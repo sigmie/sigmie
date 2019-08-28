@@ -1,0 +1,17 @@
+{
+    "name": "nicoorfi/sses",
+    "description": "Self service Elasticsearch",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nico orfi",
+            "email": "nico_orfi@yahoo.com"
+        }
+    ],
+    "require": {
+        "symfony/console": "^4.3",
+        "elasticsearch/elasticsearch": "6.0",
+        "monolog/monolog": "^1.24"
+    }
+}
