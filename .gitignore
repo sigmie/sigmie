@@ -1,4 +1,7 @@
 
-/vendor/
 .history
+.vscode
 .idea
+
+composer.phar
+/vendor/
