@@ -1,8 +1,16 @@
 version: 2 # use CircleCI 2.0
 jobs:
-  build: &build 
+  build:
     docker: 
       - image: php:7.2-cli
+      - image: docker.elastic.co/elasticsearch/elasticsearch:6.8.0
+        environment:
+         - cluster.name: es-test-cluster
+         - xpack.security.enabled: false
+         - transport.host: localhost
+         - network.host: 127.0.0.1
+         - http.port: 9200
+         - discovery.type: single-node
     working_directory: ~/project
     steps:
       - run: apt-get update  
@@ -17,16 +25,8 @@ jobs:
       - run: composer install -n --prefer-dist
       - run: vendor/bin/phpcs --standard=PSR12 --ignore=vendor/* ./
       - run: vendor/bin/phpunit --configuration phpunit.xml
+      - run: curl -XGET localhost:9200
       - save_cache:
           key: composer-v1-{{ checksum "composer.lock" }}
           paths:
             - vendor
-  build-php-7-latest:
-    <<: *build
-    docker: 
-      - image: php:latest
-workflows:
-  version: 2
-  build-n-test: 
-    jobs:
-      - build
