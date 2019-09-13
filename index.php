@@ -1,5 +1,19 @@
 <?php
 
-require 'vendor/autoload.php';
+use Elasticsearch\ClientBuilder;
 
-$client = new Elasticsearch\Client();
+require_once 'vendor/autoload.php';
+
+$esClient = ClientBuilder::create()->build();
+
+$params = [
+    'index' => $name,
+    'body' => [
+        'settings' => [
+            'number_of_shards' => $shards,
+            'number_of_replicas' => $replicas
+        ]
+    ]
+];
+
+$esClient->indicies()->create($params);
