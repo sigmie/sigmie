@@ -9,6 +9,15 @@
             "email": "nico_orfi@yahoo.com"
         }
     ],
+    "autoload": {
+        "psr-4": {
+            "niElastic\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+        }
+    },
     "require": {
         "symfony/console": "^4.3",
         "elasticsearch/elasticsearch": "^6.7",
