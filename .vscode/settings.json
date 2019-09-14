@@ -1,4 +1,6 @@
 {
+    "phpmd.command": "vendor/bin/phpmd",
+    "phpmd.rules": "cleancode,codesize,controversial,design,unusedcode,naming",
     "phpcs.standard": "PSR12",
     "phpcs.executablePath": "vendor/bin/phpcs",
     "phpcs.ignorePatterns": [
