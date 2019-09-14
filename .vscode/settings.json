@@ -1,0 +1,7 @@
+{
+    "phpcs.standard": "PSR12",
+    "phpcs.executablePath": "vendor/bin/phpcs",
+    "phpcs.ignorePatterns": [
+        "vendor/*/**",
+    ]
+}
