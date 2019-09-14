@@ -1,7 +1,8 @@
 
 .history
-.vscode
 .idea
 
 composer.phar
 /vendor/
+
+.phpunit.result.cache
