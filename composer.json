@@ -11,12 +11,14 @@
     ],
     "autoload": {
         "psr-4": {
-            "niElastic\\": "src/"
-        }
+            "Ni\\Elastic\\": "src/"
+        },
+        "exclude-from-classmap": [
+            "/test/"
+        ]
     },
     "autoload-dev": {
-        "psr-4": {
-        }
+        "psr-4": {}
     },
     "require": {
         "symfony/console": "^4.3",

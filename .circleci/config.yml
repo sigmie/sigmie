@@ -25,7 +25,7 @@ jobs:
       - run: composer install -n --prefer-dist
       - run: vendor/bin/phpcs --standard=PSR12 --ignore=vendor/* ./
       - run: vendor/bin/phpmd ./ text cleancode,codesize,controversial,design,unusedcode,naming --exclude vendor
-      - run: vendor/bin/phpunit --configuration phpunit.xml
+      - run: vendor/bin/phpunit
       - run: curl -XGET localhost:9200
       - save_cache:
           key: composer-v1-{{ checksum "composer.lock" }}
