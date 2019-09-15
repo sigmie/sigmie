@@ -1,6 +1,6 @@
 <?php
 
-namespace niElastic\Service;
+namespace Ni\Elastic\Service;
 
 class Client
 {

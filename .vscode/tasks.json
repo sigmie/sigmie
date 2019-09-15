@@ -7,6 +7,30 @@
             "label": "test",
             "type": "shell",
             "command": "vendor/bin/phpunit"
+        },
+        {
+            "label": "phpcs",
+            "type": "shell",
+            "command": "vendor/bin/phpcs --standard=PSR12 --ignore=vendor/*,.history/* ./",
+            "problemMatcher": []
+        },
+        {
+            "label": "phpmd",
+            "type": "shell",
+            "command": "vendor/bin/phpmd ./ text cleancode,codesize,controversial,design,unusedcode,naming --exclude vendor,.history",
+            "problemMatcher": []
+        },
+        {
+            "label": "composer update",
+            "type": "shell",
+            "command": "composer update",
+            "problemMatcher": []
+        },
+        {
+            "label": "composer install",
+            "type": "shell",
+            "command": "composer install",
+            "problemMatcher": []
         }
     ]
 }
