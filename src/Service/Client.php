@@ -2,6 +2,9 @@
 
 namespace Ni\Elastic\Service;
 
+use Elasticsearch\ClientBuilder;
+use Elasticsearch\Client as Elasticsearch;
+
 class Client
 {
 
@@ -19,10 +22,21 @@ class Client
      */
     private $port;
 
-    public function __construct(string $host = '127.0.0.1', string $port = '9200')
+    /**
+     * Elastic search client
+     *
+     * @var Elasticsearch
+     */
+    private $elasticsearch;
+
+    public function __construct(string $host = '127.0.0.1', string $port = '9200', ?Elasticsearch $elasticsearch = null)
     {
         $this->host = $host;
         $this->port = $port;
+
+        if ($elasticsearch !== null) {
+            $this->elasticsearch = $elasticsearch;
+        }
     }
 
     /**
@@ -71,5 +85,48 @@ class Client
         $this->host = $host;
 
         return $this;
+    }
+    /**
+     * Get elastic search client
+     *
+     * @return  Elasticsearch
+     */
+    public function getElasticsearch()
+    {
+        if ($this->elasticsearch === null) {
+            $this->elasticsearch();
+        }
+
+        return $this->elasticsearch;
+    }
+
+    /**
+     * Set elastic search client
+     *
+     * @param  Elasticsearch  $elasticsearch  Elastic search client
+     *
+     * @return  self
+     */
+    public function setElasticsearch(Elasticsearch $elasticsearch)
+    {
+        $this->elasticsearch = $elasticsearch;
+
+        return $this;
+    }
+
+    public function elasticsearch(): Elasticsearch
+    {
+        if ($this->elasticsearch instanceof Elasticsearch) {
+            return $this->elasticsearch;
+        }
+
+        $this->elasticsearch = $this->build();
+
+        return $this->elasticsearch;
+    }
+
+    private function build(): Elasticsearch
+    {
+        return ClientBuilder::create()->build();
     }
 }
