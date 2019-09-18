@@ -7,20 +7,12 @@ use Elasticsearch\Client as Elasticsearch;
 
 class Client
 {
-
     /**
-     * Elasticseach host
+     * Hosts
      *
-     * @var string
+     * @var array
      */
-    private $host;
-
-    /**
-     * Elasticsearch port
-     *
-     * @var string
-     */
-    private $port;
+    private $hosts;
 
     /**
      * Elastic search client
@@ -29,60 +21,48 @@ class Client
      */
     private $elasticsearch;
 
-    public function __construct(string $host = '127.0.0.1', string $port = '9200', ?Elasticsearch $elasticsearch = null)
+    /**
+     * Client builder
+     *
+     * @var ClientBuilder
+     */
+    private $builder;
+
+    public function __construct(array $hosts = [], ?Elasticsearch $elasticsearch = null, ?ClientBuilder $builder = null)
     {
-        $this->host = $host;
-        $this->port = $port;
+        $this->hosts = $hosts;
 
         if ($elasticsearch !== null) {
             $this->elasticsearch = $elasticsearch;
         }
+
+        if ($builder !== null) {
+            $this->builder = $builder;
+        }
+
+        $this->elasticsearch();
     }
 
     /**
-     * Get elasticsearch port
+     * Get elasticseach hosts
      *
      * @return  string
      */
-    public function getPort()
+    public function getHosts()
     {
-        return $this->port;
+        return $this->hosts;
     }
 
     /**
-     * Set elasticsearch port
+     * Set elasticseach hosts
      *
-     * @param  string  $port  Elasticsearch port
+     * @param  string  $host Elasticseach hosts
      *
      * @return  self
      */
-    public function setPort(string $port)
+    public function setHosts(string $hosts)
     {
-        $this->port = $port;
-
-        return $this;
-    }
-
-    /**
-     * Get elasticseach host
-     *
-     * @return  string
-     */
-    public function getHost()
-    {
-        return $this->host;
-    }
-
-    /**
-     * Set elasticseach host
-     *
-     * @param  string  $host  Elasticseach host
-     *
-     * @return  self
-     */
-    public function setHost(string $host)
-    {
-        $this->host = $host;
+        $this->hosts = $hosts;
 
         return $this;
     }
@@ -125,8 +105,47 @@ class Client
         return $this->elasticsearch;
     }
 
+    /**
+     * Build the Elasticsearch client
+     *
+     * @return Elasticsearch
+     *
+     * @SuppressWarnings(PHPMD.StaticAccess)
+     */
     private function build(): Elasticsearch
     {
-        return ClientBuilder::create()->build();
+        if ($this->builder instanceof ClientBuilder) {
+            return $this->builder
+                ->setHosts($this->hosts)
+                ->build();
+        }
+
+        $this->builder = ClientBuilder::create();
+
+        return $this->build();
+    }
+
+    /**
+     * Get client builder
+     *
+     * @return  ClientBuilder
+     */
+    public function getBuilder()
+    {
+        return $this->builder;
+    }
+
+    /**
+     * Set client builder
+     *
+     * @param  ClientBuilder  $builder  Client builder
+     *
+     * @return  self
+     */
+    public function setBuilder(ClientBuilder $builder)
+    {
+        $this->builder = $builder;
+
+        return $this;
     }
 }
