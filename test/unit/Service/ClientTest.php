@@ -5,48 +5,67 @@ namespace Ni\Elastic\Test\Service;
 use Elasticsearch\Client as ElasticsearchClient;
 use Ni\Elastic\Service\Client;
 use PHPUnit\Framework\TestCase;
+use Elasticsearch\ClientBuilder;
 
 class ClientTest extends TestCase
 {
     /**
      * @test
      */
-    public function defaultHost(): void
-    {
-        $client = new Client();
-        $this->assertEquals($client->gethost(), '127.0.0.1');
-    }
-
-    /**
-     * @test
-     */
-    public function defaultPort(): void
-    {
-        $client = new Client();
-        $this->assertEquals($client->getPort(), '9200');
-    }
-
-    /**
-     * @test
-     */
-    public function constructorArguments(): void
+    public function constructorElasticsearch(): void
     {
         /** @var ElasticsearchClient $esMock */
         $esMock = $this->createMock(ElasticsearchClient::class);
-        $client = new Client('192.168.0.1', '3100', $esMock);
-
-        $this->assertEquals($client->getHost(), '192.168.0.1');
-        $this->assertEquals($client->getPort(), '3100');
+        $client = new Client([], $esMock);
         $this->assertEquals($client->getElasticsearch(), $esMock);
     }
 
     /**
      * @test
      */
-    public function getElasticsearch(): void
+    public function methodElasticsearch(): void
     {
-        $client = new Client('192.168.0.1', '9200');
+        $client = new Client([]);
+        $this->assertInstanceOf(ElasticsearchClient::class, $client->elasticsearch());
+    }
 
-        $this->assertInstanceOf(ElasticsearchClient::class, $client->getElasticsearch());
+    /**
+     * @test
+     */
+    public function constructorBuilder(): void
+    {
+        /** @var ClientBuilder $builderMock */
+        $builderMock = $this->createMock(ClientBuilder::class);
+        /** @var ElasticsearchClient $esMock */
+        $esMock = $this->createMock(ElasticsearchClient::class);
+        $client = new Client([], $esMock, $builderMock);
+        $this->assertEquals($builderMock, $client->getBuilder());
+    }
+
+    /**
+     * @test
+     */
+    public function defaultBuilder(): void
+    {
+        $client = new Client([]);
+        $this->assertInstanceOf(ClientBuilder::class, $client->getBuilder());
+    }
+
+    /**
+     * @test
+     */
+    public function methodBuild(): void
+    {
+        /** @var ElasticsearchClient $esMock */
+        $esMock = $this->createMock(ElasticsearchClient::class);
+        /** @var ClientBuilder $bulderMock */
+        $builderMock = $this->createMock(ClientBuilder::class);
+        $builderMock->method('setHosts')->willReturn($builderMock);
+        $builderMock->method('build')->willReturn($esMock);
+
+        $builderMock->expects($this->once())
+            ->method('setHosts')->with(['foo']);
+
+        new Client(['foo'], null, $builderMock);
     }
 }
