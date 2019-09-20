@@ -6,7 +6,13 @@
         {
             "label": "test",
             "type": "shell",
-            "command": "vendor/bin/phpunit"
+            "command": "vendor/bin/phpunit --no-coverage"
+        },
+        {
+            "label": "coverage",
+            "type": "shell",
+            "command": "vendor/bin/phpunit",
+            "problemMatcher": []
         },
         {
             "label": "phpcs",
@@ -30,6 +36,18 @@
             "label": "composer install",
             "type": "shell",
             "command": "composer install",
+            "problemMatcher": []
+        },
+        {
+            "label": "test file",
+            "type": "shell",
+            "command": "vendor/bin/phpunit --no-coverage",
+            "problemMatcher": []
+        },
+        {
+            "label": "test method",
+            "type": "shell",
+            "command": "vendor/bin/phpunit --no-coverage --filter ${selectedText} ${file}",
             "problemMatcher": []
         }
     ]
