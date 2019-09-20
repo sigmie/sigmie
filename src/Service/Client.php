@@ -56,16 +56,17 @@ class Client
     /**
      * Set elasticseach hosts
      *
-     * @param  string  $host Elasticseach hosts
+     * @param array $host Elasticseach hosts
      *
      * @return  self
      */
-    public function setHosts(string $hosts)
+    public function setHosts(array $hosts)
     {
         $this->hosts = $hosts;
 
         return $this;
     }
+
     /**
      * Get elastic search client
      *
@@ -73,9 +74,6 @@ class Client
      */
     public function getElasticsearch()
     {
-        if ($this->elasticsearch === null) {
-            $this->elasticsearch();
-        }
 
         return $this->elasticsearch;
     }
@@ -94,6 +92,13 @@ class Client
         return $this;
     }
 
+    /**
+     * Build the Elasticsearch client if the
+     * elasticsearch is not initialized yet
+     * and returns the instance
+     *
+     * @return Elasticsearch
+     */
     public function elasticsearch(): Elasticsearch
     {
         if ($this->elasticsearch instanceof Elasticsearch) {
