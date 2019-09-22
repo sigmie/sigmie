@@ -5,5 +5,12 @@
     "phpcs.executablePath": "vendor/bin/phpcs",
     "phpcs.ignorePatterns": [
         "vendor/*/**",
+    ],
+    "remote.containers.defaultExtensions": [
+        "ecodes.vscode-phpmd",
+        "neilbrayfield.php-docblocker",
+        "bmewburn.vscode-intelephense-client",
+        "neilbrayfield.php-docblocker",
+        "ikappas.phpcs",
     ]
 }
