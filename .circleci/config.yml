@@ -26,7 +26,13 @@ jobs:
       - run: vendor/bin/phpcs --standard=PSR12 --ignore=vendor/* ./
       - run: vendor/bin/phpmd ./ text cleancode,codesize,controversial,design,unusedcode,naming --exclude vendor
       - run: vendor/bin/phpunit
-      - run: curl -XGET localhost:9200
+      - run: ES_HOST=localhost 
+      - run:
+          name: Set up env variables 
+          command: |
+            echo 'export ES_HOST=localhost' >> $BASH_ENV
+            source $BASH_ENV
+      - run: curl -XGET ${ES_HOST}:9200
       - save_cache:
           key: composer-v1-{{ checksum "composer.lock" }}
           paths:
