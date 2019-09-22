@@ -21,3 +21,5 @@ services:
   php:
     container_name: php
     build: 'docker/php'
+    environment:
+     - ES_HOST=elasticsearch
