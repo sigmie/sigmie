@@ -3,6 +3,7 @@
 namespace Ni\Elastic\Service;
 
 use Elasticsearch\ClientBuilder;
+use Ni\Elastic\BuilderInterface;
 use Elasticsearch\Client as Elasticsearch;
 
 class Client
@@ -28,12 +29,34 @@ class Client
      */
     private $builder;
 
-    public function __construct(array $hosts = [], ?Elasticsearch $elasticsearch = null, ?ClientBuilder $builder = null)
-    {
+    /**
+     * Manager builder
+     *
+     * @var ManagerBuilder
+     */
+    private $managerBuilder;
+
+    /**
+     * Manager
+     *
+     * @var Manager
+     */
+    private $manager;
+
+    public function __construct(
+        array $hosts = [],
+        ?Elasticsearch $elasticsearch = null,
+        ?BuilderInterface $managerBuilder = null,
+        ?ClientBuilder $builder = null
+    ) {
         $this->hosts = $hosts;
 
         if ($elasticsearch !== null) {
             $this->elasticsearch = $elasticsearch;
+        }
+
+        if ($managerBuilder !== null) {
+            $this->managerBuilder = $managerBuilder;
         }
 
         if ($builder !== null) {
@@ -44,11 +67,35 @@ class Client
     }
 
     /**
+     * Get manager builder
+     *
+     * @return ManagerBuilder
+     */
+    public function getManagerBuilder(): ManagerBuilder
+    {
+        return $this->managerBuilder;
+    }
+
+    /**
+     * Set manager builder
+     *
+     * @param  ManagerBuilder  $managerBuilder  Manager builder
+     *
+     * @return self
+     */
+    public function setManagerBuilder(ManagerBuilder $managerBuilder): self
+    {
+        $this->managerBuilder = $managerBuilder;
+
+        return $this;
+    }
+
+    /**
      * Get elasticseach hosts
      *
-     * @return  string
+     * @return array
      */
-    public function getHosts()
+    public function getHosts(): array
     {
         return $this->hosts;
     }
@@ -58,9 +105,9 @@ class Client
      *
      * @param array $host Elasticseach hosts
      *
-     * @return  self
+     * @return self
      */
-    public function setHosts(array $hosts)
+    public function setHosts(array $hosts): self
     {
         $this->hosts = $hosts;
 
@@ -70,24 +117,47 @@ class Client
     /**
      * Get elastic search client
      *
-     * @return  Elasticsearch
+     * @return Elasticsearch
      */
-    public function getElasticsearch()
+    public function getElasticsearch(): Elasticsearch
     {
-
         return $this->elasticsearch;
     }
 
     /**
      * Set elastic search client
      *
-     * @param  Elasticsearch  $elasticsearch  Elastic search client
+     * @param Elasticsearch  $elasticsearch  Elastic search client
      *
-     * @return  self
+     * @return self
      */
-    public function setElasticsearch(Elasticsearch $elasticsearch)
+    public function setElasticsearch(Elasticsearch $elasticsearch): self
     {
         $this->elasticsearch = $elasticsearch;
+
+        return $this;
+    }
+
+    /**
+     * Get client builder
+     *
+     * @return ClientBuilder
+     */
+    public function getBuilder(): ClientBuilder
+    {
+        return $this->builder;
+    }
+
+    /**
+     * Set client builder
+     *
+     * @param  ClientBuilder  $builder  Client builder
+     *
+     * @return self
+     */
+    public function setBuilder(ClientBuilder $builder): self
+    {
+        $this->builder = $builder;
 
         return $this;
     }
@@ -105,7 +175,7 @@ class Client
             return $this->elasticsearch;
         }
 
-        $this->elasticsearch = $this->build();
+        $this->elasticsearch = $this->buildElasticsearch();
 
         return $this->elasticsearch;
     }
@@ -117,7 +187,7 @@ class Client
      *
      * @SuppressWarnings(PHPMD.StaticAccess)
      */
-    private function build(): Elasticsearch
+    private function buildElasticsearch(): Elasticsearch
     {
         if ($this->builder instanceof ClientBuilder) {
             return $this->builder
@@ -127,30 +197,26 @@ class Client
 
         $this->builder = ClientBuilder::create();
 
-        return $this->build();
+        return $this->buildElasticsearch();
     }
 
     /**
-     * Get client builder
+     * Build an return the manager instance
      *
-     * @return  ClientBuilder
+     * @return Manager
      */
-    public function getBuilder()
+    public function manager(): Manager
     {
-        return $this->builder;
-    }
+        if ($this->manager instanceof Manager) {
+            return $this->manager;
+        }
 
-    /**
-     * Set client builder
-     *
-     * @param  ClientBuilder  $builder  Client builder
-     *
-     * @return  self
-     */
-    public function setBuilder(ClientBuilder $builder)
-    {
-        $this->builder = $builder;
+        if ($this->managerBuilder === null) {
+            $this->managerBuilder = new ManagerBuilder($this->elasticsearch());
+        }
 
-        return $this;
+        $this->manager = $this->managerBuilder->build();
+
+        return $this->manager;
     }
 }
