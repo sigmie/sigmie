@@ -15,6 +15,18 @@
             "problemMatcher": []
         },
         {
+            "label": "test unit suite",
+            "type": "shell",
+            "command": "vendor/bin/phpunit --no-coverage --testsuite unit",
+            "problemMatcher": []
+        },
+        {
+            "label": "test integration suite",
+            "type": "shell",
+            "command": "vendor/bin/phpunit --no-coverage --testsuite integration",
+            "problemMatcher": []
+        },
+        {
             "label": "phpcs",
             "type": "shell",
             "command": "vendor/bin/phpcs --standard=PSR12 --ignore=vendor/*,.history/* ./",
