@@ -3,6 +3,8 @@
 namespace Ni\Elastic\Service;
 
 use Elasticsearch\Client as Elasticsearch;
+use Ni\Elastic\Index\BaseIndex;
+use Ni\Elastic\Type\BaseType;
 
 class ManagerBuilder
 {
@@ -21,6 +23,8 @@ class ManagerBuilder
     public function build(): Manager
     {
         $manager = new Manager($this->elasticsearch);
+        $manager->setIndex(new BaseIndex());
+        $manager->setType(new BaseType());
 
         return $manager;
     }

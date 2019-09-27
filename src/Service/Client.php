@@ -43,6 +43,14 @@ class Client
      */
     private $manager;
 
+    /**
+     * Class constructor
+     *
+     * @param array $hosts
+     * @param Elasticsearch|null $elasticsearch
+     * @param BuilderInterface|null $managerBuilder
+     * @param ClientBuilder|null $builder
+     */
     public function __construct(
         array $hosts = [],
         ?Elasticsearch $elasticsearch = null,
