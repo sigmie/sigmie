@@ -3,7 +3,7 @@
 namespace Ni\Elastic\Service;
 
 use Elasticsearch\Client as Elasticsearch;
-use Ni\Elastic\Index\BaseIndex;
+use Ni\Elastic\Index\IndexBase;
 use Ni\Elastic\Type\BaseType;
 
 class Manager
@@ -11,16 +11,9 @@ class Manager
     /**
      * Index instance
      *
-     * @var BaseIndex
+     * @var IndexBase
      */
     private $index = null;
-
-    /**
-     * Type instance
-     * 
-     * @var BaseType
-     */
-    private $type = null;
 
     /**
      * Elasticsearch Client
@@ -61,38 +54,19 @@ class Manager
     /**
      * Set index instance
      *
-     * @param  BaseIndex  $index  Index instance
+     * @param  IndexBase  $index  Index instance
      *
      * @return  self
      */
-    public function setIndex(BaseIndex $index)
+    public function setIndex(IndexBase $index)
     {
         $this->index = $index;
 
         return $this;
     }
 
-    public function index(): BaseIndex
+    public function index(): IndexBase
     {
         return $this->index;
-    }
-
-    public function Type(): BaseType
-    {
-        return $this->type;
-    }
-
-    /**
-     * Set type instance
-     *
-     * @param  BaseType  $type  Type instance
-     *
-     * @return  self
-     */
-    public function setType(BaseType $type)
-    {
-        $this->type = $type;
-
-        return $this;
     }
 }

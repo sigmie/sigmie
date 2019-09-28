@@ -1,11 +1,10 @@
 <?php
 
 use Elasticsearch\Client as Elasticsearch;
-use Ni\Elastic\Index\BaseIndex;
+use Ni\Elastic\Index\IndexBase;
 use Ni\Elastic\Service\Manager;
 use Ni\Elastic\Service\ManagerBuilder;
-use Ni\Elastic\Type\BaseType;
-use PHPUnit\Framework\TestCase;
+use Ni\Elastic\Type\BaseType; use PHPUnit\Framework\TestCase;
 
 class ManagerBuilderTest extends TestCase
 {
@@ -38,7 +37,6 @@ class ManagerBuilderTest extends TestCase
         $builder = new ManagerBuilder($this->esMock);
 
         $manager = $builder->build();
-        $this->assertInstanceOf(BaseIndex::class,$manager->index());
-        $this->assertInstanceOf(BaseType::class,$manager->type());
+        $this->assertInstanceOf(IndexBase::class,$manager->index());
     }
 }
