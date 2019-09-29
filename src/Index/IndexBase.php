@@ -26,6 +26,7 @@ abstract class IndexBase
             'index' => $name
         ];
 
+        //TODO return response object
         $response = $this->elasticsearch->indices()->create($params);
 
         return $response;
@@ -37,6 +38,7 @@ abstract class IndexBase
             'index' => $name
         ];
 
+        //TODO return response object
         $response = $this->elasticsearch->indices()->delete($params);
 
         return $response;
