@@ -4,6 +4,6 @@ namespace Ni\Elastic\Response\Index;
 
 use Ni\Elastic\Response\FailureResponse;
 
-class IndexFailureResponse extends FailureResponse
+class IndexFailureResponse implements FailureResponse
 {
 }

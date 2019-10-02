@@ -6,7 +6,7 @@ use Ni\Elastic\Service\Client;
 use PHPUnit\Framework\TestCase;
 use Ni\Elastic\Service\Manager;
 use Elasticsearch\ClientBuilder;
-use Ni\Elastic\BuilderInterface;
+use Ni\Elastic\Builder;
 use Ni\Elastic\Service\ManagerBuilder;
 use Elasticsearch\Client as ElasticsearchClient;
 
@@ -29,7 +29,7 @@ class ClientTest extends TestCase
     /**
      * ManagerBuilder mock
      *
-     * @var BuilderInterface
+     * @var Builder
      */
     private $managerBuilder;
 
@@ -38,7 +38,7 @@ class ClientTest extends TestCase
         /** @var ElasticsearchClient $esMock */
         $this->esMock = $this->createMock(ElasticsearchClient::class);
         /** @var ElasticsearchClient $esMock */
-        $this->managerBuilder = $this->createMock(BuilderInterface::class);
+        $this->managerBuilder = $this->createMock(Builder::class);
         /** @var ClientBuilder $builderMock */
         $this->builderMock = $this->createMock(ClientBuilder::class);
         $this->builderMock->method('setHosts')->willReturn($this->builderMock);

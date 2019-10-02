@@ -5,7 +5,7 @@ namespace Ni\Elastic;
 /**
  * Builder interface
  */
-interface BuilderInterface
+interface Builder
 {
     public function build();
 }
