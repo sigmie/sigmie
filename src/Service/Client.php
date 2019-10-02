@@ -3,7 +3,7 @@
 namespace Ni\Elastic\Service;
 
 use Elasticsearch\ClientBuilder;
-use Ni\Elastic\BuilderInterface;
+use Ni\Elastic\Builder;
 use Elasticsearch\Client as Elasticsearch;
 
 class Client
@@ -48,13 +48,13 @@ class Client
      *
      * @param array $hosts
      * @param Elasticsearch|null $elasticsearch
-     * @param BuilderInterface|null $managerBuilder
+     * @param Builder|null $managerBuilder
      * @param ClientBuilder|null $builder
      */
     public function __construct(
         array $hosts = [],
         ?Elasticsearch $elasticsearch = null,
-        ?BuilderInterface $managerBuilder = null,
+        ?Builder $managerBuilder = null,
         ?ClientBuilder $builder = null
     ) {
         $this->hosts = $hosts;

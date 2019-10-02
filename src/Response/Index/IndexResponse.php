@@ -2,5 +2,9 @@
 
 namespace Ni\Elastic\Response\Index;
 
-abstract class IndexResponse
-{ }
+interface IndexResponse
+{
+    public function acknowledged(): bool;
+
+    public function index(): string;
+}

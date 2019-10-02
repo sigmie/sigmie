@@ -2,6 +2,9 @@
 
 namespace Ni\Elastic\Response;
 
-abstract class FailureResponse extends Response
+interface FailureResponse extends Response
 {
+    public function error(): bool;
+
+    public function index(): string;
 }

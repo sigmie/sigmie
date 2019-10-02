@@ -3,44 +3,54 @@
 namespace Ni\Elastic\Index;
 
 use Elasticsearch\Client as Elasticsearch;
+use Elasticsearch\Endpoints\Cat\Repositories;
 use JsonSerializable;
 use Ni\Elastic\Exception\NotImplementedException;
+use Ni\Elastic\Manageable;
+use Ni\Elastic\Response\Response;
+use Ni\Elastic\Response\ResponseFactory;
 
-abstract class IndexBase
+abstract class IndexBase implements Manageable
 {
     /**
      * Elasticsearch Client
      *
      * @var Elasticsearch
      */
-    protected $elasticsearch;
+    private $elasticsearch;
 
-    public function __construct($elasticsearch)
+    /**
+     * Response factory
+     *
+     * @var ResponseFactory
+     */
+    private $responseFactory;
+
+    public function __construct(Elasticsearch $elasticsearch, ResponseFactory $responseFactory)
     {
         $this->elasticsearch = $elasticsearch;
+        $this->responseFactory = $responseFactory;
     }
 
-    public function create($name)
+    public function create(array $values): Response
     {
         $params = [
-            'index' => $name
+            'index' => $values['name']
         ];
 
-        //TODO return response object
         $response = $this->elasticsearch->indices()->create($params);
 
-        return $response;
+        return $this->responseFactory->create($response);
     }
 
-    public function remove($name)
+    public function remove(string $identifier): Response
     {
         $params = [
-            'index' => $name
+            'index' => $identifier
         ];
 
-        //TODO return response object
         $response = $this->elasticsearch->indices()->delete($params);
 
-        return $response;
+        return $this->responseFactory->create($response);
     }
 }

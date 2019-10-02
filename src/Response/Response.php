@@ -2,7 +2,7 @@
 
 namespace Ni\Elastic\Response;
 
-abstract class Response
-{ 
-    
+interface Response
+{
+    public function error(): bool;
 }

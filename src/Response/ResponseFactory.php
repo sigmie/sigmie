@@ -2,12 +2,7 @@
 
 namespace Ni\Elastic\Response;
 
-/**
- * Response abstract factory
- */
-abstract class ResponseFactory
+interface ResponseFactory
 {
-    abstract function indexResponse();
-
-    abstract function mappingResponse();
+    public function create(array $result): Response;
 }
