@@ -3,6 +3,7 @@
 namespace Ni\Elastic\Service;
 
 use Elasticsearch\Client as Elasticsearch;
+use Ni\Elastic\Response\ResponseFactory;
 use Ni\Elastic\Index\IndexBase;
 use Ni\Elastic\Index\Index;
 
@@ -23,7 +24,7 @@ class ManagerBuilder
     public function build(): Manager
     {
         $manager = new Manager($this->elasticsearch);
-        $manager->setIndex(new Index($this->elasticsearch));
+        $manager->setIndex(new Index($this->elasticsearch, new ResponseFactory));
 
         return $manager;
     }

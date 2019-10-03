@@ -9,4 +9,6 @@ interface Manageable
     public function create(array $values): Response;
 
     public function remove(string $identifier): Response;
+
+    // public function list(): Response;
 }

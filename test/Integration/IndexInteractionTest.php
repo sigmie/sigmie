@@ -1,9 +1,12 @@
 <?php
 
+namespace Ni\Elastic\Integration;
+
+use Ni\Elastic\Response\SuccessResponse;
 use Ni\Elastic\Service\Client;
 use PHPUnit\Framework\TestCase;
 
-class IndexInteraction extends TestCase
+class IndexInteractionTest extends TestCase
 {
     /**
      * Client instance
@@ -24,10 +27,11 @@ class IndexInteraction extends TestCase
      */
     public function createIndex(): void
     {
-        $response = $this->client->manager()->index()->create('products');
+        $response = $this->client->manager()->index()->create(['name' => 'products']);
 
-        $this->assertTrue($response['acknowledged']);
-        $this->assertEquals('products', $response['index']);
+        $this->assertInstanceOf(SuccessResponse::class, $response);
+        // $this->assertTrue($response['acknowledged']);
+        // $this->assertEquals('products', $response['index']);
     }
 
     /**
@@ -37,6 +41,7 @@ class IndexInteraction extends TestCase
     {
         $response = $this->client->manager()->index()->remove('products');
 
-        $this->assertTrue($response['acknowledged']);
+        $this->assertInstanceOf(SuccessResponse::class, $response);
+        $this->assertTrue($response->isAcknowledged());
     }
 }
