@@ -4,7 +4,6 @@ namespace Ni\Elastic\Service;
 
 use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Index\IndexBase;
-use Ni\Elastic\Type\BaseType;
 
 class Manager
 {

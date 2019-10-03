@@ -2,14 +2,16 @@
 
 namespace Ni\Elastic\Response\Index;
 
+use Ni\Elastic\Response\Factory;
 use Ni\Elastic\Response\FailureResponse;
 use Ni\Elastic\Response\Response;
 use Ni\Elastic\Response\SuccessResponse;
 
-class IndexResponseFactory implements ResponseFactory
+class IndexResponseFactory implements Factory
 {
     public function create(array $result): Response
     {
+        dump('IndexResponseFactory ');
         if (true) {
             return $this->createSuccess($result);
         }
@@ -24,6 +26,6 @@ class IndexResponseFactory implements ResponseFactory
 
     private function createSuccess(array $result): SuccessResponse
     {
-        return new IndexSuccessResponse();
+        return new IndexSuccessResponse($result['acknowledged']);
     }
 }

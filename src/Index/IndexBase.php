@@ -8,7 +8,7 @@ use JsonSerializable;
 use Ni\Elastic\Exception\NotImplementedException;
 use Ni\Elastic\Manageable;
 use Ni\Elastic\Response\Response;
-use Ni\Elastic\Response\ResponseFactory;
+use Ni\Elastic\Response\Factory;
 
 abstract class IndexBase implements Manageable
 {
@@ -22,11 +22,11 @@ abstract class IndexBase implements Manageable
     /**
      * Response factory
      *
-     * @var ResponseFactory
+     * @var Factory
      */
     private $responseFactory;
 
-    public function __construct(Elasticsearch $elasticsearch, ResponseFactory $responseFactory)
+    public function __construct(Elasticsearch $elasticsearch, Factory $responseFactory)
     {
         $this->elasticsearch = $elasticsearch;
         $this->responseFactory = $responseFactory;

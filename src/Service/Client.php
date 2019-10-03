@@ -38,8 +38,7 @@ class Client
 
     /**
      * Manager
-     *
-     * @var Manager
+     * * @var Manager
      */
     private $manager;
 
