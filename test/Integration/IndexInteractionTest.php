@@ -2,6 +2,7 @@
 
 namespace Ni\Elastic\Integration;
 
+use Ni\Elastic\Index\Index;
 use Ni\Elastic\Response\SuccessResponse;
 use Ni\Elastic\Service\Client;
 use PHPUnit\Framework\TestCase;
@@ -27,11 +28,15 @@ class IndexInteractionTest extends TestCase
      */
     public function createIndex(): void
     {
-        $response = $this->client->manager()->index()->create(['name' => 'products']);
+        $response = $this->client->manage()->index()->create(['name' => 'bar']);
 
         $this->assertInstanceOf(SuccessResponse::class, $response);
-        // $this->assertTrue($response['acknowledged']);
-        // $this->assertEquals('products', $response['index']);
+        $this->assertTrue($response->isAcknowledged());
+        $this->assertInstanceOf(Index::class, $response->getElement());
+        $this->assertEquals($response->getElement()->getIdentifier(), 'bar');
+
+        // Clean up index
+        $response = $this->client->manage()->index()->remove('bar');
     }
 
     /**
@@ -39,9 +44,28 @@ class IndexInteractionTest extends TestCase
      */
     public function removeIndex(): void
     {
-        $response = $this->client->manager()->index()->remove('products');
+        // Create index to remove
+        $response = $this->client->manage()->index()->create(['name' => 'foo']);
+
+        $response = $this->client->manage()->index()->remove('foo');
 
         $this->assertInstanceOf(SuccessResponse::class, $response);
         $this->assertTrue($response->isAcknowledged());
     }
+
+    // /**
+    //  * @test
+    //  */
+    // public function listIndices(): void
+    // {
+    //     $response = $this->client->manage()->index()->list();
+    // }
+
+    // /**
+    //  * @test
+    //  */
+    // public function getIndex(): void
+    // {
+    //     $response = $this->client->manage()->index()->get();
+    // }
 }

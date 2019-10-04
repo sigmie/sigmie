@@ -4,13 +4,14 @@ namespace Ni\Elastic\Service;
 
 use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Index\IndexBase;
+use Ni\Elastic\Index\Manager as IndexManager;
 
 class Manager
 {
     /**
      * Index instance
      *
-     * @var IndexBase
+     * @var IndexManager
      */
     private $index = null;
 
@@ -57,14 +58,14 @@ class Manager
      *
      * @return  self
      */
-    public function setIndex(IndexBase $index)
+    public function setIndex(IndexManager $index)
     {
         $this->index = $index;
 
         return $this;
     }
 
-    public function index(): IndexBase
+    public function index(): IndexManager
     {
         return $this->index;
     }

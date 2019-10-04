@@ -10,5 +10,7 @@ interface Manageable
 
     public function remove(string $identifier): Response;
 
-    // public function list(): Response;
+    public function list(array $params): Response;
+
+    public function get(array $params): Response;
 }

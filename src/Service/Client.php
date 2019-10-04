@@ -212,7 +212,7 @@ class Client
      *
      * @return Manager
      */
-    public function manager(): Manager
+    public function manage(): Manager
     {
         if ($this->manager instanceof Manager) {
             return $this->manager;
