@@ -8,18 +8,40 @@ class IndexSuccessResponse implements SuccessResponse
 {
     private $acknowledged;
 
+    private $element = null;
+
     public function __construct(bool $acknowledged)
     {
         $this->acknowledged =  $acknowledged;
     }
+
     public function isAcknowledged(): bool
-    { 
-        return $this->acknowledged ;
+    {
+        return $this->acknowledged;
     }
 
-    public function hasError(): bool
+    public function error(): bool
     {
         return false;
     }
-    // public function shardsAcknowledged(): ?bool;
+
+    /**
+     * Get the value of element
+     */
+    public function getElement()
+    {
+        return $this->element;
+    }
+
+    /**
+     * Set the value of element
+     *
+     * @return  self
+     */
+    public function setElement($element)
+    {
+        $this->element = $element;
+
+        return $this;
+    }
 }

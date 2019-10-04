@@ -136,7 +136,7 @@ class ClientTest extends TestCase
     {
         $client = new Client(['foo'], $this->esMock, null, $this->builderMock);
 
-        $this->assertInstanceOf(Manager::class, $client->manager());
+        $this->assertInstanceOf(Manager::class, $client->manage());
     }
 
     /**
@@ -148,6 +148,6 @@ class ClientTest extends TestCase
         $managerMock = $this->createMock(Manager::class);
         $this->managerBuilder->method('build')->willReturn($managerMock);
 
-        $this->assertEquals($managerMock, $client->manager());
+        $this->assertEquals($managerMock, $client->manage());
     }
 }
