@@ -7,6 +7,7 @@ use Ni\Elastic\Response\FailureResponse;
 use Ni\Elastic\Response\Response;
 use Ni\Elastic\Response\SuccessResponse;
 use Ni\Elastic\Index\Index;
+use Ni\Elastic\Index\IndexCollection;
 
 class IndexResponseFactory implements Factory
 {
@@ -26,11 +27,19 @@ class IndexResponseFactory implements Factory
 
     private function createSuccess(array $result): SuccessResponse
     {
-        $response = new IndexSuccessResponse($result['acknowledged']);
+        $response = null;
+
+        if (isset($result['acknowledged'])) {
+            $response = new IndexSuccessResponse($result['acknowledged']);
+        }
 
         if (isset($result['index'])) {
             $index = new Index($result['index']);
             $response->setElement($index);
+        }
+
+        if ($response === null) {
+            $response = new IndexCollection($result);
         }
 
         return $response;

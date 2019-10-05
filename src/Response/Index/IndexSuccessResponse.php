@@ -10,6 +10,8 @@ class IndexSuccessResponse implements SuccessResponse
 
     private $element = null;
 
+    private $list = [];
+
     public function __construct(bool $acknowledged)
     {
         $this->acknowledged =  $acknowledged;
@@ -41,6 +43,26 @@ class IndexSuccessResponse implements SuccessResponse
     public function setElement($element)
     {
         $this->element = $element;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of list
+     */ 
+    public function getList()
+    {
+        return $this->list;
+    }
+
+    /**
+     * Set the value of list
+     *
+     * @return  self
+     */ 
+    public function setList($list)
+    {
+        $this->list = $list;
 
         return $this;
     }

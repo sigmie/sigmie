@@ -2,6 +2,7 @@
 
 namespace Ni\Elastic\Integration;
 
+use Ni\Elastic\Collection;
 use Ni\Elastic\Index\Index;
 use Ni\Elastic\Response\SuccessResponse;
 use Ni\Elastic\Service\Client;
@@ -23,6 +24,15 @@ class IndexInteractionTest extends TestCase
         $this->client = new Client([$host]);
     }
 
+    protected function tearDown(): void
+    {
+        $indices = $this->client->manage()->index()->list();
+
+        foreach ($indices as $index) {
+            $this->client->manage()->index()->remove($index['index']);
+        }
+    }
+
     /**
      * @test
      */
@@ -34,9 +44,6 @@ class IndexInteractionTest extends TestCase
         $this->assertTrue($response->isAcknowledged());
         $this->assertInstanceOf(Index::class, $response->getElement());
         $this->assertEquals($response->getElement()->getIdentifier(), 'bar');
-
-        // Clean up index
-        $response = $this->client->manage()->index()->remove('bar');
     }
 
     /**
@@ -53,13 +60,21 @@ class IndexInteractionTest extends TestCase
         $this->assertTrue($response->isAcknowledged());
     }
 
-    // /**
-    //  * @test
-    //  */
-    // public function listIndices(): void
-    // {
-    //     $response = $this->client->manage()->index()->list();
-    // }
+    /**
+     * @test
+     */
+    public function listIndices(): void
+    {
+        $this->client->manage()->index()->create(['name' => 'foo']);
+        $this->client->manage()->index()->create(['name' => 'bar']);
+
+        $collection = $this->client->manage()->index()->list();
+
+        $this->assertEquals($collection[0]['index'],'foo');
+        $this->assertEquals($collection[1]['index'],'bar');
+        $this->assertCount(2, $collection);
+        $this->assertInstanceOf(Collection::class, $collection);
+    }
 
     // /**
     //  * @test
