@@ -53,4 +53,9 @@ abstract class Collection implements IteratorAggregate, Countable, ArrayAccess
     {
         return count($this->elements);
     }
+
+    public function first(): Element
+    {
+        return $this->elements[0];
+    }
 }
