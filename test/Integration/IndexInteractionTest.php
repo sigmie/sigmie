@@ -22,14 +22,11 @@ class IndexInteractionTest extends TestCase
         $host = getenv('ES_HOST');
         /** @var  Client $client */
         $this->client = new Client([$host]);
-    }
 
-    protected function tearDown(): void
-    {
-        $indices = $this->client->manage()->index()->list();
+        $indices = $this->client->getElasticsearch()->cat()->indices(['index' => '*']);
 
         foreach ($indices as $index) {
-            $this->client->manage()->index()->remove($index['index']);
+            $this->client->getElasticsearch()->indices()->delete(['index' => $index['index']]);
         }
     }
 
@@ -38,12 +35,15 @@ class IndexInteractionTest extends TestCase
      */
     public function createIndex(): void
     {
-        $response = $this->client->manage()->index()->create(['name' => 'bar']);
+        $index = new Index('bar');
+        $result = $this->client->manage()->index()->create($index);
 
-        $this->assertInstanceOf(SuccessResponse::class, $response);
-        $this->assertTrue($response->isAcknowledged());
-        $this->assertInstanceOf(Index::class, $response->getElement());
-        $this->assertEquals($response->getElement()->getIdentifier(), 'bar');
+        $this->assertTrue($result->exists());
+        $this->assertInstanceOf(Index::class, $result);
+        $this->assertEquals($result->getIdentifier(), 'bar');
+
+        // Clean up created index
+        $this->client->manage()->index()->remove('bar');
     }
 
     /**
@@ -51,13 +51,12 @@ class IndexInteractionTest extends TestCase
      */
     public function removeIndex(): void
     {
-        // Create index to remove
-        $response = $this->client->manage()->index()->create(['name' => 'foo']);
+        // Create index to be remove
+        $this->client->manage()->index()->create(new Index('bar'));
 
-        $response = $this->client->manage()->index()->remove('foo');
+        $response = $this->client->manage()->index()->remove('bar');
 
-        $this->assertInstanceOf(SuccessResponse::class, $response);
-        $this->assertTrue($response->isAcknowledged());
+        $this->assertTrue($response);
     }
 
     /**
@@ -65,22 +64,26 @@ class IndexInteractionTest extends TestCase
      */
     public function listIndices(): void
     {
-        $this->client->manage()->index()->create(['name' => 'foo']);
-        $this->client->manage()->index()->create(['name' => 'bar']);
+        $this->client->manage()->index()->create(new Index('foo'));
+        $this->client->manage()->index()->create(new Index('bar'));
 
         $collection = $this->client->manage()->index()->list();
 
-        $this->assertEquals($collection[0]['index'],'foo');
-        $this->assertEquals($collection[1]['index'],'bar');
         $this->assertCount(2, $collection);
         $this->assertInstanceOf(Collection::class, $collection);
     }
 
-    // /**
-    //  * @test
-    //  */
-    // public function getIndex(): void
-    // {
-    //     $response = $this->client->manage()->index()->get();
-    // }
+    /**
+     * @test
+     */
+    public function getIndex(): void
+    {
+        $this->client->manage()->index()->create(new Index('foo'));
+
+        $response = $this->client->manage()->index()->get('foo');
+        $element = $response->first();
+
+        $this->assertInstanceOf(Index::class, $element);
+        $this->assertEquals('foo', $element->getIdentifier());
+    }
 }
