@@ -7,6 +7,7 @@ use Ni\Elastic\Index\Index;
 use Ni\Elastic\Response\SuccessResponse;
 use Ni\Elastic\Service\Client;
 use PHPUnit\Framework\TestCase;
+use Elasticsearch\ClientBuilder;
 
 class IndexInteractionTest extends TestCase
 {
@@ -20,13 +21,14 @@ class IndexInteractionTest extends TestCase
     public function setup(): void
     {
         $host = getenv('ES_HOST');
-        /** @var  Client $client */
-        $this->client = new Client([$host]);
+        $builder = ClientBuilder::create();
+        $es = $builder->setHosts([$host])->build();
+        $this->client = Client::create($es);
 
-        $indices = $this->client->getElasticsearch()->cat()->indices(['index' => '*']);
+        $indices = $this->client->elasticsearch()->cat()->indices(['index' => '*']);
 
         foreach ($indices as $index) {
-            $this->client->getElasticsearch()->indices()->delete(['index' => $index['index']]);
+            $this->client->elasticsearch()->indices()->delete(['index' => $index['index']]);
         }
     }
 

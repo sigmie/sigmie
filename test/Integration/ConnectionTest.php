@@ -5,6 +5,7 @@ namespace Ni\Elastic\Integration;
 use Elasticsearch\Client as ElasticsearchClient;
 use Ni\Elastic\Service\Client;
 use PHPUnit\Framework\TestCase;
+use Elasticsearch\ClientBuilder;
 
 class ConnectionTest extends TestCase
 {
@@ -14,10 +15,11 @@ class ConnectionTest extends TestCase
     public function connection(): void
     {
         $host = getenv('ES_HOST');
-        /** @var  Client $client */
-        $client = new Client([$host]);
-        /** @var  ElasticsearchClient */
-        $elasticsearch = $client->getElasticsearch();
+        $builder = ClientBuilder::create();
+        $es = $builder->setHosts([$host])->build();
+        $client = Client::create($es);
+
+        $elasticsearch = $client->elasticsearch();
 
         $this->assertTrue($elasticsearch->ping());
     }
