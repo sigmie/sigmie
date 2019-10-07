@@ -2,7 +2,6 @@
 
 namespace Ni\Elastic\Index;
 
-use Ni\Elastic\Manager;
 use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Collection;
 use Ni\Elastic\Element;
@@ -16,7 +15,7 @@ use Ni\Elastic\Index\Action\IndexDelete;
 use Ni\Elastic\Index\Action\IndexGet;
 use Ni\Elastic\Index\Action\IndexListing as IndexListing;
 
-class IndexManager
+class Manager
 {
     /**
      * Elasticsearch Client
