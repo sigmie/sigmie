@@ -4,6 +4,9 @@ namespace Ni\Elastic\Service;
 
 use Elasticsearch\ClientBuilder;
 use Elasticsearch\Client as Elasticsearch;
+use Ni\Elastic\Builder;
+use Ni\Elastic\Index\IndexHandler;
+use Ni\Elastic\Index\Manager;
 
 class Client
 {
@@ -25,18 +28,33 @@ class Client
      *
      * @param Elasticsearch $elasticsearch
      */
-    public function __construct(Elasticsearch $elasticsearch)
+    public function __construct(Elasticsearch $elasticsearch, Manager $manager)
     {
         $this->elasticsearch = $elasticsearch;
+        $this->manager = $manager;
     }
 
-    public static function create(?Elasticsearch $elasticsearch = null)
+    /**
+     * Client facade generator
+     *
+     * @param Elasticsearch|null $elasticsearch
+     * @param Builder|null $managerBuilder
+     * 
+     * @return Client
+     */
+    public static function create(?Elasticsearch $elasticsearch = null, ?Builder $managerBuilder = null)
     {
         if ($elasticsearch === null) {
             $elasticsearch = ClientBuilder::create()->build();
         }
 
-        return new Client($elasticsearch);
+        if ($managerBuilder === null) {
+            $managerBuilder = new ManagerBuilder($elasticsearch);
+        }
+
+        $manager = $managerBuilder->build();
+
+        return new Client($elasticsearch, $manager);
     }
 
     /**
@@ -49,6 +67,11 @@ class Client
     public function elasticsearch(): Elasticsearch
     {
         return $this->elasticsearch;
+    }
+
+    public function isConnected(): bool
+    {
+        return $this->elasticsearch->ping();
     }
 
     /**
