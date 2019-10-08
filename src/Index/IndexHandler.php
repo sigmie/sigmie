@@ -2,18 +2,13 @@
 
 namespace Ni\Elastic\Index;
 
-use Ni\Elastic\Action\Action;
-use Ni\Elastic\Response\ErrorHandler;
-use Ni\Elastic\Response\ResponseHandler;
+use Ni\Elastic\Contract\Handler;
+use Ni\Elastic\Contract\Response;
 
-class IndexHandler implements ResponseHandler
+class IndexHandler implements Handler
 {
-    public function handle(array $response, Action $strategy)
+    public function handle($content, $response)
     {
-        if (isset($response['error'])) {
-            return (new ErrorHandler())->handle($response);
-        }
-
-        return $strategy->response($response);
+        return $response->result($content);
     }
 }

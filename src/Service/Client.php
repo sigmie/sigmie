@@ -6,7 +6,7 @@ use Elasticsearch\ClientBuilder;
 use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Builder;
 use Ni\Elastic\Index\IndexHandler;
-use Ni\Elastic\Index\Manager;
+use Ni\Elastic\Index\IndexManager;
 
 class Client
 {
@@ -19,16 +19,24 @@ class Client
 
     /**
      * Manager
+     *
      * * @var Manager
      */
     private $manager;
+
+    /**
+     * Connected flag
+     *
+     * @var bool
+     */
+    private $connected;
 
     /**
      * Class constructor
      *
      * @param Elasticsearch $elasticsearch
      */
-    public function __construct(Elasticsearch $elasticsearch, Manager $manager)
+    public function __construct(Elasticsearch $elasticsearch, IndexManager $manager)
     {
         $this->elasticsearch = $elasticsearch;
         $this->manager = $manager;
@@ -38,21 +46,19 @@ class Client
      * Client facade generator
      *
      * @param Elasticsearch|null $elasticsearch
-     * @param Builder|null $managerBuilder
-     * 
+     * @param Builder|null $manager
+     *
      * @return Client
      */
-    public static function create(?Elasticsearch $elasticsearch = null, ?Builder $managerBuilder = null)
+    public static function create(?Elasticsearch $elasticsearch = null, ?Builder $manager = null)
     {
         if ($elasticsearch === null) {
             $elasticsearch = ClientBuilder::create()->build();
         }
 
-        if ($managerBuilder === null) {
-            $managerBuilder = new ManagerBuilder($elasticsearch);
+        if ($manager === null) {
+            $manager = (new ManagerBuilder($elasticsearch))->build();
         }
-
-        $manager = $managerBuilder->build();
 
         return new Client($elasticsearch, $manager);
     }
@@ -71,22 +77,18 @@ class Client
 
     public function isConnected(): bool
     {
-        return $this->elasticsearch->ping();
+        $this->connected = $this->elasticsearch->ping();
+
+        return $this->connected;
     }
 
     /**
      * Build an return the manager instance
      *
-     * @return Manager
+     * @return IndexManager
      */
-    public function manage(): Manager
+    public function manage(): IndexManager
     {
-        if ($this->manager instanceof Manager) {
-            return $this->manager;
-        }
-
-        $this->manager = (new ManagerBuilder($this->elasticsearch()))->build();
-
         return $this->manager;
     }
 }

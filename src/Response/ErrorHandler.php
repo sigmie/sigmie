@@ -2,7 +2,7 @@
 
 namespace Ni\Elastic\Response;
 
-class ErrorHandler implements ResponseHandler
+class ErrorHandler implements Handler
 {
     public function handle():
     {
