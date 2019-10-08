@@ -1,6 +1,6 @@
 <?php
 
-namespace Ni\Elastic;
+namespace Ni\Elastic\Contract;
 
 /**
  * Builder interface

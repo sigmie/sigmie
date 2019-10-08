@@ -4,7 +4,7 @@ namespace Ni\Elastic\Index\Action;
 
 use Ni\Elastic\Action\Delete;
 
-class IndexDelete implements Delete
+class DeleteResponse implements Delete
 {
     public function response($response):bool
     {

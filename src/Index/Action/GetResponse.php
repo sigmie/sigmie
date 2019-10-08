@@ -8,7 +8,7 @@ use Ni\Elastic\Element;
 use Ni\Elastic\Index\Index;
 use Ni\Elastic\Index\IndexCollection;
 
-class IndexGet implements Get
+class GetResponse implements Get
 {
     public function response($response): Collection
     {

@@ -4,18 +4,19 @@ namespace Ni\Elastic\Index;
 
 use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Collection;
+use Ni\Elastic\Contract\Handler;
 use Ni\Elastic\Element;
+use Ni\Elastic\Contract\Manager;
+use Ni\Elastic\Index\Action\CreateResponse;
 use Ni\Elastic\Index\Action\IndexCreate;
-use Ni\Elastic\Miscellaneous\Handler;
 use Ni\Elastic\Response\Factory;
 use Ni\Elastic\Response\Response;
-use Ni\Elastic\Response\ResponseHandler;
 use Ni\Elastic\Index\Index;
-use Ni\Elastic\Index\Action\IndexDelete;
-use Ni\Elastic\Index\Action\IndexGet;
-use Ni\Elastic\Index\Action\IndexListing as IndexListing;
+use Ni\Elastic\Index\Action\DeleteResponse;
+use Ni\Elastic\Index\Action\GetResponse;
+use Ni\Elastic\Index\Action\ListResponse as ListResponse;
 
-class Manager
+class IndexManager implements Manager
 {
     /**
      * Elasticsearch Client
@@ -26,13 +27,13 @@ class Manager
 
     private $handler;
 
-    public function __construct(Elasticsearch $elasticsearch, ResponseHandler $handler)
+    public function __construct(Elasticsearch $elasticsearch, Handler $handler)
     {
         $this->elasticsearch = $elasticsearch;
         $this->handler = $handler;
     }
 
-    public function create($index)
+    public function create(Element $index): Element
     {
         $params = [
             'index' => $index->getIdentifier()
@@ -40,7 +41,7 @@ class Manager
 
         $response = $this->elasticsearch->indices()->create($params);
 
-        return $this->handler->handle($response, new IndexCreate);
+        return $this->handler->handle($response, new CreateResponse);
     }
 
     public function remove(string $identifier): bool
@@ -51,10 +52,10 @@ class Manager
 
         $response = $this->elasticsearch->indices()->delete($params);
 
-        return $this->handler->handle($response, new IndexDelete);
+        return $this->handler->handle($response, new DeleteResponse);
     }
 
-    public function list(string $name = '*'): IndexCollection
+    public function list(string $name = '*'): Collection
     {
         $params = [
             'index' => $name,
@@ -62,10 +63,10 @@ class Manager
 
         $response = $this->elasticsearch->cat()->indices($params);
 
-        return $this->handler->handle($response, new IndexListing);
+        return $this->handler->handle($response, new ListResponse);
     }
 
-    public function get(string $name): Collection
+    public function get(string $name): Element
     {
         $params = [
             'index' => $name
@@ -73,6 +74,6 @@ class Manager
 
         $response = $this->elasticsearch->indices()->get($params);
 
-        return $this->handler->handle($response, new IndexGet);
+        return $this->handler->handle($response, new GetResponse);
     }
 }

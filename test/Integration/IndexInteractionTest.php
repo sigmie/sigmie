@@ -48,44 +48,44 @@ class IndexInteractionTest extends TestCase
         $this->client->manage()->remove('bar');
     }
 
-    /**
-     * @test
-     */
-    public function removeIndex(): void
-    {
-        // Create index to be remove
-        $this->client->manage()->create(new Index('bar'));
+    // /**
+    //  * @test
+    //  */
+    // public function removeIndex(): void
+    // {
+    //     // Create index to be remove
+    //     $this->client->manage()->create(new Index('bar'));
 
-        $response = $this->client->manage()->remove('bar');
+    //     $response = $this->client->manage()->remove('bar');
 
-        $this->assertTrue($response);
-    }
+    //     $this->assertTrue($response);
+    // }
 
-    /**
-     * @test
-     */
-    public function listIndices(): void
-    {
-        $this->client->manage()->create(new Index('foo'));
-        $this->client->manage()->create(new Index('bar'));
+    // /**
+    //  * @test
+    //  */
+    // public function listIndices(): void
+    // {
+    //     $this->client->manage()->create(new Index('foo'));
+    //     $this->client->manage()->create(new Index('bar'));
 
-        $collection = $this->client->manage()->list();
+    //     $collection = $this->client->manage()->list();
 
-        $this->assertCount(2, $collection);
-        $this->assertInstanceOf(Collection::class, $collection);
-    }
+    //     $this->assertCount(2, $collection);
+    //     $this->assertInstanceOf(Collection::class, $collection);
+    // }
 
-    /**
-     * @test
-     */
-    public function getIndex(): void
-    {
-        $this->client->manage()->create(new Index('foo'));
+    // /**
+    //  * @test
+    //  */
+    // public function getIndex(): void
+    // {
+    //     $this->client->manage()->create(new Index('foo'));
 
-        $response = $this->client->manage()->get('foo');
-        $element = $response->first();
+    //     $response = $this->client->manage()->get('foo');
+    //     $element = $response->first();
 
-        $this->assertInstanceOf(Index::class, $element);
-        $this->assertEquals('foo', $element->getIdentifier());
-    }
+    //     $this->assertInstanceOf(Index::class, $element);
+    //     $this->assertEquals('foo', $element->getIdentifier());
+    // }
 }
