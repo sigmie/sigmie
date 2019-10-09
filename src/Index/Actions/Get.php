@@ -1,16 +1,15 @@
 <?php
 
-namespace Ni\Elastic\Index\Action;
+namespace Ni\Elastic\Index\Actions;
 
-use Ni\Elastic\Action\Get;
-use Ni\Elastic\Collection;
+use Ni\Elastic\Contract\Actions\Get as GetAction;
 use Ni\Elastic\Element;
 use Ni\Elastic\Index\Index;
 use Ni\Elastic\Index\IndexCollection;
 
-class GetResponse implements Get
+class Get implements GetAction
 {
-    public function response($response): Collection
+    public function result(array $response): Element
     {
         $collection = new IndexCollection([]);
 
@@ -18,6 +17,6 @@ class GetResponse implements Get
             $collection[] = new Index($identifier);
         }
 
-        return $collection;
+        return $collection->first();
     }
 }

@@ -7,14 +7,13 @@ use Ni\Elastic\Collection;
 use Ni\Elastic\Contract\Handler;
 use Ni\Elastic\Element;
 use Ni\Elastic\Contract\Manager;
-use Ni\Elastic\Index\Action\CreateResponse;
-use Ni\Elastic\Index\Action\IndexCreate;
+use Ni\Elastic\Index\Actions\Create;
+use Ni\Elastic\Index\Actions\Get;
+use Ni\Elastic\Index\Actions\Remove;
+use Ni\Elastic\Index\Actions\Listing;
 use Ni\Elastic\Response\Factory;
 use Ni\Elastic\Response\Response;
 use Ni\Elastic\Index\Index;
-use Ni\Elastic\Index\Action\DeleteResponse;
-use Ni\Elastic\Index\Action\GetResponse;
-use Ni\Elastic\Index\Action\ListResponse as ListResponse;
 
 class IndexManager implements Manager
 {
@@ -41,7 +40,7 @@ class IndexManager implements Manager
 
         $response = $this->elasticsearch->indices()->create($params);
 
-        return $this->handler->handle($response, new CreateResponse);
+        return $this->handler->handle($response, new Create);
     }
 
     public function remove(string $identifier): bool
@@ -52,7 +51,7 @@ class IndexManager implements Manager
 
         $response = $this->elasticsearch->indices()->delete($params);
 
-        return $this->handler->handle($response, new DeleteResponse);
+        return $this->handler->handle($response, new Remove);
     }
 
     public function list(string $name = '*'): Collection
@@ -63,7 +62,7 @@ class IndexManager implements Manager
 
         $response = $this->elasticsearch->cat()->indices($params);
 
-        return $this->handler->handle($response, new ListResponse);
+        return $this->handler->handle($response, new Listing);
     }
 
     public function get(string $name): Element
@@ -74,6 +73,6 @@ class IndexManager implements Manager
 
         $response = $this->elasticsearch->indices()->get($params);
 
-        return $this->handler->handle($response, new GetResponse);
+        return $this->handler->handle($response, new Get);
     }
 }
