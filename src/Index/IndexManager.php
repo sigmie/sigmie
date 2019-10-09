@@ -2,18 +2,15 @@
 
 namespace Ni\Elastic\Index;
 
-use Elasticsearch\Client as Elasticsearch;
+use Ni\Elastic\Element;
 use Ni\Elastic\Collection;
 use Ni\Elastic\Contract\Handler;
-use Ni\Elastic\Element;
 use Ni\Elastic\Contract\Manager;
-use Ni\Elastic\Index\Actions\Create;
 use Ni\Elastic\Index\Actions\Get;
+use Ni\Elastic\Index\Actions\Create;
 use Ni\Elastic\Index\Actions\Remove;
 use Ni\Elastic\Index\Actions\Listing;
-use Ni\Elastic\Response\Factory;
-use Ni\Elastic\Response\Response;
-use Ni\Elastic\Index\Index;
+use Elasticsearch\Client as Elasticsearch;
 
 class IndexManager implements Manager
 {
@@ -32,47 +29,47 @@ class IndexManager implements Manager
         $this->handler = $handler;
     }
 
-    public function create(Element $index): Element
+    public function create(Element $index): bool
     {
-        $params = [
-            'index' => $index->getIdentifier()
-        ];
+        $action = new Create();
+
+        $params = $action->prepare($index);
 
         $response = $this->elasticsearch->indices()->create($params);
 
-        return $this->handler->handle($response, new Create);
+        return $this->handler->handle($response, $action);
     }
 
     public function remove(string $identifier): bool
     {
-        $params = [
-            'index' => $identifier
-        ];
+        $action = new Remove();
+
+        $params = $action->prepare($identifier);
 
         $response = $this->elasticsearch->indices()->delete($params);
 
-        return $this->handler->handle($response, new Remove);
+        return $this->handler->handle($response, $action);
     }
 
     public function list(string $name = '*'): Collection
     {
-        $params = [
-            'index' => $name,
-        ];
+        $action = new Listing();
+
+        $params = $action->prepare($name);
 
         $response = $this->elasticsearch->cat()->indices($params);
 
-        return $this->handler->handle($response, new Listing);
+        return $this->handler->handle($response, $action);
     }
 
     public function get(string $name): Element
     {
-        $params = [
-            'index' => $name
-        ];
+        $action = new Get();
+
+        $params = $action->prepare($name);
 
         $response = $this->elasticsearch->indices()->get($params);
 
-        return $this->handler->handle($response, new Get);
+        return $this->handler->handle($response, $action);
     }
 }

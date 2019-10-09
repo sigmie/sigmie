@@ -4,11 +4,9 @@ namespace Ni\Elastic\Contract;
 
 interface Action
 {
-    // TODO
-    // public function before();
+    public function before(): string;
 
-    // TODO
-    // public function after();
+    public function after(): string;
 
-    public function result(array $response);
+    public function prepare($data): array;
 }

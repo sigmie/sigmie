@@ -14,4 +14,23 @@ class Listing implements ListingAction
 
         return $response;
     }
+
+    public function before(): string
+    {
+        return 'before.index.listing';
+    }
+
+    public function after(): string
+    {
+        return 'after.index.listing';
+    }
+
+    public function prepare($data): array
+    {
+        $params = [
+            'index' => $data,
+        ];
+
+        return $params;
+    }
 }

@@ -19,4 +19,23 @@ class Get implements GetAction
 
         return $collection->first();
     }
+
+    public function before(): string
+    {
+        return 'before.index.get';
+    }
+
+    public function after(): string
+    {
+        return 'after.index.get';
+    }
+
+    public function prepare($data): array
+    {
+        $params = [
+            'index' => $data
+        ];
+
+        return $params;
+    }
 }

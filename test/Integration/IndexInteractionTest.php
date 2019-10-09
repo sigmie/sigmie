@@ -40,9 +40,12 @@ class IndexInteractionTest extends TestCase
         $index = new Index('bar');
         $result = $this->client->manage()->create($index);
 
-        $this->assertTrue($result->exists());
-        $this->assertInstanceOf(Index::class, $result);
-        $this->assertEquals($result->getIdentifier(), 'bar');
+        $this->assertTrue($result);
+
+        $element = $this->client->manage()->get('bar');
+
+        $this->assertInstanceOf(Index::class, $element);
+        $this->assertEquals($element->getIdentifier(), 'bar');
 
         // Clean up created index
         $this->client->manage()->remove('bar');
