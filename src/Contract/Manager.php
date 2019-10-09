@@ -7,7 +7,7 @@ use Ni\Elastic\Collection;
 
 interface Manager
 {
-    public function create(Element $element): Element;
+    public function create(Element $element): bool;
 
     public function remove(string $identifier): bool;
 

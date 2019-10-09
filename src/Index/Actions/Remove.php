@@ -10,4 +10,23 @@ class Remove implements RemoveAction
     {
         return $response['acknowledged'];
     }
+
+    public function before(): string
+    {
+        return 'before.index.remove';
+    }
+
+    public function after(): string
+    {
+        return 'after.index.remove';
+    }
+
+    public function prepare($data): array
+    {
+        $params = [
+            'index' => $data
+        ];
+
+        return $params;
+    }
 }
