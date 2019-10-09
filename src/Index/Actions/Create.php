@@ -1,13 +1,11 @@
 <?php
 
-namespace Ni\Elastic\Index\Action;
+namespace Ni\Elastic\Index\Actions;
 
-use Ni\Elastic\Action\Create;
-use Ni\Elastic\Contract\Response;
-use Ni\Elastic\Element;
+use Ni\Elastic\Contract\Actions\Create as CreateAction;
 use Ni\Elastic\Index\Index;
 
-class CreateResponse implements Response
+class Create implements CreateAction
 {
     public function result(array $response)
     {

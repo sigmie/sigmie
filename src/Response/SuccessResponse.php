@@ -2,6 +2,6 @@
 
 namespace Ni\Elastic\Response;
 
-interface SuccessResponse extends Response
+interface SuccessResponse
 {
 }
