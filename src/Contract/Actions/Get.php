@@ -7,5 +7,4 @@ use Ni\Elastic\Element;
 
 interface Get extends Action
 {
-    public function result(array $response): Element;
 }
