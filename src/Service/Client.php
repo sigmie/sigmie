@@ -5,8 +5,11 @@ namespace Ni\Elastic\Service;
 use Elasticsearch\ClientBuilder;
 use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Builder;
+use Ni\Elastic\Contract\Manager;
 use Ni\Elastic\Index\IndexHandler;
 use Ni\Elastic\Index\IndexManager;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Client
 {
@@ -36,10 +39,14 @@ class Client
      *
      * @param Elasticsearch $elasticsearch
      */
-    public function __construct(Elasticsearch $elasticsearch, IndexManager $manager)
-    {
+    public function __construct(
+        Elasticsearch $elasticsearch,
+        IndexManager $manager,
+        EventDispatcherInterface $dispatcher
+    ) {
         $this->elasticsearch = $elasticsearch;
         $this->manager = $manager;
+        $this->dispatcher = $dispatcher;
     }
 
     /**
@@ -50,17 +57,28 @@ class Client
      *
      * @return Client
      */
-    public static function create(?Elasticsearch $elasticsearch = null, ?Builder $manager = null)
-    {
+    public static function create(
+        ?Elasticsearch $elasticsearch = null,
+        ?Manager $manager = null,
+        ?EventDispatcherInterface $dispatcher = null
+    ) {
         if ($elasticsearch === null) {
             $elasticsearch = ClientBuilder::create()->build();
         }
 
         if ($manager === null) {
-            $manager = (new ManagerBuilder($elasticsearch))->build();
+            $builder = new ManagerBuilder($elasticsearch);
         }
 
-        return new Client($elasticsearch, $manager);
+        if ($dispatcher === null) {
+            $dispatcher = new EventDispatcher();
+        }
+
+        $builder->setDispatcher($dispatcher);
+
+        $manager = $builder->build();
+
+        return new Client($elasticsearch, $manager, $dispatcher);
     }
 
     /**
@@ -73,6 +91,11 @@ class Client
     public function elasticsearch(): Elasticsearch
     {
         return $this->elasticsearch;
+    }
+
+    public function events(): EventDispatcherInterface
+    {
+        return $this->dispatcher;
     }
 
     public function isConnected(): bool
