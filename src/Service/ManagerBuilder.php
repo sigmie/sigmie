@@ -7,7 +7,7 @@ use Ni\Elastic\Index\IndexManager;
 use Ni\Elastic\Response\ResponseFactory;
 use Ni\Elastic\Index\IndexBase;
 use Ni\Elastic\Index\Index;
-use Ni\Elastic\Index\IndexHandler;
+use Ni\Elastic\Index\ResponseHandler;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class ManagerBuilder
@@ -35,7 +35,7 @@ class ManagerBuilder
         }
 
         if ($this->handler === null) {
-            $this->handler = new IndexHandler($this->dispatcher);
+            $this->handler = new ResponseHandler($this->dispatcher);
         }
 
         $manager = new IndexManager($this->elasticsearch, $this->handler);

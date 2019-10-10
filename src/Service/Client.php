@@ -6,7 +6,7 @@ use Elasticsearch\ClientBuilder;
 use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Builder;
 use Ni\Elastic\Contract\Manager;
-use Ni\Elastic\Index\IndexHandler;
+use Ni\Elastic\Index\ResponseHandler;
 use Ni\Elastic\Index\IndexManager;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;

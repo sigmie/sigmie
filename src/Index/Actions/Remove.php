@@ -3,20 +3,21 @@
 namespace Ni\Elastic\Index\Actions;
 
 use Ni\Elastic\Contract\Actions\Remove as RemoveAction;
+use Ni\Elastic\Contract\Subscribable;
 
-class Remove implements RemoveAction
+class Remove implements RemoveAction, Subscribable
 {
     public function result(array $response): bool
     {
         return $response['acknowledged'];
     }
 
-    public function before(): string
+    public function beforeEvent(): string
     {
         return 'before.index.remove';
     }
 
-    public function after(): string
+    public function afterEvent(): string
     {
         return 'after.index.remove';
     }
