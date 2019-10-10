@@ -8,6 +8,7 @@ use Ni\Elastic\Response\ResponseFactory;
 use Ni\Elastic\Index\IndexBase;
 use Ni\Elastic\Index\Index;
 use Ni\Elastic\Index\IndexHandler;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class ManagerBuilder
 {
@@ -18,6 +19,10 @@ class ManagerBuilder
      */
     private $elasticsearch;
 
+    private $handler = null;
+
+    private $dispatcher = null;
+
     public function __construct(Elasticsearch $elasticsearch)
     {
         $this->elasticsearch = $elasticsearch;
@@ -25,8 +30,48 @@ class ManagerBuilder
 
     public function build(): IndexManager
     {
-        $manager = new IndexManager($this->elasticsearch, new IndexHandler);
+        if ($this->dispatcher === null) {
+            $this->dispatcher = new EventDispatcher();
+        }
+
+        if ($this->handler === null) {
+            $this->handler = new IndexHandler($this->dispatcher);
+        }
+
+        $manager = new IndexManager($this->elasticsearch, $this->handler);
 
         return $manager;
+    }
+
+    /**
+     * Set the value of handler
+     *
+     * @return  self
+     */
+    public function setHandler($handler)
+    {
+        $this->handler = $handler;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of dispatcher
+     */
+    public function getDispatcher()
+    {
+        return $this->dispatcher;
+    }
+
+    /**
+     * Set the value of dispatcher
+     *
+     * @return  self
+     */
+    public function setDispatcher($dispatcher)
+    {
+        $this->dispatcher = $dispatcher;
+
+        return $this;
     }
 }
