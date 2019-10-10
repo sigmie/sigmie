@@ -3,11 +3,12 @@
 namespace Ni\Elastic\Index\Actions;
 
 use Ni\Elastic\Contract\Actions\Get as GetAction;
+use Ni\Elastic\Contract\Subscribable;
 use Ni\Elastic\Element;
 use Ni\Elastic\Index\Index;
 use Ni\Elastic\Index\IndexCollection;
 
-class Get implements GetAction
+class Get implements GetAction, Subscribable
 {
     public function result(array $response): Element
     {
@@ -20,12 +21,12 @@ class Get implements GetAction
         return $collection->first();
     }
 
-    public function before(): string
+    public function beforeEvent(): string
     {
         return 'before.index.get';
     }
 
-    public function after(): string
+    public function afterEvent(): string
     {
         return 'after.index.get';
     }

@@ -3,21 +3,22 @@
 namespace Ni\Elastic\Index\Actions;
 
 use Ni\Elastic\Contract\Actions\Create as CreateAction;
+use Ni\Elastic\Contract\Subscribable;
 use Ni\Elastic\Index\Index;
 
-class Create implements CreateAction
+class Create implements CreateAction, Subscribable
 {
     public function result(array $response): bool
     {
         return $response['acknowledged'];
     }
 
-    public function before(): string
+    public function beforeEvent(): string
     {
         return 'before.index.create';
     }
 
-    public function after(): string
+    public function afterEvent(): string
     {
         return 'after.index.create';
     }

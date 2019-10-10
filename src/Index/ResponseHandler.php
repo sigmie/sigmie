@@ -5,7 +5,7 @@ namespace Ni\Elastic\Index;
 use Ni\Elastic\Contract\Handler;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface as EventDispatcher;
 
-class IndexHandler implements Handler
+class ResponseHandler implements Handler
 {
     private $dispatcher;
 
@@ -15,7 +15,7 @@ class IndexHandler implements Handler
     }
     public function handle($content, $response)
     {
-        $event = $response->after();
+        $event = $response->afterEvent();
 
         if ($this->dispatcher->hasListeners($event)) {
             $this->dispatcher->dispatch($event);
