@@ -5,15 +5,14 @@ namespace Ni\Elastic\Index\Actions;
 use Ni\Elastic\Contract\Actions\Listing as ListingAction;
 use Ni\Elastic\Collection;
 use Ni\Elastic\Contract\Subscribable;
+use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Index\IndexCollection;
 
 class Listing implements ListingAction, Subscribable
 {
-    public function result(array $response): Collection
+    public function execute(Elasticsearch $elasticsearch, array $params): array
     {
-        $response = new IndexCollection($response);
-
-        return $response;
+        return $elasticsearch->cat()->indices($params);
     }
 
     public function beforeEvent(): string

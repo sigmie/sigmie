@@ -7,5 +7,4 @@ use Ni\Elastic\Contract\Action;
 
 interface Listing extends Action
 {
-    public function result(array $response): Collection;
 }
