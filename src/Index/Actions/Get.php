@@ -4,21 +4,16 @@ namespace Ni\Elastic\Index\Actions;
 
 use Ni\Elastic\Contract\Actions\Get as GetAction;
 use Ni\Elastic\Contract\Subscribable;
+use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Element;
 use Ni\Elastic\Index\Index;
 use Ni\Elastic\Index\IndexCollection;
 
 class Get implements GetAction, Subscribable
 {
-    public function result(array $response): Element
+    public function execute(Elasticsearch $elasticsearch, array $params): array
     {
-        $collection = new IndexCollection([]);
-
-        foreach ($response as $identifier => $payload) {
-            $collection[] = new Index($identifier);
-        }
-
-        return $collection->first();
+        return $elasticsearch->indices()->get($params);
     }
 
     public function beforeEvent(): string

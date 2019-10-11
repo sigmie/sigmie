@@ -5,7 +5,7 @@ namespace Ni\Elastic\Index;
 use Ni\Elastic\Element;
 use Ni\Elastic\Collection;
 use Ni\Elastic\Contract\ResponseHandler;
-use Ni\Elastic\Contract\Manager;
+use Ni\Elastic\Contract\Manager as ManagerInterface;
 use Ni\Elastic\Index\Actions\Get as GetAction;
 use Ni\Elastic\Index\Actions\Create as CreateAction;
 use Ni\Elastic\Index\Actions\Remove as RemoveAction;
@@ -15,64 +15,44 @@ use Ni\Elastic\Index\Response\Create as CreateResponse;
 use Ni\Elastic\Index\Response\Remove as RemoveResponse;
 use Ni\Elastic\Index\Response\Listing as ListingResponse;
 use Elasticsearch\Client as Elasticsearch;
+use Ni\Elastic\ActionDispatcher;
 
-class IndexManager implements Manager
+class Manager implements ManagerInterface
 {
-    /**
-     * Elasticsearch Client
-     *
-     * @var Elasticsearch
-     */
-    private $elasticsearch;
-
     private $handler;
 
-    public function __construct(Elasticsearch $elasticsearch, ResponseHandler $handler)
+    private $dispatcher;
+
+    public function __construct(ActionDispatcher $dispatcher, ResponseHandler $handler)
     {
-        $this->elasticsearch = $elasticsearch;
+        $this->dispatcher = $dispatcher;
         $this->handler = $handler;
     }
 
     public function create(Element $index): bool
     {
-        $action = new CreateAction();
-
-        $params = $action->prepare($index);
-
-        $response = $this->elasticsearch->indices()->create($params);
+        $response = $this->dispatcher->dispatch($index, new CreateAction);
 
         return $this->handler->handle($response, new CreateResponse);
     }
 
     public function remove(string $identifier): bool
     {
-        $action = new RemoveAction();
-
-        $params = $action->prepare($identifier);
-
-        $response = $this->elasticsearch->indices()->delete($params);
+        $response = $this->dispatcher->dispatch($identifier, new RemoveAction);
 
         return $this->handler->handle($response, new RemoveResponse);
     }
 
     public function list(string $name = '*'): Collection
     {
-        $action = new ListingAction();
-
-        $params = $action->prepare($name);
-
-        $response = $this->elasticsearch->cat()->indices($params);
+        $response = $this->dispatcher->dispatch($name, new ListingAction);
 
         return $this->handler->handle($response, new ListingResponse);
     }
 
     public function get(string $name): Element
     {
-        $action = new GetAction();
-
-        $params = $action->prepare($name);
-
-        $response = $this->elasticsearch->indices()->get($params);
+        $response = $this->dispatcher->dispatch($name, new GetAction);
 
         return $this->handler->handle($response, new GetResponse);
     }

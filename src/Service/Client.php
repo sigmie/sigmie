@@ -6,10 +6,10 @@ use Elasticsearch\ClientBuilder;
 use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Builder;
 use Ni\Elastic\Contract\Manager;
-use Ni\Elastic\Index\ActionHandler;
+use Ni\Elastic\Index\IndexResponseHandler;
 use Ni\Elastic\Index\IndexManager;
-use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\EventDispatcher as EventManager;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface as EventDispatcher;
 
 class Client
 {
@@ -41,8 +41,8 @@ class Client
      */
     public function __construct(
         Elasticsearch $elasticsearch,
-        IndexManager $manager,
-        EventDispatcherInterface $dispatcher
+        Manager $manager,
+        EventManager $dispatcher
     ) {
         $this->elasticsearch = $elasticsearch;
         $this->manager = $manager;
@@ -60,7 +60,7 @@ class Client
     public static function create(
         ?Elasticsearch $elasticsearch = null,
         ?Manager $manager = null,
-        ?EventDispatcherInterface $dispatcher = null
+        ?EventDispatcher $dispatcher = null
     ) {
         if ($elasticsearch === null) {
             $elasticsearch = ClientBuilder::create()->build();
@@ -71,10 +71,10 @@ class Client
         }
 
         if ($dispatcher === null) {
-            $dispatcher = new EventDispatcher();
+            $dispatcher = new EventManager();
         }
 
-        $builder->setDispatcher($dispatcher);
+        $builder->setEventDispatcher($dispatcher);
 
         $manager = $builder->build();
 
@@ -93,7 +93,7 @@ class Client
         return $this->elasticsearch;
     }
 
-    public function events(): EventDispatcherInterface
+    public function events(): EventManager
     {
         return $this->dispatcher;
     }
@@ -110,7 +110,7 @@ class Client
      *
      * @return IndexManager
      */
-    public function manage(): IndexManager
+    public function manage(): Manager
     {
         return $this->manager;
     }

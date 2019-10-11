@@ -4,13 +4,13 @@ namespace Ni\Elastic\Index\Actions;
 
 use Ni\Elastic\Contract\Actions\Create as CreateAction;
 use Ni\Elastic\Contract\Subscribable;
-use Ni\Elastic\Index\Index;
+use Elasticsearch\Client as Elasticsearch;
 
 class Create implements CreateAction, Subscribable
 {
-    public function result(array $response): bool
+    public function execute(Elasticsearch $elasticsearch, array $params): array
     {
-        return $response['acknowledged'];
+        return $elasticsearch->indices()->create($params);
     }
 
     public function beforeEvent(): string

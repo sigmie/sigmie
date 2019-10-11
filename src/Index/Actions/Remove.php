@@ -2,14 +2,15 @@
 
 namespace Ni\Elastic\Index\Actions;
 
+use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Contract\Actions\Remove as RemoveAction;
 use Ni\Elastic\Contract\Subscribable;
 
 class Remove implements RemoveAction, Subscribable
 {
-    public function result(array $response): bool
+    public function execute(Elasticsearch $elasticsearch, array $params): array
     {
-        return $response['acknowledged'];
+        return $elasticsearch->indices()->delete($params);
     }
 
     public function beforeEvent(): string
