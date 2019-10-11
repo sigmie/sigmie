@@ -6,7 +6,6 @@ use Elasticsearch\ClientBuilder;
 use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Builder;
 use Ni\Elastic\Contract\Manager;
-use Ni\Elastic\Index\IndexResponseHandler;
 use Ni\Elastic\Index\IndexManager;
 use Symfony\Component\EventDispatcher\EventDispatcher as EventManager;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface as EventDispatcher;
@@ -108,7 +107,7 @@ class Client
     /**
      * Build an return the manager instance
      *
-     * @return IndexManager
+     * @return Manager
      */
     public function manage(): Manager
     {
