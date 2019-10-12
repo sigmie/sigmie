@@ -4,7 +4,8 @@ namespace Ni\Elastic\Service;
 
 use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\ActionDispatcher;
-use Ni\Elastic\Index\Manager;
+use Ni\Elastic\Index\Manager as IndexManager;
+use Ni\Elastic\Manager;
 use Ni\Elastic\Response\ResponseFactory;
 use Ni\Elastic\Index\IndexBase;
 use Ni\Elastic\Index\Index;
@@ -33,6 +34,14 @@ class ManagerBuilder
 
     public function build(): Manager
     {
+        $manager = new Manager();
+        $manager->index = $this->newIndexManager();
+
+        return $manager;
+    }
+
+    public function newIndexManager(): IndexManager
+    {
         if ($this->eventDispatcher === null) {
             $this->eventDispatcher = new EventDispatcher();
         }
@@ -45,14 +54,14 @@ class ManagerBuilder
             $this->actionDispatcher = new ActionDispatcher($this->elasticsearch, $this->eventDispatcher);
         }
 
-        $manager = new Manager($this->actionDispatcher, $this->responseHandler);
+        $manager = new IndexManager($this->actionDispatcher, $this->responseHandler);
 
         return $manager;
     }
 
     /**
      * Get the value of responseHandler
-     */ 
+     */
     public function getResponseHandler()
     {
         return $this->responseHandler;
@@ -62,7 +71,7 @@ class ManagerBuilder
      * Set the value of responseHandler
      *
      * @return  self
-     */ 
+     */
     public function setResponseHandler($responseHandler)
     {
         $this->responseHandler = $responseHandler;
@@ -72,7 +81,7 @@ class ManagerBuilder
 
     /**
      * Get the value of eventDispatcher
-     */ 
+     */
     public function getEventDispatcher()
     {
         return $this->eventDispatcher;
@@ -82,7 +91,7 @@ class ManagerBuilder
      * Set the value of eventDispatcher
      *
      * @return  self
-     */ 
+     */
     public function setEventDispatcher($eventDispatcher)
     {
         $this->eventDispatcher = $eventDispatcher;
@@ -92,7 +101,7 @@ class ManagerBuilder
 
     /**
      * Get the value of actionDispatcher
-     */ 
+     */
     public function getActionDispatcher()
     {
         return $this->actionDispatcher;
@@ -102,7 +111,7 @@ class ManagerBuilder
      * Set the value of actionDispatcher
      *
      * @return  self
-     */ 
+     */
     public function setActionDispatcher($actionDispatcher)
     {
         $this->actionDispatcher = $actionDispatcher;

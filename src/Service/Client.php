@@ -5,7 +5,7 @@ namespace Ni\Elastic\Service;
 use Elasticsearch\ClientBuilder;
 use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Builder;
-use Ni\Elastic\Contract\Manager;
+use Ni\Elastic\Manager;
 use Ni\Elastic\Index\IndexManager;
 use Symfony\Component\EventDispatcher\EventDispatcher as EventManager;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface as EventDispatcher;
