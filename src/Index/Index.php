@@ -9,7 +9,7 @@ class Index extends Element
     /**
      * Identifier
      *
-     * @var string 
+     * @var string
      */
     private $identifier;
 

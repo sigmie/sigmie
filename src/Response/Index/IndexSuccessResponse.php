@@ -49,7 +49,7 @@ class IndexSuccessResponse implements SuccessResponse
 
     /**
      * Get the value of list
-     */ 
+     */
     public function getList()
     {
         return $this->list;
@@ -59,7 +59,7 @@ class IndexSuccessResponse implements SuccessResponse
      * Set the value of list
      *
      * @return  self
-     */ 
+     */
     public function setList($list)
     {
         $this->list = $list;

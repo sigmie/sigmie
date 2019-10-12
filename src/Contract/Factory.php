@@ -2,6 +2,7 @@
 
 namespace Ni\Elastic\Contract;
 
-interface Factory {
+interface Factory
+{
     public function create();
 }

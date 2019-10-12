@@ -1,6 +1,6 @@
 <?php
 
-namespace Ni\Elastic\Integration;
+namespace Ni\Elastic\Test\Integration;
 
 use Ni\Elastic\Collection;
 use Ni\Elastic\Index\Index;

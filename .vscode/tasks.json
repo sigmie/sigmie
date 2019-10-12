@@ -29,7 +29,7 @@
         {
             "label": "phpcs",
             "type": "shell",
-            "command": "vendor/bin/phpcs --standard=PSR12 --ignore=vendor/*,.history/* ./",
+            "command": "vendor/bin/phpcs --standard=./standard.xml ./ -s",
             "problemMatcher": []
         },
         {
