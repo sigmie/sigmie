@@ -5,8 +5,9 @@ namespace Ni\Elastic\Index\Actions;
 use Ni\Elastic\Contract\Actions\Create as CreateAction;
 use Ni\Elastic\Contract\Subscribable;
 use Elasticsearch\Client as Elasticsearch;
+use Ni\Elastic\Contract\Action;
 
-class Create implements CreateAction, Subscribable
+class Create implements Action, Subscribable
 {
     public function execute(Elasticsearch $elasticsearch, array $params): array
     {

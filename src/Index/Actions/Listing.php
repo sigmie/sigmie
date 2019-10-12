@@ -6,9 +6,10 @@ use Ni\Elastic\Contract\Actions\Listing as ListingAction;
 use Ni\Elastic\Collection;
 use Ni\Elastic\Contract\Subscribable;
 use Elasticsearch\Client as Elasticsearch;
+use Ni\Elastic\Contract\Action;
 use Ni\Elastic\Index\IndexCollection;
 
-class Listing implements ListingAction, Subscribable
+class Listing implements Action, Subscribable
 {
     public function execute(Elasticsearch $elasticsearch, array $params): array
     {

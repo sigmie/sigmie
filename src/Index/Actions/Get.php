@@ -5,11 +5,12 @@ namespace Ni\Elastic\Index\Actions;
 use Ni\Elastic\Contract\Actions\Get as GetAction;
 use Ni\Elastic\Contract\Subscribable;
 use Elasticsearch\Client as Elasticsearch;
+use Ni\Elastic\Contract\Action;
 use Ni\Elastic\Element;
 use Ni\Elastic\Index\Index;
 use Ni\Elastic\Index\IndexCollection;
 
-class Get implements GetAction, Subscribable
+class Get implements Action, Subscribable
 {
     public function execute(Elasticsearch $elasticsearch, array $params): array
     {

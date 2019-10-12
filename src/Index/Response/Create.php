@@ -7,7 +7,7 @@ use Ni\Elastic\Contract\Response;
 use Ni\Elastic\Contract\Subscribable;
 use Ni\Elastic\Index\Index;
 
-class Create implements CreateResponse
+class Create implements Response
 {
     public function result($response)
     {

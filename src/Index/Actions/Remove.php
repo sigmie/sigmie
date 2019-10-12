@@ -3,10 +3,11 @@
 namespace Ni\Elastic\Index\Actions;
 
 use Elasticsearch\Client as Elasticsearch;
+use Ni\Elastic\Contract\Action;
 use Ni\Elastic\Contract\Actions\Remove as RemoveAction;
 use Ni\Elastic\Contract\Subscribable;
 
-class Remove implements RemoveAction, Subscribable
+class Remove implements Action, Subscribable
 {
     public function execute(Elasticsearch $elasticsearch, array $params): array
     {

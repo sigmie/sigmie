@@ -1,6 +1,6 @@
 <?php
 
-namespace Ni\Elastic\Index;
+namespace Ni\Elastic;
 
 use Ni\Elastic\Contract\Response;
 use Ni\Elastic\Contract\ResponseHandler as ResponseHandlerInterface;

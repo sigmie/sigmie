@@ -6,10 +6,7 @@ use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\ActionDispatcher;
 use Ni\Elastic\Index\Manager as IndexManager;
 use Ni\Elastic\Manager;
-use Ni\Elastic\Response\ResponseFactory;
-use Ni\Elastic\Index\IndexBase;
-use Ni\Elastic\Index\Index;
-use Ni\Elastic\Index\ResponseHandler;
+use Ni\Elastic\ResponseHandler;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class ManagerBuilder
