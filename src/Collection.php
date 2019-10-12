@@ -10,8 +10,6 @@ use Ni\Elastic\Miscellaneous\Mapping;
 
 abstract class Collection implements IteratorAggregate, Countable, ArrayAccess
 {
-    use Mapping;
-
     private $elements;
 
     public function __construct(array $list)
