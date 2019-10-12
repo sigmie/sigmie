@@ -2,7 +2,7 @@
 
 namespace Ni\Elastic\Test\Integration;
 
-use Ni\Elastic\Service\Client;
+use Ni\Elastic\Client;
 use PHPUnit\Framework\TestCase;
 use Elasticsearch\ClientBuilder;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Ni\Elastic;
+namespace Ni\Elastic\Manager;
 
 use Ni\Elastic\Element;
 use Ni\Elastic\Collection;
