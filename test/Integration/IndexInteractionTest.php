@@ -2,12 +2,11 @@
 
 namespace Ni\Elastic\Test\Integration;
 
+use Elasticsearch\ClientBuilder;
+use Ni\Elastic\Client;
 use Ni\Elastic\Collection;
 use Ni\Elastic\Index\Index;
-use Ni\Elastic\Response\SuccessResponse;
-use Ni\Elastic\Client;
 use PHPUnit\Framework\TestCase;
-use Elasticsearch\ClientBuilder;
 
 class IndexInteractionTest extends TestCase
 {

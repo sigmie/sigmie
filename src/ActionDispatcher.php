@@ -2,11 +2,12 @@
 
 namespace Ni\Elastic;
 
+use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Contract\Action;
 use Ni\Elastic\Contract\ActionDispatcher as ActionDispatcherInterface;
-use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Contract\Subscribable;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface as EventDispatcher;
+use Symfony\Component\EventDispatcher\GenericEvent;
 
 class ActionDispatcher implements ActionDispatcherInterface
 {
@@ -23,15 +24,14 @@ class ActionDispatcher implements ActionDispatcherInterface
     {
         $beforeEvent = null;
         $afterEvent = null;
-        $isSubscribable =  $action instanceof Subscribable;
 
-        if ($isSubscribable) {
+        if ($action instanceof Subscribable) {
             $beforeEvent = $action->beforeEvent();
             $afterEvent = $action->afterEvent();
         }
 
         if ($this->eventDispatcher->hasListeners($beforeEvent)) {
-            $this->eventDispatcher->dispatch($beforeEvent);
+            $this->eventDispatcher->dispatch($beforeEvent, new GenericEvent($data));
         }
 
         $params = $action->prepare($data);
@@ -39,7 +39,7 @@ class ActionDispatcher implements ActionDispatcherInterface
         $response = $action->execute($this->elasticsearch, $params);
 
         if ($this->eventDispatcher->hasListeners($afterEvent)) {
-            $this->eventDispatcher->dispatch($afterEvent);
+            $this->eventDispatcher->dispatch($afterEvent, new GenericEvent($response));
         }
 
         return $response;

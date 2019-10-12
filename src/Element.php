@@ -4,30 +4,34 @@ namespace Ni\Elastic;
 
 abstract class Element
 {
-    protected $created = false;
-
-    public function exists(): bool
-    {
-        return $this->created;
-    }
-
-
     /**
-     * Get the value of created
+     * Identifier
+     *
+     * @var string
      */
-    public function getCreated()
+    private $identifier;
+
+    public function __construct(?string $identifier)
     {
-        return $this->created;
+        $this->identifier = $identifier;
     }
 
     /**
-     * Set the value of created
+     * Get the value of identifier
+     */
+    public function getIdentifier()
+    {
+        return $this->identifier;
+    }
+
+    /**
+     * Set the value of identifier
      *
      * @return  self
      */
-    public function setCreated($created)
+    public function setIdentifier($identifier)
     {
-        $this->created = $created;
+        $this->identifier = $identifier;
 
         return $this;
     }
