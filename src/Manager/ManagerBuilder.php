@@ -1,11 +1,11 @@
 <?php
 
-namespace Ni\Elastic\Service;
+namespace Ni\Elastic\Manager;
 
 use Elasticsearch\Client as Elasticsearch;
-use Ni\Elastic\ActionDispatcher;
 use Ni\Elastic\Index\Manager as IndexManager;
-use Ni\Elastic\Manager;
+use Ni\Elastic\Manager\Manager;
+use Ni\Elastic\ActionDispatcher;
 use Ni\Elastic\ResponseHandler;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
