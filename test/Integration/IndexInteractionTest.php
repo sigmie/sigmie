@@ -18,12 +18,19 @@ class IndexInteractionTest extends TestCase
      */
     private $client;
 
+    /**
+     * Setup stubs
+     *
+     * @SuppressWarnings(PHPMD.StaticAccess)
+     *
+     * @return void
+     */
     public function setup(): void
     {
         $host = getenv('ES_HOST');
         $builder = ClientBuilder::create();
-        $es = $builder->setHosts([$host])->build();
-        $this->client = Client::create($es);
+        $elasticsearch = $builder->setHosts([$host])->build();
+        $this->client = Client::create($elasticsearch);
 
         $indices = $this->client->elasticsearch()->cat()->indices(['index' => '*']);
 

@@ -13,7 +13,7 @@ class Get implements GetResponse
     {
         $collection = new IndexCollection([]);
 
-        foreach ($response as $identifier => $payload) {
+        foreach (array_keys($response) as $identifier) {
             $collection[] = new Index($identifier);
         }
 
