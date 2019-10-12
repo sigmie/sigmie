@@ -4,6 +4,9 @@ namespace Ni\Elastic\Contract;
 
 use Elasticsearch\Client as Elasticsearch;
 
+/**
+ * Action Contract
+ */
 interface Action
 {
     public function prepare($data): array;

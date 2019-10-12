@@ -9,6 +9,13 @@ use Ni\Elastic\Index\IndexCollection;
 
 class Listing implements Response
 {
+    /**
+     * Create and return an IndexCollection
+     *
+     * @param array $response
+     * 
+     * @return IndexCollection
+     */
     public function result(array $response): Collection
     {
         $response = new IndexCollection($response);

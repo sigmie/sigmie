@@ -2,14 +2,19 @@
 
 namespace Ni\Elastic\Index\Response;
 
-use Ni\Elastic\Contract\Response\Create as CreateResponse;
 use Ni\Elastic\Contract\Response;
-use Ni\Elastic\Contract\Subscribable;
-use Ni\Elastic\Index\Index;
 
 class Create implements Response
 {
-    public function result($response)
+    /**
+     * Return the acknowledged flag
+     * as success indicator
+     *
+     * @param array $response
+     *
+     * @return boolean
+     */
+    public function result(array $response)
     {
         return $response['acknowledged'];
     }
