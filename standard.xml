@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<ruleset name="ni-elastic">
+    <description>Ni-elastic coding standards.</description>
+
+    <exclude-pattern>.history/*</exclude-pattern>
+    <exclude-pattern>tmp/*</exclude-pattern>
+    <exclude-pattern>vendor/*</exclude-pattern>
+
+    <rule ref="PSR12">
+        <exclude name="PSR12.Classes.ClassInstantiation.MissingParentheses" />
+    </rule>
+</ruleset>

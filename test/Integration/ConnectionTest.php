@@ -1,6 +1,6 @@
 <?php
 
-namespace Ni\Elastic\Integration;
+namespace Ni\Elastic\Test\Integration;
 
 use Ni\Elastic\Service\Client;
 use PHPUnit\Framework\TestCase;
@@ -10,7 +10,7 @@ class ConnectionTest extends TestCase
 {
     /**
      * @test
-     * 
+     *
      * @SuppressWarnings(PHPMD.StaticAccess)
      */
     public function connection(): void

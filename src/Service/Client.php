@@ -2,11 +2,9 @@
 
 namespace Ni\Elastic\Service;
 
+use Ni\Elastic\Manager;
 use Elasticsearch\ClientBuilder;
 use Elasticsearch\Client as Elasticsearch;
-use Ni\Elastic\Builder;
-use Ni\Elastic\Manager;
-use Ni\Elastic\Index\IndexManager;
 use Symfony\Component\EventDispatcher\EventDispatcher as EventManager;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface as EventDispatcher;
 
@@ -34,9 +32,11 @@ class Client
     private $connected;
 
     /**
-     * Class constructor
+     * Facade constructor
      *
      * @param Elasticsearch $elasticsearch
+     * @param Manager $manager
+     * @param EventManager $dispatcher
      */
     public function __construct(
         Elasticsearch $elasticsearch,
@@ -49,12 +49,13 @@ class Client
     }
 
     /**
-     * Client facade generator
+     * Facade create method
      *
      * @param Elasticsearch|null $elasticsearch
-     * @param Builder|null $manager
+     * @param Manager|null $manager
+     * @param EventDispatcher|null $dispatcher
      *
-     * @return Client
+     * @return self
      */
     public static function create(
         ?Elasticsearch $elasticsearch = null,
@@ -81,9 +82,8 @@ class Client
     }
 
     /**
-     * Build the Elasticsearch client if the
-     * elasticsearch is not initialized yet
-     * and returns the instance
+     * Official Elasticsearch
+     * library entry point
      *
      * @return Elasticsearch
      */
@@ -92,11 +92,23 @@ class Client
         return $this->elasticsearch;
     }
 
+    /**
+     * Entry point for managing
+     * the application events
+     *
+     * @return EventManager
+     */
     public function events(): EventManager
     {
         return $this->dispatcher;
     }
 
+    /**
+     * Helper method to check if the client
+     * is connected to Elasticsearch
+     *
+     * @return bool
+     */
     public function isConnected(): bool
     {
         $this->connected = $this->elasticsearch->ping();
@@ -105,7 +117,7 @@ class Client
     }
 
     /**
-     * Build an return the manager instance
+     * Entry point for nielastic
      *
      * @return Manager
      */
