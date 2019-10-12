@@ -1,33 +1,36 @@
 <?php
 
-namespace Ni\Elastic\Index\Actions;
+namespace Ni\Elastic\Index\Action;
 
-use Ni\Elastic\Contract\Actions\Create as CreateAction;
+use Ni\Elastic\Contract\Action\Get as GetAction;
 use Ni\Elastic\Contract\Subscribable;
 use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Contract\Action;
+use Ni\Elastic\Element;
+use Ni\Elastic\Index\Index;
+use Ni\Elastic\Index\IndexCollection;
 
-class Create implements Action, Subscribable
+class Get implements Action, Subscribable
 {
     public function execute(Elasticsearch $elasticsearch, array $params): array
     {
-        return $elasticsearch->indices()->create($params);
+        return $elasticsearch->indices()->get($params);
     }
 
     public function beforeEvent(): string
     {
-        return 'before.index.create';
+        return 'before.index.get';
     }
 
     public function afterEvent(): string
     {
-        return 'after.index.create';
+        return 'after.index.get';
     }
 
     public function prepare($data): array
     {
         $params = [
-            'index' => $data->getIdentifier()
+            'index' => $data
         ];
 
         return $params;
