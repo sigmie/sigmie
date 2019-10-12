@@ -1,8 +1,8 @@
 <?php
 
-namespace Ni\Elastic\Index\Actions;
+namespace Ni\Elastic\Index\Action;
 
-use Ni\Elastic\Contract\Actions\Listing as ListingAction;
+use Ni\Elastic\Contract\Action\Listing as ListingAction;
 use Ni\Elastic\Collection;
 use Ni\Elastic\Contract\Subscribable;
 use Elasticsearch\Client as Elasticsearch;

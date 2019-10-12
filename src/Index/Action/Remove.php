@@ -1,30 +1,27 @@
 <?php
 
-namespace Ni\Elastic\Index\Actions;
+namespace Ni\Elastic\Index\Action;
 
-use Ni\Elastic\Contract\Actions\Get as GetAction;
-use Ni\Elastic\Contract\Subscribable;
 use Elasticsearch\Client as Elasticsearch;
 use Ni\Elastic\Contract\Action;
-use Ni\Elastic\Element;
-use Ni\Elastic\Index\Index;
-use Ni\Elastic\Index\IndexCollection;
+use Ni\Elastic\Contract\Action\Remove as RemoveAction;
+use Ni\Elastic\Contract\Subscribable;
 
-class Get implements Action, Subscribable
+class Remove implements Action, Subscribable
 {
     public function execute(Elasticsearch $elasticsearch, array $params): array
     {
-        return $elasticsearch->indices()->get($params);
+        return $elasticsearch->indices()->delete($params);
     }
 
     public function beforeEvent(): string
     {
-        return 'before.index.get';
+        return 'before.index.remove';
     }
 
     public function afterEvent(): string
     {
-        return 'after.index.get';
+        return 'after.index.remove';
     }
 
     public function prepare($data): array
