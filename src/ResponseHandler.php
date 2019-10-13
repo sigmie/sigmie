@@ -9,7 +9,7 @@ class ResponseHandler implements ResponseHandlerInterface
 {
     /**
      * Raw response handler method
-     * 
+     *
      * @param array $content
      * @param Response $response
      * @return void

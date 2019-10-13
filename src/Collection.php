@@ -6,7 +6,6 @@ use ArrayAccess;
 use Countable;
 use IteratorAggregate;
 use ArrayIterator;
-use Ni\Elastic\Miscellaneous\Mapping;
 
 abstract class Collection implements IteratorAggregate, Countable, ArrayAccess
 {

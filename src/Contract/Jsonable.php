@@ -2,7 +2,15 @@
 
 namespace Ni\Elastic\Contract;
 
+/**
+ * Jsonable contract
+ */
 interface Jsonable
 {
-    public function toJSON();
+    /**
+     * To JSON method
+     *
+     * @return string
+     */
+    public function toJSON():string;
 }

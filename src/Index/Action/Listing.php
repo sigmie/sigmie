@@ -45,7 +45,7 @@ class Listing implements Action, Subscribable
      * Action data preparation
      *
      * @param string $data
-     * 
+     *
      * @return array
      */
     public function prepare($data): array
