@@ -1,4 +1,6 @@
-version: 2 # use CircleCI 2.0
+version: 2.1
+orbs:
+  codecov: codecov/codecov@1.0.5
 jobs:
   build:
     docker: 
@@ -13,7 +15,13 @@ jobs:
          - discovery.type: single-node
     working_directory: ~/project
     steps:
-      - run: apt-get update  
+      - run: apt-get update
+      - run:
+          name: Set up env variables
+          command: |
+            echo 'export ES_HOST=localhost' >> $BASH_ENV
+            source $BASH_ENV
+      - run: pecl -q install xdebug && docker-php-ext-enable xdebug
       - run: apt-get -y install git zip unzip
       - checkout
       - run: curl -sS https://getcomposer.org/installer | php
@@ -23,17 +31,19 @@ jobs:
             - composer-v1-{{ checksum "composer.lock" }}
             - composer-v1-
       - run: composer install -n --prefer-dist
-      - run: vendor/bin/phpcs --standard=PSR12 --ignore=vendor/* ./
+      - run: vendor/bin/phpcs --standard=standard.xml ./
       - run: vendor/bin/phpmd ./ text cleancode,codesize,controversial,design,unusedcode,naming --exclude vendor
-      - run: vendor/bin/phpunit
-      - run: ES_HOST=localhost 
-      - run:
-          name: Set up env variables 
-          command: |
-            echo 'export ES_HOST=localhost' >> $BASH_ENV
-            source $BASH_ENV
+      - run: vendor/bin/phpunit --log-junit test-results/phpunit/results.xml
       - run: curl -XGET ${ES_HOST}:9200
+      - codecov/upload:
+          file: tmp/coverage/coverage.xml
       - save_cache:
           key: composer-v1-{{ checksum "composer.lock" }}
           paths:
             - vendor
+      - store_artifacts:
+          path: tmp/coverage
+      - store_test_results:
+          path: test-results
+
+

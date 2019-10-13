@@ -1,10 +1,6 @@
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/6.3/phpunit.xsd" backupGlobals="true" backupStaticAttributes="false" bootstrap="vendor/autoload.php" colors="true" verbose="false">
 <logging>
     <log type="coverage-html" target="tmp/coverage/coverage-html"/>
-    <log type="coverage-xml" target="tmp/coverage/coverage-xml"/>
-    <log type="coverage-clover" target="tmp/coverage/logs/clover.xml"/>
-    <log type="junit" target="tmp/coverage/logs/junit.xml"/>
-    <log type="tap" target="tmp/coverage/report.tap"/>
     <log type="coverage-text" target="tmp/coverage/coverage.txt"/>
   </logging>
   <filter>
@@ -14,9 +10,16 @@
       </exclude>
     </whitelist>
   </filter>
+    <php>
+        <!-- <env name="foo" value="foo value" /> -->
+        <!-- define your env variables for the test env here -->
+    </php>
   <testsuites>
-    <testsuite name="default">
-      <directory>test</directory>
+    <testsuite name="unit">
+      <directory>test/Unit</directory>
+    </testsuite>
+    <testsuite name="integration">
+      <directory>test/Integration</directory>
     </testsuite>
   </testsuites>
 </phpunit>

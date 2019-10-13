@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="default" tests="8" assertions="12" errors="0" failures="0" skipped="0" time="0.881706">
+    <testsuite name="Ni\Elastic\Integration\ConnectionTest" file="/var/www/ni-elastic/test/Integration/ConnectionTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.376985">
+      <testcase name="connection" class="Ni\Elastic\Integration\ConnectionTest" classname="Ni.Elastic.Integration.ConnectionTest" file="/var/www/ni-elastic/test/Integration/ConnectionTest.php" line="14" assertions="1" time="0.376985"/>
+    </testsuite>
+    <testsuite name="Ni\Elastic\Test\Service\ClientTest" file="/var/www/ni-elastic/test/Unit/Service/ClientTest.php" tests="7" assertions="11" errors="0" failures="0" skipped="0" time="0.504721">
+      <testcase name="constructorElasticsearch" class="Ni\Elastic\Test\Service\ClientTest" classname="Ni.Elastic.Test.Service.ClientTest" file="/var/www/ni-elastic/test/Unit/Service/ClientTest.php" line="38" assertions="1" time="0.319761"/>
+      <testcase name="methodElasticsearch" class="Ni\Elastic\Test\Service\ClientTest" classname="Ni.Elastic.Test.Service.ClientTest" file="/var/www/ni-elastic/test/Unit/Service/ClientTest.php" line="47" assertions="1" time="0.033584"/>
+      <testcase name="constructorBuilder" class="Ni\Elastic\Test\Service\ClientTest" classname="Ni.Elastic.Test.Service.ClientTest" file="/var/www/ni-elastic/test/Unit/Service/ClientTest.php" line="56" assertions="1" time="0.029716"/>
+      <testcase name="defaultBuilder" class="Ni\Elastic\Test\Service\ClientTest" classname="Ni.Elastic.Test.Service.ClientTest" file="/var/www/ni-elastic/test/Unit/Service/ClientTest.php" line="65" assertions="1" time="0.031504"/>
+      <testcase name="methodBuild" class="Ni\Elastic\Test\Service\ClientTest" classname="Ni.Elastic.Test.Service.ClientTest" file="/var/www/ni-elastic/test/Unit/Service/ClientTest.php" line="74" assertions="1" time="0.046073"/>
+      <testcase name="getterMethods" class="Ni\Elastic\Test\Service\ClientTest" classname="Ni.Elastic.Test.Service.ClientTest" file="/var/www/ni-elastic/test/Unit/Service/ClientTest.php" line="87" assertions="3" time="0.020274"/>
+      <testcase name="setterMethods" class="Ni\Elastic\Test\Service\ClientTest" classname="Ni.Elastic.Test.Service.ClientTest" file="/var/www/ni-elastic/test/Unit/Service/ClientTest.php" line="101" assertions="3" time="0.023809"/>
+    </testsuite>
+  </testsuite>
+</testsuites>
