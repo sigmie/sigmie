@@ -1,6 +1,6 @@
 {
     "name": "nicoorfi/ni-elastic",
-    "description": "Self service Elasticsearch",
+    "description": "Elasticsearch made simpler",
     "type": "project",
     "license": "MIT",
     "authors": [
