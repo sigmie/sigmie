@@ -7,5 +7,13 @@ namespace Ni\Elastic\Contract;
  */
 interface ActionDispatcher
 {
-    public function dispatch($data, Action $action): array;
+    /**
+     * Dispatch method
+     *
+     * @param array $data
+     * @param Action $action
+     *
+     * @return array
+     */
+    public function dispatch(array $data, Action $action): array;
 }

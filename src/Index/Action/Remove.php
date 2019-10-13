@@ -39,6 +39,7 @@ class Remove implements Action, Subscribable
      *
      * @param Elasticsearch $elasticsearch
      * @param array $params
+     *
      * @return array
      */
     public function execute(Elasticsearch $elasticsearch, array $params): array

@@ -2,7 +2,6 @@
 
 namespace Ni\Elastic\Contract;
 
-use Ni\Elastic\Action\Action;
 use Ni\Elastic\Collection;
 use Ni\Elastic\Element;
 
@@ -13,6 +12,7 @@ interface ResponseHandler
      *
      * @param array $content
      * @param Response $response
+     *
      * @return bool|Element|Collection
      */
     public function handle(array $content, Response $response);

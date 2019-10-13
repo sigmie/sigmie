@@ -2,7 +2,15 @@
 
 namespace Ni\Elastic\Contract;
 
+/**
+ * Arrayable contract
+ */
 interface Arrayable
 {
-    public function toArray();
+    /**
+     * To array method
+     *
+     * @return array
+     */
+    public function toArray(): array;
 }
