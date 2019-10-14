@@ -12,6 +12,7 @@ class ResponseHandler implements ResponseHandlerInterface
      *
      * @param array $content
      * @param Response $response
+     *
      * @return void
      */
     public function handle(array $content, Response $response)
