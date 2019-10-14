@@ -1,9 +1,9 @@
 <?php
 
-namespace Ni\Elastic\Contract;
+namespace Sigma\Contract;
 
 use Elasticsearch\Client as Elasticsearch;
-use Ni\Elastic\Element;
+use Sigma\Element;
 
 /**
  * Action Contract

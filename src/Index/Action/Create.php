@@ -1,11 +1,11 @@
 <?php
 
-namespace Ni\Elastic\Index\Action;
+namespace Sigma\Index\Action;
 
-use Ni\Elastic\Contract\Subscribable;
+use Sigma\Contract\Subscribable;
 use Elasticsearch\Client as Elasticsearch;
-use Ni\Elastic\Contract\Action;
-use Ni\Elastic\Index\Index;
+use Sigma\Contract\Action;
+use Sigma\Index\Index;
 
 class Create implements Action, Subscribable
 {

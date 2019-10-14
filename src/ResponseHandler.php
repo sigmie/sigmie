@@ -1,9 +1,9 @@
 <?php
 
-namespace Ni\Elastic;
+namespace Sigma;
 
-use Ni\Elastic\Contract\Response;
-use Ni\Elastic\Contract\ResponseHandler as ResponseHandlerInterface;
+use Sigma\Contract\Response;
+use Sigma\Contract\ResponseHandler as ResponseHandlerInterface;
 
 class ResponseHandler implements ResponseHandlerInterface
 {
@@ -12,6 +12,7 @@ class ResponseHandler implements ResponseHandlerInterface
      *
      * @param array $content
      * @param Response $response
+     *
      * @return void
      */
     public function handle(array $content, Response $response)

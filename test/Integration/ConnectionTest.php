@@ -1,8 +1,8 @@
 <?php
 
-namespace Ni\Elastic\Test\Integration;
+namespace Sigma\Test\Integration;
 
-use Ni\Elastic\Client;
+use Sigma\Client;
 use PHPUnit\Framework\TestCase;
 use Elasticsearch\ClientBuilder;
 

@@ -1,10 +1,10 @@
 <?php
 
-namespace Ni\Elastic\Index\Action;
+namespace Sigma\Index\Action;
 
-use Ni\Elastic\Contract\Subscribable;
+use Sigma\Contract\Subscribable;
 use Elasticsearch\Client as Elasticsearch;
-use Ni\Elastic\Contract\Action;
+use Sigma\Contract\Action;
 
 class Get implements Action, Subscribable
 {

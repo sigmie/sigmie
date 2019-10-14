@@ -1,6 +1,6 @@
 <?php
 
-namespace Ni\Elastic\Contract;
+namespace Sigma\Contract;
 
 /**
  * Subscribable contract

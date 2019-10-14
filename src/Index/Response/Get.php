@@ -1,11 +1,11 @@
 <?php
 
-namespace Ni\Elastic\Index\Response;
+namespace Sigma\Index\Response;
 
-use Ni\Elastic\Contract\Response;
-use Ni\Elastic\Element;
-use Ni\Elastic\Index\Index;
-use Ni\Elastic\Index\IndexCollection;
+use Sigma\Contract\Response;
+use Sigma\Element;
+use Sigma\Index\Index;
+use Sigma\Index\IndexCollection;
 
 class Get implements Response
 {
