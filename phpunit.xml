@@ -1,7 +1,8 @@
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/6.3/phpunit.xsd" backupGlobals="true" backupStaticAttributes="false" bootstrap="vendor/autoload.php" colors="true" verbose="false">
-<logging>
+  <logging>
     <log type="coverage-html" target="tmp/coverage/coverage-html"/>
     <log type="coverage-text" target="tmp/coverage/coverage.txt"/>
+    <log type="coverage-clover" target="tmp/coverage/coverage.xml"/>
   </logging>
   <filter>
     <whitelist addUncoveredFilesFromWhitelist="true">
@@ -10,10 +11,6 @@
       </exclude>
     </whitelist>
   </filter>
-    <php>
-        <!-- <env name="foo" value="foo value" /> -->
-        <!-- define your env variables for the test env here -->
-    </php>
   <testsuites>
     <testsuite name="unit">
       <directory>test/Unit</directory>
