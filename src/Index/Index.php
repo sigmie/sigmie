@@ -1,8 +1,8 @@
 <?php
 
-namespace Ni\Elastic\Index;
+namespace Sigma\Index;
 
-use Ni\Elastic\Element;
+use Sigma\Element;
 
 class Index extends Element
 {

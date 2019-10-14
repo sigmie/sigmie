@@ -1,5 +1,5 @@
 {
-    "name": "nicoorfi/ni-elastic",
+    "name": "nicoorfi/sigma",
     "description": "Elasticsearch made simpler",
     "type": "project",
     "license": "MIT",
@@ -11,7 +11,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "Ni\\Elastic\\": "src/"
+            "Sigma\\": "src/"
         },
         "exclude-from-classmap": [
             "/test/"

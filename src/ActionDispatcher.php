@@ -1,11 +1,11 @@
 <?php
 
-namespace Ni\Elastic;
+namespace Sigma;
 
 use Elasticsearch\Client as Elasticsearch;
-use Ni\Elastic\Contract\Action;
-use Ni\Elastic\Contract\ActionDispatcher as ActionDispatcherInterface;
-use Ni\Elastic\Contract\Subscribable;
+use Sigma\Contract\Action;
+use Sigma\Contract\ActionDispatcher as ActionDispatcherInterface;
+use Sigma\Contract\Subscribable;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface as EventDispatcher;
 use Symfony\Component\EventDispatcher\GenericEvent;
 

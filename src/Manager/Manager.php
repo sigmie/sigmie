@@ -1,9 +1,9 @@
 <?php
 
-namespace Ni\Elastic\Manager;
+namespace Sigma\Manager;
 
-use Ni\Elastic\Contract\Manager as ManagerInterface;
-use Ni\Elastic\Index\Manager as IndexManager;
+use Sigma\Contract\Manager as ManagerInterface;
+use Sigma\Index\Manager as IndexManager;
 
 class Manager
 {

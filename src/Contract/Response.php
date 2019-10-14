@@ -1,9 +1,9 @@
 <?php
 
-namespace Ni\Elastic\Contract;
+namespace Sigma\Contract;
 
-use Ni\Elastic\Collection;
-use Ni\Elastic\Element;
+use Sigma\Collection;
+use Sigma\Element;
 
 /**
  * Response contract

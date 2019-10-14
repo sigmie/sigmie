@@ -1,9 +1,9 @@
 <?php
 
-namespace Ni\Elastic\Index\Response;
+namespace Sigma\Index\Response;
 
-use Ni\Elastic\Contract\Response;
-use Ni\Elastic\Contract\Response\Remove as RemoveResponse;
+use Sigma\Contract\Response;
+use Sigma\Contract\Response\Remove as RemoveResponse;
 
 class Remove implements Response
 {

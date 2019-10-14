@@ -1,14 +1,14 @@
 <?php
 
-namespace Ni\Elastic\Manager;
+namespace Sigma\Manager;
 
 use Elasticsearch\Client as Elasticsearch;
-use Ni\Elastic\Index\Manager as IndexManager;
-use Ni\Elastic\Manager\Manager;
-use Ni\Elastic\ActionDispatcher;
-use Ni\Elastic\Contract\ActionDispatcher as ActionDispatcherInterface;
-use Ni\Elastic\Contract\ResponseHandler as ResponseHandlerInterface;
-use Ni\Elastic\ResponseHandler;
+use Sigma\Index\Manager as IndexManager;
+use Sigma\Manager\Manager;
+use Sigma\ActionDispatcher;
+use Sigma\Contract\ActionDispatcher as ActionDispatcherInterface;
+use Sigma\Contract\ResponseHandler as ResponseHandlerInterface;
+use Sigma\ResponseHandler;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
