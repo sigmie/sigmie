@@ -1,20 +1,20 @@
 <?php
 
-namespace Ni\Elastic\Index;
+namespace Sigma\Index;
 
-use Ni\Elastic\Element;
-use Ni\Elastic\Collection;
-use Ni\Elastic\Contract\ResponseHandler;
-use Ni\Elastic\Contract\Manager as ManagerInterface;
-use Ni\Elastic\Index\Action\Get as GetAction;
-use Ni\Elastic\Index\Action\Create as CreateAction;
-use Ni\Elastic\Index\Action\Remove as RemoveAction;
-use Ni\Elastic\Index\Action\Listing as ListingAction;
-use Ni\Elastic\Index\Response\Get as GetResponse;
-use Ni\Elastic\Index\Response\Create as CreateResponse;
-use Ni\Elastic\Index\Response\Remove as RemoveResponse;
-use Ni\Elastic\Index\Response\Listing as ListingResponse;
-use Ni\Elastic\ActionDispatcher;
+use Sigma\Element;
+use Sigma\Collection;
+use Sigma\Contract\ResponseHandler;
+use Sigma\Contract\Manager as ManagerInterface;
+use Sigma\Index\Action\Get as GetAction;
+use Sigma\Index\Action\Create as CreateAction;
+use Sigma\Index\Action\Remove as RemoveAction;
+use Sigma\Index\Action\Listing as ListingAction;
+use Sigma\Index\Response\Get as GetResponse;
+use Sigma\Index\Response\Create as CreateResponse;
+use Sigma\Index\Response\Remove as RemoveResponse;
+use Sigma\Index\Response\Listing as ListingResponse;
+use Sigma\ActionDispatcher;
 
 class Manager implements ManagerInterface
 {

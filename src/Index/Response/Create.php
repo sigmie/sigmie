@@ -1,8 +1,8 @@
 <?php
 
-namespace Ni\Elastic\Index\Response;
+namespace Sigma\Index\Response;
 
-use Ni\Elastic\Contract\Response;
+use Sigma\Contract\Response;
 
 class Create implements Response
 {

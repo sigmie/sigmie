@@ -1,6 +1,6 @@
 <?php
 
-namespace Ni\Elastic\Exception;
+namespace Sigma\Exception;
 
 use BadMethodCallException;
 

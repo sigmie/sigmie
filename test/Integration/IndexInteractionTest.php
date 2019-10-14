@@ -1,11 +1,11 @@
 <?php
 
-namespace Ni\Elastic\Test\Integration;
+namespace Sigma\Test\Integration;
 
 use Elasticsearch\ClientBuilder;
-use Ni\Elastic\Client;
-use Ni\Elastic\Collection;
-use Ni\Elastic\Index\Index;
+use Sigma\Client;
+use Sigma\Collection;
+use Sigma\Index\Index;
 use PHPUnit\Framework\TestCase;
 
 class IndexInteractionTest extends TestCase
