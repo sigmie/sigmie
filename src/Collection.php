@@ -1,6 +1,6 @@
 <?php
 
-namespace Ni\Elastic;
+namespace Sigma;
 
 use ArrayAccess;
 use Countable;

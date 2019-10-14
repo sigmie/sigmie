@@ -1,8 +1,8 @@
 <?php
 
-namespace Ni\Elastic\Index;
+namespace Sigma\Index;
 
-use Ni\Elastic\Collection;
+use Sigma\Collection;
 
 class IndexCollection extends Collection
 {

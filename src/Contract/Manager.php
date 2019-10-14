@@ -1,9 +1,9 @@
 <?php
 
-namespace Ni\Elastic\Contract;
+namespace Sigma\Contract;
 
-use Ni\Elastic\Element;
-use Ni\Elastic\Collection;
+use Sigma\Element;
+use Sigma\Collection;
 
 /**
  * Manager contract

@@ -1,9 +1,9 @@
 <?php
 
-namespace Ni\Elastic;
+namespace Sigma;
 
-use Ni\Elastic\Manager\Manager;
-use Ni\Elastic\Manager\ManagerBuilder;
+use Sigma\Manager\Manager;
+use Sigma\Manager\ManagerBuilder;
 use Elasticsearch\ClientBuilder;
 use Elasticsearch\Client as Elasticsearch;
 use Symfony\Component\EventDispatcher\EventDispatcher as EventManager;

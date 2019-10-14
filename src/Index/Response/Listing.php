@@ -1,10 +1,10 @@
 <?php
 
-namespace Ni\Elastic\Index\Response;
+namespace Sigma\Index\Response;
 
-use Ni\Elastic\Collection;
-use Ni\Elastic\Contract\Response;
-use Ni\Elastic\Index\IndexCollection;
+use Sigma\Collection;
+use Sigma\Contract\Response;
+use Sigma\Index\IndexCollection;
 
 class Listing implements Response
 {

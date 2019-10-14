@@ -1,4 +1,4 @@
-<p align="center"><img src="https://res.cloudinary.com/markos-nikolaos-orfanos/image/upload/v1569788682/ni-logo_myntnw.png" width="400"></p>
+<p align="center"><img src="https://res.cloudinary.com/markos-nikolaos-orfanos/image/upload/c_limit,h_100,q_auto:best,w_400/v1571029369/logo_yly5mv.png" width="400"></p>
 
 <p align="center">
 <a href="https://circleci.com/gh/nicoorfi/ni-elastic"><img src="https://circleci.com/gh/nicoorfi/ni-elastic.svg?style=svg&circle-token=ef57d3cd50af58d1f118f79805b5517a9d593fac" alt="Build Status"></a>
