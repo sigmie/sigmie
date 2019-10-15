@@ -1,6 +1,6 @@
 {
-    "name": "nicoorfi/sigma",
-    "description": "Elasticsearch made simpler",
+    "name": "mos-sigma/sigma",
+    "description": "Elasticsearch for developers",
     "type": "project",
     "license": "MIT",
     "authors": [
