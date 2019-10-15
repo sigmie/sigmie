@@ -1,23 +1,23 @@
 <p align="center"><img src="https://res.cloudinary.com/markos-nikolaos-orfanos/image/upload/c_limit,h_100,q_auto:best,w_400/v1571029369/logo_yly5mv.png" width="400"></p>
 
 <p align="center">
-<a href="https://circleci.com/gh/nicoorfi/ni-elastic"><img src="https://circleci.com/gh/nicoorfi/sigma.svg?style=svg&circle-token=ef57d3cd50af58d1f118f79805b5517a9d593fac" alt="Build Status"></a>
+<a href="https://circleci.com/gh/mos-sigma/sigma"><img src="https://circleci.com/gh/mos-sigma/sigma.svg?style=svg&circle-token=ef57d3cd50af58d1f118f79805b5517a9d593fac" alt="Build Status"></a>
 
-<a href="https://codecov.io/gh/nicoorfi/ni-elastic">
-  <img src="https://codecov.io/gh/nicoorfi/ni-elastic/branch/master/graph/badge.svg" alt="Code coverage"/>
+<a href="https://codecov.io/gh/mos-sigma/sigma">
+  <img src="https://codecov.io/gh/mos-sigma/sigma/branch/master/graph/badge.svg" alt="Code coverage"/>
 </a>
 
 
-<a href="https://packagist.org/packages/nicoorfi/ni-elastic">
-  <img src="https://img.shields.io/github/v/release/nicoorfi/ni-elastic?color=red&label=stable&logo=stable" alt="Stable version"/>
+<a href="https://packagist.org/packages/mos-sigma/sigma">
+  <img src="https://img.shields.io/github/v/release/mos-sigma/sigma?color=red&label=stable&logo=stable" alt="Stable version"/>
 </a>
 
 
-<a href="https://packagist.org/packages/nicoorfi/ni-elastic">
-  <img src="https://img.shields.io/packagist/dt/nicoorfi/ni-elastic?color=green" alt="Latest Stable Version"/>
+<a href="https://packagist.org/packages/mos-sigma/sigma">
+  <img src="https://img.shields.io/packagist/dt/mos-sigma/sigma?color=green" alt="Latest Stable Version"/>
 </a>
 
-<a href="https://packagist.org/packages/nicoorfi/ni-elastic">
+<a href="https://packagist.org/packages/mos-sigma/sigma">
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"/>
 </a>
 </p>
@@ -30,7 +30,7 @@ Lorem ipsum is placeholder text commonly used in the graphic, print, and publish
 Make sure you have Composer installed on your machine and execute:
 
 ```
- composer require nicoorfi/ni-elastic
+ composer require mos-sigma/sigma
 ```
 Afterwards you must require the vendor/autoload.php file in your code and you are ready to code! 
 
