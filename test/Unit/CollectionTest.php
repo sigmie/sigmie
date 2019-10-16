@@ -16,7 +16,8 @@ class CollectionTest extends TestCase
     public function setUp(): void
     {
         $this->collection = new class ([]) extends Collection
-        { };
+        {
+        };
     }
 
     /**

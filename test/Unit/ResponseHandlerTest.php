@@ -1,5 +1,7 @@
 <?php
 
+namespace Sigma\Test\Unit;
+
 use PHPUnit\Framework\TestCase;
 use Sigma\Contract\Response;
 use Sigma\ResponseHandler;
@@ -20,7 +22,7 @@ class ResponseHandlerTest extends TestCase
      */
     public function handle(): void
     {
-        $response = $responseMock = $responseMock = $this->createMock(Response::class);;
+        $response = $this->createMock(Response::class);
 
         $response->expects($this->once())->method('result')->with(['foo']);
 

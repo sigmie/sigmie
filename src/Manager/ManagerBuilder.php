@@ -127,7 +127,7 @@ class ManagerBuilder
      * Get action dispatcher
      *
      * @return  ActionDispatcherInterface
-     */ 
+     */
     public function getActionDispatcher()
     {
         return $this->actionDispatcher;
@@ -139,7 +139,7 @@ class ManagerBuilder
      * @param  ActionDispatcherInterface  $actionDispatcher  Action dispatcher
      *
      * @return  self
-     */ 
+     */
     public function setActionDispatcher(ActionDispatcherInterface $actionDispatcher)
     {
         $this->actionDispatcher = $actionDispatcher;
@@ -151,7 +151,7 @@ class ManagerBuilder
      * Get event dispatcher
      *
      * @return  EventDispatcherInterface
-     */ 
+     */
     public function getEventDispatcher()
     {
         return $this->eventDispatcher;
@@ -163,7 +163,7 @@ class ManagerBuilder
      * @param  EventDispatcherInterface  $eventDispatcher  Event dispatcher
      *
      * @return  self
-     */ 
+     */
     public function setEventDispatcher(EventDispatcherInterface $eventDispatcher)
     {
         $this->eventDispatcher = $eventDispatcher;
@@ -175,7 +175,7 @@ class ManagerBuilder
      * Get response handler
      *
      * @return  ResponseHandlerInterface
-     */ 
+     */
     public function getResponseHandler()
     {
         return $this->responseHandler;
@@ -187,7 +187,7 @@ class ManagerBuilder
      * @param  ResponseHandlerInterface  $responseHandler  Response handler
      *
      * @return  self
-     */ 
+     */
     public function setResponseHandler(ResponseHandlerInterface $responseHandler)
     {
         $this->responseHandler = $responseHandler;

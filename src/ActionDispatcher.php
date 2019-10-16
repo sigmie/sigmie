@@ -14,7 +14,7 @@ class ActionDispatcher implements ActionDispatcherInterface
     /**
      * Elasticsearch client
      *
-     * @var Elasticsearch 
+     * @var Elasticsearch
      */
     private $elasticsearch;
 
