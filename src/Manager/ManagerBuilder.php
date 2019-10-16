@@ -60,6 +60,11 @@ class ManagerBuilder
         return $manager;
     }
 
+    /**
+     * Response handler method
+     *
+     * @return ResponseHandlerInterface
+     */
     private function responseHandler(): ResponseHandlerInterface
     {
         if ($this->responseHandler instanceof ResponseHandlerInterface) {
@@ -71,6 +76,11 @@ class ManagerBuilder
         return $this->responseHandler;
     }
 
+    /**
+     * Event dispatcher method
+     *
+     * @return EventDispatcherInterface
+     */
     private function eventDispatcher(): EventDispatcherInterface
     {
         if ($this->eventDispatcher instanceof EventDispatcherInterface) {
@@ -82,6 +92,11 @@ class ManagerBuilder
         return $this->eventDispatcher;
     }
 
+    /**
+     * Action dispatcher method
+     *
+     * @return ActionDispatcherInterface
+     */
     private function actionDispatcher(): ActionDispatcherInterface
     {
         if ($this->actionDispatcher instanceof ActionDispatcherInterface) {
@@ -93,6 +108,11 @@ class ManagerBuilder
         return $this->actionDispatcher;
     }
 
+    /**
+     * Index manager initialization
+     *
+     * @return IndexManager
+     */
     public function newIndexManager(): IndexManager
     {
         $actionDispatcher = $this->actionDispatcher();
@@ -104,47 +124,9 @@ class ManagerBuilder
     }
 
     /**
-     * Get the value of responseHandler
-     */
-    public function getResponseHandler()
-    {
-        return $this->responseHandler;
-    }
-
-    /**
-     * Set the value of responseHandler
+     * Get action dispatcher
      *
-     * @return  self
-     */
-    public function setResponseHandler($responseHandler)
-    {
-        $this->responseHandler = $responseHandler;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of eventDispatcher
-     */
-    public function getEventDispatcher()
-    {
-        return $this->eventDispatcher;
-    }
-
-    /**
-     * Set the value of eventDispatcher
-     *
-     * @return  self
-     */
-    public function setEventDispatcher($eventDispatcher)
-    {
-        $this->eventDispatcher = $eventDispatcher;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of actionDispatcher
+     * @return  ActionDispatcherInterface
      */
     public function getActionDispatcher()
     {
@@ -152,13 +134,63 @@ class ManagerBuilder
     }
 
     /**
-     * Set the value of actionDispatcher
+     * Set action dispatcher
+     *
+     * @param  ActionDispatcherInterface  $actionDispatcher  Action dispatcher
      *
      * @return  self
      */
-    public function setActionDispatcher($actionDispatcher)
+    public function setActionDispatcher(ActionDispatcherInterface $actionDispatcher)
     {
         $this->actionDispatcher = $actionDispatcher;
+
+        return $this;
+    }
+
+    /**
+     * Get event dispatcher
+     *
+     * @return  EventDispatcherInterface
+     */
+    public function getEventDispatcher()
+    {
+        return $this->eventDispatcher;
+    }
+
+    /**
+     * Set event dispatcher
+     *
+     * @param  EventDispatcherInterface  $eventDispatcher  Event dispatcher
+     *
+     * @return  self
+     */
+    public function setEventDispatcher(EventDispatcherInterface $eventDispatcher)
+    {
+        $this->eventDispatcher = $eventDispatcher;
+
+        return $this;
+    }
+
+    /**
+     * Get response handler
+     *
+     * @return  ResponseHandlerInterface
+     */
+    public function getResponseHandler()
+    {
+        return $this->responseHandler;
+    }
+
+    /**
+     * Set response handler
+     *
+     * @param  ResponseHandlerInterface  $responseHandler  Response handler
+     *
+     * @return  self
+     */
+    public function setResponseHandler(ResponseHandlerInterface $responseHandler)
+    {
+        $this->responseHandler = $responseHandler;
 
         return $this;
     }
