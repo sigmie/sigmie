@@ -22,7 +22,7 @@
 </a>
 </p>
 
-## ni - Elasticsearch
+## Sigma 
 Lorem ipsum is placeholder text commonly used in the graphic, print, and publishing industries for previewing layouts and visual mockups.
 
 ## Installation
@@ -35,23 +35,24 @@ Make sure you have Composer installed on your machine and execute:
 Afterwards you must require the vendor/autoload.php file in your code and you are ready to code! 
 
 Here is a first example to get an idea.
-```
+```php
 <?php
 
 require 'vendor/autoload.php';
 
-$params = [
-  'index' => $index->getIdentifier()
-];
+use Ni\Elastic\Client;
+use Ni\Elastic\Index\Index;
 
-$response = $this->elasticsearch->indices()->create($params);
+$client = Client::create();
 
-return $this->handler->handle($response, new IndexCreate);
+$index = new Index('bar');
+
+$client->manage()->indices()->create($index);
 ```
 
-You can find the documentation on the [website](https://ni-elastic.com/docs).
+You can find the documentation on the [website](https://mossigma.com/docs).
 
-Check out the [Getting Started](https://ni-elastic.com/docs/1.0/Getting-started) page for a quick overview.
+Check out the [Getting Started](https://mossigma.com/docs/1.0/Getting-started) page for a quick overview.
 
 ## Contributing
  Thank you for considering contributing to the ni - Elastic library! The main purpose of this repository is making Elasticsearch faster and easier to use with PHP. I would be grateful to the community for contributing bugfixes and improvements. So feel free to open a pull request.

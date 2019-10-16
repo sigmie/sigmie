@@ -11,7 +11,7 @@ abstract class Element
      */
     private $identifier;
 
-    public function __construct(?string $identifier)
+    public function __construct(?string $identifier = null)
     {
         $this->identifier = $identifier;
     }
