@@ -45,6 +45,18 @@ abstract class Collection implements IteratorAggregate, Countable, ArrayAccess
     }
 
     /**
+     * Add element to Collection
+     *
+     * @param Element $element
+     *
+     * @return void
+     */
+    public function add(Element $element): void
+    {
+        $this->elements[] = $element;
+    }
+
+    /**
      * Offset exists method
      *
      * @param string $offset
@@ -85,7 +97,7 @@ abstract class Collection implements IteratorAggregate, Countable, ArrayAccess
      *
      * @return ArrayIterator
      */
-    public function getIterator() : ArrayIterator
+    public function getIterator(): ArrayIterator
     {
         return new ArrayIterator($this->elements);
     }
@@ -101,12 +113,22 @@ abstract class Collection implements IteratorAggregate, Countable, ArrayAccess
     }
 
     /**
-     * First element method
+     * Get the first element
      *
      * @return Element
      */
     public function first(): Element
     {
         return $this->elements[0];
+    }
+
+    /**
+     * Get the last element
+     *
+     * @return Element
+     */
+    public function last(): Element
+    {
+        return $this->elements[count($this) - 1];
     }
 }

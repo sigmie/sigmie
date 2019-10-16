@@ -11,15 +11,40 @@ use Symfony\Component\EventDispatcher\GenericEvent;
 
 class ActionDispatcher implements ActionDispatcherInterface
 {
+    /**
+     * Elasticsearch client
+     *
+     * @var Elasticsearch 
+     */
     private $elasticsearch;
 
+    /**
+     * Event dispatcher
+     *
+     * @var EventDispatcher
+     */
     private $eventDispatcher;
 
+    /**
+     * Constructor
+     *
+     * @param Elasticsearch $elasticsearch
+     * @param EventDispatcher $eventDispatcher
+     */
     public function __construct(Elasticsearch $elasticsearch, EventDispatcher $eventDispatcher)
     {
         $this->elasticsearch = $elasticsearch;
         $this->eventDispatcher = $eventDispatcher;
     }
+
+    /**
+     * Action dispatch method
+     *
+     * @param Element|Collection|string $data
+     * @param Action $action
+     *
+     * @return array
+     */
     public function dispatch($data, Action $action): array
     {
         $beforeEvent = null;
