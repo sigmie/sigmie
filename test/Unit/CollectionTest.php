@@ -2,6 +2,7 @@
 
 namespace Sigma\Test\Unit;
 
+use ArrayIterator;
 use PHPUnit\Framework\TestCase;
 use Sigma\Collection;
 use Sigma\Index\Index;
@@ -85,5 +86,52 @@ class CollectionTest extends TestCase
         $this->collection->add(new Index());
 
         $this->assertEquals(2, count($this->collection));
+    }
+
+    /**
+     * @test
+     */
+    public function iterator(): void
+    {
+        $iterator =  $this->collection->getIterator();
+
+        $this->assertInstanceOf(ArrayIterator::class, $iterator);
+    }
+
+    /**
+     * @test
+     */
+    public function offsetGet(): void
+    {
+        $this->collection->add(new Index());
+
+        $element = $this->collection->offsetGet(0);
+
+        $this->assertInstanceOf(Index::class, $element);
+    }
+
+    /**
+     * @test
+     */
+    public function offsetUnset(): void
+    {
+        $this->collection->add(new Index());
+
+        $this->collection->offsetUnset(0);
+
+        $this->assertEquals(0, $this->collection->count());
+    }
+
+    /**
+     * @test
+     */
+    public function offsetSet(): void
+    {
+        $this->collection[0] = new Index('foo');
+        $this->collection[1] = new Index('bar');
+
+        $this->collection->offsetSet(1, new Index('replaced'));
+
+        $this->assertEquals('replaced', $this->collection[1]->getIdentifier());
     }
 }

@@ -33,6 +33,12 @@
             "problemMatcher": []
         },
         {
+            "label": "phpcbf",
+            "type": "shell",
+            "command": "vendor/bin/phpcbf --standard=./standard.xml ./",
+            "problemMatcher": []
+        },
+        {
             "label": "phpmd",
             "type": "shell",
             "command": "vendor/bin/phpmd ./ text cleancode,codesize,controversial,design,unusedcode,naming --exclude vendor,.history",
