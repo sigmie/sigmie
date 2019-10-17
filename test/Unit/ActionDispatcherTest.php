@@ -1,4 +1,5 @@
 <?php
+
 namespace Sigma\Test\Unit;
 
 use Elasticsearch\Client as Elasticsearch;
@@ -7,6 +8,7 @@ use Sigma\ActionDispatcher;
 use Sigma\Contract\Action;
 use Sigma\Contract\Subscribable;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface as EventDispatcher;
+use Symfony\Component\EventDispatcher\GenericEvent;
 
 class ActionDispatcherTest extends TestCase
 {
@@ -53,7 +55,7 @@ class ActionDispatcherTest extends TestCase
      */
     public function eventListeners(): void
     {
-        $actionMock = $actionMock = $this->createMock([Action::class, Subscribable::class]);
+        $actionMock = $this->createMock([Action::class, Subscribable::class]);
 
         $actionMock->method('beforeEvent')->willReturn('before.foo.bar');
         $actionMock->method('afterEvent')->willReturn('after.foo.bar');
@@ -62,5 +64,50 @@ class ActionDispatcherTest extends TestCase
         $this->eventDispatcherMock->expects($this->at(1))->method('hasListeners')->with('after.foo.bar');
 
         $this->actionDispatcher->dispatch([], $actionMock);
+    }
+
+    /**
+     * @test
+     */
+    public function eventDispatch(): void
+    {
+        $actionMock = $this->createMock([Action::class, Subscribable::class]);
+
+        $actionMock->method('beforeEvent')->willReturn('before.foo.bar');
+        $actionMock->method('afterEvent')->willReturn('after.foo.bar');
+
+        $this->eventDispatcherMock->method('hasListeners')->willReturn(true);
+
+        $this->eventDispatcherMock->expects($this->at(1))
+            ->method('dispatch')
+            ->with('before.foo.bar', $this->anything());
+
+        $this->eventDispatcherMock->expects($this->at(3))
+            ->method('dispatch')
+            ->with('after.foo.bar', $this->anything());
+
+        $this->actionDispatcher->dispatch([], $actionMock);
+    }
+
+    /**
+     * @test
+     */
+    public function eventObject(): void
+    {
+        $actionMock = $this->createMock([Action::class, Subscribable::class]);
+
+        $actionMock->method('execute')->willReturn(['response data']);
+
+        $this->eventDispatcherMock->method('hasListeners')->willReturn(true);
+
+        $this->eventDispatcherMock->expects($this->at(1))
+            ->method('dispatch')
+            ->with($this->anything(), new GenericEvent(['prepared data']));
+
+        $this->eventDispatcherMock->expects($this->at(3))
+            ->method('dispatch')
+            ->with($this->anything(), new GenericEvent(['response data']));
+
+        $this->actionDispatcher->dispatch(['prepared data'], $actionMock);
     }
 }
