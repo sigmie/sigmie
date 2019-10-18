@@ -14,7 +14,7 @@ use Sigma\Index\Response\Get as GetResponse;
 use Sigma\Index\Response\Create as CreateResponse;
 use Sigma\Index\Response\Remove as RemoveResponse;
 use Sigma\Index\Response\Listing as ListingResponse;
-use Sigma\ActionDispatcher;
+use Sigma\Contract\ActionDispatcher;
 
 class Manager implements ManagerInterface
 {
