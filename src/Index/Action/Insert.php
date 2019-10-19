@@ -7,7 +7,7 @@ use Elasticsearch\Client as Elasticsearch;
 use Sigma\Contract\Action;
 use Sigma\Index\Index;
 
-class Create implements Action, Subscribable
+class Insert implements Action, Subscribable
 {
     /**
      * Action data preparation
@@ -32,7 +32,7 @@ class Create implements Action, Subscribable
      */
     public function beforeEvent(): string
     {
-        return 'before.index.create';
+        return 'before.index.insert';
     }
 
     /**
@@ -55,6 +55,6 @@ class Create implements Action, Subscribable
      */
     public function afterEvent(): string
     {
-        return 'after.index.create';
+        return 'after.index.insert';
     }
 }
