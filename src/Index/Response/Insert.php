@@ -4,7 +4,7 @@ namespace Sigma\Index\Response;
 
 use Sigma\Contract\Response;
 
-class Create implements Response
+class Insert implements Response
 {
     /**
      * Return the acknowledged flag

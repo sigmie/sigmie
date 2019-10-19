@@ -44,7 +44,7 @@ class IndexInteractionTest extends TestCase
     public function createIndex(): void
     {
         $index = new Index('bar');
-        $result = $this->client->manage()->indices()->create($index);
+        $result = $this->client->manage()->indices()->insert($index);
 
         $this->assertTrue($result);
 
@@ -63,7 +63,7 @@ class IndexInteractionTest extends TestCase
     public function removeIndex(): void
     {
         // Create index to be remove
-        $this->client->manage()->indices()->create(new Index('bar'));
+        $this->client->manage()->indices()->insert(new Index('bar'));
 
         $response = $this->client->manage()->indices()->remove('bar');
 
@@ -75,8 +75,8 @@ class IndexInteractionTest extends TestCase
      */
     public function listIndices(): void
     {
-        $this->client->manage()->indices()->create(new Index('foo'));
-        $this->client->manage()->indices()->create(new Index('bar'));
+        $this->client->manage()->indices()->insert(new Index('foo'));
+        $this->client->manage()->indices()->insert(new Index('bar'));
 
         $collection = $this->client->manage()->indices()->list();
 
@@ -89,7 +89,7 @@ class IndexInteractionTest extends TestCase
      */
     public function getIndex(): void
     {
-        $this->client->manage()->indices()->create(new Index('foo'));
+        $this->client->manage()->indices()->insert(new Index('foo'));
 
         $element = $this->client->manage()->indices()->get('foo');
 
