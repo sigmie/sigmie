@@ -7,11 +7,11 @@ use Sigma\Collection;
 use Sigma\Contract\ResponseHandler;
 use Sigma\Contract\Manager as ManagerInterface;
 use Sigma\Index\Action\Get as GetAction;
-use Sigma\Index\Action\Create as CreateAction;
+use Sigma\Index\Action\Insert as InsertAction;
 use Sigma\Index\Action\Remove as RemoveAction;
 use Sigma\Index\Action\Listing as ListingAction;
 use Sigma\Index\Response\Get as GetResponse;
-use Sigma\Index\Response\Create as CreateResponse;
+use Sigma\Index\Response\Insert as InsertResponse;
 use Sigma\Index\Response\Remove as RemoveResponse;
 use Sigma\Index\Response\Listing as ListingResponse;
 use Sigma\Contract\ActionDispatcher;
@@ -45,18 +45,18 @@ class Manager implements ManagerInterface
     }
 
     /**
-     * Dispatch the index create action and
+     * Dispatch the index insert action and
      * pass the response to the handler
      *
      * @param Element $index
      *
      * @return boolean
      */
-    public function create(Element $index): bool
+    public function insert(Element $index): bool
     {
-        $response = $this->dispatcher->dispatch($index, new CreateAction);
+        $response = $this->dispatcher->dispatch($index, new InsertAction);
 
-        return $this->handler->handle($response, new CreateResponse);
+        return $this->handler->handle($response, new InsertResponse);
     }
 
     /**
