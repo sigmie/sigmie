@@ -1,11 +1,9 @@
 <?php
 
-namespace Sigma\Test\Unit\Index;
-
 use Elasticsearch\Client as Elasticsearch;
 use PHPUnit\Framework\TestCase;
 use Sigma\Contract\Subscribable;
-use Sigma\Index\Action\Insert;
+use Sigma\Index\Action\Remove;
 use Sigma\Index\Index;
 
 class InsertTest extends TestCase
@@ -22,12 +20,12 @@ class InsertTest extends TestCase
 
     public function setUp(): void
     {
-        $this->action = new Insert();
+        $this->action = new Remove();
 
         $this->esMock = $this->createMock(Elasticsearch::class);
 
         $this->esMock->method('indices')->willReturn($this->esMock);
-        $this->esMock->method('create')->willReturn([]);
+        $this->esMock->method('delete')->willReturn([]);
     }
     /**
      * @test
@@ -42,8 +40,8 @@ class InsertTest extends TestCase
      */
     public function events(): void
     {
-        $this->assertEquals($this->action->beforeEvent(), 'before.index.insert');
-        $this->assertEquals($this->action->afterEvent(), 'after.index.insert');
+        $this->assertEquals($this->action->beforeEvent(), 'before.index.remove');
+        $this->assertEquals($this->action->afterEvent(), 'after.index.remove');
     }
 
     /**
@@ -51,7 +49,7 @@ class InsertTest extends TestCase
      */
     public function prepare(): void
     {
-        $prepared = $this->action->prepare(new Index('foo'));
+        $prepared = $this->action->prepare('foo');
 
         $this->assertEquals(['index' => 'foo'], $prepared);
     }
@@ -62,7 +60,7 @@ class InsertTest extends TestCase
     public function execute(): void
     {
         $this->esMock->expects($this->once())->method('indices');
-        $this->esMock->expects($this->once())->method('create')->with(['foo']);
+        $this->esMock->expects($this->once())->method('delete')->with(['foo']);
 
         $this->action->execute($this->esMock, ['foo']);
     }
