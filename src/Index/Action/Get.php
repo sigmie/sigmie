@@ -6,7 +6,7 @@ use Sigma\Contract\Subscribable;
 use Elasticsearch\Client as Elasticsearch;
 use Sigma\Contract\Action;
 
-class Get implements Action, Subscribable
+class Get implements Action
 {
     /**
      * Action data preparation
@@ -25,16 +25,6 @@ class Get implements Action, Subscribable
     }
 
     /**
-     * Before event name
-     *
-     * @return string
-     */
-    public function beforeEvent(): string
-    {
-        return 'before.index.get';
-    }
-
-    /**
      * Execute the elasticsearch call
      *
      * @param Elasticsearch $elasticsearch
@@ -45,15 +35,5 @@ class Get implements Action, Subscribable
     public function execute(Elasticsearch $elasticsearch, array $params): array
     {
         return $elasticsearch->indices()->get($params);
-    }
-
-    /**
-     * After event name
-     *
-     * @return string
-     */
-    public function afterEvent(): string
-    {
-        return 'after.index.get';
     }
 }
