@@ -1,11 +1,13 @@
 <?php
 
+namespace Sigma\Test\Unit\Index;
+
 use Elasticsearch\Client as Elasticsearch;
 use PHPUnit\Framework\TestCase;
 use Sigma\Contract\Subscribable;
 use Sigma\Index\Action\Get;
 
-class InsertTest extends TestCase
+class GetTest extends TestCase
 {
     /**
      * @var Insert
