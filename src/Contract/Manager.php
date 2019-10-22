@@ -11,13 +11,13 @@ use Sigma\Collection;
 interface Manager
 {
     /**
-     * Create method
+     * Insert method
      *
      * @param Element $element
      *
      * @return boolean
      */
-    public function create(Element $element): bool;
+    public function insert(Element $element): bool;
 
     /**
      * Remove method
