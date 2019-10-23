@@ -28,6 +28,7 @@ class RemoveTest extends TestCase
         $this->esMock->method('indices')->willReturn($this->esMock);
         $this->esMock->method('delete')->willReturn([]);
     }
+
     /**
      * @test
      */
