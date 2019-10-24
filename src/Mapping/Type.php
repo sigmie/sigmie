@@ -11,7 +11,7 @@ abstract class Type implements TypeInterface
      *
      * @return array
      */
-    protected function parameters(): array
+    public function parameters(): array
     {
         return [];
     }

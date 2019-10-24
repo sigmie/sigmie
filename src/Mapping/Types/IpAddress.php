@@ -4,7 +4,7 @@ namespace Sigma\Mapping\Types;
 
 use Sigma\Mapping\Type;
 
-class Keyword extends Type
+class IpAddress extends Type
 {
     public function field(): string
     {
