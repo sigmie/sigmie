@@ -46,12 +46,12 @@ class IndexInteractionTest extends TestCase
         $index = new Index('bar');
         $result = $this->client->manage()->indices()->insert($index);
 
-        $this->assertTrue($result);
+        $this->isInstanceOf(Index::class);
 
         $element = $this->client->manage()->indices()->get('bar');
 
         $this->assertInstanceOf(Index::class, $element);
-        $this->assertEquals($element->getIdentifier(), 'bar');
+        $this->assertEquals($element->name, 'bar');
 
         // Clean up created index
         $this->client->manage()->indices()->remove('bar');
@@ -94,6 +94,6 @@ class IndexInteractionTest extends TestCase
         $element = $this->client->manage()->indices()->get('foo');
 
         $this->assertInstanceOf(Index::class, $element);
-        $this->assertEquals('foo', $element->getIdentifier());
+        $this->assertEquals('foo', $element->name);
     }
 }

@@ -4,35 +4,25 @@ namespace Sigma;
 
 abstract class Element
 {
-    /**
-     * Identifier
-     *
-     * @var string
-     */
-    private $identifier;
-
-    public function __construct(?string $identifier = null)
+    public function __construct()
     {
-        $this->identifier = $identifier;
     }
 
-    /**
-     * Get the value of identifier
-     */
-    public function getIdentifier()
+    public function __set($name, $value)
     {
-        return $this->identifier;
-    }
+        $name = ltrim($name, '_');
 
-    /**
-     * Set the value of identifier
-     *
-     * @return  self
-     */
-    public function setIdentifier($identifier)
-    {
-        $this->identifier = $identifier;
+        if (property_exists($this, $name)) {
+            $this->$name = $value;
+        }
 
         return $this;
+    }
+
+    public function __get($name)
+    {
+        if (property_exists($this, $name)) {
+            return $this->$name;
+        }
     }
 }

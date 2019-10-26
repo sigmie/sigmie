@@ -52,7 +52,7 @@ class Manager implements ManagerInterface
      *
      * @return boolean
      */
-    public function insert(Element $index): bool
+    public function insert(Element $index): Element
     {
         $response = $this->dispatcher->dispatch($index, new InsertAction);
 

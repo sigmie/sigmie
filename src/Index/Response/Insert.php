@@ -3,6 +3,8 @@
 namespace Sigma\Index\Response;
 
 use Sigma\Contract\Response;
+use Sigma\Exception\ActionFailed;
+use Sigma\Index\Index;
 
 class Insert implements Response
 {
@@ -16,6 +18,6 @@ class Insert implements Response
      */
     public function result(array $response)
     {
-        return $response['acknowledged'];
+        return new Index($response['index']);
     }
 }

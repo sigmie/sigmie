@@ -17,7 +17,7 @@ interface Manager
      *
      * @return boolean
      */
-    public function insert(Element $element): bool;
+    public function insert(Element $element): Element;
 
     /**
      * Remove method

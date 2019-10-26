@@ -19,7 +19,7 @@ class Insert implements Action, Subscribable
     public function prepare($index): array
     {
         $params = [
-            'index' => $index->getIdentifier()
+            'index' => $index->name
         ];
 
         return $params;

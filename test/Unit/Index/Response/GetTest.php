@@ -24,6 +24,6 @@ class GetTest extends TestCase
         $result = $this->response->result(['identifier' => ['foo', 'bar']]);
 
         $this->assertInstanceOf(Index::class, $result);
-        $this->assertEquals('identifier', $result->getIdentifier());
+        $this->assertEquals('identifier', $result->name);
     }
 }

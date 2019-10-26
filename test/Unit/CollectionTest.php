@@ -26,8 +26,8 @@ class CollectionTest extends TestCase
      */
     public function add(): void
     {
-        $this->collection->add(new Index());
-        $this->collection->add(new Index());
+        $this->collection->add(new Index('foo'));
+        $this->collection->add(new Index('bar'));
 
         $this->assertEquals(2, $this->collection->count());
     }
@@ -40,7 +40,7 @@ class CollectionTest extends TestCase
         $this->collection->add(new Index('first'));
         $this->collection->add(new Index('second'));
 
-        $identifier = $this->collection->first()->getIdentifier();
+        $identifier = $this->collection->first()->name;
 
         $this->assertEquals('first', $identifier);
     }
@@ -54,7 +54,7 @@ class CollectionTest extends TestCase
         $this->collection->add(new Index('second'));
         $this->collection->add(new Index('third'));
 
-        $identifier = $this->collection->last()->getIdentifier();
+        $identifier = $this->collection->last()->name;
 
         $this->assertEquals('third', $identifier);
     }
@@ -72,7 +72,7 @@ class CollectionTest extends TestCase
      */
     public function arrayAccesible(): void
     {
-        $this->collection->add(new Index());
+        $this->collection->add(new Index('foo'));
 
         $this->assertArrayHasKey(0, $this->collection);
     }
@@ -82,8 +82,8 @@ class CollectionTest extends TestCase
      */
     public function countable(): void
     {
-        $this->collection->add(new Index());
-        $this->collection->add(new Index());
+        $this->collection->add(new Index('foo'));
+        $this->collection->add(new Index('foo'));
 
         $this->assertEquals(2, count($this->collection));
     }
@@ -103,7 +103,7 @@ class CollectionTest extends TestCase
      */
     public function offsetGet(): void
     {
-        $this->collection->add(new Index());
+        $this->collection->add(new Index('foo'));
 
         $element = $this->collection->offsetGet(0);
 
@@ -115,7 +115,7 @@ class CollectionTest extends TestCase
      */
     public function offsetUnset(): void
     {
-        $this->collection->add(new Index());
+        $this->collection->add(new Index('foo'));
 
         $this->collection->offsetUnset(0);
 
@@ -132,6 +132,6 @@ class CollectionTest extends TestCase
 
         $this->collection->offsetSet(1, new Index('replaced'));
 
-        $this->assertEquals('replaced', $this->collection[1]->getIdentifier());
+        $this->assertEquals('replaced', $this->collection[1]->name);
     }
 }
