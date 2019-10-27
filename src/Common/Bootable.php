@@ -2,16 +2,28 @@
 
 namespace Sigma\Common;
 
+use Sigma\Contract\Action;
 use Sigma\Contract\ResponseHandler;
 use Sigma\Contract\ActionDispatcher;
+use Sigma\Contract\Response;
 
 trait Bootable
 {
     private $booted = false;
 
-    private $handler = null;
+    /**
+     * Response handler
+     *
+     * @var ResponseHandler
+     */
+    private $handler;
 
-    private $dispatcher = null;
+    /**
+     * Action dispatcher
+     *
+     * @var ActionDispatcher
+     */
+    private $dispatcher;
 
     public function boot(ActionDispatcher $dispatcher, ResponseHandler $handler)
     {
@@ -19,5 +31,12 @@ trait Bootable
         $this->handler = $handler;
 
         $this->booted = true;
+    }
+
+    public function execute($params, Action $action, Response $response)
+    {
+        $rawResponse = $this->dispatcher->dispatch($params, $action);
+
+        return $this->handler->handle($rawResponse, $response);
     }
 }
