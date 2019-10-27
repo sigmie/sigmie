@@ -14,7 +14,7 @@ use Sigma\Index\Response\Insert as InsertResponse;
 use Sigma\Index\Response\Remove as RemoveResponse;
 use Sigma\Index\Response\Listing as ListingResponse;
 
-class Sigma
+class Manager
 {
     use Bootable;
 
@@ -68,22 +68,5 @@ class Sigma
     public function get(string $name): Element
     {
         return $this->execute($name, new GetAction, new GetResponse);
-    }
-
-    public function __get($name)
-    {
-        if (property_exists($this, $name)) {
-            return $this->$name;
-        }
-    }
-
-    private function handler()
-    {
-        return $this->handler;
-    }
-
-    private function dispatcher()
-    {
-        return $this->dispatcher;
     }
 }

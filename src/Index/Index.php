@@ -4,9 +4,6 @@ namespace Sigma\Index;
 
 use Sigma\Element;
 use Sigma\Exception\EmptyIndexName;
-use Elasticsearch\Client as Elasticsearch;
-use Monolog\Handler\HandlerInterface;
-use Sigma\Common\Bootable;
 
 class Index extends Element
 {

@@ -37,15 +37,4 @@ class DocumentInteractionTest extends TestCase
             $this->client->elasticsearch()->indices()->delete(['index' => $index['index']]);
         }
     }
-
-    /**
-     * @test
-     */
-    public function addDocument(): void
-    {
-        $index = new Index('bar');
-        $result = $this->client->index()->insert($index);
-
-        $this->client->boot($index);
-    }
 }

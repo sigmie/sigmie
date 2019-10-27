@@ -2,7 +2,7 @@
 
 namespace Sigma;
 
-use Sigma\Index\Sigma;
+use Sigma\Index\Manager;
 use Sigma\Manager\ManagerBuilder;
 use Elasticsearch\ClientBuilder;
 use Elasticsearch\Client as Elasticsearch;
@@ -59,33 +59,31 @@ class Client
      * Facade constructor
      *
      * @param Elasticsearch $elasticsearch
-     * @param Sigma $manager
+     * @param Manager $manager
      * @param EventManager $dispatcher
      */
     public function __construct(
         Elasticsearch $elasticsearch,
-        Sigma $manager,
+        Manager $manager,
         EventManager $dispatcher
     ) {
         $this->elasticsearch = $elasticsearch;
         $this->events = $dispatcher;
         $this->manager = $manager;
-        $this->dispatcher = $manager->dispatcher;
-        $this->handler = $manager->handler;
     }
 
     /**
      * Facade create method
      *
      * @param Elasticsearch|null $elasticsearch
-     * @param Sigma|null $manager
+     * @param Manager|null $manager
      * @param EventDispatcher|null $dispatcher
      *
      * @return self
      */
     public static function create(
         ?Elasticsearch $elasticsearch = null,
-        ?Sigma $manager = null,
+        ?Manager $manager = null,
         ?EventDispatcher $dispatcher = null
     ) {
         if ($elasticsearch === null) {
@@ -145,9 +143,9 @@ class Client
     /**
      * Entry point for Sigma
      *
-     * @return Sigma
+     * @return Manager
      */
-    public function index(): Sigma
+    public function index(): Manager
     {
         return $this->manager;
     }

@@ -25,6 +25,11 @@ trait Bootable
      */
     private $dispatcher;
 
+    public function isBooted()
+    {
+        return $this->booted;
+    }
+
     public function boot(ActionDispatcher $dispatcher, ResponseHandler $handler)
     {
         $this->dispatcher = $dispatcher;
