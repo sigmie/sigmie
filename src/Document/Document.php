@@ -5,6 +5,7 @@ namespace Sigma\Document;
 use Sigma\Element;
 use Sigma\Exception\NotImplementedException;
 use Sigma\Mapping\Types\Boolean;
+use Sigma\Mapping\Types\Integer;
 use Sigma\Mapping\Types\Text;
 
 class Document extends Element
@@ -21,7 +22,7 @@ class Document extends Element
      *
      * @var string
      */
-    protected $id;
+    protected $id = [Text::class];
 
     /**
      * Bolean indicator if the document
@@ -60,6 +61,13 @@ class Document extends Element
      * @var bool
      */
     protected $active = [Boolean::class, true];
+
+    /**
+     * Document version indicator
+     *
+     * @var array
+     */
+    protected $version = [Integer::class, true];
 
     public function fill()
     {

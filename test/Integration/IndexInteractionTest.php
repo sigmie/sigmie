@@ -44,17 +44,17 @@ class IndexInteractionTest extends TestCase
     public function createIndex(): void
     {
         $index = new Index('bar');
-        $result = $this->client->manage()->indices()->insert($index);
+        $result = $this->client->index()->insert($index);
 
         $this->isInstanceOf(Index::class);
 
-        $element = $this->client->manage()->indices()->get('bar');
+        $element = $this->client->index()->get('bar');
 
         $this->assertInstanceOf(Index::class, $element);
         $this->assertEquals($element->name, 'bar');
 
         // Clean up created index
-        $this->client->manage()->indices()->remove('bar');
+        $this->client->index()->remove('bar');
     }
 
     /**
@@ -63,9 +63,9 @@ class IndexInteractionTest extends TestCase
     public function removeIndex(): void
     {
         // Create index to be remove
-        $this->client->manage()->indices()->insert(new Index('bar'));
+        $this->client->index()->insert(new Index('bar'));
 
-        $response = $this->client->manage()->indices()->remove('bar');
+        $response = $this->client->index()->remove('bar');
 
         $this->assertTrue($response);
     }
@@ -75,10 +75,10 @@ class IndexInteractionTest extends TestCase
      */
     public function listIndices(): void
     {
-        $this->client->manage()->indices()->insert(new Index('foo'));
-        $this->client->manage()->indices()->insert(new Index('bar'));
+        $this->client->index()->insert(new Index('foo'));
+        $this->client->index()->insert(new Index('bar'));
 
-        $collection = $this->client->manage()->indices()->list();
+        $collection = $this->client->index()->list();
 
         $this->assertCount(2, $collection);
         $this->assertInstanceOf(Collection::class, $collection);
@@ -89,9 +89,9 @@ class IndexInteractionTest extends TestCase
      */
     public function getIndex(): void
     {
-        $this->client->manage()->indices()->insert(new Index('foo'));
+        $this->client->index()->insert(new Index('foo'));
 
-        $element = $this->client->manage()->indices()->get('foo');
+        $element = $this->client->index()->get('foo');
 
         $this->assertInstanceOf(Index::class, $element);
         $this->assertEquals('foo', $element->name);

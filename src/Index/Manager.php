@@ -103,4 +103,21 @@ class Manager implements ManagerInterface
 
         return $this->handler->handle($response, new GetResponse);
     }
+
+    public function __get($name)
+    {
+        if (property_exists($this, $name)) {
+            return $this->$name;
+        }
+    }
+
+    private function handler()
+    {
+        return $this->handler;
+    }
+
+    private function dispatcher()
+    {
+        return $this->dispatcher;
+    }
 }

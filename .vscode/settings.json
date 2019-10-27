@@ -12,5 +12,6 @@
         "bmewburn.vscode-intelephense-client",
         "neilbrayfield.php-docblocker",
         "ikappas.phpcs",
-    ]
+    ],
+    "emmet.showSuggestionsAsSnippets": false
 }

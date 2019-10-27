@@ -2,12 +2,14 @@
 
 namespace Sigma;
 
-use Sigma\Manager\Manager;
+use Sigma\Index\Manager;
 use Sigma\Manager\ManagerBuilder;
 use Elasticsearch\ClientBuilder;
 use Elasticsearch\Client as Elasticsearch;
 use Symfony\Component\EventDispatcher\EventDispatcher as EventManager;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface as EventDispatcher;
+use Sigma\Common\Bootable;
+use Sigma\Contract\ActionDispatcher;
 
 class Client
 {
@@ -33,6 +35,27 @@ class Client
     private $connected;
 
     /**
+     * Event manager
+     *
+     * @var EventManager
+     */
+    private $events;
+
+    /**
+     * Action dispatcher
+     *
+     * @var ActionDispatcher
+     */
+    private $dispatcher;
+
+    /**
+     * Reponse handler
+     *
+     * @var ResponseHandler
+     */
+    private $handler;
+
+    /**
      * Facade constructor
      *
      * @param Elasticsearch $elasticsearch
@@ -45,8 +68,10 @@ class Client
         EventManager $dispatcher
     ) {
         $this->elasticsearch = $elasticsearch;
+        $this->events = $dispatcher;
         $this->manager = $manager;
-        $this->dispatcher = $dispatcher;
+        $this->dispatcher = $manager->dispatcher;
+        $this->handler = $manager->handler;
     }
 
     /**
@@ -101,7 +126,7 @@ class Client
      */
     public function events(): EventManager
     {
-        return $this->dispatcher;
+        return $this->events;
     }
 
     /**
@@ -118,12 +143,19 @@ class Client
     }
 
     /**
-     * Entry point for nielastic
+     * Entry point for Sigma
      *
      * @return Manager
      */
-    public function manage(): Manager
+    public function index(): Manager
     {
         return $this->manager;
+    }
+
+    public function boot(Element $bootable): Element
+    {
+        $bootable->boot($this->dispatcher, $this->handler);
+
+        return $bootable;
     }
 }

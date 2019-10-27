@@ -2,11 +2,11 @@
 
 namespace Sigma;
 
+use Sigma\Common\Bootable;
+
 abstract class Element
 {
-    public function __construct()
-    {
-    }
+    use Bootable;
 
     public function __set($name, $value)
     {

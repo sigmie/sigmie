@@ -3,8 +3,7 @@
 namespace Sigma\Manager;
 
 use Elasticsearch\Client as Elasticsearch;
-use Sigma\Index\Manager as IndexManager;
-use Sigma\Manager\Manager;
+use Sigma\Index\Manager;
 use Sigma\ActionDispatcher;
 use Sigma\Contract\ActionDispatcher as ActionDispatcherInterface;
 use Sigma\Contract\ResponseHandler as ResponseHandlerInterface;
@@ -54,10 +53,10 @@ class ManagerBuilder
      */
     public function build(): Manager
     {
-        $manager = new Manager();
-        $manager->index = $this->newIndexManager();
+        $actionDispatcher = $this->actionDispatcher();
+        $responseHandler = $this->responseHandler();
 
-        return $manager;
+        return  new Manager($actionDispatcher, $responseHandler);
     }
 
     /**
@@ -65,7 +64,7 @@ class ManagerBuilder
      *
      * @return ResponseHandlerInterface
      */
-    private function responseHandler(): ResponseHandlerInterface
+    function responseHandler(): ResponseHandlerInterface
     {
         if ($this->responseHandler instanceof ResponseHandlerInterface) {
             return $this->responseHandler;
@@ -106,21 +105,6 @@ class ManagerBuilder
         $this->actionDispatcher = new ActionDispatcher($this->elasticsearch, $this->eventDispatcher());
 
         return $this->actionDispatcher;
-    }
-
-    /**
-     * Index manager initialization
-     *
-     * @return IndexManager
-     */
-    public function newIndexManager(): IndexManager
-    {
-        $actionDispatcher = $this->actionDispatcher();
-        $responseHandler = $this->responseHandler();
-
-        $manager = new IndexManager($actionDispatcher, $responseHandler);
-
-        return $manager;
     }
 
     /**
