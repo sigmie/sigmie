@@ -13,8 +13,9 @@ use Sigma\Index\Response\Get as GetResponse;
 use Sigma\Index\Response\Insert as InsertResponse;
 use Sigma\Index\Response\Remove as RemoveResponse;
 use Sigma\Index\Response\Listing as ListingResponse;
+use Sigma\Contract\Bootable as BootableInterface;
 
-class Manager
+class Manager implements BootableInterface
 {
     use Bootable;
 

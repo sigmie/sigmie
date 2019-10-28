@@ -157,28 +157,4 @@ class ManagerBuilder
 
         return $this;
     }
-
-    /**
-     * Get response handler
-     *
-     * @return  ResponseHandlerInterface
-     */
-    public function getResponseHandler()
-    {
-        return $this->responseHandler;
-    }
-
-    /**
-     * Set response handler
-     *
-     * @param  ResponseHandlerInterface  $responseHandler  Response handler
-     *
-     * @return  self
-     */
-    public function setResponseHandler(ResponseHandlerInterface $responseHandler)
-    {
-        $this->responseHandler = $responseHandler;
-
-        return $this;
-    }
 }

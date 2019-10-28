@@ -37,4 +37,12 @@ class DocumentInteractionTest extends TestCase
             $this->client->elasticsearch()->indices()->delete(['index' => $index['index']]);
         }
     }
+
+    /**
+    * @test
+    */
+    public function foo(): void
+    {
+        $this->assertTrue(true);
+    }
 }

@@ -25,7 +25,7 @@ trait Bootable
      */
     private $dispatcher;
 
-    public function isBooted()
+    public function isBooted() : bool
     {
         return $this->booted;
     }
