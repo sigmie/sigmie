@@ -18,6 +18,8 @@ class Insert implements Response
      */
     public function result(array $response)
     {
+        dump($response);
+        die();
         return new Index($response['index']);
     }
 }

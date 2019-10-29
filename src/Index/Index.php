@@ -2,11 +2,17 @@
 
 namespace Sigma\Index;
 
+use Sigma\Common\Bootable;
+use Sigma\Contract\Bootable as BootableInterface;
+use Sigma\Document\Action\Insert as SigmaDocumentInsert;
 use Sigma\Element;
 use Sigma\Exception\EmptyIndexName;
+use Sigma\Index\Action\Insert;
+use Sigma\Index\Response\Insert as SigmaInsert;
 
-class Index extends Element
+class Index extends Element implements BootableInterface
 {
+    use Bootable;
     /**
      * Identifier
      *
@@ -41,8 +47,12 @@ class Index extends Element
         $this->name = $name;
     }
 
-    public function add()
-    { }
+    public function add($element)
+    {
+        $element->index = $this->name;
+
+        $this->execute($element, new SigmaDocumentInsert, new SigmaInsert);
+    }
 
     public function query()
     { }

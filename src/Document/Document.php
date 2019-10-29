@@ -2,13 +2,15 @@
 
 namespace Sigma\Document;
 
+use Sigma\Contract\Arrayable;
+use Sigma\Contract\Jsonable;
 use Sigma\Element;
 use Sigma\Exception\NotImplementedException;
 use Sigma\Mapping\Types\Boolean;
 use Sigma\Mapping\Types\Integer;
 use Sigma\Mapping\Types\Text;
 
-class Document extends Element
+class Document extends Element implements Arrayable
 {
     /**
      * Index that the Document belogs to
@@ -68,6 +70,18 @@ class Document extends Element
      * @var array
      */
     protected $version = [Integer::class, true];
+
+    public function toArray(): array
+    {
+        return [
+            'index' => $this->index,
+            'type' => self::class,
+            'body' => [
+                'foo' => 'bar',
+                'name' => 'john doe',
+            ]
+        ];
+    }
 
     public function fill()
     {

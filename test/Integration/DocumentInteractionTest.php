@@ -7,6 +7,7 @@ use Sigma\Client;
 use Sigma\Collection;
 use Sigma\Index\Index;
 use PHPUnit\Framework\TestCase;
+use Sigma\Document\Document;
 
 class DocumentInteractionTest extends TestCase
 {
@@ -43,6 +44,13 @@ class DocumentInteractionTest extends TestCase
     */
     public function foo(): void
     {
-        $this->assertTrue(true);
+        $index = new Index('foo');
+
+        $this->client->boot($index);
+
+        $index->add(new Document());
+
+        dump($index);
+        die();
     }
 }
