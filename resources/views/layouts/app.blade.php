@@ -23,8 +23,8 @@
 </head>
 
 <body class="min-h-full h-full">
-    <div id="app" class="min-h-full h-full">
-        <nav class="top-0 text-gray-500 bg-gray-900">
+    <div id="app" class="min-h-full h-full bg-gray-100">
+        <nav class="top-0 text-gray-500 shadow bg-white">
             <div class="row">
                 <div class="col-md-4 col-sm-4 col-xs-4">
                     <div class="h-full flex justify-center">
@@ -45,9 +45,9 @@
                     <div class="h-full flex justify-center">
                         <!-- Authentication Links -->
                         @guest
-                        <a class="m-2 py-2 px-4" href="{{ route('login') }}">{{ __('Login') }}</a>
+                        <a class="m-2 py-2 px-4 hover:text-gray-600" href="{{ route('login') }}">{{ __('Login') }}</a>
                         @if (Route::has('register'))
-                        <a class="m-2 py-2 px-4" href="{{ route('register') }}">{{ __('Register') }}</a>
+                        <a class="m-2 py-2 px-4 hover:text-gray-600" href="{{ route('register') }}">{{ __('Register') }}</a>
                         @endif
                         @else
                     </div>
