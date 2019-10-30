@@ -10,6 +10,8 @@ use Symfony\Component\EventDispatcher\EventDispatcher as EventManager;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface as EventDispatcher;
 use Sigma\ActionDispatcher;
 use Sigma\Contract\Bootable;
+use Sigma\Event\Factory;
+use Sigma\Event\Registry;
 
 class Client
 {
@@ -99,6 +101,12 @@ class Client
 
         $actionDispatcher = new ActionDispatcher($elasticsearch, $events);
         $responseHandler = new ResponseHandler();
+
+        $subcribers = (new Factory())->create(Registry::subscribers(), [$actionDispatcher, $responseHandler, $elasticsearch]);
+
+        foreach ($subcribers as $subcriber) {
+            $events->addSubscriber($subcriber);
+        }
 
         return new Client($elasticsearch, $events, $actionDispatcher, $responseHandler);
     }

@@ -1,9 +1,0 @@
-<?php
-
-/**
- * 
- */
-trait Executive
-{
-    
-}
