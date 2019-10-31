@@ -39,7 +39,6 @@
 
                 </div>
 
-
                 <div class="col-md-4 col-sm-4 col-xd-4">
                     <!-- Right Side Of Navbar -->
                     <div class="h-full flex justify-center">
@@ -78,6 +77,9 @@
             @yield('content')
         </main>
     </div>
+    @if(config('app.env') == 'local')
+    <script src="http://localhost:35729/livereload.js"></script>
+    @endif
 </body>
 
 </html>

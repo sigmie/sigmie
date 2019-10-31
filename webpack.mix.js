@@ -1,5 +1,7 @@
 const mix = require('laravel-mix');
 const tailwindcss = require('tailwindcss')
+const LiveReloadPlugin = require('webpack-livereload-plugin');
+
 
 /*
  |--------------------------------------------------------------------------
@@ -12,7 +14,11 @@ const tailwindcss = require('tailwindcss')
  |
  */
 
-mix.js('resources/js/app.js', 'public/js')
+mix.webpackConfig({
+    plugins: [
+        new LiveReloadPlugin()
+    ]
+}).js('resources/js/app.js', 'public/js')
     .sass('resources/sass/app.scss', 'public/css')
     .options({
         processCssUrls: false,

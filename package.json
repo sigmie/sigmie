@@ -21,7 +21,8 @@
         "sass": "^1.23.1",
         "sass-loader": "^7.1.0",
         "vue": "^2.5.17",
-        "vue-template-compiler": "^2.6.10"
+        "vue-template-compiler": "^2.6.10",
+        "webpack-livereload-plugin": "^1.2.0"
     },
     "dependencies": {
         "flexboxgrid": "^6.3.1",
