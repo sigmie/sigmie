@@ -3,7 +3,7 @@
 namespace Sigma\Test\Integration;
 
 use Elasticsearch\ClientBuilder;
-use Sigma\Client;
+use Sigma\Sigma;
 use Sigma\Collection;
 use Sigma\Index\Index;
 use PHPUnit\Framework\TestCase;
@@ -14,9 +14,9 @@ class DocumentInteractionTest extends TestCase
     /**
      * Client instance
      *
-     * @var Client
+     * @var Sigma
      */
-    private $client;
+    private $sigma;
 
     /**
      * Setup stubs
@@ -30,12 +30,12 @@ class DocumentInteractionTest extends TestCase
         $host = getenv('ES_HOST');
         $builder = ClientBuilder::create();
         $elasticsearch = $builder->setHosts([$host])->build();
-        $this->client = Client::create($elasticsearch);
+        $this->sigma = Sigma::create($elasticsearch);
 
-        $indices = $this->client->elasticsearch()->cat()->indices(['index' => '*']);
+        $indices = $this->sigma->elasticsearch()->cat()->indices(['index' => '*']);
 
         foreach ($indices as $index) {
-            $this->client->elasticsearch()->indices()->delete(['index' => $index['index']]);
+            $this->sigma->elasticsearch()->indices()->delete(['index' => $index['index']]);
         }
     }
 
@@ -44,13 +44,6 @@ class DocumentInteractionTest extends TestCase
     */
     public function foo(): void
     {
-        $index = new Index('foo');
 
-        $this->client->boot($index);
-
-        $index->add(new Document());
-
-        dump($index);
-        die();
     }
 }

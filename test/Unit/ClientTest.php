@@ -3,14 +3,14 @@
 namespace Sigma\Test\Unit;
 
 use PHPUnit\Framework\TestCase;
-use Sigma\Client;
+use Sigma\Sigma;
 use Elasticsearch\Client as Elasticsearch;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class ClientTest extends TestCase
 {
     /**
-     * @var Client
+     * @var Sigma
      */
     private $client;
 
@@ -26,7 +26,7 @@ class ClientTest extends TestCase
     {
         $this->esMock = $this->createMock(Elasticsearch::class);
 
-        $this->client = Client::create($this->esMock);
+        $this->client = Sigma::create($this->esMock);
     }
 
     /**
@@ -58,7 +58,7 @@ class ClientTest extends TestCase
      */
     public function elasticsearch(): void
     {
-        $client = Client::create();
+        $client = Sigma::create();
         $elasticsearch = $client->elasticsearch();
 
         $this->assertInstanceOf(Elasticsearch::class, $elasticsearch);

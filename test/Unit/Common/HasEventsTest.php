@@ -4,7 +4,7 @@
 namespace Sigma\Test\Unit\Common;
 
 use PHPUnit\Framework\TestCase;
-use Sigma\Client;
+use Sigma\Sigma;
 use Sigma\Common\HasEvents;
 
 class HasEventsTest extends TestCase
@@ -14,7 +14,7 @@ class HasEventsTest extends TestCase
     */
     public function foo()
     {
-        $client = Client::create();
+        $client = Sigma::create();
 
         dump($client->events());
         die();

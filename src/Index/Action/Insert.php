@@ -32,7 +32,7 @@ class Insert implements Action, Subscribable
      */
     public function beforeEvent(): string
     {
-        return 'before.index.insert';
+        return 'beforeIndexInsert';
     }
 
     /**

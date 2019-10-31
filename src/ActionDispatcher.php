@@ -55,7 +55,7 @@ class ActionDispatcher implements ActionDispatcherInterface
             $afterEvent = $action->afterEvent();
         }
 
-        if ($this->eventDispatcher->hasListeners($beforeEvent)) {
+        if ($this->eventDispatcher->hasListeners($beforeEvent) && $beforeEvent !== null) {
             $this->eventDispatcher->dispatch($beforeEvent, new GenericEvent($data));
         }
 
@@ -63,7 +63,7 @@ class ActionDispatcher implements ActionDispatcherInterface
 
         $response = $action->execute($this->elasticsearch, $params);
 
-        if ($this->eventDispatcher->hasListeners($afterEvent)) {
+        if ($this->eventDispatcher->hasListeners($afterEvent) && $afterEvent !== null) {
             $this->eventDispatcher->dispatch($afterEvent, new GenericEvent($response));
         }
 

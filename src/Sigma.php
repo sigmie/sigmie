@@ -3,31 +3,25 @@
 namespace Sigma;
 
 use Sigma\Index\Manager;
-use Sigma\Manager\ManagerBuilder;
 use Elasticsearch\ClientBuilder;
 use Elasticsearch\Client as Elasticsearch;
 use Symfony\Component\EventDispatcher\EventDispatcher as EventManager;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface as EventDispatcher;
 use Sigma\ActionDispatcher;
-use Sigma\Contract\Bootable;
 use Sigma\Event\Factory;
 use Sigma\Event\Registry;
+use Sigma\Common\InteractsWithIndex;
 
-class Client
+class Sigma
 {
+    use InteractsWithIndex;
+
     /**
      * Elastic search client
      *
      * @var Elasticsearch
      */
     private $elasticsearch;
-
-    /**
-     * Manager
-     *
-     * * @var Manager
-     */
-    private $manager;
 
     /**
      * Connected flag
@@ -44,20 +38,6 @@ class Client
     private $events;
 
     /**
-     * Action dispatcher
-     *
-     * @var ActionDispatcher
-     */
-    private $dispatcher;
-
-    /**
-     * Reponse handler
-     *
-     * @var ResponseHandler
-     */
-    private $handler;
-
-    /**
      * Facade constructor
      *
      * @param Elasticsearch $elasticsearch
@@ -72,10 +52,8 @@ class Client
     ) {
         $this->elasticsearch = $elasticsearch;
         $this->events = $dispatcher;
-        $this->actionDispatcher = $actionDispatcher;
-        $this->responseHandler = $responseHandler;
 
-        $this->manager = new Manager();
+        $this->boot($actionDispatcher, $responseHandler);
     }
 
     /**
@@ -108,7 +86,7 @@ class Client
             $events->addSubscriber($subcriber);
         }
 
-        return new Client($elasticsearch, $events, $actionDispatcher, $responseHandler);
+        return new Sigma($elasticsearch, $events, $actionDispatcher, $responseHandler);
     }
 
     /**
@@ -144,26 +122,5 @@ class Client
         $this->connected = $this->elasticsearch->ping();
 
         return $this->connected;
-    }
-
-    /**
-     * Entry point for Sigma
-     *
-     * @return Manager
-     */
-    public function index(): Manager
-    {
-        if ($this->manager->isBooted() === false) {
-            $this->boot($this->manager);
-        }
-
-        return $this->manager;
-    }
-
-    public function boot(Bootable $bootable): Bootable
-    {
-        $bootable->boot($this->actionDispatcher, $this->responseHandler);
-
-        return $bootable;
     }
 }

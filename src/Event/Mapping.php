@@ -11,6 +11,6 @@ class Mapping implements EventSubscriberInterface
 
     public function beforeIndexInsert()
     {
-        dump('beforeIndexInsert');
+        dump('fired!');
     }
 }
