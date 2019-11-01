@@ -51,12 +51,12 @@ class ActionDispatcher implements ActionDispatcherInterface
         $afterEvent = null;
 
         if ($action instanceof Subscribable) {
-            $beforeEvent = $action->beforeEvent();
-            $afterEvent = $action->afterEvent();
+            $beforeEvent = $action->preEvent();
+            $afterEvent = $action->postEvent();
         }
 
         if ($this->eventDispatcher->hasListeners($beforeEvent) && $beforeEvent !== null) {
-            $this->eventDispatcher->dispatch($beforeEvent, new GenericEvent($data));
+            $this->eventDispatcher->dispatch(new $beforeEvent($data), $beforeEvent);
         }
 
         $params = $action->prepare($data);

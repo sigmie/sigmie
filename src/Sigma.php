@@ -8,14 +8,10 @@ use Elasticsearch\Client as Elasticsearch;
 use Symfony\Component\EventDispatcher\EventDispatcher as EventManager;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface as EventDispatcher;
 use Sigma\ActionDispatcher;
-use Sigma\Event\Factory;
-use Sigma\Event\Registry;
-use Sigma\Common\InteractsWithIndex;
+use Sigma\Provider\SigmaProvider;
 
-class Sigma
+class Sigma extends SigmaProvider
 {
-    use InteractsWithIndex;
-
     /**
      * Elastic search client
      *
@@ -53,6 +49,8 @@ class Sigma
         $this->elasticsearch = $elasticsearch;
         $this->events = $dispatcher;
 
+        $this->registerListeners();
+
         $this->boot($actionDispatcher, $responseHandler);
     }
 
@@ -79,12 +77,6 @@ class Sigma
 
         $actionDispatcher = new ActionDispatcher($elasticsearch, $events);
         $responseHandler = new ResponseHandler();
-
-        $subcribers = (new Factory())->create(Registry::subscribers(), [$actionDispatcher, $responseHandler, $elasticsearch]);
-
-        foreach ($subcribers as $subcriber) {
-            $events->addSubscriber($subcriber);
-        }
 
         return new Sigma($elasticsearch, $events, $actionDispatcher, $responseHandler);
     }

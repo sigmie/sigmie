@@ -42,8 +42,8 @@ class InsertTest extends TestCase
      */
     public function events(): void
     {
-        $this->assertEquals($this->action->beforeEvent(), 'before.index.insert');
-        $this->assertEquals($this->action->afterEvent(), 'after.index.insert');
+        $this->assertEquals($this->action->preEvent(), 'before.index.insert');
+        $this->assertEquals($this->action->postEvent(), 'after.index.insert');
     }
 
     /**
