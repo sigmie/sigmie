@@ -11,7 +11,7 @@
                 <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 border-b mb-2">
                     <h1 class="pt-5 pb-4 text-xl">Login</h1>
                 </div>
-                <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-2">
+                <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-4">
                     <div class="box">
                         <div class="mx-auto">
                             <label class="pb-2 block" for="email">{{ __('E-Mail Address') }}</label>
@@ -26,7 +26,7 @@
                     </div>
                 </div>
                 <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pb-6">
-                    <div class="box my-4">
+                    <div class="box mt-4">
                         <div class="mx-auto">
                             <label class="pb-2 block" for="password">{{ __('Password') }}</label>
 
@@ -48,7 +48,7 @@
                 </div>
 
                 <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 bg-gray-300 px-10">
-                    <div class="float-left box w-full py-4">
+                    <div class="float-left box w-full py-3">
                         <div class="container">
                             <div class="row m-0">
                                 <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6 p-0 pr-3">
