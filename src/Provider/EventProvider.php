@@ -2,14 +2,21 @@
 
 namespace Sigma\Provider;
 
-use Sigma\Event\PreInsert;
 use Sigma\Support\DependencyResolver;
 use Sigma\Listener\ValidateMappings;
+use Sigma\Event\Index\PreInsert as IndexPreInsert;
+use Sigma\Event\Document\PreInsert as DocumentPreInsert;
+use Sigma\Event\Index\PostInsert as IndexPostInsert;
+use Sigma\Event\Document\PostInsert as DocumentPostInsert;
 
 class EventProvider
 {
     protected $listen = [
-        PreInsert::class => [
+        IndexPreInsert::class => [
+            ValidateMappings::class
+        ],
+        IndexPostInsert::class => [],
+        DocumentPostInsert::class => [
             ValidateMappings::class
         ]
     ];

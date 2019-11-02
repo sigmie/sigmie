@@ -4,11 +4,10 @@ namespace Sigma\Index;
 
 use Sigma\Common\Bootable;
 use Sigma\Contract\Bootable as BootableInterface;
-use Sigma\Document\Action\Insert as SigmaDocumentInsert;
 use Sigma\Element;
 use Sigma\Exception\EmptyIndexName;
-use Sigma\Index\Action\Insert;
-use Sigma\Index\Response\Insert as SigmaInsert;
+use Sigma\Document\Action\Insert as InsertDocument;
+use Sigma\Document\Response\Add;
 
 class Index extends Element implements BootableInterface
 {
@@ -32,12 +31,6 @@ class Index extends Element implements BootableInterface
 
     protected $max;
 
-    private $booted = false;
-
-    private $dispatcher = null;
-
-    private $handler = null;
-
     public function __construct(string $name)
     {
         if ($name === '') {
@@ -51,7 +44,7 @@ class Index extends Element implements BootableInterface
     {
         $element->index = $this->name;
 
-        $this->execute($element, new SigmaDocumentInsert, new SigmaInsert);
+        $this->execute($element, new InsertDocument, new Add);
     }
 
     public function query()

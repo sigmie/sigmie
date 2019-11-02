@@ -8,6 +8,7 @@ use Elasticsearch\Client as Elasticsearch;
 use Symfony\Component\EventDispatcher\EventDispatcher as EventManager;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface as EventDispatcher;
 use Sigma\ActionDispatcher;
+use Sigma\Contract\Bootable;
 use Sigma\Provider\SigmaProvider;
 
 class Sigma extends SigmaProvider
@@ -101,6 +102,13 @@ class Sigma extends SigmaProvider
     public function events(): EventManager
     {
         return $this->events;
+    }
+
+    public function bootElement(Bootable $bootable): Bootable
+    {
+        $bootable->boot($this->dispatcher, $this->handler);
+
+        return $bootable;
     }
 
     /**

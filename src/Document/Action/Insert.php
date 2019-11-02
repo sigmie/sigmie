@@ -2,13 +2,14 @@
 
 namespace Sigma\Document\Action;
 
-use Sigma\Contract\Subscribable;
 use Elasticsearch\Client as Elasticsearch;
 use Sigma\Index\Index;
 use Sigma\Contract\Action;
-use Sigma\Document\Document;
+use Sigma\Contract\Subscribable;
+use Sigma\Event\Document\PostInsert;
+use Sigma\Event\Document\PreInsert;
 
-class Insert implements Action
+class Insert implements Action, Subscribable
 {
     /**
      * Action data preparation
@@ -23,13 +24,13 @@ class Insert implements Action
     }
 
     /**
-     * Before event name
+     * Before event
      *
      * @return string
      */
-    public function beforeEvent(): string
+    public function preEvent(): string
     {
-        return 'before.document.insert';
+        return PreInsert::class;
     }
 
     /**
@@ -46,12 +47,12 @@ class Insert implements Action
     }
 
     /**
-     * After event name
+     * After event
      *
      * @return string
      */
-    public function afterEvent(): string
+    public function postEvent(): string
     {
-        return 'after.document.insert';
+        return PostInsert::class;
     }
 }
