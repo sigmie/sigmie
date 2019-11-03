@@ -1,8 +1,8 @@
 @extends('layouts.app')
 @section('content')
-<div class="h-full mx-auto container m-12">
+<div class="h-full mx-auto container m-12 w-9/12 xl:w-8/12">
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-7 col-sm-12">
             <form method="POST" class="mx-auto flex container w-full text-gray-700 h-auto" action="{{ route('register') }}">
                 @csrf
                 <div class="container flex justify-center w-auto block border-gray-200 border rounded bg-white px-4">
@@ -89,18 +89,20 @@
             </form>
         </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-md-5">
         <div class="row">
-            <div class="col-md-8 border bg-white border-gray-400 rounded p-0 py-3">
-                <h2 class="uppercase px-6">Hobby</h2>
-                <div class="bg-green-300 px-6 text-center">
-                    <span class="text-green-500">
+            <div class="col-md-12 border bg-white border-gray-400 rounded p-0 py-2">
+                <h2 class="uppercase text-sm text-gray-500 px-8 py-2 font-semibold tracking-wider">
+                    Hobby
+                </h2>
+                <div class="bg-green-200 px-6 text-center py-1">
+                    <span class="text-green-600">
                         5-day Free trail
                     </span>
                 </div>
-                <div class="row p-0 p-3 m-0">
-                    <div class="col-md-6">
-                        <div>
+                <div class="row py-3 m-0">
+                    <div class="col-md-6 p-0 px-8">
+                        <div class="py-1">
                             <svg class="fill-current inline-block relative mr-2" width="12px" height="12px" viewBox="0 0 20 15" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                                 <g id="Symbols" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                                     <g id="Check-text-list" transform="translate(0.000000, -7.000000)" fill="#828282" fill-rule="nonzero">
@@ -116,7 +118,7 @@
                                 1 Project
                             </span>
                         </div>
-                        <div>
+                        <div class="py-1">
                             <svg class="fill-current inline-block relative mr-2" width="12px" height="12px" viewBox="0 0 20 15" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                                 <g id="Symbols" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                                     <g id="Check-text-list" transform="translate(0.000000, -7.000000)" fill="#828282" fill-rule="nonzero">
@@ -132,7 +134,7 @@
                                 1 Cluster
                             </span>
                         </div>
-                        <div>
+                        <div class="py-1">
                             <svg class="fill-current inline-block relative mr-2" width="12px" height="12px" viewBox="0 0 20 15" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                                 <g id="Symbols" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                                     <g id="Check-text-list" transform="translate(0.000000, -7.000000)" fill="#828282" fill-rule="nonzero">
@@ -145,12 +147,12 @@
                                 </g>
                             </svg>
                             <span class="text-sm">
-                               2 Nodes 
+                                2 Nodes
                             </span>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div>
+                        <div class="py-1">
                             <svg class="fill-current inline-block relative mr-2" width="12px" height="12px" viewBox="0 0 20 15" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                                 <g id="Symbols" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                                     <g id="Check-text-list" transform="translate(0.000000, -7.000000)" fill="#828282" fill-rule="nonzero">
@@ -166,7 +168,7 @@
                                 Mail reports
                             </span>
                         </div>
-                        <div>
+                        <div class="py-1">
                             <svg class="fill-current inline-block relative mr-2" width="12px" height="12px" viewBox="0 0 20 15" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                                 <g id="Symbols" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                                     <g id="Check-text-list" transform="translate(0.000000, -7.000000)" fill="#828282" fill-rule="nonzero">
@@ -179,10 +181,10 @@
                                 </g>
                             </svg>
                             <span class="text-sm">
-                                Daily checks 
+                                Daily checks
                             </span>
                         </div>
-                        <div>
+                        <div class="py-1">
                             <svg class="fill-current inline-block relative mr-2" width="12px" height="12px" viewBox="0 0 20 15" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                                 <g id="Symbols" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                                     <g id="Check-text-list" transform="translate(0.000000, -7.000000)" fill="#828282" fill-rule="nonzero">
@@ -195,19 +197,18 @@
                                 </g>
                             </svg>
                             <span class="text-sm">
-                               More Feature 
+                                More Feature
                             </span>
                         </div>
                     </div>
                 </div>
-                <div class="div px-3">
-                    <div>
-                        € 24/Month
+                <div class="px-8 pb-2">
+                    <div class="text-sm">
+                        <span class="text-3xl font-semibold">€ 24</span> /Month
                     </div>
-                    <div>
+                    <div class="text-gray-500 text-sm">
                         Price does not include your GCP costs.
                     </div>
-
                 </div>
             </div>
         </div>
