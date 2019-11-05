@@ -39,13 +39,13 @@ trait Bootable
         $this->booted = true;
     }
 
-    public function execute($params, Action $action, Response $response)
+    public function execute(Action $action, Response $response, ...$params)
     {
-        if ($this->dispatcher === null || $this->handler) {
+        if ($this->dispatcher === null || $this->handler === null) {
             throw new NotBootedException;
         }
 
-        $rawResponse = $this->dispatcher->dispatch($params, $action);
+        $rawResponse = $this->dispatcher->dispatch( $action, ...$params);
 
         return $this->handler->handle($rawResponse, $response);
     }

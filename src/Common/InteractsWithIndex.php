@@ -28,7 +28,7 @@ trait InteractsWithIndex
      */
     public function insert(Element $index): Element
     {
-        return $this->execute($index, new InsertAction, new InsertResponse);
+        return $this->execute(new InsertAction, new InsertResponse, $index);
     }
 
     /**
@@ -41,7 +41,7 @@ trait InteractsWithIndex
      */
     public function remove(string $identifier): bool
     {
-        return $this->execute($identifier, new RemoveAction, new RemoveResponse);
+        return $this->execute(new RemoveAction, new RemoveResponse, $identifier);
     }
 
     /**
@@ -54,7 +54,7 @@ trait InteractsWithIndex
      */
     public function list(string $name = '*'): Collection
     {
-        return $this->execute($name, new ListingAction, new ListingResponse);
+        return $this->execute(new ListingAction, new ListingResponse, $name);
     }
 
     /**
@@ -67,6 +67,6 @@ trait InteractsWithIndex
      */
     public function get(string $name): Element
     {
-        return $this->execute($name, new GetAction, new GetResponse);
+        return $this->execute(new GetAction, new GetResponse, $name);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Sigma\Contract;
 
+use Sigma\ActionDispatcher;
 use Sigma\Collection;
 use Sigma\Element;
 
@@ -17,5 +18,5 @@ interface Response
      *
      * @return bool|Element|Collection
      */
-    public function result(array $raw);
+    public function result($raw);
 }

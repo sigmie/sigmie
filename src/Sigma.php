@@ -77,7 +77,7 @@ class Sigma extends SigmaProvider
         }
 
         $actionDispatcher = new ActionDispatcher($elasticsearch, $events);
-        $responseHandler = new ResponseHandler();
+        $responseHandler = new ResponseHandler($actionDispatcher);
 
         return new Sigma($elasticsearch, $events, $actionDispatcher, $responseHandler);
     }

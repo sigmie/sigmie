@@ -16,7 +16,7 @@ class Get implements Response
      *
      * @return Element
      */
-    public function result(array $response): Element
+    public function result($response): Element
     {
         $collection = new IndexCollection([]);
 

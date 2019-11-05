@@ -15,7 +15,7 @@ class Listing implements Response
      *
      * @return IndexCollection
      */
-    public function result(array $response): Collection
+    public function result($response): Collection
     {
         $response = new IndexCollection($response);
 

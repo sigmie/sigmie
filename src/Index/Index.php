@@ -7,7 +7,7 @@ use Sigma\Contract\Bootable as BootableInterface;
 use Sigma\Element;
 use Sigma\Exception\EmptyIndexName;
 use Sigma\Document\Action\Insert as InsertDocument;
-use Sigma\Document\Response\Add;
+use Sigma\Document\Response\Insert;
 
 class Index extends Element implements BootableInterface
 {
@@ -44,7 +44,7 @@ class Index extends Element implements BootableInterface
     {
         $element->index = $this->name;
 
-        $this->execute($element, new InsertDocument, new Add);
+        $this->execute(new InsertDocument, new Insert, $element);
     }
 
     public function query()

@@ -45,7 +45,7 @@ class ActionDispatcher implements ActionDispatcherInterface
      *
      * @return array
      */
-    public function dispatch($data, Action $action): array
+    public function dispatch(Action $action, ...$data): array
     {
         $beforeEvent = null;
         $afterEvent = null;
@@ -59,7 +59,7 @@ class ActionDispatcher implements ActionDispatcherInterface
             $this->eventDispatcher->dispatch(new $beforeEvent($data), $beforeEvent);
         }
 
-        $params = $action->prepare($data);
+        $params = $action->prepare(...$data);
 
         $response = $action->execute($this->elasticsearch, $params);
 

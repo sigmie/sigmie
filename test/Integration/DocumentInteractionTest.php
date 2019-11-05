@@ -36,18 +36,19 @@ class DocumentInteractionTest extends TestCase
 
         foreach ($indices as $index) {
             $this->sigma->elasticsearch()->indices()->delete(['index' => $index['index']]);
-
         }
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function add(): void
     {
         $index = new Index('foo');
 
         $this->sigma->insert($index);
+
+        $this->sigma->bootElement($index);
 
         $document = new Document();
 

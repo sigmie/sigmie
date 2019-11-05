@@ -4,7 +4,7 @@ namespace Sigma\Document\Response;
 
 use Sigma\Contract\Response;
 
-class Add implements Response
+class Get implements Response
 {
     /**
      * Result formating method
@@ -13,9 +13,8 @@ class Add implements Response
      *
      * @return Element
      */
-    public function result(array $raw)
+    public function result($data)
     {
-        dump($raw);
-        die();
+        return;
     }
 }

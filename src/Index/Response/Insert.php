@@ -16,7 +16,7 @@ class Insert implements Response
      *
      * @return boolean
      */
-    public function result(array $response)
+    public function result($response)
     {
         return new Index($response['index']);
     }

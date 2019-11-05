@@ -16,7 +16,7 @@ interface Action
      * @param Element|string $data
      * @return array
      */
-    public function prepare($data): array;
+    public function prepare(...$data): array;
 
     /**
      * Elasticsearch call

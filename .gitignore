@@ -2,6 +2,8 @@
 .history
 .idea
 
+tmp
+
 composer.phar
 /vendor/
 

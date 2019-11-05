@@ -15,5 +15,5 @@ interface ActionDispatcher
      *
      * @return array
      */
-    public function dispatch(array $data, Action $action): array;
+    public function dispatch(Action $action, array ...$data): array;
 }

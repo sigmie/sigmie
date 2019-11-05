@@ -15,7 +15,7 @@ class Remove implements Response
      *
      * @return boolean
      */
-    public function result(array $response): bool
+    public function result($response): bool
     {
         return $response['acknowledged'];
     }

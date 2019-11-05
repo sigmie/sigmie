@@ -16,6 +16,7 @@ jobs:
     working_directory: ~/project
     steps:
       - run: apt-get update
+      - run: mkdir tmp
       - run:
           name: Set up env variables
           command: |

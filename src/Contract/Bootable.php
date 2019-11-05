@@ -12,5 +12,5 @@ interface Bootable
 
     public function isBooted(): bool;
 
-    public function execute($params, Action $action, Response $response);
+    public function execute(Action $action, Response $response, ...$params);
 }
