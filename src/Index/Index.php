@@ -46,7 +46,8 @@ class Index extends Element implements BootableInterface
             new InsertDocumentAction,
             new InsertDocumentResponse,
             $this->name,
-            $element
+            get_class($element),
+            $element->toArray()
         );
 
         return $element;

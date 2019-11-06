@@ -2,6 +2,7 @@
 
 namespace Sigma\Index\Response;
 
+use Closure;
 use Sigma\Contract\Response;
 use Sigma\Exception\ActionFailed;
 use Sigma\Index\Index;
@@ -16,7 +17,7 @@ class Insert implements Response
      *
      * @return boolean
      */
-    public function result($response)
+    public function result($response, Closure $boot)
     {
         return new Index($response['index']);
     }

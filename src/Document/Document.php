@@ -2,7 +2,9 @@
 
 namespace Sigma\Document;
 
+use Sigma\Common\Bootable;
 use Sigma\Contract\Arrayable;
+use Sigma\Contract\Bootable as BootableInterface;
 use Sigma\Contract\Jsonable;
 use Sigma\Element;
 use Sigma\Exception\NotImplementedException;
@@ -10,8 +12,9 @@ use Sigma\Mapping\Types\Boolean;
 use Sigma\Mapping\Types\Integer;
 use Sigma\Mapping\Types\Text;
 
-class Document extends Element implements Arrayable
+class Document extends Element implements Arrayable, BootableInterface
 {
+    use Bootable;
     /**
      * Index that the Document belogs to
      *

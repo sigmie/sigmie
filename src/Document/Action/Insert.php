@@ -20,12 +20,12 @@ class Insert implements Action, Subscribable
      */
     public function prepare(...$data): array
     {
-        [$index, $document] = $data;
+        [$index, $type, $document] = $data;
 
         $values = [
             'index' => $index,
-            'type' => get_class($document),
-            'body' => $document->toArray()
+            'type' => $type,
+            'body' => $document 
         ];
 
         return $values;

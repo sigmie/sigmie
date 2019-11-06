@@ -2,6 +2,7 @@
 
 namespace Sigma\Document\Response;
 
+use Closure;
 use Sigma\Common\Bootable;
 use Sigma\Contract\BootableResponse;
 use Sigma\Document\Action\Get as GetAction;
@@ -22,7 +23,7 @@ class Insert implements BootableResponse
      *
      * @return Element
      */
-    public function result($document)
+    public function result($document, Closure $boot)
     {
         return $document;
     }

@@ -2,6 +2,7 @@
 
 namespace Sigma;
 
+use Sigma\Contract\Bootable;
 use Sigma\Contract\BootableResponse;
 use Sigma\Contract\Response;
 use Sigma\Contract\ResponseHandler as ResponseHandlerInterface;
@@ -36,6 +37,14 @@ class ResponseHandler implements ResponseHandlerInterface
             $content = $response->prepare($content);
         }
 
-        return $response->result($content);
+        $handler = $this;
+        $dispatcher = $this->actionDispatcher;
+
+        return $response->result(
+            $content,
+            function (Bootable $bootable) use ($dispatcher, $handler) {
+                $bootable->boot($dispatcher, $handler);
+            }
+        );
     }
 }

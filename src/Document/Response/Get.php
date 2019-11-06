@@ -2,6 +2,7 @@
 
 namespace Sigma\Document\Response;
 
+use Closure;
 use Sigma\Contract\Response;
 use Sigma\Document\Document;
 
@@ -14,7 +15,7 @@ class Get implements Response
      *
      * @return Element
      */
-    public function result($data)
+    public function result($data, Closure $boot)
     {
         return new Document($data['_source']);
     }
