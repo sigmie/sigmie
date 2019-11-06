@@ -9,6 +9,6 @@ class ValidateMappings
 
     public function handle()
     { 
-        dump('handeled');
+        dump('validated mapings');
     }
 }

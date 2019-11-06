@@ -40,14 +40,16 @@ class Index extends Element implements BootableInterface
         $this->name = $name;
     }
 
-    public function add(Element $element)
+    public function add(Element &$element)
     {
-        return $this->execute(
+        $element = $this->execute(
             new InsertDocumentAction,
             new InsertDocumentResponse,
             $this->name,
             $element
         );
+
+        return $element;
     }
 
     public function toArray(): array

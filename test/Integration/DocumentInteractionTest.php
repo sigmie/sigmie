@@ -48,7 +48,7 @@ class DocumentInteractionTest extends TestCase
 
         $document = new Document();
 
-        $document = $index->add($document);
+        $index->add($document);
 
         $this->assertInstanceOf(Document::class, $document);
     }
