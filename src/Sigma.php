@@ -123,4 +123,17 @@ class Sigma extends SigmaProvider
 
         return $this->connected;
     }
+
+    public function clear($dryRun = true): void
+    {
+        $indices = $this->elasticsearch()->cat()->indices(['index' => '*']);
+
+        if ($dryRun === true) {
+            return;
+        }
+
+        foreach ($indices as $index) {
+            $this->elasticsearch()->indices()->delete(['index' => $index['index']]);
+        }
+    }
 }

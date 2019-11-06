@@ -74,12 +74,8 @@ class Document extends Element implements Arrayable
     public function toArray(): array
     {
         return [
-            'index' => $this->index,
-            'type' => self::class,
-            'body' => [
-                'foo' => 'bar',
-                'name' => 'john doe',
-            ]
+            'foo' => 'bar',
+            'name' => 'john doe'
         ];
     }
 

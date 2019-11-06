@@ -3,23 +3,25 @@
 namespace Sigma\Document\Action;
 
 use Sigma\Contract\Action;
+use Elasticsearch\Client as Elasticsearch;
 
 class Get implements Action
 {
-    public function prepare($index, $id)
+    public function prepare(...$params): array
     {
-        dump($index);
-        die();
+        [$index, $id, $type] = $params;
+
         $params = [
             'index' => $index,
-            'id'    => $id
+            'id'    => $id,
+            'type' => $type
         ];
 
         return $params;
     }
 
-    public function execute(Elasticsearch $elasticsearch, array $params)
+    public function execute(Elasticsearch $elasticsearch, array $params): array
     {
-        $elasticsearch->get($params);
+        return $elasticsearch->get($params);
     }
 }

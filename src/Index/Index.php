@@ -6,8 +6,8 @@ use Sigma\Common\Bootable;
 use Sigma\Contract\Bootable as BootableInterface;
 use Sigma\Element;
 use Sigma\Exception\EmptyIndexName;
-use Sigma\Document\Action\Insert as InsertDocument;
-use Sigma\Document\Response\Insert;
+use Sigma\Document\Action\Insert as InsertDocumentAction;
+use Sigma\Document\Response\Insert as InsertDocumentResponse;
 
 class Index extends Element implements BootableInterface
 {
@@ -40,11 +40,19 @@ class Index extends Element implements BootableInterface
         $this->name = $name;
     }
 
-    public function add($element)
+    public function add(Element $element)
     {
-        $element->index = $this->name;
+        return $this->execute(
+            new InsertDocumentAction,
+            new InsertDocumentResponse,
+            $this->name,
+            $element
+        );
+    }
 
-        $this->execute(new InsertDocument, new Insert, $element);
+    public function toArray(): array
+    {
+        return [];
     }
 
     public function query()

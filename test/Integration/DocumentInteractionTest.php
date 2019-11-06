@@ -32,11 +32,7 @@ class DocumentInteractionTest extends TestCase
         $elasticsearch = $builder->setHosts([$host])->build();
         $this->sigma = Sigma::create($elasticsearch);
 
-        $indices = $this->sigma->elasticsearch()->cat()->indices(['index' => '*']);
-
-        foreach ($indices as $index) {
-            $this->sigma->elasticsearch()->indices()->delete(['index' => $index['index']]);
-        }
+        $this->sigma->clear(false);
     }
 
     /**
@@ -52,6 +48,8 @@ class DocumentInteractionTest extends TestCase
 
         $document = new Document();
 
-        $index->add($document);
+        $document = $index->add($document);
+
+        $this->assertInstanceOf(Document::class, $document);
     }
 }

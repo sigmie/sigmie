@@ -3,8 +3,9 @@
 namespace Sigma;
 
 use Sigma\Common\Bootable;
+use Sigma\Contract\Arrayable;
 
-abstract class Element
+abstract class Element implements Arrayable
 {
     use Bootable;
 

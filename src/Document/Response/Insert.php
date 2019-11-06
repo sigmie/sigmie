@@ -13,7 +13,7 @@ class Insert implements BootableResponse
 
     public function prepare(array $raw)
     {
-        return $this->execute(new GetAction, new GetResponse, $raw['_index'], $raw['_id']);
+        return $this->execute(new GetAction, new GetResponse, $raw['_index'], $raw['_id'], $raw['_type']);
     }
     /**
      * Result formating method

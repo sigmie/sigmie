@@ -3,6 +3,7 @@
 namespace Sigma\Document\Response;
 
 use Sigma\Contract\Response;
+use Sigma\Document\Document;
 
 class Get implements Response
 {
@@ -15,6 +16,6 @@ class Get implements Response
      */
     public function result($data)
     {
-        return;
+        return new Document($data['_source']);
     }
 }

@@ -18,8 +18,10 @@ class Insert implements Action, Subscribable
      *
      * @return array
      */
-    public function prepare($index): array
+    public function prepare(...$data): array
     {
+        [$index] = $data;
+
         $params = [
             'index' => $index->name
         ];
