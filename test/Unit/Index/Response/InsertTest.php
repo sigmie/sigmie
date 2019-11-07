@@ -22,7 +22,7 @@ class InsertTest extends TestCase
         $result = $this->response->result([
             'acknowledged' => true,
             'index' => 'bar'
-        ]);
+        ],function () { });
 
         $this->assertEquals($result->name, 'bar');
     }

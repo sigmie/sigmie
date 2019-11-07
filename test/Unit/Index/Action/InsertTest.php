@@ -5,6 +5,8 @@ namespace Sigma\Test\Unit\Index;
 use Elasticsearch\Client as Elasticsearch;
 use PHPUnit\Framework\TestCase;
 use Sigma\Contract\Subscribable;
+use Sigma\Event\Index\PostInsert;
+use Sigma\Event\Index\PreInsert;
 use Sigma\Index\Action\Insert;
 use Sigma\Index\Index;
 
@@ -42,8 +44,8 @@ class InsertTest extends TestCase
      */
     public function events(): void
     {
-        $this->assertEquals($this->action->preEvent(), 'before.index.insert');
-        $this->assertEquals($this->action->postEvent(), 'after.index.insert');
+        $this->assertEquals($this->action->preEvent(), PreInsert::class);
+        $this->assertEquals($this->action->postEvent(), PostInsert::class);
     }
 
     /**

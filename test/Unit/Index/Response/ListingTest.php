@@ -22,7 +22,7 @@ class ListingTest extends TestCase
      */
     public function result(): void
     {
-        $result = $this->response->result(['foo', 'bar']);
+        $result = $this->response->result(['foo', 'bar'], function () { });
 
         $this->assertInstanceOf(IndexCollection::class, $result);
     }

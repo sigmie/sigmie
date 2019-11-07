@@ -2,6 +2,7 @@
 
 namespace Sigma\Index\Response;
 
+use Closure;
 use Sigma\Collection;
 use Sigma\Contract\Response;
 use Sigma\Index\IndexCollection;
@@ -15,7 +16,7 @@ class Listing implements Response
      *
      * @return IndexCollection
      */
-    public function result($response): Collection
+    public function result($response, Closure $boot): Collection
     {
         $response = new IndexCollection($response);
 

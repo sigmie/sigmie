@@ -17,10 +17,12 @@ class Remove implements Action, Subscribable
      *
      * @return array
      */
-    public function prepare($data): array
+    public function prepare(...$data): array
     {
+        [$index] = $data;
+
         $params = [
-            'index' => $data
+            'index' => $index
         ];
 
         return $params;

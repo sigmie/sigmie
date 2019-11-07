@@ -2,6 +2,7 @@
 
 namespace Sigma\Index\Response;
 
+use Closure;
 use Sigma\Contract\Response;
 use Sigma\Element;
 use Sigma\Index\Index;
@@ -16,7 +17,7 @@ class Get implements Response
      *
      * @return Element
      */
-    public function result($response): Element
+    public function result($response, Closure $boot): Element
     {
         $collection = new IndexCollection([]);
 

@@ -15,8 +15,10 @@ class Get implements Action
      *
      * @return array
      */
-    public function prepare($identifier): array
+    public function prepare(...$data): array
     {
+        [$identifier] = $data;
+
         $params = [
             'index' => $identifier
         ];

@@ -10,17 +10,6 @@ use Sigma\Common\HasEvents;
 class HasEventsTest extends TestCase
 {
     /**
-    * @test
-    */
-    public function foo()
-    {
-        $client = Sigma::create();
-
-        dump($client->events());
-        die();
-    }
-
-    /**
      * @test
      */
     public function HasEvents(): void

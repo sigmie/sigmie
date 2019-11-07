@@ -12,11 +12,9 @@ use Sigma\Event\Document\PostInsert as DocumentPostInsert;
 class EventProvider
 {
     protected $listen = [
-        IndexPreInsert::class => [
-            ValidateMappings::class
-        ],
+        IndexPreInsert::class => [],
         IndexPostInsert::class => [],
-        DocumentPostInsert::class => [
+        DocumentPreInsert::class => [
             ValidateMappings::class
         ]
     ];

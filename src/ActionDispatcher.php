@@ -64,7 +64,9 @@ class ActionDispatcher implements ActionDispatcherInterface
         $response = $action->execute($this->elasticsearch, $params);
 
         if ($this->eventDispatcher->hasListeners($afterEvent) && $afterEvent !== null) {
-            $this->eventDispatcher->dispatch($afterEvent, new GenericEvent($response));
+            dump($response);
+            die();
+            $this->eventDispatcher->dispatch(new $afterEvent($response), $afterEvent);
         }
 
         return $response;
