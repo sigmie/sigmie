@@ -16,4 +16,3 @@ class Integer extends Type
         return 'integer';
     }
 }
-

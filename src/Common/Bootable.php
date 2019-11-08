@@ -45,7 +45,7 @@ trait Bootable
             throw new NotBootedException;
         }
 
-        $rawResponse = $this->dispatcher->dispatch( $action, ...$params);
+        $rawResponse = $this->dispatcher->dispatch($action, ...$params);
 
         return $this->handler->handle($rawResponse, $response);
     }

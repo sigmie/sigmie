@@ -59,11 +59,14 @@ class Index extends Element implements BootableInterface
     }
 
     public function query()
-    { }
+    {
+    }
 
     public function aggregations()
-    { }
+    {
+    }
 
     public function remove()
-    { }
+    {
+    }
 }

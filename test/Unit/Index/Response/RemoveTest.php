@@ -21,7 +21,8 @@ class RemoveTest extends TestCase
      */
     public function result(): void
     {
-        $result = $this->response->result(['acknowledged' => true], function () { });
+        $result = $this->response->result(['acknowledged' => true], function () {
+        });
 
         $this->assertTrue($result);
     }

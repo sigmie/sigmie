@@ -18,5 +18,4 @@ use Sigma\Contract\Bootable as Bootable;
 class Manager implements Bootable
 {
     use Bootable;
-
 }

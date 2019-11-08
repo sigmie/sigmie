@@ -25,7 +25,7 @@ class Insert implements Action, Subscribable
         $values = [
             'index' => $index,
             'type' => $type,
-            'body' => $document 
+            'body' => $document
         ];
 
         return $values;
