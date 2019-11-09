@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Provider;
 
 use Sigma\Support\DependencyResolver;

@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Contract;
 
 use Elasticsearch\Client as Elasticsearch;

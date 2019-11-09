@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Document\Response;
 
 use Closure;
@@ -17,6 +20,9 @@ class Get implements Response
      */
     public function result($data, Closure $boot)
     {
-        return new Document($data['_source']);
+        $document = new Document($data['_source']);
+        $document->id = $data['_id'];
+
+        return $document;
     }
 }

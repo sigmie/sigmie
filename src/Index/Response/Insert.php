@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Index\Response;
 
 use Closure;
@@ -19,6 +22,10 @@ class Insert implements Response
      */
     public function result($response, Closure $boot)
     {
-        return new Index($response['index']);
+        $index = new Index($response['index']);
+
+        $boot($index);
+
+        return $index;
     }
 }

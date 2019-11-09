@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Index;
 
 use Sigma\Common\Bootable;
@@ -7,7 +10,9 @@ use Sigma\Contract\Bootable as BootableInterface;
 use Sigma\Element;
 use Sigma\Exception\EmptyIndexName;
 use Sigma\Document\Action\Insert as InsertDocumentAction;
+use Sigma\Document\Action\Remove as RemoveDocumentAction;
 use Sigma\Document\Response\Insert as InsertDocumentResponse;
+use Sigma\Document\Response\Remove as RemoveDocumentResponse;
 
 class Index extends Element implements BootableInterface
 {
@@ -53,20 +58,25 @@ class Index extends Element implements BootableInterface
         return $element;
     }
 
+    public function remove(Element &$element)
+    {
+        $result = $this->execute(
+            new RemoveDocumentAction,
+            new RemoveDocumentResponse,
+            $this->name,
+            get_class($element),
+            $element->id
+        );
+
+        if ($result === true) {
+            $element->id = null;
+        }
+
+        return $result;
+    }
+
     public function toArray(): array
     {
         return [];
-    }
-
-    public function query()
-    {
-    }
-
-    public function aggregations()
-    {
-    }
-
-    public function remove()
-    {
     }
 }

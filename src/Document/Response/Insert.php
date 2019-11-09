@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Document\Response;
 
 use Closure;
@@ -16,6 +19,7 @@ class Insert implements BootableResponse
     {
         return $this->execute(new GetAction, new GetResponse, $raw['_index'], $raw['_id'], $raw['_type']);
     }
+
     /**
      * Result formating method
      *

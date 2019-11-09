@@ -19,6 +19,11 @@ class DocumentInteractionTest extends TestCase
     private $sigma;
 
     /**
+     * @var Index
+     */
+    private $index;
+
+    /**
      * Setup stubs
      *
      * @SuppressWarnings(PHPMD.StaticAccess)
@@ -33,6 +38,10 @@ class DocumentInteractionTest extends TestCase
         $this->sigma = Sigma::create($elasticsearch);
 
         $this->sigma->clear(false);
+
+        $this->index = new Index('foo');
+
+        $this->sigma->insert($this->index);
     }
 
     /**
@@ -40,16 +49,24 @@ class DocumentInteractionTest extends TestCase
      */
     public function add(): void
     {
-        $index = new Index('foo');
-
-        $this->sigma->insert($index);
-
-        $this->sigma->bootElement($index);
-
         $document = new Document();
 
-        $index->add($document);
+        $this->index->add($document);
 
         $this->assertInstanceOf(Document::class, $document);
+    }
+
+    /**
+     * @test
+     */
+    public function remove(): void
+    {
+        $document = new Document();
+
+        $this->index->add($document);
+
+        $result = $this->index->remove($document);
+
+        $this->assertTrue($result);
     }
 }

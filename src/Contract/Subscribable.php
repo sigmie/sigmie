@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Contract;
 
 use Symfony\Component\EventDispatcher\GenericEvent;

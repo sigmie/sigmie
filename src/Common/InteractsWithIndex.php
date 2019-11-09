@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Common;
 
 use Sigma\Element;
@@ -26,9 +29,11 @@ trait InteractsWithIndex
      *
      * @return boolean
      */
-    public function insert(Element $index): Element
+    public function insert(Element &$index): Element
     {
-        return $this->execute(new InsertAction, new InsertResponse, $index);
+        $index = $this->execute(new InsertAction, new InsertResponse, $index);
+
+        return $index;
     }
 
     /**

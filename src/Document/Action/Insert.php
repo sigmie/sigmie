@@ -1,13 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Document\Action;
 
-use Elasticsearch\Client as Elasticsearch;
 use Sigma\Index\Index;
 use Sigma\Contract\Action;
 use Sigma\Contract\Subscribable;
 use Sigma\Event\Document\PostInsert;
 use Sigma\Event\Document\PreInsert;
+use Elasticsearch\Client as Elasticsearch;
 
 class Insert implements Action, Subscribable
 {

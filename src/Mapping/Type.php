@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Mapping;
 
 use Sigma\Contract\Type as TypeInterface;

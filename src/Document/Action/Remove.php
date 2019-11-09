@@ -3,36 +3,31 @@
 declare(strict_types=1);
 
 
-namespace Sigma\Index\Action;
+namespace Sigma\Document\Action;
 
-use Elasticsearch\Client as Elasticsearch;
 use Sigma\Contract\Action;
 use Sigma\Contract\Subscribable;
-use Sigma\Event\Index\PostRemove;
-use Sigma\Event\Index\PreRemove;
+use Sigma\Event\Document\PostRemove;
+use Sigma\Event\Document\PreRemove;
+use Elasticsearch\Client as Elasticsearch;
 
 class Remove implements Action, Subscribable
 {
-    /**
-     * Action data preparation
-     *
-     * @param string $data
-     *
-     * @return array
-     */
     public function prepare(...$data): array
     {
-        [$index] = $data;
+        [$index, $type, $identifier] = $data;
 
         $params = [
-            'index' => $index
+            'index' =>  $index,
+            'id'    => $identifier,
+            'type'    => $type
         ];
 
         return $params;
     }
 
     /**
-     * Before event name
+     * Before event
      *
      * @return string
      */
@@ -51,11 +46,11 @@ class Remove implements Action, Subscribable
      */
     public function execute(Elasticsearch $elasticsearch, array $params): array
     {
-        return $elasticsearch->indices()->delete($params);
+        return $elasticsearch->delete($params);
     }
 
     /**
-     * After event name
+     * After event
      *
      * @return string
      */
