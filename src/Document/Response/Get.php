@@ -8,6 +8,7 @@ namespace Sigma\Document\Response;
 use Closure;
 use Sigma\Contract\Response;
 use Sigma\Document\Document;
+use Sigma\Document\Factory as DocumentFactory;
 
 class Get implements Response
 {
@@ -20,9 +21,8 @@ class Get implements Response
      */
     public function result($data, Closure $boot)
     {
-        $document = new Document($data['_source']);
-        $document->id = $data['_id'];
+        $factory = new DocumentFactory();
 
-        return $document;
+        return $factory->fromRaw($data);
     }
 }

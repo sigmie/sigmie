@@ -15,9 +15,10 @@ use Sigma\Mapping\Types\Boolean;
 use Sigma\Mapping\Types\Integer;
 use Sigma\Mapping\Types\Text;
 
-class Document extends Element implements Arrayable, BootableInterface
+class Document extends Element implements BootableInterface
 {
     use Bootable;
+
     /**
      * Index that the Document belogs to
      *
@@ -33,65 +34,88 @@ class Document extends Element implements Arrayable, BootableInterface
     protected $id = [Text::class];
 
     /**
-     * Bolean indicator if the document
-     * should contain indexed_at and
-     * updated_at timestamps
-     *
-     * @var boolean
-     */
-    protected $_timestamps = true;
-
-    /**
      * Element class type
      *
      * @var string
      */
     protected $type = self::class;
 
-    /**
-     * Default datetime format
-     *
-     * @var string
-     */
-    protected $_dateFormat = 'YYYY-MM-DD';
+    private $body = [];
 
     /**
-     * Indicator if the active behavior
-     * should be disabled
+     * Get document identifier
      *
-     * @var boolean
+     * @return  string
      */
-    protected $_disableActive = false;
+    public function getId()
+    {
+        return $this->id;
+    }
 
     /**
-     * Active indicator
+     * Set document identifier
      *
-     * @var bool
+     * @param  string  $id  Document identifier
+     *
+     * @return  self
      */
-    protected $active = [Boolean::class, true];
+    public function setId(?string $id)
+    {
+        $this->id = $id;
+
+        return $this;
+    }
 
     /**
-     * Document version indicator
+     * Get index that the Document belogs to
      *
-     * @var array
+     * @return  string
      */
-    protected $version = [Integer::class, true];
+    public function getIndex()
+    {
+        return $this->index;
+    }
+
+    /**
+     * Set index that the Document belogs to
+     *
+     * @param  string  $index  Index that the Document belogs to
+     *
+     * @return  self
+     */
+    public function setIndex(string $index)
+    {
+        $this->index = $index;
+
+        return $this;
+    }
+
+    /**
+     * Get element class type
+     *
+     * @return  string
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * Set element class type
+     *
+     * @param  string  $type  Element class type
+     *
+     * @return  self
+     */
+    public function setType(string $type)
+    {
+        $this->type = $type;
+
+        return $this;
+    }
 
     public function toArray(): array
     {
-        return [
-            'foo' => 'bar',
-            'name' => 'john doe'
-        ];
-    }
-
-    public function fill()
-    {
-        throw new NotImplementedException();
-    }
-
-    public function save()
-    {
-        throw new NotImplementedException();
+        return  $this->body;
     }
 }

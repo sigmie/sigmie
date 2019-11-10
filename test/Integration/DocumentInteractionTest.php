@@ -51,9 +51,9 @@ class DocumentInteractionTest extends TestCase
     {
         $document = new Document();
 
-        $this->index->add($document);
+        $result = $this->index->add($document);
 
-        $this->assertInstanceOf(Document::class, $document);
+        $this->assertTrue($result);
     }
 
     /**
@@ -66,6 +66,20 @@ class DocumentInteractionTest extends TestCase
         $this->index->add($document);
 
         $result = $this->index->remove($document);
+
+        $this->assertTrue($result);
+    }
+
+    /**
+     * @test
+     */
+    public function merge(): void
+    {
+        $document = new Document();
+
+        $this->index->add($document);
+
+        $result = $this->index->merge($document);
 
         $this->assertTrue($result);
     }

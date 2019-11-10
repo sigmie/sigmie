@@ -10,31 +10,23 @@ use Sigma\Contract\Bootable as BootableInterface;
 use Sigma\Element;
 use Sigma\Exception\EmptyIndexName;
 use Sigma\Document\Action\Insert as InsertDocumentAction;
-use Sigma\Document\Action\Remove as RemoveDocumentAction;
 use Sigma\Document\Response\Insert as InsertDocumentResponse;
+use Sigma\Document\Action\Remove as RemoveDocumentAction;
 use Sigma\Document\Response\Remove as RemoveDocumentResponse;
+use Sigma\Document\Action\Merge as MergeDocumentAction;
+use Sigma\Document\Document;
+use Sigma\Document\Response\Merge as MergeDocumentResponse;
 
 class Index extends Element implements BootableInterface
 {
     use Bootable;
+
     /**
-     * Identifier
+     * Index name
      *
      * @var string
      */
     protected $name;
-
-    protected $_limit;
-
-    protected $_sort;
-
-    protected $_settings;
-
-    protected $count;
-
-    protected $sum;
-
-    protected $max;
 
     public function __construct(string $name)
     {
@@ -45,34 +37,55 @@ class Index extends Element implements BootableInterface
         $this->name = $name;
     }
 
-    public function add(Element &$element)
+    public function add(Document &$element): bool
     {
         $element = $this->execute(
             new InsertDocumentAction,
             new InsertDocumentResponse,
             $this->name,
-            get_class($element),
+            $element->getType(),
             $element->toArray()
         );
 
-        return $element;
+        if ($element->getId() !== '') {
+            return true;
+        }
+
+        return false;
     }
 
-    public function remove(Element &$element)
+    public function remove(Document &$element)
     {
         $result = $this->execute(
             new RemoveDocumentAction,
             new RemoveDocumentResponse,
             $this->name,
-            get_class($element),
-            $element->id
+            $element->getType(),
+            $element->getId()
         );
 
         if ($result === true) {
-            $element->id = null;
+            $element->setId('');
         }
 
         return $result;
+    }
+
+    public function merge(Document &$element)
+    {
+        $this->execute(
+            new MergeDocumentAction,
+            new MergeDocumentResponse,
+            $this->name,
+            $element->getType(),
+            $element->getId(),
+            $element->toArray()
+        );
+    }
+
+    public function search(): void
+    {
+        throw new NotImplementedException();
     }
 
     public function toArray(): array
