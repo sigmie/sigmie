@@ -8,14 +8,10 @@ namespace Sigma\Document;
 use Sigma\Common\Bootable;
 use Sigma\Contract\Arrayable;
 use Sigma\Contract\Bootable as BootableInterface;
-use Sigma\Contract\Jsonable;
 use Sigma\Element;
-use Sigma\Exception\NotImplementedException;
-use Sigma\Mapping\Types\Boolean;
-use Sigma\Mapping\Types\Integer;
 use Sigma\Mapping\Types\Text;
 
-class Document extends Element implements BootableInterface
+class Document extends Element implements BootableInterface, Arrayable
 {
     use Bootable;
 
@@ -24,21 +20,22 @@ class Document extends Element implements BootableInterface
      *
      * @var string
      */
-    protected $index = [Text::class];
+    protected $_index = [Text::class];
 
     /**
      * Document identifier
      *
+     * @Text
      * @var string
      */
-    protected $id = [Text::class];
+    protected $_id = [Text::class];
 
     /**
      * Element class type
      *
      * @var string
      */
-    protected $type = self::class;
+    protected $_type = self::class;
 
     private $body = [];
 
@@ -49,7 +46,7 @@ class Document extends Element implements BootableInterface
      */
     public function getId()
     {
-        return $this->id;
+        return $this->_id;
     }
 
     /**
@@ -61,7 +58,7 @@ class Document extends Element implements BootableInterface
      */
     public function setId(?string $id)
     {
-        $this->id = $id;
+        $this->_id = $id;
 
         return $this;
     }
@@ -73,7 +70,7 @@ class Document extends Element implements BootableInterface
      */
     public function getIndex()
     {
-        return $this->index;
+        return $this->_index;
     }
 
     /**
@@ -85,7 +82,7 @@ class Document extends Element implements BootableInterface
      */
     public function setIndex(string $index)
     {
-        $this->index = $index;
+        $this->_index = $index;
 
         return $this;
     }
@@ -97,7 +94,7 @@ class Document extends Element implements BootableInterface
      */
     public function getType()
     {
-        return $this->type;
+        return $this->_type;
     }
 
     /**
@@ -109,7 +106,7 @@ class Document extends Element implements BootableInterface
      */
     public function setType(string $type)
     {
-        $this->type = $type;
+        $this->_type = $type;
 
         return $this;
     }

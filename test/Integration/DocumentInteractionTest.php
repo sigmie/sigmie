@@ -35,6 +35,7 @@ class DocumentInteractionTest extends TestCase
         $host = getenv('ES_HOST');
         $builder = ClientBuilder::create();
         $elasticsearch = $builder->setHosts([$host])->build();
+
         $this->sigma = Sigma::create($elasticsearch);
 
         $this->sigma->clear(false);

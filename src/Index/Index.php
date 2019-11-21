@@ -24,8 +24,7 @@ class Index extends Element implements BootableInterface
     /**
      * Index name
      *
-     * @var string
-     */
+     * @var string */
     protected $name;
 
     public function __construct(string $name)
@@ -37,6 +36,13 @@ class Index extends Element implements BootableInterface
         $this->name = $name;
     }
 
+    /**
+     * Add an Element to Index
+     *
+     * @param Document $element
+     * 
+     * @return boolean
+     */
     public function add(Document &$element): bool
     {
         $element = $this->execute(
@@ -54,6 +60,12 @@ class Index extends Element implements BootableInterface
         return false;
     }
 
+    /**
+     * Remove an Element from Index
+     *
+     * @param Document $element
+     * @return void
+     */
     public function remove(Document &$element)
     {
         $result = $this->execute(
@@ -71,6 +83,12 @@ class Index extends Element implements BootableInterface
         return $result;
     }
 
+    /**
+     * Merge document to Index
+     *
+     * @param Document $element
+     * @return void
+     */
     public function merge(Document &$element)
     {
         $this->execute(
@@ -81,15 +99,5 @@ class Index extends Element implements BootableInterface
             $element->getId(),
             $element->toArray()
         );
-    }
-
-    public function search(): void
-    {
-        throw new NotImplementedException();
-    }
-
-    public function toArray(): array
-    {
-        return [];
     }
 }

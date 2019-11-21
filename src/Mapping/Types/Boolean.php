@@ -7,6 +7,9 @@ namespace Sigma\Mapping\Types;
 
 use Sigma\Mapping\Type;
 
+/**
+ * @Annotation
+ */
 class Boolean extends Type
 {
     /**

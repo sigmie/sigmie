@@ -9,7 +9,7 @@ use Sigma\Mapping\Types\Date;
 use Sigma\Mapping\Types\IpAddress;
 use Sigma\Mapping\Types\Long;
 
-class TypesTest extends TestCase
+class AnnotationTest extends TestCase
 {
     /**
      * @test

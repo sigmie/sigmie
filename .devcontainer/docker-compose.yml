@@ -1,39 +1,27 @@
-#-------------------------------------------------------------------------------------------------------------
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License. See https://go.microsoft.com/fwlink/?linkid=2090316 for license information.
-#-------------------------------------------------------------------------------------------------------------
-
 version: '3'
 services:
-  # Update this to the name of the service you want to work with in your docker-compose.yml file
+  elasticsearch:
+    container_name: es
+    image: elasticsearch:6.8.2
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+  kibana:
+    container_name: kb
+    image: kibana:6.8.2
+    ports:
+      - "5601:5601"
   php:
-    # You may want to add a non-root user to your Dockerfile. On Linux, this will prevent
-    # new files getting created as root. See https://aka.ms/vscode-remote/containers/non-root-user
-    # for the needed Dockerfile updates and then uncomment the next line.
-    # user: vscode
-
-    # Uncomment if you want to add a different Dockerfile in the .devcontainer folder
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
-
-    # Uncomment if you want to expose any additional ports. The snippet below exposes port 3000.
-    # ports:
-    #   - 3000:3000
-    
+    container_name: php
+    build: './php'
     volumes:
-      # Update this to wherever you want VS Code to mount the folder of your project
-      - ..:/var/www
-
-      # Uncomment the next line to use Docker from inside the container. See https://aka.ms/vscode-remote/samples/docker-in-docker-compose for details.
-      # - /var/run/docker.sock:/var/run/docker.sock 
-
-    # Uncomment the next four lines if you will use a ptrace-based debugger like C++, Go, and Rust.
-    # cap_add:
-    #   - SYS_PTRACE
-    # security_opt:
-    #   - seccomp:unconfined
-
-    # Overrides default command so things don't shut down after the process ends.
-    command: sleep infinity 
- 
+      - ..:/workspace
+    environment:
+     - ES_HOST=elasticsearch
