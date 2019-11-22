@@ -3,12 +3,6 @@
         Options -MultiViews -Indexes
     </IfModule>
 
-
-    Authtype Basic
-    AuthName "Welcome to my awesome project. Please Login."
-    AuthUserFile /srv/app/{{appname}}/htdocs/public/.htpasswd
-    Require valid-user
-
     RewriteEngine On
 
     # Handle Authorization Header

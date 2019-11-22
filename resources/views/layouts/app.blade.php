@@ -24,7 +24,7 @@
 
 <body class="min-h-full h-full">
     <div id="app" class="min-h-full h-full bg-gray-100">
-        <nav class="top-0 text-gray-500 shadow bg-white">
+        <nav class="top-0 text-gray-500 shadow h-20 bg-white">
             <div class="row">
                 <div class="col-md-4 col-sm-4 col-xs-4">
                     <div class="h-full flex justify-center">
@@ -72,6 +72,11 @@
                 </div>
             </div>
         </nav>
+
+        <div class="w-64 bg-10 bg-indigo-900 min-h-full">
+            fhe
+
+        </div>
 
         <main class="mx-auto container px-4">
             @yield('content')
