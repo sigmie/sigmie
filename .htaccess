@@ -1,0 +1,4 @@
+Authtype Basic
+AuthName "Welcome to my awesome project. Please Login."
+AuthUserFile /srv/app/{{appname}}/htdocs/.htpasswd
+Require valid-user
