@@ -1,0 +1,82 @@
+          ok  Starting native_osx for sync epsiloncode-rsync-sync
+          ok  epsiloncode-rsync-sync container still running, restarting unison in container
+     command  docker exec epsiloncode-rsync-sync supervisorctl restart unison
+unison: stopped
+unison: started
+          ok  starting initial sync of epsiloncode-rsync-sync
+     success  Sync container started
+     success  Showing unison logs from your sync container: epsiloncode-rsync-sync
+[2019-11-24 21:16:34 +0100] Sync Log:  Synchronization incomplete at 21:16:08  (1 item transferred, 0 skipped, 2 failed)
+[2019-11-24 21:16:34 +0100] Sync Log:    failed: storage/framework/sessions/Ry24RHSaD4tAVK3WA10HvGyahGP3UInzhR5SnADO
+[2019-11-24 21:16:34 +0100] Sync Log:    failed: storage/logs/laravel.log
+[2019-11-24 21:16:34 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) started propagating changes at 21:16:09.98 on 24 Nov 2019
+[2019-11-24 21:16:34 +0100] Sync Log:  [BGN] Copying storage/framework/sessions/h8WgtghQKlscHGAoABtOf8kRq2npMPBa5K0EJPfe from /app_sync to /host_sync
+[2019-11-24 21:16:34 +0100] Sync Log:  [END] Copying storage/framework/sessions/h8WgtghQKlscHGAoABtOf8kRq2npMPBa5K0EJPfe
+[2019-11-24 21:16:34 +0100] Sync Log:  [BGN] Updating file storage/logs/laravel.log from /app_sync to /host_sync
+[2019-11-24 21:16:34 +0100] Sync Log:  [END] Updating file storage/logs/laravel.log
+[2019-11-24 21:16:34 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) finished propagating changes at 21:16:10.03 on 24 Nov 2019
+[2019-11-24 21:16:34 +0100] Sync Log:  Synchronization complete at 21:16:10  (2 items transferred, 0 skipped, 0 failed)
+[2019-11-24 21:17:15 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) started propagating changes at 21:17:15.46 on 24 Nov 2019
+[2019-11-24 21:17:15 +0100] Sync Log:  [BGN] Copying .devcontainer/.docker-sync from /host_sync to /app_sync
+[2019-11-24 21:17:15 +0100] Sync Log:  Failed: The source file /host_sync/.devcontainer/.docker-sync/daemon.log
+[2019-11-24 21:17:15 +0100] Sync Log:  has been modified during synchronization.  Transfer aborted.
+[2019-11-24 21:17:15 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) finished propagating changes at 21:17:15.47 on 24 Nov 2019
+[2019-11-24 21:17:15 +0100] Sync Log:  Synchronization incomplete at 21:17:15  (0 items transferred, 0 skipped, 1 failed)
+[2019-11-24 21:17:15 +0100] Sync Log:    failed: .devcontainer/.docker-sync
+[2019-11-24 21:17:16 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) started propagating changes at 21:17:16.56 on 24 Nov 2019
+[2019-11-24 21:17:16 +0100] Sync Log:  [BGN] Copying .devcontainer/.docker-sync/daemon.log from /host_sync to /app_sync
+[2019-11-24 21:17:16 +0100] Sync Log:  [END] Copying .devcontainer/.docker-sync/daemon.log
+[2019-11-24 21:17:16 +0100] Sync Log:  [BGN] Copying .devcontainer/.docker-sync/daemon.pid from /host_sync to /app_sync
+[2019-11-24 21:17:16 +0100] Sync Log:  [END] Copying .devcontainer/.docker-sync/daemon.pid
+[2019-11-24 21:17:16 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) finished propagating changes at 21:17:16.56 on 24 Nov 2019
+[2019-11-24 21:17:16 +0100] Sync Log:  Synchronization complete at 21:17:16  (2 items transferred, 0 skipped, 0 failed)
+[2019-11-24 21:18:42 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) started propagating changes at 21:18:42.39 on 24 Nov 2019
+[2019-11-24 21:18:42 +0100] Sync Log:  [BGN] Updating file storage/logs/laravel.log from /app_sync to /host_sync
+[2019-11-24 21:18:42 +0100] Sync Log:  [END] Updating file storage/logs/laravel.log
+[2019-11-24 21:18:42 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) finished propagating changes at 21:18:42.45 on 24 Nov 2019
+[2019-11-24 21:18:42 +0100] Sync Log:  Synchronization complete at 21:18:42  (1 item transferred, 0 skipped, 0 failed)
+[2019-11-24 21:19:25 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) started propagating changes at 21:19:25.30 on 24 Nov 2019
+[2019-11-24 21:19:25 +0100] Sync Log:  [BGN] Updating file storage/logs/laravel.log from /app_sync to /host_sync
+[2019-11-24 21:19:25 +0100] Sync Log:  [END] Updating file storage/logs/laravel.log
+[2019-11-24 21:19:25 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) finished propagating changes at 21:19:25.34 on 24 Nov 2019
+[2019-11-24 21:19:25 +0100] Sync Log:  Synchronization complete at 21:19:25  (1 item transferred, 0 skipped, 0 failed)
+[2019-11-24 21:21:19 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) started propagating changes at 21:21:18.29 on 24 Nov 2019
+[2019-11-24 21:21:19 +0100] Sync Log:  [BGN] Updating file storage/logs/laravel.log from /app_sync to /host_sync
+[2019-11-24 21:21:19 +0100] Sync Log:  [END] Updating file storage/logs/laravel.log
+[2019-11-24 21:21:19 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) finished propagating changes at 21:21:18.34 on 24 Nov 2019
+[2019-11-24 21:21:19 +0100] Sync Log:  Synchronization complete at 21:21:18  (1 item transferred, 0 skipped, 0 failed)
+[2019-11-24 21:21:20 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) started propagating changes at 21:21:19.39 on 24 Nov 2019
+[2019-11-24 21:21:20 +0100] Sync Log:  [BGN] Updating file storage/framework/sessions/h8WgtghQKlscHGAoABtOf8kRq2npMPBa5K0EJPfe from /app_sync to /host_sync
+[2019-11-24 21:21:20 +0100] Sync Log:  [END] Updating file storage/framework/sessions/h8WgtghQKlscHGAoABtOf8kRq2npMPBa5K0EJPfe
+[2019-11-24 21:21:20 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) finished propagating changes at 21:21:19.40 on 24 Nov 2019
+[2019-11-24 21:21:20 +0100] Sync Log:  Synchronization complete at 21:21:19  (1 item transferred, 0 skipped, 0 failed)
+[2019-11-24 21:22:38 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) started propagating changes at 21:22:37.86 on 24 Nov 2019
+[2019-11-24 21:22:38 +0100] Sync Log:  [BGN] Updating file storage/logs/laravel.log from /app_sync to /host_sync
+[2019-11-24 21:22:38 +0100] Sync Log:  [END] Updating file storage/logs/laravel.log
+[2019-11-24 21:22:38 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) finished propagating changes at 21:22:37.91 on 24 Nov 2019
+[2019-11-24 21:22:38 +0100] Sync Log:  Synchronization complete at 21:22:37  (1 item transferred, 0 skipped, 0 failed)
+[2019-11-24 21:22:39 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) started propagating changes at 21:22:38.95 on 24 Nov 2019
+[2019-11-24 21:22:39 +0100] Sync Log:  [BGN] Updating file storage/logs/laravel.log from /app_sync to /host_sync
+[2019-11-24 21:22:39 +0100] Sync Log:  [END] Updating file storage/logs/laravel.log
+[2019-11-24 21:22:39 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) finished propagating changes at 21:22:38.99 on 24 Nov 2019
+[2019-11-24 21:22:39 +0100] Sync Log:  Synchronization complete at 21:22:39  (1 item transferred, 0 skipped, 0 failed)
+[2019-11-24 21:22:40 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) started propagating changes at 21:22:40.04 on 24 Nov 2019
+[2019-11-24 21:22:40 +0100] Sync Log:  [BGN] Updating file storage/logs/laravel.log from /app_sync to /host_sync
+[2019-11-24 21:22:41 +0100] Sync Log:  [END] Updating file storage/logs/laravel.log
+[2019-11-24 21:22:41 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) finished propagating changes at 21:22:40.08 on 24 Nov 2019
+[2019-11-24 21:22:41 +0100] Sync Log:  Synchronization complete at 21:22:40  (1 item transferred, 0 skipped, 0 failed)
+[2019-11-24 21:23:56 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) started propagating changes at 21:23:55.30 on 24 Nov 2019
+[2019-11-24 21:23:56 +0100] Sync Log:  [BGN] Updating file storage/logs/laravel.log from /app_sync to /host_sync
+[2019-11-24 21:23:56 +0100] Sync Log:  [END] Updating file storage/logs/laravel.log
+[2019-11-24 21:23:56 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) finished propagating changes at 21:23:55.37 on 24 Nov 2019
+[2019-11-24 21:23:56 +0100] Sync Log:  Synchronization complete at 21:23:55  (1 item transferred, 0 skipped, 0 failed)
+[2019-11-24 21:23:58 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) started propagating changes at 21:23:57.43 on 24 Nov 2019
+[2019-11-24 21:23:58 +0100] Sync Log:  [BGN] Updating file storage/logs/laravel.log from /app_sync to /host_sync
+[2019-11-24 21:23:58 +0100] Sync Log:  [END] Updating file storage/logs/laravel.log
+[2019-11-24 21:23:58 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) finished propagating changes at 21:23:57.48 on 24 Nov 2019
+[2019-11-24 21:23:58 +0100] Sync Log:  Synchronization complete at 21:23:57  (1 item transferred, 0 skipped, 0 failed)
+[2019-11-24 21:24:00 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) started propagating changes at 21:23:59.54 on 24 Nov 2019
+[2019-11-24 21:24:00 +0100] Sync Log:  [BGN] Updating file storage/logs/laravel.log from /app_sync to /host_sync
+[2019-11-24 21:24:00 +0100] Sync Log:  [END] Updating file storage/logs/laravel.log
+[2019-11-24 21:24:00 +0100] Sync Log:  UNISON 2.51.2 (OCAML 4.06.1) finished propagating changes at 21:23:59.58 on 24 Nov 2019
+[2019-11-24 21:24:00 +0100] Sync Log:  Synchronization complete at 21:23:59  (1 item transferred, 0 skipped, 0 failed)

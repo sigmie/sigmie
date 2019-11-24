@@ -1,4 +1,4 @@
-FROM php:7.3-fpm
+FROM php:7.2-fpm
 
 # Set working directory
 WORKDIR /var/www/app
