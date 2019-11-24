@@ -25,10 +25,21 @@
 	// Uncomment the next line if you want to keep your containers running after VS Code shuts down.
 	// "shutdownAction": "none",
 	// Uncomment the next line to run commands after the container is created - for example installing git.
-	// "postCreateCommand": "apt-get update && apt-get install -y git",
+	"postCreateCommand": "apt-get update && apt-get install -y git vim",
 	// Add the IDs of extensions you want installed when the container is created in the array below.
 	"extensions": [
 		"felixfbecker.php-debug",
-		"bradlc.vscode-tailwindcss"
+		"bradlc.vscode-tailwindcss",
+		"eamodio.gitlens",
+		"njpwerner.autodocstring",
+		"dotjoshjohnson.xml",
+		"mishkinf.vscode-edits-history",
+		"nikitakunevich.snippet-creator",
+		"phproberto.vscode-php-getters-setters",
+		"patbenatar.advanced-new-file",
+		"shd101wyy.markdown-preview-enhanced",
+		"gruntfuggly.todo-tree",
+		"neilbrayfield.php-docblocker",
+		"bmewburn.vscode-intelephense-client"
 	]
 }
