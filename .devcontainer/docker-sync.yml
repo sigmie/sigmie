@@ -1,0 +1,13 @@
+version: "2"
+options:
+  verbose: true
+syncs:
+  #IMPORTANT: ensure this name is unique and does not match your other application container name
+  epsiloncode-rsync-sync: #tip: add -sync and you keep consistent names as a convention
+    notify_terminal: true
+    sync_excludes: ['.git']
+    src: '../'
+    sync_userid: '33'
+    sync_groupid: '33'
+
+
