@@ -10,8 +10,8 @@
                                 Basics
                             </h3>
                             <ul class="pl-3">
-                                <li class="py-3">
-                                    <a href="">
+                                <li class="py-3 bg-blue-400 rounded-full pr-20 pl-5 -ml-5 md:-mr-20 lg:-mr-16 m-0">
+                                    <a href="" class="text-red-800 block leading-tight">
                                         <div class="inline-flex h-5">
                                             <div class="flex-1 pr-4">
                                                 <svg width="20px" height="1rem" viewBox="0 0 25 25" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
