@@ -21,5 +21,3 @@ Route::group(['middleware' => 'auth.basic'], function () {
 });
 
 Auth::routes();
-
-Route::post('register', 'AuthController@register');

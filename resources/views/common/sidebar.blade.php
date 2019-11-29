@@ -1,6 +1,6 @@
                 <div class="m-0 h-full p-3">
 
-                    <div class="col-md-12 align-middle mb-8 mt-4">
+                    <div class="col-md-12 align-middle mb-8">
                         <img src="https://res.cloudinary.com/markos-nikolaos-orfanos/image/upload/v1574659602/Group_2_fxapdw.png" width="200">
                     </div>
 

@@ -11,7 +11,7 @@
 <body class="min-h-full h-full">
     <div id="app" class="min-h-full h-full bg-gray-100">
 
-        <main class="mx-auto container px-4">
+        <main class="mx-auto container px-4 m-0">
             @yield('content')
         </main>
 
