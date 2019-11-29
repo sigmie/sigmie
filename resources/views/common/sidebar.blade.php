@@ -1,4 +1,4 @@
-                <div class="m-0 h-full p-3">
+                <div class="m-0 h-full px-3 py-3">
 
                     <div class="col-md-12 align-middle mb-8">
                         <img src="https://res.cloudinary.com/markos-nikolaos-orfanos/image/upload/v1574659602/Group_2_fxapdw.png" width="200">
@@ -12,7 +12,7 @@
                             <ul class="pl-3">
                                 <li class="py-3 bg-blue-400 rounded-full pr-20 pl-5 -ml-5 md:-mr-8 lg:-mr-12 m-0 mb-4 last:mb-0">
                                     <a href="" class="text-red-800 block leading-tight">
-                                        <div class="inline-flex h-5">
+                                        <div class="inline-flex h-4">
                                             <div class="flex-1 pr-4">
                                                 <svg width="20px" height="1rem" viewBox="0 0 25 25" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                                                     <g id="Desktop-HD" transform="translate(-52.000000, -355.000000)">

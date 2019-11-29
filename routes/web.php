@@ -11,7 +11,7 @@
 |
 */
 
-Route::group(['middleware' => 'auth.basic'], function () {
+Route::group([], function () {
 
     Route::get('/', function () {
         return view('welcome');

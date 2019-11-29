@@ -1,8 +1,8 @@
 @extends('layouts.homepage')
 
 @section('content')
-<div class="h-full mx-auto container w-9/12 sm:w-8/12 xl:w-8/12">
-    <div class="row">
+<div class="h-full mx-auto container">
+    <div class="row m-0">
         <div class="col-md-7 col-sm-12">
             <form method="POST" id="payment-form" class="mx-auto flex container w-full text-gray-700 h-auto" action="{{ route('register') }}">
                 @csrf
@@ -178,7 +178,7 @@
         </div>
     </div>
     <div class="col-md-5 col-sm-12 first-xs last-md">
-        <div class="row">
+        <div class="row m-0">
             @include('auth.register.cards.hobby')
         </div>
     </div>
