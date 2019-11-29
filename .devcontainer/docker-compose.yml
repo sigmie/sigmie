@@ -1,17 +1,22 @@
 version: '3'
 services:
-  web:
+  nginx:
     image: nginx:1.17
     ports:
         - '80:80'
     volumes:
-        - epsiloncode-rsync-sync:/var/www/app:nocopy
+        - code:/var/www/app:nocopy
         - ./nginx/site.conf:/etc/nginx/conf.d/default.conf
   php:
     container_name: php-fpm
     build: "./php-fpm"
     volumes:
-        - epsiloncode-rsync-sync:/var/www/app:nocopy
+        - code:/var/www/app:nocopy
+  devtools:
+    container_name: devtools
+    build: "./devtools"
+    volumes:
+        - code:/var/www/app:nocopy
   db:
     image: mysql:5.7
     restart: always
@@ -28,5 +33,5 @@ services:
       - my-db:/var/lib/mysql
 volumes:
   my-db:
-  epsiloncode-rsync-sync:
+  code:
     external: true

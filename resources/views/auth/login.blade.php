@@ -1,10 +1,9 @@
-@extends('layouts.app')
+@extends('layouts.default')
 
 @section('content')
 
-
-<div class="h-full mx-auto m-12">
-    <form class="mx-auto flex container w-4/5 sm:w-3/5 md:w-2/4 lg:w-1/3 xl:w-1/4 text-gray-700 h-auto" method="POST" action="{{ route('login') }}">
+<div class="h-full mx-auto">
+    <form class="mx-auto flex container w-96 text-gray-700 h-auto" method="POST" action="{{ route('login') }}">
         @csrf
         <div class="container flex justify-center w-auto block border-gray-200 border rounded bg-white px-4">
             <div class="row">

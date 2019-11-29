@@ -1,6 +1,6 @@
-                <div class="m-0 h-full p-3 row flex">
+                <div class="m-0 h-full p-3">
 
-                    <div class="col-md-12 align-middle mb-8">
+                    <div class="col-md-12 align-middle mb-8 mt-4">
                         <img src="https://res.cloudinary.com/markos-nikolaos-orfanos/image/upload/v1574659602/Group_2_fxapdw.png" width="200">
                     </div>
 
@@ -10,7 +10,7 @@
                                 Basics
                             </h3>
                             <ul class="pl-3">
-                                <li class="py-3 bg-blue-400 rounded-full pr-20 pl-5 -ml-5 md:-mr-20 lg:-mr-16 m-0">
+                                <li class="py-3 bg-blue-400 rounded-full pr-20 pl-5 -ml-5 md:-mr-8 lg:-mr-12 m-0 mb-4 last:mb-0">
                                     <a href="" class="text-red-800 block leading-tight">
                                         <div class="inline-flex h-5">
                                             <div class="flex-1 pr-4">
