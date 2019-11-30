@@ -1,6 +1,6 @@
 FROM ubuntu:18.04
 
-WORKDIR /var/www/penny/htdocs
+WORKDIR /var/www/app
 
 ENV TZ=Europe/Berlin
 
