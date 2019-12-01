@@ -8,7 +8,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN apt-get update
 
-RUN apt-get install -y git unzip zip vim wget curl
+RUN apt-get install -y git unzip zip vim wget curl sudo zsh
 
 RUN apt-get install -y software-properties-common
 
@@ -16,7 +16,7 @@ RUN apt-get install -y default-mysql-client
 
 RUN add-apt-repository ppa:ondrej/php
 
-RUN apt-get install -y php7.2 php7.2-zip php7.2-dom php7.2-intl php7.2-mbstring php7.2-simplexml php7.2-xml php7.2-common php7.2-opcache php7.2-cli php7.2-gd php7.2-curl php7.2-mysql php7.2-redis php7.2-fpm
+RUN apt-get install -y php7.1 php7.1-zip php7.1-dom php7.1-intl php7.1-mbstring php7.1-simplexml php7.1-xml php7.1-common php7.1-opcache php7.1-mcrypt php7.1-cli php7.1-gd php7.1-curl php7.1-mysql php7.1-redis php7.1-fpm
 
 RUN apt-get install -y nodejs npm
 
@@ -28,9 +28,18 @@ RUN apt-get -y install dirmngr apt-transport-https lsb-release ca-certificates
 
 RUN curl -sL https://deb.nodesource.com/setup_10.x | bash
 
+RUN set -uex; \
+    wget https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh; \
+    sh ./install.sh; \
+    rm ./install.sh
+
 RUN chown -R www-data:www-data /var/www
 
-RUN chsh -s /bin/bash www-data
+RUN usermod -s /bin/zsh www-data 
+
+RUN usermod -a -G sudo www-data
+
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 USER www-data
 
