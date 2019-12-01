@@ -8,7 +8,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN apt-get update
 
-RUN apt-get install -y git unzip zip vim wget curl sudo zsh
+RUN apt-get install -y git unzip zip vim wget curl sudo zsh net-tools
 
 RUN apt-get install -y software-properties-common
 
@@ -35,7 +35,7 @@ RUN set -uex; \
 
 RUN chown -R www-data:www-data /var/www
 
-RUN usermod -s /bin/zsh www-data 
+RUN usermod -s /bin/zsh www-data
 
 RUN usermod -a -G sudo www-data
 

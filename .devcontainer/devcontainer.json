@@ -28,7 +28,8 @@
 	//"postCreateCommand": "sudo apt-get update && apt-get install -y git vim",
 	// Add the IDs of extensions you want installed when the container is created in the array below.
 	"extensions": [
-		"felixfbecker.php-debug",
+        "felixfbecker.php-debug",
+        "ms-azuretools.vscode-docker",
 		"bradlc.vscode-tailwindcss",
 		"eamodio.gitlens",
 		"njpwerner.autodocstring",
