@@ -23,5 +23,25 @@
             "type": "shell",
             "command": "php artisan route:list"
         },
+        {
+            "label": "config:cache",
+            "type": "shell",
+            "command": "php artisan config:cache"
+        },
+        {
+            "label": "config:clear",
+            "type": "shell",
+            "command": "php artisan config:clear"
+        },
+        {
+            "label": "cache:clear",
+            "type": "shell",
+            "command": "php artisan cache:clear"
+        },
+        {
+            "label": "config:all",
+            "type": "shell",
+            "command": "php artisan config:cache && php artisan config:clear"
+        },
     ]
 }

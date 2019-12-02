@@ -1,7 +1,14 @@
-@extends('layouts.app')
+{{-- @extends('layouts.homepage') --}}
 
 @section('content')
-<div class="container">
+
+<div class="h-full mx-auto">
+    <form class="mx-auto flex container w-84 text-gray-700 h-auto" method="POST" action="{{ route('password.email') }}">
+
+    </form>
+</div>
+
+{{-- <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
@@ -61,5 +68,5 @@
             </div>
         </div>
     </div>
-</div>
+</div> --}}
 @endsection

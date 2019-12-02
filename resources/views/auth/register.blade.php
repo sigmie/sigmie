@@ -20,7 +20,7 @@
                             <div class="box">
                                 <div class="mx-auto">
 
-                                    <label for="email" class="pb-1 block">{{ __('E-Mail Address') }}</label>
+                                    <label for="email" class="pb-1 block">Email</label>
                                     <input id="email" type="email" class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('name') is-invalid @enderror @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email">
 
                                     @error('email')
