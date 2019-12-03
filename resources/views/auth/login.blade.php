@@ -71,3 +71,9 @@
     </form>
 </div>
 @endsection
+
+@section('bottom-content')
+<a href="{{ route('register') }}">
+    Don't have an account yet? Sign up Here
+</a>
+@endsection

@@ -21,3 +21,9 @@ Route::group([], function () {
 });
 
 Auth::routes();
+
+
+Route::view('/terms-of-service', 'static.terms-of-service')->name('terms-of-service');
+
+Route::view('/privacy-policy', 'static.privacy-policy')->name('privacy-policy');
+

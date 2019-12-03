@@ -29,7 +29,7 @@ return [
     |
     */
 
-    'host' => env('MAIL_HOST', 'https://api.eu.mailgun.net/v3/mg.mos-sigma.com'),
+    'host' => env('MAIL_HOST', ''),
 
     /*
     |--------------------------------------------------------------------------
