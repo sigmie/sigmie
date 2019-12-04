@@ -46,23 +46,13 @@
                 <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 bg-gray-300 px-8">
                     <div class="float-left box w-full py-3">
                         <div class="container">
-                            <div class="row m-0">
-                                <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6 p-0 pr-3">
-                                    <a href="{{ route('register')}}"
-                                        class="bg-transparent text-gray-600 text-sm rounded w-full font-semibold uppercase tracking-wide w-full text-center block h-full cursor-pointer px-4 py-2">
-                                        Register
-                                    </a>
-                                </div>
-                                <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6 p-0 pl-3">
-                                    <div class="w-full">
-                                        <button type="submit"
-                                            class="bg-blue-800 hover:bg-blue-900 text-white text-sm py-2 px-4 rounded uppercase w-full float-right font-semibold tracking-wide">
-                                            Sign in
-                                        </button>
-                                    </div>
-
-                                </div>
+                            <div class="w-full">
+                                <button type="submit"
+                                    class="bg-blue-800 hover:bg-blue-900 text-white text-sm py-2 px-4 rounded uppercase w-full float-right font-semibold tracking-wide">
+                                    Sign in
+                                </button>
                             </div>
+
                         </div>
                     </div>
                 </div>
