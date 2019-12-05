@@ -41,6 +41,18 @@ class RegisterController extends Controller
     }
 
     /**
+     * Show the application registration form.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function showRegistrationForm()
+    {
+        $intent = (new User)->createSetupIntent();
+
+        return view('auth.register', ['intent' => $intent]);
+    }
+
+    /**
      * Get a validator for an incoming registration request.
      *
      * @param  array  $data
@@ -63,13 +75,12 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
-        dump($data);
-        die();
-
-        return User::create([
+        $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
+
+        $user->newSubscription('main', 'premium')->create($data['method']);
     }
 }

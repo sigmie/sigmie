@@ -4,7 +4,8 @@
 <div class="h-full mx-auto container">
     <div class="row m-0">
         <div class="col-md-7 col-sm-12">
-            <form method="POST" id="payment-form" class="mx-auto flex container w-full text-gray-700 h-auto" action="{{ route('register') }}">
+            <form method="POST" id="register-form" class="mx-auto flex container w-full text-gray-700 h-auto"
+                action="{{ route('register') }}">
                 @csrf
                 <div class="container flex justify-center w-auto block border-gray-200 border rounded bg-white px-4">
                     <div class="row">
@@ -21,7 +22,9 @@
                                 <div class="mx-auto">
 
                                     <label for="email" class="pb-1 block">Email</label>
-                                    <input id="email" type="email" class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('name') is-invalid @enderror @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email">
+                                    <input id="email" type="email"
+                                        class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('name') is-invalid @enderror @error('email') is-invalid @enderror"
+                                        name="email" value="{{ old('email') }}" required autocomplete="email">
 
                                     @error('email')
                                     <span class="invalid-feedback" role="alert">
@@ -37,7 +40,9 @@
                                 <div class="mx-auto">
 
                                     <label for="password" class="pb-1 block">{{ __('Password') }}</label>
-                                    <input id="password" type="password" class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('password') is-invalid @enderror @error('email') is-invalid @enderror" name="password">
+                                    <input id="password" type="password"
+                                        class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('password') is-invalid @enderror @error('email') is-invalid @enderror"
+                                        name="password">
 
                                     @error('password')
                                     <span class="invalid-feedback" role="alert">
@@ -52,8 +57,11 @@
                             <div class="box">
                                 <div class="mx-auto">
 
-                                    <label for="password-confirm" class="pb-1 block">{{ __('Confirm Password') }}</label>
-                                    <input id="password-confirm" type="password" class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('password') is-invalid @enderror @error('email') is-invalid @enderror" name="password_confirmation" required autocomplete="new-password">
+                                    <label for="password-confirm"
+                                        class="pb-1 block">{{ __('Confirm Password') }}</label>
+                                    <input id="password-confirm" type="password"
+                                        class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('password') is-invalid @enderror @error('email') is-invalid @enderror"
+                                        name="password_confirmation" required autocomplete="new-password">
                                     @error('password-confirm')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -71,7 +79,9 @@
                             <div class="box">
                                 <div class="mx-auto">
                                     <label for="name" class="pb-1 block">Cardholder name</label>
-                                    <input id="name" type="text" class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}" required autocomplete="name" autofocus>
+                                    <input id="card-holder-name" type="text"
+                                        class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('name') is-invalid @enderror"
+                                        name="name" value="{{ old('name') }}" required autocomplete="name" autofocus>
 
                                     @error('name')
                                     <span class="invalid-feedback" role="alert">
@@ -86,10 +96,22 @@
                             <div class="box">
                                 <div class="mx-auto">
                                     <label for="name" class="pb-1 block">Credit card</label>
-                                    <div id="card-element" class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('name') is-invalid @enderror"></div>
+                                    <div id="card-element"
+                                        class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('name') is-invalid @enderror">
+                                    </div>
                                     <div id="card-errors" role="alert"></div>
                                 </div>
                             </div>
+                        </div>
+
+                        <input name="method" id="method-field" value="" type="hidden">
+
+
+                        <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 py-4">
+                            <button id="register-button" data-secret="{{ $intent->client_secret }}"
+                                class="bg-blue-500 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded uppercase float-right font-semibold tracking-wide">
+                                Register
+                            </button>
                         </div>
 
                         <script src="https://js.stripe.com/v3/" type="application/javascript"></script>
@@ -123,56 +145,38 @@
                                 style: style
                             });
 
+                            console.log('hoejoerklej');
+
                             // Add an instance of the card Element into the `card-element` <div>.
                             card.mount('#card-element');
 
-                            // Handle real-time validation errors from the card Element.
-                            card.addEventListener('change', function(event) {
-                                var displayError = document.getElementById('card-errors');
-                                if (event.error) {
-                                    displayError.textContent = event.error.message;
-                                } else {
-                                    displayError.textContent = '';
-                                }
-                            });
+                            const cardHolderName = document.getElementById('card-holder-name');
+                            const cardButton = document.getElementById('register-button');
+                            const clientSecret = cardButton.dataset.secret;
+                            const methodInput = document.getElementById('method-field');
+                            const form = document.getElementById("register-form")
 
-                            // Handle form submission.
-                            var form = document.getElementById('payment-form');
-                            form.addEventListener('submit', function(event) {
-                                event.preventDefault();
+cardButton.addEventListener('click', async (e) => {
+    e.preventDefault();
 
-                                stripe.createToken(card).then(function(result) {
-                                    if (result.error) {
-                                        // Inform the user if there was an error.
-                                        var errorElement = document.getElementById('card-errors');
-                                        errorElement.textContent = result.error.message;
-                                    } else {
-                                        // Send the token to your server.
-                                        stripeTokenHandler(result.token);
-                                    }
-                                });
-                            });
+    const { setupIntent, error } = await stripe.handleCardSetup(
+        clientSecret, card, {
 
-                            // Submit the form with the token ID.
-                            function stripeTokenHandler(token) {
-                                // Insert the token ID into the form so it gets submitted to the server
-                                var form = document.getElementById('payment-form');
-                                var hiddenInput = document.createElement('input');
-                                hiddenInput.setAttribute('type', 'hidden');
-                                hiddenInput.setAttribute('name', 'stripeToken');
-                                hiddenInput.setAttribute('value', token.id);
-                                form.appendChild(hiddenInput);
+            payment_method_data: {
+                billing_details: { name: cardHolderName.value }
+            }
+        }
+    );
 
-                                // Submit the form
-                                form.submit();
-                            }
+    if (error) {
+        console.log(error);
+    } else {
+        methodInput.value = setupIntent.payment_method
+        form.submit();
+    }
+});
+
                         </script>
-
-                        <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 py-4">
-                            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded uppercase float-right font-semibold tracking-wide">
-                                {{ __('Register') }}
-                            </button>
-                        </div>
                     </div>
             </form>
         </div>
