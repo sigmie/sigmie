@@ -106,7 +106,6 @@
 
                         <input name="method" id="method-field" value="" type="hidden">
 
-
                         <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 py-4">
                             <button id="register-button" data-secret="{{ $intent->client_secret }}"
                                 class="bg-blue-500 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded uppercase float-right font-semibold tracking-wide">
