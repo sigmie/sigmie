@@ -40,6 +40,7 @@
 		"neilbrayfield.php-docblocker",
         "bmewburn.vscode-intelephense-client",
         "onecentlin.laravel-extension-pack",
-        "codingyu.laravel-goto-view"
+        "codingyu.laravel-goto-view",
+        "octref.vetur"
 	]
 }
