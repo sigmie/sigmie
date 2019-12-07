@@ -30,23 +30,4 @@ RUN apt-get -y install dirmngr apt-transport-https lsb-release ca-certificates
 
 RUN curl -sL https://deb.nodesource.com/setup_10.x | bash
 
-RUN chown -R www-data:www-data /var/www
-
-RUN usermod -s /bin/zsh www-data
-
-RUN usermod -a -G sudo www-data
-
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
-USER www-data
-
-RUN set -uex; \
-    wget https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh; \
-    sh ./install.sh; \
-    rm ./install.sh
-
-RUN cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc
-
-RUN sudo chsh -s $(which zsh)
-
 CMD ["sleep","infinity"]

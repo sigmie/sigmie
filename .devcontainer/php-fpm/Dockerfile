@@ -18,11 +18,5 @@ RUN pecl install -o -f redis && rm -rf /tmp/pear && echo "extension=redis.so" > 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Change current user to www-data
-USER www-data
-
-# Expose port 9000 and start php-fpm server
-EXPOSE 9000
-
 # Bind container to the php-fpm service
 CMD ["php-fpm"]
