@@ -14,7 +14,9 @@
 
         <main class="mx-auto container m-0 w-256">
 
-            <router-view :old="{{ json_encode(Session::getOldInput()) }}"></router-view>
+            <router-view :erros="{{ $errors->toJson() }}" :old="{{ json_encode(Session::getOldInput()) }}"
+                 :app="{{ json_encode($app) }}">
+            </router-view>
 
             <div class="w-full py-10">
                 <img class="mx-auto"

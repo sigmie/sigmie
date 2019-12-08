@@ -11,14 +11,13 @@ if (token) {
 
 Vue.use(VueRouter);
 
+Vue.component('csrf-token', require('./common/csrf.vue').default);
+
 const router = new VueRouter({
     routes: Routes,
     mode: 'history',
     base: '/',
 });
-
-console.log('yo');
-
 
 new Vue({
     el: '#app',

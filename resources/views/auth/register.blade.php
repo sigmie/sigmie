@@ -1,5 +1,38 @@
 @extends('layouts.homepage')
 
+@section('additional-js')
+<script src="https://js.stripe.com/v3/" type="application/javascript"></script>
+@endsection
+
+
+@section('additional-css')
+<style>
+    .StripeElement {
+        box-sizing: border-box;
+        padding: 0.25rem 1rem 0.25rem 1rem;
+        background-color: #edf2f7;
+        border-radius: 0.25rem;
+        line-height: 1.5;
+        padding: 0.4rem 1rem 0.4rem 1rem;
+    }
+
+    .StripeElement--focus {
+        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+    }
+
+    .StripeElement--invalid {
+        background-color: 'red';
+        border-color: #fa755a;
+    }
+
+    .StripeElement--webkit-autofill {
+        background-color: 'red';
+        background-color: #fefde5 !important;
+    }
+</style>
+
+@endsection()
+
 @section('content')
 <div class="h-full mx-auto container">
     <div class="row m-0">
@@ -107,82 +140,19 @@
                         <input name="method" id="method-field" value="" type="hidden">
 
                         <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 py-4">
-                            <button id="register-button" data-secret="{{ $intent->client_secret }}"
+                            <button id="register-button"
                                 class="bg-blue-500 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded uppercase float-right font-semibold tracking-wide">
                                 Register
                             </button>
                         </div>
 
-                        <script src="https://js.stripe.com/v3/" type="application/javascript"></script>
-
-                        <script type="application/javascript">
-                            var stripe = Stripe('pk_test_c9qTG6rra0eQdTd6n7Nhcqka00a3YibJYB');
-
-                            var elements = stripe.elements();
-
-                            // Custom styling can be passed to options when creating an Element.
-                            // (Note that this demo uses a wider set of styles than the guide below.)
-                            var style = {
-                                hidePostalCode: true,
-                                base: {
-                                    backgroundColor: '#edf2f7',
-                                    fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
-                                    fontSmoothing: 'antialiased',
-                                    fontSize: '16px',
-                                    '::placeholder': {
-                                        color: '#aab7c4'
-                                    }
-                                },
-                                invalid: {
-                                    color: '#fa755a',
-                                    iconColor: '#fa755a'
-                                }
-                            };
-
-                            // Create an instance of the card Element.
-                            var card = elements.create('card', {
-                                style: style
-                            });
-
-                            console.log('hoejoerklej');
-
-                            // Add an instance of the card Element into the `card-element` <div>.
-                            card.mount('#card-element');
-
-                            const cardHolderName = document.getElementById('card-holder-name');
-                            const cardButton = document.getElementById('register-button');
-                            const clientSecret = cardButton.dataset.secret;
-                            const methodInput = document.getElementById('method-field');
-                            const form = document.getElementById("register-form")
-
-cardButton.addEventListener('click', async (e) => {
-    e.preventDefault();
-
-    const { setupIntent, error } = await stripe.handleCardSetup(
-        clientSecret, card, {
-
-            payment_method_data: {
-                billing_details: { name: cardHolderName.value }
-            }
-        }
-    );
-
-    if (error) {
-        console.log(error);
-    } else {
-        methodInput.value = setupIntent.payment_method
-        form.submit();
-    }
-});
-
-                        </script>
                     </div>
             </form>
         </div>
     </div>
     <div class="col-md-5 col-sm-12 first-xs last-md">
         <div class="row m-0">
-            @include('auth.register.cards.hobby')
+            {{-- @include('auth.register.cards.hobby') --}}
         </div>
     </div>
 </div>

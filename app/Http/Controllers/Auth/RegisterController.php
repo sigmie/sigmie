@@ -49,7 +49,7 @@ class RegisterController extends Controller
     {
         $intent = (new User)->createSetupIntent();
 
-        return view('auth.register', ['intent' => $intent]);
+        return view('auth.register', ['app' => ['intent' => $intent]]);
     }
 
     /**
