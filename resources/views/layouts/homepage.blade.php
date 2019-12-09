@@ -12,7 +12,7 @@
             @include('common.navbar')
         </nav>
 
-        <main class="mx-auto container m-0 w-256">
+        <main class="mx-auto container m-0 w-256 max-w-full">
 
             <div class="w-full py-10">
                 <img class="mx-auto"

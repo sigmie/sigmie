@@ -1,151 +1,104 @@
 <template>
   <div class="h-full mx-auto container">
-    <div class="row m-0 max-w-4xl">
-      <div class="col-md-7 col-sm-12">
-        <form
-          method="POST"
-          id="register-form"
-          class="mx-auto flex container w-full text-gray-700 h-auto"
-          :action="route"
+    <div class="mx-auto max-w-sm md:max-w-sm lg:m-0 lg:max-w-md">
+      <form
+        method="POST"
+        id="register-form"
+        class="mx-auto flex container w-full text-gray-700 h-auto"
+        :action="route"
+        v-on:submit.prevent="validate"
+      >
+        <csrf-token />
+
+        <div
+          class="container flex justify-center w-auto block border-gray-200 border rounded bg-white px-4"
         >
-          <csrf-token />
+          <div class="row">
+            <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10">
+              <form-heading text="Registers" />
+            </div>
 
-          <div
-            class="container flex justify-center w-auto block border-gray-200 border rounded bg-white px-4"
-          >
-            <div class="row">
-              <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10">
-                <h1 class="pt-5 pb-2 text-xl">Register</h1>
-              </div>
-              <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 border-t mt-3 pt-2">
-                <span class="text-xs text-gray-500">Basics</span>
-              </div>
+            <content-separator text="Basics" />
 
-              <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
-                <input-field :type="'text'" :name="'email'" :label="'Email'" />
-              </div>
+            <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
+              <input-field :type="'text'" :id="'email-field'" :name="'email'" :label="'Email'" />
+            </div>
 
-              <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
-                <input-field :type="'password'" :name="'password'" :label="'Password'" />
-              </div>
+            <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
+              <input-field
+                :id="'password-field'"
+                :type="'password'"
+                :name="'password'"
+                :label="'Password'"
+              />
+            </div>
 
-              <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
-                <input-field
-                  :type="'password'"
-                  :name="'password-confirm'"
-                  :label="'Confirm password'"
-                />
-              </div>
+            <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3 pb-4">
+              <input-field
+                :id="'password-confirm-field'"
+                :type="'password'"
+                :name="'password-confirm'"
+                :label="'Confirm password'"
+              />
+            </div>
 
-              <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 border-t mt-6 pt-2 px-0">
-                <span class="text-xs text-gray-500 px-10">Billing</span>
+            <content-separator text="Billing" />
 
-                <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
-                  <input-field
-                    :type="'text'"
-                    :name="'name'"
-                    :label="'Cardholder name'"
-                    :required="true"
-                    :autocomplete="name"
-                  />
-                </div>
+            <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
+              <input-field
+                :id="'name-field'"
+                :type="'text'"
+                :name="'name'"
+                :label="'Cardholder name'"
+                :required="true"
+                :autocomplete="'name'"
+              />
+            </div>
 
-                <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
-                  <div class="box">
-                    <div class="mx-auto">
-                      <label for="name" class="pb-1 block">Credit card</label>
-                      <div
-                        id="card-element"
-                        class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('name') is-invalid @enderror"
-                      ></div>
-                      <div id="card-errors" role="alert"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
+              <stripe :intent="app.intent" />
+            </div>
 
-              <input name="method" id="method-field" value type="hidden" />
-
-              <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 py-4">
-                <button
-                  id="register-button"
-                  class="bg-blue-500 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded uppercase float-right font-semibold tracking-wide"
-                >Register</button>
-              </div>
+            <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-6 pb-4">
+              <primary-button :disabled="disabled" type="submit" text="Register" />
             </div>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   </div>
 </template>
 
 <script>
-var stripe = Stripe("pk_test_c9qTG6rra0eQdTd6n7Nhcqka00a3YibJYB");
-
 export default {
   props: ["old", "app", "errors", "route"],
   components: {
     plan: require("./register/plan").default
   },
-
   data() {
     return {
-      stripe: {
-        card: null,
-        holder: "",
-        method: null,
-        style: {
-          base: {
-            backgroundColor: "#edf2f7",
-            fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
-            fontSmoothing: "antialiased",
-            fontSize: "16px",
-            "::placeholder": {
-              color: "#aab7c4"
-            }
-          },
-          invalid: {
-            color: "#fa755a",
-            iconColor: "#fa755a"
-          }
-        }
-      }
+      mutableErrors: [...this.errors],
+      disabled: false,
+      email: "",
+      password: "",
+      passwordConfirm: "",
+      name: ""
     };
   },
-
-  mounted() {
-    let elements = stripe.elements();
-
-    this.card = elements.create("card", {
-      style: this.stripe.style,
-      hidePostalCode: true
-    });
-
-    this.card.mount("#card-element");
-  },
-
   methods: {
-    async handleSubmit(e) {
-      e.preventDefault();
+    validate(event) {
+      if (this.name && this.age) {
+        return true;
+      }
 
-      let client_secret = this.app.intent.client_secret;
+      this.errors = [];
 
-      const { setupIntent, error } = await stripe.handleCardSetup(
-        client_secret,
-        this.card,
-        {
-          payment_method_data: {
-            billing_details: { name: this.stripe.holder }
-          }
-        }
-      );
+      if (!this.name) {
+        this.errors.push("Name required.");
+      }
 
-      if (error) {
-        console.log(error);
-      } else {
-        this.stripe.method = setupIntent.payment_method;
-        // form.submit();
+      if (!this.age) {
+        this.errors.push("Age required.");
       }
     }
   }

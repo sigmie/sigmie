@@ -1,19 +1,17 @@
 <template>
   <div class="box">
     <div class="mx-auto">
-      <label :for="name" class="pb-1 block">{{ label }}</label>
+      <label :for="name" class="pb-1 block text-gray-600 font-normal text-sm">{{ label }}</label>
       <input
         :id="id"
         :type="type"
-        class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal is-invalid @enderror"
+        class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal"
         :name="name"
         :value="old"
         :required="required"
         :autocomplete="autocomplete"
       />
-      <span class="text-red-600 font-semibold" role="alert">
-        Wrong input!
-      </span>
+      <span v-if="error.length > 0" class="text-red-600 font-semibold" role="alert">Wrong input!</span>
     </div>
   </div>
 </template>
@@ -33,6 +31,9 @@ export default {
     type: {
       default: ""
     },
+    error: {
+      default: ""
+    },
     type: {
       default: ""
     },
@@ -49,11 +50,7 @@ export default {
   data() {
     return {};
   },
-
-  mounted() {
-    console.log("plan mount");
-  },
-
+  mounted() {},
   methods: {}
 };
 </script>

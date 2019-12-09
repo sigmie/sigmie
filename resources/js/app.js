@@ -13,6 +13,11 @@ Vue.use(VueRouter);
 
 Vue.component('csrf-token', require('./common/csrf').default);
 Vue.component('input-field', require('./components/form/input').default);
+Vue.component('primary-button', require('./components/form/button').default);
+Vue.component('form-heading', require('./components/form/heading').default);
+Vue.component('content-separator', require('./components/form/separator').default);
+Vue.component('container-gray', require('./components/container/gray').default);
+Vue.component('stripe', require('./components/form/stripe').default);
 
 const router = new VueRouter({
     routes: Routes,
