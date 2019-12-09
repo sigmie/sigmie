@@ -12,8 +12,6 @@ export default {
   mounted() {
     let csrfMeta = document.head.querySelector('meta[name="csrf-token"]');
     this.token = csrfMeta.content;
-    console.log("csrf mounnthed");
-    console.log(this.token);
   }
 };
 </script>

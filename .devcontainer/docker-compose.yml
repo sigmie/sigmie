@@ -18,6 +18,8 @@ services:
     build: "./devtools"
     volumes:
         - code:/var/www/app:nocopy
+    ports:
+        - '35729:35729'
   db:
     image: mysql:5.7
     restart: always

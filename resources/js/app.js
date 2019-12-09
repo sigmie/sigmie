@@ -11,7 +11,8 @@ if (token) {
 
 Vue.use(VueRouter);
 
-Vue.component('csrf-token', require('./common/csrf.vue').default);
+Vue.component('csrf-token', require('./common/csrf').default);
+Vue.component('input-field', require('./components/form/input').default);
 
 const router = new VueRouter({
     routes: Routes,

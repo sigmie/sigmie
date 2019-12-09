@@ -1,5 +1,5 @@
 <template>
-  <div class="col-md-12 border bg-white rounded p-0 py-2 shadow">
+  <div class="col-md-5 border bg-white rounded p-0 py-2 shadow">
     <h2 class="uppercase text-sm text-gray-500 px-8 py-2 font-semibold tracking-wider">Hobby</h2>
     <div class="bg-green-200 px-6 text-center py-1">
       <span class="text-green-600">5-day Free trail</span>
