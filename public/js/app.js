@@ -1850,14 +1850,27 @@ module.exports = {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
-
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 //
 //
 //
@@ -1936,7 +1949,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
   },
   data: function data() {
     return {
-      mutableErrors: _toConsumableArray(this.errors),
+      mutableErrors: _objectSpread({}, this.errors),
       disabled: false,
       email: "",
       password: "",
@@ -1946,19 +1959,13 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
   },
   methods: {
     validate: function validate(event) {
-      if (this.name && this.age) {
-        return true;
-      }
-
-      this.errors = [];
-
-      if (!this.name) {
-        this.errors.push("Name required.");
-      }
-
-      if (!this.age) {
-        this.errors.push("Age required.");
-      }
+      this.mutableErrors = []; //   if (this.name.length < 1) {
+      //     this.$set(this.mutableErrors, "name", "Name required.");
+      //   }
+      //   var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      //   if (re.test(String(this.email).toLowerCase())) {
+      //     this.$set(this.mutableErrors, "email", "Email required");
+      //   }
     }
   }
 });
@@ -2325,9 +2332,13 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 //
 //
 //
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   props: (_props = {
     name: {
+      "default": ""
+    },
+    placeholder: {
       "default": ""
     },
     label: {
@@ -2352,7 +2363,9 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
     "default": true
   }), _props),
   data: function data() {
-    return {};
+    return {
+      value: this.old
+    };
   },
   mounted: function mounted() {},
   methods: {}
@@ -3802,9 +3815,18 @@ var render = function() {
                         _c("input-field", {
                           attrs: {
                             type: "text",
+                            placeholder: "john.doe@gmail.com",
                             id: "email-field",
+                            error: _vm.mutableErrors.email,
                             name: "email",
                             label: "Email"
+                          },
+                          model: {
+                            value: _vm.email,
+                            callback: function($$v) {
+                              _vm.email = $$v
+                            },
+                            expression: "email"
                           }
                         })
                       ],
@@ -3823,7 +3845,15 @@ var render = function() {
                             id: "password-field",
                             type: "password",
                             name: "password",
+                            error: _vm.mutableErrors.password,
                             label: "Password"
+                          },
+                          model: {
+                            value: _vm.password,
+                            callback: function($$v) {
+                              _vm.password = $$v
+                            },
+                            expression: "password"
                           }
                         })
                       ],
@@ -3841,8 +3871,16 @@ var render = function() {
                           attrs: {
                             id: "password-confirm-field",
                             type: "password",
+                            error: _vm.mutableErrors.passwordConfirm,
                             name: "password-confirm",
                             label: "Confirm password"
+                          },
+                          model: {
+                            value: _vm.passwordConfirm,
+                            callback: function($$v) {
+                              _vm.passwordConfirm = $$v
+                            },
+                            expression: "passwordConfirm"
                           }
                         })
                       ],
@@ -3861,11 +3899,20 @@ var render = function() {
                         _c("input-field", {
                           attrs: {
                             id: "name-field",
+                            placeholder: "John Doe",
                             type: "text",
                             name: "name",
+                            error: _vm.mutableErrors.name,
                             label: "Cardholder name",
                             required: true,
                             autocomplete: "name"
+                          },
+                          model: {
+                            value: _vm.name,
+                            callback: function($$v) {
+                              _vm.name = $$v
+                            },
+                            expression: "name"
                           }
                         })
                       ],
@@ -3886,7 +3933,7 @@ var render = function() {
                       "div",
                       {
                         staticClass:
-                          "col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-4 pb-6"
+                          "col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-6 pb-4"
                       },
                       [
                         _c("primary-button", {
@@ -4561,11 +4608,16 @@ var render = function() {
         attrs: {
           id: _vm.id,
           type: _vm.type,
+          placeholder: _vm.placeholder,
           name: _vm.name,
-          required: _vm.required,
           autocomplete: _vm.autocomplete
         },
-        domProps: { value: _vm.old }
+        domProps: { value: _vm.value },
+        on: {
+          input: function($event) {
+            return _vm.$emit("input", $event.target.value)
+          }
+        }
       }),
       _vm._v(" "),
       _vm.error.length > 0
@@ -4575,7 +4627,7 @@ var render = function() {
               staticClass: "text-red-600 font-semibold",
               attrs: { role: "alert" }
             },
-            [_vm._v("Wrong input!")]
+            [_vm._v(_vm._s(_vm.error))]
           )
         : _vm._e()
     ])

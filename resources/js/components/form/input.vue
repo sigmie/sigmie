@@ -5,13 +5,14 @@
       <input
         :id="id"
         :type="type"
+        :placeholder="placeholder"
         class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal"
+        v-bind:value="value"
+        v-on:input="$emit('input', $event.target.value)"
         :name="name"
-        :value="old"
-        :required="required"
         :autocomplete="autocomplete"
       />
-      <span v-if="error.length > 0" class="text-red-600 font-semibold" role="alert">Wrong input!</span>
+      <span v-if="error.length > 0" class="text-red-600 font-semibold" role="alert">{{ error }}</span>
     </div>
   </div>
 </template>
@@ -20,6 +21,9 @@
 export default {
   props: {
     name: {
+      default: ""
+    },
+    placeholder: {
       default: ""
     },
     label: {
@@ -48,9 +52,12 @@ export default {
     }
   },
   data() {
-    return {};
+    return {
+      value: this.old
+    };
   },
-  mounted() {},
+  mounted() {
+  },
   methods: {}
 };
 </script>

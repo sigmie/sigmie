@@ -21,15 +21,25 @@
             <content-separator text="Basics" />
 
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
-              <input-field :type="'text'" :id="'email-field'" :name="'email'" :label="'Email'" />
+              <input-field
+                :type="'text'"
+                placeholder="john.doe@gmail.com"
+                v-model="email"
+                :id="'email-field'"
+                :error="mutableErrors.email"
+                :name="'email'"
+                label="Email"
+              />
             </div>
 
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
               <input-field
+                v-model="password"
                 :id="'password-field'"
                 :type="'password'"
                 :name="'password'"
-                :label="'Password'"
+                :error="mutableErrors.password"
+                label="Password"
               />
             </div>
 
@@ -37,8 +47,10 @@
               <input-field
                 :id="'password-confirm-field'"
                 :type="'password'"
+                v-model="passwordConfirm"
+                :error="mutableErrors.passwordConfirm"
                 :name="'password-confirm'"
-                :label="'Confirm password'"
+                label="Confirm password"
               />
             </div>
 
@@ -47,9 +59,12 @@
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
               <input-field
                 :id="'name-field'"
+                v-model="name"
+                placeholder="John Doe"
                 :type="'text'"
                 :name="'name'"
-                :label="'Cardholder name'"
+                :error="mutableErrors.name"
+                label="Cardholder name"
                 :required="true"
                 :autocomplete="'name'"
               />
@@ -77,7 +92,7 @@ export default {
   },
   data() {
     return {
-      mutableErrors: [...this.errors],
+      mutableErrors: { ...this.errors },
       disabled: false,
       email: "",
       password: "",
@@ -87,19 +102,17 @@ export default {
   },
   methods: {
     validate(event) {
-      if (this.name && this.age) {
-        return true;
-      }
+      this.mutableErrors = [];
 
-      this.errors = [];
+    //   if (this.name.length < 1) {
+    //     this.$set(this.mutableErrors, "name", "Name required.");
+    //   }
 
-      if (!this.name) {
-        this.errors.push("Name required.");
-      }
+    //   var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
-      if (!this.age) {
-        this.errors.push("Age required.");
-      }
+    //   if (re.test(String(this.email).toLowerCase())) {
+    //     this.$set(this.mutableErrors, "email", "Email required");
+    //   }
     }
   }
 };
