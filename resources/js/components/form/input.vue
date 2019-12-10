@@ -9,6 +9,7 @@
         class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal"
         v-bind:value="value"
         v-on:input="$emit('input', $event.target.value)"
+        v-on:blur="$emit('blur', $event.target.value)"
         :name="name"
         :autocomplete="autocomplete"
       />
@@ -21,6 +22,12 @@
 export default {
   props: {
     name: {
+      default: ""
+    },
+    blur: {
+      default: () => {}
+    },
+    value: {
       default: ""
     },
     placeholder: {
@@ -52,12 +59,9 @@ export default {
     }
   },
   data() {
-    return {
-      value: this.old
-    };
+    return {};
   },
-  mounted() {
-  },
+  mounted() {},
   methods: {}
 };
 </script>

@@ -1,6 +1,6 @@
 <template>
   <div class="h-full mx-auto container">
-    <div class="mx-auto max-w-sm md:max-w-sm lg:m-0 lg:max-w-md">
+    <div class="mx-auto max-w-sm md:max-w-sm lg:m-0 lg:max-w-sm">
       <form
         method="POST"
         id="register-form"
@@ -24,7 +24,8 @@
               <input-field
                 :type="'text'"
                 placeholder="john.doe@gmail.com"
-                v-model="email"
+                v-on:blur="blur"
+                v-model="email.value"
                 :id="'email-field'"
                 :error="mutableErrors.email"
                 :name="'email'"
@@ -34,7 +35,7 @@
 
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
               <input-field
-                v-model="password"
+                v-model="password.value"
                 :id="'password-field'"
                 :type="'password'"
                 :name="'password'"
@@ -47,7 +48,7 @@
               <input-field
                 :id="'password-confirm-field'"
                 :type="'password'"
-                v-model="passwordConfirm"
+                v-model="passwordConfirm.value"
                 :error="mutableErrors.passwordConfirm"
                 :name="'password-confirm'"
                 label="Confirm password"
@@ -85,6 +86,8 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   props: ["old", "app", "errors", "route"],
   components: {
@@ -94,25 +97,64 @@ export default {
     return {
       mutableErrors: { ...this.errors },
       disabled: false,
-      email: "",
-      password: "",
-      passwordConfirm: "",
-      name: ""
+      email: {
+        value: "",
+        dirty: "",
+        valid: false,
+        touched: ""
+      },
+      password: {
+        value: "",
+        dirty: "",
+        valid: false,
+        touched: ""
+      },
+      passwordConfirm: {
+        value: "",
+        dirty: "",
+        valid: false,
+        touched: ""
+      },
+      name: {
+        value: "",
+        dirty: "",
+        valid: false,
+        touched: ""
+      },
+      disabled: false,
+      submited: false
     };
   },
   methods: {
-    validate(event) {
+    blur(value) {
+      if (this.submited) {
+        this.validate();
+      }
+    },
+    validate() {
       this.mutableErrors = [];
+      this.submited = true;
 
-    //   if (this.name.length < 1) {
-    //     this.$set(this.mutableErrors, "name", "Name required.");
-    //   }
+      let passwordRegex = /^(((?=.*[a-z])(?=.*[A-Z]))|((?=.*[a-z]))|((?=.*[A-Z])))(?=.{6,})/;
+      let mailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
-    //   var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      if (mailRegex.test(this.email.value) === false) {
+        this.$set(this.mutableErrors, "email", "Email is invalid");
+      }
 
-    //   if (re.test(String(this.email).toLowerCase())) {
-    //     this.$set(this.mutableErrors, "email", "Email required");
-    //   }
+      if (this.password.value !== this.passwordConfirm) {
+        this.$set(
+          this.mutableErrors,
+          "password",
+          "Passwords are not identical"
+        );
+      }
+
+      if (passwordRegex.test(this.password.value) === false) {
+        this.$set(this.mutableErrors, "password", "Password is invalid");
+      }
+
+      this.disabled = true;
     }
   }
 };

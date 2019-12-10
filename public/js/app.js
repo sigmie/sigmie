@@ -1850,6 +1850,8 @@ module.exports = {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+/* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! axios */ "./node_modules/axios/index.js");
+/* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(axios__WEBPACK_IMPORTED_MODULE_0__);
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
@@ -1942,30 +1944,70 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 //
 //
 //
+//
+
 /* harmony default export */ __webpack_exports__["default"] = ({
   props: ["old", "app", "errors", "route"],
   components: {
     plan: __webpack_require__(/*! ./register/plan */ "./resources/js/auth/register/plan.vue")["default"]
   },
   data: function data() {
-    return {
+    var _ref;
+
+    return _ref = {
       mutableErrors: _objectSpread({}, this.errors),
       disabled: false,
-      email: "",
-      password: "",
-      passwordConfirm: "",
-      name: ""
-    };
+      email: {
+        value: "",
+        dirty: "",
+        valid: false,
+        touched: ""
+      },
+      password: {
+        value: "",
+        dirty: "",
+        valid: false,
+        touched: ""
+      },
+      passwordConfirm: {
+        value: "",
+        dirty: "",
+        valid: false,
+        touched: ""
+      },
+      name: {
+        value: "",
+        dirty: "",
+        valid: false,
+        touched: ""
+      }
+    }, _defineProperty(_ref, "disabled", false), _defineProperty(_ref, "submited", false), _ref;
   },
   methods: {
-    validate: function validate(event) {
-      this.mutableErrors = []; //   if (this.name.length < 1) {
-      //     this.$set(this.mutableErrors, "name", "Name required.");
-      //   }
-      //   var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-      //   if (re.test(String(this.email).toLowerCase())) {
-      //     this.$set(this.mutableErrors, "email", "Email required");
-      //   }
+    blur: function blur(value) {
+      if (this.submited) {
+        this.validate();
+      }
+    },
+    validate: function validate() {
+      this.mutableErrors = [];
+      this.submited = true;
+      var passwordRegex = /^(((?=.*[a-z])(?=.*[A-Z]))|((?=.*[a-z]))|((?=.*[A-Z])))(?=.{6,})/;
+      var mailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
+      if (mailRegex.test(this.email.value) === false) {
+        this.$set(this.mutableErrors, "email", "Email is invalid");
+      }
+
+      if (this.password.value !== this.passwordConfirm) {
+        this.$set(this.mutableErrors, "password", "Passwords are not identical");
+      }
+
+      if (passwordRegex.test(this.password.value) === false) {
+        this.$set(this.mutableErrors, "password", "Password is invalid");
+      }
+
+      this.disabled = true;
     }
   }
 });
@@ -2259,6 +2301,7 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   props: {
     id: {
@@ -2333,9 +2376,16 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 //
 //
 //
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   props: (_props = {
     name: {
+      "default": ""
+    },
+    blur: {
+      "default": function _default() {}
+    },
+    value: {
       "default": ""
     },
     placeholder: {
@@ -2363,9 +2413,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
     "default": true
   }), _props),
   data: function data() {
-    return {
-      value: this.old
-    };
+    return {};
   },
   mounted: function mounted() {},
   methods: {}
@@ -3765,7 +3813,7 @@ var render = function() {
   return _c("div", { staticClass: "h-full mx-auto container" }, [
     _c(
       "div",
-      { staticClass: "mx-auto max-w-sm md:max-w-sm lg:m-0 lg:max-w-md" },
+      { staticClass: "mx-auto max-w-sm md:max-w-sm lg:m-0 lg:max-w-sm" },
       [
         _c(
           "form",
@@ -3821,12 +3869,13 @@ var render = function() {
                             name: "email",
                             label: "Email"
                           },
+                          on: { blur: _vm.blur },
                           model: {
-                            value: _vm.email,
+                            value: _vm.email.value,
                             callback: function($$v) {
-                              _vm.email = $$v
+                              _vm.$set(_vm.email, "value", $$v)
                             },
-                            expression: "email"
+                            expression: "email.value"
                           }
                         })
                       ],
@@ -3849,11 +3898,11 @@ var render = function() {
                             label: "Password"
                           },
                           model: {
-                            value: _vm.password,
+                            value: _vm.password.value,
                             callback: function($$v) {
-                              _vm.password = $$v
+                              _vm.$set(_vm.password, "value", $$v)
                             },
-                            expression: "password"
+                            expression: "password.value"
                           }
                         })
                       ],
@@ -3876,11 +3925,11 @@ var render = function() {
                             label: "Confirm password"
                           },
                           model: {
-                            value: _vm.passwordConfirm,
+                            value: _vm.passwordConfirm.value,
                             callback: function($$v) {
-                              _vm.passwordConfirm = $$v
+                              _vm.$set(_vm.passwordConfirm, "value", $$v)
                             },
-                            expression: "passwordConfirm"
+                            expression: "passwordConfirm.value"
                           }
                         })
                       ],
@@ -4537,7 +4586,8 @@ var render = function() {
     "button",
     {
       staticClass:
-        "bg-blue-800 hover:bg-blue-900 text-white text-sm py-2 px-4 rounded uppercase w-full float-right font-semibold tracking-wide",
+        "text-white text-sm py-2 px-4 rounded uppercase w-full float-right font-semibold tracking-wide",
+      class: [_vm.disabled ? "bg-blue-200" : "bg-blue-800 hover:bg-blue-900"],
       attrs: { id: _vm.id, type: _vm.type, disabled: _vm.disabled }
     },
     [_vm._v(_vm._s(_vm.text))]
@@ -4616,6 +4666,9 @@ var render = function() {
         on: {
           input: function($event) {
             return _vm.$emit("input", $event.target.value)
+          },
+          blur: function($event) {
+            return _vm.$emit("blur", $event.target.value)
           }
         }
       }),
