@@ -11,13 +11,15 @@ if (token) {
 
 Vue.use(VueRouter);
 
-Vue.component('csrf-token', require('./common/csrf').default);
-Vue.component('input-field', require('./components/form/input').default);
-Vue.component('primary-button', require('./components/form/button').default);
-Vue.component('form-heading', require('./components/form/heading').default);
-Vue.component('content-separator', require('./components/form/separator').default);
-Vue.component('container-gray', require('./components/container/gray').default);
-Vue.component('stripe', require('./components/form/stripe').default);
+Vue.component('csrf', require('./essentials/csrf').default);
+Vue.component('stripe', require('./essentials/stripe').default);
+
+Vue.component('form-input', require('./ui/forms/input').default);
+Vue.component('button-primary', require('./ui/buttons/primary').default);
+Vue.component('heading-form', require('./ui/headings/form').default);
+Vue.component('divider-form', require('./ui/dividers/form').default);
+Vue.component('card-gray', require('./ui/cards/gray').default);
+Vue.component('card-white', require('./ui/cards/white').default);
 
 const router = new VueRouter({
     routes: Routes,

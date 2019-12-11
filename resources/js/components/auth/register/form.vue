@@ -1,31 +1,29 @@
 <template>
   <div class="h-full mx-auto container">
     <div class="mx-auto max-w-sm md:max-w-sm lg:m-0 lg:max-w-sm">
-      <form
-        method="POST"
-        id="register-form"
-        class="mx-auto flex container w-full text-gray-700 h-auto"
-        :action="route"
-        v-on:submit.prevent="validate"
-      >
-        <csrf-token />
-
-        <div
-          class="container flex justify-center w-auto block border-gray-200 border rounded bg-white px-4"
+      <card-white>
+        <form
+          method="POST"
+          id="register-form"
+          class="mx-auto flex container w-full text-gray-700 h-auto"
+          :action="route"
+          v-on:submit.prevent="validate"
         >
+          <csrf />
+
           <div class="row">
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10">
-              <form-heading text="Registers" />
+              <heading-form text="Registers" />
             </div>
 
-            <content-separator text="Basics" />
+            <divider-form text="Basics" />
 
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
-              <input-field
+              <form-input
                 :type="'text'"
                 placeholder="john.doe@gmail.com"
                 v-on:blur="blur"
-                v-model="email.value"
+                v-model.trim="email.value"
                 :id="'email-field'"
                 :error="mutableErrors.email"
                 :name="'email'"
@@ -34,36 +32,37 @@
             </div>
 
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
-              <input-field
+              <form-input
                 v-model="password.value"
                 :id="'password-field'"
                 :type="'password'"
                 :name="'password'"
+                v-on:change="change"
                 :error="mutableErrors.password"
                 label="Password"
               />
             </div>
 
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3 pb-4">
-              <input-field
+              <form-input
                 :id="'password-confirm-field'"
                 :type="'password'"
-                v-model="passwordConfirm.value"
+                v-model.trim="passwordConfirm.value"
                 :error="mutableErrors.passwordConfirm"
                 :name="'password-confirm'"
                 label="Confirm password"
               />
             </div>
 
-            <content-separator text="Billing" />
+            <divider-form text="Billing" />
 
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
-              <input-field
+              <form-input
                 :id="'name-field'"
-                v-model="name"
+                v-model.trim="name.value"
                 placeholder="John Doe"
                 :type="'text'"
-                :name="'name'"
+                name="name"
                 :error="mutableErrors.name"
                 label="Cardholder name"
                 :required="true"
@@ -72,27 +71,22 @@
             </div>
 
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
-              <stripe :intent="app.intent" />
+              <stripe :intent="intent" />
             </div>
 
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-6 pb-4">
-              <primary-button :disabled="disabled" type="submit" text="Register" />
+              <button-primary :disabled="disabled" type="submit" text="Register" />
             </div>
           </div>
-        </div>
-      </form>
+        </form>
+      </card-white>
     </div>
   </div>
 </template>
 
 <script>
-import axios from "axios";
-
 export default {
-  props: ["old", "app", "errors", "route"],
-  components: {
-    plan: require("./register/plan").default
-  },
+  props: ["old", "intent", "errors", "route"],
   data() {
     return {
       mutableErrors: { ...this.errors },
@@ -131,22 +125,31 @@ export default {
         this.validate();
       }
     },
+    change() {
+      if (this.submited) {
+        this.validate();
+      }
+    },
     validate() {
-      this.mutableErrors = [];
+      this.mutableErrors = {};
       this.submited = true;
 
       let passwordRegex = /^(((?=.*[a-z])(?=.*[A-Z]))|((?=.*[a-z]))|((?=.*[A-Z])))(?=.{6,})/;
       let mailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
       if (mailRegex.test(this.email.value) === false) {
-        this.$set(this.mutableErrors, "email", "Email is invalid");
-      }
-
-      if (this.password.value !== this.passwordConfirm) {
         this.$set(
           this.mutableErrors,
-          "password",
-          "Passwords are not identical"
+          "email",
+          "The email address that you provided isn't valid."
+        );
+      }
+
+      if (this.password.value !== this.passwordConfirm.value) {
+        this.$set(
+          this.mutableErrors,
+          "passwordConfirm",
+          "The provided passwords don't match."
         );
       }
 
@@ -154,7 +157,7 @@ export default {
         this.$set(this.mutableErrors, "password", "Password is invalid");
       }
 
-      this.disabled = true;
+      this.disabled = this.mutableErrors.length > 0;
     }
   }
 };

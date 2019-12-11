@@ -6,12 +6,14 @@
         :id="id"
         :type="type"
         :placeholder="placeholder"
-        class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal"
-        v-bind:value="value"
-        v-on:input="$emit('input', $event.target.value)"
-        v-on:blur="$emit('blur', $event.target.value)"
+        class="bg-white focus:outline-none focus:shadow-outline bg-gray-100 rounded py-1 px-4 block w-full appearance-none leading-normal"
+        :value="value"
         :name="name"
         :autocomplete="autocomplete"
+        @input="$emit('input', $event.target.value)"
+        @blur="$emit('blur', $event.target.value)"
+        @focus="$emit('touch', $event.target.value)"
+        @change="$emit('change', $event.target.value)"
       />
       <span v-if="error.length > 0" class="text-red-600 font-semibold" role="alert">{{ error }}</span>
     </div>
@@ -23,6 +25,9 @@ export default {
   props: {
     name: {
       default: ""
+    },
+    valid: {
+      default: null
     },
     blur: {
       default: () => {}
