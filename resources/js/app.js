@@ -15,6 +15,7 @@ Vue.component('csrf', require('./essentials/csrf').default);
 Vue.component('stripe', require('./essentials/stripe').default);
 
 Vue.component('form-input', require('./ui/forms/input').default);
+Vue.component('form-checkbox', require('./ui/forms/checkbox').default);
 Vue.component('button-primary', require('./ui/buttons/primary').default);
 Vue.component('heading-form', require('./ui/headings/form').default);
 Vue.component('divider-form', require('./ui/dividers/form').default);
@@ -29,9 +30,7 @@ const router = new VueRouter({
 
 new Vue({
     el: '#app',
-
     router,
-
     data() {
         return {
             acme: {
@@ -39,12 +38,8 @@ new Vue({
             bar: 'bar',
         }
     },
-
     mounted() {
-        console.log('ho');
     },
-
-
     methods: {
         foo() {
             return 'foo'

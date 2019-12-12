@@ -30,12 +30,12 @@
         background-color: #fefde5 !important;
     }
 </style>
-
 @endsection()
 
 @section('content')
 
-<router-view :route="'{{ route('register') }}'" :errors="{{ $errors->toJson() }}"
+<router-view :form-action="'{{ route('register') }}'" :terms-route="'{{ route('terms-of-service') }}'"
+    :privacy-route="'{{ route('privacy-policy') }}'" :errors="{{ $errors->toJson() }}"
     :old="{{ json_encode(Session::getOldInput()) }}" :app="{{ json_encode($app) }}">
 </router-view>
 

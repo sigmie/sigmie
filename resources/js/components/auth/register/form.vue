@@ -6,7 +6,7 @@
           method="POST"
           id="register-form"
           class="mx-auto flex container w-full text-gray-700 h-auto"
-          :action="route"
+          :action="action"
           v-on:submit.prevent="validate"
         >
           <csrf />
@@ -74,6 +74,24 @@
               <stripe :intent="intent" />
             </div>
 
+            <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
+              <form-checkbox id="policy-field" :required="true">
+                <span for="policy-field" class="text-xs">
+                  I agree to the
+                  <a
+                    class="underline cursor-pointer"
+                    :href="termsRoute"
+                    target="_blank"
+                  >Terms of Service</a> and
+                  <a
+                    class="underline cursor-pointer"
+                    target="_blank"
+                    :href="privacyRoute"
+                  >Privacy Policy</a>.
+                </span>
+              </form-checkbox>
+            </div>
+
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-6 pb-4">
               <button-primary :disabled="disabled" type="submit" text="Register" />
             </div>
@@ -86,7 +104,7 @@
 
 <script>
 export default {
-  props: ["old", "intent", "errors", "route"],
+  props: ["intent", "action", "privacyRoute", "termsRoute"],
   data() {
     return {
       mutableErrors: { ...this.errors },
@@ -141,7 +159,7 @@ export default {
         this.$set(
           this.mutableErrors,
           "email",
-          "The email address that you provided isn't valid."
+          "The string must contain a lowercase, uppercase, numeric, and a special character."
         );
       }
 

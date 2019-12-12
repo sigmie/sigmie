@@ -11,8 +11,6 @@
 </template>
 
 <script>
-var stripe = Stripe("pk_test_c9qTG6rra0eQdTd6n7Nhcqka00a3YibJYB");
-
 export default {
   props: {
     text: {
@@ -65,11 +63,12 @@ export default {
         console.log(error);
       } else {
         this.method = setupIntent.payment_method;
-        // form.submit();
       }
     }
   },
   mounted() {
+    let stripe = Stripe("pk_test_c9qTG6rra0eQdTd6n7Nhcqka00a3YibJYB");
+
     let elements = stripe.elements();
 
     this.card = elements.create("card", {

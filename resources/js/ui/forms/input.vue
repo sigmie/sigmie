@@ -6,7 +6,8 @@
         :id="id"
         :type="type"
         :placeholder="placeholder"
-        class="bg-white focus:outline-none focus:shadow-outline bg-gray-100 rounded py-1 px-4 block w-full appearance-none leading-normal"
+        :class="{ 'border-red-500 border': error.length > 0,'focus:shadow-outline':error.length == 0 }"
+        class="bg-white focus:outline-none bg-gray-100 rounded py-1 px-4 block w-full appearance-none leading-normal border-red-500"
         :value="value"
         :name="name"
         :autocomplete="autocomplete"
@@ -15,7 +16,7 @@
         @focus="$emit('touch', $event.target.value)"
         @change="$emit('change', $event.target.value)"
       />
-      <span v-if="error.length > 0" class="text-red-600 font-semibold" role="alert">{{ error }}</span>
+      <span v-if="error.length > 0" class="text-red-600 font-normal" role="alert">{{ error }}</span>
     </div>
   </div>
 </template>
