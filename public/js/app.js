@@ -2008,7 +2008,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
     validate: function validate() {
       this.mutableErrors = {};
       this.submited = true;
-      var passwordRegex = /^(((?=.*[a-z])(?=.*[A-Z]))|((?=.*[a-z]))|((?=.*[A-Z])))(?=.{6,})/;
       var mailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
       if (mailRegex.test(this.email.value) === false) {
@@ -2019,8 +2018,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         this.$set(this.mutableErrors, "passwordConfirm", "The provided passwords don't match.");
       }
 
-      if (passwordRegex.test(this.password.value) === false) {
-        this.$set(this.mutableErrors, "password", "Password is invalid");
+      if (this.password.length >= 8) {
+        this.$set(this.mutableErrors, "password", "Password should be eight characters or longer.");
       }
 
       this.disabled = this.mutableErrors.length > 0;
@@ -2103,7 +2102,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       method: null,
       style: {
         base: {
-          backgroundColor: "#edf2f7",
+          backgroundColor: "#f7fafc",
           fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
           fontSmoothing: "antialiased",
           fontSize: "16px",

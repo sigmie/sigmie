@@ -152,7 +152,6 @@ export default {
       this.mutableErrors = {};
       this.submited = true;
 
-      let passwordRegex = /^(((?=.*[a-z])(?=.*[A-Z]))|((?=.*[a-z]))|((?=.*[A-Z])))(?=.{6,})/;
       let mailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
       if (mailRegex.test(this.email.value) === false) {
@@ -171,8 +170,8 @@ export default {
         );
       }
 
-      if (passwordRegex.test(this.password.value) === false) {
-        this.$set(this.mutableErrors, "password", "Password is invalid");
+      if (this.password.length >= 8) {
+        this.$set(this.mutableErrors, "password", "Password should be eight characters or longer.");
       }
 
       this.disabled = this.mutableErrors.length > 0;

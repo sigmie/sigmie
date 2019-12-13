@@ -10,7 +10,7 @@
     .StripeElement {
         box-sizing: border-box;
         padding: 0.25rem 1rem 0.25rem 1rem;
-        background-color: #edf2f7;
+        background-color: #f7fafc;
         border-radius: 0.25rem;
         line-height: 1.5;
         padding: 0.4rem 1rem 0.4rem 1rem;
@@ -22,12 +22,12 @@
 
     .StripeElement--invalid {
         background-color: 'red';
-        border-color: #fa755a;
+        border-color: #f7fafc;
     }
 
     .StripeElement--webkit-autofill {
         background-color: 'red';
-        background-color: #fefde5 !important;
+        background-color: #f7fafc !important;
     }
 </style>
 @endsection()

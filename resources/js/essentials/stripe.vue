@@ -28,7 +28,7 @@ export default {
       method: null,
       style: {
         base: {
-          backgroundColor: "#edf2f7",
+          backgroundColor: "#f7fafc",
           fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
           fontSmoothing: "antialiased",
           fontSize: "16px",
