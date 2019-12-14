@@ -9,5 +9,4 @@ class Query extends Element
     private $fields;
 
     private $match;
-
 }

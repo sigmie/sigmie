@@ -40,7 +40,7 @@ class Index extends Element implements BootableInterface
      * Add an Element to Index
      *
      * @param Document $element
-     * 
+     *
      * @return boolean
      */
     public function add(Document &$element): bool
