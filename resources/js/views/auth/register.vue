@@ -11,7 +11,9 @@
       </div>
     </div>
     <div class="col-md-6 col-xs-12">
-      <div class="box">plan</div>
+      <div class="box">
+        <plan />
+      </div>
     </div>
   </div>
 </template>
@@ -20,7 +22,8 @@
 export default {
   props: ["formAction", "termsRoute", "privacyRoute", "errors", "old", "app"],
   components: {
-    "register-form": require("../../components/auth/register/form").default
+    "register-form": require("../../components/auth/register/form").default,
+    plan: require("../../components/auth/register/plan").default
   }
 };
 </script>

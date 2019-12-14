@@ -18,9 +18,11 @@ Vue.component('form-input', require('./ui/forms/input').default);
 Vue.component('form-checkbox', require('./ui/forms/checkbox').default);
 Vue.component('button-primary', require('./ui/buttons/primary').default);
 Vue.component('heading-form', require('./ui/headings/form').default);
+Vue.component('heading-card', require('./ui/headings/card').default);
 Vue.component('divider-form', require('./ui/dividers/form').default);
 Vue.component('card-gray', require('./ui/cards/gray').default);
 Vue.component('card-white', require('./ui/cards/white').default);
+Vue.component('card-elevated', require('./ui/cards/elevated').default);
 
 const router = new VueRouter({
     routes: Routes,
