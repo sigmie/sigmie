@@ -4527,8 +4527,8 @@ var render = function() {
               _vm._v(" "),
               _c(
                 "div",
-                { staticClass: "mx-auto py-6" },
-                [_c("icon", { attrs: { width: "200px", height: "150px" } })],
+                { staticClass: "mx-auto pt-6 pb-4" },
+                [_c("icon", { attrs: { width: "200px", height: "100px" } })],
                 1
               ),
               _vm._v(" "),

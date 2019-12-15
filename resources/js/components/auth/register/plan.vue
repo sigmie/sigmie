@@ -5,8 +5,8 @@
         <div class="w-full row">
           <heading-card text="Subscription plan" />
 
-          <div class="mx-auto py-6">
-            <icon width="200px" height="150px" />
+          <div class="mx-auto pt-6 pb-4">
+            <icon width="200px" height="100px" />
           </div>
 
           <div class="w-full text-center">
