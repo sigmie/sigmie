@@ -2184,6 +2184,37 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   props: ["old"],
   components: {
@@ -4577,7 +4608,7 @@ var render = function() {
   return _c("div", { staticClass: "h-full mx-auto container" }, [
     _c(
       "div",
-      { staticClass: "max-w-sm" },
+      { staticClass: "max-w-sm mx-auto lg:mx-0" },
       [
         _c("card-elevated", [
           _c(
@@ -4597,7 +4628,7 @@ var render = function() {
                 _c(
                   "span",
                   { staticClass: "text-3xl font-base text-gray-800" },
-                  [_vm._v("$ 24")]
+                  [_vm._v("$ 9")]
                 ),
                 _vm._v(" "),
                 _c(
@@ -4611,14 +4642,14 @@ var render = function() {
                 "div",
                 { staticClass: "w-full text-center pb-2 border-b mx-6" },
                 [
-                  _c("span", { staticClass: "text-gray-300 text-sm" }, [
+                  _c("span", { staticClass: "text-gray-400 text-sm" }, [
                     _vm._v("Price doesn't include your GCP costs.")
                   ])
                 ]
               ),
               _vm._v(" "),
               _c("ul", { staticClass: "px-8 py-6" }, [
-                _c("li", { staticClass: "py-2 w-full flex text-gray-400" }, [
+                _c("li", { staticClass: "py-2 w-full flex text-gray-500" }, [
                   _c(
                     "div",
                     { staticClass: "pr-2" },
@@ -4630,13 +4661,82 @@ var render = function() {
                     1
                   ),
                   _vm._v(" "),
-                  _c("span", { staticClass: "text-base" }, [
-                    _c("b", { staticClass: "font-semibold" }, [
-                      _vm._v("Lorem, ipsum dolor")
-                    ]),
-                    _vm._v(
-                      " sit amet consectetur adipisicing elit.\n            "
-                    )
+                  _c("div", { staticClass: "w-full" }, [
+                    _c("span", { staticClass: "text-base" }, [
+                      _c("b", { staticClass: "font-semibold" }, [
+                        _vm._v("15 days free trial")
+                      ])
+                    ])
+                  ])
+                ]),
+                _vm._v(" "),
+                _c("li", { staticClass: "py-2 w-full flex text-gray-500" }, [
+                  _c(
+                    "div",
+                    { staticClass: "pr-2" },
+                    [
+                      _c("icon-check", {
+                        attrs: { height: "18px", width: "18px" }
+                      })
+                    ],
+                    1
+                  ),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "w-full" }, [
+                    _c("span", { staticClass: "text-base" }, [
+                      _c("b", { staticClass: "font-semibold" }, [
+                        _vm._v("Alerts")
+                      ]),
+                      _vm._v(
+                        "- we monitor your clusters and even send you mail notification about anything suspicious.\n              "
+                      )
+                    ])
+                  ])
+                ]),
+                _vm._v(" "),
+                _c("li", { staticClass: "py-2 w-full flex text-gray-500" }, [
+                  _c(
+                    "div",
+                    { staticClass: "pr-2" },
+                    [
+                      _c("icon-check", {
+                        attrs: { height: "18px", width: "18px" }
+                      })
+                    ],
+                    1
+                  ),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "w-full" }, [
+                    _c("span", { staticClass: "text-base" }, [
+                      _c("b", { staticClass: "font-semibold" }, [
+                        _vm._v("3 Node cluster")
+                      ]),
+                      _vm._v(" for hight availability.\n              ")
+                    ])
+                  ])
+                ]),
+                _vm._v(" "),
+                _c("li", { staticClass: "py-2 w-full flex text-gray-500" }, [
+                  _c(
+                    "div",
+                    { staticClass: "pr-2" },
+                    [
+                      _c("icon-check", {
+                        attrs: { height: "18px", width: "18px" }
+                      })
+                    ],
+                    1
+                  ),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "w-full" }, [
+                    _c("span", { staticClass: "text-base" }, [
+                      _c("b", { staticClass: "font-semibold" }, [
+                        _vm._v("Metrics")
+                      ]),
+                      _vm._v(
+                        " we provide metrics about your Elasticseasrch data and indexes.\n              "
+                      )
+                    ])
                   ])
                 ])
               ])
@@ -5215,11 +5315,11 @@ var render = function() {
   return _c("div", { staticClass: "row" }, [
     _c(
       "div",
-      { staticClass: "col-md-6 col-sm-6 col-xs-12 last-xs first-md first-sm" },
+      { staticClass: "col-md-6 col-sm-12 col-xs-12 last-xs last-sm first-md" },
       [
         _c(
           "div",
-          { staticClass: "box md:float-right" },
+          { staticClass: "box lg:float-right sm:float-none sm:mx-auto" },
           [
             _c("register-form", {
               attrs: {
@@ -5235,8 +5335,8 @@ var render = function() {
       ]
     ),
     _vm._v(" "),
-    _c("div", { staticClass: "col-md-6 col-xs-12" }, [
-      _c("div", { staticClass: "box" }, [_c("plan")], 1)
+    _c("div", { staticClass: "col-md-6 col-sm-12 col-xs-12" }, [
+      _c("div", { staticClass: "box sm:mx-auto pb-6 lg:pb-0" }, [_c("plan")], 1)
     ])
   ])
 }

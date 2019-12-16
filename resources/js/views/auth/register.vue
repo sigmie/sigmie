@@ -1,7 +1,7 @@
 <template>
   <div class="row">
-    <div class="col-md-6 col-sm-6 col-xs-12 last-xs first-md first-sm">
-      <div class="box md:float-right">
+    <div class="col-md-6 col-sm-12 col-xs-12 last-xs last-sm first-md">
+      <div class="box lg:float-right sm:float-none sm:mx-auto">
         <register-form
           :intent="app.intent"
           :action="formAction"
@@ -10,8 +10,8 @@
         />
       </div>
     </div>
-    <div class="col-md-6 col-xs-12">
-      <div class="box">
+    <div class="col-md-6 col-sm-12 col-xs-12">
+      <div class="box sm:mx-auto pb-6 lg:pb-0">
         <plan />
       </div>
     </div>
