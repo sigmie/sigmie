@@ -1,6 +1,6 @@
 <template>
   <div class="h-full mx-auto container">
-    <div class="max-w-sm md:max-w-xs lg:m-0 lg:max-w-sm">
+    <div class="max-w-sm">
       <card-elevated>
         <div class="w-full row">
           <heading-card text="Subscription plan" />
@@ -14,9 +14,21 @@
             <span class="text-gray-500 text-base tracking-wide">&nbsp;/ month</span>
           </div>
 
-          <div class="w-full text-center pb-2 border-b mx-6 mb-5">
-            <span class="text-gray-400 text-sm">Price doesn't include your GCP costs.</span>
+          <div class="w-full text-center pb-2 border-b mx-6">
+            <span class="text-gray-300 text-sm">Price doesn't include your GCP costs.</span>
           </div>
+
+          <ul class="px-8 py-6">
+            <li class="py-2 w-full flex text-gray-400">
+              <div class="pr-2"
+              >
+                <icon-check height="18px" width="18px" />
+              </div>
+              <span class="text-base">
+                <b class="font-semibold">Lorem, ipsum dolor</b> sit amet consectetur adipisicing elit.
+              </span>
+            </li>
+          </ul>
         </div>
       </card-elevated>
     </div>
