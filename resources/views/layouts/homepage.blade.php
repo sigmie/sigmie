@@ -8,7 +8,7 @@
 <body class="min-h-full h-full bg-gray-100">
     <div id="app" class="min-h-full relative pb-20">
 
-        <nav class="top-0 text-gray-500 shadow bg-white inline-block w-full h-12">
+        <nav class="top-0 text-gray-500 shadow bg-white inline-block w-full h-16">
             @include('common.navbar')
         </nav>
 

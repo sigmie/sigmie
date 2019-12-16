@@ -1,23 +1,23 @@
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- CSRF Token -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+<!-- CSRF Token -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <!-- Title Token -->
-    <title>{{ config('app.name', 'Laravel') }}</title>
+<!-- CSRF Token -->
+<link rel=icon href=/favicon.png> <!-- Title Token -->
 
-    <!-- Scripts -->
-    <script src="{{ asset('js/app.js') }}" defer></script>
+<title>{{ config('app.name', 'Laravel') }}</title>
 
-    <!-- Fonts -->
-    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+<!-- Scripts -->
+<script src="{{ asset('js/app.js') }}" defer></script>
 
-    <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
 
-    <!-- Styles -->
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+<!-- Styles -->
+<link href="{{ asset('css/app.css') }}" rel="stylesheet">
 
-    @yield('additional-js')
+@yield('additional-js')
 
-    @yield('additional-css')
+@yield('additional-css')
