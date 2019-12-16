@@ -71,7 +71,7 @@
             </div>
 
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
-              <stripe :intent="intent" />
+              <stripe :name="name.value" ref="stripe" :intent="intent" />
             </div>
 
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
@@ -93,7 +93,7 @@
             </div>
 
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-6 pb-4">
-              <button-primary :disabled="disabled" type="submit" text="Register" />
+              <button-primary @click="submit" :disabled="disabled" type="submit" text="Register" />
             </div>
           </div>
         </form>
@@ -143,6 +143,16 @@ export default {
         this.validate();
       }
     },
+    async submit() {
+      if (this.disabled) {
+        return;
+      }
+
+      await this.$refs.stripe.fetchMethod();
+
+      let form = document.getElementById("register-form");
+      form.submit();
+    },
     change() {
       if (this.submited) {
         this.validate();
@@ -171,7 +181,11 @@ export default {
       }
 
       if (this.password.length >= 8) {
-        this.$set(this.mutableErrors, "password", "Password should be eight characters or longer.");
+        this.$set(
+          this.mutableErrors,
+          "password",
+          "Password should be eight characters or longer."
+        );
       }
 
       this.disabled = this.mutableErrors.length > 0;

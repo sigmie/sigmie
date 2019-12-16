@@ -15,10 +15,10 @@
                     {{ csrf_field() }}
                 </form>
                 @else
-                <a class="pl-4" href="{{ route('login') }}">Login</a>
+                <a class="pl-4" href="{{ route('login') }}">Sign in</a>
 
                 @if (Route::has('register'))
-                <a class="pl-4" href="{{ route('register') }}">Register</a>
+                <a class="pl-4" href="{{ route('register') }}">Sign up</a>
                 @endif
 
                 @endauth

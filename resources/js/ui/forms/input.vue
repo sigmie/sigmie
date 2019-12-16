@@ -7,7 +7,7 @@
         :type="type"
         :placeholder="placeholder"
         :class="{ 'border-red-500 border': error.length > 0,'focus:shadow-outline':error.length == 0 }"
-        class="bg-white focus:outline-none bg-gray-100 rounded py-1 px-4 block w-full appearance-none leading-normal border-red-500"
+        class="bg-white focus:outline-none bg-gray-100 rounded py-1 px-4 block w-full appearance-none leading-normal border-red-500 tracking-wider"
         :value="value"
         :name="name"
         :autocomplete="autocomplete"

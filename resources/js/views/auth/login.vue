@@ -30,7 +30,7 @@
               name="password"
               label="Password"
             />
-            <a class="text-gray-500 text-sm py-1" :href="passwordResetRoute">Forgot Your Password?</a>
+            <a class="text-gray-500 text-sm py-1" :href="forgotRoute">Forgot Your Password?</a>
           </div>
 
           <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 bg-gray-300 px-8">
@@ -50,7 +50,7 @@
 
 <script>
 export default {
-  props: ["formAction", "passwordResetRoute", "errors", "old", "app"],
+  props: ["formAction", "forgotRoute", "errors", "old", "app"],
   components: {
     "login-form": require("../../components/auth/login/form").default
   }

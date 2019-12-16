@@ -1884,6 +1884,14 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0__);
+
+
+function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
+
+function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
+
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
@@ -2034,6 +2042,44 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         this.validate();
       }
     },
+    submit: function () {
+      var _submit = _asyncToGenerator(
+      /*#__PURE__*/
+      _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee() {
+        var form;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                if (!this.disabled) {
+                  _context.next = 2;
+                  break;
+                }
+
+                return _context.abrupt("return");
+
+              case 2:
+                _context.next = 4;
+                return this.$refs.stripe.fetchMethod();
+
+              case 4:
+                form = document.getElementById("register-form");
+                form.submit();
+
+              case 6:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, this);
+      }));
+
+      function submit() {
+        return _submit.apply(this, arguments);
+      }
+
+      return submit;
+    }(),
     change: function change() {
       if (this.submited) {
         this.validate();
@@ -2326,6 +2372,9 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     text: {
       "default": ""
     },
+    name: {
+      "default": ""
+    },
     intent: {
       "default": "",
       required: true
@@ -2334,8 +2383,8 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
   data: function data() {
     return {
       card: null,
-      holder: "",
       method: null,
+      stripe: null,
       style: {
         base: {
           backgroundColor: "#f7fafc",
@@ -2354,28 +2403,27 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     };
   },
   methods: {
-    handleSubmit: function () {
-      var _handleSubmit = _asyncToGenerator(
+    fetchMethod: function () {
+      var _fetchMethod = _asyncToGenerator(
       /*#__PURE__*/
-      _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee(e) {
+      _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee() {
         var client_secret, _ref, setupIntent, error;
 
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                e.preventDefault();
-                client_secret = this.app.intent.client_secret;
-                _context.next = 4;
-                return stripe.handleCardSetup(client_secret, this.card, {
+                client_secret = this.intent.client_secret;
+                _context.next = 3;
+                return this.stripe.handleCardSetup(client_secret, this.card, {
                   payment_method_data: {
                     billing_details: {
-                      name: this.holder
+                      name: this.name
                     }
                   }
                 });
 
-              case 4:
+              case 3:
                 _ref = _context.sent;
                 setupIntent = _ref.setupIntent;
                 error = _ref.error;
@@ -2386,7 +2434,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
                   this.method = setupIntent.payment_method;
                 }
 
-              case 8:
+              case 7:
               case "end":
                 return _context.stop();
             }
@@ -2394,16 +2442,16 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
         }, _callee, this);
       }));
 
-      function handleSubmit(_x) {
-        return _handleSubmit.apply(this, arguments);
+      function fetchMethod() {
+        return _fetchMethod.apply(this, arguments);
       }
 
-      return handleSubmit;
+      return fetchMethod;
     }()
   },
   mounted: function mounted() {
-    var stripe = Stripe("pk_test_c9qTG6rra0eQdTd6n7Nhcqka00a3YibJYB");
-    var elements = stripe.elements();
+    this.stripe = Stripe("pk_test_c9qTG6rra0eQdTd6n7Nhcqka00a3YibJYB");
+    var elements = this.stripe.elements();
     this.card = elements.create("card", {
       style: this.style,
       hidePostalCode: true
@@ -2423,6 +2471,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+//
 //
 //
 //
@@ -2850,8 +2899,9 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
-  props: ["formAction", "passwordResetRoute", "errors", "old", "app"],
+  props: ["formAction", "forgotRoute", "errors", "old", "app"],
   components: {
     "login-form": __webpack_require__(/*! ../../components/auth/login/form */ "./resources/js/components/auth/login/form.vue")["default"]
   }
@@ -4342,7 +4392,12 @@ var render = function() {
                       staticClass:
                         "col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3"
                     },
-                    [_c("stripe", { attrs: { intent: _vm.intent } })],
+                    [
+                      _c("stripe", {
+                        ref: "stripe",
+                        attrs: { name: _vm.name.value, intent: _vm.intent }
+                      })
+                    ],
                     1
                   ),
                   _vm._v(" "),
@@ -4411,7 +4466,8 @@ var render = function() {
                           disabled: _vm.disabled,
                           type: "submit",
                           text: "Register"
-                        }
+                        },
+                        on: { click: _vm.submit }
                       })
                     ],
                     1
@@ -4942,37 +4998,47 @@ var render = function() {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  return _vm._m(0)
-}
-var staticRenderFns = [
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "box" }, [
-      _c(
-        "label",
+  return _c("div", { staticClass: "box" }, [
+    _c(
+      "label",
+      {
+        staticClass: "pb-1 block text-gray-600 font-normal text-sm",
+        attrs: { for: "name" }
+      },
+      [_vm._v("Credit card")]
+    ),
+    _vm._v(" "),
+    _c("div", {
+      staticClass:
+        "bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('name') is-invalid @enderror",
+      attrs: { id: "card-element" }
+    }),
+    _vm._v(" "),
+    _c("div", { attrs: { id: "card-errors", role: "alert" } }),
+    _vm._v(" "),
+    _c("input", {
+      directives: [
         {
-          staticClass: "pb-1 block text-gray-600 font-normal text-sm",
-          attrs: { for: "name" }
-        },
-        [_vm._v("Credit card")]
-      ),
-      _vm._v(" "),
-      _c("div", {
-        staticClass:
-          "bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('name') is-invalid @enderror",
-        attrs: { id: "card-element" }
-      }),
-      _vm._v(" "),
-      _c("div", { attrs: { id: "card-errors", role: "alert" } }),
-      _vm._v(" "),
-      _c("input", {
-        attrs: { name: "method", id: "method-field", value: "", type: "hidden" }
-      })
-    ])
-  }
-]
+          name: "model",
+          rawName: "v-model",
+          value: _vm.method,
+          expression: "method"
+        }
+      ],
+      attrs: { name: "method", id: "method-field", type: "hidden" },
+      domProps: { value: _vm.method },
+      on: {
+        input: function($event) {
+          if ($event.target.composing) {
+            return
+          }
+          _vm.method = $event.target.value
+        }
+      }
+    })
+  ])
+}
+var staticRenderFns = []
 render._withStripped = true
 
 
@@ -5000,7 +5066,12 @@ var render = function() {
       staticClass:
         "text-white text-sm py-2 px-4 rounded uppercase w-full float-right font-semibold tracking-wide",
       class: [_vm.disabled ? "bg-blue-200" : "bg-blue-800 hover:bg-blue-900"],
-      attrs: { id: _vm.id, type: _vm.type, disabled: _vm.disabled }
+      attrs: { id: _vm.id, type: _vm.type, disabled: _vm.disabled },
+      on: {
+        click: function($event) {
+          return _vm.$emit("click", $event)
+        }
+      }
     },
     [_vm._v(_vm._s(_vm.text))]
   )
@@ -5223,7 +5294,7 @@ var render = function() {
       _vm._v(" "),
       _c("input", {
         staticClass:
-          "bg-white focus:outline-none bg-gray-100 rounded py-1 px-4 block w-full appearance-none leading-normal border-red-500",
+          "bg-white focus:outline-none bg-gray-100 rounded py-1 px-4 block w-full appearance-none leading-normal border-red-500 tracking-wider",
         class: {
           "border-red-500 border": _vm.error.length > 0,
           "focus:shadow-outline": _vm.error.length == 0
@@ -5448,6 +5519,8 @@ var render = function() {
         attrs: { method: "POST", action: _vm.formAction }
       },
       [
+        _c("csrf"),
+        _vm._v(" "),
         _c(
           "div",
           {
@@ -5507,7 +5580,7 @@ var render = function() {
                     "a",
                     {
                       staticClass: "text-gray-500 text-sm py-1",
-                      attrs: { href: _vm.passwordResetRoute }
+                      attrs: { href: _vm.forgotRoute }
                     },
                     [_vm._v("Forgot Your Password?")]
                   )
@@ -5541,7 +5614,8 @@ var render = function() {
             ])
           ]
         )
-      ]
+      ],
+      1
     )
   ])
 }

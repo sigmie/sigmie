@@ -6,7 +6,7 @@
       class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('name') is-invalid @enderror"
     ></div>
     <div id="card-errors" role="alert"></div>
-    <input name="method" id="method-field" value type="hidden" />
+    <input name="method" id="method-field" v-model="method" type="hidden" />
   </div>
 </template>
 
@@ -16,6 +16,9 @@ export default {
     text: {
       default: ""
     },
+    name: {
+      default: "",
+    },
     intent: {
       default: "",
       required: true
@@ -24,8 +27,8 @@ export default {
   data() {
     return {
       card: null,
-      holder: "",
       method: null,
+      stripe: null,
       style: {
         base: {
           backgroundColor: "#f7fafc",
@@ -44,17 +47,15 @@ export default {
     };
   },
   methods: {
-    async handleSubmit(e) {
-      e.preventDefault();
+    async fetchMethod() {
+      let client_secret = this.intent.client_secret;
 
-      let client_secret = this.app.intent.client_secret;
-
-      const { setupIntent, error } = await stripe.handleCardSetup(
+      const { setupIntent, error } = await this.stripe.handleCardSetup(
         client_secret,
         this.card,
         {
           payment_method_data: {
-            billing_details: { name: this.holder }
+            billing_details: { name: this.name }
           }
         }
       );
@@ -67,9 +68,9 @@ export default {
     }
   },
   mounted() {
-    let stripe = Stripe("pk_test_c9qTG6rra0eQdTd6n7Nhcqka00a3YibJYB");
+    this.stripe = Stripe("pk_test_c9qTG6rra0eQdTd6n7Nhcqka00a3YibJYB");
 
-    let elements = stripe.elements();
+    let elements = this.stripe.elements();
 
     this.card = elements.create("card", {
       style: this.style,

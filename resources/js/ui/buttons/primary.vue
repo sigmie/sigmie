@@ -3,6 +3,7 @@
     :id="id"
     :type="type"
     :disabled="disabled"
+    @click="$emit('click', $event)"
     v-bind:class="[disabled ? 'bg-blue-200' : 'bg-blue-800 hover:bg-blue-900']"
     class="text-white text-sm py-2 px-4 rounded uppercase w-full float-right font-semibold tracking-wide"
   >{{ text }}</button>
