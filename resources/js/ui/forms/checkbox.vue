@@ -4,15 +4,13 @@
       type="checkbox"
       :id="id"
       :required="required"
-      :placeholder="placeholder"
       class="mr-2 leading-tight"
       :value="value"
       :name="name"
-      :autocomplete="autocomplete"
-      @input="$emit('input', $event.target.value)"
+      :checked="checked"
+      @change="$emit('change', $event.target.checked)"
       @blur="$emit('blur', $event.target.value)"
       @focus="$emit('touch', $event.target.value)"
-      @change="$emit('change', $event.target.value)"
     />
     <slot />
     <span :for="id" class="text-xs">{{ label }}</span>
@@ -21,6 +19,10 @@
 
 <script>
 export default {
+  model: {
+    prop: 'checked',
+    event: 'change'
+  },
   props: {
     name: {
       default: ""
@@ -52,11 +54,11 @@ export default {
     type: {
       default: ""
     },
-    autocomplete: {
-      default: ""
-    },
     id: {
       default: ""
+    },
+    checked: {
+      default: false
     },
     required: {
       default: true

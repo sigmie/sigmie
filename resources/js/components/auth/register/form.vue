@@ -75,7 +75,7 @@
             </div>
 
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
-              <form-checkbox id="policy-field" :required="true">
+              <form-checkbox id="policy-field" v-model="policy.value" :required="true">
                 <span for="policy-field" class="text-xs">
                   I agree to the
                   <a
@@ -115,6 +115,12 @@ export default {
         valid: false,
         touched: ""
       },
+      policy: {
+        value: false,
+        dirty: "",
+        valid: false,
+        touched: false
+      },
       password: {
         value: "",
         dirty: "",
@@ -150,8 +156,8 @@ export default {
 
       await this.$refs.stripe.fetchMethod();
 
-      let form = document.getElementById("register-form");
-      form.submit();
+        let form = document.getElementById("register-form");
+        form.submit();
     },
     change() {
       if (this.submited) {
@@ -161,6 +167,7 @@ export default {
     validate() {
       this.mutableErrors = {};
       this.submited = true;
+      this.disabled = false;
 
       let mailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
@@ -170,6 +177,10 @@ export default {
           "email",
           "The string must contain a lowercase, uppercase, numeric, and a special character."
         );
+      }
+
+      if (this.policy.value === false) {
+        this.$set(this.mutableErrors, "policy", "");
       }
 
       if (this.password.value !== this.passwordConfirm.value) {
@@ -188,7 +199,10 @@ export default {
         );
       }
 
-      this.disabled = this.mutableErrors.length > 0;
+      let count = Object.keys(this.mutableErrors).length;
+      console.log(count);
+
+      //   this.disabled = this.mutableErrors.length > 0;
     }
   }
 };

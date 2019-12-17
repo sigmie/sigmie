@@ -2016,6 +2016,12 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         valid: false,
         touched: ""
       },
+      policy: {
+        value: false,
+        dirty: "",
+        valid: false,
+        touched: false
+      },
       password: {
         value: "",
         dirty: "",
@@ -2088,10 +2094,15 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
     validate: function validate() {
       this.mutableErrors = {};
       this.submited = true;
+      this.disabled = false;
       var mailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
       if (mailRegex.test(this.email.value) === false) {
         this.$set(this.mutableErrors, "email", "The string must contain a lowercase, uppercase, numeric, and a special character.");
+      }
+
+      if (this.policy.value === false) {
+        this.$set(this.mutableErrors, "policy", "");
       }
 
       if (this.password.value !== this.passwordConfirm.value) {
@@ -2102,7 +2113,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         this.$set(this.mutableErrors, "password", "Password should be eight characters or longer.");
       }
 
-      this.disabled = this.mutableErrors.length > 0;
+      var count = Object.keys(this.mutableErrors).length;
+      console.log(count); //   this.disabled = this.mutableErrors.length > 0;
     }
   }
 });
@@ -2619,9 +2631,11 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 //
 //
 //
-//
-//
 /* harmony default export */ __webpack_exports__["default"] = ({
+  model: {
+    prop: 'checked',
+    event: 'change'
+  },
   props: (_props = {
     name: {
       "default": ""
@@ -2652,10 +2666,10 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
     }
   }, _defineProperty(_props, "type", {
     "default": ""
-  }), _defineProperty(_props, "autocomplete", {
-    "default": ""
   }), _defineProperty(_props, "id", {
     "default": ""
+  }), _defineProperty(_props, "checked", {
+    "default": false
   }), _defineProperty(_props, "required", {
     "default": true
   }), _props)
@@ -4410,7 +4424,16 @@ var render = function() {
                     [
                       _c(
                         "form-checkbox",
-                        { attrs: { id: "policy-field", required: true } },
+                        {
+                          attrs: { id: "policy-field", required: true },
+                          model: {
+                            value: _vm.policy.value,
+                            callback: function($$v) {
+                              _vm.$set(_vm.policy, "value", $$v)
+                            },
+                            expression: "policy.value"
+                          }
+                        },
                         [
                           _c(
                             "span",
@@ -5229,23 +5252,18 @@ var render = function() {
           type: "checkbox",
           id: _vm.id,
           required: _vm.required,
-          placeholder: _vm.placeholder,
-          name: _vm.name,
-          autocomplete: _vm.autocomplete
+          name: _vm.name
         },
-        domProps: { value: _vm.value },
+        domProps: { value: _vm.value, checked: _vm.checked },
         on: {
-          input: function($event) {
-            return _vm.$emit("input", $event.target.value)
+          change: function($event) {
+            return _vm.$emit("change", $event.target.checked)
           },
           blur: function($event) {
             return _vm.$emit("blur", $event.target.value)
           },
           focus: function($event) {
             return _vm.$emit("touch", $event.target.value)
-          },
-          change: function($event) {
-            return _vm.$emit("change", $event.target.value)
           }
         }
       }),
