@@ -1892,12 +1892,11 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
+//
+//
+//
+//
+//
 //
 //
 //
@@ -2003,53 +2002,41 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 //
 //
 /* harmony default export */ __webpack_exports__["default"] = ({
-  props: ["intent", "action", "privacyRoute", "termsRoute"],
+  props: ["intent", "old", "action", "errors", "privacyRoute", "termsRoute"],
   data: function data() {
-    var _ref;
-
-    return _ref = {
-      mutableErrors: _objectSpread({}, this.errors),
-      disabled: false,
+    return {
       email: {
-        value: "",
-        dirty: "",
-        valid: false,
-        touched: ""
+        errors: this.errors.email ? this.errors.email : [],
+        value: this.old.email ? this.old.email : ""
       },
       policy: {
-        value: false,
-        dirty: "",
-        valid: false,
-        touched: false
+        value: false
       },
       password: {
-        value: "",
-        dirty: "",
-        valid: false,
-        touched: ""
+        errors: this.errors.password ? this.errors.password : [],
+        value: ""
       },
       passwordConfirm: {
-        value: "",
-        dirty: "",
-        valid: false,
-        touched: ""
+        errors: this.errors.passwordConfirm ? this.errors.passwordConfirm : [],
+        value: ""
       },
       name: {
-        value: "",
-        dirty: "",
-        valid: false,
-        touched: ""
-      }
-    }, _defineProperty(_ref, "disabled", false), _defineProperty(_ref, "submited", false), _ref;
+        errors: this.errors.name ? this.errors.name : [],
+        value: this.old.name ? this.old.name : ""
+      },
+      state: "clean"
+    };
   },
   methods: {
     blur: function blur(value) {
-      if (this.submited) {
+      console.log("bluer");
+
+      if (this.state === "invalid") {
         this.validate();
       }
     },
-    submit: function () {
-      var _submit = _asyncToGenerator(
+    onSubmit: function () {
+      var _onSubmit = _asyncToGenerator(
       /*#__PURE__*/
       _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee() {
         var form;
@@ -2057,22 +2044,17 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                if (!this.disabled) {
-                  _context.next = 2;
-                  break;
-                }
-
-                return _context.abrupt("return");
-
-              case 2:
-                _context.next = 4;
+                this.validate();
+                _context.next = 3;
                 return this.$refs.stripe.fetchMethod();
 
-              case 4:
-                form = document.getElementById("register-form");
-                form.submit();
+              case 3:
+                if (this.state === "valid") {
+                  form = document.getElementById("register-form");
+                  form.submit();
+                }
 
-              case 6:
+              case 4:
               case "end":
                 return _context.stop();
             }
@@ -2080,41 +2062,44 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         }, _callee, this);
       }));
 
-      function submit() {
-        return _submit.apply(this, arguments);
+      function onSubmit() {
+        return _onSubmit.apply(this, arguments);
       }
 
-      return submit;
+      return onSubmit;
     }(),
     change: function change() {
-      if (this.submited) {
+      if (this.state === "invalid") {
         this.validate();
       }
     },
     validate: function validate() {
-      this.mutableErrors = {};
-      this.submited = true;
-      this.disabled = false;
+      this.state = "valid";
+      this.email.errors = [];
+      this.password.errors = [];
+      this.passwordConfirm.errors = [];
       var mailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
       if (mailRegex.test(this.email.value) === false) {
-        this.$set(this.mutableErrors, "email", "The string must contain a lowercase, uppercase, numeric, and a special character.");
+        this.state = "invalid";
+        this.email.errors.push("The string must contain a lowercase, uppercase, numeric, and a special character.");
       }
 
       if (this.policy.value === false) {
-        this.$set(this.mutableErrors, "policy", "");
+        this.state = "invalid";
       }
 
+      console.log(this.password.value, this.passwordConfirm.value);
+
       if (this.password.value !== this.passwordConfirm.value) {
-        this.$set(this.mutableErrors, "passwordConfirm", "The provided passwords don't match.");
+        this.state = "invalid";
+        this.passwordConfirm.errors.push("The provided passwords don't match.");
       }
 
       if (this.password.length >= 8) {
-        this.$set(this.mutableErrors, "password", "Password should be eight characters or longer.");
+        this.state = "invalid";
+        this.password.errors.push("Password should be eight characters or longer.");
       }
-
-      var count = Object.keys(this.mutableErrors).length;
-      console.log(count); //   this.disabled = this.mutableErrors.length > 0;
     }
   }
 });
@@ -2932,6 +2917,8 @@ __webpack_require__.r(__webpack_exports__);
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+//
+//
 //
 //
 //
@@ -4284,7 +4271,7 @@ var render = function() {
                           type: "text",
                           placeholder: "john.doe@gmail.com",
                           id: "email-field",
-                          error: _vm.mutableErrors.email,
+                          error: _vm.email.errors[0],
                           name: "email",
                           label: "Email"
                         },
@@ -4317,7 +4304,7 @@ var render = function() {
                           id: "password-field",
                           type: "password",
                           name: "password",
-                          error: _vm.mutableErrors.password,
+                          error: _vm.password.errors[0],
                           label: "Password"
                         },
                         on: { change: _vm.change },
@@ -4344,7 +4331,7 @@ var render = function() {
                         attrs: {
                           id: "password-confirm-field",
                           type: "password",
-                          error: _vm.mutableErrors.passwordConfirm,
+                          error: _vm.passwordConfirm.errors[0],
                           name: "password-confirm",
                           label: "Confirm password"
                         },
@@ -4379,7 +4366,7 @@ var render = function() {
                           placeholder: "John Doe",
                           type: "text",
                           name: "name",
-                          error: _vm.mutableErrors.name,
+                          error: _vm.name.errors[0],
                           label: "Cardholder name",
                           required: true,
                           autocomplete: "name"
@@ -4486,11 +4473,11 @@ var render = function() {
                     [
                       _c("button-primary", {
                         attrs: {
-                          disabled: _vm.disabled,
+                          disabled: _vm.state === "invalid",
                           type: "submit",
                           text: "Register"
                         },
-                        on: { click: _vm.submit }
+                        on: { click: _vm.onSubmit }
                       })
                     ],
                     1
@@ -5671,6 +5658,8 @@ var render = function() {
             _c("register-form", {
               attrs: {
                 intent: _vm.app.intent,
+                errors: _vm.errors,
+                old: _vm.old,
                 action: _vm.formAction,
                 "privacy-route": _vm.privacyRoute,
                 "terms-route": _vm.termsRoute

@@ -22,10 +22,10 @@
               <form-input
                 :type="'text'"
                 placeholder="john.doe@gmail.com"
-                v-on:blur="blur"
+                @blur="blur"
                 v-model.trim="email.value"
                 :id="'email-field'"
-                :error="mutableErrors.email"
+                :error="email.errors[0]"
                 :name="'email'"
                 label="Email"
               />
@@ -38,7 +38,7 @@
                 :type="'password'"
                 :name="'password'"
                 v-on:change="change"
-                :error="mutableErrors.password"
+                :error="password.errors[0]"
                 label="Password"
               />
             </div>
@@ -48,7 +48,7 @@
                 :id="'password-confirm-field'"
                 :type="'password'"
                 v-model.trim="passwordConfirm.value"
-                :error="mutableErrors.passwordConfirm"
+                :error="passwordConfirm.errors[0]"
                 :name="'password-confirm'"
                 label="Confirm password"
               />
@@ -63,7 +63,7 @@
                 placeholder="John Doe"
                 :type="'text'"
                 name="name"
-                :error="mutableErrors.name"
+                :error="name.errors[0]"
                 label="Cardholder name"
                 :required="true"
                 :autocomplete="'name'"
@@ -93,7 +93,12 @@
             </div>
 
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-6 pb-4">
-              <button-primary @click="submit" :disabled="disabled" type="submit" text="Register" />
+              <button-primary
+                @click="onSubmit"
+                :disabled="state === 'invalid'"
+                type="submit"
+                text="Register"
+              />
             </div>
           </div>
         </form>
@@ -104,105 +109,86 @@
 
 <script>
 export default {
-  props: ["intent", "action", "privacyRoute", "termsRoute"],
+  props: ["intent", "old", "action", "errors", "privacyRoute", "termsRoute"],
   data() {
     return {
-      mutableErrors: { ...this.errors },
-      disabled: false,
       email: {
-        value: "",
-        dirty: "",
-        valid: false,
-        touched: ""
+        errors: this.errors.email ? this.errors.email : [],
+        value: this.old.email ? this.old.email : ""
       },
       policy: {
-        value: false,
-        dirty: "",
-        valid: false,
-        touched: false
+        value: false
       },
       password: {
-        value: "",
-        dirty: "",
-        valid: false,
-        touched: ""
+        errors: this.errors.password ? this.errors.password : [],
+        value: ""
       },
       passwordConfirm: {
-        value: "",
-        dirty: "",
-        valid: false,
-        touched: ""
+        errors: this.errors.passwordConfirm ? this.errors.passwordConfirm : [],
+        value: ""
       },
       name: {
-        value: "",
-        dirty: "",
-        valid: false,
-        touched: ""
+        errors: this.errors.name ? this.errors.name : [],
+        value: this.old.name ? this.old.name : ""
       },
-      disabled: false,
-      submited: false
+      state: "clean"
     };
   },
   methods: {
     blur(value) {
-      if (this.submited) {
+      console.log("bluer");
+
+      if (this.state === "invalid") {
         this.validate();
       }
     },
-    async submit() {
-      if (this.disabled) {
-        return;
-      }
+    async onSubmit() {
+      this.validate();
 
       await this.$refs.stripe.fetchMethod();
 
+      if (this.state === "valid") {
         let form = document.getElementById("register-form");
         form.submit();
+      }
     },
     change() {
-      if (this.submited) {
+      if (this.state === "invalid") {
         this.validate();
       }
     },
     validate() {
-      this.mutableErrors = {};
-      this.submited = true;
-      this.disabled = false;
+      this.state = "valid";
+      this.email.errors = [];
+      this.password.errors = [];
+      this.passwordConfirm.errors = [];
 
       let mailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
       if (mailRegex.test(this.email.value) === false) {
-        this.$set(
-          this.mutableErrors,
-          "email",
+        this.state = "invalid";
+        this.email.errors.push(
           "The string must contain a lowercase, uppercase, numeric, and a special character."
         );
       }
 
       if (this.policy.value === false) {
-        this.$set(this.mutableErrors, "policy", "");
+        this.state = "invalid";
       }
 
+      console.log(this.password.value , this.passwordConfirm.value);
+
       if (this.password.value !== this.passwordConfirm.value) {
-        this.$set(
-          this.mutableErrors,
-          "passwordConfirm",
-          "The provided passwords don't match."
-        );
+        this.state = "invalid";
+        this.passwordConfirm.errors.push("The provided passwords don't match.");
       }
 
       if (this.password.length >= 8) {
-        this.$set(
-          this.mutableErrors,
-          "password",
+        this.state = "invalid";
+        this.password.errors.push(
           "Password should be eight characters or longer."
         );
       }
-
-      let count = Object.keys(this.mutableErrors).length;
-      console.log(count);
-
-      //   this.disabled = this.mutableErrors.length > 0;
     }
   }
 };

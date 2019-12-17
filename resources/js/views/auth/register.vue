@@ -4,6 +4,8 @@
       <div class="box lg:float-right sm:float-none sm:mx-auto">
         <register-form
           :intent="app.intent"
+          :errors="errors"
+          :old="old"
           :action="formAction"
           :privacy-route="privacyRoute"
           :terms-route="termsRoute"

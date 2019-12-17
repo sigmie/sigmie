@@ -81,6 +81,8 @@ class RegisterController extends Controller
             'password' => Hash::make($data['password']),
         ]);
 
-        $user->newSubscription('hobby', 'Hobby')->create($data['method']);
+        $user->newSubscription('hobby', 'plan_GES1izXya6Q2bA')->trialDays(15)->create($data['method']);
+
+        return $user;
     }
 }
