@@ -33,6 +33,10 @@ const router = new VueRouter({
 
 new Vue({
     el: '#app',
+    components: {
+        navbar: require("./components/common/navbar").default,
+        sidebar: require("./components/common/sidebar").default
+    },
     router,
     data() {
         return {
