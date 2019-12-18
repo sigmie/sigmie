@@ -23,6 +23,7 @@
                 :type="'text'"
                 placeholder="john.doe@gmail.com"
                 @blur="blur"
+                @change="change"
                 v-model.trim="email.value"
                 :id="'email-field'"
                 :error="email.errors[0]"
@@ -37,7 +38,8 @@
                 :id="'password-field'"
                 :type="'password'"
                 :name="'password'"
-                v-on:change="change"
+                @blur="blur"
+                @change="change"
                 :error="password.errors[0]"
                 label="Password"
               />
@@ -48,6 +50,8 @@
                 :id="'password-confirm-field'"
                 :type="'password'"
                 v-model.trim="passwordConfirm.value"
+                @blur="blur"
+                @change="change"
                 :error="passwordConfirm.errors[0]"
                 :name="'password-confirm'"
                 label="Confirm password"
@@ -63,6 +67,8 @@
                 placeholder="John Doe"
                 :type="'text'"
                 name="name"
+                @blur="blur"
+                @change="change"
                 :error="name.errors[0]"
                 label="Cardholder name"
                 :required="true"
@@ -75,7 +81,13 @@
             </div>
 
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 px-10 pt-3">
-              <form-checkbox id="policy-field" v-model="policy.value" :required="true">
+              <form-checkbox
+                id="policy-field"
+                v-model="policy.value"
+                :required="true"
+                @blur="blur"
+                @change="change"
+              >
                 <span for="policy-field" class="text-xs">
                   I agree to the
                   <a
@@ -136,8 +148,6 @@ export default {
   },
   methods: {
     blur(value) {
-      console.log("bluer");
-
       if (this.state === "invalid") {
         this.validate();
       }
@@ -162,21 +172,33 @@ export default {
       this.email.errors = [];
       this.password.errors = [];
       this.passwordConfirm.errors = [];
+      this.name.errors = [];
 
       let mailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
+      if (this.email.value === "") {
+        this.state = "invalid";
+        this.email.errors.push("The email adress field is required.");
+      }
+
+      if (this.password.value === "") {
+        this.state = "invalid";
+        this.password.errors.push("The password field is required.");
+      }
+
+      if (this.name.value === "") {
+        this.state = "invalid";
+        this.name.errors.push("The name field is required.");
+      }
+
       if (mailRegex.test(this.email.value) === false) {
         this.state = "invalid";
-        this.email.errors.push(
-          "The string must contain a lowercase, uppercase, numeric, and a special character."
-        );
+        this.email.errors.push("The provided email address isn't valid.");
       }
 
       if (this.policy.value === false) {
         this.state = "invalid";
       }
-
-      console.log(this.password.value , this.passwordConfirm.value);
 
       if (this.password.value !== this.passwordConfirm.value) {
         this.state = "invalid";

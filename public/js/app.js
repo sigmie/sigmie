@@ -2001,6 +2001,18 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   props: ["intent", "old", "action", "errors", "privacyRoute", "termsRoute"],
   data: function data() {
@@ -2029,8 +2041,6 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
   },
   methods: {
     blur: function blur(value) {
-      console.log("bluer");
-
       if (this.state === "invalid") {
         this.validate();
       }
@@ -2078,18 +2088,32 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       this.email.errors = [];
       this.password.errors = [];
       this.passwordConfirm.errors = [];
+      this.name.errors = [];
       var mailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
+      if (this.email.value === "") {
+        this.state = "invalid";
+        this.email.errors.push("The email adress field is required.");
+      }
+
+      if (this.password.value === "") {
+        this.state = "invalid";
+        this.password.errors.push("The password field is required.");
+      }
+
+      if (this.name.value === "") {
+        this.state = "invalid";
+        this.name.errors.push("The name field is required.");
+      }
 
       if (mailRegex.test(this.email.value) === false) {
         this.state = "invalid";
-        this.email.errors.push("The string must contain a lowercase, uppercase, numeric, and a special character.");
+        this.email.errors.push("The provided email address isn't valid.");
       }
 
       if (this.policy.value === false) {
         this.state = "invalid";
       }
-
-      console.log(this.password.value, this.passwordConfirm.value);
 
       if (this.password.value !== this.passwordConfirm.value) {
         this.state = "invalid";
@@ -4275,7 +4299,7 @@ var render = function() {
                           name: "email",
                           label: "Email"
                         },
-                        on: { blur: _vm.blur },
+                        on: { blur: _vm.blur, change: _vm.change },
                         model: {
                           value: _vm.email.value,
                           callback: function($$v) {
@@ -4307,7 +4331,7 @@ var render = function() {
                           error: _vm.password.errors[0],
                           label: "Password"
                         },
-                        on: { change: _vm.change },
+                        on: { blur: _vm.blur, change: _vm.change },
                         model: {
                           value: _vm.password.value,
                           callback: function($$v) {
@@ -4335,6 +4359,7 @@ var render = function() {
                           name: "password-confirm",
                           label: "Confirm password"
                         },
+                        on: { blur: _vm.blur, change: _vm.change },
                         model: {
                           value: _vm.passwordConfirm.value,
                           callback: function($$v) {
@@ -4371,6 +4396,7 @@ var render = function() {
                           required: true,
                           autocomplete: "name"
                         },
+                        on: { blur: _vm.blur, change: _vm.change },
                         model: {
                           value: _vm.name.value,
                           callback: function($$v) {
@@ -4413,6 +4439,7 @@ var render = function() {
                         "form-checkbox",
                         {
                           attrs: { id: "policy-field", required: true },
+                          on: { blur: _vm.blur, change: _vm.change },
                           model: {
                             value: _vm.policy.value,
                             callback: function($$v) {
