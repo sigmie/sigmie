@@ -2362,18 +2362,14 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-/* harmony default export */ __webpack_exports__["default"] = ({});
+/* harmony default export */ __webpack_exports__["default"] = ({
+  props: ["logoutAction", "registerRoute", "loginRoute", "auth"],
+  methods: {
+    logout: function logout() {
+      document.getElementById("logout-form").submit();
+    }
+  }
+});
 
 /***/ }),
 
@@ -5229,28 +5225,76 @@ var render = function() {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  return _vm._m(0)
+  return _c("div", { staticClass: "m-0 p-3 row flex h-full m-auto" }, [
+    _vm._m(0),
+    _vm._v(" "),
+    _c(
+      "div",
+      { staticClass: "col-md-4 col-md-offset-4 flex flex-col justify-center" },
+      [
+        _c("div", { staticClass: "flex justify-end" }, [
+          _vm.auth
+            ? _c(
+                "a",
+                {
+                  staticClass: "cursor-pointer",
+                  on: {
+                    click: function($event) {
+                      $event.preventDefault()
+                      return _vm.logout($event)
+                    }
+                  }
+                },
+                [_vm._v("Logout")]
+              )
+            : _vm._e(),
+          _vm._v(" "),
+          _vm.auth
+            ? _c(
+                "form",
+                {
+                  staticClass: "hidden",
+                  attrs: {
+                    id: "logout-form",
+                    action: _vm.logoutAction,
+                    method: "POST"
+                  }
+                },
+                [_c("csrf")],
+                1
+              )
+            : _vm._e(),
+          _vm._v(" "),
+          !_vm.auth
+            ? _c(
+                "a",
+                { staticClass: "pl-4", attrs: { href: _vm.loginRoute } },
+                [_vm._v("Login")]
+              )
+            : _vm._e(),
+          _vm._v(" "),
+          !_vm.auth
+            ? _c(
+                "a",
+                { staticClass: "pl-4", attrs: { href: _vm.registerRoute } },
+                [_vm._v("Register")]
+              )
+            : _vm._e()
+        ])
+      ]
+    )
+  ])
 }
 var staticRenderFns = [
   function() {
     var _vm = this
     var _h = _vm.$createElement
     var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "m-0 p-3 row flex h-full m-auto w-256" }, [
-      _c("div", { staticClass: "col-md-4 align-middle" }, [
-        _c("input", {
-          staticClass: "align-middle",
-          attrs: { id: "search", name: "search", type: "search" }
-        })
-      ]),
-      _vm._v(" "),
-      _c(
-        "div",
-        {
-          staticClass: "col-md-4 col-md-offset-4 flex flex-col justify-center"
-        },
-        [_c("div", { staticClass: "flex justify-end" })]
-      )
+    return _c("div", { staticClass: "col-md-4 align-middle" }, [
+      _c("input", {
+        staticClass: "align-middle",
+        attrs: { id: "search", name: "search", type: "search" }
+      })
     ])
   }
 ]
