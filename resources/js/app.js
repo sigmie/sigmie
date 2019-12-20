@@ -20,10 +20,15 @@ Vue.component('button-primary', require('./ui/buttons/primary').default);
 Vue.component('heading-form', require('./ui/headings/form').default);
 Vue.component('heading-card', require('./ui/headings/card').default);
 Vue.component('divider-form', require('./ui/dividers/form').default);
+Vue.component('divider-sidebar', require('./ui/dividers/sidebar').default);
 Vue.component('icon-check', require('./ui/icons/check').default);
 Vue.component('card-gray', require('./ui/cards/gray').default);
 Vue.component('card-white', require('./ui/cards/white').default);
 Vue.component('card-elevated', require('./ui/cards/elevated').default);
+Vue.component('logo-white', require('./ui/logos/white').default);
+
+Vue.component('icon-server', require('./ui/icons/server').default);
+Vue.component('icon-notification', require('./ui/icons/notification').default);
 
 const router = new VueRouter({
     routes: Routes,

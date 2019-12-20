@@ -1,46 +1,21 @@
 <template>
   <div class="m-0 h-full px-3 py-3">
     <div class="col-md-12 align-middle mb-8">
-      <img
-        src="https://res.cloudinary.com/markos-nikolaos-orfanos/image/upload/v1574659602/Group_2_fxapdw.png"
-        width="200"
-      />
+      <logo-white />
     </div>
 
     <div class="col-md-12 flex flex-col justify-center">
       <div class="py-2 leading-relaxed">
-        <h3 class="uppercase font-semibold text-gray-600 pb-4">Basics</h3>
+        <divider-sidebar text="Basics" />
         <ul class="pl-3">
           <li
-            class="py-3 bg-blue-400 rounded-full pr-20 pl-5 -ml-5 md:-mr-8 lg:-mr-12 m-0 mb-4 last:mb-0"
+            v-bind:class="[true ? 'bg-blue-400 rounded-full pr-20 pl-5 -ml-5 md:-mr-8 lg:-mr-12 m-0 mb-4 last:mb-0' : '']"
+            class="py-3"
           >
             <a href class="text-red-800 block leading-tight">
               <div class="inline-flex h-4">
                 <div class="flex-1 pr-4">
-                  <svg
-                    width="20px"
-                    height="1rem"
-                    viewBox="0 0 25 25"
-                    version="1.1"
-                    xmlns="http://www.w3.org/2000/svg"
-                    xmlns:xlink="http://www.w3.org/1999/xlink"
-                  >
-                    <g id="Desktop-HD" transform="translate(-52.000000, -355.000000)">
-                      <g
-                        id="Group-9"
-                        transform="translate(52.000000, 355.000000)"
-                        fill="#FFFFFF"
-                        fill-rule="nonzero"
-                      >
-                        <g id="icon-server">
-                          <path
-                            d="M2.77777778,0 L22.2222222,0 C23.7563465,0 25,1.24365347 25,2.77777778 L25,22.2222222 C25,23.7563465 23.7563465,25 22.2222222,25 L2.77777778,25 C1.24365347,25 0,23.7563465 0,22.2222222 L0,2.77777778 C0,1.25 1.25,0 2.77777778,0 Z M22.2222222,11.1111111 L22.2222222,2.77777778 L2.77777778,2.77777778 L2.77777778,11.1111111 L22.2222222,11.1111111 Z M22.2222222,13.8888889 L2.77777778,13.8888889 L2.77777778,22.2222222 L22.2222222,22.2222222 L22.2222222,13.8888889 Z M6.94444444,8.33333333 C6.17738229,8.33333333 5.55555556,7.7115066 5.55555556,6.94444444 C5.55555556,6.17738229 6.17738229,5.55555556 6.94444444,5.55555556 C7.7115066,5.55555556 8.33333333,6.17738229 8.33333333,6.94444444 C8.33333333,7.7115066 7.7115066,8.33333333 6.94444444,8.33333333 Z M6.94444444,19.4444444 C6.17738229,19.4444444 5.55555556,18.8226177 5.55555556,18.0555556 C5.55555556,17.2884934 6.17738229,16.6666667 6.94444444,16.6666667 C7.7115066,16.6666667 8.33333333,17.2884934 8.33333333,18.0555556 C8.33333333,18.8226177 7.7115066,19.4444444 6.94444444,19.4444444 Z"
-                            id="Shape"
-                          />
-                        </g>
-                      </g>
-                    </g>
-                  </svg>
+                  <icon-server width="20px" height="1rem" />
                 </div>
                 <div class="flex-1 leading-tight text-base">
                   <span class="inline-block text-gray-100 font-semibold cursor-pointer">Nodes</span>
@@ -52,31 +27,7 @@
             <a href>
               <div class="inline-flex h-5">
                 <div class="flex-1 pr-4">
-                  <svg
-                    width="20px"
-                    height="1rem"
-                    viewBox="0 0 23 25"
-                    version="1.1"
-                    xmlns="http://www.w3.org/2000/svg"
-                    xmlns:xlink="http://www.w3.org/1999/xlink"
-                  >
-                    <g id="Desktop-HD" transform="translate(-52.000000, -432.000000)">
-                      <rect id="Rectangle-2" fill="#313758" x="0" y="0" width="325" height="1024" />
-                      <g
-                        id="Group-8"
-                        transform="translate(52.000000, 428.000000)"
-                        fill="#FFFFFF"
-                        fill-rule="nonzero"
-                      >
-                        <g id="icon-notification" transform="translate(0.000000, 4.000000)">
-                          <path
-                            d="M15,21.25 C15,23.3210678 13.3210678,25 11.25,25 C9.17893219,25 7.5,23.3210678 7.5,21.25 L1.25,21.25 C0.559644063,21.25 0,20.6903559 0,20 C0,19.3096441 0.559644063,18.75 1.25,18.75 L2.5,18.75 L2.5,11.25 C2.49709448,7.85758364 4.45534443,4.76919939 7.525,3.325 C7.74446821,1.43386606 9.34617389,0.00729041164 11.25,0.00729041164 C13.1538261,0.00729041164 14.7555318,1.43386606 14.975,3.325 C18.0446556,4.76919939 20.0029055,7.85758364 20,11.25 L20,18.75 L21.25,18.75 C21.9403559,18.75 22.5,19.3096441 22.5,20 C22.5,20.6903559 21.9403559,21.25 21.25,21.25 L15,21.25 L15,21.25 Z M10,21.25 C10,21.9403559 10.5596441,22.5 11.25,22.5 C11.9403559,22.5 12.5,21.9403559 12.5,21.25 L10,21.25 Z M9.99999987,5.125 C7.08958591,5.71908572 4.99939374,8.27957113 4.99999987,11.25 L4.99999987,18.75 L17.4999999,18.75 L17.4999999,11.25 C17.5006063,8.27957113 15.4104141,5.71908572 12.4999999,5.125 L12.4999999,3.75 C12.4999999,3.05964406 11.9403559,2.5 11.25,2.5 C10.5596441,2.5 9.99999987,3.05964406 9.99999987,3.75 L9.99999987,5.125 Z"
-                            id="Shape"
-                          />
-                        </g>
-                      </g>
-                    </g>
-                  </svg>
+                  <icon-notification width="20px" height="1rem" />
                 </div>
                 <div class="flex-1 leading-tight text-base">
                   <span
