@@ -27,7 +27,8 @@ Vue.component('card-white', require('./ui/cards/white').default);
 Vue.component('card-elevated', require('./ui/cards/elevated').default);
 Vue.component('logo-white', require('./ui/logos/white').default);
 
-Vue.component('modal-simple', require('./ui/modals/simple').default);
+Vue.component('modal', require('./ui/essentials/modal').default);
+Vue.component('spinner', require('./ui/essentials/spinner').default);
 
 Vue.component('list-sidebar', require('./ui/lists/sidebar').default);
 
