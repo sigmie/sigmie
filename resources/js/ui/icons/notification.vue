@@ -25,6 +25,7 @@
 
 <script>
 export default {
+
   props: {
     fill: {
       default: "#ffffff"

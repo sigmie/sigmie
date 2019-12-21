@@ -27,8 +27,15 @@ Vue.component('card-white', require('./ui/cards/white').default);
 Vue.component('card-elevated', require('./ui/cards/elevated').default);
 Vue.component('logo-white', require('./ui/logos/white').default);
 
+Vue.component('modal-simple', require('./ui/modals/simple').default);
+
+Vue.component('list-sidebar', require('./ui/lists/sidebar').default);
+
+Vue.component('illustration-hologram', require('./ui/illustrations/hologram').default);
+
 Vue.component('icon-server', require('./ui/icons/server').default);
 Vue.component('icon-notification', require('./ui/icons/notification').default);
+Vue.component('icon-refresh', require('./ui/icons/refresh').default);
 
 const router = new VueRouter({
     routes: Routes,

@@ -6,7 +6,7 @@
 </head>
 
 <body class="min-h-full h-full">
-    <div id="app" class="min-h-full h-full bg-gray-100 flex">
+    <div id="app" class="min-h-full bg-gray-100 flex">
 
         <div class="w-64 bg-10 bg-primary min-h-full inline-block w-92">
             @include('common.sidebar')
