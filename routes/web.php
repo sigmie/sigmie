@@ -27,3 +27,4 @@ Route::view('/terms-of-service', 'static.terms-of-service')->name('terms-of-serv
 
 Route::view('/privacy-policy', 'static.privacy-policy')->name('privacy-policy');
 
+Route::view('/cookies-policy', 'static.cookie-policy')->name('cookie-policy');

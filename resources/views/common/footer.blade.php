@@ -9,5 +9,8 @@
         <a class="inline-block pr-4 text-gray-500" href="{{route('privacy-policy')}}">
             Privacy policy
         </a>
+        <a class="inline-block pr-4 text-gray-500" href="{{route('cookie-policy')}}">
+            Cookie Policy
+        </a>
     </div>
 </div>

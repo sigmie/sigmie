@@ -3,9 +3,13 @@
 
 <head>
     @include('common.head')
+
 </head>
 
 <body class="min-h-full h-full bg-gray-100">
+
+    @include('cookieConsent::index')
+
     <div id="app" class="min-h-full relative pb-20">
 
         <nav class="top-0 text-gray-500 shadow bg-white inline-block w-full h-16">
@@ -25,17 +29,22 @@
             <div class="pt-5 text-gray-500 text-center text-sm">
                 @yield('bottom-content')
             </div>
+
         </main>
+
 
         <footer class="bottom-0 absolute text-sm w-full h-20">
             @include('common.footer')
         </footer>
+
     </div>
 
 
     @if(config('app.env') == 'local')
     <script src="http://localhost:35729/livereload.js"></script>
     @endif
+
+    @include('common.analytics')
 </body>
 
 </html>

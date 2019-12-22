@@ -1,8 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container px-12 pt-6">
+<div class="mx-auto container px-12 pt-6">
     <div class="shadow w-full bg-white mx-auto py-3">
+        <modal />
         <div>
             <illustration-hologram height="300px" width="300px" />
         </div>

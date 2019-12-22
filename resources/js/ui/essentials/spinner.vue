@@ -32,7 +32,6 @@ export default {
 .modal-container {
   text-align: center;
   margin: 0px auto;
-  padding: 20px 30px;
   border-radius: 2px;
   transition: all 0.3s ease;
   font-family: Helvetica, Arial, sans-serif;

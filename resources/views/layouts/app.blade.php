@@ -18,7 +18,7 @@
                 @include('common.navbar')
             </nav>
 
-            <main class="mx-auto container px-4 inline-block">
+            <main class="min-w-full container px-4 inline-block">
                 @yield('content')
             </main>
         </div>
