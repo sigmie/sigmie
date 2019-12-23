@@ -3,7 +3,6 @@
 @section('content')
 <div class="mx-auto container px-12 pt-6">
     <div class="shadow w-full bg-white mx-auto py-3">
-        <spinner :show="true" />
         <div>
             <illustration-hologram height="300px" width="300px" />
         </div>

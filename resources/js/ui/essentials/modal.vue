@@ -25,11 +25,7 @@
 
 <script>
 export default {
-  data() {
-    return {
-      showModal: false
-    };
-  }
+
 };
 </script>
 
