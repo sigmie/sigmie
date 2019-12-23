@@ -1,7 +1,7 @@
 <template>
-  <div v-if="show" class="modal-mask">
-    <div class="modal-wrapper pl-64">
-      <div class="modal-container">
+  <div v-if="show" class="spinner-mask">
+    <div class="spinner-wrapper pl-64">
+      <div class="spinner-container">
         <div class="trinity-rings-spinner">
           <div class="circle"></div>
           <div class="circle"></div>
@@ -29,15 +29,7 @@ export default {
   box-sizing: border-box;
 }
 
-.modal-container {
-  text-align: center;
-  margin: 0px auto;
-  border-radius: 2px;
-  transition: all 0.3s ease;
-  font-family: Helvetica, Arial, sans-serif;
-}
-
-.modal-mask {
+.spinner-mask {
   position: fixed;
   z-index: 9998;
   top: 0;
@@ -49,7 +41,7 @@ export default {
   transition: opacity 0.3s ease;
 }
 
-.modal-wrapper {
+.spinner-wrapper {
   display: table-cell;
   vertical-align: middle;
 }
