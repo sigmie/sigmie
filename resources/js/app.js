@@ -37,6 +37,7 @@ Vue.component('illustration-hologram', require('./ui/illustrations/hologram').de
 Vue.component('icon-server', require('./ui/icons/server').default);
 Vue.component('icon-notification', require('./ui/icons/notification').default);
 Vue.component('icon-refresh', require('./ui/icons/refresh').default);
+Vue.component('icon-cheveron-right', require('./ui/icons/cheveron/right').default);
 
 const router = new VueRouter({
     routes: Routes,

@@ -9,30 +9,53 @@
 
     @include('cookieConsent::index')
 
-    <div id="app" class="min-h-full relative pb-20">
+    <div id="app" class="min-h-full relative">
 
 
         <div style="background-image: linear-gradient(45deg, #667EEA 0%, #7F9CF5 45%, #A3BFFA 100%);">
             <nav class="container mx-auto">
-                @include('common.navbar')
+                <div class="m-0 p-3 row flex h-full m-auto">
+                    <div class="col-md-4 align-middle">
+                    </div>
+                    <div class="col-md-4 col-md-offset-4 flex flex-col justify-center">
+                        <div class="flex justify-end">
+                            <a href="{{ route('login') }}">Sign in
+                                <icon-cheveron-right />
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </nav>
             <div class="container bg-red-900 w-full mx-auto">
                 <div class="row mx-auto bg-yellow-500 w-full h-full">
                     <div class="col-lg-7 bg-green-500">
                         <div class="row">
-                            <div class="col-lg-12">
-                                Title
+                            <div class="col-lg-12 py-4">
+                                <h1 class="text-4xl">
+                                    Speedily say has suitable disposal add boy.
+                                </h1>
                             </div>
                             <div class="col-lg-12">
-                                descirption text
+                                <p class="">
+                                    On forth doubt miles of child. Exercise joy man children rejoiced. Yet uncommonly
+                                    his
+                                    ten who diminution astonished. Demesne new manners savings staying had. Under folly
+                                    balls death own point now men. Match way these she avoid see death. She whose drift
+                                    their fat off.
+                                </p>
                             </div>
                             <div class="col-lg-12">
                                 <div class="inline-block">
                                     <div class="inline-block">
-                                        Button 1
+                                        <button
+                                            class="text-white text-sm py-2 px-4 rounded uppercase w-full float-right font-semibold tracking-wide bg-white text-indigo-600 border-white border">Sign
+                                            up</button>
                                     </div>
                                     <div class="inline-block">
-                                        Button 2
+                                        <button
+                                            class="text-white text-sm py-2 px-4 rounded uppercase w-full float-right font-semibold tracking-wide border">
+                                            Documentation
+                                        </button>
                                     </div>
                                 </div>
                             </div>
