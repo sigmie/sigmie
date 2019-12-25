@@ -11,7 +11,6 @@
 
     <div id="app" class="min-h-full relative">
 
-
         <div style="background-image: linear-gradient(45deg, #667EEA 0%, #7F9CF5 45%, #A3BFFA 100%);">
             <nav class="container mx-auto">
                 <div class="m-0 p-3 row flex h-full m-auto">
@@ -28,28 +27,31 @@
             </nav>
             <div class="container w-full mx-auto">
                 <div class="row mx-auto w-full h-full">
-                    <div class="col-lg-7">
-                        <div class="row">
-                            <div class="col-lg-12 py-4">
-                                <h1 class="text-4xl font-semibold tracking-wide text-indigo-900">
+                    <div class="col-lg-6">
+                        <div class="row text-primary-text tracking-wide">
+                            <div class="col-lg-12 pt-16">
+                                <h1 class="text-5xl font-semibold tracking-wide text-primary">
                                     Awesome search, your infastructure.
                                 </h1>
                             </div>
-                            <div class="col-lg-12">
-                                <p class="">
+                            <div class="col-lg-12 text-primary pt-4">
+                                <p class="text-xl">
                                     Beautifully designed components and templates, hand-crafted using the CSS framework
                                     you already know and love.
                                 </p>
+                                <p class="text-xl font-medium pt-10">
+                                    Sign up for project updates, early previews, and to find out when it’s ready.
+                                </p>
                             </div>
                             <div class="col-lg-12">
-                                <div class="inline-block">
+                                <div class="inline-block pt-4">
                                     <div class="inline-block">
                                         <input type="text" placeholder="Email address"
-                                            class="text-white text-sm py-2 px-4 rounded w-full float-right font-normal tracking-wider bg-white text-indigo-600 border-white border">
+                                            class="block sm:max-w-xs w-full px-5 py-3 text-lg leading-snug appearance-none bg-white rounded-lg focus:outline-none focus:shadow-outline">
                                     </div>
                                     <div class="inline-block">
                                         <button
-                                            class="bg-primary border-primary text-white text-sm py-2 px-4 rounded uppercase w-full float-right font-medium tracking-wider border">
+                                            class="mt-4 relative h-12 sm:mt-0 sm:h-auto sm:ml-4 block w-full sm:w-auto px-6 py-3 font-semibold leading-snug bg-primary text-white uppercase tracking-wide rounded-lg shadow-md focus:outline-none focus:shadow-outline hover:shadow">
                                             Subscribe
                                         </button>
                                     </div>
@@ -57,7 +59,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-5">
+                    <div class="col-lg-6">
 
                         <svg width="533px" height="575px" viewBox="0 0 533 575" version="1.1"
                             xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
