@@ -3050,12 +3050,6 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
-//
-//
-//
-//
-//
-//
 /* harmony default export */ __webpack_exports__["default"] = ({});
 
 /***/ }),
@@ -6405,19 +6399,19 @@ var render = function() {
             { staticClass: "pl-3" },
             [
               _c("list-sidebar", {
-                attrs: { text: "Nodes", active: true, icon: "server" }
+                attrs: { text: "Analytics", active: true, icon: "server" }
               }),
               _vm._v(" "),
               _c("list-sidebar", {
                 attrs: {
-                  text: "Notifications",
+                  text: "Monitoring",
                   active: false,
                   icon: "notification"
                 }
               }),
               _vm._v(" "),
               _c("list-sidebar", {
-                attrs: { text: "Actions", active: false, icon: "refresh" }
+                attrs: { text: "Suggestions", active: false, icon: "refresh" }
               })
             ],
             1
@@ -7146,25 +7140,16 @@ var render = function() {
   return _c(
     "svg",
     {
-      attrs: {
-        width: "6px",
-        height: "10px",
-        viewBox: "0 0 6 10",
-        version: "1.1",
-        xmlns: "http://www.w3.org/2000/svg",
-        "xmlns:xlink": "http://www.w3.org/1999/xlink"
-      }
+      staticClass: "ml-1 h-6 w-6 fill-current mt-px",
+      attrs: { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24" }
     },
     [
-      _c("g", { attrs: { fill: "#000000", "fill-rule": "nonzero" } }, [
-        _c("path", {
-          attrs: {
-            d:
-              "M0.3,1.7 C0.00140977404,1.3018797 0.0410012629,0.744785175 0.392893219,0.392893219 C0.744785175,0.0410012629 1.3018797,0.00140977404 1.7,0.3 L5.7,4.3 C6.08114288,4.68884351 6.08114288,5.31115649 5.7,5.7 L1.7,9.7 C1.3018797,9.99859023 0.744785175,9.95899874 0.392893219,9.60710678 C0.0410012629,9.25521483 0.00140977404,8.6981203 0.3,8.3 L3.59,5 L0.29,1.7 L0.3,1.7 Z",
-            id: "Path"
-          }
-        })
-      ])
+      _c("path", {
+        attrs: {
+          d:
+            "M9.3 8.7a1 1 0 0 1 1.4-1.4l4 4a1 1 0 0 1 0 1.4l-4 4a1 1 0 0 1-1.4-1.4l3.29-3.3-3.3-3.3z"
+        }
+      })
     ]
   )
 }

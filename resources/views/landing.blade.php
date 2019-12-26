@@ -14,54 +14,51 @@
         <div style="background-image: linear-gradient(45deg, #667EEA 0%, #7F9CF5 45%, #A3BFFA 100%);">
             <nav class="container mx-auto">
                 <div class="m-0 p-3 row flex h-full m-auto">
-                    <div class="col-md-4 align-middle">
+                    <div class="col-md-4 col-md-4 col-sm-4 col-xs-4 align-middle">
                     </div>
-                    <div class="col-md-4 col-md-offset-4 flex flex-col justify-center">
+                    <div class="col-md-4 col-sm-4 col-xs-4  col-xs-offset-4 col-md-offset-4 flex flex-col justify-center">
                         <div class="flex justify-end">
-                            <a href="{{ route('login') }}">Sign in
+                            <a class="flex items-center" href="{{ route('login') }}">Sign in
                                 <icon-cheveron-right />
                             </a>
                         </div>
                     </div>
                 </div>
             </nav>
-            <div class="container w-full mx-auto">
+            <div class="container w-full mx-auto py-8">
                 <div class="row mx-auto w-full h-full">
-                    <div class="col-lg-6">
+                    <div class="col-lg-6 col-md-7 col-sm-12 col-xs-12 first-lg first-md">
                         <div class="row text-primary-text tracking-wide">
-                            <div class="col-lg-12 pt-16">
+                            <div class="col-lg-12 pt-8 lg:pt-16 px-6">
                                 <h1 class="text-5xl font-semibold tracking-wide text-primary">
                                     Awesome search, your infastructure.
                                 </h1>
                             </div>
-                            <div class="col-lg-12 text-primary pt-4">
+                            <div class="col-lg-12 text-primary pt-4 px-6">
                                 <p class="text-xl">
                                     Beautifully designed components and templates, hand-crafted using the CSS framework
                                     you already know and love.
                                 </p>
-                                <p class="text-xl font-medium pt-10">
+                                <p class="text-xl font-medium pt-8">
                                     Sign up for project updates, early previews, and to find out when it’s ready.
                                 </p>
                             </div>
-                            <div class="col-lg-12">
-                                <div class="inline-block pt-4">
-                                    <div class="inline-block">
-                                        <input type="text" placeholder="Email address"
-                                            class="block sm:max-w-xs w-full px-5 py-3 text-lg leading-snug appearance-none bg-white rounded-lg focus:outline-none focus:shadow-outline">
-                                    </div>
-                                    <div class="inline-block">
-                                        <button
-                                            class="mt-4 relative h-12 sm:mt-0 sm:h-auto sm:ml-4 block w-full sm:w-auto px-6 py-3 font-semibold leading-snug bg-primary text-white uppercase tracking-wide rounded-lg shadow-md focus:outline-none focus:shadow-outline hover:shadow">
-                                            Subscribe
-                                        </button>
-                                    </div>
+                            <div class="inline-block pt-4 w-full px-6">
+                                <div class="inline-block w-full sm:w-auto">
+                                    <input type="text" placeholder="Email address"
+                                        class="block w-full sm:max-w-xs px-5 py-2 text-lg leading-snug appearance-none bg-white rounded-lg focus:outline-none focus:shadow-outline">
+                                </div>
+                                <div class="inline-block w-full sm:w-auto">
+                                    <button
+                                        class="mt-4 relative w-full sm:mt-0 sm:h-auto sm:ml-4 block w-full sm:w-auto px-6 py-3 font-semibold leading-snug bg-primary text-white uppercase tracking-wide rounded-lg shadow-md focus:outline-none focus:shadow-outline hover:shadow">
+                                        Subscribe
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-6">
-
-                        <svg width="533px" height="575px" viewBox="0 0 533 575" version="1.1"
+                    <div class="col-lg-6 col-md-5 col-sm-12 col-xs-12 first-xs first-sm">
+                        <svg class="mx-auto" width="533px" height="400px" viewBox="0 0 533 575" version="1.1"
                             xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                             <g id="Homepage" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                                 <g id="Desktop-HD" transform="translate(-907.000000, -160.000000)">

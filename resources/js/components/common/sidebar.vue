@@ -8,9 +8,9 @@
       <div class="py-2 leading-relaxed">
         <divider-sidebar text="Basics" />
         <ul class="pl-3">
-          <list-sidebar text="Nodes" :active="true" icon="server" />
-          <list-sidebar text="Notifications" :active="false" icon="notification" />
-          <list-sidebar text="Actions" :active="false" icon="refresh" />
+          <list-sidebar text="Analytics" :active="true" icon="server" />
+          <list-sidebar text="Monitoring" :active="false" icon="notification" />
+          <list-sidebar text="Suggestions" :active="false" icon="refresh" />
         </ul>
       </div>
     </div>
