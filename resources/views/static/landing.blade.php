@@ -29,9 +29,12 @@
                             Sign up for project updates, early previews, and to find out when it’s ready.
                         </p>
                     </div>
-                    <div class="inline-block pt-4 w-full px-6">
+                    <form method="POST" action="/newsletter-subscription" class="inline-block pt-4 w-full px-6">
+
+                        @csrf
+
                         <div class="inline-block w-full sm:w-auto">
-                            <input type="text" placeholder="Email address"
+                            <input type="text" name="email" placeholder="Email address"
                                 class="block w-full sm:max-w-xs px-5 py-2 text-lg leading-snug appearance-none bg-white rounded-lg focus:outline-none focus:shadow-outline">
                         </div>
                         <div class="inline-block w-full sm:w-auto">
@@ -40,7 +43,7 @@
                                 Subscribe
                             </button>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
             <div class="col-lg-6 col-md-5 col-sm-12 col-xs-12 first-xs first-sm">

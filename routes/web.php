@@ -11,16 +11,14 @@
 |
 */
 
-Route::group([], function () {
-
-    Route::get('/', function () {
-        return view('static.landing');
-    });
-
-    Route::get('/home', 'HomeController@index')->name('home');
-});
+Route::get('/home', 'HomeController@index')->name('home');
 
 Auth::routes();
+
+Route::resource('/newsletter-subscription', 'NewsletterSubscriptionController');
+
+// Static routes below
+Route::view('/', 'static.landing')->name('landing');
 
 Route::view('/terms', 'static.terms')->name('terms');
 
