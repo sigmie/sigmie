@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('content')
+@section('app.content')
 <div class="mx-auto container px-12 pt-6">
     <div class="shadow w-full bg-white mx-auto py-3">
         <div>

@@ -14,7 +14,7 @@
 Route::group([], function () {
 
     Route::get('/', function () {
-        return view('landing');
+        return view('static.landing');
     });
 
     Route::get('/home', 'HomeController@index')->name('home');
@@ -22,9 +22,8 @@ Route::group([], function () {
 
 Auth::routes();
 
+Route::view('/terms', 'static.terms')->name('terms');
 
-Route::view('/terms-of-service', 'static.terms-of-service')->name('terms-of-service');
+Route::view('/privacy', 'static.privacy')->name('privacy');
 
-Route::view('/privacy-policy', 'static.privacy-policy')->name('privacy-policy');
-
-Route::view('/cookies-policy', 'static.cookie-policy')->name('cookie-policy');
+Route::view('/cookie', 'static.cookie')->name('cookie');

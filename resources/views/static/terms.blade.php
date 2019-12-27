@@ -1,6 +1,6 @@
-@extends('layouts.homepage')
+@extends('layouts.public')
 
-@section('content')
+@section('public.content')
 
 <div class="mx-auto font-sans antialiased text-gray-900 px-6 py-6 max-w-2xl">
     <h1 class="text-xl pb-6">

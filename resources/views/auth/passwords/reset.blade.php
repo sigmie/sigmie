@@ -1,6 +1,6 @@
-@extends('layouts.homepage')
+@extends('layouts.public')
 
-@section('content')
+@section('public.content')
 
 <div class="h-full mx-auto">
     <form class="mx-auto flex container w-84 text-gray-700 h-auto" method="POST" action="{{ route('password.email') }}">

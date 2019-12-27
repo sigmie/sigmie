@@ -1,4 +1,4 @@
-@extends('layouts.homepage')
+@extends('layouts.public')
 
 @section('additional-js')
 <script src="https://js.stripe.com/v3/" type="application/javascript"></script>
@@ -32,10 +32,10 @@
 </style>
 @endsection()
 
-@section('content')
+@section('public.content')
 
-<router-view :form-action="'{{ route('register') }}'" :terms-route="'{{ route('terms-of-service') }}'"
-    :privacy-route="'{{ route('privacy-policy') }}'" :errors="{{ $errors->toJson() }}"
+<router-view :form-action="'{{ route('register') }}'" :terms-route="'{{ route('terms') }}'"
+    :privacy-route="'{{ route('privacy') }}'" :errors="{{ $errors->toJson() }}"
     :old="{{ json_encode(Session::getOldInput()) }}" :app="{{ json_encode($app) }}">
 </router-view>
 

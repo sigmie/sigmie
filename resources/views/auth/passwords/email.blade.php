@@ -1,6 +1,6 @@
-@extends('layouts.homepage')
+@extends('layouts.public')
 
-@section('content')
+@section('public.content')
 
 
 {{-- @if (session('status')) --}}
