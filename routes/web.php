@@ -17,6 +17,8 @@ Auth::routes();
 
 Route::resource('/newsletter-subscription', 'NewsletterSubscriptionController');
 
+Auth::routes(['verify' => true]);
+
 // Static routes below
 Route::view('/', 'static.landing')->name('landing');
 

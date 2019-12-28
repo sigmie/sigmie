@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreNewsletterSubscription;
 use App\NewsletterSubscription;
 use Illuminate\Http\Request;
 
@@ -14,13 +15,13 @@ class NewsletterSubscriptionController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(StoreNewsletterSubscription $request)
     {
-        $email = $request->get('email');
+        $values = $request->validated();
 
-        dd($email);
+        $subscription = NewsletterSubscription::create($values);
 
-        NewsletterSubscription::create(array('email' => $email));
+        $subscription->sendEmailConfirmationNotification();
 
         return redirect()->route('landing');
     }
