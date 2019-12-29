@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\NewsletterSubscribed;
 use App\Http\Requests\StoreNewsletterSubscription;
 use App\NewsletterSubscription;
 use Illuminate\Http\Request;
@@ -17,11 +18,9 @@ class NewsletterSubscriptionController extends Controller
      */
     public function store(StoreNewsletterSubscription $request)
     {
-        $values = $request->validated();
+        $subscription = NewsletterSubscription::create($request->validated());
 
-        $subscription = NewsletterSubscription::create($values);
-
-        $subscription->sendEmailConfirmationNotification();
+        event(new NewsletterSubscribed($subscription));
 
         return redirect()->route('landing');
     }

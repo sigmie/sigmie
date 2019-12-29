@@ -1,30 +1,32 @@
 <?php
 
-namespace App\Trais;
+namespace App\Traits;
 
-class MustConfirmSubscription
+use App\Notifications\ConfirmSubscription;
+
+trait MustConfirmSubscription
 {
     /**
      * @return bool
      */
-    public function hasVerifiedEmail()
+    public function subscriptionConfirmed(): bool
     {
-        return !is_null($this->confirmed);
+        return $this->confirmed !== null;
     }
 
     /**
      * @return bool
      */
-    public function confirmSubscription()
+    public function confirmSubscription(): void
     {
-        // TODO
+        $this->forceFill(['confirmed' => true])->save();
     }
 
     /**
      * @return void
      */
-    public function sendEmailConfirmationNotification()
+    public function sendConfirmationEmailNotification(): void
     {
-        // TODO
+        $this->notify(new ConfirmSubscription);
     }
 }
