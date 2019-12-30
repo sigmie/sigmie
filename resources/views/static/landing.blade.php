@@ -1,7 +1,8 @@
 @extends('layout')
 
+
 @section('content')
-<div style="background-image: linear-gradient(45deg, #667EEA 0%, #7F9CF5 45%, #A3BFFA 100%);">
+<div style="background-image: linear-gradient(30deg, #AEA9EF 8%, #CEC3EE 51%, #F5EAF3 100%);">
     <nav class="container mx-auto">
         <div class="m-0 p-3 row flex h-full m-auto">
             <div class="col-md-4 col-md-4 col-sm-4 col-xs-4 align-middle"> </div>

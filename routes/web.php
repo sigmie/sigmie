@@ -13,15 +13,18 @@
 
 Route::get('/home', 'HomeController@index')->name('home');
 
-Auth::routes(['verify' => true]);
+// Auth routes
+Auth::routes();
 
 // Resource routes below
 Route::resource('/newsletter-subscription', 'NewsletterSubscriptionController');
 
-Route::get('/subscription-cofirmation/{id}', 'NewsletterSubscriptionConfirmationController@store')->name('subscription.confirmation')->middleware(['signed', 'throttle:6,1']);
+Route::get('/subscription-cofirmation/{newsletterSubscription}', 'NewsletterSubscriptionConfirmationController@store')->name('subscription.confirmation')->middleware(['signed', 'throttle:6,1']);
 
 // Static routes below
 Route::view('/', 'static.landing')->name('landing');
+
+Route::view('/thank-you', 'static.newsletter-subscription.thankyou')->name('newsletter-subscription.thankyou');
 
 Route::view('/terms', 'static.terms')->name('terms');
 

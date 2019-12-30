@@ -27,15 +27,11 @@ class NewsletterSubscriptionConfirmationController extends Controller
         //
     }
 
-    public function store($id, Request $request)
+    public function store(NewsletterSubscription $newsletterSubscription)
     {
-        $sub = NewsletterSubscription::find($id);
+        $newsletterSubscription->update(['confirmed' => true]);
 
-        $sub->confirmed = true;
-
-        $sub->save();
-
-        return redirect()->route('landing');
+        return redirect()->route('newsletter-subscription.thankyou');
     }
 
     /**

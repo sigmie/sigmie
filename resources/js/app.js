@@ -34,6 +34,7 @@ Vue.component('list-sidebar', require('./ui/lists/sidebar').default);
 
 Vue.component('illustration-hologram', require('./ui/illustrations/hologram').default);
 
+Vue.component('icon-x', require('./ui/icons/x').default);
 Vue.component('icon-server', require('./ui/icons/server').default);
 Vue.component('icon-notification', require('./ui/icons/notification').default);
 Vue.component('icon-refresh', require('./ui/icons/refresh').default);
