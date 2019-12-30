@@ -25,6 +25,7 @@ Route::get('/subscription-cofirmation/{newsletterSubscription}', 'NewsletterSubs
 Route::view('/', 'static.landing')->name('landing');
 
 Route::view('/thank-you', 'static.newsletter-subscription.thankyou')->name('newsletter-subscription.thankyou');
+Route::view('/confirmed', 'static.newsletter-subscription.confirmed')->name('newsletter-subscription.confirmed');
 
 Route::view('/terms', 'static.terms')->name('terms');
 

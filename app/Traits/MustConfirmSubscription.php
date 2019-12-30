@@ -11,7 +11,7 @@ trait MustConfirmSubscription
      */
     public function subscriptionConfirmed(): bool
     {
-        return $this->confirmed !== null;
+        return $this->confirmed;
     }
 
     /**

@@ -18,11 +18,11 @@ class NewsletterSubscriptionController extends Controller
      */
     public function store(StoreNewsletterSubscription $request)
     {
-        $subscription = NewsletterSubscription::create($request->validated());
+        $subscription = NewsletterSubscription::firstOrNew($request->validated());
 
         event(new NewsletterSubscribed($subscription));
 
-        return redirect()->route('landing');
+        return redirect()->route('newsletter-subscription.thankyou');
     }
 
     /**

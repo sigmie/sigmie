@@ -11,6 +11,10 @@ use App\Traits\MustConfirmSubscription;
 
 class NewsletterSubscription extends Model implements MustConfirmSubscriptionInterface
 {
+    protected $casts = [
+        'confirmed' => 'boolean'
+    ];
+
     use Notifiable;
     use MustConfirmSubscription;
     //
