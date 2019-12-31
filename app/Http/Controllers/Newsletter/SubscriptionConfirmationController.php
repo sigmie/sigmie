@@ -17,7 +17,7 @@ class SubscriptionConfirmationController extends Controller
      */
     public function store(NewsletterSubscription $newsletterSubscription)
     {
-        $newsletterSubscription->update(['confirmed' => true]);
+        $newsletterSubscription->confirmSubscription();
 
         return redirect()->route('newsletter.confirmed');
     }

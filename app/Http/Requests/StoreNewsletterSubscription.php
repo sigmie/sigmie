@@ -24,7 +24,7 @@ class StoreNewsletterSubscription extends FormRequest
     public function rules()
     {
         return [
-            'email' => ['email:rfc,dns']
+            'email' => ['email:rfc,dns', 'required']
         ];
     }
 }

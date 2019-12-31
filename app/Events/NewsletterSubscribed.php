@@ -26,6 +26,11 @@ class NewsletterSubscribed
         $this->newsletterSubscription = $newsletterSubscription;
     }
 
+    /**
+     * Return the newsletter subscription instance
+     *
+     * @return NewsletterSubscription
+     */
     public function newsletterSubscription()
     {
         return $this->newsletterSubscription;

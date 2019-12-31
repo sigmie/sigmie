@@ -15,7 +15,7 @@ class CreateNewsletterSubscriptionsTable extends Migration
     {
         Schema::create('newsletter_subscriptions', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('email');
+            $table->string('email')->unique();
             $table->boolean('confirmed')->default(false);
             $table->timestamps();
         });

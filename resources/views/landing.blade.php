@@ -36,7 +36,7 @@
                         @csrf
 
                         <div class="inline-block w-full sm:w-auto">
-                            <input type="text" name="email" placeholder="Email address"
+                            <input type="email" name="email" placeholder="Email address" required
                                 class="block w-full sm:max-w-xs px-5 py-2 text-lg leading-snug appearance-none bg-white rounded-lg focus:outline-none focus:shadow-outline">
                         </div>
                         <div class="inline-block w-full sm:w-auto">

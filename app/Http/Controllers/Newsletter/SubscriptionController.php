@@ -19,7 +19,7 @@ class SubscriptionController extends Controller
      */
     public function store(StoreNewsletterSubscription $request)
     {
-        $subscription = NewsletterSubscription::firstOrNew($request->validated());
+        $subscription = NewsletterSubscription::firstOrCreate($request->validated());
 
         event(new NewsletterSubscribed($subscription));
 
