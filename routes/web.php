@@ -17,15 +17,20 @@ Route::get('/home', 'HomeController@index')->name('home');
 Auth::routes();
 
 // Resource routes below
-Route::resource('/newsletter-subscription', 'NewsletterSubscriptionController');
+Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group(function () {
 
-Route::get('/subscription-cofirmation/{newsletterSubscription}', 'NewsletterSubscriptionConfirmationController@store')->name('subscription.confirmation')->middleware(['signed', 'throttle:6,1']);
+    Route::get('/cofirmation/{newsletterSubscription}', 'SubscriptionConfirmationController@store')->name('subscription.confirmation')->middleware(['signed', 'throttle:6,1']);
+
+    Route::resource('/subscription', 'SubscriptionController');
+
+    Route::view('/thank-you', 'newsletter.thankyou')->name('thankyou');
+
+    Route::view('/confirmed', 'newsletter.confirmed')->name('confirmed');
+});
 
 // Static routes below
 Route::view('/', 'static.landing')->name('landing');
 
-Route::view('/thank-you', 'static.newsletter-subscription.thankyou')->name('newsletter-subscription.thankyou');
-Route::view('/confirmed', 'static.newsletter-subscription.confirmed')->name('newsletter-subscription.confirmed');
 
 Route::view('/terms', 'static.terms')->name('terms');
 

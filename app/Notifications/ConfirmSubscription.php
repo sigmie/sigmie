@@ -47,7 +47,7 @@ class ConfirmSubscription extends Notification
     protected function verificationUrl($notifiable)
     {
         return URL::temporarySignedRoute(
-            'subscription.confirmation',
+            'newsletter.subscription.confirmation',
             Carbon::now()->addMinutes(120),
             ['newsletterSubscription' => $notifiable->getKey()]
         );

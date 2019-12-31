@@ -30,7 +30,7 @@
                             Sign up for project updates, early previews, and to find out when it’s ready.
                         </p>
                     </div>
-                    <form method="POST" action="{{ route('newsletter-subscription.store') }}"
+                    <form method="POST" action="{{ route('newsletter.subscription.store') }}"
                         class="inline-block pt-4 w-full px-6">
 
                         @csrf
