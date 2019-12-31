@@ -3,13 +3,13 @@
         <a class="inline-block pr-4 text-gray-500" href="">
             ©2019 MOS - Sigma s.r.o.
         </a>
-        <a class="inline-block pr-4 text-gray-500" href="{{route('terms')}}">
+        <a class="inline-block pr-4 text-gray-500" href="{{route('legal.terms')}}">
             Terms of service
         </a>
-        <a class="inline-block pr-4 text-gray-500" href="{{route('privacy')}}">
+        <a class="inline-block pr-4 text-gray-500" href="{{route('legal.privacy')}}">
             Privacy policy
         </a>
-        <a class="inline-block pr-4 text-gray-500" href="{{route('cookie')}}">
+        <a class="inline-block pr-4 text-gray-500" href="{{route('legal.cookie')}}">
             Cookie Policy
         </a>
     </div>

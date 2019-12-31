@@ -13,10 +13,12 @@
 
 Route::get('/home', 'HomeController@index')->name('home');
 
+Route::view('/', 'landing')->name('landing');
+
 // Auth routes
 Auth::routes();
 
-// Resource routes below
+// Newsletter routes
 Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group(function () {
 
     Route::get('/cofirmation/{newsletterSubscription}', 'SubscriptionConfirmationController@store')->name('subscription.confirmation')->middleware(['signed', 'throttle:6,1']);
@@ -28,12 +30,13 @@ Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group
     Route::view('/confirmed', 'newsletter.confirmed')->name('confirmed');
 });
 
-// Static routes below
-Route::view('/', 'static.landing')->name('landing');
 
+// Legal
+Route::name('legal.')->group(function () {
 
-Route::view('/terms', 'static.terms')->name('terms');
+    Route::view('/terms', 'legal.terms')->name('terms');
 
-Route::view('/privacy', 'static.privacy')->name('privacy');
+    Route::view('/privacy', 'legal.privacy')->name('privacy');
 
-Route::view('/cookie', 'static.cookie')->name('cookie');
+    Route::view('/cookie', 'legal.cookie')->name('cookie');
+});
