@@ -23,11 +23,10 @@
                     </div>
                     <div class="col-lg-12 text-primary pt-4 px-6">
                         <p class="text-xl">
-                            Beautifully designed components and templates, hand-crafted using the CSS framework
-                            you already know and love.
+Imagine having an smart, reliable, and scalable On-Site search, with the power of Elasticsearch, running on your Google Cloud Infastructure, without breaking a sweat.
                         </p>
                         <p class="text-xl font-medium pt-8">
-                            Sign up for project updates, early previews, and to find out when it’s ready.
+Subscribe for project updates, early releases, and to find out when it’s ready.
                         </p>
                     </div>
                     <form method="POST" action="{{ route('newsletter.subscription.store') }}"
@@ -174,12 +173,13 @@
                     <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 first-md first-lg">
                         <div class="mx-auto max-w-xl">
                             <h5 class="font-medium text-5xl pb-4 max-w-lg">
-                                Keep your budget up to date
+All the interesting stuff right in front of you
                             </h5>
                             <p class="text-xl max-w-lg">
-                                To control the background color of an element on hover, add the hover: prefix to
-                                any
-                                existing background color utility. For example.</p>
+We collect a variety of information about your Elasticsearch cluster, like health, size, field mappings and more, and display all of them at one place for you to never lose sight of your cluster’s health.
+
+We'll even mail you when something doesn’t seem right.
+                                </p>
                         </div>
                     </div>
                     <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 first-sm first-xs pb-12">
