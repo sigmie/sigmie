@@ -34,8 +34,8 @@
 
 @section('public.content')
 
-<router-view :form-action="'{{ route('register') }}'" :terms-route="'{{ route('terms') }}'"
-    :privacy-route="'{{ route('privacy') }}'" :errors="{{ $errors->toJson() }}"
+<router-view :form-action="'{{ route('register') }}'" :terms-route="'{{ route('legal.terms') }}'"
+    :privacy-route="'{{ route('legal.privacy') }}'" :errors="{{ $errors->toJson() }}"
     :old="{{ json_encode(Session::getOldInput()) }}" :app="{{ json_encode($app) }}">
 </router-view>
 
