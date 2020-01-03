@@ -23,10 +23,11 @@
                     </div>
                     <div class="col-lg-12 text-primary pt-4 px-6">
                         <p class="text-xl">
-Imagine having an smart, reliable, and scalable On-Site search, with the power of Elasticsearch, running on your Google Cloud Infastructure, without breaking a sweat.
+                            Imagine having a smart, reliable, and scalable On-Site search, with the power of
+                            Elasticsearch, running on your Google Cloud Infastructure, without breaking a sweat.
                         </p>
                         <p class="text-xl font-medium pt-8">
-Subscribe for project updates, early releases, and to find out when it’s ready.
+                            Subscribe for project updates, early releases, and to find out when it’s ready.
                         </p>
                     </div>
                     <form method="POST" action="{{ route('newsletter.subscription.store') }}"
@@ -86,12 +87,12 @@ Subscribe for project updates, early releases, and to find out when it’s ready
                 <div class="row py-20 text-primary">
                     <div
                         class="col-lg-12 col-md-12 col-sm-12 col-xs-12 text-center pb-6 text-lg font-medium tracking-wide text-primary">
-                        Latin professor at Hampden-Sydney
+                        Keep your data by your side
                     </div>
                     <div
                         class="col-lg-12 col-md-12 col-sm-12 col-xs-12 text-center text-center pb-12 font-medium tracking-normal text-3xl text-primary">
                         <div class="max-w-2xl mx-auto">
-                            It has roots in a piece of classical Latin literature from.
+                            Set up your highly scalable search engine in 3 steps.
                         </div>
                     </div>
                     <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 text-center px-4 lg:px-12">
@@ -108,9 +109,12 @@ Subscribe for project updates, early releases, and to find out when it’s ready
                                 </g>
                             </g>
                         </svg>
-                        <h4 class="text-2xl pt-4 pb-3">Latin professor Sydney</h4>
+                        <h4 class="text-2xl pt-4 pb-3">
+                            Link your Cloud
+                        </h4>
                         <p class="max-w-sm text-lg mx-auto pb-16 lg:pb-0">
-                            Its in a piece of classical Latin literature from 45 BC, making it over 2000 years o
+                            Link your GCP account and have total control
+                            of your search engine, keeping your data on your side.
                         </p>
                     </div>
                     <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 text-center px-4 lg:px-12">
@@ -137,9 +141,12 @@ Subscribe for project updates, early releases, and to find out when it’s ready
                                 </g>
                             </g>
                         </svg>
-                        <h4 class="text-2xl pt-4 pb-3">Latin professor Sydney</h4>
+                        <h4 class="text-2xl pt-4 pb-3">
+                            Set your preferences
+                        </h4>
                         <p class="max-w-sm text-lg mx-auto pb-16 lg:pb-0">
-                            Its in a piece of classical Latin literature from 45 BC, making it over 2000 years o
+                            Choose your data center location, the maximum, the minimum and
+                            the desirable amount of nodes.
                         </p>
                     </div>
                     <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 text-center px-4 lg:px-12">
@@ -159,9 +166,12 @@ Subscribe for project updates, early releases, and to find out when it’s ready
                                 </g>
                             </g>
                         </svg>
-                        <h4 class="text-2xl pt-4 pb-3">Latin professor Sydney</h4>
+                        <h4 class="text-2xl pt-4 pb-3">
+                            Start searching
+                        </h4>
                         <p class="max-w-sm text-lg mx-auto lg:pb-0">
-                            Its in a piece of classical Latin literature from 45 BC, making it over 2000 years o
+                            Enjoy the intuitive mos-sigma dashboard, manage and monitor you indicies and your
+                            search results scores.
                         </p>
                     </div>
                 </div>
@@ -173,13 +183,15 @@ Subscribe for project updates, early releases, and to find out when it’s ready
                     <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 first-md first-lg">
                         <div class="mx-auto max-w-xl">
                             <h5 class="font-medium text-5xl pb-4 max-w-lg">
-All the interesting stuff right in front of you
+                                All the interesting stuff right in front of you
                             </h5>
                             <p class="text-xl max-w-lg">
-We collect a variety of information about your Elasticsearch cluster, like health, size, field mappings and more, and display all of them at one place for you to never lose sight of your cluster’s health.
+                                We collect a variety of information about your Elasticsearch cluster, like health, size,
+                                field mappings and more, and display all of them at one place for you to never lose
+                                sight of your cluster’s health.
 
-We'll even mail you when something doesn’t seem right.
-                                </p>
+                                We'll even mail you when something doesn’t seem right.
+                            </p>
                         </div>
                     </div>
                     <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 first-sm first-xs pb-12">
