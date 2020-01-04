@@ -11,32 +11,37 @@
 |
 */
 
-Route::get('/home', 'HomeController@index')->name('home');
 
 Route::view('/', 'landing')->name('landing');
 
-// Auth routes
-Auth::routes();
 
-// Newsletter routes
-Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group(function () {
+Route::group(['middleware' => ['auth.basic']], function () {
 
-    Route::get('/cofirmation/{newsletterSubscription}', 'SubscriptionConfirmationController@store')->name('subscription.confirmation')->middleware(['signed', 'throttle:6,1']);
+    Route::get('/home', 'HomeController@index')->name('home');
 
-    Route::resource('/subscription', 'SubscriptionController');
+    // Auth routes
+    Auth::routes();
 
-    Route::view('/thank-you', 'newsletter.thankyou')->name('thankyou');
+    // Newsletter routes
+    Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group(function () {
 
-    Route::view('/confirmed', 'newsletter.confirmed')->name('confirmed');
-});
+        Route::get('/cofirmation/{newsletterSubscription}', 'SubscriptionConfirmationController@store')->name('subscription.confirmation')->middleware(['signed', 'throttle:6,1']);
+
+        Route::resource('/subscription', 'SubscriptionController');
+
+        Route::view('/thank-you', 'newsletter.thankyou')->name('thankyou');
+
+        Route::view('/confirmed', 'newsletter.confirmed')->name('confirmed');
+    });
 
 
-// Legal
-Route::name('legal.')->group(function () {
+    // Legal
+    Route::name('legal.')->group(function () {
 
-    Route::view('/terms', 'legal.terms')->name('terms');
+        Route::view('/terms', 'legal.terms')->name('terms');
 
-    Route::view('/privacy', 'legal.privacy')->name('privacy');
+        Route::view('/privacy', 'legal.privacy')->name('privacy');
 
-    Route::view('/cookie', 'legal.cookie')->name('cookie');
+        Route::view('/cookie', 'legal.cookie')->name('cookie');
+    });
 });
