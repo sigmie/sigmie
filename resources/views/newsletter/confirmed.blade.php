@@ -16,7 +16,7 @@
                 <h1 class="font-display font-semibold text-primary text-4xl sm:text-5xl mb-8 leading-none">Your
                     newsletter subscription has been confirmed.</h1>
                 <p class="text-xl sm:text-2xl text-primary leading-normal"> Now you can close this page and return to
-                    whatever you were doing, and i will keep you up to date with the Sigma project.
+                    whatever you were doing, and we will keep you up to date with the MOS-Sigma project.
                 </p>
             </div>
         </div>

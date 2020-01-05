@@ -14,6 +14,17 @@
 
 Route::view('/', 'landing')->name('landing');
 
+// Newsletter routes
+Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group(function () {
+
+    Route::get('/cofirmation/{newsletterSubscription}', 'SubscriptionConfirmationController@store')->name('subscription.confirmation')->middleware(['signed', 'throttle:6,1']);
+
+    Route::resource('/subscription', 'SubscriptionController');
+
+    Route::view('/thank-you', 'newsletter.thankyou')->name('thankyou');
+
+    Route::view('/confirmed', 'newsletter.confirmed')->name('confirmed');
+});
 
 Route::group(['middleware' => ['auth.basic']], function () {
 
@@ -22,17 +33,6 @@ Route::group(['middleware' => ['auth.basic']], function () {
     // Auth routes
     Auth::routes();
 
-    // Newsletter routes
-    Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group(function () {
-
-        Route::get('/cofirmation/{newsletterSubscription}', 'SubscriptionConfirmationController@store')->name('subscription.confirmation')->middleware(['signed', 'throttle:6,1']);
-
-        Route::resource('/subscription', 'SubscriptionController');
-
-        Route::view('/thank-you', 'newsletter.thankyou')->name('thankyou');
-
-        Route::view('/confirmed', 'newsletter.confirmed')->name('confirmed');
-    });
 
 
     // Legal
