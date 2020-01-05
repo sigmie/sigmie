@@ -26,10 +26,10 @@
                     <div class="col-lg-12 text-primary pt-4 px-6">
                         <p class="text-xl">
                             Imagine having a smart, reliable, and scalable On-Site search, with the power of
-                            Elasticsearch, running on your Google Cloud Infastructure, without breaking a sweat.
+                            Elasticsearch, running on your Cloud Infastructure, without breaking a sweat.
                         </p>
                         <p class="text-xl font-normal pt-8">
-                            Subscribe for project updates, early releases, and to find out when it’s ready.
+                            Subscribe for project updates and early releases.
                         </p>
                     </div>
                     <form method="POST" action="{{ route('newsletter.subscription.store') }}"
@@ -100,7 +100,7 @@
                     <div
                         class="col-lg-12 col-md-12 col-sm-12 col-xs-12 text-center text-center pb-12 font-light tracking-normal text-4xl">
                         <div class="mx-auto pb-5 text-black">
-                            Set up your highly scalable search engine.
+                            Set up your search engine on your Cloud platform
                         </div>
                     </div>
                     <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 text-center px-4 lg:px-12">
@@ -145,9 +145,9 @@
                         <h4 class="text-2xl pt-4 pb-3 text-black font-semilight tracking-wide">
                             Link your Cloud
                         </h4>
-                        <p class="max-w-sm text-lg mx-auto pb-16 lg:pb-0 text-gray-600">
-                            Link your GCP account and have total control
-                            of your search engine, keeping your data on your side.
+                        <p class="max-w-sm text-lg mx-auto pb-16 lg:pb-0 text-gray-600 font-light tracking-wide">
+                            Link your Cloud account and let us do the
+                            hard lifting for you, keeping the full control.
                         </p>
                     </div>
                     <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 text-center px-4 lg:px-12">
@@ -197,9 +197,9 @@
                         <h4 class="text-2xl pt-4 pb-3 text-black font-semilight tracking-wide">
                             Set your preferences
                         </h4>
-                        <p class="max-w-sm text-lg mx-auto pb-16 lg:pb-0 text-gray-600">
-                            Choose your data center location, the maximum, the minimum and
-                            the desirable amount of nodes.
+                        <p class="max-w-sm text-lg mx-auto pb-16 lg:pb-0 text-gray-600 tracking-wide font-light">
+                            Choose your desirable data center location and
+                            amount of nodes, let the rest to be done for you.
                         </p>
                     </div>
                     <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 text-center px-4 lg:px-12">
@@ -250,9 +250,8 @@
                         <h4 class="text-2xl pt-4 pb-3 text-black font-semilight tracking-wide">
                             Start searching
                         </h4>
-                        <p class="max-w-sm text-lg mx-auto lg:pb-0 text-gray-600">
-                            Enjoy the intuitive mos-sigma dashboard, manage and monitor you indicies and your
-                            search results.
+                        <p class="max-w-sm text-lg mx-auto lg:pb-0 text-gray-600 font-light tracking-wide">
+                            Enjoy the intuitive dashboard, and have always the complete overview over your search.
                         </p>
                     </div>
                 </div>
@@ -261,17 +260,18 @@
         <div class="bg-white text-primary">
             <div class="container mx-auto">
                 <div class="row py-24 px-6">
-                    <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 first-md first-lg">
+                    <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 first-md first-lg pt-12 md:pt-0">
                         <div class="mx-auto max-w-xl">
                             <h5 class="font-medium text-5xl pb-4 max-w-lg">
-                                Cluster mentrics
+                                Cluster metrics
                             </h5>
-                            <p class="text-xl max-w-lg text-gray-600">
-                                We collect a variety of information about your Elasticsearch cluster, like health, size,
-                                field mappings and more, and display all of them at one place for you to never lose
-                                sight of your cluster’s health.
-
-                                We'll even mail you when something doesn’t seem right.
+                            <p class="text-xl max-w-lg text-gray-600 font-light tracking-wide">
+                                We monitor your cluster, providing you an overview with variety of information.
+                                <br>
+                                <br>
+                                We even notify you when something doesn't seem right, so
+                                that you never lose sight of your clusters health, size, documents count, memory,
+                                storage and more.
                             </p>
                         </div>
                     </div>
@@ -561,7 +561,7 @@
                                 Instant analysis
                             </h5>
                             <p class="text-xl max-w-lg text-gray-600 tracking-wide font-light">
-                                Each MOS-Sigma project contains it's own Playground. To help you
+                                Each MOS-Sigma project contains it's own Playground, to help
                                 you aim for the perfect search results.
                                 <br>
                                 <br>
@@ -577,7 +577,7 @@
         </div>
 
         <div class="bg-white text-center text-primary pb-3">
-            <h3 class="text-xl font-semibold pt-6">Sign up for project updates</h3>
+            <h3 class="text-xl font-semibold pt-6">Subscribe for project updates</h3>
             <div class="inline-block pt-4 w-full px-6 pb-8">
                 <div class="inline-block w-full sm:max-w-xs">
                     <input
