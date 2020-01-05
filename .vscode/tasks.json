@@ -19,6 +19,11 @@
             "command": "php artisan tinker"
         },
         {
+            "label": "phpunit",
+            "type": "shell",
+            "command": "vendor/bin/phpunit"
+        },
+        {
             "label": "route:list",
             "type": "shell",
             "command": "php artisan route:list"
