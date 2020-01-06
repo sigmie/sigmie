@@ -2,10 +2,9 @@ module.exports = {
     theme: {
         extend: {
             colors: {
-                'primary': '#3F3D56',
-                'primary-background': '#ECEFFB',
-                'secondary-background': '#261c56',
-                'theme-text': '#251d51'
+                'theme-primary': '#3F3D56',
+                'theme-background': '#ECEFFB',
+                'theme-green':"#23b682"
             },
             spacing: {
                 '72': '18rem',

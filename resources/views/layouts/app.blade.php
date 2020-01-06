@@ -3,9 +3,9 @@
 @section('content')
 
 
-<div class="flex h-full bg-primary-background">
+<div class="flex h-full bg-theme-background">
 
-    <div class="w-64 bg-10 bg-primary min-h-full inline-block w-92">
+    <div class="w-64 bg-10 bg-theme-primary min-h-full inline-block w-92">
         @include('common.sidebar')
     </div>
 

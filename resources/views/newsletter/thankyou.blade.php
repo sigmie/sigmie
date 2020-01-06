@@ -13,10 +13,10 @@
 
         <div class="max-w-3xl mx-auto px-6 py-8 sm:py-16 md:py-24">
             <div class="mt-20">
-                <h1 class="font-display font-semibold text-primary text-4xl sm:text-5xl mb-8 leading-none">Thank you! Now
+                <h1 class="font-display font-semibold text-theme-primary text-4xl sm:text-5xl mb-8 leading-none">Thank you! Now
                     check your email.</h1>
-                <p class="text-xl sm:text-2xl text-primary leading-normal"> You should get a confirmation email soon,
-                    open it up and <strong class="text-primary font-bold">click the confirm email button</strong> so we
+                <p class="text-xl sm:text-2xl text-theme-primary leading-normal"> You should get a confirmation email soon,
+                    open it up and <strong class="text-theme-primary font-bold">click the confirm email button</strong> so we
                     can keep you up to date. </p>
             </div>
         </div>

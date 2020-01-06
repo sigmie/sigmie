@@ -17,13 +17,13 @@
     <div class="container w-full mx-auto pt-8 pb-16">
         <div class="row mx-auto w-full h-full">
             <div class="col-lg-6 col-md-7 col-sm-12 col-xs-12 first-lg first-md">
-                <div class="row text-primary-text tracking-wide">
+                <div class="row text-theme-primary-text tracking-wide">
                     <div class="col-lg-12 pt-8 lg:pt-16 px-6">
-                        <h1 class="text-5xl font-medium tracking-wide text-primary">
+                        <h1 class="text-5xl font-medium tracking-wide text-theme-primary">
                             Awesome search, your infastructure.
                         </h1>
                     </div>
-                    <div class="col-lg-12 text-primary pt-4 px-6">
+                    <div class="col-lg-12 text-theme-primary pt-4 px-6">
                         <p class="text-xl">
                             Imagine having a smart, reliable, and scalable On-Site search, with the power of
                             Elasticsearch, running on your Cloud Infastructure, without breaking a sweat.
@@ -43,7 +43,7 @@
                         </div>
                         <div class="inline-block w-full sm:w-auto">
                             <button
-                                class="mt-4 relative w-full sm:mt-0 sm:h-auto sm:ml-4 block w-full sm:w-auto px-6 py-3 font-semibold leading-snug bg-primary text-white uppercase tracking-wide rounded-lg shadow-md focus:outline-none focus:shadow-outline hover:shadow">
+                                class="mt-4 relative w-full sm:mt-0 sm:h-auto sm:ml-4 block w-full sm:w-auto px-6 py-3 font-semibold leading-snug bg-theme-primary text-white uppercase tracking-wide rounded-lg shadow-md focus:outline-none focus:shadow-outline hover:shadow">
                                 Subscribe
                             </button>
                         </div>
@@ -93,10 +93,10 @@
     </div>
 </div>
 <main>
-    <div class="bg-primary-background">
+    <div class="bg-theme-background">
         <div class="container mx-auto h-full">
             <div class="px-6">
-                <div class="row pb-32 pt-20 text-primary">
+                <div class="row pb-32 pt-20 text-theme-primary">
                     <div
                         class="col-lg-12 col-md-12 col-sm-12 col-xs-12 text-center text-center pb-12 font-light tracking-normal text-4xl">
                         <div class="mx-auto pb-5 text-black">
@@ -108,10 +108,7 @@
                         <svg class="mx-auto" width="44px" height="50px" viewBox="0 0 44 50" version="1.1"
                             xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                             <g id="Homepage" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                <g id="Desktop-HD" transform="translate(-255.000000, -2338.000000)">
-                                    <g id="Group-9" transform="translate(1.000000, 1966.000000)" fill="#ECEFFB">
-                                        <rect id="Rectangle" x="0" y="0" width="1440" height="707"></rect>
-                                    </g>
+                                <g transform="translate(-255.000000, -2338.000000)">
                                     <g id="ECHO" transform="translate(255.000000, 2338.000000)" fill="#3F3D56">
                                         <path
                                             d="M11.8078696,30.5632561 C3.53574157,22.2984507 3.53574157,8.84936502 11.8078696,0.585292426 C12.5888817,-0.195097475 13.8546346,-0.195097475 14.6356467,0.585292426 L41.8104673,27.7384644 C42.5914794,28.5188543 42.5914794,29.7828662 41.8104673,30.5632561 C37.7902718,34.5809817 32.4639893,36.7924528 26.8091685,36.7924528 C21.1558143,36.7924528 15.8280652,34.5809817 11.8078696,30.5632561 Z M14.8266473,28.3163857 C18.3608459,31.9568036 23.041357,33.9622642 28.0044769,33.9622642 C32.2444039,33.9622642 36.2771373,32.499881 39.5660377,29.8041233 L13.3850245,2.83018868 C7.5978933,10.3604803 8.07816962,21.3635228 14.8266473,28.3163857 Z"
@@ -156,9 +153,6 @@
                             xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                             <g id="Homepage" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                                 <g id="Desktop-HD" transform="translate(-690.000000, -2341.000000)">
-                                    <g id="Group-9" transform="translate(1.000000, 1966.000000)" fill="#ECEFFB">
-                                        <rect id="Rectangle" x="0" y="0" width="1440" height="707"></rect>
-                                    </g>
                                     <g id="SAT" transform="translate(690.000000, 2341.000000)" fill="#3F3D56">
                                         <path
                                             d="M12.6990425,6.34920635 C11.3482007,6.34920635 10.1416684,5.48917301 9.69951488,4.20935363 C9.42275706,3.40674385 9.47415494,2.54407035 9.84514221,1.78040299 C10.2154705,1.01673562 10.8612388,0.443820088 11.6612006,0.165942854 C13.2861644,-0.395091942 15.1411007,0.517744673 15.699229,2.13154476 C16.2698772,3.7895676 15.3888649,5.60270005 13.7349074,6.1742955 C13.4008212,6.29046271 13.0522382,6.34920635 12.6990425,6.34920635 L12.6990425,6.34920635 Z M12.6990425,2.39028081 C12.6133793,2.39028081 12.5277162,2.40480171 12.4453478,2.43384351 C12.2483226,2.50182773 12.0908342,2.64175641 11.9992406,2.82920803 C11.9096237,3.01665966 11.8964448,3.22787276 11.9643164,3.42390492 C12.1013774,3.81926944 12.5481436,4.0476436 12.9527371,3.90705488 C13.3586486,3.76646616 13.5747833,3.32159857 13.4344275,2.91501336 C13.3257012,2.60149391 13.0311518,2.39028081 12.6990425,2.39028081 L12.6990425,2.39028081 Z"
@@ -208,9 +202,6 @@
                             xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                             <g id="Homepage" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                                 <g id="Desktop-HD" transform="translate(-1068.000000, -2341.000000)">
-                                    <g id="Group-9" transform="translate(1.000000, 1966.000000)" fill="#ECEFFB">
-                                        <rect id="Rectangle" x="0" y="0" width="1440" height="707"></rect>
-                                    </g>
                                     <g id="ROCKET" transform="translate(1068.000000, 2341.000000)">
                                         <path
                                             d="M20.5498866,14.5269507 C20.5498866,16.6788437 18.9637807,18.4240363 17.0068027,18.4240363 C15.0498247,18.4240363 13.4637188,16.6788437 13.4637188,14.5269507 C13.4637188,12.3744443 15.0498247,10.6292517 17.0068027,10.6292517 C18.9637807,10.6292517 20.5498866,12.3744443 20.5498866,14.5269507 L20.5498866,14.5269507 Z"
@@ -257,7 +248,7 @@
                 </div>
             </div>
         </div>
-        <div class="bg-white text-primary">
+        <div class="bg-white text-theme-primary">
             <div class="container mx-auto">
                 <div class="row py-24 px-6">
                     <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 first-md first-lg pt-12 md:pt-0">
@@ -442,7 +433,7 @@
                 </div>
             </div>
         </div>
-        <div class="bg-primary-background text-primary">
+        <div class="bg-theme-background text-theme-primary">
             <div class="container mx-auto">
                 <div class="row py-24 px-6">
                     <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
@@ -452,10 +443,6 @@
                                     xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                                     <g id="Homepage" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                                         <g id="Desktop-HD" transform="translate(-70.000000, -3601.000000)">
-                                            <g id="Group-11" transform="translate(0.000000, 3467.000000)"
-                                                fill="#ECEFFB">
-                                                <rect id="Rectangle" x="0" y="0" width="1440" height="647"></rect>
-                                            </g>
                                             <g id="Group-2" transform="translate(70.000000, 3601.976316)"
                                                 fill-rule="nonzero">
                                                 <path
@@ -568,7 +555,7 @@
                                 Through the Playground interface your can send queries to your search
                                 and instantly recieve various search metrics about your search results.
                                 In addition to the standard search functionality you can play around with
-                                scores, mappings, analyzers and tokenziers.
+                                score, mappings, analyzers and tokenziers.
                             </p>
                         </div>
                     </div>
@@ -576,7 +563,7 @@
             </div>
         </div>
 
-        <div class="bg-white text-center text-primary pb-3">
+        <div class="bg-white text-center text-theme-primary pb-3">
             <h3 class="text-xl font-semibold pt-6">Subscribe for project updates</h3>
             <div class="inline-block pt-4 w-full px-6 pb-8">
                 <div class="inline-block w-full sm:max-w-xs">
@@ -586,7 +573,7 @@
                 </div>
                 <div class="inline-block w-full sm:w-auto">
                     <button
-                        class="mt-4 relative w-full sm:mt-0 sm:h-auto sm:ml-4 block w-full sm:w-auto px-6 py-3 font-semibold leading-snug bg-primary text-white uppercase tracking-wide rounded-lg shadow-md focus:outline-none focus:shadow-outline hover:shadow">
+                        class="mt-4 relative w-full sm:mt-0 sm:h-auto sm:ml-4 block w-full sm:w-auto px-6 py-3 font-semibold leading-snug bg-theme-primary text-white uppercase tracking-wide rounded-lg shadow-md focus:outline-none focus:shadow-outline hover:shadow">
 
                         Subscribe
                     </button>
