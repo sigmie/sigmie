@@ -16,12 +16,16 @@ class ConfigcatServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->singleton('ConfigCat\ConfigCatClient', function () {
-            return new ConfigCatClient(config('services.configcat.key'), [
-                'cache' => new LaravelCache(Cache::store()),
-                'cache-refresh-interval' => 5
-            ]);
-        });
+        $key = config('services.configcat.key');
+
+        if ($key !== null) {
+            $this->app->singleton(ConfigCatClient::class, function () use ($key) {
+                return new ConfigCatClient($key, [
+                    'cache' => new LaravelCache(Cache::store()),
+                    'cache-refresh-interval' => 5
+                ]);
+            });
+        }
     }
 
     /**

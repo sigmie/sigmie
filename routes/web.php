@@ -13,9 +13,14 @@
 
 use ConfigCat\ConfigCatClient;
 
-$configcat = resolve(ConfigCatClient::class);
+$launched = false;
 
-$launched = $configcat->getValue("lauched", false);
+if (config('services.configcat.key') !== null) {
+
+    $configcat = resolve(ConfigCatClient::class);
+
+    $launched = $configcat->getValue("lauched", false);
+}
 
 Route::view('/', 'landing', ['launched' => $launched])->name('landing');
 
