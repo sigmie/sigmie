@@ -34,4 +34,7 @@ return [
         'secret' => env('SPARKPOST_SECRET'),
     ],
 
+    'configcat' => [
+        'key' => env('CONFIGCAT_KEY')
+    ]
 ];

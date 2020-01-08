@@ -33,8 +33,6 @@ Route::group(['middleware' => ['auth.basic']], function () {
     // Auth routes
     Auth::routes();
 
-
-
     // Legal
     Route::name('legal.')->group(function () {
 
