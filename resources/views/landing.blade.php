@@ -8,8 +8,10 @@
             <div class="col-md-4 col-md-4 col-sm-4 col-xs-4 align-middle"> </div>
             <div class="col-md-4 col-sm-4 col-xs-4  col-xs-offset-4 col-md-offset-4 flex flex-col justify-center">
                 <div class="flex justify-end">
+                    @if ($launched)
                     <a class="flex items-center" href="{{ route('login') }}">Sign in
                         <icon-cheveron-right /> </a>
+                    @endif
                 </div>
             </div>
         </div>

@@ -11,8 +11,13 @@
 |
 */
 
+use ConfigCat\ConfigCatClient;
 
-Route::view('/', 'landing')->name('landing');
+$configcat = resolve(ConfigCatClient::class);
+
+$launched = $configcat->getValue("lauched", false);
+
+Route::view('/', 'landing', ['launched' => $launched])->name('landing');
 
 // Newsletter routes
 Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group(function () {
@@ -26,8 +31,7 @@ Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group
     Route::view('/confirmed', 'newsletter.confirmed')->name('confirmed');
 });
 
-Route::group(['middleware' => ['auth.basic']], function () {
-
+if ($launched === true) {
     Route::get('/home', 'HomeController@index')->name('home');
 
     // Auth routes
@@ -42,4 +46,4 @@ Route::group(['middleware' => ['auth.basic']], function () {
 
         Route::view('/cookie', 'legal.cookie')->name('cookie');
     });
-});
+}
