@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\DeliverableMail;
+use GuzzleHttp\Client;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreNewsletterSubscription extends FormRequest
@@ -21,10 +23,10 @@ class StoreNewsletterSubscription extends FormRequest
      *
      * @return array
      */
-    public function rules()
+    public function rules(Client $client)
     {
         return [
-            'email' => ['email:rfc,dns', 'required']
+            'email' => ['email:rfc,dns', 'required', new DeliverableMail($client)]
         ];
     }
 }
