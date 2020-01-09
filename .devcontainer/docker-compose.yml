@@ -13,6 +13,19 @@ services:
     build: "./php-fpm"
     volumes:
         - ../:/var/www/app:delegated
+  redis:
+    container_name: redis
+    image: redis:5.0
+    ports:
+        - '6379:6379'
+  node:
+    container_name: node
+    build: "./node"
+    ports:
+        - '3000:3000'
+    command: ["node","/app/serve.js"]
+    volumes:
+        - ./node/serve.js:/app/serve.js:delegated
   devtools:
     container_name: devtools
     build: "./devtools"
