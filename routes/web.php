@@ -12,10 +12,13 @@
 */
 
 use ConfigCat\ConfigCatClient;
+use Illuminate\Support\Facades\Redis;
 
 $launched = false;
 
 if (config('services.configcat.key') !== null) {
+
+    Redis::set('foo','bar');
 
     $configcat = resolve(ConfigCatClient::class);
 
