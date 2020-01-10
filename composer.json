@@ -17,6 +17,7 @@
         "laravel/telescope": "^2",
         "laravel/tinker": "^1.0",
         "predis/predis": "^1.1",
+        "sentry/sentry-laravel": "1.5.0",
         "spatie/laravel-cookie-consent": "^2.6"
     },
     "require-dev": {
