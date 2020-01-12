@@ -18,12 +18,16 @@ $launched = false;
 
 if (config('services.configcat.key') !== null) {
 
-    Redis::set('foo','bar');
+    Redis::set('foo', 'bar');
 
     $configcat = resolve(ConfigCatClient::class);
 
     $launched = $configcat->getValue("lauched", false);
 }
+
+Route::get('test-socket', function () {
+    dd('test');
+});
 
 Route::view('/', 'landing', ['launched' => $launched])->name('landing');
 

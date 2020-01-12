@@ -1,7 +1,17 @@
+// require('bootstrap');
+
 import Vue from 'vue';
 import axios from 'axios';
 import Routes from './routes';
 import VueRouter from 'vue-router';
+import Echo from 'laravel-echo';
+
+window.io = require('socket.io-client');
+
+window.Echo = new Echo({
+    broadcaster: 'socket.io',
+    host: window.location.hostname + ':6001'
+});
 
 let token = document.head.querySelector('meta[name="csrf-token"]');
 
@@ -61,6 +71,8 @@ new Vue({
         }
     },
     mounted() {
+        console.log(window.io);
+        console.log(window.Echo);
     },
     methods: {
         foo() {

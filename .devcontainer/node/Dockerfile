@@ -1,11 +1,5 @@
 FROM node:13
 
-RUN mkdir /app
+EXPOSE 6001
 
-COPY . /app/
-
-RUN cd /app && npm install
-
-EXPOSE 3000
-
-CMD ["node","/app/serve.js"]
+CMD ["node","/app/socket.js"]

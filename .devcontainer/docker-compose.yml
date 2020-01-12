@@ -22,10 +22,10 @@ services:
     container_name: node
     build: "./node"
     ports:
-        - '3000:3000'
-    command: ["node","/app/serve.js"]
+        - '6001:6001'
+    command: ["node","/app/socket.js"]
     volumes:
-        - ./node/serve.js:/app/serve.js:delegated
+        - ../:/app:delegated
   devtools:
     container_name: devtools
     build: "./devtools"
