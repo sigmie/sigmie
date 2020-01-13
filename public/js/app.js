@@ -4921,8 +4921,8 @@ new vue__WEBPACK_IMPORTED_MODULE_0___default.a({
     };
   },
   mounted: function mounted() {
-    socket.on('test-channel', function (msg) {
-      console.log(msg);
+    echo.channel('test-channel').listen('Foo', function (e) {
+      console.log(e);
     });
   },
   methods: {

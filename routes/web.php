@@ -11,6 +11,7 @@
 |
 */
 
+use App\Events\Foo;
 use ConfigCat\ConfigCatClient;
 use Illuminate\Support\Facades\Redis;
 
@@ -27,9 +28,7 @@ if (config('services.configcat.key') !== null) {
 
 Route::get('test-socket', function () {
 
-    $redis = new \Redis();
-    $redis->connect('redis', 6379);
-    $redis->publish('test-channel', 'Hello from backend');
+    event(new Foo);
 
     return 'done';
 });

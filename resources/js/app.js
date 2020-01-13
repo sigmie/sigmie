@@ -72,9 +72,10 @@ new Vue({
         }
     },
     mounted() {
-        socket.on('test-channel', function (msg) {
-            console.log(msg);
-        });
+        echo.channel('test-channel')
+            .listen('Foo', (e) => {
+                console.log(e);
+            });
     },
     methods: {
         foo() {

@@ -5,15 +5,23 @@ var Redis = require("ioredis");
 var redis = new Redis(6379, "redis");
 var publisher = new Redis(6379, "redis");
 
-redis.subscribe("test-channel", function (err, count) {
+redis.psubscribe("*", function (err, count) {
+
     console.log('Message recieved');
-    console.log(count);
 
     publisher.publish("test-channel", "Hello world!");
 });
 
+redis.on("pmessage", function (channel, message) {
+
+    console.log(channel);
+    console.log(message);
+
+    io.emit(channel, message);
+});
+
 redis.on("message", function (channel, message) {
-    console.log('On:' + channel + ',' + message);
+    console.log(message);
     io.emit('test-channel', 'foo:bar');
 });
 
