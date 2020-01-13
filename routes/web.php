@@ -26,7 +26,12 @@ if (config('services.configcat.key') !== null) {
 }
 
 Route::get('test-socket', function () {
-    dd('test');
+
+    $redis = new \Redis();
+    $redis->connect('redis', 6379);
+    $redis->publish('test-channel', 'Hello from backend');
+
+    return 'done';
 });
 
 Route::view('/', 'landing', ['launched' => $launched])->name('landing');

@@ -6,9 +6,10 @@ import Routes from './routes';
 import VueRouter from 'vue-router';
 import Echo from 'laravel-echo';
 
-window.io = require('socket.io-client');
-
-window.Echo = new Echo({
+const io = require('socket.io-client');
+const socket = io('http://localhost:6001');
+const echo = new Echo({
+    client: io,
     broadcaster: 'socket.io',
     host: window.location.hostname + ':6001'
 });
@@ -71,8 +72,9 @@ new Vue({
         }
     },
     mounted() {
-        console.log(window.io);
-        console.log(window.Echo);
+        socket.on('test-channel', function (msg) {
+            console.log(msg);
+        });
     },
     methods: {
         foo() {

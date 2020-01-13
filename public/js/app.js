@@ -4863,8 +4863,12 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-window.io = __webpack_require__(/*! socket.io-client */ "./node_modules/socket.io-client/lib/index.js");
-window.Echo = new laravel_echo__WEBPACK_IMPORTED_MODULE_4__["default"]({
+
+var io = __webpack_require__(/*! socket.io-client */ "./node_modules/socket.io-client/lib/index.js");
+
+var socket = io('http://localhost:6001');
+var echo = new laravel_echo__WEBPACK_IMPORTED_MODULE_4__["default"]({
+  client: io,
   broadcaster: 'socket.io',
   host: window.location.hostname + ':6001'
 });
@@ -4917,8 +4921,9 @@ new vue__WEBPACK_IMPORTED_MODULE_0___default.a({
     };
   },
   mounted: function mounted() {
-    console.log(window.io);
-    console.log(window.Echo);
+    socket.on('test-channel', function (msg) {
+      console.log(msg);
+    });
   },
   methods: {
     foo: function foo() {
