@@ -35,6 +35,8 @@ Route::get('test-socket', function () {
 
 Route::view('/', 'landing', ['launched' => $launched])->name('landing');
 
+Broadcast::routes();
+
 // Newsletter routes
 Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group(function () {
 

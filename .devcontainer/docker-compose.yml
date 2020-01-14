@@ -1,6 +1,7 @@
 version: '3'
 services:
   nginx:
+    container_name: nginx
     build: "./nginx"
     ports:
         - '80:80'
@@ -23,9 +24,8 @@ services:
     build: "./node"
     ports:
         - '6001:6001'
-    command: ["node","/app/socket.js"]
     volumes:
-        - ../:/app:delegated
+        - ../laravel-echo-server.json:/laravel-echo-server.json:delegated
   devtools:
     container_name: devtools
     build: "./devtools"
@@ -34,6 +34,7 @@ services:
     ports:
         - '35729:35729'
   db:
+    container_name: db
     image: mysql:5.7
     restart: always
     environment:

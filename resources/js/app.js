@@ -7,11 +7,10 @@ import VueRouter from 'vue-router';
 import Echo from 'laravel-echo';
 
 const io = require('socket.io-client');
-const socket = io('http://localhost:6001');
 const echo = new Echo({
     client: io,
     broadcaster: 'socket.io',
-    host: window.location.hostname + ':6001'
+    host: 'http://localhost' + ':6001'
 });
 
 let token = document.head.querySelector('meta[name="csrf-token"]');
@@ -72,6 +71,7 @@ new Vue({
         }
     },
     mounted() {
+
         echo.channel('test-channel')
             .listen('Foo', (e) => {
                 console.log(e);

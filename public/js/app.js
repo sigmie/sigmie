@@ -4866,11 +4866,10 @@ __webpack_require__.r(__webpack_exports__);
 
 var io = __webpack_require__(/*! socket.io-client */ "./node_modules/socket.io-client/lib/index.js");
 
-var socket = io('http://localhost:6001');
 var echo = new laravel_echo__WEBPACK_IMPORTED_MODULE_4__["default"]({
   client: io,
   broadcaster: 'socket.io',
-  host: window.location.hostname + ':6001'
+  host: 'http://localhost' + ':6001'
 });
 var token = document.head.querySelector('meta[name="csrf-token"]');
 
