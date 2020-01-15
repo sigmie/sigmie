@@ -19,6 +19,16 @@
             "command": "php artisan tinker"
         },
         {
+            "label": "queue:work",
+            "type": "shell",
+            "command": "php artisan queue:work"
+        },
+        {
+            "label": "horizon",
+            "type": "shell",
+            "command": "php artisan horizon"
+        },
+        {
             "label": "phpunit",
             "type": "shell",
             "command": "vendor/bin/phpunit"

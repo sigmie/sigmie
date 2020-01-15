@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Events\Foo;
 use App\Events\NewsletterSubscribed;
 use App\Listeners\SendEmailConfirmationNotification;
 use Illuminate\Auth\Events\Registered;
@@ -21,7 +22,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         NewsletterSubscribed::class => [
             SendEmailConfirmationNotification::class
-        ]
+        ],
     ];
 
     /**
