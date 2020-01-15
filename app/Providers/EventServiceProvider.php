@@ -23,7 +23,6 @@ class EventServiceProvider extends ServiceProvider
         NewsletterSubscribed::class => [
             SendEmailConfirmationNotification::class
         ],
-        Foo::class => []
     ];
 
     /**

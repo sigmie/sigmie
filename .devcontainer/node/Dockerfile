@@ -4,4 +4,4 @@ RUN npm install -g laravel-echo-server
 
 EXPOSE 6001
 
-CMD ["/usr/local/bin/laravel-echo-server", "start"]
+CMD ["/usr/local/bin/laravel-echo-server", "start", "--force"]

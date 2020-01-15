@@ -11,7 +11,6 @@
 |
 */
 
-use App\Events\Foo;
 use ConfigCat\ConfigCatClient;
 use Illuminate\Support\Facades\Redis;
 
@@ -25,13 +24,6 @@ if (config('services.configcat.key') !== null) {
 
     $launched = $configcat->getValue("lauched", false);
 }
-
-Route::get('test-socket', function () {
-
-    event(new Foo);
-
-    return 'done';
-});
 
 Route::view('/', 'landing', ['launched' => $launched])->name('landing');
 
