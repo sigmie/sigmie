@@ -1,35 +1,62 @@
-# PHP CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-php/ for more details
-#
+---
 version: 2
 jobs:
   build:
     docker:
-      # Specify the version you desire here
-      - image: circleci/php:7.1-node-browsers
+      - image: circleci/php:7.2-node-browsers
+        environment:
+          APP_DEBUG: true
+          APP_ENV: local
+          APP_KEY: base64:6CPMmM8RByBPlknSQqcwHQ86a1SO+ZEa9/zeGKqj974=
+          APP_NAME: Laravel
+          APP_URL: http://localhost
+          BROADCAST_DRIVER: log
+          CACHE_DRIVER: file
+          CONFIGCAT_KEY: fJPXCGrKtz19Kiy3pl3SAg/N37ZkYKmzkiG_2oMG0C8XA
+          DB_CONNECTION: mysql
+          DB_DATABASE: db
+          DB_HOST: 127.0.0.1
+          DB_PASSWORD: password
+          DB_PORT: 3306
+          DB_USERNAME: user
+          LOG_CHANNEL: stack
+          MAIL_DRIVER: mailgun
+          MAIL_HOST: mg.mos-sigma.com
+          MAILGUN_ENDPOINT: api.eu.mailgun.net
+          MAILGUN_SECRET: key-fdfd771a0f2fbd29d5e279bed9dd0839
+          QUEUE_CONNECTION: sync
+          REDIS_HOST: 127.0.0.1
+          REDIS_PASSWORD: null
+          REDIS_PORT: 6379
+          SESSION_DRIVER: file
+          SESSION_LIFETIME: 120
+          STRIPE_KEY: pk_test_c9qTG6rra0eQdTd6n7Nhcqka00a3YibJYB
+          STRIPE_SECRET: sk_test_EKWRDUE6EhJEmxXttvX1cYLm00j8yti82y
 
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # Using the RAM variation mitigates I/O contention
-      # for database intensive operations.
-      # - image: circleci/mysql:5.7-ram
-      #
-      # - image: redis:2.8.19
+      - image: circleci/mysql:5.7
+        environment:
+          MYSQL_ROOT_PASSWORD: n0t4u
+          MYSQL_DATABASE: db
+          MYSQL_USER: user
+          MYSQL_PASSWORD: password
 
     steps:
+      - run: sudo apt update
+      - run: sudo apt-get install -y libpng-dev libzip-dev libmagickwand-dev
+      - run: sudo pecl install imagick
+      - run: sudo docker-php-ext-install bcmath
+      - run: sudo docker-php-ext-install exif
+      - run: sudo docker-php-ext-install gd
+      - run: sudo docker-php-ext-install intl
+      - run: sudo docker-php-ext-install mysqli
+      - run: sudo docker-php-ext-install pdo_mysql
+      - run: sudo docker-php-ext-install zip
+      - run: sudo docker-php-ext-enable imagick
       - checkout
 
-      - run: sudo apt update # PHP CircleCI 2.0 Configuration File# PHP CircleCI 2.0 Configuration File sudo apt install zlib1g-dev libsqlite3-dev
-      - run: sudo docker-php-ext-install zip
-
-      # Download and cache dependencies
       - restore_cache:
           keys:
-            # "composer.lock" can be used if it is committed to the repo
             - v1-dependencies-{{ checksum "composer.json" }}
-            # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
 
       - run: composer install -n --prefer-dist
@@ -38,21 +65,16 @@ jobs:
           key: v1-dependencies-{{ checksum "composer.json" }}
           paths:
             - ./vendor
+
       - restore_cache:
           keys:
             - node-v1-{{ checksum "package.json" }}
             - node-v1-
-      - run: yarn install
+
+      - run: npm install
       - save_cache:
           key: node-v1-{{ checksum "package.json" }}
           paths:
             - node_modules
 
-      # prepare the database
-      - run: touch storage/testing.sqlite
-      - run: php artisan migrate --env=testing --database=sqlite_testing --force
-
-      # run tests with phpunit or codecept
-      #- run: ./vendor/bin/phpunit
-      - run: ./vendor/bin/codecept build
-      - run: ./vendor/bin/codecept run
+      - run: php artisan migrate

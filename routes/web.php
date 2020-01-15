@@ -12,10 +12,13 @@
 */
 
 use ConfigCat\ConfigCatClient;
+use Illuminate\Support\Facades\Redis;
 
 $launched = false;
 
 if (config('services.configcat.key') !== null) {
+
+    Redis::set('foo', 'bar');
 
     $configcat = resolve(ConfigCatClient::class);
 
@@ -23,6 +26,8 @@ if (config('services.configcat.key') !== null) {
 }
 
 Route::view('/', 'landing', ['launched' => $launched])->name('landing');
+
+Broadcast::routes();
 
 // Newsletter routes
 Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group(function () {
