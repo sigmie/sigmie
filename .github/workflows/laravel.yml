@@ -3,22 +3,51 @@ name: Laravel
 on: [push]
 
 jobs:
-  laravel-tests:
-    runs-on: ubuntu-latest
+
+  build:
+    runs-on: ubuntu-18.04
+    services:
+     redis:
+      image: redis
+      ports:
+        - 6379/tcp
+
     steps:
-    - uses: actions/checkout@v1
-    - name: Copy .env
-      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+    - uses: actions/checkout@v2
+
+    - name: Install curl
+      run: sudo apt-get update && sudo apt-get install -y curl
+
+    - name: Install composer
+      run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+
+    - name: Validate composer.json and composer.lock
+      run: composer validate
+
     - name: Install Dependencies
       run: composer install -q --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
-    - name: Generate key
-      run: php artisan key:generate
-    - name: Create Database
-      run: |
-        mkdir -p database
-        touch database/database.sqlite
-    - name: Execute tests (Unit and Feature tests) via PHPUnit
-      env:
-        DB_CONNECTION: sqlite
-        DB_DATABASE: database/database.sqlite
-      run: vendor/bin/phpunit
+
+
+# jobs:
+#   laravel-tests:
+#     runs-on: ubuntu-latest
+#     using: docker
+#     image: 'redis:5.0'
+#     image: 'mysql:5.7'
+#     steps:
+#     - uses: actions/checkout@v1
+#     - name: Copy .env
+#       run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+#     - name: Install Dependencies
+#       run: composer install -q --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
+#     - name: Generate key
+#       run: php artisan key:generate
+#     - name: Create Database
+#       run: |
+#         mkdir -p database
+#         touch database/database.sqlite
+#     - name: Execute tests (Unit and Feature tests) via PHPUnit
+#       env:
+#         DB_CONNECTION: sqlite
+#         DB_DATABASE: database/database.sqlite
+#       run: vendor/bin/phpunit
