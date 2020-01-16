@@ -14,3 +14,4 @@ yarn-error.log
 .devcontainer/.docker-sync
 
 .DS_Store
+v8-compile-cache-0
