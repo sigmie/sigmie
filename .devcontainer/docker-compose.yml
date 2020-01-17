@@ -16,9 +16,11 @@ services:
         - ../:/var/www/app:delegated
   redis:
     container_name: redis
-    image: redis:5.0
+    image: bitnami/redis:5.0
     ports:
         - '6379:6379'
+    environment:
+      - REDIS_PASSWORD=password
   node:
     container_name: node
     build: "./node"

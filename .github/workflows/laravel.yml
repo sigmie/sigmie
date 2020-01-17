@@ -60,14 +60,20 @@ jobs:
     - name: Install composer
       run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 
-    - name: Install node
-      run: curl https://nodejs.org/dist/v4.2.4/node-v4.2.4-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
-
     - name: Validate composer.json and composer.lock
       run: composer validate
 
-    - name: Install Dependencies
+    - name: Install php dependencies
       run: composer install -q --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
+
+    - name: Install node dependencies
+      run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
+
+    - name: Node version
+      run: node -v
+
+    - name: Install node
+      run: npm install
 
     - name: Create .env file
       run: touch .env
