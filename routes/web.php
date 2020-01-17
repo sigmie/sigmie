@@ -16,15 +16,6 @@ use Illuminate\Support\Facades\Redis;
 
 $launched = false;
 
-if (config('services.configcat.key') !== null) {
-
-    Redis::set('foo', 'bar');
-
-    $configcat = resolve(ConfigCatClient::class);
-
-    $launched = $configcat->getValue("lauched", false);
-}
-
 Route::view('/', 'landing', ['launched' => $launched])->name('landing');
 
 Broadcast::routes();
@@ -42,6 +33,7 @@ Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group
 });
 
 if ($launched === true) {
+
     Route::get('/home', 'HomeController@index')->name('home');
 
     // Auth routes
