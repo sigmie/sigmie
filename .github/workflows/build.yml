@@ -50,6 +50,7 @@ jobs:
       DB_DATABASE: db
       DB_USERNAME: user
       DB_PASSWORD: password
+      TELESCOPE_ENABLED: false
 
     steps:
     - uses: actions/checkout@v2
@@ -94,4 +95,4 @@ jobs:
       run: npm run production
 
     - name: Run tests
-      run: vendor/bin/phpunit
+      run: vendor/bin/phpunit --configuration phpunit.xml

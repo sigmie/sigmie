@@ -3,6 +3,7 @@
 namespace Tests\Unit\Http\Requests;
 
 use App\Http\Requests\StoreNewsletterSubscription;
+use GuzzleHttp\Client;
 use Tests\TestCase;
 
 class StoreNewsletterSubscriptionTest extends TestCase
@@ -15,6 +16,13 @@ class StoreNewsletterSubscriptionTest extends TestCase
     private $request;
 
     /**
+     * Guzzle mock
+     *
+     * @var Client
+     */
+    private $guzzleMock;
+
+    /**
      * Setup method
      */
     protected function setUp(): void
@@ -22,6 +30,7 @@ class StoreNewsletterSubscriptionTest extends TestCase
         parent::setUp();
 
         $this->request = new StoreNewsletterSubscription();
+        $this->guzzleMock = $this->createMock(Client::class);
     }
 
     /**
@@ -29,7 +38,7 @@ class StoreNewsletterSubscriptionTest extends TestCase
      */
     public function has_email_validation(): void
     {
-        $this->assertArrayHasKey('email', $this->request->rules());
+        $this->assertArrayHasKey('email', $this->request->rules($this->guzzleMock));
     }
 
     /**
@@ -37,7 +46,7 @@ class StoreNewsletterSubscriptionTest extends TestCase
      */
     public function email_is_required(): void
     {
-        $this->assertContains('required', $this->request->rules()['email']);
+        $this->assertContains('required', $this->request->rules($this->guzzleMock)['email']);
     }
 
     /**
@@ -45,6 +54,6 @@ class StoreNewsletterSubscriptionTest extends TestCase
      */
     public function email_is_email(): void
     {
-        $this->assertContains('email:rfc,dns', $this->request->rules()['email']);
+        $this->assertContains('email:rfc,dns', $this->request->rules($this->guzzleMock)['email']);
     }
 }
