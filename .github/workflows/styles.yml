@@ -1,0 +1,14 @@
+name: Style
+
+on: [push]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Echo check code styles
+      run: echo 'Check code styles'
