@@ -10,5 +10,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Echo check code styles
-      run: echo 'Check code styles'
+    - name: PHPStan
+      run: vendor/bin/phpstan analyse --level 8 app
+
+
+    - name: PHPCS
+      run: vendor/bin/phpcs --standard=standard.xml ./app

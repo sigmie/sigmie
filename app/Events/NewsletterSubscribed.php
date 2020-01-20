@@ -30,6 +30,8 @@ class NewsletterSubscribed
      */
     public function newsletterSubscription()
     {
+        return 'foo';
+
         return $this->newsletterSubscription;
     }
 }

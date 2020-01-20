@@ -3,13 +3,14 @@
 namespace App\Listeners;
 
 use App\Contracts\MustConfirmSubscription;
+use App\Events\NewsletterSubscribed;
 
 class SendEmailConfirmationNotification
 {
     /**
      * Handle the event.
      *
-     * @param  object  $event
+     * @param NewsletterSubscribed $event
      * @return void
      */
     public function handle($event)

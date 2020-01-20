@@ -15,7 +15,7 @@ trait MustConfirmSubscription
     }
 
     /**
-     * @return bool
+     * @return void
      */
     public function confirmSubscription(): void
     {
