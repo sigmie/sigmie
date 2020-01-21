@@ -13,6 +13,5 @@ jobs:
     - name: PHPStan
       run: vendor/bin/phpstan analyse --level 8 app
 
-
     - name: PHPCS
       run: vendor/bin/phpcs --standard=standard.xml ./app

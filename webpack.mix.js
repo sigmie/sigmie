@@ -1,8 +1,7 @@
-const mix = require('laravel-mix');
+const mix = require('laravel-mix')
 const tailwindcss = require('tailwindcss')
-const LiveReloadPlugin = require('webpack-livereload-plugin');
-require('laravel-mix-purgecss');
-
+const LiveReloadPlugin = require('webpack-livereload-plugin')
+require('laravel-mix-purgecss')
 
 /*
  |--------------------------------------------------------------------------
@@ -16,15 +15,15 @@ require('laravel-mix-purgecss');
  */
 
 mix.webpackConfig({
-    plugins: [
-        new LiveReloadPlugin()
-    ]
+  plugins: [
+    new LiveReloadPlugin()
+  ]
 }).js('resources/js/app.js', 'public/js')
-    .sass('resources/sass/app.scss', 'public/css')
-    .options({
-        processCssUrls: false,
-        postCss: [tailwindcss('./tailwind.config.js')],
-    }).
-    purgeCss().
-    extract().
-    version();
+  .sass('resources/sass/app.scss', 'public/css')
+  .options({
+    processCssUrls: false,
+    postCss: [tailwindcss('./tailwind.config.js')]
+  })
+  .purgeCss()
+  .extract()
+  .version()

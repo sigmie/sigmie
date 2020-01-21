@@ -11,10 +11,7 @@
 |
 */
 
-use ConfigCat\ConfigCatClient;
-use Illuminate\Support\Facades\Redis;
-
-$launched = false;
+$launched = true;
 
 Route::view('/', 'landing', ['launched' => $launched])->name('landing');
 

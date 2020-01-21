@@ -7,6 +7,12 @@
         "laravel"
     ],
     "license": "MIT",
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://nova.laravel.com"
+        }
+    ],
     "require": {
         "php": "^7.1.3",
         "configcat/configcat-client": "^2.0",
@@ -17,6 +23,7 @@
         "laravel/horizon": "^3.4",
         "laravel/telescope": "^2",
         "laravel/tinker": "^1.0",
+        "laravel/nova": "~2.0",
         "predis/predis": "^1.1",
         "sentry/sentry-laravel": "1.5.0",
         "spatie/laravel-cookie-consent": "^2.6"
