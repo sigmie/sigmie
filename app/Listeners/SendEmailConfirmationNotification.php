@@ -10,13 +10,13 @@ class SendEmailConfirmationNotification
     /**
      * Handle the event.
      *
-     * @param NewsletterSubscribed $event
+     * @param  NewsletterSubscribed $event
      * @return void
      */
     public function handle($event)
     {
-        if ($event->newsletterSubscription() instanceof MustConfirmSubscription && !$event->newsletterSubscription()->subscriptionConfirmed()) {
-            $event->newsletterSubscription()->sendConfirmationEmailNotification();
+        if ($event->newsletterSubscription instanceof MustConfirmSubscription && !$event->newsletterSubscription->subscriptionConfirmed()) {
+            $event->newsletterSubscription->sendConfirmationEmailNotification();
         }
     }
 }

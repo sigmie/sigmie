@@ -19,12 +19,18 @@ class ConfigcatServiceProvider extends ServiceProvider
         $key = config('services.configcat.key');
 
         if ($key !== null) {
-            $this->app->singleton(ConfigCatClient::class, function () use ($key) {
-                return new ConfigCatClient($key, [
-                    'cache' => new LaravelCache(Cache::store()),
-                    'cache-refresh-interval' => 5
-                ]);
-            });
+            $this->app->singleton(
+                ConfigCatClient::class,
+                function () use ($key) {
+                    return new ConfigCatClient(
+                        $key,
+                        [
+                        'cache' => new LaravelCache(Cache::store()),
+                        'cache-refresh-interval' => 5
+                        ]
+                    );
+                }
+            );
         }
     }
 

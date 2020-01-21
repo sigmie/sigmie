@@ -12,10 +12,20 @@ class NewsletterSubscription extends Model implements MustConfirmSubscriptionInt
     use Notifiable;
     use MustConfirmSubscription;
 
+    /**
+     * Attribute default types
+     *
+     * @var array
+     */
     protected $casts = [
         'confirmed' => 'boolean'
     ];
 
+    /**
+     * Attribute defaults
+     *
+     * @var array
+     */
     protected $attributes = [
         'confirmed' => false
     ];

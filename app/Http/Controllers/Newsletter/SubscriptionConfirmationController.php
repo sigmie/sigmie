@@ -11,9 +11,9 @@ class SubscriptionConfirmationController extends Controller
      * Store the subscription confirmation to
      * the newsletter subscription model
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param NewsletterSubscription $newsletterSubscription
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(NewsletterSubscription $newsletterSubscription)
     {

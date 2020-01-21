@@ -1,9 +1,12 @@
 parameters:
-    level: 8
+    level: max
     paths:
         - app
     checkMissingIterableValueType: false
     excludes_analyse:
      - ./app/Providers/TelescopeServiceProvider.php
+
     ignoreErrors:
      - '#Call to an undefined static method#'
+     - '#Call to an undefined method#'
+     - '#.*should return Illuminate\\View\\View but returns Illuminate\\Contracts\\View\\Factory\|Illuminate\\View\\View.*#'
