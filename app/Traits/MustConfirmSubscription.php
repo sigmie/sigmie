@@ -4,6 +4,9 @@ namespace App\Traits;
 
 use App\Notifications\ConfirmSubscription;
 
+/**
+ * @property bool $confirmed
+ */
 trait MustConfirmSubscription
 {
     /**

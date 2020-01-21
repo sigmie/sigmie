@@ -39,11 +39,4 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
-
-    /**
-     * Foo
-     *
-     * @var string
-     */
-    private $foo;
 }

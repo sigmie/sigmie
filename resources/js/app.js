@@ -56,8 +56,7 @@ const router = new VueRouter({
   base: '/'
 })
 
-new Vue({
-  el: '#app',
+const vm = new Vue({
   components: {
     navbar: require('./components/common/navbar').default,
     sidebar: require('./components/common/sidebar').default
@@ -82,3 +81,5 @@ new Vue({
     }
   }
 })
+
+vm.$mount('#app')

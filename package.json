@@ -42,7 +42,13 @@
     "standard": {
         "ignore": [
             "public/vendor",
-            "public/js"
+            "public/js",
+            "app",
+            "config",
+            "routes",
+            "storage",
+            "tests",
+            "bootstrap"
         ]
     }
 }

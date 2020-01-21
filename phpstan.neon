@@ -1,0 +1,9 @@
+parameters:
+    level: 8
+    paths:
+        - app
+    checkMissingIterableValueType: false
+    excludes_analyse:
+     - ./app/Providers/TelescopeServiceProvider.php
+    ignoreErrors:
+     - '#Call to an undefined static method#'

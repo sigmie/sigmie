@@ -16,7 +16,7 @@ RUN apt-get install -y default-mysql-client
 
 RUN add-apt-repository ppa:ondrej/php
 
-RUN apt-get install -y php7.2 php7.2-zip php7.2-dom php7.2-intl php7.2-mbstring php7.2-simplexml php7.2-xml php7.2-common php7.2-opcache php7.2-mcrypt php7.2-cli php7.2-gd php7.2-curl php7.2-mysql php7.2-redis php7.2-fpm php7.2-bcmath
+RUN apt-get install -y php7.4 php7.4-zip php7.4-dom php7.4-intl php7.4-mbstring php7.4-simplexml php7.4-xml php7.4-common php7.4-opcache php7.4-cli php7.4-gd php7.4-curl php7.4-mysql php7.4-fpm php7.4-bcmath
 
 RUN apt-get update --fix-missing
 
