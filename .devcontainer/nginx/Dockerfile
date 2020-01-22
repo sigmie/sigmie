@@ -8,7 +8,7 @@ RUN touch /etc/nginx/conf.d/csr.txt
 
 RUN mkdir /etc/nginx/ssl
 
-RUN openssl dhparam -out /etc/nginx/ssl/dhparam.pem 2048
+RUN openssl dhparam -out /etc/nginx/ssl/dhparam.pem 512
 
 RUN echo '[ req ]'                                     >> csr.txt
 RUN echo 'distinguished_name="req_distinguished_name"' >> csr.txt
@@ -27,3 +27,7 @@ RUN openssl req -config csr.txt -newkey rsa:2048 -new -nodes -x509 -days 3650 -k
 RUN mv cert.pem /etc/nginx/ssl/fullchain.pem
 
 RUN mv key.pem /etc/nginx/ssl/privkey.pem
+
+COPY .devcontainer/nginx/site.conf /etc/nginx/conf.d/default.conf
+
+COPY . /var/www/app

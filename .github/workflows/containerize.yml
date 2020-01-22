@@ -5,9 +5,31 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-18.04
+    env:
+      PASSPHRASE: ${{ secrets.gcp_json_passphrase }}
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Docker ps
-      run: docker ps
+    - name: Install GCloud
+      run: if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
+
+    - name: Make secrets home dir
+      run: mkdir $HOME/secrets
+
+    - name: Decrypt gcp secret
+      run: gpg --quiet --batch --yes --decrypt --passphrase=$PASSPHRASE --output $HOME/secrets/gcp_secret.json gcp_secret.json.gpg
+
+    - name: Gcloud authentication
+      run: gcloud auth activate-service-account --key-file=$HOME/secrets/gcp_secret.json
+
+    - name: Docker authentication
+      run: gcloud auth configure-docker
+
+    - name: Build nginx image
+      run: docker build -t eu.gcr.io/sigma-development-264720/nginx -f .devcontainer/nginx/Dockerfile .
+
+    - name: Push nginx image to gcr
+      run: docker push eu.gcr.io/sigma-development-264720/nginx
+
+

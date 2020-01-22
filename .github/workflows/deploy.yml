@@ -15,3 +15,6 @@ jobs:
 
     - name: Deploy
       run: echo 'Deploy application'
+
+    # gcloud compute instances delete-access-config $VM_NAME --access-config-name "External NAT"
+    # gcloud compute instances add-access-config $VM_NAME --access-config-name "External NAT" --address $IP
