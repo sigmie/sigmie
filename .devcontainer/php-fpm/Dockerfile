@@ -22,5 +22,8 @@ RUN pecl install -o -f redis && rm -rf /tmp/pear && echo "extension=redis.so" > 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Copy the application files
+COPY . /var/www/app
+
 # Bind container to the php-fpm service
 CMD ["php-fpm"]

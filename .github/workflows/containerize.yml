@@ -1,6 +1,10 @@
 name: Containerize
 
 on: [push]
+# on:
+#   push:
+#     tags:
+#       - 'v*.*.*'
 
 jobs:
   build:
@@ -10,6 +14,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Set tag env
+      run: echo ::set-env name=RELEASE_VERSION::${GITHUB_REF:10}
 
     - name: Install GCloud
       run: if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
@@ -32,4 +39,14 @@ jobs:
     - name: Push nginx image to gcr
       run: docker push eu.gcr.io/sigma-development-264720/nginx
 
+    - name: Build php image
+      run: docker build -t eu.gcr.io/sigma-development-264720/php-fpm -f .devcontainer/php-fpm/Dockerfile .
 
+    - name: Push php image to gcr
+      run: docker push eu.gcr.io/sigma-development-264720/php-fpm
+
+    - name: Build node image
+      run: docker build -t eu.gcr.io/sigma-development-264720/node -f .devcontainer/node/Dockerfile .
+
+    - name: Push node image to gcr
+      run: docker push eu.gcr.io/sigma-development-264720/node

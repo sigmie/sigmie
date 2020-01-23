@@ -1,6 +1,10 @@
 FROM node:13
 
+WORKDIR /home/root
+
 RUN npm install -g laravel-echo-server
+
+COPY laravel-echo-server.json /home/root/
 
 EXPOSE 6001
 
