@@ -18,9 +18,6 @@ jobs:
     - name: Set tag env
       run: echo ::set-env name=RELEASE_VERSION::${GITHUB_REF:10}
 
-    - name: Set redis ip env
-      run: export REDIS_IP=$(gcloud compute instances describe redis-qwa --zone=europe-west1-b --format='get(networkInterfaces[0].networkIP)')
-
     - name: Install GCloud
       run: if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
 
@@ -43,7 +40,7 @@ jobs:
       run: docker push eu.gcr.io/sigma-development-264720/nginx
 
     - name: Build php image
-      run: docker build -t eu.gcr.io/sigma-development-264720/php-fpm -f .devcontainer/php-fpm/Dockerfile .
+      run: docker build --add-host redis:$(gcloud compute instances describe redis-qwa --zone=europe-west1-b --project=sigma-development-264720 --format='get(networkInterfaces[0].networkIP)') -t eu.gcr.io/sigma-development-264720/php-fpm -f .devcontainer/php-fpm/Dockerfile .
 
     - name: Push php image to gcr
       run: docker push eu.gcr.io/sigma-development-264720/php-fpm
