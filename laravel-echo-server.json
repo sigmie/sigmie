@@ -6,12 +6,12 @@
     "databaseConfig": {
         "redis": {
             "port": "6379",
-            "host": "redis",
+            "host": "redis.internal.mos-sigma.com.",
             "keyPrefix": "mos_sigma_database_"
         }
     },
     "devMode": true,
-    "host": "node",
+    "host": null,
     "port": "6001",
     "protocol": "http",
     "socketio": {},

@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-18.04
     env:
       PASSPHRASE: ${{ secrets.gcp_json_passphrase }}
+      REDIS_HOST: redis.internal.mos-sigma.com.
 
     steps:
     - uses: actions/checkout@v2
@@ -40,7 +41,7 @@ jobs:
       run: docker push eu.gcr.io/sigma-development-264720/nginx
 
     - name: Build php image
-      run: docker build --add-host redis:$(gcloud compute instances describe redis-qwa --zone=europe-west1-b --project=sigma-development-264720 --format='get(networkInterfaces[0].networkIP)') -t eu.gcr.io/sigma-development-264720/php-fpm -f .devcontainer/php-fpm/Dockerfile .
+      run: docker build -t eu.gcr.io/sigma-development-264720/php-fpm -f .devcontainer/php-fpm/Dockerfile .
 
     - name: Push php image to gcr
       run: docker push eu.gcr.io/sigma-development-264720/php-fpm
