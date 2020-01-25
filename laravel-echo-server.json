@@ -1,12 +1,13 @@
 {
-    "authHost": "nginx",
+    "authHost": "nginx.internal.mos-sigma.com",
     "authEndpoint": "/broadcasting/auth",
     "clients": [],
     "database": "redis",
     "databaseConfig": {
         "redis": {
             "port": "6379",
-            "host": "redis.internal.mos-sigma.com.",
+            "host": "redis.internal.mos-sigma.com",
+            "password": "jB#6#3dyThj@",
             "keyPrefix": "mos_sigma_database_"
         }
     },

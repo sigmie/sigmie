@@ -24,7 +24,7 @@ services:
     ports:
         - '6379:6379'
     environment:
-      - REDIS_PASSWORD=password
+      - REDIS_PASSWORD=jB#6#3dyThj@
   'node.internal.mos-sigma.com':
     container_name: node
     build:
