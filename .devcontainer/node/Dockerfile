@@ -4,7 +4,7 @@ WORKDIR /home/root
 
 RUN npm install -g laravel-echo-server
 
-COPY laravel-echo-server.json /home/root/
+COPY .devcontainer/node/laravel-echo-server.json /home/root/
 
 COPY .env /home/root/
 

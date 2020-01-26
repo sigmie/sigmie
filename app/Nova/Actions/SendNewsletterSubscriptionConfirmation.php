@@ -10,7 +10,8 @@ use Laravel\Nova\Fields\ActionFields;
 
 class SendNewsletterSubscriptionConfirmation extends Action
 {
-    use InteractsWithQueue, Queueable;
+    use InteractsWithQueue;
+    use Queueable;
 
     public $name = 'Send confirmation';
 

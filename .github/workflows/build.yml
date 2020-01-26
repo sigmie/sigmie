@@ -55,7 +55,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install curl
+    - name: Install curl and npm
       run: sudo apt-get update && sudo apt-get install -y curl npm
 
     - name: Install composer
@@ -69,9 +69,6 @@ jobs:
 
     - name: Install node dependencies
       run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
-
-    - name: Node version
-      run: node -v
 
     - name: Install node
       run: npm install
@@ -88,11 +85,11 @@ jobs:
     - name: Clear and cache config
       run: php artisan config:clear && php artisan config:cache
 
-    - name: Create Database
-      run: php artisan migrate
-
     - name: Compile production assets
       run: npm run production
+
+    - name: Create Database
+      run: php artisan migrate
 
     - name: Run tests
       run: vendor/bin/phpunit --configuration phpunit.xml
