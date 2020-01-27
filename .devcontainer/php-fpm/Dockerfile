@@ -9,12 +9,11 @@ RUN rm /etc/localtime && ln -s /usr/share/zoneinfo/Europe/Berlin /etc/localtime 
 # Update
 RUN apt-get update
 
-# Install php extensions
-RUN docker-php-ext-install pdo pdo_mysql mysqli bcmath
-
+# Install additional dependencies
 RUN apt-get update && apt-get install -y zlib1g-dev libicu-dev g++
-RUN docker-php-ext-configure intl
-RUN docker-php-ext-install intl
+
+# Install php extensions
+RUN docker-php-ext-install pdo pdo_mysql mysqli bcmath intl
 
 # Install Redis extension
 RUN pecl install -o -f redis && rm -rf /tmp/pear && echo "extension=redis.so" > /usr/local/etc/php/conf.d/docker-php-ext-redis.ini

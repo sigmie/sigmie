@@ -83,31 +83,28 @@ jobs:
       run: if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
 
     - name: Make secrets home dir
-      run: mkdir $HOME/secrets
-
-    - name: Decrypt gcp secret
-      run: gpg --quiet --batch --yes --decrypt --passphrase=$PASSPHRASE --output $HOME/secrets/gcp_secret.json gcp_secret.json.gpg
+      run: mkdir $HOME/secrets && touch $HOME/secrets/service_account.json && echo ${{ secrets.service_account_json }} >> $HOME/secrets/service_account.json
 
     - name: Gcloud authentication
-      run: gcloud auth activate-service-account --key-file=$HOME/secrets/gcp_secret.json
+      run: gcloud auth activate-service-account --key-file=$HOME/secrets/service_account.json
 
     - name: Docker authentication
       run: gcloud auth configure-docker
 
-    - name: Build nginx image
-      run: docker build -t eu.gcr.io/sigma-development-264720/nginx -f .devcontainer/nginx/Dockerfile .
-
-    - name: Push nginx image to gcr
-      run: docker push eu.gcr.io/sigma-development-264720/nginx
-
     - name: Build php image
-      run: docker build -t eu.gcr.io/sigma-development-264720/php-fpm -f .devcontainer/php-fpm/Dockerfile .
+      run: docker build -t eu.gcr.io/sigma-development-264720/fpm -f .devcontainer/php-fpm/Dockerfile .
 
     - name: Push php image to gcr
-      run: docker push eu.gcr.io/sigma-development-264720/php-fpm
+      run: docker push eu.gcr.io/sigma-development-264720/fpm
 
-    - name: Build node image
-      run: docker build -t eu.gcr.io/sigma-development-264720/node -f .devcontainer/node/Dockerfile .
+    - name: Build sheduler image
+      run: docker build -t eu.gcr.io/sigma-development-264720/scheduler -f .devcontainer/scheduler/Dockerfile .
 
-    - name: Push node image to gcr
-      run: docker push eu.gcr.io/sigma-development-264720/node
+    - name: Push sheduler image to gcr
+      run: docker push eu.gcr.io/sigma-development-264720/scheduler
+
+    - name: Build worker image
+      run: docker build -t eu.gcr.io/sigma-development-264720/worker -f .devcontainer/worker/Dockerfile .
+
+    - name: Push worker image to gcr
+      run: docker push eu.gcr.io/sigma-development-264720/worker
