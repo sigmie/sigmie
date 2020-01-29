@@ -92,6 +92,12 @@ jobs:
     - name: Docker authentication
       run: gcloud auth configure-docker
 
+    - name: Build nginx image
+      run: docker build -t eu.gcr.io/mossigma-app-production/nginx -f .devcontainer/nginx/Dockerfile .
+
+    - name: Push nginx image to gcr
+      run: docker push eu.gcr.io/mossigma-app-production/nginx
+
     - name: Build php image
       run: docker build -t eu.gcr.io/mossigma-app-production/fpm -f .devcontainer/fpm/Dockerfile .
 
