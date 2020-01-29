@@ -1,4 +1,4 @@
-FROM eu.gcr.io/sigma-development-264720/fpm:latest
+FROM eu.gcr.io/mossigma-app-production/fpm:latest
 
 # Copy the entrypoint file into the image
 COPY .devcontainer/worker/entrypoint.sh /opt/bin/entrypoint.sh
