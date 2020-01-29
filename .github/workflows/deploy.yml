@@ -92,7 +92,7 @@ jobs:
       run: gcloud auth configure-docker
 
     - name: Build php image
-      run: docker build -t eu.gcr.io/sigma-development-264720/fpm -f .devcontainer/php-fpm/Dockerfile .
+      run: docker build -t eu.gcr.io/sigma-development-264720/fpm -f .devcontainer/fpm/Dockerfile .
 
     - name: Push php image to gcr
       run: docker push eu.gcr.io/sigma-development-264720/fpm

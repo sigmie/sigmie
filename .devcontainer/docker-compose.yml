@@ -11,11 +11,11 @@ services:
     volumes:
         - ../:/var/www/app:delegated
         - ./nginx/site.conf:/etc/nginx/conf.d/default.conf
-  'php.internal.mos-sigma.com':
-    container_name: php-fpm
+  'fpm.internal.mos-sigma.com':
+    container_name: fpm
     build:
       context: '..'
-      dockerfile: .devcontainer/php-fpm/Dockerfile
+      dockerfile: .devcontainer/fpm/Dockerfile
     volumes:
         - ../:/var/www/app:delegated
   'redis.internal.mos-sigma.com':

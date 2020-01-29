@@ -1,4 +1,4 @@
-FROM eu.gcr.io/sigma-development-264720/php-fpm:latest
+FROM eu.gcr.io/sigma-development-264720/fpm:latest
 
 # Copy the entrypoint file into the image
 COPY .devcontainer/worker/entrypoint.sh /opt/bin/entrypoint.sh
