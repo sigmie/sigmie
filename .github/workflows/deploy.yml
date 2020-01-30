@@ -12,6 +12,7 @@ jobs:
     env:
       GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
       COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
+      ASSET_URL: https://mos-sigma.storage.googleapis.com/public
       APP_DEBUG: false
       APP_ENV: production
       APP_KEY: base64:6CPMmM8RByBPlknSQqcwHQ86a1SO+ZEa9/zeGKqj974=
@@ -115,3 +116,9 @@ jobs:
 
     - name: Push worker image to gcr
       run: docker push eu.gcr.io/mossigma-app-production/worker
+
+    - name: Deploy assets to mos-sigma bucket
+      run: gsutil -m rsync -r ./public gs://mos-sigma/${{ env.RELEASE_VERSION }}
+
+    - name: Echo assets url to .env
+      run: echo "ASSET_URL=https://mos-sigma.storage.googleapis.com/${{ env.RELEASE_VERSION }}"
