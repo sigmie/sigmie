@@ -120,4 +120,4 @@ jobs:
       run: gsutil -m rsync -r ./public gs://mos-sigma/${ASSETS_HASH}
 
     - name: Echo assets url to .env
-      run: echo "ASSET_URL=https://mos-sigma.storage.googleapis.com/${ASSETS_HASH}
+      run: echo "ASSET_URL=https://mos-sigma.storage.googleapis.com/${ASSETS_HASH}"
