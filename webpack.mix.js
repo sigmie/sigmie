@@ -26,3 +26,4 @@ mix.webpackConfig({
   })
   .purgeCss()
   .extract()
+  .version()

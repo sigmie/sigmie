@@ -1,14 +1,6 @@
 name: Deploy
 
-# on: [push]
-
-on:
-  release:
-    types: # This configuration does not affect the page_build event above
-      - created
-  push:
-    tags:
-      - 'v*.*.*'
+on: [push]
 
 jobs:
   build:
@@ -51,6 +43,9 @@ jobs:
 
     - name: Set tag env
       run: echo ::set-env name=RELEASE_VERSION::${GITHUB_REF:10}
+
+    - name: Set assets env
+      run: echo ::set-env name=ASSETS_HASH::$(md5sum ./public/mix-manifest.json | awk '{ print $1 }')
 
     - name: Decrypt google secret
       run: gpg --quiet --batch --yes --decrypt --passphrase=$GOOGLE_PASSPHRASE --output google.json .github/secrets/google.json.gpg
@@ -122,7 +117,7 @@ jobs:
       run: docker push eu.gcr.io/mossigma-app-production/worker
 
     - name: Deploy assets to mos-sigma bucket
-      run: gsutil -m rsync -r ./public gs://mos-sigma/${{ env.RELEASE_VERSION }}
+      run: gsutil -m rsync -r ./public gs://mos-sigma/${ASSETS_HASH}
 
     - name: Echo assets url to .env
-      run: echo "ASSET_URL=https://mos-sigma.storage.googleapis.com/${{ env.RELEASE_VERSION }}"
+      run: echo "ASSET_URL=https://mos-sigma.storage.googleapis.com/${ASSETS_HASH}

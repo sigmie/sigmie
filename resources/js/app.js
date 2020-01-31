@@ -77,7 +77,7 @@ const vm = new Vue({
   },
   methods: {
     foo () {
-      return 'foo'
+      return 'foo & bar'
     }
   }
 })
