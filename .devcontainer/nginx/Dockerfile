@@ -29,5 +29,3 @@ RUN mv cert.pem /etc/nginx/ssl/fullchain.pem
 RUN mv key.pem /etc/nginx/ssl/privkey.pem
 
 COPY .devcontainer/nginx/site.conf /etc/nginx/conf.d/default.conf
-
-COPY . /var/www/app

@@ -14,7 +14,9 @@ v8-compile-cache-0
 .gitignore
 .styleci.yml
 
+google.json
 auth.json
+
 composer.json
 composer.lock
 
