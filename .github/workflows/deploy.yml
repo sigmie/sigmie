@@ -131,5 +131,10 @@ jobs:
     - name: Start rolling update
       run: gcloud compute instance-groups managed rolling-action start-update fpm --version template=fpm-${RELEASE_VERSION} --zone=europe-west1-b
 
+    - name: Update worker and scheduler container images
+      run: |
+          gcloud compute instances update-container worker --zone=europe-west1-b --container-image=eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION}
+          gcloud compute instances update-container scheduler --zone=europe-west1-b --container-image=eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION}
+
     - name: Migrate database
       run: php artisan migrate --force
