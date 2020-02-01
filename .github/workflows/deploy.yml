@@ -10,11 +10,9 @@ jobs:
       COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
       DB_HOST: 127.0.0.1
       DB_PORT: 3307
-      DB_DATABASE: mos-sigma
-      DB_USERNAME: root
-      DB_PASSWORD: zed6u8C2U4*$
-      # DB_USERNAME: app
-      # DB_PASSWORD: u#Rh2!HTr2HA
+      DB_DATABASE: app
+      DB_USERNAME: app
+      DB_PASSWORD: u#Rh2!HTr2HA
     steps:
     - uses: actions/checkout@v2
 
@@ -31,7 +29,7 @@ jobs:
       run: gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
 
     - name: Start sql proxy
-      run: docker run -d -v google.json:/config -p 3307:3306 gcr.io/cloudsql-docker/gce-proxy:1.16 /cloud_sql_proxy -instances=mossigma-app-production:europe-west1:mos-sigma=tcp:0.0.0.0:3306 -credential_file=/config
+      run: docker run -d -v ${PWD}/google.json:/config -p 3307:3306 gcr.io/cloudsql-docker/gce-proxy:1.16 /cloud_sql_proxy -instances=mossigma-app-production:europe-west1:mos-sigma=tcp:0.0.0.0:3306 -credential_file=/config
 
     - name: Install curl and npm
       run: sudo apt-get update && sudo apt-get install -y curl npm
@@ -44,9 +42,6 @@ jobs:
 
     - name: Install php production dependencies
       run: composer install -q --no-dev --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
-
-    - name: Migrate database
-      run: php artisan migrate --force
 
     - name: Install node dependencies
       run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
@@ -80,15 +75,7 @@ jobs:
         echo "SESSION_DRIVER=redis"                                                                >> .env
         echo "SESSION_LIFETIME=120"                                                                >> .env
         echo ""                                                                                    >> .env
-        echo "ASSET_URL=https://mos-sigma.storage.googleapis.com/4550dc497a3e7d28f5a01ea02f68a8df" >> .env
-        echo ""                                                                                    >> .env
         echo "TELESCOPE_ENABLED=true" >> .env
-
-    - name: Clear and cache routes
-      run: php artisan route:clear && php artisan route:cache
-
-    - name: Clear and cache config
-      run: php artisan config:clear && php artisan config:cache
 
     - name: Compile production assets
       run: npm run production
@@ -96,17 +83,20 @@ jobs:
     - name: Install GCloud
       run: if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
 
-    - name: Gcloud authentication
-      run: gcloud auth activate-service-account --key-file=google.json
-
-    - name: Docker authentication
-      run: gcloud auth configure-docker
+    - name: Gcloud & docker authentications
+      run: gcloud auth activate-service-account --key-file=google.json && gcloud auth configure-docker
 
     - name: Deploy assets to mos-sigma bucket
       run: gsutil -m rsync -r ./public gs://mos-sigma/${ASSETS_HASH}
 
     - name: Echo assets url to .env
-      run: echo "ASSET_URL=https://mos-sigma.storage.googleapis.com/${ASSETS_HASH}"
+      run: echo "ASSET_URL=https://mos-sigma.storage.googleapis.com/${ASSETS_HASH}" >> .env
+
+    - name: Clear and cache routes
+      run: php artisan route:clear && php artisan route:cache
+
+    - name: Clear and cache config
+      run: php artisan config:clear && php artisan config:cache
 
     - name: Build nginx image
       run: docker build -t eu.gcr.io/mossigma-app-production/nginx -f .devcontainer/nginx/Dockerfile .
@@ -126,9 +116,11 @@ jobs:
     - name: Push sheduler image to gcr
       run: docker push eu.gcr.io/mossigma-app-production/scheduler
 
-    - name: Build worker image
+    - name: Build and push worker image
       run: docker build -t eu.gcr.io/mossigma-app-production/worker -f .devcontainer/worker/Dockerfile .
 
     - name: Push worker image to gcr
       run: docker push eu.gcr.io/mossigma-app-production/worker
 
+    - name: Migrate database
+      run: php artisan migrate --force
