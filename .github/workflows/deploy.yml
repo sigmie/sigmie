@@ -16,17 +16,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set tag env
-      run: echo ::set-env name=RELEASE_VERSION::${GITHUB_REF:10}
+    - name: Set release and assets url env
+      # run: echo ::set-env name=RELEASE_VERSION::${GITHUB_REF:10}
+      run: echo ::set-env name=RELEASE_VERSION::$(date +%s)
 
-    - name: Set assets env
-      run: echo ::set-env name=ASSETS_HASH::$(md5sum ./public/mix-manifest.json | awk '{ print $1 }')
-
-    - name: Decrypt google secret
-      run: gpg --quiet --batch --yes --decrypt --passphrase=$GOOGLE_PASSPHRASE --output google.json .github/secrets/google.json.gpg
-
-    - name: Decrypt composer secret
-      run: gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
+    - name: Decrypt google and composer secrets
+      run: |
+          gpg --quiet --batch --yes --decrypt --passphrase=$GOOGLE_PASSPHRASE --output google.json .github/secrets/google.json.gpg
+          gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
 
     - name: Start sql proxy
       run: docker run -d -v ${PWD}/google.json:/config -p 3307:3306 gcr.io/cloudsql-docker/gce-proxy:1.16 /cloud_sql_proxy -instances=mossigma-app-production:europe-west1:mos-sigma=tcp:0.0.0.0:3306 -credential_file=/config
@@ -37,17 +34,24 @@ jobs:
     - name: Install composer
       run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 
-    - name: Validate composer.json and composer.lock
-      run: composer validate
+    - name: Validate composer and install prod dependecies
+      run: |
+          composer validate
+          composer install -q --no-dev --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
 
-    - name: Install php production dependencies
-      run: composer install -q --no-dev --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
+    - name: Clear and generate cofig and route caches
+      run: |
+          php artisan route:clear && php artisan route:cache
+          php artisan config:clear && php artisan config:cache
 
     - name: Install node dependencies
       run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
 
-    - name: Install node
-      run: npm install
+    - name: Install node and generate production assets
+      run: |
+          npm install
+          npm run production
+          echo ::set-env name=ASSETS_HASH::$(md5sum ./public/mix-manifest.json | awk '{ print $1 }')
 
     - name: Create .env file
       run: |
@@ -75,52 +79,57 @@ jobs:
         echo "SESSION_DRIVER=redis"                                                                >> .env
         echo "SESSION_LIFETIME=120"                                                                >> .env
         echo ""                                                                                    >> .env
-        echo "TELESCOPE_ENABLED=true" >> .env
-
-    - name: Compile production assets
-      run: npm run production
+        echo "TELESCOPE_ENABLED=true"                                                              >> .env
+        echo "ASSET_URL=https://mos-sigma.storage.googleapis.com/${ASSETS_HASH}"                   >> .env
 
     - name: Install GCloud
       run: if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
 
     - name: Gcloud & docker authentications
-      run: gcloud auth activate-service-account --key-file=google.json && gcloud auth configure-docker
+      run: |
+          gcloud auth activate-service-account --key-file=google.json
+          gcloud auth configure-docker
+          gcloud config set project mossigma-app-production
 
     - name: Deploy assets to mos-sigma bucket
       run: gsutil -m rsync -r ./public gs://mos-sigma/${ASSETS_HASH}
 
-    - name: Echo assets url to .env
-      run: echo "ASSET_URL=https://mos-sigma.storage.googleapis.com/${ASSETS_HASH}" >> .env
+    - name: Build and push fpm image
+      run: |
+          docker build -t eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} -f .devcontainer/fpm/Dockerfile .
+          docker push eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION}
 
-    - name: Clear and cache routes
-      run: php artisan route:clear && php artisan route:cache
-
-    - name: Clear and cache config
-      run: php artisan config:clear && php artisan config:cache
-
-    - name: Build nginx image
-      run: docker build -t eu.gcr.io/mossigma-app-production/nginx -f .devcontainer/nginx/Dockerfile .
-
-    - name: Push nginx image to gcr
-      run: docker push eu.gcr.io/mossigma-app-production/nginx
-
-    - name: Build php image
-      run: docker build -t eu.gcr.io/mossigma-app-production/fpm -f .devcontainer/fpm/Dockerfile .
-
-    - name: Push php image to gcr
-      run: docker push eu.gcr.io/mossigma-app-production/fpm
-
-    - name: Build sheduler image
-      run: docker build -t eu.gcr.io/mossigma-app-production/scheduler -f .devcontainer/scheduler/Dockerfile .
-
-    - name: Push sheduler image to gcr
-      run: docker push eu.gcr.io/mossigma-app-production/scheduler
+    - name: Build and push sheduler image
+      run: |
+          docker build -t eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION} -f .devcontainer/scheduler/Dockerfile .
+          docker push eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION}
 
     - name: Build and push worker image
-      run: docker build -t eu.gcr.io/mossigma-app-production/worker -f .devcontainer/worker/Dockerfile .
+      run: |
+          docker build -t eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION} -f .devcontainer/worker/Dockerfile .
+          docker push eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION}
 
-    - name: Push worker image to gcr
-      run: docker push eu.gcr.io/mossigma-app-production/worker
+    - name: Create instance template
+      run: |
+           gcloud compute \
+           instance-templates \
+           create-with-container \
+           fpm-${RELEASE_VERSION} \
+           --machine-type=f1-micro \
+           --subnet=projects/mossigma-app-production/regions/europe-west1/subnetworks/default \
+           --region=europe-west1 \
+           --tags=default-allow-internal,allow-health-check \
+           --image=cos-stable-79-12607-80-0 \
+           --image-project=cos-cloud \
+           --boot-disk-size=10GB \
+           --boot-disk-type=pd-standard \
+           --boot-disk-device-name=fpm-${RELEASE_VERSION} \
+           --container-image=eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} \
+           --container-restart-policy=always \
+           --labels=container-vm=cos-stable-79-12607-80-0
+
+    - name: Start rolling update
+      run: gcloud compute instance-groups managed rolling-action start-update fpm --version template=fpm-${RELEASE_VERSION} --zone=europe-west1-b
 
     - name: Migrate database
       run: php artisan migrate --force
