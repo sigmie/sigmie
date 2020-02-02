@@ -48,6 +48,12 @@ jobs:
           npm run production
           echo ::set-env name=ASSETS_HASH::$(md5sum ./public/mix-manifest.json | awk '{ print $1 }')
 
+    - name: Clear and generate cofig and route caches
+      run: |
+          php artisan clear-compiled && php artisan optimize
+          php artisan view:clear && php artisan view:cache
+          php artisan event:clear && php artisan event:cache
+
     - name: Create .env file
       run: |
         echo "APP_NAME=MOS-Sigma"                                                                  >> .env
@@ -80,11 +86,6 @@ jobs:
         echo ""                                                                                    >> .env
         echo "TELESCOPE_ENABLED=true"                                                              >> .env
         echo "ASSET_URL=https://mos-sigma.storage.googleapis.com/${ASSETS_HASH}"                   >> .env
-
-    - name: Clear and generate cofig and route caches
-      run: |
-          php artisan route:clear && php artisan route:cache
-          php artisan config:clear && php artisan config:cache
 
     - name: Install GCloud
       run: if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
