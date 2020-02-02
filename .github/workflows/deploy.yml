@@ -39,11 +39,6 @@ jobs:
           composer validate
           composer install -q --no-dev --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
 
-    - name: Clear and generate cofig and route caches
-      run: |
-          php artisan route:clear && php artisan route:cache
-          php artisan config:clear && php artisan config:cache
-
     - name: Install node dependencies
       run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
 
@@ -58,7 +53,7 @@ jobs:
         echo "APP_NAME=MOS-Sigma"                                                                  >> .env
         echo "APP_ENV=production"                                                                  >> .env
         echo "APP_KEY=base64:6CPMmM8RByBPlknSQqcwHQ86a1SO+ZEa9/zeGKqj974="                         >> .env
-        echo "APP_DEBUG=true"                                                                      >> .env
+        echo "APP_DEBUG=false"                                                                     >> .env
         echo "APP_URL=https://mos-sigma.com"                                                       >> .env
         echo ""                                                                                    >> .env
         echo "LOG_CHANNEL=stack"                                                                   >> .env
@@ -66,13 +61,17 @@ jobs:
         echo "DB_CONNECTION=mysql"                                                                 >> .env
         echo "DB_HOST=sqlproxy.internal.mos-sigma.com"                                             >> .env
         echo "DB_PORT=3306"                                                                        >> .env
-        echo "DB_DATABASE=mos-sigma"                                                               >> .env
+        echo "DB_DATABASE=app"                                                                     >> .env
         echo "DB_USERNAME=app"                                                                     >> .env
-        echo "DB_PASSWORD=u#Rh2!HTr2HA"                                                            >> .env
+        echo "DB_PASSWORD=ieK7^yeE^F8Rn"                                                           >> .env
         echo ""                                                                                    >> .env
         echo "BROADCAST_DRIVER=redis"                                                              >> .env
         echo ""                                                                                    >> .env
         echo "CACHE_DRIVER=redis"                                                                  >> .env
+        echo ""                                                                                    >> .env
+        echo "REDIS_HOST=redis.internal.mos-sigma.com"                                             >> .env
+        echo "REDIS_PASSWORD=na8!^&*JbXEz"                                                         >> .env
+        echo "REDIS_PORT=6379"                                                                     >> .env
         echo ""                                                                                    >> .env
         echo "QUEUE_CONNECTION=redis"                                                              >> .env
         echo ""                                                                                    >> .env
@@ -81,6 +80,11 @@ jobs:
         echo ""                                                                                    >> .env
         echo "TELESCOPE_ENABLED=true"                                                              >> .env
         echo "ASSET_URL=https://mos-sigma.storage.googleapis.com/${ASSETS_HASH}"                   >> .env
+
+    - name: Clear and generate cofig and route caches
+      run: |
+          php artisan route:clear && php artisan route:cache
+          php artisan config:clear && php artisan config:cache
 
     - name: Install GCloud
       run: if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
