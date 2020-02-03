@@ -20,6 +20,11 @@ jobs:
       # run: echo ::set-env name=RELEASE_VERSION::${GITHUB_REF:10}
       run: echo ::set-env name=RELEASE_VERSION::$(date +%s)
 
+    - name: Set gcloud host names
+      run: |
+          sudo sh -c "echo 127.0.0.1 redis.internal.mos-sigma.com >> /etc/hosts"
+          sudo sh -c "echo 127.0.0.1 sqlproxy.internal.mos-sigma.com >> /etc/hosts"
+
     - name: Decrypt google and composer secrets
       run: |
           gpg --quiet --batch --yes --decrypt --passphrase=$GOOGLE_PASSPHRASE --output google.json .github/secrets/google.json.gpg
@@ -47,12 +52,6 @@ jobs:
           npm install
           npm run production
           echo ::set-env name=ASSETS_HASH::$(md5sum ./public/mix-manifest.json | awk '{ print $1 }')
-
-    - name: Clear and generate cofig and route caches
-      run: |
-          php artisan clear-compiled && php artisan optimize
-          php artisan view:clear && php artisan view:cache
-          php artisan event:clear && php artisan event:cache
 
     - name: Create .env file
       run: |
@@ -95,6 +94,15 @@ jobs:
           gcloud auth activate-service-account --key-file=google.json
           gcloud auth configure-docker
           gcloud config set project mossigma-app-production
+
+    - name: Create redis tunnel
+      run: gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:127.0.0.1:6379  -N -f
+
+    - name: Clear and generate config and route caches
+      run: |
+          php artisan clear-compiled && php artisan optimize
+          php artisan view:clear && php artisan view:cache
+          php artisan event:clear && php artisan event:cache
 
     - name: Deploy assets to mos-sigma bucket
       run: gsutil -m rsync -r ./public gs://mos-sigma/${ASSETS_HASH}
