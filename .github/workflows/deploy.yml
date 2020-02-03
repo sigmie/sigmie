@@ -8,11 +8,6 @@ jobs:
     env:
       GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
       COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
-      DB_HOST: 127.0.0.1
-      DB_PORT: 3307
-      DB_DATABASE: app
-      DB_USERNAME: app
-      DB_PASSWORD: u#Rh2!HTr2HA
     steps:
     - uses: actions/checkout@v2
 
@@ -65,7 +60,7 @@ jobs:
         echo ""                                                                                    >> .env
         echo "DB_CONNECTION=mysql"                                                                 >> .env
         echo "DB_HOST=sqlproxy.internal.mos-sigma.com"                                             >> .env
-        echo "DB_PORT=3306"                                                                        >> .env
+        echo "DB_PORT=3307"                                                                        >> .env
         echo "DB_DATABASE=app"                                                                     >> .env
         echo "DB_USERNAME=app"                                                                     >> .env
         echo "DB_PASSWORD=ieK7^yeE^F8Rn"                                                           >> .env
@@ -103,6 +98,9 @@ jobs:
           php artisan clear-compiled && php artisan optimize
           php artisan view:clear && php artisan view:cache
           php artisan event:clear && php artisan event:cache
+
+    - name: Migrate database
+      run: php artisan migrate --force
 
     - name: Deploy assets to mos-sigma bucket
       run: gsutil -m rsync -r ./public gs://mos-sigma/${ASSETS_HASH}
@@ -148,6 +146,3 @@ jobs:
       run: |
           gcloud compute instances update-container worker --zone=europe-west1-b --container-image=eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION}
           gcloud compute instances update-container scheduler --zone=europe-west1-b --container-image=eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION}
-
-    - name: Migrate database
-      run: php artisan migrate --force

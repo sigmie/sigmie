@@ -21,8 +21,21 @@ RUN pecl install -o -f redis && rm -rf /tmp/pear && echo "extension=redis.so" > 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Add user for laravel application
+RUN groupadd -g 1000 www
+RUN useradd -u 1000 -ms /bin/bash -g www www
+
 # Copy the application files
 COPY . /var/www/app
+
+# Copy existing application directory permissions
+COPY --chown=www:www . /var/www/app
+
+# Change current user to www
+USER www
+
+# Expose port 9000 and start php-fpm server
+EXPOSE 9000
 
 # Bind container to the php-fpm service
 CMD ["php-fpm"]
