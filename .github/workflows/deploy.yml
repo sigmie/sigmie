@@ -99,9 +99,6 @@ jobs:
           php artisan view:clear && php artisan view:cache
           php artisan event:clear && php artisan event:cache
 
-    - name: Migrate database
-      run: php artisan migrate --force
-
     - name: Deploy assets to mos-sigma bucket
       run: gsutil -m rsync -r ./public gs://mos-sigma/${ASSETS_HASH}
 
@@ -146,3 +143,6 @@ jobs:
       run: |
           gcloud compute instances update-container worker --zone=europe-west1-b --container-image=eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION}
           gcloud compute instances update-container scheduler --zone=europe-west1-b --container-image=eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION}
+
+    - name: Migrate database
+      run: php artisan migrate --force
