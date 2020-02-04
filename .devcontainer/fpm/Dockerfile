@@ -31,6 +31,11 @@ COPY . /var/www/app
 # Copy existing application directory permissions
 COPY --chown=www:www . /var/www/app
 
+# Optimize for production
+RUN php artisan clear-compiled && php artisan optimize
+RUN php artisan view:clear && php artisan view:cache
+RUN php artisan event:clear && php artisan event:cache
+
 # Change current user to www
 USER www
 

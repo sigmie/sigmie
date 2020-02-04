@@ -53,7 +53,7 @@ jobs:
         echo "APP_NAME=MOS-Sigma"                                                                  >> .env
         echo "APP_ENV=production"                                                                  >> .env
         echo "APP_KEY=base64:6CPMmM8RByBPlknSQqcwHQ86a1SO+ZEa9/zeGKqj974="                         >> .env
-        echo "APP_DEBUG=false"                                                                     >> .env
+        echo "APP_DEBUG=true"                                                                     >> .env
         echo "APP_URL=https://mos-sigma.com"                                                       >> .env
         echo ""                                                                                    >> .env
         echo "LOG_CHANNEL=stack"                                                                   >> .env
@@ -90,21 +90,15 @@ jobs:
           gcloud auth configure-docker
           gcloud config set project mossigma-app-production
 
-    - name: Create redis tunnel
-      run: gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:127.0.0.1:6379  -N -f
-
-    - name: Clear and generate config and route caches
-      run: |
-          php artisan clear-compiled && php artisan optimize
-          php artisan view:clear && php artisan view:cache
-          php artisan event:clear && php artisan event:cache
+    - name: Open redis tunnel
+      run: gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
 
     - name: Deploy assets to mos-sigma bucket
       run: gsutil -m rsync -r ./public gs://mos-sigma/${ASSETS_HASH}
 
     - name: Build and push fpm image
       run: |
-          docker build -t eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} -f .devcontainer/fpm/Dockerfile .
+          docker build --network=host -t eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} -f .devcontainer/fpm/Dockerfile .
           docker push eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION}
 
     - name: Build and push sheduler image
@@ -144,5 +138,8 @@ jobs:
           gcloud compute instances update-container worker --zone=europe-west1-b --container-image=eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION}
           gcloud compute instances update-container scheduler --zone=europe-west1-b --container-image=eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION}
 
+    - name: Reopen redis tunnel
+      run: gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
+
     - name: Migrate database
-      run: php artisan migrate --force
+      run: docker run --network=host eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} php artisan migrate --force
