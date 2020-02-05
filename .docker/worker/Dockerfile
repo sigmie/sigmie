@@ -1,7 +1,7 @@
 FROM eu.gcr.io/mossigma-app-production/fpm:latest
 
 # Copy the entrypoint file into the image
-COPY .devcontainer/worker/entrypoint.sh /opt/bin/entrypoint.sh
+COPY entrypoint.sh /opt/bin/entrypoint.sh
 
 # Make the entrypoint executable
 RUN chmod +x /opt/bin/entrypoint.sh

@@ -15,7 +15,7 @@ services:
     container_name: fpm
     build:
       context: '..'
-      dockerfile: .devcontainer/fpm/Dockerfile
+      dockerfile: docker/fpm/Dockerfile
     volumes:
         - ../:/var/www/app:delegated
   'redis.internal.mos-sigma.com':

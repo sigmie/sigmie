@@ -7,6 +7,8 @@ tests
 
 v8-compile-cache-0
 
+docker
+
 .editorconfig
 .env.example
 .env.testing

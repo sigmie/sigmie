@@ -98,17 +98,19 @@ jobs:
 
     - name: Build and push fpm image
       run: |
-          docker build --network=host -t eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} -f .devcontainer/fpm/Dockerfile .
+          docker build --network=host -t eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} -f .docker/fpm/Dockerfile .
           docker push eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION}
 
-    - name: Build and push sheduler image
+    - name: Build and push scheduler image
       run: |
-          docker build -t eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION} -f .devcontainer/scheduler/Dockerfile .
+          mv .docker/scheduler/entrypoint.sh .
+          docker build -t eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION} -f .docker/scheduler/Dockerfile .
           docker push eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION}
 
     - name: Build and push worker image
       run: |
-          docker build -t eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION} -f .devcontainer/worker/Dockerfile .
+          mv .docker/worker/entrypoint.sh .
+          docker build -t eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION} -f .docker/worker/Dockerfile .
           docker push eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION}
 
     - name: Create instance template

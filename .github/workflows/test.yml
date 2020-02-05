@@ -23,6 +23,8 @@ jobs:
       env:
         REDIS_PASSWORD: password
     env:
+      GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
+      COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
       APP_DEBUG: false
       APP_ENV: production
       APP_KEY: base64:6CPMmM8RByBPlknSQqcwHQ86a1SO+ZEa9/zeGKqj974=
@@ -60,6 +62,10 @@ jobs:
 
     - name: Install composer
       run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+
+    - name: Decrypt google and composer secrets
+      run: |
+          gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
 
     - name: Validate composer.json and composer.lock
       run: composer validate

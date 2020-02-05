@@ -6,6 +6,10 @@ jobs:
 
   build:
     runs-on: ubuntu-18.04
+      
+    env:
+      GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
+      COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
 
     steps:
     - uses: actions/checkout@v2
@@ -15,6 +19,10 @@ jobs:
 
     - name: Install composer
       run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+
+    - name: Decrypt google and composer secrets
+      run: |
+          gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
 
     - name: Validate composer.json and composer.lock
       run: composer validate
