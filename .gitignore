@@ -11,6 +11,6 @@ Homestead.yaml
 npm-debug.log
 yarn-error.log
 *.tmp
-.devcontainer/.docker-sync
 
 .DS_Store
+v8-compile-cache-0

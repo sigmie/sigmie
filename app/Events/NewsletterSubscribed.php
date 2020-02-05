@@ -9,9 +9,16 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 
 class NewsletterSubscribed
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 
-    private $newsletterSubscription;
+    /**
+     * Newsletter subscription model
+     *
+     * @var NewsletterSubscription
+     */
+    public $newsletterSubscription;
 
     /**
      * Create a new event instance.
@@ -21,15 +28,5 @@ class NewsletterSubscribed
     public function __construct(NewsletterSubscription $newsletterSubscription)
     {
         $this->newsletterSubscription = $newsletterSubscription;
-    }
-
-    /**
-     * Return the newsletter subscription instance
-     *
-     * @return NewsletterSubscription
-     */
-    public function newsletterSubscription()
-    {
-        return $this->newsletterSubscription;
     }
 }

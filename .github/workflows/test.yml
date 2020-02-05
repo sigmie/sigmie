@@ -1,0 +1,98 @@
+name: Build
+
+on: [push]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-18.04
+    services:
+     mysql:
+      image: mysql:5.7
+      ports:
+        - 3306/tcp
+      env:
+        MYSQL_DATABASE: db
+        MYSQL_USER: user
+        MYSQL_PASSWORD: password
+        MYSQL_ROOT_PASSWORD: password
+     redis:
+      image: bitnami/redis:latest
+      ports:
+        - 6379:6379
+      env:
+        REDIS_PASSWORD: password
+    env:
+      GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
+      COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
+      APP_DEBUG: false
+      APP_ENV: production
+      APP_KEY: base64:6CPMmM8RByBPlknSQqcwHQ86a1SO+ZEa9/zeGKqj974=
+      APP_NAME: MOS - Sigma
+      APP_URL: http://localhost
+      BROADCAST_DRIVER: redis
+      CACHE_DRIVER: redis
+      CONFIGCAT_KEY: fJPXCGrKtz19Kiy3pl3SAg/N37ZkYKmzkiG_2oMG0C8XA
+      LOG_CHANNEL: stack
+      MAIL_DRIVER: mailgun
+      MAIL_HOST: mg.mos-sigma.com
+      MAILGUN_ENDPOINT: api.eu.mailgun.net
+      MAILGUN_SECRET: key-fdfd771a0f2fbd29d5e279bed9dd0839
+      QUEUE_CONNECTION: redis
+      REDIS_HOST: 127.0.0.1
+      REDIS_PASSWORD: password
+      REDIS_PORT: 6379
+      SESSION_DRIVER: redis
+      SESSION_LIFETIME: 120
+      STRIPE_KEY: pk_test_c9qTG6rra0eQdTd6n7Nhcqka00a3YibJYB
+      STRIPE_SECRET: sk_test_EKWRDUE6EhJEmxXttvX1cYLm00j8yti82y
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: db
+      DB_USERNAME: user
+      DB_PASSWORD: password
+      TELESCOPE_ENABLED: false
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install curl and npm
+      run: sudo apt-get update && sudo apt-get install -y curl npm zip
+
+    - name: Install composer
+      run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+
+    - name: Decrypt google and composer secrets
+      run: |
+          gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
+
+    - name: Validate composer.json and composer.lock
+      run: composer validate
+
+    - name: Install php dependencies
+      run: composer install -q --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
+
+    - name: Install node dependencies
+      run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
+
+    - name: Install node
+      run: npm install
+
+    - name: Generate key
+      run: php artisan key:generate
+
+    - name: Clear and cache routes
+      run: php artisan route:clear && php artisan route:cache
+
+    - name: Clear and cache config
+      run: php artisan config:clear && php artisan config:cache
+
+    - name: Compile production assets
+      run: npm run production
+
+    - name: Create Database
+      run: php artisan migrate
+
+    - name: Run tests
+      run: vendor/bin/phpunit --configuration phpunit.xml

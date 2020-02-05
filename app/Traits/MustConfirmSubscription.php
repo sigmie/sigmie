@@ -4,6 +4,9 @@ namespace App\Traits;
 
 use App\Notifications\ConfirmSubscription;
 
+/**
+ * @property bool $confirmed
+ */
 trait MustConfirmSubscription
 {
     /**
@@ -15,7 +18,7 @@ trait MustConfirmSubscription
     }
 
     /**
-     * @return bool
+     * @return void
      */
     public function confirmSubscription(): void
     {

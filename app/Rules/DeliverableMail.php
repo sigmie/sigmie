@@ -26,19 +26,22 @@ class DeliverableMail implements Rule
     /**
      * Determine if the validation rule passes.
      *
-     * @param  string  $attribute
+     * @param  string $attribute
      * @param  mixed  $value
      * @return bool
      */
     public function passes($attribute, $value)
     {
-        $response = $this->client->get('https://api.mailgun.net/v4/address/validate', [
+        $response = $this->client->get(
+            'https://api.mailgun.net/v4/address/validate',
+            [
             'auth' => [
                 'api',
                 config('services.mailgun.secret')
             ],
             'query' => ['address' => $value]
-        ]);
+            ]
+        );
 
         $content = $response->getBody()->getContents();
         $result = json_decode($content, true);

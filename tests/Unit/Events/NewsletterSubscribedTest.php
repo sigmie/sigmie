@@ -26,6 +26,6 @@ class NewsletterSubscribedTest extends TestCase
      */
     public function newslettersubscription_returns_given_instance(): void
     {
-        $this->assertEquals($this->event->newsletterSubscription(),  $this->newsletterSubscriptionMock);
+        $this->assertEquals($this->event->newsletterSubscription,  $this->newsletterSubscriptionMock);
     }
 }

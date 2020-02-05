@@ -13,9 +13,9 @@ class SubscriptionController extends Controller
      * Store a newly created Newsletter subscription
      * if it doesn't already exist.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param StoreNewsletterSubscription $request
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(StoreNewsletterSubscription $request)
     {

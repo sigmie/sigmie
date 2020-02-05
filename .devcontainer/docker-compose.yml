@@ -1,39 +1,47 @@
 version: '3'
 services:
-  nginx:
+  'nginx.internal.mos-sigma.com':
     container_name: nginx
-    build: "./nginx"
+    build:
+      context: '..'
+      dockerfile: .devcontainer/nginx/Dockerfile
     ports:
         - '80:80'
         - '443:443'
     volumes:
         - ../:/var/www/app:delegated
         - ./nginx/site.conf:/etc/nginx/conf.d/default.conf
-  php:
-    container_name: php-fpm
-    build: "./php-fpm"
+  'fpm.internal.mos-sigma.com':
+    container_name: fpm
+    build:
+      context: '..'
+      dockerfile: docker/fpm/Dockerfile
     volumes:
         - ../:/var/www/app:delegated
-  redis:
+  'redis.internal.mos-sigma.com':
     container_name: redis
-    image: redis:5.0
+    image: bitnami/redis:5.0
     ports:
         - '6379:6379'
-  node:
+    environment:
+      - REDIS_PASSWORD=na8!^&*JbXEz
+  'node.internal.mos-sigma.com':
     container_name: node
-    build: "./node"
+    build:
+      context: '..'
+      dockerfile: .devcontainer/node/Dockerfile
     ports:
         - '6001:6001'
     volumes:
         - ../laravel-echo-server.json:/laravel-echo-server.json:delegated
-  devtools:
+  'devtools.internal.mos-sigma.com':
     container_name: devtools
     build: "./devtools"
     volumes:
         - ../:/var/www/app:delegated
     ports:
         - '35729:35729'
-  db:
+  'db.internal.mos-sigma.com':
     container_name: db
     image: mysql:5.7
     restart: always

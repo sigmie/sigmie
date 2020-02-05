@@ -1,0 +1,150 @@
+name: Deploy
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-18.04
+    if: github.event.pull_request.merged
+
+    env:
+      GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
+      COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set release and assets url env
+      run: echo ::set-env name=RELEASE_VERSION::$(date +%s)
+
+    - name: Set gcloud host names
+      run: |
+          sudo sh -c "echo 127.0.0.1 redis.internal.mos-sigma.com >> /etc/hosts"
+          sudo sh -c "echo 127.0.0.1 sqlproxy.internal.mos-sigma.com >> /etc/hosts"
+
+    - name: Decrypt google and composer secrets
+      run: |
+          gpg --quiet --batch --yes --decrypt --passphrase=$GOOGLE_PASSPHRASE --output google.json .github/secrets/google.json.gpg
+          gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
+
+    - name: Start sql proxy
+      run: docker run -d -v ${PWD}/google.json:/config -p 3307:3306 gcr.io/cloudsql-docker/gce-proxy:1.16 /cloud_sql_proxy -instances=mossigma-app-production:europe-west1:mos-sigma=tcp:0.0.0.0:3306 -credential_file=/config
+
+    - name: Install curl and npm
+      run: sudo apt-get update && sudo apt-get install -y curl npm zip
+
+    - name: Install composer
+      run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+
+    - name: Validate composer and install prod dependecies
+      run: |
+          composer validate
+          composer install -q --no-dev --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
+
+    - name: Install node dependencies
+      run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
+
+    - name: Install node and generate production assets
+      run: |
+          npm install
+          npm run production
+          echo ::set-env name=ASSETS_HASH::$(md5sum ./public/mix-manifest.json | awk '{ print $1 }')
+
+    - name: Create .env file
+      run: |
+        echo "APP_NAME=MOS-Sigma"                                                                  >> .env
+        echo "APP_ENV=production"                                                                  >> .env
+        echo "APP_KEY=base64:6CPMmM8RByBPlknSQqcwHQ86a1SO+ZEa9/zeGKqj974="                         >> .env
+        echo "APP_DEBUG=true"                                                                     >> .env
+        echo "APP_URL=https://mos-sigma.com"                                                       >> .env
+        echo ""                                                                                    >> .env
+        echo "LOG_CHANNEL=stack"                                                                   >> .env
+        echo ""                                                                                    >> .env
+        echo "DB_CONNECTION=mysql"                                                                 >> .env
+        echo "DB_HOST=sqlproxy.internal.mos-sigma.com"                                             >> .env
+        echo "DB_PORT=3307"                                                                        >> .env
+        echo "DB_DATABASE=app"                                                                     >> .env
+        echo "DB_USERNAME=app"                                                                     >> .env
+        echo "DB_PASSWORD=ieK7^yeE^F8Rn"                                                           >> .env
+        echo ""                                                                                    >> .env
+        echo "BROADCAST_DRIVER=redis"                                                              >> .env
+        echo ""                                                                                    >> .env
+        echo "CACHE_DRIVER=redis"                                                                  >> .env
+        echo ""                                                                                    >> .env
+        echo "REDIS_HOST=redis.internal.mos-sigma.com"                                             >> .env
+        echo "REDIS_PASSWORD=na8!^&*JbXEz"                                                         >> .env
+        echo "REDIS_PORT=6379"                                                                     >> .env
+        echo ""                                                                                    >> .env
+        echo "QUEUE_CONNECTION=redis"                                                              >> .env
+        echo ""                                                                                    >> .env
+        echo "SESSION_DRIVER=redis"                                                                >> .env
+        echo "SESSION_LIFETIME=120"                                                                >> .env
+        echo ""                                                                                    >> .env
+        echo "TELESCOPE_ENABLED=true"                                                              >> .env
+        echo "ASSET_URL=https://mos-sigma.storage.googleapis.com/${ASSETS_HASH}"                   >> .env
+
+    - name: Install GCloud SDK
+      run: if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
+
+    - name: Gcloud & docker authentication
+      run: |
+          gcloud auth activate-service-account --key-file=google.json
+          gcloud auth configure-docker
+          gcloud config set project mossigma-app-production
+
+    - name: Open redis tunnel
+      run: gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
+
+    - name: Deploy assets to mos-sigma bucket
+      run: gsutil -m rsync -x index.php -r ./public gs://mos-sigma/${ASSETS_HASH}
+
+    - name: Build and push fpm image
+      run: |
+          docker build --network=host -t eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} -f .docker/fpm/Dockerfile .
+          docker push eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION}
+
+    - name: Build and push scheduler image
+      run: |
+          mv .docker/scheduler/entrypoint.sh .
+          docker build -t eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION} -f .docker/scheduler/Dockerfile .
+          docker push eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION}
+
+    - name: Build and push worker image
+      run: |
+          mv .docker/worker/entrypoint.sh .
+          docker build -t eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION} -f .docker/worker/Dockerfile .
+          docker push eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION}
+
+    - name: Create instance template
+      run: |
+           gcloud compute \
+           instance-templates \
+           create-with-container \
+           fpm-${RELEASE_VERSION} \
+           --machine-type=f1-micro \
+           --subnet=projects/mossigma-app-production/regions/europe-west1/subnetworks/default \
+           --region=europe-west1 \
+           --tags=default-allow-internal,allow-health-check \
+           --image=cos-stable-79-12607-80-0 \
+           --image-project=cos-cloud \
+           --boot-disk-size=10GB \
+           --boot-disk-type=pd-standard \
+           --boot-disk-device-name=fpm-${RELEASE_VERSION} \
+           --container-image=eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} \
+           --container-restart-policy=always \
+           --labels=container-vm=cos-stable-79-12607-80-0
+
+    - name: Start rolling update
+      run: gcloud compute instance-groups managed rolling-action start-update fpm --version template=fpm-${RELEASE_VERSION} --zone=europe-west1-b
+
+    - name: Migrate database
+      run: docker run --network=host eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} php artisan migrate --force
+
+    - name: Update worker and scheduler container images
+      run: |
+          gcloud compute instances update-container worker --zone=europe-west1-b --container-image=eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION}
+          gcloud compute instances update-container scheduler --zone=europe-west1-b --container-image=eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION}
