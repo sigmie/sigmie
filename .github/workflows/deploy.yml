@@ -94,7 +94,7 @@ jobs:
       run: gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
 
     - name: Deploy assets to mos-sigma bucket
-      run: gsutil -m rsync -r ./public gs://mos-sigma/${ASSETS_HASH}
+      run: gsutil -m rsync -x index.php -r ./public gs://mos-sigma/${ASSETS_HASH}
 
     - name: Build and push fpm image
       run: |
@@ -133,13 +133,10 @@ jobs:
     - name: Start rolling update
       run: gcloud compute instance-groups managed rolling-action start-update fpm --version template=fpm-${RELEASE_VERSION} --zone=europe-west1-b
 
+    - name: Migrate database
+      run: docker run --network=host eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} php artisan migrate --force
+
     - name: Update worker and scheduler container images
       run: |
           gcloud compute instances update-container worker --zone=europe-west1-b --container-image=eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION}
           gcloud compute instances update-container scheduler --zone=europe-west1-b --container-image=eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION}
-
-    - name: Reopen redis tunnel
-      run: gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
-
-    - name: Migrate database
-      run: docker run --network=host eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} php artisan migrate --force

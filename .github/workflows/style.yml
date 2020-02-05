@@ -1,4 +1,4 @@
-name: Styles
+name: Code style
 
 on: [push]
 
