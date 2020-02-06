@@ -4,8 +4,9 @@ on: [push]
 
 jobs:
 
-  build:
+  test:
     runs-on: ubuntu-18.04
+    if: github.ref != 'refs/heads/master'
     services:
      mysql:
       image: mysql:5.7
