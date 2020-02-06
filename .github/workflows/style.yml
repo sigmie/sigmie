@@ -4,11 +4,10 @@ on: [push]
 
 jobs:
 
-  build:
+  style_check:
     runs-on: ubuntu-18.04
-
+    if: github.ref != 'refs/heads/master'
     env:
-      GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
       COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
 
     steps:
@@ -20,7 +19,7 @@ jobs:
     - name: Install composer
       run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 
-    - name: Decrypt google and composer secrets
+    - name: Decrypt composer secret
       run: |
           gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
 

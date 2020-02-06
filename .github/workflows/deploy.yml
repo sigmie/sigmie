@@ -96,27 +96,24 @@ jobs:
           gcloud auth configure-docker
           gcloud config set project mossigma-app-production
 
-    - name: Open redis tunnel
-      run: gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
-
     - name: Deploy assets to mos-sigma bucket
       run: gsutil -m rsync -x index.php -r ./public gs://mos-sigma/${ASSETS_HASH}
 
-    - name: Build and push fpm image
+    - name: Open redis tunnel
+      run: gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
+
+    - name: Build app images
       run: |
           docker build --target=production --network=host -t eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} -f .docker/Dockerfile .
-          docker push eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION}
-
-    - name: Build and push scheduler image
-      run: |
           mv .docker/scheduler.sh .
           docker build --target=entrypoint -t eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION} -f .docker/Dockerfile .
-          docker push eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION}
-
-    - name: Build and push worker image
-      run: |
           mv .docker/worker.sh .
           docker build --target=entrypoint -t eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION} -f .docker/Dockerfile .
+
+    - name: Push app images
+      run: |
+          docker push eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION}
+          docker push eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION}
           docker push eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION}
 
     - name: Create instance template
