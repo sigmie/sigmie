@@ -105,9 +105,9 @@ jobs:
     - name: Build app images
       run: |
           docker build --target=production --network=host -t eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} -f .docker/Dockerfile .
-          mv .docker/scheduler.sh .
+          mv .docker/scheduler.sh ./entrypoint.sh
           docker build --target=entrypoint --network=host -t eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION} -f .docker/Dockerfile .
-          mv .docker/worker.sh .
+          mv .docker/worker.sh ./entrypoint.sh
           docker build --target=entrypoint --network=host -t eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION} -f .docker/Dockerfile .
 
     - name: Push app images
