@@ -47,6 +47,17 @@ RUN php artisan clear-compiled && php artisan optimize && \
     php artisan view:clear && php artisan view:cache && \
     php artisan event:clear && php artisan event:cache
 
+# Entrypoint stage
+FROM production as entrypoint
+
+# Copy the entrypoint file into the image
+COPY entrypoint.sh /opt/bin/entrypoint.sh
+
+# Make the entrypoint executable
+RUN chmod +x /opt/bin/entrypoint.sh
+
+# Override the default fpm command
+CMD ["/opt/bin/entrypoint.sh"]
 
 # Development stage
 FROM base as development
@@ -63,15 +74,3 @@ RUN pecl install xdebug && \
     echo "xdebug.remote_host=docker.host.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
     echo "xdebug.remote_connect_back=0"            >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
-
-# Entrypoint stage
-FROM production as entrypoint
-
-# Copy the entrypoint file into the image
-COPY entrypoint.sh /opt/bin/entrypoint.sh
-
-# Make the entrypoint executable
-RUN chmod +x /opt/bin/entrypoint.sh
-
-# Override the default fpm command
-CMD ["/opt/bin/entrypoint.sh"]
