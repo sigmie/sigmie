@@ -14,6 +14,7 @@ jobs:
     env:
       GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
       COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
+      VARIABLES_PASSPHRASE: ${{ secrets.variables_passphrase }}
 
     steps:
     - uses: actions/checkout@v2
@@ -30,6 +31,7 @@ jobs:
       run: |
           gpg --quiet --batch --yes --decrypt --passphrase=$GOOGLE_PASSPHRASE --output google.json .github/secrets/google.json.gpg
           gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
+          gpg --quiet --batch --yes --decrypt --passphrase=$VARIABLES_PASSPHRASE --output .env .github/secrets/variables.gpg
 
     - name: Start sql proxy
       run: docker run -d -v ${PWD}/google.json:/config -p 3307:3306 gcr.io/cloudsql-docker/gce-proxy:1.16 /cloud_sql_proxy -instances=mossigma-app-production:europe-west1:mos-sigma=tcp:0.0.0.0:3306 -credential_file=/config
@@ -54,38 +56,8 @@ jobs:
           npm run production
           echo ::set-env name=ASSETS_HASH::$(md5sum ./public/mix-manifest.json | awk '{ print $1 }')
 
-    - name: Create .env file
-      run: |
-        echo "APP_NAME=MOS-Sigma"                                                                  >> .env
-        echo "APP_ENV=production"                                                                  >> .env
-        echo "APP_KEY=base64:6CPMmM8RByBPlknSQqcwHQ86a1SO+ZEa9/zeGKqj974="                         >> .env
-        echo "APP_DEBUG=true"                                                                     >> .env
-        echo "APP_URL=https://mos-sigma.com"                                                       >> .env
-        echo ""                                                                                    >> .env
-        echo "LOG_CHANNEL=stack"                                                                   >> .env
-        echo ""                                                                                    >> .env
-        echo "DB_CONNECTION=mysql"                                                                 >> .env
-        echo "DB_HOST=sqlproxy.internal.mos-sigma.com"                                             >> .env
-        echo "DB_PORT=3307"                                                                        >> .env
-        echo "DB_DATABASE=app"                                                                     >> .env
-        echo "DB_USERNAME=app"                                                                     >> .env
-        echo "DB_PASSWORD=ieK7^yeE^F8Rn"                                                           >> .env
-        echo ""                                                                                    >> .env
-        echo "BROADCAST_DRIVER=redis"                                                              >> .env
-        echo ""                                                                                    >> .env
-        echo "CACHE_DRIVER=redis"                                                                  >> .env
-        echo ""                                                                                    >> .env
-        echo "REDIS_HOST=redis.internal.mos-sigma.com"                                             >> .env
-        echo "REDIS_PASSWORD=na8!^&*JbXEz"                                                         >> .env
-        echo "REDIS_PORT=6379"                                                                     >> .env
-        echo ""                                                                                    >> .env
-        echo "QUEUE_CONNECTION=redis"                                                              >> .env
-        echo ""                                                                                    >> .env
-        echo "SESSION_DRIVER=redis"                                                                >> .env
-        echo "SESSION_LIFETIME=120"                                                                >> .env
-        echo ""                                                                                    >> .env
-        echo "TELESCOPE_ENABLED=true"                                                              >> .env
-        echo "ASSET_URL=https://mos-sigma.storage.googleapis.com/${ASSETS_HASH}"                   >> .env
+    - name: Set ASSETS_URL
+      run: echo "ASSET_URL=https://mos-sigma.storage.googleapis.com/${ASSETS_HASH}" >> .env
 
     - name: Install GCloud SDK
       run: if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
@@ -99,11 +71,12 @@ jobs:
     - name: Deploy assets to mos-sigma bucket
       run: gsutil -m rsync -x index.php -r ./public gs://mos-sigma/${ASSETS_HASH}
 
-    - name: Open redis tunnel
-      run: gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
+    # - name: Open redis tunnel
+    #   run:
 
     - name: Build app images
       run: |
+          gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
           docker build --target=production --network=host -t eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} -f .docker/Dockerfile .
           mv .docker/scheduler.sh ./entrypoint.sh && chmod +x ./entrypoint.sh
           docker build --target=entrypoint --network=host -t eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION} -f .docker/Dockerfile .
@@ -112,8 +85,8 @@ jobs:
 
     - name: Push app images
       run: |
-          docker push eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION}
           docker push eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION}
+          docker push eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION}
           docker push eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION}
 
     - name: Create instance template

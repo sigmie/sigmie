@@ -7,21 +7,21 @@ jobs:
   style_check:
     runs-on: ubuntu-18.04
     if: github.ref != 'refs/heads/master'
+
     env:
       COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install curl
+    - name: Install curl npm zip
       run: sudo apt-get update && sudo apt-get install -y curl npm zip
 
     - name: Install composer
       run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 
     - name: Decrypt composer secret
-      run: |
-          gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
+      run: gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
 
     - name: Validate composer.json and composer.lock
       run: composer validate
@@ -29,10 +29,10 @@ jobs:
     - name: Install php dependencies
       run: composer install -q --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
 
-    - name: Install node dependencies
+    - name: Install node
       run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
 
-    - name: Install node
+    - name: Install node dependencies
       run: npm install
 
     - name: PHPStan
