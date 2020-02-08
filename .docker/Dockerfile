@@ -39,6 +39,28 @@ EXPOSE 9000
 # Bind container to the php-fpm service
 CMD ["php-fpm"]
 
+
+# Development stage
+FROM base as development
+
+# Change current user to root
+USER root
+
+# Install enable and configure xDebug
+RUN pecl install xdebug && \
+    docker-php-ext-enable xdebug && \
+    echo "error_reporting = E_ALL"                 >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "display_startup_errors = On"             >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "display_errors = On"                     >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "xdebug.remote_enable=1"                  >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "xdebug.remote_autostart=1"               >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "xdebug.remote_port=9001"                 >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "xdebug.remote_host=docker.host.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "xdebug.remote_connect_back=0"            >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+
+# Change current user to www
+USER www
+
 # Production stage
 FROM base AS production
 
@@ -55,19 +77,3 @@ COPY entrypoint.sh /opt/bin/entrypoint.sh
 
 # Override the default fpm command
 CMD ["/opt/bin/entrypoint.sh"]
-
-# Development stage
-FROM base as development
-
-# Install enable and configure xDebug
-RUN pecl install xdebug && \
-    docker-php-ext-enable xdebug && \
-    echo "error_reporting = E_ALL"                 >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-    echo "display_startup_errors = On"             >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-    echo "display_errors = On"                     >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-    echo "xdebug.remote_enable=1"                  >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-    echo "xdebug.remote_autostart=1"               >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-    echo "xdebug.remote_port=9001"                 >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-    echo "xdebug.remote_host=docker.host.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-    echo "xdebug.remote_connect_back=0"            >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
-

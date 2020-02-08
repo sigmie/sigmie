@@ -71,12 +71,11 @@ jobs:
     - name: Deploy assets to mos-sigma bucket
       run: gsutil -m rsync -x index.php -r ./public gs://mos-sigma/${ASSETS_HASH}
 
-    # - name: Open redis tunnel
-    #   run:
+    - name: Open redis tunnel
+      run: gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
 
     - name: Build app images
       run: |
-          gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
           docker build --target=production --network=host -t eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} -f .docker/Dockerfile .
           mv .docker/scheduler.sh ./entrypoint.sh && chmod +x ./entrypoint.sh
           docker build --target=entrypoint --network=host -t eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION} -f .docker/Dockerfile .

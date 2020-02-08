@@ -27,5 +27,3 @@ RUN openssl req -config csr.txt -newkey rsa:2048 -new -nodes -x509 -days 3650 -k
 RUN mv cert.pem /etc/nginx/ssl/fullchain.pem
 
 RUN mv key.pem /etc/nginx/ssl/privkey.pem
-
-COPY .devcontainer/nginx/site.conf /etc/nginx/conf.d/default.conf
