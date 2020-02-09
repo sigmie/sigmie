@@ -19,15 +19,13 @@ docker
 
 public/**
 !public/index.php
-!public/mix-manifest.json
+!public/vendor/*/mix-manifest.json
 
 google.json
 auth.json
 
 composer.json
 composer.lock
-
-gcp_secret.json.gpg
 
 package-lock.json
 package.json

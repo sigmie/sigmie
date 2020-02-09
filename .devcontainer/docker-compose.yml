@@ -35,12 +35,10 @@ services:
   'node.internal.mos-sigma.com':
     container_name: node
     build:
-      context: '..'
-      dockerfile: .devcontainer/node/Dockerfile
+      context: '.'
+      dockerfile: node/Dockerfile
     ports:
         - '6001:6001'
-    volumes:
-        - ./node/laravel-echo-server.json:/laravel-echo-server.json:delegated
 
   'devtools.internal.mos-sigma.com':
     container_name: devtools
