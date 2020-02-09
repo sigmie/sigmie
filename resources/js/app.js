@@ -8,15 +8,15 @@ import Echo from 'laravel-echo'
 
 const io = require('socket.io-client')
 const echo = new Echo({
-  client: io,
-  broadcaster: 'socket.io',
-  host: 'http://localhost' + ':6001'
+    client: io,
+    broadcaster: 'socket.io',
+    host: process.env.MIX_SOCKETIO_HOST + ':6001'
 })
 
 const token = document.head.querySelector('meta[name="csrf-token"]')
 
 if (token) {
-  axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content
+    axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content
 }
 
 Vue.use(VueRouter)
@@ -51,35 +51,37 @@ Vue.component('icon-refresh', require('./ui/icons/refresh').default)
 Vue.component('icon-cheveron-right', require('./ui/icons/cheveron/right').default)
 
 const router = new VueRouter({
-  routes: Routes,
-  mode: 'history',
-  base: '/'
+    routes: Routes,
+    mode: 'history',
+    base: '/'
 })
 
 const vm = new Vue({
-  components: {
-    navbar: require('./components/common/navbar').default,
-    sidebar: require('./components/common/sidebar').default
-  },
-  router,
-  data () {
-    return {
-      acme: {
-      },
-      bar: 'bar'
+    components: {
+        navbar: require('./components/common/navbar').default,
+        sidebar: require('./components/common/sidebar').default
+    },
+    router,
+    data() {
+        return {
+            acme: {
+            },
+            bar: 'bar'
+        }
+    },
+    mounted() {
+        console.log('mounted');
+
+        echo.channel('bar')
+            .listen("Foo", (e) => {
+                console.log(e)
+            })
+    },
+    methods: {
+        foo() {
+            return 'foo & bar'
+        }
     }
-  },
-  mounted () {
-    echo.channel('test-channel')
-      .listen('Foo', (e) => {
-        console.log(e)
-      })
-  },
-  methods: {
-    foo () {
-      return 'foo & bar'
-    }
-  }
 })
 
 vm.$mount('#app')

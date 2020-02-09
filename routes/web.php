@@ -11,9 +11,18 @@
 |
 */
 
+use App\Events\Foo;
+
 $launched = true;
 
 Route::view('/', 'landing', ['launched' => $launched])->name('landing');
+
+Route::get('/broadcast', function () {
+
+    broadcast(new Foo());
+
+    dd('fired');
+});
 
 Broadcast::routes();
 
