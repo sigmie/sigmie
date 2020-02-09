@@ -19,6 +19,7 @@ docker
 
 public/**
 !public/index.php
+!public/mix-manifest.json
 
 google.json
 auth.json

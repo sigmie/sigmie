@@ -27,7 +27,7 @@ jobs:
           sudo sh -c "echo 127.0.0.1 redis.internal.mos-sigma.com >> /etc/hosts"
           sudo sh -c "echo 127.0.0.1 sqlproxy.internal.mos-sigma.com >> /etc/hosts"
 
-    - name: Decrypt google and composer secrets
+    - name: Decrypt secrets
       run: |
           gpg --quiet --batch --yes --decrypt --passphrase=$GOOGLE_PASSPHRASE --output google.json .github/secrets/google.json.gpg
           gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
