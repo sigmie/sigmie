@@ -47,6 +47,9 @@ jobs:
           composer validate
           composer install -q --no-dev --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
 
+    - name: Replace Nova mixins url with assets url
+      run: grep --include=\*.blade.php -rl 'vendor/laravel/nova' -e "{{ mix(.*) }}" | xargs sed -ri "s@mix\('(.*)', '(.*)'\)@asset\('\2/\1'\)@g"
+
     - name: Install node dependencies
       run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
 
@@ -54,7 +57,7 @@ jobs:
       run: |
           npm install
           npm run production
-          echo ::set-env name=ASSETS_HASH::$(md5sum ./public/mix-manifest.json | awk '{ print $1 }')
+          echo ::set-env name=ASSETS_HASH::$(find public -type f -exec md5sum {} \; | md5sum | awk '{ print $1 }')
 
     - name: Set ASSETS_URL
       run: echo "ASSET_URL=https://assets.mos-sigma.com/${ASSETS_HASH}" >> .env
