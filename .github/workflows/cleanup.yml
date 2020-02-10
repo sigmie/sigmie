@@ -1,0 +1,61 @@
+name: GCP Cleanup
+
+on:
+  schedule:
+    - cron:  '0 3 * * *'
+
+jobs:
+
+  cleanup:
+    runs-on: ubuntu-18.04
+
+    env:
+      GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Decrypt secret
+      run: gpg --quiet --batch --yes --decrypt --passphrase=$GOOGLE_PASSPHRASE --output google.json .github/secrets/google.json.gpg
+
+    - name: Install GCloud SDK
+      run: if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
+
+    - name: Authenticate GCloud SDK
+      run: |
+          gcloud auth activate-service-account --key-file=google.json
+          gcloud config set project mossigma-app-production
+
+    - name: Remove fpm images
+      run: |
+        for digest in $(gcloud container images list-tags eu.gcr.io/mossigma-app-production/fpm --limit=999999 --sort-by=~TIMESTAMP --format='get(digest)' | awk '{if(NR>3)print}'); do
+          gcloud container images delete -q --force-delete-tags "eu.gcr.io/mossigma-app-production/fpm@${digest}"
+        done
+
+    - name: Remove scheduler images
+      run: |
+        for digest in $(gcloud container images list-tags eu.gcr.io/mossigma-app-production/scheduler --limit=999999 --sort-by=~TIMESTAMP --format='get(digest)' | awk '{if(NR>3)print}'); do
+          gcloud container images delete -q --force-delete-tags "eu.gcr.io/mossigma-app-production/scheduler@${digest}"
+        done
+
+    - name: Remove worker images
+      run: |
+        for digest in $(gcloud container images list-tags eu.gcr.io/mossigma-app-production/worker --limit=999999 --sort-by=~TIMESTAMP --format='get(digest)' | awk '{if(NR>3)print}'); do
+          gcloud container images delete -q --force-delete-tags "eu.gcr.io/mossigma-app-production/worker@${digest}"
+        done
+
+    - name: Remove fpm instance templates
+      run: |
+        for template in $(gcloud compute instance-templates list --sort-by=~CREATION_TIMESTAMP | awk '{ print $1}' | awk '{if(NR>3)print}'); do
+          gcloud compute instance-templates delete $template
+        done
+
+    - name: Set current assets hash
+      run: echo ::set-env name=CHECKSUM::$(find public -type f -exec md5sum {} \; | md5sum | awk '{ print $1 }')
+
+    - name: Remove bucket assets
+      run: |
+          for folder in $(gsutil ls gs://assets.mos-sigma.com); do
+            if [ $folder != "gs://assets.mos-sigma.com/$CHECKSUM" ] ; then gsutil -m rm -r $folder ; fi
+          done
+
