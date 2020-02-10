@@ -33,6 +33,6 @@ class Foo implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new Channel('bar');
+        return new PresenceChannel('bar');
     }
 }

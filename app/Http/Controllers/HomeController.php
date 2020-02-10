@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\Foo;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -14,7 +15,7 @@ class HomeController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth');
+        // $this->middleware('auth');
     }
 
     /**
@@ -25,5 +26,13 @@ class HomeController extends Controller
     public function index()
     {
         return view('home.index');
+    }
+
+    public function test()
+    {
+
+        broadcast(new Foo());
+
+        dd('fired');
     }
 }
