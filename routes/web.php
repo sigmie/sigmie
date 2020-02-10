@@ -17,12 +17,7 @@ $launched = true;
 
 Route::view('/', 'landing', ['launched' => $launched])->name('landing');
 
-Route::get('/broadcast', function () {
-
-    broadcast(new Foo());
-
-    dd('fired');
-});
+Route::get('/broadcast', 'HomeController@test');
 
 Broadcast::routes();
 

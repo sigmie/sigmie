@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Newsletter;
 
+use App\Events\Foo;
 use App\NewsletterSubscription;
 use App\Http\Controllers\Controller;
 
