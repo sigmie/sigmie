@@ -50,14 +50,14 @@ jobs:
     - name: Replace Nova mixins url with assets url
       run: grep --include=\*.blade.php -rl 'vendor/laravel/nova' -e "{{ mix(.*) }}" | xargs sed -ri "s@mix\('(.*)', '(.*)'\)@asset\('\2/\1'\)@g"
 
-    - name: Install node dependencies
+    - name: Install node
       run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
 
-    - name: Install node and generate production assets
+    - name: Install node dependencies and generate production assets
       run: |
+          echo ::set-env name=ASSETS_HASH::$(find public -type f -name "*.json" -exec md5sum {} + | awk '{print $1}' | sort | md5sum | awk '{print $1}')
           npm install
           npm run production
-          echo ::set-env name=ASSETS_HASH::$(find public -type f -name "*.json" -exec md5sum {} + | awk '{print $1}' | sort | md5sum | awk '{print $1}')
 
     - name: Set ASSETS_URL
       run: echo "ASSET_URL=https://assets.mos-sigma.com/${ASSETS_HASH}" >> .env

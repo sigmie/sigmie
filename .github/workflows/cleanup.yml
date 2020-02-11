@@ -50,8 +50,14 @@ jobs:
           gcloud compute instance-templates delete $template
         done
 
-    - name: Set the ASSETS_HASH
-      run: echo ::set-env name=ASSETS_HASH::$(find public -type f -name "*.json" -exec md5sum {} + | awk '{print $1}' | sort | md5sum | awk '{print $1}')
+    - name: Install node
+      run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
+
+    - name: Install node dependencies and generate production assets
+      run: |
+          echo ::set-env name=ASSETS_HASH::$(find public -type f -name "*.json" -exec md5sum {} + | awk '{print $1}' | sort | md5sum | awk '{print $1}')
+          npm install
+          npm run production
 
     - name: Remove bucket assets
       run: |
