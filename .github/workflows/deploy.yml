@@ -36,8 +36,8 @@ jobs:
     - name: Start sql proxy
       run: docker run -d -v ${PWD}/google.json:/config -p 3307:3306 gcr.io/cloudsql-docker/gce-proxy:1.16 /cloud_sql_proxy -instances=mossigma-app-production:europe-west1:mos-sigma=tcp:0.0.0.0:3306 -credential_file=/config
 
-    - name: Install curl and npm
-      run: sudo apt-get update && sudo apt-get install -y curl npm zip
+    - name: Install curl npm zip md5deep
+      run: sudo apt-get update && sudo apt-get install -y curl npm zip md5deep
 
     - name: Install composer
       run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
@@ -57,7 +57,7 @@ jobs:
       run: |
           npm install
           npm run production
-          echo ::set-env name=ASSETS_HASH::$(find ./public -type f -exec md5sum {} \; | md5sum | awk '{ print $1 }')
+          echo ::set-env name=ASSETS_HASH::$(find public -type f -name "*.json" -exec md5sum {} + | awk '{print $1}' | sort | md5sum | awk '{print $1}')
 
     - name: Set ASSETS_URL
       run: echo "ASSET_URL=https://assets.mos-sigma.com/${ASSETS_HASH}" >> .env
