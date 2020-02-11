@@ -57,7 +57,7 @@ jobs:
       run: |
           npm install
           npm run production
-          echo ::set-env name=ASSETS_HASH::$(find public -type f -exec md5sum {} \; | md5sum | awk '{ print $1 }')
+          echo ::set-env name=ASSETS_HASH::$(find ./public -type f -exec md5sum {} \; | md5sum | awk '{ print $1 }')
 
     - name: Set ASSETS_URL
       run: echo "ASSET_URL=https://assets.mos-sigma.com/${ASSETS_HASH}" >> .env
