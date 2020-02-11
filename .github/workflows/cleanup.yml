@@ -1,9 +1,8 @@
 name: GCP Cleanup
 
-on: [push]
-# on:
-#   schedule:
-#     - cron:  '0 3 * * *'
+on:
+  schedule:
+    - cron:  '0 3 * * *'
 
 jobs:
 
@@ -50,13 +49,3 @@ jobs:
         for template in $(gcloud compute instance-templates list --sort-by=~CREATION_TIMESTAMP | awk '{ print $1}' | awk '{if(NR>3)print}'); do
           gcloud compute instance-templates delete $template
         done
-
-    - name: Set current assets hash
-      run: echo ::set-env name=ASSETS_HASH::$(find ./public -type f -exec md5sum {} \; | md5sum | awk '{ print $1 }')
-
-    - name: Remove bucket assets
-      run: |
-          for folder in $(gsutil ls gs://assets.mos-sigma.com); do
-            if [ $folder != "gs://assets.mos-sigma.com/$ASSETS_HASH" ] ; then gsutil -m rm -r $folder ; fi
-          done
-
