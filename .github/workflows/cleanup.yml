@@ -50,17 +50,11 @@ jobs:
           gcloud compute instance-templates delete $template
         done
 
-    - name: Install node
-      run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
-
-    - name: Install node dependencies and generate production assets
-      run: |
-          echo ::set-env name=ASSETS_HASH::$(find public -type f -name "*.json" -exec md5sum {} + | awk '{print $1}' | sort | md5sum | awk '{print $1}')
-          npm install
-          npm run production
+    - name: Set production ASSETS_HASH
+      run: echo ::set-env name=ASSETS_HASH::$(find public -type f -name "*.json" -exec md5sum {} + | awk '{print $1}' | sort | md5sum | awk '{print $1}')
 
     - name: Remove bucket assets
       run: |
           for folder in $(gsutil ls gs://assets.mos-sigma.com); do
-            if [ $folder != "gs://assets.mos-sigma.com/$ASSETS_HASH" ] ; then gsutil -m rm -r $folder ; fi
+            if [ $folder != "gs://assets.mos-sigma.com/$ASSETS_HASH/" ] ; then gsutil -m rm -r $folder ; fi
           done
