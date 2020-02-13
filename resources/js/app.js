@@ -10,7 +10,7 @@ const io = require('socket.io-client')
 const echo = new Echo({
     client: io,
     broadcaster: 'socket.io',
-    host: process.env.MIX_SOCKETIO_HOST + ':6001'
+    host: process.env.MIX_SOCKET_HOST
 })
 
 const token = document.head.querySelector('meta[name="csrf-token"]')
