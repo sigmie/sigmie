@@ -4869,7 +4869,7 @@ var io = __webpack_require__(/*! socket.io-client */ "./node_modules/socket.io-c
 var echo = new laravel_echo__WEBPACK_IMPORTED_MODULE_4__["default"]({
   client: io,
   broadcaster: 'socket.io',
-  host: "http://localhost" + ':6001'
+  host: "https://socket.mos-sigma.com"
 });
 var token = document.head.querySelector('meta[name="csrf-token"]');
 
