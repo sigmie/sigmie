@@ -13,7 +13,7 @@
 
 use App\Events\Foo;
 
-$launched = true;
+$launched = false;
 
 Route::view('/', 'landing', ['launched' => $launched])->name('landing');
 

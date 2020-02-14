@@ -58,3 +58,8 @@ jobs:
           for folder in $(gsutil ls gs://assets.mos-sigma.com); do
             if [ $folder != "gs://assets.mos-sigma.com/$ASSETS_HASH/" ] ; then gsutil -m rm -r $folder ; fi
           done
+
+    - name: Prune worker scheduler
+      run: |
+          gcloud compute ssh --zone europe-west1-b worker -- 'docker system prune -a --force'
+          gcloud compute ssh --zone europe-west1-b scheduler -- 'docker system prune -a --force'
