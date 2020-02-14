@@ -18,6 +18,11 @@
 
 <title>{{ config('app.name', 'Laravel') }}</title>
 
+<style>
+    .gradient {
+        background: linear-gradient(90deg, #d53369 0%, #daae51 100%);
+    }
+</style>
 
 <!-- Fonts -->
 <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">

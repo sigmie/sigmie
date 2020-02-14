@@ -19,7 +19,7 @@
         <g
           id="icon-x"
           transform="translate(1178.000000, 183.000000)"
-          fill="#3F3D56"
+          :fill="fill"
           fill-rule="nonzero"
         >
           <path
@@ -34,6 +34,6 @@
 
 <script>
 export default {
-  props: ["height", "width"]
+  props: ["height", "width", "fill"]
 };
 </script>
