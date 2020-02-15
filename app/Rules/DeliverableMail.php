@@ -2,6 +2,7 @@
 
 namespace App\Rules;
 
+use Exception;
 use GuzzleHttp\Client;
 use Illuminate\Contracts\Validation\Rule;
 
@@ -13,6 +14,7 @@ class DeliverableMail implements Rule
      * @var Client
      */
     private $client;
+
     /**
      * Create a new rule instance.
      *
@@ -32,16 +34,22 @@ class DeliverableMail implements Rule
      */
     public function passes($attribute, $value)
     {
-        $response = $this->client->get(
-            'https://api.mailgun.net/v4/address/validate',
-            [
-            'auth' => [
-                'api',
-                config('services.mailgun.secret')
-            ],
-            'query' => ['address' => $value]
-            ]
-        );
+        try {
+            $response = $this->client->get(
+                'https://api.mailgun.net/v4/address/validate',
+                [
+                    'auth' => [
+                        'api',
+                        config('services.mailgun.secret')
+                    ],
+                    'query' => ['address' => $value],
+                    'connect_timeout' => 2.5
+                ]
+            );
+
+        } catch (Exception $exception) {
+            return true;
+        }
 
         $content = $response->getBody()->getContents();
         $result = json_decode($content, true);

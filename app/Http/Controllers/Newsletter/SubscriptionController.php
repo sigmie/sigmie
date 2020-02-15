@@ -21,7 +21,7 @@ class SubscriptionController extends Controller
     {
         $subscription = NewsletterSubscription::firstOrCreate($request->validated());
 
-        event(new NewsletterSubscribed($subscription));
+        broadcast(new NewsletterSubscribed($subscription));
 
         return redirect()->route('newsletter.thankyou');
     }
