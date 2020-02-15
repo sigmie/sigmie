@@ -35,7 +35,7 @@ class Handler extends ExceptionHandler
     public function report(Exception $exception)
     {
         // Report to sentry only in production environment
-        if (app()->bound('sentry') && $this->shouldReport($exception) && $this->app->isProduction()) {
+        if (app()->bound('sentry') && $this->shouldReport($exception) && app()->isProduction()) {
             app('sentry')->captureException($exception);
         }
 
