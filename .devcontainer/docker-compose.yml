@@ -33,7 +33,7 @@ services:
       - 'redis.internal.mos-sigma.com'
 
   'echo.internal.mos-sigma.com':
-    container_name: node
+    container_name: echo
     build:
       context: '.'
       dockerfile: echo/Dockerfile
