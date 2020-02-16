@@ -15,7 +15,7 @@
 <div class="leading-normal tracking-normal text-white gradient" style="font-family: 'Source Sans Pro', sans-serif;">
 
     <!--Nav-->
-    <nav id="header" class="fixed w-full z-30 top-0 text-white">
+    <nav id="header" class="fixed w-full bg-white shadow z-30 top-0 text-white">
 
         <div class="w-full container mx-auto flex flex-wrap items-center justify-between mt-0 py-2">
 
@@ -33,18 +33,18 @@
                 </a>
             </div>
 
-            <div class="block lg:hidden pr-4">
+            {{-- <div class="block lg:hidden pr-4">
                 <button id="nav-toggle" class="flex items-center p-1 text-orange-800 hover:text-gray-900">
                     <svg class="fill-current h-6 w-6" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <title>Menu</title>
                         <path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z" />
                     </svg>
                 </button>
-            </div>
+            </div> --}}
 
             <div class="w-full flex-grow lg:flex lg:items-center lg:w-auto hidden lg:block mt-2 lg:mt-0 bg-white lg:bg-transparent text-black p-4 lg:p-0 z-20"
                 id="nav-content">
-                <ul class="list-reset lg:flex justify-end flex-1 items-center">
+                {{-- <ul class="list-reset lg:flex justify-end flex-1 items-center">
                     <li class="mr-3">
                         <a class="inline-block py-2 px-4 text-black font-bold no-underline" href="#">Active</a>
                     </li>
@@ -56,17 +56,15 @@
                         <a class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4"
                             href="#">link</a>
                     </li>
-                </ul>
-                <button id="navAction"
-                    class="mx-auto lg:mx-0 hover:underline bg-white text-gray-800 font-bold rounded-full mt-4 lg:mt-0 py-4 px-8 shadow opacity-75">Action</button>
+                </ul> --}}
+                {{-- <button --}}
+                    {{-- class="mx-auto lg:mx-0 hover:underline bg-white text-gray-800 font-bold rounded-full mt-4 lg:mt-0 py-4 px-8 shadow opacity-75">Action</button> --}}
             </div>
         </div>
-
-        <hr class="border-b border-gray-100 opacity-25 my-0 py-0" />
     </nav>
 
     <!--Hero-->
-    <div class="pt-24">
+    <div class="pt-32">
 
         <div class="container px-3 mx-auto flex flex-wrap flex-col md:flex-row items-center lg:px-24">
             <!--Left Col-->
@@ -77,7 +75,7 @@
                     <div
                         class="flex flex-col w-full justify-center items-start text-center md:text-left md:pr-10 lg:pr-20 pb-4">
                         <p class="uppercase tracking-loose w-full">Most of search</p>
-                        <h1 class="my-4 text-5xl font-bold leading-tight">Awesome search, your infastructure.</h1>
+                        <h1 class="my-4 text-5xl font-bold leading-tight">Awesome search, on your infastructure.</h1>
                         <p class="leading-normal text-2xl mb-0 md:mb-3">
                             Imagine having a smart, reliable, and scalable On-Site search, with the power of
                             Elasticsearch,
@@ -915,57 +913,5 @@
 
     </section>
 
-</div>
-
-<script>
-    var scrollpos = window.scrollY;
-	var header = document.getElementById("header");
-	var navcontent = document.getElementById("nav-content");
-	var navaction = document.getElementById("navAction");
-	var brandname = document.getElementById("brandname");
-	var toToggle = document.querySelectorAll(".toggleColour");
-
-	document.addEventListener('scroll', function() {
-
-	/*Apply classes for slide in bar*/
-	scrollpos = window.scrollY;
-
-    if(scrollpos > 10){
-      header.classList.add("bg-white");
-	  navaction.classList.remove("bg-white");
-	  navaction.classList.add("gradient");
-	  navaction.classList.remove("text-gray-800");
-	  navaction.classList.add("text-white");
-	  //Use to switch toggleColour colours
-  	  for (var i = 0; i < toToggle.length; i++) {
-	     toToggle[i].classList.add("text-gray-800");
-		 toToggle[i].classList.remove("text-white");
-	  }
-	  header.classList.add("shadow");
-	  navcontent.classList.remove("bg-gray-100");
-	  navcontent.classList.add("bg-white");
-    }
-    else {
-	  header.classList.remove("bg-white");
-	  navaction.classList.remove("gradient");
-	  navaction.classList.add("bg-white");
-	  navaction.classList.remove("text-white");
-	  navaction.classList.add("text-gray-800");
-	  //Use to switch toggleColour colours
-  	  for (var i = 0; i < toToggle.length; i++) {
-	     toToggle[i].classList.add("text-white");
-		 toToggle[i].classList.remove("text-gray-800");
-	  }
-
-	  header.classList.remove("shadow");
-	  navcontent.classList.remove("bg-white");
-	  navcontent.classList.add("bg-gray-100");
-
-    }
-
-	});
-
-
-</script>
 
 @endsection
