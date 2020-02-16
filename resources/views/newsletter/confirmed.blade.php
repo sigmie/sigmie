@@ -6,7 +6,7 @@
 
     <main class="mx-auto container">
 
-        <a href="{{ route('landing') }}" class="float-right mt-10 cursor-pointer mr-10 sm:mr-10 md:mr-0 lg:mr-0">
+        <a href="{{ route('landing') }}" class="float-right mt-10 cursor-pointer mr-10 sm:mr-10 md:mr-0 lg:mr-0  pr-5">
             <icon-x fill="#ffffff" height="25px" />
         </a>
 
@@ -15,7 +15,7 @@
                 <h1 class="font-display font-semibold text-white text-4xl sm:text-5xl mb-8 leading-none">Your
                     newsletter subscription has been confirmed.</h1>
                 <p class="text-xl sm:text-2xl text-white leading-normal"> Now you can close this page and return to
-                    whatever you were doing, and we will keep you up to date with the MOS-Sigma project.
+                    whatever you were doing, and I will keep you up to date with the MOS-Sigma project.
                 </p>
             </div>
         </div>

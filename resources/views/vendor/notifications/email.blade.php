@@ -6,7 +6,7 @@
 @if ($level === 'error')
 # @lang('Whoops!')
 @else
-# @lang('Hi!')
+  @lang('Hey,')
 @endif
 @endif
 
@@ -44,7 +44,7 @@
 {{ $salutation }}
 @else
 @lang('Regards'),<br>
-MOS-Sigma Team
+Nico
 @endif
 
 {{-- Subcopy --}}

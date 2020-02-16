@@ -2,6 +2,8 @@
 
 namespace App\Notifications;
 
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Lang;
@@ -9,8 +11,10 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class ConfirmSubscription extends Notification
+class ConfirmSubscription extends Notification implements ShouldQueue
 {
+    use Queueable;
+
     /**
      * Get the notification's delivery channels.
      *
