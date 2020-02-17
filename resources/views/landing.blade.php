@@ -803,36 +803,39 @@
             <div class="flex flex-col sm:flex-row justify-center pt-12 my-12 sm:my-4">
 
                 <div class="flex flex-col w-5/6 lg:w-1/4 mx-auto lg:mx-0 rounded-none lg:rounded-l-lg bg-white mt-4">
-                    <div class="flex-1 bg-white text-gray-600 rounded-t rounded-b-none overflow-hidden shadow">
-                        <div class="p-8 text-3xl font-bold text-center border-b-4">Hobby</div>
-                        <ul class="w-full text-sm px-10 py-2">
-                            <li class="py-4">
-                                <span class="pr-3">
-                                    <icon-check height="18px" width="18px" />
+                    <div
+                        class="flex-1 bg-white text-gray-600 tracking-wide rounded-t rounded-b-none overflow-hidden shadow">
+                        <div class="p-8 text-3xl font-bold text-center border-b-2">Hobby</div>
+                        <ul class="w-full text-sm px-10 text-center leading-snug py-4 font-normal text-md">
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px">
                                 </span>
                                 15 days free trial
                             </li>
-                            <li class="py-4">
-                                <span class="pr-3">
+                            <li class="py-2">
+                                <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
                                 Alerts and notifications
                             </li>
-                            <li class="py-4">
-                                <span class="pr-3">
+                            <li class="py-2">
+                                <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
-                                Up to 3 Nodes</li>
-                            <li class="py-4">
-                                <span class="pr-3">
+                                Up to 3 cluster nodes</li>
+                            <li class="py-2">
+                                <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
-                                Metris and analytics</li>
-                            <li class="py-4">
-                                <span class="pr-3">
+                                Metrics
+                            </li>
+                            <li class="py-2">
+                                <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
-                                Playgound function</li>
+                                Sigma playgound
+                            </li>
                         </ul>
                     </div>
                     <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden shadow px-6">
@@ -851,18 +854,43 @@
 
                 <div
                     class="flex flex-col w-5/6 lg:w-1/3 mx-auto lg:mx-0 rounded-lg bg-white mt-4 sm:-mt-6 shadow-lg z-10">
-                    <div class="flex-1 bg-white rounded-t rounded-b-none overflow-hidden shadow">
-                        <div class="p-8 text-3xl font-bold text-center border-b-4">Pro</div>
+                    <div class="flex-1 bg-white rounded-t text-gray-600 rounded-b-none overflow-hidden shadow">
+                        <div class="p-8 text-3xl font-bold text-center border-b-2">Pro</div>
                         {{-- <div class="h-1 w-full bg-gray-600 my-0 py-0 rounded-t"></div> --}}
-                        <ul class="w-full text-center text-base font-bold">
-                            <li class="border-b py-4">Thing</li>
-                            <li class="border-b py-4">Thing</li>
-                            <li class="border-b py-4">Thing</li>
-                            <li class="border-b py-4">Thing</li>
+                        <ul class="w-full text-sm px-10 text-center leading-snug py-4 font-normal text-md">
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px" />
+                                </span>
+                                15 days free trial
+                            </li>
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px" />
+                                </span>
+                                Scalability on demand
+                            </li>
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px" />
+                                </span>
+                                Up to 3 cluster nodes</li>
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px" />
+                                </span>
+                                Metrics
+                            </li>
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px" />
+                                </span>
+                                Sigma playgound
+                            </li>
                         </ul>
                     </div>
-                    <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden shadow p-6">
-                        <div class="w-full pt-6 text-3xl text-gray-600 font-bold text-center">$35
+                    <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden shadow px-6">
+                        <div class="w-full pt-2 text-3xl text-gray-600 font-bold text-center pt-2">$35
                         </div>
                         <div class="text-gray-400 text-sm font-normal text-center">Price doesn't include your GCP costs.
                         </div>
@@ -879,15 +907,41 @@
 
                 <div class="flex flex-col w-5/6 lg:w-1/4 mx-auto lg:mx-0 rounded-none lg:rounded-l-lg bg-white mt-4">
                     <div class="flex-1 bg-white text-gray-600 rounded-t rounded-b-none overflow-hidden shadow">
-                        <div class="p-8 text-3xl font-bold text-center border-b-4">Serious</div>
-                        <ul class="w-full text-center text-sm">
-                            <li class="border-b py-4">Thing</li>
-                            <li class="border-b py-4">Thing</li>
-                            <li class="border-b py-4">Thing</li>
+                        <div class="p-8 text-3xl font-bold text-center border-b-2">Serious</div>
+                        <ul class="text-base py-2 text-center tracking-wide text-md mx-auto w-3/5">
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px" />
+                                </span>
+                                15 days free trial
+                            </li>
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px" />
+                                </span>
+                                Scalability on demand
+                            </li>
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px" />
+                                </span>
+                                Up to 3 cluster nodes</li>
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px" />
+                                </span>
+                                Metrics
+                            </li>
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px" />
+                                </span>
+                                Sigma playgound
+                            </li>
                         </ul>
                     </div>
-                    <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden shadow p-6">
-                        <div class="w-full pt-6 text-3xl text-gray-600 font-bold text-center">$90
+                    <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden shadow px-6">
+                        <div class="w-full pt-6 text-3xl text-gray-600 font-bold text-center pt-2">$90
                         </div>
                         <div class="text-gray-400 text-sm font-normal text-center">Price doesn't include your GCP costs.
                         </div>
