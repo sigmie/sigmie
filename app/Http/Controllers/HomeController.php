@@ -27,12 +27,4 @@ class HomeController extends Controller
     {
         return view('home.index');
     }
-
-    public function test()
-    {
-
-        broadcast(new Foo());
-
-        dd('fired');
-    }
 }

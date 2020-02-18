@@ -718,72 +718,99 @@
 
         <div class="container mx-auto flex flex-wrap pt-4 pb-12">
 
-            <h1 class="w-full my-2 text-5xl font-bold leading-tight text-center text-gray-800">Title</h1>
+            <h1 class="w-full my-2 text-5xl font-bold leading-tight text-center text-gray-800">Simple steps</h1>
             <div class="w-full mb-4">
                 <div class="h-1 mx-auto gradient w-64 opacity-25 my-0 py-0 rounded-t"></div>
             </div>
 
             <div class="w-full md:w-1/3 p-6 flex flex-col flex-grow flex-shrink">
-                <div class="flex-1 bg-white rounded-t rounded-b-none overflow-hidden shadow">
-                    <a href="#" class="flex flex-wrap no-underline hover:no-underline">
-                        <p class="w-full text-gray-600 text-xs md:text-sm px-6">xGETTING STARTED</p>
-                        <div class="w-full font-bold text-xl text-gray-800 px-6">Lorem ipsum dolor sit amet.</div>
-                        <p class="text-gray-800 text-base px-6 mb-5">
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam at ipsum eu nunc commodo
-                            posuere et sit amet ligula.
-                        </p>
-                    </a>
-                </div>
-                <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden shadow p-6">
+                <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden p-6">
                     <div class="flex items-center justify-start">
-                        <button
-                            class="mx-auto lg:mx-0 hover:underline gradient text-white font-bold rounded-full my-6 py-4 px-8 shadow-lg">Action</button>
+                        <svg width="80px" height="53px" viewBox="0 0 60 40" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                            <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"
+                                stroke-linecap="round">
+                                <g id="cloud" transform="translate(1.000000, 1.000000)" fill="#FF6347"
+                                    fill-rule="nonzero" stroke="#3F3D55" stroke-width="2">
+                                    <path
+                                        d="M49.003,16 C48.888,7.301 41.81,0 33.084,0 C27.525,0 22.305,3.005 19.423,7.336 C18.157,6.493 16.636,6 15,6 C10.582,6 7,9.582 7,14 C7,14.153 7.014,14.302 7.023,14.454 C7.013,14.636 7,14.82 7,15 C3.012,16.912 0,21.457 0,26.155 C0,32.67 5.33,38 11.845,38 L36.352,38 C36.49,38 36.624,37.984 36.76,37.979 C36.897,37.984 37.031,38 37.169,38 L46.972,38 C53.037,38 58,33.037 58,26.972 C58,21.601 54.106,16.961 49.003,16 Z"
+                                        id="Path"></path>
+                                    <path d="M49.003,16 C49.003,16 46.468,15.625 44,16" id="Path"></path>
+                                    <path
+                                        d="M7,14 C7,11.8654903 7.86156608,9.91350695 9.2241297,8.4789649 C10.6817951,6.94429724 12.7165097,6 15,6 C19.418,6 23,9.582 23,14"
+                                        id="Path"></path>
+                                </g>
+                            </g>
+                        </svg>
                     </div>
                 </div>
-            </div>
-
-
-
-            <div class="w-full md:w-1/3 p-6 flex flex-col flex-grow flex-shrink">
-                <div class="flex-1 bg-white rounded-t rounded-b-none overflow-hidden shadow">
+                <div class="flex-1 bg-white rounded-t rounded-b-none overflow-hidden">
                     <a href="#" class="flex flex-wrap no-underline hover:no-underline">
-                        <p class="w-full text-gray-600 text-xs md:text-sm px-6">xGETTING STARTED</p>
-                        <div class="w-full font-bold text-xl text-gray-800 px-6">Lorem ipsum dolor sit amet.</div>
+                        <div class="w-full font-bold text-xl text-gray-800 px-6 pb-1">Link your Cloud</div>
                         <p class="text-gray-800 text-base px-6 mb-5">
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam at ipsum eu nunc commodo
-                            posuere et sit amet ligula.
+                            Link your Cloud account and let us do the hard lifting for you, keeping the full control.
                         </p>
                     </a>
                 </div>
-                <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden shadow p-6">
-                    <div class="flex items-center justify-center">
-                        <button
-                            class="mx-auto lg:mx-0 hover:underline gradient text-white font-bold rounded-full my-6 py-4 px-8 shadow-lg">Action</button>
-                    </div>
-                </div>
             </div>
-
 
 
             <div class="w-full md:w-1/3 p-6 flex flex-col flex-grow flex-shrink">
-                <div class="flex-1 bg-white rounded-t rounded-b-none overflow-hidden shadow">
+                <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden p-6">
+                    <div class="flex items-center justify-start">
+                        <svg width="56px" height="56px" viewBox="0 0 54 54" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                            <g id="Page-1" stroke="none" stroke-width="2" fill="none" fill-rule="evenodd">
+                                <g id="settings-(1)" transform="translate(1.000000, -69.000000)" fill-rule="nonzero">
+                                    <g id="settings-(2)" transform="translate(0.000000, 70.000000)">
+                                        <path
+                                            d="M48.872,22.898 C44.229,22.005 42.1,16.58 44.896,12.768 L46.86,10.09 L42.617,5.847 L39.979,7.634 C36.065,10.286 30.723,7.955 30.005,3.283 L29.5,0 L23.5,0 L22.723,4.041 C21.85,8.581 16.618,10.749 12.79,8.156 L9.383,5.847 L5.14,10.09 L7.104,12.768 C9.9,16.58 7.77,22.005 3.128,22.898 L0,23.5 L0,29.5 L3.283,30.005 C7.956,30.724 10.286,36.066 7.634,39.98 L5.847,42.617 L10.09,46.86 L12.768,44.896 C16.58,42.1 22.005,44.229 22.898,48.872 L23.5,52 L29.5,52 L29.855,49.691 C30.59,44.915 36.129,42.62 40.026,45.478 L41.91,46.86 L46.153,42.617 L44.366,39.98 C41.715,36.066 44.045,30.724 48.717,30.005 L52,29.5 L52,23.5 L48.872,22.898 Z M26.5,31 C24.015,31 22,28.985 22,26.5 C22,24.015 24.015,22 26.5,22 C28.985,22 31,24.015 31,26.5 C31,28.985 28.985,31 26.5,31 Z"
+                                            id="Shape" stroke="#3F3D55" fill="#FF6347"></path>
+                                        <path
+                                            d="M26.5,17 C21.253,17 17,21.253 17,26.5 C17,31.747 21.253,36 26.5,36 C31.747,36 36,31.747 36,26.5 C36,21.253 31.747,17 26.5,17 Z M26.5,31 C24.015,31 22,28.985 22,26.5 C22,24.015 24.015,22 26.5,22 C28.985,22 31,24.015 31,26.5 C31,28.985 28.985,31 26.5,31 Z"
+                                            id="Shape" fill="#3F3D55"></path>
+                                    </g>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+                <div class="flex-1 bg-white rounded-t rounded-b-none overflow-hidden">
                     <a href="#" class="flex flex-wrap no-underline hover:no-underline">
-                        <p class="w-full text-gray-600 text-xs md:text-sm px-6">xGETTING STARTED</p>
-                        <div class="w-full font-bold text-xl text-gray-800 px-6">Lorem ipsum dolor sit amet.</div>
+                        <div class="w-full font-bold text-xl text-gray-800 px-6 pb-1">Set your preferences</div>
                         <p class="text-gray-800 text-base px-6 mb-5">
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam at ipsum eu nunc commodo
-                            posuere et sit amet ligula.
+                            Choose your desirable data center location and amount of nodes, let the rest to be done for
+                            you.
                         </p>
                     </a>
                 </div>
-                <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden shadow p-6">
-                    <div class="flex items-center justify-end">
-                        <button
-                            class="mx-auto lg:mx-0 hover:underline gradient text-white font-bold rounded-full my-6 py-4 px-8 shadow-lg">Action</button>
+            </div>
+
+            <div class="w-full md:w-1/3 p-6 flex flex-col flex-grow flex-shrink">
+                <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden p-6">
+                    <div class="flex items-center justify-start">
+                        <svg width="56px" height="57px" viewBox="0 0 56 57" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                            <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                <g id="search" transform="translate(1.000000, 1.000000)" fill="#FF6347"
+                                    fill-rule="nonzero" stroke="#3F3D55" stroke-width="2">
+                                    <path
+                                        d="M53.1765,50.0338929 L40.1027143,36.4365 C43.4642143,32.4405 45.306,27.4127143 45.306,22.1785714 C45.306,9.9495 35.3565,0 23.1274286,0 C10.8983571,0 0.948857143,9.9495 0.948857143,22.1785714 C0.948857143,34.4076429 10.8983571,44.3571429 23.1274286,44.3571429 C27.7183929,44.3571429 32.0933571,42.9724286 35.8338214,40.3437857 L49.0069286,54.0443571 C49.5575357,54.6161786 50.2981071,54.9315 51.0917143,54.9315 C51.8428929,54.9315 52.5555,54.6451071 53.0964643,54.1243929 C54.2458929,53.0183571 54.2825357,51.1842857 53.1765,50.0338929 Z M23.1274286,5.78571429 C32.1666429,5.78571429 39.5202857,13.1393571 39.5202857,22.1785714 C39.5202857,31.2177857 32.1666429,38.5714286 23.1274286,38.5714286 C14.0882143,38.5714286 6.73457143,31.2177857 6.73457143,22.1785714 C6.73457143,13.1393571 14.0882143,5.78571429 23.1274286,5.78571429 Z"
+                                        id="Shape"></path>
+                                </g>
+                            </g>
+                        </svg>
                     </div>
                 </div>
+                <div class="flex-1 bg-white rounded-t rounded-b-none overflow-hidden">
+                    <a href="#" class="flex flex-wrap no-underline hover:no-underline">
+                        <div class="w-full font-bold text-xl text-gray-800 px-6 pb-1">Enjoy your search</div>
+                        <p class="text-gray-800 text-base px-6 mb-5">
+                            Enjoy the intuitive dashboard, and have always the complete overview over your search.
+                        </p>
+                    </a>
+                </div>
             </div>
-        </div>
 
     </section>
 
@@ -817,13 +844,20 @@
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
-                                Alerts and notifications
+                                1 Project
                             </li>
                             <li class="py-2">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
-                                Up to 3 cluster nodes</li>
+                                Email notifications
+                            </li>
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px" />
+                                </span>
+                                2 Cluster nodes
+                            </li>
                             <li class="py-2">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
@@ -857,10 +891,10 @@
                     <div class="flex-1 bg-white rounded-t text-gray-600 rounded-b-none overflow-hidden shadow">
                         <div class="p-8 text-3xl font-bold text-center border-b-2">Pro</div>
                         {{-- <div class="h-1 w-full bg-gray-600 my-0 py-0 rounded-t"></div> --}}
-                        <ul class="w-full text-sm px-10 text-center leading-snug py-4 font-normal text-md">
+                        <ul class="w-full text-sm text-center leading-snug py-4 font-normal text-md">
                             <li class="py-2">
                                 <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
+                                    <icon-check height="18px" width="18px">
                                 </span>
                                 15 days free trial
                             </li>
@@ -868,13 +902,26 @@
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
-                                Scalability on demand
+                                3 Projects
                             </li>
                             <li class="py-2">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
-                                Up to 3 cluster nodes</li>
+                                On demand auto-scaling
+                            </li>
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px" />
+                                </span>
+                                Slack & Email Notifications
+                            </li>
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px" />
+                                </span>
+                                Quick index rollbacks
+                            </li>
                             <li class="py-2">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
@@ -908,10 +955,10 @@
                 <div class="flex flex-col w-5/6 lg:w-1/4 mx-auto lg:mx-0 rounded-none lg:rounded-l-lg bg-white mt-4">
                     <div class="flex-1 bg-white text-gray-600 rounded-t rounded-b-none overflow-hidden shadow">
                         <div class="p-8 text-3xl font-bold text-center border-b-2">Serious</div>
-                        <ul class="text-base py-2 text-center tracking-wide text-md mx-auto w-3/5">
+                        <ul class="w-full text-sm text-center leading-snug py-4 font-normal text-md">
                             <li class="py-2">
                                 <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
+                                    <icon-check height="18px" width="18px">
                                 </span>
                                 15 days free trial
                             </li>
@@ -919,29 +966,36 @@
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
-                                Scalability on demand
+                                Unlimited Projects
                             </li>
                             <li class="py-2">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
-                                Up to 3 cluster nodes</li>
-                            <li class="py-2">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
-                                Metrics
+                                On demand auto-scaling
                             </li>
                             <li class="py-2">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
-                                Sigma playgound
+                                Hight availability
+                            </li>
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px" />
+                                </span>
+                                Slack, Email and SMS Notifications
+                            </li>
+                            <li class="py-2">
+                                <span class="pr-1">
+                                    <icon-check height="18px" width="18px" />
+                                </span>
+                                All the Hobby and Pro plan features
                             </li>
                         </ul>
                     </div>
                     <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden shadow px-6">
-                        <div class="w-full pt-6 text-3xl text-gray-600 font-bold text-center pt-2">$90
+                        <div class="w-full text-3xl text-gray-600 font-bold text-center pt-2">$90
                         </div>
                         <div class="text-gray-400 text-sm font-normal text-center">Price doesn't include your GCP costs.
                         </div>
@@ -1015,6 +1069,7 @@
         </div>
 
     </section>
+</div>
 
 
-    @endsection
+@endsection

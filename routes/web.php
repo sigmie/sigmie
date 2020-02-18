@@ -17,8 +17,6 @@ $launched = false;
 
 Route::view('/', 'landing', ['launched' => $launched])->name('landing');
 
-Route::get('/broadcast', 'HomeController@test');
-
 Broadcast::routes();
 
 // Newsletter routes
