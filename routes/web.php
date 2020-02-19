@@ -11,8 +11,6 @@
 |
 */
 
-use App\Events\Foo;
-
 $launched = false;
 
 Route::view('/', 'landing', ['launched' => $launched])->name('landing');
