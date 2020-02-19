@@ -81,7 +81,7 @@
         {
             "label": "php:fix",
             "type": "shell",
-            "command": "vendor/bin/phpcbf --color --standard=standard.xml app"
+            "command": "vendor/bin/phpcbf --standard=standard.xml app"
         },
         {
             "label": "js:check",

@@ -46,7 +46,6 @@ class DeliverableMail implements Rule
                     'connect_timeout' => 2.5
                 ]
             );
-
         } catch (Exception $exception) {
             return true;
         }
