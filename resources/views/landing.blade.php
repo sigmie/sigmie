@@ -78,6 +78,7 @@
                     </li> --}}
                     <li class="mr-3">
                         <a class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4"
+                            target="blank"
                             href="https://github.com/mos-sigma/sigma">
                             <svg role="img" class="h-8" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path
@@ -92,7 +93,7 @@
     </nav>
 
     <!--Hero-->
-    <div class="pt-32">
+    <div class="pt-32 pb-10">
 
         <div class="container px-3 mx-auto flex flex-wrap flex-col md:flex-row items-center lg:px-24">
             <!--Left Col-->
@@ -111,7 +112,9 @@
                         </p>
 
                         <button
-                            class="mx-auto lg:mx-0 hover:underline bg-white text-gray-800 font-bold rounded-full my-6 py-4 px-8 shadow-lg">Subscribe</button>
+                            class="mx-auto lg:mx-0 hover:underline bg-white text-gray-800 font-bold rounded-full my-6 py-4 px-8 shadow-lg cursor-pointer">
+                            Subscribe
+                        </button>
 
                     </div>
                 </div>

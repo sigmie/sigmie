@@ -24,6 +24,7 @@ mix.webpackConfig({
     processCssUrls: false,
     postCss: [tailwindcss('./tailwind.config.js')]
   })
+  .sourceMaps()
   .purgeCss()
   .extract()
   .version()
