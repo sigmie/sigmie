@@ -23,7 +23,6 @@ public/**
 google.json
 auth.json
 
-composer.json
 composer.lock
 
 package-lock.json
