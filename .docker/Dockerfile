@@ -59,13 +59,17 @@ USER www
 # Production stage
 FROM base AS production
 
+# Change the home dir of the www user
+RUN usermod -d /var/www/app www
+
+# Running as www user optimize the app for production
+RUN su - www -c "php artisan clear-compiled && php artisan optimize && php artisan view:clear && php artisan view:cache && php artisan event:clear && php artisan event:cache"
+
+# Remove env file
+RUN rm .env
+
 # Change current user to www
 USER www
-
-# Optimize for production
-RUN php artisan clear-compiled && php artisan optimize && \
-    php artisan view:clear && php artisan view:cache && \
-    php artisan event:clear && php artisan event:cache && rm .env
 
 
 # Entrypoint stage

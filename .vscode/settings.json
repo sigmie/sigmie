@@ -4,5 +4,11 @@
     "javascript.validate.enable": false,
     "laravel_goto_view.folders": {
         "default": "/resources/views",
+    },
+    "workbench.colorCustomizations": {
+        "titleBar.activeBackground": "#3F3D54",
+        "titleBar.activeForeground": "#ffffff",
+        "statusBarItem.remoteBackground": "#3F3D54",
+        "statusBarItem.remoteForeground": "#ffffff",
     }
 }
