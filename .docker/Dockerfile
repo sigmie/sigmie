@@ -67,7 +67,7 @@ FROM base AS production
 # Optimize for production
 RUN php artisan clear-compiled && php artisan optimize && \
     php artisan view:clear && php artisan view:cache && \
-    php artisan event:clear && php artisan event:cache
+    php artisan event:clear && php artisan event:cache && rm .env
 
 # Entrypoint stage
 FROM production as entrypoint
