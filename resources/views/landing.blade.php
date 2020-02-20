@@ -164,7 +164,7 @@
                 <div class="h-1 mx-auto gradient w-64 opacity-25 my-0 py-0 rounded-t"></div>
             </div>
 
-            <div class="flex flex-wrap">
+            <div class="flex flex-row flex-wrap-reverse sm:flex-wrap">
                 <div class="w-5/6 sm:w-1/2 p-6">
                     <h3 class="text-3xl text-gray-800 font-bold leading-none mb-3">Cluster metrics</h3>
                     <p class="text-gray-600 mb-8">We monitor your cluster, providing you an overview with variety of
@@ -549,7 +549,7 @@
             </div>
 
 
-            <div class="flex flex-wrap flex-col-reverse sm:flex-row">
+            <div class="flex flex-wrap sm:flex-row">
                 <div class="w-full sm:w-1/2 p-6 mt-6">
 
                     <svg class="w-5/6 sm:h-64 mx-auto" viewBox="0 0 1176.60617 873.97852">
