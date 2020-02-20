@@ -1058,17 +1058,21 @@
             Subscribe for project updates and early releases.
         </h3>
 
-        <div class="inline-block pt-4 w-full px-6 pb-8">
+        <form method="POST" action="{{ route('newsletter.subscription.store') }}"
+            class="inline-block pt-4 w-full px-6 pb-8">
+
+            @csrf
+
             <div class="inline-block w-full sm:max-w-xs pr-4">
                 <input
                     class="bg-white text-gray-600 rounded-full focus:outline-none focus:shadow-outline border border-gray-300 rounded-lg py-4 px-6 block w-full appearance-none leading-normal"
-                    type="email" placeholder="jane@example.com">
+                    name="email" required type="email" placeholder="jane@example.com">
             </div>
             <div class="inline-block w-full sm:w-auto">
-                <button
+                <button type="submit"
                     class="mx-auto lg:mx-0 hover:underline bg-white text-gray-800 font-bold rounded-full my-6 py-4 px-8 shadow-lg">Subscribe</button>
             </div>
-        </div>
+        </form>
 
     </section>
 </div>
