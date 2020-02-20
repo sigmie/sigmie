@@ -30,9 +30,6 @@ COPY . /var/www/app
 # Copy existing application directory permissions
 COPY --chown=www:www . /var/www/app
 
-# Change current user to www
-USER www
-
 # Expose port 9000 and start php-fpm server
 EXPOSE 9000
 
@@ -42,9 +39,6 @@ CMD ["php-fpm"]
 
 # Development stage
 FROM base as development
-
-# Change current user to root
-USER root
 
 # Install enable and configure xDebug
 RUN pecl install xdebug && \
@@ -61,13 +55,18 @@ RUN pecl install xdebug && \
 # Change current user to www
 USER www
 
+
 # Production stage
 FROM base AS production
+
+# Change current user to www
+USER www
 
 # Optimize for production
 RUN php artisan clear-compiled && php artisan optimize && \
     php artisan view:clear && php artisan view:cache && \
     php artisan event:clear && php artisan event:cache && rm .env
+
 
 # Entrypoint stage
 FROM production as entrypoint
