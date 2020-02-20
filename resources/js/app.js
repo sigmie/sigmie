@@ -1,5 +1,3 @@
-// require('bootstrap');
-
 import Vue from 'vue'
 import axios from 'axios'
 import Routes from './routes'
@@ -70,8 +68,6 @@ const vm = new Vue({
     }
   },
   mounted () {
-    console.log('mounted')
-
     echo.channel('bar')
       .listen('Foo', (e) => {
         console.log(e)

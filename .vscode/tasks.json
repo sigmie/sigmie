@@ -79,9 +79,14 @@
             "command": "node_modules/standard/bin/cmd.js --fix | node_modules/snazzy/bin/cmd.js"
         },
         {
-            "label": "npm:development",
+            "label": "npm:dev",
             "type": "shell",
             "command": "npm run dev"
+        },
+        {
+            "label": "npm:prod",
+            "type": "shell",
+            "command": "npm run prod"
         },
         {
             "label": "php:fix",
