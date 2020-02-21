@@ -14,7 +14,6 @@
 
 <div class="leading-normal tracking-normal text-white gradient" style="font-family: 'Source Sans Pro', sans-serif;">
 
-    <!--Nav-->
     <nav id="header" class="fixed w-full bg-white shadow z-30 top-0 text-white py-1">
 
         <div class="w-full container mx-auto flex flex-wrap items-center justify-between mt-0 py-2">
@@ -33,7 +32,7 @@
                                         <tspan x="122.834" y="59" fill="#FF6347">i</tspan>
                                         <tspan x="138.511" y="59" fill="#3F3D54">gma</tspan>
                                     </text>
-                                    <g id="SYSTEM">
+                                    <g>
                                         <path
                                             d="M15.8610118,24.0912962 C10.7219345,24.0912962 6.5406234,19.9099851 6.5406234,14.7721815 C6.5406234,9.63183065 10.7219345,5.4505195 15.8610118,5.4505195 C21.000089,5.4505195 25.1814001,9.63183065 25.1814001,14.7721815 C25.1814001,19.9099851 21.000089,24.0912962 15.8610118,24.0912962 L15.8610118,24.0912962 Z M15.8610118,10.0801467 C13.2755528,10.0801467 11.1702506,12.1854489 11.1702506,14.7721815 C11.1702506,17.3576404 13.2755528,19.461669 15.8610118,19.461669 C18.4477443,19.461669 20.5517729,17.3576404 20.5517729,14.7721815 C20.5517729,12.1854489 18.4477443,10.0801467 15.8610118,10.0801467 L15.8610118,10.0801467 Z"
                                             id="Fill-1" fill="#3F3D54"></path>
@@ -91,11 +90,9 @@
         </div>
     </nav>
 
-    <!--Hero-->
     <div class="pt-32 pb-10">
 
         <div class="container px-3 mx-auto flex flex-wrap flex-col md:flex-row items-center lg:px-24">
-            <!--Left Col-->
             <div class="row">
 
                 <div class="col-md-8 col-lg-7 col-sm-12 col-xs-12">
@@ -1019,7 +1016,6 @@
 
 
 
-    <!-- Change the colour #f8fafc to match the previous section colour -->
     <svg class="wave-top" viewBox="0 0 1439 147" version="1.1" xmlns="http://www.w3.org/2000/svg"
         xmlns:xlink="http://www.w3.org/1999/xlink">
         <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
