@@ -41,6 +41,18 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Cache node modules
+      uses: actions/cache@v1
+      with:
+       path: ~/.npm
+       key: npm-${{ hashFiles('**/package-lock.json') }}
+
+    - name: Cache PHP dependencies
+      uses: actions/cache@v1
+      with:
+       path: ~/.npm
+       key: composer-${{ hashFiles('**/composer.lock') }}
+
     - name: Decrypt auth.json
       run: gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
 

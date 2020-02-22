@@ -19,6 +19,18 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Cache node modules
+      uses: actions/cache@v1
+      with:
+       path: ~/.npm
+       key: npm-${{ hashFiles('**/package-lock.json') }}
+
+    - name: Cache PHP dependencies
+      uses: actions/cache@v1
+      with:
+       path: ~/.npm
+       key: composer-${{ hashFiles('**/composer.lock') }}
+
     - name: Set release and assets url env
       run: echo ::set-env name=RELEASE_VERSION::$(date +%s)
 
