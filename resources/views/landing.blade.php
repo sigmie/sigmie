@@ -93,12 +93,9 @@
     <div class="pt-32 pb-10">
 
         <div class="container px-3 mx-auto flex flex-wrap flex-col md:flex-row items-center lg:px-24">
-            <div class="row">
-
-                <div class="col-md-8 col-lg-7 col-sm-12 col-xs-12">
 
                     <div
-                        class="flex flex-col w-full justify-center items-start text-center md:text-left md:pr-10 lg:pr-20 pb-4">
+                        class="flex flex-col order-2 md:order-1 md:w-3/5 justify-center items-start text-center md:text-left md:pr-10 lg:pr-20 pb-4">
                         <p class="uppercase tracking-loose w-full">Most of search</p>
                         <h1 class="my-4 text-5xl font-bold leading-tight">Awesome search, on your infastructure.</h1>
                         <p class="leading-normal text-2xl mb-0 md:mb-3">
@@ -113,14 +110,10 @@
                         </a>
 
                     </div>
-                </div>
 
-                <div class="col-md-4 col-sm-12 col-xs-12 col-lg-5 last-md first-xs">
-                    <div class="w-full py-6 text-center">
+                    <div class="w-full order-1 md:order-2 py-6 md:w-2/5 text-center">
                         <img class="m-auto max-w-xs z-50" src="{{ asset('img/hero.png') }}">
                     </div>
-                </div>
-            </div>
 
         </div>
 
