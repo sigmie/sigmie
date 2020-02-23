@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 
 class LoginController extends Controller
@@ -24,5 +25,24 @@ class LoginController extends Controller
     public function __construct()
     {
         $this->middleware('guest')->except('logout');
+    }
+
+    /**
+     * Redirect to Github
+     *
+     * @return Illuminate\Http\RedirectResponse
+     */
+    public function githubRedirect()
+    {
+        return Socialite::driver('github')->redirect();
+    }
+
+    public function handleCallback()
+    {
+        $user = Socialite::driver('github')->user();
+
+        dd($user);
+
+        return redirect(route('register'));
     }
 }

@@ -19,6 +19,11 @@
             "command": "npm run watch"
         },
         {
+            "label": "phpunit",
+            "type": "shell",
+            "command": "vendor/bin/phpunit"
+        },
+        {
             "label": "tinker",
             "type": "shell",
             "command": "php artisan tinker"
@@ -42,6 +47,11 @@
             "label": "route:list",
             "type": "shell",
             "command": "php artisan route:list"
+        },
+        {
+            "label": "route:clear",
+            "type": "shell",
+            "command": "php artisan route:clear"
         },
         {
             "label": "config:cache",

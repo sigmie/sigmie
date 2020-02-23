@@ -11,7 +11,7 @@
 |
 */
 
-$launched = false;
+$launched = true;
 
 Route::view('/', 'landing', ['launched' => $launched])->name('landing');
 
@@ -28,6 +28,15 @@ Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group
 
     Route::view('/confirmed', 'newsletter.confirmed')->name('confirmed');
 });
+
+// Github oauth routes
+Route::namespace('Auth')->prefix('github')->name('github.')->group(function () {
+
+    Route::get('/redirect', 'LoginController@githubRedirect');
+
+    Route::get('/callback', 'LoginController@handleCallback');
+});
+
 
 if ($launched === true) {
 
