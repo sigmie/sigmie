@@ -1,6 +1,7 @@
 <template>
   <div class="h-full mx-auto container">
     <div class="mx-auto max-w-sm md:max-w-sm lg:m-0 lg:max-w-sm">
+      <a :href="githubRoute">Login with github</a>
       <card-white>
         <form
           method="POST"
@@ -121,7 +122,7 @@
 
 <script>
 export default {
-  props: ["intent", "old", "action", "errors", "privacyRoute", "termsRoute"],
+  props: ["intent", "old", "action", "errors", "privacyRoute", "termsRoute","githubRoute"],
   data() {
     return {
       email: {

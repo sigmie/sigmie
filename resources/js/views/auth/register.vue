@@ -9,6 +9,7 @@
           :action="formAction"
           :privacy-route="privacyRoute"
           :terms-route="termsRoute"
+          :github-route="githubRoute"
         />
       </div>
     </div>
@@ -22,7 +23,7 @@
 
 <script>
 export default {
-  props: ["formAction", "termsRoute", "privacyRoute", "errors", "old", "app"],
+  props: ["formAction", "termsRoute", "privacyRoute", "errors", "old", "app", "githubRoute"],
   components: {
     "register-form": require("../../components/auth/register/form").default,
     plan: require("../../components/auth/register/plan").default

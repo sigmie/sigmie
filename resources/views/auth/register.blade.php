@@ -36,7 +36,8 @@
 
 <router-view :form-action="'{{ route('register') }}'" :terms-route="'{{ route('legal.terms') }}'"
     :privacy-route="'{{ route('legal.privacy') }}'" :errors="{{ $errors->toJson() }}"
-    :old="{{ json_encode(Session::getOldInput()) }}" :app="{{ json_encode($app) }}">
+    :github-route="'{{ route('github.redirect') }}'" :old="{{ json_encode(Session::getOldInput()) }}"
+    :app="{{ json_encode($app) }}">
 </router-view>
 
 @endsection

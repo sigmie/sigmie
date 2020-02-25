@@ -32,9 +32,11 @@ Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group
 // Github oauth routes
 Route::namespace('Auth')->prefix('github')->name('github.')->group(function () {
 
-    Route::get('/redirect', 'LoginController@githubRedirect');
+    Route::get('/register', 'RegisterController@handleCallback')->name('register.redirect');
 
-    Route::get('/callback', 'LoginController@handleCallback');
+    Route::get('/redirect', 'LoginController@githubRedirect')->name('redirect');
+
+    Route::get('/callback', 'LoginController@handleCallback')->name('callback');
 });
 
 

@@ -35,7 +35,9 @@ class LoginController extends Controller
      */
     public function githubRedirect()
     {
-        return Socialite::driver('github')->redirect();
+        return Socialite::driver('github')
+            ->with(['redirect_uri' => 'https://localhost/github/callback'])
+            ->redirect();
     }
 
     /**
@@ -47,7 +49,7 @@ class LoginController extends Controller
     {
         $user = Socialite::driver('github')->user();
 
-        dd($user);
+        dd('login');
 
         return redirect(route('register'));
     }
