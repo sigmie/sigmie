@@ -107,6 +107,18 @@
             "label": "js:check",
             "type": "shell",
             "command": "node_modules/standard/bin/cmd.js | node_modules/snazzy/bin/cmd.js"
+        },
+        {
+            "label": "test:file",
+            "type": "shell",
+            "command": "vendor/bin/phpunit --no-coverage ${file}",
+            "problemMatcher": []
+        },
+        {
+            "label": "test:method",
+            "type": "shell",
+            "command": "vendor/bin/phpunit --no-coverage --filter ${selectedText} ${file}",
+            "problemMatcher": []
         }
     ]
 }

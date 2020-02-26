@@ -1,17 +1,17 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Auth;
 
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-class GithubLoginTest extends TestCase
+class GithubTest extends TestCase
 {
     /**
-     * A basic feature test example.
+     * Github register redirect
      *
-     * @return void
+     * @test
      */
     public function testRedirectRoute()
     {

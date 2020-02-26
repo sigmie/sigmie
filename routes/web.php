@@ -29,14 +29,10 @@ Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group
     Route::view('/confirmed', 'newsletter.confirmed')->name('confirmed');
 });
 
-// Github oauth routes
+// Github auth routes
 Route::namespace('Auth')->prefix('github')->name('github.')->group(function () {
 
-    Route::get('/register', 'RegisterController@handleCallback')->name('register.redirect');
-
-    Route::get('/redirect', 'LoginController@githubRedirect')->name('redirect');
-
-    Route::get('/callback', 'LoginController@handleCallback')->name('callback');
+    Route::get('/redirect', 'GithubController@redirect')->name('redirect');
 });
 
 
