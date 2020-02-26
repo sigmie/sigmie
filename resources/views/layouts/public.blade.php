@@ -4,17 +4,11 @@
 
 <div class="min-h-full relative pb-20">
 
-    <nav class="top-0 text-gray-500 shadow bg-white inline-block w-full h-16">
-        @include('common.navbar')
-    </nav>
+    {{-- <nav class="top-0 text-gray-500 shadow bg-white inline-block w-full h-16"> --}}
+    @include('common.navbar')
+    {{-- </nav> --}}
 
     <main class="mx-auto container m-0 w-256 max-w-full">
-
-        <div class="w-full py-10">
-            <img class="mx-auto"
-                src="https://res.cloudinary.com/markos-nikolaos-orfanos/image/upload/v1574659602/Group_2_fxapdw.png"
-                width="200">
-        </div>
 
         @yield('public.content')
 

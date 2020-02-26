@@ -34,6 +34,7 @@ Vue.component('card-gray', require('./ui/cards/gray').default)
 Vue.component('card-white', require('./ui/cards/white').default)
 Vue.component('card-elevated', require('./ui/cards/elevated').default)
 Vue.component('logo-white', require('./ui/logos/white').default)
+Vue.component('logo-default', require('./ui/logos/default').default)
 
 Vue.component('modal', require('./ui/essentials/modal').default)
 Vue.component('spinner', require('./ui/essentials/spinner').default)

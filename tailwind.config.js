@@ -2,10 +2,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        gradient: 'linear-gradient(90deg, #d53369 0%, #daae51 100%)',
-        'theme-primary': '#3F3D56',
-        'theme-background': '#ECEFFB',
-        'theme-green': '#23b682'
+        'theme-primary': '#3F3D54',
+        'theme-grey': '#A8A8A8',
+        'theme-orange-500': '#FF6347',
+        'theme-orange-600': '#fb6c52'
       },
       spacing: {
         72: '18rem',

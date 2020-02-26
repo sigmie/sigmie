@@ -10,7 +10,6 @@
 | contains the "web" middleware group. Now create something great!
 |
 */
-
 $launched = true;
 
 Route::view('/', 'landing', ['launched' => $launched])->name('landing');
@@ -33,6 +32,10 @@ Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group
 Route::namespace('Auth')->prefix('github')->name('github.')->group(function () {
 
     Route::get('/redirect', 'GithubController@redirect')->name('redirect');
+
+    Route::get('/login', 'GithubController@login')->name('login');
+
+    Route::get('/register', 'GithubController@register')->name('register');
 });
 
 

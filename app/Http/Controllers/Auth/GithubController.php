@@ -3,13 +3,15 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\User;
+use Exception;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class GithubController extends Controller
 {
-    /**
-     * Guest controller
+    /** * Guest controller
      */
     public function __construct()
     {
@@ -32,5 +34,30 @@ class GithubController extends Controller
         return Socialite::driver('github')
             ->with(['redirect_uri' => config('app.url') . $redirect_uri])
             ->redirect();
+    }
+
+    public function register()
+    {
+        throw new Exception('Not implemented!');
+    }
+
+    /**
+     * Handle Github login
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function login()
+    {
+        $email = Socialite::driver('github')->user()->getEmail();
+        $user = User::where(['email' => $email, 'github' => true])->first();
+
+        if ($user !== null) {
+
+            Auth::login($user, true);
+
+            return redirect()->intended('home');
+        }
+
+        return redirect(route('register'));
     }
 }
