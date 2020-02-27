@@ -7,13 +7,13 @@
         <div class="mx-auto">
             <logo-default />
         </div>
-        <h2 class="mt-6 text-center text-3xl leading-9 font-extrabold text-gray-900">
+        <h2 class="mt-6 text-center text-3xl leading-9 font-bold text-gray-900">
             Sign in to your account
         </h2>
-        <p class="mt-2 text-center text-theme-orange-600 text-sm leading-5 text-gray-600 max-w">
+        <p class="mt-2 text-center text-sm leading-5 text-gray-600 max-w">
             Or
             <a href="#"
-                class="font-medium theme-orange focus:outline-none focus:underline transition ease-in-out duration-150">
+                class="font-medium text-orange-600 focus:outline-none focus:underline transition ease-in-out duration-150">
                 start your 14-day free trial
             </a>
         </p>
@@ -53,7 +53,7 @@
 
                     <div class="text-sm leading-5">
                         <a href="#"
-                            class="font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:underline transition ease-in-out duration-150">
+                            class="font-medium text-orange-600 hover:text-indigo-500 focus:outline-none focus:underline transition ease-in-out duration-150">
                             Forgot your password?
                         </a>
                     </div>
@@ -62,14 +62,14 @@
                 <div class="mt-6">
                     <span class="block w-full rounded-md shadow-sm">
                         <button type="submit"
-                            class="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:border-indigo-700 focus:shadow-outline-indigo active:bg-indigo-700 transition duration-150 ease-in-out">
+                            class="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-500 focus:outline-none focus:orange-indigo-700 focus:shadow-outline-indigo active:bg-orange-700 transition duration-150 ease-in-out">
                             Sign in
                         </button>
                     </span>
                 </div>
             </form>
 
-            <div class="mt-6">
+            <div class="mt-4">
                 <div class="relative">
                     <div class="absolute inset-0 flex items-center">
                         <div class="w-full border-t border-gray-300"></div>
