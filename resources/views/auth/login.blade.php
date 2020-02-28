@@ -23,32 +23,17 @@
         <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
             <form action="#" method="POST">
                 <div>
-                    <label for="email" class="block text-sm font-medium leading-5 text-gray-700">
-                        Email address
-                    </label>
-                    <div class="mt-1 rounded-md shadow-sm">
-                        <input id="email" type="email" required
-                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:shadow-outline-blue focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5" />
-                    </div>
+                    <form-input name="email" type="email" required label="Email address" />
                 </div>
 
                 <div class="mt-6">
-                    <label for="password" class="block text-sm font-medium leading-5 text-gray-700">
-                        Password
-                    </label>
-                    <div class="mt-1 rounded-md shadow-sm">
-                        <input id="password" type="password" required
-                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:shadow-outline-blue focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5" />
-                    </div>
+                    <form-input name="password" type="password" required label="Password" />
                 </div>
 
                 <div class="mt-6 flex items-center justify-between">
-                    <div class="flex items-center">
-                        <input id="remember_me" type="checkbox"
-                            class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" />
-                        <label for="remember_me" class="ml-2 block text-sm leading-5 text-gray-900">
-                            Remember me
-                        </label>
+
+                    <div>
+                        <form-checkbox id="remember_me" label="Remember me" />
                     </div>
 
                     <div class="text-sm leading-5">

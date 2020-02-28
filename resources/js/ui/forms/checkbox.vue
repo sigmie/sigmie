@@ -1,27 +1,26 @@
 <template>
-  <label class="block text-gray-500">
+  <div class="flex items-center">
     <input
-      type="checkbox"
       :id="id"
+      type="checkbox"
       :required="required"
-      class="mr-2 leading-tight"
       :value="value"
       :name="name"
       :checked="checked"
       @change="$emit('change', $event.target.checked)"
       @blur="$emit('blur', $event.target.value)"
       @focus="$emit('touch', $event.target.value)"
+      class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out"
     />
-    <slot />
-    <span :for="id" class="text-xs">{{ label }}</span>
-  </label>
+    <label :for="id" class="ml-2 block text-sm leading-5 text-gray-900">{{ label }}</label>
+  </div>
 </template>
 
 <script>
 export default {
   model: {
-    prop: 'checked',
-    event: 'change'
+    prop: "checked",
+    event: "change"
   },
   props: {
     name: {

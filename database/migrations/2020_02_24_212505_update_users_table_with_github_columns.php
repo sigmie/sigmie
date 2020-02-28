@@ -14,7 +14,7 @@ class UpdateUsersTableWithGithubColumns extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->boolean('github');
+            $table->boolean('github')->default(false);
             $table->string('avatar_url');
         });
     }

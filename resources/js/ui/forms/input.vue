@@ -1,20 +1,21 @@
 <template>
-  <div class="box">
-    <div class="mx-auto">
-      <label :for="name" class="pb-1 block text-gray-600 font-normal text-sm">{{ label }}</label>
+  <div>
+    <label :for="name" class="block text-sm font-medium leading-5 text-gray-700">{{ label }}</label>
+    <div class="mt-1 rounded-md shadow-sm">
       <input
         :id="id"
         :type="type"
         :placeholder="placeholder"
-        :class="{ 'border-red-500 border': error.length > 0,'focus:shadow-outline':error.length == 0 }"
-        class="bg-white focus:outline-none bg-gray-100 rounded py-1 px-4 block w-full appearance-none leading-normal border-red-500 tracking-wider"
+        :class="{ 'border-red-700 border': error.length > 0 }"
+        :autocomplete="autocomplete"
         :value="value"
         :name="name"
-        :autocomplete="autocomplete"
+        :required="required"
         @input="$emit('input', $event.target.value)"
         @blur="$emit('blur', $event.target.value)"
         @focus="$emit('touch', $event.target.value)"
         @change="$emit('change', $event.target.value)"
+        class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
       />
       <span v-if="error.length > 0" class="text-red-600 font-normal" role="alert">{{ error }}</span>
     </div>

@@ -9,9 +9,19 @@
             "command": "php artisan"
         },
         {
+            "label": "dump:autoload",
+            "type": "shell",
+            "command": "composer dump-autoload"
+        },
+        {
             "label": "migrate",
             "type": "shell",
             "command": "php artisan migrate"
+        },
+        {
+            "label": "migrate:fresh",
+            "type": "shell",
+            "command": "php artisan migrate:fresh"
         },
         {
             "label": "watch",
