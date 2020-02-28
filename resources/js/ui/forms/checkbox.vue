@@ -60,7 +60,7 @@ export default {
       default: false
     },
     required: {
-      default: true
+      default: false
     }
   }
 };
