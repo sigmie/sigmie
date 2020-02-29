@@ -105,7 +105,7 @@
                 </p>
 
                 <a href="#subscribe"
-                    class="mx-auto lg:mx-0 hover:underline bg-white text-gray-800 font-bold rounded-full my-6 py-4 px-8 shadow-lg cursor-pointer">
+                    class="mx-auto lg:mx-0 bg-white text-gray-800 font-bold rounded-lg my-6 py-3 px-8 shadow hover:shadow-lg cursor-pointer transition-shadow">
                     Subscribe
                 </a>
 
@@ -823,7 +823,8 @@
 
                     <div class="flex-1 bg-white text-gray-600 rounded-t-lg rounded-b-none overflow-hidden shadow">
                         <div class="pt-8 pb-4 px-8 text-3xl font-semibold text-left">Hobby</div>
-                        <ul class="w-full text-sm text-left px-8 leading-snug py-4 font-normal text-md bg-gray-100 h-full">
+                        <ul
+                            class="w-full text-sm text-left px-8 leading-snug py-4 font-normal text-md bg-gray-100 h-full">
                             <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px">
@@ -877,7 +878,8 @@
                     class="flex flex-col w-5/6 lg:w-1/3 mx-auto lg:mx-0 rounded-lg bg-white mt-4 sm:-mt-6 shadow-lg z-10">
                     <div class="flex-1 bg-white rounded-t-lg text-gray-600 rounded-b-none overflow-hidden shadow">
                         <div class="pt-8 pb-4 px-10 text-3xl font-semibold text-left">Pro</div>
-                        <ul class="w-full bg-gray-100 text-sm text-left leading-snug h-full px-10 font-normal text-md py-4">
+                        <ul
+                            class="w-full bg-gray-100 text-sm text-left leading-snug h-full px-10 font-normal text-md py-4">
                             <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px">
@@ -938,7 +940,8 @@
                 <div class="flex flex-col w-5/6 lg:w-1/4 mx-auto lg:mx-0 rounded-l-lg bg-white mt-4">
                     <div class="flex-1 bg-white text-gray-600 rounded-t-lg rounded-b-none overflow-hidden shadow">
                         <div class="pt-8 pb-4 px-8 text-3xl font-semibold text-left">Serious</div>
-                        <ul class="w-full text-sm text-left px-8 leading-snug py-4 font-normal text-md bg-gray-100 h-full">
+                        <ul
+                            class="w-full text-sm text-left px-8 leading-snug py-4 font-normal text-md bg-gray-100 h-full">
                             <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px">
@@ -1039,15 +1042,15 @@
             class="inline-block pt-4 w-full px-6 pb-8">
 
             @csrf
-
             <div class="inline-block w-full sm:max-w-xs pr-4">
                 <input
-                    class="bg-white text-gray-600 rounded-full focus:outline-none focus:shadow-outline border border-gray-300 rounded-lg py-4 px-6 block w-full appearance-none leading-normal"
+                    class="bg-white text-gray-600 rounded-lg focus:outline-none focus:shadow-outline border border-gray-300 rounded-lg py-3 px-8 block w-full appearance-none leading-normal"
                     name="email" required type="email" placeholder="jane@example.com">
             </div>
             <div class="inline-block w-full sm:w-auto">
                 <button type="submit"
-                    class="mx-auto lg:mx-0 hover:underline bg-white text-gray-800 font-bold rounded-full my-6 py-4 px-8 shadow-lg">Subscribe</button>
+                    class="mx-auto lg:mx-0 bg-white text-gray-800 font-bold rounded-lg my-6 py-3 px-8 shadow hover:shadow-lg cursor-pointer transition-shadow">
+                    Subscribe</button>
             </div>
         </form>
 
