@@ -179,7 +179,8 @@ return [
         App\Providers\HorizonServiceProvider::class,
         App\Providers\TelescopeServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        App\Providers\ConfigcatServiceProvider::class
+        App\Providers\ConfigcatServiceProvider::class,
+        App\Providers\MailgunServiceProvider::class
     ],
 
     /*
@@ -231,7 +232,6 @@ return [
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
         'Sentry' => Sentry\Laravel\Facade::class,
-
     ],
 
 ];

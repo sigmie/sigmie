@@ -11,6 +11,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 class MailgunTest extends TestCase
 {
     /**
+     * @var string
+     */
+    private $list = 'testing@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org';
+    /**
      * @var Mailgun
      */
     private $mailgun;
@@ -38,9 +42,9 @@ class MailgunTest extends TestCase
      */
     public function add_to_list()
     {
-        $this->mailgun->addToList('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'john_doe@gmail.com');
+        $this->mailgun->addToList($this->list, 'john_doe@gmail.com');
 
-        $result = $this->mailgun->retrieveMember('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'john_doe@gmail.com');
+        $result = $this->mailgun->retrieveMember($this->list, 'john_doe@gmail.com');
 
         $expected = [
             "member" => [
@@ -53,7 +57,7 @@ class MailgunTest extends TestCase
 
         $this->assertEquals($expected, $result);
 
-        $this->mailgun->removeFromList('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'john_doe@gmail.com');
+        $this->mailgun->removeFromList($this->list, 'john_doe@gmail.com');
     }
 
     /**
@@ -61,9 +65,9 @@ class MailgunTest extends TestCase
      */
     public function remove_from_list()
     {
-        $this->mailgun->addToList('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'foo@gmail.com');
+        $this->mailgun->addToList($this->list, 'foo@gmail.com');
 
-        $result = $this->mailgun->removeFromList('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'foo@gmail.com');
+        $result = $this->mailgun->removeFromList($this->list, 'foo@gmail.com');
 
         $expected = [
             "member" => [
@@ -80,11 +84,11 @@ class MailgunTest extends TestCase
      */
     public function confirm_subscription()
     {
-        $this->mailgun->addToList('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'bar@gmail.com');
+        $this->mailgun->addToList($this->list, 'bar@gmail.com');
 
-        $this->mailgun->confirmSubscription('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'bar@gmail.com');
+        $this->mailgun->confirmSubscription($this->list, 'bar@gmail.com');
 
-        $result = $this->mailgun->retrieveMember('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'bar@gmail.com');
+        $result = $this->mailgun->retrieveMember($this->list, 'bar@gmail.com');
 
         $expected = [
             "member" => [
@@ -97,7 +101,7 @@ class MailgunTest extends TestCase
 
         $this->assertEquals($expected, $result);
 
-        $this->mailgun->removeFromList('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'bar@gmail.com');
+        $this->mailgun->removeFromList($this->list, 'bar@gmail.com');
     }
 
     /**
@@ -105,11 +109,11 @@ class MailgunTest extends TestCase
      */
     public function revoke_subscription()
     {
-        $this->mailgun->addToList('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'bar@hotmail.com', true);
+        $this->mailgun->addToList($this->list, 'bar@hotmail.com', true);
 
-        $this->mailgun->revokeSubscription('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'bar@hotmail.com');
+        $this->mailgun->revokeSubscription($this->list, 'bar@hotmail.com');
 
-        $result = $this->mailgun->retrieveMember('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'bar@hotmail.com');
+        $result = $this->mailgun->retrieveMember($this->list, 'bar@hotmail.com');
 
         $expected = [
             "member" => [
@@ -122,7 +126,7 @@ class MailgunTest extends TestCase
 
         $this->assertEquals($expected, $result);
 
-        $this->mailgun->removeFromList('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'bar@hotmail.com');
+        $this->mailgun->removeFromList($this->list, 'bar@hotmail.com');
     }
 
     /**
@@ -130,9 +134,9 @@ class MailgunTest extends TestCase
     */
     public function retrieve_member()
     {
-        $this->mailgun->addToList('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'bar@yahoo.com', true);
+        $this->mailgun->addToList($this->list, 'bar@yahoo.com', true);
 
-        $result = $this->mailgun->retrieveMember('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'bar@yahoo.com');
+        $result = $this->mailgun->retrieveMember($this->list, 'bar@yahoo.com');
 
         $expected = [
             "member" => [
@@ -145,6 +149,6 @@ class MailgunTest extends TestCase
 
         $this->assertEquals($expected, $result);
 
-        $this->mailgun->removeFromList('development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org', 'bar@yahoo.com');
+        $this->mailgun->removeFromList($this->list, 'bar@yahoo.com');
     }
 }
