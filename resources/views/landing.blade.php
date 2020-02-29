@@ -94,26 +94,26 @@
 
         <div class="container px-3 mx-auto flex flex-wrap flex-col md:flex-row items-center lg:px-24">
 
-                    <div
-                        class="flex flex-col order-2 md:order-1 md:w-3/5 justify-center items-start text-center md:text-left md:pr-10 lg:pr-20 pb-4">
-                        <p class="uppercase tracking-loose w-full">Most of search</p>
-                        <h1 class="my-4 text-5xl font-bold leading-tight">Awesome search, on your infastructure.</h1>
-                        <p class="leading-normal text-2xl mb-0 md:mb-3">
-                            Imagine having a smart, reliable, and scalable On-Site search, with the power of
-                            Elasticsearch,
-                            running on your Cloud Infastructure, without breaking a sweat.
-                        </p>
+            <div
+                class="flex flex-col order-2 md:order-1 md:w-3/5 justify-center items-start text-center md:text-left md:pr-10 lg:pr-20 pb-4">
+                <p class="uppercase tracking-loose w-full">Most of search</p>
+                <h1 class="my-4 text-5xl font-bold leading-tight">Awesome search, on your infastructure.</h1>
+                <p class="leading-normal text-2xl mb-0 md:mb-3">
+                    Imagine having a smart, reliable, and scalable On-Site search, with the power of
+                    Elasticsearch,
+                    running on your Cloud Infastructure, without breaking a sweat.
+                </p>
 
-                        <a href="#subscribe"
-                            class="mx-auto lg:mx-0 hover:underline bg-white text-gray-800 font-bold rounded-full my-6 py-4 px-8 shadow-lg cursor-pointer">
-                            Subscribe
-                        </a>
+                <a href="#subscribe"
+                    class="mx-auto lg:mx-0 hover:underline bg-white text-gray-800 font-bold rounded-full my-6 py-4 px-8 shadow-lg cursor-pointer">
+                    Subscribe
+                </a>
 
-                    </div>
+            </div>
 
-                    <div class="w-full order-1 md:order-2 py-6 md:w-2/5 text-center">
-                        <img class="m-auto max-w-xs z-50" src="{{ asset('img/hero.png') }}">
-                    </div>
+            <div class="w-full order-1 md:order-2 py-6 md:w-2/5 text-center">
+                <img class="m-auto max-w-xs z-50" src="{{ asset('img/hero.png') }}">
+            </div>
 
         </div>
 
@@ -817,46 +817,44 @@
                 <div class="h-1 mx-auto gradient w-64 opacity-25 my-0 py-0 rounded-t"></div>
             </div>
 
-
-
             <div class="flex flex-col sm:flex-row justify-center pt-12 my-12 sm:my-4">
 
-                <div class="flex flex-col w-5/6 lg:w-1/4 mx-auto lg:mx-0 rounded-none lg:rounded-l-lg bg-white mt-4">
-                    <div
-                        class="flex-1 bg-white text-gray-600 tracking-wide rounded-t rounded-b-none overflow-hidden shadow">
-                        <div class="p-8 text-3xl font-bold text-center border-b-2">Hobby</div>
-                        <ul class="w-full text-sm px-10 text-center leading-snug py-4 font-normal text-md">
-                            <li class="py-2">
+                <div class="flex flex-col w-5/6 lg:w-1/4 mx-auto lg:mx-0 rounded-t-lg bg-white mt-4">
+
+                    <div class="flex-1 bg-white text-gray-600 rounded-t-lg rounded-b-none overflow-hidden shadow">
+                        <div class="pt-8 pb-4 px-8 text-3xl font-semibold text-left">Hobby</div>
+                        <ul class="w-full text-sm text-left px-8 leading-snug py-4 font-normal text-md bg-gray-100 h-full">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px">
                                 </span>
-                                15 days free trial
+                                14 days free trial
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
                                 1 Project
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
                                 Email notifications
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
                                 2 Cluster nodes
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
                                 Metrics
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
@@ -864,63 +862,59 @@
                             </li>
                         </ul>
                     </div>
-                    <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden shadow px-6">
-                        <div class="w-full text-3xl pt-2 text-gray-600 font-bold text-center">$12
+                    <div class="flex-none mt-auto bg-white rounded-b-lg rounded-t-none overflow-hidden shadow px-6">
+                        <div class="w-full text-3xl text-gray-600 font-bold text-center pt-2">$90
                         </div>
                         <div class="text-gray-400 text-sm font-normal text-center">Price doesn't include your GCP costs.
                         </div>
-                        <div class="flex items-center justify-center">
-                            <button
-                                class="mx-auto cursor-not-allowed lg:mx-0 bg-gray-500 text-gray-100 text-white font-bold rounded-full my-6 py-4 px-8 shadow-lg">
-                                Comming
-                            </button>
+                        <div class="flex items-center justify-start">
+                            <button-disabled value="Comming" class="my-6 mx-4 py-2 font-bold" />
                         </div>
                     </div>
                 </div>
 
                 <div
                     class="flex flex-col w-5/6 lg:w-1/3 mx-auto lg:mx-0 rounded-lg bg-white mt-4 sm:-mt-6 shadow-lg z-10">
-                    <div class="flex-1 bg-white rounded-t text-gray-600 rounded-b-none overflow-hidden shadow">
-                        <div class="p-8 text-3xl font-bold text-center border-b-2">Pro</div>
-                        {{-- <div class="h-1 w-full bg-gray-600 my-0 py-0 rounded-t"></div> --}}
-                        <ul class="w-full text-sm text-center leading-snug py-4 font-normal text-md">
-                            <li class="py-2">
+                    <div class="flex-1 bg-white rounded-t-lg text-gray-600 rounded-b-none overflow-hidden shadow">
+                        <div class="pt-8 pb-4 px-10 text-3xl font-semibold text-left">Pro</div>
+                        <ul class="w-full bg-gray-100 text-sm text-left leading-snug h-full px-10 font-normal text-md py-4">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px">
                                 </span>
-                                15 days free trial
+                                14 days free trial
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
                                 3 Projects
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
                                 On demand auto-scaling
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
                                 Slack & Email Notifications
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
                                 Quick index rollbacks
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
                                 Metrics
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
@@ -928,57 +922,54 @@
                             </li>
                         </ul>
                     </div>
-                    <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden shadow px-6">
+                    <div class="flex-none mt-auto bg-white rounded-b-lg rounded-t-none overflow-hidden shadow px-6">
                         <div class="w-full pt-2 text-3xl text-gray-600 font-bold text-center pt-2">$35
                         </div>
                         <div class="text-gray-400 text-sm font-normal text-center">Price doesn't include your GCP costs.
                         </div>
                         <div class="flex items-center justify-center">
-                            <button
-                                class="mx-auto cursor-not-allowed lg:mx-0 bg-gray-500 text-gray-100 text-white font-bold rounded-full my-6 py-4 px-8 shadow-lg">
-                                Comming
-                            </button>
+                            <button-disabled value="Comming" class="my-6 mx-4 py-2 lg:py-3 font-bold" />
                         </div>
                     </div>
                 </div>
 
 
 
-                <div class="flex flex-col w-5/6 lg:w-1/4 mx-auto lg:mx-0 rounded-none lg:rounded-l-lg bg-white mt-4">
-                    <div class="flex-1 bg-white text-gray-600 rounded-t rounded-b-none overflow-hidden shadow">
-                        <div class="p-8 text-3xl font-bold text-center border-b-2">Serious</div>
-                        <ul class="w-full text-sm text-center leading-snug py-4 font-normal text-md">
-                            <li class="py-2">
+                <div class="flex flex-col w-5/6 lg:w-1/4 mx-auto lg:mx-0 rounded-l-lg bg-white mt-4">
+                    <div class="flex-1 bg-white text-gray-600 rounded-t-lg rounded-b-none overflow-hidden shadow">
+                        <div class="pt-8 pb-4 px-8 text-3xl font-semibold text-left">Serious</div>
+                        <ul class="w-full text-sm text-left px-8 leading-snug py-4 font-normal text-md bg-gray-100 h-full">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px">
                                 </span>
-                                15 days free trial
+                                14 days free trial
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
                                 Unlimited Projects
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
                                 On demand auto-scaling
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
                                 Hight availability
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
                                 Slack, Email and SMS Notifications
                             </li>
-                            <li class="py-2">
+                            <li class="py-3">
                                 <span class="pr-1">
                                     <icon-check height="18px" width="18px" />
                                 </span>
@@ -986,16 +977,13 @@
                             </li>
                         </ul>
                     </div>
-                    <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden shadow px-6">
+                    <div class="flex-none mt-auto bg-white rounded-b-lg rounded-t-none overflow-hidden shadow px-6">
                         <div class="w-full text-3xl text-gray-600 font-bold text-center pt-2">$90
                         </div>
                         <div class="text-gray-400 text-sm font-normal text-center">Price doesn't include your GCP costs.
                         </div>
-                        <div class="flex items-center justify-center">
-                            <button
-                                class="mx-auto cursor-not-allowed lg:mx-0 bg-gray-500 text-gray-100 text-white font-bold rounded-full my-6 py-4 px-8 shadow-lg">
-                                Comming
-                            </button>
+                        <div class="flex items-center justify-start">
+                            <button-disabled value="Comming" class="my-6 mx-4 py-2 font-bold" />
                         </div>
                     </div>
                 </div>
