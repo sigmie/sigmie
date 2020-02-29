@@ -27,30 +27,4 @@ class LoginController extends Controller
     {
         $this->middleware('guest')->except('logout');
     }
-
-    /**
-     * Redirect to Github
-     *
-     * @return Illuminate\Http\RedirectResponse
-     */
-    public function githubRedirect()
-    {
-        return Socialite::driver('github')
-            ->with(['redirect_uri' => 'https://localhost/github/callback'])
-            ->redirect();
-    }
-
-    /**
-     * Handle Github authentication callback
-     *
-     * @return void
-     */
-    public function handleCallback()
-    {
-        $user = Socialite::driver('github')->user();
-
-        dd('login');
-
-        return redirect(route('register'));
-    }
 }

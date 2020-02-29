@@ -2,7 +2,7 @@
 
 @section('public.content')
 
-<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8" v-cloak>
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
         <div class="mx-auto">
             <logo-default />
@@ -12,7 +12,7 @@
         </h2>
         <p class="mt-2 text-center text-sm leading-5 text-gray-600 max-w">
             Or
-            <a href="#"
+            <a href="{{ route('register') }}"
                 class="font-medium text-orange-600 focus:outline-none focus:underline transition ease-in-out duration-150">
                 start your 14-day free trial
             </a>
@@ -21,24 +21,27 @@
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            <form action="#" method="POST">
+            <form action="{{ route('login') }}" method="POST">
+
+                @csrf
+
                 <div>
-                    <form-input name="email" type="email" required label="Email address" />
+                    <form-input id="email" name="email" type="email" value="{{ old('email') }}" required label="Email address" />
                 </div>
 
                 <div class="mt-6">
-                    <form-input name="password" type="password" required label="Password" />
+                    <form-input id="password" name="password" type="password" required label="Password" />
                 </div>
 
                 <div class="mt-6 flex items-center justify-between">
 
                     <div>
-                        <form-checkbox id="remember_me" label="Remember me" />
+                        <form-checkbox id="remember" name="remember" label="Remember me" />
                     </div>
 
                     <div class="text-sm leading-5">
-                        <a href="#"
-                            class="font-medium text-orange-600 hover:text-indigo-500 focus:outline-none focus:underline transition ease-in-out duration-150">
+                        <a href="{{ route('password.request') }}"
+                            class="font-medium text-orange-600 hover:text-orange-500 focus:outline-none focus:underline transition ease-in-out duration-150">
                             Forgot your password?
                         </a>
                     </div>
