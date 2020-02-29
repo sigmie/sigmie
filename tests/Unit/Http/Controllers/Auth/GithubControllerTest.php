@@ -22,23 +22,4 @@ class GithubControllerTest extends TestCase
 
         $this->controller = new GithubController();
     }
-
-    /**
-     * @test
-     */
-    public function foo(): void
-    {
-        $githubDriverMock = $this->createMock(SocialiteManager::class);
-        $requestMock = $this->createMock(Request::class);
-
-        $requestMock->expects($this->once())->method('get');
-
-
-        Socialite::shouldReceive('driver')
-            ->once()
-            ->with('github')
-            ->andReturn($githubDriverMock);
-
-        $this->controller->redirect($requestMock);
-    }
 }
