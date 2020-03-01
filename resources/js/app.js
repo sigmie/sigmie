@@ -6,22 +6,21 @@ import Echo from 'laravel-echo'
 
 const io = require('socket.io-client')
 const echo = new Echo({
-  client: io,
-  broadcaster: 'socket.io',
-  host: process.env.MIX_SOCKET_HOST
+    client: io,
+    broadcaster: 'socket.io',
+    host: process.env.MIX_SOCKET_HOST
 })
 
 const token = document.head.querySelector('meta[name="csrf-token"]')
 
 if (token) {
-  axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content
+    axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content
 }
 
 Vue.use(VueRouter)
 
 Vue.component('csrf', require('./essentials/csrf').default)
 Vue.component('stripe', require('./essentials/stripe').default)
-
 Vue.component('form-input', require('./ui/forms/input').default)
 Vue.component('form-checkbox', require('./ui/forms/checkbox').default)
 Vue.component('button-primary', require('./ui/buttons/primary').default)
@@ -36,50 +35,50 @@ Vue.component('card-white', require('./ui/cards/white').default)
 Vue.component('card-elevated', require('./ui/cards/elevated').default)
 Vue.component('logo-white', require('./ui/logos/white').default)
 Vue.component('logo-default', require('./ui/logos/default').default)
-
+Vue.component('container-white', require('./ui/containers/white').default)
+Vue.component('alert-danger', require('./ui/alerts/danger').default)
 Vue.component('modal', require('./ui/essentials/modal').default)
 Vue.component('spinner', require('./ui/essentials/spinner').default)
-
 Vue.component('list-sidebar', require('./ui/lists/sidebar').default)
-
 Vue.component('illustration-hologram', require('./ui/illustrations/hologram').default)
-
 Vue.component('icon-x', require('./ui/icons/x').default)
 Vue.component('icon-server', require('./ui/icons/server').default)
 Vue.component('icon-notification', require('./ui/icons/notification').default)
 Vue.component('icon-refresh', require('./ui/icons/refresh').default)
 Vue.component('icon-cheveron-right', require('./ui/icons/cheveron/right').default)
 
+Vue.component('register-form', require('./views/auth/register/_form').default)
+
 const router = new VueRouter({
-  routes: Routes,
-  mode: 'history',
-  base: '/'
+    routes: Routes,
+    mode: 'history',
+    base: '/'
 })
 
 const vm = new Vue({
-  components: {
-    navbar: require('./components/common/navbar').default,
-    sidebar: require('./components/common/sidebar').default
-  },
-  router,
-  data () {
-    return {
-      acme: {
-      },
-      bar: 'bar'
+    components: {
+        // navbar: require('./components/common/navbar').default,
+        // sidebar: require('./components/common/sidebar').default
+    },
+    router,
+    data() {
+        return {
+            acme: {
+            },
+            bar: 'bar'
+        }
+    },
+    mounted() {
+        echo.channel('bar')
+            .listen('Foo', (e) => {
+                console.log(e)
+            })
+    },
+    methods: {
+        foo() {
+            return 'foo & bar'
+        }
     }
-  },
-  mounted () {
-    echo.channel('bar')
-      .listen('Foo', (e) => {
-        console.log(e)
-      })
-  },
-  methods: {
-    foo () {
-      return 'foo & bar'
-    }
-  }
 })
 
 vm.$mount('#app')

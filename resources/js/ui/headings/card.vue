@@ -1,5 +1,7 @@
 <template>
-    <h2 class="pt-3 pb-1 border-b tracking-widest font-semibold w-full text-sm px-10 uppercase text-gray-500">{{ text }}</h2>
+  <div class="bg-white border-gray-200 text-left sm:px-6">
+    <h3 class="text-lg leading-6 font-medium text-gray-900">{{ text}}</h3>
+  </div>
 </template>
 
 <script>

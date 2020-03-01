@@ -1,9 +1,9 @@
 <template>
   <div class="box">
-    <label for="name" class="pb-1 block text-gray-600 font-normal text-sm">Credit card</label>
+    <label for="method" class="block text-sm font-medium leading-5 text-gray-700 pb-1">Credit card</label>
     <div
       id="card-element"
-      class="bg-white focus:outline-none focus:shadow-outline bg-gray-200 rounded py-1 px-4 block w-full appearance-none leading-normal @error('name') is-invalid @enderror"
+      class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
     ></div>
     <div id="card-errors" role="alert"></div>
     <input name="method" id="method-field" v-model="method" type="hidden" />
@@ -31,7 +31,7 @@ export default {
       stripe: null,
       style: {
         base: {
-          backgroundColor: "#f7fafc",
+          backgroundColor: "#ffffff",
           fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
           fontSmoothing: "antialiased",
           fontSize: "16px",

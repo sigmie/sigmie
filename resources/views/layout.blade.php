@@ -5,7 +5,7 @@
     @include('common.head')
 </head>
 
-<body class="min-h-full h-full bg-gray-100">
+<body class="min-h-full h-full bg-gray-50">
 
     @include('cookieConsent::index')
 

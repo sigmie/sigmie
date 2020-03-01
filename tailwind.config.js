@@ -1,4 +1,7 @@
 module.exports = {
+  plugins: [
+    require('@tailwindcss/ui')
+  ],
   theme: {
     extend: {
       colors: {
@@ -16,6 +19,5 @@ module.exports = {
       }
     }
   },
-  variants: {},
-  plugins: []
+  variants: {}
 }

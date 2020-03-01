@@ -47,6 +47,8 @@ services:
     build: "./devtools"
     volumes:
         - ../:/var/www/app:delegated
+        - ~/.composer:/root/.composer
+        - ~/.npm:/root/.npm
     ports:
         - '35729:35729'
 

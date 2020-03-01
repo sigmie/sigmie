@@ -15,16 +15,18 @@ require('laravel-mix-purgecss')
  */
 
 mix.webpackConfig({
-  plugins: [
-    new LiveReloadPlugin()
-  ]
+    plugins: [
+        new LiveReloadPlugin()
+    ]
 }).js('resources/js/app.js', 'public/js')
-  .sass('resources/sass/app.scss', 'public/css')
-  .options({
-    processCssUrls: false,
-    postCss: [tailwindcss('./tailwind.config.js')]
-  })
-  .purgeCss()
-  .extract()
-  .version()
-  .sourceMaps()
+    .sass('resources/sass/app.scss', 'public/css')
+    .options({
+        processCssUrls: false,
+        postCss: [tailwindcss('./tailwind.config.js')]
+    })
+    .purgeCss({
+        whitelistPatterns: [/[\w-/.:]+(?<!:)/g]
+    })
+    .extract()
+    .version()
+    .sourceMaps()

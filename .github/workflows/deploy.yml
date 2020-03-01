@@ -28,7 +28,7 @@ jobs:
     - name: Cache PHP dependencies
       uses: actions/cache@v1
       with:
-       path: ~/.npm
+       path: ~/.composer
        key: composer-${{ hashFiles('**/composer.lock') }}
 
     - name: Set release and assets url env

@@ -2,7 +2,7 @@
 
 @section('public.content')
 
-<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8" v-cloak>
+<div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8" v-cloak>
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
         <div class="mx-auto">
             <logo-default />
@@ -20,13 +20,20 @@
     </div>
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        @if($errors->any())
+        <div>
+            <alert-danger class="mb-3 shadow" title="Whoops!" text="These credentials do not match our records" />
+        </div>
+        @endif
+
         <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
             <form action="{{ route('login') }}" method="POST">
 
                 @csrf
 
                 <div>
-                    <form-input id="email" name="email" type="email" value="{{ old('email') }}" required label="Email address" />
+                    <form-input id="email" name="email" type="email" value="{{ old('email') }}" required
+                        label="Email address" />
                 </div>
 
                 <div class="mt-6">
@@ -48,12 +55,7 @@
                 </div>
 
                 <div class="mt-6">
-                    <span class="block w-full rounded-md shadow-sm">
-                        <button type="submit"
-                            class="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-500 focus:outline-none focus:orange-indigo-700 focus:shadow-outline-indigo active:bg-orange-700 transition duration-150 ease-in-out">
-                            Sign in
-                        </button>
-                    </span>
+                    <button-primary text="Sign in" type="submit" />
                 </div>
             </form>
 
@@ -84,9 +86,5 @@
             </div>
         </div>
     </div>
-    {{-- <router-view :form-action="'{{ route('login') }}'" forgot-route="{{ route('password.request') }}"
-    :errors="{{ $errors->toJson() }}"
-    :old="{{ json_encode(Session::getOldInput()) }}" :app="{{ json_encode($app) }}">
-    </router-view> --}}
 
     @endsection
