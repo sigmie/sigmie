@@ -39,6 +39,21 @@
             "command": "vendor/bin/phpunit"
         },
         {
+            "label": "phpunit:integration",
+            "type": "shell",
+            "command": "vendor/bin/phpunit --testsuite Integration"
+        },
+        {
+            "label": "phpunit:unit",
+            "type": "shell",
+            "command": "vendor/bin/phpunit --testsuite Unit"
+        },
+        {
+            "label": "phpunit:feature",
+            "type": "shell",
+            "command": "vendor/bin/phpunit --testsuite Feature"
+        },
+        {
             "label": "tinker",
             "type": "shell",
             "command": "php artisan tinker"

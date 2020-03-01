@@ -7,6 +7,7 @@ jobs:
   test:
     runs-on: ubuntu-18.04
     if: github.ref != 'refs/heads/master'
+
     services:
 
      mysql:
@@ -27,6 +28,7 @@ jobs:
         REDIS_PASSWORD: password
 
     env:
+      VARIABLES_PASSPHRASE: ${{ secrets.variables_testing_passphrase }}
       COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
       DB_CONNECTION: mysql
       DB_HOST: 127.0.0.1
@@ -53,8 +55,10 @@ jobs:
        path: ~/.npm
        key: composer-${{ hashFiles('**/composer.lock') }}
 
-    - name: Decrypt auth.json
-      run: gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
+    - name: Decrypt composer auth.json .env.testing
+      run: |
+          gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
+          gpg --quiet --batch --yes --decrypt --passphrase=$VARIABLES_PASSPHRASE --output .env.testing .github/secrets/variables.testing.gpg
 
     - name: Install curl zip npm
       run: sudo apt-get update && sudo apt-get install -y curl npm zip
