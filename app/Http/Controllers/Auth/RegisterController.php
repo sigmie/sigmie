@@ -61,20 +61,6 @@ class RegisterController extends Controller
     }
 
     /**
-     * Handle Github authentication callback
-     *
-     * @return void
-     */
-    public function handleCallback()
-    {
-        $user = Socialite::driver('github')->user();
-
-        dd('register');
-
-        return redirect(route('register'));
-    }
-
-    /**
      * Create a new user instance after a valid registration.
      *
      * @param  array $data

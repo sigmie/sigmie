@@ -21,6 +21,12 @@ class SubscriptionConfirmationController extends Controller
     {
         $newsletterSubscription->confirmSubscription();
 
+        /** @var  Mailgun */
+        $mailgun = resolve(Mailgun::class);
+        $list = config('services.mailgun.newsletter_list');
+
+        dispatch(fn () => $mailgun->confirmSubscription($list, $newsletterSubscription->email));
+
         return redirect()->route('newsletter.confirmed');
     }
 }

@@ -36,11 +36,6 @@ class GithubController extends Controller
             ->redirect();
     }
 
-    public function register()
-    {
-        throw new Exception('Not implemented!');
-    }
-
     /**
      * Handle Github login
      *
@@ -52,7 +47,6 @@ class GithubController extends Controller
         $user = User::where(['email' => $email, 'github' => true])->first();
 
         if ($user !== null) {
-
             Auth::login($user, true);
 
             return redirect()->intended('home');

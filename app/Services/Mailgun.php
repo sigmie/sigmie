@@ -55,10 +55,12 @@ class Mailgun
      * @param bool $subscribed
      * @param string $list
      * @param string $address
+     * @param bool $subscribed
+     * @param bool $upsert
      *
      * @return array
      */
-    public function addToList(string $list, string $address, bool $subscribed = false): array
+    public function addToList(string $list, string $address, bool $subscribed = false, bool $upsert = false): array
     {
         $response = $this->client->post(
             "https://{$this->endpoint}/v3/lists/{$list}/members",
@@ -69,7 +71,8 @@ class Mailgun
                 ],
                 'form_params' => [
                     'address' => $address,
-                    'subscribed' => ($subscribed)  ? 'yes' : 'no'
+                    'subscribed' => ($subscribed)  ? 'yes' : 'no',
+                    'upsert' => ($upsert)  ? 'yes' : 'no'
                 ]
             ]
         );
