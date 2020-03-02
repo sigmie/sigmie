@@ -1,23 +1,40 @@
 <template>
   <div>
     <label :for="name" class="block text-sm font-medium leading-5 text-gray-700">{{ label }}</label>
-    <div class="mt-1 rounded-md shadow-sm">
+    <div class="mt-1 relative rounded-md shadow-sm">
       <input
         :id="id"
         :type="type"
         :placeholder="placeholder"
-        :class="{ 'border-red-700 border': error.length > 0 }"
+        :class="[validations.$anyError ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-300 focus:text-' : '']"
         :autocomplete="autocomplete"
-        :value="value"
         :name="name"
         :required="required"
+        :value="value"
         @input="$emit('input', $event.target.value)"
         @blur="$emit('blur', $event.target.value)"
         @focus="$emit('touch', $event.target.value)"
         @change="$emit('change', $event.target.value)"
-        class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
+        class="appearance-none block w-full px-3 py-2 border border-gray-300 focus:text-gray-700 rounded-md placeholder-gray-400 focus:outline-none focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
       />
-      <span v-if="error.length > 0" class="text-red-600 font-normal" role="alert">{{ error }}</span>
+      <div
+        v-if="validations.$anyError"
+        class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+      >
+        <svg class="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </div>
+    </div>
+    <div v-for="(message, rule) in errorMessages" track-by="$index">
+      <p
+        v-if="!validations[rule] && validations.$dirty"
+        class="mt-2 text-sm text-red-600"
+      >{{ message }}</p>
     </div>
   </div>
 </template>
@@ -28,8 +45,12 @@ export default {
     name: {
       default: ""
     },
-    valid: {
-      default: null
+    validations: {
+      default: () => {
+        return {
+          $anyError: false
+        };
+      }
     },
     blur: {
       default: () => {}
@@ -63,6 +84,9 @@ export default {
     },
     required: {
       default: true
+    },
+    errorMessages: {
+      default: []
     }
   },
   data() {

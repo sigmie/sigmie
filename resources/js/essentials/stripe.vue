@@ -1,9 +1,9 @@
 <template>
-  <div class="box">
+  <div @change="fetchMethod">
     <label for="method" class="block text-sm font-medium leading-5 text-gray-700 pb-1">Credit card</label>
     <div
       id="card-element"
-      class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
+      class="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
     ></div>
     <div id="card-errors" role="alert"></div>
     <input name="method" id="method-field" v-model="method" type="hidden" />
@@ -17,13 +17,10 @@ export default {
       default: ""
     },
     name: {
-      default: "",
-    },
-    intent: {
-      default: "",
-      required: true
+      default: ""
     }
   },
+  methods() {},
   data() {
     return {
       card: null,
@@ -48,7 +45,8 @@ export default {
   },
   methods: {
     async fetchMethod() {
-      let client_secret = this.intent.client_secret;
+
+      let client_secret = stripe.intent.client_secret;
 
       const { setupIntent, error } = await this.stripe.handleCardSetup(
         client_secret,
@@ -59,7 +57,6 @@ export default {
           }
         }
       );
-
       if (error) {
         console.log(error);
       } else {
@@ -68,7 +65,7 @@ export default {
     }
   },
   mounted() {
-    this.stripe = Stripe("pk_test_c9qTG6rra0eQdTd6n7Nhcqka00a3YibJYB");
+    this.stripe = Stripe(stripe.secret);
 
     let elements = this.stripe.elements();
 
@@ -78,7 +75,37 @@ export default {
     });
 
     this.card.mount("#card-element");
+
+    this.card.on("change", event => {
+      if (event.complete) {
+        this.fetchMethod();
+      } else if (event.error) {
+        console.log("error");
+      }
+    });
   }
 };
 </script>
 
+<style>
+.StripeElement {
+  box-sizing: border-box;
+  padding: 0.5rem 0.75rem 0.5rem 0.75rem;
+  background-color: #ffffff;
+  border-radius: 0.375rem;
+  line-height: 1.5;
+}
+
+.StripeElement--focus {
+}
+
+.StripeElement--invalid {
+  background-color: "red";
+  border-color: #f8b4b4;
+}
+
+.StripeElement--webkit-autofill {
+  background-color: "red";
+  background-color: #ffffff !important;
+}
+</style>

@@ -2,6 +2,7 @@ import Vue from 'vue'
 import axios from 'axios'
 import Routes from './routes'
 import VueRouter from 'vue-router'
+import Vuelidate from 'vuelidate'
 import Echo from 'laravel-echo'
 
 const io = require('socket.io-client')
@@ -18,11 +19,13 @@ if (token) {
 }
 
 Vue.use(VueRouter)
+Vue.use(Vuelidate)
 
 Vue.component('csrf', require('./essentials/csrf').default)
 Vue.component('stripe', require('./essentials/stripe').default)
 Vue.component('form-input', require('./ui/forms/input').default)
 Vue.component('form-checkbox', require('./ui/forms/checkbox').default)
+Vue.component('form-select', require('./ui/forms/select').default)
 Vue.component('button-primary', require('./ui/buttons/primary').default)
 Vue.component('button-disabled', require('./ui/buttons/disabled').default)
 Vue.component('heading-form', require('./ui/headings/form').default)

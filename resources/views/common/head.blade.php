@@ -52,3 +52,7 @@
 @yield('additional-js')
 
 @yield('additional-css')
+
+<script>
+    @yield('js-assign')
+</script>

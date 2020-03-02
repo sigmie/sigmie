@@ -4,30 +4,14 @@
 <script src="https://js.stripe.com/v3/" type="application/javascript"></script>
 @endsection
 
-
 @section('additional-css')
-<style>
-    .StripeElement {
-        box-sizing: border-box;
-        padding: 0.5rem 0.75rem 0.5rem 0.75rem;
-        background-color: #ffffff;
-        border-radius: 0.375rem;
-        line-height: 1.5;
-    }
-
-    .StripeElement--focus {}
-
-    .StripeElement--invalid {
-        background-color: 'red';
-        border-color: #ffffff;
-    }
-
-    .StripeElement--webkit-autofill {
-        background-color: 'red';
-        background-color: #ffffff !important;
-    }
-</style>
 @endsection()
+
+
+@section('js-assign')
+var stripe = @json($stripe);
+@endsection()
+
 
 @section('public.content')
 
@@ -35,8 +19,8 @@
     <div class="flex flex-wrap md:flex-no-wrap flex-wrap-reverse">
         <div class="flex-initial w-full md:w-2/5 px-4 py-2 m-2">
             <container-white>
-                <register-form />
-
+                <register-form id="register" method="POST" action="{{ route('register') }}" :errors="@json($errors)"
+                    :old="@json(Session::getOldInput())" />
             </container-white>
         </div>
         <div class="flex-initial w-full md:w-3/5 text-gray-700 text-center bg-gray-400 px-4 py-2 m-2">
