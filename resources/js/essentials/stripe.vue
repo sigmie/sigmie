@@ -6,7 +6,13 @@
       class="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
     ></div>
     <div id="card-errors" role="alert"></div>
-    <input name="method" id="method-field" v-model="method" type="hidden" />
+    <input
+      name="method"
+      v-bind:value="value"
+      v-on:input="$emit('input', $event.target.value)"
+      id="method"
+      type="hidden"
+    />
   </div>
 </template>
 
@@ -18,7 +24,8 @@ export default {
     },
     name: {
       default: ""
-    }
+    },
+    value: {}
   },
   methods() {},
   data() {
@@ -45,7 +52,6 @@ export default {
   },
   methods: {
     async fetchMethod() {
-
       let client_secret = stripe.intent.client_secret;
 
       const { setupIntent, error } = await this.stripe.handleCardSetup(
@@ -57,10 +63,11 @@ export default {
           }
         }
       );
+
       if (error) {
-        console.log(error);
+        this.$emit("input", "");
       } else {
-        this.method = setupIntent.payment_method;
+        this.$emit("input", setupIntent.payment_method);
       }
     }
   },
@@ -75,14 +82,6 @@ export default {
     });
 
     this.card.mount("#card-element");
-
-    this.card.on("change", event => {
-      if (event.complete) {
-        this.fetchMethod();
-      } else if (event.error) {
-        console.log("error");
-      }
-    });
   }
 };
 </script>

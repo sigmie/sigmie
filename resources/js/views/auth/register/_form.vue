@@ -1,8 +1,8 @@
 <template>
-  <form>
+  <form @submit.prevent="submit">
     <div class="p-6">
       <div class="border-gray-200">
-          <csrf/>
+        <csrf />
         <div>
           <h3 class="text-lg leading-6 font-medium text-gray-900">Account</h3>
           <p class="mt-1 max-w-2xl text-sm leading-5 text-gray-500">Account information</p>
@@ -56,9 +56,10 @@
           label="Plan"
           name="plan"
           id="plan"
+          v-model.trim="$v.plan.$model"
           aria-label="Billin plan"
-          :values="['Hobby','Pro','Serious']"
-
+          :items="['Hobby','Pro','Serious']"
+          :validations="$v.plan"
         />
       </div>
       <div class="pt-2">
@@ -76,7 +77,7 @@
       </div>
       <div class="pt-2">
         <div class="sm:col-span-3 pb-2">
-          <stripe :name="name" class="pt-4" />
+          <stripe v-model.trim="$v.method.$model" ref="stripe" :name="name" class="pt-4" />
         </div>
       </div>
     </div>
@@ -101,13 +102,15 @@ import {
 } from "vuelidate/lib/validators";
 
 export default {
+  props: ["old", "errors"],
   data() {
     return {
-      name: "",
-      email: "",
+      name: this.old.name ? this.old.name : "",
+      email: this.old.email ? this.old.email : "",
       password: "",
       password_confirmation: "",
-      plan: "",
+      plan: this.old.plan ? this.old.plan : "Hobby",
+      method: "",
       errorMessages: {
         email: {
           required: "Email address is required.",
@@ -137,9 +140,24 @@ export default {
     name: {
       required
     },
+    plan: {
+      required
+    },
     email: {
       required,
       email
+    },
+    method: {
+      required
+    }
+  },
+  methods: {
+    async submit(event) {
+      await this.$refs.stripe.fetchMethod();
+
+      if (this.$v.$anyError === false) {
+        event.target.submit();
+      }
     }
   }
 };

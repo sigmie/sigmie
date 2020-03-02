@@ -19,8 +19,9 @@ var stripe = @json($stripe);
     <div class="flex flex-wrap md:flex-no-wrap flex-wrap-reverse">
         <div class="flex-initial w-full md:w-2/5 px-4 py-2 m-2">
             <container-white>
-                <register-form id="register" method="POST" action="{{ route('register') }}" :errors="@json($errors)"
-                    :old="@json(Session::getOldInput())" />
+                <register-form id="register" method="POST" action="{{ route('register') }}"
+                    :errors="{{ json_encode($errors->getMessages()) }} "
+                    :old="{{ json_encode(Session::getOldInput()) }}" />
             </container-white>
         </div>
         <div class="flex-initial w-full md:w-3/5 text-gray-700 text-center bg-gray-400 px-4 py-2 m-2">

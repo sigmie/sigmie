@@ -5,11 +5,18 @@
       <div>
         <select
           :id="id"
-          name="name"
+          :name="name"
           :aria-label="label"
+          :class="[validations.$anyError ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-300 focus:text-' : '']"
+          :required="required"
+          v-model="value"
+          @input="$emit('input', $event.target.value)"
+          @blur="$emit('blur', $event.target.value)"
+          @focus="$emit('touch', $event.target.value)"
+          @change="$emit('change', $event.target.value)"
           class="form-select relative block w-full rounded-none rounded-md bg-transparent focus:z-10 transition ease-in-out duration-150 sm:text-sm sm:leading-5"
         >
-          <option v-for="(value, index) in values" :key="index">{{ value }}</option>
+          <option v-for="(item, index) in items" :key="index">{{ item }}</option>
         </select>
       </div>
     </div>
@@ -18,7 +25,17 @@
 
 <script>
 export default {
-  props: ["values", "aria-label", "label", "name", "id"]
+  props: [
+    "value",
+    "items",
+    "selected",
+    "aria-label",
+    "label",
+    "name",
+    "id",
+    "validations",
+    "required"
+  ]
 };
 </script>
 
