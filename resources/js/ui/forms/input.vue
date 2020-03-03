@@ -86,7 +86,7 @@ export default {
       default: true
     },
     errorMessages: {
-      default: []
+      default: () => {}
     }
   },
   data() {

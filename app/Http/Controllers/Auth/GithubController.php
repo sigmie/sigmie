@@ -41,11 +41,10 @@ class GithubController extends Controller
     {
         $githubUser = Socialite::driver('github')->user();
 
-        $request->session()->put('github', [
+        $request->session()->put('githubUser', [
             'name' => $githubUser->getName(),
             'email' => $githubUser->getEmail(),
             'avatar_url' => $githubUser->getAvatar(),
-            'github' => true
         ]);
 
         return redirect('register');

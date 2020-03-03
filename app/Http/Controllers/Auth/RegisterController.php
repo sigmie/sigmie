@@ -7,14 +7,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
-use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Facades\Session;
-use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Http\Request;
 
 class RegisterController extends Controller
 {
     use RegistersUsers;
-
     /**
      * Where to redirect users after registration.
      *
@@ -36,13 +33,12 @@ class RegisterController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function showRegistrationForm()
+    public function showRegistrationForm(Request $request)
     {
-        $user = new User;
-        $intent = $user->createSetupIntent();
+        $intent = (new User)->createSetupIntent();
 
         return view('auth.register', [
-            'user' => $user->toArray(),
+            'githubUser' => $request->session()->get('githubUser', []),
             'stripe' =>            [
                 'intent' => $intent, 'secret' => config('cashier.key')
             ]
@@ -57,12 +53,15 @@ class RegisterController extends Controller
      */
     protected function validator(array $data)
     {
+        $password = (session()->has('githubUser')) ? [] : ['required', 'string', 'min:8'];
+
         return Validator::make(
             $data,
             [
                 'name' => ['required', 'string', 'max:255'],
+                'username' => ['required', 'string', 'min:4'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-                'password' => ['required', 'string', 'min:8'],
+                'password' => $password,
                 'method' => ['required'],
             ]
         );
@@ -76,17 +75,31 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
-        $all = session()->all();
-        dd($all);
+        $githubUser = session()->get('githubUser', null);
+
+        $email = $data['email'];
+        $password = (isset($data['password'])) ? Hash::make($data['password']) : '';
+        $avatar_url = '';
+
+        if ($githubUser !== null) {
+            $avatar_url = $githubUser['avatar_url'];
+        } else {
+            $avatar_url = 'https://www.gravatar.com/avatar/';
+            $avatar_url .= md5(strtolower(trim($email)));
+        }
+
         $user = User::create(
             [
                 'name' => $data['name'],
-                'email' => $data['email'],
-                'password' => Hash::make($data['password']),
+                'email' => $email,
+                'username' => $data['username'],
+                'password' => $password,
+                'avatar_url' => $avatar_url,
             ]
         );
 
-        $user->newSubscription('hobby', 'plan_GES1izXya6Q2bA')->trialDays(15)->create($data['method']);
+        $plans = config('cashier.plans');
+        $user->newSubscription('Subscription', $plans[$data['plan']])->trialDays(14)->create($data['method']);
 
         return $user;
     }

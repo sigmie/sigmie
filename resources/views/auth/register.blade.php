@@ -26,10 +26,10 @@ var stripe = @json($stripe);
 
     <div class="flex flex-wrap md:flex-no-wrap flex-wrap-reverse pl-4 pr-6">
         <div class="flex-initial w-full md:w-2/5">
-            {{-- {{ dd($user) }} --}}
             <container-white>
                 <register-form id="register" method="POST" action="{{ route('register') }}"
-                    github-route="{{ route('github.redirect', ['action' => 'register'])}}" user="{{ json_encode($user) }}" />
+                    github-route="{{ route('github.redirect', ['action' => 'register'])}}"
+                    :github-user="{{ json_encode($githubUser) }}" />
             </container-white>
         </div>
         <div class="flex-initial w-full md:w-3/5 text-gray-700 text-center bg-gray-400 px-4 py-2 m-2">
