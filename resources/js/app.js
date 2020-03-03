@@ -66,9 +66,11 @@ const vm = new Vue({
     router,
     data() {
         return {
-            acme: {
+            old: {
             },
-            bar: 'bar'
+            erros: {
+
+            }
         }
     },
     mounted() {

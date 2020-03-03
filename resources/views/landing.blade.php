@@ -1,7 +1,6 @@
 @extends('layout')
 
-@section('additional-css')
-
+@section('head-css')
 <style>
     .gradient {
         background: linear-gradient(90deg, #d53369 0%, #daae51 100%);
@@ -869,7 +868,7 @@
                         <div class="text-gray-400 text-sm font-normal text-center">Price doesn't include your GCP costs.
                         </div>
                         <div class="flex items-center justify-start">
-                            <button-disabled value="Comming" class="my-6 mx-4 py-2 font-bold" />
+                            <button-disabled text="Comming" class="my-6 mx-4 py-2 font-bold" />
                         </div>
                     </div>
                 </div>
@@ -930,7 +929,7 @@
                         <div class="text-gray-400 text-sm font-normal text-center">Price doesn't include your GCP costs.
                         </div>
                         <div class="flex items-center justify-center">
-                            <button-disabled value="Comming" class="my-6 mx-4 py-2 lg:py-3 font-bold" />
+                            <button-disabled text="Comming" class="my-6 mx-4 py-2 lg:py-3 font-bold" />
                         </div>
                     </div>
                 </div>
@@ -986,7 +985,7 @@
                         <div class="text-gray-400 text-sm font-normal text-center">Price doesn't include your GCP costs.
                         </div>
                         <div class="flex items-center justify-start">
-                            <button-disabled value="Comming" class="my-6 mx-4 py-2 font-bold" />
+                            <button-disabled text="Comming" class="my-6 mx-4 py-2 font-bold" />
                         </div>
                     </div>
                 </div>

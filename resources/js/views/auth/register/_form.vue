@@ -102,14 +102,13 @@ import {
 } from "vuelidate/lib/validators";
 
 export default {
-  props: ["old", "errors"],
   data() {
     return {
-      name: this.old.name ? this.old.name : "",
-      email: this.old.email ? this.old.email : "",
+      name: app.old.name ? app.old.name : "",
+      email: app.old.email ? app.old.email : "",
       password: "",
       password_confirmation: "",
-      plan: this.old.plan ? this.old.plan : "Hobby",
+      plan: app.old.plan ? app.old.plan : "Hobby",
       method: "",
       errorMessages: {
         email: {

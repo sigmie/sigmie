@@ -1,12 +1,11 @@
 @extends('layouts.public')
 
-@section('additional-js')
+@section('tail-js')
 <script src="https://js.stripe.com/v3/" type="application/javascript"></script>
 @endsection
 
-@section('additional-css')
+@section('head-css')
 @endsection()
-
 
 @section('js-assign')
 var stripe = @json($stripe);
@@ -15,13 +14,20 @@ var stripe = @json($stripe);
 
 @section('public.content')
 
-<div class="flex h-full items-center pt-5">
-    <div class="flex flex-wrap md:flex-no-wrap flex-wrap-reverse">
-        <div class="flex-initial w-full md:w-2/5 px-4 py-2 m-2">
+<div class="pt-4 px-4">
+    @if($errors->any())
+    @foreach ($errors->all() as $error)
+    <alert-danger class="mb-3 shadow" title="Whoops!" text="{{ $error }}" />
+    @endforeach
+    @endif
+</div>
+
+<div class="flex h-full items-center pt-5 pb-4">
+
+    <div class="flex flex-wrap md:flex-no-wrap flex-wrap-reverse pl-4 pr-6">
+        <div class="flex-initial w-full md:w-2/5">
             <container-white>
-                <register-form id="register" method="POST" action="{{ route('register') }}"
-                    :errors="{{ json_encode($errors->getMessages()) }} "
-                    :old="{{ json_encode(Session::getOldInput()) }}" />
+                <register-form id="register" method="POST" action="{{ route('register') }}" />
             </container-white>
         </div>
         <div class="flex-initial w-full md:w-3/5 text-gray-700 text-center bg-gray-400 px-4 py-2 m-2">

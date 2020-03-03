@@ -7,15 +7,13 @@
 
 <body class="min-h-full h-full bg-gray-50">
 
-    @include('cookieConsent::index')
-
     <div id="app" class="min-h-full h-full relative">
 
         @yield('content')
 
     </div>
 
-    @include('common.javascripts')
+    @include('common.tail')
 </body>
 
 </html>

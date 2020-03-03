@@ -49,10 +49,11 @@
 {{-- Styles --}}
 <link href="{{ asset('css/app.css') }}" rel="stylesheet">
 
-@yield('additional-js')
+@yield('head-js')
 
-@yield('additional-css')
+@yield('head-css')
 
 <script>
+    window.app = {};
     @yield('js-assign')
 </script>
