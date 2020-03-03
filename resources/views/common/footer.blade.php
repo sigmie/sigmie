@@ -1,8 +1,8 @@
 <div class="flex flex-col justify-center h-full px-10">
     <div>
-        <a class="inline-block pr-4 text-gray-500" href="">
+        <span class="inline-block pr-4 text-gray-500" href="">
             © 2019 MOS - Sigma s.r.o.
-        </a>
+        </span>
         <a class="inline-block pr-4 text-gray-500" href="{{route('legal.terms')}}">
             Terms of service
         </a>
