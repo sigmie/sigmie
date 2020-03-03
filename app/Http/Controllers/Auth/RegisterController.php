@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
+use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Session;
 use Laravel\Socialite\Facades\Socialite;
 
 class RegisterController extends Controller
@@ -36,9 +38,15 @@ class RegisterController extends Controller
      */
     public function showRegistrationForm()
     {
-        $intent = (new User)->createSetupIntent();
+        $user = new User;
+        $intent = $user->createSetupIntent();
 
-        return view('auth.register', ['stripe' => ['intent' => $intent, 'secret' => config('cashier.key')]]);
+        return view('auth.register', [
+            'user' => $user->toArray(),
+            'stripe' =>            [
+                'intent' => $intent, 'secret' => config('cashier.key')
+            ]
+        ]);
     }
 
     /**
@@ -55,7 +63,7 @@ class RegisterController extends Controller
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
                 'password' => ['required', 'string', 'min:8'],
-                'method' => ['required', 'email'],
+                'method' => ['required'],
             ]
         );
     }
@@ -68,6 +76,8 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
+        $all = session()->all();
+        dd($all);
         $user = User::create(
             [
                 'name' => $data['name'],

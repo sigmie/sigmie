@@ -8,6 +8,7 @@ use Exception;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
 
 class GithubController extends Controller
 {
@@ -34,6 +35,20 @@ class GithubController extends Controller
         return Socialite::driver('github')
             ->with(['redirect_uri' => config('app.url') . $redirect_uri])
             ->redirect();
+    }
+
+    public function register(Request $request)
+    {
+        $githubUser = Socialite::driver('github')->user();
+
+        $request->session()->put('github', [
+            'name' => $githubUser->getName(),
+            'email' => $githubUser->getEmail(),
+            'avatar_url' => $githubUser->getAvatar(),
+            'github' => true
+        ]);
+
+        return redirect('register');
     }
 
     /**

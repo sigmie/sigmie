@@ -4,12 +4,24 @@
       <div class="border-gray-200">
         <csrf />
         <div>
-          <h3 class="text-lg leading-6 font-medium text-gray-900">Account</h3>
-          <p class="mt-1 max-w-2xl text-sm leading-5 text-gray-500">Account information</p>
+          <h3 class="text-lg leading-6 font-medium text-gray-900">Sign up With Github</h3>
         </div>
+
+        <button-github :route="githubRoute" class="mt-3" />
+
+        <div class="mt-4 relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-300"></div>
+          </div>
+          <div class="relative flex justify-center text-sm leading-5">
+            <span class="px-2 bg-white text-gray-500">Or</span>
+          </div>
+        </div>
+
         <div class="sm:col-span-3 pb-2">
           <form-input
-            v-model.trim="$v.email.$model"
+            :value="email"
+            @change="(value) => set('email',value)"
             class="pt-4"
             id="email"
             name="email"
@@ -21,7 +33,8 @@
         </div>
         <div class="sm:col-span-3 pb-2">
           <form-input
-            v-model.trim="$v.password.$model"
+            :value="password"
+            @change="(value) => set('password',value)"
             class="pt-4"
             id="password"
             name="password"
@@ -33,7 +46,8 @@
         </div>
         <div class="sm:col-span-3 pb-2">
           <form-input
-            v-model.trim="$v.password_confirmation.$model"
+            :value="password_confirmation"
+            @change="(value) => set('password_confirmation',value)"
             class="pt-4"
             id="password_cofirmation"
             name="password_confirmation"
@@ -65,7 +79,8 @@
       <div class="pt-2">
         <div class="sm:col-span-3 pb-2">
           <form-input
-            v-model.trim="$v.name.$model"
+            :value="name"
+            @change="(value) => set('name',value)"
             class="pt-4"
             label="Name"
             id="name"
@@ -102,6 +117,7 @@ import {
 } from "vuelidate/lib/validators";
 
 export default {
+  props: ["githubRoute", "user"],
   data() {
     return {
       name: app.old.name ? app.old.name : "",
@@ -157,6 +173,10 @@ export default {
       if (this.$v.$anyError === false) {
         event.target.submit();
       }
+    },
+    set(key, value) {
+      this[key] = value;
+      this.$v[key].$touch();
     }
   }
 };
