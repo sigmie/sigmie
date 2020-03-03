@@ -1,7 +1,11 @@
 <template>
   <div>
-    <label :for="name" class="block text-sm font-medium leading-5 text-gray-700">{{ label }}</label>
-    <div class="mt-1 relative rounded-md shadow-sm">
+    <label
+      v-if="label.length > 0"
+      :for="name"
+      class="block text-sm font-medium leading-5 text-gray-700"
+    >{{ label }}</label>
+    <div class="relative rounded-md shadow-sm">
       <input
         :id="id"
         :type="type"
