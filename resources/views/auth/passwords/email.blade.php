@@ -3,26 +3,41 @@
 @section('public.content')
 
 
-@if($errors->any())
-<div>
-    <alert-danger class="mb-3 shadow" title="Whoops!" text="These credentials do not match our records" />
-</div>
-@endif
+<div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8" v-cloak>
+    <div class="sm:mx-auto sm:w-full sm:max-w-md pb-6">
+        <div class="mx-auto pb-2">
+            <a href="{{ route("landing") }}">
+                <logo-default />
+            </a>
+        </div>
 
-<div class="min-h-screen flex flex-col justify-center py-12 w-full" v-cloak>
-    <container-white class="mx-auto py-4 w-full max-w-md">
+        @if($errors->any())
+        <div class="pt-4">
+            <alert-danger class="shadow" title="Whoops!" text="These credentials do not match our records" />
+        </div>
+        @endif
 
-        <form action="{{ route('password.email') }}" method="POST" class="flex w-full px-4">
+        @if(Session::has('status'))
+        <div class="pt-4">
+            <alert-success class="shadow" title="Nice!"
+                text="Check your email for a link to reset your password" />
+        </div>
+        @endif
+    </div>
 
+    <container-white class="mx-auto py-6 px-4 w-full max-w-md flex flex-col w-full">
+        <form action="{{ route('password.email') }}" method="POST" class="flex flex-col w-full px-4">
+            <span class="text-gray-500 pb-6">
+                Enter the email associated with your account and you will get a link to reset your password.
+            </span>
             @csrf
-
-            <div class="w-3/5 pr-3">
-                <form-input placeholder="john@yahoo.com" id="email" name="email" type="email" value="{{ old('email') }}"
-                    required />
+            <div class="pb-6">
+                <form-input label="Email address" placeholder="john@yahoo.com" id="email" name="email" type="email"
+                    value="{{ old('email') }}" required />
             </div>
 
-            <div class="w-2/5">
-                <button-primary text="Send reset link" type="submit" />
+            <div>
+                <button-primary text="Send" type="submit" />
             </div>
         </form>
     </container-white>

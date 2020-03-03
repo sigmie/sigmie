@@ -95,6 +95,7 @@ class RegisterController extends Controller
                 'username' => $data['username'],
                 'password' => $password,
                 'avatar_url' => $avatar_url,
+                'github' => $githubUser !== null
             ]
         );
 

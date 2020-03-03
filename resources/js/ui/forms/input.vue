@@ -3,7 +3,7 @@
     <label
       v-if="label.length > 0"
       :for="name"
-      class="block text-sm font-medium leading-5 text-gray-700"
+      class="block text-sm font-medium leading-5 text-gray-700 pb-1"
     >{{ label }}</label>
     <div class="relative rounded-md shadow-sm">
       <input

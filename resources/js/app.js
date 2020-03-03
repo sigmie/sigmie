@@ -41,6 +41,7 @@ Vue.component('logo-white', require('./ui/logos/white').default)
 Vue.component('logo-default', require('./ui/logos/default').default)
 Vue.component('container-white', require('./ui/containers/white').default)
 Vue.component('alert-danger', require('./ui/alerts/danger').default)
+Vue.component('alert-success', require('./ui/alerts/success').default)
 Vue.component('modal', require('./ui/essentials/modal').default)
 Vue.component('spinner', require('./ui/essentials/spinner').default)
 Vue.component('list-sidebar', require('./ui/lists/sidebar').default)
@@ -51,7 +52,8 @@ Vue.component('icon-notification', require('./ui/icons/notification').default)
 Vue.component('icon-refresh', require('./ui/icons/refresh').default)
 Vue.component('icon-cheveron-right', require('./ui/icons/cheveron/right').default)
 
-Vue.component('register-form', require('./views/auth/register/_form').default)
+Vue.component('register-form', require('./views/auth/register/form').default)
+Vue.component('password-form', require('./views/auth/passwords/form').default)
 
 const router = new VueRouter({
     routes: Routes,
