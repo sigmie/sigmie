@@ -52,8 +52,7 @@ class RegisterController extends Controller
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function validator(array $data)
-    {
-        $password = (session()->has('githubUser')) ? [] : ['required', 'string', 'min:8'];
+    { $password = (session()->has('githubUser')) ? [] : ['required', 'string', 'min:8'];
 
         return Validator::make(
             $data,

@@ -10,9 +10,12 @@
       @change="$emit('change', $event.target.checked)"
       @blur="$emit('blur', $event.target.value)"
       @focus="$emit('touch', $event.target.value)"
-      class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out"
+      class="form-checkbox h-4 w-4 text-orange-600 transition duration-150 ease-in-out"
     />
-    <label :for="id" class="ml-2 block text-sm leading-5 text-gray-900">{{ label }}</label>
+    <label :for="id" class="ml-2 block text-sm leading-5 text-gray-900">
+      <slot />
+      {{ label }}
+    </label>
   </div>
 </template>
 

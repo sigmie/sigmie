@@ -141,13 +141,22 @@
           />
         </div>
       </div>
+      <div class="pt-4">
+        <div class="sm:col-span-3">
+          <stripe v-model.trim="$v.method.$model" ref="stripe" :name="name" />
+        </div>
+      </div>
       <div class="pt-2">
-        <div class="sm:col-span-3 pb-2">
-          <stripe v-model.trim="$v.method.$model" ref="stripe" :name="name" class="pt-4" />
+        <div class="sm:col-span-3 pt-2">
+          <form-checkbox v-model="consent" required :validations="$v.consent" name="consent" id="consent">
+            I agree to the
+            <a href="/terms" taget="_blank" class="underline">terms of service</a>
+          </form-checkbox>
         </div>
       </div>
     </div>
-    <div class="border-gray-200 p-5">
+
+    <div class="border-gray-200 px-5 pb-5 pt-1">
       <div class="flex justify-end">
         <span class="ml-3 inline-flex rounded-md shadow-sm">
           <button-primary :class="{ 'disabled': $v.$anyError }" text="Register" type="submit" />
@@ -167,6 +176,8 @@ import {
   helpers
 } from "vuelidate/lib/validators";
 
+const mustBeTrue = value => value === true;
+
 export default {
   props: ["githubRoute", "githubUser"],
   data() {
@@ -178,6 +189,7 @@ export default {
       username: app.old.username ? app.old.username : "",
       plan: app.old.plan ? app.old.plan : "Hobby",
       method: "",
+      consent: false,
       github: false,
       errorMessages: {
         email: {
@@ -197,7 +209,8 @@ export default {
         },
         name: {
           required: "Name field is required."
-        }
+        },
+        consent: {}
       }
     };
   },
@@ -211,6 +224,9 @@ export default {
     },
     name: {
       required
+    },
+    consent: {
+      mustBeTrue
     },
     username: {
       required,

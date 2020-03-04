@@ -31,6 +31,13 @@ var stripe = @json($stripe);
                     github-route="{{ route('github.redirect', ['action' => 'register'])}}"
                     :github-user="{{ json_encode($githubUser) }}" />
             </container-white>
+            <div class="w-full px-4 w-4/12 pt-3">
+                <div class="mx-auto text-center">
+                    <span class="text-gray-500 mx-auto">
+                        Already having an account ? <a class="text-orange-600 font-semibold" href="{{ route('login') }}">Sign-in</a>
+                    </span>
+                </div>
+            </div>
         </div>
         <div class="flex-initial w-full md:w-3/5 text-gray-700 text-center bg-gray-400 px-4 py-2 m-2">
 
