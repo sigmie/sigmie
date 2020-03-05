@@ -16,8 +16,8 @@ class HomeController extends Controller
         $this->middleware('auth');
     }
 
-    public function index(): void
+    public function index()
     {
-        dd(Auth::id());
+        return  view('home.index');
     }
 }
