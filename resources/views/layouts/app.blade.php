@@ -24,7 +24,7 @@
                 </button>
             </div>
             <div class="flex-shrink-0 flex items-center h-16 px-4 bg-gray-900">
-                <img class="h-8 w-auto" src="/img/logos/workflow-logo-on-dark.svg" alt="Workflow" />
+                <logo-default />
             </div>
             <div class="flex-1 h-0 overflow-y-auto">
                 <nav class="px-2 py-4">
@@ -91,7 +91,7 @@
     <div class="hidden md:flex md:flex-shrink-0">
         <div class="flex flex-col w-64">
             <div class="flex items-center h-16 flex-shrink-0 px-4 bg-gray-900">
-                <img class="h-8 w-auto" src="/img/logos/workflow-logo-on-dark.svg" alt="Workflow" />
+                <logo-white height="50px" width="159px" class="mx-auto" />
             </div>
             <div class="h-0 flex-1 flex flex-col overflow-y-auto">
                 <!-- Sidebar component, swap this element with another sidebar if you like -->
@@ -192,7 +192,7 @@
                             <button @click="open = !open"
                                 class="max-w-xs flex items-center text-sm rounded-full focus:outline-none focus:shadow-outline">
                                 <img class="h-8 w-8 rounded-full"
-                                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                                    src="{{ $user->avatar_url }}"
                                     alt="" />
                             </button>
                         </div>
