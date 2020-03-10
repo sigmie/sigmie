@@ -5,6 +5,10 @@ import VueRouter from 'vue-router'
 import Vuelidate from 'vuelidate'
 import Echo from 'laravel-echo'
 
+import { directive as away } from 'vue-clickaway'
+
+Vue.directive('away', away)
+
 const io = require('socket.io-client')
 
 Vue.prototype.$http = axios.create({
@@ -64,8 +68,8 @@ const router = new VueRouter({
 
 const vm = new Vue({
     components: {
-        // navbar: require('./components/common/navbar').default,
-        // sidebar: require('./components/common/sidebar').default
+        // sidebar: require('./components/common/sidebar').default,
+        navbar: require('./views/common/navbar').default
     },
     router,
     data() {
