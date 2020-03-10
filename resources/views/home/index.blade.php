@@ -4,7 +4,7 @@
 <div class="mx-auto container px-12 pt-6">
     <div class="shadow w-full bg-white mx-auto py-3">
         <div>
-            <illustration-hologram height="300px" width="300px" />
+            {{-- <illustration-hologram height="300px" width="300px" /> --}}
         </div>
         <div class="text-center">
             <h2 class="text-gray-700 font-semibold">

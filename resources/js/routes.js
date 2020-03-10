@@ -1,7 +1,12 @@
 export default [
-    //   {
-    //     path: '/login',
-    //     name: 'login-view',
-    //     component: require('./views/auth/login').default
-    //   }
+    {
+        path: '/home',
+        name: 'home-view',
+        component: require('./views/home').default
+    },
+    {
+        path: '/bar',
+        name: 'bar-view',
+        component: require('./views/bar').default
+    }
 ]

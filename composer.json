@@ -11,6 +11,10 @@
         {
             "type": "composer",
             "url": "https://nova.laravel.com"
+        },
+        {
+            "type": "composer",
+            "url": "https://packages.mos-sigma.com"
         }
     ],
     "require": {
@@ -27,6 +31,7 @@
         "laravel/socialite": "^4.3",
         "laravel/telescope": "^2",
         "laravel/tinker": "^1.0",
+        "mos-sigma/mos": "dev-master",
         "predis/predis": "^1.1",
         "sentry/sentry-laravel": "1.5.0",
         "spatie/laravel-cookie-consent": "^2"

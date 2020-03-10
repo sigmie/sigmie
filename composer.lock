@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "11d4bd1e64c0093f26da2c149f3722d1",
+    "content-hash": "a36fc7407e453c8b3d5313fb23f241be",
     "packages": [
         {
             "name": "beyondcode/laravel-dump-server",
@@ -2395,6 +2395,48 @@
             ],
             "abandoned": "brick/math",
             "time": "2020-01-05T04:49:34+00:00"
+        },
+        {
+            "name": "mos-sigma/mos",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:nicoorfi/mos.git",
+                "reference": "61c5151f577035457201af9eeaf0451fe9d6b417"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/nicoorfi/mos/zipball/61c5151f577035457201af9eeaf0451fe9d6b417",
+                "reference": "61c5151f577035457201af9eeaf0451fe9d6b417",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "MOS\\": "src/"
+                },
+                "exclude-from-classmap": [
+                    "test/"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": []
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nico orfi",
+                    "email": "nico_orfi@yahoo.com"
+                }
+            ],
+            "description": "Most of search",
+            "support": {
+                "source": "https://github.com/nicoorfi/mos/tree/master",
+                "issues": "https://github.com/nicoorfi/mos/issues"
+            },
+            "time": "2020-03-09T07:34:21+00:00"
         },
         {
             "name": "nesbot/carbon",
@@ -7953,7 +7995,9 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": [],
+    "stability-flags": {
+        "mos-sigma/mos": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

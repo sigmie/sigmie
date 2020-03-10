@@ -10,4 +10,9 @@ class HomeController extends AppController
     {
         return  view('home.index');
     }
+
+    public function show()
+    {
+        return  view('home.show');
+    }
 }
