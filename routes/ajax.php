@@ -11,7 +11,7 @@
 |
 */
 
-Route::get('/bar', function () {
+Route::post('/bar', function () {
 
     return ['bar'];
 });

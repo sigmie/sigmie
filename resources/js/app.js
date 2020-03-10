@@ -6,18 +6,10 @@ import Vuelidate from 'vuelidate'
 import Echo from 'laravel-echo'
 
 const io = require('socket.io-client')
-const token = document.head.querySelector('meta[name="csrf-token"]')
-
-if (token) {
-    axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content
-}
 
 Vue.prototype.$http = axios.create({
     baseURL: process.env.MIX_APP_URL + '/ajax/',
-    timeout: 100000,
     headers: {
-        'Access-Control-Allow-Origin': 'https://localhost',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
     }
 });
 
@@ -86,7 +78,7 @@ const vm = new Vue({
         }
     },
     mounted() {
-        this.$http.get('/bar')
+        this.$http.post('/bar')
             .then(function (response) {
                 console.log(response.data);
                 console.log(response.status);
