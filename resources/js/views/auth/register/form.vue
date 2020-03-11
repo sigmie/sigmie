@@ -65,7 +65,7 @@
               label="Username"
               :validations="$v.username"
               :error-messages="errorMessages.username"
-            />
+            ></form-input>
           </div>
 
           <div class="sm:col-span-3 pb-2">
@@ -79,7 +79,7 @@
               label="Email address"
               :validations="$v.email"
               :error-messages="errorMessages.email"
-            />
+            ></form-input>
           </div>
           <div class="sm:col-span-3 pb-2">
             <form-input
@@ -92,7 +92,7 @@
               label="Password"
               :validations="$v.password"
               :error-messages="errorMessages.password"
-            />
+            ></form-input>
           </div>
           <div class="sm:col-span-3 pb-2">
             <form-input
@@ -105,7 +105,7 @@
               label="Password confirm"
               :validations="$v.password_confirmation"
               :error-messages="errorMessages.password_confirmation"
-            />
+            ></form-input>
           </div>
         </div>
       </div>
@@ -125,7 +125,7 @@
           aria-label="Billin plan"
           :items="['Hobby','Pro','Serious']"
           :validations="$v.plan"
-        />
+        ></form-select>
       </div>
       <div class="pt-2">
         <div class="sm:col-span-3 pb-2">
@@ -138,7 +138,7 @@
             name="name"
             :validations="$v.name"
             :error-messages="errorMessages.name"
-          />
+          ></form-input>
         </div>
       </div>
       <div class="pt-4">
@@ -148,7 +148,13 @@
       </div>
       <div class="pt-2">
         <div class="sm:col-span-3 pt-2">
-          <form-checkbox v-model="consent" required :validations="$v.consent" name="consent" id="consent">
+          <form-checkbox
+            v-model="consent"
+            required
+            :validations="$v.consent"
+            name="consent"
+            id="consent"
+          >
             I agree to the
             <a href="/terms" taget="_blank" class="underline">terms of service</a>
           </form-checkbox>
@@ -159,7 +165,7 @@
     <div class="border-gray-200 px-5 pb-5 pt-1">
       <div class="flex justify-end">
         <span class="ml-3 inline-flex rounded-md shadow-sm">
-          <button-primary :class="{ 'disabled': $v.$anyError }" text="Register" type="submit" />
+          <button-primary :class="{ 'disabled': $v.$anyError }" text="Register" type="submit"></button-primary>
         </span>
       </div>
     </div>

@@ -1,6 +1,6 @@
 <template>
   <form class="flex flex-col w-full px-4">
-    <csrf />
+    <csrf></csrf>
 
     <input type="hidden" name="token" :value="token" />
 
@@ -14,7 +14,7 @@
       label="Email address"
       :validations="$v.email"
       :error-messages="errorMessages.email"
-    />
+    ></form-input>
 
     <form-input
       :value="password"
@@ -26,7 +26,7 @@
       label="Password"
       :validations="$v.password"
       :error-messages="errorMessages.password"
-    />
+    ></form-input>
     <form-input
       :value="password_confirmation"
       @change="(value) => set('password_confirmation',value)"
@@ -37,9 +37,9 @@
       label="Password confirm"
       :validations="$v.password_confirmation"
       :error-messages="errorMessages.password_confirmation"
-    />
+    ></form-input>
     <div class="pt-4">
-      <button-primary text="Change password" type="submit" />
+      <button-primary text="Change password" type="submit"></button-primary>
     </div>
   </form>
 </template>

@@ -5,7 +5,7 @@
 <div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8" v-cloak>
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
         <div class="mx-auto">
-            <logo-default />
+            <logo-default></logo-default>
         </div>
         <h2 class="mt-6 text-center text-3xl leading-9 font-bold text-gray-900">
             Sign in to your account
@@ -22,7 +22,8 @@
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         @if($errors->any())
         <div>
-            <alert-danger class="mb-3 shadow" title="Whoops!" text="These credentials do not match our records" />
+            <alert-danger class="mb-3 shadow" title="Whoops!" text="These credentials do not match our records">
+            </alert-danger>
         </div>
         @endif
 
@@ -31,20 +32,14 @@
 
                 @csrf
 
-                <div>
-                    <form-input id="email" name="email" type="email" value="{{ old('email') }}" required
-                        label="Email address" />
-                </div>
+                <form-input id="email" name="email" type="email" value="{{ old('email') }}" required
+                    label="Email address"></form-input>
 
-                <div class="mt-6">
-                    <form-input id="password" name="password" type="password" required label="Password" />
-                </div>
+                <form-input id="password" name="password" type="password" required label="Password"></form-input>
 
                 <div class="mt-6 flex items-center justify-between">
 
-                    <div>
-                        <form-checkbox id="remember" name="remember" label="Remember me" />
-                    </div>
+                    <form-checkbox id="remember" name="remember" label="Remember me"></form-checkbox>
 
                     <div class="text-sm leading-5">
                         <a href="{{ route('password.request') }}"
@@ -55,7 +50,7 @@
                 </div>
 
                 <div class="mt-6">
-                    <button-primary text="Sign in" type="submit" />
+                    <button-primary text="Sign in" type="submit"></button-primary>
                 </div>
             </form>
 
@@ -72,7 +67,8 @@
                 </div>
 
                 <div>
-                    <button-github route="{{ route('github.redirect', ['action' => 'login'])}}" class="mt-3" />
+                    <button-github route="{{ route('github.redirect', ['action' => 'login'])}}" class="mt-3">
+                    </button-github>
                 </div>
             </div>
         </div>
