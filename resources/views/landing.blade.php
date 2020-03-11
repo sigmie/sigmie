@@ -825,39 +825,27 @@
                         <ul
                             class="w-full text-sm text-left px-8 leading-snug py-4 font-normal text-md bg-gray-100 h-full">
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px">
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 14 days free trial
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 1 Project
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 Email notifications
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 2 Cluster nodes
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 Metrics
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 Sigma playgound
                             </li>
                         </ul>
@@ -880,45 +868,31 @@
                         <ul
                             class="w-full bg-gray-100 text-sm text-left leading-snug h-full px-10 font-normal text-md py-4">
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px">
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 14 days free trial
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 3 Projects
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 On demand auto-scaling
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 Slack & Email Notifications
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 Quick index rollbacks
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 Metrics
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 Sigma playgound
                             </li>
                         </ul>
@@ -942,39 +916,27 @@
                         <ul
                             class="w-full text-sm text-left px-8 leading-snug py-4 font-normal text-md bg-gray-100 h-full">
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px">
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 14 days free trial
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 Unlimited Projects
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 On demand auto-scaling
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 Hight availability
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 Slack, Email and SMS Notifications
                             </li>
                             <li class="py-3">
-                                <span class="pr-1">
-                                    <icon-check height="18px" width="18px" />
-                                </span>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
                                 All the Hobby and Pro plan features
                             </li>
                         </ul>
