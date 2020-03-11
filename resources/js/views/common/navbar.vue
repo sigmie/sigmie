@@ -80,7 +80,7 @@
               <a
                 @click.prevent="logout"
                 onclick
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150 pointer"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150 cursor-pointer"
               >
                 Sign
                 out
@@ -107,10 +107,10 @@ export default {
       document.getElementById("logout-form").submit();
     },
     openSidebar() {
-      this.sidebar = "open";
+      this.$root.$refs.sidebar.open();
     },
     closeSidebar() {
-      this.sidebar = "closed";
+      this.$root.$refs.sidebar.close();
     }
   }
 };

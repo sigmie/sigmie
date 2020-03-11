@@ -50,7 +50,6 @@ Vue.component('alert-success', require('./ui/alerts/success').default)
 Vue.component('modal', require('./ui/essentials/modal').default)
 Vue.component('bar', require('./ui/essentials/bar').default)
 Vue.component('spinner', require('./ui/essentials/spinner').default)
-Vue.component('list-sidebar', require('./ui/lists/sidebar').default)
 Vue.component('illustration-hologram', require('./ui/illustrations/hologram').default)
 Vue.component('icon-x', require('./ui/icons/x').default)
 Vue.component('icon-server', require('./ui/icons/server').default)
@@ -69,7 +68,7 @@ const router = new VueRouter({
 
 const vm = new Vue({
     components: {
-        // sidebar: require('./components/common/sidebar').default,
+        sidebar: require('./views/common/sidebar').default,
         navbar: require('./views/common/navbar').default
     },
     router,
