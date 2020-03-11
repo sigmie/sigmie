@@ -48,6 +48,7 @@ Vue.component('container-white', require('./ui/containers/white').default)
 Vue.component('alert-danger', require('./ui/alerts/danger').default)
 Vue.component('alert-success', require('./ui/alerts/success').default)
 Vue.component('modal', require('./ui/essentials/modal').default)
+Vue.component('bar', require('./ui/essentials/bar').default)
 Vue.component('spinner', require('./ui/essentials/spinner').default)
 Vue.component('list-sidebar', require('./ui/lists/sidebar').default)
 Vue.component('illustration-hologram', require('./ui/illustrations/hologram').default)
@@ -77,11 +78,12 @@ const vm = new Vue({
             old: {
             },
             erros: {
-
             }
         }
     },
     mounted() {
+        document.getElementById('main').focus();
+
         this.$http.post('/bar')
             .then(function (response) {
                 console.log(response.data);
@@ -92,8 +94,8 @@ const vm = new Vue({
             });
     },
     methods: {
-        foo() {
-            return 'foo & bar'
+        animate() {
+            this.$refs.bar.animate(1, [], this.$refs.bar.reset);
         }
     }
 })

@@ -80,7 +80,7 @@
               <a
                 @click.prevent="logout"
                 onclick
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150 pointer"
               >
                 Sign
                 out
