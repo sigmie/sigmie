@@ -1,5 +1,5 @@
 <template>
-  <div v-if="show" class="spinner-mask">
+  <div v-if="visible" class="spinner-mask">
     <div class="spinner-wrapper pl-64">
       <div class="spinner-container">
         <div class="trinity-rings-spinner">
@@ -14,10 +14,18 @@
 
 <script>
 export default {
-  props:{
-      show: {
-          default: false
-      }
+  data() {
+    return {
+      visible: false
+    };
+  },
+  methods: {
+    show() {
+      this.visible = true;
+    },
+    hide() {
+      this.visible = false;
+    }
   }
 };
 </script>
@@ -71,19 +79,19 @@ export default {
   height: 60px;
   width: 60px;
   animation: trinity-rings-spinner-circle1-animation 1.5s infinite linear;
-  border-width: 3px;
+  border-width: 4px;
 }
 .trinity-rings-spinner .circle:nth-child(2) {
   height: calc(60px * 0.65);
   width: calc(60px * 0.65);
   animation: trinity-rings-spinner-circle2-animation 1.5s infinite linear;
-  border-width: 2px;
+  border-width: 3px;
 }
 .trinity-rings-spinner .circle:nth-child(3) {
   height: calc(60px * 0.1);
   width: calc(60px * 0.1);
   animation: trinity-rings-spinner-circle3-animation 1.5s infinite linear;
-  border-width: 1px;
+  border-width: 2px;
 }
 
 @keyframes trinity-rings-spinner-circle1-animation {

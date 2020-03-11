@@ -96,6 +96,7 @@ const vm = new Vue({
     methods: {
         animate() {
             this.$refs.bar.animate(1, [], this.$refs.bar.reset);
+            this.$refs.spinner.show();
         }
     }
 })
