@@ -93,34 +93,14 @@ export default {
       path: "",
       items: [
         {
-          text: "Dashboard",
+          text: "Home",
           href: "/home",
           icon: "home"
         },
         {
-          text: "Team",
-          href: "#",
+          text: "Bar",
+          href: "/bar",
           icon: "team"
-        },
-        {
-          text: "Projects",
-          href: "#",
-          icon: "folder"
-        },
-        {
-          text: "Calendar",
-          href: "#",
-          icon: "calendar"
-        },
-        {
-          text: "Documents",
-          href: "#",
-          icon: "inbox"
-        },
-        {
-          text: "Reports",
-          href: "#",
-          icon: "report"
         }
       ]
     };
@@ -135,6 +115,10 @@ export default {
   },
   beforeMount() {
     this.path = this.$route.path;
+
+    this.$root.$router.afterEach(() => {
+      this.path = this.$route.path;
+    });
   }
 };
 </script>

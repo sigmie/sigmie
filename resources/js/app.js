@@ -90,14 +90,22 @@ const vm = new Vue({
     mounted() {
         document.getElementById('main').focus();
 
-        this.$http.post('/bar')
-            .then(function (response) {
-                console.log(response.data);
-                console.log(response.status);
-                console.log(response.statusText);
-                console.log(response.headers);
-                console.log(response.config);
-            });
+        this.$router.beforeEach((to, from, next) => {
+            this.$root.$refs.bar.animate(0.4, [], next)
+        });
+
+        this.$router.afterEach(() => {
+            this.$root.$refs.bar.animate(1, [], this.$root.$refs.bar.reset)
+        });
+
+        // this.$http.post('/bar')
+        //     .then(function (response) {
+        //         console.log(response.data);
+        //         console.log(response.status);
+        //         console.log(response.statusText);
+        //         console.log(response.headers);
+        //         console.log(response.config);
+        //     });
     },
     methods: {
         animate() {

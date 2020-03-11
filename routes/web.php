@@ -41,7 +41,9 @@ Route::namespace('Auth')->prefix('github')->name('github.')->group(function () {
 
 if ($launched === true) {
 
-    Route::get('/home', 'HomeController@index')->name('home');
+    Route::view('/home', 'layouts.app');
+
+    Route::view('/bar', 'layouts.app');
 
     // Auth routes
     Auth::routes();
