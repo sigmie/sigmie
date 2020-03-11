@@ -7,8 +7,9 @@
         </div>
         <div class="h-0 flex-1 flex flex-col overflow-y-auto">
           <nav class="flex-1 px-2 py-4 bg-gray-800">
-            <a
+            <router-link
               v-for="(item, index) in items"
+              :to="item.href"
               :key="index"
               :href="item.href"
               :class="[path == item.href ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white']"
@@ -23,7 +24,7 @@
                 :is="'icon-'+item.icon"
               ></component>
               {{ item.text }}
-            </a>
+            </router-link>
           </nav>
         </div>
       </div>
@@ -59,8 +60,9 @@
         </div>
         <div class="flex-1 h-0 overflow-y-auto">
           <nav class="px-2 py-4">
-            <a
+            <router-link
               v-for="(item, index) in items"
+              :to="item.href"
               :key="index"
               :href="item.href"
               :class="[path == item.href ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white']"
@@ -75,7 +77,7 @@
                 :is="'icon-'+item.icon"
               ></component>
               {{ item.text }}
-            </a>
+            </router-link>
           </nav>
         </div>
       </div>
