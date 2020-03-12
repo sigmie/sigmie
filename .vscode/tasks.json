@@ -146,10 +146,24 @@
             "problemMatcher": []
         },
         {
+            "label": "make:factory",
+            "type": "shell",
+            "command": "php artisan make:factory ${input:params}",
+            "problemMatcher": []
+        },
+        {
             "label": "test:method",
             "type": "shell",
             "command": "vendor/bin/phpunit --no-coverage --filter ${selectedText} ${file}",
             "problemMatcher": []
         }
+    ],
+    "inputs": [
+        {
+            "id": "params",
+            "description": "Parameters",
+            "default": "",
+            "type": "promptString"
+        },
     ]
 }

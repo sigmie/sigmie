@@ -93,8 +93,8 @@ export default {
       path: "",
       items: [
         {
-          text: "Home",
-          href: "/home",
+          text: "Dashboard",
+          href: "/dashboard",
           icon: "home"
         },
         {

@@ -11,4 +11,4 @@
 |
 */
 
-Route::resource('/project', 'ProjectController');
+Route::group(['middleware' => 'auth'], fn () => Route::resource('/project', 'ProjectController'));

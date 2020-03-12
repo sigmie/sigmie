@@ -1,8 +1,8 @@
 export default [
     {
-        path: '/home',
-        name: 'home-view',
-        component: require('./views/home').default
+        path: '/dashboard',
+        name: 'dashboard-view',
+        component: require('./views/dashboard').default
     },
     {
         path: '/bar',

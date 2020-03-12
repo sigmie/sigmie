@@ -17,8 +17,6 @@ class CreateProjectsTable extends Migration
             $table->increments('id');
             $table->bigInteger('user_id')->unsigned()->index();
             $table->string('name')->unique();
-            $table->unsignedInteger('provider_id')->index();
-            $table->string('region', 25);
             $table->tinyInteger('archived')->default(0);
             $table->timestamps();
         });

@@ -43,7 +43,7 @@ if ($launched === true) {
 
     Route::group(['middleware' => ['auth']], function () {
 
-        Route::view('/home', 'layouts.app');
+        Route::view('/dashboard', 'layouts.app');
 
         Route::view('/bar', 'layouts.app');
     });
