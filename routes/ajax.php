@@ -11,7 +11,4 @@
 |
 */
 
-Route::post('/bar', function () {
-
-    return ['bar'];
-});
+Route::resource('/project', 'ProjectController');

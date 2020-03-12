@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "052c07ef974334530bd0b8ff3a25bcd3",
+    "content-hash": "afaf2ee1efdcde9373c4b05a7e15bc55",
     "packages": [
         {
             "name": "beyondcode/laravel-dump-server",

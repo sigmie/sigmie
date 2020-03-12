@@ -7,10 +7,7 @@ import View from "./View";
 
 var component = View.extend({
   beforeMount() {
-    var self = this;
-    this.$http.post("/bar").then(function(response) {
-      self.state = "fetched";
-    });
+    // this.state = "fetched";
   }
 });
 export default component;

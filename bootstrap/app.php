@@ -41,8 +41,6 @@ $app->singleton(
     App\Exceptions\Handler::class
 );
 
-$app->register(\NunoMaduro\Collision\Adapters\Laravel\CollisionServiceProvider::class);
-
 /*
 |--------------------------------------------------------------------------
 | Return The Application

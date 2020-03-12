@@ -11,17 +11,11 @@ export default {
         mode: 'history',
         base: '/'
     }),
+    mounted() {
+        this.$refs.bar.animate(0.7)
+    },
     data() {
         return {
         }
-    },
-    mounted() {
-        this.$router.beforeEach((to, from, next) => {
-            this.$root.$refs.bar.animate(0.4, [], next)
-        });
-
-        this.$router.afterEach(() => {
-            this.$root.$refs.bar.animate(0.7)
-        });
     },
 }

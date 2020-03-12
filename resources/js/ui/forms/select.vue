@@ -25,17 +25,39 @@
 
 <script>
 export default {
-  props: [
-    "value",
-    "items",
-    "selected",
-    "aria-label",
-    "label",
-    "name",
-    "id",
-    "validations",
-    "required"
-  ]
+  props: {
+    value: {
+      default: ""
+    },
+    items: {
+      default: ""
+    },
+    selected: {
+      default: ""
+    },
+    "aria-label": {
+      default: ""
+    },
+    label: {
+      default: ""
+    },
+    name: {
+      default: ""
+    },
+    id: {
+      default: ""
+    },
+    validations: {
+      default() {
+        return {
+          $anyError: false
+        };
+      }
+    },
+    required: {
+      default: ""
+    }
+  }
 };
 </script>
 
