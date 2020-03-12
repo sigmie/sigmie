@@ -95,22 +95,12 @@ const vm = new Vue({
         });
 
         this.$router.afterEach(() => {
-            this.$root.$refs.bar.animate(1, [], this.$root.$refs.bar.reset)
+            this.$root.$refs.bar.animate(0.7)
         });
-
-        // this.$http.post('/bar')
-        //     .then(function (response) {
-        //         console.log(response.data);
-        //         console.log(response.status);
-        //         console.log(response.statusText);
-        //         console.log(response.headers);
-        //         console.log(response.config);
-        //     });
     },
     methods: {
         animate() {
-            this.$refs.bar.animate(1, [], this.$refs.bar.reset);
-            this.$refs.spinner.show();
+            // this.$refs.spinner.show();
         }
     }
 })

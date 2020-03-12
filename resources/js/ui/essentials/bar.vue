@@ -3,7 +3,7 @@
 </template>
 
 <script>
-import ProgressBar from "progressbar.js";
+import ProgressBar from "progressbar.js/dist/progressbar";
 
 export default {
   data() {
@@ -22,8 +22,12 @@ export default {
     });
   },
   methods: {
-    animate(...params) {
-      this.bar.animate(...params);
+    async animate(...params) {
+      try {
+        this.bar.animate(...params);
+      } catch (e) {
+        console.log("Caught!");
+      }
     },
     reset() {
       this.bar.set(0);

@@ -41,9 +41,12 @@ Route::namespace('Auth')->prefix('github')->name('github.')->group(function () {
 
 if ($launched === true) {
 
-    Route::view('/home', 'layouts.app');
+    Route::group(['middleware' => ['auth']], function () {
 
-    Route::view('/bar', 'layouts.app');
+        Route::view('/home', 'layouts.app');
+
+        Route::view('/bar', 'layouts.app');
+    });
 
     // Auth routes
     Auth::routes();
