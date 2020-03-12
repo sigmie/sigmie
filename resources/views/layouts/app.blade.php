@@ -2,9 +2,6 @@
 
 @section('content')
 <div class="h-screen flex overflow-hidden bg-gray-100">
-    {{-- x-data="{ sidebarOpen: false }" --}}
-
-    {{-- @keydown.window.escape="sidebarOpen = false" --}}
 
     <sidebar ref="sidebar"> </sidebar>
 
@@ -25,7 +22,6 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
 
                 <router-view>
-
                 </router-view>
 
                 @yield('app.content')
