@@ -48,7 +48,7 @@ jobs:
       run: npm install
 
     - name: PHPStan
-      run: vendor/bin/phpstan analyse --level 8 app
+      run: vendor/bin/phpstan analyse --memory-limit=2G
 
     - name: PHPCS
       run: vendor/bin/phpcs --standard=standard.xml ./app

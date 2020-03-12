@@ -1,14 +1,18 @@
+includes:
+    - ./vendor/nunomaduro/larastan/extension.neon
+
 parameters:
-    level: max
+
     paths:
         - app
-    checkMissingIterableValueType: false
-    excludes_analyse:
-     - ./app/Providers/TelescopeServiceProvider.php
+
+    # The level 8 is the highest level
+    level: 5
 
     ignoreErrors:
-     - '#Call to an undefined static method#'
-     - '#Call to an undefined method#'
-     - '#Access to an undefined property#'
-     - '#.*should return Illuminate\\View\\View but returns Illuminate\\Contracts\\View\\Factory\|Illuminate\\View\\View.*#'
-     - '#.*should return Illuminate\\Http\\RedirectResponse but returns Illuminate\\Http\\RedirectResponse\|Illuminate\\Routing\\Redirector.*#'
+        - '#Unsafe usage of new static#'
+
+    excludes_analyse:
+        - ./*/*/FileToBeExcluded.php
+
+    checkMissingIterableValueType: false
