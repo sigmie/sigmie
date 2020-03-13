@@ -63,6 +63,7 @@ Vue.component('icon-folder', require('./ui/icons/folder').default)
 Vue.component('icon-calendar', require('./ui/icons/calendar').default)
 Vue.component('icon-inbox', require('./ui/icons/inbox').default)
 Vue.component('icon-report', require('./ui/icons/report').default)
+Vue.component('icon-bell', require('./ui/icons/bell').default)
 
 Vue.component('register-form', require('./views/auth/register/form').default)
 Vue.component('password-form', require('./views/auth/passwords/form').default)

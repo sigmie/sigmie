@@ -1,5 +1,5 @@
 {
-    "authHost": "nginx.internal.mos-sigma.com",
+    "authHost": "http://nginx.internal.mos-sigma.com",
     "authEndpoint": "/broadcasting/auth",
     "clients": [],
     "database": "redis",
@@ -8,11 +8,11 @@
             "port": "6379",
             "host": "redis.internal.mos-sigma.com",
             "password": "na8!^&*JbXEz",
-            "keyPrefix": "mos_sigma_database_presence-"
+            "keyPrefix": "mos_sigma_database_"
         }
     },
     "devMode": true,
-    "host": null,
+    "host": "0.0.0.0",
     "port": "6001",
     "protocol": "http",
     "socketio": {},

@@ -11,4 +11,20 @@
 |
 */
 
+use App\Events\Foo;
+use App\Notifications\ProjectWasCreated;
+use Illuminate\Notifications\Events\BroadcastNotificationCreated;
+use Illuminate\Support\Facades\Auth;
+
 Route::group(['middleware' => 'auth'], fn () => Route::resource('/project', 'ProjectController'));
+
+Route::resource('/notification', 'NotificationController', ['except' => ['edit', 'create', 'destroy']]);
+
+Route::get('/notify/me', function () {
+
+    Auth::user()->notify(new ProjectWasCreated('project title'));
+
+    dd('notifed');
+
+    return;
+});
