@@ -15,16 +15,16 @@ Vue.use(Vuelidate)
 Vue.directive('away', away)
 
 Vue.prototype.$http = axios.create({
-    baseURL: process.env.MIX_APP_URL + '/ajax/',
-    headers: {
-    }
-});
+  baseURL: process.env.MIX_APP_URL + '/ajax/',
+  headers: {
+  }
+})
 
 Vue.prototype.$socket = new Echo({
-    client: io,
-    broadcaster: 'socket.io',
-    host: process.env.MIX_SOCKET_HOST
-});
+  client: io,
+  broadcaster: 'socket.io',
+  host: process.env.MIX_SOCKET_HOST
+})
 
 Vue.component('csrf', require('./essentials/csrf').default)
 Vue.component('stripe', require('./essentials/stripe').default)
@@ -48,6 +48,7 @@ Vue.component('alert-danger', require('./ui/alerts/danger').default)
 Vue.component('alert-success', require('./ui/alerts/success').default)
 Vue.component('modal', require('./ui/essentials/modal').default)
 Vue.component('bar', require('./ui/essentials/bar').default)
+Vue.component('badge', require('./ui/essentials/badge').default)
 Vue.component('spinner', require('./ui/essentials/spinner').default)
 Vue.component('illustration-hologram', require('./ui/illustrations/hologram').default)
 Vue.component('icon-x', require('./ui/icons/x').default)

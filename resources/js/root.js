@@ -3,8 +3,8 @@ import routes from './routes'
 
 export default {
   components: {
-    sidebar: require('./views/common/sidebar').default,
-    navbar: require('./views/common/navbar').default
+    sidebar: require('./views/common/sidebar/sidebar').default,
+    navbar: require('./views/common/navbar/navbar').default
   },
   router: new VueRouter({
     routes,
