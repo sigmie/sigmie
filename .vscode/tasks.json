@@ -154,7 +154,7 @@
         {
             "label": "test:method",
             "type": "shell",
-            "command": "vendor/bin/phpunit --no-coverage --filter ${selectedText} ${file}",
+            "command": "vendor/bin/phpunit --configuration=${cwd}/phpunit.xml --no-coverage --filter ${selectedText} ${file}",
             "problemMatcher": []
         }
     ],

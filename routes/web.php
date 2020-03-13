@@ -12,7 +12,7 @@
 */
 $launched = true;
 
-Route::view('/', 'landing', ['launched' => $launched])->name('landing');
+Route::view('/', 'landing', ['launched' => $launched])->name('landing')->middleware('guest');
 
 Broadcast::routes();
 

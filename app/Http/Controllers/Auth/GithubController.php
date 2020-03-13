@@ -37,15 +37,11 @@ class GithubController extends Controller
             ->redirect();
     }
 
-    public function register(Request $request)
+    public function register()
     {
         $githubUser = Socialite::driver('github')->user();
 
-        $request->session()->put('githubUser', [
-            'name' => $githubUser->getName(),
-            'email' => $githubUser->getEmail(),
-            'avatar_url' => $githubUser->getAvatar(),
-        ]);
+        $this->populateSession($githubUser);
 
         return redirect('register');
     }
@@ -57,7 +53,9 @@ class GithubController extends Controller
      */
     public function login()
     {
-        $email = Socialite::driver('github')->user()->getEmail();
+        $githubUser = Socialite::driver('github')->user();
+        $email = $githubUser->getEmail();
+
         $user = User::where(['email' => $email, 'github' => true])->first();
 
         if ($user !== null) {
@@ -66,6 +64,17 @@ class GithubController extends Controller
             return redirect()->intended('home');
         }
 
+        $this->populateSession($githubUser);
+
         return redirect(route('register'));
+    }
+
+    private function populateSession($githubUser)
+    {
+        request()->session()->put('githubUser', [
+            'name' => $githubUser->getName(),
+            'email' => $githubUser->getEmail(),
+            'avatar_url' => $githubUser->getAvatar(),
+        ]);
     }
 }
