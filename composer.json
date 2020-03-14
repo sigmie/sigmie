@@ -1,10 +1,12 @@
 {
-    "name": "laravel/laravel",
+    "name": "mos-sigma/mos-sigma",
     "type": "project",
-    "description": "The Laravel Framework.",
+    "description": "Most of search application",
     "keywords": [
         "framework",
-        "laravel"
+        "laravel",
+        "sigma",
+        "mos-sigma"
     ],
     "license": "MIT",
     "repositories": [
@@ -52,7 +54,9 @@
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,
-        "github-protocols": ["https"]
+        "github-protocols": [
+            "https"
+        ]
     },
     "extra": {
         "laravel": {

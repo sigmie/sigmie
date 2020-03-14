@@ -2,6 +2,9 @@ module.exports = {
   plugins: [
     require('@tailwindcss/ui')
   ],
+  variants: {
+    borderWidth: ['first']
+  },
   theme: {
     extend: {
       colors: {
@@ -18,6 +21,5 @@ module.exports = {
         256: '64rem'
       }
     }
-  },
-  variants: {}
+  }
 }

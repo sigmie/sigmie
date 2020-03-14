@@ -1,5 +1,5 @@
 <template>
-  <ul>
+  <ul v-cloak>
     <li v-for="notification in notifications" class="border-t border-gray-200 first:border-t-0">
       <a
         href="#"
