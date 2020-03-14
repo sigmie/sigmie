@@ -66,6 +66,9 @@ jobs:
     - name: Install composer
       run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 
+    - name: Instruct composer to use https protocol over ssh
+      run: composer config github-protocols https
+
     - name: Validate composer and install dependecies
       run: composer validate && composer install -q --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
 

@@ -14,7 +14,7 @@
         },
         {
             "type": "composer",
-            "url": "https://packages.mos-sigma.com/mos-sigma/mos"
+            "url": "https://packages.mos-sigma.com"
         }
     ],
     "require": {
@@ -51,7 +51,8 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "github-protocols": ["https"]
     },
     "extra": {
         "laravel": {

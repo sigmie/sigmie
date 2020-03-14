@@ -1,6 +1,6 @@
 <template>
   <ul>
-    <li v-for="notification in notifications" class="first:border-t-0 border-t border-gray-200">
+    <li v-for="notification in notifications" class="border-t border-gray-200 first:border-t-0">
       <a
         href="#"
         class="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition duration-150 ease-in-out"
@@ -34,7 +34,11 @@
 
 <script>
 export default {
-  props: ["notifications"]
+  props: {
+      notifications:{
+          default: []
+      }
+  }
 };
 </script>
 

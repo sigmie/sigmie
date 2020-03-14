@@ -25,7 +25,7 @@ mix.webpackConfig({
     postCss: [tailwindcss('./tailwind.config.js')]
   })
   .purgeCss({
-    whitelistPatterns: [/[\w-/.:]+(?<!:)/g]
+    whitelistPatterns: [/[\w-/:]*[\w-/:]/g]
   })
   .extract()
   .version()
