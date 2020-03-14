@@ -1,5 +1,8 @@
 <template>
-  <div class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg">
+  <div
+    v-away="() => $emit('away')"
+    class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg"
+  >
     <div class="py-1 rounded-md bg-white shadow-xs">
       <div class="border-t border-gray-100"></div>
       <a

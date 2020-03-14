@@ -40,6 +40,7 @@
         <div class="ml-3 relative">
           <button
             class="p-1 text-gray-400 rounded-full hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:shadow-outline focus:text-gray-500"
+            @click="notifications = 'open'"
           >
             <badge
               class="absolute top-1 right-1 text-orange-400"
@@ -52,21 +53,23 @@
 
             <icon-bell class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24"></icon-bell>
           </button>
-          <div class="origin-top-right absolute right-0 mt-2 w-96 rounded-md shadow-lg">
-            <div class="py-1 rounded-md bg-white shadow-xs" v-away="() => this.dropdown = 'closed'">
-              <notifications :notifications="notifications"></notifications>
-            </div>
+          <div class="origin-top-right absolute right-0 mt-2 w-96 rounded-md shadow-lg" v-cloak>
+            <notifications
+              v-if="notifications === 'open'"
+              @away="closeNotifications"
+              :notifications="notificationsData"
+            ></notifications>
           </div>
         </div>
 
         <div class="ml-3 relative">
           <button
             class="max-w-xs flex items-center text-sm rounded-full focus:outline-none focus:shadow-outline"
-            @click="dropdown = 'open'"
+            @click="settings = 'open'"
           >
             <img class="h-8 w-8 rounded-full" :src="avatarUrl" />
           </button>
-          <settings v-if="dropdown == 'open'" v-away="() => this.dropdown = 'closed'"></settings>
+          <settings v-if="settings == 'open'" @away="closeSettings"></settings>
         </div>
       </div>
     </div>
@@ -84,8 +87,9 @@ export default {
   data() {
     return {
       sidebar: "closed",
-      dropdown: "closed",
-      notifications: []
+      settings: "closed",
+      notifications: "closed",
+      notificationsData: []
     };
   },
   async beforeMount() {
@@ -98,6 +102,12 @@ export default {
 
       this.addNotifications(response.data);
     },
+    closeSettings() {
+      this.settings = "close";
+    },
+    closeNotifications() {
+      this.notifications = "close";
+    },
     listenOnNotificationChannel() {
       this.$socket
         .private(`App.User.${this.userId}`)
@@ -105,8 +115,8 @@ export default {
           this.addNotifications([notification.payload]);
         });
     },
-    addNotifications(notifications) {
-      this.notifications = this.notifications.concat(notifications);
+    addNotifications(notificationsData) {
+      this.notificationsData = this.notificationsData.concat(notificationsData);
     },
     openSidebar() {
       this.$root.$refs.sidebar.open();
