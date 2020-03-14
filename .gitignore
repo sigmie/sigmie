@@ -9,6 +9,9 @@
 .env.testing
 .phpunit.result.cache
 
+auth.json
+google.json
+
 Homestead.json
 Homestead.yaml
 npm-debug.log

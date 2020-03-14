@@ -13,6 +13,7 @@
             "url": "https://nova.laravel.com"
         },
         {
+            "name": "mos-sigma",
             "type": "composer",
             "url": "https://packages.mos-sigma.com"
         }
