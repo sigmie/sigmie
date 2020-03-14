@@ -54,99 +54,7 @@
           </button>
           <div class="origin-top-right absolute right-0 mt-2 w-96 rounded-md shadow-lg">
             <div class="py-1 rounded-md bg-white shadow-xs" v-away="() => this.dropdown = 'closed'">
-              <ul>
-                <li>
-                  <a
-                    href="#"
-                    class="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition duration-150 ease-in-out"
-                  >
-                    <div class="px-4 py-4 sm:px-6">
-                      <div class="flex items-center justify-between">
-                        <div
-                          class="text-sm leading-5 font-medium text-orange-600 truncate"
-                        >Removed</div>
-                        <div class="ml-2 flex-shrink-0 flex">
-                          <span
-                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800"
-                          >#sigma_search</span>
-                        </div>
-                      </div>
-                      <div class="mt-2 sm:flex sm:justify-between">
-                        <div class="sm:flex">
-                          <div
-                            class="mr-6 flex items-center text-sm leading-5 text-gray-500"
-                          >Lorem, ipsum dolor sit amet cons.</div>
-                        </div>
-                        <div class="mt-2 flex items-center text-sm leading-5 text-gray-400 sm:mt-0">
-                          <span class="w-12 text-xs">
-                            <time datetime="2020-01-07">3 days</time>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </a>
-                </li>
-                <li class="border-t border-gray-200">
-                  <a
-                    href="#"
-                    class="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition duration-150 ease-in-out"
-                  >
-                    <div class="px-4 py-4 sm:px-6">
-                      <div class="flex items-center justify-between">
-                        <div class="text-sm leading-5 font-medium text-gray-600 truncate">Created</div>
-                        <div class="ml-2 flex-shrink-0 flex">
-                          <span
-                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800"
-                          >#sigma_search</span>
-                        </div>
-                      </div>
-                      <div class="mt-2 sm:flex sm:justify-between">
-                        <div class="sm:flex">
-                          <div
-                            class="mr-6 flex items-center text-sm leading-5 text-gray-500"
-                          >Lorem, ipsum dolor sit amet cons.</div>
-                        </div>
-                        <div class="mt-2 flex items-center text-sm leading-5 text-gray-500 sm:mt-0">
-                          <span class="w-12">
-                            <time datetime="2020-01-07">3 days</time>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </a>
-                </li>
-                <li class="border-t border-gray-200">
-                  <a
-                    href="#"
-                    class="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition duration-150 ease-in-out"
-                  >
-                    <div class="px-4 py-4 sm:px-6">
-                      <div class="flex items-center justify-between">
-                        <div
-                          class="text-sm leading-5 font-medium text-orange-600 truncate"
-                        >Subscribed</div>
-                        <div class="ml-2 flex-shrink-0 flex">
-                          <span
-                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-green-800"
-                          >#project_name</span>
-                        </div>
-                      </div>
-                      <div class="mt-2 sm:flex sm:justify-between">
-                        <div class="sm:flex">
-                          <div
-                            class="mr-6 flex items-center text-sm leading-5 text-gray-500"
-                          >Lorem, ipsum dolor sit amet cons.</div>
-                        </div>
-                        <div class="mt-2 flex items-center text-sm leading-5 text-gray-500 sm:mt-0">
-                          <span class="w-12">
-                            <time datetime="2020-01-07">3 days</time>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </a>
-                </li>
-              </ul>
+              <notifications :notifications="notifications"></notifications>
             </div>
           </div>
         </div>
@@ -158,45 +66,7 @@
           >
             <img class="h-8 w-8 rounded-full" :src="avatarUrl" />
           </button>
-
-          <div
-            v-if="dropdown == 'open'"
-            class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg"
-          >
-            <div class="py-1 rounded-md bg-white shadow-xs" v-away="() => this.dropdown = 'closed'">
-              <div class="border-t border-gray-100"></div>
-              <a
-                href="#"
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
-              >Zooroyal</a>
-              <a
-                href="#"
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
-                :class="[true ? 'bg-gray-100': '']"
-              >Weinfreunde</a>
-              <a
-                onclick
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150 cursor-pointer"
-              >Penny</a>
-              <div class="border-t border-gray-100"></div>
-              <a
-                href="#"
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
-              >Profile</a>
-              <a
-                href="#"
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
-              >Settings</a>
-              <a
-                @click.prevent="logout"
-                onclick
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150 cursor-pointer"
-              >
-                Sign
-                out
-              </a>
-            </div>
-          </div>
+          <settings v-if="dropdown == 'open'" v-away="() => this.dropdown = 'closed'"></settings>
         </div>
       </div>
     </div>
@@ -205,6 +75,11 @@
 
 <script>
 export default {
+  components: {
+    notifications: require("./notifications").default,
+    settings: require("./settings").default,
+    badge: require("./badge").default
+  },
   props: ["avatarUrl", "userId"],
   data() {
     return {
@@ -234,9 +109,6 @@ export default {
     },
     addNotifications(notifications) {
       this.notifications = this.notifications.concat(notifications);
-    },
-    logout() {
-      document.getElementById("logout-form").submit();
     },
     openSidebar() {
       this.$root.$refs.sidebar.open();
