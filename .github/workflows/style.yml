@@ -35,9 +35,6 @@ jobs:
     - name: Decrypt composer secret
       run: gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
 
-    - name: Instruct composer to use https protocol over ssh
-      run: composer config github-protocols https
-
     - name: Validate composer.json and composer.lock
       run: composer validate
 
@@ -46,12 +43,6 @@ jobs:
 
     - name: Install node
       run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
-
-    - name: Upgrade node to latest stable
-      run: |
-           sudo npm cache clean -f
-           sudo npm install -g n
-           sudo n stable
 
     - name: Install node dependencies
       run: npm install

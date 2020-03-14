@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "afaf2ee1efdcde9373c4b05a7e15bc55",
+    "content-hash": "0ef62d18f14a11ce6e764abf79cb9d5c",
     "packages": [
         {
             "name": "beyondcode/laravel-dump-server",
@@ -2395,48 +2395,6 @@
             ],
             "abandoned": "brick/math",
             "time": "2020-01-05T04:49:34+00:00"
-        },
-        {
-            "name": "mos-sigma/mos",
-            "version": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "git@github.com:nicoorfi/mos.git",
-                "reference": "61c5151f577035457201af9eeaf0451fe9d6b417"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/nicoorfi/mos/zipball/61c5151f577035457201af9eeaf0451fe9d6b417",
-                "reference": "61c5151f577035457201af9eeaf0451fe9d6b417",
-                "shasum": ""
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "MOS\\": "src/"
-                },
-                "exclude-from-classmap": [
-                    "test/"
-                ]
-            },
-            "autoload-dev": {
-                "psr-4": []
-            },
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Nico orfi",
-                    "email": "nico_orfi@yahoo.com"
-                }
-            ],
-            "description": "Most of search",
-            "support": {
-                "source": "https://github.com/nicoorfi/mos/tree/master",
-                "issues": "https://github.com/nicoorfi/mos/issues"
-            },
-            "time": "2020-03-09T07:34:21+00:00"
         },
         {
             "name": "nesbot/carbon",
@@ -6903,70 +6861,6 @@
             "time": "2020-01-17T21:11:47+00:00"
         },
         {
-            "name": "nunomaduro/collision",
-            "version": "v3.0.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/nunomaduro/collision.git",
-                "reference": "af42d339fe2742295a54f6fdd42aaa6f8c4aca68"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/nunomaduro/collision/zipball/af42d339fe2742295a54f6fdd42aaa6f8c4aca68",
-                "reference": "af42d339fe2742295a54f6fdd42aaa6f8c4aca68",
-                "shasum": ""
-            },
-            "require": {
-                "filp/whoops": "^2.1.4",
-                "jakub-onderka/php-console-highlighter": "0.3.*|0.4.*",
-                "php": "^7.1",
-                "symfony/console": "~2.8|~3.3|~4.0"
-            },
-            "require-dev": {
-                "laravel/framework": "5.8.*",
-                "nunomaduro/larastan": "^0.3.0",
-                "phpstan/phpstan": "^0.11",
-                "phpunit/phpunit": "~8.0"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "providers": [
-                        "NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "NunoMaduro\\Collision\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Nuno Maduro",
-                    "email": "enunomaduro@gmail.com"
-                }
-            ],
-            "description": "Cli error handling for console/command-line PHP applications.",
-            "keywords": [
-                "artisan",
-                "cli",
-                "command-line",
-                "console",
-                "error",
-                "handling",
-                "laravel",
-                "laravel-zero",
-                "php",
-                "symfony"
-            ],
-            "time": "2019-03-07T21:35:13+00:00"
-        },
-        {
             "name": "nunomaduro/larastan",
             "version": "v0.5.2",
             "source": {
@@ -8580,9 +8474,7 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": {
-        "mos-sigma/mos": 20
-    },
+    "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
