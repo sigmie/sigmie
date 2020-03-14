@@ -102,8 +102,6 @@ export default {
       this.$socket
         .private(`App.User.${this.userId}`)
         .notification(notification => {
-          console.log(notification);
-
           this.addNotifications([notification.payload]);
         });
     },
