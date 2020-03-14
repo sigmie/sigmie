@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0ef62d18f14a11ce6e764abf79cb9d5c",
+    "content-hash": "41b31f6efd0f0eb8ca796b67bf4e3f7c",
     "packages": [
         {
             "name": "beyondcode/laravel-dump-server",
@@ -2395,6 +2395,48 @@
             ],
             "abandoned": "brick/math",
             "time": "2020-01-05T04:49:34+00:00"
+        },
+        {
+            "name": "mos-sigma/mos",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:nicoorfi/mos.git",
+                "reference": "61c5151f577035457201af9eeaf0451fe9d6b417"
+            },
+            "dist": {
+                "type": "tar",
+                "url": "https://packages.mos-sigma.com/dist/mos-sigma/mos/mos-sigma-mos-61c5151f577035457201af9eeaf0451fe9d6b417-zip-5f9809.tar",
+                "reference": "61c5151f577035457201af9eeaf0451fe9d6b417",
+                "shasum": "4b9519127094cb7b662e152cd3b3fa3596956b46"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "MOS\\": "src/"
+                },
+                "exclude-from-classmap": [
+                    "test/"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": []
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nico orfi",
+                    "email": "nico_orfi@yahoo.com"
+                }
+            ],
+            "description": "Most of search",
+            "support": {
+                "source": "https://github.com/nicoorfi/mos/tree/master",
+                "issues": "https://github.com/nicoorfi/mos/issues"
+            },
+            "time": "2020-03-09T07:34:21+00:00"
         },
         {
             "name": "nesbot/carbon",
@@ -8474,7 +8516,9 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": [],
+    "stability-flags": {
+        "mos-sigma/mos": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
