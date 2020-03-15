@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Services\Mailgun;
+use App\Services\MailgunList;
 use GuzzleHttp\Client;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -15,7 +15,7 @@ class MailgunTest extends TestCase
      */
     private $list = 'testing@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org';
     /**
-     * @var Mailgun
+     * @var MailgunList
      */
     private $mailgun;
 
@@ -28,7 +28,7 @@ class MailgunTest extends TestCase
     {
         $this->client = new Client();
 
-        $this->mailgun = new Mailgun(
+        $this->mailgun = new MailgunList(
             $this->client,
             [
                 'domain' => env('MAILGUN_DOMAIN'),

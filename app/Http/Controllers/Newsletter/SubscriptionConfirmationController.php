@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Newsletter;
 use App\Events\Foo;
 use App\NewsletterSubscription;
 use App\Http\Controllers\Controller;
-use App\Services\Mailgun;
+use App\Services\MailgunList;
 
 class SubscriptionConfirmationController extends Controller
 {
@@ -21,8 +21,8 @@ class SubscriptionConfirmationController extends Controller
     {
         $newsletterSubscription->confirmSubscription();
 
-        /** @var  Mailgun */
-        $mailgun = resolve(Mailgun::class);
+        /** @var  MailgunList */
+        $mailgun = resolve(MailgunList::class);
         $list = config('services.mailgun.newsletter_list');
 
         dispatch(fn () => $mailgun->confirmSubscription($list, $newsletterSubscription->email));

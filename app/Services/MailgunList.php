@@ -2,10 +2,11 @@
 
 namespace App\Services;
 
+use App\Contracts\MailingList;
 use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;
 
-class Mailgun
+class MailgunList implements MailingList
 {
     /**
      * Mailgun $domain

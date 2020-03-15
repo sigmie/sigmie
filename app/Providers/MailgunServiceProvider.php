@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Services\Mailgun;
+use App\Services\MailgunList;
 use GuzzleHttp\Client;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,9 +26,9 @@ class MailgunServiceProvider extends ServiceProvider
     public function boot(Client $client)
     {
         $this->app->singleton(
-            Mailgun::class,
+            MailgunList::class,
             function () use ($client) {
-                return new Mailgun(
+                return new MailgunList(
                     $client,
                     [
                         'domain' => config('services.mailgun.domain'),

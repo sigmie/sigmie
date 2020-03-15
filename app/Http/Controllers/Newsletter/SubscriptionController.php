@@ -6,7 +6,7 @@ use App\NewsletterSubscription;
 use App\Events\NewsletterSubscribed;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreNewsletterSubscription;
-use App\Services\Mailgun;
+use App\Services\MailgunList;
 use Exception;
 
 class SubscriptionController extends Controller
@@ -23,8 +23,8 @@ class SubscriptionController extends Controller
     {
         $subscription = NewsletterSubscription::firstOrCreate($request->validated());
 
-        /** @var  Mailgun */
-        $mailgun = resolve(Mailgun::class);
+        /** @var  MailgunList */
+        $mailgun = resolve(MailgunList::class);
         $list = config('services.mailgun.newsletter_list');
 
         dispatch(fn () => $mailgun->addToList($list, $subscription->email, false, true));
