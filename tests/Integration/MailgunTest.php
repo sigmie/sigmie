@@ -26,6 +26,8 @@ class MailgunTest extends TestCase
 
     public function setUp(): void
     {
+        parent::setUp();
+
         $this->client = new Client();
 
         $this->mailgun = new MailgunList(
@@ -37,6 +39,7 @@ class MailgunTest extends TestCase
             ],
         );
     }
+
     /**
      * @test
      */
@@ -130,8 +133,8 @@ class MailgunTest extends TestCase
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function retrieve_member()
     {
         $this->mailgun->addToList($this->list, 'bar@yahoo.com', true);

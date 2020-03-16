@@ -8,12 +8,6 @@ use Psr\Http\Message\ResponseInterface;
 
 class MailgunList implements MailingList
 {
-    /**
-     * Mailgun $domain
-     *
-     * @var string
-     */
-    private $domain;
 
     /**
      * Mailgun secret
@@ -45,7 +39,6 @@ class MailgunList implements MailingList
     public function __construct($client, $config)
     {
         $this->client = $client;
-        $this->domain = $config['domain'];
         $this->secret = $config['secret'];
         $this->endpoint = $config['endpoint'];
     }

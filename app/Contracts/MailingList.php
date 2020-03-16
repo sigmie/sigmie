@@ -4,8 +4,6 @@ namespace App\Contracts;
 
 interface MailingList
 {
-
-
     /**
      * Add to email to email list
      *

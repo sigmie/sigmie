@@ -180,7 +180,7 @@ return [
         App\Providers\TelescopeServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\ConfigcatServiceProvider::class,
-        App\Providers\MailgunServiceProvider::class
+        App\Providers\MailingListServiceProvider::class
     ],
 
     /*

@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers\Newsletter;
 
+use App\Contracts\MailingList;
 use App\NewsletterSubscription;
 use App\Events\NewsletterSubscribed;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreNewsletterSubscription;
-use App\Services\MailgunList;
-use Exception;
 
 class SubscriptionController extends Controller
 {
@@ -19,15 +18,13 @@ class SubscriptionController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(StoreNewsletterSubscription $request)
+    public function store(StoreNewsletterSubscription $request, MailingList $mailingList)
     {
         $subscription = NewsletterSubscription::firstOrCreate($request->validated());
 
-        /** @var  MailgunList */
-        $mailgun = resolve(MailgunList::class);
-        $list = config('services.mailgun.newsletter_list');
+        $list = config('newsletter.list');
 
-        dispatch(fn () => $mailgun->addToList($list, $subscription->email, false, true));
+        dispatch(fn () => $mailingList->addToList($list, $subscription->email, false, true));
 
         broadcast(new NewsletterSubscribed($subscription));
 

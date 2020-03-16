@@ -41,17 +41,17 @@
         {
             "label": "phpunit:integration",
             "type": "shell",
-            "command": "vendor/bin/phpunit --testsuite Integration"
+            "command": "vendor/bin/phpunit --configuration=${cwd}/phpunit.xml --testsuite Integration"
         },
         {
             "label": "phpunit:unit",
             "type": "shell",
-            "command": "vendor/bin/phpunit --testsuite Unit"
+            "command": "vendor/bin/phpunit --configuration=${cwd}/phpunit.xml --testsuite Unit"
         },
         {
             "label": "phpunit:feature",
             "type": "shell",
-            "command": "vendor/bin/phpunit --testsuite Feature"
+            "command": "vendor/bin/phpunit --configuration=${cwd}/phpunit.xml --testsuite Feature"
         },
         {
             "label": "tinker",
@@ -141,7 +141,8 @@
         {
             "label": "test:file",
             "type": "shell",
-            "command": "vendor/bin/phpunit --no-coverage ${file}",
+            "command": "vendor/bin/phpunit --configuration=${cwd}/phpunit.xml ${file}",
+
             "problemMatcher": []
         },
         {

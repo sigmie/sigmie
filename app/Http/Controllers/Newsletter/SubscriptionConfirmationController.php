@@ -17,15 +17,13 @@ class SubscriptionConfirmationController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(NewsletterSubscription $newsletterSubscription)
+    public function store(NewsletterSubscription $newsletterSubscription, MailgunList $mailgunList)
     {
         $newsletterSubscription->confirmSubscription();
 
-        /** @var  MailgunList */
-        $mailgun = resolve(MailgunList::class);
-        $list = config('services.mailgun.newsletter_list');
+        $list = config('newsletter.list');
 
-        dispatch(fn () => $mailgun->confirmSubscription($list, $newsletterSubscription->email));
+        dispatch(fn () => $mailgunList->confirmSubscription($list, $newsletterSubscription->email));
 
         return redirect()->route('newsletter.confirmed');
     }

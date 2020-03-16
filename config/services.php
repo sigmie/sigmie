@@ -44,4 +44,9 @@ return [
         'client_secret' => env('GITHUB_CLIENT_SECRET'),
         'redirect' => '/github/callback',
     ],
+
+    'mailchimp' => [
+        'key' => env('MAILCHIMP_KEY'),
+        'data_center' => env('MAILCHIMP_DATACENTER'),
+    ],
 ];
