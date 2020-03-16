@@ -3,8 +3,7 @@
 namespace App\Providers;
 
 use App\Contracts\MailingList;
-use App\Services\Mailchimp;
-use App\Services\MailgunList;
+use App\Services\MailchimpList;
 use GuzzleHttp\Client;
 use Illuminate\Support\ServiceProvider;
 
@@ -29,7 +28,7 @@ class MailingListServiceProvider extends ServiceProvider
     {
         $this->app->bind(
             MailingList::class,
-            fn ($app) => new Mailchimp($app->make(Client::class), ['key' => config('mailchimp.key'), 'data_center' => config('mailchimp.data_center')])
+            fn ($app) => new MailchimpList($app->make(Client::class), ['key' => config('services.mailchimp.key'), 'data_center' => config('services.mailchimp.data_center')])
         );
     }
 }

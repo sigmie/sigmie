@@ -47,6 +47,6 @@ return [
 
     'mailchimp' => [
         'key' => env('MAILCHIMP_KEY'),
-        'data_center' => env('MAILCHIMP_DATACENTER'),
+        'data_center' => env('MAILCHIMP_DATA_CENTER'),
     ],
 ];

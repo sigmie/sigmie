@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Newsletter;
 
+use App\Contracts\MailingList;
 use App\Events\Foo;
 use App\NewsletterSubscription;
 use App\Http\Controllers\Controller;
@@ -17,13 +18,13 @@ class SubscriptionConfirmationController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(NewsletterSubscription $newsletterSubscription, MailgunList $mailgunList)
+    public function store(NewsletterSubscription $newsletterSubscription, MailingList $mailingList)
     {
         $newsletterSubscription->confirmSubscription();
 
         $list = config('newsletter.list');
 
-        dispatch(fn () => $mailgunList->confirmSubscription($list, $newsletterSubscription->email));
+        dispatch(fn () => $mailingList->confirmSubscription($list, $newsletterSubscription->email));
 
         return redirect()->route('newsletter.confirmed');
     }
