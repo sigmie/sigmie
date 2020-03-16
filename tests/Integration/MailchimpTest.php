@@ -44,7 +44,7 @@ class MailchimpTest extends TestCase
     public function add_to_list()
     {
         $unique = time();
-        $email = "john_doe_{$unique}@gmail.com";
+        $email = "foo_add{$unique}@gmail.com";
 
         $this->mailchimp->addToList($this->list, $email);
 
@@ -61,7 +61,7 @@ class MailchimpTest extends TestCase
     public function remove_from_list()
     {
         $unique = time();
-        $email = "foo_{$unique}@gmail.com";
+        $email = "foo_remove{$unique}@gmail.com";
 
         $this->mailchimp->addToList($this->list, $email);
 
@@ -76,7 +76,7 @@ class MailchimpTest extends TestCase
     public function confirm_subscription()
     {
         $unique = time();
-        $email = "foo_{$unique}@gmail.com";
+        $email = "foo_confirm{$unique}@gmail.com";
 
         $this->mailchimp->addToList($this->list, $email);
 
@@ -95,7 +95,7 @@ class MailchimpTest extends TestCase
     public function revoke_subscription()
     {
         $unique = time();
-        $email = "foo_{$unique}@gmail.com";
+        $email = "foo_revoke{$unique}@gmail.com";
 
         $this->mailchimp->addToList($this->list, $email, true);
 
@@ -114,7 +114,7 @@ class MailchimpTest extends TestCase
     public function retrieve_member()
     {
         $unique = time();
-        $email = "foo_{$unique}@gmail.com";
+        $email = "foo_retrieve{$unique}@gmail.com";
 
         $this->mailchimp->addToList($this->list, $email, true);
 

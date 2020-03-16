@@ -3,19 +3,46 @@
 namespace App\Services;
 
 use App\Contracts\MailingList;
-use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Client;
+use Psr\Http\Message\ResponseInterface;
 
 class MailchimpList implements MailingList
 {
-    private $key;
+    /**
+     * Mailchimp key
+     *
+     * @var string
+     */
+    private string $key;
 
-    private $dataCenter;
+    /**
+     * Mailchimp data center
+     *
+     * @var string
+     */
+    private string $dataCenter;
 
-    private $url;
+    /**
+     * Mailchimp API url
+     *
+     * @var string
+     */
+    private string $url;
 
-    private $client;
+    /**
+     * Client
+     *
+     * @var Client
+     */
+    private Client $client;
 
-    public function __construct($client, $config)
+    /**
+     * Constructor
+     *
+     * @param Client $client
+     * @param array $config
+     */
+    public function __construct(Client $client, array $config)
     {
         $this->client = $client;
         $this->key = $config['key'];
@@ -68,7 +95,7 @@ class MailchimpList implements MailingList
      * Remove from email list
      *
      * @param string $list
-     * @param string $email
+     * @param string $address
      *
      * @return array
      */
@@ -94,7 +121,7 @@ class MailchimpList implements MailingList
      * Confirm list subscription
      *
      * @param string $list
-     * @param string $email
+     * @param string $address
      *
      * @return array
      */
@@ -123,7 +150,7 @@ class MailchimpList implements MailingList
      * Revoke list subscription
      *
      * @param string $list
-     * @param string $email
+     * @param string $address
      *
      * @return array
      */
@@ -146,14 +173,13 @@ class MailchimpList implements MailingList
 
 
         return $this->formatResponse($response);
-        return [];
     }
 
     /**
      * Retrieve a list member
      *
      * @param string $list
-     * @param string $email
+     * @param string $address
      *
      * @return array
      */
@@ -194,7 +220,7 @@ class MailchimpList implements MailingList
      * @param ResponseInterface $response
      * @return array
      */
-    private function formatResponse(Response $response): array
+    private function formatResponse(ResponseInterface $response): array
     {
         $jsonResult = $response->getBody()->getContents();
 
