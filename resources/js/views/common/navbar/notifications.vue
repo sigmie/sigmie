@@ -30,7 +30,9 @@
               </div>
               <div class="mt-2 flex items-center text-sm leading-5 text-gray-400 sm:mt-0">
                 <span class="w-20 text-right text-xs">
-                  <time :datetime="notification.create_at">{{relativeTime(notification.created_at) }}</time>
+                  <time
+                    :datetime="notification.create_at"
+                  >{{relativeTime(notification.created_at) }}</time>
                 </span>
               </div>
             </div>
@@ -51,14 +53,25 @@ export default {
     }
   },
   methods: {
-    relativeTime(datetime) {
-      return moment(datetime, "YYYY-MM-DD H:mm:S").fromNow();
+    relativeTime(utcDatetime) {
+      return moment
+        .utc(utcDatetime)
+        .local()
+        .fromNow();
     },
     async makrkAsRead(index, id) {
       this.$set(
         this.notifications[index],
         "read_at",
-        moment().format("YYYY-MM-DD H:mm:S")
+        moment()
+          .utc()
+          .format("YYYY-MM-DD H:mm:S")
+      );
+
+      console.log(
+        moment()
+          .utc()
+          .format("YYYY-MM-DD H:mm:S")
       );
 
       const response = await this.$http.put(`notification/${id}`);

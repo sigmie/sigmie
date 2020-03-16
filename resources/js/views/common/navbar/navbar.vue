@@ -118,6 +118,8 @@ export default {
     },
     async addNotification(id) {
       const response = await this.$http.get(`notification/${id}`);
+      console.log(response.data);
+
       this.addNotifications(response.data);
     },
     addNotifications(notificationsData) {
