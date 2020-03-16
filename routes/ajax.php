@@ -22,7 +22,7 @@ Route::resource('/notification', 'NotificationController', ['except' => ['edit',
 
 Route::get('/notify/me', function () {
 
-    Auth::user()->notify(new ProjectWasCreated('project title'));
+    Auth::user()->notify(new ProjectWasCreated('Sigma search'));
 
     dd('notifed');
 

@@ -55,7 +55,7 @@
           </button>
           <div class="origin-top-right absolute right-0 mt-2 w-96 rounded-md shadow-lg" v-cloak>
             <notifications
-              v-if="notifications === 'open'"
+              v-if="notifications === 'open' && notificationsData.length > 0"
               @away="closeNotifications"
               :notifications="notificationsData"
             ></notifications>
@@ -77,6 +77,7 @@
 </template>
 
 <script>
+import moment from 'moment';
 export default {
   components: {
     notifications: require("./notifications").default,
@@ -112,11 +113,15 @@ export default {
       this.$socket
         .private(`App.User.${this.userId}`)
         .notification(notification => {
-          this.addNotifications([notification.payload]);
+          this.addNotification(notification.id);
         });
     },
+    async addNotification(id) {
+      const response = await this.$http.get(`notification/${id}`);
+      this.addNotifications(response.data);
+    },
     addNotifications(notificationsData) {
-      this.notificationsData = this.notificationsData.concat(notificationsData);
+      this.notificationsData = notificationsData.concat(this.notificationsData);
     },
     openSidebar() {
       this.$root.$refs.sidebar.open();

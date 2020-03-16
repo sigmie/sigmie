@@ -45,7 +45,11 @@ class ProjectWasCreated extends Notification implements ShouldBroadcastNow
     public function toArray($notifiable)
     {
         return [
-            'payload' => ['foo' => 'bar']
+            'title' => 'Create',
+            'body' => "New project <b>{$this->title}</b> was successfully created",
+            'project' => [
+                'title' => $this->title
+            ]
         ];
     }
 }

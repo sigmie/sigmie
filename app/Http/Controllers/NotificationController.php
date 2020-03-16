@@ -14,7 +14,7 @@ class NotificationController extends Controller
      */
     public function index()
     {
-        return Auth::user()->unreadNotifications->map(fn ($notification) => $notification->data['payload']);
+        return Auth::user()->notifications->sortByDesc('created_at')->toArray();
     }
 
     /**
@@ -25,7 +25,17 @@ class NotificationController extends Controller
      */
     public function store(Request $request)
     {
-        //
+    }
+
+    /**
+     * Show the specified resource in storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        return Auth::user()->notifications->where('id', $id);
     }
 
     /**
@@ -37,6 +47,6 @@ class NotificationController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        Auth::user()->notifications->where('id', $id)->markAsRead();
     }
 }
