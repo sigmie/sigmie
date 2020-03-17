@@ -43,6 +43,7 @@
             @click="notifications = 'open'"
           >
             <badge
+              v-if="unreadNotification"
               class="absolute top-1 right-1 text-orange-400"
               stroke="currentColor"
               fill="currentColor"
@@ -53,10 +54,11 @@
 
             <icon-bell class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24"></icon-bell>
           </button>
-          <div class="origin-top-right absolute right-0 mt-2 w-96 rounded-md shadow-lg" v-cloak>
+          <div class="origin-top-right absolute right-0 mt-2 w-64 md:w-96 rounded-md shadow-lg" v-cloak>
             <notifications
               v-if="notifications === 'open' && notificationsData.length > 0"
               @away="closeNotifications"
+              @read="markAsRead"
               :notifications="notificationsData"
             ></notifications>
           </div>
@@ -77,7 +79,8 @@
 </template>
 
 <script>
-import moment from 'moment';
+import moment from "moment";
+
 export default {
   components: {
     notifications: require("./notifications").default,
@@ -90,12 +93,23 @@ export default {
       sidebar: "closed",
       settings: "closed",
       notifications: "closed",
-      notificationsData: []
+      notificationsData: [],
+      unreadNotification: false
     };
   },
   async beforeMount() {
     this.listenOnNotificationChannel();
     this.fetchNotifications();
+  },
+  watch: {
+    notificationsData: {
+      handler(newData, oldData) {
+        this.unreadNotification = this.notificationsData.some(
+          notification => notification.read_at === null
+        );
+      },
+      deep: true
+    }
   },
   methods: {
     async fetchNotifications() {
@@ -118,9 +132,15 @@ export default {
     },
     async addNotification(id) {
       const response = await this.$http.get(`notification/${id}`);
-      console.log(response.data);
 
-      this.addNotifications(response.data);
+      this.addNotifications([response.data]);
+    },
+    markAsRead(index) {
+      const utcTime = moment()
+        .utc()
+        .format("YYYY-MM-DD H:mm:S");
+
+      this.$set(this.notificationsData[index], "read_at", utcTime);
     },
     addNotifications(notificationsData) {
       this.notificationsData = notificationsData.concat(this.notificationsData);

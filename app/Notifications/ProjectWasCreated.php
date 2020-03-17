@@ -13,6 +13,11 @@ class ProjectWasCreated extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
+    /**
+     * Project project title
+     *
+     * @var string
+     */
     private $title;
 
     /**
@@ -20,7 +25,7 @@ class ProjectWasCreated extends Notification implements ShouldBroadcastNow
      *
      * @return void
      */
-    public function __construct($title)
+    public function __construct(string $title)
     {
         $this->title = $title;
     }

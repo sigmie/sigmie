@@ -1,15 +1,15 @@
 <template>
-  <div class="py-1 rounded-md bg-white shadow-xs">
+  <div class="py-1 rounded-md bg-white shadow-xs overflow-auto max-h-128" v-away="emitAway">
     <ul v-cloak>
       <li
         v-for="(notification,index) in notifications"
         :key="index"
-        class="border-t border-gray-200 first:border-t-0"
+        class="border-t border-gray-200 first:border-t-0 hover:bg-gray-50 focus:bg-gray-50"
       >
         <a
-          @click.prevent="(notification.read_at === null) ? makrkAsRead(index, notification.id): ()=>{}"
+          @click.prevent="(notification.read_at === null) ? readNotification(index, notification.id): ()=>{}"
           :class="[(notification.read_at === null) ? 'bg-gray-100':'']"
-          class="block cursor-pointer hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition duration-150 ease-in-out"
+          class="block cursor-pointer focus:outline-none transition duration-150 ease-in-out"
         >
           <div class="px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between">
@@ -29,7 +29,7 @@
                 </div>
               </div>
               <div class="mt-2 flex items-center text-sm leading-5 text-gray-400 sm:mt-0">
-                <span class="w-20 text-right text-xs">
+                <span class="w-full md:w-24 text-right text-xs">
                   <time
                     :datetime="notification.create_at"
                   >{{relativeTime(notification.created_at) }}</time>
@@ -45,6 +45,7 @@
 
 <script>
 import moment from "moment";
+import includes from "lodash/includes";
 
 export default {
   props: {
@@ -52,28 +53,31 @@ export default {
       default: []
     }
   },
+  data() {
+    return {
+      read: []
+    };
+  },
   methods: {
+    emitAway() {
+      this.$emit("away");
+    },
     relativeTime(utcDatetime) {
       return moment
         .utc(utcDatetime)
         .local()
         .fromNow();
     },
-    async makrkAsRead(index, id) {
-      this.$set(
-        this.notifications[index],
-        "read_at",
-        moment()
-          .utc()
-          .format("YYYY-MM-DD H:mm:S")
-      );
+    readNotification(index, id) {
+      if (includes(this.read, id)) {
+        return;
+      }
 
-      console.log(
-        moment()
-          .utc()
-          .format("YYYY-MM-DD H:mm:S")
-      );
+      this.$emit("read", index);
 
+      this.markAsRead(index, id);
+    },
+    async markAsRead(index, id) {
       const response = await this.$http.put(`notification/${id}`);
     }
   }

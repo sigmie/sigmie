@@ -15,7 +15,9 @@ use Illuminate\Queue\SerializesModels;
 
 class Foo implements ShouldBroadcast, ShouldQueue
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
     use Queueable;
 
     /**

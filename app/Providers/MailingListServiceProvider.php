@@ -30,7 +30,10 @@ class MailingListServiceProvider extends ServiceProvider
             MailingList::class,
             fn ($app) => new MailchimpList(
                 $app->make(Client::class),
-                ['key' => config('services.mailchimp.key'), 'data_center' => config('services.mailchimp.data_center')]
+                [
+                    'key' => config('services.mailchimp.key'),
+                    'data_center' => config('services.mailchimp.data_center')
+                ]
             )
         );
     }

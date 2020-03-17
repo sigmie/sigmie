@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<ruleset name="ni-elastic">
+<ruleset name="mos-sigma">
     <description>Coding standart</description>
 
     <exclude-pattern>.history/*</exclude-pattern>
@@ -8,6 +8,7 @@
 
     <rule ref="PSR12">
         <exclude name="PSR12.Classes.ClassInstantiation.MissingParentheses" />
+        <exclude name="PSR2.Methods.FunctionCallSignature.Indent" />
     </rule>
 
     <rule ref="Generic.Files.LineLength">
@@ -16,4 +17,5 @@
             <property name="absoluteLineLimit" value="0"/>
         </properties>
     </rule>
+
 </ruleset>

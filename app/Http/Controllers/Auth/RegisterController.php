@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 class RegisterController extends Controller
 {
     use RegistersUsers;
+
     /**
      * Where to redirect users after registration.
      *
@@ -52,7 +53,8 @@ class RegisterController extends Controller
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function validator(array $data)
-    { $password = (session()->has('githubUser')) ? [] : ['required', 'string', 'min:8'];
+    {
+        $password = (session()->has('githubUser')) ? [] : ['required', 'string', 'min:8'];
 
         return Validator::make(
             $data,

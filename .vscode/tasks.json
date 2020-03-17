@@ -106,12 +106,12 @@
         {
             "label": "code:check",
             "type": "shell",
-            "command": "vendor/bin/phpstan analyse --level 8 app && vendor/bin/phpcs --standard=standard.xml app && node_modules/standard/bin/cmd.js | node_modules/snazzy/bin/cmd.js"
+            "command": "vendor/bin/phpstan analyse && vendor/bin/phpcs -s --standard=standard.xml app && node_modules/standard/bin/cmd.js | node_modules/snazzy/bin/cmd.js"
         },
         {
             "label": "php:check",
             "type": "shell",
-            "command": "vendor/bin/phpstan analyse --level 8 app && vendor/bin/phpcs --color --standard=standard.xml app"
+            "command": "vendor/bin/phpstan analyse && vendor/bin/phpcs -s --standard=standard.xml app"
         },
         {
             "label": "js:fix",

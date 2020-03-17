@@ -32,7 +32,7 @@ class ProjectTest extends TestCase
     /**
      * @test
      */
-    public function index_returns_empty_json_to_guests()
+    public function index_returns_anauthorized_json_to_guests()
     {
         $this->getJson('/ajax/project')->assertStatus(401)->assertExactJson(['message' => 'Unauthenticated.']);
     }

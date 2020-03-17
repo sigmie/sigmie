@@ -42,7 +42,7 @@ class User extends Authenticatable
     /**
      * Projects
      *
-     * @return Collection
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function projects()
     {

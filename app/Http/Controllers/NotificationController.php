@@ -2,40 +2,57 @@
 
 namespace App\Http\Controllers;
 
+use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Notifications\DatabaseNotificationCollection;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\Intl\Exception\NotImplementedException;
 
 class NotificationController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Return notifications which are not
+     * older than 7 days
      *
-     * @return \Illuminate\Http\Response
+     * @return array
      */
     public function index()
     {
-        return Auth::user()->notifications->sortByDesc('created_at')->toArray();
+        /** @var  User */
+        $user = Auth::user();
+        $beforeOneWeek = Carbon::now()->subWeek()->toDateString();
+
+        return $user->notifications->where('created_at', '>', $beforeOneWeek)->sortByDesc('created_at')->toArray();
     }
 
     /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     *
+     * @throws NotImplementedException
+     * @return void
      */
     public function store(Request $request)
     {
+        throw new NotImplementedException('Notification store actions isn\'t implemented yet.');
     }
 
     /**
      * Show the specified resource in storage.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     *
+     * @return DatabaseNotification|null
      */
     public function show($id)
     {
-        return Auth::user()->notifications->where('id', $id);
+        /** @var  User */
+        $user = Auth::user();
+
+        return $user->notifications->where('id', $id)->first();
     }
 
     /**
@@ -43,10 +60,17 @@ class NotificationController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     *
+     * @return void
      */
     public function update(Request $request, $id)
     {
-        Auth::user()->notifications->where('id', $id)->markAsRead();
+        /** @var  User */
+        $user = Auth::user();
+
+        /** @var  DatabaseNotificationCollection */
+        $notifications = $user->notifications->where('id', $id);
+
+        $notifications->markAsRead();
     }
 }

@@ -25,20 +25,11 @@ jobs:
       ports:
         - 6379:6379
       env:
-        REDIS_PASSWORD: password
+        REDIS_PASSWORD: na8!^&*JbXEz
 
     env:
       VARIABLES_PASSPHRASE: ${{ secrets.variables_testing_passphrase }}
       COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
-      DB_CONNECTION: mysql
-      DB_HOST: 127.0.0.1
-      DB_PORT: 3307
-      DB_DATABASE: db
-      DB_USERNAME: user
-      DB_PASSWORD: password
-      REDIS_HOST: localhost
-      REDIS_PASSWORD: password
-      REDIS_PORT: 6379
 
     steps:
     - uses: actions/checkout@v2
@@ -78,8 +69,8 @@ jobs:
     - name: Install node and generate assets
       run: npm install && npm run production
 
-    - name: PHPUnit
-      run: vendor/bin/phpunit
-
     - name: Migrations
       run: php artisan migrate --force
+
+    - name: PHPUnit
+      run: vendor/bin/phpunit

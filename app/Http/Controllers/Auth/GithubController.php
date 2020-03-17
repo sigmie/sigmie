@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\User;
-use Exception;
+use Illuminate\Http\RedirectResponse;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\URL;
+use Laravel\Socialite\Contracts\User as SocialiteUser;
+use Laravel\Socialite\SocialiteManager;
+use Laravel\Socialite\Two\GithubProvider;
 
 class GithubController extends Controller
 {
@@ -32,11 +34,19 @@ class GithubController extends Controller
 
         $redirect_uri = ($action === 'register') ? '/github/register' : '/github/login';
 
-        return Socialite::driver('github')
-            ->with(['redirect_uri' => config('app.url') . $redirect_uri])
-            ->redirect();
+        /** @var  GithubProvider */
+        $provider = Socialite::driver('github');
+
+        return $provider->with([
+            'redirect_uri' => config('app.url') . $redirect_uri
+        ])->redirect();
     }
 
+    /**
+     * Populate session with Github infos
+     *
+     * @return RedirectResponse
+     */
     public function register()
     {
         $githubUser = Socialite::driver('github')->user();
@@ -69,7 +79,14 @@ class GithubController extends Controller
         return redirect(route('register'));
     }
 
-    private function populateSession($githubUser)
+    /**
+     * Populate session values from
+     * the given github user data
+     *
+     * @param SocialiteUser $githubUser
+     * @return void
+     */
+    private function populateSession(SocialiteUser $githubUser)
     {
         request()->session()->put('githubUser', [
             'name' => $githubUser->getName(),
