@@ -51,6 +51,11 @@ jobs:
           gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
           gpg --quiet --batch --yes --decrypt --passphrase=$VARIABLES_PASSPHRASE --output .env.testing .github/secrets/variables.testing.gpg
 
+    - name: Set host names
+      run: |
+          sudo sh -c "echo 127.0.0.1 redis.internal.mos-sigma.com >> /etc/hosts"
+          sudo sh -c "echo 127.0.0.1 db.internal.mos-sigma.com >> /etc/hosts"
+
     - name: Install curl zip npm
       run: sudo apt-get update && sudo apt-get install -y curl npm zip
 
@@ -70,7 +75,7 @@ jobs:
       run: npm install && npm run production
 
     - name: Migrations
-      run: php artisan migrate --force
+      run: php artisan --env=testing migrate --force
 
     - name: PHPUnit
       run: vendor/bin/phpunit

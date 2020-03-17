@@ -71,7 +71,7 @@ class GithubController extends Controller
         if ($user !== null) {
             Auth::login($user, true);
 
-            return redirect()->intended('home');
+            return redirect()->intended('dashboard');
         }
 
         $this->populateSession($githubUser);
