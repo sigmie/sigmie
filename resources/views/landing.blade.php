@@ -864,7 +864,7 @@
                         </ul>
                     </div>
                     <div class="flex-none mt-auto bg-white rounded-b-lg rounded-t-none overflow-hidden shadow px-6">
-                        <div class="w-full text-3xl text-gray-600 font-bold text-center pt-2">$90
+                        <div class="w-full text-3xl text-gray-600 font-bold text-center pt-2">$12
                         </div>
                         <div class="text-gray-400 text-sm font-normal text-center">Price doesn't include your GCP costs.
                         </div>
