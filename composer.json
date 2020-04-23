@@ -1,12 +1,11 @@
 {
-    "name": "mos-sigma/mos-sigma",
+    "name": "sigmie/app",
     "type": "project",
     "description": "Most of search application",
     "keywords": [
         "framework",
         "laravel",
-        "sigma",
-        "mos-sigma"
+        "sigmie"
     ],
     "license": "MIT",
     "repositories": [
@@ -16,7 +15,7 @@
         },
         {
             "type": "composer",
-            "url": "https://packages.mos-sigma.com/"
+            "url": "https://packages.sigmie.com/"
         }
     ],
     "require": {
@@ -33,10 +32,10 @@
         "laravel/socialite": "^4.3",
         "laravel/telescope": "^2",
         "laravel/tinker": "^1.0",
-        "mos-sigma/mos": "dev-master",
         "predis/predis": "^1.1",
         "ramsey/uuid": "^3.9",
-        "sentry/sentry-laravel": "1.5.0"
+        "sentry/sentry-laravel": "1.5.0",
+        "sigmie/app-core": "^0.1.0"
     },
     "require-dev": {
         "filp/whoops": "^2.0",
