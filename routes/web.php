@@ -10,7 +10,7 @@
 | contains the "web" middleware group. Now create something great!
 |
 */
-$launched = true;
+$launched = false;
 
 Route::view('/', 'landing', ['launched' => $launched])->name('landing')->middleware('guest');
 
