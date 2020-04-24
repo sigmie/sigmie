@@ -1,16 +1,15 @@
 name: Deploy
 
-# on:
-#   pull_request:
-#     types: [closed]
-#     branches:
-#       - master
-on: [push]
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
 
 jobs:
   deploy:
     runs-on: ubuntu-18.04
-    # if: github.event.pull_request.merged
+    if: github.event.pull_request.merged
 
     env:
       GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
@@ -36,7 +35,9 @@ jobs:
       run: echo ::set-env name=RELEASE_VERSION::$(date +%s)
 
     - name: Composer cache permissions
-      run: sudo chown -R $USER ~/.composer
+      run: |
+           sudo chown -R $USER ~/.composer
+           sudo chown -R $USER ~/.npm
 
     - name: Set gcloud host names
       run: |
