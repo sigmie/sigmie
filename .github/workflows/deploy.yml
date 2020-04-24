@@ -73,7 +73,7 @@ jobs:
           npm run production
 
     - name: Set ASSETS_URL
-      run: echo "ASSET_URL=https://assets.mos-sigma.com/${ASSETS_HASH}" >> .env
+      run: echo "ASSET_URL=https://assets.sigmie.com/${ASSETS_HASH}" >> .env
 
     - name: Install GCloud SDK
       run: if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
@@ -84,8 +84,8 @@ jobs:
           gcloud auth configure-docker
           gcloud config set project mossigma-app-production
 
-    - name: Deploy assets to mos-sigma bucket
-      run: gsutil -m rsync -x index.php -r ./public gs://assets.mos-sigma.com/${ASSETS_HASH}
+    - name: Deploy assets to sigmie bucket
+      run: gsutil -m rsync -x index.php -r ./public gs://assets.sigmie.com/${ASSETS_HASH}
 
     - name: Open redis tunnel
       run: gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
