@@ -35,6 +35,9 @@ jobs:
     - name: Set release and assets url env
       run: echo ::set-env name=RELEASE_VERSION::$(date +%s)
 
+    - name: Composer cache permissions
+      run: sudo chown -R $USER ~/.composer
+
     - name: Set gcloud host names
       run: |
           sudo sh -c "echo 127.0.0.1 redis.internal.mos-sigma.com >> /etc/hosts"
