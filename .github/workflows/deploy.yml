@@ -1,15 +1,16 @@
 name: Deploy
 
-on:
-  pull_request:
-    types: [closed]
-    branches:
-      - master
+# on:
+#   pull_request:
+#     types: [closed]
+#     branches:
+#       - master
+on: [push]
 
 jobs:
   deploy:
     runs-on: ubuntu-18.04
-    if: github.event.pull_request.merged
+    # if: github.event.pull_request.merged
 
     env:
       GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
@@ -48,8 +49,8 @@ jobs:
     - name: Start sql proxy
       run: docker run -d -v ${PWD}/google.json:/config -p 3307:3306 gcr.io/cloudsql-docker/gce-proxy:1.16 /cloud_sql_proxy -instances=mossigma-app-production:europe-west1:mos-sigma=tcp:0.0.0.0:3306 -credential_file=/config
 
-    - name: Install curl npm zip
-      run: sudo apt-get update && sudo apt-get install -y curl npm zip
+    - name: Install curl curl nodejs-dev node-gyp libssl1.0-dev zip npm
+      run: sudo apt-get update && sudo apt-get install -y curl nodejs-dev node-gyp libssl1.0-dev zip npm
 
     - name: Install composer
       run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
