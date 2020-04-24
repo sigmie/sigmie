@@ -35,7 +35,7 @@
                 <form-input id="email" name="email" type="email" value="{{ old('email') }}" required
                     label="Email address"></form-input>
 
-                <form-input id="password" name="password" type="password" required label="Password"></form-input>
+                <form-input class="pt-2" id="password" name="password" type="password" required label="Password"></form-input>
 
                 <div class="mt-6 flex items-center justify-between">
 
