@@ -34,7 +34,7 @@
         "laravel/tinker": "^1.0",
         "predis/predis": "^1.1",
         "ramsey/uuid": "^3.9",
-        "sentry/sentry-laravel": "1.5.0",
+        "sentry/sentry-laravel": "^1.5",
         "sigmie/app-core": "^0.1.0"
     },
     "require-dev": {
