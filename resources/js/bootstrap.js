@@ -14,8 +14,7 @@ Vue.use(Vuelidate)
 
 Vue.directive('away', away)
 
-Vue.prototype.$http = axios.create({
-  baseURL: process.env.MIX_APP_URL + '/ajax/',
+Vue.prototype.$http = axios.create({ baseURL: process.env.MIX_APP_URL + '/ajax/',
   headers: {
   }
 })
@@ -27,6 +26,7 @@ Vue.prototype.$socket = new Echo({
 
 Vue.component('csrf', require('./essentials/csrf').default)
 Vue.component('stripe', require('./essentials/stripe').default)
+
 Vue.component('form-input', require('./ui/forms/input').default)
 Vue.component('form-checkbox', require('./ui/forms/checkbox').default)
 Vue.component('form-select', require('./ui/forms/select').default)
@@ -66,3 +66,4 @@ Vue.component('icon-bell', require('./ui/icons/bell').default)
 
 Vue.component('register-form', require('./views/auth/register/form').default)
 Vue.component('password-form', require('./views/auth/passwords/form').default)
+Vue.component('cluster-wizard', require('./views/cluster/wizard').default)
