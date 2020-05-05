@@ -1,11 +1,11 @@
 <template>
   <div>
     <label
-      v-if="label.length > 0"
+      v-if="label.length > 0 && suffix.length === 0"
       :for="name"
       class="block text-sm font-medium leading-5 text-gray-700 pb-1"
     >{{ label }}</label>
-    <div class="relative rounded-md shadow-sm">
+    <div class="relative rounded-md shadow-sm" v-if="suffix.length === 0">
       <input
         :id="id"
         :type="type"
@@ -19,8 +19,9 @@
         @blur="$emit('blur', $event.target.value)"
         @focus="$emit('touch', $event.target.value)"
         @change="$emit('change', $event.target.value)"
-        class="appearance-none block w-full px-3 py-2 border border-gray-300 focus:text-gray-700 rounded-md placeholder-gray-400 focus:outline-none focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
+        class="flex flex-1 appearance-none block w-full px-3 py-2 border border-gray-300 focus:text-gray-700 rounded-md placeholder-gray-400 focus:outline-none focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
       />
+
       <div
         v-if="validations.$anyError"
         class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
@@ -34,6 +35,31 @@
         </svg>
       </div>
     </div>
+
+    <div class="col-span-3 sm:col-span-2" v-if="suffix.length > 0">
+      <label for="company_website" class="block text-sm font-medium leading-5 text-gray-700">{{ label }}</label>
+      <div class="mt-1 flex rounded-md shadow-sm">
+        <input
+          :id="id"
+          :type="type"
+          :placeholder="placeholder"
+          :class="[validations.$anyError ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-300 focus:text-' : '']"
+          :autocomplete="autocomplete"
+          :name="name"
+          :required="required"
+          :value="value"
+          @input="$emit('input', $event.target.value)"
+          @blur="$emit('blur', $event.target.value)"
+          @focus="$emit('touch', $event.target.value)"
+          @change="$emit('change', $event.target.value)"
+          class="form-input flex-1 block w-full rounded-none rounded-l-md transition duration-150 ease-in-out sm:text-sm sm:leading-5"
+        />
+        <span
+          class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm"
+        >{{ suffix }}</span>
+      </div>
+    </div>
+
     <div v-for="(message, rule) in errorMessages" track-by="$index">
       <p
         v-if="!validations[rule] && validations.$dirty"
@@ -46,6 +72,9 @@
 <script>
 export default {
   props: {
+    suffix: {
+      default: ""
+    },
     name: {
       default: ""
     },

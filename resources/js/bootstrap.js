@@ -66,4 +66,3 @@ Vue.component('icon-bell', require('./ui/icons/bell').default)
 
 Vue.component('register-form', require('./views/auth/register/form').default)
 Vue.component('password-form', require('./views/auth/passwords/form').default)
-Vue.component('cluster-wizard', require('./views/cluster/wizard').default)

@@ -45,6 +45,8 @@ if ($launched === true) {
 
         Route::view('/dashboard', 'layouts.app')->name('dashboard');
 
+        Route::view('/cluster/create', 'layouts.app')->name('cluster.create');
+
         Route::view('/bar', 'layouts.app');
     });
 
