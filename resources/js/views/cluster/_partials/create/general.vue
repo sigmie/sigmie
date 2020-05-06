@@ -29,6 +29,7 @@
             General information about your search.
             <br />
             <br />You search will be available at
+            <br />
             <a
               class="text-orange-700"
               :href="'https://'+name+'.search.sigmie.com'"
