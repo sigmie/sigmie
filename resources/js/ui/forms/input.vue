@@ -37,7 +37,10 @@
     </div>
 
     <div class="col-span-3 sm:col-span-2" v-if="suffix.length > 0">
-      <label for="company_website" class="block text-sm font-medium leading-5 text-gray-700">{{ label }}</label>
+      <label
+        for="company_website"
+        class="block text-sm font-medium leading-5 text-gray-700"
+      >{{ label }}</label>
       <div class="mt-1 flex rounded-md shadow-sm">
         <input
           :id="id"
@@ -60,7 +63,7 @@
       </div>
     </div>
 
-    <div v-for="(message, rule) in errorMessages" track-by="$index">
+    <div v-for="(message, rule) in errorMessages" :key="rule">
       <p
         v-if="!validations[rule] && validations.$dirty"
         class="mt-2 text-sm text-red-600"

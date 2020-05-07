@@ -29,6 +29,7 @@ Vue.component('stripe', require('./essentials/stripe').default)
 
 Vue.component('form-input', require('./ui/forms/input').default)
 Vue.component('form-checkbox', require('./ui/forms/checkbox').default)
+Vue.component('form-textarea', require('./ui/forms/textarea').default)
 Vue.component('form-select', require('./ui/forms/select').default)
 Vue.component('button-primary', require('./ui/buttons/primary').default)
 Vue.component('button-secondary', require('./ui/buttons/secondary').default)
