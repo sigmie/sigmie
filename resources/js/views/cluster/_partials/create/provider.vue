@@ -3,7 +3,8 @@
     <div class="md:grid md:grid-cols-3 md:gap-6">
       <div class="mt-5 md:mt-0 md:col-span-2">
         <div class="shadow sm:rounded-md sm:overflow-hidden">
-          <div class="px-4 py-5 bg-white sm:p-6">
+          <div v-if="state === 'chosen'" class="px-4 py-5 bg-white sm:p-6">chosen</div>
+          <div v-if="state === 'choosing'" class="px-4 py-5 bg-white sm:p-6">
             <ul class>
               <li>
                 <a
@@ -20,7 +21,7 @@
                       </div>
                     </div>
                     <div>
-                      <button-secondary text="Choose"></button-secondary >
+                      <button-secondary @click="choose('google')" text="Choose"></button-secondary>
                     </div>
                   </div>
                 </a>
@@ -40,7 +41,8 @@
                       </div>
                     </div>
                     <div>
-                      <button-secondary text="Choose"></button-secondary >
+                      <button-disabled text="Comming"></button-disabled>
+                      <!-- <button-secondary text="Choose"></button-secondary > -->
                     </div>
                   </div>
                 </a>
@@ -60,7 +62,8 @@
                       </div>
                     </div>
                     <div>
-                      <button-secondary text="Choose"></button-secondary >
+                      <button-disabled text="Comming"></button-disabled>
+                      <!-- <button-secondary text="Choose"></button-secondary > -->
                     </div>
                   </div>
                 </a>
@@ -82,7 +85,20 @@
 </template>
 
 <script>
-export default {};
+export default {
+  data() {
+    return {
+      provider: "",
+      state: "choosing"
+    };
+  },
+  methods: {
+    choose(provider) {
+      this.provider = provider;
+      this.state = "chosen";
+    }
+  }
+};
 </script>
 
 <style>
