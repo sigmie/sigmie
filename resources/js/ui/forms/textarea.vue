@@ -4,7 +4,7 @@
       :for="id"
       class="block text-sm font-medium leading-5 text-gray-700 sm:mt-px sm:pt-2"
     >{{ label }}</label>
-    <div class="mt-4 sm:mt-0 sm:col-span-2">
+    <div class="md:mt-2 sm:col-span-2">
       <div class="max-w-lg flex rounded-md shadow-sm">
         <textarea
           :id="id"

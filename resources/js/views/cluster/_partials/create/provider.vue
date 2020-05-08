@@ -3,7 +3,24 @@
     <div class="md:grid md:grid-cols-3 md:gap-6">
       <div class="mt-5 md:mt-0 md:col-span-2">
         <div class="shadow sm:rounded-md sm:overflow-hidden">
-          <div v-if="state === 'chosen' && provider === 'google'" class="px-4 py-5 bg-white sm:p-6">
+          <div v-if="state === 'chosen'" class="px-4 py-5 bg-white sm:p-6">
+            <div
+              class="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition duration-150 ease-in-out"
+            >
+              <div class="flex items-center px-4 py-4 sm:px-6">
+                <div class="min-w-0 flex-1 flex items-center">
+                  <div class="flex-shrink-0 w-16">
+                    <img class="h-10 w-auto mx-auto" :src="assetUrl+'/img/'+chosen.logo" alt />
+                  </div>
+                  <div class="min-w-0 flex-1 flex items-center pl-4">
+                    <p>{{ chosen.name }}</p>
+                  </div>
+                </div>
+                <div>
+                  <button-secondary @click="state = 'choosing'" text="Change"></button-secondary>
+                </div>
+              </div>
+            </div>
             <form-textarea
               :value="serviceAccount"
               @change="(value) => set('serviceAccount',value)"
@@ -16,77 +33,37 @@
               label="Service account JSON"
             >
               <template v-slot:info>
-                <a
-                  target="_blank"
-                  class="mt-2 text-sm text-gray-500"
-                  href="https://docs.sigmie.com"
-                >Where do i find this ?</a>
+                <p class="text-gray-500">
+                  More info at
+                  <a
+                    target="_blank"
+                    class="mt-2 text-sm text-orange-700"
+                    href="https://docs.sigmie.com"
+                  >https://docs.sigmie.com/app/google</a>
+                </p>
               </template>
             </form-textarea>
           </div>
           <div v-if="state === 'choosing'" class="px-4 py-5 bg-white sm:p-6">
-            <ul class>
-              <li>
-                <a
-                  href="#"
+            <ul>
+              <li v-for="(provider, key, index) in providers" :key="index">
+                <div
                   class="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition duration-150 ease-in-out"
                 >
                   <div class="flex items-center px-4 py-4 sm:px-6">
                     <div class="min-w-0 flex-1 flex items-center">
                       <div class="flex-shrink-0 w-16">
-                        <img class="h-10 w-auto mx-auto" :src="assetUrl+'/img/gcloud_logo.png'" alt />
+                        <img class="h-10 w-auto mx-auto" :src="assetUrl+'/img/'+provider.logo" alt />
                       </div>
                       <div class="min-w-0 flex-1 flex items-center pl-4">
-                        <p>Google Cloud Platform</p>
+                        <p>{{ provider.name }}</p>
                       </div>
                     </div>
                     <div>
-                      <button-secondary @click="choose('google')" text="Choose"></button-secondary>
+                      <button-secondary @click="choose(provider)" text="Choose"></button-secondary>
                     </div>
                   </div>
-                </a>
-              </li>
-              <li class="border-t border-gray-100">
-                <a
-                  href="#"
-                  class="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition duration-150 ease-in-out"
-                >
-                  <div class="flex items-center px-4 py-4 sm:px-6">
-                    <div class="min-w-0 flex-1 flex items-center">
-                      <div class="flex-shrink-0 w-16">
-                        <img class="h-10 w-auto mx-auto" :src="assetUrl+'/img/aws_logo.png'" alt />
-                      </div>
-                      <div class="min-w-0 flex-1 flex items-center pl-4">
-                        <p>Amazon Web Services</p>
-                      </div>
-                    </div>
-                    <div>
-                      <button-disabled text="Comming"></button-disabled>
-                      <!-- <button-secondary text="Choose"></button-secondary > -->
-                    </div>
-                  </div>
-                </a>
-              </li>
-              <li class="border-t border-gray-100">
-                <a
-                  href="#"
-                  class="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition duration-150 ease-in-out"
-                >
-                  <div class="flex items-center px-4 py-4 sm:px-6">
-                    <div class="min-w-0 flex-1 flex items-center">
-                      <div class="flex-shrink-0 w-16">
-                        <img class="h-10 w-auto mx-auto" :src="assetUrl+'/img/do_logo.png'" alt />
-                      </div>
-                      <div class="min-w-0 flex-1 flex items-center pl-4">
-                        <p>DigitalOcean</p>
-                      </div>
-                    </div>
-                    <div>
-                      <button-disabled text="Comming"></button-disabled>
-                      <!-- <button-secondary text="Choose"></button-secondary > -->
-                    </div>
-                  </div>
-                </a>
+                </div>
               </li>
             </ul>
           </div>
@@ -133,15 +110,29 @@ export default {
           mustBeJSON: "Not a valid json"
         }
       },
+      providers: {
+        google: {
+          name: "Google Cloud Platform",
+          logo: "gcloud_logo.png"
+        },
+        aws: {
+          name: "Amazon Web Services",
+          logo: "aws_logo.png"
+        },
+        digitalocean: {
+          name: "DigitalOcean",
+          logo: "do_logo.png"
+        }
+      },
       assetUrl: assetUrl,
-      provider: "google",
+      chosen: "google",
       state: "choosing",
       serviceAccount: ""
     };
   },
   methods: {
     choose(provider) {
-      this.provider = provider;
+      this.chosen = provider;
       this.state = "chosen";
     },
     set(key, value) {

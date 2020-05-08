@@ -58,11 +58,9 @@ export default {
       required,
       alphaDashes,
       isUnique(value) {
-
-          if (value === '')
-          {
-              return true;
-          }
+        if (value === "") {
+          return true;
+        }
 
         return new Promise((resolve, reject) => {
           setTimeout(() => {
