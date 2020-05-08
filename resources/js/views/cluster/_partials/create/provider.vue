@@ -3,7 +3,7 @@
     <div class="md:grid md:grid-cols-3 md:gap-6">
       <div class="mt-5 md:mt-0 md:col-span-2">
         <div class="shadow sm:rounded-md sm:overflow-hidden">
-          <div v-if="state === 'chosen'" class="px-4 py-5 bg-white sm:p-6">
+          <div v-if="state === 'chosen' && provider === 'google'" class="px-4 py-5 bg-white sm:p-6">
             <form-textarea
               :value="serviceAccount"
               @change="(value) => set('serviceAccount',value)"
@@ -16,7 +16,11 @@
               label="Service account JSON"
             >
               <template v-slot:info>
-                <p class="mt-2 text-sm text-gray-500">Info slot</p>
+                <a
+                  target="_blank"
+                  class="mt-2 text-sm text-gray-500"
+                  href="https://docs.sigmie.com"
+                >Where do i find this ?</a>
               </template>
             </form-textarea>
           </div>
@@ -30,7 +34,7 @@
                   <div class="flex items-center px-4 py-4 sm:px-6">
                     <div class="min-w-0 flex-1 flex items-center">
                       <div class="flex-shrink-0 w-16">
-                        <img class="h-10 w-auto mx-auto" src="/img/gcloud_logo.png" alt />
+                        <img class="h-10 w-auto mx-auto" :src="assetUrl+'/img/gcloud_logo.png'" alt />
                       </div>
                       <div class="min-w-0 flex-1 flex items-center pl-4">
                         <p>Google Cloud Platform</p>
@@ -50,7 +54,7 @@
                   <div class="flex items-center px-4 py-4 sm:px-6">
                     <div class="min-w-0 flex-1 flex items-center">
                       <div class="flex-shrink-0 w-16">
-                        <img class="h-10 w-auto mx-auto" src="/img/aws_logo.png" alt />
+                        <img class="h-10 w-auto mx-auto" :src="assetUrl+'/img/aws_logo.png'" alt />
                       </div>
                       <div class="min-w-0 flex-1 flex items-center pl-4">
                         <p>Amazon Web Services</p>
@@ -71,7 +75,7 @@
                   <div class="flex items-center px-4 py-4 sm:px-6">
                     <div class="min-w-0 flex-1 flex items-center">
                       <div class="flex-shrink-0 w-16">
-                        <img class="h-10 w-auto mx-auto" src="/img/do_logo.png" alt />
+                        <img class="h-10 w-auto mx-auto" :src="assetUrl+'/img/do_logo.png'" alt />
                       </div>
                       <div class="min-w-0 flex-1 flex items-center pl-4">
                         <p>DigitalOcean</p>
@@ -103,6 +107,8 @@
 <script>
 import { required, helpers } from "vuelidate/lib/validators";
 
+const assetUrl = process.env.MIX_ASSET_URL;
+
 const mustBeJSON = value => {
   try {
     JSON.parse(value);
@@ -127,7 +133,8 @@ export default {
           mustBeJSON: "Not a valid json"
         }
       },
-      provider: "",
+      assetUrl: assetUrl,
+      provider: "google",
       state: "choosing",
       serviceAccount: ""
     };

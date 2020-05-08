@@ -12,7 +12,7 @@ jobs:
 
     env:
       GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
-      COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
+ s     COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
       VARIABLES_PASSPHRASE: ${{ secrets.variables_passphrase }}
 
     steps:
@@ -54,6 +54,12 @@ jobs:
 
     - name: Install node
       run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
+
+    - name: Set ASSETS_URL
+      run: |
+           echo ::set-env name=ASSETS_HASH::$(find public -type f -name "*.json" -exec md5sum {} + | awk '{print $1}' | sort | md5sum | awk '{print $1}')
+           echo "ASSET_URL=https://assets.sigmie.com/${ASSETS_HASH}" >> .env
+           echo "MIX_ASSET_URL=https://assets.sigmie.com/${ASSETS_HASH}" >> .env
 
     - name: Install node dependencies and generate production assets
       run: npm install && npm run production
