@@ -33,11 +33,11 @@
               label="Service account JSON"
             >
               <template v-slot:info>
-                <p class="text-gray-500">
+                <p class="text-gray-500 text-sm mt-2">
                   More info at
                   <a
                     target="_blank"
-                    class="mt-2 text-sm text-orange-700"
+                    class="text-orange-700"
                     href="https://docs.sigmie.com"
                   >https://docs.sigmie.com/app/google</a>
                 </p>
@@ -60,7 +60,12 @@
                       </div>
                     </div>
                     <div>
-                      <button-secondary @click="choose(provider)" text="Choose"></button-secondary>
+                      <button-secondary
+                        v-if="provider.active"
+                        @click="choose(provider)"
+                        text="Choose"
+                      ></button-secondary>
+                      <button-disabled v-else text="Choose"></button-disabled>
                     </div>
                   </div>
                 </div>
@@ -72,9 +77,11 @@
       <div class="md:col-span-1">
         <div class="px-4 sm:px-0">
           <h3 class="text-lg font-medium leading-6 text-gray-900">Cloud provider</h3>
-          <p
-            class="mt-1 text-sm leading-5 text-gray-600"
-          >Your Cloud provider for your Elasticsearch cluster.</p>
+          <p class="mt-1 text-sm leading-5 text-gray-600">
+            Your Cloud provider for your Elasticsearch cluster.
+            <br />
+            <br />AWS and DigitalOcean aren't available yet.
+          </p>
         </div>
       </div>
     </div>
@@ -113,15 +120,18 @@ export default {
       providers: {
         google: {
           name: "Google Cloud Platform",
-          logo: "gcloud_logo.png"
+          logo: "gcloud_logo.png",
+          active: true
         },
         aws: {
           name: "Amazon Web Services",
-          logo: "aws_logo.png"
+          logo: "aws_logo.png",
+          active: false
         },
         digitalocean: {
           name: "DigitalOcean",
-          logo: "do_logo.png"
+          logo: "do_logo.png",
+          active: false
         }
       },
       assetUrl: assetUrl,

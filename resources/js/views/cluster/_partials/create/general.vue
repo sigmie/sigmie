@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="md:grid md:grid-cols-3 md:gap-6">
-      <div class="mt-5 md:mt-0 md:col-span-2">
+      <div class="md:mt-0 md:col-span-2">
         <div class="shadow sm:rounded-md sm:overflow-hidden">
           <div class="px-4 py-5 bg-white sm:p-6">
             <div class="grid grid-cols-3 gap-6">
@@ -10,7 +10,7 @@
                   :value="name"
                   label="Name"
                   @change="(value) => set('name',value)"
-                  class="pt-4 max-w-sm"
+                  class="max-w-sm"
                   id="name"
                   name="name"
                   :validations="$v.name"
