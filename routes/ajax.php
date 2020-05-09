@@ -15,4 +15,4 @@ Route::group(['middleware' => 'auth'], fn () => Route::resource('/project', 'Pro
 
 Route::resource('/notification', 'NotificationController', ['except' => ['edit', 'create', 'destroy']])->middleware('auth');
 
-Route::get('/cluster/name/{cluster:name}', 'ClusterNameController@show');
+Route::get('/cluster/name/{cluster:foo}', 'ClusterNameController@show');

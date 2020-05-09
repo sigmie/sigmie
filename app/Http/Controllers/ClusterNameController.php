@@ -6,8 +6,8 @@ use App\Cluster;
 
 class ClusterNameController extends Controller
 {
-    public function show(Cluster $cluster)
+    public function show(Cluster $foo)
     {
-        dd('hi');
+        dd($foo);
     }
 }
