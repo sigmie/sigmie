@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use Exception;
 use Google\Cloud\ErrorReporting\Bootstrap;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Throwable;
 
 class Handler extends ExceptionHandler
 {
@@ -33,7 +34,7 @@ class Handler extends ExceptionHandler
      * @param  \Exception $exception
      * @return void
      */
-    public function report(Exception $exception)
+    public function report(Throwable $exception)
     {
         // Report to sentry only in production environment
         if (app()->bound('sentry') && $this->shouldReport($exception) && app()->isProduction()) {
@@ -55,7 +56,7 @@ class Handler extends ExceptionHandler
      * @param  \Exception               $exception
      * @return \Symfony\Component\HttpFoundation\Response
      */
-    public function render($request, Exception $exception)
+    public function render($request, Throwable $exception)
     {
         return parent::render($request, $exception);
     }

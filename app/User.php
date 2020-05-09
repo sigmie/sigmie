@@ -48,4 +48,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Project::class);
     }
+
+    public function clusters()
+    {
+        return $this->hasMany(Cluster::class);
+    }
 }
