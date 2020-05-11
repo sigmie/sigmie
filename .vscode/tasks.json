@@ -9,6 +9,11 @@
             "command": "php artisan"
         },
         {
+            "label": "artisan:test",
+            "type": "shell",
+            "command": "php artisan test"
+        },
+        {
             "label": "dump:autoload",
             "type": "shell",
             "command": "composer dump-autoload"
