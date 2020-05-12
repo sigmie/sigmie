@@ -49,4 +49,27 @@ return [
         'key' => env('MAILCHIMP_KEY'),
         'data_center' => env('MAILCHIMP_DATA_CENTER'),
     ],
+    'paddle' => [
+        'vendor_id' => 113820,
+        'plans' => [
+            'hobby' => [
+                'id' => 593241,
+                'name' => 'Hobby'
+            ],
+            'pro' => [
+                'id' =>  593244,
+                'name' => 'Pro'
+            ],
+            'serious' => [
+                'id' => 593245,
+                'name' => 'Serious'
+            ],
+        ],
+        'test_plans'=>[
+            'test' => [
+                'id'=> 593243,
+                'name' => 'Test'
+            ]
+        ]
+    ],
 ];

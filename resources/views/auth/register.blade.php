@@ -3,7 +3,7 @@
 @section('tail-js')
 <script src="https://cdn.paddle.com/paddle/paddle.js"></script>
 <script type="text/javascript">
-	Paddle.Setup({ vendor: 113820 });
+    Paddle.Setup({ vendor: {{ $paddleVendor }} });
 </script>
 @endsection
 
@@ -31,12 +31,13 @@
             <container-white>
                 <register-form id="register" method="POST" action="{{ route('register') }}"
                     github-route="{{ route('github.redirect', ['action' => 'register'])}}"
-                    :github-user="{{ json_encode($githubUser) }}" />
+                    :paddle-plans="{{ json_encode($paddlePlans) }} " :github-user="{{ json_encode($githubUser) }}" />
             </container-white>
             <div class="w-full px-4 w-4/12 pt-3">
                 <div class="mx-auto text-center">
                     <span class="text-gray-500 mx-auto">
-                        Already having an account ? <a class="text-orange-600 font-semibold" href="{{ route('login') }}">Sign-in</a>
+                        Already having an account ? <a class="text-orange-600 font-semibold"
+                            href="{{ route('login') }}">Sign-in</a>
                     </span>
                 </div>
             </div>

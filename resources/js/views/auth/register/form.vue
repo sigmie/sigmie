@@ -111,7 +111,17 @@
       </div>
     </div>
     <div class="border-t border-gray-200 p-6">
-      <paddle></paddle>
+      <form-select
+        label="Plan"
+        name="plan"
+        id="plan"
+        v-model.trim="$v.plan.$model"
+        aria-label="Billing plan"
+        :items="plans"
+        :validations="$v.plan"
+      ></form-select>
+
+      <paddle class="mt-4" :plan="plan"></paddle>
     </div>
 
     <div class="border-gray-200 px-5 pb-5 pt-1">
@@ -134,10 +144,13 @@ import {
   helpers
 } from "vuelidate/lib/validators";
 
+import forEach from "lodash/forEach";
+import findKey from "lodash/findKey";
+
 const mustBeTrue = value => value === true;
 
 export default {
-  props: ["githubRoute", "githubUser"],
+  props: ["githubRoute", "githubUser", "paddlePlans"],
   data() {
     return {
       name: app.old.name ? app.old.name : "",
@@ -145,8 +158,9 @@ export default {
       password: "",
       password_confirmation: "",
       username: app.old.username ? app.old.username : "",
-      plan: app.old.plan ? app.old.plan : "Hobby",
+      plan: app.old.plan ? app.old.plan : "",
       method: "",
+      plans: [],
       consent: false,
       github: false,
       errorMessages: {
@@ -216,6 +230,13 @@ export default {
   },
   beforeMount() {
     this.github = typeof this.githubUser.name !== "undefined";
+  },
+  mounted() {
+    this.plans = {};
+
+    forEach(this.paddlePlans, e => (this.plans[e.id] = e.name));
+
+    this.plan = this.plan !== '' ? this.plan : findKey(this.plans);
   }
 };
 </script>

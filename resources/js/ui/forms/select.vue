@@ -16,7 +16,7 @@
           @change="$emit('change', $event.target.value)"
           class="form-select relative block w-full rounded-none rounded-md bg-transparent focus:z-10 transition ease-in-out duration-150 sm:text-sm sm:leading-5"
         >
-          <option v-for="(item, index) in items" :key="index">{{ item }}</option>
+          <option v-for="(item, index) in items" :value="index" :key="index">{{ item }}</option>
         </select>
       </div>
     </div>
