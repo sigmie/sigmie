@@ -26,7 +26,7 @@
         <div class="px-4 sm:px-0">
           <h3 class="text-lg font-medium leading-6 text-gray-900">General</h3>
           <p v-if="name !== ''" class="mt-1 text-sm leading-5 text-gray-600">
-            General information about your search.
+            Basic information about your search.
             <br />
             <br />You search will be available at
             <br />
@@ -62,10 +62,10 @@ export default {
           return true;
         }
 
-        return new Promise((resolve, reject) => {
-          setTimeout(() => {
-            resolve(typeof value === "string" && value.length % 2 !== 0);
-          }, 350 + Math.random() * 300);
+        return this.$http.get(`/cluster/name/${value}`, {
+          validateStatus: function(status) {
+            return status === 404; // Resolve only if the status code is less than 500
+          }
         });
       }
     }

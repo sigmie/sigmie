@@ -23,7 +23,7 @@
       />
 
       <div
-        v-if="validations.$anyError"
+        v-if="validations.$anyError && validations.$pending === false"
         class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
       >
         <svg class="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
@@ -63,7 +63,11 @@
       </div>
     </div>
 
-    <div v-for="(message, rule) in errorMessages" :key="rule">
+    <div
+      v-for="(message, rule) in errorMessages"
+      :key="rule"
+      v-if="validations.$pending === false"
+    >
       <p
         v-if="!validations[rule] && validations.$dirty"
         class="mt-2 text-sm text-red-600"
