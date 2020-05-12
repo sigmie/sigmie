@@ -36,13 +36,9 @@ class RegisterController extends Controller
      */
     public function showRegistrationForm(Request $request)
     {
-        $intent = (new User)->createSetupIntent();
-
         return view('auth.register', [
             'githubUser' => $request->session()->get('githubUser', []),
-            'stripe' =>            [
-                'intent' => $intent, 'secret' => config('cashier.key')
-            ]
+            'paddleVendor' => config('paddle.vendor')
         ]);
     }
 
@@ -62,8 +58,7 @@ class RegisterController extends Controller
                 'name' => ['required', 'string', 'max:255'],
                 'username' => ['required', 'string', 'min:4'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-                'password' => $password,
-                'method' => ['required'],
+                'password' => $password
             ]
         );
     }

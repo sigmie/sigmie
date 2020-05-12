@@ -23,7 +23,6 @@
         "google/cloud-logging": "^1.20",
         "fruitcake/laravel-cors": "^1.0",
         "guzzlehttp/guzzle": "^6.4",
-        "laravel/cashier": "^10.3",
         "laravel/framework": "^7.0",
         "laravel/horizon": "^4.0",
         "laravel/nova": "^3.0",

@@ -1,14 +1,16 @@
 @extends('layouts.public')
 
 @section('tail-js')
-<script src="https://js.stripe.com/v3/" type="application/javascript"></script>
+<script src="https://cdn.paddle.com/paddle/paddle.js"></script>
+<script type="text/javascript">
+	Paddle.Setup({ vendor: 113820 });
+</script>
 @endsection
 
 @section('head-css')
 @endsection()
 
 @section('js-assign')
-var stripe = @json($stripe);
 @endsection()
 
 

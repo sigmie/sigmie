@@ -26,6 +26,7 @@ Vue.prototype.$socket = new Echo({
 
 Vue.component('csrf', require('./essentials/csrf').default)
 Vue.component('stripe', require('./essentials/stripe').default)
+Vue.component('paddle', require('./essentials/paddle').default)
 
 Vue.component('form-input', require('./ui/forms/input').default)
 Vue.component('form-checkbox', require('./ui/forms/checkbox').default)

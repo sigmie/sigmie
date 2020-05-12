@@ -111,55 +111,7 @@
       </div>
     </div>
     <div class="border-t border-gray-200 p-6">
-      <div>
-        <h3 class="text-lg leading-6 font-medium text-gray-900">Billing</h3>
-        <p class="mt-1 max-w-2xl text-sm leading-5 text-gray-500">Billing information</p>
-      </div>
-
-      <div class="mt-4 bg-white">
-        <form-select
-          label="Plan"
-          name="plan"
-          id="plan"
-          v-model.trim="$v.plan.$model"
-          aria-label="Billin plan"
-          :items="['Hobby','Pro','Serious']"
-          :validations="$v.plan"
-        ></form-select>
-      </div>
-      <div class="pt-2">
-        <div class="sm:col-span-3 pb-2">
-          <form-input
-            :value="name"
-            @change="(value) => set('name',value)"
-            class="pt-4"
-            label="Name"
-            id="name"
-            name="name"
-            :validations="$v.name"
-            :error-messages="errorMessages.name"
-          ></form-input>
-        </div>
-      </div>
-      <div class="pt-4">
-        <div class="sm:col-span-3">
-          <stripe v-model.trim="$v.method.$model" ref="stripe" :name="name" />
-        </div>
-      </div>
-      <div class="pt-2">
-        <div class="sm:col-span-3 pt-2">
-          <form-checkbox
-            v-model="consent"
-            required
-            :validations="$v.consent"
-            name="consent"
-            id="consent"
-          >
-            I agree to the
-            <a href="/terms" taget="_blank" class="underline">terms of service</a>
-          </form-checkbox>
-        </div>
-      </div>
+      <paddle></paddle>
     </div>
 
     <div class="border-gray-200 px-5 pb-5 pt-1">
