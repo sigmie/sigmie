@@ -55,7 +55,6 @@ services:
   'db.internal.mos-sigma.com':
     container_name: db
     image: mysql:5.7
-    restart: always
     environment:
       MYSQL_DATABASE: 'db'
       MYSQL_USER: 'user'

@@ -1,0 +1,24 @@
+runtime: custom
+env: flex
+
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 1
+  cool_down_period_sec: 180
+  cpu_utilization:
+    target_utilization: 0.6
+  target_concurrent_requests: 100
+
+resources:
+  cpu: 1
+  memory_gb: 0.5
+  disk_size_gb: 10
+
+network:
+  instance_tag: app-engine
+  name: default
+  subnetwork_name: default
+  session_affinity: true
+
+beta_settings:
+    cloud_sql_instances: "mossigma-app-production:europe-west1:mos-sigma"

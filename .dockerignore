@@ -1,5 +1,4 @@
 .github
-.git
 .vscode
 
 node_modules
@@ -21,7 +20,6 @@ public/**
 !public/index.php
 
 google.json
-auth.json
 
 composer.lock
 

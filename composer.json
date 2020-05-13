@@ -12,10 +12,6 @@
         {
             "type": "composer",
             "url": "https://nova.laravel.com"
-        },
-        {
-            "type": "composer",
-            "url": "https://packages.sigmie.com/"
         }
     ],
     "require": {
@@ -34,8 +30,7 @@
         "laravel/tinker": "^1.0",
         "predis/predis": "^1.1",
         "ramsey/uuid": "^3.9",
-        "sentry/sentry-laravel": "^1.5",
-        "sigmie/app-core": "^0.1.0"
+        "sentry/sentry-laravel": "^1.5"
     },
     "require-dev": {
         "filp/whoops": "^2.0",
