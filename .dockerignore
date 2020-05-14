@@ -15,12 +15,7 @@ docker
 .gitattributes
 .styleci.yml
 
-public/**
-!public/index.php
-
 google.json
-
-composer.lock
 
 package-lock.json
 package.json
