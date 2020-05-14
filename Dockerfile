@@ -5,7 +5,6 @@ ENV DEBIAN_FRONTEND noninteractive
 WORKDIR /var/www/app
 
 ENV TZ=Europe/Berlin
-
 # setup the timezone
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
@@ -56,6 +55,8 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 
 # replace nova assets url
 RUN grep --include=\*.blade.php -rl 'vendor/laravel/nova' -e "{{ mix(.*) }}" | xargs sed -ri "s@mix\('(.*)', '(.*)'\)@asset\('\2/\1'\)@g"
+
+RUN php artisan clear-compiled && php artisan optimize && php artisan view:clear && php artisan view:cache && php artisan event:clear && php artisan event:cache
 
 # Remove env file
 RUN rm .env && mkdir -p /var/www/app/storage/framework/cache/data && chmod -R 775 /var/www/app/storage
