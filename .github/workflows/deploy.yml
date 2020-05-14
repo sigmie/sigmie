@@ -30,15 +30,10 @@ jobs:
        path: ~/.composer
        key: composer-${{ hashFiles('**/composer.lock') }}
 
-    - name: Set release and assets url env
-      run: echo ::set-env name=RELEASE_VERSION::$(date +%s)
-
     - name: Composer cache permissions
       run: |
-           sudo mkdir -p ~/.composer
-           sudo mkdir -p ~/.npm
-           sudo chown -R $USER ~/.composer
-           sudo chown -R $USER ~/.npm
+           sudo mkdir -p ~/.composer && sudo chown -R $USER ~/.composer
+           sudo mkdir -p ~/.npm && sudo chown -R $USER ~/.composer
 
     - name: Set gcloud host names
       run: |
@@ -88,14 +83,22 @@ jobs:
           gcloud auth activate-service-account --key-file=google.json
           gcloud config set project mossigma-app-production
 
+    - name: Open redis tunnel
+      run: gcloud compute ssh redis --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
+
     - name: Deploy assets to sigmie bucket
       run: gsutil -m rsync -x index.php -r ./public gs://assets.sigmie.com/${ASSETS_HASH}
 
-    - name: Optimize app for production
-      run: php artisan clear-compiled && php artisan optimize && php artisan view:clear && php artisan view:cache && php artisan event:clear && php artisan event:cache
+    - name: Build image and cache configs
+      run: |
+          docker build --network=host -t application .
+          docker run --network=host application php artisan clear-compiled && php artisan optimize && php artisan view:clear && php artisan view:cache && php artisan event:clear && php artisan event:cache
 
     - name: Deploy to app engine
       run: gcloud app deploy --stop-previous-version
 
-    - name: Migrate database
-      run: php artisan migrate --force
+    - name: Migrate database \
+      run: |
+        sed -ri 's@DB_SOCKET=/cloudsql/mossigma-app-production:europe-west1:mos-sigma@DB_HOST=sqlproxy.internal.mos-sigma.com@g' .env
+        php artisan cache:clear
+        php artisan migrate --force
