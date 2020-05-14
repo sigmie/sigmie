@@ -94,8 +94,11 @@ jobs:
     - name: Open redis tunnel
       run: gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
 
+    - name: Optimize app for production
+      run: php artisan clear-compiled && php artisan optimize && php artisan view:clear && php artisan view:cache && php artisan event:clear && php artisan event:cache
+
     - name: Deploy to app engine
       run: gcloud app deploy --stop-previous-version
 
     - name: Migrate database
-      run: docker run --network=host eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} php artisan migrate --force
+      run: php artisan migrate --force
