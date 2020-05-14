@@ -53,9 +53,6 @@ COPY .docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
     && composer validate && composer install --no-dev --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
 
-# replace nova assets url
-RUN grep --include=\*.blade.php -rl 'vendor/laravel/nova' -e "{{ mix(.*) }}" | xargs sed -ri "s@mix\('(.*)', '(.*)'\)@asset\('\2/\1'\)@g"
-
 RUN php artisan clear-compiled && php artisan optimize && php artisan view:clear && php artisan view:cache && php artisan event:clear && php artisan event:cache
 
 # Remove env file
