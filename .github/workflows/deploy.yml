@@ -46,34 +46,31 @@ jobs:
           gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
           gpg --quiet --batch --yes --decrypt --passphrase=$VARIABLES_PASSPHRASE --output .env .github/secrets/variables.gpg
 
-    # - name: Start sql proxy
-    #   run: docker run -d -v ${PWD}/google.json:/config -p 3307:3306 gcr.io/cloudsql-docker/gce-proxy:1.16 /cloud_sql_proxy -instances=mossigma-app-production:europe-west1:mos-sigma=tcp:0.0.0.0:3306 -credential_file=/config
+    - name: Start sql proxy
+      run: docker run -d -v ${PWD}/google.json:/config -p 3307:3306 gcr.io/cloudsql-docker/gce-proxy:1.16 /cloud_sql_proxy -instances=mossigma-app-production:europe-west1:mos-sigma=tcp:0.0.0.0:3306 -credential_file=/config
 
     - name: Install curl curl nodejs-dev node-gyp libssl1.0-dev zip npm
       run: sudo apt-get update && sudo apt-get install -y curl nodejs-dev node-gyp libssl1.0-dev zip npm
 
-    # - name: Install composer
-    #   run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+    - name: Install composer
+      run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 
-    # - name: Validate composer and install prod dependecies
-    #   run: |
-    #       composer validate
-    #       composer install -q --no-dev --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
+    - name: Validate composer and install prod dependecies
+      run: |
+          composer validate
+          composer install -q --no-dev --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
 
-    # - name: Replace Nova mixins url with assets url
-    #   run: grep --include=\*.blade.php -rl 'vendor/laravel/nova' -e "{{ mix(.*) }}" | xargs sed -ri "s@mix\('(.*)', '(.*)'\)@asset\('\2/\1'\)@g"
+    - name: Install node
+      run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
 
-    # - name: Install node
-    #   run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
+    - name: Install node dependencies and generate production assets
+      run: |
+          echo ::set-env name=ASSETS_HASH::$(find public -type f -name "*.json" -exec md5sum {} + | awk '{print $1}' | sort | md5sum | awk '{print $1}')
+          npm install
+          npm run production
 
-    # - name: Install node dependencies and generate production assets
-    #   run: |
-    #       echo ::set-env name=ASSETS_HASH::$(find public -type f -name "*.json" -exec md5sum {} + | awk '{print $1}' | sort | md5sum | awk '{print $1}')
-    #       npm install
-    #       npm run production
-
-    # - name: Set ASSETS_URL
-    #   run: echo "ASSET_URL=https://assets.sigmie.com/${ASSETS_HASH}" >> .env
+    - name: Set ASSETS_URL
+      run: echo "ASSET_URL=https://assets.sigmie.com/${ASSETS_HASH}" >> .env
 
     - name: Install GCloud SDK
       run: if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
@@ -83,11 +80,20 @@ jobs:
           gcloud auth activate-service-account --key-file=google.json
           gcloud config set project mossigma-app-production
 
+    - name: Open redis tunnel
+      run: gcloud compute ssh redis --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
+
     - name: Deploy assets to sigmie bucket
       run: gsutil -m rsync -x index.php -r ./public gs://assets.sigmie.com/${ASSETS_HASH}
 
+    - name: Build image and cache values
+      run: |
+          docker build -t app .
+          docker run -v ${PWD}:/var/www/app --network=host app php artisan cache:clear && php artisan clear-compiled && php artisan optimize && php artisan view:clear && php artisan view:cache && php artisan event:clear && php artisan event:cache
+          rm -rf .env
+
     - name: Deploy to app engine
-      run: gcloud app deploy --verbosity=info --stop-previous-version
+      run: gcloud app deploy --stop-previous-version
 
     - name: Migrate database \
       run: |
