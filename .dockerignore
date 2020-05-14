@@ -13,7 +13,6 @@ docker
 .env.example
 .env.testing
 .gitattributes
-.gitignore
 .styleci.yml
 
 public/**

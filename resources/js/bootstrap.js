@@ -21,9 +21,8 @@ Vue.prototype.$http = axios.create({
 })
 
 Vue.prototype.$socket = new Echo({
-  client: io,
-  broadcaster: 'socket.io',
-  host: process.env.MIX_SOCKET_HOST
+  broadcaster: 'pusher',
+  key: '1060db93e19b5125f23a'
 })
 
 Vue.component('csrf', require('./essentials/csrf').default)
