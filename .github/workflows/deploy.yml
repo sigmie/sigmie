@@ -1,15 +1,14 @@
 name: Deploy
 
-on:
-  pull_request:
-    types: [closed]
-    branches:
-      - master
-
+on: push
+  # pull_request:
+  #   types: [closed]
+  #   branches:
+  #     - master
 jobs:
   deploy:
     runs-on: ubuntu-18.04
-    if: github.event.pull_request.merged
+    # if: github.event.pull_request.merged
 
     env:
       GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
@@ -36,6 +35,8 @@ jobs:
 
     - name: Composer cache permissions
       run: |
+           sudo mkdir ~/.composer ;
+           sudo mkdir ~/.npm ;
            sudo chown -R $USER ~/.composer
            sudo chown -R $USER ~/.npm
 
@@ -85,7 +86,6 @@ jobs:
     - name: Gcloud & docker authentication
       run: |
           gcloud auth activate-service-account --key-file=google.json
-          gcloud auth configure-docker
           gcloud config set project mossigma-app-production
 
     - name: Deploy assets to sigmie bucket
@@ -94,46 +94,8 @@ jobs:
     - name: Open redis tunnel
       run: gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
 
-    - name: Build app images
-      run: |
-          docker build --target=production --network=host -t eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} -f .docker/Dockerfile .
-          mv .docker/scheduler.sh ./entrypoint.sh && chmod +x ./entrypoint.sh
-          docker build --target=entrypoint --network=host -t eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION} -f .docker/Dockerfile .
-          mv .docker/worker.sh ./entrypoint.sh && chmod +x ./entrypoint.sh
-          docker build --target=entrypoint --network=host -t eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION} -f .docker/Dockerfile .
-
-    - name: Push app images
-      run: |
-          docker push eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION}
-          docker push eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION}
-          docker push eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION}
-
-    - name: Create instance template
-      run: |
-           gcloud compute \
-           instance-templates \
-           create-with-container \
-           fpm-${RELEASE_VERSION} \
-           --machine-type=f1-micro \
-           --subnet=projects/mossigma-app-production/regions/europe-west1/subnetworks/default \
-           --region=europe-west1 \
-           --tags=default-allow-internal,allow-health-check \
-           --image=cos-stable-79-12607-80-0 \
-           --image-project=cos-cloud \
-           --boot-disk-size=10GB \
-           --boot-disk-type=pd-standard \
-           --boot-disk-device-name=fpm-${RELEASE_VERSION} \
-           --container-image=eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} \
-           --container-restart-policy=always \
-           --labels=container-vm=cos-stable-79-12607-80-0
-
-    - name: Start rolling update
-      run: gcloud compute instance-groups managed rolling-action start-update fpm --version template=fpm-${RELEASE_VERSION} --zone=europe-west1-b
+    - name: Deploy to app engine
+      run: gcloud app deploy --stop-previous-version
 
     - name: Migrate database
       run: docker run --network=host eu.gcr.io/mossigma-app-production/fpm:${RELEASE_VERSION} php artisan migrate --force
-
-    - name: Update worker and scheduler container images
-      run: |
-          gcloud compute instances update-container worker --zone=europe-west1-b --container-image=eu.gcr.io/mossigma-app-production/worker:${RELEASE_VERSION}
-          gcloud compute instances update-container scheduler --zone=europe-west1-b --container-image=eu.gcr.io/mossigma-app-production/scheduler:${RELEASE_VERSION}
