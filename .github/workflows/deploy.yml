@@ -35,8 +35,8 @@ jobs:
 
     - name: Composer cache permissions
       run: |
-           sudo mkdir ~/.composer ;
-           sudo mkdir ~/.npm ;
+           sudo mkdir -p ~/.composer
+           sudo mkdir -p ~/.npm
            sudo chown -R $USER ~/.composer
            sudo chown -R $USER ~/.npm
 
@@ -90,9 +90,6 @@ jobs:
 
     - name: Deploy assets to sigmie bucket
       run: gsutil -m rsync -x index.php -r ./public gs://assets.sigmie.com/${ASSETS_HASH}
-
-    - name: Open redis tunnel
-      run: gcloud compute ssh sidecars --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
 
     - name: Optimize app for production
       run: php artisan clear-compiled && php artisan optimize && php artisan view:clear && php artisan view:cache && php artisan event:clear && php artisan event:cache

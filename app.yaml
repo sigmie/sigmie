@@ -20,5 +20,8 @@ network:
   subnetwork_name: default
   session_affinity: true
 
+vpc_access_connector:
+  name: "projects/mossigma-app-production/locations/europe-west1/connectors/ae"
+
 beta_settings:
     cloud_sql_instances: "mossigma-app-production:europe-west1:mos-sigma"

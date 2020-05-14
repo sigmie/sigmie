@@ -54,8 +54,10 @@ COPY .docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
     && composer validate && composer install --no-dev --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
 
+RUN grep --include=\*.blade.php -rl 'vendor/laravel/nova' -e "{{ mix(.*) }}" | xargs sed -ri "s@mix\('(.*)', '(.*)'\)@asset\('\2/\1'\)@g"
+
 # Remove env file
-RUN rm .env
+RUN rm .env && mkdir -p storage/framework/cache/data
 
 # publish app engine port 8080
 EXPOSE 8080
