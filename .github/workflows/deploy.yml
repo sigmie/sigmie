@@ -78,4 +78,4 @@ jobs:
       run: gcloud app deploy --stop-previous-version
 
     - name: Migrate database
-      run: php artisan migrate --force
+      run: docker run --network=host $(docker build -q .) php artisan migrate --force
