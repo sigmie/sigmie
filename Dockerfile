@@ -32,7 +32,7 @@ RUN add-apt-repository ppa:ondrej/php
 RUN apt-get install -y php7.4 php7.4-fpm php7.4-zip php7.4-dom php7.4-intl php7.4-mbstring php7.4-simplexml php7.4-xml php7.4-common php7.4-opcache php7.4-cli php7.4-gd php7.4-curl php7.4-mysql php7.4-fpm php7.4-bcmath
 
 # remove apt-cache leftovers
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # disable default vhost
 RUN unlink /etc/nginx/sites-enabled/default && rm -rf /var/www/html
@@ -49,12 +49,18 @@ COPY .docker/nginx/conf.d /etc/nginx/conf.d
 # copy the supervisor configuration
 COPY .docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 
+# Assign app folder ownership to www-data
+RUN chown -R www-data:www-data /var/www/app
+
 # install composer and the project dependecies
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
     composer validate && composer install --no-dev --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
 
 # publish app engine port 8080
 EXPOSE 8080
+
+# change root user
+USER www-data
 
 CMD php artisan cache:clear         && \
     php artisan clear-compiled      && \
