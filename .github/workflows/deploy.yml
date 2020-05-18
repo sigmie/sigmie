@@ -73,6 +73,7 @@ jobs:
       run: |
           sudo sh -c "echo 127.0.0.1 redis.internal.mos-sigma.com >> /etc/hosts"
           gcloud compute ssh redis --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
+          sleep 60
 
     - name: Deploy to app-engine
       run: gcloud app deploy --stop-previous-version
