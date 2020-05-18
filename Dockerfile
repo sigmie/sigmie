@@ -49,8 +49,10 @@ COPY .docker/nginx/conf.d /etc/nginx/conf.d
 # copy the supervisor configuration
 COPY .docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 
-# Assign app folder ownership to www-data
-RUN chown -R www-data:www-data /var/www/app
+# Assign app folder ownership to www-data and set permissions
+RUN chown -R www-data:www-data /var/www/app && \
+    find /var/www/app -type f -exec chmod 644 {} \; && \
+    find /var/www/app -type d -exec chmod 755 {} \;
 
 # install composer and the project dependecies
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
@@ -59,9 +61,6 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # publish app engine port 8080
 EXPOSE 8080
 
-# change root user
-USER www-data
-
 CMD php artisan cache:clear         && \
     php artisan clear-compiled      && \
     php artisan optimize            && \
@@ -69,6 +68,7 @@ CMD php artisan cache:clear         && \
     php artisan view:cache          && \
     php artisan event:clear         && \
     php artisan event:cache         && \
+    php artisan migrate --force     && \
     rm .env                         && \
     rm auth.json                    && \
     /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
