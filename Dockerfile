@@ -49,6 +49,9 @@ COPY .docker/nginx/conf.d /etc/nginx/conf.d
 # copy the supervisor configuration
 COPY .docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 
+# copy the supervisor kill script into container's path
+COPY .docker/supervisor/stop-supervisor /bin
+
 # Assign app folder ownership to www-data and set permissions
 RUN chown -R www-data:www-data /var/www/app && \
     find /var/www/app -type f -exec chmod 644 {} \; && \
