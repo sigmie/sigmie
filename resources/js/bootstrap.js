@@ -6,6 +6,7 @@ import Vuelidate from 'vuelidate'
 import Echo from 'laravel-echo'
 import axios from 'axios'
 import io from 'socket.io-client'
+import pusher from 'pusher-js'
 
 import { directive as away } from 'vue-clickaway'
 
@@ -14,14 +15,16 @@ Vue.use(Vuelidate)
 
 Vue.directive('away', away)
 
-Vue.prototype.$http = axios.create({ baseURL: process.env.MIX_APP_URL + '/ajax/',
-  headers: {
-  }
+Vue.prototype.$http = axios.create({
+    baseURL: process.env.MIX_APP_URL + '/ajax/',
+    headers: {
+    }
 })
 
 Vue.prototype.$socket = new Echo({
-  broadcaster: 'pusher',
-  key: '1060db93e19b5125f23a'
+    broadcaster: 'pusher',
+    key: '1060db93e19b5125f23a'
+
 })
 
 Vue.component('csrf', require('./essentials/csrf').default)
