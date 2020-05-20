@@ -1,14 +1,14 @@
 name: Deploy
 
-on: push
-  # pull_request:
-  #   types: [closed]
-  #   branches:
-  #     - master
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
 jobs:
   deploy:
     runs-on: ubuntu-18.04
-    # if: github.event.pull_request.merged
+    if: github.event.pull_request.merged
 
     env:
       GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
