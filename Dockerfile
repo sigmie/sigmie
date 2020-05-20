@@ -1,9 +1,12 @@
-FROM debian:buster
+FROM debian:buster AS prod
 
+# avoid errro message
 ENV DEBIAN_FRONTEND noninteractive
 
+# app directory
 WORKDIR /var/www/app
 
+# time zone
 ENV TZ=Europe/Berlin
 
 # setup the timezone
@@ -13,11 +16,11 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN apt-get update
 
 # install system dependencies
-RUN apt-get install -y git unzip zip vim wget curl nginx supervisor
+RUN apt-get install -y git unzip zip vim wget curl nginx supervisor curl
 
-RUN apt-get install -y apt-transport-https gnupg lsb-release ca-certificates curl
-RUN curl -fsSL -o /etc/apt/trusted.gpg.d/php.gpg "https://packages.sury.org/php/apt.gpg"
-RUN sh -c 'echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
+RUN apt -y install lsb-release apt-transport-https ca-certificates && \
+    wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg && \
+    echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list
 
 # update
 RUN apt-get update
@@ -64,6 +67,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # publish app engine port 8080
 EXPOSE 8080
 
+# production command
 CMD php artisan cache:clear         && \
     php artisan clear-compiled      && \
     php artisan optimize            && \

@@ -68,14 +68,3 @@ jobs:
 
     - name: Deploy to app-engine
       run: gcloud app deploy --stop-previous-version
-
-    - name: Setup migratin environment
-      run: |
-          sed -i 's@DB_SOCKET=/cloudsql/mossigma-app-production:europe-west1:mos-sigma@DB_HOST=127.0.0.1@' .env
-          sed -i 's@DB_PORT=3306@DB_PORT=3307@' .env
-          docker run -d -v ${PWD}/google.json:/config -p 3307:3306 gcr.io/cloudsql-docker/gce-proxy:1.16 /cloud_sql_proxy -instances=mossigma-app-production:europe-west1:mos-sigma=tcp:0.0.0.0:3306 -credential_file=/config
-          sudo sh -c "echo 127.0.0.1 redis.internal.mos-sigma.com >> /etc/hosts"
-          gcloud compute ssh redis --zone europe-west1-b -- -L 6379:0.0.0.0:6379  -N -f
-
-    - name: Migrate database
-      run: php artisan migrate --force
