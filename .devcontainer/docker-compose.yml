@@ -1,58 +1,23 @@
 version: '3.4'
 services:
 
-  'nginx.internal.mos-sigma.com':
-    container_name: nginx
+  app:
+    container_name: app
     build:
       context: '..'
-      dockerfile: .devcontainer/nginx/Dockerfile
     ports:
-        - '80:80'
-        - '443:443'
-    depends_on:
-      - 'fpm.internal.mos-sigma.com'
-    volumes:
-        - ../:/var/www/app:delegated
-        - ./nginx/site.conf:/etc/nginx/conf.d/default.conf
-
-  'redis.internal.mos-sigma.com':
-    container_name: redis
-    image: bitnami/redis:5.0
-    ports:
-        - '6379:6379'
-    environment:
-      - REDIS_PASSWORD=na8!^&*JbXEz
-
-  'fpm.internal.mos-sigma.com':
-    container_name: fpm
-    build:
-      context: '..'
-      dockerfile: .docker/Dockerfile
-      target: development
-    volumes:
-        - ../:/var/www/app:delegated
-    depends_on:
-      - 'redis.internal.mos-sigma.com'
-
-  'echo.internal.mos-sigma.com':
-    container_name: echo
-    build:
-      context: '.'
-      dockerfile: echo/Dockerfile
-    ports:
-        - '6001:6001'
-
-  'devtools.internal.mos-sigma.com':
-    container_name: devtools
-    build: "./devtools"
+        - '35729:35729'
+        - '80:8080'
     volumes:
         - ../:/var/www/app:delegated
         - ~/.composer:/root/.composer
         - ~/.npm:/root/.npm
-    ports:
-        - '35729:35729'
+    depends_on:
+      - redis
+      - db
+    command: sleep infinity
 
-  'db.internal.mos-sigma.com':
+  db:
     container_name: db
     image: mysql:5.7
     environment:
@@ -62,10 +27,19 @@ services:
       MYSQL_ROOT_PASSWORD: 'password'
     ports:
       - '3306:3306'
-    expose:
-      - '3306'
     volumes:
       - db:/var/lib/mysql
 
+  redis:
+    container_name: redis
+    image: bitnami/redis:5.0
+    ports:
+        - '6379:6379'
+    environment:
+      - REDIS_PASSWORD=na8!^&*JbXEz
+    volumes:
+      - redis:/data
+
 volumes:
   db:
+  redis:

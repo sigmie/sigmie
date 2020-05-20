@@ -8,7 +8,7 @@
 	],
 	// The 'service' property is the name of the service for the container that VS Code should
 	// use. Update this value and .devcontainer/docker-compose.yml to the real service name.
-	"service": "devtools.internal.mos-sigma.com",
+	"service": "app",
 	// The optional 'workspaceFolder' property is the path VS Code should open by default when
 	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
 	"workspaceFolder": "/var/www/app",
@@ -25,7 +25,7 @@
 	// Uncomment the next line if you want to keep your containers running after VS Code shuts down.
 	// "shutdownAction": "none",
 	// Uncomment the next line to run commands after the container is created - for example installing git.
-	//"postCreateCommand": "php artisan queue:work",
+	"postCreateCommand": "rm /etc/apt/sources.list.d/ondrej-ubuntu-php-groovy.list && apt-get update && apt-get install -y npm && /usr/bin/supervisord -c /etc/supervisor/supervisord.conf",
 	// Add the IDs of extensions you want installed when the container is created in the array below.
 	"extensions": [
         "chenxsan.vscode-standardjs",
