@@ -34,6 +34,11 @@ return [
     */
 
     'channels' => [
+        'stackdriver' => [
+            'driver' => 'custom',
+            'via' => App\Logging\CreateStackdriverLogger::class,
+        ],
+
         'stack' => [
             'driver' => 'stack',
             'channels' => ['daily'],

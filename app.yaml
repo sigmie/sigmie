@@ -25,3 +25,6 @@ vpc_access_connector:
 
 beta_settings:
     cloud_sql_instances: "mossigma-app-production:europe-west1:mos-sigma"
+
+runtime_config:
+  enable_stackdriver_integration: true

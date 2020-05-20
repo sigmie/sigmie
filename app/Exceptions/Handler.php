@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Exception;
+use Google\Cloud\ErrorReporting\Bootstrap;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 
 class Handler extends ExceptionHandler
@@ -37,6 +38,11 @@ class Handler extends ExceptionHandler
         // Report to sentry only in production environment
         if (app()->bound('sentry') && $this->shouldReport($exception) && app()->isProduction()) {
             app('sentry')->captureException($exception);
+        }
+
+        // Report to stackdriver on app engine
+        if (isset($_SERVER['GAE_SERVICE']) && $this->shouldReport($exception)) {
+                Bootstrap::exceptionHandler($exception);
         }
 
         parent::report($exception);

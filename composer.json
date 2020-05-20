@@ -19,6 +19,8 @@
         "beyondcode/laravel-dump-server": "^1",
         "configcat/configcat-client": "^2.0",
         "fideloper/proxy": "^4.0",
+        "google/cloud-error-reporting": "^0.16.2",
+        "google/cloud-logging": "^1.20",
         "guzzlehttp/guzzle": "^6.4",
         "laravel/cashier": "^10.3",
         "laravel/framework": "^6.17",

@@ -1,47 +1,48 @@
 // If you want to run as a non-root user in the container, see .devcontainer/docker-compose.yml.
 {
-	"name": "Existing Docker Compose (Extend)",
-	// Update the 'dockerComposeFile' list if you have more compose files or use different names.
-	// The .devcontainer/docker-compose.yml file contains any overrides you need/want to make.
-	"dockerComposeFile": [
-		"docker-compose.yml"
-	],
-	// The 'service' property is the name of the service for the container that VS Code should
-	// use. Update this value and .devcontainer/docker-compose.yml to the real service name.
-	"service": "app",
-	// The optional 'workspaceFolder' property is the path VS Code should open by default when
-	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
-	"workspaceFolder": "/var/www/app",
-	// Use 'settings' to set *default* container specific settings.json values on container create.
-	// You can edit these settings after create using File > Preferences > Settings > Remote.
-	"settings": {
-		// This will ignore your local shell user setting for Linux since shells like zsh are typically
-		// not in base container images. You can also update this to an specific shell to ensure VS Code
-		// uses the right one for terminals and tasks. For example, /bin/bash (or /bin/ash for Alpine).
-		"terminal.integrated.shell.linux": "/bin/bash"
-	},
-	// Uncomment the next line if you want start specific services in your Docker Compose config.
-	// "runServices": [],
-	// Uncomment the next line if you want to keep your containers running after VS Code shuts down.
-	// "shutdownAction": "none",
-	// Uncomment the next line to run commands after the container is created - for example installing git.
-	"postCreateCommand": "rm /etc/apt/sources.list.d/ondrej-ubuntu-php-groovy.list && apt-get update && apt-get install -y npm && /usr/bin/supervisord -c /etc/supervisor/supervisord.conf",
-	// Add the IDs of extensions you want installed when the container is created in the array below.
-	"extensions": [
+    "name": "Existing Docker Compose (Extend)",
+    // Update the 'dockerComposeFile' list if you have more compose files or use different names.
+    // The .devcontainer/docker-compose.yml file contains any overrides you need/want to make.
+    "dockerComposeFile": [
+        "docker-compose.yml"
+    ],
+    // The 'service' property is the name of the service for the container that VS Code should
+    // use. Update this value and .devcontainer/docker-compose.yml to the real service name.
+    "service": "app",
+    // The optional 'workspaceFolder' property is the path VS Code should open by default when
+    // connected. This is typically a file mount in .devcontainer/docker-compose.yml
+    "workspaceFolder": "/var/www/app",
+    // Use 'settings' to set *default* container specific settings.json values on container create.
+    // You can edit these settings after create using File > Preferences > Settings > Remote.
+    "settings": {
+        // This will ignore your local shell user setting for Linux since shells like zsh are typically
+        // not in base container images. You can also update this to an specific shell to ensure VS Code
+        // uses the right one for terminals and tasks. For example, /bin/bash (or /bin/ash for Alpine).
+        "terminal.integrated.shell.linux": "/bin/bash"
+    },
+    // Uncomment the next line if you want start specific services in your Docker Compose config.
+    // "runServices": [],
+    // Uncomment the next line if you want to keep your containers running after VS Code shuts down.
+    // "shutdownAction": "none",
+    // Uncomment the next line to run commands after the container is created - for example installing git.
+    "postCreateCommand": "rm /etc/apt/sources.list.d/ondrej-ubuntu-php-groovy.list && apt-get update && apt-get install -y npm",
+    "overrideCommand": false,
+    // Add the IDs of extensions you want installed when the container is created in the array below.
+    "extensions": [
         "chenxsan.vscode-standardjs",
         "felixfbecker.php-debug",
         "ms-azuretools.vscode-docker",
-		"bradlc.vscode-tailwindcss",
-		"eamodio.gitlens",
-		"njpwerner.autodocstring",
-		"mishkinf.vscode-edits-history",
-		"phproberto.vscode-php-getters-setters",
-		"patbenatar.advanced-new-file",
-		"shd101wyy.markdown-preview-enhanced",
-		"neilbrayfield.php-docblocker",
+        "bradlc.vscode-tailwindcss",
+        "eamodio.gitlens",
+        "njpwerner.autodocstring",
+        "mishkinf.vscode-edits-history",
+        "phproberto.vscode-php-getters-setters",
+        "patbenatar.advanced-new-file",
+        "shd101wyy.markdown-preview-enhanced",
+        "neilbrayfield.php-docblocker",
         "bmewburn.vscode-intelephense-client",
         "onecentlin.laravel-extension-pack",
         "codingyu.laravel-goto-view",
         "octref.vetur"
-	]
+    ]
 }
