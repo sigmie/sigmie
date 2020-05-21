@@ -1,5 +1,7 @@
 <?php
 
+use Inertia\Inertia;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -10,9 +12,15 @@
 | contains the "web" middleware group. Now create something great!
 |
 */
+
 $launched = true;
 
-Route::view('/', 'landing', ['launched' => $launched])->name('landing')->middleware('guest');
+// Route::view('/', 'landing', ['launched' => $launched])->name('landing')->middleware('guest');
+Route::get('/', function () {
+
+    return Inertia::render('landing');
+});
+
 
 Broadcast::routes();
 

@@ -29,6 +29,8 @@
     "webpack-livereload-plugin": "^1.2.0"
   },
   "dependencies": {
+    "@inertiajs/inertia": "^0.1.9",
+    "@inertiajs/inertia-vue": "^0.1.4",
     "@tailwindcss/ui": "^0.1.3",
     "axios": "^0.19.1",
     "bufferutil": "^3.0.5",

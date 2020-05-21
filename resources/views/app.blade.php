@@ -7,11 +7,7 @@
 
 <body class="min-h-full h-full bg-gray-50">
 
-    <div id="app" class="min-h-full h-full relative">
-
-        @yield('content')
-
-    </div>
+    @inertia
 
     @include('common.tail')
 </body>

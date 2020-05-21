@@ -1,25 +1,34 @@
 import VueRouter from 'vue-router'
+import { InertiaApp } from '@inertiajs/inertia-vue'
 import routes from './routes'
 
-export default {
-  components: {
-    sidebar: require('./views/common/sidebar/sidebar').default,
-    navbar: require('./views/common/navbar/navbar').default
-  },
-  router: new VueRouter({
-    routes,
-    mode: 'history',
-    base: '/'
-  }),
-  mounted () {
-    if (typeof this.$refs.bar === 'undefined') {
-      return
-    }
+const app = document.getElementById('app')
 
-    this.$refs.bar.animate(0.7)
-  },
-  data () {
-    return {
+export default {
+    components: {
+        sidebar: require('./views/common/sidebar/sidebar').default,
+        navbar: require('./views/common/navbar/navbar').default
+    },
+    render: h => h(InertiaApp, {
+        props: {
+            initialPage: JSON.parse(app.dataset.page),
+            resolveComponent: name => require(`./Pages/${name}`).default,
+        },
+    }),
+    router: new VueRouter({
+        routes,
+        mode: 'history',
+        base: '/'
+    }),
+    mounted() {
+        if (typeof this.$refs.bar === 'undefined') {
+            return
+        }
+
+        this.$refs.bar.animate(0.7)
+    },
+    data() {
+        return {
+        }
     }
-  }
 }

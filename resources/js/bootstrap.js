@@ -7,9 +7,11 @@ import Echo from 'laravel-echo'
 import axios from 'axios'
 import io from 'socket.io-client'
 import pusher from 'pusher-js'
+import { InertiaApp } from '@inertiajs/inertia-vue'
 
 import { directive as away } from 'vue-clickaway'
 
+Vue.use(InertiaApp)
 Vue.use(VueRouter)
 Vue.use(Vuelidate)
 
