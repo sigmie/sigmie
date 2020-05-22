@@ -12,21 +12,21 @@ import { InertiaApp } from '@inertiajs/inertia-vue'
 import { directive as away } from 'vue-clickaway'
 
 Vue.use(InertiaApp)
-Vue.use(VueRouter)
 Vue.use(Vuelidate)
 
 Vue.directive('away', away)
 
 Vue.prototype.$http = axios.create({
-    baseURL: process.env.MIX_APP_URL + '/ajax/',
-    headers: {
-    }
+  baseURL: process.env.MIX_APP_URL + '/ajax/',
+  headers: {
+  }
 })
 
-Vue.prototype.$socket = new Echo({
-    broadcaster: 'pusher',
-    key: '1060db93e19b5125f23a'
+Vue.prototype.$route = (...args) => route(...args).url()
 
+Vue.prototype.$socket = new Echo({
+  broadcaster: 'pusher',
+  key: '1060db93e19b5125f23a'
 })
 
 Vue.component('csrf', require('./essentials/csrf').default)

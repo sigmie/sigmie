@@ -2,7 +2,7 @@ import VueRouter from 'vue-router'
 import { InertiaApp } from '@inertiajs/inertia-vue'
 import routes from './routes'
 
-const app = document.getElementById('app')
+export const app = document.getElementById('app')
 
 export default {
     components: {
@@ -12,7 +12,7 @@ export default {
     render: h => h(InertiaApp, {
         props: {
             initialPage: JSON.parse(app.dataset.page),
-            resolveComponent: name => require(`./Pages/${name}`).default,
+            resolveComponent: name => require(`./views/${name}`).default,
         },
     }),
     router: new VueRouter({

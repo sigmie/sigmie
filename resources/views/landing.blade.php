@@ -24,25 +24,9 @@
                 </a>
             </div>
 
-            {{-- <div class="block lg:hidden pr-4">
-                <button id="nav-toggle" class="flex items-center p-1 text-orange-800 hover:text-gray-900">
-                    <svg class="fill-current h-6 w-6" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <title>Menu</title>
-                        <path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z" />
-                    </svg>
-                </button>
-            </div> --}}
-
             <div class="w-full flex-grow lg:flex lg:items-center lg:w-auto hidden lg:block mt-2 lg:mt-0 bg-white lg:bg-transparent text-black p-4 lg:p-0 z-20"
                 id="nav-content">
                 <ul class="list-reset lg:flex justify-end flex-1 items-center">
-                    {{-- <li class="mr-3">
-                        <a class="inline-block py-2 px-4 text-black font-bold no-underline" href="#">Active</a>
-                    </li>
-                    <li class="mr-3">
-                        <a class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4"
-                            href="#">link</a>
-                    </li> --}}
                     <li class="mr-3">
                         <a class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4"
                             target="blank" href="https://github.com/sigmie">
@@ -52,8 +36,6 @@
                             </svg></a>
                     </li>
                 </ul>
-                {{-- <button --}}
-                {{-- class="mx-auto lg:mx-0 hover:underline bg-white text-gray-800 font-bold rounded-full mt-4 lg:mt-0 py-4 px-8 shadow opacity-75">Action</button> --}}
             </div>
         </div>
     </nav>
@@ -102,7 +84,7 @@
                         opacity="0.100000001"></path>
                     <path
                         d="M1046,51.6521276 C1130.83045,29.328812 1279.08318,17.607883 1439,40.1656806 L1439,120 C1271.17211,77.9435312 1140.17211,55.1609071 1046,51.6521276 Z"
-                         opacity="0.200000003"></path>
+                        opacity="0.200000003"></path>
                 </g>
                 <g transform="translate(-4.000000, 76.000000)" fill="#FFFFFF" fill-rule="nonzero">
                     <path
@@ -795,27 +777,33 @@
                         <ul
                             class="w-full text-sm text-left px-8 leading-snug py-4 font-normal text-md bg-gray-100 h-full">
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 14 days free trial
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 1 Project
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 Email notifications
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 2 Cluster nodes
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 Metrics
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 Playgound
                             </li>
                         </ul>
@@ -838,31 +826,38 @@
                         <ul
                             class="w-full bg-gray-100 text-sm text-left leading-snug h-full px-10 font-normal text-md py-4">
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 14 days free trial
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 3 Projects
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 On demand auto-scaling
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 Slack & Email Notifications
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 Quick index rollbacks
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 Metrics
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 Playgound
                             </li>
                         </ul>
@@ -886,27 +881,33 @@
                         <ul
                             class="w-full text-sm text-left px-8 leading-snug py-4 font-normal text-md bg-gray-100 h-full">
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 14 days free trial
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 Unlimited Projects
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 On demand auto-scaling
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 Hight availability
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 Slack, Email and SMS Notifications
                             </li>
                             <li class="py-3">
-                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px"></icon-check>
+                                <icon-check class="inline-block pt-1" fill="#68d391" width="18px" height="18px">
+                                </icon-check>
                                 All the Hobby and Pro plan features
                             </li>
                         </ul>
@@ -969,7 +970,7 @@
             Subscribe for project updates and early releases.
         </h3>
 
-        <form method="POST" action="{{ route('newsletter.subscription.store') }}"
+        <form method="POST" action="{{}}"
             class="inline-block pt-4 w-full px-6 pb-8">
 
             @csrf

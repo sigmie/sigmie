@@ -7,6 +7,8 @@
     window.app.old = @json(Session::getOldInput());
 </script>
 
+@routes
+
 <script src="{{ mix('js/app.js') }}" defer></script>
 <script src="{{ mix('js/manifest.js') }}" defer></script>
 <script src="{{ mix('js/vendor.js') }}" defer></script>
