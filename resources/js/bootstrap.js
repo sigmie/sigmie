@@ -1,11 +1,9 @@
 import Vue from 'vue'
 
-import VueRouter from 'vue-router'
 import Vuelidate from 'vuelidate'
 
 import Echo from 'laravel-echo'
 import axios from 'axios'
-import io from 'socket.io-client'
 import pusher from 'pusher-js'
 import { InertiaApp } from '@inertiajs/inertia-vue'
 

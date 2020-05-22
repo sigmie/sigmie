@@ -17,10 +17,8 @@ $launched = true;
 
 // Route::view('/', 'landing', ['launched' => $launched])->name('landing')->middleware('guest');
 Route::get('/', function () {
-
     return Inertia::render('landing');
 });
-
 
 Broadcast::routes();
 

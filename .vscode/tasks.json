@@ -36,7 +36,7 @@
         {
             "label": "watch",
             "type": "shell",
-            "command": "npm run watch"
+            "command": "yarn run watch"
         },
         {
             "label": "phpunit",
@@ -124,14 +124,14 @@
             "command": "node_modules/standard/bin/cmd.js --fix | node_modules/snazzy/bin/cmd.js"
         },
         {
-            "label": "npm:dev",
+            "label": "yarn:dev",
             "type": "shell",
-            "command": "npm run dev"
+            "command": "yarn run dev"
         },
         {
-            "label": "npm:prod",
+            "label": "yarn:prod",
             "type": "shell",
-            "command": "npm run prod"
+            "command": "yarn run prod"
         },
         {
             "label": "php:fix",

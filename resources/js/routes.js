@@ -1,4 +1,5 @@
 export default [
+
   {
     path: '/dashboard',
     name: 'dashboard-view',
