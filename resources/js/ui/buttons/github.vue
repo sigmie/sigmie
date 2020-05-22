@@ -2,7 +2,7 @@
   <div>
     <span class="w-full inline-flex rounded-md shadow-sm">
       <a
-        :href="route"
+        :href="$route('github.redirect', {action : 'login'})"
         class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md bg-white text-sm leading-5 font-medium text-gray-500 hover:text-gray-400 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue transition duration-150 ease-in-out"
       >
         <svg class="h-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -18,9 +18,7 @@
 </template>
 
 <script>
-export default {
-  props: ["route"]
-};
+export default {};
 </script>
 
 <style>
