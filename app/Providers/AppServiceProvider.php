@@ -15,15 +15,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-    }
-
-    /**
-     * Bootstrap any application services.
-     *
-     * @return void
-     */
-    public function boot()
-    {
         Inertia::share('flash', function () {
             return [
                 'success' => Session::get('success'),
@@ -34,5 +25,20 @@ class AppServiceProvider extends ServiceProvider
         Inertia::share('old', function () {
             return Session::getOldInput();
         });
+
+        Inertia::share('errors', function () {
+            return Session::get('errors')
+                ? Session::get('errors')->getBag('default')->getMessages()
+                : (object) [];
+        });
+    }
+
+    /**
+     * Bootstrap any application services.
+     *
+     * @return void
+     */
+    public function boot()
+    {
     }
 }

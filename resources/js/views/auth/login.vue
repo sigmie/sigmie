@@ -17,7 +17,7 @@
     </div>
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-      <div v-if="$page.flash.error" class="red">
+      <div v-if="$page.errors" class="red">
         <div>
           <alert-danger
             class="mb-3 shadow"
@@ -85,7 +85,12 @@
 </template>
 
 <script>
-export default {};
+export default {
+    mounted(){
+        console.log(this.$page);
+
+    }
+};
 </script>
 
 <style scoped>
