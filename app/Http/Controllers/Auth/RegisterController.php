@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class RegisterController extends Controller
 {
@@ -36,10 +37,10 @@ class RegisterController extends Controller
      */
     public function showRegistrationForm(Request $request)
     {
-        return view('auth.register', [
+        return Inertia::render('auth/register', [
             'githubUser' => $request->session()->get('githubUser', []),
             'paddleVendor' => config('services.paddle.vendor_id'),
-            'paddlePlans' => (env('APP_ENV') === 'production') ? config('services.paddle.plans') : config('services.paddle.test_plans'),
+            'paddlePlans' => (env('APP_ENV') === 'production') ? config('services.paddle.plans') : config('services.paddle.test_plans')
         ]);
     }
 

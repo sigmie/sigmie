@@ -7,13 +7,6 @@
 </script>
 @endsection
 
-@section('head-css')
-@endsection()
-
-@section('js-assign')
-@endsection()
-
-
 @section('public.content')
 
 <div class="pt-4 px-4">

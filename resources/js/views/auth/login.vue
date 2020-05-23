@@ -22,7 +22,7 @@
           <alert-danger
             class="mb-3 shadow"
             title="Whoops!"
-            text="These credentials do not match our records"
+            text="These credentials don't match our records"
           ></alert-danger>
         </div>
       </div>
