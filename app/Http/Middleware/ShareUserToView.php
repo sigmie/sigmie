@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class ShareUserToView
 {
@@ -16,9 +17,13 @@ class ShareUserToView
      */
     public function handle($request, Closure $next)
     {
-        $user = Auth::user();
+        $user = null;
 
-        view()->share('user', $user);
+        if (Auth::check()) {
+            $user = Auth::user()->only(['id', 'avatar_url']);
+        }
+
+        Inertia::share('user', $user);
 
         return $next($request);
     }

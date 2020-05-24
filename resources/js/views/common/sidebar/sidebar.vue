@@ -7,16 +7,15 @@
         </div>
         <div class="h-0 flex-1 flex flex-col overflow-y-auto">
           <nav class="flex-1 px-2 py-4 bg-gray-800">
-            <router-link
+            <inertia-link
               v-for="(item, index) in items"
-              :to="item.href"
               :key="index"
-              :href="item.href"
-              :class="[path == item.href ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white']"
+              :class="[isRoute(item.name) ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white']"
               class="group flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
+              :href="$route(item.name)"
             >
               <component
-                :class="[ path == item.href ? 'text-gray-400': 'text-gray-300']"
+                :class="[ isRoute(item.name) ? 'text-gray-400': 'text-gray-300']"
                 class="mr-4 h-6 w-6 group-hover:text-gray-300 group-focus:text-gray-300 transition ease-in-out duration-150"
                 stroke="currentColor"
                 fill="none"
@@ -24,7 +23,7 @@
                 :is="'icon-'+item.icon"
               ></component>
               {{ item.text }}
-            </router-link>
+            </inertia-link>
           </nav>
         </div>
       </div>
@@ -60,16 +59,15 @@
         </div>
         <div class="flex-1 h-0 overflow-y-auto">
           <nav class="px-2 py-4">
-            <router-link
+            <inertia-link
               v-for="(item, index) in items"
-              :to="item.href"
               :key="index"
-              :href="item.href"
-              :class="[path == item.href ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white']"
+              :class="[isRoute(item.name) ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white']"
               class="group flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
+              :href="$route(item.name)"
             >
               <component
-                :class="[ path == item.href ? 'text-gray-400': 'text-gray-300']"
+                :class="[ isRoute(item.name) ? 'text-gray-400': 'text-gray-300']"
                 class="mr-4 h-6 w-6 group-hover:text-gray-300 group-focus:text-gray-300 transition ease-in-out duration-150"
                 stroke="currentColor"
                 fill="none"
@@ -77,7 +75,7 @@
                 :is="'icon-'+item.icon"
               ></component>
               {{ item.text }}
-            </router-link>
+            </inertia-link>
           </nav>
         </div>
       </div>
@@ -94,31 +92,27 @@ export default {
       items: [
         {
           text: "Dashboard",
-          href: "/dashboard",
+          name: "dashboard",
           icon: "home"
         },
         {
           text: "Bar",
-          href: "/bar",
+          name: "bar",
           icon: "team"
         }
       ]
     };
   },
   methods: {
+    isRoute(name) {
+      return route().current(name);
+    },
     close() {
       this.sidebar = "closed";
     },
     open() {
       this.sidebar = "open";
     }
-  },
-  beforeMount() {
-    this.path = this.$route.path;
-
-    this.$root.$router.afterEach(() => {
-      this.path = this.$route.path;
-    });
   }
 };
 </script>

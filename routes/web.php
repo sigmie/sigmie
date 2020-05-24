@@ -49,11 +49,11 @@ if ($launched === true) {
 
     Route::group(['middleware' => ['auth']], function () {
 
-        Route::view('/dashboard', 'layouts.app')->name('dashboard');
+        Route::get('/dashboard', 'DashboardController')->name('dashboard');
 
         Route::view('/cluster/create', 'layouts.app')->name('cluster.create');
 
-        Route::view('/bar', 'layouts.app');
+        Route::view('/bar', 'layouts.app')->name('bar');
     });
 
     // Auth routes

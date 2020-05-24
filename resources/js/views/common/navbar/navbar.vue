@@ -54,7 +54,10 @@
 
             <icon-bell class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24"></icon-bell>
           </button>
-          <div class="origin-top-right absolute right-0 mt-2 w-64 md:w-96 rounded-md shadow-lg" v-cloak>
+          <div
+            class="origin-top-right absolute right-0 mt-2 w-64 md:w-96 rounded-md shadow-lg"
+            v-cloak
+          >
             <notifications
               v-if="notifications === 'open' && notificationsData.length > 0"
               @away="closeNotifications"
@@ -146,10 +149,10 @@ export default {
       this.notificationsData = notificationsData.concat(this.notificationsData);
     },
     openSidebar() {
-      this.$root.$refs.sidebar.open();
+      this.$parent.$refs.sidebar.open();
     },
     closeSidebar() {
-      this.$root.$refs.sidebar.close();
+      this.$parent.$refs.sidebar.close();
     }
   }
 };
