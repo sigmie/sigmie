@@ -35,7 +35,6 @@
           <span
             class="text-gray-500 pb-6"
           >Enter the email associated with your account and you will get a link to reset your password.</span>
-          <csrf></csrf>
           <div class="pb-6">
             <form-input
               label="Email address"
@@ -73,11 +72,9 @@ export default {
   },
   methods: {
     submit() {
-      let _token = document.head.querySelector('meta[name="csrf-token"]')
-        .content;
       let email = this.email;
 
-      this.$inertia.post(this.$route("password.email"), { _token, email });
+      this.$inertia.post(this.$route("password.email"), { email });
     }
   }
 };

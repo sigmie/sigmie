@@ -23,9 +23,6 @@
 <meta property="og:description" content="Awesome On-Site Search, running on your own Cloud infastructure.">
 <meta property="og:image" content="{{ asset('img/twitter-card.png') }}">
 
-{{-- CSRF Token --}}
-<meta name="csrf-token" content="{{ csrf_token() }}">
-
 {{-- Favicon --}}
 <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('/apple-touch-icon.png')}}">
 <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('/favicon-32x32.png')}}">

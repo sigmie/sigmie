@@ -43,9 +43,7 @@
 export default {
   methods: {
     logout() {
-      let _token = document.head.querySelector('meta[name="csrf-token"]')
-        .content;
-      this.$inertia.post(this.$route("logout"), { _token });
+      this.$inertia.post(this.$route("logout"), {});
     }
   }
 };
