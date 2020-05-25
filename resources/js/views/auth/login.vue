@@ -9,10 +9,10 @@
       >Sign in to your account</h2>
       <p class="mt-2 text-center text-sm leading-5 text-gray-600 max-w">
         Or
-        <a
-          :href="$route('register')"
+        <inertia-link
           class="font-medium text-orange-600 focus:outline-none focus:underline transition ease-in-out duration-150"
-        >start your 14-day free trial</a>
+          :href="$route('register')"
+        >start your 14-day free trial</inertia-link>
       </p>
     </div>
 
@@ -28,7 +28,7 @@
       </div>
 
       <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-        <form :action="$route('login')" method="POST">
+        <form @submit.prevent :action="$route('login')" method="POST">
           <csrf></csrf>
 
           <form-input
@@ -36,6 +36,7 @@
             name="email"
             type="email"
             :value="$page.old.email"
+            v-model="form.email"
             required
             label="Email address"
           ></form-input>
@@ -44,13 +45,19 @@
             class="pt-2"
             id="password"
             name="password"
+            v-model="form.password"
             type="password"
             required
             label="Password"
           ></form-input>
 
           <div class="mt-6 flex items-center justify-between">
-            <form-checkbox id="remember" name="remember" label="Remember me"></form-checkbox>
+            <form-checkbox
+              v-model="form.remember"
+              id="remember"
+              name="remember"
+              label="Remember me"
+            ></form-checkbox>
 
             <div class="text-sm leading-5">
               <a
@@ -61,7 +68,7 @@
           </div>
 
           <div class="mt-6">
-            <button-primary text="Sign in" type="submit"></button-primary>
+            <button-primary @click="submit" text="Sign in" type="submit"></button-primary>
           </div>
         </form>
 
@@ -86,10 +93,20 @@
 
 <script>
 export default {
-    mounted(){
-        console.log(this.$page);
-
+  data() {
+    return {
+      form: {
+        username: null,
+        password: null,
+        remember: null
+      }
+    };
+  },
+  methods: {
+    submit() {
+      this.$inertia.post(this.$route("login"), this.form);
     }
+  }
 };
 </script>
 

@@ -1,9 +1,10 @@
 <template>
-  <form class="flex flex-col w-full px-4">
-    <csrf></csrf>
-
-    <input type="hidden" name="token" :value="token" />
-
+  <form
+    @submit.prevent
+    class="flex flex-col w-full px-4"
+    method="POST"
+    :action="$route('password.update')"
+  >
     <form-input
       :value="email"
       @change="(value) => set('email',value)"
@@ -39,7 +40,7 @@
       :error-messages="errorMessages.password_confirmation"
     ></form-input>
     <div class="pt-4">
-      <button-primary text="Change password" type="submit"></button-primary>
+      <button-primary @click="submit" text="Change password" type="submit"></button-primary>
     </div>
   </form>
 </template>
@@ -53,12 +54,13 @@ import {
   sameAs,
   helpers
 } from "vuelidate/lib/validators";
+import loginVue from '../login.vue';
 
 export default {
   props: ["token"],
   data() {
     return {
-      email: app.old.email ? app.old.email : "",
+      email: this.$page.old.email ? this.$page.old.email : "",
       password: "",
       password_confirmation: "",
       errorMessages: {
@@ -90,6 +92,19 @@ export default {
     }
   },
   methods: {
+    submit() {
+      let email = this.email;
+      let password = this.password;
+      let password_confirmation = this.password_confirmation;
+      let token = this.token;
+
+      this.$inertia.post(this.$route("password.update"), {
+        email,
+        token,
+        password,
+        password_confirmation
+      });
+    },
     set(key, value) {
       this[key] = value;
       this.$v[key].$touch();

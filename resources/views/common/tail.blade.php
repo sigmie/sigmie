@@ -2,11 +2,6 @@
 
 @yield('tail-css')
 
-<script>
-    window.app.errors = @json($errors->getMessages());
-    window.app.old = @json(Session::getOldInput());
-</script>
-
 @routes
 
 <script src="{{ mix('js/app.js') }}" defer></script>

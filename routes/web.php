@@ -18,7 +18,7 @@ $launched = true;
 // Route::view('/', 'landing', ['launched' => $launched])->name('landing')->middleware('guest');
 Route::get('/', function () {
     return Inertia::render('landing');
-});
+})->name('landing');
 
 Broadcast::routes();
 
@@ -77,14 +77,17 @@ if ($launched === true) {
         'as' => 'password.email',
         'uses' => 'Auth\ForgotPasswordController@sendResetLinkEmail'
     ]);
+
     Route::get('password/reset', [
         'as' => 'password.request',
         'uses' => 'Auth\ForgotPasswordController@showLinkRequestForm'
     ]);
+
     Route::post('password/reset', [
         'as' => 'password.update',
         'uses' => 'Auth\ResetPasswordController@reset'
     ]);
+
     Route::get('password/reset/{token}', [
         'as' => 'password.reset',
         'uses' => 'Auth\ResetPasswordController@showResetForm'

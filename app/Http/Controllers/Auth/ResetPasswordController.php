@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Auth;
 
+use Inertia\Inertia;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Foundation\Auth\ResetsPasswords;
 
 class ResetPasswordController extends Controller
@@ -14,7 +16,7 @@ class ResetPasswordController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/home';
+    protected $redirectTo = '/dashboard';
 
     /**
      * Create a new controller instance.
@@ -24,5 +26,12 @@ class ResetPasswordController extends Controller
     public function __construct()
     {
         $this->middleware('guest');
+    }
+
+    public function showResetForm($token)
+    {
+        $reset = Session::has('status');
+
+        return Inertia::render('auth/password/reset', ['reset' => $reset, 'token' => $token]);
     }
 }

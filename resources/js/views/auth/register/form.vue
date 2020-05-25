@@ -153,12 +153,12 @@ export default {
   props: ["githubRoute", "githubUser", "paddlePlans"],
   data() {
     return {
-      name: app.old.name ? app.old.name : "",
-      email: app.old.email ? app.old.email : "",
+      name: this.$page.old.name ? this.$page.old.name : "",
+      email: this.$page.old.email ? this.$page.old.email : "",
       password: "",
       password_confirmation: "",
-      username: app.old.username ? app.old.username : "",
-      plan: app.old.plan ? app.old.plan : "",
+      username: this.$page.old.username ? this.$page.old.username : "",
+      plan: this.$page.old.plan ? this.$page.old.plan : "",
       method: "",
       plans: [],
       consent: false,
@@ -236,7 +236,7 @@ export default {
 
     forEach(this.paddlePlans, e => (this.plans[e.id] = e.name));
 
-    this.plan = this.plan !== '' ? this.plan : findKey(this.plans);
+    this.plan = this.plan !== "" ? this.plan : findKey(this.plans);
   }
 };
 </script>

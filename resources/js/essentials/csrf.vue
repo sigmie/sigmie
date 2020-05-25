@@ -9,10 +9,14 @@ export default {
       token: null
     };
   },
+  methods: {
+    getToken() {
+      let csrfMeta = document.head.querySelector('meta[name="csrf-token"]');
+      return csrfMeta.content;
+    }
+  },
   mounted() {
-    let csrfMeta = document.head.querySelector('meta[name="csrf-token"]');
-    this.token = csrfMeta.content;
+    this.token = this.getToken();
   }
 };
 </script>
-

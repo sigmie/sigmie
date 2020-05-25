@@ -33,7 +33,9 @@
         "vuelidate": "^0.7.5",
         "webpack-livereload-plugin": "^1.2.0"
     },
-    "dependencies": {},
+    "dependencies": {
+        "vue-meta": "^2.3.3"
+    },
     "standard": {
         "ignore": [
             "public/vendor",

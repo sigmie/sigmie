@@ -2,10 +2,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-<title>Most of search - Sigma</title>
+<title>Sigmie app</title>
 
 <meta name="description" content="">
-<meta name="keywords" content="elasticseach,cloud,infastructure,sigma,php">
+<meta name="keywords" content="elasticseach,cloud,infastructure,sigma,sigmie,search,php">
 <meta name="author" content="nicoorfi@yahoo.com">
 
 {{-- Twitter --}}
@@ -17,7 +17,7 @@
 <meta name="twitter:creator" content="@nicoorf">
 
 {{-- Og --}}
-<meta property="og:url" content="https://mos-sigma.com">
+<meta property="og:url" content="https://app.sigmie.com">
 <meta property="og:type" content="article">
 <meta property="og:title" content="{{ config('app.name') }}">
 <meta property="og:description" content="Awesome On-Site Search, running on your own Cloud infastructure.">
@@ -54,6 +54,5 @@
 @yield('head-css')
 
 <script>
-    window.app = {};
     @yield('js-assign')
 </script>

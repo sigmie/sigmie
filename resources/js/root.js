@@ -8,11 +8,5 @@ export default {
       initialPage: JSON.parse(app.dataset.page),
       resolveComponent: name => require(`./views/${name}`).default
     }
-  }),
-  mounted () {
-  },
-  data () {
-    return {
-    }
-  }
+  })
 }
