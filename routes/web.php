@@ -15,12 +15,8 @@ use Inertia\Inertia;
 
 $launched = true;
 
-// Route::view('/', 'landing', ['launched' => $launched])->name('landing')->middleware('guest');
-Route::get('/', function () {
-    return Inertia::render('landing');
-})->name('landing');
 
-Broadcast::routes();
+Route::get('/', 'LandingController')->name('landing')->middleware('guest');
 
 // Newsletter routes
 Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group(function () {
@@ -51,7 +47,7 @@ if ($launched === true) {
 
         Route::get('/dashboard', 'DashboardController')->name('dashboard');
 
-        Route::view('/cluster/create', 'layouts.app')->name('cluster.create');
+        Route::resource('cluster', 'ClusterController');
 
         Route::view('/bar', 'layouts.app')->name('bar');
     });

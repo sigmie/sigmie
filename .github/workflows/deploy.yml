@@ -12,7 +12,7 @@ jobs:
 
     env:
       GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
- s     COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
+      COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
       VARIABLES_PASSPHRASE: ${{ secrets.variables_passphrase }}
 
     steps:

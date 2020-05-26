@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8" v-cloak>
+  <div class="min-h-screen flex flex-col justify-center sm:px-6 lg:px-8" v-cloak>
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
       <div class="mx-auto">
         <logo-default></logo-default>
@@ -60,10 +60,10 @@
             ></form-checkbox>
 
             <div class="text-sm leading-5">
-              <a
+              <inertia-link
                 :href="$route('password.request')"
                 class="font-medium text-orange-600 hover:text-orange-500 focus:outline-none focus:underline transition ease-in-out duration-150"
-              >Forgot your password?</a>
+              >Forgot your password?</inertia-link>
             </div>
           </div>
 

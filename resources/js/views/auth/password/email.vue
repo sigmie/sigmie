@@ -1,6 +1,6 @@
 <template>
   <public>
-    <div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8" v-cloak>
+    <div class="min-h-screen flex flex-col justify-center sm:px-6 lg:px-8" v-cloak>
       <div class="sm:mx-auto sm:w-full sm:max-w-md pb-6">
         <div class="mx-auto pb-2">
           <a :href="$route('landing')">

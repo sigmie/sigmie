@@ -17,10 +17,10 @@
             <div class="mx-auto text-center">
               <span class="text-gray-500 mx-auto">
                 Already having an account ?
-                <a
+                <inertia-link
                   class="text-orange-600 font-semibold"
                   :href="$route('login')"
-                >Sign-in</a>
+                >Sign-in</inertia-link>
               </span>
             </div>
           </div>
