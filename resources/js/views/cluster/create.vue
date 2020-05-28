@@ -21,6 +21,10 @@
       <provider></provider>
 
       <separator></separator>
+
+      <search></search>
+
+      <separator></separator>
     </div>
   </app>
 </template>
@@ -33,7 +37,8 @@ export default {
     App,
     general: require("./_partials/create/general").default,
     provider: require("./_partials/create/provider").default,
-    separator: require("./_partials/create/separator").default
+    separator: require("./_partials/create/separator").default,
+    search: require("./_partials/create/search").default
   }
 };
 </script>

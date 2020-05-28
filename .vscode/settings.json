@@ -10,5 +10,20 @@
         "titleBar.activeForeground": "#ffffff",
         "statusBarItem.remoteBackground": "#3F3D54",
         "statusBarItem.remoteForeground": "#ffffff",
-    }
+    },
+    "remote.containers.defaultExtensions": [
+         "chenxsan.vscode-standardjs",
+         "sleistner.vscode-fileutils",
+         "eamodio.gitlens",
+         "njpwerner.autodocstring",
+         "dotjoshjohnson.xml",
+         "phproberto.vscode-php-getters-setters",
+         "felixfbecker.php-debug",
+         "mehedidracula.php-namespace-resolver",
+         "bmewburn.vscode-intelephense-client",
+         "ryanluker.vscode-coverage-gutters",
+         "onpaik.save-and-run-reg",
+         "ryuta46.multi-command",
+         "octref.vetur"
+    ],
 }

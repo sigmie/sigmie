@@ -38,6 +38,9 @@ export default {
     name: {
       default: ""
     },
+    rows: {
+      default: "5"
+    },
     validations: {
       default: () => {
         return {

@@ -58,9 +58,14 @@ export default {
       required,
       alphaDashes,
       isUnique(value) {
+
         if (value === "") {
           return true;
         }
+
+        let route = this.$route('cluster.name',[value]) ;
+
+        console.log(route);
 
         return this.$http.get(`/cluster/name/${value}`, {
           validateStatus: function(status) {
