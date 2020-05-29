@@ -11,7 +11,7 @@
               v-for="(item, index) in items"
               :key="index"
               :class="[isRoute(item.name) ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white']"
-              class="group flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
+              class="group mx-1 my-2 flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
               :href="$route(item.name)"
             >
               <component
@@ -63,7 +63,7 @@
               v-for="(item, index) in items"
               :key="index"
               :class="[isRoute(item.name) ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white']"
-              class="group flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
+              class="group mx-2 my-4 flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
               :href="$route(item.name)"
             >
               <component
@@ -96,9 +96,19 @@ export default {
           icon: "home"
         },
         {
-          text: "Bar",
-          name: "bar",
-          icon: "team"
+          text: "Access tokens",
+          name: "access-token",
+          icon: "key"
+        },
+        {
+          text: "Playground",
+          name: "playground",
+          icon: "puzzle"
+        },
+        {
+          text: "Monitoring",
+          name: "monitoring",
+          icon: "desktop"
         }
       ]
     };

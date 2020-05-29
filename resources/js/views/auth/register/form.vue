@@ -2,8 +2,6 @@
   <form @submit.prevent="submit">
     <div class="p-6">
       <div class="border-gray-200">
-        <csrf />
-
         <div v-if="github">
           <input type="hidden" :value="githubUser.name" name="username" />
           <input type="hidden" :value="githubUser.email" name="email" />

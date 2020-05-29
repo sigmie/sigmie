@@ -9,8 +9,7 @@
 
       <main
         id="main"
-        class="flex-1 relative z-0 overflow-y-auto py-6 focus:outline-none"
-        tabindex="0"
+        class="flex-1 relative overflow-y-auto py-6 focus:outline-none"
       >
         <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
           <slot></slot>
@@ -23,8 +22,8 @@
 <script>
 export default {
   components: {
-    sidebar: require('../common/sidebar/sidebar').default,
-    navbar: require('../common/navbar/navbar').default
+    sidebar: require("../common/sidebar/sidebar").default,
+    navbar: require("../common/navbar/navbar").default
   },
   props: ["user"]
 };

@@ -1,7 +1,6 @@
 import Vue from 'vue'
 
 import Vuelidate from 'vuelidate'
-
 import Echo from 'laravel-echo'
 import axios from 'axios'
 import pusher from 'pusher-js'
@@ -32,6 +31,7 @@ Vue.component('stripe', require('./essentials/stripe').default)
 Vue.component('paddle', require('./essentials/paddle').default)
 
 Vue.component('form-input', require('./ui/forms/input').default)
+Vue.component('form-slider', require('./ui/forms/slider').default)
 Vue.component('form-checkbox', require('./ui/forms/checkbox').default)
 Vue.component('form-textarea', require('./ui/forms/textarea').default)
 Vue.component('form-select', require('./ui/forms/select').default)
@@ -69,5 +69,6 @@ Vue.component('icon-calendar', require('./ui/icons/calendar').default)
 Vue.component('icon-inbox', require('./ui/icons/inbox').default)
 Vue.component('icon-report', require('./ui/icons/report').default)
 Vue.component('icon-bell', require('./ui/icons/bell').default)
-
-Vue.component('register-form', require('./views/auth/register/form').default)
+Vue.component('icon-key', require('./ui/icons/key').default)
+Vue.component('icon-puzzle', require('./ui/icons/puzzle').default)
+Vue.component('icon-desktop', require('./ui/icons/desktop').default)

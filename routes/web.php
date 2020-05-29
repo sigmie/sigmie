@@ -47,9 +47,13 @@ if ($launched === true) {
 
         Route::get('/dashboard', 'DashboardController')->name('dashboard');
 
-        Route::resource('cluster', 'ClusterController');
+        Route::get('/access-tokens', 'DashboardController')->name('access-token');
 
-        Route::view('/bar', 'layouts.app')->name('bar');
+        Route::get('/playground', 'DashboardController')->name('playground');
+
+        Route::get('/monitoring', 'DashboardController')->name('monitoring');
+
+        Route::resource('cluster', 'ClusterController');
     });
 
     // Auth routes

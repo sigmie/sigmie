@@ -46,8 +46,7 @@
           <h1 class="my-4 text-5xl font-bold leading-tight">Awesome search, on your infastructure.</h1>
           <p class="leading-normal text-2xl mb-0 md:mb-3">
             Imagine having a smart, reliable, and scalable On-Site search, with the power of
-            Elasticsearch,
-            running on your Cloud Infastructure, without breaking a sweat.
+            Elasticsearch, running on your Cloud Infastructure.
           </p>
 
           <a
@@ -1398,8 +1397,12 @@
 
       <h3 class="my-4 text-3xl leading-tight">Subscribe for project updates and early releases.</h3>
 
-      <form method="POST" :action="$route('newsletter.subscription.store')" class="inline-block pt-4 w-full px-6 pb-8">
-          <csrf/>
+      <form
+        method="POST"
+        :action="$route('newsletter.subscription.store')"
+        class="inline-block pt-4 w-full px-6 pb-8"
+      >
+        <csrf />
         <div class="inline-block w-full sm:max-w-xs pr-4">
           <input
             class="bg-white text-gray-600 rounded-lg focus:outline-none focus:shadow-outline border border-gray-300 rounded-lg py-3 px-8 block w-full appearance-none leading-normal"
@@ -1421,9 +1424,7 @@
 </template>
 
 <script>
-export default {
-
-};
+export default {};
 </script>
 
 <style scoped>

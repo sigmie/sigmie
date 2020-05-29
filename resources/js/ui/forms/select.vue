@@ -9,7 +9,7 @@
           :aria-label="label"
           :class="[validations.$anyError ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-300 focus:text-' : '']"
           :required="required"
-          v-model="value"
+          :value="value"
           @input="$emit('input', $event.target.value)"
           @blur="$emit('blur', $event.target.value)"
           @focus="$emit('touch', $event.target.value)"

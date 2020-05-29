@@ -14,17 +14,21 @@
         </div>
       </div>
 
-      <general></general>
+      <general @nameChange="(value)=> set('name', value)"></general>
 
       <separator></separator>
 
-      <provider></provider>
+      <provider @providerChange="(value)=> set('provider', value)"></provider>
 
       <separator></separator>
 
-      <search></search>
+      <search
+        @nodesChange="(value)=> set('nodes', parseFloat(value))"
+        @dataCenterChange="(value)=> set('dataCenter', value)"
+        @usernameChange="(value)=> set('username', value)"
+        @passwordChange="(value)=> set('password', value)"
+      ></search>
 
-      <separator></separator>
     </div>
   </app>
 </template>
@@ -39,6 +43,23 @@ export default {
     provider: require("./_partials/create/provider").default,
     separator: require("./_partials/create/separator").default,
     search: require("./_partials/create/search").default
+  },
+  data() {
+    return {
+      name: "",
+      provider: null,
+      dataCenter: "",
+      username: "",
+      password: "",
+      nodes: null
+    };
+  },
+  methods: {
+    set(key, value) {
+      console.log("provider change");
+
+      this[key] = value;
+    }
   }
 };
 </script>

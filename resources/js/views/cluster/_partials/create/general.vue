@@ -58,12 +58,11 @@ export default {
       required,
       alphaDashes,
       isUnique(value) {
-
         if (value === "") {
           return true;
         }
 
-        let route = this.$route('cluster.name',[value]) ;
+        let route = this.$route("cluster.name", [value]);
 
         console.log(route);
 
@@ -91,6 +90,8 @@ export default {
     set(key, value) {
       this[key] = value;
       this.$v[key].$touch();
+
+      this.$emit(`${key}Change`, value);
     }
   }
 };

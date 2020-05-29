@@ -1,5 +1,5 @@
 <template>
-  <div class="pt-4">
+  <div>
     <div class="md:grid md:grid-cols-3 md:gap-6">
       <div class="mt-5 md:mt-0 md:col-span-2">
         <div class="shadow sm:rounded-md sm:overflow-hidden">
@@ -90,6 +90,7 @@
 
 <script>
 import { required, helpers } from "vuelidate/lib/validators";
+import { forEach } from "lodash";
 
 const assetUrl = process.env.MIX_ASSET_URL;
 
@@ -119,16 +120,19 @@ export default {
       },
       providers: {
         google: {
+          id: "google",
           name: "Google Cloud Platform",
           logo: "gcloud_logo.png",
           active: true
         },
         aws: {
+          id: "aws",
           name: "Amazon Web Services",
           logo: "aws_logo.png",
           active: false
         },
         digitalocean: {
+          id: "digitalocean",
           name: "DigitalOcean",
           logo: "do_logo.png",
           active: false
@@ -139,6 +143,16 @@ export default {
       state: "choosing",
       serviceAccount: ""
     };
+  },
+  watch: {
+    serviceAccount(newValue, oldValue) {
+      let provider = {
+        id: this.providers.google.id,
+        creds: newValue
+      };
+
+      this.$emit("providerChange", provider);
+    }
   },
   methods: {
     choose(provider) {
