@@ -1,6 +1,12 @@
 <template>
   <div>
-    <modal :show="showConfirmation" @hide="showConfirmation=false" type="success"></modal>
+    <modal
+      text="Are you sure you want to deactivate your account? All of your data will be permanently removed from our servers forever. This action cannot be undone."
+      title="Deactivate account"
+      :show="showConfirmation"
+      @hide="showConfirmation=false"
+      type="danger"
+    ></modal>
     <div class="md:grid md:grid-cols-3 md:gap-6">
       <div class="md:mt-0 md:col-span-2">
         <div class="shadow sm:rounded-md sm:overflow-hidden">
@@ -117,7 +123,7 @@ export default {
   },
   data() {
     return {
-      showConfirmation: false,
+      showConfirmation: true,
       dataCenter: "",
       nodes: 3,
       username: "",
