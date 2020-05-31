@@ -1,10 +1,12 @@
 <template>
   <div>
     <modal
-      text="Are you sure you want to deactivate your account? All of your data will be permanently removed from our servers forever. This action cannot be undone."
       title="Deactivate account"
+      content="Are you sure you want to deactivate your account? All of your data will be permanently removed from our servers forever. This action cannot be undone."
+      primaryText="Okay"
+      @primaryAction="showConfirmation = false"
+      :icon="true"
       :show="showConfirmation"
-      @hide="showConfirmation=false"
       type="danger"
     ></modal>
     <div class="md:grid md:grid-cols-3 md:gap-6">
