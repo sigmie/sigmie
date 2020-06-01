@@ -1,13 +1,17 @@
  <template>
   <div
+    ref="modal"
     class="z-50 fixed bottom-0 inset-x-0 px-4 pb-4 sm:inset-0 sm:flex sm:items-center sm:justify-center"
     :class="show ? 'ease-out duration-300 opacity-100 visible' : 'ease-in duration-200 opacity-0 invisible'"
+    tabindex="-1"
+    @keyup.esc="$emit('onEsc')"
   >
     <div class="fixed inset-0 transition-opacity">
       <div class="absolute inset-0 bg-black opacity-75"></div>
     </div>
 
     <div
+      v-on-clickaway="clickAway"
       :class="show ?'ease-out duration-300 opacity-100 translate-y-0 sm:scale-100':'ease-in duration-200 opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95' "
       class="bg-white rounded-lg px-4 pt-5 pb-4 overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full sm:p-6"
       role="dialog"
@@ -55,7 +59,17 @@
 </template>
 
 <script>
+import { mixin as clickaway } from "vue-clickaway";
+
 export default {
+  mixins: [clickaway],
+  watch: {
+    show(newVal, oldVal) {
+      if (oldVal === false && newVal === true) {
+        this.$refs.modal.focus();
+      }
+    }
+  },
   props: [
     "show",
     "type",
@@ -65,6 +79,16 @@ export default {
     "icon",
     "primaryText",
     "secondaryText"
-  ]
+  ],
+  mounted() {
+    if (this.show === true) {
+      this.$refs.modal.focus();
+    }
+  },
+  methods: {
+    clickAway() {
+      this.$emit("clickAway");
+    }
+  }
 };
 </script>

@@ -5,9 +5,11 @@
       content="Are you sure you want to deactivate your account? All of your data will be permanently removed from our servers forever. This action cannot be undone."
       primaryText="Okay"
       @primaryAction="showConfirmation = false"
+      @clickAway="showConfirmation = false"
+      @onEsc="showConfirmation = false"
       :icon="true"
       :show="showConfirmation"
-      type="danger"
+      type="success"
     ></modal>
     <div class="md:grid md:grid-cols-3 md:gap-6">
       <div class="md:mt-0 md:col-span-2">

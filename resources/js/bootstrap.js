@@ -4,19 +4,15 @@ import Vuelidate from 'vuelidate'
 import Echo from 'laravel-echo'
 import axios from 'axios'
 import pusher from 'pusher-js'
-import { InertiaApp } from '@inertiajs/inertia-vue'
 
-import { directive as away } from 'vue-clickaway'
+import { InertiaApp } from '@inertiajs/inertia-vue'
 
 Vue.use(InertiaApp)
 Vue.use(Vuelidate)
 
-Vue.directive('away', away)
-
 Vue.prototype.$http = axios.create({
   baseURL: process.env.MIX_APP_URL + '/ajax/',
-  headers: {
-  }
+  headers: { }
 })
 
 Vue.prototype.$route = (...args) => route(...args).url()
