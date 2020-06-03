@@ -4,7 +4,7 @@
       title="Create Elasticsearch cluster ?"
       primaryText="Confirm"
       secondaryText="Cancel"
-      @primaryAction="showConfirmation = false"
+      @primaryAction="submit"
       @secondaryAction="showConfirmation = false"
       @clickAway="showConfirmation = false"
       @onEsc="showConfirmation = false"
@@ -106,7 +106,7 @@ export default {
           invalid: true
         }
       },
-      showConfirmation: true,
+      showConfirmation: false,
       name: "",
       provider: null,
       dataCenter: null,
@@ -116,6 +116,19 @@ export default {
     };
   },
   methods: {
+    submit() {
+      let cluster = {
+        nodes: this.nodes,
+        username: this.username,
+        password: this.password,
+        dataCenter: this.dataCenter.id,
+        provider: this.provider.id,
+        creds: this.provider.creds,
+        name: this.name
+      };
+
+      this.$inertia.post("/cluster", cluster);
+    },
     set(key, value) {
       this[key] = value;
     }

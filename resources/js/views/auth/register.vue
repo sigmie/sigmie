@@ -148,7 +148,8 @@ import Layout from "../layouts/public";
 
 export default {
   components: {
-    Layout
+    Layout,
+    registerForm: require("./register/form").default
   },
   props: ["paddleVendor", "paddlePlans", "githubUser"],
   mounted() {

@@ -115,7 +115,7 @@
         id="plan"
         v-model.trim="$v.plan.$model"
         aria-label="Billing plan"
-        :items="plans"
+        :items="paddlePlans"
         :validations="$v.plan"
       ></form-select>
 
@@ -127,8 +127,7 @@
         <span class="ml-3 inline-flex rounded-md shadow-sm">
           <button-primary :class="{ 'disabled': $v.$anyError }" text="Register" type="submit"></button-primary>
         </span>
-      </div>
-    </div>
+      </div> </div>
   </form>
 </template>
 
@@ -158,7 +157,6 @@ export default {
       username: this.$page.old.username ? this.$page.old.username : "",
       plan: this.$page.old.plan ? this.$page.old.plan : "",
       method: "",
-      plans: [],
       consent: false,
       github: false,
       errorMessages: {
@@ -215,8 +213,6 @@ export default {
   },
   methods: {
     async submit(event) {
-      await this.$refs.stripe.fetchMethod();
-
       if (this.$v.$anyError === false) {
         event.target.submit();
       }
@@ -229,13 +225,6 @@ export default {
   beforeMount() {
     this.github = typeof this.githubUser.name !== "undefined";
   },
-  mounted() {
-    this.plans = {};
-
-    forEach(this.paddlePlans, e => (this.plans[e.id] = e.name));
-
-    this.plan = this.plan !== "" ? this.plan : findKey(this.plans);
-  }
 };
 </script>
 

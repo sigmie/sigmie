@@ -17,6 +17,10 @@ class CreateClustersTable extends Migration
             $table->bigIncrements('id');
             $table->bigInteger('user_id')->unsigned()->index();
             $table->string('name')->unique();
+            $table->string('data_center');
+            $table->string('username');
+            $table->string('password');
+            $table->string('provider');
             $table->timestamps();
         });
 

@@ -65,9 +65,9 @@ return [
                 'name' => 'Serious'
             ],
         ],
-        'test_plans'=>[
+        'test_plans' => [
             'test' => [
-                'id'=> 593243,
+                'id' => 593243,
                 'name' => 'Test'
             ]
         ]

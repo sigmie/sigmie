@@ -36,7 +36,10 @@
         {
             "label": "watch",
             "type": "shell",
-            "command": "yarn run watch"
+            "command": "yarn run watch",
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
         },
         {
             "label": "phpunit",
@@ -147,7 +150,6 @@
             "label": "test:file",
             "type": "shell",
             "command": "vendor/bin/phpunit --configuration=${cwd}/phpunit.xml ${file}",
-
             "problemMatcher": []
         },
         {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Cluster;
+use App\Http\Requests\StoreCluster;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -29,14 +30,14 @@ class ClusterController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Seore a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(StoreCluster $request)
     {
-        //
+        dd($request->all());
     }
 
     /**
