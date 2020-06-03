@@ -86,6 +86,11 @@ export default {
       }
     };
   },
+  watch: {
+    "$v.$invalid": function(value) {
+      this.$emit("validate", value);
+    }
+  },
   methods: {
     set(key, value) {
       this[key] = value;

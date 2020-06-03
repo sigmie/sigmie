@@ -1,5 +1,46 @@
 <template>
   <app>
+    <modal
+      title="Create Elasticsearch cluster ?"
+      primaryText="Confirm"
+      secondaryText="Cancel"
+      @primaryAction="showConfirmation = false"
+      @secondaryAction="showConfirmation = false"
+      @clickAway="showConfirmation = false"
+      @onEsc="showConfirmation = false"
+      :icon="false"
+      :show="showConfirmation"
+      type="info"
+    >
+      <div class="px-4 py-5 sm:px-6">
+        <dl class="grid grid-cols-1 col-gap-4 row-gap-8 sm:grid-cols-2">
+          <div class="sm:col-span-1">
+            <dt class="text-sm leading-5 font-medium text-gray-500">Name</dt>
+            <dd class="mt-1 text-sm leading-5 text-gray-900">{{ name }}</dd>
+          </div>
+          <div class="sm:col-span-1" v-if="provider">
+            <dt class="text-sm leading-5 font-medium text-gray-500">Provider</dt>
+            <dd class="mt-1 text-sm leading-5 text-gray-900">{{ provider.name }}</dd>
+          </div>
+          <div class="sm:col-span-1" v-if="dataCenter">
+            <dt class="text-sm leading-5 font-medium text-gray-500">Data center</dt>
+            <dd class="mt-1 text-sm leading-5 text-gray-900">{{ dataCenter.name }}</dd>
+          </div>
+          <div class="sm:col-span-1">
+            <dt class="text-sm leading-5 font-medium text-gray-500">Number of Nodes</dt>
+            <dd class="mt-1 text-sm leading-5 text-gray-900">{{ nodes }}</dd>
+          </div>
+          <div class="sm:col-span-2">
+            <dd class="text-sm leading-5 font-medium text-gray-500">
+              Your cluster will become available at:
+              <br />
+              <a class="text-orange-400" target="_blank" href>https://{{name}}.search.sigmie.com</a>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </modal>
+
     <div class="max-w-4xl mx-auto">
       <div class="md:flex md:items-center md:justify-between mb-4">
         <div class="flex-1 min-w-0">
@@ -14,11 +55,17 @@
         </div>
       </div>
 
-      <general @nameChange="(value)=> set('name', value)"></general>
+      <general
+        @nameChange="(value)=> set('name', value)"
+        @validate="(invalid)=> this.sections.general.invalid = invalid"
+      ></general>
 
       <separator></separator>
 
-      <provider @providerChange="(value)=> set('provider', value)"></provider>
+      <provider
+        @providerChange="(value)=> set('provider', value)"
+        @validate="(invalid)=> this.sections.provider.invalid = invalid"
+      ></provider>
 
       <separator></separator>
 
@@ -27,8 +74,10 @@
         @dataCenterChange="(value)=> set('dataCenter', value)"
         @usernameChange="(value)=> set('username', value)"
         @passwordChange="(value)=> set('password', value)"
+        @submit="showConfirmation = true"
+        :disabled="sections.search.invalid || sections.general.invalid || sections.provider.invalid"
+        @validate="(invalid)=> this.sections.search.invalid = invalid"
       ></search>
-
     </div>
   </app>
 </template>
@@ -46,9 +95,21 @@ export default {
   },
   data() {
     return {
+      sections: {
+        general: {
+          invalid: true
+        },
+        search: {
+          invalid: true
+        },
+        provider: {
+          invalid: true
+        }
+      },
+      showConfirmation: true,
       name: "",
       provider: null,
-      dataCenter: "",
+      dataCenter: null,
       username: "",
       password: "",
       nodes: null
@@ -56,8 +117,6 @@ export default {
   },
   methods: {
     set(key, value) {
-      console.log("provider change");
-
       this[key] = value;
     }
   }

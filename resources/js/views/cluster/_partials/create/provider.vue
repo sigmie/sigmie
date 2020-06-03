@@ -148,10 +148,14 @@ export default {
     serviceAccount(newValue, oldValue) {
       let provider = {
         id: this.providers.google.id,
-        creds: newValue
+        creds: newValue,
+        name: this.providers.google.name
       };
 
       this.$emit("providerChange", provider);
+    },
+    "$v.$invalid": function(value) {
+      this.$emit("validate", value);
     }
   },
   methods: {

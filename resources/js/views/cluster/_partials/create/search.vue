@@ -1,16 +1,5 @@
 <template>
   <div>
-    <modal
-      title="Deactivate account"
-      content="Are you sure you want to deactivate your account? All of your data will be permanently removed from our servers forever. This action cannot be undone."
-      primaryText="Okay"
-      @primaryAction="showConfirmation = false"
-      @clickAway="showConfirmation = false"
-      @onEsc="showConfirmation = false"
-      :icon="true"
-      :show="showConfirmation"
-      type="success"
-    ></modal>
     <div class="md:grid md:grid-cols-3 md:gap-6">
       <div class="md:mt-0 md:col-span-2">
         <div class="shadow sm:rounded-md sm:overflow-hidden">
@@ -30,7 +19,7 @@
                   id="data-center"
                   v-model.trim="$v.dataCenter.$model"
                   aria-label="Data center"
-                  :items="{asia:'Asia Pacific', europe:'Europe', north_america: 'North America', south_america:'South America'}"
+                  :items="[ {id:'asia',name:'Asia Pacific'}, {id:'europe',name:'Europe'}, {id:'north_america',name: 'North America'}, {id:'south_america',name:'South America'}]"
                   :validations="$v.dataCenter"
                 ></form-select>
               </div>
@@ -86,7 +75,7 @@
           <div class="pt-5 pb-3">
             <div class="flex justify-end">
               <span class="mr-6 inline-flex rounded-md shadow-sm">
-                <button-primary @click="showConfirmation = true" text="Submit"></button-primary>
+                <button-primary :disabled="disabled" @click="$emit('submit')" text="Submit"></button-primary>
               </span>
             </div>
           </div>
@@ -109,6 +98,7 @@
 import { required, minValue, maxValue } from "vuelidate/lib/validators";
 
 export default {
+  props: ["disabled"],
   validations: {
     dataCenter: {
       required
@@ -127,7 +117,6 @@ export default {
   },
   data() {
     return {
-      showConfirmation: true,
       dataCenter: "",
       nodes: 3,
       username: "",
@@ -149,6 +138,11 @@ export default {
         }
       }
     };
+  },
+  watch: {
+    "$v.$invalid": function(value) {
+      this.$emit("validate", value);
+    }
   },
   methods: {
     set(key, value) {
