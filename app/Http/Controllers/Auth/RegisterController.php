@@ -57,7 +57,6 @@ class RegisterController extends Controller
         return Validator::make(
             $data,
             [
-                'name' => ['required', 'string', 'max:255'],
                 'username' => ['required', 'string', 'min:4'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
                 'password' => $password
@@ -88,7 +87,6 @@ class RegisterController extends Controller
 
         $user = User::create(
             [
-                'name' => $data['name'],
                 'email' => $email,
                 'username' => $data['username'],
                 'password' => $password,
@@ -96,9 +94,6 @@ class RegisterController extends Controller
                 'github' => $githubUser !== null
             ]
         );
-
-        $plans = config('cashier.plans');
-        $user->newSubscription('Subscription', $plans[$data['plan']])->trialDays(14)->create($data['method']);
 
         return $user;
     }

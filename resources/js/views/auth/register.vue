@@ -26,16 +26,12 @@
           </div>
         </div>
         <div
-          class="flex-initial w-full md:w-3/5 text-gray-700 text-center bg-gray-400 px-4 py-2 m-2"
+          class="flex-initial w-full md:w-3/5 text-gray-700 text-center px-4 py-2 m-2"
         >
           <container-white>
-            <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
-              <h3 class="text-lg leading-6 font-medium text-gray-900">Applicant Information</h3>
-              <p
-                class="mt-1 max-w-2xl text-sm leading-5 text-gray-500"
-              >Personal details and application.</p>
-            </div>
+
             <div class="px-4 py-5 sm:p-0">
+
               <dl>
                 <div class="sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 sm:py-5">
                   <dd class="text-sm leading-5 font-medium text-gray-500">Full name</dd>

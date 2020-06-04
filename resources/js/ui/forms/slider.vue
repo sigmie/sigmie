@@ -10,6 +10,7 @@
       <vue-slider
         :min="min"
         :max="max"
+        :tooltipStyle="{display:'none'}"
         :disabled="disabled"
         :processStyle="{ backgroundColor:'#ed8936'}"
         v-model="model"

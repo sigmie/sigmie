@@ -1,9 +1,9 @@
 <template>
   <div>
-    <div class="md:grid md:grid-cols-3 md:gap-6">
-      <div class="md:mt-0 md:col-span-2">
+    <div class="flex flex-col-reverse lg:grid lg:grid-cols-3 gap-6">
+      <div class="flex-1 md:col-span-2 sm:px-0">
         <div class="shadow sm:rounded-md sm:overflow-hidden">
-          <div class="px-4 py-5 bg-white sm:p-6">
+          <div class="px-4 py-5 bg-white sm:p-6 rounded-md">
             <div class="grid grid-cols-3 gap-6">
               <div class="col-span-4 sm:col-span-4">
                 <legend class="text-base leading-6 font-medium text-gray-900">Cluster information</legend>
@@ -60,6 +60,7 @@
 
               <div class="col-span-2 sm:col-span-2">
                 <form-input
+                  type="password"
                   :value="password"
                   label="Password"
                   @change="(value) => set('password',value)"
@@ -81,8 +82,8 @@
           </div>
         </div>
       </div>
-      <div class="md:col-span-1">
-        <div class="px-4 sm:px-0">
+      <div class="flex-1 md:col-span-1 pt-4 sm:pt-0">
+        <div class="pb-2 md:pb-4 lg:pb-0 lg:px-4">
           <h3 class="text-lg font-medium leading-6 text-gray-900">Search details</h3>
           <p class="mt-1 text-sm leading-5 text-gray-600">
             Choose where you want your data to be stored and

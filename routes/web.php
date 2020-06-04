@@ -98,6 +98,7 @@ if ($launched === true) {
         'as' => 'register',
         'uses' => 'Auth\RegisterController@showRegistrationForm'
     ]);
+
     Route::post('register', [
         'as' => '',
         'uses' => 'Auth\RegisterController@register'
