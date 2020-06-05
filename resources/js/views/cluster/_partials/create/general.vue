@@ -25,7 +25,10 @@
       <div class="flex-1 md:col-span-1 pt-4 sm:pt-0">
         <div class="pb-2 md:pb-4 lg:pb-0 lg:px-4">
           <h3 class="text-lg font-medium md:leading-6 text-gray-900">General</h3>
-          <p v-if="name !== '' && $v.name.invalid === false" class="mt-1 text-sm leading-5 text-gray-600">
+          <p
+            v-if="name !== '' && $v.name.invalid === false"
+            class="mt-1 text-sm leading-5 text-gray-600"
+          >
             Basic information about your search.
             <br />
             <br />You search will be available at
@@ -62,15 +65,9 @@ export default {
           return true;
         }
 
-        let route = this.$route("cluster.name", [value]);
+        let route = this.$route("cluster.validate.name", [value]);
 
-        console.log(route);
-
-        return this.$http.get(`/cluster/name/${value}`, {
-          validateStatus: function(status) {
-            return status === 404; // Resolve only if the status code is less than 500
-          }
-        });
+        return this.$http.get(route).then(response => response.data.valid);
       }
     }
   },
