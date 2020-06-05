@@ -3,6 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Cluster;
+use Google_Client;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+use Sigmie\App\Core\Cloud\Providers\Google\Google;
+use Google_Service_Compute;
+use Illuminate\Http\Request;
 
 class ClusterValidationController extends Controller
 {
@@ -11,5 +17,31 @@ class ClusterValidationController extends Controller
         $valid = Cluster::firstWhere('name', $name) === null;
 
         return response()->json(['valid' => $valid]);
+    }
+
+    public function serviceaccount(Request $request)
+    {
+        $data = $request->json();
+        $project = null;
+        $filename = Str::random(40) . '.json';
+
+        if (isset($data['project_id'])) {
+            $project = $data['project_id'];
+        }
+
+        $googleClient = new Google_Client();
+        $googleClient->useApplicationDefaultCredentials();
+
+        Storage::disk('local')->put($filename, json_encode($json));
+
+        $cwd = getcwd();
+        $path = Storage::url($filename);
+
+        putenv("GOOGLE_APPLICATION_CREDENTIALS=" . $cwd . $path);
+
+        $service = new Google_Service_Compute($googleClient);
+        $provider = new Google($project, $service);
+
+        $result = $provider->isActive();
     }
 }

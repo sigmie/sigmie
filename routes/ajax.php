@@ -15,4 +15,6 @@ Route::group(['middleware' => 'auth'], fn () => Route::resource('/project', 'Pro
 
 Route::resource('/notification', 'NotificationController', ['except' => ['edit', 'create', 'destroy']])->middleware('auth');
 
-Route::get('/cluster/validate/{cluster:name}', 'ClusterValidationController@name')->name('cluster.validate.name');
+Route::get('/cluster/validate/name/{name}', 'ClusterValidationController@name')->name('cluster.validate.name');
+
+Route::post('/cluster/validate/serviceaccount', 'ClusterValidationController@serviceaccount')->name('cluster.validate.serviceaccount');

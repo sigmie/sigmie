@@ -12,6 +12,10 @@
         {
             "type": "composer",
             "url": "https://nova.laravel.com"
+        },
+        {
+            "type": "composer",
+            "url": "https://packages.sigmie.com"
         }
     ],
     "require": {
@@ -37,6 +41,7 @@
         "pusher/pusher-php-server": "~4.0",
         "ramsey/uuid": "^3.9",
         "sentry/sentry-laravel": "^1.5",
+        "sigmie/app-core": "dev-master",
         "tightenco/ziggy": "^0.9.3"
     },
     "require-dev": {

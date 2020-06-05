@@ -107,7 +107,20 @@ export default {
   validations: {
     serviceAccount: {
       mustBeJSON,
-      required
+      required,
+      isValid(value) {
+        if (value === "") {
+          return true;
+        }
+
+        value = JSON.parse(value);
+
+        let route = this.$route("cluster.validate.serviceaccount");
+
+        return this.$http
+          .post(route, value)
+          .then(response => response.data.valid);
+      }
     }
   },
   data() {
@@ -115,7 +128,8 @@ export default {
       errorMessages: {
         serviceAccount: {
           required: "JSON Service account key is required.",
-          mustBeJSON: "Not a valid json"
+          mustBeJSON: "Not a valid json",
+          isValid: "The service account JSON isn't valid"
         }
       },
       providers: {
