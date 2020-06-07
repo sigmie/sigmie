@@ -180,7 +180,8 @@ return [
         App\Providers\TelescopeServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\ConfigcatServiceProvider::class,
-        App\Providers\MailingListServiceProvider::class
+        App\Providers\MailingListServiceProvider::class,
+        App\Providers\ClusterServiceProvider::class
     ],
 
     /*
@@ -195,7 +196,6 @@ return [
     */
 
     'aliases' => [
-
         'App' => Illuminate\Support\Facades\App::class,
         'Arr' => Illuminate\Support\Arr::class,
         'Artisan' => Illuminate\Support\Facades\Artisan::class,
@@ -232,6 +232,6 @@ return [
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
         'Sentry' => Sentry\Laravel\Facade::class,
+        'ClusterManager' => App\Facades\Cluster::class,
     ],
-
 ];

@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Cluster;
+use App\Facades\Cluster as FacadesCluster;
 use App\Http\Requests\StoreCluster;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Sigmie\App\Core\Cluster as CoreCluster;
 
 class ClusterController extends Controller
 {

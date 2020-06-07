@@ -45,6 +45,11 @@ return [
         'redirect' => '/github/callback',
     ],
 
+    'cloudflare' => [
+        'api_token' => env('CLOUDFLARE_TOKEN_ID'),
+        'zone_id' => env('CLOUDFLARE_ZONE_ID')
+    ],
+
     'mailchimp' => [
         'key' => env('MAILCHIMP_KEY'),
         'data_center' => env('MAILCHIMP_DATA_CENTER'),
