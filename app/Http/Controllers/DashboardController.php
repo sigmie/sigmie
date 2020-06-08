@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
@@ -13,6 +14,10 @@ class DashboardController extends Controller
      */
     public function __invoke()
     {
+        if (Auth::user()->activeProject() === null) {
+            return redirect()->route('project.create');
+        }
+
         return Inertia::render('dashboard', ['data' => null]);
     }
 }

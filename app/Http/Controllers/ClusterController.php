@@ -8,6 +8,7 @@ use App\Http\Requests\StoreCluster;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Sigmie\App\Core\Cluster as CoreCluster;
+use Sigmie\App\Core\ClusterManager;
 
 class ClusterController extends Controller
 {

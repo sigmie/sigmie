@@ -5,6 +5,7 @@ namespace App;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Session;
 use Laravel\Cashier\Billable;
 
 class User extends Authenticatable
@@ -39,17 +40,17 @@ class User extends Authenticatable
     ];
 
     /**
-     * Projects
+     * Get the users active project
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return string
      */
+    public function activeProject()
+    {
+        return Session::get('active_project');
+    }
+
     public function projects()
     {
         return $this->hasMany(Project::class);
-    }
-
-    public function clusters()
-    {
-        return $this->hasMany(Cluster::class);
     }
 }

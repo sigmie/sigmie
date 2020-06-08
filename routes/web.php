@@ -15,8 +15,8 @@ use Inertia\Inertia;
 
 $launched = true;
 
-
 Route::get('/', 'LandingController')->name('landing')->middleware('guest');
+
 
 // Newsletter routes
 Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group(function () {
@@ -54,6 +54,8 @@ if ($launched === true) {
         Route::get('/monitoring', 'DashboardController')->name('monitoring');
 
         Route::resource('cluster', 'ClusterController');
+
+        Route::resource('project', 'ProjectController');
     });
 
     // Auth routes

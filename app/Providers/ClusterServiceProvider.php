@@ -6,6 +6,8 @@ use Google_Service_Compute;
 use Cloudflare\API\Auth\APIToken;
 use Cloudflare\API\Endpoints\DNS;
 use Cloudflare\API\Adapter\Guzzle;
+use Exception;
+use Illuminate\Support\Facades\Auth;
 use Sigmie\App\Core\ClusterManager;
 use Illuminate\Support\ServiceProvider;
 use Sigmie\App\Core\Cloud\Providers\Google\Google;
@@ -21,6 +23,14 @@ class ClusterServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->bind('ClusterManager', function ($app) {
+
+            if (Auth::check() === false) {
+                throw new Exception('ClusterManager can\'t be instatiated because of missing user');
+            }
+
+            if (Auth::user()->activeProject() === null) {
+                throw new Exception('User hasn\'t any project yet');
+            }
 
             $client = new Google_Service_Compute();
             $google = new Google('project', $client);

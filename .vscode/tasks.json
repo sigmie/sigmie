@@ -29,6 +29,11 @@
             "command": "php artisan migrate"
         },
         {
+            "label": "migrate:rollback",
+            "type": "shell",
+            "command": "php artisan migrate:rollback --step=1"
+        },
+        {
             "label": "migrate:fresh",
             "type": "shell",
             "command": "php artisan migrate:fresh"
