@@ -25,15 +25,5 @@ class ProjectTest extends TestCase
             });
 
         $this->actingAs($users->first());
-
-        $this->get('/ajax/project')->assertJsonCount(3);
-    }
-
-    /**
-     * @test
-     */
-    public function index_returns_anauthorized_json_to_guests()
-    {
-         $this->getJson('/ajax/project')->assertStatus(401)->assertExactJson(['message' => 'Unauthenticated.']);
     }
 }

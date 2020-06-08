@@ -19,7 +19,6 @@ class CreateClustersTable extends Migration
             $table->string('data_center');
             $table->string('username');
             $table->string('password');
-            $table->string('provider');
             $table->timestamps();
         });
 
