@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Cloudflare\API\Auth\APIToken;
 use Cloudflare\API\Endpoints\DNS;
 use Cloudflare\API\Adapter\Guzzle;
+use Illuminate\Support\Facades\DB;
 use Sigmie\App\Core\ClusterManager;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
@@ -44,7 +45,7 @@ class ClusterServiceProvider extends ServiceProvider
                 throw new Exception('Missing project id on request params.');
             }
 
-            $project = Auth::user()->projects->filter(fn ($project) => $project->id = $projectId)->first();
+            $project = Project::where('id', $projectId)->where('user_id', Auth::user()->id)->first();
 
             if ($project === null) {
                 throw new Exception('User\'s project doesn\'t exist.');
@@ -80,7 +81,6 @@ class ClusterServiceProvider extends ServiceProvider
     private function createGoogleProvider(Project $project): CloudProvider
     {
         $decrypted = decrypt($project->creds);
-        dd($decrypted);
 
         return new Google();
     }

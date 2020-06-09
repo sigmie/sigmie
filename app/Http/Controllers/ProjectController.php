@@ -34,13 +34,13 @@ class ProjectController extends Controller
 
     public function store(StoreProject $request)
     {
-        $credentials = $request->get('provider')['creds'];
+        $credentials = json_decode($request->get('provider')['creds'], true);
         $provider = $request->get('provider')['id'];
 
-        Project::create([
+        $project = Project::create([
             'name' => $request->get('name'),
             'description' => $request->get('description'),
-            'creds' => encrypt('foo'),
+            'creds' => encrypt($credentials),
             'provider' => $provider,
             'user_id' => Auth::user()->id
         ]);
