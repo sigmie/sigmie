@@ -22,7 +22,7 @@
       </div>
       <slot name="info"></slot>
       <p v-if="info.length > 0" slot="info" class="mt-2 text-sm text-gray-500">{{ info }}</p>
-      <div v-for="(message, rule) in errorMessages" :key="rule">
+      <div v-if="validations.$pending === false" v-for="(message, rule) in errorMessages" :key="rule">
         <p
           v-if="!validations[rule] && validations.$dirty"
           class="mt-2 text-sm text-red-600"
