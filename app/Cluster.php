@@ -6,8 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Cluster extends Model
 {
-    public function user()
+    public function project()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Project::class);
     }
 }
