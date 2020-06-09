@@ -15,4 +15,4 @@ Route::resource('/notification', 'NotificationController', ['except' => ['edit',
 
 Route::get('/cluster/validate/name/{name}', 'ClusterValidationController@name')->name('cluster.validate.name');
 
-Route::post('/cluster/validate/serviceaccount', 'ClusterValidationController@serviceaccount')->name('cluster.validate.serviceaccount');
+Route::post('/project/validate/provider', 'ProjectValidationController@provider')->name('project.validate.provider');

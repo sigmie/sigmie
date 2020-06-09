@@ -45,7 +45,7 @@ if ($launched === true) {
 
     Route::group(['middleware' => ['auth']], function () {
 
-        Route::get('/dashboard', 'DashboardController')->name('dashboard');
+        Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard');
 
         Route::get('/access-tokens', 'DashboardController')->name('access-token');
 

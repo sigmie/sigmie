@@ -21,7 +21,7 @@ class ShareProjectsToView
             return $next($request);
         }
 
-        $projects = Auth::user()->projects->only(['name', 'id']);
+        $projects = Auth::user()->projects->map(fn ($project) => $project->only(['name', 'id']));
 
         Inertia::share('projects', $projects);
 

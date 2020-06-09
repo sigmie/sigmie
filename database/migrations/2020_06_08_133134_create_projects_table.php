@@ -18,6 +18,7 @@ class CreateProjectsTable extends Migration
             $table->string('name');
             $table->text('description');
             $table->string('provider');
+            $table->text('creds');
             $table->bigInteger('user_id')->unsigned()->index();
             $table->timestamps();
         });

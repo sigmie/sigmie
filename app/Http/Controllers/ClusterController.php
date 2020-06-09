@@ -29,6 +29,8 @@ class ClusterController extends Controller
      */
     public function create()
     {
+        FacadesCluster::create();
+
         return Inertia::render('cluster/create');
     }
 

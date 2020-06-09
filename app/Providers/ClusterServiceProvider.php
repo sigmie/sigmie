@@ -2,20 +2,22 @@
 
 namespace App\Providers;
 
+use Exception;
 use App\Project;
 use Google_Service_Compute;
+use Illuminate\Http\Request;
 use Cloudflare\API\Auth\APIToken;
 use Cloudflare\API\Endpoints\DNS;
 use Cloudflare\API\Adapter\Guzzle;
-use Exception;
-use Illuminate\Contracts\Filesystem\Cloud;
-use Illuminate\Support\Facades\Auth;
 use Sigmie\App\Core\ClusterManager;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Contracts\Filesystem\Cloud;
+use Sigmie\App\Core\DNS\Providers\Cloudflare;
 use Sigmie\App\Core\Cloud\Providers\Google\Google;
 use Sigmie\App\Core\DNS\Contracts\Provider as DNSProvider;
 use Sigmie\App\Core\Cloud\Contracts\Provider as CloudProvider;
-use Sigmie\App\Core\DNS\Providers\Cloudflare;
 
 class ClusterServiceProvider extends ServiceProvider
 {
@@ -32,16 +34,24 @@ class ClusterServiceProvider extends ServiceProvider
                 throw new Exception('ClusterManager can\'t be instatiated because of missing user');
             }
 
-            $projectId = Auth::user()->activeProject();
-
-            if ($projectId === null) {
+            if (Auth::user()->projects->isEmpty()) {
                 throw new Exception('User hasn\'t any project yet');
             }
 
-            $project = Project::find($projectId);
+            $projectId = $app->request->get('project_id');
+
+            if ($app->request->has('project_id') === false) {
+                throw new Exception('Missing project id on request params.');
+            }
+
+            $project = Auth::user()->projects->filter(fn ($project) => $project->id = $projectId)->first();
+
+            if ($project === null) {
+                throw new Exception('User\'s project doesn\'t exist.');
+            }
 
             if ($project->provider === 'google') {
-                $cloudProvider = $this->createGoogleProvider();
+                $cloudProvider = $this->createGoogleProvider($project);
             }
 
             if ($project->provider === 'aws') {
@@ -67,8 +77,11 @@ class ClusterServiceProvider extends ServiceProvider
         return new Cloudflare(config('services.cloudflare.zone_id'), $dns);
     }
 
-    private function createGoogleProvider(): CloudProvider
+    private function createGoogleProvider(Project $project): CloudProvider
     {
+        $decrypted = decrypt($project->creds);
+        dd($decrypted);
+
         return new Google();
     }
 

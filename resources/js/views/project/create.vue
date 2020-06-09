@@ -34,23 +34,22 @@
                 label="Description"
               >
                 <template v-slot:info>
-                  <p class="text-gray-500 text-sm mt-2">Optionaly write some notes about the project</p>
+                  <p
+                    class="text-gray-500 text-sm mt-2"
+                  >Optionaly write some notes about the project.</p>
                 </template>
               </form-textarea>
             </div>
           </div>
         </div>
-        <div class="pt-5 pb-3">
-          <div class="flex justify-end">
-            <span v-if="hasProjects" class="mr-6 inline-flex rounded-md">
-              <a class="tracking-wide text-sm text-gray-400 float-right" href>Cancel</a>
-            </span>
-            <span class="mr-6 inline-flex rounded-md shadow-sm">
-              <button-primary @click="$emit('submit')" text="Create"></button-primary>
-            </span>
-          </div>
-        </div>
-        <div class="flex-1 md:col-span-1 pt-4 sm:pt-0"></div>
+      </div>
+
+      <div class="pt-3">
+        <provider
+          @submit="submit"
+          @providerChange="(value)=> provider.data = value"
+          @validate="(invalid)=> this.provider.invalid = invalid"
+        ></provider>
       </div>
     </div>
   </app>
@@ -59,10 +58,10 @@
 <script>
 import App from "../layouts/app";
 
-import { required, alphaNum } from "vuelidate/lib/validators";
+import { required, helpers } from "vuelidate/lib/validators";
+const alphaNum = helpers.regex("alpha", /^[a-zA-Z0-9-_]*$/i);
 
 export default {
-  props: ["hasProjects"],
   validations: {
     name: {
       required,
@@ -71,22 +70,34 @@ export default {
     description: {}
   },
   components: {
-    App
+    App,
+    provider: require("./_partials/create/provider").default
   },
   data() {
     return {
       name: "",
       description: "",
+      provider: {
+        data: "",
+        invalid: true
+      },
       errorMessages: {
         name: {
           required: "Name is required.",
-          alphaNum: "Name can contain only letters and numbers."
+          alphaNum: "Name can contain only letters and numbers and dashes."
         },
         description: {}
       }
     };
   },
   methods: {
+    submit() {
+      this.$inertia.post(this.$route("project.store"), {
+        name: this.name,
+        description: this.description,
+        provider: this.provider.data
+      });
+    },
     set(key, value) {
       this[key] = value;
       this.$v[key].$touch();

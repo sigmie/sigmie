@@ -18,10 +18,6 @@
             <dt class="text-sm leading-5 font-medium text-gray-500">Name</dt>
             <dd class="mt-1 text-sm leading-5 text-gray-900">{{ name }}</dd>
           </div>
-          <div class="sm:col-span-1" v-if="provider">
-            <dt class="text-sm leading-5 font-medium text-gray-500">Provider</dt>
-            <dd class="mt-1 text-sm leading-5 text-gray-900">{{ provider.name }}</dd>
-          </div>
           <div class="sm:col-span-1" v-if="dataCenter">
             <dt class="text-sm leading-5 font-medium text-gray-500">Data center</dt>
             <dd class="mt-1 text-sm leading-5 text-gray-900">{{ dataCenter.name }}</dd>
@@ -52,18 +48,10 @@
             <a class="tracking-wide text-sm text-gray-400 float-right" href>Use existing</a>
         </div>
       </div>
-
       <general
         @nameChange="(value)=> set('name', value)"
         @validate="(invalid)=> this.sections.general.invalid = invalid"
       ></general>
-
-      <separator></separator>
-
-      <provider
-        @providerChange="(value)=> set('provider', value)"
-        @validate="(invalid)=> this.sections.provider.invalid = invalid"
-      ></provider>
 
       <separator></separator>
 
@@ -73,7 +61,7 @@
         @usernameChange="(value)=> set('username', value)"
         @passwordChange="(value)=> set('password', value)"
         @submit="showConfirmation = true"
-        :disabled="sections.search.invalid || sections.general.invalid || sections.provider.invalid"
+        :disabled="sections.search.invalid || sections.general.invalid"
         @validate="(invalid)=> this.sections.search.invalid = invalid"
       ></search>
     </div>
@@ -87,7 +75,6 @@ export default {
   components: {
     App,
     general: require("./_partials/create/general").default,
-    provider: require("./_partials/create/provider").default,
     separator: require("./_partials/create/separator").default,
     search: require("./_partials/create/search").default
   },
@@ -100,13 +87,9 @@ export default {
         search: {
           invalid: true
         },
-        provider: {
-          invalid: true
-        }
       },
       showConfirmation: false,
       name: "",
-      provider: null,
       dataCenter: null,
       username: "",
       password: "",
@@ -120,8 +103,6 @@ export default {
         username: this.username,
         password: this.password,
         dataCenter: this.dataCenter.id,
-        provider: this.provider.id,
-        creds: this.provider.creds,
         name: this.name
       };
 
