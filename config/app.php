@@ -165,7 +165,6 @@ return [
         /*
          * Package Service Providers...
          */
-        Sentry\Laravel\ServiceProvider::class,
         Tightenco\Ziggy\ZiggyServiceProvider::class,
 
         /*
@@ -181,7 +180,6 @@ return [
         App\Providers\RouteServiceProvider::class,
         App\Providers\ConfigcatServiceProvider::class,
         App\Providers\MailingListServiceProvider::class,
-        App\Providers\ClusterServiceProvider::class
     ],
 
     /*
@@ -230,8 +228,6 @@ return [
         'Str' => Illuminate\Support\Str::class,
         'URL' => Illuminate\Support\Facades\URL::class,
         'Validator' => Illuminate\Support\Facades\Validator::class,
-        'View' => Illuminate\Support\Facades\View::class,
-        'Sentry' => Sentry\Laravel\Facade::class,
-        'ClusterManager' => App\Facades\Cluster::class,
+        'View' => Illuminate\Support\Facades\View::class
     ],
 ];

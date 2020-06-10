@@ -17,7 +17,7 @@ class ValidProvider implements Rule
     {
         $value = json_decode($serviceAccount, true);
 
-        $filename = Str::random(40) . '.json';
+        $path = 'temp/' . Str::random(40) . '.json';
 
         if (isset($value['project_id']) === false) {
             return false;
@@ -29,18 +29,18 @@ class ValidProvider implements Rule
         $googleClient->useApplicationDefaultCredentials();
         $googleClient->addScope(Google_Service_Compute::COMPUTE);
 
-        Storage::disk('local')->put($filename, json_encode($value));
+        Storage::disk('local')->put($path, json_encode($value));
 
         $storagePath  = Storage::disk('local')->getDriver()->getAdapter()->getPathPrefix();
 
-        putenv("GOOGLE_APPLICATION_CREDENTIALS=" . $storagePath . $filename);
+        putenv("GOOGLE_APPLICATION_CREDENTIALS=" . $storagePath . $path);
 
         $service = new Google_Service_Compute($googleClient);
         $provider = new Google($project, $service);
 
         $result = $provider->isActive();
 
-        Storage::delete($filename);
+        Storage::delete($path);
 
         return $result;
     }

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Cluster;
-use App\Facades\Cluster as FacadesCluster;
-use App\Http\Requests\StoreCluster;
-use Illuminate\Http\Request;
+use App\Project;
 use Inertia\Inertia;
-use Sigmie\App\Core\Cluster as CoreCluster;
+use App\Jobs\CreateCluster;
+use Illuminate\Http\Request;
+use App\Http\Requests\StoreCluster;
 use Sigmie\App\Core\ClusterManager;
+use App\Facades\Cluster as FacadesCluster;
+use Sigmie\App\Core\Cluster as CoreCluster;
 
 class ClusterController extends Controller
 {
@@ -27,9 +29,22 @@ class ClusterController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function create(Request $request)
     {
-        FacadesCluster::create();
+        $project = Project::find($request->get('project_id'));
+
+        $cluster = new CoreCluster();
+        $cluster->setName('awesome29');
+        $cluster->setRegion('europe-west1');
+        $cluster->setZone('europe-west1-b');
+        $cluster->setDiskSize(15);
+        $cluster->setNodesCount(3);
+        $cluster->setUsername('sigmie');
+        $cluster->setPassword('core');
+
+        CreateCluster::dispatch($project->id, $cluster);
+
+        dd('dispatched');
 
         return Inertia::render('cluster/create');
     }
