@@ -2,15 +2,16 @@
 
 namespace App\Jobs;
 
-use App\Facades\Cluster as FacadesCluster;
-use App\Factories\ClusterManagerFactory;
+use Illuminate\Support\Str;
+use Sigmie\App\Core\Cluster;
 use Illuminate\Bus\Queueable;
+use Sigmie\App\Core\ClusterManager;
+use Illuminate\Queue\SerializesModels;
+use App\Factories\ClusterManagerFactory;
+use Illuminate\Queue\InteractsWithQueue;
+use App\Facades\Cluster as FacadesCluster;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
-use Sigmie\App\Core\Cluster;
-use Sigmie\App\Core\ClusterManager;
 
 class CreateCluster implements ShouldQueue
 {
@@ -27,10 +28,8 @@ class CreateCluster implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($projectId, $cluster)
+    public function __construct($projectId)
     {
-        $this->factory = new ClusterManagerFactory;
-        $this->cluster = $cluster;
         $this->projectId = $projectId;
     }
 
@@ -41,7 +40,17 @@ class CreateCluster implements ShouldQueue
      */
     public function handle()
     {
-        $manager = $this->factory->create($this->projectId);
-        $manager->create($this->cluster);
+        $cluster = new Cluster();
+        $cluster->setName('awesome-' . Str::lower(Str::random(4)));
+        $cluster->setRegion('europe-west1');
+        $cluster->setZone('europe-west1-b');
+        $cluster->setDiskSize(15);
+        $cluster->setNodesCount(3);
+        $cluster->setUsername('sigmie');
+        $cluster->setPassword('core');
+
+        $f = new ClusterManagerFactory;
+        $mana = $f->create($this->projectId);
+        $mana->create($cluster);
     }
 }

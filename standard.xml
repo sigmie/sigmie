@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<ruleset name="mos-sigma">
+<ruleset name="sigmie">
     <description>Coding standart</description>
 
     <exclude-pattern>.history/*</exclude-pattern>

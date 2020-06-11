@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\StoreCluster;
 use Sigmie\App\Core\ClusterManager;
 use App\Facades\Cluster as FacadesCluster;
+use App\Factories\ClusterManagerFactory;
 use Sigmie\App\Core\Cluster as CoreCluster;
 
 class ClusterController extends Controller
@@ -33,16 +34,7 @@ class ClusterController extends Controller
     {
         $project = Project::find($request->get('project_id'));
 
-        $cluster = new CoreCluster();
-        $cluster->setName('awesome29');
-        $cluster->setRegion('europe-west1');
-        $cluster->setZone('europe-west1-b');
-        $cluster->setDiskSize(15);
-        $cluster->setNodesCount(3);
-        $cluster->setUsername('sigmie');
-        $cluster->setPassword('core');
-
-        CreateCluster::dispatch($project->id, $cluster);
+        CreateCluster::dispatch($project->id);
 
         dd('dispatched');
 
