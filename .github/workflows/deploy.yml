@@ -1,14 +1,11 @@
 name: Deploy
 
-on:
-  pull_request:
-    types: [closed]
-    branches:
-      - master
+on: push
+
 jobs:
   deploy:
     runs-on: ubuntu-18.04
-    if: github.event.pull_request.merged
+    # if: github.event.pull_request.merged
 
     env:
       GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
@@ -41,8 +38,8 @@ jobs:
           gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
           gpg --quiet --batch --yes --decrypt --passphrase=$VARIABLES_PASSPHRASE --output .env .github/secrets/variables.gpg
 
-    - name: Install curl curl zip npm
-      run: sudo apt-get update && sudo apt-get install -y curl zip npm
+    - name: Install curl curl nodejs-dev node-gyp libssl1.0-dev zip npm
+      run: sudo apt-get update && sudo apt-get install -y curl nodejs-dev node-gyp libssl1.0-dev zip npm
 
     - name: Install composer
       run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
@@ -52,12 +49,17 @@ jobs:
           composer validate
           composer install -q --no-dev --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
 
-    - uses: borales/actions-yarn@v2.0.0
-      with:
-       cmd: install
-    - uses: borales/actions-yarn@v2.0.0
-      with:
-       cmd: prod
+    - name: Install node
+      run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
+
+    - name: Set ASSETS_URL
+      run: |
+           echo ::set-env name=ASSETS_HASH::$(find public -type f -name "*.json" -exec md5sum {} + | awk '{print $1}' | sort | md5sum | awk '{print $1}')
+           echo "ASSET_URL=https://assets.sigmie.com/${ASSETS_HASH}" >> .env
+           echo "MIX_ASSET_URL=https://assets.sigmie.com/${ASSETS_HASH}" >> .env
+
+    - name: Install node dependencies and generate production assets
+      run: npm install && npm run production
 
     - name: Install GCloud SDK
       run: if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
