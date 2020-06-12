@@ -11,8 +11,15 @@ automatic_scaling:
 
 resources:
   cpu: 1
-  memory_gb: 0.5
+  memory_gb: 2
   disk_size_gb: 10
+
+readiness_check:
+  check_interval_sec: 120
+  timeout_sec: 40
+  failure_threshold: 5
+  success_threshold: 5
+  app_start_timeout_sec: 1500
 
 network:
   instance_tag: app-engine
@@ -21,10 +28,10 @@ network:
   session_affinity: true
 
 vpc_access_connector:
-  name: "projects/mossigma-app-production/locations/europe-west1/connectors/ae"
+  name: "projects/sigmie/locations/europe-west1/connectors/app-engine"
 
 beta_settings:
-    cloud_sql_instances: "mossigma-app-production:europe-west1:mos-sigma"
+    cloud_sql_instances: "sigmie:europe-west1:sigmie-application"
 
 runtime_config:
   enable_stackdriver_integration: true

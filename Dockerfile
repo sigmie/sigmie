@@ -70,12 +70,12 @@ EXPOSE 8080
 # production command
 CMD php artisan cache:clear         && \
     php artisan clear-compiled      && \
+    php artisan migrate --force     && \
     php artisan optimize            && \
     php artisan view:clear          && \
     php artisan view:cache          && \
     php artisan event:clear         && \
     php artisan event:cache         && \
-    php artisan migrate --force     && \
     rm .env                         && \
     rm auth.json                    && \
     /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
