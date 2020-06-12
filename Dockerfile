@@ -75,7 +75,7 @@ CMD php artisan cache:clear         && \
     php artisan view:cache          && \
     php artisan event:clear         && \
     php artisan event:cache         && \
-    php artisan migrate:fresh --force     && \
+    # php artisan migrate --force     && \
     rm .env                         && \
     rm auth.json                    && \
     /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
