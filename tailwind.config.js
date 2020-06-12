@@ -2,6 +2,10 @@ module.exports = {
   plugins: [
     require('@tailwindcss/ui')
   ],
+  purge: [
+    './resources/js/**/*.vue',
+    './resources/views/*.blade.php'
+  ],
   variants: {
     borderWidth: ['first']
   },
