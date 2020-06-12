@@ -25,9 +25,9 @@ Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group
 
     Route::resource('/subscription', 'SubscriptionController');
 
-    Route::view('/thank-you', 'newsletter.thankyou')->name('thankyou');
+    Route::get('/thank-you', 'SubscriptionController@thankyou')->name('thankyou');
 
-    Route::view('/confirmed', 'newsletter.confirmed')->name('confirmed');
+    Route::get('/confirmed', 'SubscriptionController@confirmed')->name('confirmed');
 });
 
 // Github auth routes

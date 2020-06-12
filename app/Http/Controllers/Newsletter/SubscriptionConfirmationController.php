@@ -24,7 +24,7 @@ class SubscriptionConfirmationController extends Controller
 
         $list = config('newsletter.list');
 
-        dispatch(fn () => $mailingList->confirmSubscription($list, $newsletterSubscription->email));
+        dispatch(fn () => $mailingList->addToList($list, $newsletterSubscription->email, true));
 
         return redirect()->route('newsletter.confirmed');
     }

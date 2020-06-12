@@ -1400,13 +1400,14 @@
       <form
         method="POST"
         :action="$route('newsletter.subscription.store')"
+        @submit.prevent="submit"
         class="inline-block pt-4 w-full px-6 pb-8"
       >
-        <csrf />
         <div class="inline-block w-full sm:max-w-xs pr-4">
           <input
             class="bg-white text-gray-600 rounded-lg focus:outline-none focus:shadow-outline border border-gray-300 rounded-lg py-3 px-8 block w-full appearance-none leading-normal"
             name="email"
+            v-model="email"
             required
             type="email"
             placeholder="jane@example.com"
@@ -1424,7 +1425,20 @@
 </template>
 
 <script>
-export default {};
+export default {
+  data() {
+    return {
+      email: ""
+    };
+  },
+  methods: {
+    submit() {
+      this.$inertia.post(this.$route("newsletter.subscription.store"), {
+        email: this.email
+      });
+    }
+  }
+};
 </script>
 
 <style scoped>

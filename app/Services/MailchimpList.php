@@ -87,7 +87,6 @@ class MailchimpList implements MailingList
             ]
         );
 
-
         return $this->formatResponse($response);
     }
 
