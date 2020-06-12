@@ -14,7 +14,7 @@ class ProjectTest extends TestCase
     /**
      * @test
      */
-    public function index_returns_json_with_auth_projects()
+   public function index_returns_json_with_auth_projects()
     {
         $users = factory(User::class, 3)
             ->create()

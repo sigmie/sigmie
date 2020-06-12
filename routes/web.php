@@ -1,7 +1,5 @@
 <?php
 
-use Inertia\Inertia;
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -13,10 +11,9 @@ use Inertia\Inertia;
 |
 */
 
-$launched = true;
+$launched = false;
 
 Route::get('/', 'LandingController')->name('landing')->middleware('guest');
-
 
 // Newsletter routes
 Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group(function () {
@@ -30,18 +27,17 @@ Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group
     Route::get('/confirmed', 'SubscriptionController@confirmed')->name('confirmed');
 });
 
-// Github auth routes
-Route::namespace('Auth')->prefix('github')->name('github.')->group(function () {
-
-    Route::get('/redirect', 'GithubController@redirect')->name('redirect');
-
-    Route::get('/login', 'GithubController@login')->name('login');
-
-    Route::get('/register', 'GithubController@register')->name('register');
-});
-
-
 if ($launched === true) {
+
+    // Github auth routes
+    Route::namespace('Auth')->prefix('github')->name('github.')->group(function () {
+
+        Route::get('/redirect', 'GithubController@redirect')->name('redirect');
+
+        Route::get('/login', 'GithubController@login')->name('login');
+
+        Route::get('/register', 'GithubController@register')->name('register');
+    });
 
     Route::group(['middleware' => ['auth']], function () {
 
@@ -58,53 +54,7 @@ if ($launched === true) {
         Route::resource('project', 'ProjectController');
     });
 
-    // Auth routes
-    Route::get('login', [
-        'as' => 'login',
-        'uses' => 'Auth\LoginController@showLoginForm'
-    ]);
-
-    Route::post('login', [
-        'as' => '',
-        'uses' => 'Auth\LoginController@login'
-    ]);
-
-    Route::post('logout', [
-        'as' => 'logout',
-        'uses' => 'Auth\LoginController@logout'
-    ]);
-
-    // Password Reset Routes...
-    Route::post('password/email', [
-        'as' => 'password.email',
-        'uses' => 'Auth\ForgotPasswordController@sendResetLinkEmail'
-    ]);
-
-    Route::get('password/reset', [
-        'as' => 'password.request',
-        'uses' => 'Auth\ForgotPasswordController@showLinkRequestForm'
-    ]);
-
-    Route::post('password/reset', [
-        'as' => 'password.update',
-        'uses' => 'Auth\ResetPasswordController@reset'
-    ]);
-
-    Route::get('password/reset/{token}', [
-        'as' => 'password.reset',
-        'uses' => 'Auth\ResetPasswordController@showResetForm'
-    ]);
-
-    // Registration Routes...
-    Route::get('register', [
-        'as' => 'register',
-        'uses' => 'Auth\RegisterController@showRegistrationForm'
-    ]);
-
-    Route::post('register', [
-        'as' => '',
-        'uses' => 'Auth\RegisterController@register'
-    ]);
+    Auth::routes();
 
     // Legal
     Route::name('legal.')->group(function () {
