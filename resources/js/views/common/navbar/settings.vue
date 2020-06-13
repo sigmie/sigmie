@@ -3,7 +3,8 @@
     <div class="py-1 rounded-md bg-white shadow-xs">
       <p class="text-xs text-gray-300 font-semibold pl-4 pt-2 pb-1">PROJECTS</p>
       <inertia-link
-        v-for="project in $page.projects"
+        v-for="(project, index) in $page.projects"
+        :key="index"
         :href="$route('dashboard',{project: project.id})"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
       >{{ project.name }}</inertia-link>
