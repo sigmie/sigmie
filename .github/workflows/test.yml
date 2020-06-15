@@ -30,9 +30,14 @@ jobs:
     env:
       VARIABLES_PASSPHRASE: ${{ secrets.variables_testing_passphrase }}
       COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
+      SLACK_HOOK_URL: ${{ secrets.slack_webhook_url }}
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Slack deploy finish notification
+      run: |
+           curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "Test workflow has started."}' $SLACK_HOOK_URL
 
     - name: Cache node modules
       uses: actions/cache@v1
@@ -80,3 +85,7 @@ jobs:
 
     - name: PHPUnit
       run: vendor/bin/phpunit
+
+    - name: Slack deploy finish notification
+      run: |
+           curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "All tests have passed."}' $SLACK_HOOK_URL

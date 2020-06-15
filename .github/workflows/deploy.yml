@@ -15,9 +15,14 @@ jobs:
       GOOGLE_PASSPHRASE: ${{ secrets.google_passphrase }}
       COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
       VARIABLES_PASSPHRASE: ${{ secrets.variables_passphrase }}
+      SLACK_HOOK_URL: ${{ secrets.slack_webhook_url }}
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Slack notification
+      run: |
+           curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "Deploy workflow has started."}' $SLACK_HOOK_URL
 
     - name: Cache node modules
       uses: actions/cache@v1
@@ -69,3 +74,7 @@ jobs:
 
     - name: Deploy to app-engine
       run: gcloud app deploy --stop-previous-version
+
+    - name: Slack deploy finish notification
+      run: |
+           curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "New app version has been deployed to Google App Engine."}' $SLACK_HOOK_URL
