@@ -11,19 +11,18 @@ class ProjectTest extends TestCase
 {
     use DatabaseTransactions;
 
-    /**
-     * @test
-     */
-   public function index_returns_json_with_auth_projects()
-    {
-        $users = factory(User::class, 3)
-            ->create()
-            ->each(function ($user) {
-                factory(Project::class, 3)
-                    ->make()
-                    ->each(fn ($project) => $user->projects()->save($project));
-            });
+//     /**
+//      * @test
+//      */
+//    public function index_returns_json_with_auth_projects()
+//     {
 
-        $this->actingAs($users->first());
-    }
+//         $users = factory(User::class, 3)
+//             ->create()
+//             ->each(function ($user) {
+//                 factory(Project::class, 3)
+//                     ->make()
+//                     ->each(fn ($project) => $user->projects()->save($project));
+//             });
+//     }
 }

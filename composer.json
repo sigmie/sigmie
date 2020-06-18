@@ -28,6 +28,7 @@
         "google/cloud-logging": "^1.20",
         "guzzlehttp/guzzle": "^6.4",
         "inertiajs/inertia-laravel": "^0.2.5",
+        "laravel/cashier-paddle": "^1.0@beta",
         "laravel/framework": "^7.0",
         "laravel/horizon": "^4.0",
         "laravel/nova": "^3.0",
@@ -41,7 +42,7 @@
         "predis/predis": "^1.1",
         "pusher/pusher-php-server": "~4.0",
         "ramsey/uuid": "^3.9",
-        "sigmie/app-core": "dev-master",
+        "sigmie/app-core": "^0.2",
         "tightenco/ziggy": "^0.9.3"
     },
     "require-dev": {

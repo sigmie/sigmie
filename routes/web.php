@@ -11,7 +11,7 @@
 |
 */
 
-$launched = false;
+$launched = true;
 
 Route::get('/', 'LandingController')->name('landing')->middleware('guest');
 
