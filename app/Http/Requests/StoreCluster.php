@@ -13,7 +13,7 @@ class StoreCluster extends FormRequest
      */
     public function authorize()
     {
-        return false;
+        return true;
     }
 
     /**
@@ -24,7 +24,11 @@ class StoreCluster extends FormRequest
     public function rules()
     {
         return [
-            //
+            'name' => ['alpha_num', 'required'],
+            'nodes' => ['min:1', 'max:3', 'required'],
+            'dataCenter' => ['required'],
+            'username' => ['required'],
+            'password' => ['required']
         ];
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Cluster;
-use App\Rules\ValidProvider;
 use Google_Client;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;

@@ -32,24 +32,20 @@ class ClusterController extends Controller
      */
     public function create(Request $request)
     {
-        $project = Project::find($request->get('project_id'));
-
-        CreateCluster::dispatch($project->id);
-
-        dd('dispatched');
-
         return Inertia::render('cluster/create');
     }
 
     /**
-     * Seore a newly created resource in storage.
+     * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function store(StoreCluster $request)
     {
-        dd($request->all());
+        CreateCluster::dispatch($request->all());
+
+        return redirect()->route('dashboard');
     }
 
     /**

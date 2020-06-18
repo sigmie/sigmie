@@ -14,7 +14,7 @@
                   id="name"
                   name="name"
                   :validations="$v.name"
-                  suffix="search.sigmie.com"
+                  suffix="sigmie.app"
                   :error-messages="errorMessages.name"
                 ></form-input>
               </div>
@@ -35,9 +35,9 @@
             <br />
             <a
               class="text-orange-700"
-              :href="'https://'+name+'.search.sigmie.com'"
+              :href="'https://'+name+'.sigmie.app'"
               target="_blank"
-            >https://{{ name }}.search.sigmie.com</a>.
+            >https://{{ name }}.sigmie.app</a>.
           </p>
           <p
             v-else

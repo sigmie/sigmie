@@ -30,7 +30,7 @@
             <dd class="text-sm leading-5 font-medium text-gray-500">
               Your cluster will become available at:
               <br />
-              <a class="text-orange-400" target="_blank" href>https://{{name}}.search.sigmie.com</a>
+              <a class="text-orange-400" target="_blank" href>https://{{name}}.sigmie.app</a>
             </dd>
           </div>
         </dl>

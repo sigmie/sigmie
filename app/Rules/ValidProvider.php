@@ -2,6 +2,7 @@
 
 namespace App\Rules;
 
+use Exception;
 use Illuminate\Contracts\Validation\Rule;
 use Google_Client;
 use Illuminate\Support\Str;
@@ -9,34 +10,23 @@ use Illuminate\Support\Facades\Storage;
 use Sigmie\App\Core\Cloud\Providers\Google\Google;
 use Google_Service_Compute;
 use Symfony\Component\HttpFoundation\ParameterBag;
-
+use Throwable;
 
 class ValidProvider implements Rule
 {
     private function validateGoogle($serviceAccount)
     {
-        $value = json_decode($serviceAccount, true);
-
+        $storagePath  = Storage::disk('local')->getDriver()->getAdapter()->getPathPrefix();
         $path = 'temp/' . Str::random(40) . '.json';
+        $fullPath = $storagePath . $path;
 
-        if (isset($value['project_id']) === false) {
+        Storage::disk('local')->put($path, $serviceAccount);
+
+        try {
+            $provider = new Google($fullPath, new Google_Service_Compute(new Google_Client()));
+        } catch (Exception $exception) {
             return false;
         }
-
-        $project = $value['project_id'];
-
-        $googleClient = new Google_Client();
-        $googleClient->useApplicationDefaultCredentials();
-        $googleClient->addScope(Google_Service_Compute::COMPUTE);
-
-        Storage::disk('local')->put($path, json_encode($value));
-
-        $storagePath  = Storage::disk('local')->getDriver()->getAdapter()->getPathPrefix();
-
-        putenv("GOOGLE_APPLICATION_CREDENTIALS=" . $storagePath . $path);
-
-        $service = new Google_Service_Compute($googleClient);
-        $provider = new Google($project, $service);
 
         $result = $provider->isActive();
 
@@ -51,7 +41,7 @@ class ValidProvider implements Rule
      * @param  mixed  $value
      * @return bool
      */
-    public function passes($attribute, $value)
+    public function passes($attribute, $value): bool
     {
         if ($value['id'] === 'google') {
             return $this->validateGoogle($value['creds']);
@@ -65,7 +55,7 @@ class ValidProvider implements Rule
      *
      * @return string
      */
-    public function message()
+    public function message(): string
     {
         return 'Cloud provider is invalid.';
     }
