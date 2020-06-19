@@ -19,7 +19,7 @@
                   id="data-center"
                   v-model.trim="$v.dataCenter.$model"
                   aria-label="Data center"
-                  :items="[ {id:'asia',name:'Asia Pacific'}, {id:'europe',name:'Europe'}, {id:'north_america',name: 'North America'}, {id:'south_america',name:'South America'}]"
+                  :items="[ {id:'asia',name:'Asia Pacific'}, {id:'europe',name:'Europe'}, {id:'america',name: 'America'}]"
                   :validations="$v.dataCenter"
                 ></form-select>
               </div>

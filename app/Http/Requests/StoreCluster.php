@@ -28,7 +28,8 @@ class StoreCluster extends FormRequest
             'nodes' => ['min:1', 'max:3', 'required'],
             'dataCenter' => ['required'],
             'username' => ['required'],
-            'password' => ['required']
+            'password' => ['required'],
+            'project_id' => ['required']
         ];
     }
 }

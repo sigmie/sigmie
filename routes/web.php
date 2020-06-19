@@ -39,21 +39,6 @@ if ($launched === true) {
         Route::get('/register', 'GithubController@register')->name('register');
     });
 
-    Route::group(['middleware' => ['auth']], function () {
-
-        Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard');
-
-        Route::get('/access-tokens', 'DashboardController')->name('access-token');
-
-        Route::get('/playground', 'DashboardController')->name('playground');
-
-        Route::get('/monitoring', 'DashboardController')->name('monitoring');
-
-        Route::resource('cluster', 'ClusterController');
-
-        Route::resource('project', 'ProjectController');
-    });
-
     Auth::routes();
 
     // Legal
@@ -64,5 +49,23 @@ if ($launched === true) {
         Route::view('/privacy', 'legal.privacy')->name('privacy');
 
         Route::view('/cookie', 'legal.cookie')->name('cookie');
+    });
+
+    Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
+
+        Route::resource('project', 'ProjectController');
+
+        Route::group(['middleware' => ['project']], function () {
+
+            Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard');
+
+            Route::get('/access-tokens', 'DashboardController')->name('access-token');
+
+            Route::get('/playground', 'DashboardController')->name('playground');
+
+            Route::get('/monitoring', 'DashboardController')->name('monitoring');
+
+            Route::resource('cluster', 'ClusterController');
+        });
     });
 }

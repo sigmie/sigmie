@@ -62,23 +62,16 @@ class ClusterManagerFactory
 
     private function createGoogleProvider(Project $project): CloudProvider
     {
-        $decrypted = decrypt($project->creds);
+        $serviceAccount = decrypt($project->creds);
 
-        $googleClient = new Google_Client();
-        $googleClient->useApplicationDefaultCredentials();
-        $googleClient->addScope(Google_Service_Compute::COMPUTE);
-
-        $credsPath = "creds/{$project->id}.json";
-
-        Storage::disk('local')->put($credsPath, json_encode($decrypted));
-
+        $path = "creds/{$project->id}.json";
         $storagePath  = Storage::disk('local')->getDriver()->getAdapter()->getPathPrefix();
 
-        putenv("GOOGLE_APPLICATION_CREDENTIALS=" . $storagePath . $credsPath);
+        Storage::disk('local')->put($path, json_encode($serviceAccount));
 
-        $compute_service = new Google_Service_Compute($googleClient);
+        $compute_service = new Google_Service_Compute(new Google_Client());
 
-        return new Google($decrypted['project_id'], $compute_service);
+        return new Google($storagePath . $path, $compute_service);
     }
 
     public function createDigitaloceanProvider()

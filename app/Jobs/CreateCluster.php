@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\ClusterCreated;
 use Illuminate\Support\Str;
 use Sigmie\App\Core\Cluster;
 use Illuminate\Bus\Queueable;
@@ -17,19 +18,28 @@ class CreateCluster implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    private $factory;
+    /**
+     * Project identifier
+     *
+     * @var int
+     */
+    private int $projectId;
 
-    private $cluster;
-
-    private $projectId;
+    /**
+     * Provider credentials
+     *
+     * @var array
+     */
+    private array $spec;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($projectId)
+    public function __construct(int $projectId, array $spec)
     {
+        $this->spec = $spec;
         $this->projectId = $projectId;
     }
 
@@ -41,16 +51,32 @@ class CreateCluster implements ShouldQueue
     public function handle()
     {
         $cluster = new Cluster();
-        $cluster->setName('awesome-' . Str::lower(Str::random(4)));
-        $cluster->setRegion('europe-west1');
-        $cluster->setZone('europe-west1-b');
-        $cluster->setDiskSize(15);
-        $cluster->setNodesCount(3);
-        $cluster->setUsername('sigmie');
-        $cluster->setPassword('core');
+        $cluster->setName($this->spec['name']);
 
-        $f = new ClusterManagerFactory;
-        $mana = $f->create($this->projectId);
-        $mana->create($cluster);
+        if ($this->creds['dataCenter'] === 'europe') {
+            $cluster->setRegion('europe-west1');
+            $cluster->setZone('europe-west1-b');
+        }
+
+        if ($this->creds['dataCenter'] === 'asia') {
+            $cluster->setRegion('asia-northeast1');
+            $cluster->setZone('asia-northeast1-b');
+        }
+
+        if ($this->creds['dataCenter'] === 'america') {
+            $cluster->setRegion('us-west2');
+            $cluster->setZone('us-west2-a');
+        }
+
+        $cluster->setDiskSize(15);
+        $cluster->setNodesCount($this->spec['nodes']);
+
+        $cluster->setUsername($this->spec['username']);
+        $cluster->setPassword($this->spec['password']);
+
+        $manager = (new ClusterManagerFactory)->create($this->projectId);
+        $manager->create($cluster);
+
+        event(new ClusterCreated($cluster));
     }
 }

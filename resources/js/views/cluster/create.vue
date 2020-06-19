@@ -45,7 +45,7 @@
           >Add new cluster</h2>
         </div>
         <div class="flex-1 md:mt-0 md:ml-4">
-            <a class="tracking-wide text-sm text-gray-400 float-right" href>Use existing</a>
+          <a class="tracking-wide text-sm text-gray-400 float-right" href>Use existing</a>
         </div>
       </div>
       <general
@@ -86,7 +86,7 @@ export default {
         },
         search: {
           invalid: true
-        },
+        }
       },
       showConfirmation: false,
       name: "",
@@ -103,8 +103,10 @@ export default {
         username: this.username,
         password: this.password,
         dataCenter: this.dataCenter.id,
-        name: this.name
+        name: this.name,
+        project_id: this.$page.project_id
       };
+
 
       this.$inertia.post("/cluster", cluster);
     },
