@@ -19,28 +19,20 @@ class CreateCluster implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * Project identifier
-     *
-     * @var int
-     */
-    private int $projectId;
-
-    /**
      * Provider credentials
      *
      * @var array
      */
-    private array $spec;
+    private array $data;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct(int $projectId, array $spec)
+    public function __construct(array $data)
     {
-        $this->spec = $spec;
-        $this->projectId = $projectId;
+        $this->data = $data;
     }
 
     /**
@@ -51,30 +43,30 @@ class CreateCluster implements ShouldQueue
     public function handle()
     {
         $cluster = new Cluster();
-        $cluster->setName($this->spec['name']);
+        $cluster->setName($this->data['name']);
 
-        if ($this->creds['dataCenter'] === 'europe') {
+        if ($this->data['dataCenter'] === 'europe') {
             $cluster->setRegion('europe-west1');
             $cluster->setZone('europe-west1-b');
         }
 
-        if ($this->creds['dataCenter'] === 'asia') {
+        if ($this->data['dataCenter'] === 'asia') {
             $cluster->setRegion('asia-northeast1');
             $cluster->setZone('asia-northeast1-b');
         }
 
-        if ($this->creds['dataCenter'] === 'america') {
+        if ($this->data['dataCenter'] === 'america') {
             $cluster->setRegion('us-west2');
             $cluster->setZone('us-west2-a');
         }
 
         $cluster->setDiskSize(15);
-        $cluster->setNodesCount($this->spec['nodes']);
+        $cluster->setNodesCount($this->data['nodes']);
 
-        $cluster->setUsername($this->spec['username']);
-        $cluster->setPassword($this->spec['password']);
+        $cluster->setUsername($this->data['username']);
+        $cluster->setPassword($this->data['password']);
 
-        $manager = (new ClusterManagerFactory)->create($this->projectId);
+        $manager = (new ClusterManagerFactory)->create($this->data['project_id']);
         $manager->create($cluster);
 
         event(new ClusterCreated($cluster));

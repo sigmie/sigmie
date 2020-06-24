@@ -43,8 +43,6 @@ class ClusterController extends Controller
      */
     public function store(StoreCluster $request)
     {
-        dd($request->all());
-
         CreateCluster::dispatch($request->all());
 
         return redirect()->route('dashboard');

@@ -15,6 +15,8 @@ class ClusterCreated
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public $cluster;
+
     /**
      * Create a new event instance.
      *

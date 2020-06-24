@@ -61,6 +61,8 @@ if ($launched === true) {
 
             Route::get('/access-tokens', 'DashboardController')->name('access-token');
 
+            Route::get('/settings', 'SettingsController@index')->name('settings');
+
             Route::get('/playground', 'DashboardController')->name('playground');
 
             Route::get('/monitoring', 'DashboardController')->name('monitoring');

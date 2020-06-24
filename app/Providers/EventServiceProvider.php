@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Events\ClusterCreated;
 use App\Events\NewsletterSubscribed;
 use App\Listeners\SendEmailConfirmationNotification;
+use App\Listeners\StoreClusterData;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -22,6 +24,9 @@ class EventServiceProvider extends ServiceProvider
         NewsletterSubscribed::class => [
             SendEmailConfirmationNotification::class
         ],
+        ClusterCreated::class => [
+            StoreClusterData::class
+        ]
     ];
 
     /**

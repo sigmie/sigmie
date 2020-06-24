@@ -109,7 +109,12 @@ export default {
           text: "Monitoring",
           name: "monitoring",
           icon: "desktop"
-        }
+        },
+        {
+          text: "Settings",
+          name: "settings",
+          icon: "cog"
+        },
       ]
     };
   },

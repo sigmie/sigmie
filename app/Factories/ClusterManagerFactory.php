@@ -57,7 +57,7 @@ class ClusterManagerFactory
         $adapter = new Guzzle($key);
         $dns = new DNS($adapter);
 
-        return new Cloudflare(config('services.cloudflare.zone_id'), $dns);
+        return new Cloudflare(config('services.cloudflare.zone_id'), $dns, 'mos-sigma.com');
     }
 
     private function createGoogleProvider(Project $project): CloudProvider
