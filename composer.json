@@ -42,7 +42,7 @@
         "predis/predis": "^1.1",
         "pusher/pusher-php-server": "~4.0",
         "ramsey/uuid": "^3.9",
-        "sigmie/app-core": "^0.2",
+        "sigmie/app-core": "^0.3.0",
         "tightenco/ziggy": "^0.9.3"
     },
     "require-dev": {
