@@ -1,10 +1,7 @@
  <template>
   <div
-    ref="modal"
     class="z-50 fixed bottom-0 inset-x-0 px-4 pb-4 sm:inset-0 sm:flex sm:items-center sm:justify-center"
     :class="show ? 'ease-out duration-300 opacity-100 visible' : 'ease-in duration-200 opacity-0 invisible'"
-    tabindex="-1"
-    @keyup.esc="$emit('onEsc')"
   >
     <div @click="$emit('clickAway')" class="fixed inset-0 transition-opacity">
       <div class="absolute inset-0 bg-black opacity-75"></div>
@@ -17,7 +14,13 @@
       aria-modal="true"
       aria-labelledby="modal-headline"
     >
-      <div class="sm:flex sm:items-start">
+      <div
+        class="sm:flex sm:items-start"
+        tabindex="-1"
+        ref="modal"
+        id="foo"
+        @keyup.esc="$emit('onEsc')"
+      >
         <div
           v-if="icon"
           class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10"
@@ -62,12 +65,10 @@ import { mixin as clickaway } from "vue-clickaway";
 
 export default {
   mixins: [clickaway],
-  watch: {
-    show(newVal, oldVal) {
-      if (oldVal === false && newVal === true) {
-        this.$refs.modal.focus();
-      }
-    }
+  updated() {
+    this.$nextTick(function() {
+      this.$refs.modal.focus();
+    });
   },
   props: [
     "show",
