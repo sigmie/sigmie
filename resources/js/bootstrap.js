@@ -19,7 +19,8 @@ Vue.prototype.$route = (...args) => route(...args).url()
 
 Vue.prototype.$socket = new Echo({
   broadcaster: 'pusher',
-  key: '1060db93e19b5125f23a'
+  key: process.env.MIX_PUSHER_APP_KEY,
+  cluster: process.env.MIX_PUSHER_APP_CLUSTER
 })
 
 Vue.component('csrf', require('./essentials/csrf').default)

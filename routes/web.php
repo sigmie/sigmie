@@ -67,7 +67,10 @@ if ($launched === true) {
 
             Route::get('/monitoring', 'DashboardController')->name('monitoring');
 
-            Route::resource('cluster', 'ClusterController');
+            Route::resource('cluster', 'ClusterController')->except(['destroy']);
+            Route::delete('/cluster/{project}', 'ClusterController@destroy')->name('cluster.destroy');
         });
     });
 }
+
+Broadcast::routes();

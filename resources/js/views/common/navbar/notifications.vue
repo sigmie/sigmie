@@ -1,5 +1,8 @@
 <template>
-  <div class="py-1 rounded-md bg-white shadow-xs overflow-auto max-h-128" v-away="emitAway">
+  <div
+  class="py-1 rounded-md bg-white shadow-xs overflow-auto max-h-128"
+  v-on-clickaway="emitAway"
+  >
     <ul v-cloak>
       <li
         v-for="(notification,index) in notifications"
@@ -19,7 +22,7 @@
               <div class="ml-2 flex-shrink-0 flex">
                 <span
                   class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-700"
-                >#{{ notification.data.project.title.toLowerCase().replace(' ', '_') }}</span>
+                >#{{ notification.data.project.toLowerCase().replace(' ', '_') }}</span>
               </div>
             </div>
             <div class="mt-2 sm:flex sm:justify-between">
@@ -46,8 +49,10 @@
 <script>
 import moment from "moment";
 import includes from "lodash/includes";
+import { mixin as clickaway } from 'vue-clickaway';
 
 export default {
+  mixins: [ clickaway ],
   props: {
     notifications: {
       default: []

@@ -8,6 +8,9 @@
 <meta name="keywords" content="elasticseach,cloud,infastructure,sigma,sigmie,search,php">
 <meta name="author" content="nicoorfi@yahoo.com">
 
+{{-- CSRF Token required by Laravel Echo --}}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
 {{-- Twitter --}}
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@nicoorf">

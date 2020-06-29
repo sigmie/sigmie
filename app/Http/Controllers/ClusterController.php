@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Cluster;
+use App\Events\ClusterDestroyed;
 use App\Project;
 use Inertia\Inertia;
 use App\Jobs\CreateCluster;
@@ -11,6 +12,10 @@ use App\Http\Requests\StoreCluster;
 use Sigmie\App\Core\ClusterManager;
 use App\Facades\Cluster as FacadesCluster;
 use App\Factories\ClusterManagerFactory;
+use App\Notifications\ClusterWasDestroyed;
+use App\User;
+use Illuminate\Support\Facades\Auth;
+use Pusher\Pusher;
 use Sigmie\App\Core\Cluster as CoreCluster;
 
 class ClusterController extends Controller
@@ -88,8 +93,8 @@ class ClusterController extends Controller
      * @param  \App\Cluster  $cluster
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Cluster $cluster)
+    public function destroy(Project $project)
     {
-        //
+        Auth::user()->notifyNow(new ClusterWasDestroyed($project->name));
     }
 }
