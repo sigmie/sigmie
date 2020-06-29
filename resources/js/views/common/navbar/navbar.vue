@@ -83,6 +83,7 @@
 
 <script>
 import moment from "moment";
+import uniqBy from "lodash/uniqBy";
 
 export default {
   components: {
@@ -146,7 +147,10 @@ export default {
       this.$set(this.notificationsData[index], "read_at", utcTime);
     },
     addNotifications(notificationsData) {
-      this.notificationsData = notificationsData.concat(this.notificationsData);
+      let allNotifications = notificationsData.concat(this.notificationsData);
+      let uniqueNotifications = uniqBy(allNotifications, "id");
+
+      this.notificationsData = uniqueNotifications;
     },
     openSidebar() {
       this.$parent.$refs.sidebar.open();
