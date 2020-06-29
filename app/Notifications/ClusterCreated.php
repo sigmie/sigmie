@@ -4,29 +4,22 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ClusterWasDestroyed extends Notification
+class ClusterCreated extends Notification
 {
     use Queueable;
-
-    /**
-     * Project name
-     *
-     * @var string
-     */
-    private $projectName;
 
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    public function __construct($project)
+    public function __construct(string $projectName, string $clusterName)
     {
-        $this->projectName = $project;
+        $this->projectName = $projectName;
+        $this->clusterName = $clusterName;
     }
 
     /**
@@ -41,19 +34,6 @@ class ClusterWasDestroyed extends Notification
     }
 
     /**
-     * Get the broadcastable representation of the notification.
-     *
-     * @param  mixed  $notifiable
-     * @return BroadcastMessage
-     */
-    public function toBroadcast($notifiable)
-    {
-        return new BroadcastMessage([
-            'id' => $this->id
-        ]);
-    }
-
-    /**
      * Get the array representation of the notification.
      *
      * @param  mixed  $notifiable
@@ -63,7 +43,7 @@ class ClusterWasDestroyed extends Notification
     {
         return [
             'title' => 'Cluster',
-            'body' => 'Your cluster has been destroyed.',
+            'body' => "Your cluster <b>{$this->clusterName}</b> is up and running.",
             'project' => $this->projectName
         ];
     }

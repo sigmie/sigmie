@@ -12,6 +12,7 @@ use App\Http\Requests\StoreCluster;
 use Sigmie\App\Core\ClusterManager;
 use App\Facades\Cluster as FacadesCluster;
 use App\Factories\ClusterManagerFactory;
+use App\Notifications\ClusterCreated;
 use App\Notifications\ClusterWasDestroyed;
 use App\User;
 use Illuminate\Support\Facades\Auth;
@@ -48,7 +49,11 @@ class ClusterController extends Controller
      */
     public function store(StoreCluster $request)
     {
-        CreateCluster::dispatch($request->all());
+        // CreateCluster::dispatch($request->all());
+
+        $project = Project::find($request->get('project_id'));
+
+        Auth::user()->notify(new ClusterCreated($project->name, $request->get('name')));
 
         return redirect()->route('dashboard');
     }
@@ -95,6 +100,6 @@ class ClusterController extends Controller
      */
     public function destroy(Project $project)
     {
-        Auth::user()->notifyNow(new ClusterWasDestroyed($project->name));
+        Auth::user()->notify(new ClusterWasDestroyed($project->name));
     }
 }
