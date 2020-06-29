@@ -7,7 +7,7 @@ services:
       context: '..'
     ports:
         - '35729:35729' # Live reload port
-        - '80:8080'
+        - '8080:8080'
     volumes:
         - ../:/var/www/app:delegated
         - ~/.composer:/root/.composer
