@@ -59,6 +59,7 @@ Vue.component('icon-notification', require('./ui/icons/notification').default)
 Vue.component('icon-refresh', require('./ui/icons/refresh').default)
 Vue.component('icon-cheveron-right', require('./ui/icons/cheveron/right').default)
 Vue.component('icon-check', require('./ui/icons/check').default)
+Vue.component('icon-rocket', require('./ui/icons/rocket').default)
 
 Vue.component('icon-home', require('./ui/icons/home').default)
 Vue.component('icon-team', require('./ui/icons/team').default)

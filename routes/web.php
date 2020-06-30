@@ -11,6 +11,8 @@
 |
 */
 
+use App\Http\Middleware\RedirectIfHasCluster;
+
 $launched = true;
 
 Route::get('/', 'LandingController')->name('landing')->middleware('guest');
@@ -59,7 +61,7 @@ if ($launched === true) {
 
             Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard');
 
-            Route::get('/access-tokens', 'DashboardController')->name('access-token');
+            Route::get('/access-tokens', 'DashboardController')->name('access-token.index');
 
             Route::get('/settings', 'SettingsController@index')->name('settings');
 
@@ -67,7 +69,8 @@ if ($launched === true) {
 
             Route::get('/monitoring', 'DashboardController')->name('monitoring');
 
-            Route::resource('cluster', 'ClusterController')->except(['destroy']);
+            Route::get('/cluster/create', 'ClusterController@create')->name('cluster.create')->middleware(RedirectIfHasCluster::class);
+            Route::post('/cluster', 'ClusterController@store')->name('cluster.store');
             Route::delete('/cluster/{project}', 'ClusterController@destroy')->name('cluster.destroy');
         });
     });

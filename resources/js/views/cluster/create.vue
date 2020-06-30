@@ -1,8 +1,8 @@
 <template>
   <app>
     <modal
-      title="Create Elasticsearch cluster ?"
-      primaryText="Confirm"
+      title="Elasticsearch Cluster"
+      primaryText="Create"
       secondaryText="Cancel"
       @primaryAction="submit"
       @secondaryAction="showConfirmation = false"
@@ -12,28 +12,53 @@
       :show="showConfirmation"
       type="info"
     >
-      <div class="px-4 py-5 sm:px-6">
-        <dl class="grid grid-cols-1 col-gap-4 row-gap-8 sm:grid-cols-2">
-          <div class="sm:col-span-1">
-            <dt class="text-sm leading-5 font-medium text-gray-500">Name</dt>
-            <dd class="mt-1 text-sm leading-5 text-gray-900">{{ name }}</dd>
-          </div>
-          <div class="sm:col-span-1" v-if="dataCenter">
-            <dt class="text-sm leading-5 font-medium text-gray-500">Data center</dt>
-            <dd class="mt-1 text-sm leading-5 text-gray-900">{{ dataCenter.name }}</dd>
-          </div>
-          <div class="sm:col-span-1">
-            <dt class="text-sm leading-5 font-medium text-gray-500">Number of Nodes</dt>
-            <dd class="mt-1 text-sm leading-5 text-gray-900">{{ nodes }}</dd>
-          </div>
-          <div class="sm:col-span-2">
-            <dd class="text-sm leading-5 font-medium text-gray-500">
-              Your cluster will become available at:
-              <br />
-              <a class="text-orange-400" target="_blank" href>https://{{name}}.sigmie.app</a>
-            </dd>
-          </div>
-        </dl>
+      <div class="sm:p-0 px-2 py-1">
+        <p class>
+          We will create and protect your Elasticsearch cluster with basic auth and
+          a free SSL Certificate provided by Cloudflare.
+          <br />
+          <br />Your cluster will become available at:
+          <a
+            class="text-orange-400"
+            target="_blank"
+            :href="'https://'+name+'.sigmie.app'"
+          >https://{{name}}.sigmie.app</a>
+        </p>
+        <div class="py-5">
+          <dl class="grid col-gap-4 row-gap-8 grid-cols-3">
+            <div class="col-span-1">
+              <dt class="text-sm leading-5 font-medium text-gray-500">Name</dt>
+              <dd class="mt-1 text-sm leading-5 text-gray-900">{{ name }}</dd>
+            </div>
+              <div class="col-span-1" v-if="dataCenter">
+              <dt class="text-sm leading-5 font-medium text-gray-500">Data center</dt>
+              <dd class="mt-1 text-sm leading-5 text-gray-900">{{ dataCenter.name }}</dd>
+            </div>
+            <div class="col-span-1">
+              <dt class="text-sm leading-5 font-medium text-gray-500">Number of Nodes</dt>
+              <dd class="mt-1 text-sm leading-5 text-gray-900">{{ nodes }}</dd>
+            </div>
+
+            <div class="col-span-3">
+              <dd
+                class="text-sm leading-5 font-normal tracking-normal text-gray-500 bg-gray-100 px-3 py-2 rounded-md"
+              >
+                <div class="flex align-middle">
+                  <icon-info class="flex-none h-8 w-8 text-gray-400 mt-1 mr-3"></icon-info>
+                  <div class="flex-1 text-sm">
+                    You can access your Cluster either by using our API
+                    with an
+                    <a
+                      class="text-orange-400"
+                      target="_blank"
+                      :href="$route('access-token.index')"
+                    >Access Token</a> or directly by using your basic auth credentials.
+                  </div>
+                </div>
+              </dd>
+            </div>
+          </dl>
+        </div>
       </div>
     </modal>
 
@@ -45,7 +70,10 @@
           >Add new cluster</h2>
         </div>
         <div class="flex-1 md:mt-0 md:ml-4">
-          <a class="tracking-wide text-sm text-gray-400 float-right" href>Use existing</a>
+          <a
+            class="tracking-wide text-sm text-gray-400 float-right cursor-not-allowed"
+            href="#"
+          >Use existing</a>
         </div>
       </div>
       <general
@@ -106,7 +134,6 @@ export default {
         name: this.name,
         project_id: this.$page.project_id
       };
-
 
       this.$inertia.post("/cluster", cluster);
     },

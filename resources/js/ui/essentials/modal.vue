@@ -9,16 +9,15 @@
 
     <div
       :class="show ?'ease-out duration-300 opacity-100 translate-y-0 sm:scale-100':'ease-in duration-200 opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95' "
-      class="bg-white rounded-lg px-4 pt-5 pb-4 overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full sm:p-6"
+      class="bg-white rounded-lg pb-4 overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full p-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-headline"
     >
       <div
-        class="sm:flex sm:items-start"
+        class="sm:flex sm:items-start focus:outline-none"
         tabindex="-1"
         ref="modal"
-        id="foo"
         @keyup.esc="$emit('onEsc')"
       >
         <div
@@ -31,7 +30,7 @@
           <icon-info v-if="type === 'info'" class="h-6 w-6 text-blue-500"></icon-info>
           <icon-check v-if="type === 'success'" class="h-6 w-6 text-green-500"></icon-check>
         </div>
-        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+        <div class="mt-3 sm:mt-0 sm:ml-4 sm:text-left">
           <h3 class="text-lg leading-6 font-medium text-gray-900">{{ title }}</h3>
           <div class="mt-2 text-sm leading-5 text-gray-500">
             <p v-if="content">{{ content }}</p>

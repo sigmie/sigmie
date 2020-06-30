@@ -11,6 +11,7 @@
                   class="text-sm leading-5 text-gray-500"
                 >Choose the main Region and the desired amount of nodes for your cluster.</p>
               </div>
+
               <div class="col-span-2 sm:col-span-2">
                 <form-select
                   label="Datacenter location"
@@ -32,6 +33,26 @@
                   label="Nodes"
                 ></form-slider>
               </div>
+
+              <div class="col-span-3" v-if="nodes === 1">
+                <div class="rounded-md bg-yellow-50 p-2">
+                  <div class="flex">
+                    <div class="ml-3 flex-1 md:flex md:justify-between">
+                      <p
+                        class="text-sm leading-5 text-yellow-500"
+                      >You won't have a healthy cluster by having only one node.</p>
+                      <p class="mt-3 text-sm leading-5 md:mt-0 md:ml-6">
+                        <a
+                          href="https://docs.sigmie.com/knowledge/cluster-health"
+                          target="_blank"
+                          class="whitespace-no-wrap font-medium text-yellow-500 hover:text-yellow-400 transition ease-in-out duration-150"
+                        >Details &rarr;</a>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
             <div class="grid grid-cols-4 gap-6 mt-4">
               <div class="col-span-4 sm:col-span-4">

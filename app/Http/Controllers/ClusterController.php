@@ -49,11 +49,22 @@ class ClusterController extends Controller
      */
     public function store(StoreCluster $request)
     {
-        // CreateCluster::dispatch($request->all());
+        $values = $request->all();
+
+        $cluster = Cluster::create([
+            'name' => $values['name'],
+            'data_center' => $values['dataCenter'],
+            'project_id' => $values['project_id'],
+            'username' => $values['username'],
+            'password' => '',
+            'state' => Cluster::QUEUED
+        ]);
 
         $project = Project::find($request->get('project_id'));
 
-        Auth::user()->notify(new ClusterCreated($project->name, $request->get('name')));
+        // CreateCluster::dispatch($cluster->id);
+
+        // Auth::user()->notify(new ClusterCreated($project->name, $request->get('name')));
 
         return redirect()->route('dashboard');
     }

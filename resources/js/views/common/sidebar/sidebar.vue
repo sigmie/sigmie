@@ -97,7 +97,7 @@ export default {
         },
         {
           text: "Access tokens",
-          name: "access-token",
+          name: "access-token.index",
           icon: "key"
         },
         {

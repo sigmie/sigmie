@@ -13,6 +13,9 @@ use Illuminate\Queue\InteractsWithQueue;
 use App\Facades\Cluster as FacadesCluster;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Sigmie\App\Core\Cloud\Regions\America;
+use Sigmie\App\Core\Cloud\Regions\Asia;
+use Sigmie\App\Core\Cloud\Regions\Europe;
 
 class CreateCluster implements ShouldQueue
 {
@@ -46,18 +49,15 @@ class CreateCluster implements ShouldQueue
         $cluster->setName($this->data['name']);
 
         if ($this->data['dataCenter'] === 'europe') {
-            $cluster->setRegion('europe-west1');
-            $cluster->setZone('europe-west1-b');
+            $cluster->setRegion(new Europe);
         }
 
         if ($this->data['dataCenter'] === 'asia') {
-            $cluster->setRegion('asia-northeast1');
-            $cluster->setZone('asia-northeast1-b');
+            $cluster->setRegion(new Asia);
         }
 
         if ($this->data['dataCenter'] === 'america') {
-            $cluster->setRegion('us-west2');
-            $cluster->setZone('us-west2-a');
+            $cluster->setRegion(new America);
         }
 
         $cluster->setDiskSize(15);

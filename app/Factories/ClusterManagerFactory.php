@@ -14,6 +14,8 @@ use Cloudflare\API\Adapter\Guzzle;
 use Google_Client;
 use Illuminate\Support\Facades\DB;
 use Sigmie\App\Core\ClusterManager;
+use Sigmie\App\Core\Contracts\DNSFactory;
+use Sigmie\App\Core\Contracts\CloudFactory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +25,8 @@ use Sigmie\App\Core\DNS\Providers\Cloudflare;
 use Sigmie\App\Core\Cloud\Providers\Google\Google;
 use Sigmie\App\Core\DNS\Contracts\Provider as DNSProvider;
 use Sigmie\App\Core\Cloud\Contracts\Provider as CloudProvider;
+use Sigmie\App\Core\CloudflareFactory;
+use Sigmie\App\Core\GoogleFactory;
 
 class ClusterManagerFactory
 {
@@ -35,32 +39,32 @@ class ClusterManagerFactory
         }
 
         if ($project->provider === 'google') {
-            $cloudProvider = $this->createGoogleProvider($project);
+            $cloudProviderFactory = $this->createGoogleProvider($project);
         }
 
         if ($project->provider === 'aws') {
-            $cloudProvider = $this->createAWSProvider();
+            $cloudProviderFactory = $this->createAWSProvider();
         }
 
         if ($project->provider === 'digitalocean') {
-            $cloudProvider = $this->createDigitaloceanProvider();
+            $cloudProviderFactory = $this->createDigitaloceanProvider();
         }
 
-        $dnsProvider = $this->createDnsProvider();
+        $dnsProviderFactory = $this->createDnsProvider();
 
-        return  new ClusterManager($cloudProvider, $dnsProvider);
+        return  new ClusterManager($cloudProviderFactory, $dnsProviderFactory);
     }
 
-    private function createDnsProvider(): DNSProvider
+    private function createDnsProvider(): DNSFactory
     {
-        $key = new APIToken(config('services.cloudflare.api_token'));
-        $adapter = new Guzzle($key);
-        $dns = new DNS($adapter);
-
-        return new Cloudflare(config('services.cloudflare.zone_id'), $dns, 'mos-sigma.com');
+        return new CloudflareFactory(
+            config('services.cloudflare.api_token'),
+            config('services.cloudflare.zone_id'),
+            config('services.cloudflare.domain')
+        );
     }
 
-    private function createGoogleProvider(Project $project): CloudProvider
+    private function createGoogleProvider(Project $project): CloudFactory
     {
         $serviceAccount = decrypt($project->creds);
 
@@ -69,16 +73,12 @@ class ClusterManagerFactory
 
         Storage::disk('local')->put($path, json_encode($serviceAccount));
 
-        $compute_service = new Google_Service_Compute(new Google_Client());
-
-        return new Google($storagePath . $path, $compute_service);
+        return new GoogleFactory($storagePath);
     }
 
     public function createDigitaloceanProvider()
     {
         throw new Exception('Digital Ocean is not supported yet!');
-
-        return;
     }
 
     public function createAWSProvider()
