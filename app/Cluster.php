@@ -2,9 +2,17 @@
 
 namespace App;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Cluster extends Model
 {
-    public const QUEUED = 'queued';
+    use SoftDeletes;
+
+    public const QUEUED_DESTROY = 'queued_destroy';
+
+    public const QUEUED_CREATE = 'queued_create';
+
+    public const CREATED = 'created';
 
     public const RUNNING = 'running';
 

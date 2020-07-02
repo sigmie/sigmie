@@ -1,6 +1,5 @@
 <template>
-  <div v-if="visible" class="spinner-mask">
-    <div class="spinner-wrapper pl-64">
+    <div class="spinner-wrapper">
       <div class="spinner-container">
         <div class="trinity-rings-spinner">
           <div class="circle"></div>
@@ -9,26 +8,9 @@
         </div>
       </div>
     </div>
-  </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      visible: false
-    };
-  },
-  methods: {
-    show() {
-      this.visible = true;
-    },
-    hide() {
-      this.visible = false;
-    }
-  }
-};
-</script>
+<script></script>
 
 <style>
 .trinity-rings-spinner,
@@ -50,7 +32,6 @@ export default {
 }
 
 .spinner-wrapper {
-  display: table-cell;
   vertical-align: middle;
 }
 

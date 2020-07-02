@@ -30,7 +30,11 @@ class DashboardController extends Controller
 
         Gate::authorize('view-dashboard', $project);
 
-        return Inertia::render('dashboard', ['data' => 'There are no cluster metrics yet.']);
+        $cluster = $project->clusters->first();
+
+        $state = ($cluster === null) ? null : $cluster->state;
+
+        return Inertia::render('dashboard', ['state' => $state]);
     }
 
     private function userHasProjects()

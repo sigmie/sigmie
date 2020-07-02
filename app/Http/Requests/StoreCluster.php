@@ -25,7 +25,7 @@ class StoreCluster extends FormRequest
     {
         return [
             'name' => ['alpha_num', 'required'],
-            'nodes' => ['min:1', 'max:3', 'required'],
+            'nodes_count' => ['min:1', 'max:3', 'required'],
             'dataCenter' => ['required'],
             'username' => ['required'],
             'password' => ['required'],

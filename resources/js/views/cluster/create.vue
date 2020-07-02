@@ -127,7 +127,7 @@ export default {
   methods: {
     submit() {
       let cluster = {
-        nodes: this.nodes,
+        nodes_count: this.nodes,
         username: this.username,
         password: this.password,
         dataCenter: this.dataCenter.id,

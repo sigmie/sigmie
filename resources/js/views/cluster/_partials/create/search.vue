@@ -7,9 +7,9 @@
             <div class="grid grid-cols-3 gap-6">
               <div class="col-span-4 sm:col-span-4">
                 <legend class="text-base leading-6 font-medium text-gray-900">Cluster information</legend>
-                <p
+                <!-- <p
                   class="text-sm leading-5 text-gray-500"
-                >Choose the main Region and the desired amount of nodes for your cluster.</p>
+                >Choose the main Region and the desired amount of nodes for your cluster.</p> -->
               </div>
 
               <div class="col-span-2 sm:col-span-2">
@@ -63,7 +63,7 @@
                     class="hover:text-gray-600"
                     target="_blank"
                     href="https://en.wikipedia.org/wiki/Basic_access_authentication"
-                  >basic authentication</a> credentials for direct access to your Elasticsearch.
+                  >basic auth</a> credentials for direct access to your Elasticsearch.
                 </p>
               </div>
               <div class="col-span-2 sm:col-span-2">

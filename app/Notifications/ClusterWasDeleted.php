@@ -4,29 +4,21 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ClusterWasDestroyed extends Notification
+class ClusterWasDeleted extends Notification
 {
     use Queueable;
-
-    /**
-     * Project name
-     *
-     * @var string
-     */
-    private $projectName;
 
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    public function __construct($projectName)
+    public function __construct()
     {
-        $this->projectName = $projectName;
+        //
     }
 
     /**
@@ -37,20 +29,21 @@ class ClusterWasDestroyed extends Notification
      */
     public function via($notifiable)
     {
-        return ['broadcast', 'database'];
+        return ['mail'];
     }
 
     /**
-     * Get the broadcastable representation of the notification.
+     * Get the mail representation of the notification.
      *
      * @param  mixed  $notifiable
-     * @return BroadcastMessage
+     * @return \Illuminate\Notifications\Messages\MailMessage
      */
-    public function toBroadcast($notifiable)
+    public function toMail($notifiable)
     {
-        return new BroadcastMessage([
-            'id' => $this->id
-        ]);
+        return (new MailMessage)
+                    ->line('The introduction to the notification.')
+                    ->action('Notification Action', url('/'))
+                    ->line('Thank you for using our application!');
     }
 
     /**
@@ -62,9 +55,7 @@ class ClusterWasDestroyed extends Notification
     public function toArray($notifiable)
     {
         return [
-            'title' => 'Cluster',
-            'body' => 'Your cluster has been destroyed.',
-            'project' => $this->projectName
+            //
         ];
     }
 }

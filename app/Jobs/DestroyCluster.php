@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Cluster;
 use App\Events\ClusterCreated;
 use App\Events\ClusterWasCreated;
+use App\Events\ClusterWasDestroyed;
 use Illuminate\Support\Str;
 use Sigmie\App\Core\Cluster as CloudCluster;
 use Illuminate\Bus\Queueable;
@@ -18,7 +19,7 @@ use Sigmie\App\Core\Cloud\Regions\America;
 use Sigmie\App\Core\Cloud\Regions\Asia;
 use Sigmie\App\Core\Cloud\Regions\Europe;
 
-class CreateCluster implements ShouldQueue
+class DestroyCluster implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -46,7 +47,7 @@ class CreateCluster implements ShouldQueue
      */
     public function handle()
     {
-        $cluster = Cluster::find($this->clusterId);
+        $cluster = Cluster::withTrashed()->find($this->clusterId);
         $cloudCluster = new CloudCluster();
         $projectId = $cluster->project->id;
 
@@ -71,11 +72,10 @@ class CreateCluster implements ShouldQueue
         $cloudCluster->setPassword(decrypt($cluster->password));
 
         $manager = (new ClusterManagerFactory)->create($projectId);
-        $manager->create($cloudCluster);
+        $manager->destroy($cloudCluster);
 
-        $cluster->state = Cluster::CREATED;
-        $cluster->save();
+        $cluster->project->user->notify(new ClusterWasDestroyed($cluster->project->name));
 
-        event(new ClusterWasCreated($cloudCluster));
+        event(new ClusterWasDestroyed($cloudCluster));
     }
 }

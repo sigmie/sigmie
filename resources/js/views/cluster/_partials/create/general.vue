@@ -17,6 +17,10 @@
                   suffix="sigmie.app"
                   :error-messages="errorMessages.name"
                 ></form-input>
+                <p class="mt-2 text-sm leading-5 text-gray-600">
+                  You can
+                  <b>not</b> change this value later.
+                </p>
               </div>
             </div>
           </div>
@@ -37,7 +41,7 @@
               class="text-orange-700"
               :href="'https://'+name+'.sigmie.app'"
               target="_blank"
-            >https://{{ name }}.sigmie.app</a>.
+            >https://{{ name + domain }}</a>.
           </p>
           <p
             v-else
@@ -53,7 +57,7 @@
 import { required, helpers } from "vuelidate/lib/validators";
 
 // Allow only letters and dashes
-const alphaDashes = helpers.regex("alpha", /^[a-z-]*$/);
+const alphaDashes = helpers.regex("alphaNum", /^[a-z-0-9]*$/);
 
 export default {
   validations: {

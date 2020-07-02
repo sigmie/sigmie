@@ -11,16 +11,24 @@
 |
 */
 
+use App\Events\ClusterWasCreated;
 use App\Http\Middleware\RedirectIfHasCluster;
+use App\Listeners\AwaitElasticsearchBoot;
 
 $launched = true;
 
 Route::get('/', 'LandingController')->name('landing')->middleware('guest');
 
+Route::get('/foo', function () {
+    $event = new ClusterWasCreated(15);
+    $listener = new AwaitElasticsearchBoot();
+    $listener->handle($event);
+});
+
 // Newsletter routes
 Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group(function () {
 
-    Route::get('/cofirmation/{newsletterSubscription}', 'SubscriptionConfirmationController@store')->name('subscription.confirmation')->middleware(['signed', 'throttle:6,1']);
+    Route::get('/confirmation/{newsletterSubscription}', 'SubscriptionConfirmationController@store')->name('subscription.confirmation')->middleware(['signed', 'throttle:6,1']);
 
     Route::resource('/subscription', 'SubscriptionController');
 

@@ -3,8 +3,6 @@
     <sidebar ref="sidebar"></sidebar>
 
     <div class="flex flex-col w-0 flex-1 overflow-hidden">
-      <spinner ref="spinner"></spinner>
-
       <navbar v-cloak :user-id="$page.user.id" :avatar-url="$page.user.avatar_url"></navbar>
 
       <main id="main" class="flex-1 relative overflow-y-auto py-6 focus:outline-none">

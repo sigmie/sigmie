@@ -52,7 +52,7 @@ class ClusterManagerFactory
 
         $dnsProviderFactory = $this->createDnsProvider();
 
-        return  new ClusterManager($cloudProviderFactory, $dnsProviderFactory);
+        return  new ClusterManager($cloudProviderFactory, $dnsProviderFactory, config('app.debug'));
     }
 
     private function createDnsProvider(): DNSFactory
@@ -70,10 +70,11 @@ class ClusterManagerFactory
 
         $path = "creds/{$project->id}.json";
         $storagePath  = Storage::disk('local')->getDriver()->getAdapter()->getPathPrefix();
+        $absolutePath = $storagePath . $path;
 
         Storage::disk('local')->put($path, json_encode($serviceAccount));
 
-        return new GoogleFactory($storagePath);
+        return new GoogleFactory($absolutePath);
     }
 
     public function createDigitaloceanProvider()

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Cluster;
-use App\Events\ClusterDestroyed;
 use App\Project;
 use Inertia\Inertia;
 use App\Jobs\CreateCluster;
@@ -12,6 +11,7 @@ use App\Http\Requests\StoreCluster;
 use Sigmie\App\Core\ClusterManager;
 use App\Facades\Cluster as FacadesCluster;
 use App\Factories\ClusterManagerFactory;
+use App\Jobs\DestroyCluster;
 use App\Notifications\ClusterCreated;
 use App\Notifications\ClusterWasDestroyed;
 use App\User;
@@ -55,16 +55,13 @@ class ClusterController extends Controller
             'name' => $values['name'],
             'data_center' => $values['dataCenter'],
             'project_id' => $values['project_id'],
+            'nodes_count' => $values['nodes_count'],
             'username' => $values['username'],
-            'password' => '',
-            'state' => Cluster::QUEUED
+            'password' => encrypt($values['password']),
+            'state' => Cluster::QUEUED_CREATE
         ]);
 
-        $project = Project::find($request->get('project_id'));
-
-        // CreateCluster::dispatch($cluster->id);
-
-        // Auth::user()->notify(new ClusterCreated($project->name, $request->get('name')));
+        CreateCluster::dispatch($cluster->id);
 
         return redirect()->route('dashboard');
     }
@@ -111,6 +108,12 @@ class ClusterController extends Controller
      */
     public function destroy(Project $project)
     {
-        Auth::user()->notify(new ClusterWasDestroyed($project->name));
+        $cluster = $project->clusters->first();
+
+        DestroyCluster::dispatch($cluster->id);
+
+        $cluster->delete();
+
+        return redirect()->route('dashboard');
     }
 }
