@@ -78,10 +78,15 @@ if ($launched === true) {
             Route::get('/monitoring', 'DashboardController')->name('monitoring');
 
             Route::get('/cluster/create', 'ClusterController@create')->name('cluster.create')->middleware(RedirectIfHasCluster::class);
+            Route::get('/cluster/edit/{cluster?}', 'ClusterController@edit')->name('cluster.edit');
             Route::post('/cluster', 'ClusterController@store')->name('cluster.store');
             Route::delete('/cluster/{project}', 'ClusterController@destroy')->name('cluster.destroy');
         });
     });
 }
+
+Route::bind('cluster', function ($id) {
+    return App\Cluster::withTrashed()->where('id', $id)->first();
+});
 
 Broadcast::routes();

@@ -16,6 +16,7 @@ use App\Notifications\ClusterCreated;
 use App\Notifications\ClusterWasDestroyed;
 use App\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Pusher\Pusher;
 use Sigmie\App\Core\Cluster as CoreCluster;
 
@@ -38,6 +39,19 @@ class ClusterController extends Controller
      */
     public function create(Request $request)
     {
+        $projectId = $request->get('project_id');
+
+        $project = Project::find($projectId);
+
+        if (Gate::allows('create-cluster', $project) === false) {
+
+            $cluster = $project->clusters()->withTrashed()->first();
+
+            $id = route('cluster.edit', $cluster->id);
+
+            return redirect()->route('cluster.edit', $cluster->id);
+        }
+
         return Inertia::render('cluster/create');
     }
 
@@ -49,6 +63,14 @@ class ClusterController extends Controller
      */
     public function store(StoreCluster $request)
     {
+        $projectId = $request->get('project_id');
+
+        $project = Project::find($projectId);
+
+        if (Gate::allows('create-cluster', $project) === false) {
+            return redirect()->route('dashboard');
+        }
+
         $values = $request->all();
 
         $cluster = Cluster::create([
@@ -85,7 +107,7 @@ class ClusterController extends Controller
      */
     public function edit(Cluster $cluster)
     {
-        //
+        dd($cluster);
     }
 
     /**
