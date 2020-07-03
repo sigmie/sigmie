@@ -74,8 +74,9 @@ class DestroyCluster implements ShouldQueue
         $manager = (new ClusterManagerFactory)->create($projectId);
         $manager->destroy($cloudCluster);
 
-        $cluster->project->user->notify(new ClusterWasDestroyed($cluster->project->name));
+        $cluster->state = Cluster::DESTROYED;
+        $cluster->save();
 
-        event(new ClusterWasDestroyed($cloudCluster));
+        event(new ClusterWasDestroyed($cluster->id));
     }
 }

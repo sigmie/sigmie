@@ -112,6 +112,8 @@ class ClusterController extends Controller
 
         DestroyCluster::dispatch($cluster->id);
 
+        $cluster->state = Cluster::QUEUED_DESTROY;
+        $cluster->save();
         $cluster->delete();
 
         return redirect()->route('dashboard');

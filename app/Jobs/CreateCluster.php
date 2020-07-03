@@ -76,6 +76,6 @@ class CreateCluster implements ShouldQueue
         $cluster->state = Cluster::CREATED;
         $cluster->save();
 
-        event(new ClusterWasCreated($cloudCluster));
+        event(new ClusterWasCreated($cluster->id));
     }
 }

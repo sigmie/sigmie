@@ -27,19 +27,4 @@ class ClusterWasDestroyed implements ShouldBroadcast
     {
         $this->clusterId = $clusterId;
     }
-
-    public function via()
-    {
-        return ['broadcast'];
-    }
-
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return \Illuminate\Broadcasting\Channel|array
-     */
-    public function broadcastOn()
-    {
-        return new PrivateChannel('cluster.destroyed.' . $this->clusterId);
-    }
 }
