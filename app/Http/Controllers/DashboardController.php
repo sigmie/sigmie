@@ -30,12 +30,9 @@ class DashboardController extends Controller
 
         Gate::authorize('view-dashboard', $project);
 
-        $cluster = $project->clusters->first();
-
-        $state = ($cluster === null) ? null : $cluster->state;
-
         $trashedCluster = $project->clusters()->withTrashed()->first();
 
+        $state = ($trashedCluster === null) ? null : $trashedCluster->state;
         $id = ($trashedCluster === null) ? null : $trashedCluster->id;
 
         return Inertia::render('dashboard', ['state' => $state, 'id' => $id]);

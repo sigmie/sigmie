@@ -12,7 +12,7 @@ use Sigmie\App\Core\ClusterManager;
 use App\Facades\Cluster as FacadesCluster;
 use App\Factories\ClusterManagerFactory;
 use App\Jobs\DestroyCluster;
-use App\Notifications\ClusterCreated;
+use App\Notifications\ClusterIsRunning;
 use App\Notifications\ClusterWasDestroyed;
 use App\User;
 use Illuminate\Support\Facades\Auth;

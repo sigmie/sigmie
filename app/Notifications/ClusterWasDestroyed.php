@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Cluster;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
@@ -12,11 +13,6 @@ class ClusterWasDestroyed extends Notification
 {
     use Queueable;
 
-    /**
-     * Project name
-     *
-     * @var string
-     */
     private $projectName;
 
     /**
@@ -24,9 +20,11 @@ class ClusterWasDestroyed extends Notification
      *
      * @return void
      */
-    public function __construct($projectName)
+    public function __construct($clusterId)
     {
-        $this->projectName = $projectName;
+        $cluster = Cluster::withTrashed()->where('id', $clusterId)->first();
+
+        $this->projectName = $cluster->project->name;
     }
 
     /**
@@ -38,19 +36,6 @@ class ClusterWasDestroyed extends Notification
     public function via($notifiable)
     {
         return ['broadcast', 'database'];
-    }
-
-    /**
-     * Get the broadcastable representation of the notification.
-     *
-     * @param  mixed  $notifiable
-     * @return BroadcastMessage
-     */
-    public function toBroadcast($notifiable)
-    {
-        return new BroadcastMessage([
-            'id' => $this->id
-        ]);
     }
 
     /**

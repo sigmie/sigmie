@@ -14,7 +14,7 @@ class ClusterIsRunning implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    private $clusterId;
+    public $clusterId;
 
     /**
      * Create a new event instance.

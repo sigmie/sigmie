@@ -2,24 +2,31 @@
 
 namespace App\Notifications;
 
+use App\Cluster;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ClusterCreated extends Notification
+class ClusterIsRunning extends Notification
 {
     use Queueable;
+
+    private $projectName;
+
+    private $clusterName;
 
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    public function __construct(string $projectName, string $clusterName)
+    public function __construct($clusterId)
     {
-        $this->projectName = $projectName;
-        $this->clusterName = $clusterName;
+        $cluster = Cluster::find($clusterId);
+
+        $this->projectName = $cluster->project->name;
+        $this->clusterName = $cluster->name;
     }
 
     /**
