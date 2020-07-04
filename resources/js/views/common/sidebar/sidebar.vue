@@ -12,7 +12,7 @@
               :key="index"
               :class="[isRoute(item.name) ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white']"
               class="group mx-1 my-2 flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
-              :href="$route(item.name)"
+              :href="$route(item.name, item.routeParams)"
             >
               <component
                 :class="[ isRoute(item.name) ? 'text-gray-400': 'text-gray-300']"
@@ -64,7 +64,7 @@
               :key="index"
               :class="[isRoute(item.name) ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white']"
               class="group mx-2 my-4 flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
-              :href="$route(item.name)"
+              :href="$route(item.name, item.routeParams)"
             >
               <component
                 :class="[ isRoute(item.name) ? 'text-gray-400': 'text-gray-300']"
@@ -93,28 +93,33 @@ export default {
         {
           text: "Dashboard",
           name: "dashboard",
+          routeParams: [],
           icon: "home"
         },
         {
           text: "Access tokens",
           name: "access-token.index",
+          routeParams: [],
           icon: "key"
         },
         {
           text: "Playground",
           name: "playground",
+          routeParams: [],
           icon: "puzzle"
         },
         {
           text: "Monitoring",
           name: "monitoring",
+          routeParams: [],
           icon: "desktop"
         },
         {
           text: "Settings",
           name: "settings",
+          routeParams: { project_id: this.$page.project_id },
           icon: "cog"
-        },
+        }
       ]
     };
   },

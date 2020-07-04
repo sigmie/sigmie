@@ -46,7 +46,7 @@ class CreateCluster implements ShouldQueue
      */
     public function handle()
     {
-        $cluster = Cluster::find($this->clusterId);
+        $cluster = Cluster::withTrashed()->where('id', $this->clusterId)->first();
         $cloudCluster = new CloudCluster();
         $projectId = $cluster->project->id;
 

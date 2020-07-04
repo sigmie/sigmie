@@ -34,7 +34,11 @@ class DashboardController extends Controller
 
         $state = ($cluster === null) ? null : $cluster->state;
 
-        return Inertia::render('dashboard', ['state' => $state]);
+        $trashedCluster = $project->clusters()->withTrashed()->first();
+
+        $id = ($trashedCluster === null) ? null : $trashedCluster->id;
+
+        return Inertia::render('dashboard', ['state' => $state, 'id' => $id]);
     }
 
     private function userHasProjects()

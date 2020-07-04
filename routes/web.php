@@ -19,12 +19,6 @@ $launched = true;
 
 Route::get('/', 'LandingController')->name('landing')->middleware('guest');
 
-Route::get('/foo', function () {
-    $event = new ClusterWasCreated(15);
-    $listener = new AwaitElasticsearchBoot();
-    $listener->handle($event);
-});
-
 // Newsletter routes
 Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group(function () {
 
@@ -78,8 +72,9 @@ if ($launched === true) {
             Route::get('/monitoring', 'DashboardController')->name('monitoring');
 
             Route::get('/cluster/create', 'ClusterController@create')->name('cluster.create')->middleware(RedirectIfHasCluster::class);
-            Route::get('/cluster/edit/{cluster?}', 'ClusterController@edit')->name('cluster.edit');
+            Route::get('/cluster/edit/{cluster}', 'ClusterController@edit')->name('cluster.edit');
             Route::post('/cluster', 'ClusterController@store')->name('cluster.store');
+            Route::put('/cluster/{cluster}', 'ClusterController@update')->name('cluster.update');
             Route::delete('/cluster/{project}', 'ClusterController@destroy')->name('cluster.destroy');
         });
     });

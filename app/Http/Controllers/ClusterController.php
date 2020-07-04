@@ -105,9 +105,13 @@ class ClusterController extends Controller
      * @param  \App\Cluster  $cluster
      * @return \Illuminate\Http\Response
      */
-    public function edit(Cluster $cluster)
+    public function edit(Request $request, Cluster $cluster)
     {
-        dd($cluster);
+        return Inertia::render('cluster/edit', ['cluster' =>
+        [
+            'id' => $cluster->id,
+            'name' => $cluster->name
+        ]]);
     }
 
     /**
@@ -119,7 +123,20 @@ class ClusterController extends Controller
      */
     public function update(Request $request, Cluster $cluster)
     {
-        //
+        $values = $request->all();
+
+        $cluster->data_center = $values['dataCenter'];
+        $cluster->nodes_count = $values['nodes_count'];
+        $cluster->username = $values['username'];
+        $cluster->password =  encrypt($values['password']);
+        $cluster->state = Cluster::QUEUED_CREATE;
+
+        $cluster->save();
+        $cluster->restore();
+
+        CreateCluster::dispatch($cluster->id);
+
+        return redirect()->route('dashboard');
     }
 
     /**
@@ -130,7 +147,7 @@ class ClusterController extends Controller
      */
     public function destroy(Project $project)
     {
-        $cluster = $project->clusters->first();
+        $cluster = $project->clusters()->withTrashed()->first();
 
         DestroyCluster::dispatch($cluster->id);
 

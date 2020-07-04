@@ -9,7 +9,7 @@
                 <legend class="text-base leading-6 font-medium text-gray-900">Cluster information</legend>
                 <!-- <p
                   class="text-sm leading-5 text-gray-500"
-                >Choose the main Region and the desired amount of nodes for your cluster.</p> -->
+                >Choose the main Region and the desired amount of nodes for your cluster.</p>-->
               </div>
 
               <div class="col-span-2 sm:col-span-2">
@@ -34,7 +34,7 @@
                 ></form-slider>
               </div>
 
-              <div class="col-span-3" v-if="nodes === 1">
+              <div class="col-span-3" v-if="false">
                 <div class="rounded-md bg-yellow-50 p-2">
                   <div class="flex">
                     <div class="ml-3 flex-1 md:flex md:justify-between">
@@ -52,7 +52,6 @@
                   </div>
                 </div>
               </div>
-
             </div>
             <div class="grid grid-cols-4 gap-6 mt-4">
               <div class="col-span-4 sm:col-span-4">

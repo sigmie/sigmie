@@ -10,7 +10,7 @@
           </div>-->
           <div>
             <div class>
-              <fieldset class="">
+              <fieldset class>
                 <legend class="text-base font-medium text-red-700">Danger zone</legend>
                 <div class="pt-5 mt-3 border-t border-gray-200 w-full">
                   <div class="flex justify-between">
@@ -20,9 +20,10 @@
                     </div>
                     <div class="max-w-sm py-1">
                       <button-danger
+                        :disabled="hasCluster === false"
                         id="destroy_cluster"
                         @click="showDestroy = true"
-                        text="Destroy"
+                        :text="hasCluster?  'Destroy': 'Destroyed'"
                       ></button-danger>
                     </div>
                   </div>
@@ -57,6 +58,7 @@ export default {
   components: {
     App
   },
+  props: ["hasCluster"],
   data() {
     return {
       showDestroy: false
@@ -64,7 +66,9 @@ export default {
   },
   methods: {
     destroy() {
-        this.$inertia.delete(this.$route("cluster.destroy", this.$page.project_id));
+      this.$inertia.delete(
+        this.$route("cluster.destroy", this.$page.project_id)
+      );
     }
   }
 };

@@ -10,18 +10,20 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class ClusterIsRunning
+class ClusterIsRunning implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
+
+    private $clusterId;
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct($clusterId)
     {
-        //
+        $this->clusterId = $clusterId;
     }
 
     /**
@@ -31,6 +33,6 @@ class ClusterIsRunning
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('channel-name');
+        return new PrivateChannel("cluster.{$this->clusterId}");
     }
 }

@@ -1,5 +1,6 @@
 <template>
   <div>
+
     <div class="flex flex-col-reverse lg:grid lg:grid-cols-3 gap-6">
       <div class="flex-1 md:col-span-2 sm:px-0 sm:pt-2">
         <div class="shadow rounded-md sm:overflow-hidden">
