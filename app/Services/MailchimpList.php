@@ -10,38 +10,21 @@ class MailchimpList implements MailingList
 {
     /**
      * Mailchimp key
-     *
-     * @var string
      */
     private string $key;
 
     /**
      * Mailchimp data center
-     *
-     * @var string
      */
     private string $dataCenter;
 
     /**
      * Mailchimp API url
-     *
-     * @var string
      */
     private string $url;
 
-    /**
-     * Client
-     *
-     * @var Client
-     */
     private Client $client;
 
-    /**
-     * Constructor
-     *
-     * @param Client $client
-     * @param array $config
-     */
     public function __construct(Client $client, array $config)
     {
         $this->client = $client;
@@ -53,14 +36,6 @@ class MailchimpList implements MailingList
 
     /**
      * Add to email to email list
-     *
-     * @param bool $subscribed
-     * @param string $list
-     * @param string $address
-     * @param bool $subscribed
-     * @param bool $upsert
-     *
-     * @return array
      */
     public function addToList(string $list, string $address, bool $subscribed = false, bool $upsert = false): array
     {
@@ -92,11 +67,6 @@ class MailchimpList implements MailingList
 
     /**
      * Remove from email list
-     *
-     * @param string $list
-     * @param string $address
-     *
-     * @return array
      */
     public function removeFromList(string $list, string $address): array
     {
@@ -118,11 +88,6 @@ class MailchimpList implements MailingList
 
     /**
      * Confirm list subscription
-     *
-     * @param string $list
-     * @param string $address
-     *
-     * @return array
      */
     public function confirmSubscription(string $list, string $address): array
     {
@@ -147,11 +112,6 @@ class MailchimpList implements MailingList
 
     /**
      * Revoke list subscription
-     *
-     * @param string $list
-     * @param string $address
-     *
-     * @return array
      */
     public function revokeSubscription(string $list, string $address): array
     {
@@ -176,11 +136,6 @@ class MailchimpList implements MailingList
 
     /**
      * Retrieve a list member
-     *
-     * @param string $list
-     * @param string $address
-     *
-     * @return array
      */
     public function retrieveMember(string $list, string $address): array
     {
@@ -203,10 +158,6 @@ class MailchimpList implements MailingList
     /**
      * Hast the address given creating
      * the member id
-     *
-     * @param string $address
-     *
-     * @return string
      */
     private function createMemberId($address)
     {
@@ -215,9 +166,6 @@ class MailchimpList implements MailingList
 
     /**
      * Decode guzzle response
-     *
-     * @param ResponseInterface $response
-     * @return array
      */
     private function formatResponse(ResponseInterface $response): array
     {

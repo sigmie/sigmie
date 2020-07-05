@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Newsletter;
 
 use App\Contracts\MailingList;
-use App\NewsletterSubscription;
-use App\Events\NewsletterSubscribed;
+use App\Models\NewsletterSubscription;
+use App\Events\NewsletterSubscriptionWasCreated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreNewsletterSubscription;
 use Inertia\Inertia;
@@ -23,7 +23,7 @@ class SubscriptionController extends Controller
     {
         $subscription = NewsletterSubscription::firstOrCreate($request->validated());
 
-        broadcast(new NewsletterSubscribed($subscription));
+        broadcast(new NewsletterSubscriptionWasCreated($subscription));
 
         return redirect()->route('newsletter.thankyou');
     }

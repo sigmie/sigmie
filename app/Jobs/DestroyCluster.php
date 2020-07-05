@@ -2,16 +2,13 @@
 
 namespace App\Jobs;
 
-use App\Cluster;
-use App\Events\ClusterCreated;
-use App\Events\ClusterWasCreated;
+use App\Models\Cluster;
 use App\Events\ClusterWasDestroyed;
-use Illuminate\Support\Str;
+use App\Helpers\ClusterAdapter;
 use Sigmie\App\Core\Cluster as CloudCluster;
 use Illuminate\Bus\Queueable;
-use Sigmie\App\Core\ClusterManager;
 use Illuminate\Queue\SerializesModels;
-use App\Factories\ClusterManagerFactory;
+use App\Helpers\ClusterManagerFactory;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -23,60 +20,27 @@ class DestroyCluster implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * Provider credentials
-     *
-     * @var array
-     */
     private int $clusterId;
 
-    /**
-     * Create a new job instance.
-     *
-     * @return void
-     */
     public function __construct(int $clusterId)
     {
         $this->clusterId = $clusterId;
     }
 
     /**
-     * Execute the job.
-     *
-     * @return void
+     * Map the application Cluster instance to the sigmie Cluster instance
+     * initialize the Cluster manager and call the destroy method. After
+     * fire the cluster was created event.
      */
     public function handle()
     {
-        $cluster = Cluster::withTrashed()->find($this->clusterId);
-        $cloudCluster = new CloudCluster();
-        $projectId = $cluster->project->id;
+        $appCluster = Cluster::withTrashed()->find($this->clusterId);
+        $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
 
-        $cloudCluster->setName($cluster->name);
+        ClusterManagerFactory::create($appCluster->project->id)->destroy($coreCluster);
 
-        if ($cluster->data_center === 'europe') {
-            $cloudCluster->setRegion(new Europe);
-        }
+        $appCluster->update(['state' => Cluster::DESTROYED]);
 
-        if ($cluster->data_center === 'asia') {
-            $cloudCluster->setRegion(new Asia);
-        }
-
-        if ($cluster->data_center === 'america') {
-            $cloudCluster->setRegion(new America);
-        }
-
-        $cloudCluster->setDiskSize(15);
-        $cloudCluster->setNodesCount($cluster->nodes_count);
-
-        $cloudCluster->setUsername($cluster->username);
-        $cloudCluster->setPassword(decrypt($cluster->password));
-
-        $manager = (new ClusterManagerFactory)->create($projectId);
-        $manager->destroy($cloudCluster);
-
-        $cluster->state = Cluster::DESTROYED;
-        $cluster->save();
-
-        event(new ClusterWasDestroyed($cluster->id));
+        event(new ClusterWasDestroyed($appCluster->id));
     }
 }

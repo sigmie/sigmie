@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Cluster;
+use App\Models\Cluster;
 use Google_Client;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;

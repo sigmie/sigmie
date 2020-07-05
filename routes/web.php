@@ -13,7 +13,7 @@
 
 use App\Events\ClusterWasCreated;
 use App\Http\Middleware\RedirectIfHasCluster;
-use App\Listeners\AwaitElasticsearchBoot;
+use App\Listeners\PollState;
 
 $launched = true;
 
@@ -80,7 +80,7 @@ if ($launched === true) {
 }
 
 Route::bind('cluster', function ($id) {
-    return App\Cluster::withTrashed()->where('id', $id)->first();
+    return App\Models\Cluster::withTrashed()->where('id', $id)->first();
 });
 
 Broadcast::routes();

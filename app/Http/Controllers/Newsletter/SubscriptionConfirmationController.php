@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Newsletter;
 
 use App\Contracts\MailingList;
 use App\Events\Foo;
-use App\NewsletterSubscription;
+use App\Models\NewsletterSubscription;
 use App\Http\Controllers\Controller;
 use App\Services\MailgunList;
 

@@ -13,18 +13,13 @@ use Illuminate\Support\Facades\Notification;
 
 class CleanNotifications implements ShouldQueue
 {
-    use Dispatchable;
-    use InteractsWithQueue;
-    use Queueable;
-    use SerializesModels;
+    use Dispatchable, InteractsWithQueue,  Queueable,  SerializesModels;
 
     /**
      * Remove notifications which are older than
      * one month
-     *
-     * @return void
      */
-    public function handle()
+    public function handle(): void
     {
         $lastMonth = Carbon::now()->subMonth()->toDateString();
 

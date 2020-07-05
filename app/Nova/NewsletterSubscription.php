@@ -17,7 +17,7 @@ class NewsletterSubscription extends Resource
      *
      * @var string
      */
-    public static $model = 'App\NewsletterSubscription';
+    public static $model = 'App\Models\NewsletterSubscription';
 
     /**
      * The single value that should be used to represent the resource when being displayed.

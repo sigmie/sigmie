@@ -14,23 +14,10 @@ class ClusterHasFailed
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    /**
-     * Create a new event instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        //
-    }
+    public int $clusterId;
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return \Illuminate\Broadcasting\Channel|array
-     */
-    public function broadcastOn()
+    public function __construct(int $clusterId)
     {
-        return new PrivateChannel('channel-name');
+        $this->clusterId = $clusterId;
     }
 }

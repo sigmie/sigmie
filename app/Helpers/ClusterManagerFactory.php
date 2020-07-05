@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Factories;
+namespace App\Helpers;
 
 use Exception;
-use App\Project;
+use App\Models\Project;
 use Google_Service_Compute;
 use Illuminate\Http\Request;
 use Cloudflare\API\Auth\APIToken;
@@ -30,7 +30,7 @@ use Sigmie\App\Core\GoogleFactory;
 
 class ClusterManagerFactory
 {
-    public function create(int $projectId)
+    public static function create(int $projectId): ClusterManager
     {
         $project = Project::find($projectId);
 
@@ -39,23 +39,23 @@ class ClusterManagerFactory
         }
 
         if ($project->provider === 'google') {
-            $cloudProviderFactory = $this->createGoogleProvider($project);
+            $cloudProviderFactory = self::createGoogleProvider($project);
         }
 
         if ($project->provider === 'aws') {
-            $cloudProviderFactory = $this->createAWSProvider();
+            $cloudProviderFactory = self::createAWSProvider();
         }
 
         if ($project->provider === 'digitalocean') {
-            $cloudProviderFactory = $this->createDigitaloceanProvider();
+            $cloudProviderFactory = self::createDigitaloceanProvider();
         }
 
-        $dnsProviderFactory = $this->createDnsProvider();
+        $dnsProviderFactory = self::createDnsProvider();
 
         return  new ClusterManager($cloudProviderFactory, $dnsProviderFactory, config('app.debug'));
     }
 
-    private function createDnsProvider(): DNSFactory
+    private static function createDnsProvider(): DNSFactory
     {
         return new CloudflareFactory(
             config('services.cloudflare.api_token'),
@@ -64,7 +64,7 @@ class ClusterManagerFactory
         );
     }
 
-    private function createGoogleProvider(Project $project): CloudFactory
+    private static function createGoogleProvider(Project $project): CloudFactory
     {
         $serviceAccount = decrypt($project->creds);
 
@@ -77,12 +77,12 @@ class ClusterManagerFactory
         return new GoogleFactory($absolutePath);
     }
 
-    public function createDigitaloceanProvider()
+    public static function createDigitaloceanProvider()
     {
         throw new Exception('Digital Ocean is not supported yet!');
     }
 
-    public function createAWSProvider()
+    public static function createAWSProvider()
     {
         throw new Exception('AWS is not supported yet!');
     }

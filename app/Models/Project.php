@@ -1,16 +1,11 @@
 <?php
 
-namespace App;
+namespace App\Models;
 
-use App\Cluster;
+use App\Models\Cluster;
 
 class Project extends Model
 {
-    /**
-     * Clusters relationship
-     *
-     * \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function clusters()
     {
         return $this->hasMany(Cluster::class);

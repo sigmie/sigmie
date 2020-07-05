@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Project;
+use App\Models\Project;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

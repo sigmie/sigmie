@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Project;
+use App\Models\Project;
 use Closure;
 
 class RedirectIfHasCluster

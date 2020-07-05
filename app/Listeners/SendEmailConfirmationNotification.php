@@ -3,17 +3,11 @@
 namespace App\Listeners;
 
 use App\Contracts\MustConfirmSubscription;
-use App\Events\NewsletterSubscribed;
+use App\Events\NewsletterSubscriptionWasCreated;
 
 class SendEmailConfirmationNotification
 {
-    /**
-     * Handle the event.
-     *
-     * @param  NewsletterSubscribed $event
-     * @return void
-     */
-    public function handle($event)
+    public function handle(NewsletterSubscriptionWasCreated $event): void
     {
         if ($event->newsletterSubscription instanceof MustConfirmSubscription && !$event->newsletterSubscription->subscriptionConfirmed()) {
             $event->newsletterSubscription->sendConfirmationEmailNotification();

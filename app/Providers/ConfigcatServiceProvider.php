@@ -11,10 +11,8 @@ class ConfigcatServiceProvider extends ServiceProvider
 {
     /**
      * Register services.
-     *
-     * @return void
      */
-    public function register()
+    public function register(): void
     {
         $key = config('services.configcat.key');
 
@@ -25,8 +23,8 @@ class ConfigcatServiceProvider extends ServiceProvider
                     return new ConfigCatClient(
                         $key,
                         [
-                        'cache' => new LaravelCache(Cache::store()),
-                        'cache-refresh-interval' => 5
+                            'cache' => new LaravelCache(Cache::store()),
+                            'cache-refresh-interval' => 5
                         ]
                     );
                 }
@@ -36,10 +34,8 @@ class ConfigcatServiceProvider extends ServiceProvider
 
     /**
      * Bootstrap services.
-     *
-     * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         //
     }

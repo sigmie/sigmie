@@ -2,13 +2,13 @@
 
 namespace App\Notifications;
 
-use App\Cluster;
+use App\Models\Cluster;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ClusterIsRunning extends Notification
+class ClusterIsRunning extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -16,11 +16,6 @@ class ClusterIsRunning extends Notification
 
     private $clusterName;
 
-    /**
-     * Create a new notification instance.
-     *
-     * @return void
-     */
     public function __construct($clusterId)
     {
         $cluster = Cluster::find($clusterId);
@@ -29,24 +24,12 @@ class ClusterIsRunning extends Notification
         $this->clusterName = $cluster->name;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @param  mixed  $notifiable
-     * @return array
-     */
-    public function via($notifiable)
+    public function via($notifiable): array
     {
         return ['broadcast', 'database'];
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @param  mixed  $notifiable
-     * @return array
-     */
-    public function toArray($notifiable)
+    public function toArray($notifiable): array
     {
         return [
             'title' => 'Cluster',

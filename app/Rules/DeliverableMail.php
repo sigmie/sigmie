@@ -10,16 +10,9 @@ class DeliverableMail implements Rule
 {
     /**
      * Guzzle client
-     *
-     * @var Client
      */
-    private $client;
+    private Client $client;
 
-    /**
-     * Create a new rule instance.
-     *
-     * @return void
-     */
     public function __construct(Client $client)
     {
         $this->client = $client;
@@ -27,12 +20,8 @@ class DeliverableMail implements Rule
 
     /**
      * Determine if the validation rule passes.
-     *
-     * @param  string $attribute
-     * @param  mixed  $value
-     * @return bool
      */
-    public function passes($attribute, $value)
+    public function passes(string $attribute, $value): bool
     {
         try {
             $response = $this->client->get(
@@ -62,10 +51,8 @@ class DeliverableMail implements Rule
 
     /**
      * Get the validation error message.
-     *
-     * @return string
      */
-    public function message()
+    public function message(): string
     {
         return 'The email address is not deliverable or is a disposable one.';
     }

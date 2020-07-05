@@ -11,32 +11,17 @@ class MailgunList implements MailingList
 
     /**
      * Mailgun secret
-     *
-     * @var string
      */
     private $secret;
 
     /**
      * Mailgun api endpoint
-     *
-     * @var string
      */
-    private $endpoint;
+    private string $endpoint;
 
-    /**
-     * Guzzle HTTP Client
-     *
-     * @var Client
-     */
-    private $client;
+    private Client $client;
 
-    /**
-     * Constructor
-     *
-     * @param Client $client
-     * @param array $config
-     */
-    public function __construct($client, $config)
+    public function __construct(Client $client, array $config)
     {
         $this->client = $client;
         $this->secret = $config['secret'];
@@ -45,14 +30,6 @@ class MailgunList implements MailingList
 
     /**
      * Add to email to email list
-     *
-     * @param bool $subscribed
-     * @param string $list
-     * @param string $address
-     * @param bool $subscribed
-     * @param bool $upsert
-     *
-     * @return array
      */
     public function addToList(string $list, string $address, bool $subscribed = false, bool $upsert = false): array
     {
@@ -76,11 +53,6 @@ class MailgunList implements MailingList
 
     /**
      * Remove from email list
-     *
-     * @param string $list
-     * @param string $email
-     *
-     * @return array
      */
     public function removeFromList(string $list, string $email): array
     {
@@ -99,11 +71,6 @@ class MailgunList implements MailingList
 
     /**
      * Confirm list subscription
-     *
-     * @param string $list
-     * @param string $email
-     *
-     * @return array
      */
     public function confirmSubscription(string $list, string $email): array
     {
@@ -125,11 +92,6 @@ class MailgunList implements MailingList
 
     /**
      * Revoke list subscription
-     *
-     * @param string $list
-     * @param string $email
-     *
-     * @return array
      */
     public function revokeSubscription(string $list, string $email): array
     {
@@ -151,11 +113,6 @@ class MailgunList implements MailingList
 
     /**
      * Retrieve a list member
-     *
-     * @param string $list
-     * @param string $email
-     *
-     * @return array
      */
     public function retrieveMember(string $list, string $email): array
     {
@@ -175,9 +132,6 @@ class MailgunList implements MailingList
 
     /**
      * Decode guzzle response
-     *
-     * @param ResponseInterface $response
-     * @return array
      */
     private function formatResponse(ResponseInterface $response): array
     {

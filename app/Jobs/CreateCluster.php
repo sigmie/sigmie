@@ -2,15 +2,16 @@
 
 namespace App\Jobs;
 
-use App\Cluster;
+use App\Models\Cluster;
 use App\Events\ClusterCreated;
 use App\Events\ClusterWasCreated;
+use App\Helpers\ClusterAdapter;
 use Illuminate\Support\Str;
 use Sigmie\App\Core\Cluster as CloudCluster;
 use Illuminate\Bus\Queueable;
 use Sigmie\App\Core\ClusterManager;
 use Illuminate\Queue\SerializesModels;
-use App\Factories\ClusterManagerFactory;
+use App\Helpers\ClusterManagerFactory;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -22,60 +23,27 @@ class CreateCluster implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * Provider credentials
-     *
-     * @var array
-     */
     private int $clusterId;
 
-    /**
-     * Create a new job instance.
-     *
-     * @return void
-     */
     public function __construct(int $clusterId)
     {
         $this->clusterId = $clusterId;
     }
 
     /**
-     * Execute the job.
-     *
-     * @return void
+     * Map the application Cluster instance to the sigmie Cluster instance
+     * initialize the Cluster manager and call the create method. After
+     * fire the cluster was created event.
      */
-    public function handle()
+    public function handle(): void
     {
-        $cluster = Cluster::withTrashed()->where('id', $this->clusterId)->first();
-        $cloudCluster = new CloudCluster();
-        $projectId = $cluster->project->id;
+        $appCluster = Cluster::withTrashed()->where('id', $this->clusterId)->first();
+        $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
 
-        $cloudCluster->setName($cluster->name);
+        ClusterManagerFactory::create($appCluster->project->id)->create($coreCluster);
 
-        if ($cluster->data_center === 'europe') {
-            $cloudCluster->setRegion(new Europe);
-        }
+        $appCluster->update(['state' => Cluster::CREATED]);
 
-        if ($cluster->data_center === 'asia') {
-            $cloudCluster->setRegion(new Asia);
-        }
-
-        if ($cluster->data_center === 'america') {
-            $cloudCluster->setRegion(new America);
-        }
-
-        $cloudCluster->setDiskSize(15);
-        $cloudCluster->setNodesCount($cluster->nodes_count);
-
-        $cloudCluster->setUsername($cluster->username);
-        $cloudCluster->setPassword(decrypt($cluster->password));
-
-        $manager = (new ClusterManagerFactory)->create($projectId);
-        $manager->create($cloudCluster);
-
-        $cluster->state = Cluster::CREATED;
-        $cluster->save();
-
-        event(new ClusterWasCreated($cluster->id));
+        event(new ClusterWasCreated($appCluster->id));
     }
 }

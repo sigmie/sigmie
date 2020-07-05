@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Events;
 
-use App\Events\NewsletterSubscribed;
-use App\NewsletterSubscription;
+use App\Events\NewsletterSubscriptionWasCreated;
+use App\Models\NewsletterSubscription;
 use Tests\TestCase;
 
 class NewsletterSubscribedTest extends TestCase
@@ -18,7 +18,7 @@ class NewsletterSubscribedTest extends TestCase
 
         $this->newsletterSubscriptionMock = $this->createMock(NewsletterSubscription::class);
 
-        $this->event = new NewsletterSubscribed($this->newsletterSubscriptionMock);
+        $this->event = new NewsletterSubscriptionWasCreated($this->newsletterSubscriptionMock);
     }
 
     /**

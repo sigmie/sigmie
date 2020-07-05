@@ -2,44 +2,23 @@
 
 namespace App\Listeners;
 
-use App\Cluster;
+use App\Models\Cluster;
 use App\Events\ClusterHasFailed;
-use App\Events\ClusterIsRunning;
+use App\Events\ClusterWasBooted;
 use App\Events\ClusterWasCreated;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Http;
 
-class AwaitElasticsearchBoot implements ShouldQueue
+class PollState implements ShouldQueue
 {
-    /**
-     * The number of times the job may be attempted.
-     *
-     * @var int
-     */
     public $tries = 30;
 
-    /**
-     * The number of seconds to wait before retrying the job.
-     *
-     * @var int
-     */
     public $retryAfter = 15;
 
-    /**
-     * The time (seconds) before the job should be processed.
-     *
-     * @var int
-     */
     public $delay = 90;
 
-    /**
-     * Handle the event.
-     *
-     * @param  object  $event
-     * @return void
-     */
-    public function handle(ClusterWasCreated $event)
+    public function handle(ClusterWasCreated $event): void
     {
         $domain = config('services.cloudflare.domain');
 
@@ -54,7 +33,7 @@ class AwaitElasticsearchBoot implements ShouldQueue
             $cluster->state = Cluster::RUNNING;
             $cluster->save();
 
-            event(new ClusterIsRunning($cluster->id));
+            event(new ClusterWasBooted($cluster->id));
 
             return;
         }
@@ -62,14 +41,7 @@ class AwaitElasticsearchBoot implements ShouldQueue
         throw new \Exception("Cluster run check failed after {$this->tries} tries with {$this->retryAfter} delay between each of them.");
     }
 
-    /**
-     * Handle a job failure.
-     *
-     * @param  \App\Exceptions\ClusterFailureException $exception
-     *
-     * @return void
-     */
-    public function failed(ClusterWasCreated $event, Exception $exception)
+    public function failed(ClusterWasCreated $event, Exception $exception): void
     {
         $cluster = Cluster::find($event->clusterId);
 

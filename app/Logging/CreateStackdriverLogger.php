@@ -8,7 +8,7 @@ use Monolog\Handler\PsrHandler;
 
 class CreateStackdriverLogger
 {
-    public function __invoke(array $config)
+    public function __invoke(array $config): Logger
     {
         $logger = LoggingClient::psrBatchLogger('app');
         $handler = new PsrHandler($logger);

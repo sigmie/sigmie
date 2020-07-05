@@ -12,23 +12,13 @@ class ClusterWasDestroyed implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $clusterId;
+    public int $clusterId;
 
-    /**
-     * Create a new event instance.
-     *
-     * @return void
-     */
-    public function __construct($clusterId)
+    public function __construct(int $clusterId)
     {
         $this->clusterId = $clusterId;
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return \Illuminate\Broadcasting\Channel|array
-     */
     public function broadcastOn()
     {
         return new PrivateChannel("cluster.{$this->clusterId}");

@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Cluster;
-use App\Project;
+use App\Models\Cluster;
+use App\Models\Project;
 use Inertia\Inertia;
 use App\Jobs\CreateCluster;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreCluster;
 use Sigmie\App\Core\ClusterManager;
 use App\Facades\Cluster as FacadesCluster;
-use App\Factories\ClusterManagerFactory;
+use App\Helpers\ClusterManagerFactory;
 use App\Jobs\DestroyCluster;
 use App\Notifications\ClusterIsRunning;
 use App\Notifications\ClusterWasDestroyed;
-use App\User;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Pusher\Pusher;
@@ -91,7 +91,7 @@ class ClusterController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  \App\Cluster  $cluster
+     * @param  \App\Models\Cluster  $cluster
      * @return \Illuminate\Http\Response
      */
     public function show(Cluster $cluster)
@@ -102,7 +102,7 @@ class ClusterController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  \App\Cluster  $cluster
+     * @param  \App\Models\Cluster  $cluster
      * @return \Illuminate\Http\Response
      */
     public function edit(Request $request, Cluster $cluster)
@@ -118,7 +118,7 @@ class ClusterController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Cluster  $cluster
+     * @param  \App\Models\Cluster  $cluster
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, Cluster $cluster)
@@ -142,7 +142,7 @@ class ClusterController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Cluster  $cluster
+     * @param  \App\Models\Cluster  $cluster
      * @return \Illuminate\Http\Response
      */
     public function destroy(Project $project)
