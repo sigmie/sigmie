@@ -2,39 +2,32 @@
 
 namespace App\Exceptions;
 
-use Exception;
 use Google\Cloud\ErrorReporting\Bootstrap;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 class Handler extends ExceptionHandler
 {
     /**
      * A list of the exception types that are not reported.
-     *
-     * @var array
      */
-    protected $dontReport = [
+    protected array $dontReport = [
         //
     ];
 
     /**
      * A list of the inputs that are never flashed for validation exceptions.
-     *
-     * @var array
      */
-    protected $dontFlash = [
+    protected array $dontFlash = [
         'password',
         'password_confirmation',
     ];
 
     /**
      * Report or log an exception.
-     *
-     * @param  \Exception $exception
-     * @return void
      */
-    public function report(Throwable $exception)
+    public function report(Throwable $exception): void
     {
         // Report to stackdriver on app engine
         if (isset($_SERVER['GAE_SERVICE']) && $this->shouldReport($exception)) {
@@ -46,12 +39,8 @@ class Handler extends ExceptionHandler
 
     /**
      * Render an exception into an HTTP response.
-     *
-     * @param  \Illuminate\Http\Request $request
-     * @param  \Exception               $exception
-     * @return \Symfony\Component\HttpFoundation\Response
      */
-    public function render($request, Throwable $exception)
+    public function render($request, Throwable $exception): Response
     {
         return parent::render($request, $exception);
     }
