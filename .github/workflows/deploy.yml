@@ -43,9 +43,9 @@ jobs:
 
     - name: Decrypt secrets
       run: |
-          gpg --quiet --batch --yes --decrypt --passphrase=$GOOGLE_PASSPHRASE --output google.json .github/secrets/google.json.gpg
-          gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
-          gpg --quiet --batch --yes --decrypt --passphrase=$VARIABLES_PASSPHRASE --output .env .github/secrets/variables.gpg
+          gpg --quiet --batch --yes --decrypt --passphrase=$GOOGLE_PASSPHRASE --output service-account.json .github/secrets/service-account.json.gpg
+          gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/auth.json.gpg
+          gpg --quiet --batch --yes --decrypt --passphrase=$VARIABLES_PASSPHRASE --output .env .github/secrets/.env.gpg
 
     - name: Install curl curl nodejs-dev node-gyp libssl1.0-dev zip
       run: sudo apt-get update && sudo apt-get install -y curl nodejs-dev node-gyp libssl1.0-dev zip
@@ -69,7 +69,7 @@ jobs:
 
     - name: Authenticate GCloud and configure default project
       run: |
-          gcloud auth activate-service-account --key-file=google.json
+          gcloud auth activate-service-account --key-file=service-account.json
           gcloud config set project sigmie
 
     - name: Deploy to app-engine

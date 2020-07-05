@@ -53,8 +53,8 @@ jobs:
 
     - name: Decrypt composer auth.json .env.testing
       run: |
-          gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
-          gpg --quiet --batch --yes --decrypt --passphrase=$VARIABLES_PASSPHRASE --output .env.testing .github/secrets/variables.testing.gpg
+          gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/auth.json.gpg
+          gpg --quiet --batch --yes --decrypt --passphrase=$VARIABLES_PASSPHRASE --output .env.testing .github/secrets/.env.testing.gpg
 
     - name: Set host names
       run: |

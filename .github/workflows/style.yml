@@ -37,7 +37,7 @@ jobs:
       run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 
     - name: Decrypt composer secret
-      run: gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/composer.json.gpg
+      run: gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/auth.json.gpg
 
     - name: Validate composer.json and composer.lock
       run: composer validate
