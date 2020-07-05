@@ -6,9 +6,9 @@
         "default": "/resources/views",
     },
     "workbench.colorCustomizations": {
-        "titleBar.activeBackground": "#3F3D54",
-        "titleBar.activeForeground": "#ffffff",
-        "statusBarItem.remoteBackground": "#3F3D54",
+        "titleBar.activeBackground": "#B8C4D1",
+        "titleBar.activeForeground": "#403C56",
+        "statusBarItem.remoteBackground": "#FF6347",
         "statusBarItem.remoteForeground": "#ffffff",
     },
     "remote.containers.defaultExtensions": [
