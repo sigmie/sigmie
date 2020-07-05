@@ -8,6 +8,7 @@
 .env.backup
 .env.testing
 .env.prod
+
 .phpunit.result.cache
 
 auth.json
