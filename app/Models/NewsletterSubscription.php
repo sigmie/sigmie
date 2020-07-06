@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Models;
 
@@ -9,7 +11,9 @@ use Laravel\Nova\Actions\Actionable;
 
 class NewsletterSubscription extends Model implements MustConfirmSubscriptionInterface
 {
-    use Actionable, Notifiable, MustConfirmSubscription;
+    use Actionable;
+    use Notifiable;
+    use MustConfirmSubscription;
 
     protected $casts = [
         'confirmed' => 'boolean'

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Jobs;
 
@@ -12,7 +14,10 @@ use Illuminate\Support\Facades\DB;
 
 class CleanNotifications implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue,  Queueable,  SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * Remove notifications which are older than

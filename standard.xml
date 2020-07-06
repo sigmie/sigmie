@@ -1,15 +1,19 @@
 <?xml version="1.0"?>
-<ruleset name="sigmie">
-    <description>Coding standart</description>
+<ruleset name="Sigmie standard">
+    <description>Sigmie coding standard</description>
 
-    <exclude-pattern>.history/*</exclude-pattern>
-    <exclude-pattern>tmp/*</exclude-pattern>
     <exclude-pattern>vendor/*</exclude-pattern>
 
     <rule ref="PSR12">
         <exclude name="PSR12.Classes.ClassInstantiation.MissingParentheses" />
-        <exclude name="PSR2.Methods.FunctionCallSignature.Indent" />
     </rule>
+
+    <rule ref="Squiz.WhiteSpace.ControlStructureSpacing">
+        <exclude name="Squiz.WhiteSpace.ControlStructureSpacing.SpacingAfterOpen" />
+    </rule>
+
+    <rule ref="Squiz.Commenting.FunctionComment.Missing"/>
+    <rule ref="Squiz.Commenting.VariableComment.Missing"/>
 
     <rule ref="Generic.Files.LineLength">
         <properties>
@@ -17,5 +21,4 @@
             <property name="absoluteLineLimit" value="0"/>
         </properties>
     </rule>
-
 </ruleset>

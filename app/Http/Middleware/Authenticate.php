@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
@@ -17,7 +19,5 @@ class Authenticate extends Middleware
         if (!$request->expectsJson()) {
             return route('login');
         }
-
-        
     }
 }

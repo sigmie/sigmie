@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Events;
 
@@ -8,7 +10,9 @@ use Illuminate\Queue\SerializesModels;
 
 class ClusterWasCreated
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 
     public int $clusterId;
 

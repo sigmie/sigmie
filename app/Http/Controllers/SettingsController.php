@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
@@ -19,7 +21,7 @@ class SettingsController extends Controller
         $cluster = $project->clusters()->first();
         $clusterId = null;
 
-        if ($cluster !== null){
+        if ($cluster !== null) {
             $clusterId = $cluster->id;
         }
 
