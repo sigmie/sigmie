@@ -13,7 +13,7 @@ class ClusterWasDestroyed extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    private $projectName;
+    private string $projectName;
 
     public function __construct($clusterId)
     {

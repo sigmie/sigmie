@@ -72,13 +72,14 @@ class ClusterManagerFactory
         /** @var  AbstractAdapter $adapter */
         $adapter = $filesystem->getAdapter();
 
+        $storagePath  = $adapter->getPathPrefix();
+
         $serviceAccount = decrypt($project->creds);
 
         $path = "creds/{$project->id}.json";
-        $storagePath  = $adapter->getPathPrefix();
         $absolutePath = $storagePath . $path;
 
-        Storage::disk('local')->put($path, json_encode($serviceAccount));
+        $filesystem->put($path, json_encode($serviceAccount));
 
         return new GoogleFactory($absolutePath);
     }

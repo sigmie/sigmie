@@ -15,7 +15,7 @@ class ConfirmSubscription extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function via($notifiable)
+    public function via($notifiable): array
     {
         return ['mail'];
     }
@@ -30,7 +30,7 @@ class ConfirmSubscription extends Notification implements ShouldQueue
             ->action('Confirm newsletter subscription', $verificationUrl);
     }
 
-    protected function verificationUrl($notifiable)
+    protected function verificationUrl($notifiable): string
     {
         return URL::temporarySignedRoute(
             'newsletter.subscription.confirmation',

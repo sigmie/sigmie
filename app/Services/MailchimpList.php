@@ -25,8 +25,13 @@ class MailchimpList implements MailingList
      */
     private string $url;
 
+    /**
+     * Guzzle client
+     */
     private Client $client;
 
+    /**
+     */
     public function __construct(Client $client, array $config)
     {
         $this->client = $client;

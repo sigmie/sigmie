@@ -54,14 +54,14 @@ jobs:
        cmd: prod
 
     - name: PHPStan
-      run: vendor/bin/phpstan analyse --memory-limit=2G
+      run: vendor/bin/phpstan analyse --memory-limit=-1
 
     - name: PHPCS
-      run: vendor/bin/phpcs --standard=standard.xml ./app
+      run: vendor/bin/phpcs --standard=phpcs-laravel app
 
     - name: JS Standard
       run: node_modules/standard/bin/cmd.js | node_modules/snazzy/bin/cmd.js
 
-    - name: Slack deploy finish notification
+    - name: Slack finish notification
       run: |
            curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "Code style checks have passed."}' $SLACK_HOOK_URL

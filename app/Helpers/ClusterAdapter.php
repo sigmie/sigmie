@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Helpers;
 
 use App\Models\Cluster as AppCluster;
+use Exception;
 use Sigmie\App\Core\Cloud\Regions\America;
 use Sigmie\App\Core\Cloud\Regions\Asia;
 use Sigmie\App\Core\Cloud\Regions\Europe;
@@ -12,6 +13,9 @@ use Sigmie\App\Core\Cluster as CoreCluster;
 
 class ClusterAdapter
 {
+    /**
+     * Map an App\Cluster instance to a Sigmie\Core\Cluster one
+     */
     public static function toCoreCluster(AppCluster $cluster): CoreCluster
     {
         $coreCluster = new CoreCluster();

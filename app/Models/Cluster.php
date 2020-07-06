@@ -10,17 +10,17 @@ class Cluster extends Model
 {
     use SoftDeletes;
 
-    const QUEUED_DESTROY = 'queued_destroy';
+    public const QUEUED_DESTROY = 'queued_destroy';
 
-    const QUEUED_CREATE = 'queued_create';
+    public const QUEUED_CREATE = 'queued_create';
 
-    const CREATED = 'created';
+    public const CREATED = 'created';
 
-    const RUNNING = 'running';
+    public const RUNNING = 'running';
 
-    const DESTROYED = 'destroyed';
+    public const DESTROYED = 'destroyed';
 
-    const FAILED = 'failed';
+    public const FAILED = 'failed';
 
     public function project()
     {

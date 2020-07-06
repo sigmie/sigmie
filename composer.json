@@ -46,6 +46,7 @@
         "tightenco/ziggy": "^0.9.3"
     },
     "require-dev": {
+        "emielmolenaar/phpcs-laravel": "^1.2",
         "filp/whoops": "^2.0",
         "fzaninotto/faker": "^1.4",
         "mockery/mockery": "^1.0",

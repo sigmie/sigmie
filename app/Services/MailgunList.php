@@ -21,8 +21,16 @@ class MailgunList implements MailingList
      */
     private string $endpoint;
 
+    /**
+     * Guzzle client
+     */
     private Client $client;
 
+    /**
+     * Read Mailgun secret and api endpoint
+     * from the Mailgun config and set
+     * the class props
+     */
     public function __construct(Client $client, array $config)
     {
         $this->client = $client;

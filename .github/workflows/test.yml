@@ -35,7 +35,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Slack deploy finish notification
+    - name: Slack test start notification
       run: |
            curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "Test workflow has started."}' $SLACK_HOOK_URL
 
