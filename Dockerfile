@@ -11,7 +11,6 @@ ENV TZ=Europe/Berlin
 
 # setup the timezone
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
 # update
 RUN apt-get update
 
@@ -54,6 +53,9 @@ COPY .docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 
 # copy the supervisor kill script into container's path
 COPY .docker/supervisor/stop-supervisor /bin
+
+# copy the scheduler script into container's path
+COPY .docker/supervisor/scheduler /bin
 
 # Assign app folder ownership to www-data and set permissions
 RUN chown -R www-data:www-data /var/www/app && \
