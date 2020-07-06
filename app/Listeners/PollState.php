@@ -8,6 +8,7 @@ use App\Events\ClusterWasBooted;
 use App\Events\ClusterWasCreated;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 
 class PollState implements ShouldQueue
@@ -26,6 +27,7 @@ class PollState implements ShouldQueue
 
         $password = decrypt($cluster->password);
 
+        /** @var  Response */
         $response = Http::withBasicAuth($cluster->username, $password)->timeout(3)->get("https://{$cluster->name}.{$domain}");
 
         if ($response->getStatusCode() === 200) {

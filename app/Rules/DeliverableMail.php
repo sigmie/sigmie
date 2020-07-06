@@ -21,7 +21,7 @@ class DeliverableMail implements Rule
     /**
      * Determine if the validation rule passes.
      */
-    public function passes(string $attribute, $value): bool
+    public function passes($attribute, $value)
     {
         try {
             $response = $this->client->get(

@@ -15,7 +15,10 @@ class ClusterValidationController extends Controller
 {
     public function name(string $name)
     {
-        $valid = Cluster::withTrashed()->firstWhere('name', $name) === null;
+        /** @var  Cluster|null */
+        $cluster = Cluster::withTrashed()->firstWhere('name', $name);
+
+        $valid = ($cluster instanceof Cluster) ? true : false;
 
         return response()->json(['valid' => $valid]);
     }

@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Filesystem\Cloud;
+use League\Flysystem\Adapter\AbstractAdapter;
+use League\Flysystem\Filesystem;
 use Sigmie\App\Core\DNS\Providers\Cloudflare;
 use Sigmie\App\Core\Cloud\Providers\Google\Google;
 use Sigmie\App\Core\DNS\Contracts\Provider as DNSProvider;
@@ -32,6 +34,9 @@ class ClusterManagerFactory
 {
     public static function create(int $projectId): ClusterManager
     {
+        $cloudProviderFactory = null;
+        $dnsProviderFactory = null;
+
         $project = Project::find($projectId);
 
         if ($project === null) {
@@ -66,10 +71,16 @@ class ClusterManagerFactory
 
     private static function createGoogleProvider(Project $project): CloudFactory
     {
+        /** @var Filesystem $filesystem */
+        $filesystem = Storage::disk('local');
+
+        /** @var  AbstractAdapter $adapter */
+        $adapter = $filesystem->getAdapter();
+
         $serviceAccount = decrypt($project->creds);
 
         $path = "creds/{$project->id}.json";
-        $storagePath  = Storage::disk('local')->getDriver()->getAdapter()->getPathPrefix();
+        $storagePath  = $adapter->getPathPrefix();
         $absolutePath = $storagePath . $path;
 
         Storage::disk('local')->put($path, json_encode($serviceAccount));

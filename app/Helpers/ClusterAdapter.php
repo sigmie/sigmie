@@ -40,13 +40,4 @@ class ClusterAdapter
 
         return $coreCluster;
     }
-
-    public static function toAppCluster(CoreCluster $cluster): AppCluster
-    {
-        $coreCluster = new AppCluster();
-
-        throw new Exception('Function toAppCluster isn\'t implemented yet.');
-
-        return $coreCluster;
-    }
 }

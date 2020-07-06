@@ -11,7 +11,7 @@ class NewsletterSubscription extends Model implements MustConfirmSubscriptionInt
 {
     use Actionable, Notifiable, MustConfirmSubscription;
 
-    protected array $casts = [
+    protected $casts = [
         'confirmed' => 'boolean'
     ];
 
