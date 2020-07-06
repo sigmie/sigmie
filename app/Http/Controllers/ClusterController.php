@@ -22,21 +22,16 @@ use Sigmie\App\Core\Cluster as CoreCluster;
 
 class ClusterController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    public function __construct()
+    {
+        $this->authorizeResource(Cluster::class, 'cluster');
+    }
+
     public function index()
     {
         //
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create(Request $request)
     {
         $projectId = $request->get('project_id');
@@ -55,12 +50,6 @@ class ClusterController extends Controller
         return Inertia::render('cluster/create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(StoreCluster $request)
     {
         $projectId = $request->get('project_id');
@@ -88,23 +77,11 @@ class ClusterController extends Controller
         return redirect()->route('dashboard');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Cluster  $cluster
-     * @return \Illuminate\Http\Response
-     */
     public function show(Cluster $cluster)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Cluster  $cluster
-     * @return \Illuminate\Http\Response
-     */
     public function edit(Request $request, Cluster $cluster)
     {
         return Inertia::render('cluster/edit', ['cluster' =>
@@ -114,24 +91,18 @@ class ClusterController extends Controller
         ]]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Cluster  $cluster
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, Cluster $cluster)
     {
         $values = $request->all();
 
-        $cluster->data_center = $values['dataCenter'];
-        $cluster->nodes_count = $values['nodes_count'];
-        $cluster->username = $values['username'];
-        $cluster->password =  encrypt($values['password']);
-        $cluster->state = Cluster::QUEUED_CREATE;
+        $cluster->update([
+            'data_center' => $values['dataCenter'],
+            'nodes_count' => $values['nodes_count'],
+            'username' => $values['username'],
+            'password' =>  encrypt($values['password']),
+            'state' => Cluster::QUEUED_CREATE
+        ]);
 
-        $cluster->save();
         $cluster->restore();
 
         CreateCluster::dispatch($cluster->id);
@@ -139,20 +110,12 @@ class ClusterController extends Controller
         return redirect()->route('dashboard');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Cluster  $cluster
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Project $project)
+    public function destroy(Cluster $cluster)
     {
-        $cluster = $project->clusters()->withTrashed()->first();
-
         DestroyCluster::dispatch($cluster->id);
 
-        $cluster->state = Cluster::QUEUED_DESTROY;
-        $cluster->save();
+        $cluster->update(['state' => Cluster::QUEUED_DESTROY]);
+
         $cluster->delete();
 
         return redirect()->route('dashboard');

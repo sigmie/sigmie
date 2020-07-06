@@ -10,16 +10,17 @@ class AuthServiceProvider extends ServiceProvider
     /**
      * The policy mappings for the application.
      */
-    protected $policies = [
-        // 'App\Model' => 'App\Policies\ModelPolicy',
-    ];
+    protected $policies = [];
 
     /**
      * Register any authentication / authorization services.
      */
     public function boot(): void
     {
-        $this->registerPolicies();
+        Gate::guessPolicyNamesUsing(function ($modelClass) {
+
+            return 'App\\Policies\\' . class_basename($modelClass) . 'Policy';
+        });
 
         Gate::define('view-dashboard', fn ($user, $project) => $project->user_id === $user->id);
 

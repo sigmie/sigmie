@@ -8,20 +8,25 @@ class Cluster extends Model
 {
     use SoftDeletes;
 
-    public const QUEUED_DESTROY = 'queued_destroy';
+    const QUEUED_DESTROY = 'queued_destroy';
 
-    public const QUEUED_CREATE = 'queued_create';
+    const QUEUED_CREATE = 'queued_create';
 
-    public const CREATED = 'created';
+    const CREATED = 'created';
 
-    public const RUNNING = 'running';
+    const RUNNING = 'running';
 
-    public const DESTROYED = 'destroyed';
+    const DESTROYED = 'destroyed';
 
-    public const FAILED = 'failed';
+    const FAILED = 'failed';
 
     public function project()
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function isOwnedBy(User $user)
+    {
+        return $this->project->user->id === $user->id;
     }
 }

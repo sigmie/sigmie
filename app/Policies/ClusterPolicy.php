@@ -11,84 +11,60 @@ class ClusterPolicy
     use HandlesAuthorization;
 
     /**
-     * Determine whether the user can view any models.
-     *
-     * @param  \App\Models\User  $user
-     * @return mixed
+     * There is no cluster view action
      */
     public function viewAny(User $user)
     {
-        //
+        return false;
     }
 
     /**
-     * Determine whether the user can view the model.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Cluster  $cluster
-     * @return mixed
+     * There is no cluster view
      */
     public function view(User $user, Cluster $cluster)
     {
-        //
+        return false;
     }
 
     /**
-     * Determine whether the user can create models.
+     * Check if the user already owns a project with a cluster
      *
-     * @param  \App\Models\User  $user
-     * @return mixed
+     * TODO allow create new cluster for different project
      */
-    public function create(User $user)
+    public function create(User $user): bool
     {
-        //
+        return $user->projects()->first()->clusters()->isEmpty();
     }
 
     /**
-     * Determine whether the user can update the model.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Cluster  $cluster
-     * @return mixed
+     * Determine whether the user can update the cluster.
      */
-    public function update(User $user, Cluster $cluster)
+    public function update(User $user, Cluster $cluster): bool
     {
-        //
+        return $cluster->isOwnedBy($user);
     }
 
     /**
      * Determine whether the user can delete the model.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Cluster  $cluster
-     * @return mixed
      */
-    public function delete(User $user, Cluster $cluster)
+    public function delete(User $user, Cluster $cluster): bool
     {
-        //
+        return $cluster->isOwnedBy($user);
     }
 
     /**
      * Determine whether the user can restore the model.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Cluster  $cluster
-     * @return mixed
      */
-    public function restore(User $user, Cluster $cluster)
+    public function restore(User $user, Cluster $cluster): bool
     {
-        //
+        return $cluster->isOwnedBy($user);
     }
 
     /**
      * Determine whether the user can permanently delete the model.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Cluster  $cluster
-     * @return mixed
      */
-    public function forceDelete(User $user, Cluster $cluster)
+    public function forceDelete(User $user, Cluster $cluster): bool
     {
-        //
+        return false;
     }
 }

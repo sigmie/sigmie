@@ -15,9 +15,6 @@ class NewsletterSubscription extends Model implements MustConfirmSubscriptionInt
         'confirmed' => 'boolean'
     ];
 
-    /**
-     * Attribute defaults
-     */
     protected $attributes = [
         'confirmed' => false
     ];

@@ -20,10 +20,10 @@
                     </div>
                     <div class="max-w-sm py-1">
                       <button-danger
-                        :disabled="hasCluster === false"
+                        :disabled="clusterId === null"
                         id="destroy_cluster"
                         @click="showDestroy = true"
-                        :text="hasCluster?  'Destroy': 'Destroyed'"
+                        :text="clsterId === null ?  'Destroyed': 'Destroy'"
                       ></button-danger>
                     </div>
                   </div>
@@ -58,7 +58,7 @@ export default {
   components: {
     App
   },
-  props: ["hasCluster"],
+  props: ["clusterId"],
   data() {
     return {
       showDestroy: false
@@ -67,7 +67,7 @@ export default {
   methods: {
     destroy() {
       this.$inertia.delete(
-        this.$route("cluster.destroy", this.$page.project_id)
+        this.$route("cluster.destroy", this.clusterId)
       );
     }
   }

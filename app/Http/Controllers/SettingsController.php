@@ -16,9 +16,13 @@ class SettingsController extends Controller
     public function index(Request $request)
     {
         $project = Project::find($request->get('project_id'));
+        $cluster = $project->clusters()->first();
+        $clusterId = null;
 
-        $hasCluster = $project->clusters->first() !== null;
+        if ($cluster !== null){
+            $clusterId = $cluster->id;
+        }
 
-        return Inertia::render('settings/index', ['hasCluster' => $hasCluster]);
+        return Inertia::render('settings/index', ['clusterId' => $clusterId]);
     }
 }

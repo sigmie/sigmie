@@ -74,7 +74,7 @@ if ($launched === true) {
             Route::get('/cluster/edit/{cluster}', 'ClusterController@edit')->name('cluster.edit');
             Route::post('/cluster', 'ClusterController@store')->name('cluster.store');
             Route::put('/cluster/{cluster}', 'ClusterController@update')->name('cluster.update');
-            Route::delete('/cluster/{project}', 'ClusterController@destroy')->name('cluster.destroy');
+            Route::delete('/cluster/{cluster}', 'ClusterController@destroy')->name('cluster.destroy');
         });
     });
 }
