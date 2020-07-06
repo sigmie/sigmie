@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\CleanNotifications;
-use App\User;
+use App\Models\User;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Carbon;

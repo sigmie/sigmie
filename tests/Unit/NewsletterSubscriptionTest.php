@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\NewsletterSubscription;
+use App\Models\NewsletterSubscription;
 use Tests\TestCase;
 
 class NewsletterSubscriptionTest extends TestCase

@@ -43,7 +43,7 @@ jobs:
       run: composer validate
 
     - name: Install php dependencies
-      run: composer install -q --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
+      run: composer install
 
     - uses: borales/actions-yarn@v2.0.0
       with:
