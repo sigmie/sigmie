@@ -1,24 +1,15 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCluster;
+use App\Jobs\CreateCluster;
+use App\Jobs\DestroyCluster;
 use App\Models\Cluster;
 use App\Models\Project;
-use Inertia\Inertia;
-use App\Jobs\CreateCluster;
 use Illuminate\Http\Request;
-use App\Http\Requests\StoreCluster;
-use Sigmie\App\Core\ClusterManager;
-use App\Facades\Cluster as FacadesCluster;
-use App\Helpers\ClusterManagerFactory;
-use App\Jobs\DestroyCluster;
-use App\Notifications\ClusterIsRunning;
-use App\Notifications\ClusterWasDestroyed;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Pusher\Pusher;
-use Sigmie\App\Core\Cluster as CoreCluster;
+use Inertia\Inertia;
 
 class ClusterController extends Controller
 {

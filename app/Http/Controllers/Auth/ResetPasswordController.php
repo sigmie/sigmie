@@ -1,11 +1,11 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
-use Inertia\Inertia;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Foundation\Auth\ResetsPasswords;
+use Illuminate\Support\Facades\Session;
+use Inertia\Inertia;
 
 class ResetPasswordController extends Controller
 {

@@ -1,13 +1,13 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
-use App\Models\User;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
+use App\Models\User;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
 class RegisterController extends Controller
@@ -85,7 +85,7 @@ class RegisterController extends Controller
             $avatar_url .= md5(strtolower(trim($email)));
         }
 
-        $user = User::create(
+        return User::create(
             [
                 'email' => $email,
                 'username' => $data['username'],
@@ -94,7 +94,5 @@ class RegisterController extends Controller
                 'github' => $githubUser !== null
             ]
         );
-
-        return $user;
     }
 }

@@ -1,22 +1,38 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Rules;
 
 use Exception;
-use Illuminate\Contracts\Validation\Rule;
 use Google_Client;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
-use Sigmie\App\Core\Cloud\Providers\Google\Google;
 use Google_Service_Compute;
-use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Contracts\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\Filesystem;
-use Symfony\Component\HttpFoundation\ParameterBag;
-use Throwable;
+use Sigmie\App\Core\Cloud\Providers\Google\Google;
 
 class ValidProvider implements Rule
 {
+    /**
+     * Determine if the validation rule passes.
+     */
+    public function passes($attribute, $value)
+    {
+        if ($value['id'] === 'google') {
+            return $this->validateGoogle($value['creds']);
+        }
+
+        return false;
+    }
+
+    /**
+     * Get the validation error message.
+     */
+    public function message(): string
+    {
+        return 'Cloud provider is invalid.';
+    }
     private function validateGoogle($serviceAccount)
     {
         /** @var Filesystem $filesystem */
@@ -42,24 +58,5 @@ class ValidProvider implements Rule
         $filesystem->delete($path);
 
         return $result;
-    }
-    /**
-     * Determine if the validation rule passes.
-     */
-    public function passes($attribute, $value)
-    {
-        if ($value['id'] === 'google') {
-            return $this->validateGoogle($value['creds']);
-        }
-
-        return false;
-    }
-
-    /**
-     * Get the validation error message.
-     */
-    public function message(): string
-    {
-        return 'Cloud provider is invalid.';
     }
 }

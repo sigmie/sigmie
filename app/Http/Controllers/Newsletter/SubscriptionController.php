@@ -1,12 +1,12 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Http\Controllers\Newsletter;
 
 use App\Contracts\MailingList;
-use App\Models\NewsletterSubscription;
 use App\Events\NewsletterSubscriptionWasCreated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreNewsletterSubscription;
+use App\Models\NewsletterSubscription;
 use Inertia\Inertia;
 
 class SubscriptionController extends Controller

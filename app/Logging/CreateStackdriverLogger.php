@@ -1,10 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Logging;
 
-use Monolog\Logger;
 use Google\Cloud\Logging\LoggingClient;
 use Monolog\Handler\PsrHandler;
+use Monolog\Logger;
 
 class CreateStackdriverLogger
 {

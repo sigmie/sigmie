@@ -1,11 +1,11 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Listeners;
 
-use App\Models\Cluster;
 use App\Events\ClusterHasFailed;
 use App\Events\ClusterWasBooted;
 use App\Events\ClusterWasCreated;
+use App\Models\Cluster;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Http\Response;

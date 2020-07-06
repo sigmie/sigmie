@@ -1,10 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use Illuminate\Http\Request;
 use App\Rules\ValidProvider;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Request;
 
 class StoreProject extends FormRequest
 {

@@ -1,17 +1,7 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Events\ClusterCreated;
-use App\Events\ClusterHasFailed;
-use App\Events\ClusterWasBooted;
-use App\Events\ClusterWasCreated;
-use App\Events\NewsletterSubscriptionWasCreated;
-use App\Listeners\SendEmailConfirmationNotification;
-use App\Listeners\PollState;
-use App\Listeners\FooListen;
-use Illuminate\Auth\Events\Registered;
-use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider

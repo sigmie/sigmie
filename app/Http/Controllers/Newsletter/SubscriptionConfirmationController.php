@@ -1,12 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Http\Controllers\Newsletter;
 
 use App\Contracts\MailingList;
-use App\Events\Foo;
-use App\Models\NewsletterSubscription;
 use App\Http\Controllers\Controller;
-use App\Services\MailgunList;
+use App\Models\NewsletterSubscription;
 
 class SubscriptionConfirmationController extends Controller
 {

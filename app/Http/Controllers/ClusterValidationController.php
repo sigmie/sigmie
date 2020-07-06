@@ -1,15 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
 use App\Models\Cluster;
-use Google_Client;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
-use Sigmie\App\Core\Cloud\Providers\Google\Google;
-use Google_Service_Compute;
-use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\ParameterBag;
 
 class ClusterValidationController extends Controller
 {

@@ -1,23 +1,16 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Models\Cluster;
-use App\Events\ClusterCreated;
 use App\Events\ClusterWasCreated;
 use App\Helpers\ClusterAdapter;
-use Illuminate\Support\Str;
-use Sigmie\App\Core\Cluster as CloudCluster;
-use Illuminate\Bus\Queueable;
-use Sigmie\App\Core\ClusterManager;
-use Illuminate\Queue\SerializesModels;
 use App\Helpers\ClusterManagerFactory;
-use Illuminate\Queue\InteractsWithQueue;
+use App\Models\Cluster;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Sigmie\App\Core\Cloud\Regions\America;
-use Sigmie\App\Core\Cloud\Regions\Asia;
-use Sigmie\App\Core\Cloud\Regions\Europe;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 
 class CreateCluster implements ShouldQueue
 {
