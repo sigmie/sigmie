@@ -4,10 +4,11 @@ namespace Tests\Unit;
 
 use App\Rules\DeliverableMail;
 use Exception;
-use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Config;
 use PHPUnit\Framework\MockObject\MockObject;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
+use Tests\TestCase;
 
 class DeliverableMailTest extends TestCase
 {
@@ -21,14 +22,44 @@ class DeliverableMailTest extends TestCase
      */
     private $clientMock;
 
+    /**
+     * @var ResponseInterface|MockObject
+     */
+    private $responseMock;
+
+    /**
+     * @var StreamInterface|MockObject
+     */
+    private $streamMock;
+
+    private $deliverableResponse = [
+        'is_disposable_address' => false,
+        'result' => 'deliverable'
+    ];
+
+    private $disposableResponse = [
+        'is_disposable_address' => true,
+        'result' => 'deliverable'
+    ];
+
+    private $undeliverable = [
+        'is_disposable_address' => true,
+        'result' => 'undeliverable'
+    ];
+
     public function setUp(): void
     {
         parent::setUp();
 
-        $class =  $this->getMockClass(Client::class, ['get']);
+        $this->responseMock = $this->createMock(ResponseInterface::class);
 
-        /** @var Client */
-        $this->clientMock = new $class();
+        /** @var Client|MockObject */
+        $this->clientMock = $this->getMockBuilder(Client::class)->setMethods(['get'])->getMock();
+        $this->clientMock->method('get')->willReturn($this->responseMock);
+
+        $this->streamMock = $this->createMock(StreamInterface::class);
+
+        $this->responseMock->method('getBody')->willReturn($this->streamMock);
 
         $this->rule = new DeliverableMail($this->clientMock);
     }
@@ -48,19 +79,14 @@ class DeliverableMailTest extends TestCase
      */
     public function mailgun_api_is_called_with_email_and_config_secret()
     {
-        function config($key)
-        {
-            if ($key === 'services.mailgun.secret') {
-                return 'secret-key';
-            }
-        }
+        $this->streamMock->method('getContents')->willReturn(json_encode($this->deliverableResponse));
 
         $params = [
             'https://api.mailgun.net/v4/address/validate',
             [
                 'auth' => [
                     'api',
-                    'secret-key'
+                    env('MAILGUN_SECRET')
                 ],
                 'query' => ['address' => 'example.com'],
                 'connect_timeout' => 2.5
@@ -69,6 +95,36 @@ class DeliverableMailTest extends TestCase
 
         $this->clientMock->expects($this->once())->method('get')->with(...$params);
 
+        $this->rule->passes('email', 'example.com');
+    }
+
+    /**
+     * @test
+     */
+    public function return_false_if_email_is_disposable()
+    {
+        $this->streamMock->method('getContents')->willReturn(json_encode($this->disposableResponse));
+
+        $this->assertFalse($this->rule->passes('email', 'example.com'));
+    }
+
+    /**
+     * @test
+     */
+    public function return_true_is_deliverable()
+    {
+        $this->streamMock->method('getContents')->willReturn(json_encode($this->deliverableResponse));
+
         $this->assertTrue($this->rule->passes('email', 'example.com'));
+    }
+
+    /**
+     * @test
+     */
+    public function return_false_not_deliverable()
+    {
+        $this->streamMock->method('getContents')->willReturn(json_encode($this->undeliverable));
+
+        $this->assertFalse($this->rule->passes('email', 'example.com'));
     }
 }
