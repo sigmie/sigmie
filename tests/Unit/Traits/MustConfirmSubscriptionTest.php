@@ -11,7 +11,7 @@ use Tests\TestCase;
 
 class MustConfirmSubscriptionTest extends TestCase
 {
-    /** @var MustConfirmSubscription|MockObject */
+    /** @var MustConfirmSubscription */
     private $trait;
 
     public function setUp(): void
