@@ -4,10 +4,11 @@ import Vuelidate from 'vuelidate'
 import Echo from 'laravel-echo'
 import axios from 'axios'
 import route from 'ziggy'
-import { Ziggy } from './routes'
-import pusher from 'pusher-js'
-
 import { InertiaApp } from '@inertiajs/inertia-vue'
+import Pusher from 'pusher-js'
+import { Ziggy } from './routes'
+
+window.Pusher = Pusher
 
 Vue.use(InertiaApp)
 Vue.use(Vuelidate)
