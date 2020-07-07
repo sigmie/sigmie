@@ -1,4 +1,5 @@
 const mix = require('laravel-mix')
+const path = require('path');
 const tailwindcss = require('tailwindcss')
 const LiveReloadPlugin = require('webpack-livereload-plugin')
 require('laravel-mix-purgecss')
@@ -15,6 +16,11 @@ require('laravel-mix-purgecss')
  */
 
 mix.webpackConfig({
+  resolve: {
+    alias: {
+      ziggy: path.resolve('vendor/tightenco/ziggy/src/js/route.js')
+    }
+  },
   plugins: [
     new LiveReloadPlugin()
   ]

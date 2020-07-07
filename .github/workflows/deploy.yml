@@ -53,13 +53,16 @@ jobs:
     - name: Install composer
       run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 
-    - name: Validate composer and install prod dependecies
+    - name: Validate composer and install prod dependencies
       run: |
           composer validate
           composer install -q --no-dev --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
 
     - name: Install node
       run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
+
+    - name: Generate production routes
+      run:  php artisan ziggy:generate resources/js/routes.js
 
     - name: Install node dependencies and generate production assets
       run: npm install && npm run production

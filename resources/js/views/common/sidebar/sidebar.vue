@@ -125,7 +125,7 @@ export default {
   },
   methods: {
     isRoute(name) {
-      return route().current(name);
+      return this.$route().current(name);
     },
     close() {
       this.sidebar = "closed";

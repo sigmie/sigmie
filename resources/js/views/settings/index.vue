@@ -23,7 +23,7 @@
                         :disabled="clusterId === null"
                         id="destroy_cluster"
                         @click="showDestroy = true"
-                        :text="clsterId === null ?  'Destroyed': 'Destroy'"
+                        :text="clusterId === null ?  'Destroyed': 'Destroy'"
                       ></button-danger>
                     </div>
                   </div>

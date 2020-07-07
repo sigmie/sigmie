@@ -35,7 +35,9 @@
         "vuelidate": "^0.7.5",
         "webpack-livereload-plugin": "^1.2.0"
     },
-    "dependencies": {},
+    "dependencies": {
+        "ziggy-js": "^0.9.4"
+    },
     "standard": {
         "ignore": [
             "public/vendor",

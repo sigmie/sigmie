@@ -3,6 +3,8 @@ import Vue from 'vue'
 import Vuelidate from 'vuelidate'
 import Echo from 'laravel-echo'
 import axios from 'axios'
+import route from 'ziggy'
+import { Ziggy } from './routes'
 import pusher from 'pusher-js'
 
 import { InertiaApp } from '@inertiajs/inertia-vue'
@@ -15,7 +17,7 @@ Vue.prototype.$http = axios.create({
   headers: { }
 })
 
-Vue.prototype.$route = (...args) => route(...args).url()
+Vue.prototype.$route = (name, params, absolute) => route(name, params, absolute, Ziggy)
 
 Vue.prototype.$socket = new Echo({
   broadcaster: 'pusher',
