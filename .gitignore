@@ -13,6 +13,8 @@ resources/js/routes.js
 
 .phpunit.result.cache
 
+cov-html
+
 auth.json
 google.json
 
