@@ -4,6 +4,8 @@
 /storage/*.key
 /vendor
 
+resources/js/routes.js
+
 .env
 .env.backup
 .env.testing

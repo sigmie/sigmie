@@ -1,5 +1,5 @@
 const mix = require('laravel-mix')
-const path = require('path');
+const path = require('path')
 const tailwindcss = require('tailwindcss')
 const LiveReloadPlugin = require('webpack-livereload-plugin')
 require('laravel-mix-purgecss')
