@@ -30,6 +30,8 @@ class ValidProviderTest  extends TestCase
 
     public function setUp(): void
     {
+        parent::setUp();
+
         $this->filesystemMock = $this->createMock(FilesystemAdapter::class);
 
         Storage::shouldReceive('disk')->once()->with('local')->andReturn($this->filesystemMock);
@@ -80,5 +82,13 @@ class ValidProviderTest  extends TestCase
         $this->filesystemMock->expects($this->once())->method('delete')->with($this->filePathArgument);
 
         $this->rule->passes('provider', ['id' => 'google', 'creds' => '[]']);
+    }
+
+    /**
+     * @test
+     */
+    public function message_returns_string()
+    {
+        $this->assertEquals('Cloud provider is invalid.', $this->rule->message());
     }
 }

@@ -19,6 +19,11 @@
             "command": "php artisan event:clear"
         },
         {
+            "label": "phpunit:coverage",
+            "type": "shell",
+            "command": "./vendor/bin/phpunit --coverage-html cov-html"
+        },
+        {
             "label": "horizon:terminate",
             "type": "shell",
             "command": "php artisan horizon:terminate"
