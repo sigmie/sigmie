@@ -11,8 +11,6 @@ use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use League\Flysystem\Adapter\Local;
-use League\Flysystem\Filesystem;
 use Sigmie\App\Core\Cloud\Providers\Google\Google;
 
 class ValidProvider implements Rule
