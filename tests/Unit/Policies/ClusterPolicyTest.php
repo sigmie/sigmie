@@ -55,7 +55,7 @@ class ClusterPolicyTest extends TestCase
 
         $this->clusterMock = $this->createMock(Cluster::class);
 
-        $this->policy = new ClusterPolicy($this->userMock);
+        $this->policy = new ClusterPolicy;
     }
 
     /**
@@ -120,6 +120,6 @@ class ClusterPolicyTest extends TestCase
     {
         $this->clustersCollectionMock->method('isEmpty')->willReturn(false);
 
-        $this->assertFalse($this->policy->create($this->userMock, $this->clusterMock));
+        $this->assertFalse($this->policy->create($this->userMock));
     }
 }

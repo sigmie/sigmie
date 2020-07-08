@@ -19,6 +19,16 @@
             "command": "php artisan make:test --unit ${input:params}"
         },
         {
+            "label": "phpcs:tests",
+            "type": "shell",
+            "command": "vendor/bin/phpcs --standard=phpcs-laravel tests"
+        },
+        {
+            "label": "phpcs:app",
+            "type": "shell",
+            "command": "vendor/bin/phpcs --standard=phpcs-laravel app"
+        },
+        {
             "label": "make:test:feature",
             "type": "shell",
             "command": "php artisan make:test ${input:params}"
