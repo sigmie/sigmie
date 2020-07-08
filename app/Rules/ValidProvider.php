@@ -8,14 +8,22 @@ use Exception;
 use Google_Client;
 use Google_Service_Compute;
 use Illuminate\Contracts\Validation\Rule;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use League\Flysystem\Adapter\AbstractAdapter;
+use League\Flysystem\Adapter\Local;
 use League\Flysystem\Filesystem;
 use Sigmie\App\Core\Cloud\Providers\Google\Google;
 
 class ValidProvider implements Rule
 {
+    private FilesystemAdapter $filesystem;
+
+    public function __construct()
+    {
+        $this->filesystem = Storage::disk('local');
+    }
+
     /**
      * Determine if the validation rule passes.
      */
@@ -35,29 +43,25 @@ class ValidProvider implements Rule
     {
         return 'Cloud provider is invalid.';
     }
+
     private function validateGoogle($serviceAccount)
     {
-        /** @var Filesystem $filesystem */
-        $filesystem = Storage::disk('local');
+        $filename = Str::random(40) . '.json';
+        $path = "temp/{$filename}";
 
-        /** @var  AbstractAdapter $adapter */
-        $adapter = $filesystem->getAdapter();
+        $this->filesystem->put($path, $serviceAccount);
 
-        $storagePath  = $adapter->getPathPrefix();
-        $path = 'temp/' . Str::random(40) . '.json';
-        $fullPath = $storagePath . $path;
-
-        $filesystem->put($path, $serviceAccount);
+        $fullPath = $this->filesystem->path($path);
 
         try {
             $provider = new Google($fullPath, new Google_Service_Compute(new Google_Client()));
+
+            $result = $provider->isActive();
         } catch (Exception $exception) {
-            return false;
+            $result = false;
         }
 
-        $result = $provider->isActive();
-
-        $filesystem->delete($path);
+        $this->filesystem->delete($path);
 
         return $result;
     }

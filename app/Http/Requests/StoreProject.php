@@ -25,11 +25,11 @@ class StoreProject extends FormRequest
      *
      * @return array
      */
-    public function rules(Request $request)
+    public function rules(ValidProvider $validProvider)
     {
         return [
             'name' => ['required', 'regex:/^[a-zA-Z0-9-_]*$/i'],
-            'provider' => [new ValidProvider]
+            'provider' => [$validProvider]
         ];
     }
 }

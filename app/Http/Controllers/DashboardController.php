@@ -15,7 +15,7 @@ class DashboardController extends Controller
     /**
      * Handle the incoming request.
      */
-    public function __invoke(Project $project)
+    public function __invoke(Project $project = null)
     {
         if ($project->exists === false && $this->userHasProjects()) {
 

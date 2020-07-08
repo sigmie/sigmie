@@ -9,6 +9,9 @@
 <meta name="author" content="nicoorfi@yahoo.com">
 
 {{-- CSRF Token required by Laravel Echo --}}
+{{-- Also using in axios header since the
+    default X-XCSRF-TOKEN is for some reason
+    not workign                            --}}
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
 {{-- Twitter --}}

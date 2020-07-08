@@ -15,7 +15,9 @@ Vue.use(Vuelidate)
 
 Vue.prototype.$http = axios.create({
   baseURL: process.env.MIX_APP_URL + '/ajax/',
-  headers: { }
+  headers: {
+    'X-CSRF-TOKEN': document.head.querySelector('meta[name="csrf-token"]').getAttribute('content')
+  }
 })
 
 Vue.prototype.$route = (name, params, absolute) => route(name, params, absolute, Ziggy)
