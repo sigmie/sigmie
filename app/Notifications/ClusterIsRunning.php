@@ -6,6 +6,7 @@ namespace App\Notifications;
 
 use App\Models\Cluster;
 use App\Models\User;
+use App\Repositories\ClusterRepository;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
@@ -14,25 +15,17 @@ class ClusterIsRunning extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    /**
-     * @var string
-     */
-    private $projectName;
+    private string $clusterName;
 
-    /**
-     * @var string
-     */
-    private $clusterName;
+    private string $projectName;
 
     /**
      * @param int $clusterId
      */
-    public function __construct($clusterId)
+    public function __construct(string $clusterName, string $projectName)
     {
-        $cluster = Cluster::find($clusterId);
-
-        $this->projectName = $cluster->project->name;
-        $this->clusterName = $cluster->name;
+        $this->clusterName = $clusterName;
+        $this->projectName = $projectName;
     }
 
     /**
