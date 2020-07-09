@@ -24,7 +24,9 @@ trait NeedsModel
             'where',
             'first',
             'find',
-            'all'
+            'all',
+            'save',
+            'update'
         ];
 
         if ($this->modelMock === null) {

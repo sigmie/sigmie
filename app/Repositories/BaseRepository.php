@@ -18,4 +18,9 @@ abstract class BaseRepository implements Repository
     {
         return $this->model->find($id);
     }
+
+    public function update(int $id, array $values)
+    {
+        return $this->model->find($id)->update($values);
+    }
 }

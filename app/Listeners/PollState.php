@@ -8,6 +8,7 @@ use App\Events\ClusterHasFailed;
 use App\Events\ClusterWasBooted;
 use App\Events\ClusterWasCreated;
 use App\Models\Cluster;
+use App\Repositories\ClusterRepository;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Http\Response;
@@ -21,11 +22,18 @@ class PollState implements ShouldQueue
 
     public $delay = 90;
 
+    private $clusters;
+
+    public function __construct(ClusterRepository $clusterRepository)
+    {
+        $this->clusters = $clusterRepository;
+    }
+
     public function handle(ClusterWasCreated $event): void
     {
         $domain = config('services.cloudflare.domain');
 
-        $cluster = Cluster::find($event->clusterId);
+        $cluster = $this->clusters->find($event->clusterId);
 
         $password = decrypt($cluster->password);
 
@@ -34,10 +42,9 @@ class PollState implements ShouldQueue
 
         if ($response->getStatusCode() === 200) {
 
-            $cluster->state = Cluster::RUNNING;
-            $cluster->save();
+            $this->clusters->update($event->clusterId, ['state' => Cluster::RUNNING]);
 
-            event(new ClusterWasBooted($cluster->id));
+            event(new ClusterWasBooted($event->clusterId));
 
             return;
         }
@@ -47,11 +54,8 @@ class PollState implements ShouldQueue
 
     public function failed(ClusterWasCreated $event, Exception $exception): void
     {
-        $cluster = Cluster::find($event->clusterId);
+        $this->clusters->update($event->clusterId, ['state' => Cluster::FAILED]);
 
-        $cluster->state = Cluster::FAILED;
-        $cluster->save();
-
-        event(new ClusterHasFailed($cluster->id));
+        event(new ClusterHasFailed($event->clusterId));
     }
 }
