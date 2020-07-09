@@ -15,11 +15,9 @@ class ClusterWasDestroyed extends Notification implements ShouldQueue
 
     private string $projectName;
 
-    public function __construct($clusterId)
+    public function __construct($projectName)
     {
-        $cluster = Cluster::withTrashed()->where('id', $clusterId)->first();
-
-        $this->projectName = $cluster->project->name;
+        $this->projectName = $projectName;
     }
 
     public function via($notifiable)

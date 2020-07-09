@@ -7,13 +7,14 @@ namespace App\Listeners;
 use App\Events\ClusterWasDestroyed;
 use App\Models\Cluster;
 use App\Notifications\ClusterWasDestroyed as NotificationsClusterWasDestroyed;
+use App\Repositories\ClusterRepository;
 
 class SendClusterDestroyedNotification
 {
-    public function handle(ClusterWasDestroyed $event): void
+    public function handle(ClusterWasDestroyed $event, ClusterRepository $clusters): void
     {
-        $user = Cluster::withTrashed()->where('id', $event->clusterId)->first()->project->user;
+        $cluster = $clusters->findTrashed($event->clusterId);
 
-        $user->notify(new NotificationsClusterWasDestroyed($event->clusterId));
+        $cluster->user->notify(new NotificationsClusterWasDestroyed($cluster->project->name));
     }
 }
