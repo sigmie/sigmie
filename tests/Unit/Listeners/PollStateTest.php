@@ -59,6 +59,7 @@ class PollStateTest extends TestCase
         Config::set('services.cloudflare.domain', $this->domain);
 
         $this->repository = $this->createMock(ClusterRepository::class);
+        $this->repository->method('find')->willReturn($this->createCluster());
 
         $this->eventMock = $this->createEventMock();
 
@@ -78,8 +79,6 @@ class PollStateTest extends TestCase
      */
     public function handle_make_call_updates_state_on_200_response_and_triggers_cluster_was_booted_event()
     {
-        $this->repository->method('find')->willReturn($this->createCluster());
-
         $this->clusterCallWillReturn(200);
 
         $this->repository->expects($this->once())->method('update')->with(0, ['state' => 'running']);
@@ -96,7 +95,6 @@ class PollStateTest extends TestCase
      */
     public function handle_make_call_updates_state_on_not_500_response_and_throws_exception()
     {
-        $this->repository->method('find')->willReturn($this->createCluster());
         $this->expectException(Exception::class);
 
         $this->clusterCallWillReturn(500);
@@ -104,11 +102,20 @@ class PollStateTest extends TestCase
         $this->listener->handle($this->eventMock);
     }
 
+    /**
+     * @test
+     */
+    public function handle_makes_correct_http_call()
+    {
+        $this->repository->expects($this->once())->method('find')->with(0);
 
-    // $this->repository->expects($this->once())->method('find')->with(0);
-    // Http::shouldReceive('withBasicAuth')->once()->with('foo', 'bar')->andReturnSelf();
-    // Http::shouldReceive('timeout')->once()->with(3)->andReturnSelf();
-    // Http::shouldReceive('get')->with('https://baz.test-domain.com')->andReturn($response);
+        Http::shouldReceive('withBasicAuth')->once()->with('foo', 'bar')->andReturnSelf();
+        Http::shouldReceive('timeout')->once()->with(3)->andReturnSelf();
+        Http::shouldReceive('get')->with("https://baz.{$this->domain}")->andReturn($this->responseWithCode(200));
+
+        $this->listener->handle($this->eventMock);
+    }
+
 
     private function createCluster()
     {

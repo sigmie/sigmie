@@ -31,16 +31,9 @@ class PollState implements ShouldQueue
 
     public function handle(ClusterWasCreated $event): void
     {
-        $domain = config('services.cloudflare.domain');
-
         $cluster = $this->clusters->find($event->clusterId);
 
-        $password = decrypt($cluster->password);
-
-        /** @var  Response */
-        $response = Http::withBasicAuth($cluster->username, $password)->timeout(3)->get("https://{$cluster->name}.{$domain}");
-
-        if ($response->getStatusCode() === 200) {
+        if ($this->clusterStatusCode($cluster) === 200) {
 
             $this->clusters->update($event->clusterId, ['state' => Cluster::RUNNING]);
 
@@ -52,8 +45,19 @@ class PollState implements ShouldQueue
         throw new \Exception("Cluster run check failed after {$this->tries} tries with {$this->retryAfter} delay between each of them.");
     }
 
+    private function clusterStatusCode(Cluster $cluster): int
+    {
+        $domain = config('services.cloudflare.domain');
+        $url = "https://{$cluster->name}.{$domain}";
+
+        $response = Http::withBasicAuth($cluster->username, decrypt($cluster->password))->timeout(3)->get($url);
+
+        return $response->getStatusCode();
+    }
+
     public function failed(ClusterWasCreated $event, Exception $exception): void
     {
+
         $this->clusters->update($event->clusterId, ['state' => Cluster::FAILED]);
 
         event(new ClusterHasFailed($event->clusterId));
