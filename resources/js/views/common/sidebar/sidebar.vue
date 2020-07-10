@@ -97,8 +97,8 @@ export default {
           icon: "home"
         },
         {
-          text: "Access tokens",
-          name: "access-token.index",
+          text: "API tokens",
+          name: "api-token.index",
           routeParams: [],
           icon: "key"
         },

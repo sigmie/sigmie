@@ -27,7 +27,7 @@ Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group
     Route::resource('/subscription', 'SubscriptionController');
 
     Route::get('/thank-you', 'SubscriptionController@thankyou')->name('thankyou');
-Route::get('/confirmed', 'SubscriptionController@confirmed')->name('confirmed');
+    Route::get('/confirmed', 'SubscriptionController@confirmed')->name('confirmed');
 });
 
 if ($launched === true) {
@@ -62,7 +62,7 @@ if ($launched === true) {
 
             Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard');
 
-            Route::get('/access-tokens', 'DashboardController')->name('access-token.index');
+            Route::get('/api-tokens', 'ApiTokenController@index')->name('api-token.index');
 
             Route::get('/settings', 'SettingsController@index')->name('settings');
 

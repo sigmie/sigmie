@@ -4,11 +4,18 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Cloudflare\API\Auth\APIToken;
+
 class Project extends Model
 {
     public function clusters()
     {
         return $this->hasMany(Cluster::class);
+    }
+
+    public function apiTokens()
+    {
+        return $this->hasMany(ApiToken::class);
     }
 
     public function user()
