@@ -12,6 +12,10 @@ trait NeedsNotifiable
      */
     public function notifiable()
     {
-        return $this->getMockBuilder(Notifiable::class)->setMethods(['getKey'])->getMockForTrait();
+        $methods = [
+            'getKey', 'notify'
+        ];
+
+        return $this->getMockBuilder(Notifiable::class)->setMethods($methods)->getMockForTrait();
     }
 }

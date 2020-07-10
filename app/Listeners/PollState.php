@@ -57,7 +57,6 @@ class PollState implements ShouldQueue
 
     public function failed(ClusterWasCreated $event, Exception $exception): void
     {
-
         $this->clusters->update($event->clusterId, ['state' => Cluster::FAILED]);
 
         event(new ClusterHasFailed($event->clusterId));

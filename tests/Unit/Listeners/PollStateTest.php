@@ -2,15 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Test\Unit\Listeners;
+namespace Tests\Unit\Listeners;
 
 use App\Events\ClusterHasFailed;
 use App\Events\ClusterWasBooted;
 use App\Events\ClusterWasCreated;
 use App\Listeners\PollState;
 use App\Models\Cluster;
-use App\Models\Model;
-use App\Notifications\ClusterIsRunning;
 use App\Repositories\ClusterRepository;
 use Exception;
 use GuzzleHttp\Psr7\Response;
