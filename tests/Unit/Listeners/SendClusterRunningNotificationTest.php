@@ -67,13 +67,13 @@ class SendClusterRunningNotificationTest extends TestCase
     {
         parent::setUp();
 
+        $this->notifiableMock = $this->notifiable();
+
         $this->eventMock = $this->createMock(ClusterWasBooted::class);
         $this->eventMock->clusterId = $this->clusterId;
 
-        $this->notifiableMock = $this->notifiable();
         $this->projectMock = $this->createMock(Project::class);
         $this->projectMock->method('getAttribute')->willReturnMap([['name', $this->projectName]]);
-
 
         $this->clusterMock = $this->createMock(Cluster::class);
         $this->clusterMock->method('getAttribute')->willReturnMap([['user', $this->notifiableMock], ['project', $this->projectMock], ['name', $this->clusterName]]);

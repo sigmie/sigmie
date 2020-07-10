@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Listeners;
 
 use App\Events\ClusterWasBooted;
-use App\Models\Cluster;
 use App\Notifications\ClusterIsRunning as ClusterIsRunningNotification;
 use App\Repositories\ClusterRepository;
 use Illuminate\Contracts\Queue\ShouldQueue;
