@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Helpers;
 
 use App\Models\Project;
+use App\Repositories\ClusterRepository;
+use App\Repositories\ProjectRepository;
 use Exception;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\Filesystem;
@@ -17,45 +20,56 @@ use Sigmie\App\Core\GoogleFactory;
 
 class ClusterManagerFactory
 {
-    public static function create(int $projectId): ClusterManager
+    private ProjectRepository $projects;
+
+    private FilesystemAdapter $filesystem;
+
+    public function __construct(ProjectRepository $projectRepository)
+    {
+        $this->projects = $projectRepository;
+        $this->filesystem = Storage::disk('local');
+    }
+
+    public function create(int $projectId): ClusterManager
     {
         $cloudProviderFactory = null;
         $dnsProviderFactory = null;
 
-        $project = Project::find($projectId);
+        $project = $this->projects->find($projectId);
+        $provider = $project->getAttribute('provider');
 
         if ($project === null) {
             throw new Exception('User\'s project doesn\'t exist.');
         }
 
-        if ($project->provider === 'google') {
-            $cloudProviderFactory = self::createGoogleProvider($project);
+        if ($provider === 'google') {
+            $cloudProviderFactory = $this->createGoogleProvider($project);
         }
 
-        if ($project->provider === 'aws') {
-            $cloudProviderFactory = self::createAWSProvider();
+        if ($provider === 'aws') {
+            $cloudProviderFactory = $this->createAWSProvider();
         }
 
-        if ($project->provider === 'digitalocean') {
-            $cloudProviderFactory = self::createDigitaloceanProvider();
+        if ($provider === 'digitalocean') {
+            $cloudProviderFactory = $this->createDigitaloceanProvider();
         }
 
-        $dnsProviderFactory = self::createDnsProvider();
+        $dnsProviderFactory = $this->createDnsProvider();
 
         return  new ClusterManager($cloudProviderFactory, $dnsProviderFactory, config('app.debug'));
     }
 
-    public static function createDigitaloceanProvider()
+    public function createDigitaloceanProvider()
     {
         throw new Exception('Digital Ocean is not supported yet!');
     }
 
-    public static function createAWSProvider()
+    public function createAWSProvider()
     {
         throw new Exception('AWS is not supported yet!');
     }
 
-    private static function createDnsProvider(): DNSFactory
+    public function createDnsProvider(): DNSFactory
     {
         return new CloudflareFactory(
             config('services.cloudflare.api_token'),
@@ -64,23 +78,16 @@ class ClusterManagerFactory
         );
     }
 
-    private static function createGoogleProvider(Project $project): CloudFactory
+    public function createGoogleProvider(Project $project): CloudFactory
     {
-        /** @var Filesystem $filesystem */
-        $filesystem = Storage::disk('local');
+        $projectId = $project->getAttribute('id');
+        $serviceAccount = decrypt($project->getAttribute('creds'));
+        $path = "creds/{$projectId}.json";
 
-        /** @var  AbstractAdapter $adapter */
-        $adapter = $filesystem->getAdapter();
+        $this->filesystem->put($path, $serviceAccount);
 
-        $storagePath  = $adapter->getPathPrefix();
+        $fullPath = $this->filesystem->path($path);
 
-        $serviceAccount = decrypt($project->creds);
-
-        $path = "creds/{$project->id}.json";
-        $absolutePath = $storagePath . $path;
-
-        $filesystem->put($path, json_encode($serviceAccount));
-
-        return new GoogleFactory($absolutePath);
+        return new GoogleFactory($fullPath);
     }
 }
