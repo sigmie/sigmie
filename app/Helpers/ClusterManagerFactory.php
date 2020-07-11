@@ -38,10 +38,6 @@ class ClusterManagerFactory
         $project = $this->projects->find($projectId);
         $provider = $project->getAttribute('provider');
 
-        if ($project === null) {
-            throw new Exception('User\'s project doesn\'t exist.');
-        }
-
         if ($provider === 'google') {
             $cloudProviderFactory = $this->createGoogleProvider($project);
         }
