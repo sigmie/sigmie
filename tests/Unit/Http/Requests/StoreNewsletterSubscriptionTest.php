@@ -36,6 +36,14 @@ class StoreNewsletterSubscriptionTest extends TestCase
     /**
      * @test
      */
+    public function authorize_returns_true()
+    {
+        $this->assertTrue($this->request->authorize());
+    }
+
+    /**
+     * @test
+     */
     public function has_email_validation(): void
     {
         $this->assertArrayHasKey('email', $this->request->rules($this->guzzleMock));

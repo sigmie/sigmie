@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Cloudflare\API\Auth\APIToken;
+use App\Models\ApiToken;
 
 class Project extends Model
 {

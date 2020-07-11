@@ -3,6 +3,7 @@
 /** @var \Illuminate\Database\Eloquent\Factory $factory */
 
 use App\Models\Project;
+use App\Models\User;
 use Faker\Generator as Faker;
 
 $factory->define(Project::class, function (Faker $faker) {
@@ -10,6 +11,7 @@ $factory->define(Project::class, function (Faker $faker) {
         'name' => $faker->name,
         'description' => $faker->text(40),
         'provider' => $faker->randomElement(['google', 'aws', 'digitalocean']),
-        'creds' => encrypt($faker->text(20))
+        'creds' => encrypt($faker->text(20)),
+        'user_id' => factory(User::class)
     ];
 });

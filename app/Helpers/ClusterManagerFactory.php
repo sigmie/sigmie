@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\Filesystem;
 use Sigmie\App\Core\CloudflareFactory;
+use Sigmie\App\Core\Contracts\ClusterManager as ClusterManagerInterface;
 use Sigmie\App\Core\ClusterManager;
 use Sigmie\App\Core\Contracts\CloudFactory;
 use Sigmie\App\Core\Contracts\DNSFactory;
@@ -30,7 +31,7 @@ class ClusterManagerFactory
         $this->filesystem = Storage::disk('local');
     }
 
-    public function create(int $projectId): ClusterManager
+    public function create(int $projectId): ClusterManagerInterface
     {
         $cloudProviderFactory = null;
         $dnsProviderFactory = null;

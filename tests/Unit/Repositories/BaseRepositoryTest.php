@@ -16,7 +16,6 @@ class BaseRepositoryTest extends TestCase
      * @var BaseRepository
      */
     private $repository;
-
     public function setUp(): void
     {
         parent::setUp();
@@ -35,5 +34,17 @@ class BaseRepositoryTest extends TestCase
         $this->model()->expects($this->once())->method('find')->with(0);
 
         $this->repository->find(0);
+    }
+
+    /**
+     * @test
+     */
+    public function update(): void
+    {
+        $this->model()->method('find')->willReturnSelf();
+        $this->model()->expects($this->once())->method('find')->with(1);
+        $this->model()->expects($this->once())->method('update')->with(['column' => 'value']);
+
+        $this->repository->update(1, ['column' => 'value']);
     }
 }

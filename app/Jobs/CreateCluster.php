@@ -8,6 +8,7 @@ use App\Events\ClusterWasCreated;
 use App\Helpers\ClusterAdapter;
 use App\Helpers\ClusterManagerFactory;
 use App\Models\Cluster;
+use App\Repositories\ClusterRepository;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -33,15 +34,18 @@ class CreateCluster implements ShouldQueue
      * initialize the Cluster manager and call the create method. After
      * fire the cluster was created event.
      */
-    public function handle(): void
+    public function handle(ClusterRepository $clusters, ClusterManagerFactory $managerFactory): void
     {
-        $appCluster = Cluster::withTrashed()->where('id', $this->clusterId)->first();
+        $appCluster = $clusters->findTrashed($this->clusterId);
+        $projectId = $appCluster->getAttribute('project')->getAttribute('id');
+        $clusterId = $appCluster->getAttribute('id');
+
         $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
 
-        ClusterManagerFactory::create($appCluster->project->id)->create($coreCluster);
+        $managerFactory->create($projectId)->create($coreCluster);
 
-        $appCluster->update(['state' => Cluster::CREATED]);
+        $clusters->update($this->clusterId, ['state' => Cluster::CREATED]);
 
-        event(new ClusterWasCreated($appCluster->id));
+        event(new ClusterWasCreated($clusterId));
     }
 }

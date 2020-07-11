@@ -8,6 +8,7 @@ use App\Events\ClusterWasDestroyed;
 use App\Helpers\ClusterAdapter;
 use App\Helpers\ClusterManagerFactory;
 use App\Models\Cluster;
+use App\Repositories\ClusterRepository;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -33,15 +34,18 @@ class DestroyCluster implements ShouldQueue
      * initialize the Cluster manager and call the destroy method. After
      * fire the cluster was created event.
      */
-    public function handle()
+    public function handle(ClusterRepository $clusters, ClusterManagerFactory $managerFactory): void
     {
-        $appCluster = Cluster::withTrashed()->find($this->clusterId);
+        $appCluster = $clusters->findTrashed($this->clusterId);
+        $projectId = $appCluster->getAttribute('project')->getAttribute('id');
+        $clusterId = $appCluster->getAttribute('id');
+
         $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
 
-        ClusterManagerFactory::create($appCluster->project->id)->destroy($coreCluster);
+        $managerFactory->create($projectId)->destroy($coreCluster);
 
-        $appCluster->update(['state' => Cluster::DESTROYED]);
+        $clusters->update($clusterId, ['state' => Cluster::DESTROYED]);
 
-        event(new ClusterWasDestroyed($appCluster->id));
+        event(new ClusterWasDestroyed($clusterId));
     }
 }

@@ -20,25 +20,31 @@ class ClusterAdapter
     {
         $coreCluster = new CoreCluster();
 
-        $coreCluster->setName($cluster->name);
+        $name = $cluster->getAttribute('name');
+        $dataCenter = $cluster->getAttribute('data_center');
+        $nodesCount = $cluster->getAttribute('nodes_count');
+        $username = $cluster->getAttribute('username');
+        $password = decrypt($cluster->getAttribute('password'));
 
-        if ($cluster->data_center === 'europe') {
+        $coreCluster->setName($name);
+
+        if ($dataCenter === 'europe') {
             $coreCluster->setRegion(new Europe);
         }
 
-        if ($cluster->data_center === 'asia') {
+        if ($dataCenter === 'asia') {
             $coreCluster->setRegion(new Asia);
         }
 
-        if ($cluster->data_center === 'america') {
+        if ($dataCenter === 'america') {
             $coreCluster->setRegion(new America);
         }
 
         $coreCluster->setDiskSize(15);
-        $coreCluster->setNodesCount($cluster->nodes_count);
+        $coreCluster->setNodesCount($nodesCount);
 
-        $coreCluster->setUsername($cluster->username);
-        $coreCluster->setPassword(decrypt($cluster->password));
+        $coreCluster->setUsername($username);
+        $coreCluster->setPassword($password);
 
         return $coreCluster;
     }
