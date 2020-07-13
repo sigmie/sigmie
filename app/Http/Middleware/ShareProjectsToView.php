@@ -11,19 +11,18 @@ use Inertia\Inertia;
 class ShareProjectsToView
 {
     /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return mixed
+     * Share project names and id's to inertia
      */
     public function handle($request, Closure $next)
     {
         if (Auth::check() === false) {
-            return $next($request);
+            return redirect()->route('login');
         }
 
-        $projects = Auth::user()->projects->map(fn ($project) => $project->only(['name', 'id']));
+        $user = Auth::user();
+        $projects = $user->getAttribute('projects');
+
+        $projects = $projects->map(fn ($project) => $project->only(['name', 'id']));
 
         Inertia::share('projects', $projects);
 
