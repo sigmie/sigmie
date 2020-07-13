@@ -25,6 +25,7 @@
 
              <file>app/Console/Kernel.php</file>
              <file>app/Logging/CreateStackdriverLogger.php</file>
+             <file>app/Http/Middleware/GaeProxyIp.php</file>
 
             </exclude>
 

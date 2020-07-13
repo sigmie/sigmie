@@ -6,6 +6,7 @@ namespace Tests\Unit\Middleware;
 
 use App\Http\Middleware\RedirectIfHasCluster;
 use App\Http\Middleware\ShareProjectsToView;
+use App\Http\Middleware\ShareProjectToView;
 use App\Models\Project;
 use App\Models\User;
 use App\Repositories\ProjectRepository;
@@ -19,7 +20,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\HttpFoundation\Request;
 use Tests\TestCase;
 
-class ShareProjectsToViewTest extends TestCase
+class ShareProjectToViewTest extends TestCase
 {
     use NeedsClosure;
 
@@ -64,39 +65,44 @@ class ShareProjectsToViewTest extends TestCase
         $this->closure();
 
         $this->projectMock = $this->createMock(Project::class);
+        $this->projectMock->method('getAttribute')->willReturn($this->projectId);
+
+        $this->requestMock = $this->createMock(Request::class);
 
         $this->projectsCollectionMock = $this->createMock(Collection::class);
-        $this->projectsCollectionMock->method('map')->willReturn($this->projects);
+        $this->projectsCollectionMock->method('first')->willReturn($this->projectMock);
 
         $this->userMock = $this->createMock(User::class);
         $this->userMock->method('getAttribute')->willReturn($this->projectsCollectionMock);
 
-        $this->middleware = new ShareProjectsToView;
+        $this->middleware = new ShareProjectToView;
     }
 
     /**
      * @test
      */
-    public function handle_redirects_to_login_if_not_authenticated(): void
+    public function handle_share_project_id_to_inertia(): void
     {
-        Auth::shouldReceive('check')->once()->andReturn(false);
+        $this->requestMock->method('get')->willReturn(99);
 
-        $response = $this->middleware->handle($this->requestMock, $this->closureMock);
-
-        $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertEquals($response->getTargetUrl(), route('login'));
-    }
-
-    /**
-     * @test
-     */
-    public function handle_share_projects_to_inertia(): void
-    {
-        Auth::shouldReceive('check')->once()->andReturn(true);
-        Auth::shouldReceive('user')->once()->andReturn($this->userMock);
+        Inertia::shouldReceive('share')->once()->with('project_id', 99);
 
         $this->expectClosureCalledWith($this->requestMock);
-        Inertia::shouldReceive('share')->once()->with('projects', $this->projects);
+
+        $this->middleware->handle($this->requestMock, $this->closureMock);
+    }
+
+    /**
+     * @test
+     */
+    public function handle_shares_first_project_id_if_no_project_id_in_request()
+    {
+        $this->requestMock->method('get')->willReturn(null);
+
+        Auth::shouldReceive('user')->once()->andReturn($this->userMock);
+        Inertia::shouldReceive('share')->once()->with('project_id', $this->projectId);
+
+        $this->expectClosureCalledWith($this->requestMock);
 
         $this->middleware->handle($this->requestMock, $this->closureMock);
     }

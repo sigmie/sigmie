@@ -11,11 +11,7 @@ use Inertia\Inertia;
 class ShareUserToView
 {
     /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return mixed
+     * Share user information to inertia view
      */
     public function handle($request, Closure $next)
     {

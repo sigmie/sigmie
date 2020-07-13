@@ -12,11 +12,16 @@ use Illuminate\Support\Facades\Storage;
 
 class ProjectValidationController extends Controller
 {
+    private $rule;
+
+    public function __construct(ValidProvider $validProvider)
+    {
+        $this->rule = $validProvider;
+    }
+
     public function provider(Request $request)
     {
-        $rule = new ValidProvider;
-
-        $valid = $rule->passes('provider', $request->toArray());
+        $valid = $this->rule->passes('provider', $request->toArray());
 
         return response()->json(['valid' => $valid]);
     }

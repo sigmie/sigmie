@@ -12,6 +12,10 @@ use Inertia\Inertia;
 
 class ProjectController extends Controller
 {
+    public function __construct()
+    {
+        $this->authorizeResource(Project::class, 'cluster');
+    }
     /**
      * Display a listing of the resource.
      *
@@ -19,7 +23,6 @@ class ProjectController extends Controller
      */
     public function index()
     {
-        /** @var  User */
         $user = Auth::user();
 
         return $user->projects()->get()->toArray();

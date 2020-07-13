@@ -12,21 +12,13 @@ class ShareProjectToView
 {
     /**
      * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return mixed
      */
     public function handle($request, Closure $next)
     {
-        $projectId = null;
-
-        if ($request->get('project_id') !== null) {
-            $projectId = (int) $request->get('project_id');
-        }
+        $projectId = $request->get('project_id');
 
         if ($projectId === null) {
-            $projectId = Auth::user()->projects()->first()->id;
+            $projectId = Auth::user()->getAttribute('projects')->first()->getAttribute('id');
         }
 
         Inertia::share('project_id', $projectId);
