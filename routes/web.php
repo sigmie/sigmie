@@ -12,6 +12,7 @@
 */
 
 use App\Events\ClusterWasCreated;
+use App\Http\Middleware\AssignProject;
 use App\Http\Middleware\RedirectIfHasCluster;
 use App\Listeners\PollState;
 
@@ -60,7 +61,7 @@ if ($launched === true) {
 
         Route::group(['middleware' => ['project']], function () {
 
-            Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard');
+            Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard')->middleware(AssignProject::class);
 
             Route::get('/api-tokens', 'ApiTokenController@index')->name('api-token.index');
 

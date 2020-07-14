@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Gates\ClusterGate;
+use App\Gates\DashboardGate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
@@ -20,18 +22,15 @@ class AuthServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::guessPolicyNamesUsing(function ($modelClass) {
-
             return 'App\\Policies\\' . class_basename($modelClass) . 'Policy';
         });
 
-        Gate::define('view-dashboard', fn ($user, $project) => $project->user_id === $user->id);
+        Gate::define('view-dashboard', $this->classMethodCallback(DashboardGate::class, 'view'));
+        Gate::define('create-cluster', $this->classMethodCallback(ClusterGate::class, 'create'));
+    }
 
-        Gate::define('create-cluster', function ($user, $project) {
-
-            $projectBelongsToUser = $project->user->id === $user->id;
-            $projectHasNotCluster = $project->clusters()->withTrashed()->get()->isEmpty();
-
-            return $projectBelongsToUser && $projectHasNotCluster;
-        });
+    private function classMethodCallback($class, $method)
+    {
+        return $class . '@' . $method;
     }
 }

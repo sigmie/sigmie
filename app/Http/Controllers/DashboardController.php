@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Repositories\ProjectRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -12,28 +13,22 @@ use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
+    private $projects;
+
+    public function __construct(ProjectRepository $projectRepository)
+    {
+        $this->projects = $projectRepository;
+    }
+
     /**
      * Handle the incoming request.
      */
-    public function __invoke(Request $request, Project $project = null)
+    public function __invoke(Request $request, Project $project)
     {
-        if ($project->exists === false && $this->userHasProjects()) {
-
-            $projectId = $project = Auth::user()->projects->sortBy('id')->first()->id;
-
-            return redirect()->route('dashboard', ['project' => $projectId]);
-        }
-
-        if ($project->exists === false) {
-            return redirect()->route('project.create');
-        }
-
         Gate::authorize('view-dashboard', $project);
 
-        $trashedCluster = $project->clusters()->withTrashed()->first();
-
-        $state = ($trashedCluster === null) ? null : $trashedCluster->state;
-        $id = ($trashedCluster === null) ? null : $trashedCluster->id;
+        $state = $project->getAttribute('state');
+        $id = $project->getAttribute('id');
 
         return Inertia::render('dashboard', ['state' => $state, 'id' => $id]);
     }
