@@ -7,25 +7,19 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreProject;
 use App\Models\Project;
 use App\Models\User;
+use App\Repositories\ProjectRepository;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class ProjectController extends Controller
 {
-    public function __construct()
-    {
-        $this->authorizeResource(Project::class, 'cluster');
-    }
-    /**
-     * Display a listing of the resource.
-     *
-     * @return array
-     */
-    public function index()
-    {
-        $user = Auth::user();
+    private ProjectRepository $projects;
 
-        return $user->projects()->get()->toArray();
+    public function __construct(ProjectRepository $projectRepository)
+    {
+        $this->projects = $projectRepository;
+
+        $this->authorizeResource(Project::class, 'cluster');
     }
 
     /**
@@ -40,13 +34,14 @@ class ProjectController extends Controller
     {
         $credentials = json_decode($request->get('provider')['creds'], true);
         $provider = $request->get('provider')['id'];
+        $userId = Auth::user()->getAttribute('id');
 
-        $project = Project::create([
+        $this->projects->create([
             'name' => $request->get('name'),
             'description' => $request->get('description'),
             'creds' => encrypt($credentials),
             'provider' => $provider,
-            'user_id' => Auth::user()->id
+            'user_id' => $userId
         ]);
 
         return redirect()->route('cluster.create');
