@@ -9,7 +9,7 @@ use Inertia\Inertia;
 class LandingController extends Controller
 {
     /**
-     * Handle the incoming request.
+     * Render landing page
      */
     public function __invoke()
     {
