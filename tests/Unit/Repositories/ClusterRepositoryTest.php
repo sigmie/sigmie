@@ -42,4 +42,19 @@ class ClusterRepositoryTest extends TestCase
 
         $this->assertEquals(new Cluster(['prop' => 'value']), $this->repository->findTrashed(123));
     }
+
+    /**
+     * @test
+     */
+    public function restore()
+    {
+        $this->model()->method('withTrashed')->willReturnSelf();
+        $this->model()->method('firstWhere')->willReturnSelf();
+        $this->model()->method('restore')->willReturn(true);
+
+        $this->model()->expects($this->once())->method('firstWhere')->with('id', 1);
+        $this->model()->expects($this->once())->method('restore');
+
+        $this->assertTrue($this->repository->restore(1));
+    }
 }

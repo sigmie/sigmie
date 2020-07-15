@@ -27,6 +27,6 @@ class ClusterRepository extends BaseRepository implements TrashableRepository
 
     public function restore(int $id): bool
     {
-        return $this->model->withTrashed()->firstWhere('id', $id)->restore($id);
+        return $this->model->withTrashed()->firstWhere('id', $id)->restore();
     }
 }

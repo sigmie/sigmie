@@ -23,10 +23,14 @@ trait NeedsModel
             'withTrashed',
             'where',
             'first',
+            'create',
+            'delete',
             'find',
             'all',
             'save',
-            'update'
+            'update',
+            'restore',
+            'firstWhere'
         ];
 
         if ($this->modelMock === null) {
