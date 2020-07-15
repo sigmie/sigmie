@@ -58,15 +58,16 @@ if ($launched === true) {
 
     Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
 
-        Route::resource('project', 'ProjectController');
 
-        Route::group(['middleware' => []], function () {
+        Route::group(['middleware' => [ShareProjectToView::class]], function () {
 
-            Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard')->middleware(AssignProject::class)->middleware(ShareProjectToView::class);
+            Route::resource('project', 'ProjectController');
+
+            Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard')->middleware(AssignProject::class);
 
             Route::get('/api-tokens', 'ApiTokenController@index')->name('api-token.index');
 
-            Route::get('/settings', 'SettingsController@index')->name('settings');
+            Route::get('/settings/{project?}', 'SettingsController@index')->name('settings')->middleware(AssignProject::class);
 
             Route::get('/playground', 'DashboardController')->name('playground');
 

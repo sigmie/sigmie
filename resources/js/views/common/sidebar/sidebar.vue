@@ -12,7 +12,7 @@
               :key="index"
               :class="[isRoute(item.name) ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white']"
               class="group mx-1 my-2 flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
-              :href="$route(item.name, item.routeParams)"
+              :href="($page.project_id === null) ? '#':$route(item.name, item.routeParams)"
             >
               <component
                 :class="[ isRoute(item.name) ? 'text-gray-400': 'text-gray-300']"
@@ -23,6 +23,11 @@
                 :is="'icon-'+item.icon"
               ></component>
               {{ item.text }}
+              <span
+                v-if="item.badge"
+                :class="(item.badge.color === 'blue') ? 'bg-blue-100 text-blue-800': null"
+                class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium leading-4"
+              >{{ item.badge.text }}</span>
             </inertia-link>
           </nav>
         </div>
@@ -64,7 +69,7 @@
               :key="index"
               :class="[isRoute(item.name) ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white']"
               class="group mx-2 my-4 flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
-              :href="$route(item.name, item.routeParams)"
+              :href="($page.project_id === null) ? '#':$route(item.name, item.routeParams)"
             >
               <component
                 :class="[ isRoute(item.name) ? 'text-gray-400': 'text-gray-300']"
@@ -75,6 +80,11 @@
                 :is="'icon-'+item.icon"
               ></component>
               {{ item.text }}
+              <span
+                v-if="item.badge"
+                :class="(item.badge.color === 'blue') ? 'bg-blue-100 text-blue-800': null"
+                class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium leading-4"
+              >{{ item.badge.text }}</span>
             </inertia-link>
           </nav>
         </div>
@@ -106,7 +116,11 @@ export default {
           text: "Playground",
           name: "playground",
           routeParams: [],
-          icon: "puzzle"
+          icon: "puzzle",
+          badge: {
+            text: "Soon",
+            color: "blue"
+          }
         },
         {
           text: "Monitoring",
@@ -117,7 +131,9 @@ export default {
         {
           text: "Settings",
           name: "settings",
-          routeParams: { project_id: this.$page.project_id },
+          routeParams: {
+            project: this.$page.project_id === null ? "" : this.$page.project_id
+          },
           icon: "cog"
         }
       ]

@@ -21,9 +21,15 @@ class DashboardController extends Controller
     {
         Gate::authorize('view-dashboard', $project);
 
-        $state = $project->getAttribute('state');
-        $id = $project->getAttribute('id');
+        $cluster = $project->clusters()->first();
+        $id = null;
+        $state = null;
 
-        return Inertia::render('dashboard', ['state' => $state, 'id' => $id]);
+        if ($cluster !== null) {
+            $state = $project->getAttribute('state');
+            $id = $project->getAttribute('id');
+        }
+
+        return Inertia::render('dashboard', ['clusterState' => $state, 'clusterId' => $id]);
     }
 }

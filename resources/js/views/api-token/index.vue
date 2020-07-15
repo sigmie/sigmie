@@ -6,12 +6,6 @@
           class="text-lg font-bold leading-7 text-gray-900 sm:text-3xl sm:leading-9 sm:truncate"
         >API Tokens</h2>
       </div>
-      <div class="flex-1 md:mt-0 md:ml-4">
-        <a
-          class="tracking-wide text-sm text-gray-400 float-right cursor-not-allowed"
-          href="#"
-        >Use existing</a>
-      </div>
     </div>
     <div class="flex flex-col">
       <div class="-my-2 py-2 overflow-x-auto sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
