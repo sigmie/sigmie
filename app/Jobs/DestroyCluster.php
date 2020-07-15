@@ -29,6 +29,11 @@ class DestroyCluster implements ShouldQueue
         $this->clusterId = $clusterId;
     }
 
+    public function getClusterId(): int
+    {
+        return $this->clusterId;
+    }
+
     /**
      * Map the application Cluster instance to the sigmie Cluster instance
      * initialize the Cluster manager and call the destroy method. After

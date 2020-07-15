@@ -13,15 +13,9 @@ use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
-    private $projects;
-
-    public function __construct(ProjectRepository $projectRepository)
-    {
-        $this->projects = $projectRepository;
-    }
-
     /**
-     * Handle the incoming request.
+     * Get the project state and id and render
+     * the dashboard view
      */
     public function __invoke(Request $request, Project $project)
     {
@@ -31,10 +25,5 @@ class DashboardController extends Controller
         $id = $project->getAttribute('id');
 
         return Inertia::render('dashboard', ['state' => $state, 'id' => $id]);
-    }
-
-    private function userHasProjects()
-    {
-        return Auth::user()->projects->isEmpty() === false;
     }
 }

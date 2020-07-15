@@ -14,6 +14,7 @@
 use App\Events\ClusterWasCreated;
 use App\Http\Middleware\AssignProject;
 use App\Http\Middleware\RedirectIfHasCluster;
+use App\Http\Middleware\ShareProjectToView;
 use App\Listeners\PollState;
 
 $launched = true;
@@ -59,9 +60,9 @@ if ($launched === true) {
 
         Route::resource('project', 'ProjectController');
 
-        Route::group(['middleware' => ['project']], function () {
+        Route::group(['middleware' => []], function () {
 
-            Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard')->middleware(AssignProject::class);
+            Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard')->middleware(AssignProject::class)->middleware(ShareProjectToView::class);
 
             Route::get('/api-tokens', 'ApiTokenController@index')->name('api-token.index');
 
@@ -71,7 +72,7 @@ if ($launched === true) {
 
             Route::get('/monitoring', 'DashboardController')->name('monitoring');
 
-            Route::get('/cluster/create', 'ClusterController@create')->name('cluster.create')->middleware(RedirectIfHasCluster::class);
+            Route::get('/cluster/create', 'ClusterController@create')->name('cluster.create');
             Route::get('/cluster/edit/{cluster}', 'ClusterController@edit')->name('cluster.edit');
             Route::post('/cluster', 'ClusterController@store')->name('cluster.store');
             Route::put('/cluster/{cluster}', 'ClusterController@update')->name('cluster.update');

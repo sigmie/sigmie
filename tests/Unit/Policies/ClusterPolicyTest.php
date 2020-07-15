@@ -38,17 +38,22 @@ class ClusterPolicyTest extends TestCase
      */
     private $clustersCollectionMock;
 
+    /**
+     * @var Project|MockObject
+     */
+    private $projectMock;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->clustersCollectionMock = $this->createMock(Collection::class);
 
-        $project = $this->createMock(Project::class);
-        $project->method('clusters')->willReturn($this->clustersCollectionMock);
+        $this->projectMock = $this->createMock(Project::class);
+        $this->projectMock->method('getAttribute')->willReturnMap([['clusters', $this->clustersCollectionMock]]);
 
         $projects = $this->createMock(Collection::class);
-        $projects->method('first')->willReturn($project);
+        $projects->method('first')->willReturn($this->projectMock);
 
         $this->userMock = $this->createMock(User::class);
         $this->userMock->method('projects')->willReturn($projects);

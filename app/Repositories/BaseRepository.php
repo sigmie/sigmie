@@ -14,12 +14,12 @@ abstract class BaseRepository implements Repository
         $this->model = $model;
     }
 
-    public function find(int $id): Model
+    public function find(int $id): ?Model
     {
         return $this->model->find($id);
     }
 
-    public function update(int $id, array $values): Model
+    public function update(int $id, array $values): ?Model
     {
         return $this->model->find($id)->update($values);
     }
@@ -27,5 +27,10 @@ abstract class BaseRepository implements Repository
     public function create(array $values): Model
     {
         return $this->model->create($values);
+    }
+
+    public function delete(int $id): bool
+    {
+        return $this->model->find($id)->delete();
     }
 }

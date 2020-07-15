@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Project;
+use App\Repositories\ProjectRepository;
 use Closure;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,11 +20,18 @@ class AssignProject
             return $next($request);
         }
 
-        // Get the first project idk
-        $projectId = Auth::user()->getAttribute('projects')->first()->getAttribute('id');
+        // Get the first project id
+        $project = Auth::user()->getAttribute('projects')->first();
 
-        $routeName = $request->route()->getName();
+        if ($project instanceof Project) {
 
-        return redirect()->route($routeName, ['project' => $projectId]);
+            $projectId = $project->getAttribute('id');
+
+            $routeName = $request->route()->getName();
+
+            return redirect()->route($routeName, ['project' => $projectId]);
+        }
+
+        return redirect()->route('project.create');
     }
 }

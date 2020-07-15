@@ -5,8 +5,6 @@ namespace Tests\Feature;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
@@ -35,5 +33,19 @@ class DashboardTest extends TestCase
         $response = $this->get('/dashboard');
 
         $response->assertRedirect("/dashboard/{$project->id}");
+    }
+
+    /**
+     * @test
+     */
+    public function redirect_to_create_project_if_no_project_exists()
+    {
+        $user = factory(User::class)->create();
+
+        $this->actingAs($user);
+
+        $response = $this->get('/dashboard');
+
+        $response->assertRedirect(route('project.create'));
     }
 }

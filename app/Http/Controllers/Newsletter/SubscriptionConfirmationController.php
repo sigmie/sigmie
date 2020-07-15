@@ -13,18 +13,15 @@ class SubscriptionConfirmationController extends Controller
     /**
      * Store the subscription confirmation to
      * the newsletter subscription model
-     *
-     * @param NewsletterSubscription $newsletterSubscription
-     *
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(NewsletterSubscription $newsletterSubscription, MailingList $mailingList)
     {
         $newsletterSubscription->confirmSubscription();
+        $email = $newsletterSubscription->getAttribute('email');
 
         $list = config('newsletter.list');
 
-        dispatch(fn () => $mailingList->addToList($list, $newsletterSubscription->email, true));
+        dispatch(fn () => $mailingList->addToList($list, $email, true));
 
         return redirect()->route('newsletter.confirmed');
     }

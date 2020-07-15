@@ -9,23 +9,26 @@ use App\Events\NewsletterSubscriptionWasCreated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreNewsletterSubscription;
 use App\Models\NewsletterSubscription;
+use App\Repositories\NewsletterSubscriptionRepository;
 use Inertia\Inertia;
 
 class SubscriptionController extends Controller
 {
+    private NewsletterSubscriptionRepository $subscriptions;
+
+    public function __construct(NewsletterSubscriptionRepository $newsletterSubscriptionRepository)
+    {
+        $this->subscriptions = $newsletterSubscriptionRepository;
+    }
     /**
      * Store a newly created Newsletter subscription
      * if it doesn't already exist.
-     *
-     * @param StoreNewsletterSubscription $request
-     *
-     * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(StoreNewsletterSubscription $request, MailingList $mailingList)
+    public function store(StoreNewsletterSubscription $request)
     {
-        $subscription = NewsletterSubscription::firstOrCreate($request->validated());
+        $subscription = $this->subscriptions->firstOrCreate($request->validated());
 
-        broadcast(new NewsletterSubscriptionWasCreated($subscription));
+        event(new NewsletterSubscriptionWasCreated($subscription));
 
         return redirect()->route('newsletter.thankyou');
     }

@@ -60,7 +60,6 @@ class AssignProjectTest extends TestCase
         $this->projectMock->method('getAttribute')->willReturn($this->projectId);
 
         $this->projectsCollectionMock = $this->createMock(Collection::class);
-        $this->projectsCollectionMock->method('first')->willReturn($this->projectMock);
 
         $this->userMock = $this->createMock(User::class);
         $this->userMock->method('getAttribute')->willReturnMap([['projects', $this->projectsCollectionMock]]);
@@ -75,6 +74,7 @@ class AssignProjectTest extends TestCase
      */
     public function dont_redirect_if_projectd(): void
     {
+        $this->projectsCollectionMock->method('first')->willReturn($this->projectMock);
         $this->requestMock->expects($this->once())->method('route')->willReturn(new Project);
 
         $this->expectClosureCalledWith($this->requestMock);
@@ -87,6 +87,7 @@ class AssignProjectTest extends TestCase
      */
     public function redirect_to_first_project_if_no_project_passed()
     {
+        $this->projectsCollectionMock->method('first')->willReturn($this->projectMock);
         $this->requestMock->expects($this->any())->method('route')->willReturnSelf();
         $this->requestMock->expects($this->any())->method('getName')->willReturn('dashboard');
 
@@ -96,5 +97,19 @@ class AssignProjectTest extends TestCase
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertEquals(route('dashboard', ['project' => $this->projectId]), $response->getTargetUrl());
+    }
+
+    /**
+     * @test
+     */
+    public function redirect_to_create_if_not_project_is_found()
+    {
+        Auth::shouldReceive('user')->andReturn($this->userMock);
+        $this->projectsCollectionMock->method('first')->willReturn(null);
+
+        $response = $this->middleware->handle($this->requestMock, $this->closureMock);
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertEquals(route('project.create'), $response->getTargetUrl());
     }
 }

@@ -5,111 +5,86 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCluster;
+use App\Http\Requests\UpdateCluster;
 use App\Jobs\CreateCluster;
 use App\Jobs\DestroyCluster;
 use App\Models\Cluster;
-use App\Models\Project;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
+use App\Repositories\ClusterRepository;
 use Inertia\Inertia;
 
 class ClusterController extends Controller
 {
-    public function __construct()
+    private ClusterRepository $clusters;
+
+    public function __construct(ClusterRepository $clusterRepository)
     {
+        $this->clusters = $clusterRepository;
+
         $this->authorizeResource(Cluster::class, 'cluster');
     }
 
-    public function index()
+    public function create()
     {
-        //
-    }
-
-    public function create(Request $request)
-    {
-        $projectId = $request->get('project_id');
-
-        $project = Project::find($projectId);
-
-        if (Gate::allows('create-cluster', $project) === false) {
-
-            $cluster = $project->clusters()->withTrashed()->first();
-
-            $id = route('cluster.edit', $cluster->id);
-
-            return redirect()->route('cluster.edit', $cluster->id);
-        }
-
         return Inertia::render('cluster/create');
     }
 
     public function store(StoreCluster $request)
     {
-        $projectId = $request->get('project_id');
+        $validated = $request->validated();
 
-        $project = Project::find($projectId);
-
-        if (Gate::allows('create-cluster', $project) === false) {
-            return redirect()->route('dashboard');
-        }
-
-        $values = $request->all();
-
-        $cluster = Cluster::create([
-            'name' => $values['name'],
-            'data_center' => $values['dataCenter'],
-            'project_id' => $values['project_id'],
-            'nodes_count' => $values['nodes_count'],
-            'username' => $values['username'],
-            'password' => encrypt($values['password']),
+        $cluster = $this->clusters->create([
+            'name' => $validated['name'],
+            'data_center' => $validated['data_center'],
+            'project_id' => $validated['project_id'],
+            'nodes_count' => $validated['nodes_count'],
+            'username' => $validated['username'],
+            'password' => encrypt($validated['password']),
             'state' => Cluster::QUEUED_CREATE
         ]);
 
-        CreateCluster::dispatch($cluster->id);
+        CreateCluster::dispatch($cluster->getAttribute('id'));
 
         return redirect()->route('dashboard');
     }
 
-    public function show(Cluster $cluster)
-    {
-        //
-    }
-
-    public function edit(Request $request, Cluster $cluster)
+    public function edit(Cluster $cluster)
     {
         return Inertia::render('cluster/edit', ['cluster' =>
         [
-            'id' => $cluster->id,
-            'name' => $cluster->name
+            'id' => $cluster->getAttribute('id'),
+            'name' => $cluster->getAttribute('name')
         ]]);
     }
 
-    public function update(Request $request, Cluster $cluster)
+    public function update(UpdateCluster $request, Cluster $cluster)
     {
-        $values = $request->all();
+        $validated = $request->validated();
+        $clusterId = $cluster->getAttribute('id');
 
-        $cluster->update([
-            'data_center' => $values['dataCenter'],
-            'nodes_count' => $values['nodes_count'],
-            'username' => $values['username'],
-            'password' =>  encrypt($values['password']),
+        $this->clusters->update($clusterId, [
+            'data_center' => $validated['data_center'],
+            'nodes_count' => $validated['nodes_count'],
+            'username' => $validated['username'],
+            'password' =>  encrypt($validated['password']),
             'state' => Cluster::QUEUED_CREATE
         ]);
 
-        $cluster->restore();
+        $this->clusters->restore($clusterId);
 
-        CreateCluster::dispatch($cluster->id);
+        CreateCluster::dispatch($clusterId);
 
         return redirect()->route('dashboard');
     }
 
     public function destroy(Cluster $cluster)
     {
-        DestroyCluster::dispatch($cluster->id);
+        $clusterId = $cluster->getAttribute('id');
 
-        $cluster->update(['state' => Cluster::QUEUED_DESTROY]);
+        DestroyCluster::dispatch($clusterId);
 
-        $cluster->delete();
+        $this->clusters->update($clusterId, ['state' => Cluster::QUEUED_DESTROY]);
+
+        $this->clusters->delete($clusterId);
 
         return redirect()->route('dashboard');
     }

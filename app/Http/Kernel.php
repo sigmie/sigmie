@@ -72,8 +72,7 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'user' =>   \App\Http\Middleware\ShareUserToView::class,
-        'projects' => \App\Http\Middleware\ShareProjectsToView::class,
-        'project' => \App\Http\Middleware\ShareProjectToView::class,
+        'projects' => \App\Http\Middleware\ShareProjectsToView::class
     ];
 
     /**

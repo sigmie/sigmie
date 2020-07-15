@@ -35,7 +35,7 @@ class StoreClusterTest extends TestCase
         $expected = [
             'name' => ['alpha_num', 'required'],
             'nodes_count' => ['min:1', 'max:3', 'required'],
-            'dataCenter' => ['required'],
+            'data_center' => ['required'],
             'username' => ['required'],
             'password' => ['required'],
             'project_id' => ['required']
