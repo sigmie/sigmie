@@ -75,6 +75,8 @@ class ShareProjectToViewTest extends TestCase
         $this->userMock = $this->createMock(User::class);
         $this->userMock->method('getAttribute')->willReturn($this->projectsCollectionMock);
 
+        Auth::shouldReceive('user')->once()->andReturn($this->userMock);
+
         $this->middleware = new ShareProjectToView;
     }
 
@@ -99,7 +101,6 @@ class ShareProjectToViewTest extends TestCase
     {
         $this->requestMock->method('get')->willReturn(null);
 
-        Auth::shouldReceive('user')->once()->andReturn($this->userMock);
         Inertia::shouldReceive('share')->once()->with('project_id', $this->projectId);
 
         $this->expectClosureCalledWith($this->requestMock);

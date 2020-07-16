@@ -88,7 +88,7 @@ class SettingsControllerTest extends TestCase
     {
         $this->clustersCollection->method('first')->willReturn($this->clusterMock);
 
-        $this->controller->index($this->requestMock);
+        $this->controller->index($this->projectMock);
 
         Inertia::shouldReceive('settings/index', ['clusterId' => $this->clusterId]);
     }
@@ -100,7 +100,7 @@ class SettingsControllerTest extends TestCase
     {
         $this->clustersCollection->method('first')->willReturn(null);
 
-        $this->controller->index($this->requestMock);
+        $this->controller->index($this->projectMock);
 
         Inertia::shouldReceive('settings/index', ['clusterId' => null]);
     }

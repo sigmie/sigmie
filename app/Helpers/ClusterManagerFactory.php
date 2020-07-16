@@ -81,7 +81,7 @@ class ClusterManagerFactory
         $serviceAccount = decrypt($project->getAttribute('creds'));
         $path = "creds/{$projectId}.json";
 
-        $this->filesystem->put($path, $serviceAccount);
+        $this->filesystem->put($path, json_encode($serviceAccount));
 
         $fullPath = $this->filesystem->path($path);
 

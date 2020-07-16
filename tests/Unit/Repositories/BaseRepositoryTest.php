@@ -43,10 +43,11 @@ class BaseRepositoryTest extends TestCase
     public function update(): void
     {
         $this->model()->method('find')->willReturnSelf();
+        $this->model()->method('update')->willReturn(true);
         $this->model()->expects($this->once())->method('find')->with(1);
         $this->model()->expects($this->once())->method('update')->with(['column' => 'value']);
 
-        $this->repository->update(1, ['column' => 'value']);
+        $this->assertTrue($this->repository->update(1, ['column' => 'value']));
     }
 
     /**

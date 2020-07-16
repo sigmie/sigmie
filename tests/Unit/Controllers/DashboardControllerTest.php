@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Tests\Unit\Controllers;
 
 use App\Http\Controllers\DashboardController;
+use App\Models\Cluster;
 use App\Models\Project;
+use App\Repositories\ClusterRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
-use Laravel\Nova\Console\DashboardCommand;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
@@ -31,19 +31,35 @@ class DashboardControllerTest extends TestCase
      */
     private $projectMock;
 
+    /**
+     * @var ClusterRepository|MockObject
+     */
+    private $clusterRepositoryMock;
+
+    /**
+     * @var MockObject|Cluster
+     */
+    private $clusterMock;
+
     public function setUp(): void
     {
         parent::setUp();
 
         $this->requestMock = $this->createMock(Request::class);
 
+
         $this->projectMock = $this->createMock(Project::class);
-        $this->projectMock->method('getAttribute')->willReturnMap([
+
+        $this->clusterMock = $this->createMock(Cluster::class);
+        $this->clusterMock->method('getAttribute')->willReturnMap([
             ['state', 'some-state'],
             ['id', 'some-id']
         ]);
 
-        $this->controller = new DashboardController;
+        $this->clusterRepositoryMock = $this->createMock(ClusterRepository::class);
+        $this->clusterRepositoryMock->method('findOneTrashedBy')->willReturn($this->clusterMock);
+
+        $this->controller = new DashboardController($this->clusterRepositoryMock);
     }
 
     /**
@@ -53,7 +69,7 @@ class DashboardControllerTest extends TestCase
     {
         Gate::shouldReceive('authorize')->once()->with('view-dashboard', $this->projectMock);
 
-        Inertia::shouldReceive('render')->once()->with('dashboard', ['state' => 'some-state', 'id' => 'some-id']);
+        Inertia::shouldReceive('render')->once()->with('dashboard', ['clusterState' => 'some-state', 'clusterId' => 'some-id']);
 
         ($this->controller)($this->requestMock, $this->projectMock);
     }
