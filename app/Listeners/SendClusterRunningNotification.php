@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Listeners;
 
 use App\Events\ClusterWasBooted;
+use App\Models\Cluster;
 use App\Notifications\ClusterIsRunning;
 use App\Repositories\ClusterRepository;
+use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class SendClusterRunningNotification implements ShouldQueue
@@ -22,12 +24,17 @@ class SendClusterRunningNotification implements ShouldQueue
     {
         $cluster = $this->clusters->find($event->clusterId);
 
-        $user = $cluster->findUser();
+        if ($cluster instanceof Cluster) {
 
-        $projectName = $cluster->getAttribute('project')->getAttribute('name');
+            $user = $cluster->findUser();
 
-        $clusterName = $cluster->getAttribute('name');
+            $projectName = $cluster->getAttribute('project')->getAttribute('name');
 
-        $user->notify(new ClusterIsRunning($clusterName, $projectName));
+            $clusterName = $cluster->getAttribute('name');
+
+            $user->notify(new ClusterIsRunning($clusterName, $projectName));
+        }
+
+        throw new Exception("Cluster with the id {$event->clusterId} was not found.");
     }
 }

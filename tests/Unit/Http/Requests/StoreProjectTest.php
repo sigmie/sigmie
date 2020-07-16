@@ -10,7 +10,7 @@ use Tests\TestCase;
 class StoreProjectTest extends TestCase
 {
     /**
-     * @var StoreCluster
+     * @var StoreProject
      */
     private $request;
 

@@ -25,7 +25,7 @@ class ShareUserToViewTest extends TestCase
     use NeedsClosure;
 
     /**
-     * @var RedirectIfHasCluster
+     * @var ShareUserToView
      */
     private $middleware;
 

@@ -24,7 +24,7 @@ class ShareProjectsToViewTest extends TestCase
     use NeedsClosure;
 
     /**
-     * @var RedirectIfHasCluster
+     * @var ShareProjectsToView
      */
     private $middleware;
 

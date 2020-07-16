@@ -18,7 +18,7 @@ class ConfirmSubscriptionTest extends TestCase
     use NeedsNotifiable;
 
     /**
-     * @var ClusterIsRunning
+     * @var ConfirmSubscription
      */
     private $notification;
 

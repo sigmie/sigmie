@@ -18,15 +18,22 @@ class ProjectRepositoryTest extends TestCase
     use NeedsModel;
 
     /**
-     * @var ClusterRepository
+     * @var ProjectRepository
      */
     private $repository;
+
+    /**
+     * @var Project|MockObject
+     */
+    private $model;
 
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->repository = new ProjectRepository($this->model(Project::class));
+        $this->model = $this->model(Project::class);
+
+        $this->repository = new ProjectRepository($this->model);
     }
 
     /**

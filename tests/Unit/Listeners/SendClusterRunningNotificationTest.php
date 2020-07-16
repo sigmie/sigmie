@@ -9,8 +9,10 @@ use App\Events\ClusterWasDestroyed;
 use App\Listeners\SendClusterRunningNotification;
 use App\Models\Cluster;
 use App\Models\Project;
+use App\Models\User;
 use App\Notifications\ClusterIsRunning;
 use App\Repositories\ClusterRepository;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Tests\Helpers\NeedsNotifiable;
 
@@ -19,14 +21,14 @@ class SendClusterRunningNotificationTest extends TestCase
     use NeedsNotifiable;
 
     /**
-     * @var SendClusterDestroyedNotification
+     * @var SendClusterRunningNotification
      */
     private $listener;
 
     /**
-     * @var ClusterWasDestroyed|MockObject
+     * @var ClusterWasBooted|MockObject
      */
-    private $event;
+    private $eventMock;
 
     /**
      * @var ClusterRepository|MockObject
@@ -44,7 +46,7 @@ class SendClusterRunningNotificationTest extends TestCase
     private $clusterId = 0;
 
     /**
-     * @var MockObject|Notifiable
+     * @var MockObject|User
      */
     private $notifiableMock;
 

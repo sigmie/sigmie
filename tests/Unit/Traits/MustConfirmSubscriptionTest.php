@@ -4,28 +4,30 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Traits;
 
+use App\Contracts\MustConfirmSubscription;
 use App\Notifications\ConfirmSubscription;
-use App\Traits\MustConfirmSubscription;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
 class MustConfirmSubscriptionTest extends TestCase
 {
-    /** @var MustConfirmSubscription */
-    private $trait;
+    /**
+     * @var MustConfirmSubscription|MockObject
+     */
+    private $mustConfirmSubscription;
 
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->trait = $this->getMockBuilder(MustConfirmSubscription::class)
+        $this->mustConfirmSubscription = $this->getMockBuilder(MustConfirmSubscription::class)
             ->setMethods([
                 'forceFill',
                 'save',
                 'notify',
-            ])->getMockForTrait();
+            ])->getMock();
 
-        $this->trait->method('forceFill')->willReturnSelf();
+        $this->mustConfirmSubscription->method('forceFill')->willReturnSelf();
     }
 
     /**
@@ -33,9 +35,9 @@ class MustConfirmSubscriptionTest extends TestCase
      */
     public function subscription_confirmed_returns_prop_value()
     {
-        $this->trait->confirmed = false;
+        $this->mustConfirmSubscription->method('getAttribute')->willReturnMap([['confirmed', false]]);
 
-        $this->assertFalse($this->trait->subscriptionConfirmed());
+        $this->assertFalse($this->mustConfirmSubscription->subscriptionConfirmed());
     }
 
     /**
@@ -43,19 +45,19 @@ class MustConfirmSubscriptionTest extends TestCase
      */
     public function confirm_subscription_force_fills_confirmed_value_to_true_and_saves()
     {
-        $this->trait->expects($this->once())->method('forceFill')->with(['confirmed' => true]);
-        $this->trait->expects($this->once())->method('save');
+        $this->mustConfirmSubscription->expects($this->once())->method('forceFill')->with(['confirmed' => true]);
+        $this->mustConfirmSubscription->expects($this->once())->method('save');
 
-        $this->trait->confirmSubscription();
+        $this->mustConfirmSubscription->confirmSubscription();
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function send_confirmation_email_calls_notify_with_notification()
     {
-        $this->trait->expects($this->once())->method('notify')->with(new ConfirmSubscription);
+        $this->mustConfirmSubscription->expects($this->once())->method('notify')->with(new ConfirmSubscription);
 
-        $this->trait->sendConfirmationEmailNotification();
+        $this->mustConfirmSubscription->sendConfirmationEmailNotification();
     }
 }

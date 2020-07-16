@@ -23,7 +23,7 @@ use Tests\Unit\Events\ClusterWasCreatedTest;
 class DestroyClusterTest extends TestCase
 {
     /**
-     * @var CreateCluster
+     * @var DestroyCluster
      */
     private $job;
 

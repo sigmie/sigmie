@@ -8,6 +8,7 @@ use App\Rules\ValidProvider;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use PHPUnit\Framework\Constraint\RegularExpression;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
@@ -24,7 +25,7 @@ class ValidProviderTest  extends TestCase
     private $filesystemMock;
 
     /**
-     * @var string
+     * @var RegularExpression
      */
     private $filePathArgument;
 

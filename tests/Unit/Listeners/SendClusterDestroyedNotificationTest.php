@@ -8,6 +8,7 @@ use App\Events\ClusterWasDestroyed;
 use App\Listeners\SendClusterDestroyedNotification;
 use App\Models\Cluster;
 use App\Models\Project;
+use App\Models\User;
 use App\Repositories\ClusterRepository;
 use Illuminate\Notifications\Notifiable;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -27,7 +28,7 @@ class SendClusterDestroyedNotificationTest extends TestCase
     /**
      * @var ClusterWasDestroyed|MockObject
      */
-    private $event;
+    private $eventMock;
 
     /**
      * @var ClusterRepository|MockObject
@@ -45,7 +46,7 @@ class SendClusterDestroyedNotificationTest extends TestCase
     private $clusterId = 0;
 
     /**
-     * @var MockObject|Notifiable
+     * @var User|MockObject
      */
     private $notifiableMock;
 

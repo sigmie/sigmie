@@ -14,7 +14,7 @@ class MailchimpTest extends TestCase
     private $list = 'bff776aacd';
 
     /**
-     * @var Mailchimp
+     * @var MailchimpList
      */
     private $mailchimp;
 

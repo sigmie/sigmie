@@ -118,9 +118,11 @@ class PollStateTest extends TestCase
     private function createCluster()
     {
         $cluster = $this->model(Cluster::class);
-        $cluster->username = 'foo';
-        $cluster->password = encrypt('bar');
-        $cluster->name = 'baz';
+        $cluster->method('getAttribute')->willReturnMap([
+            ['username', 'foo'],
+            ['password', encrypt('bar')],
+            ['name', 'baz'],
+        ]);
 
         return $cluster;
     }

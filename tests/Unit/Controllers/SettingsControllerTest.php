@@ -78,7 +78,7 @@ class SettingsControllerTest extends TestCase
         $this->requestMock = $this->createMock(Request::class);
         $this->requestMock->expects($this->any())->method('get')->willReturn($this->projectId);
 
-        $this->controller = new SettingsController($this->projectRepositoryMock);
+        $this->controller = new SettingsController;
     }
 
     /**

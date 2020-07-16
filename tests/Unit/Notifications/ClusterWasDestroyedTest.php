@@ -14,7 +14,7 @@ class ClusterWasDestroyedTest extends TestCase
     use NeedsNotifiable;
 
     /**
-     * @var ClusterIsRunning
+     * @var ClusterWasDestroyed
      */
     private $notification;
 

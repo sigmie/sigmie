@@ -17,9 +17,6 @@ class ClusterIsRunning extends Notification implements ShouldQueue
 
     private string $projectName;
 
-    /**
-     * @param int $clusterId
-     */
     public function __construct(string $clusterName, string $projectName)
     {
         $this->clusterName = $clusterName;

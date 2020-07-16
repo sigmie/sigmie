@@ -3,6 +3,7 @@
 namespace Tests\Helpers;
 
 use PHPUnit\Framework\MockObject\MockObject;
+use Closure;
 use Prophecy\Comparator\ClosureComparator;
 
 trait NeedsClosure
@@ -13,7 +14,9 @@ trait NeedsClosure
     private $closureMock;
 
     /**
-     * @var callable|MockObject
+     * @var MockObject
+     *
+     * @method null closure()
      */
     private $callableMock;
 

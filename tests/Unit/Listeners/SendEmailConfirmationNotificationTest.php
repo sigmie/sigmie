@@ -7,7 +7,7 @@ namespace Tests\Unit\Listeners;
 use App\Events\NewsletterSubscriptionWasCreated;
 use App\Listeners\SendEmailConfirmationNotification;
 use App\Models\NewsletterSubscription;
-use App\Traits\MustConfirmSubscription;
+use App\Contracts\MustConfirmSubscription;
 use Mockery\Mock;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;

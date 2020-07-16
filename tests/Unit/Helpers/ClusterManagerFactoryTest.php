@@ -31,7 +31,7 @@ class ClusterManagerFactoryTest extends TestCase
     private $projectId = 99;
 
     /**
-     * @var Project
+     * @var Project|MockObject
      */
     private $project;
 

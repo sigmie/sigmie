@@ -13,7 +13,7 @@ use Tests\TestCase;
 class ClusterValidationControllerTest extends TestCase
 {
     /**
-     * @var ControllersClusterValidationController
+     * @var ClusterValidationController
      */
     private $controller;
 

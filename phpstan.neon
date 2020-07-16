@@ -7,6 +7,9 @@ parameters:
         - app
         - tests
 
+    ignoreErrors:
+    - '/Call to an undefined method.*/'
+
     # The level 8 is the highest level
     level: 5
 

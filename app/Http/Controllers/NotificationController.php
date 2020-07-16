@@ -16,25 +16,18 @@ class NotificationController extends Controller
 {
     public function index()
     {
-        $user = Auth::user();
         $beforeOneWeek = Carbon::now()->subWeek()->toDateString();
 
-        return $user->notifications->where('created_at', '>', $beforeOneWeek)->sortByDesc('created_at')->toArray();
+        return Auth::user()->notifications->where('created_at', '>', $beforeOneWeek)->sortByDesc('created_at')->toArray();
     }
 
     public function show($id)
     {
-        $user = Auth::user();
-
-        return $user->notifications->where('id', $id)->first();
+        return Auth::user()->notifications->where('id', $id)->first();
     }
 
-    public function update(Request $request, $id)
+    public function update($id)
     {
-        $user = Auth::user();
-
-        $notifications = $user->notifications->where('id', $id);
-
-        $notifications->markAsRead();
+        Auth::user()->notifications->firstWhere('id', $id)->markAsRead();
     }
 }
