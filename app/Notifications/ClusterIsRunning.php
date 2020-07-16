@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
-use App\Models\Cluster;
 use App\Models\User;
-use App\Repositories\ClusterRepository;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;

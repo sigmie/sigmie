@@ -117,7 +117,7 @@ class DestroyClusterTest extends TestCase
      */
     public function handle_updates_cluster_state_to_created()
     {
-        $this->clusterRepositoryMock->expects($this->once())->method('update')->with($this->clusterId, ['state' => 'destroyed']);
+        $this->clusterRepositoryMock->expects($this->once())->method('updateTrashed')->with($this->clusterId, ['state' => 'destroyed']);
 
         $this->job->handle($this->clusterRepositoryMock, $this->clusterManagerFactoryMock);
     }

@@ -27,6 +27,11 @@ class Cluster extends Model
         return $this->belongsTo(Project::class);
     }
 
+    public function findUser()
+    {
+        return $this->getAttribute('project')->getAttribute('user');
+    }
+
     public function isOwnedBy(User $user)
     {
         return $this->project->user->id === $user->id;

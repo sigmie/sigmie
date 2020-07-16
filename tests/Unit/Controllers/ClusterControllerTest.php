@@ -118,7 +118,7 @@ class ClusterControllerTest extends TestCase
             'password' => 'bar',
         ]);
 
-        $this->clusterRepositoryMock->expects($this->once())->method('update');
+        $this->clusterRepositoryMock->expects($this->once())->method('updateTrashed');
         $this->clusterRepositoryMock->expects($this->once())->method('restore')->with($this->clusterId);
 
         $response = $this->controller->update($updateRequest, $this->clusterMock);

@@ -49,7 +49,7 @@ class DestroyCluster implements ShouldQueue
 
         $managerFactory->create($projectId)->destroy($coreCluster);
 
-        $clusters->update($clusterId, ['state' => Cluster::DESTROYED]);
+        $clusters->updateTrashed($clusterId, ['state' => Cluster::DESTROYED]);
 
         event(new ClusterWasDestroyed($clusterId));
     }

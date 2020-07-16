@@ -15,6 +15,11 @@ class ClusterRepository extends BaseRepository implements TrashableRepository
         parent::__construct($cluster);
     }
 
+    public function updateTrashed(int $id, array $values): bool
+    {
+        return $this->model->withTrashed()->where('id', $id)->first()->update($values);
+    }
+
     public function findTrashed(int $id): ?Cluster
     {
         return $this->model->withTrashed()->where('id', $id)->first();

@@ -119,7 +119,7 @@ export default {
         nodes_count: this.nodes,
         username: this.username,
         password: this.password,
-        dataCenter: this.dataCenter.id,
+        data_center: this.dataCenter.id,
         project_id: this.$page.project_id
       };
 

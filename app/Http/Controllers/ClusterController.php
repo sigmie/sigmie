@@ -61,7 +61,7 @@ class ClusterController extends Controller
         $validated = $request->validated();
         $clusterId = $cluster->getAttribute('id');
 
-        $this->clusters->update($clusterId, [
+        $this->clusters->updateTrashed($clusterId, [
             'data_center' => $validated['data_center'],
             'nodes_count' => $validated['nodes_count'],
             'username' => $validated['username'],

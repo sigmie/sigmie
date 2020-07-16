@@ -5,22 +5,29 @@ declare(strict_types=1);
 namespace App\Listeners;
 
 use App\Events\ClusterWasBooted;
-use App\Notifications\ClusterIsRunning as ClusterIsRunningNotification;
+use App\Notifications\ClusterIsRunning;
 use App\Repositories\ClusterRepository;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class SendClusterRunningNotification implements ShouldQueue
 {
-    public function handle(ClusterWasBooted $event, ClusterRepository $clusters): void
-    {
-        $cluster = $clusters->find($event->clusterId);
+    private ClusterRepository $clusters;
 
-        $user = $cluster->getAttribute('user');
+    public function __construct(ClusterRepository $clusters)
+    {
+        $this->clusters = $clusters;
+    }
+
+    public function handle(ClusterWasBooted $event): void
+    {
+        $cluster = $this->clusters->find($event->clusterId);
+
+        $user = $cluster->findUser();
 
         $projectName = $cluster->getAttribute('project')->getAttribute('name');
 
         $clusterName = $cluster->getAttribute('name');
 
-        $user->notify(new ClusterIsRunningNotification($clusterName, $projectName));
+        $user->notify(new ClusterIsRunning($clusterName, $projectName));
     }
 }
