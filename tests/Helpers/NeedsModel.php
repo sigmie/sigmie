@@ -24,6 +24,7 @@ trait NeedsModel
 
         $methods = [
             'withTrashed',
+            'firstOrCreate',
             'where',
             'first',
             'create',

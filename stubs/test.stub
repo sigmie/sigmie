@@ -12,14 +12,10 @@ class {{ class }} extends TestCase
     use DatabaseTransactions;
 
     /**
-     * A basic feature test example.
-     *
-     * @return void
-     */
-    public function testExample()
+    * @test
+    */
+    public function foo()
     {
-        $response = $this->get('/');
-
-        $response->assertStatus(200);
+        $this->assertTrue(false);
     }
 }

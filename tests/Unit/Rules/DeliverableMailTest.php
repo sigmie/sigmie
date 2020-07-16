@@ -127,4 +127,12 @@ class DeliverableMailTest extends TestCase
 
         $this->assertFalse($this->rule->passes('email', 'example.com'));
     }
+
+    /**
+     * @test
+     */
+    public function validation_message()
+    {
+        $this->assertEquals('The email address is not deliverable or is a disposable one.', $this->rule->message());
+    }
 }

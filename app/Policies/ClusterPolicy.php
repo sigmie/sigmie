@@ -7,6 +7,8 @@ namespace App\Policies;
 use App\Models\Cluster;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Auth\Access\Response;
+
 
 class ClusterPolicy
 {

@@ -10,7 +10,7 @@ class Project extends Model
 {
     public function clusters()
     {
-        return $this->hasMany(Cluster::class);
+        return $this->hasMany(Cluster::class)->withTrashed();
     }
 
     public function apiTokens()

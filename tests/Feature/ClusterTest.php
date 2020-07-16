@@ -45,4 +45,16 @@ class ClusterTest extends TestCase
 
         $this->assertFalse($cluster->isOwnedBy($user));
     }
+
+    /**
+     * @test
+     */
+    public function find_user_returns_user_instance()
+    {
+        $cluster = factory(Cluster::class)->make();
+        $user = $cluster->project->user;
+
+        $this->assertInstanceOf(User::class, $cluster->findUser());
+        $this->assertEquals($cluster->findUser()->getAttribute('id'), $user->getAttribute('id'));
+    }
 }
