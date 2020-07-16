@@ -11,6 +11,6 @@ class DashboardGate
 {
     public function view(User $user, Project $project)
     {
-        return $project->user_id === $user->id;
+        return $project->getAttribute('user_id') === $user->getAttribute('id');
     }
 }

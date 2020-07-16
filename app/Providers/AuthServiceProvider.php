@@ -26,7 +26,6 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         Gate::define('view-dashboard', $this->classMethodCallback(DashboardGate::class, 'view'));
-        Gate::define('create-cluster', $this->classMethodCallback(ClusterGate::class, 'create'));
     }
 
     private function classMethodCallback($class, $method)

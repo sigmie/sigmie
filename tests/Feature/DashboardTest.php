@@ -38,6 +38,25 @@ class DashboardTest extends TestCase
     /**
      * @test
      */
+    public function user_can_see_dashboard_only_from_owned_project()
+    {
+        $project = factory(Project::class)->create();
+        $user = factory(User::class)->create();
+
+        $this->actingAs($user);
+
+        $response = $this->get(route('dashboard', ['project' => $project->getAttribute('id')]));
+        $response->assertForbidden();
+
+        $this->actingAs($project->getAttribute('user'));
+
+        $response = $this->get(route('dashboard', ['project' => $project->getAttribute('id')]));
+        $response->assertSuccessful();
+    }
+
+    /**
+     * @test
+     */
     public function redirect_to_create_project_if_no_project_exists()
     {
         $user = factory(User::class)->create();
