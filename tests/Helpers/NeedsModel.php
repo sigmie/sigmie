@@ -28,6 +28,7 @@ trait NeedsModel
             'first',
             'create',
             'delete',
+            'getAttribute',
             'find',
             'all',
             'save',

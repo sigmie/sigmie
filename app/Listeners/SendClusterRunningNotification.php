@@ -33,6 +33,8 @@ class SendClusterRunningNotification implements ShouldQueue
             $clusterName = $cluster->getAttribute('name');
 
             $user->notify(new ClusterIsRunning($clusterName, $projectName));
+
+            return;
         }
 
         throw new Exception("Cluster with the id {$event->clusterId} was not found.");

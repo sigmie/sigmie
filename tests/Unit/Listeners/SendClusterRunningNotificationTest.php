@@ -82,7 +82,6 @@ class SendClusterRunningNotificationTest extends TestCase
         $this->clusterMock->method('findUser')->willReturn($this->notifiableMock);
 
         $this->clusterRepositoryMock = $this->createMock(ClusterRepository::class);
-        $this->clusterRepositoryMock->method('find')->willReturn($this->clusterMock);
 
         $this->listener = new SendClusterRunningNotification($this->clusterRepositoryMock);
     }
@@ -92,7 +91,7 @@ class SendClusterRunningNotificationTest extends TestCase
      */
     public function handle_finds_trashed_cluster_and_notifies_cluster_user()
     {
-        $this->clusterRepositoryMock->expects($this->once())->method('find')->with($this->clusterId);
+        $this->clusterRepositoryMock->expects($this->once())->method('find')->with($this->clusterId)->willReturn($this->clusterMock);
         $this->notifiableMock->expects($this->once())->method('notify')->with(new ClusterIsRunning($this->clusterName, $this->projectName));
 
         $this->listener->handle($this->eventMock);

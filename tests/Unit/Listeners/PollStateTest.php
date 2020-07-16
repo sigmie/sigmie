@@ -77,7 +77,7 @@ class PollStateTest extends TestCase
      */
     public function handle_make_call_updates_state_on_200_response_and_triggers_cluster_was_booted_event()
     {
-        $this->clusterCallWillReturn(200);
+        $this->clusterCallWillReturn(true);
 
         $this->repository->expects($this->once())->method('update')->with(0, ['state' => 'running']);
 
@@ -95,7 +95,7 @@ class PollStateTest extends TestCase
     {
         $this->expectException(Exception::class);
 
-        $this->clusterCallWillReturn(500);
+        $this->clusterCallWillReturn(false);
 
         $this->listener->handle($this->eventMock);
     }
@@ -109,7 +109,8 @@ class PollStateTest extends TestCase
 
         Http::shouldReceive('withBasicAuth')->once()->with('foo', 'bar')->andReturnSelf();
         Http::shouldReceive('timeout')->once()->with(3)->andReturnSelf();
-        Http::shouldReceive('get')->with("https://baz.{$this->domain}")->andReturn($this->responseWithCode(200));
+        Http::shouldReceive('get')->with("https://baz.{$this->domain}")->andReturnSelf();
+        Http::shouldReceive('successful')->once()->andReturn(true);
 
         $this->listener->handle($this->eventMock);
     }
@@ -127,11 +128,12 @@ class PollStateTest extends TestCase
         return $cluster;
     }
 
-    private function clusterCallWillReturn($code)
+    private function clusterCallWillReturn($success)
     {
         Http::shouldReceive('withBasicAuth')->andReturnSelf();
         Http::shouldReceive('timeout')->andReturnSelf();
-        Http::shouldReceive('get')->andReturn($this->responseWithCode($code));
+        Http::shouldReceive('get')->andReturnSelf();
+        Http::shouldReceive('successful')->andReturn($success);
     }
 
     private function responseWithCode(int $code)

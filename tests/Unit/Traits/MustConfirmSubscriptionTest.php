@@ -6,6 +6,7 @@ namespace Tests\Unit\Traits;
 
 use App\Contracts\MustConfirmSubscription;
 use App\Notifications\ConfirmSubscription;
+use App\Traits\MustConfirmSubscription as MustConfirmSubscriptionTrait;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
@@ -20,14 +21,9 @@ class MustConfirmSubscriptionTest extends TestCase
     {
         parent::setUp();
 
-        $this->mustConfirmSubscription = $this->getMockBuilder(MustConfirmSubscription::class)
-            ->setMethods([
-                'forceFill',
-                'save',
-                'notify',
-            ])->getMock();
-
-        $this->mustConfirmSubscription->method('forceFill')->willReturnSelf();
+        $this->mustConfirmSubscription = $this->getMockBuilder(MustConfirmSubscriptionTrait::class)->addMethods([
+            'forceFill', 'notify', 'save', 'getAttribute'
+        ])->getMockForTrait();
     }
 
     /**
@@ -35,6 +31,7 @@ class MustConfirmSubscriptionTest extends TestCase
      */
     public function subscription_confirmed_returns_prop_value()
     {
+        $this->mustConfirmSubscription->method('forceFill')->willReturnSelf();
         $this->mustConfirmSubscription->method('getAttribute')->willReturnMap([['confirmed', false]]);
 
         $this->assertFalse($this->mustConfirmSubscription->subscriptionConfirmed());
@@ -45,6 +42,7 @@ class MustConfirmSubscriptionTest extends TestCase
      */
     public function confirm_subscription_force_fills_confirmed_value_to_true_and_saves()
     {
+        $this->mustConfirmSubscription->method('forceFill')->willReturnSelf();
         $this->mustConfirmSubscription->expects($this->once())->method('forceFill')->with(['confirmed' => true]);
         $this->mustConfirmSubscription->expects($this->once())->method('save');
 
@@ -56,6 +54,7 @@ class MustConfirmSubscriptionTest extends TestCase
      */
     public function send_confirmation_email_calls_notify_with_notification()
     {
+        $this->mustConfirmSubscription->method('forceFill')->willReturnSelf();
         $this->mustConfirmSubscription->expects($this->once())->method('notify')->with(new ConfirmSubscription);
 
         $this->mustConfirmSubscription->sendConfirmationEmailNotification();

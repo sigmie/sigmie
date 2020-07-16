@@ -10,7 +10,7 @@ trait MustConfirmSubscription
 {
     public function subscriptionConfirmed(): bool
     {
-        return $this->confirmed;
+        return $this->getAttribute('confirmed');
     }
 
     public function confirmSubscription(): void
