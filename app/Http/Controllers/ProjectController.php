@@ -21,9 +21,6 @@ class ProjectController extends Controller
         $this->authorizeResource(Project::class, 'project');
     }
 
-    /**
-     * Project create page
-     */
     public function create()
     {
         return Inertia::render('project/create');
@@ -31,13 +28,14 @@ class ProjectController extends Controller
 
     public function store(StoreProject $request)
     {
-        $credentials = json_decode($request->get('provider')['creds'], true);
-        $provider = $request->get('provider')['id'];
+        $validated = $request->validated();
+        $credentials = json_decode($validated['provider']['creds'], true);
+        $provider = $validated['provider']['id'];
         $userId = Auth::user()->getAttribute('id');
 
         $this->projects->create([
-            'name' => $request->get('name'),
-            'description' => $request->get('description'),
+            'name' => $validated['name'],
+            'description' => $validated['description'],
             'creds' => encrypt($credentials),
             'provider' => $provider,
             'user_id' => $userId

@@ -53,14 +53,11 @@ class ProjectControllerTest extends TestCase
         $this->projectRepositoryMock = $this->createMock(ProjectRepository::class);
 
         $this->requestMock = $this->createMock(StoreProject::class);
-        // Null is the second default parameter
-        $this->requestMock->expects($this->any())
-            ->method('get')
-            ->willReturnMap([
-                ['name', null, 'foo'],
-                ['description', null, 'bar'],
-                ['provider', null, ['creds' => '{"foo":"bar"}', 'id' => 'cloud']]
-            ]);
+        $this->requestMock->expects($this->any())->method('validated')->willReturn([
+            'name' => 'foo',
+            'description' => 'bar',
+            'provider' => ['creds' => '{"foo":"bar"}', 'id' => 'cloud']
+        ]);
 
         $this->controller = new ProjectController($this->projectRepositoryMock);
     }

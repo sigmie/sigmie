@@ -8,12 +8,11 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 class ProjectTest extends TestCase
 {
-    use DatabaseTransactions;
-
     /**
      * @test
      */
@@ -42,5 +41,33 @@ class ProjectTest extends TestCase
         $project = factory(Project::class)->make();
 
         $this->assertInstanceOf(HasMany::class, $project->clusters());
+    }
+
+    /**
+     * @test
+     */
+    public function project_store_action()
+    {
+        Config::set('override.provider.rule', true);
+
+        $user = factory(User::class)->create();
+
+        $this->actingAs($user);
+
+        $response = $this->post(route('project.store'), [
+            'name' => 'foo',
+            'description' => 'bar',
+            'provider' => ['id' => 'google', 'creds' => '[]'],
+            'user_id' => $user->getAttribute('id')
+        ]);
+
+        $response->assertRedirect(route('cluster.create'));
+
+        $this->assertDatabaseHas('projects', [
+            'name' => 'foo',
+            'description' => 'bar',
+            'provider' => 'google',
+            'user_id' => $user->getAttribute('id')
+        ]);
     }
 }

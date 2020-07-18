@@ -36,7 +36,8 @@ class StoreProjectTest extends TestCase
     {
         $expected = [
             'name' => ['required', 'regex:/^[a-zA-Z0-9-_]*$/i'],
-            'provider' => [new ValidProvider]
+            'provider' => [new ValidProvider],
+            'description' => []
         ];
 
         $this->assertEquals($expected, $this->request->rules());
