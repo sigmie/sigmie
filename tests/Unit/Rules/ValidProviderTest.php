@@ -35,7 +35,7 @@ class ValidProviderTest  extends TestCase
 
         $this->filesystemMock = $this->createMock(FilesystemAdapter::class);
 
-        Storage::shouldReceive('disk')->once()->with('local')->andReturn($this->filesystemMock);
+        Storage::shouldReceive('disk')->with('local')->andReturn($this->filesystemMock);
 
         $this->filePathArgument = $this->matchesRegularExpression('/temp\/.*\.json$/');
 

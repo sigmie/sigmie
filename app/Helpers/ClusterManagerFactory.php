@@ -7,11 +7,8 @@ namespace App\Helpers;
 use App\Models\Project;
 use App\Repositories\ClusterRepository;
 use App\Repositories\ProjectRepository;
+use App\Traits\InitializesGoogleFactory;
 use Exception;
-use Illuminate\Filesystem\FilesystemAdapter;
-use Illuminate\Support\Facades\Storage;
-use League\Flysystem\Adapter\AbstractAdapter;
-use League\Flysystem\Filesystem;
 use Sigmie\App\Core\CloudflareFactory;
 use Sigmie\App\Core\Contracts\ClusterManager as ClusterManagerInterface;
 use Sigmie\App\Core\ClusterManager;
@@ -21,14 +18,13 @@ use Sigmie\App\Core\GoogleFactory;
 
 class ClusterManagerFactory
 {
-    private ProjectRepository $projects;
+    use InitializesGoogleFactory;
 
-    private FilesystemAdapter $filesystem;
+    private ProjectRepository $projects;
 
     public function __construct(ProjectRepository $projectRepository)
     {
         $this->projects = $projectRepository;
-        $this->filesystem = Storage::disk('local');
     }
 
     public function create(int $projectId): ClusterManagerInterface
@@ -85,10 +81,6 @@ class ClusterManagerFactory
         $serviceAccount = decrypt($project->getAttribute('creds'));
         $path = "creds/{$projectId}.json";
 
-        $this->filesystem->put($path, json_encode($serviceAccount));
-
-        $fullPath = $this->filesystem->path($path);
-
-        return new GoogleFactory($fullPath);
+        return $this->newGoogleFactory($path, json_encode($serviceAccount));
     }
 }

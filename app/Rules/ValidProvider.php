@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
+use App\Traits\InitializesGoogleFactory;
 use Exception;
 use Google_Client;
 use Google_Service_Compute;
@@ -12,15 +13,11 @@ use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Sigmie\App\Core\Cloud\Providers\Google\Google;
+use Sigmie\App\Core\GoogleFactory;
 
 class ValidProvider implements Rule
 {
-    private FilesystemAdapter $filesystem;
-
-    public function __construct()
-    {
-        $this->filesystem = Storage::disk('local');
-    }
+    use InitializesGoogleFactory;
 
     /**
      * Determine if the validation rule passes.
@@ -47,19 +44,14 @@ class ValidProvider implements Rule
         $filename = Str::random(40) . '.json';
         $path = "temp/{$filename}";
 
-        $this->filesystem->put($path, $serviceAccount);
-
-        $fullPath = $this->filesystem->path($path);
-
         try {
-            $provider = new Google($fullPath, new Google_Service_Compute(new Google_Client()));
-
+            $provider = $this->newGoogleFactory($path, $serviceAccount)->create();
             $result = $provider->isActive();
         } catch (Exception $exception) {
             $result = false;
         }
 
-        $this->filesystem->delete($path);
+        $this->googleFactoryCleanUp();
 
         return $result;
     }
