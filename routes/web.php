@@ -11,11 +11,8 @@
 |
 */
 
-use App\Events\ClusterWasCreated;
 use App\Http\Middleware\AssignProject;
-use App\Http\Middleware\RedirectIfHasCluster;
 use App\Http\Middleware\ShareProjectToView;
-use App\Listeners\PollState;
 
 $launched = true;
 

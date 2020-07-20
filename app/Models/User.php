@@ -14,7 +14,6 @@ class User extends Authenticatable
 {
     use Notifiable;
     use Billable;
-    use HasApiTokens;
 
     protected $fillable = [
         'email', 'username', 'password', 'avatar_url', 'github',
