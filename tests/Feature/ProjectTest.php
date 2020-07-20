@@ -26,16 +26,6 @@ class ProjectTest extends TestCase
     /**
      * @test
      */
-    public function project_api_tokens_returns_has_many()
-    {
-        $project = factory(Project::class)->make();
-
-        $this->assertInstanceOf(HasMany::class, $project->apiTokens());
-    }
-
-    /**
-     * @test
-     */
     public function project_clusters_returns_has_many()
     {
         $project = factory(Project::class)->make();

@@ -13,11 +13,6 @@ class Project extends Model
         return $this->hasMany(Cluster::class)->withTrashed();
     }
 
-    public function apiTokens()
-    {
-        return $this->hasMany(ApiToken::class);
-    }
-
     public function user()
     {
         return $this->belongsTo(User::class);
