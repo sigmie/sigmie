@@ -20,6 +20,12 @@ jobs:
         MYSQL_PASSWORD: password
         MYSQL_ROOT_PASSWORD: password
 
+     es:
+      image: docker.elastic.co/elasticsearch/elasticsearch:7.8.0
+      ports:
+      - 9200:9200
+      options: -e="discovery.type=single-node" --health-cmd="curl http://localhost:9200/_cluster/health" --health-interval=10s --health-timeout=5s --health-retries=10
+
      redis:
       image: bitnami/redis:latest
       ports:
@@ -60,6 +66,7 @@ jobs:
       run: |
           sudo sh -c "echo 127.0.0.1 redis.internal.mos-sigma.com >> /etc/hosts"
           sudo sh -c "echo 127.0.0.1 db.internal.mos-sigma.com >> /etc/hosts"
+          sudo sh -c "echo 127.0.0.1 es.internal.mos-sigma.com >> /etc/hosts"
 
     - name: Install curl zip
       run: sudo apt-get update && sudo apt-get install -y curl zip
