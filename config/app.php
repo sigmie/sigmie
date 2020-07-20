@@ -14,6 +14,10 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'app_domain' => env('APP_DOMAIN', 'app.sigmie.com'),
+
+    'proxy_domain' => env('PROXY_DOMAIN', 'proxy.sigmie.com'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

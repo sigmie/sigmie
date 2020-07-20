@@ -46,8 +46,7 @@ class RouteServiceProvider extends ServiceProvider
         $this->mapProxyRoutes();
     }
 
-    /**
-     * Define the "web" routes for the application.
+    /** * Define the "web" routes for the application.
      *
      * These routes all receive session state, CSRF protection, etc.
      *
@@ -56,6 +55,7 @@ class RouteServiceProvider extends ServiceProvider
     protected function mapWebRoutes()
     {
         Route::middleware('web')
+            ->domain(config('app.app_domain'))
             ->namespace($this->namespace)
             ->group(base_path('routes/web.php'));
     }
@@ -94,6 +94,7 @@ class RouteServiceProvider extends ServiceProvider
     protected function mapProxyRoutes()
     {
         Route::middleware('proxy')
+            ->domain(config('app.proxy_domain'))
             ->namespace($this->namespace)
             ->group(base_path('routes/proxy.php'));
     }

@@ -11,6 +11,4 @@
 |
 */
 
-Route::group(['domain' => 'proxy.localhost'], function () {
-    Route::get('/{any?}/{cluster?}', 'ProxyController')->where('any', '.*');
-});
+Route::get('/{endpoint?}/{cluster?}', 'ProxyController')->where('endpoint', '.*');

@@ -10,16 +10,8 @@ class ProxyController extends Controller
     /**
      * Proxy pass the incoming request to the Elasticsearch
      */
-    public function __invoke(string $endpoint, Cluster $cluster)
+    public function __invoke(Cluster $cluster, string $endpoint = '')
     {
-        $url = "http://es:9200/";
-
-        dispatch(fn () => dump('log the request'));
-
-        $response = Http::withBasicAuth('', '')->timeout(3)->get($url . $endpoint);
-
-        dispatch(fn () => dump('log the response'));
-
-        return $response->json();
+        return [];
     }
 }

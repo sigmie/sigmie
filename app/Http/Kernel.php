@@ -54,8 +54,8 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class
         ],
         'proxy' => [
-            'auth:sanctum',
-            \App\Http\Middleware\ProxyRequest::class
+            \App\Http\Middleware\ProxyRequest::class,
+            'auth:sanctum'
         ]
     ];
 
