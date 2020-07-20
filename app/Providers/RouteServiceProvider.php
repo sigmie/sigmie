@@ -42,6 +42,8 @@ class RouteServiceProvider extends ServiceProvider
         $this->mapWebRoutes();
 
         $this->mapAjaxRoutes();
+
+        $this->mapProxyRoutes();
     }
 
     /**
@@ -86,5 +88,21 @@ class RouteServiceProvider extends ServiceProvider
             ->middleware('ajax')
             ->namespace($this->namespace)
             ->group(base_path('routes/ajax.php'));
+    }
+
+
+    /**
+     * Define the "ajax" routes for the application.
+     *
+     * These routes are typically stateless.
+     *
+     * @return void
+     */
+    protected function mapProxyRoutes()
+    {
+        Route::prefix('proxy')
+            ->middleware('proxy')
+            ->namespace($this->namespace)
+            ->group(base_path('routes/proxy.php'));
     }
 }

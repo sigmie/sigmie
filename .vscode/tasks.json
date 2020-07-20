@@ -6,7 +6,7 @@
         {
             "label": "php artisan",
             "type": "shell",
-            "command": "php artisan"
+            "command": "php artisan ${input:params}"
         },
         {
             "label": "artisan:test",

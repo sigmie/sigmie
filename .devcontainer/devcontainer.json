@@ -12,18 +12,8 @@
     "overrideCommand": false,
     "extensions": [
         "chenxsan.vscode-standardjs",
-        "felixfbecker.php-debug",
-        "ms-azuretools.vscode-docker",
         "bradlc.vscode-tailwindcss",
-        "eamodio.gitlens",
-        "njpwerner.autodocstring",
-        "mishkinf.vscode-edits-history",
-        "phproberto.vscode-php-getters-setters",
-        "shd101wyy.markdown-preview-enhanced",
-        "neilbrayfield.php-docblocker",
-        "bmewburn.vscode-intelephense-client",
-        "onecentlin.laravel-extension-pack",
-        "codingyu.laravel-goto-view",
-        "octref.vetur"
+        "octref.vetur",
+        "amiralizadeh9480.laravel-extra-intellisense"
     ]
 }
