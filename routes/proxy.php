@@ -11,4 +11,4 @@
 |
 */
 
-Route::get('/{endpoint?}/{cluster?}', 'ProxyController')->where('endpoint', '.*');
+Route::any('/{endpoint?}/{cluster?}', 'ProxyController')->where('endpoint', '.*');
