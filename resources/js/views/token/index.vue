@@ -33,14 +33,17 @@
                   <div class="flex items-center">
                     <div class>
                       <div class="text-sm leading-5 font-medium text-gray-900">{{ token.name }}</div>
-                      <div class="text-sm leading-5 text-gray-500" v-if="token.name === 'Admin'">
+                      <div
+                        class="text-sm leading-5 text-gray-500 hidden md:block"
+                        v-if="token.name === 'Admin'"
+                      >
                         This is the API key
                         <b>only</b> in your backend.
                       </div>
-                      <div
-                        class="text-sm leading-5 text-gray-500"
-                        v-else
-                      >This is the public API key to use in your frontend code.</div>
+                      <div class="text-sm leading-5 text-gray-500 hidden md:block" v-else>
+                        This is the public API key to use in
+                        <br />your frontend code.
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -56,35 +59,60 @@
                 </td>
                 <td
                   v-if="token.value"
-                  class="px-6 py-4 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 text-gray-500 max-w-sm overflow-x-scroll"
+                  class="px-6 py-4 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 text-gray-500 overflow-x-scroll"
                 >
-                  <input
-                    type="text"
+                  <textarea
                     @click="selectElement"
+                    rows="5"
+                    col="20"
                     readonly
                     :value="token.value"
-                    class="focus:outline-none"
+                    class="focus:outline-none resize-none p-1"
                   />
                 </td>
                 <td
                   v-else
-                  class="px-6 py-4 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 text-gray-500"
-                >****************</td>
+                  class="px-6 py-4 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 text-gray-400 italic"
+                >hidden</td>
                 <td
-                  class="px-6 py-4 whitespace-no-wrap text-right border-b border-gray-200 text-sm leading-5 font-medium"
+                  class="px-6 py-4 whitespace-no-wrap text-right border-b border-gray-200 text-sm leading-5 font-medium w-8"
                 >
                   <a
                     v-if="token.value"
                     v-clipboard="()=> token.value"
                     v-clipboard:success="() => onCopy(index)"
                     href="#"
-                    class="text-indigo-600 hover:text-indigo-900 cursor-pointer"
+                    class="text-orange-500 cursor-pointer hidden md:block"
                   >{{ token.actionText }}</a>
+
                   <a
                     v-else
                     @click="() => regenerate(token.id, token.cluster_id, index)"
-                    class="text-indigo-600 hover:text-indigo-900 cursor-pointer"
+                    class="text-orange-500 cursor-pointer hidden md:block"
                   >Regenerate</a>
+
+                  <a
+                    v-if="token.value"
+                    v-clipboard="()=> token.value"
+                    v-clipboard:success="() => onCopy(index)"
+                    href="#"
+                    class="text-orange-500 cursor-pointer"
+                  >
+                    <component
+                      class="text-orange-500 cursor-pointer h-5 block md:hidden"
+                      :is="'icon-'+token.actionIcon"
+                    ></component>
+                  </a>
+                  <a
+                    v-else
+                    @click="() => regenerate(token.id, token.cluster_id, index)"
+                    class="text-orange-500 cursor-pointer"
+                  >
+                    <component
+                      class="text-orange-500 cursor-pointer h-5 block md:hidden"
+                      :is="'icon-'+token.actionIcon"
+                    ></component>
+                  </a>
                 </td>
               </tr>
             </tbody>
@@ -113,13 +141,15 @@ export default {
   mounted() {
     forEach(this.tokens, (value, key) => {
       value.actionText = "Copy";
+      value.actionIcon = "duplicate";
       this.reactiveTokens[key] = value;
     });
   },
   methods: {
-    updateActionText(index, text) {
+    updateAction(index, text, icon) {
       let tokens = this.reactiveTokens;
       tokens[index].actionText = text;
+      tokens[index].actionIcon = icon;
       this.reactiveTokens = tokens;
 
       this.$forceUpdate();
@@ -128,12 +158,13 @@ export default {
       event.target.select();
     },
     onCopy(index) {
-      this.updateActionText(index, "Copied!");
+      this.updateAction(index, "Copied!", "check-circle");
 
-      delay(([self, index]) => self.updateActionText(index, "Copy"), 300, [
-        this,
-        index
-      ]);
+      delay(
+        ([self, index]) => self.updateAction(index, "Copy", "duplicate"),
+        300,
+        [this, index]
+      );
     },
     async regenerate(tokenId, clusterId, index) {
       let response = await this.$http.put(
@@ -145,12 +176,13 @@ export default {
 
       this.reactiveTokens[index].value = response.data;
 
-      this.updateActionText(index, "Regenerated!");
+      this.updateAction(index, "Regenerated!", "check-circle");
 
-      delay(([self, index]) => self.updateActionText(index, "Copy"), 300, [
-        this,
-        index
-      ]);
+      delay(
+        ([self, index]) => self.updateAction(index, "Copy", "duplicate"),
+        300,
+        [this, index]
+      );
     }
   }
 };
