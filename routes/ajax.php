@@ -16,3 +16,5 @@ Route::resource('/notification', 'NotificationController', ['except' => ['edit',
 Route::get('/cluster/validate/name/{name}', 'ClusterValidationController@name')->name('cluster.validate.name');
 
 Route::post('/project/validate/provider', 'ProjectValidationController@provider')->name('project.validate.provider');
+
+Route::put('/tokens/{cluster}/{token}', 'ClusterTokenController@update')->name('token.update');

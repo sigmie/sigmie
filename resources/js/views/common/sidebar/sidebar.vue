@@ -108,7 +108,7 @@ export default {
         },
         {
           text: "API tokens",
-          name: "api-token.index",
+          name: "token.index",
           routeParams: [],
           icon: "key"
         },

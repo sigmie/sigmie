@@ -7,11 +7,13 @@ import route from 'ziggy'
 import { InertiaApp } from '@inertiajs/inertia-vue'
 import Pusher from 'pusher-js'
 import { Ziggy } from './routes'
+import Clipboard from 'v-clipboard'
 
 window.Pusher = Pusher
 
 Vue.use(InertiaApp)
 Vue.use(Vuelidate)
+Vue.use(Clipboard)
 
 Vue.prototype.$http = axios.create({
   baseURL: process.env.MIX_APP_URL + '/ajax/',

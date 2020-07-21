@@ -62,7 +62,7 @@ if ($launched === true) {
 
             Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard')->middleware(AssignProject::class);
 
-            Route::get('/api-tokens', 'ApiTokenController@index')->name('api-token.index');
+            Route::get('/tokens/{project?}', 'ClusterTokenController@index')->name('token.index')->middleware(AssignProject::class);
 
             Route::get('/settings/{project?}', 'SettingsController@index')->name('settings')->middleware(AssignProject::class);
 

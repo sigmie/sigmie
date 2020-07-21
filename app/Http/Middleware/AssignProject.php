@@ -16,7 +16,7 @@ class AssignProject
     {
         $project = $request->route('project');
 
-        if ($project instanceof Project) {
+        if ($project !== null) {
             return $next($request);
         }
 
@@ -31,6 +31,7 @@ class AssignProject
 
             return redirect()->route($routeName, ['project' => $projectId]);
         }
+
 
         return redirect()->route('project.create');
     }
