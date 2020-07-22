@@ -80,6 +80,6 @@ class ClusterTokenController extends Controller
 
         $oldToken->delete();
 
-        return $newToken->plainTextToken;
+        return ['value' => $newToken->plainTextToken, 'id' => $newToken->accessToken->getAttribute('id')];
     }
 }

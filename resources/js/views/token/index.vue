@@ -48,49 +48,54 @@
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
-                  <span
+                  <div
                     @click="()=> toogleActive(token.id, token.cluster_id, index)"
                     v-if="token.active"
-                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 cursor-pointer"
-                  >Active</span>
-                  <span
+                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 cursor-pointer w-16 text-center"
+                  >
+                    <span class="mx-auto">Active</span>
+                  </div>
+                  <div
                     @click="()=> toogleActive(token.id, token.cluster_id, index)"
                     v-else
-                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 cursor-pointer"
-                  >Inactive</span>
+                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 cursor-pointer w-16 text-center"
+                  >
+                    <span class="mx-auto">Inactive</span>
+                  </div>
                 </td>
                 <td
                   v-if="token.value"
-                  class="px-6 py-4 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 text-gray-500 overflow-x-scroll"
+                  class="px-6 py-1 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 text-gray-500"
                 >
                   <textarea
                     @click="selectElement"
-                    rows="5"
-                    col="20"
+                    rows="2"
                     readonly
                     :value="token.value"
-                    class="focus:outline-none resize-none p-1"
+                    class="focus:outline-none resize-none p-1 w-96"
                   />
                 </td>
                 <td
                   v-else
-                  class="px-6 py-4 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 text-gray-400 italic"
-                >hidden</td>
+                  class="px-6 py-4 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 text-gray-400"
+                >
+                  <div class="italic w-10 md:w-96">hidden</div>
+                </td>
                 <td
-                  class="px-6 py-4 whitespace-no-wrap text-right border-b border-gray-200 text-sm leading-5 font-medium w-8"
+                  class="pr-2 md:px-6 py-4 whitespace-no-wrap text-right border-b border-gray-200 text-sm leading-5 font-medium w-60"
                 >
                   <a
                     v-if="token.value"
                     v-clipboard="()=> token.value"
                     v-clipboard:success="() => onCopy(index)"
                     href="#"
-                    class="text-orange-500 cursor-pointer hidden md:block"
+                    class="text-orange-500 cursor-pointer hidden md:block w-full"
                   >{{ token.actionText }}</a>
 
                   <a
                     v-else
                     @click="() => regenerate(token.id, token.cluster_id, index)"
-                    class="text-orange-500 cursor-pointer hidden md:block"
+                    class="text-orange-500 cursor-pointer hidden md:block w-full"
                   >Regenerate</a>
 
                   <a
@@ -101,7 +106,7 @@
                     class="text-orange-500 cursor-pointer"
                   >
                     <component
-                      class="text-orange-500 cursor-pointer h-5 block md:hidden"
+                      class="text-orange-500 cursor-pointer h-5 block md:hidden w-full"
                       :is="'icon-'+token.actionIcon"
                     ></component>
                   </a>
@@ -111,7 +116,7 @@
                     class="text-orange-500 cursor-pointer"
                   >
                     <component
-                      class="text-orange-500 cursor-pointer h-5 block md:hidden"
+                      class="text-orange-500 cursor-pointer h-5 block md:hidden w-full"
                       :is="'icon-'+token.actionIcon"
                     ></component>
                   </a>
@@ -140,10 +145,10 @@ export default {
       reactiveTokens: {}
     };
   },
-  mounted() {
+  beforeMount() {
     forEach(this.tokens, (value, key) => {
       value.actionText = "Copy";
-      value.actionIcon = "duplicate";
+      value.actionIcon = value.value ? "duplicate" : "refresh";
       this.reactiveTokens[key] = value;
     });
   },
@@ -176,7 +181,7 @@ export default {
         })
       );
 
-      this.reactiveTokens[index].active = (response.data === 1);
+      this.reactiveTokens[index].active = response.data === 1;
 
       this.$forceUpdate();
     },
@@ -188,7 +193,8 @@ export default {
         })
       );
 
-      this.reactiveTokens[index].value = response.data;
+      this.reactiveTokens[index].value = response.data.value;
+      this.reactiveTokens[index].id = response.data.id;
 
       this.updateAction(index, "Regenerated!", "check-circle");
 
