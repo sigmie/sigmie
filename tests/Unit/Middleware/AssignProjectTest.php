@@ -88,7 +88,7 @@ class AssignProjectTest extends TestCase
     public function redirect_to_first_project_if_no_project_passed()
     {
         $this->projectsCollectionMock->method('first')->willReturn($this->projectMock);
-        $this->requestMock->expects($this->any())->method('route')->willReturnSelf();
+        $this->requestMock->expects($this->any())->method('route')->willReturn(null, $this->requestMock);
         $this->requestMock->expects($this->any())->method('getName')->willReturn('dashboard');
 
         Auth::shouldReceive('user')->andReturn($this->userMock);
