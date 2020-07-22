@@ -10,7 +10,7 @@
     <div class="flex flex-col">
       <div class="-my-2 py-2 overflow-x-auto sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div
-          class="align-middle inline-block min-w-full shadow overflow-hidden sm:rounded-lg border-b border-gray-200"
+          class="align-middle inline-block min-w-full shadow overflow-hidden rounded-lg border-b border-gray-200"
         >
           <table class="min-w-full">
             <thead>
@@ -49,12 +49,14 @@
                 </td>
                 <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
                   <span
+                    @click="()=> toogleActive(token.id, token.cluster_id, index)"
                     v-if="token.active"
-                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
+                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 cursor-pointer"
                   >Active</span>
                   <span
+                    @click="()=> toogleActive(token.id, token.cluster_id, index)"
                     v-else
-                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800"
+                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 cursor-pointer"
                   >Inactive</span>
                 </td>
                 <td
@@ -166,9 +168,21 @@ export default {
         [this, index]
       );
     },
+    async toogleActive(tokenId, clusterId, index) {
+      let response = await this.$http.put(
+        this.$route("token.toogle", {
+          token: tokenId,
+          cluster: clusterId
+        })
+      );
+
+      this.reactiveTokens[index].active = (response.data === 1);
+
+      this.$forceUpdate();
+    },
     async regenerate(tokenId, clusterId, index) {
       let response = await this.$http.put(
-        this.$route("token.update", {
+        this.$route("token.regenerate", {
           token: tokenId,
           cluster: clusterId
         })

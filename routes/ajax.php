@@ -17,4 +17,6 @@ Route::get('/cluster/validate/name/{name}', 'ClusterValidationController@name')-
 
 Route::post('/project/validate/provider', 'ProjectValidationController@provider')->name('project.validate.provider');
 
-Route::put('/tokens/{cluster}/{token}', 'ClusterTokenController@update')->name('token.update');
+Route::put('/tokens/{cluster}/regenerate/{token}', 'ClusterTokenController@regenerate')->name('token.regenerate');
+
+Route::put('/tokens/{cluster}/toogle/{token}', 'ClusterTokenController@toogle')->name('token.toogle');

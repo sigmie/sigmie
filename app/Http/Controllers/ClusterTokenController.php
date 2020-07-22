@@ -52,7 +52,27 @@ class ClusterTokenController extends Controller
         return Inertia::render('token/index', ['tokens' => $tokens]);
     }
 
-    public function update(Cluster $cluster, int $tokenId)
+    public function toogle(Cluster $cluster, int $tokenId)
+    {
+        $token = $cluster->tokens()->where('id', $tokenId)->get()->first();
+        $oldValue = null;
+
+        if ($token->getAttribute('name') === self::SEARCH_ONLY) {
+            $oldValue = $cluster->getAttribute('search_token_active');
+            $cluster->update(['search_token_active' => !$oldValue]);
+            $newValue = $cluster->getAttribute('search_token_active');
+        }
+
+        if ($token->getAttribute('name') === self::ADMIN) {
+            $oldValue = $cluster->getAttribute('admin_token_active');
+            $cluster->update(['admin_token_active' => !$oldValue]);
+            $newValue = $cluster->getAttribute('admin_token_active');
+        }
+
+        return $newValue;
+    }
+
+    public function regenerate(Cluster $cluster, int $tokenId)
     {
         $oldToken = $cluster->tokens()->where('id', $tokenId)->get()->first();
 
