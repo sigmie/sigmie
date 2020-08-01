@@ -5243,16 +5243,16 @@
         },
         {
             "name": "sigmie/app-core",
-            "version": "v0.3.9",
+            "version": "v0.3.10",
             "source": {
                 "type": "git",
                 "url": "git@github.com:sigmie/app-core.git",
-                "reference": "d0d5ccd0f4d63dadd992ceda507aba8a52620cd3"
+                "reference": "fcef258d062858257c87431fb26bccdc3c2d7434"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sigmie/app-core/zipball/d0d5ccd0f4d63dadd992ceda507aba8a52620cd3",
-                "reference": "d0d5ccd0f4d63dadd992ceda507aba8a52620cd3",
+                "url": "https://api.github.com/repos/sigmie/app-core/zipball/fcef258d062858257c87431fb26bccdc3c2d7434",
+                "reference": "fcef258d062858257c87431fb26bccdc3c2d7434",
                 "shasum": ""
             },
             "require": {
@@ -5294,10 +5294,10 @@
             ],
             "description": "Sigmie application core library",
             "support": {
-                "source": "https://github.com/sigmie/app-core/tree/v0.3.9",
+                "source": "https://github.com/sigmie/app-core/tree/v0.3.10",
                 "issues": "https://github.com/sigmie/app-core/issues"
             },
-            "time": "2020-07-31T13:39:25+00:00"
+            "time": "2020-08-01T12:43:59+00:00"
         },
         {
             "name": "sigmie/promises",

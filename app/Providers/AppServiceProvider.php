@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Http\Middleware\ProxyRequest;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -33,6 +34,8 @@ class AppServiceProvider extends ServiceProvider
                 ? Session::get('errors')->getBag('default')->getMessages()
                 : null;
         });
+
+        $this->app->singleton(ProxyRequest::class);
     }
 
     /**

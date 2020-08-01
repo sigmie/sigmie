@@ -12,15 +12,17 @@ $factory->define(Cluster::class, function (Faker $faker) {
         'username' => $faker->text(10),
         'password' => encrypt($faker->text(10)),
         'state' => $faker->randomElement([
-            Cluster::QUEUED_CREATE,
-            Cluster::QUEUED_DESTROY,
-            Cluster::CREATED,
             Cluster::RUNNING,
-            Cluster::DESTROYED,
-            Cluster::FAILED,
+            // Cluster::QUEUED_CREATE,
+            // Cluster::QUEUED_DESTROY,
+            // Cluster::CREATED,
+            // Cluster::DESTROYED,
+            // Cluster::FAILED,
         ]),
-        'deleted_at' => $faker->randomElement([null, $faker->dateTime()]),
-        'nodes_count' => $faker->numberBetween(1, 3),
+        // 'deleted_at' => $faker->randomElement([null, $faker->dateTime()]),
+        'deleted_at' => null,
+        // 'nodes_count' => $faker->numberBetween(1, 3),
+        'nodes_count' => 1,
         'project_id' => factory(Project::class)
     ];
 });

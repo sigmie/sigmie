@@ -2,11 +2,16 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Cluster;
 use Closure;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
+use Illuminate\Support\Facades\Auth;
 
 class ProxyRequest
 {
+    private Cluster $cluster;
+
     /**
      * Because of the limitation on the laravel sectum the
      * function $request->user(); has to be user in order
@@ -15,15 +20,20 @@ class ProxyRequest
      * and pass is a route argument to the controller action which
      * has the benefit of directly injecting the Cluster
      * instance to the controller.
+     *
+     * @param Request $request
      */
     public function handle($request, Closure $next)
     {
-        $cluster =  $request->user();
+        $this->cluster = $request->user();
 
         $request->setUserResolver(fn () => null);
 
-        $request->route()->setParameter('cluster', $cluster);
-
         return $next($request);
+    }
+
+    public function cluster()
+    {
+        return $this->cluster;
     }
 }

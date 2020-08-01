@@ -11,6 +11,7 @@
     "postCreateCommand": "add-apt-repository ppa:ondrej/php --remove -y && apt-get update && apt-get install -y npm && npm install -g yarn",
     "overrideCommand": false,
     "extensions": [
+        "bmewburn.vscode-intelephense-client",
         "chenxsan.vscode-standardjs",
         "bradlc.vscode-tailwindcss",
         "octref.vetur",
