@@ -16,11 +16,11 @@ use Illuminate\Support\Facades\Http;
 
 class PollState implements ShouldQueue
 {
-    public $tries = 30;
+    public $tries = 10;
 
     public $retryAfter = 15;
 
-    public $delay = 90;
+    public $delay = 15;
 
     private $clusters;
 

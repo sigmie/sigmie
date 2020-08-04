@@ -116,25 +116,36 @@
 </template>
 
 <script>
-import { required, minValue, maxValue } from "vuelidate/lib/validators";
+import {
+  required,
+  minValue,
+  maxValue,
+  maxLength,
+  minLength,
+} from "vuelidate/lib/validators";
+
+const cantContainColon = (value) => value.includes(":") === false;
 
 export default {
   props: ["disabled"],
   validations: {
     dataCenter: {
-      required
+      required,
     },
     username: {
-      required
+      required,
+      cantContainColon,
     },
     password: {
-      required
+      required,
+      maxLength: maxLength(8),
+      minLength: minLength(4),
     },
     nodes: {
       required,
       minValue: minValue(1),
-      maxValue: maxValue(3)
-    }
+      maxValue: maxValue(3),
+    },
   },
   data() {
     return {
@@ -144,26 +155,29 @@ export default {
       password: "",
       errorMessages: {
         dataCenter: {
-          required: "Please choose a data center"
+          required: "Please choose a data center",
         },
         username: {
-          required: "Basic auth username is required"
+          required: "Basic auth username is required",
+          cantContainColon: "Username can't contain colon",
         },
         password: {
-          required: "Basic auth password is required"
+          required: "Basic auth password is required",
+          maxLength: "Max password length is 8 chars",
+          minLength: "Min password length is 4 chars",
         },
         nodes: {
           required: "Please specify a the desired nodes count",
           minValue: "Min is 0",
-          maxValue: "Max is 3"
-        }
-      }
+          maxValue: "Max is 3",
+        },
+      },
     };
   },
   watch: {
-    "$v.$invalid": function(value) {
+    "$v.$invalid": function (value) {
       this.$emit("validate", value);
-    }
+    },
   },
   methods: {
     set(key, value) {
@@ -171,8 +185,8 @@ export default {
       this.$v[key].$touch();
 
       this.$emit(`${key}Change`, this[key]);
-    }
-  }
+    },
+  },
 };
 </script>
 

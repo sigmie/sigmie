@@ -32,14 +32,21 @@ class StoreClusterTest extends TestCase
      */
     public function rules()
     {
+        $colonRegex = '/:.*/';
         $expected = [
             'name' => ['alpha_num', 'required'],
             'nodes_count' => ['min:1', 'max:3', 'required'],
             'data_center' => ['required'],
-            'username' => ['required'],
-            'password' => ['required'],
+            'username' => ['required', "not_regex:{$colonRegex}"],
+            'password' => ['required', 'min:4', 'max:8'],
             'project_id' => ['required']
         ];
+
+        $this->assertEquals(1, preg_match($colonRegex, 'foo:bar'));
+        $this->assertEquals(1, preg_match($colonRegex, 'f::o:bar'));
+        $this->assertEquals(1, preg_match($colonRegex, ':foobar'));
+        $this->assertEquals(0, preg_match($colonRegex, 'foobar'));
+        $this->assertEquals(0, preg_match($colonRegex, 'usern/ex-dhs'));
 
         $this->assertEquals($expected, $this->request->rules());
     }
