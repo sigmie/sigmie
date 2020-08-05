@@ -9,9 +9,9 @@
   >
     <g
       id="Subscription-confirmation"
-      stroke="none"
+      stroke="currentColor"
       stroke-width="1"
-      fill="none"
+      fill="currentColor"
       fill-rule="evenodd"
     >
       <g id="Desktop-HD" transform="translate(-1178.000000, -183.000000)">

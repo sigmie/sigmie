@@ -1387,7 +1387,7 @@
       </g>
     </svg>
 
-    <section id="subscribe" class="container mx-auto text-center py-6">
+    <section id="subscribe" class="container mx-auto text-center pt-6">
       <h1
         class="w-full my-2 text-5xl font-bold leading-tight text-center text-white"
       >Keep Yourself Up-to-Date</h1>
@@ -1401,7 +1401,7 @@
         method="POST"
         :action="$route('newsletter.subscription.store')"
         @submit.prevent="submit"
-        class="inline-block pt-4 w-full px-6 pb-8"
+        class="inline-block pt-4 w-full px-6 pb-4"
       >
         <div class="inline-block w-full sm:max-w-xs pr-4">
           <input
@@ -1421,6 +1421,19 @@
         </div>
       </form>
     </section>
+    <div class="px-7 mx-auto w-full text-center inline-block pb-3">
+      <inertia-link :href="$route('legal.about')" class="pr-10">About Us</inertia-link>
+      <inertia-link class="pr-10" :href="$route('legal.terms')">Terms and Conditions</inertia-link>
+      <inertia-link class="pr-10" :href="$route('legal.privacy')">Privacy Policy</inertia-link>
+      <inertia-link class="pr-10" :href="$route('legal.imprint')">Imprint</inertia-link>
+      <inertia-link :href="$route('legal.disclaimer')">Disclaimer</inertia-link>
+    </div>
+    <p class="text-center w-full opacity-75 px-5 sm:px-0 sm:w-2/3 md:w-8/12 pb-15 mx-auto py-3">
+      Sigmie UG (haftungsbeschränkt), Feldstr. 9, 58507 Lüdenscheid, Germany
+      <br />Commercial Register: Amtsgericht Iserlohn, HRB 9701
+      <br />VAT ID: DE000000000 / Managing Partner: Markos Nikolaos Orfanos
+      <br />
+    </p>
   </div>
 </template>
 
@@ -1428,16 +1441,16 @@
 export default {
   data() {
     return {
-      email: ""
+      email: "",
     };
   },
   methods: {
     submit() {
       this.$inertia.post(this.$route("newsletter.subscription.store"), {
-        email: this.email
+        email: this.email,
       });
-    }
-  }
+    },
+  },
 };
 </script>
 

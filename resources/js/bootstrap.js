@@ -14,7 +14,6 @@ window.Pusher = Pusher
 Vue.use(InertiaApp)
 Vue.use(Vuelidate)
 Vue.use(Clipboard)
-
 Vue.prototype.$http = axios.create({
   baseURL: process.env.MIX_APP_URL + '/ajax/',
   headers: {
@@ -66,6 +65,7 @@ Vue.component('icon-server', require('./ui/icons/server').default)
 Vue.component('icon-notification', require('./ui/icons/notification').default)
 Vue.component('icon-refresh', require('./ui/icons/refresh').default)
 Vue.component('icon-cheveron-right', require('./ui/icons/cheveron/right').default)
+Vue.component('icon-cheveron-left', require('./ui/icons/cheveron/left').default)
 Vue.component('icon-check', require('./ui/icons/check').default)
 Vue.component('icon-duplicate', require('./ui/icons/duplicate').default)
 Vue.component('icon-rocket', require('./ui/icons/rocket').default)

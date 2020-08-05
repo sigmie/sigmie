@@ -45,12 +45,11 @@ if ($launched === true) {
 
     // Legal
     Route::name('legal.')->group(function () {
-
-        Route::view('/terms', 'legal.terms')->name('terms');
-
-        Route::view('/privacy', 'legal.privacy')->name('privacy');
-
-        Route::view('/cookie', 'legal.cookie')->name('cookie');
+        Route::get('/about-us', 'LegalController@about')->name('about');
+        Route::get('/terms-and-conditions', 'LegalController@terms')->name('terms');
+        Route::get('/privacy-policy', 'LegalController@privacy')->name('privacy');
+        Route::get('/imprint', 'LegalController@imprint')->name('imprint');
+        Route::get('/disclaimer', 'LegalController@disclaimer')->name('disclaimer');
     });
 
     Route::group(['middleware' => ['auth', 'user', 'projects']], function () {

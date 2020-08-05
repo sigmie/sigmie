@@ -36,6 +36,7 @@
         "webpack-livereload-plugin": "^1.2.0"
     },
     "dependencies": {
+        "@tailwindcss/typography": "^0.2.0",
         "v-clipboard": "^2.2.3",
         "ziggy-js": "^0.9.4"
     },

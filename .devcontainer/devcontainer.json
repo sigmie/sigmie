@@ -15,6 +15,7 @@
         "chenxsan.vscode-standardjs",
         "bradlc.vscode-tailwindcss",
         "octref.vetur",
-        "amiralizadeh9480.laravel-extra-intellisense"
+        "amiralizadeh9480.laravel-extra-intellisense",
+        "onecentlin.laravel-blade"
     ]
 }

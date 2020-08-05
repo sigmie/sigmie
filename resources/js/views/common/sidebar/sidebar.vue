@@ -3,7 +3,9 @@
     <div class="hidden md:flex md:flex-shrink-0">
       <div class="flex flex-col w-64">
         <div class="flex items-center h-16 flex-shrink-0 px-4 bg-gray-900">
-          <logo-white height="50px" width="159px" class="mx-auto py-1"></logo-white>
+          <inertia-link class="mx-auto py-1" :href="$route('dashboard')">
+            <logo-white height="50px" width="159px"></logo-white>
+          </inertia-link>
         </div>
         <div class="h-0 flex-1 flex flex-col overflow-y-auto">
           <nav class="flex-1 px-2 py-4 bg-gray-800">
@@ -104,13 +106,13 @@ export default {
           text: "Dashboard",
           name: "dashboard",
           routeParams: [],
-          icon: "home"
+          icon: "home",
         },
         {
           text: "API tokens",
           name: "token.index",
           routeParams: [],
-          icon: "key"
+          icon: "key",
         },
         {
           text: "Playground",
@@ -119,24 +121,25 @@ export default {
           icon: "puzzle",
           badge: {
             text: "Soon",
-            color: "blue"
-          }
+            color: "blue",
+          },
         },
         {
           text: "Monitoring",
           name: "monitoring",
           routeParams: [],
-          icon: "desktop"
+          icon: "desktop",
         },
         {
           text: "Settings",
           name: "settings",
           routeParams: {
-            project: this.$page.project_id === null ? "" : this.$page.project_id
+            project:
+              this.$page.project_id === null ? "" : this.$page.project_id,
           },
-          icon: "cog"
-        }
-      ]
+          icon: "cog",
+        },
+      ],
     };
   },
   methods: {
@@ -148,8 +151,8 @@ export default {
     },
     open() {
       this.sidebar = "open";
-    }
-  }
+    },
+  },
 };
 </script>
 
