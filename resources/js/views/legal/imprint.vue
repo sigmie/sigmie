@@ -1,6 +1,5 @@
 <template>
   <layout>
-    <logo-default class="h-20 mx-auto mb-20"></logo-default>
     <h1>Imprint</h1>
     <div>
       <p>

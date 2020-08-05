@@ -1423,7 +1423,7 @@
     </section>
     <div class="px-7 mx-auto w-full text-center inline-block pb-3">
       <inertia-link :href="$route('legal.about')" class="pr-10">About Us</inertia-link>
-      <inertia-link class="pr-10" :href="$route('legal.terms')">Terms and Conditions</inertia-link>
+      <inertia-link class="pr-10" :href="$route('legal.terms')">Terms of Service</inertia-link>
       <inertia-link class="pr-10" :href="$route('legal.privacy')">Privacy Policy</inertia-link>
       <inertia-link class="pr-10" :href="$route('legal.imprint')">Imprint</inertia-link>
       <inertia-link :href="$route('legal.disclaimer')">Disclaimer</inertia-link>

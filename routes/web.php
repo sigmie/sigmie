@@ -46,7 +46,7 @@ if ($launched === true) {
     // Legal
     Route::name('legal.')->group(function () {
         Route::get('/about-us', 'LegalController@about')->name('about');
-        Route::get('/terms-and-conditions', 'LegalController@terms')->name('terms');
+        Route::get('/terms-of-service', 'LegalController@terms')->name('terms');
         Route::get('/privacy-policy', 'LegalController@privacy')->name('privacy');
         Route::get('/imprint', 'LegalController@imprint')->name('imprint');
         Route::get('/disclaimer', 'LegalController@disclaimer')->name('disclaimer');
