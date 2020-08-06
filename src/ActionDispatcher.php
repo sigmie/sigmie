@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma;
 
 use Elasticsearch\Client as Elasticsearch;
@@ -45,26 +48,28 @@ class ActionDispatcher implements ActionDispatcherInterface
      *
      * @return array
      */
-    public function dispatch($data, Action $action): array
+    public function dispatch(Action $action, ...$data): array
     {
         $beforeEvent = null;
         $afterEvent = null;
 
         if ($action instanceof Subscribable) {
-            $beforeEvent = $action->beforeEvent();
-            $afterEvent = $action->afterEvent();
+            $beforeEvent = $action->preEvent();
+            $afterEvent = $action->postEvent();
         }
 
-        if ($this->eventDispatcher->hasListeners($beforeEvent)) {
-            $this->eventDispatcher->dispatch($beforeEvent, new GenericEvent($data));
+        if ($this->eventDispatcher->hasListeners($beforeEvent) && $beforeEvent !== null) {
+            $this->eventDispatcher->dispatch(new $beforeEvent($data), $beforeEvent);
         }
 
-        $params = $action->prepare($data);
+        $params = $action->prepare(...$data);
 
         $response = $action->execute($this->elasticsearch, $params);
 
-        if ($this->eventDispatcher->hasListeners($afterEvent)) {
-            $this->eventDispatcher->dispatch($afterEvent, new GenericEvent($response));
+        if ($this->eventDispatcher->hasListeners($afterEvent) && $afterEvent !== null) {
+            dump($response);
+            die();
+            $this->eventDispatcher->dispatch(new $afterEvent($response), $afterEvent);
         }
 
         return $response;

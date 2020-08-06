@@ -1,8 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Contract;
 
 use Sigma\Collection;
+use Sigma\Document\Document;
 use Sigma\Element;
 
 /**
@@ -13,7 +17,7 @@ interface Factory
     /**
      * Create method
      *
-     * @return Element|Collection
+     * @return Document
      */
-    public function create();
+    public function fromRaw(array $raw);
 }

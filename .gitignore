@@ -1,6 +1,9 @@
 
 .history
 .idea
+.vscode
+
+tmp
 
 composer.phar
 /vendor/

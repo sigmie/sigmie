@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Index\Response;
 
+use Closure;
 use Sigma\Contract\Response;
 use Sigma\Element;
 use Sigma\Index\Index;
@@ -16,7 +20,7 @@ class Get implements Response
      *
      * @return Element
      */
-    public function result(array $response): Element
+    public function result($response, Closure $boot): Element
     {
         $collection = new IndexCollection([]);
 

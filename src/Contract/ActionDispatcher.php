@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Contract;
 
 /**
@@ -15,5 +18,5 @@ interface ActionDispatcher
      *
      * @return array
      */
-    public function dispatch(array $data, Action $action): array;
+    public function dispatch(Action $action, array ...$data): array;
 }

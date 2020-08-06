@@ -19,8 +19,12 @@ class InsertTest extends TestCase
      */
     public function result(): void
     {
-        $result = $this->response->result(['acknowledged' => true]);
+        $result = $this->response->result([
+            'acknowledged' => true,
+            'index' => 'bar'
+        ], function () {
+        });
 
-        $this->assertTrue($result);
+        $this->assertEquals($result->name, 'bar');
     }
 }

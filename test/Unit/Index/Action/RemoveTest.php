@@ -5,6 +5,8 @@ namespace Sigma\Test\Unit\Index;
 use Elasticsearch\Client as Elasticsearch;
 use PHPUnit\Framework\TestCase;
 use Sigma\Contract\Subscribable;
+use Sigma\Event\Index\PostRemove;
+use Sigma\Event\Index\PreRemove;
 use Sigma\Index\Action\Remove;
 
 class RemoveTest extends TestCase
@@ -42,8 +44,8 @@ class RemoveTest extends TestCase
      */
     public function events(): void
     {
-        $this->assertEquals($this->action->beforeEvent(), 'before.index.remove');
-        $this->assertEquals($this->action->afterEvent(), 'after.index.remove');
+        $this->assertEquals($this->action->preEvent(), PreRemove::class);
+        $this->assertEquals($this->action->postEvent(), PostRemove::class);
     }
 
     /**

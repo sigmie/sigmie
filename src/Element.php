@@ -1,38 +1,32 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma;
+
+use Sigma\Common\Bootable;
+use Sigma\Contract\Arrayable;
 
 abstract class Element
 {
-    /**
-     * Identifier
-     *
-     * @var string
-     */
-    private $identifier;
+    use Bootable;
 
-    public function __construct(?string $identifier = null)
+    public function __set($name, $value)
     {
-        $this->identifier = $identifier;
-    }
+        $name = ltrim($name, '_');
 
-    /**
-     * Get the value of identifier
-     */
-    public function getIdentifier()
-    {
-        return $this->identifier;
-    }
-
-    /**
-     * Set the value of identifier
-     *
-     * @return  self
-     */
-    public function setIdentifier($identifier)
-    {
-        $this->identifier = $identifier;
+        if (property_exists($this, $name)) {
+            $this->$name = $value;
+        }
 
         return $this;
+    }
+
+    public function __get($name)
+    {
+        if (property_exists($this, $name)) {
+            return $this->$name;
+        }
     }
 }

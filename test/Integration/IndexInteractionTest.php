@@ -3,7 +3,7 @@
 namespace Sigma\Test\Integration;
 
 use Elasticsearch\ClientBuilder;
-use Sigma\Client;
+use Sigma\Sigma;
 use Sigma\Collection;
 use Sigma\Index\Index;
 use PHPUnit\Framework\TestCase;
@@ -13,7 +13,7 @@ class IndexInteractionTest extends TestCase
     /**
      * Client instance
      *
-     * @var Client
+     * @var Sigma
      */
     private $client;
 
@@ -29,7 +29,7 @@ class IndexInteractionTest extends TestCase
         $host = getenv('ES_HOST');
         $builder = ClientBuilder::create();
         $elasticsearch = $builder->setHosts([$host])->build();
-        $this->client = Client::create($elasticsearch);
+        $this->client = Sigma::create($elasticsearch);
 
         $indices = $this->client->elasticsearch()->cat()->indices(['index' => '*']);
 
@@ -44,17 +44,17 @@ class IndexInteractionTest extends TestCase
     public function createIndex(): void
     {
         $index = new Index('bar');
-        $result = $this->client->manage()->indices()->insert($index);
+        $result = $this->client->insert($index);
 
-        $this->assertTrue($result);
+        $this->isInstanceOf(Index::class);
 
-        $element = $this->client->manage()->indices()->get('bar');
+        $element = $this->client->get('bar');
 
         $this->assertInstanceOf(Index::class, $element);
-        $this->assertEquals($element->getIdentifier(), 'bar');
+        $this->assertEquals($element->name, 'bar');
 
         // Clean up created index
-        $this->client->manage()->indices()->remove('bar');
+        $this->client->remove('bar');
     }
 
     /**
@@ -62,10 +62,12 @@ class IndexInteractionTest extends TestCase
      */
     public function removeIndex(): void
     {
-        // Create index to be remove
-        $this->client->manage()->indices()->insert(new Index('bar'));
+        $index = new Index('bar');
 
-        $response = $this->client->manage()->indices()->remove('bar');
+        // Create index to be remove
+        $this->client->insert($index);
+
+        $response = $this->client->remove('bar');
 
         $this->assertTrue($response);
     }
@@ -75,10 +77,13 @@ class IndexInteractionTest extends TestCase
      */
     public function listIndices(): void
     {
-        $this->client->manage()->indices()->insert(new Index('foo'));
-        $this->client->manage()->indices()->insert(new Index('bar'));
+        $fooIndex = new Index('foo');
+        $barIndex = new Index('bar');
 
-        $collection = $this->client->manage()->indices()->list();
+        $this->client->insert($fooIndex);
+        $this->client->insert($barIndex);
+
+        $collection = $this->client->list();
 
         $this->assertCount(2, $collection);
         $this->assertInstanceOf(Collection::class, $collection);
@@ -89,11 +94,13 @@ class IndexInteractionTest extends TestCase
      */
     public function getIndex(): void
     {
-        $this->client->manage()->indices()->insert(new Index('foo'));
+        $index = new Index('foo');
 
-        $element = $this->client->manage()->indices()->get('foo');
+        $this->client->insert($index);
+
+        $element = $this->client->get('foo');
 
         $this->assertInstanceOf(Index::class, $element);
-        $this->assertEquals('foo', $element->getIdentifier());
+        $this->assertEquals('foo', $element->name);
     }
 }

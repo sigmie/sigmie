@@ -1,7 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Contract;
 
+use Closure;
+use Sigma\ActionDispatcher;
 use Sigma\Collection;
 use Sigma\Element;
 
@@ -17,5 +22,5 @@ interface Response
      *
      * @return bool|Element|Collection
      */
-    public function result(array $raw);
+    public function result($data, Closure $boot);
 }

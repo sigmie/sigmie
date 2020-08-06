@@ -8,5 +8,6 @@
 
     <rule ref="PSR12">
         <exclude name="PSR12.Classes.ClassInstantiation.MissingParentheses" />
+        <exclude name="PSR2.Classes.PropertyDeclaration.Underscore" />
     </rule>
 </ruleset>

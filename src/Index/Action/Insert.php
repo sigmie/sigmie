@@ -1,10 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Index\Action;
 
 use Sigma\Contract\Subscribable;
 use Elasticsearch\Client as Elasticsearch;
 use Sigma\Contract\Action;
+use Sigma\Event\Index\PostInsert;
+use Sigma\Event\Index\PreInsert;
 use Sigma\Index\Index;
 
 class Insert implements Action, Subscribable
@@ -16,10 +21,12 @@ class Insert implements Action, Subscribable
      *
      * @return array
      */
-    public function prepare($index): array
+    public function prepare(...$data): array
     {
+        [$index] = $data;
+
         $params = [
-            'index' => $index->getIdentifier()
+            'index' => $index->name
         ];
 
         return $params;
@@ -30,9 +37,9 @@ class Insert implements Action, Subscribable
      *
      * @return string
      */
-    public function beforeEvent(): string
+    public function preEvent(): string
     {
-        return 'before.index.insert';
+        return PreInsert::class;
     }
 
     /**
@@ -53,8 +60,8 @@ class Insert implements Action, Subscribable
      *
      * @return string
      */
-    public function afterEvent(): string
+    public function postEvent(): string
     {
-        return 'after.index.insert';
+        return PostInsert::class;
     }
 }

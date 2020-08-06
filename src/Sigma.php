@@ -1,15 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma;
 
-use Sigma\Manager\Manager;
-use Sigma\Manager\ManagerBuilder;
+use Sigma\Index\Manager;
 use Elasticsearch\ClientBuilder;
 use Elasticsearch\Client as Elasticsearch;
 use Symfony\Component\EventDispatcher\EventDispatcher as EventManager;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface as EventDispatcher;
+use Sigma\ActionDispatcher;
+use Sigma\Contract\Bootable;
+use Sigma\Provider\SigmaProvider;
 
-class Client
+class Sigma extends SigmaProvider
 {
     /**
      * Elastic search client
@@ -19,18 +24,18 @@ class Client
     private $elasticsearch;
 
     /**
-     * Manager
-     *
-     * * @var Manager
-     */
-    private $manager;
-
-    /**
      * Connected flag
      *
      * @var bool
      */
     private $connected;
+
+    /**
+     * Event manager
+     *
+     * @var EventManager
+     */
+    private $events;
 
     /**
      * Facade constructor
@@ -41,12 +46,16 @@ class Client
      */
     public function __construct(
         Elasticsearch $elasticsearch,
-        Manager $manager,
-        EventManager $dispatcher
+        EventManager $dispatcher,
+        ActionDispatcher $actionDispatcher,
+        ResponseHandler $responseHandler
     ) {
         $this->elasticsearch = $elasticsearch;
-        $this->manager = $manager;
-        $this->dispatcher = $dispatcher;
+        $this->events = $dispatcher;
+
+        $this->registerListeners();
+
+        $this->boot($actionDispatcher, $responseHandler);
     }
 
     /**
@@ -54,32 +63,26 @@ class Client
      *
      * @param Elasticsearch|null $elasticsearch
      * @param Manager|null $manager
-     * @param EventDispatcher|null $dispatcher
+     * @param EventDispatcher|null $events
      *
      * @return self
      */
     public static function create(
         ?Elasticsearch $elasticsearch = null,
-        ?Manager $manager = null,
-        ?EventDispatcher $dispatcher = null
+        ?EventDispatcher $events = null
     ) {
         if ($elasticsearch === null) {
             $elasticsearch = ClientBuilder::create()->build();
         }
 
-        if ($manager === null) {
-            $builder = new ManagerBuilder($elasticsearch);
+        if ($events === null) {
+            $events = new EventManager();
         }
 
-        if ($dispatcher === null) {
-            $dispatcher = new EventManager();
-        }
+        $actionDispatcher = new ActionDispatcher($elasticsearch, $events);
+        $responseHandler = new ResponseHandler($actionDispatcher);
 
-        $builder->setEventDispatcher($dispatcher);
-
-        $manager = $builder->build();
-
-        return new Client($elasticsearch, $manager, $dispatcher);
+        return new Sigma($elasticsearch, $events, $actionDispatcher, $responseHandler);
     }
 
     /**
@@ -101,7 +104,14 @@ class Client
      */
     public function events(): EventManager
     {
-        return $this->dispatcher;
+        return $this->events;
+    }
+
+    public function bootElement(Bootable $bootable): Bootable
+    {
+        $bootable->boot($this->dispatcher, $this->handler);
+
+        return $bootable;
     }
 
     /**
@@ -117,13 +127,16 @@ class Client
         return $this->connected;
     }
 
-    /**
-     * Entry point for nielastic
-     *
-     * @return Manager
-     */
-    public function manage(): Manager
+    public function clear($dryRun = true): void
     {
-        return $this->manager;
+        $indices = $this->elasticsearch()->cat()->indices(['index' => '*']);
+
+        if ($dryRun === true) {
+            return;
+        }
+
+        foreach ($indices as $index) {
+            $this->elasticsearch()->indices()->delete(['index' => $index['index']]);
+        }
     }
 }

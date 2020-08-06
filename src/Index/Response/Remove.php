@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Index\Response;
 
+use Closure;
 use Sigma\Contract\Response;
 use Sigma\Contract\Response\Remove as RemoveResponse;
 
@@ -15,7 +19,7 @@ class Remove implements Response
      *
      * @return boolean
      */
-    public function result(array $response): bool
+    public function result($response, Closure $boot): bool
     {
         return $response['acknowledged'];
     }

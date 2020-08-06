@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Index\Action;
 
 use Sigma\Contract\Subscribable;
@@ -15,8 +18,10 @@ class Get implements Action
      *
      * @return array
      */
-    public function prepare($identifier): array
+    public function prepare(...$data): array
     {
+        [$identifier] = $data;
+
         $params = [
             'index' => $identifier
         ];

@@ -58,7 +58,7 @@ Check out the [Getting Started](https://mossigma.com/docs/1.0/Getting-started) p
  Thank you for considering contributing to the Sigma library! The main purpose of this repository is making Elasticsearch easier to use with PHP. I would be grateful to the community for contributing bugfixes and improvements. So feel free to open a pull request.
 
 ## Contact
- For any question regarding this project feel free to send an e-mail to nico_orfi@yahoo.com.
+ For any question regarding this project feel free to send an e-mail to nicoorfi@mos-sigma.com.
 
  # Thanks
  A big thanks to [Beasty](http://www.beasty.me) for his awesome [Space Icons Set](https://www.sketchappsources.com/free-source/1139-space-icons-sketch-freebie-resource.html).

@@ -2,7 +2,7 @@
 
 namespace Sigma\Test\Integration;
 
-use Sigma\Client;
+use Sigma\Sigma;
 use PHPUnit\Framework\TestCase;
 use Elasticsearch\ClientBuilder;
 
@@ -18,7 +18,7 @@ class ConnectionTest extends TestCase
         $host = getenv('ES_HOST');
         $builder = ClientBuilder::create();
         $elasticsearch = $builder->setHosts([$host])->build();
-        $client = Client::create($elasticsearch);
+        $client = Sigma::create($elasticsearch);
 
         $elasticsearch = $client->elasticsearch();
 

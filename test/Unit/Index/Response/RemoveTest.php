@@ -2,6 +2,7 @@
 
 namespace Sigma\Test\Unit\Index\Responses;
 
+use Closure;
 use PHPUnit\Framework\TestCase;
 use Sigma\Index\Response\Insert;
 use Sigma\Index\Response\Remove;
@@ -20,7 +21,8 @@ class RemoveTest extends TestCase
      */
     public function result(): void
     {
-        $result = $this->response->result(['acknowledged' => true]);
+        $result = $this->response->result(['acknowledged' => true], function () {
+        });
 
         $this->assertTrue($result);
     }

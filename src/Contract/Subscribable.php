@@ -1,6 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Contract;
+
+use Symfony\Component\EventDispatcher\GenericEvent;
 
 /**
  * Subscribable contract
@@ -12,12 +17,12 @@ interface Subscribable
      *
      * @return string
      */
-    public function beforeEvent(): string;
+    public function preEvent(): string;
 
     /**
      * After event method
      *
      * @return string
      */
-    public function afterEvent(): string;
+    public function postEvent(): string;
 }

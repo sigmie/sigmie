@@ -1,8 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Sigma\Index\Response;
 
+use Closure;
 use Sigma\Contract\Response;
+use Sigma\Exception\ActionFailed;
+use Sigma\Index\Index;
 
 class Insert implements Response
 {
@@ -14,8 +20,12 @@ class Insert implements Response
      *
      * @return boolean
      */
-    public function result(array $response)
+    public function result($response, Closure $boot)
     {
-        return $response['acknowledged'];
+        $index = new Index($response['index']);
+
+        $boot($index);
+
+        return $index;
     }
 }
