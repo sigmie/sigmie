@@ -2,10 +2,10 @@
 .history
 .idea
 .vscode
-
-tmp
+.devcontainer
 
 composer.phar
+
 /vendor/
 
 .phpunit.result.cache
@@ -14,4 +14,3 @@ composer.phar
 
 tmp/*
 !tmp/.gitkeep
-
