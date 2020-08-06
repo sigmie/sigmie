@@ -1,0 +1,28 @@
+{
+    "name": "sigmie/contracts",
+    "description": "Sigmie Contracts package.",
+    "license": "MIT",
+    "homepage": "https://docs.sigmie.com/contracts",
+    "support": {
+        "issues": "https://github.com/sigmie/sigmie/issues",
+        "source": "https://github.com/sigmie/contracts"
+    },
+    "authors": [
+        {
+            "name": "Nico Orfi",
+            "email": "nico@sigmie.com"
+        }
+    ],
+    "require": {
+        "php": "^7.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sigmie\\Contracts\\": ""
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev"
+}
