@@ -1,5 +1,5 @@
 <template>
-  <layout>
+  <layout title="Privacy Policy">
     <div>
       <h1>Privacy Policy</h1>
       <p>Last updated: August 5, 2020</p>
@@ -183,8 +183,7 @@
 
       <h3>Analytics</h3>
       <p>We may use third-party Service providers to monitor and analyze the use of our Service.</p>
-      <ul>
-      </ul>
+      <ul></ul>
 
       <h3>Usage, Performance and Miscellaneous</h3>
       <p>We may use third-party Service Providers to provide better improvement of our Service.</p>

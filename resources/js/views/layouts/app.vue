@@ -2,6 +2,8 @@
   <div class="h-screen flex overflow-hidden bg-gray-100">
     <sidebar ref="sidebar"></sidebar>
 
+    <vue-headful :title="title + ' | Sigmie'" />
+
     <div class="flex flex-col w-0 flex-1 overflow-hidden">
       <navbar v-cloak :user-id="$page.user.id" :avatar-url="$page.user.avatar_url"></navbar>
 
@@ -18,9 +20,9 @@
 export default {
   components: {
     sidebar: require("../common/sidebar/sidebar").default,
-    navbar: require("../common/navbar/navbar").default
+    navbar: require("../common/navbar/navbar").default,
   },
-  props: ["user", "project"]
+  props: ["user", "project", "title"],
 };
 </script>
 

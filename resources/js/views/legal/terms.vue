@@ -1,5 +1,5 @@
 <template>
-  <layout>
+  <layout title="Terms of Service">
     <h1>Terms of Service</h1>
     <span>Last updated: August 5, 2020</span>
     <p>Please read these terms and conditions carefully before using Our Service.</p>
@@ -100,7 +100,6 @@
     <h3>Availability, Errors and Inaccuracies</h3>
     <p>We are constantly updating Our offerings of Goods on the Service. The Goods available on Our Service may be mispriced, described inaccurately, or unavailable, and We may experience delays in updating information regarding our Goods on the Service and in Our advertising on other websites.</p>
     <p>We cannot and do not guarantee the accuracy or completeness of any information, including prices, product images, specifications, availability, and services. We reserve the right to change or update information and to correct errors, inaccuracies, or omissions at any time without prior notice.</p>
-
 
     <h3>Beta Services.</h3>From time to time, We may offer services identified as beta, pilot, developer preview, non-production, evaluation or by a description of similar import ("Beta Services"). Subscriber may accept or decline Beta Services. If accepted by Subscriber, Beta Services: (a) are provided only for evaluation purposes; (b) may not be relied on by Subscriber for production use; (c) may not be supported; and (d) may be subject to additional terms. Unless otherwise stated, any Beta Services trial period will expire on the date that a version of the Beta Services becomes generally available or is discontinued. We may discontinue Beta Services at any time in its sole discretion and may never make Beta Services generally available. ALL BETA SERVICES ARE PROVIDED “AS IS” AND “AS AVAILABLE” WITHOUT ANY WARRANTY OF ANY KIND. BETA SERVICES MAY BE TERMINATED AT ANY TIME. ALGOLIA DISCLAIMS ALL OBLIGATION AND LIABILITY UNDER THE AGREEMENT FOR ANY HARM OR DAMAGE ARISING OUT OF OR IN CONNECTION WITH A BETA SERVICE, INCLUDING ANY OBLIGATION OR LIABILITY WITH RESPECT TO SUBSCRIBER DATA. ANY CONFIGURATIONS OR SUBSCRIBER DATA ENTERED INTO BETA SERVICES, AND ANY CUSTOMIZATIONS MADE TO BETA SERVICES BY OR FOR SUBSCRIBER, MAY BE PERMANENTLY LOST IF THE BETA SERVICES ARE SUSPENDED, TERMINATED, OR DISCONTINUED.
     <p>The prices quoted may be revised by the Company subsequent to accepting an Order in the event of any occurrence affecting delivery caused by government action, variation in customs duties, increased shipping charges, higher foreign exchange costs and any other matter beyond the control of the Company. In that event, You will have the right to cancel Your Order.</p>

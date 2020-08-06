@@ -1,5 +1,5 @@
 <template>
-  <layout>
+  <layout title="About Us">
     <img
       class="mx-auto h-36 rounded-full"
       src="https://avatars2.githubusercontent.com/u/15706832?v=4"

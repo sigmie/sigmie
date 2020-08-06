@@ -1,5 +1,5 @@
 <template>
-  <app>
+  <app title="Create Project">
     <div class="max-w-lg mx-auto">
       <div class="shadow rounded-md sm:overflow-hidden">
         <div class="px-4 py-5 bg-white sm:p-6 rounded-md">

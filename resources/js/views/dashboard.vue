@@ -1,5 +1,5 @@
 <template>
-  <app>
+  <app title="Dashboard">
     <div class="pt-4" v-if="clusterState === 'queued_create' || clusterState === 'created'">
       <spinner class="mx-auto block"></spinner>
       <p

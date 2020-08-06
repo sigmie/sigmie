@@ -1,5 +1,5 @@
 <template>
-  <app>
+  <app title="Tokens">
     <div class="flex md:items-center md:justify-between md:mb-4">
       <div class="flex-1 min-w-0">
         <h2

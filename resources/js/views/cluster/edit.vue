@@ -1,5 +1,5 @@
 <template>
-  <app>
+  <app title="Restore Cluster">
     <modal
       title="Elasticsearch Cluster"
       primaryText="Create"

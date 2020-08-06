@@ -8,6 +8,7 @@ import { InertiaApp } from '@inertiajs/inertia-vue'
 import Pusher from 'pusher-js'
 import { Ziggy } from './routes'
 import Clipboard from 'v-clipboard'
+import vueHeadful from 'vue-headful'
 
 window.Pusher = Pusher
 
@@ -28,6 +29,8 @@ Vue.prototype.$socket = new Echo({
   key: process.env.MIX_PUSHER_APP_KEY,
   cluster: process.env.MIX_PUSHER_APP_CLUSTER
 })
+
+Vue.component('vue-headful', vueHeadful)
 
 Vue.component('csrf', require('./essentials/csrf').default)
 Vue.component('stripe', require('./essentials/stripe').default)

@@ -3718,6 +3718,11 @@ he@1.2.x, he@^1.1.0:
   resolved "https://registry.yarnpkg.com/he/-/he-1.2.0.tgz#84ae65fa7eafb165fddb61566ae14baf05664f0f"
   integrity sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==
 
+headful@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/headful/-/headful-1.0.3.tgz#420936f6184358a0613b5f73f1c5b5c91a251895"
+  integrity sha512-vF9Vfddn1QWmziliht2mji6ayI78+hUuSC+Kt0GEqLw/51zWgi1KF7oLtIQf3nlkg8sQQOlznkkIaF4W9lIt9w==
+
 hex-color-regex@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/hex-color-regex/-/hex-color-regex-1.1.0.tgz#4c06fccb4602fe2602b3c93df82d7e7dbf1a8a8e"
@@ -7778,6 +7783,13 @@ vue-clickaway@^2.2.2:
   integrity sha512-25SpjXKetL06GLYoLoC8pqAV6Cur9cQ//2g35GRFBV4FgoljbZZjTINR8g2NuVXXDMLSUXaKx5dutgO4PaDE7A==
   dependencies:
     loose-envify "^1.2.0"
+
+vue-headful@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/vue-headful/-/vue-headful-2.1.0.tgz#a1d55c3d2340a6f61799b4b32997e2af4215eac4"
+  integrity sha512-HXMdJfVDgD3eoh8qk9Laz2wGraPVGYDbvfXd7+i1MVziWMXGHUm8gpRC2p11ugYYXKRAcaS2g6ycq4Pr+eqb7g==
+  dependencies:
+    headful "^1.0.3"
 
 vue-hot-reload-api@^2.3.0:
   version "2.3.4"

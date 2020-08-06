@@ -1,5 +1,5 @@
 <template>
-  <layout>
+  <layout title="Imprint">
     <h1>Imprint</h1>
     <div>
       <p>

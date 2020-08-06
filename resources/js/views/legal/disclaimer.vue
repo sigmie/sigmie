@@ -1,5 +1,5 @@
 <template>
-  <layout>
+  <layout title="Disclaimer">
     <h1>Disclaimer</h1>
     <span>Last updated: August 5, 2020</span>
 
