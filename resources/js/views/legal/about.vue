@@ -7,7 +7,8 @@
     />
     <h1 class="text-center">@nicoorfi</h1>
     <p>
-      Hello my name Nico,<br><br>
+      Hello my name is Nico,<br><br>
+
       I am a full-stack developer passionate about Code, Cloud Computing, Docker and Elasticsearch. <br><br>
 
       Right now I'm working on <a target="_blank" href="https://github.com/sigmie">Sigmie</a>, an idea that i had back in 2018 which combines
