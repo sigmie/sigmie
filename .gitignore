@@ -5,6 +5,7 @@
 .devcontainer
 
 composer.phar
+composer.lock
 
 /vendor/
 
