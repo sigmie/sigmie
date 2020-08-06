@@ -2,6 +2,7 @@
 .history
 .idea
 .vscode
+.devcontainer
 
 tmp
 
@@ -14,4 +15,3 @@ composer.phar
 
 tmp/*
 !tmp/.gitkeep
-
