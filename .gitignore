@@ -4,9 +4,8 @@
 .vscode
 .devcontainer
 
-tmp
-
 composer.phar
+
 /vendor/
 
 .phpunit.result.cache
