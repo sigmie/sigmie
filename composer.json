@@ -27,11 +27,15 @@
             "Sigmie\\Tests\\": "tests/"
         }
     },
-    "require": {},
+    "require": {
+        "guzzlehttp/guzzle": "^7.0",
+        "illuminate/collections": "^8.0@dev"
+    },
     "require-dev": {
         "phpunit/phpunit": "^8",
         "symfony/var-dumper": "^4.3"
     },
+    "minimum-stability": "dev",
     "archive": {
         "exclude": [
             "!vendor",

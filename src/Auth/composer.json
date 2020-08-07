@@ -1,0 +1,29 @@
+{
+    "name": "sigmie/auth",
+    "description": "Sigmie Authentication package.",
+    "license": "MIT",
+    "homepage": "https://docs.sigmie.com/auth",
+    "support": {
+        "issues": "https://github.com/sigmie/sigmie/issues",
+        "source": "https://github.com/sigmie/auth"
+    },
+    "authors": [
+        {
+            "name": "Nico Orfi",
+            "email": "nico@sigmie.com"
+        }
+    ],
+    "require": {
+        "php": "^7.3",
+        "sigmie/contracts": "^0.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sigmie\\Auth\\": ""
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev"
+}

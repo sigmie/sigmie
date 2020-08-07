@@ -5,10 +5,12 @@
 .devcontainer
 
 composer.phar
+composer.lock
 
 /vendor/
 
 .phpunit.result.cache
+coverage-html
 
 .DS_Store
 
