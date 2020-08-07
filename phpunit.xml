@@ -1,12 +1,10 @@
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/6.3/phpunit.xsd"
     backupGlobals="false"
-    colors="true"
     bootstrap="vendor/autoload.php"
     failOnRisky="true"
     failOnWarning="true"
     backupStaticAttributes="false"
-    bootstrap="vendor/autoload.php"
     colors="true"
     verbose="false">
   <logging>
@@ -14,6 +12,14 @@
     <log type="coverage-text" target="coverage.txt"/>
     <log type="coverage-clover" target="coverage.xml"/>
   </logging>
+   <php>
+        <ini name="error_reporting" value="-1" />
+        <ini name="intl.default_locale" value="en" />
+        <ini name="intl.error_level" value="0" />
+        <ini name="memory_limit" value="-1" />
+        <env name="ES_HOST" value="elasticsearch" />
+        <env name="ES_PORT" value="9200" />
+    </php>
   <filter>
     <whitelist addUncoveredFilesFromWhitelist="true">
       <directory suffix=".php">src</directory>
@@ -23,10 +29,10 @@
   </filter>
   <testsuites>
     <testsuite name="unit">
-      <directory>test/Unit</directory>
+      <directory>tests/Unit</directory>
     </testsuite>
     <testsuite name="integration">
-      <directory>test/Integration</directory>
+      <directory>tests/Integration</directory>
     </testsuite>
   </testsuites>
 </phpunit>
