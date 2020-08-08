@@ -28,7 +28,7 @@
         }
     },
     "require": {
-        "guzzlehttp/guzzle": "^7.0",
+        "guzzlehttp/guzzle": "^6",
         "illuminate/collections": "^8.0@dev"
     },
     "require-dev": {
