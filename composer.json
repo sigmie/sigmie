@@ -28,8 +28,8 @@
         }
     },
     "require": {
-        "guzzlehttp/guzzle": "^6",
-        "illuminate/collections": "^8.0@dev"
+        "guzzlehttp/guzzle": "~5.3.1||~6.0||~7.0",
+        "doctrine/collections": "^2.0@dev"
     },
     "require-dev": {
         "phpunit/phpunit": "^8",
