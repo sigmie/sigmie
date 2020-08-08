@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\Cluster;
 use App\Models\Project;
 use App\Repositories\ClusterRepository;
 use App\Repositories\ProjectRepository;
@@ -38,7 +39,9 @@ class DashboardController extends Controller
         if ($cluster !== null) {
             $state = $cluster->getAttribute('state');
             $id = $cluster->getAttribute('id');
+        }
 
+        if ($cluster->getAttribute('state') === Cluster::RUNNING) {
             $clusterInfo = $sigmieClient->cluster()->get();
             $indices = $sigmieClient->cluster()->get();
         }
