@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Illuminate\Support\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
 use Sigmie\Contracts\EntityCollection;
 
-abstract class BaseEntityCollection extends Collection implements EntityCollection
+abstract class BaseEntityCollection extends ArrayCollection implements EntityCollection
 {
     public function __construct(array $data)
     {
