@@ -181,8 +181,8 @@ return [
         App\Providers\HorizonServiceProvider::class,
         App\Providers\TelescopeServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        App\Providers\ConfigcatServiceProvider::class,
         App\Providers\MailingListServiceProvider::class,
+        App\Providers\SigmieServiceProvider::class,
     ],
 
     /*

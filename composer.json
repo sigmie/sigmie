@@ -20,7 +20,6 @@
     ],
     "require": {
         "php": "^7.4",
-        "configcat/configcat-client": "^2.0",
         "facade/ignition": "^2.0",
         "fideloper/proxy": "^4.0",
         "fruitcake/laravel-cors": "^1.0",
@@ -44,6 +43,7 @@
         "pusher/pusher-php-server": "~4.0",
         "ramsey/uuid": "^3.9",
         "sigmie/app-core": "^0.3.0",
+        "sigmie/sigmie": "^0.3.3",
         "tightenco/ziggy": "^0.9.3"
     },
     "require-dev": {

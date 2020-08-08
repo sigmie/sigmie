@@ -17,7 +17,45 @@
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 class="text-lg leading-6 font-medium text-cool-gray-900">Overview</h2>
           <div class="mt-2 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            <!-- Card -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+              <div class="p-5">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <icon-heart class="h-6 w-6 text-gray-300"></icon-heart>
+                  </div>
+                  <div class="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt
+                        class="text-sm leading-5 font-medium text-cool-gray-500 truncate"
+                      >Cluster health</dt>
+                      <dd>
+                        <div class="text-lg leading-7 font-medium text-cool-gray-900">green</div>
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+              <div class="p-5">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <icon-heart class="h-6 w-6 text-gray-300"></icon-heart>
+                  </div>
+                  <div class="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt
+                        class="text-sm leading-5 font-medium text-cool-gray-500 truncate"
+                      >Cluster health</dt>
+                      <dd>
+                        <div class="text-lg leading-7 font-medium text-cool-gray-900">green</div>
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div class="bg-white overflow-hidden shadow rounded-lg">
               <div class="p-5">
@@ -40,6 +78,75 @@
             </div>
 
             <!-- More cards... -->
+          </div>
+
+          <div class="flex flex-col mt-5">
+            <div class="-my-2 py-2 overflow-x-auto sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+              <div
+                class="align-middle inline-block min-w-full shadow overflow-hidden sm:rounded-lg border-b border-gray-200"
+              >
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th
+                        class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"
+                      >Name</th>
+                      <th
+                        class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"
+                      >Title</th>
+                      <th
+                        class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"
+                      >Email</th>
+                      <th
+                        class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"
+                      >Role</th>
+                      <th class="px-6 py-3 bg-gray-50"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Odd row -->
+                    <tr class="bg-white">
+                      <td
+                        class="px-6 py-4 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900"
+                      >Jane Cooper</td>
+                      <td
+                        class="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500"
+                      >Regional Paradigm Technician</td>
+                      <td
+                        class="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500"
+                      >jane.cooper@example.com</td>
+                      <td class="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500">Admin</td>
+                      <td
+                        class="px-6 py-4 whitespace-no-wrap text-right text-sm leading-5 font-medium"
+                      >
+                        <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                      </td>
+                    </tr>
+
+                    <!-- Even row -->
+                    <tr class="bg-gray-50">
+                      <td
+                        class="px-6 py-4 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900"
+                      >Cody Fisher</td>
+                      <td
+                        class="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500"
+                      >Product Directives Officer</td>
+                      <td
+                        class="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500"
+                      >cody.fisher@example.com</td>
+                      <td class="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500">Owner</td>
+                      <td
+                        class="px-6 py-4 whitespace-no-wrap text-right text-sm leading-5 font-medium"
+                      >
+                        <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                      </td>
+                    </tr>
+
+                    <!-- More rows... -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -66,7 +173,7 @@
 import App from "./layouts/app";
 import delay from "lodash/delay";
 export default {
-  props: ["clusterState", "clusterId"],
+  props: ["clusterState", "clusterId", "indices", "clusterInfo"],
   components: { App },
   beforeMount() {
     if (this.clusterId === null) {

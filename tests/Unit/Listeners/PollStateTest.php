@@ -163,7 +163,7 @@ class PollStateTest extends TestCase
      */
     public function tries()
     {
-        $this->assertEquals(30, $this->listener->tries);
+        $this->assertEquals(10, $this->listener->tries);
     }
 
     /**
@@ -171,7 +171,7 @@ class PollStateTest extends TestCase
      */
     public function delay_seconds()
     {
-        $this->assertEquals(90, $this->listener->delay);
+        $this->assertEquals(15, $this->listener->delay);
     }
 
     /**
