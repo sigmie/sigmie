@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Models\ApiToken;
-
 class Project extends Model
 {
     public function clusters()
@@ -16,6 +14,11 @@ class Project extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function subscriptionPlan()
+    {
+        return $this->hasOne(SubscriptionPlan::class);
     }
 
     // public function productionCluster()
