@@ -15,9 +15,13 @@
 <script>
 import App from "../layouts/app";
 import delay from "lodash/delay";
+import throttle from "lodash/throttle";
+import loginVue from "../auth/login.vue";
+
 export default {
   props: ["clusterState", "clusterId", "indices", "clusterInfo"],
-  components: { App,
+  components: {
+    App,
     creating: require("./_creating").default,
     destroying: require("./_destroying").default,
     running: require("./_running").default,
@@ -25,6 +29,19 @@ export default {
     null: require("./_null").default,
   },
   beforeMount() {
+    throttle(() => {
+      console.log("reload");
+      this.$inertia.reload({
+        method: "get",
+        data: {},
+        preserveState: false,
+        preserveScroll: false,
+        only: ["indices", "clusterInfo"],
+      });
+
+      console.log("reloaded");
+    }, 30000);
+
     if (this.clusterId === null) {
       return;
     }

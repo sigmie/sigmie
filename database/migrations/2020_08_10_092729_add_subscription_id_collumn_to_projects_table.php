@@ -14,11 +14,11 @@ class AddSubscriptionIdCollumnToProjectsTable extends Migration
     public function up()
     {
         Schema::table('projects', function (Blueprint $table) {
-            $table->bigInteger('subscription_id')->unsigned()->index();
+            $table->bigInteger('subscription_plan_id')->unsigned()->index();
         });
 
         Schema::table('projects', function (Blueprint $table) {
-            $table->foreign('subscription_id')->references('id')->on('subscription_plan');
+            $table->foreign('subscription_plan_id')->references('id')->on('subscription_plans');
         });
     }
 
@@ -30,8 +30,8 @@ class AddSubscriptionIdCollumnToProjectsTable extends Migration
     public function down()
     {
         Schema::table('projects', function (Blueprint $table) {
-            $table->dropForeign('subscription_id');
-            $table->dropColumn('subscription_id');
+            $table->dropForeign('subscription_plan_id');
+            $table->dropColumn('subscription_plan_id');
         });
     }
 }

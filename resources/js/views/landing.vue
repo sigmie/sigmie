@@ -21,18 +21,11 @@
           id="nav-content"
         >
           <ul class="list-reset lg:flex justify-end flex-1 items-center">
-            <li class="mr-3">
-              <a
-                class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4"
-                target="blank"
-                href="https://github.com/sigmie"
-              >
-                <svg role="img" class="h-8" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
-                  />
-                </svg>
-              </a>
+            <li class>
+              <inertia-link
+                class="text-gray-500 tracking-wide py-2 px-4 font-semibold hover:bg-gray-50 rounded-md"
+                :href="$route('login')"
+              >Login</inertia-link>
             </li>
           </ul>
         </div>
@@ -44,7 +37,7 @@
         <div
           class="flex flex-col order-2 md:order-1 md:w-3/5 justify-center items-start text-center md:text-left md:pr-10 lg:pr-20 pb-4"
         >
-          <p class="uppercase tracking-loose w-full">Most of search</p>
+          <p class="uppercase tracking-loose w-full">EARLY ACCESS</p>
           <h1 class="my-4 text-5xl font-bold leading-tight">Awesome search, on your infastructure.</h1>
           <p class="leading-normal text-2xl mb-0 md:mb-3">
             Imagine having a smart, reliable, and scalable On-Site search, with the power of
@@ -52,9 +45,9 @@
           </p>
 
           <a
-            href="#subscribe"
-            class="mx-auto lg:mx-0 bg-white text-gray-800 font-bold rounded-lg my-6 py-3 px-8 shadow hover:shadow-lg cursor-pointer transition-shadow"
-          >Subscribe</a>
+            :href="$route('register')"
+            class="mx-auto lg:mx-0 tracking-wide bg-white hover:bg-gray-50 text-gray-600 font-bold rounded-lg my-6 py-3 px-8 shadow cursor-pointer transition-shadow"
+          >Get early access</a>
         </div>
 
         <div class="w-full order-1 md:order-2 py-6 md:w-2/5 text-center">
@@ -1390,14 +1383,11 @@
     </svg>
 
     <section id="subscribe" class="container mx-auto text-center pt-6">
-      <h1
-        class="w-full my-2 text-5xl font-bold leading-tight text-center text-white"
-      >Keep Yourself Up-to-Date</h1>
-      <div class="w-full mb-4">
+      <h3 class="my-4 text-3xl leading-tight">Subscribe for project updates and early releases.</h3>
+
+      <div class="w-full pt-4">
         <div class="h-1 mx-auto bg-white w-1/6 opacity-25 my-0 py-0 rounded-t"></div>
       </div>
-
-      <h3 class="my-4 text-3xl leading-tight">Subscribe for project updates and early releases.</h3>
 
       <form
         method="POST"
@@ -1407,7 +1397,7 @@
       >
         <div class="inline-block w-full sm:max-w-xs pr-4">
           <input
-            class="bg-white text-gray-600 rounded-lg focus:outline-none focus:shadow-outline border border-gray-300 rounded-lg py-3 px-8 block w-full appearance-none leading-normal"
+            class="bg-white text-gray-600 rounded-lg focus:outline-none focus:shadow-outline border border-gray-300 py-3 px-8 block w-full appearance-none leading-normal"
             name="email"
             v-model="email"
             required
@@ -1418,7 +1408,7 @@
         <div class="inline-block w-full sm:w-auto">
           <button
             type="submit"
-            class="mx-auto lg:mx-0 bg-white text-gray-800 font-bold rounded-lg my-6 py-3 px-8 shadow hover:shadow-lg cursor-pointer transition-shadow"
+            class="mx-auto lg:mx-0 tracking-wide bg-white hover:bg-gray-50 text-gray-800 font-bold rounded-lg my-6 py-3 px-8 shadow cursor-pointer transition-shadow"
           >Subscribe</button>
         </div>
       </form>

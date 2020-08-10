@@ -13,7 +13,7 @@ class CreateSubscriptionPlanTable extends Migration
      */
     public function up()
     {
-        Schema::create('subscription_plan', function (Blueprint $table) {
+        Schema::create('subscription_plans', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->integer('search_requests_rate');
@@ -29,6 +29,6 @@ class CreateSubscriptionPlanTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('subscription_plan');
+        Schema::dropIfExists('subscription_plans');
     }
 }

@@ -38,7 +38,8 @@ class ProjectController extends Controller
             'description' => $validated['description'],
             'creds' => encrypt($credentials),
             'provider' => $provider,
-            'user_id' => $userId
+            'user_id' => $userId,
+            'subscription_plan_id' => 1
         ]);
 
         return redirect()->route('cluster.create');
