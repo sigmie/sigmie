@@ -21,8 +21,8 @@ class UpdateCluster extends FormRequest
         return [
             'nodes_count' => ['min:1', 'max:3', 'required'],
             'data_center' => ['required'],
-            'username' => ['required'],
-            'password' => ['required'],
+            'username' => ['required', 'not_regex:/:.*/'],
+            'password' => ['required', 'min:4', 'max:8'],
         ];
     }
 }

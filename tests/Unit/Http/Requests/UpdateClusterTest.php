@@ -34,11 +34,18 @@ class UpdateClusterTest extends TestCase
      */
     public function rules()
     {
+        $colonRegex = '/:.*/';
         $this->assertEquals([
             'nodes_count' => ['min:1', 'max:3', 'required'],
             'data_center' => ['required'],
-            'username' => ['required'],
-            'password' => ['required']
+            'username' => ['required', "not_regex:{$colonRegex}"],
+            'password' => ['required', 'min:4', 'max:8'],
         ], $this->request->rules());
+
+        $this->assertEquals(1, preg_match($colonRegex, 'foo:bar'));
+        $this->assertEquals(1, preg_match($colonRegex, 'f::o:bar'));
+        $this->assertEquals(1, preg_match($colonRegex, ':foobar'));
+        $this->assertEquals(0, preg_match($colonRegex, 'foobar'));
+        $this->assertEquals(0, preg_match($colonRegex, 'usern/ex-dhs'));
     }
 }
