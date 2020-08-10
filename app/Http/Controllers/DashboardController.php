@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
+use Sigmie\Search\Indices\Index;
 use Sigmie\Search\SigmieClient;
 
 class DashboardController extends Controller
@@ -43,10 +44,12 @@ class DashboardController extends Controller
 
         if ($cluster->getAttribute('state') === Cluster::RUNNING) {
             $clusterInfo = $sigmieClient->cluster()->get();
-            $indices = $sigmieClient->cluster()->get();
+            $indices = $sigmieClient->indices()->list()->toArray();
+
+            $indices = array_map(fn ($index) => (array) $index, $indices);
         }
 
-        return Inertia::render('dashboard', [
+        return Inertia::render('dashboard/dashboard', [
             'clusterState' => $state,
             'clusterId' => $id,
             'indices' => $indices,

@@ -1,0 +1,68 @@
+<template>
+  <app title="Dashboard">
+    <creating class="pt-4" v-if="clusterState === 'queued_create' || clusterState === 'created'"></creating>
+
+    <destroying class="pt-4" v-if="clusterState === 'queued_destroy'"></destroying>
+
+    <running v-if="clusterState === 'running'" :clusterInfo="clusterInfo" :indices="indices"></running>
+
+    <destroyed v-if="clusterState === 'destroyed'" class="max-w-md mx-auto"></destroyed>
+
+    <null v-if="clusterState === null" class="max-w-md mx-auto"></null>
+  </app>
+</template>
+
+<script>
+import App from "../layouts/app";
+import delay from "lodash/delay";
+export default {
+  props: ["clusterState", "clusterId", "indices", "clusterInfo"],
+  components: { App,
+    creating: require("./_creating").default,
+    destroying: require("./_destroying").default,
+    running: require("./_running").default,
+    destroyed: require("./_destroyed").default,
+    null: require("./_null").default,
+  },
+  beforeMount() {
+    if (this.clusterId === null) {
+      return;
+    }
+
+    this.$socket
+      .private(`cluster.${this.clusterId}`)
+      .listen("ClusterWasBooted", (e) => {
+        // Wait 5 seconds for the cluster state to change
+        // in the database before reloading the page
+        delay(() => {
+          this.$inertia.reload({
+            method: "get",
+            data: {},
+            preserveState: false,
+            preserveScroll: false,
+            only: [],
+          });
+        }, 5);
+      });
+
+    this.$socket
+      .private(`cluster.${this.clusterId}`)
+      .listen("ClusterWasDestroyed", (e) => {
+        // Wait 5 seconds for the cluster state to change
+        // in the database before reloading the page
+        delay(() => {
+          this.$inertia.reload({
+            method: "get",
+            data: {},
+            preserveState: false,
+            preserveScroll: false,
+            only: [],
+          });
+        }, 5);
+      });
+  },
+};
+</script>
+
+<style>
+</style>
