@@ -6,7 +6,7 @@
 
     <running v-if="clusterState === 'running'" :clusterInfo="clusterInfo" :indices="indices"></running>
 
-    <destroyed v-if="clusterState === 'destroyed'" class="max-w-md mx-auto"></destroyed>
+    <destroyed v-if="clusterState === 'destroyed'" :clusterId="clusterId" class="max-w-md mx-auto"></destroyed>
 
     <null v-if="clusterState === null" class="max-w-md mx-auto"></null>
   </app>

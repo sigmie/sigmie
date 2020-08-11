@@ -1,42 +1,47 @@
 <template>
-  <section style="background-color: #f8fafc" class="bg-white md:py-8">
-    <div class="container mx-auto px-4">
+  <section class="bg-white px-16 md:py-20">
+    <div class="container mx-auto lg:w-8/12 md:px-4">
       <div class="flex flex-col-reverse md:flex-col">
-        <div class="flex flex-row flex-wrap-reverse justify-between w-10/12 md:w-full mx-auto md:mx-0 mt-8 md:mt-0 md:pt-0 pt-8 border-t-2 border-b-0 md:border-t-0 md:border-b-2 border-gray-200">
-          <div class="flex mx-auto md:mx-0 py-5">
-            <h2 class="font-bold text-gray-800 text-3xl">
+        <div
+          class="flex flex-row flex-wrap-dreverse justify-between w-full mx-auto md:mx-0 mt-8 md:mt-0 md:pt-0 pt-8 border-t-2 border-b-0 md:border-t-0 md:border-b-2 border-gray-200 pb-10"
+        >
+          <div class="flex mx-auto w-2/3 md:mx-0 py-5">
+            <h2 class="font-bold text-gray-800 text-xl md:text-3xl">
               Starting at $12 a month
               <span
-                class="text-gray-400 pl-2 font-normal text-sm"
+                class="hidden md:inline-block leading-none text-gray-400 font-normal text-sm"
               >/ per project.</span>
+              <span
+                class="block md:hidden leading-none text-gray-400 font-normal text-sm"
+              >per project.</span>
             </h2>
           </div>
-          <div class="flex mx-auto md:mx-0">
+          <div class="flex mx-auto w-1/3 justify-end md:mx-0">
             <inertia-link
               :href="$route('register')"
-              class="bg-theme-secondary-lighter w-60 md:w-48 flex items-center justify-center px-4 rounded-lg h-12 self-center text-sm leading-5 text-white"
+              class="bg-theme-secondary-lighter md:w-48 flex items-center justify-center px-4 rounded-lg h-12 self-center text-sm leading-5 text-white"
             >Get started</inertia-link>
           </div>
         </div>
         <div class="flex-col md:flex-row flex md:space-x-4 justify-between pt-8">
-          <div class="w-4/5 md:w-1/3 mx-auto flex-1 md:mx-0">
-            <span class="uppercase h-8 text-cool-gray-300 mb-3 text-sm">Simple pricing plan</span>
-            <h3 class="font-bold text-gray-800 text-3xl mb-4">All-in-on platform</h3>
-            <p
-              class="font-normal text-base text-cool-gray-400"
-            >Lorem ipsum dolor sit amet consectetur adipisicing elit. Perferendis iure quibusdam, obcaecati officia vel atque consequatur doloremque adipisci ipsum.</p>
+          <div class="md:w-1/3 mx-auto flex-1 md:mx-0">
+            <h3 class="font-bold text-gray-800 text-3xl mb-4">All-in-One</h3>
+            <p class="font-normal text-base text-cool-gray-400">
+              Simple and affordable pricing. Since the infastructure remains on your side,
+              you don't have to worry about pricing units.
+            </p>
           </div>
-          <div class="w-4/5 md:w-1/3 mx-auto flex-1 md:mx-0 mt-8 md:mt-0">
+          <div class="md:w-1/3 mx-auto flex-1 md:mx-0 mt-8 md:mt-0">
             <ul class="text-black">
               <li class="text-sm leading-5 mb-4 flex">
                 <div>
-                  <icon-check class="w-6 text-green-500 mr-3"></icon-check>
+                  <icon-check class="w-6 rounded-full text-green-400 mr-3"></icon-check>
                 </div>
                 <div>
-                  <h4 class="font-semibold text-base text-gray-700 mb-1">Comments</h4>
+                  <h4 class="font-semibold text-base text-gray-700 mb-1">14 day free trial</h4>
                   <p class="text-gray-400 text-sm">
-                    Somebody help me to go to holidays, i am sweating like a idiot here in
-                    the office, and i have no idea what i could do to feel better.
+                    Try out all our features and if you aren't satisfied
+                    your still get to keep your cluster.
                   </p>
                 </div>
               </li>
@@ -46,10 +51,9 @@
                 </div>
                 <div>
                   <h4 class="font-semibold text-base text-gray-700 mb-1">Alerts</h4>
-                  <p class="text-gray-400 text-sm">
-                    Get notified when someones posts i was having a bad day yesterday the
-                    then the night falled and i got myself killed a comment on a posting.
-                  </p>
+                  <p
+                    class="text-gray-400 text-sm"
+                  >Get notifications regarding significant changes via Email, Slack and SMS.</p>
                 </div>
               </li>
               <li class="text-sm leading-5 mb-4 flex">
@@ -57,51 +61,47 @@
                   <icon-check class="w-6 text-green-500 mr-3"></icon-check>
                 </div>
                 <div>
-                  <h4 class="font-semibold text-base text-gray-700 mb-1">Proxy</h4>
-                  <p class="text-gray-400 text-sm">
-                    Get notified lore mispu dolores how go about when
-                    someones posts a comment on a posting.
-                  </p>
+                  <h4 class="font-semibold text-base text-gray-700 mb-1">Cloud Providers</h4>
+                  <p
+                    class="text-gray-400 text-sm"
+                  >Choose your desired Cloud Provider between Google Cloud, AWS, Digital Ocean and Microsoft Azure.</p>
                 </div>
               </li>
             </ul>
           </div>
-          <div class="w-4/5 md:w-1/3 mx-auto flex-1 md:mx-0">
+          <div class="md:w-1/3 mx-auto flex-1 md:mx-0">
             <ul class="text-black">
               <li class="text-sm leading-5 mb-4 flex flex-">
                 <div>
                   <icon-check class="w-6 text-green-500 mr-3"></icon-check>
                 </div>
                 <div>
-                  <h4 class="font-semibold text-base text-gray-700 mb-1">Cloud platform</h4>
-                  <p class="text-gray-400 text-sm">
-                    If this at any time goes live i am gona get crazy. Because it feels like
-                    i am not making any progress. Event though i am fixing every day some bugs
-                    and making some improvenments.
-                  </p>
-                </div>
-              </li>
-              <li class="text-sm leading-5 mb-4 flex">
-                <div>
-                  <icon-check class="w-6 text-green-500 mr-3"></icon-check>
-                </div>
-                <div>
-                  <h4 class="font-semibold text-base text-gray-700 mb-1">Customer support</h4>
-                  <p class="text-gray-400 text-sm">
-                    I think that the custormer support job will really be easy since,
-                    i won't have any customers any soon.
-                  </p>
-                </div>
-              </li>
-              <li class="text-sm leading-5 mb-4 flex">
-                <div>
-                  <icon-check class="w-6 text-green-500 mr-3"></icon-check>
-                </div>
-                <div>
-                  <h4 class="font-semibold text-base text-gray-700 mb-1">Blah</h4>
+                  <h4 class="font-semibold text-base text-gray-700 mb-1">Proxy</h4>
                   <p
                     class="text-gray-400 text-sm"
-                  >I have no idea about what i should write in this last bullet point.</p>
+                  >Make 50.000 requests each month, by using your access tokens.</p>
+                </div>
+              </li>
+              <li class="text-sm leading-5 mb-4 flex">
+                <div>
+                  <icon-check class="w-6 text-green-500 mr-3"></icon-check>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-base text-gray-700 mb-1">Playground</h4>
+                  <p
+                    class="text-gray-400 text-sm"
+                  >Query your search, and recieve analysis regarding your search results.</p>
+                </div>
+              </li>
+              <li class="text-sm leading-5 mb-4 flex">
+                <div>
+                  <icon-check class="w-6 text-green-500 mr-3"></icon-check>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-base text-gray-700 mb-1">Multiple environment</h4>
+                  <p
+                    class="text-gray-400 text-sm"
+                  >Create a test and staging environment for your development workflow.</p>
                 </div>
               </li>
             </ul>
