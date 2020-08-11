@@ -8,11 +8,8 @@ use Inertia\Inertia;
 
 class LandingController extends Controller
 {
-    /**
-     * Render landing page
-     */
     public function __invoke()
     {
-        return Inertia::render('landing');
+        return Inertia::render('landing/landing');
     }
 }

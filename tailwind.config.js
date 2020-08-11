@@ -1,14 +1,14 @@
 module.exports = {
   plugins: [
     require('@tailwindcss/ui'),
-    require('@tailwindcss/typography'),
+    require('@tailwindcss/typography')
   ],
   purge: [
     './resources/js/**/*.vue',
     './resources/views/*.blade.php'
   ],
   variants: {
-    borderWidth: ['first']
+    borderWidth: ['first', 'responsive']
   },
   theme: {
     extend: {
@@ -17,6 +17,7 @@ module.exports = {
         'theme-primary': '#FF6347',
         // purple
         'theme-secondary': '#403C56',
+        'theme-secondary-lighter': '#2f2f41',
         // gray
         'theme-tertiary': '#B8C4D1'
       },
