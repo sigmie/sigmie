@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center">
+  <div class="flex">
     <input
       :id="id"
       type="checkbox"
@@ -10,12 +10,10 @@
       @change="$emit('change', $event.target.checked)"
       @blur="$emit('blur', $event.target.value)"
       @focus="$emit('touch', $event.target.value)"
-      class="form-checkbox h-4 w-4 text-orange-600 transition duration-150 ease-in-out"
+      class="form-checkbox h-4 w-4 mt-1 text-orange-400 transition duration-150 ease-in-out"
     />
-    <label :for="id" class="ml-2 block text-sm leading-5 text-gray-900">
-      <slot />
-      {{ label }}
-    </label>
+    <label v-if="label" :for="id" class="ml-2 block leading-none text-gray-900">{{ label }}</label>
+    <slot />
   </div>
 </template>
 
@@ -23,48 +21,48 @@
 export default {
   model: {
     prop: "checked",
-    event: "change"
+    event: "change",
   },
   props: {
     name: {
-      default: ""
+      default: "",
     },
     valid: {
-      default: null
+      default: null,
     },
     blur: {
-      default: () => {}
+      default: () => {},
     },
     value: {
-      default: ""
+      default: "",
     },
     placeholder: {
-      default: ""
+      default: "",
     },
     label: {
-      default: ""
+      default: "",
     },
     old: {
-      default: ""
+      default: "",
     },
     type: {
-      default: ""
+      default: "",
     },
     error: {
-      default: ""
+      default: "",
     },
     type: {
-      default: ""
+      default: "",
     },
     id: {
-      default: ""
+      default: "",
     },
     checked: {
-      default: false
+      default: false,
     },
     required: {
-      default: false
-    }
-  }
+      default: false,
+    },
+  },
 };
 </script>

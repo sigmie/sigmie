@@ -3,9 +3,17 @@
     <vue-headful :title="title + ' | Sigmie'" />
     <div class="flex flex-col-reverse md:flex-row flex-wrap-reverse">
       <div class="flex-1 md:border-none border-t-2 border-gray-200 mx-10 md:mx-0 py-10 md:pt-24">
-        <inertia-link class="md:float-right mx-auto w-8 block md:mr-15" :href="$route('landing')">
+        <inertia-link
+          v-if="hasHistory() === false"
+          class="md:float-right mx-auto w-8 block md:mr-15"
+          :href="$route('landing')"
+        >
           <icon-cheveron-left class="text-gray-300 md:mb-24"></icon-cheveron-left>
         </inertia-link>
+
+        <a v-else class="md:float-right mx-auto w-8 block md:mr-15 cursor-pointer" @click.prevent="back">
+          <icon-cheveron-left class="text-gray-300 md:mb-24"></icon-cheveron-left>
+        </a>
       </div>
       <div class="flex-1 pb-10 px-10 sm:px-0">
         <div class="max-w-3xl mx-auto lg:max-w-4xl xl:max-w-6xl">
@@ -60,14 +68,17 @@
 
 <script>
 export default {
-  components: {
-    // sidebar: require("../common/sidebar/sidebar").default,
-  },
-  props: ['title'],
+  props: ["title"],
   methods: {
     isRoute(name) {
       return this.$route().current(name);
     },
+    hasHistory() {
+      return window.history.length > 2;
+    },
+    back(){
+  window.history.back();
+    }
   },
 };
 </script>

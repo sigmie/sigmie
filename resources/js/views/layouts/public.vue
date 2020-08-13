@@ -1,30 +1,24 @@
 <template>
   <div class="min-h-full relative pb-20">
+    <vue-headful :title="title + ' | Sigmie'" />
+
     <main class="mx-auto container m-0 w-256 max-w-full">
       <slot></slot>
     </main>
 
-    <footer class="bottom-0 absolute text-sm w-full h-20">
-      <div class="flex flex-col justify-center h-full px-10">
-        <div>
-          <span class="inline-block pr-4 text-gray-500" href>© 2019 MOS - Sigma s.r.o.</span>
-          <a
-            class="inline-block pr-4 text-gray-500"
-            :href="$route('legal.terms')"
-          >Terms of service</a>
-          <a
-            class="inline-block pr-4 text-gray-500"
-            :href="$route('legal.privacy')"
-          >Privacy policy</a>
-          <a class="inline-block pr-4 text-gray-500" :href="$route('legal.cookie')">Cookie Policy</a>
-        </div>
-      </div>
+    <footer class="bottom-0 absolute text-cool-gray-400 text-sm w-full h-20">
+      <legal-footer class="px-7 space-x-8 mx-auto w-4/5 justify-center flex-wrap flex pb-3"></legal-footer>
     </footer>
   </div>
 </template>
 
 <script>
-export default {};
+export default {
+  props: ["title"],
+  components: {
+    legalFooter: require("../common/legal/footer").default,
+  },
+};
 </script>
 
 <style scoped>

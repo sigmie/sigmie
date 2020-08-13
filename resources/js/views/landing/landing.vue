@@ -3,12 +3,12 @@
     <vue-headful title="Sigmie Application | Awesome search on your Infastructure" />
 
     <nav class="fixed w-full bg-white shadow z-30 top-0 text-white py-1">
-      <div class="w-full px-5 container mx-auto flex justify-between items-center mt-0 py-2">
+      <div class="w-full px-5 container mx-auto lg:px-24 flex justify-between items-center mt-0 py-2">
         <div class>
           <div
             class="toggleColour text-white no-underline hover:no-underline font-bold text-2xl lg:text-4xl"
           >
-            <logo-default class="lg:pl-24 h-16"></logo-default>
+            <logo-default class="h-16"></logo-default>
           </div>
         </div>
 
@@ -214,23 +214,7 @@
         </div>
       </form>
     </section>
-    <div class="px-7 space-x-8 mx-auto w-4/5 justify-center flex-wrap flex pb-3">
-      <div class="py-5">
-        <inertia-link :href="$route('legal.about')">About Us</inertia-link>
-      </div>
-      <div class="py-5">
-        <inertia-link :href="$route('legal.terms')">Terms of Service</inertia-link>
-      </div>
-      <div class="py-5">
-        <inertia-link :href="$route('legal.privacy')">Privacy Policy</inertia-link>
-      </div>
-      <div class="py-5">
-        <inertia-link :href="$route('legal.imprint')">Imprint</inertia-link>
-      </div>
-      <div class="py-5">
-        <inertia-link :href="$route('legal.disclaimer')">Disclaimer</inertia-link>
-      </div>
-    </div>
+    <legal-footer class="px-7 space-x-8 mx-auto w-4/5 justify-center flex-wrap flex pb-3"></legal-footer>
     <p class="text-center w-full opacity-75 px-5 sm:px-0 sm:w-2/3 md:w-8/12 pb-15 mx-auto py-3">
       Sigmie UG (haftungsbeschränkt), Feldstr. 9, 58507 Lüdenscheid, Germany
       <br />Commercial Register: Amtsgericht Iserlohn, HRB 9701
@@ -247,6 +231,7 @@ export default {
     illustrationMetrics: require("./illustrations/metrics").default,
     illustrationHero: require("./illustrations/hero").default,
     sectionPricing: require("./sections/pricing").default,
+    legalFooter: require("../common/legal/footer").default
   },
   data() {
     return {

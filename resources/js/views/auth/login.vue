@@ -1,9 +1,9 @@
 <template>
   <div class="min-h-screen flex flex-col justify-center sm:px-6 lg:px-8" v-cloak>
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
-      <div class="mx-auto">
+      <inertia-link :href="$route('landing')" class="mx-auto">
         <logo-default></logo-default>
-      </div>
+      </inertia-link>
       <h2
         class="mt-6 text-center text-3xl leading-9 font-bold text-gray-900"
       >Sign in to your account</h2>
@@ -83,7 +83,7 @@
           </div>
 
           <div>
-            <button-github class="mt-3"></button-github>
+            <button-github text="GitHub" class="mt-3"></button-github>
           </div>
         </div>
       </div>
@@ -98,15 +98,15 @@ export default {
       form: {
         username: null,
         password: null,
-        remember: null
-      }
+        remember: null,
+      },
     };
   },
   methods: {
     submit() {
       this.$inertia.post(this.$route("login"), this.form);
-    }
-  }
+    },
+  },
 };
 </script>
 
