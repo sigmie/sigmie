@@ -5,8 +5,7 @@ return [
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
-    |--------------------------------------------------------------------------
-    |
+    |-------------------------------------------------------------------------- |
     | This file is for storing the credentials for third party services such
     | as Mailgun, SparkPost and others. This file provides a sane default
     | location for this type of information, allowing packages to have
@@ -56,26 +55,7 @@ return [
         'data_center' => env('MAILCHIMP_DATA_CENTER'),
     ],
     'paddle' => [
-        'vendor_id' => 113820,
-        'plans' => [
-            'hobby' => [
-                'id' => 593241,
-                'name' => 'Hobby'
-            ],
-            'pro' => [
-                'id' =>  593244,
-                'name' => 'Pro'
-            ],
-            'serious' => [
-                'id' => 593245,
-                'name' => 'Serious'
-            ],
-        ],
-        'test_plans' => [
-            'test' => [
-                'id' => 593243,
-                'name' => 'Test'
-            ]
-        ]
-    ],
+        'vendor_id' => env('PADDLE_VENDOR_ID'),
+        'plan_id' => env('PADDLE_PLAN_ID')
+    ]
 ];

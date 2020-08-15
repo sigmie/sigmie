@@ -124,11 +124,17 @@ export default {
             color: "blue",
           },
         },
+        // {
+        //   text: "Monitoring",
+        //   name: "monitoring",
+        //   routeParams: [],
+        //   icon: "desktop",
+        // },
         {
-          text: "Monitoring",
-          name: "monitoring",
-          routeParams: [],
-          icon: "desktop",
+          text: "Support",
+          name: "support",
+          routeParams:[],
+          icon: "chat",
         },
         {
           text: "Settings",

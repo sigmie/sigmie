@@ -15,7 +15,7 @@
               method="POST"
               :action="$route('register')"
               :github-route="$route('github.redirect', {action :'register'})"
-              :paddle-plans="paddlePlans"
+              :paddle-data="paddleData"
               :github-user="githubUser"
             />
             <div class="text-gray-400 text-base antialiased mt-5 mx-auto text-center">
@@ -40,7 +40,7 @@ export default {
     registerForm: require("./register/form").default,
     plan: require("./register/plan").default,
   },
-  props: ["paddleVendor", "paddlePlans", "githubUser"],
+  props: ["paddleData", "githubUser"],
   mounted() {
     let script = document.createElement("script");
     script.async = true;

@@ -69,6 +69,8 @@ if ($launched === true) {
 
             Route::get('/monitoring', 'DashboardController')->name('monitoring');
 
+            Route::get('/support', 'SupportController@index')->name('support');
+
             Route::get('/cluster/create', 'ClusterController@create')->name('cluster.create');
             Route::get('/cluster/edit/{cluster}', 'ClusterController@edit')->name('cluster.edit');
             Route::post('/cluster', 'ClusterController@store')->name('cluster.store');

@@ -86,12 +86,14 @@
       </div>
     </div>
 
-    <button-primary
+    <paddle :data="paddleData"></paddle>
+
+    <!-- <button-primary
       :class="{ 'disabled': $v.$anyError }"
       text="Create account"
       @click="submit"
       type="submit"
-    ></button-primary>
+    ></button-primary> -->
   </form>
 </template>
 
@@ -114,7 +116,7 @@ export default {
   components: {
     github: require("./github").default,
   },
-  props: ["githubRoute", "githubUser"],
+  props: ["githubRoute", "githubUser", "paddleData"],
   data() {
     return {
       name: this.$page.old.name ? this.$page.old.name : "",

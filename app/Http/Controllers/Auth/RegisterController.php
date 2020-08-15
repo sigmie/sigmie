@@ -41,8 +41,10 @@ class RegisterController extends Controller
     {
         return Inertia::render('auth/register', [
             'githubUser' => $request->session()->get('githubUser', []),
-            'paddleVendor' => config('services.paddle.vendor_id'),
-            'paddlePlans' => (env('APP_ENV') === 'production') ? config('services.paddle.plans') : config('services.paddle.test_plans')
+            'paddleData' => [
+                'vendor' => (int) config('services.paddle.vendor_id'),
+                'plan' => (int) config('services.paddle.plan_id')
+            ],
         ]);
     }
 

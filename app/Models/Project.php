@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Laravel\Paddle\Billable;
+
 class Project extends Model
 {
+    use Billable;
+
     public function clusters()
     {
         return $this->hasMany(Cluster::class)->withTrashed();
