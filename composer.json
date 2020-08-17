@@ -18,7 +18,10 @@
         },
         {
             "type": "path",
-            "url": "./nova-components/NovaFeatureFlags"
+            "url": "./nova-components/NovaFeatureFlags",
+            "options": {
+                "symlink": true
+            }
         }
     ],
     "require": {
@@ -46,9 +49,9 @@
         "pusher/pusher-php-server": "~4.0",
         "ramsey/uuid": "^3.9",
         "sigmie/app-core": "^0.3.0",
+        "sigmie/nova-feature-flags": "@dev",
         "sigmie/sigmie": "^0.3.3",
-        "tightenco/ziggy": "^0.9.3",
-        "sigmie/nova-feature-flags": "dev-master"
+        "tightenco/ziggy": "^0.9.3"
     },
     "require-dev": {
         "emielmolenaar/phpcs-laravel": "^1.2",
@@ -93,7 +96,7 @@
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true,
+    "prefer-stable": false,
     "scripts": {
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
