@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "aedcc46baebce89f6cc8df67ee5b359d",
+    "content-hash": "426ab5bb96198044233fda8a8e9c73bd",
     "packages": [
         {
             "name": "amphp/amp",
@@ -5422,14 +5422,21 @@
         },
         {
             "name": "sigmie/nova-feature-flags",
-            "version": "dev-feature/api-tokens",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sigmie/nova-feature-flag.git",
+                "reference": "8441cb838512ff6959cbe9857ba355153c23049b"
+            },
             "dist": {
-                "type": "path",
-                "url": "./nova-components/NovaFeatureFlags",
-                "reference": "2ea3402fba18a7b3c72c58d4e27196bac0542238"
+                "type": "zip",
+                "url": "https://api.github.com/repos/sigmie/nova-feature-flag/zipball/8441cb838512ff6959cbe9857ba355153c23049b",
+                "reference": "8441cb838512ff6959cbe9857ba355153c23049b",
+                "shasum": ""
             },
             "require": {
-                "php": ">=7.1.0"
+                "php": ">=7.1.0",
+                "ylsideas/feature-flags": "^1.3"
             },
             "type": "library",
             "extra": {
@@ -5444,17 +5451,16 @@
                     "Sigmie\\NovaFeatureFlags\\": "src/"
                 }
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
-            "description": "A Laravel Nova tool.",
+            "description": "A Laravel Nova tool for Managing Feature flags.",
             "keywords": [
                 "laravel",
                 "nova"
             ],
-            "transport-options": {
-                "relative": true
-            }
+            "time": "2020-08-17T10:25:19+00:00"
         },
         {
             "name": "sigmie/promises",
@@ -11069,7 +11075,8 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "laravel/cashier-paddle": 10
+        "laravel/cashier-paddle": 10,
+        "sigmie/nova-feature-flags": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
