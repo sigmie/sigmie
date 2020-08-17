@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Unit\Http\Requests;
 
 use App\Http\Requests\StoreCluster;
 use App\Http\Requests\StoreProject;

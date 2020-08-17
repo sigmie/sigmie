@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Unit\Http\Requests;
 
 use App\Models\NewsletterSubscription;
 use Tests\TestCase;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Requests;
+namespace Tests\Unit\Requests\Http\UpdateClusterTest;
 
 use App\Http\Requests\UpdateCluster;
 use PHPUnit\Framework\TestCase;

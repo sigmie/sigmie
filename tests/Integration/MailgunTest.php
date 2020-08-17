@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Integration;
 
 use App\Services\MailgunList;
 use GuzzleHttp\Client;
