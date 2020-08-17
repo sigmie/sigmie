@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
+use YlsIdeas\FeatureFlags\Facades\Features;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -43,6 +44,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Features::noBlade();
+        Features::noScheduling();
+        Features::noValidations();
+        Features::noCommands();
+
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }

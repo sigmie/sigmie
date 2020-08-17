@@ -16,6 +16,10 @@
         {
             "type": "composer",
             "url": "https://packages.sigmie.com"
+        },
+        {
+            "type": "path",
+            "url": "./nova-components/NovaFeatureFlags"
         }
     ],
     "require": {
@@ -44,7 +48,9 @@
         "ramsey/uuid": "^3.9",
         "sigmie/app-core": "^0.3.0",
         "sigmie/sigmie": "^0.3.3",
-        "tightenco/ziggy": "^0.9.3"
+        "tightenco/ziggy": "^0.9.3",
+        "ylsideas/feature-flags": "^1.3",
+        "sigmie/nova-feature-flags": "*"
     },
     "require-dev": {
         "emielmolenaar/phpcs-laravel": "^1.2",
@@ -102,7 +108,7 @@
             "@php artisan key:generate --ansi"
         ],
         "post-install-cmd": [
-            "chmod -R 755 bootstrap\/cache",
+            "chmod -R 755 bootstrap/cache",
             "php artisan cache:clear"
         ]
     }
