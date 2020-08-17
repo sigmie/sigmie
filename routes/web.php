@@ -29,9 +29,20 @@ Route::namespace('Newsletter')->prefix('newsletter')->name('newsletter.')->group
     Route::get('/confirmed', 'SubscriptionController@confirmed')->name('confirmed');
 });
 
-if ($launched === true) {
+// Legal
+Route::name('legal.')->group(function () {
+    Route::get('/about-us', 'LegalController@about')->name('about');
+    Route::get('/terms-of-service', 'LegalController@terms')->name('terms');
+    Route::get('/privacy-policy', 'LegalController@privacy')->name('privacy');
+    Route::get('/imprint', 'LegalController@imprint')->name('imprint');
+    Route::get('/disclaimer', 'LegalController@disclaimer')->name('disclaimer');
+});
 
-    // Github auth routes
+
+// Github auth routes
+
+Route::group(['middleware' => ['feature:auth']], function () {
+
     Route::namespace('Auth')->prefix('github')->name('github.')->group(function () {
 
         Route::get('/redirect', 'GithubController@redirect')->name('redirect');
@@ -42,43 +53,34 @@ if ($launched === true) {
     });
 
     Auth::routes();
+});
 
-    // Legal
-    Route::name('legal.')->group(function () {
-        Route::get('/about-us', 'LegalController@about')->name('about');
-        Route::get('/terms-of-service', 'LegalController@terms')->name('terms');
-        Route::get('/privacy-policy', 'LegalController@privacy')->name('privacy');
-        Route::get('/imprint', 'LegalController@imprint')->name('imprint');
-        Route::get('/disclaimer', 'LegalController@disclaimer')->name('disclaimer');
+Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
+
+
+    Route::group(['middleware' => [ShareProjectToView::class]], function () {
+
+        Route::resource('project', 'ProjectController');
+
+        Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard')->middleware(AssignProject::class);
+
+        Route::get('/tokens/{project?}', 'ClusterTokenController@index')->name('token.index')->middleware(AssignProject::class);
+
+        Route::get('/settings/{project?}', 'SettingsController@index')->name('settings')->middleware(AssignProject::class);
+
+        Route::get('/playground', 'DashboardController')->name('playground');
+
+        Route::get('/monitoring', 'DashboardController')->name('monitoring');
+
+        Route::get('/support', 'SupportController@index')->name('support');
+
+        Route::get('/cluster/create', 'ClusterController@create')->name('cluster.create');
+        Route::get('/cluster/edit/{cluster}', 'ClusterController@edit')->name('cluster.edit');
+        Route::post('/cluster', 'ClusterController@store')->name('cluster.store');
+        Route::put('/cluster/{cluster}', 'ClusterController@update')->name('cluster.update');
+        Route::delete('/cluster/{cluster}', 'ClusterController@destroy')->name('cluster.destroy');
     });
-
-    Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
-
-
-        Route::group(['middleware' => [ShareProjectToView::class]], function () {
-
-            Route::resource('project', 'ProjectController');
-
-            Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard')->middleware(AssignProject::class);
-
-            Route::get('/tokens/{project?}', 'ClusterTokenController@index')->name('token.index')->middleware(AssignProject::class);
-
-            Route::get('/settings/{project?}', 'SettingsController@index')->name('settings')->middleware(AssignProject::class);
-
-            Route::get('/playground', 'DashboardController')->name('playground');
-
-            Route::get('/monitoring', 'DashboardController')->name('monitoring');
-
-            Route::get('/support', 'SupportController@index')->name('support');
-
-            Route::get('/cluster/create', 'ClusterController@create')->name('cluster.create');
-            Route::get('/cluster/edit/{cluster}', 'ClusterController@edit')->name('cluster.edit');
-            Route::post('/cluster', 'ClusterController@store')->name('cluster.store');
-            Route::put('/cluster/{cluster}', 'ClusterController@update')->name('cluster.update');
-            Route::delete('/cluster/{cluster}', 'ClusterController@destroy')->name('cluster.destroy');
-        });
-    });
-}
+});
 
 
 Route::bind('cluster', function ($id) {

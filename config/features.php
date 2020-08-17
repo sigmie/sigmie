@@ -47,11 +47,11 @@ return [
         ],
         'chain' => [
             'drivers' => [
+                'database',
                 'config',
-                'database'
                 // 'redis',
             ],
-            'store' => 'database',
+            'store' => 'config',
             'update_on_resolve' => true,
         ],
     ],

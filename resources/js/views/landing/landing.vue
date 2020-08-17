@@ -3,7 +3,9 @@
     <vue-headful title="Sigmie Application | Awesome search on your Infastructure" />
 
     <nav class="fixed w-full bg-white shadow z-30 top-0 text-white py-1">
-      <div class="w-full px-5 container mx-auto lg:px-24 flex justify-between items-center mt-0 py-2">
+      <div
+        class="w-full px-5 container mx-auto lg:px-24 flex justify-between items-center mt-0 py-2"
+      >
         <div class>
           <div
             class="toggleColour text-white no-underline hover:no-underline font-bold text-2xl lg:text-4xl"
@@ -14,11 +16,13 @@
 
         <div>
           <inertia-link
+            v-if="features.auth"
             :href="$route('register')"
             class="items-center px-4 py-2 border border-transparent text-sm leading-5 font-semibold rounded-md text-cool-gray-800 tracking-wide bg-white hover:bg-cool-gray-50 focus:outline-none focus:border-cool-gray-700 active:bg-cool-gray-100 transition duration-150 ease-in-out"
           >Register</inertia-link>
 
           <inertia-link
+            v-if="features.auth"
             :href="$route('login')"
             class="items-center px-4 py-2 border border-transparent text-sm leading-5 font-semibold rounded-md text-cool-gray-800 tracking-wide bg-white hover:bg-cool-gray-50 focus:outline-none focus:border-cool-gray-700 active:bg-cool-gray-100 transition duration-150 ease-in-out"
           >Login</inertia-link>
@@ -37,11 +41,16 @@
           <p
             class="leading-normal text-xl mb-0 md:mb-3 opacity-75"
           >Sigmie is an application of which helps you create your Elasticsearch cluster, optimize your search results, and simplifies common tasks.</p>
-
           <inertia-link
+            v-if="features.auth"
             :href="$route('register')"
             class="mx-auto lg:mx-0 bg-white hover:bg-cool-gray-50 text-gray-600 font-semibold rounded-lg my-6 py-3 px-8 shadow cursor-pointer transition-shadow"
           >Get early access</inertia-link>
+          <inertia-link
+            v-else
+            href="#!"
+            class="mx-auto lg:mx-0 bg-white hover:bg-cool-gray-50 text-gray-600 font-semibold rounded-lg my-6 py-3 px-8 shadow cursor-pointer transition-shadow"
+          >Soon available</inertia-link>
         </div>
 
         <div class="w-full order-1 md:order-2 py-6 md:w-2/5 text-center">
@@ -100,7 +109,7 @@
               <br />We even notify you when something doesn't seem right,
               so that you never lose sight of your cluster.
               <br />
-              <br />You can also  query your search from inside our application, to get a detailed overview
+              <br />You can also query your search from inside our application, to get a detailed overview
               regarding your results.
             </p>
           </div>
@@ -131,7 +140,7 @@
       </div>
     </section>
 
-    <section-pricing></section-pricing>
+    <section-pricing :auth-feature="features.auth"></section-pricing>
 
     <section style="background-color: #f8fafc" class="bg-white px-16 py-16">
       <div class="flex flex-col justify-center container mx-auto px-4">
@@ -226,12 +235,13 @@
 
 <script>
 export default {
+  props: ["features"],
   components: {
     illustrationAnalysis: require("./illustrations/analysis").default,
     illustrationMetrics: require("./illustrations/metrics").default,
     illustrationHero: require("./illustrations/hero").default,
     sectionPricing: require("./sections/pricing").default,
-    legalFooter: require("../common/legal/footer").default
+    legalFooter: require("../common/legal/footer").default,
   },
   data() {
     return {

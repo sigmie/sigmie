@@ -18,9 +18,15 @@
           </div>
           <div class="flex mx-auto w-1/3 justify-end md:mx-0">
             <inertia-link
+              v-if="authFeature"
               :href="$route('register')"
               class="bg-theme-secondary-lighter md:w-48 flex items-center justify-center px-4 rounded-lg h-12 self-center text-sm leading-5 text-white"
             >Get started</inertia-link>
+            <inertia-link
+              v-else
+              href="#!"
+              class="bg-theme-secondary-lighter md:w-48 flex items-center justify-center px-4 rounded-lg h-12 self-center text-sm leading-5 text-white"
+            >Soon available</inertia-link>
           </div>
         </div>
         <div class="flex-col md:flex-row flex md:space-x-4 justify-between pt-8">
@@ -113,7 +119,9 @@
 </template>
 
 <script>
-export default {};
+export default {
+  props: ["authFeature"],
+};
 </script>
 
 <style scoped>
