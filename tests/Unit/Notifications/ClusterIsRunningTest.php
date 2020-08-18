@@ -1,20 +1,12 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Tests\Unit\Notifications;
 
-use App\Models\Cluster;
-use App\Models\Project;
-use App\Models\User;
 use App\Notifications\ClusterIsRunning;
 use App\Repositories\ClusterRepository;
-use Google\Protobuf\Method;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\App;
-use Mockery;
-use Mockery\MockInterface;
 use PHPUnit\Framework\MockObject\MockObject;
-use Tests\TestCase;
 use Tests\Helpers\NeedsNotifiable;
+use Tests\TestCase;
 
 class ClusterIsRunningTest extends TestCase
 {

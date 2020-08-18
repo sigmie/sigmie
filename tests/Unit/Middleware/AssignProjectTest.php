@@ -11,7 +11,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Mockery\Mock;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\Helpers\NeedsClosure;
 use Tests\TestCase;
@@ -66,7 +65,7 @@ class AssignProjectTest extends TestCase
 
         $this->requestMock = $this->getMockBuilder(Request::class)->addMethods(['getName'])->setMethods(['route'])->getMock();
 
-        $this->middleware = new AssignProject;
+        $this->middleware = new AssignProject();
     }
 
     /**
@@ -75,7 +74,7 @@ class AssignProjectTest extends TestCase
     public function dont_redirect_if_projectd(): void
     {
         $this->projectsCollectionMock->method('first')->willReturn($this->projectMock);
-        $this->requestMock->expects($this->once())->method('route')->willReturn(new Project);
+        $this->requestMock->expects($this->once())->method('route')->willReturn(new Project());
 
         $this->expectClosureCalledWith($this->requestMock);
 

@@ -7,12 +7,11 @@ namespace Tests\Unit\Rules;
 use App\Rules\ValidProvider;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use PHPUnit\Framework\Constraint\RegularExpression;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
-class ValidProviderTest  extends TestCase
+class ValidProviderTest extends TestCase
 {
     /**
      * @var ValidProvider
@@ -39,7 +38,7 @@ class ValidProviderTest  extends TestCase
 
         $this->filePathArgument = $this->matchesRegularExpression('/temp\/.*\.json$/');
 
-        $this->rule = new ValidProvider;
+        $this->rule = new ValidProvider();
     }
 
     /**

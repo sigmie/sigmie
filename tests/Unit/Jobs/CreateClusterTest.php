@@ -16,7 +16,6 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\App\Core\Cluster as CoreCluster;
 use Sigmie\App\Core\Contracts\ClusterManager;
 use Tests\TestCase;
-use Tests\Unit\Events\ClusterWasCreatedTest;
 
 class CreateClusterTest extends TestCase
 {

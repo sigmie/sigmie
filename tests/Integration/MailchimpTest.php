@@ -1,9 +1,9 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use GuzzleHttp\Client;
 use App\Services\MailchimpList;
+use GuzzleHttp\Client;
 use Tests\TestCase;
 
 class MailchimpTest extends TestCase

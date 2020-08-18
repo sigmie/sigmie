@@ -9,9 +9,9 @@ use App\Models\Project;
 use App\Repositories\ProjectRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
-use Tests\Helpers\NeedsClosure;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\HttpFoundation\Request;
+use Tests\Helpers\NeedsClosure;
 use Tests\TestCase;
 
 class RedirectIfHasClusterTest extends TestCase

@@ -1,11 +1,9 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Tests\Feature;
 
 use App\Models\Project;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class ProjectPoliciesTest extends TestCase

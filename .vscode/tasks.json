@@ -21,12 +21,12 @@
         {
             "label": "phpcs:tests",
             "type": "shell",
-            "command": "vendor/bin/phpcs --standard=phpcs-laravel tests"
+            "command": "vendor/bin/phpcbf --standard=psr12 tests && vendor/bin/phpcs --standard=psr12 tests"
         },
         {
             "label": "phpcs:app",
             "type": "shell",
-            "command": "vendor/bin/phpcs --standard=phpcs-laravel app"
+            "command": "vendor/bin/phpcbf --standard=psr12 app && vendor/bin/phpcs --standard=psr12 app"
         },
         {
             "label": "make:test:feature",

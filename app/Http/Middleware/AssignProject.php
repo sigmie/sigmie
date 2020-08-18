@@ -1,9 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
 use App\Models\Project;
-use App\Repositories\ProjectRepository;
 use Closure;
 use Illuminate\Support\Facades\Auth;
 
@@ -24,7 +23,6 @@ class AssignProject
         $project = Auth::user()->getAttribute('projects')->first();
 
         if ($project instanceof Project) {
-
             $projectId = $project->getAttribute('id');
 
             $routeName = $request->route()->getName();

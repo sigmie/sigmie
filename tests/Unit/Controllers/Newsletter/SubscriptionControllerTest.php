@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Controllers\Newsletter;
 
-use App\Http\Controllers\Newsletter\SubscriptionConfirmationController;
 use App\Http\Controllers\Newsletter\SubscriptionController;
 use App\Http\Requests\StoreNewsletterSubscription;
 use App\Repositories\NewsletterSubscriptionRepository;
@@ -13,7 +12,6 @@ use Inertia\Inertia;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
-use function GuzzleHttp\Promise\queue;
 
 class SubscriptionControllerTest extends TestCase
 {

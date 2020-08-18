@@ -9,12 +9,11 @@ use App\Listeners\SendClusterDestroyedNotification;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\User;
+use App\Notifications\ClusterWasDestroyed as ClusterWasDestroyedNotification;
 use App\Repositories\ClusterRepository;
-use Illuminate\Notifications\Notifiable;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Tests\Helpers\NeedsNotifiable;
-use App\Notifications\ClusterWasDestroyed as ClusterWasDestroyedNotification;
 
 class SendClusterDestroyedNotificationTest extends TestCase
 {

@@ -99,7 +99,7 @@ class NewsletterSubscription extends Resource
     public function actions(Request $request)
     {
         return [
-            (new SendNewsletterSubscriptionConfirmation)->onlyOnTableRow()
+            (new SendNewsletterSubscriptionConfirmation())->onlyOnTableRow()
         ];
     }
 }

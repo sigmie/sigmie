@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Notifications;
 
-use App\Notifications\ClusterIsRunning;
 use App\Notifications\ClusterWasDestroyed;
 use PHPUnit\Framework\TestCase;
 use Tests\Helpers\NeedsNotifiable;

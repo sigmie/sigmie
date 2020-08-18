@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Notifications;
 
-use App\Models\User;
 use App\Notifications\ConfirmSubscription;
-use Carbon\Carbon;
-use DateTime;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\URL;
 use Tests\Helpers\NeedsNotifiable;
@@ -44,7 +41,7 @@ class ConfirmSubscriptionTest extends TestCase
     {
         URL::shouldReceive('temporarySignedRoute')->andReturn('some-link');
 
-        $expected = (new MailMessage)
+        $expected = (new MailMessage())
             ->subject('Confirm your subscription')
             ->line('Please click the button below to confirm your newsletter subscription.')
             ->action('Confirm newsletter subscription', 'some-link');

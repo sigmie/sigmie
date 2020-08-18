@@ -1,8 +1,7 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Tests\Unit\Http\Requests;
 
-use App\Http\Requests\StoreCluster;
 use App\Http\Requests\StoreProject;
 use App\Rules\ValidProvider;
 use Tests\TestCase;
@@ -36,7 +35,7 @@ class StoreProjectTest extends TestCase
     {
         $expected = [
             'name' => ['required', 'regex:/^[a-zA-Z0-9-_]*$/i'],
-            'provider' => [new ValidProvider],
+            'provider' => [new ValidProvider()],
             'description' => []
         ];
 

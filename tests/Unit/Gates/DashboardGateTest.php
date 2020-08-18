@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Gates;
 
+use App\Gates\DashboardGate;
 use App\Models\Project;
 use App\Models\User;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use App\Gates\DashboardGate;
 
 class DashboardGateTest extends TestCase
 {
@@ -24,7 +24,7 @@ class DashboardGateTest extends TestCase
     /**
      * @var User|MockObject
      */
-    private  $userMock;
+    private $userMock;
 
     public function setUp(): void
     {
@@ -34,7 +34,7 @@ class DashboardGateTest extends TestCase
 
         $this->userMock = $this->createMock(User::class);
 
-        $this->gate = new DashboardGate;
+        $this->gate = new DashboardGate();
     }
 
     /**

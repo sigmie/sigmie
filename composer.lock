@@ -2673,12 +2673,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/framework.git",
-                "reference": "bec8a465fb9e27bfa9d45ace5884a3927e87e9cd"
+                "reference": "8a192a2c89aa6e79962e5484ebc4b967ff63de9a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/framework/zipball/bec8a465fb9e27bfa9d45ace5884a3927e87e9cd",
-                "reference": "bec8a465fb9e27bfa9d45ace5884a3927e87e9cd",
+                "url": "https://api.github.com/repos/laravel/framework/zipball/8a192a2c89aa6e79962e5484ebc4b967ff63de9a",
+                "reference": "8a192a2c89aa6e79962e5484ebc4b967ff63de9a",
                 "shasum": ""
             },
             "require": {
@@ -2823,7 +2823,7 @@
                 "framework",
                 "laravel"
             ],
-            "time": "2020-08-17T13:28:58+00:00"
+            "time": "2020-08-18T07:59:47+00:00"
         },
         {
             "name": "laravel/horizon",
@@ -3408,12 +3408,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/commonmark.git",
-                "reference": "7c783c8887455720cab81d0a748f44f4b985235c"
+                "reference": "be270fa8c6e9659941611b7ec6aed0c857a00f1a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/commonmark/zipball/7c783c8887455720cab81d0a748f44f4b985235c",
-                "reference": "7c783c8887455720cab81d0a748f44f4b985235c",
+                "url": "https://api.github.com/repos/thephpleague/commonmark/zipball/be270fa8c6e9659941611b7ec6aed0c857a00f1a",
+                "reference": "be270fa8c6e9659941611b7ec6aed0c857a00f1a",
                 "shasum": ""
             },
             "require": {
@@ -3495,7 +3495,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2020-08-15T12:49:21+00:00"
+            "time": "2020-08-18T01:18:00+00:00"
         },
         {
             "name": "league/flysystem",
@@ -5563,11 +5563,11 @@
         },
         {
             "name": "sigmie/nova-feature-flags",
-            "version": "dev-feature/api-tokens",
+            "version": "dev-master",
             "dist": {
                 "type": "path",
                 "url": "./nova-components/NovaFeatureFlags",
-                "reference": "20aa2a3a3412b49423f5935646ee72e94ac0a7ed"
+                "reference": "b578876c561fd518046d9f4ffb5d43de2d719f3d"
             },
             "require": {
                 "php": ">=7.1.0",
@@ -5979,12 +5979,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/console.git",
-                "reference": "61db8aa3f32415fbcacbe9ec9ace95b90e09c98b"
+                "reference": "5bc9d8e93f5a3746fdd9d774ad214e502cbb0f8a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/console/zipball/61db8aa3f32415fbcacbe9ec9ace95b90e09c98b",
-                "reference": "61db8aa3f32415fbcacbe9ec9ace95b90e09c98b",
+                "url": "https://api.github.com/repos/symfony/console/zipball/5bc9d8e93f5a3746fdd9d774ad214e502cbb0f8a",
+                "reference": "5bc9d8e93f5a3746fdd9d774ad214e502cbb0f8a",
                 "shasum": ""
             },
             "require": {
@@ -6070,7 +6070,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2020-08-17T08:48:15+00:00"
+            "time": "2020-08-18T05:52:09+00:00"
         },
         {
             "name": "symfony/css-selector",
@@ -10386,12 +10386,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "bb1d32b9f6efd49eaefc6b998302fc59c4b5d4fc"
+                "reference": "faf29331cbf6b63f3f0d396d7ea862390de16a29"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/bb1d32b9f6efd49eaefc6b998302fc59c4b5d4fc",
-                "reference": "bb1d32b9f6efd49eaefc6b998302fc59c4b5d4fc",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/faf29331cbf6b63f3f0d396d7ea862390de16a29",
+                "reference": "faf29331cbf6b63f3f0d396d7ea862390de16a29",
                 "shasum": ""
             },
             "require": {
@@ -10471,7 +10471,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2020-08-12T08:20:05+00:00"
+            "time": "2020-08-18T06:36:16+00:00"
         },
         {
             "name": "react/promise",

@@ -24,7 +24,7 @@ class ConfirmSubscription extends Notification implements ShouldQueue
     {
         $verificationUrl = $this->verificationUrl($notifiable);
 
-        return (new MailMessage)
+        return (new MailMessage())
             ->subject('Confirm your subscription')
             ->line('Please click the button below to confirm your newsletter subscription.')
             ->action('Confirm newsletter subscription', $verificationUrl);

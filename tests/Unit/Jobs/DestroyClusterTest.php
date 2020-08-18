@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use App\Events\ClusterWasCreated;
 use App\Events\ClusterWasDestroyed;
 use App\Helpers\ClusterManagerFactory;
-use App\Jobs\CreateCluster;
 use App\Jobs\DestroyCluster;
 use App\Models\Cluster;
 use App\Models\Project;
@@ -18,7 +16,6 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\App\Core\Cluster as CoreCluster;
 use Sigmie\App\Core\Contracts\ClusterManager;
 use Tests\TestCase;
-use Tests\Unit\Events\ClusterWasCreatedTest;
 
 class DestroyClusterTest extends TestCase
 {

@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Controllers\Newsletter;
 
 use App\Contracts\MailingList;
-use App\Contracts\MustConfirmSubscription;
 use App\Http\Controllers\Newsletter\SubscriptionConfirmationController;
-use App\Http\Controllers\Newsletter\SubscriptionController;
 use App\Models\NewsletterSubscription;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Config;
@@ -45,7 +43,7 @@ class SubscriptionConfirmationControllerTest extends TestCase
         $this->newsletterSubscriptionMock = $this->createMock(NewsletterSubscription::class);
         $this->newsletterSubscriptionMock->method('getAttribute')->willReturn($this->email);
 
-        $this->controller = new SubscriptionConfirmationController;
+        $this->controller = new SubscriptionConfirmationController();
     }
 
     /**

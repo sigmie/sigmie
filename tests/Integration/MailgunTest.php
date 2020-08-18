@@ -1,12 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Tests\Integration;
 
 use App\Services\MailgunList;
 use GuzzleHttp\Client;
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class MailgunTest extends TestCase
 {

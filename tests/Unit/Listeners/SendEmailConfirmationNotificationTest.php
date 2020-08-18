@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Listeners;
 
+use App\Contracts\MustConfirmSubscription;
 use App\Events\NewsletterSubscriptionWasCreated;
 use App\Listeners\SendEmailConfirmationNotification;
 use App\Models\NewsletterSubscription;
-use App\Contracts\MustConfirmSubscription;
-use Mockery\Mock;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -38,7 +37,7 @@ class SendEmailConfirmationNotificationTest extends TestCase
         $this->eventMock = $this->createMock(NewsletterSubscriptionWasCreated::class);
         $this->eventMock->newsletterSubscription  = $this->subscriptionMock;
 
-        $this->listener = new SendEmailConfirmationNotification;
+        $this->listener = new SendEmailConfirmationNotification();
     }
 
     /**

@@ -11,7 +11,6 @@ use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 
 class PollState implements ShouldQueue
@@ -34,7 +33,6 @@ class PollState implements ShouldQueue
         $cluster = $this->clusters->find($event->clusterId);
 
         if ($this->clusterCallWasSuccessful($cluster)) {
-
             $this->clusters->update($event->clusterId, ['state' => Cluster::RUNNING]);
 
             event(new ClusterWasBooted($event->clusterId));
@@ -45,6 +43,13 @@ class PollState implements ShouldQueue
         throw new \Exception("Cluster run check failed after {$this->tries} tries with {$this->retryAfter} delay between each of them.");
     }
 
+    public function failed(ClusterWasCreated $event, Exception $exception): void
+    {
+        $this->clusters->update($event->clusterId, ['state' => Cluster::FAILED]);
+
+        event(new ClusterHasFailed($event->clusterId));
+    }
+
     private function clusterCallWasSuccessful(Cluster $cluster): bool
     {
         $domain = config('services.cloudflare.domain');
@@ -53,12 +58,5 @@ class PollState implements ShouldQueue
         $response = Http::withBasicAuth($cluster->username, decrypt($cluster->password))->timeout(3)->get($url);
 
         return $response->successful();
-    }
-
-    public function failed(ClusterWasCreated $event, Exception $exception): void
-    {
-        $this->clusters->update($event->clusterId, ['state' => Cluster::FAILED]);
-
-        event(new ClusterHasFailed($event->clusterId));
     }
 }

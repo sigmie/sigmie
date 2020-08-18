@@ -7,12 +7,9 @@ namespace App\Http\Controllers;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Repositories\ClusterRepository;
-use App\Repositories\ProjectRepository;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
-use Sigmie\Search\Indices\Index;
 use Sigmie\Search\SigmieClient;
 
 class DashboardController extends Controller

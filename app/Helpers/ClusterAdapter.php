@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Helpers;
 
 use App\Models\Cluster as AppCluster;
-use Exception;
 use Sigmie\App\Core\Cloud\Regions\America;
 use Sigmie\App\Core\Cloud\Regions\Asia;
 use Sigmie\App\Core\Cloud\Regions\Europe;
@@ -29,15 +28,15 @@ class ClusterAdapter
         $coreCluster->setName($name);
 
         if ($dataCenter === 'europe') {
-            $coreCluster->setRegion(new Europe);
+            $coreCluster->setRegion(new Europe());
         }
 
         if ($dataCenter === 'asia') {
-            $coreCluster->setRegion(new Asia);
+            $coreCluster->setRegion(new Asia());
         }
 
         if ($dataCenter === 'america') {
-            $coreCluster->setRegion(new America);
+            $coreCluster->setRegion(new America());
         }
 
         $coreCluster->setDiskSize(15);

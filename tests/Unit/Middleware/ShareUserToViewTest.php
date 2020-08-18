@@ -4,20 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Middleware;
 
-use App\Http\Middleware\RedirectIfHasCluster;
-use App\Http\Middleware\ShareProjectsToView;
 use App\Http\Middleware\ShareUserToView;
-use App\Models\Project;
 use App\Models\User;
-use App\Repositories\ProjectRepository;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
-use Tests\Helpers\NeedsClosure;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\HttpFoundation\Request;
+use Tests\Helpers\NeedsClosure;
 use Tests\TestCase;
 
 class ShareUserToViewTest extends TestCase
@@ -49,7 +42,7 @@ class ShareUserToViewTest extends TestCase
 
         Auth::shouldReceive('user')->andReturn($this->userMock);
 
-        $this->middleware = new ShareUserToView;
+        $this->middleware = new ShareUserToView();
     }
 
     /**

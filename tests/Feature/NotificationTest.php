@@ -1,13 +1,13 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Tests\Feature;
 
 use App\Jobs\CleanNotifications;
 use App\Models\User;
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Carbon;
 use Tests\Fakes\FakeNotification;
+use Tests\TestCase;
 
 class NotificationTest extends TestCase
 {
@@ -36,7 +36,7 @@ class NotificationTest extends TestCase
 
         $this->actingAs($user);
 
-        $user->notify(new FakeNotification);
+        $user->notify(new FakeNotification());
 
         $id = $user->notifications->first()->id;
 
@@ -54,7 +54,7 @@ class NotificationTest extends TestCase
 
         $this->actingAs($user);
 
-        $user->notify(new FakeNotification);
+        $user->notify(new FakeNotification());
 
         $id = $user->notifications->first()->id;
 
@@ -76,7 +76,7 @@ class NotificationTest extends TestCase
 
         $user = factory(User::class)->create();
 
-        $user->notify(new FakeNotification);
+        $user->notify(new FakeNotification());
 
         $id = $user->notifications->first()->id;
 
@@ -100,7 +100,7 @@ class NotificationTest extends TestCase
 
         $this->actingAs($user);
 
-        $user->notify(new FakeNotification);
+        $user->notify(new FakeNotification());
 
         Carbon::setTestNow('2030-01-09');
 
@@ -118,7 +118,7 @@ class NotificationTest extends TestCase
 
         $this->actingAs($user);
 
-        $user->notify(new FakeNotification);
+        $user->notify(new FakeNotification());
 
         $response = $this->get('/ajax/notification');
 

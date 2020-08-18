@@ -50,7 +50,7 @@ class ClusterValidationControllerTest extends TestCase
      */
     public function name_finds_trashed_by_name_and_returns_true_if_records_was_found(): void
     {
-        $this->clusterRepositoryMock->method('findOneTrashedBy')->willReturn(new Cluster);
+        $this->clusterRepositoryMock->method('findOneTrashedBy')->willReturn(new Cluster());
 
         $this->clusterRepositoryMock->expects($this->once())->method('findOneTrashedBy')->with('name', 'foo');
 

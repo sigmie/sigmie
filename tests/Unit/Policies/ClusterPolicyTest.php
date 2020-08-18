@@ -1,17 +1,11 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Tests\Unit\Policies;
 
-use App\Events\ClusterHasFailed;
-use App\Events\ClusterWasBooted;
-use App\Events\ClusterWasCreated;
-use App\Events\ClusterWasDestroyed;
-use App\Helpers\ClusterManagerFactory;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\User;
 use App\Policies\ClusterPolicy;
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
@@ -60,7 +54,7 @@ class ClusterPolicyTest extends TestCase
 
         $this->clusterMock = $this->createMock(Cluster::class);
 
-        $this->policy = new ClusterPolicy;
+        $this->policy = new ClusterPolicy();
     }
 
     /**

@@ -30,7 +30,7 @@ class NovaServiceProvider extends NovaApplicationServiceProvider
     public function tools()
     {
         return [
-            new FeatureFlags
+            new FeatureFlags()
         ];
     }
 
@@ -88,7 +88,7 @@ class NovaServiceProvider extends NovaApplicationServiceProvider
     protected function cards()
     {
         return [
-            new Help,
+            new Help(),
         ];
     }
 

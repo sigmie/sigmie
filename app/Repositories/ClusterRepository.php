@@ -6,7 +6,6 @@ namespace App\Repositories;
 
 use App\Contracts\TrashableRepository;
 use App\Models\Cluster;
-use App\Repositories\BaseRepository;
 
 class ClusterRepository extends BaseRepository implements TrashableRepository
 {

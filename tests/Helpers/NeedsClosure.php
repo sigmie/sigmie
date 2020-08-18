@@ -1,10 +1,9 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Tests\Helpers;
 
-use PHPUnit\Framework\MockObject\MockObject;
 use Closure;
-use Prophecy\Comparator\ClosureComparator;
+use PHPUnit\Framework\MockObject\MockObject;
 
 trait NeedsClosure
 {

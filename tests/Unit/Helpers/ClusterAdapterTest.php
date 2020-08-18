@@ -29,7 +29,7 @@ class ClusterAdapterTest extends TestCase
 
         $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
 
-        $this->assertEquals(new Europe, $coreCluster->region);
+        $this->assertEquals(new Europe(), $coreCluster->region);
         $this->assertEquals('foo', $coreCluster->name);
         $this->assertEquals('bar', $coreCluster->username);
         $this->assertEquals('baz', $coreCluster->password);
@@ -40,11 +40,11 @@ class ClusterAdapterTest extends TestCase
         //Check asia region mapping
         $appCluster->setAttribute('data_center', 'asia');
         $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
-        $this->assertEquals(new Asia, $coreCluster->region);
+        $this->assertEquals(new Asia(), $coreCluster->region);
 
         //Check america region mapping
         $appCluster->setAttribute('data_center', 'america');
         $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
-        $this->assertEquals(new America, $coreCluster->region);
+        $this->assertEquals(new America(), $coreCluster->region);
     }
 }

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
@@ -23,7 +23,6 @@ class ClusterTokenController extends Controller
         $plainTextTokens = [self::ADMIN => null, self::SEARCH_ONLY => null];
 
         if ($cluster->getAttribute('tokens')->isEmpty()) {
-
             $plainTextTokens[self::ADMIN] = $cluster->createToken(self::ADMIN, ['*'])->plainTextToken;
             $plainTextTokens[self::SEARCH_ONLY] = $cluster->createToken(self::SEARCH_ONLY, ['search'])->plainTextToken;
 
@@ -32,6 +31,7 @@ class ClusterTokenController extends Controller
 
         $clusterId = $cluster->getAttribute('id');
 
+        $tokens = [];
         foreach ($cluster->getAttribute('tokens') as $token) {
             $token = $token->only(['name', 'last_used_at', 'created_at', 'id']);
 
@@ -55,8 +55,9 @@ class ClusterTokenController extends Controller
 
     public function toogle(Cluster $cluster, int $tokenId)
     {
-        $token = $cluster->tokens()->where('id', $tokenId)->get()->first();
+        $token = $cluster->tokens()->firstWhere('id', $tokenId);
         $oldValue = null;
+        $newValue = null;
 
         if ($token->getAttribute('name') === self::SEARCH_ONLY) {
             $oldValue = $cluster->getAttribute('search_token_active');
@@ -75,7 +76,7 @@ class ClusterTokenController extends Controller
 
     public function regenerate(Cluster $cluster, int $tokenId)
     {
-        $oldToken = $cluster->tokens()->where('id', $tokenId)->get()->first();
+        $oldToken = $cluster->tokens()->firstWhere('id', $tokenId);
 
         $newToken = $cluster->createToken($oldToken->getAttribute('name'), $oldToken->getAttribute('abilities'));
 

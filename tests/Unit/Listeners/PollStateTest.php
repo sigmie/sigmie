@@ -64,14 +64,6 @@ class PollStateTest extends TestCase
         $this->listener = new PollState($this->repository);
     }
 
-    private function createEventMock()
-    {
-        $event = $this->createMock(ClusterWasCreated::class);
-        $event->clusterId = $this->clusterId;
-
-        return $event;
-    }
-
     /**
      * @test
      */
@@ -115,35 +107,6 @@ class PollStateTest extends TestCase
         $this->listener->handle($this->eventMock);
     }
 
-
-    private function createCluster()
-    {
-        $cluster = $this->model(Cluster::class);
-        $cluster->method('getAttribute')->willReturnMap([
-            ['username', 'foo'],
-            ['password', encrypt('bar')],
-            ['name', 'baz'],
-        ]);
-
-        return $cluster;
-    }
-
-    private function clusterCallWillReturn($success)
-    {
-        Http::shouldReceive('withBasicAuth')->andReturnSelf();
-        Http::shouldReceive('timeout')->andReturnSelf();
-        Http::shouldReceive('get')->andReturnSelf();
-        Http::shouldReceive('successful')->andReturn($success);
-    }
-
-    private function responseWithCode(int $code)
-    {
-        $response = $this->createMock(Response::class);
-        $response->method('getStatusCode')->willReturn($code);
-
-        return $response;
-    }
-
     /**
      * @test
      */
@@ -180,5 +143,42 @@ class PollStateTest extends TestCase
     public function retry_after_seconds()
     {
         $this->assertEquals(15, $this->listener->retryAfter);
+    }
+
+    private function createEventMock()
+    {
+        $event = $this->createMock(ClusterWasCreated::class);
+        $event->clusterId = $this->clusterId;
+
+        return $event;
+    }
+
+
+    private function createCluster()
+    {
+        $cluster = $this->model(Cluster::class);
+        $cluster->method('getAttribute')->willReturnMap([
+            ['username', 'foo'],
+            ['password', encrypt('bar')],
+            ['name', 'baz'],
+        ]);
+
+        return $cluster;
+    }
+
+    private function clusterCallWillReturn($success)
+    {
+        Http::shouldReceive('withBasicAuth')->andReturnSelf();
+        Http::shouldReceive('timeout')->andReturnSelf();
+        Http::shouldReceive('get')->andReturnSelf();
+        Http::shouldReceive('successful')->andReturn($success);
+    }
+
+    private function responseWithCode(int $code)
+    {
+        $response = $this->createMock(Response::class);
+        $response->method('getStatusCode')->willReturn($code);
+
+        return $response;
     }
 }

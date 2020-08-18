@@ -8,14 +8,10 @@ use App\Helpers\ClusterManagerFactory;
 use App\Models\Project;
 use App\Repositories\ProjectRepository;
 use Exception;
-use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\App\Core\ClusterManager;
-use Sigmie\App\Core\Contracts\CloudFactory;
-use Sigmie\App\Core\Contracts\DNSFactory;
-use Sigmie\App\Core\GoogleFactory;
 use Tests\TestCase;
 
 class ClusterManagerFactoryTest extends TestCase
@@ -57,17 +53,6 @@ class ClusterManagerFactoryTest extends TestCase
         $this->projectRepositoryMock->method('find')->willReturn($this->project);
 
         $this->factory = new ClusterManagerFactory($this->projectRepositoryMock);
-    }
-
-    private function setProjectProvider($provider)
-    {
-        $creds = null;
-
-        if ($provider === 'google') {
-            $creds =  encrypt('[]');
-        }
-
-        $this->project->method('getAttribute')->willReturnMap([['provider', $provider], ['creds', $creds], ['id', $this->projectId]]);
     }
 
     /**
@@ -128,5 +113,16 @@ class ClusterManagerFactoryTest extends TestCase
         $instance = $this->factory->create($this->projectId);
 
         $this->assertInstanceOf(ClusterManager::class, $instance);
+    }
+
+    private function setProjectProvider($provider)
+    {
+        $creds = null;
+
+        if ($provider === 'google') {
+            $creds =  encrypt('[]');
+        }
+
+        $this->project->method('getAttribute')->willReturnMap([['provider', $provider], ['creds', $creds], ['id', $this->projectId]]);
     }
 }

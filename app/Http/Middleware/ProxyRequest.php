@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
@@ -6,7 +6,6 @@ use App\Models\Cluster;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
-use Illuminate\Support\Facades\Auth;
 
 class ProxyRequest
 {

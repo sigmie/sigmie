@@ -25,7 +25,6 @@ class SendClusterRunningNotification implements ShouldQueue
         $cluster = $this->clusters->find($event->clusterId);
 
         if ($cluster instanceof Cluster) {
-
             $user = $cluster->findUser();
 
             $projectName = $cluster->getAttribute('project')->getAttribute('name');

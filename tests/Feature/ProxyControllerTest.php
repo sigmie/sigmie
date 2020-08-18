@@ -1,13 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Tests\Feature;
 
 use App\Http\Controllers\ClusterTokenController;
 use App\Models\Cluster;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class ProxyControllerTest extends TestCase

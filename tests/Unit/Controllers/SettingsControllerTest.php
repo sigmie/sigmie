@@ -6,17 +6,14 @@ namespace Tests\Unit\Controllers;
 
 use App\Http\Controllers\SettingsController;
 use App\Models\Cluster;
-use App\Models\Model;
 use App\Models\Project;
 use App\Repositories\ProjectRepository;
-use Collator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use phpDocumentor\Reflection\Types\Integer;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
-
 
 class SettingsControllerTest extends TestCase
 {
@@ -78,7 +75,7 @@ class SettingsControllerTest extends TestCase
         $this->requestMock = $this->createMock(Request::class);
         $this->requestMock->expects($this->any())->method('get')->willReturn($this->projectId);
 
-        $this->controller = new SettingsController;
+        $this->controller = new SettingsController();
     }
 
     /**

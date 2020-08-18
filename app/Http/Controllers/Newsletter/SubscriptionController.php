@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Newsletter;
 
-use App\Contracts\MailingList;
 use App\Events\NewsletterSubscriptionWasCreated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreNewsletterSubscription;
-use App\Models\NewsletterSubscription;
 use App\Repositories\NewsletterSubscriptionRepository;
 use Inertia\Inertia;
 

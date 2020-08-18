@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Unit\Controllers;
 
 use App\Http\Controllers\ProjectValidationController;
-use App\Models\Project;
 use App\Rules\ValidProvider;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Http\JsonResponse;

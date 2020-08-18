@@ -7,7 +7,6 @@ namespace Tests\Unit\Policies;
 use App\Models\Project;
 use App\Models\User;
 use App\Policies\ProjectPolicy;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -44,7 +43,7 @@ class ProjectPolicyTest extends TestCase
         $this->userMock = $this->createMock(User::class);
         $this->userMock->method('projects')->willReturn($relationMock);
 
-        $this->policy = new ProjectPolicy;
+        $this->policy = new ProjectPolicy();
     }
 
     /**

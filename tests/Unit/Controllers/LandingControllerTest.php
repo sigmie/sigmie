@@ -28,7 +28,7 @@ class LandingControllerTest extends TestCase
 
         $this->featureFlagManager = $this->createMock(FeatureFlagManager::class);
 
-        $this->controller = new LandingController;
+        $this->controller = new LandingController();
     }
 
     /**

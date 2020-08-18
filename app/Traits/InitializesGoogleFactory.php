@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Traits;
 
@@ -28,6 +28,6 @@ trait InitializesGoogleFactory
     {
         $this->filesystem->delete($this->serviceAccountPath);
 
-        return;
+        
     }
 }

@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Repositories;
 
 use App\Models\Cluster;
-use App\Models\Model;
 use App\Repositories\ClusterRepository;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Tests\Helpers\NeedsModel;
 

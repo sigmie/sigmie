@@ -27,7 +27,7 @@ class StoreProject extends FormRequest
      */
     public function rules()
     {
-        $providerRules = (config('override.provider.rule') === null) ? [new ValidProvider] : [];
+        $providerRules = (config('override.provider.rule') === null) ? [new ValidProvider()] : [];
 
         return [
             'name' => ['required', 'regex:/^[a-zA-Z0-9-_]*$/i'],

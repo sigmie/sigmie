@@ -55,7 +55,7 @@ class MustConfirmSubscriptionTest extends TestCase
     public function send_confirmation_email_calls_notify_with_notification()
     {
         $this->mustConfirmSubscription->method('forceFill')->willReturnSelf();
-        $this->mustConfirmSubscription->expects($this->once())->method('notify')->with(new ConfirmSubscription);
+        $this->mustConfirmSubscription->expects($this->once())->method('notify')->with(new ConfirmSubscription());
 
         $this->mustConfirmSubscription->sendConfirmationEmailNotification();
     }

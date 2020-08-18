@@ -1,9 +1,7 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Tests\Unit\Events;
 
-use App\Events\ClusterWasBooted;
-use App\Events\ClusterWasCreated;
 use App\Events\ClusterWasDestroyed;
 use Illuminate\Broadcasting\PrivateChannel;
 use Tests\TestCase;

@@ -7,12 +7,9 @@ namespace Tests\Unit\Controllers;
 use App\Http\Controllers\ClusterTokenController;
 use App\Models\Cluster;
 use App\Models\Project;
-use Faker\Provider\ar_JO\Person;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Inertia\Inertia;
 use Laravel\Sanctum\PersonalAccessToken;
-use Mockery\Mock;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
@@ -81,7 +78,7 @@ class ClusterTokenControllerTest extends TestCase
         $this->projectMock = $this->createMock(Project::class);
         $this->projectMock->method('clusters')->willReturn($this->clusterCollectionMock);
 
-        $this->controller = new ClusterTokenController;
+        $this->controller = new ClusterTokenController();
     }
 
     /**

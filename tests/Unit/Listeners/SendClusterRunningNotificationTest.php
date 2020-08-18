@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Unit\Listeners;
 
 use App\Events\ClusterWasBooted;
-use App\Events\ClusterWasDestroyed;
 use App\Listeners\SendClusterRunningNotification;
 use App\Models\Cluster;
 use App\Models\Project;
