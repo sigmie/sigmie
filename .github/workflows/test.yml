@@ -45,6 +45,9 @@ jobs:
       run: |
            curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "Test workflow has started."}' $SLACK_HOOK_URL
 
+    - name: Add elasticsearch host
+      run: echo "127.0.0.1 es" | sudo tee -a /etc/hosts
+
     - name: Cache node modules
       uses: actions/cache@v1
       with:
