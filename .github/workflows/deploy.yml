@@ -61,9 +61,6 @@ jobs:
     - name: Install node
       run:  curl https://nodejs.org/dist/v8.10.0/node-v8.10.0-linux-x64.tar.gz | sudo tar xzvf - --exclude CHANGELOG.md --exclude LICENSE --exclude README.md --strip-components 1 -C /usr/local/
 
-    - name: Generate production routes
-      run:  php artisan ziggy:generate resources/js/routes.js
-
     - name: Install node dependencies and generate production assets
       run: npm install && npm run production
 
