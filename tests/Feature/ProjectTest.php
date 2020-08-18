@@ -46,7 +46,7 @@ class ProjectTest extends TestCase
             'name' => 'foo',
             'description' => 'bar',
             'provider' => ['id' => 'google', 'creds' => '[]'],
-            'user_id' => $user->getAttribute('id')
+            'user_id' => $user->getAttribute('id'),
         ]);
 
         $response->assertRedirect(route('cluster.create'));

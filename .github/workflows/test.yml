@@ -90,8 +90,11 @@ jobs:
       with:
        cmd: prod
 
-    - name: Migrations
+    - name: Migrate
       run: php artisan --env=testing migrate --force
+
+    - name: Seed
+      run: php artisan --env=testing db:seed --force
 
     - name: PHPUnit
       run: vendor/bin/phpunit

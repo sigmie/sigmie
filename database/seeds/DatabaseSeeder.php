@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         DB::table('subscription_plans')->insert([
-            'name' => 'Test',
+            'name' => 'Hobby',
             'search_requests_rate' => 5000,
             'admin_requests_rate' => 5000,
         ]);
