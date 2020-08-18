@@ -76,7 +76,6 @@ CMD php artisan cache:clear         && \
     php artisan optimize            && \
     php artisan view:clear          && \
     php artisan view:cache          && \
-    php artisan ziggy:generate resources/js/routes.js && \
     php artisan event:clear         && \
     php artisan event:cache         && \
     rm .env                         && \
