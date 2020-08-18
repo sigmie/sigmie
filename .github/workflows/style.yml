@@ -63,7 +63,7 @@ jobs:
       run: vendor/bin/phpcs --standard=phpcs-laravel tests
 
     - name: JS Standard
-      run: node_modules/standard/bin/cmd.js | node_modules/snazzy/bin/cmd.js
+      run: node_modules/standard/bin/cmd.js resources | node_modules/snazzy/bin/cmd.js
 
     - name: Slack finish notification
       run: |
