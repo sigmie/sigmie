@@ -12,6 +12,7 @@
 */
 
 use App\Http\Middleware\AssignProject;
+use App\Http\Middleware\NeedsCluster;
 use App\Http\Middleware\ShareProjectToView;
 
 $launched = true;
@@ -62,7 +63,7 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
 
         Route::resource('project', 'ProjectController');
 
-        Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard')->middleware(AssignProject::class);
+        Route::get('/dashboard/{project?}', 'DashboardController')->name('dashboard')->middleware([AssignProject::class, NeedsCluster::class]);
 
         Route::get('/tokens/{project?}', 'ClusterTokenController@index')->name('token.index')->middleware(AssignProject::class);
 

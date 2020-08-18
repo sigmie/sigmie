@@ -3,6 +3,7 @@
 use App\Model;
 use App\Models\Cluster;
 use App\Models\Project;
+use App\Models\SubscriptionPlan;
 use Faker\Generator as Faker;
 
 $factory->define(Cluster::class, function (Faker $faker) {
@@ -20,8 +21,8 @@ $factory->define(Cluster::class, function (Faker $faker) {
             // Cluster::FAILED,
         ]),
         // 'deleted_at' => $faker->randomElement([null, $faker->dateTime()]),
-        'deleted_at' => null,
         // 'nodes_count' => $faker->numberBetween(1, 3),
+        'deleted_at' => null,
         'nodes_count' => 1,
         'project_id' => factory(Project::class)
     ];

@@ -23,10 +23,7 @@ class DashboardController extends Controller
     {
         $this->clusters = $clusterRepository;
     }
-    /**
-     * Get the project state and id and render
-     * the dashboard view
-     */
+
     public function __invoke(Request $request, Project $project, SigmieClient $sigmieClient)
     {
         Gate::authorize('view-dashboard', $project);

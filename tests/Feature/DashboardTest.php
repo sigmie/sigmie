@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -40,7 +41,9 @@ class DashboardTest extends TestCase
      */
     public function user_can_see_dashboard_only_from_owned_project()
     {
-        $project = factory(Project::class)->create();
+        $cluster = factory(Cluster::class)->create();
+        $project = $cluster->getAttribute('project');
+
         $user = factory(User::class)->create();
 
         $this->actingAs($user);
@@ -52,6 +55,20 @@ class DashboardTest extends TestCase
 
         $response = $this->get(route('dashboard', ['project' => $project->getAttribute('id')]));
         $response->assertSuccessful();
+    }
+
+    /**
+     * @test
+     */
+    public function dashboard_redirects_if_project_has_not_a_cluster()
+    {
+        $project = factory(Project::class)->create();
+        $user = factory(User::class)->create();
+
+        $this->actingAs($user);
+
+        $response = $this->get(route('dashboard', ['project' => $project->getAttribute('id')]));
+        $response->assertRedirect(route('cluster.create'));
     }
 
     /**

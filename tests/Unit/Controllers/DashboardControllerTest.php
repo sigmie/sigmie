@@ -12,10 +12,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use PHPUnit\Framework\MockObject\MockObject;
+use Sigmie\Search\SigmieClient;
+use Tests\Helpers\SigmieClientMock;
 use Tests\TestCase;
 
 class DashboardControllerTest extends TestCase
 {
+    use SigmieClientMock;
+
     /**
      * @var DashboardController
      */
@@ -41,12 +45,18 @@ class DashboardControllerTest extends TestCase
      */
     private $clusterMock;
 
+    /**
+     * @var SigmieClient|MockObject
+     */
+    private $sigmieClientMock;
+
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->requestMock = $this->createMock(Request::class);
+        $this->createSigmieMock();
 
+        $this->requestMock = $this->createMock(Request::class);
 
         $this->projectMock = $this->createMock(Project::class);
 
@@ -69,8 +79,13 @@ class DashboardControllerTest extends TestCase
     {
         Gate::shouldReceive('authorize')->once()->with('view-dashboard', $this->projectMock);
 
-        Inertia::shouldReceive('render')->once()->with('dashboard', ['clusterState' => 'some-state', 'clusterId' => 'some-id']);
+        Inertia::shouldReceive('render')->once()->with('dashboard/dashboard', [
+            'clusterState' => 'some-state',
+            'clusterId' => 'some-id',
+            'indices' => null,
+            'clusterInfo' => null
+        ]);
 
-        ($this->controller)($this->requestMock, $this->projectMock);
+        ($this->controller)($this->requestMock, $this->projectMock, $this->sigmieClientMock);
     }
 }
