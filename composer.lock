@@ -5564,10 +5564,16 @@
         {
             "name": "sigmie/nova-feature-flags",
             "version": "dev-master",
-            "dist": {
-                "type": "path",
-                "url": "./nova-components/NovaFeatureFlags",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sigmie/nova-feature-flag.git",
                 "reference": "b578876c561fd518046d9f4ffb5d43de2d719f3d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sigmie/nova-feature-flag/zipball/b578876c561fd518046d9f4ffb5d43de2d719f3d",
+                "reference": "b578876c561fd518046d9f4ffb5d43de2d719f3d",
+                "shasum": ""
             },
             "require": {
                 "php": ">=7.1.0",
@@ -5586,6 +5592,7 @@
                     "Sigmie\\NovaFeatureFlags\\": "src/"
                 }
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -5594,10 +5601,7 @@
                 "laravel",
                 "nova"
             ],
-            "transport-options": {
-                "symlink": true,
-                "relative": true
-            }
+            "time": "2020-08-17T14:31:14+00:00"
         },
         {
             "name": "sigmie/promises",
