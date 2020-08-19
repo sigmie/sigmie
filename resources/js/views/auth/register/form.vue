@@ -1,5 +1,5 @@
 <template>
-  <form @submit.prevent="submit">
+  <form @submit.prevent>
     <github :github-user="githubUser" :github-route="githubRoute"></github>
 
     <div class="mt-4 relative">
@@ -91,7 +91,7 @@
     <button-primary
       :class="{ 'disabled': $v.$anyError }"
       text="Create account"
-      @click="getPaylink"
+      @click="fetchPaylink"
       type="submit"
     ></button-primary>
   </form>
@@ -185,28 +185,21 @@ export default {
     },
   },
   methods: {
-    submit(event) {
-      this.$inertia.post(this.$route("register"), {
-        email: this.email,
-        username: this.username,
-        password: this.password,
-      });
-    },
     set(key, value) {
       this[key] = value;
       this.$v[key].$touch();
     },
-    async getPaylink() {
+    async fetchPaylink() {
       let response = await this.$http.post(this.$route("paylink"), {
         email: this.email,
         username: this.username,
         password: this.password,
       });
 
-      this.paylink = response.data;
+      this.paylink = response.data.paylink;
 
       Paddle.Checkout.open({
-        override: response.data,
+        override: response.data.paylink,
       });
     },
   },

@@ -22,7 +22,7 @@ return [
     */
 
     'feature' => [
-        'auth' => false,
+        'auth' => true,
     ],
 
     /*

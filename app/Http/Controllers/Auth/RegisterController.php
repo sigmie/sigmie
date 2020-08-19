@@ -8,11 +8,16 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUser;
 use App\Models\User;
 use App\Repositories\UserRepository;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
+use Laravel\Paddle\Receipt;
 
 class RegisterController extends Controller
 {
@@ -58,11 +63,29 @@ class RegisterController extends Controller
             ]
         );
 
+        event(new Registered($user));
+
         $paylink = $user->newSubscription('hobby', config('services.paddle.plan_id'))
             ->returnTo(route('dashboard'))
             ->create();
 
         return ['paylink' => $paylink];
+    }
+
+    public function awaitPaddleWebhook(Request $request)
+    {
+        $receipt = Receipt::firstWhere('checkout_id', $request->get('checkout'));
+
+        if ($receipt !== null) {
+
+            $user = $receipt->getAttribute('billable');
+
+            $this->guard()->login($user);
+
+            return redirect()->route('project.create');
+        }
+
+        return Inertia::render('auth/register/await-hook');
     }
 
     // /**

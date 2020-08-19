@@ -39,19 +39,32 @@ Route::name('legal.')->group(function () {
     Route::get('/disclaimer', 'LegalController@disclaimer')->name('disclaimer');
 });
 
-
 // Auth routes
+Route::middleware([])->group(function () {
 
-Route::namespace('Auth')->middleware(['feature:auth'])->group(function () {
+    Route::namespace('Auth')->group(function () {
 
-    Route::get('/sign-up', 'RegisterController@showRegistrationForm')->name('register');
+        Route::get('/sign-up', 'RegisterController@showRegistrationForm')->name('register');
 
-    Route::post('/paylink', 'RegisterController@createUser')->name('paylink');
+        Route::get('/sign-in', 'LoginController@showLoginForm')->name('login');
 
-    Route::prefix('github')->name('github.')->group(function () {
+        Route::post('/paylink', 'RegisterController@createUser')->name('paylink');
+
+        Route::get('/await-webhook', 'RegisterController@awaitPaddleWebhook')->name('await-webhook');
+
+        Route::get('login', 'LoginController@showLoginForm')->name('login');
+        Route::post('login', 'LoginController@login');
+        Route::post('logout', 'LoginController@logout')->name('logout');
+
+        Route::get('password/reset', 'ForgotPasswordController@showLinkRequestForm');
+        Route::post('password/email', 'ForgotPasswordController@sendResetLinkEmail');
+        Route::get('password/reset/{token}', 'ResetPasswordController@showResetForm');
+        Route::post('password/reset', 'ResetPasswordController@reset');
+
+        Route::prefix('github')->name('github.')->group(function () {
+        });
     });
 });
-
 
 Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
 

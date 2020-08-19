@@ -7,7 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
 
-class UserValidationController extends Controller
+class ClusterValidationController extends Controller
 {
     private $clusters;
 

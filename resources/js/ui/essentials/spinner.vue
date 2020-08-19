@@ -1,16 +1,24 @@
 <template>
-    <div class="spinner-wrapper">
-      <div class="spinner-container">
-        <div class="trinity-rings-spinner">
-          <div class="circle"></div>
-          <div class="circle"></div>
-          <div class="circle"></div>
-        </div>
+  <div class="spinner-wrapper">
+    <div class="spinner-container">
+      <div class="trinity-rings-spinner">
+        <div class="circle border-solid border-2" :class="'border-'+color"></div>
+        <div class="circle border-solid border-2" :class="'border-'+color"></div>
+        <div class="circle border-solid border-2" :class="'border-'+color"></div>
       </div>
     </div>
+  </div>
 </template>
 
-<script></script>
+<script>
+export default {
+  props: {
+    color: {
+      default: "theme-secondary",
+    },
+  },
+};
+</script>
 
 <style>
 .trinity-rings-spinner,
@@ -52,7 +60,7 @@
   position: absolute;
   display: block;
   border-radius: 50%;
-  border: 3px solid #313758;
+  border-width: 3px !important;
   opacity: 1;
 }
 

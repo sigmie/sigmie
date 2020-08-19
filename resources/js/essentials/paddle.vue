@@ -12,12 +12,11 @@ import loginVue from "../views/auth/login.vue";
 
 export default {
   props: ["paylink", "data"],
-  mounted() {
+  beforeMount() {
     let paddleScript = document.createElement("script");
     paddleScript.setAttribute("src", "https://cdn.paddle.com/paddle/paddle.js");
     paddleScript.async = true;
     paddleScript.addEventListener("load", () => {
-      console.log("called setup");
       Paddle.Setup({ vendor: this.data.vendor });
     });
     document.head.appendChild(paddleScript);
