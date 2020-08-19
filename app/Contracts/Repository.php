@@ -2,7 +2,7 @@
 
 namespace App\Contracts;
 
-use App\Models\Model;
+use Illuminate\Database\Eloquent\Model;
 
 interface Repository
 {

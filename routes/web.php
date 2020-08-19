@@ -40,21 +40,18 @@ Route::name('legal.')->group(function () {
 });
 
 
-// Github auth routes
+// Auth routes
 
-Route::group(['middleware' => ['feature:auth']], function () {
+Route::namespace('Auth')->middleware(['feature:auth'])->group(function () {
 
-    Route::namespace('Auth')->prefix('github')->name('github.')->group(function () {
+    Route::get('/sign-up', 'RegisterController@showRegistrationForm')->name('register');
 
-        Route::get('/redirect', 'GithubController@redirect')->name('redirect');
+    Route::post('/paylink', 'RegisterController@createUser')->name('paylink');
 
-        Route::get('/login', 'GithubController@login')->name('login');
-
-        Route::get('/register', 'GithubController@register')->name('register');
+    Route::prefix('github')->name('github.')->group(function () {
     });
-
-    Auth::routes();
 });
+
 
 Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
 

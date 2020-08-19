@@ -86,14 +86,14 @@
       </div>
     </div>
 
-    <paddle :data="paddleData"></paddle>
+    <paddle :data="paddleData" class="hidden" :link="this.paylink"></paddle>
 
-    <!-- <button-primary
+    <button-primary
       :class="{ 'disabled': $v.$anyError }"
       text="Create account"
-      @click="submit"
+      @click="getPaylink"
       type="submit"
-    ></button-primary> -->
+    ></button-primary>
   </form>
 </template>
 
@@ -127,10 +127,12 @@ export default {
       method: "",
       consent: false,
       github: false,
+      paylink: "",
       errorMessages: {
         email: {
           required: "Email address is required.",
           email: "Invalid email address format.",
+          isUnique: "This email already exists.",
         },
         password: {
           minLength: "Password should contain at least 8 chars.",
@@ -168,6 +170,15 @@ export default {
     email: {
       required,
       email,
+      isUnique(value) {
+        if (value === "") {
+          return true;
+        }
+
+        let route = this.$route("user.validate.email", { email: value });
+
+        return this.$http.get(route).then((response) => response.data.valid);
+      },
     },
     method: {
       required,
@@ -184,6 +195,19 @@ export default {
     set(key, value) {
       this[key] = value;
       this.$v[key].$touch();
+    },
+    async getPaylink() {
+      let response = await this.$http.post(this.$route("paylink"), {
+        email: this.email,
+        username: this.username,
+        password: this.password,
+      });
+
+      this.paylink = response.data;
+
+      Paddle.Checkout.open({
+        override: response.data,
+      });
     },
   },
   beforeMount() {

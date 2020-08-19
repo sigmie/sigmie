@@ -14,6 +14,7 @@
 Route::resource('/notification', 'NotificationController', ['except' => ['edit', 'create', 'destroy']])->middleware('auth');
 
 Route::get('/cluster/validate/name/{name}', 'ClusterValidationController@name')->name('cluster.validate.name');
+Route::get('/user/validate/email/{email}', 'UserValidationController@email')->name('user.validate.email');
 
 Route::post('/project/validate/provider', 'ProjectValidationController@provider')->name('project.validate.provider');
 

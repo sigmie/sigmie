@@ -1,9 +1,11 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Repositories;
 
 use App\Contracts\Repository;
-use App\Models\Model;
+use Illuminate\Database\Eloquent\Model;
 
 abstract class BaseRepository implements Repository
 {
@@ -22,6 +24,11 @@ abstract class BaseRepository implements Repository
     public function update(int $id, array $values): bool
     {
         return $this->model->find($id)->update($values);
+    }
+
+    public function findOneBy(string $column, string $value): ?Model
+    {
+        return $this->model->firstWhere($column, $value);
     }
 
     public function create(array $values): Model

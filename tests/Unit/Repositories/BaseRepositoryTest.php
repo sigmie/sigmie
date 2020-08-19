@@ -66,6 +66,18 @@ class BaseRepositoryTest extends TestCase
     /**
      * @test
      */
+    public function find_one_by()
+    {
+        $this->model()->method('firstWhere')->willReturn(null);
+        $this->model()->expects($this->once())->method('firstWhere')->with('foo', 'bar');
+
+        $result = $this->repository->findOneBy('foo', 'bar');
+        $this->assertNull($result);
+    }
+
+    /**
+     * @test
+     */
     public function create()
     {
         $this->model()->method('create')->willReturnSelf();
