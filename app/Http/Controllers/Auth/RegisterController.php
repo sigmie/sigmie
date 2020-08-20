@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUser;
 use App\Repositories\UserRepository;
+use Carbon\Carbon;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
@@ -72,6 +73,23 @@ class RegisterController extends Controller
 
         return ['paylink' => $paylink];
     }
+
+    public function webhookReceived(Request $request)
+    {
+        $handled = false;
+        $checkoutId = $request->get('checkout');
+        $anHourAfter = Carbon::now()->addHour()->toDateTime();
+
+        $receipt = Receipt::where('checkout_id', '=', $checkoutId)
+            ->where('updated_at', '<', $anHourAfter)->first();
+
+        if ($receipt instanceof Receipt) {
+            $handled = true;
+        }
+
+        return ['handled' => $handled];
+    }
+
 
     public function awaitPaddleWebhook(Request $request)
     {

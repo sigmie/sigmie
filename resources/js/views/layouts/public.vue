@@ -18,6 +18,9 @@ export default {
   components: {
     legalFooter: require("../common/legal/footer").default,
   },
+  beforeMount() {
+    this.$http.defaults.headers["X-CSRF-TOKEN"] = this.$page.csrf_token;
+  },
 };
 </script>
 

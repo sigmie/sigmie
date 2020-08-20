@@ -11,8 +11,7 @@
           </div>
           <div class="grid grid-cols-3 gap-6">
             <div class="col-span-3 lg:col-span-2">
-              <form-input
-                :value="name"
+              <form-input :value="name"
                 label="Name"
                 @change="(value) => set('name',value)"
                 id="name"

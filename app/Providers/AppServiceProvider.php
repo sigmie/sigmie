@@ -29,6 +29,10 @@ class AppServiceProvider extends ServiceProvider
             return Session::getOldInput();
         });
 
+        Inertia::share('csrf_token', function () {
+            return csrf_token();
+        });
+
         Inertia::share('errors', function () {
 
             return Session::get('errors')

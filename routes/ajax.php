@@ -22,3 +22,5 @@ Route::post('/project/validate/provider', 'ProjectValidationController@provider'
 Route::put('/tokens/{cluster}/regenerate/{token}', 'ClusterTokenController@regenerate')->name('token.regenerate');
 
 Route::put('/tokens/{cluster}/toogle/{token}', 'ClusterTokenController@toogle')->name('token.toogle');
+
+Route::get('/webhook/received', 'Auth\RegisterController@webhookReceived')->name('webhook.received');
