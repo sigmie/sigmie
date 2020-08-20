@@ -22,6 +22,39 @@ class RegisterControllerTest extends TestCase
     /**
      * @test
      */
+    public function webhook_received_returns_true_is_receipt_is_found_else_false()
+    {
+        $paddleId = 9999999;
+        $checkoutId = '64294199-chref4b2b852724-c2d7392sad6';
+
+        DB::table('receipts')->insert(
+            [
+                'billable_id' => 1,
+                'billable_type' => User::class,
+                'paddle_subscription_id' => $paddleId,
+                'checkout_id' => $checkoutId,
+                'order_id' => '17024121-1320200086',
+                'amount' => 0,
+                'tax' => 0,
+                'currency' => 'USD',
+                'quantity' => 1,
+                'receipt_url' => "http://my.paddle.com/receipt/17024121-13001986/{$checkoutId}",
+                'paid_at' => '2020-08-19 09:45:09',
+                'created_at' => '2020-08-19 09:45:08',
+                'updated_at' => '2020-08-19 09:45:08'
+            ]
+        );
+
+        $response = $this->get(route('webhook.received', ['checkout' => $checkoutId]));
+        $response->assertJson(['handled' => true]);
+
+        $response = $this->get(route('webhook.received', ['checkout' => 'some-checkout-identifier']));
+        $response->assertJson(['handled' => false]);
+    }
+
+    /**
+     * @test
+     */
     public function await_redirects_if_receipt()
     {
         $user = factory(User::class)->create();
