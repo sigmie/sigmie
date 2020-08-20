@@ -91,7 +91,8 @@ class RegisterControllerTest extends TestCase
         $response = $this->post(route('paylink'), [
             'email' => 'foo@bar.com',
             'password' => 'baz12345',
-            'username' => 'John Doe'
+            'username' => 'John Doe',
+            'github' => false
         ]);
 
         $response->assertJson(['paylink' => $paylink]);

@@ -1,7 +1,7 @@
 <template>
   <div class>
-    <div v-if="false">
-      <div class="bg-whitesm:px-6">
+    <div v-if="githubUser">
+      <div class="bg-black p-4 mb-2 rounded-lg">
         <div class="-ml-4 -mt-4 flex justify-between items-center flex-wrap sm:flex-no-wrap">
           <div class="ml-4 mt-4">
             <div class="flex items-center">
@@ -9,15 +9,15 @@
                 <img class="h-12 w-12 rounded-full" :src="githubUser.avatar_url" alt />
               </div>
               <div class="ml-4">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">{{ githubUser.name }}</h3>
-                <p class="text-sm leading-5 text-gray-500">
+                <h3 class="text-lg leading-6 font-medium text-gray-200">{{ githubUser.name }}</h3>
+                <p class="text-sm leading-5 text-gray-200">
                   <span href="#">{{ githubUser.email }}</span>
                 </p>
               </div>
             </div>
           </div>
           <div class="ml-4 mt-4 flex-shrink-0 flex">
-            <span class="ml-3 inline-flex rounded-md shadow-sm">
+            <span class="ml-3 inline-flex rounded-md shadow-sm text-gray-200">
               <svg class="h-10" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fill-rule="evenodd"
@@ -32,14 +32,18 @@
     </div>
 
     <div v-else>
-      <button-github text="Sign Up with GitHub" :route="githubRoute" class="mt-3" />
+      <button-github
+        text="Sign Up with GitHub"
+        :route="$route('github.redirect',{action:'register'})"
+        class="mt-3"
+      />
     </div>
   </div>
 </template>
 
 <script>
 export default {
-  props: ["githubRoute", "githubUser", "paddlePlans"],
+  props: ["githubUser"],
 };
 </script>
 

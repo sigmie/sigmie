@@ -51,8 +51,7 @@ export default {
       Paddle.Setup({ vendor: this.paddleVendor });
     };
   },
-  methods:{
-  }
+  methods: {},
 };
 </script>
 

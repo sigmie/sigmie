@@ -1,8 +1,8 @@
 <template>
   <form @submit.prevent>
-    <github :github-user="githubUser" :github-route="githubRoute"></github>
+    <github :github-user="githubUser"></github>
 
-    <div class="mt-4 relative">
+    <div v-if="!githubUser" class="mt-4 relative">
       <div class="absolute inset-0 flex items-center">
         <div class="w-full border-t border-gray-300"></div>
       </div>
@@ -13,7 +13,7 @@
 
     <div class="pb-5">
       <div class="border-gray-200">
-        <div class="sm:col-span-3 pb-5">
+        <div class="sm:col-span-3 pb-5" v-if="!githubUser">
           <form-input
             :value="username"
             @change="(value) => set('username',value)"
@@ -27,7 +27,7 @@
           ></form-input>
         </div>
 
-        <div class="sm:col-span-3 pb-5">
+        <div class="sm:col-span-3 pb-5" v-if="!githubUser">
           <form-input
             :value="email"
             @change="(value) => set('email',value)"
@@ -40,7 +40,7 @@
             :error-messages="errorMessages.email"
           ></form-input>
         </div>
-        <div class="sm:col-span-3 pb-5">
+        <div class="sm:col-span-3 pb-5" v-if="!githubUser">
           <form-input
             :value="password"
             @change="(value) => set('password',value)"
@@ -53,7 +53,7 @@
             :error-messages="errorMessages.password"
           ></form-input>
         </div>
-        <div class="sm:col-span-3 pb-5">
+        <div class="sm:col-span-3 pb-5" v-if="!githubUser">
           <form-input
             :value="password_confirmation"
             @change="(value) => set('password_confirmation',value)"
@@ -63,11 +63,17 @@
             type="password"
             label="Password confirm"
             :validations="$v.password_confirmation"
-            :error-messages="errorMessages.password_confirmation"
-          ></form-input>
+            :error-messages="errorMessages.password_confirmation" ></form-input>
         </div>
         <div class="sm:col-span-3 pb-5">
-          <form-checkbox class="pt-4" name="agree" id="terms">
+          <form-checkbox
+            class="pt-4"
+            name="consent"
+            id="consent"
+            :value="consent"
+            @change="(value) => set('consent',value)"
+            :required="true"
+          >
             <label class="ml-2 block leading-6 text-sm text-gray-400" for="terms">
               I agree to the
               <inertia-link
@@ -124,9 +130,9 @@ export default {
       password: "",
       password_confirmation: "",
       username: this.$page.old.username ? this.$page.old.username : "",
-      method: "",
       consent: false,
       github: false,
+      avatar_url: null,
       paylink: "",
       errorMessages: {
         email: {
@@ -180,9 +186,6 @@ export default {
         return this.$http.get(route).then((response) => response.data.valid);
       },
     },
-    method: {
-      required,
-    },
   },
   methods: {
     set(key, value) {
@@ -190,10 +193,16 @@ export default {
       this.$v[key].$touch();
     },
     async fetchPaylink() {
+      if (this.$v.$invalid && this.github === false) {
+        return;
+      }
+
       let response = await this.$http.post(this.$route("paylink"), {
         email: this.email,
         username: this.username,
         password: this.password,
+        github: this.github,
+        avatar_url: this.avatar_url,
       });
 
       this.paylink = response.data.paylink;
@@ -203,13 +212,12 @@ export default {
       });
     },
   },
-  beforeMount() {
-    this.github = typeof this.githubUser.name !== "undefined";
-  },
   mounted() {
-    if (this.github) {
+    if (this.githubUser) {
       this.email = this.githubUser.email;
       this.username = this.githubUser.name;
+      this.avatar_url = this.githubUser.avatar_url;
+      this.github = true;
     }
   },
 };

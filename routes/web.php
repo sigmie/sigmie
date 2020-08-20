@@ -62,6 +62,12 @@ Route::middleware([])->group(function () {
         Route::post('password/reset', 'ResetPasswordController@reset');
 
         Route::prefix('github')->name('github.')->group(function () {
+
+            Route::get('/redirect', 'GithubController@redirect')->name('redirect');
+
+            Route::get('/login', 'GithubController@login')->name('login');
+
+            Route::get('/register', 'GithubController@register')->name('register');
         });
     });
 });

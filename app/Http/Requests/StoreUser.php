@@ -13,12 +13,14 @@ class StoreUser extends FormRequest
 
     public function rules()
     {
-        $password = (session()->has('githubUser')) ? [] : ['required', 'string', 'min:8'];
+        $password = request('github') ? [] : ['required_without:github', 'min:8'];
 
         return [
             'username' => ['required', 'string', 'min:4'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => $password
+            'password' => $password,
+            'github' => [],
+            'avatar_url' => ['required_if:github,true']
         ];
     }
 }

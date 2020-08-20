@@ -2,7 +2,7 @@
   <div>
     <span class="w-full inline-flex rounded-md shadow-sm">
       <a
-        :href="$route('github.redirect', {action : 'login'})"
+        :href="route"
         class="w-full text-gray-100 inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md bg-gray-900 text-sm leading-5 font-medium hover:text-gray-300 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue transition duration-150 ease-in-out"
       >
         {{text}}
@@ -20,7 +20,7 @@
 
 <script>
 export default {
-  props: ["text"],
+  props: ["text", "route"],
 };
 </script>
 

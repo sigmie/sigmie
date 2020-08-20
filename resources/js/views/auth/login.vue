@@ -83,7 +83,11 @@
           </div>
 
           <div>
-            <button-github text="GitHub" class="mt-3"></button-github>
+            <button-github
+              :route="$route('github.redirect',{action:'login'})"
+              text="GitHub"
+              class="mt-3"
+            ></button-github>
           </div>
         </div>
       </div>

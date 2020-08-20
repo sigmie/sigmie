@@ -6,10 +6,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUser;
-use App\Models\User;
 use App\Repositories\UserRepository;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -32,10 +30,18 @@ class RegisterController extends Controller
         $this->users = $userRepository;
     }
 
+    private function gravatarUrl(string $email)
+    {
+        $avatar_url = 'https://www.gravatar.com/avatar/';
+        $avatar_url .= md5(strtolower(trim($email)));
+
+        return $email;
+    }
+
     public function showRegistrationForm(Request $request)
     {
         return Inertia::render('auth/register', [
-            'githubUser' => $request->session()->get('githubUser', []),
+            'githubUser' => $request->session()->pull('githubUser', null),
             'paddleData' => [
                 'vendor' => (int) config('services.paddle.vendor_id'),
             ],
@@ -53,8 +59,8 @@ class RegisterController extends Controller
                 'email' => $data['email'],
                 'username' => $data['username'],
                 'password' => $password,
-                'avatar_url' => '',
-                'github' => false
+                'avatar_url' => ($data['github']) ? $data['avatar_url'] : $this->gravatarUrl($data['email']),
+                'github' => $data['github']
             ]
         );
 
