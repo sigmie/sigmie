@@ -25,11 +25,6 @@ class RegisterController extends Controller
 
     protected UserRepository $users;
 
-    /**
-     * Where to redirect users after registration.
-     */
-    protected $redirectTo = '/project/create';
-
     public function __construct(UserRepository $userRepository)
     {
         $this->middleware('guest');
@@ -66,7 +61,7 @@ class RegisterController extends Controller
         event(new Registered($user));
 
         $paylink = $user->newSubscription('hobby', config('services.paddle.plan_id'))
-            ->returnTo(route('dashboard'))
+            ->returnTo(route('await-webhook'))
             ->create();
 
         return ['paylink' => $paylink];
@@ -74,9 +69,10 @@ class RegisterController extends Controller
 
     public function awaitPaddleWebhook(Request $request)
     {
+        $checkoutId = $request->get('checkout');
         $receipt = Receipt::firstWhere('checkout_id', $request->get('checkout'));
 
-        if ($receipt !== null) {
+        if ($receipt !== null && $receipt->getAttribute('billable')->subscribed('hobby')) {
 
             $user = $receipt->getAttribute('billable');
 
@@ -85,7 +81,7 @@ class RegisterController extends Controller
             return redirect()->route('project.create');
         }
 
-        return Inertia::render('auth/register/await-hook');
+        return Inertia::render('auth/register/await-hook', ['checkoutId' => $checkoutId]);
     }
 
     // /**

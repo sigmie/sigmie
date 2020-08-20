@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Controllers;
 
+use App\Http\Controllers\ClusterValidationController;
 use App\Http\Controllers\UserValidationController;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
@@ -28,7 +29,7 @@ class ClusterValidationControllerTest extends TestCase
 
         $this->clusterRepositoryMock = $this->createMock(ClusterRepository::class);
 
-        $this->controller = new UserValidationController($this->clusterRepositoryMock);
+        $this->controller = new ClusterValidationController($this->clusterRepositoryMock);
     }
 
     /**

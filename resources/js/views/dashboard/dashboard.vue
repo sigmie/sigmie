@@ -30,7 +30,6 @@ export default {
   },
   beforeMount() {
     throttle(() => {
-      console.log("reload");
       this.$inertia.reload({
         method: "get",
         data: {},
@@ -38,8 +37,6 @@ export default {
         preserveScroll: false,
         only: ["indices", "clusterInfo"],
       });
-
-      console.log("reloaded");
     }, 30000);
 
     if (this.clusterId === null) {
