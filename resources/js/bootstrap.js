@@ -27,7 +27,12 @@ Vue.prototype.$route = (name, params, absolute) => route(name, params, absolute,
 Vue.prototype.$socket = new Echo({
   broadcaster: 'pusher',
   key: process.env.MIX_PUSHER_APP_KEY,
-  cluster: process.env.MIX_PUSHER_APP_CLUSTER
+  cluster: process.env.MIX_PUSHER_APP_CLUSTER,
+  auth: {
+    headers: {
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    }
+  }
 })
 
 Vue.component('vue-headful', vueHeadful)

@@ -6,12 +6,14 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Repositories\UserRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\GithubProvider;
+use Laravel\Socialite\Two\User as TwoUser;
 
 class GithubController extends Controller
 {
@@ -25,59 +27,47 @@ class GithubController extends Controller
         return Socialite::driver('github');
     }
 
-    public function redirect(Request $request)
+    public function redirect()
     {
-        $action = $request->get('action');
-
-        return $this->github()
-            ->with(
-                ['redirect_uri' => route("github.{$action}")]
-            )->redirect();
+        return $this->github()->redirect();
     }
 
-    /**
-     * Populate session with Github infos
-     */
-    public function register()
+    public function handle()
     {
         $githubUser = $this->github()->user();
 
-        $this->populateSession($githubUser);
+        $user = $this->findUser($githubUser->getEmail());
 
-        return redirect()->route('register');
+        if ($user instanceof User) {
+            return $this->loginUser($user);
+        }
+
+        return $this->populateAndRedirectToSignUp($githubUser);
     }
 
-    public function login()
+    private function findUser(string $email)
     {
-        // $githubUser = Socialite::driver('github')->user();
-        // $email = $githubUser->getEmail();
-
-        // $user = User::where(['email' => $email, 'github' => true])->first();
-
-        // if ($user !== null) {
-        //     Auth::login($user, true);
-
-        //     return redirect()->intended('dashboard');
-        // }
-
-        // $this->populateSession($githubUser);
-
-        // return redirect(route('register'));
+        return User::firstWhere([
+            'email' => $email,
+            'github' => true
+        ]);
     }
 
-    /**
-     * Populate session values from
-     * the given github user data
-     *
-     * @param SocialiteUser $githubUser
-     * @return void
-     */
-    protected function populateSession(SocialiteUser $githubUser)
+    private function loginUser(User $user)
+    {
+        Auth::login($user, true);
+
+        return redirect()->intended('dashboard');
+    }
+
+    private function populateAndRedirectToSignUp($githubUser)
     {
         request()->session()->put('githubUser', [
             'name' => $githubUser->getName(),
             'email' => $githubUser->getEmail(),
             'avatar_url' => $githubUser->getAvatar(),
         ]);
+
+        return redirect()->route('sign-up');
     }
 }

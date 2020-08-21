@@ -11,7 +11,7 @@
         Or
         <inertia-link
           class="font-medium text-orange-600 focus:outline-none focus:underline transition ease-in-out duration-150"
-          :href="$route('register')"
+          :href="$route('sign-up')"
         >start your 14-day free trial</inertia-link>
       </p>
     </div>

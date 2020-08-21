@@ -41,7 +41,7 @@ return [
     'github' => [
         'client_id' => env('GITHUB_CLIENT_ID'),
         'client_secret' => env('GITHUB_CLIENT_SECRET'),
-        'redirect' => '/github/callback',
+        'redirect' => '/github/handle',
     ],
 
     'cloudflare' => [
@@ -56,6 +56,7 @@ return [
     ],
     'paddle' => [
         'vendor_id' => env('PADDLE_VENDOR_ID'),
-        'plan_id' => env('PADDLE_PLAN_ID')
+        'plan_id' => env('PADDLE_PLAN_ID'),
+        'plan_name' => 'hobby'
     ]
 ];

@@ -43,9 +43,6 @@ class RegisterController extends Controller
     {
         return Inertia::render('auth/register', [
             'githubUser' => $request->session()->pull('githubUser', null),
-            'paddleData' => [
-                'vendor' => (int) config('services.paddle.vendor_id'),
-            ],
         ]);
     }
 
@@ -65,50 +62,10 @@ class RegisterController extends Controller
             ]
         );
 
+        $this->guard()->login($user);
+
         event(new Registered($user));
 
-        $paylink = $user->newSubscription('hobby', config('services.paddle.plan_id'))
-            ->returnTo(route('await-webhook'))
-            ->create();
-
-        return ['paylink' => $paylink];
-    }
-
-    public function webhookReceived(Request $request)
-    {
-        $handled = false;
-        $checkoutId = $request->get('checkout');
-        $anHourAfter = Carbon::now()->addHour()->toDateTime();
-
-        $receipt = Receipt::where('checkout_id', '=', $checkoutId)
-            ->where('updated_at', '<', $anHourAfter)->first();
-
-        if ($receipt instanceof Receipt) {
-            $handled = true;
-        }
-
-        return ['handled' => $handled];
-    }
-
-    public function payment()
-    {
-        return Inertia::render('auth/register/await-hook', ['checkoutId' => $checkoutId]);
-    }
-
-    public function awaitPaddleWebhook(Request $request)
-    {
-        $checkoutId = $request->get('checkout');
-        $receipt = Receipt::firstWhere('checkout_id', $request->get('checkout'));
-
-        if ($receipt !== null && $receipt->getAttribute('billable')->subscribed('hobby')) {
-
-            $user = $receipt->getAttribute('billable');
-
-            $this->guard()->login($user);
-
-            return redirect()->route('project.create');
-        }
-
-        return Inertia::render('auth/register/await-hook', ['checkoutId' => $checkoutId]);
+        return ['registered' => $user->exists];
     }
 }

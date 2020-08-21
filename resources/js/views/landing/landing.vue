@@ -17,13 +17,13 @@
         <div>
           <inertia-link
             v-if="features.auth"
-            :href="$route('register')"
+            :href="$route('sign-up')"
             class="items-center px-4 py-2 border border-transparent text-sm leading-5 font-semibold rounded-md text-cool-gray-800 tracking-wide bg-white hover:bg-cool-gray-50 focus:outline-none focus:border-cool-gray-700 active:bg-cool-gray-100 transition duration-150 ease-in-out"
           >Register</inertia-link>
 
           <inertia-link
             v-if="features.auth"
-            :href="$route('login')"
+            :href="$route('sign-in')"
             class="items-center px-4 py-2 border border-transparent text-sm leading-5 font-semibold rounded-md text-cool-gray-800 tracking-wide bg-white hover:bg-cool-gray-50 focus:outline-none focus:border-cool-gray-700 active:bg-cool-gray-100 transition duration-150 ease-in-out"
           >Login</inertia-link>
         </div>

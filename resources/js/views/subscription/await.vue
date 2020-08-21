@@ -9,8 +9,8 @@
   </layout>
 </template>
 <script>
-import Layout from "../../layouts/public";
-import loginVue from "../login.vue";
+import Layout from "../layouts/app";
+
 export default {
   props: ["checkoutId"],
   data() {
@@ -22,27 +22,20 @@ export default {
     Layout,
   },
   async mounted() {
+    this.$socket
+      .private(`user.${this.$page.user.id}`)
+      .listen("Subscription\\UserWasSubscribed", (e) => {
+        this.text = "Authorization recieved, redirecting...";
+        this.reload();
+      });
+
     let response = await this.$http.get(
       this.$route("webhook.received", { checkout: this.checkoutId })
     );
 
-    console.log("checking...");
-
     if (response.data.handled) {
-      console.log("ajax check reload");
-
       this.reload();
     }
-  },
-  beforeMount() {
-    console.log("subscribed");
-    this.$socket
-      .channel(`${this.checkoutId}`)
-      .listen("UserWasSubscribed", (e) => {
-        this.text = "Authorizations recieved...";
-        console.log("subscribed reload");
-        this.reload();
-      });
   },
   methods: {
     reload() {

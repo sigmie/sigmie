@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Events;
+namespace App\Events\Subscription;
 
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -12,15 +13,15 @@ class UserWasSubscribed implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    private $checkoutId;
+    public int $userId;
 
-    public function __construct($checkoutId)
+    public function __construct(int $userId)
     {
-        $this->checkoutId = $checkoutId;
+        $this->userId = $userId;
     }
 
     public function broadcastOn()
     {
-        return new Channel($this->checkoutId);
+        return new PrivateChannel("user.{$this->userId}");
     }
 }

@@ -15,12 +15,11 @@
               method="POST"
               :action="$route('register')"
               :github-route="$route('github.redirect', {action :'register'})"
-              :paddle-data="paddleData"
               :github-user="githubUser"
             />
             <div class="text-gray-400 text-base antialiased mt-5 mx-auto text-center">
               Already having an account ?
-              <inertia-link class="text-orange-400 font-semibold" :href="$route('login')">Sign-in</inertia-link>
+              <inertia-link class="text-orange-400 font-semibold" :href="$route('sign-in')">Sign-in</inertia-link>
             </div>
           </div>
         </div>
@@ -40,17 +39,7 @@ export default {
     registerForm: require("./register/form").default,
     plan: require("./register/plan").default,
   },
-  props: ["paddleData", "githubUser"],
-  mounted() {
-    let script = document.createElement("script");
-    script.async = true;
-    script.setAttribute("src", "https://cdn.paddle.com/paddle/paddle.js");
-    document.head.appendChild(script);
-
-    script.onload = () => {
-      Paddle.Setup({ vendor: this.paddleVendor });
-    };
-  },
+  props: ["githubUser"],
   methods: {},
 };
 </script>

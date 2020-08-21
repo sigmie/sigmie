@@ -12,7 +12,9 @@
 */
 
 use App\Http\Middleware\AssignProject;
+use App\Http\Middleware\MustBeSubscribed;
 use App\Http\Middleware\NeedsCluster;
+use App\Http\Middleware\RedirectIfSubscribed;
 use App\Http\Middleware\ShareProjectToView;
 
 $launched = true;
@@ -40,42 +42,39 @@ Route::name('legal.')->group(function () {
 });
 
 // Auth routes
-Route::middleware([])->group(function () {
+Route::namespace('Auth')->middleware('feature:auth')->group(function () {
 
-    Route::namespace('Auth')->group(function () {
+    Route::get('/sign-up', 'RegisterController@showRegistrationForm')->name('sign-up');
+    Route::get('/sign-in', 'LoginController@showLoginForm')->name('sign-in');
 
-        Route::get('/sign-up', 'RegisterController@showRegistrationForm')->name('register');
+    Route::post('/register', 'RegisterController@createUser')->name('register');
+    Route::get('/login', 'LoginController@showLoginForm')->name('login');
+    Route::post('/login', 'LoginController@login');
+    Route::post('/logout', 'LoginController@logout')->name('logout');
 
-        Route::get('/sign-in', 'LoginController@showLoginForm')->name('login');
+    Route::get('/password/reset', 'ForgotPasswordController@showLinkRequestForm');
+    Route::post('/password/email', 'ForgotPasswordController@sendResetLinkEmail');
+    Route::get('/password/reset/{token}', 'ResetPasswordController@showResetForm');
+    Route::post('/password/reset', 'ResetPasswordController@reset');
 
-        Route::post('/paylink', 'RegisterController@createUser')->name('paylink');
+    Route::prefix('github')->name('github.')->group(function () {
 
-        Route::get('/await-webhook', 'RegisterController@awaitPaddleWebhook')->name('await-webhook');
-
-        Route::get('login', 'LoginController@showLoginForm')->name('login');
-        Route::post('login', 'LoginController@login');
-        Route::post('logout', 'LoginController@logout')->name('logout');
-
-        Route::get('password/reset', 'ForgotPasswordController@showLinkRequestForm');
-        Route::post('password/email', 'ForgotPasswordController@sendResetLinkEmail');
-        Route::get('password/reset/{token}', 'ResetPasswordController@showResetForm');
-        Route::post('password/reset', 'ResetPasswordController@reset');
-
-        Route::prefix('github')->name('github.')->group(function () {
-
-            Route::get('/redirect', 'GithubController@redirect')->name('redirect');
-
-            Route::get('/login', 'GithubController@login')->name('login');
-
-            Route::get('/register', 'GithubController@register')->name('register');
-        });
+        Route::get('/redirect', 'GithubController@redirect')->name('redirect');
+        Route::get('/handle', 'GithubController@handle')->name('handle');
     });
+});
+
+Route::namespace('Subscription')->prefix('subscription')->name('subscription.')->middleware(['user', RedirectIfSubscribed::class])->group(function () {
+    Route::get('/await', 'SubscriptionController@await')->name('await');
+    Route::get('/create', 'SubscriptionController@create')->name('create');
+    Route::get('/missing', 'SubscriptionController@missing')->name('missing');
+    Route::get('/expired', 'SubscriptionController@expired')->name('expired');
 });
 
 Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
 
 
-    Route::group(['middleware' => [ShareProjectToView::class]], function () {
+    Route::group(['middleware' => [MustBeSubscribed::class, ShareProjectToView::class]], function () {
 
         Route::resource('project', 'ProjectController');
 

@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div class="min-h-full h-full">
     <vue-headful :title="title + ' | Sigmie'" />
-    <slot></slot>
+    <slot />
   </div>
 </template>
 
@@ -10,6 +10,7 @@ export default {
   props: ["title"],
   beforeMount() {
     this.$http.defaults.headers["X-CSRF-TOKEN"] = this.$page.csrf_token;
+    this.$socket.options.auth.headers["X-CSRF-TOKEN"] =this.$page.csrf_token;
   },
 };
 </script>

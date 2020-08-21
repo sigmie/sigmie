@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Listeners\Subscription;
 
-use App\Events\UserWasSubscribed;
+use App\Events\Subscription\UserWasSubscribed;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Laravel\Paddle\Events\WebhookHandled;
 
@@ -14,9 +14,11 @@ class DispatchUserWasSubscribedEvent implements ShouldQueue
 
         if ($paddleEvent === 'subscription_created') {
 
-            $checkoutId = $event->payload['checkout_id'];
+            $passthrough = json_decode($event->payload['passthrough'], true);
 
-            event(new UserWasSubscribed($checkoutId));
+            $userId = (int) $passthrough['billable_id'];
+
+            event(new UserWasSubscribed($userId));
         }
     }
 }

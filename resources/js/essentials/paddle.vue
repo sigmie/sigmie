@@ -11,15 +11,37 @@
 import loginVue from "../views/auth/login.vue";
 
 export default {
-  props: ["paylink", "data"],
-  beforeMount() {
-    let paddleScript = document.createElement("script");
-    paddleScript.setAttribute("src", "https://cdn.paddle.com/paddle/paddle.js");
-    paddleScript.async = true;
-    paddleScript.addEventListener("load", () => {
-      Paddle.Setup({ vendor: this.data.vendor });
-    });
-    document.head.appendChild(paddleScript);
+  props: ["paylink", "vendor"],
+  methods: {
+    handleClose() {
+      console.log('handle close');
+      this.$inertia.visit(this.$route("dashboard"));
+    },
+    handleComplete() {
+      console.log('handle complete');
+      this.$inertia.visit(this.$route("subscription.await"));
+    },
+  },
+  mounted() {
+    let vendor = this.vendor;
+    let paylink = this.paylink;
+    let script = document.createElement("script");
+    let handleClose = this.handleClose;
+    let handleComplete = this.handleComplete;
+
+    script.onload = () => {
+      Paddle.Setup({ vendor: vendor });
+
+      Paddle.Checkout.open({
+        override: paylink,
+        closeCallback: handleClose,
+        successCallback: handleComplete,
+      });
+    };
+
+    script.src = "https://cdn.paddle.com/paddle/paddle.js";
+
+    document.head.appendChild(script);
   },
 };
 </script>

@@ -20,3 +20,7 @@ Broadcast::channel('App.User.{id}', function ($user, $id) {
 Broadcast::channel('cluster.{clusterId}', function ($user, $clusterId) {
     return $user->id === Cluster::withTrashed()->where('id', $clusterId)->first()->project->user->id;
 });
+
+Broadcast::channel('user.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});

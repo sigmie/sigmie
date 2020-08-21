@@ -63,7 +63,8 @@
             type="password"
             label="Password confirm"
             :validations="$v.password_confirmation"
-            :error-messages="errorMessages.password_confirmation" ></form-input>
+            :error-messages="errorMessages.password_confirmation"
+          ></form-input>
         </div>
         <div class="sm:col-span-3 pb-5">
           <form-checkbox
@@ -92,12 +93,10 @@
       </div>
     </div>
 
-    <paddle :data="paddleData" class="hidden" :link="this.paylink"></paddle>
-
     <button-primary
       :class="{ 'disabled': $v.$anyError }"
       text="Create account"
-      @click="fetchPaylink"
+      @click="createUser"
       type="submit"
     ></button-primary>
   </form>
@@ -122,7 +121,7 @@ export default {
   components: {
     github: require("./github").default,
   },
-  props: ["githubRoute", "githubUser", "paddleData"],
+  props: ["githubUser"],
   data() {
     return {
       name: this.$page.old.name ? this.$page.old.name : "",
@@ -192,12 +191,12 @@ export default {
       this[key] = value;
       this.$v[key].$touch();
     },
-    async fetchPaylink() {
+    async createUser() {
       if (this.$v.$invalid && this.github === false) {
         return;
       }
 
-      let response = await this.$http.post(this.$route("paylink"), {
+      let response = await this.$http.post(this.$route("register"), {
         email: this.email,
         username: this.username,
         password: this.password,
@@ -205,11 +204,9 @@ export default {
         avatar_url: this.avatar_url,
       });
 
-      this.paylink = response.data.paylink;
-
-      Paddle.Checkout.open({
-        override: response.data.paylink,
-      });
+      if (response.data.registered) {
+        this.$inertia.visit(this.$route("subscription.create"));
+      }
     },
   },
   mounted() {
