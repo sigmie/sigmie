@@ -35,8 +35,9 @@ class RegisterController extends Controller
     {
         $avatar_url = 'https://www.gravatar.com/avatar/';
         $avatar_url .= md5(strtolower(trim($email)));
+        $avatar_url .= '?d=identicon';
 
-        return $email;
+        return $avatar_url;
     }
 
     public function showRegistrationForm(Request $request)
