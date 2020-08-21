@@ -90,6 +90,10 @@ class RegisterController extends Controller
         return ['handled' => $handled];
     }
 
+    public function payment()
+    {
+        return Inertia::render('auth/register/await-hook', ['checkoutId' => $checkoutId]);
+    }
 
     public function awaitPaddleWebhook(Request $request)
     {
@@ -107,36 +111,4 @@ class RegisterController extends Controller
 
         return Inertia::render('auth/register/await-hook', ['checkoutId' => $checkoutId]);
     }
-
-    // /**
-    //  * Create a new user instance after a valid registration.
-    //  *
-    //  * @param  array $data
-    //  * @return \App\Models\User
-    //  */
-    // protected function create(array $data)
-    // {
-    //     $githubUser = session()->get('githubUser', null);
-
-    //     $email = $data['email'];
-    //     $password = (isset($data['password'])) ? Hash::make($data['password']) : '';
-    //     $avatar_url = '';
-
-    //     if ($githubUser !== null) {
-    //         $avatar_url = $githubUser['avatar_url'];
-    //     } else {
-    //         $avatar_url = 'https://www.gravatar.com/avatar/';
-    //         $avatar_url .= md5(strtolower(trim($email)));
-    //     }
-
-    //     return User::create(
-    //         [
-    //             'email' => $email,
-    //             'username' => $data['username'],
-    //             'password' => $password,
-    //             'avatar_url' => $avatar_url,
-    //             'github' => $githubUser !== null
-    //         ]
-    //     );
-    // }
 }

@@ -12,8 +12,8 @@
         "build-nova-feature-flags-prod": "cd nova-components/NovaFeatureFlags && npm run prod"
     },
     "devDependencies": {
-        "@inertiajs/inertia": "^0.1.9",
-        "@inertiajs/inertia-vue": "^0.1.4",
+        "@inertiajs/inertia": "^0.2.1",
+        "@inertiajs/inertia-vue": "^0.2.0",
         "@tailwindcss/ui": "^0.1.3",
         "axios": "^0.19.1",
         "cross-env": "^5.1",
