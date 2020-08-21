@@ -42,9 +42,12 @@ class RegisterController extends Controller
 
     public function showRegistrationForm(Request $request)
     {
-        return Inertia::render('auth/register', [
-            'githubUser' => $request->session()->pull('githubUser', null),
-        ]);
+        return Inertia::render(
+            'auth/register',
+            [
+                'githubUser' => $request->session()->pull('githubUser', null),
+            ]
+        );
     }
 
     public function createUser(StoreUser $request)

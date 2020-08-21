@@ -10,8 +10,10 @@ class RedirectIfSubscribed
     public function handle($request, Closure $next)
     {
         $planName = config('services.paddle.plan_name');
+        $user = Auth::user();
+        $subscription = $user->subscription($planName);
 
-        if (Auth::user()->subscribed($planName)) {
+        if ($subscription !== null && $user->subscription($planName)->cancelled() === false) {
             return redirect()->route('dashboard');
         }
 

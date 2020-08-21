@@ -29,11 +29,10 @@ export default {
         this.reload();
       });
 
-    let response = await this.$http.get(
-      this.$route("webhook.received", { checkout: this.checkoutId })
-    );
+    let response = await this.$http.get(this.$route("subscirption.check"));
 
-    if (response.data.handled) {
+    if (response.data.subscribed) {
+      this.text = "Authorization recieved, redirecting...";
       this.reload();
     }
   },

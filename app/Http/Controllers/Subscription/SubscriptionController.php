@@ -23,8 +23,11 @@ class SubscriptionController extends Controller
         $user = Auth::user();
         $planId = config('services.paddle.plan_id');
         $planName = config('services.paddle.plan_name');
+        $trailDays = ($user->subscription($planName) === null) ? 14 : 0;
 
-        $paylink = $user->newSubscription($planName, $planId)->create();
+        $paylink = $user->newSubscription($planName, $planId)
+            ->trialDays($trailDays)
+            ->create();
 
         return Inertia::render('subscription/create', [
             'paylink' => $paylink,
@@ -49,20 +52,11 @@ class SubscriptionController extends Controller
         return Inertia::render('subscription/missing');
     }
 
-    public function check(Request $request)
+    public function check()
     {
-        $handled = false;
-        $checkoutId = $request->get('checkout');
-        $anHourAfter = Carbon::now()->addHour()->toDateTime();
+        $subscribed = Auth::user()->subscribed(config('services.paddle.plan_name'));
 
-        $receipt = Receipt::where('checkout_id', '=', $checkoutId)
-            ->where('updated_at', '<', $anHourAfter)->first();
-
-        if ($receipt instanceof Receipt) {
-            $handled = true;
-        }
-
-        return ['handled' => $handled];
+        return ['subscribed' => $subscribed];
     }
 
     public function expired()

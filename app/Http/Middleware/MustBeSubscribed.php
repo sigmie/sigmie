@@ -10,10 +10,18 @@ class MustBeSubscribed
     public function handle($request, Closure $next)
     {
         $planName = config('services.paddle.plan_name');
+        $user = Auth::user();
 
-        if (Auth::user()->subscribed($planName)) {
+        $subscription = $user->subscription($planName);
+
+        if ($subscription !== null && $user->subscription($planName)->cancelled()) {
+            return redirect()->route('subscription.expired');
+        }
+
+        if ($user->subscribed($planName)) {
             return $next($request);
         }
+
 
         return redirect()->route('subscription.missing');
     }

@@ -23,4 +23,4 @@ Route::put('/tokens/{cluster}/regenerate/{token}', 'ClusterTokenController@regen
 
 Route::put('/tokens/{cluster}/toogle/{token}', 'ClusterTokenController@toogle')->name('token.toogle');
 
-Route::get('/webhook/received', 'Auth\RegisterController@webhookReceived')->name('webhook.received');
+Route::get('/subscription/check', 'Subscription\SubscriptionController@check')->name('subscription.check');
