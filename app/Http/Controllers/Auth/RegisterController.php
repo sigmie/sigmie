@@ -26,9 +26,9 @@ class RegisterController extends Controller
 
     public function __construct(UserRepository $userRepository)
     {
-        $this->middleware('guest');
-
         $this->users = $userRepository;
+
+        $this->middleware('guest');
     }
 
     private function gravatarUrl(string $email)
