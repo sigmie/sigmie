@@ -1,18 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Http\Controllers\Subscription;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreUser;
-use App\Repositories\UserRepository;
-use Carbon\Carbon;
-use Illuminate\Auth\Events\Registered;
-use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Laravel\Paddle\Receipt;
 

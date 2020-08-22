@@ -1,14 +1,11 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
 use Laravel\Paddle\Subscription;
 use Tests\TestCase;
@@ -16,11 +13,6 @@ use Tests\TestCase;
 class RegisterControllerTest extends TestCase
 {
     use DatabaseTransactions;
-
-    public function setUp(): void
-    {
-        parent::setUp();
-    }
 
     /**
      * @test

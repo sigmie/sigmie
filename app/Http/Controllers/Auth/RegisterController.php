@@ -7,16 +7,11 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUser;
 use App\Repositories\UserRepository;
-use Carbon\Carbon;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
-use Laravel\Paddle\Receipt;
 
 class RegisterController extends Controller
 {
@@ -29,15 +24,6 @@ class RegisterController extends Controller
         $this->users = $userRepository;
 
         $this->middleware('guest');
-    }
-
-    private function gravatarUrl(string $email)
-    {
-        $avatar_url = 'https://www.gravatar.com/avatar/';
-        $avatar_url .= md5(strtolower(trim($email)));
-        $avatar_url .= '?d=identicon';
-
-        return $avatar_url;
     }
 
     public function showRegistrationForm(Request $request)
@@ -71,5 +57,14 @@ class RegisterController extends Controller
         event(new Registered($user));
 
         return ['registered' => $user->exists];
+    }
+
+    private function gravatarUrl(string $email)
+    {
+        $avatar_url = 'https://www.gravatar.com/avatar/';
+        $avatar_url .= md5(strtolower(trim($email)));
+        $avatar_url .= '?d=identicon';
+
+        return $avatar_url;
     }
 }

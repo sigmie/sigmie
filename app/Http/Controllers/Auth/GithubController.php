@@ -6,25 +6,16 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Repositories\UserRepository;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Laravel\Socialite\Contracts\User as SocialiteUser;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\GithubProvider;
-use Laravel\Socialite\Two\User as TwoUser;
 
 class GithubController extends Controller
 {
     public function __construct()
     {
         $this->middleware('guest');
-    }
-
-    protected function github(): GithubProvider
-    {
-        return Socialite::driver('github');
     }
 
     public function redirect()
@@ -43,6 +34,11 @@ class GithubController extends Controller
         }
 
         return $this->populateAndRedirectToSignUp($githubUser);
+    }
+
+    protected function github(): GithubProvider
+    {
+        return Socialite::driver('github');
     }
 
     private function findUser(string $email)

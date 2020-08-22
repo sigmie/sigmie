@@ -1,18 +1,11 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Tests\Feature\Subscription;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
-use Inertia\Inertia;
-use Laravel\Paddle\Billable;
-use Laravel\Paddle\Concerns\ManagesSubscriptions;
 use Laravel\Paddle\Subscription;
 use Laravel\Paddle\SubscriptionBuilder;
 use Tests\TestCase;

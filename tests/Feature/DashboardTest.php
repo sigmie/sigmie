@@ -6,7 +6,6 @@ namespace Tests\Feature;
 
 use App\Models\Cluster;
 use App\Models\Project;
-use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Laravel\Paddle\Subscription;
 use Tests\TestCase;
