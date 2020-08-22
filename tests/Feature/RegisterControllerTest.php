@@ -4,10 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
-use Inertia\Inertia;
+use Laravel\Paddle\Subscription;
 use Tests\TestCase;
 
 class RegisterControllerTest extends TestCase
@@ -24,11 +21,11 @@ class RegisterControllerTest extends TestCase
      */
     public function registered_users_are_redirected_to_dashboard()
     {
-        $user = factory(User::class)->create();
+        $user = factory(Subscription::class)->create()->billable;
 
         $this->actingAs($user);
 
-        $response = $this->get(route('register'));
+        $response = $this->get(route('sign-up'));
 
         $response->assertRedirect(route('dashboard'));
     }

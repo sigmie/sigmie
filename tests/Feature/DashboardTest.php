@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Tests\Feature;
 
@@ -6,6 +8,7 @@ use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Laravel\Paddle\Subscription;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
@@ -27,7 +30,8 @@ class DashboardTest extends TestCase
      */
     public function assign_first_project_id_if_no_project_id_is_provided()
     {
-        $project = factory(Project::class)->create();
+        $user = factory(Subscription::class)->create()->billable;
+        $project = factory(Project::class)->create(['user_id' => $user->id]);
 
         $this->actingAs($project->getAttribute('user'));
 
@@ -41,12 +45,13 @@ class DashboardTest extends TestCase
      */
     public function user_can_see_dashboard_only_from_owned_project()
     {
-        $cluster = factory(Cluster::class)->create();
-        $project = $cluster->getAttribute('project');
+        $user = factory(Subscription::class)->create()->billable;
+        $project = factory(Project::class)->create(['user_id' => $user->id]);
+        factory(Cluster::class)->create(['project_id' => $project->id]);
 
-        $user = factory(User::class)->create();
+        $secondUser = factory(Subscription::class)->create()->billable;
 
-        $this->actingAs($user);
+        $this->actingAs($secondUser);
 
         $response = $this->get(route('dashboard', ['project' => $project->getAttribute('id')]));
         $response->assertForbidden();
@@ -63,7 +68,7 @@ class DashboardTest extends TestCase
     public function dashboard_redirects_if_project_has_not_a_cluster()
     {
         $project = factory(Project::class)->create();
-        $user = factory(User::class)->create();
+        $user = factory(Subscription::class)->create()->billable;
 
         $this->actingAs($user);
 
@@ -76,7 +81,7 @@ class DashboardTest extends TestCase
      */
     public function redirect_to_create_project_if_no_project_exists()
     {
-        $user = factory(User::class)->create();
+        $user = factory(Subscription::class)->create()->billable;
 
         $this->actingAs($user);
 

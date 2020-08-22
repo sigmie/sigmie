@@ -3,8 +3,11 @@
 use App\Models\User;
 use Illuminate\Support\Str;
 use Faker\Generator as Faker;
+use Laravel\Paddle\Receipt;
 
 $factory->define(User::class, function (Faker $faker) {
+
+
     return [
         'email' => $faker->unique()->safeEmail,
         'username' => $faker->name,

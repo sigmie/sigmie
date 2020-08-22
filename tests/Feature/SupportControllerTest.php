@@ -1,10 +1,13 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Inertia;
+use Laravel\Paddle\Subscription;
 use Tests\TestCase;
 
 class SupportControllerTest extends TestCase
@@ -16,7 +19,7 @@ class SupportControllerTest extends TestCase
      */
     public function see_support_page_controller_and_inertia_view()
     {
-        $user = factory(User::class)->create();
+        $user = factory(Subscription::class)->create()->billable;
 
         $this->actingAs($user);
 

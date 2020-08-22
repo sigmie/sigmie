@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Config;
+use Laravel\Paddle\Subscription;
 use Tests\TestCase;
 
 class ProjectTest extends TestCase
@@ -41,7 +42,7 @@ class ProjectTest extends TestCase
     {
         Config::set('override.provider.rule', true);
 
-        $user = factory(User::class)->create();
+        $user = factory(Subscription::class)->create()->billable;
 
         $this->actingAs($user);
 

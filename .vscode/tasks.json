@@ -19,6 +19,11 @@
             "command": "php artisan make:test --unit ${input:params}"
         },
         {
+            "label": "db:seed",
+            "type": "shell",
+            "command": "php artisan db:seed"
+        },
+        {
             "label": "phpcs:tests",
             "type": "shell",
             "command": "vendor/bin/phpcbf --standard=psr12 tests && vendor/bin/phpcs --standard=psr12 tests"
