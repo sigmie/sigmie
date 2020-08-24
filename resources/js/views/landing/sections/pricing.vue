@@ -19,7 +19,7 @@
           <div class="flex mx-auto w-1/3 justify-end md:mx-0">
             <inertia-link
               v-if="authFeature"
-              :href="$route('register')"
+              :href="$route('sign-up')"
               class="bg-theme-secondary-lighter md:w-48 flex items-center justify-center px-4 rounded-lg h-12 self-center text-sm leading-5 text-white"
             >Get started</inertia-link>
             <inertia-link

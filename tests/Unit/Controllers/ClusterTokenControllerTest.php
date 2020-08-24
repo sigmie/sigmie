@@ -9,6 +9,7 @@ use App\Models\Cluster;
 use App\Models\Project;
 use Illuminate\Database\Eloquent\Collection;
 use Inertia\Inertia;
+use Laravel\Sanctum\NewAccessToken;
 use Laravel\Sanctum\PersonalAccessToken;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
@@ -79,6 +80,37 @@ class ClusterTokenControllerTest extends TestCase
         $this->projectMock->method('clusters')->willReturn($this->clusterCollectionMock);
 
         $this->controller = new ClusterTokenController();
+    }
+
+    /**
+     * @test
+     */
+    public function regenerate()
+    {
+        $newAccessToken = $this->createMock(PersonalAccessToken::class);
+        $newAccessToken->method('getAttribute')->willReturnMap([['id', 0000]]);
+
+        $newToken = $this->createMock(NewAccessToken::class);
+        $newToken->plainTextToken = 'foo-bar-token';
+        $newToken->accessToken = $newAccessToken;
+
+        $oldToken = $this->createMock(PersonalAccessToken::class);
+        $oldToken->method('getAttribute')->willReturnMap([['name', 'token-name'], ['abilities', ['some-abilities']]]);
+
+        $tokensCollectionMock = $this->createMock(Collection::class);
+        $tokensCollectionMock->method('firstWhere')->willReturn($oldToken);
+
+        $clusterMock = $this->createMock(Cluster::class);
+        $clusterMock->method('tokens')->willReturn($tokensCollectionMock);
+        $clusterMock->method('createToken')->willReturn($newToken);
+
+        $tokensCollectionMock->expects($this->once())->method('firstWhere')->with('id', 99);
+        $clusterMock->expects($this->once())->method('createToken')->with('token-name', ['some-abilities']);
+        $oldToken->expects($this->once())->method('delete');
+
+        $result = $this->controller->regenerate($clusterMock, 99);
+
+        $this->assertEquals(['value' => 'foo-bar-token', 'id' => 0000], $result);
     }
 
     /**
