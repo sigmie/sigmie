@@ -1,8 +1,11 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
 use App\Models\Cluster;
+use App\Models\ClusterToken;
 use App\Models\Project;
 use Inertia\Inertia;
 
@@ -21,6 +24,8 @@ class ClusterTokenController extends Controller
     {
         $cluster = $project->clusters()->first();
         $plainTextTokens = [self::ADMIN => null, self::SEARCH_ONLY => null];
+
+        $this->authorize('index', [ClusterToken::class, $cluster]);
 
         if ($cluster->getAttribute('tokens')->isEmpty()) {
             $plainTextTokens[self::ADMIN] = $cluster->createToken(self::ADMIN, ['*'])->plainTextToken;
@@ -53,19 +58,17 @@ class ClusterTokenController extends Controller
         return Inertia::render('token/index', ['tokens' => $tokens]);
     }
 
-    public function toogle(Cluster $cluster, int $tokenId)
+    public function toogle(Cluster $cluster, ClusterToken $clusterToken)
     {
-        $token = $cluster->tokens()->firstWhere('id', $tokenId);
-        $oldValue = null;
-        $newValue = null;
+        $this->authorize('update', [$clusterToken, $cluster]);
 
-        if ($token->getAttribute('name') === self::SEARCH_ONLY) {
+        if ($clusterToken->getAttribute('name') === self::SEARCH_ONLY) {
             $oldValue = $cluster->getAttribute('search_token_active');
             $cluster->update(['search_token_active' => !$oldValue]);
             $newValue = $cluster->getAttribute('search_token_active');
         }
 
-        if ($token->getAttribute('name') === self::ADMIN) {
+        if ($clusterToken->getAttribute('name') === self::ADMIN) {
             $oldValue = $cluster->getAttribute('admin_token_active');
             $cluster->update(['admin_token_active' => !$oldValue]);
             $newValue = $cluster->getAttribute('admin_token_active');
@@ -74,13 +77,13 @@ class ClusterTokenController extends Controller
         return $newValue;
     }
 
-    public function regenerate(Cluster $cluster, int $tokenId)
+    public function regenerate(Cluster $cluster, ClusterToken $clusterToken)
     {
-        $oldToken = $cluster->tokens()->firstWhere('id', $tokenId);
+        $this->authorize('update', [$clusterToken, $cluster]);
 
-        $newToken = $cluster->createToken($oldToken->getAttribute('name'), $oldToken->getAttribute('abilities'));
+        $newToken = $cluster->createToken($clusterToken->getAttribute('name'), $clusterToken->getAttribute('abilities'));
 
-        $oldToken->delete();
+        $clusterToken->delete();
 
         return ['value' => $newToken->plainTextToken, 'id' => $newToken->accessToken->getAttribute('id')];
     }

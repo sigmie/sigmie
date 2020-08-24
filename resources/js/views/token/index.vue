@@ -176,7 +176,7 @@ export default {
     async toogleActive(tokenId, clusterId, index) {
       let response = await this.$http.put(
         this.$route("token.toogle", {
-          token: tokenId,
+          clusterToken: tokenId,
           cluster: clusterId
         })
       );
@@ -188,7 +188,7 @@ export default {
     async regenerate(tokenId, clusterId, index) {
       let response = await this.$http.put(
         this.$route("token.regenerate", {
-          token: tokenId,
+          clusterToken: tokenId,
           cluster: clusterId
         })
       );

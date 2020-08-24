@@ -85,7 +85,7 @@ class ClusterTokenControllerTest extends TestCase
     /**
      * @test
      */
-    public function regenerate()
+    public function regenerate_deletes_token_and_creates_new()
     {
         $newAccessToken = $this->createMock(PersonalAccessToken::class);
         $newAccessToken->method('getAttribute')->willReturnMap([['id', 0000]]);

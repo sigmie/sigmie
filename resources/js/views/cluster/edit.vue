@@ -51,7 +51,7 @@
                     <a
                       class="text-orange-400"
                       target="_blank"
-                      :href="$route('access-token.index')"
+                      :href="$route('token.index')"
                     >Access Token</a> or directly by using your basic auth credentials.
                   </div>
                 </div>

@@ -11,6 +11,8 @@
 |
 */
 
+use Laravel\Sanctum\PersonalAccessToken;
+
 Route::resource('/notification', 'NotificationController', ['except' => ['edit', 'create', 'destroy']])->middleware('auth');
 
 Route::get('/cluster/validate/name/{name}', 'ClusterValidationController@name')->name('cluster.validate.name');
@@ -19,8 +21,8 @@ Route::get('/user/validate/email/{email}', 'UserValidationController@email')->na
 
 Route::post('/project/validate/provider', 'ProjectValidationController@provider')->name('project.validate.provider');
 
-Route::put('/tokens/{cluster}/regenerate/{token}', 'ClusterTokenController@regenerate')->name('token.regenerate');
+Route::put('/tokens/{cluster}/regenerate/{clusterToken}', 'ClusterTokenController@regenerate')->name('token.regenerate');
 
-Route::put('/tokens/{cluster}/toogle/{token}', 'ClusterTokenController@toogle')->name('token.toogle');
+Route::put('/tokens/{cluster}/toogle/{clusterToken}', 'ClusterTokenController@toogle')->name('token.toogle');
 
 Route::get('/subscription/check', 'Subscription\SubscriptionController@check')->name('subscription.check');

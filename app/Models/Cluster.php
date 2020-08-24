@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
+use Laravel\Sanctum\Sanctum;
 
 class Cluster extends Model
 {
@@ -28,6 +29,11 @@ class Cluster extends Model
         'admin_token_active' => 'boolean',
         'search_token_active' => 'boolean'
     ];
+
+    public function tokens()
+    {
+        return $this->morphMany(ClusterToken::class, 'tokenable');
+    }
 
     public function project()
     {

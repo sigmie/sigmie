@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
+use Laravel\Sanctum\Sanctum;
 use YlsIdeas\FeatureFlags\Facades\Features;
 
 class AppServiceProvider extends ServiceProvider
