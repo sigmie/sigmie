@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddSubscriptionIdCollumnToProjectsTable extends Migration
+class RemovetSubscriptionPlanColumnFromProject extends Migration
 {
     /**
      * Run the migrations.
@@ -14,11 +14,11 @@ class AddSubscriptionIdCollumnToProjectsTable extends Migration
     public function up()
     {
         Schema::table('projects', function (Blueprint $table) {
-            $table->bigInteger('subscription_plan_id')->unsigned()->index();
+            $table->dropForeign([ 'subscription_plan_id' ]);
         });
 
         Schema::table('projects', function (Blueprint $table) {
-            $table->foreign('subscription_plan_id')->references('id')->on('subscription_plans');
+            $table->dropColumn('subscription_plan_id');
         });
     }
 
@@ -30,8 +30,11 @@ class AddSubscriptionIdCollumnToProjectsTable extends Migration
     public function down()
     {
         Schema::table('projects', function (Blueprint $table) {
-            $table->dropForeign('subscription_plan_id');
-            $table->dropColumn('subscription_plan_id');
+            $table->bigInteger('subscription_plan_id')->unsigned()->index();
+        });
+
+        Schema::table('projects', function (Blueprint $table) {
+            $table->foreign('subscription_plan_id')->references('id')->on('subscription_plans');
         });
     }
 }

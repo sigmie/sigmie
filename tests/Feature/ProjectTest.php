@@ -21,8 +21,7 @@ class ProjectTest extends TestCase
     {
         $project = factory(Project::class)->make();
 
-        $this->assertInstanceOf(BelongsTo::class, $project->user());
-    }
+        $this->assertInstanceOf(BelongsTo::class, $project->user()); }
 
     /**
      * @test

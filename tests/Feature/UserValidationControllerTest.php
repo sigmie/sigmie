@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
-class UserValidationController extends TestCase
+class UserValidationControllerTest extends TestCase
 {
     use DatabaseTransactions;
 
@@ -25,7 +25,7 @@ class UserValidationController extends TestCase
      */
     public function email_validation_returns_true_if_email_doesnt_exists()
     {
-        $user = factory(User::class)->create();
+        factory(User::class)->create();
 
         $this->get(route('user.validate.email', ['email' => 'someother@email.com']))->assertJson(['valid' => true]);
     }

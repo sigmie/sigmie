@@ -22,9 +22,6 @@ class ProjectPolicy
         return false;
     }
 
-    /**
-     * @return bool
-     */
     public function create(User $user)
     {
         return $user->projects()->get()->isEmpty();

@@ -20,11 +20,6 @@ class Project extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function subscriptionPlan()
-    {
-        return $this->hasOne(SubscriptionPlan::class);
-    }
-
     // public function productionCluster()
     // {
     //     return $this->hasMany(Cluster::class)->where(['environment' => 'prod']);

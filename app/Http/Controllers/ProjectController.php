@@ -39,7 +39,6 @@ class ProjectController extends Controller
             'creds' => encrypt($credentials),
             'provider' => $provider,
             'user_id' => $userId,
-            'subscription_plan_id' => 1
         ]);
 
         return redirect()->route('cluster.create');

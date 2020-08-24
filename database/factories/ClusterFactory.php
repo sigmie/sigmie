@@ -1,9 +1,7 @@
-<?php
+<?php declare(strict_types=1);
 
-use App\Model;
 use App\Models\Cluster;
 use App\Models\Project;
-use App\Models\SubscriptionPlan;
 use Faker\Generator as Faker;
 
 $factory->define(Cluster::class, function (Faker $faker) {
