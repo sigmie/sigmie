@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\Cluster;
 use App\Models\ClusterToken;
 use App\Models\Project;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
 class ClusterTokenController extends Controller
@@ -25,7 +26,7 @@ class ClusterTokenController extends Controller
         $cluster = $project->clusters()->first();
         $plainTextTokens = [self::ADMIN => null, self::SEARCH_ONLY => null];
 
-        $this->authorize('index', [ClusterToken::class, $cluster]);
+        Gate::authorize('index', [ClusterToken::class, $cluster]);
 
         if ($cluster->getAttribute('tokens')->isEmpty()) {
             $plainTextTokens[self::ADMIN] = $cluster->createToken(self::ADMIN, ['*'])->plainTextToken;
@@ -60,7 +61,7 @@ class ClusterTokenController extends Controller
 
     public function toogle(Cluster $cluster, ClusterToken $clusterToken)
     {
-        $this->authorize('update', [$clusterToken, $cluster]);
+        Gate::authorize('update', [$clusterToken, $cluster]);
 
         if ($clusterToken->getAttribute('name') === self::SEARCH_ONLY) {
             $oldValue = $cluster->getAttribute('search_token_active');
@@ -79,7 +80,7 @@ class ClusterTokenController extends Controller
 
     public function regenerate(Cluster $cluster, ClusterToken $clusterToken)
     {
-        $this->authorize('update', [$clusterToken, $cluster]);
+        Gate::authorize('update', [$clusterToken, $cluster]);
 
         $newToken = $cluster->createToken($clusterToken->getAttribute('name'), $clusterToken->getAttribute('abilities'));
 

@@ -6,8 +6,10 @@ namespace Tests\Unit\Controllers;
 
 use App\Http\Controllers\ClusterTokenController;
 use App\Models\Cluster;
+use App\Models\ClusterToken;
 use App\Models\Project;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Laravel\Sanctum\NewAccessToken;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -87,14 +89,15 @@ class ClusterTokenControllerTest extends TestCase
      */
     public function regenerate_deletes_token_and_creates_new()
     {
-        $newAccessToken = $this->createMock(PersonalAccessToken::class);
+
+        $newAccessToken = $this->createMock(ClusterToken::class);
         $newAccessToken->method('getAttribute')->willReturnMap([['id', 0000]]);
 
         $newToken = $this->createMock(NewAccessToken::class);
         $newToken->plainTextToken = 'foo-bar-token';
         $newToken->accessToken = $newAccessToken;
 
-        $oldToken = $this->createMock(PersonalAccessToken::class);
+        $oldToken = $this->createMock(ClusterToken::class);
         $oldToken->method('getAttribute')->willReturnMap([['name', 'token-name'], ['abilities', ['some-abilities']]]);
 
         $tokensCollectionMock = $this->createMock(Collection::class);
@@ -104,11 +107,12 @@ class ClusterTokenControllerTest extends TestCase
         $clusterMock->method('tokens')->willReturn($tokensCollectionMock);
         $clusterMock->method('createToken')->willReturn($newToken);
 
-        $tokensCollectionMock->expects($this->once())->method('firstWhere')->with('id', 99);
         $clusterMock->expects($this->once())->method('createToken')->with('token-name', ['some-abilities']);
         $oldToken->expects($this->once())->method('delete');
 
-        $result = $this->controller->regenerate($clusterMock, 99);
+        Gate::shouldReceive('authorize')->once()->with('update', [$oldToken, $clusterMock]);
+
+        $result = $this->controller->regenerate($clusterMock, $oldToken);
 
         $this->assertEquals(['value' => 'foo-bar-token', 'id' => 0000], $result);
     }
@@ -146,6 +150,8 @@ class ClusterTokenControllerTest extends TestCase
         ]];
 
         Inertia::shouldReceive('render')->once()->with('token/index', $tokens);
+
+        Gate::shouldReceive('authorize')->once()->with('index', [ClusterToken::class, $this->clusterMock]);
 
         $this->controller->index($this->projectMock);
     }
