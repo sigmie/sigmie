@@ -18,3 +18,11 @@ docker-compose --project-name app_devcontainer -f .devcontainer/docker-compose.y
 ```
 
 After the build process the application will be available at http://localhost:8080
+
+## Vue
+
+###  Click away
+```
+  <div v-on-clickaway="()=> $emit('away')">
+  </div>
+    ```

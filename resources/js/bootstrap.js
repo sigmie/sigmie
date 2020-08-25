@@ -9,9 +9,11 @@ import Pusher from 'pusher-js'
 import { Ziggy } from './routes'
 import Clipboard from 'v-clipboard'
 import vueHeadful from 'vue-headful'
+import { mixin as clickaway } from 'vue-clickaway'
 
 window.Pusher = Pusher
 
+Vue.mixin(clickaway)
 Vue.use(InertiaApp)
 Vue.use(Vuelidate)
 Vue.use(Clipboard)

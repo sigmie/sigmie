@@ -1,7 +1,7 @@
 <template>
   <div
-  class="py-1 rounded-md bg-white shadow-xs overflow-auto max-h-128"
-  v-on-clickaway="emitAway"
+    class="py-1 rounded-md bg-white shadow-xs overflow-auto max-h-128"
+    v-on-clickaway="()=> $emit('away')"
   >
     <ul v-cloak>
       <li
@@ -49,29 +49,23 @@
 <script>
 import moment from "moment";
 import includes from "lodash/includes";
-import { mixin as clickaway } from 'vue-clickaway';
+import { mixin as clickaway } from "vue-clickaway";
 
 export default {
-  mixins: [ clickaway ],
+  mixins: [clickaway],
   props: {
     notifications: {
-      default: []
-    }
+      default: [],
+    },
   },
   data() {
     return {
-      read: []
+      read: [],
     };
   },
   methods: {
-    emitAway() {
-      this.$emit("away");
-    },
     relativeTime(utcDatetime) {
-      return moment
-        .utc(utcDatetime)
-        .local()
-        .fromNow();
+      return moment.utc(utcDatetime).local().fromNow();
     },
     readNotification(index, id) {
       if (includes(this.read, id)) {
@@ -84,8 +78,8 @@ export default {
     },
     async markAsRead(index, id) {
       const response = await this.$http.put(`notification/${id}`);
-    }
-  }
+    },
+  },
 };
 </script>
 

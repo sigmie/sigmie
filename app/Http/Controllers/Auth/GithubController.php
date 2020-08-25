@@ -38,7 +38,7 @@ class GithubController extends Controller
 
         if ($user instanceof User) {
 
-            $this->session()->flash('info','You already have an account.');
+            $this->session()->flash('info', 'You already have an account.');
 
             return redirect()->route('sign-in')
                 ->withInput(['email' => $githubUser->getEmail()]);
