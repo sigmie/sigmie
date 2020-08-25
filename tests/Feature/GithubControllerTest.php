@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Tests\Feature;
 
@@ -22,6 +24,37 @@ class GithubControllerTest extends TestCase
         $targetUrl = $response->baseResponse->getTargetUrl();
 
         $this->assertStringContainsString('https://github.com/login/oauth/authorize?', $targetUrl);
+    }
+
+    /**
+     * @test
+     */
+    public function redirect_to_login_if_normal_user_exists()
+    {
+        DB::table('users')->insert(
+            [
+                'email' => 'foo@bar.com',
+                'username' => 'john',
+                'github' => false,
+                'avatar_url' => 'https://awesome.avatar-url.com',
+                'created_at' => '2020-08-19 09:45:08',
+                'updated_at' => '2020-08-19 09:45:08'
+            ]
+        );
+
+        $githubUser = $this->createMock(SocialiteUser::class);
+        $githubUser->method('getName')->willReturn('John');
+        $githubUser->method('getEmail')->willReturn('foo@bar.com');
+        $githubUser->method('getAvatar')->willReturn('https://awesome.avatar-url.com');
+
+        $githubDriver = $this->createMock(GithubProvider::class);
+        $githubDriver->method('user')->willReturn($githubUser);
+
+        Socialite::shouldReceive('driver')->with('github')->andReturn($githubDriver);
+
+        $response = $this->get(route('github.handle'));
+        $response->assertRedirect(route('sign-in'));
+        $response->assertSessionHas('info', 'You already have an account.');
     }
 
     /**

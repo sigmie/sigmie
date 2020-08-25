@@ -27,6 +27,7 @@ class AppServiceProvider extends ServiceProvider
             return [
                 'success' => Session::get('success'),
                 'error' => Session::get('error'),
+                'info' => Session::get('info'),
             ];
         });
 
@@ -39,7 +40,6 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Inertia::share('errors', function () {
-
             return Session::get('errors')
                 ? Session::get('errors')->getBag('default')->getMessages()
                 : null;

@@ -31,7 +31,7 @@ class RegisterController extends Controller
         return Inertia::render(
             'auth/register',
             [
-                'githubUser' => $request->session()->pull('githubUser', null),
+                'githubUser' => $request->session()->pull('githubUser', null)
             ]
         );
     }

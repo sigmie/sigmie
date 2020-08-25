@@ -9,6 +9,7 @@
                 <logo-default class="h-20 mx-auto mb-10"></logo-default>
               </inertia-link>
             </div>
+
             <register-form
               class="w-80"
               id="register"
@@ -39,7 +40,7 @@ export default {
     registerForm: require("./register/form").default,
     plan: require("./register/plan").default,
   },
-  props: ["githubUser"],
+  props: ["githubUser" ],
   methods: {},
 };
 </script>

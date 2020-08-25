@@ -17,6 +17,15 @@
     </div>
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div v-if="$page.flash.info">
+        <div>
+          <alert-info
+            class="mb-3 shadow"
+            text="You already have an account with this email address."
+          ></alert-info>
+        </div>
+      </div>
+
       <div v-if="$page.errors" class="red">
         <div>
           <alert-danger
@@ -100,7 +109,7 @@ export default {
   data() {
     return {
       form: {
-        username: null,
+        email: this.$page.old.email ? this.$page.old.email : "",
         password: null,
         remember: null,
       },

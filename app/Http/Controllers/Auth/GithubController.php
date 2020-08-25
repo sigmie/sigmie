@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\GithubProvider;
 
@@ -27,13 +28,28 @@ class GithubController extends Controller
     {
         $githubUser = $this->github()->user();
 
-        $user = $this->findUser($githubUser->getEmail());
+        $user = $this->findGithubUser($githubUser->getEmail());
 
         if ($user instanceof User) {
             return $this->loginUser($user);
         }
 
+        $user = $this->findUser($githubUser->getEmail());
+
+        if ($user instanceof User) {
+
+            $this->session()->flash('info','You already have an account.');
+
+            return redirect()->route('sign-in')
+                ->withInput(['email' => $githubUser->getEmail()]);
+        }
+
         return $this->populateAndRedirectToSignUp($githubUser);
+    }
+
+    public function session()
+    {
+        return Session::getFacadeRoot();
     }
 
     protected function github(): GithubProvider
@@ -41,13 +57,21 @@ class GithubController extends Controller
         return Socialite::driver('github');
     }
 
-    private function findUser(string $email)
+    private function findGithubUser(string $email)
     {
         return User::firstWhere([
             'email' => $email,
             'github' => true
         ]);
     }
+
+    private function findUser(string $email)
+    {
+        return User::firstWhere([
+            'email' => $email,
+        ]);
+    }
+
 
     private function loginUser(User $user)
     {

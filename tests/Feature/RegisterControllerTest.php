@@ -67,7 +67,7 @@ class RegisterControllerTest extends TestCase
     /**
      * @test
      */
-    public function show_register_form_renderts_without_githubuser()
+    public function show_register_form_renders_without_githubuser()
     {
         Inertia::shouldReceive('render')->once()->with(
             'auth/register',
