@@ -35,7 +35,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
-            // \Illuminate\Session\Middleware\AuthenticateSession::class,
+            \Illuminate\Session\Middleware\AuthenticateSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
@@ -77,7 +77,8 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'user' =>   \App\Http\Middleware\ShareUserToView::class,
         'feature' => \YlsIdeas\FeatureFlags\Middleware\FeatureFlagState::class,
-        'projects' => \App\Http\Middleware\ShareProjectsToView::class
+        'projects' => \App\Http\Middleware\ShareProjectsToView::class,
+        'password.confirm' => \Illuminate\Auth\Middleware\RequirePassword::class
     ];
 
     /**

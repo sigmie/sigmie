@@ -17,7 +17,7 @@
                 <div class="min-w-0 flex-1 px-4 md:grid md:grid-cols-2 md:gap-4">
                   <div>
                     <div
-                      class="text-sm leading-5 font-medium text-orange-500 truncate"
+                      class="text-sm leading-5 font-medium text-gray-900 truncate"
                     >{{ data.username }}</div>
                     <div class="mt-2 flex items-center text-sm leading-5 text-gray-500">
                       <svg
@@ -30,7 +30,7 @@
                         />
                         <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                       </svg>
-                      <span>{{ data.email }}</span>
+                      <span>{{ email }}</span>
                     </div>
                   </div>
                   <div class="hidden md:flex">
@@ -48,18 +48,43 @@
       <div>
         <dl>
           <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-            <dt class="text-sm leading-5 font-medium text-gray-500">Username</dt>
+            <dt class="text-sm leading-5 font-medium self-center text-gray-500">Username</dt>
+
+            <dd
+              class="mt-1 text-sm flex items-center leading-5 text-gray-900 sm:mt-0 sm:col-span-2"
+              v-if="edit.username"
+            >
+              <input
+                v-model="username"
+                class="flex-1 bg-white border-gray-200 rounded block border focus:border-gray-200 py-1 px-3 sm:text-sm"
+              />
+              <span @click="save" class="ml-2 text-orange-500 cursor-pointer hover:underline">Save</span>
+              <span
+                @click="cancel('username')"
+                class="ml-2 text-orange-500 cursor-pointer hover:underline"
+              >Cancel</span>
+            </dd>
             <dd
               class="mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2"
-            >{{ data.username }}</dd>
+              v-if="!edit.username"
+            >
+              {{username }}
+              <span
+                @click="editSection('username')"
+                class="ml-2 text-orange-500 cursor-pointer hover:underline"
+              >Edit</span>
+            </dd>
           </div>
           <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-            <dt class="text-sm leading-5 font-medium text-gray-500">Email</dt>
-            <dd class="mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2">{{ data.email }}</dd>
+            <dt class="text-sm leading-5 font-medium self-center text-gray-500">Email</dt>
+            <dd class="mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2">
+              {{email }}
+              <!-- <span class="ml-2 text-orange-500 cursor-pointer hover:underline">Edit</span> -->
+            </dd>
           </div>
           <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-            <dt class="text-sm leading-5 font-medium text-gray-500">Password</dt>
-            <dd class="mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2">*********</dd>
+            <dt class="text-sm leading-5 font-medium self-center text-gray-500">Password</dt>
+            <dd class="mt-1 text-sm leading-5 cursor-pointer text-orange-500 sm:mt-0 sm:col-span-2">Change password</dd>
           </div>
 
           <!-- <div class="sm:col-span-2 py-5 px-6">
@@ -81,7 +106,25 @@ import moment from "moment";
 
 export default {
   props: ["data"],
+  data() {
+    return {
+      edit: { username: false },
+      username: this.data.username,
+      email: this.data.email,
+    };
+  },
   methods: {
+    editSection(section) {
+      this.edit[section] = true;
+    },
+    cancel(section) {
+      this.username = this.data.username;
+      this.edit[section] = false;
+    },
+    save() {
+      console.log("save");
+      // inertia reaload
+    },
     onlyDate(datetime) {
       return moment.utc(datetime).format("LL");
     },
