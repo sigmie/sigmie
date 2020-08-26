@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Http\Controllers\Subscription;
 
@@ -44,11 +46,22 @@ class SubscriptionController extends Controller
         return Inertia::render('subscription/missing');
     }
 
-    public function check()
+    public function check(Request $request)
     {
-        $subscribed = Auth::user()->subscribed(config('services.paddle.plan_name'));
+        $checkoutId = $request->get('checkout');
+
+        $receipt = Receipt::firstWhere('checkout_id', $checkoutId);
+
+        $subscribed = $receipt instanceof Receipt;
 
         return ['subscribed' => $subscribed];
+    }
+
+    public function cancel()
+    {
+        Auth::user()->subscription(config('services.paddle.plan_name'))->cancel();
+
+        return redirect()->route('account.settings', ['section' => 'subscription']);
     }
 
     public function expired()

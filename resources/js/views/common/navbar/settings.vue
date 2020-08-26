@@ -27,18 +27,18 @@
         :href="$route('account.settings',{ section:'account' })"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
       >Account</inertia-link>
-      <inertia-link
+      <!-- <inertia-link
         :href="$route('account.settings',{ section:'general' })"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
-      >General</inertia-link>
+      >General</inertia-link> -->
       <inertia-link
         :href="$route('account.settings',{ section:'subscription' })"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
       >Subscritpion</inertia-link>
-      <inertia-link
+      <!-- <inertia-link
         :href="$route('account.settings',{ section:'notifications' })"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
-      >Notifications</inertia-link>
+      >Notifications</inertia-link> -->
       <a
         @click.prevent="logout"
         onclick

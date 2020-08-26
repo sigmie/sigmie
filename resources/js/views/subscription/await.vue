@@ -29,7 +29,9 @@ export default {
         this.reload();
       });
 
-    let response = await this.$http.get(this.$route("subscirption.check"));
+    let response = await this.$http.get(
+      this.$route("subscription.check", { checkout: this.checkoutId })
+    );
 
     if (response.data.subscribed) {
       this.updateText();

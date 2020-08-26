@@ -1,7 +1,6 @@
 <template>
   <div class="pb-5 border-b border-gray-200 space-y-3 sm:space-y-4 sm:pb-0">
     <div>
-      <!-- Dropdown menu on small screens -->
       <div class="sm:hidden">
         <select
           aria-label="Selected tab"
@@ -19,8 +18,7 @@
             v-for="item in items"
             :key="item.key"
             @click.prevent="onClick(item.key)"
-            :href="$route('account.settings',{section:item.key})"
-            :class="(item.key === selected)?'text-orange-500 border-orange-400':'focus:text-gray-700 focus:border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+            :href="$route('account.settings',{section:item.key})" :class="(item.key === selected)?'text-orange-500 border-orange-400':'focus:text-gray-700 focus:border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-300'"
             class="whitespace-no-wrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm leading-5 focus:outline-none"
           >{{ item.name }}</a>
         </nav>
@@ -62,16 +60,8 @@ export default {
           key: "account",
         },
         {
-          name: "General",
-          key: "general",
-        },
-        {
           name: "Subscription",
           key: "subscription",
-        },
-        {
-          name: "Notification",
-          key: "notifications",
         },
       ],
     };

@@ -14,11 +14,9 @@ export default {
   props: ["paylink", "vendor"],
   methods: {
     handleClose() {
-      console.log('handle close');
       this.$inertia.visit(this.$route("dashboard"));
     },
     handleComplete() {
-      console.log('handle complete');
       this.$inertia.visit(this.$route("subscription.await"));
     },
   },

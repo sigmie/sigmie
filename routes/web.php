@@ -75,9 +75,9 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
 
     Route::get('/account/settings/{section?}', 'Account\SettingsController@index')->name('account.settings');
 
-    //
-
     Route::group(['middleware' => [MustBeSubscribed::class, ShareProjectToView::class]], function () {
+
+        Route::post('/subscription/cancel', 'Subscription\SubscriptionController@cancel')->name('subscription.cancel');
 
         Route::resource('project', 'ProjectController');
 
