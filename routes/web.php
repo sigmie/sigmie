@@ -73,6 +73,9 @@ Route::namespace('Subscription')->prefix('subscription')->name('subscription.')-
 
 Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
 
+    Route::get('/account/settings/{section?}', 'Account\SettingsController@index')->name('account.settings');
+
+    //
 
     Route::group(['middleware' => [MustBeSubscribed::class, ShareProjectToView::class]], function () {
 

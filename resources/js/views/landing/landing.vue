@@ -17,15 +17,9 @@
         <div>
           <inertia-link
             v-if="features.auth"
-            :href="$route('sign-up')"
-            class="items-center px-4 py-2 border border-transparent text-sm leading-5 font-semibold rounded-md text-cool-gray-800 tracking-wide bg-white hover:bg-cool-gray-50 focus:outline-none focus:border-cool-gray-700 active:bg-cool-gray-100 transition duration-150 ease-in-out"
-          >Register</inertia-link>
-
-          <inertia-link
-            v-if="features.auth"
             :href="$route('sign-in')"
-            class="items-center px-4 py-2 border border-transparent text-sm leading-5 font-semibold rounded-md text-cool-gray-800 tracking-wide bg-white hover:bg-cool-gray-50 focus:outline-none focus:border-cool-gray-700 active:bg-cool-gray-100 transition duration-150 ease-in-out"
-          >Login</inertia-link>
+            class="items-center px-4 py-2 text-sm leading-5 font-semibold rounded-md text-cool-gray-800 tracking-wide bg-white hover:bg-cool-gray-50 focus:outline-none focus:border-cool-gray-100 active:bg-cool-gray-100 transition duration-150 ease-in-out"
+          >Sign-In</inertia-link>
         </div>
       </div>
     </nav>
@@ -43,7 +37,7 @@
           >Sigmie is an application of which helps you create your Elasticsearch cluster, optimize your search results, and simplifies common tasks.</p>
           <inertia-link
             v-if="features.auth"
-            :href="$route('register')"
+            :href="$route('sign-up')"
             class="mx-auto lg:mx-0 bg-white hover:bg-cool-gray-50 text-gray-600 font-semibold rounded-lg my-6 py-3 px-8 shadow cursor-pointer transition-shadow"
           >Get early access</inertia-link>
           <inertia-link
@@ -98,7 +92,7 @@
         </div>
 
         <div class="flex flex-row flex-wrap-reverse sm:flex-wrap">
-          <div class="w-5/6 sm:w-1/2 p-6">
+          <div class="w-full sm:w-1/2 p-6 mt-6">
             <h3
               class="text-2xl text-gray-800 font-semibold kleading-none mb-3"
             >Keep an eye on everything</h3>
@@ -140,7 +134,9 @@
       </div>
     </section>
 
-    <section-pricing :auth-feature="features.auth"></section-pricing>
+    <section-pricing :auth-feature="features.auth"
+     class="bg-white px-10 md:py-20"
+    ></section-pricing>
 
     <section style="background-color: #f8fafc" class="bg-white px-16 py-16">
       <div class="flex flex-col justify-center container mx-auto px-4">
@@ -207,7 +203,7 @@
       >
         <div class="inline-block w-full sm:max-w-xs pr-4">
           <input
-            class="bg-white text-cool-gray-600 rounded-lg focus:outline-none focus:shadow-outline border border-cool-gray-300 py-3 px-8 block w-full appearance-none leading-normal"
+            class="bg-white text-cool-gray-600 rounded-lg focus:outline-none focus:shadow-outline py-3 px-8 block w-full appearance-none leading-normal"
             name="email"
             v-model="email"
             required
@@ -223,7 +219,7 @@
         </div>
       </form>
     </section>
-    <legal-footer class="px-7 space-x-8 mx-auto w-4/5 justify-center flex-wrap flex pb-3"></legal-footer>
+    <legal-footer class="md:px-7 md:space-x-8 mx-auto w-full justify-center flex-wrap flex"></legal-footer>
     <p class="text-center w-full opacity-75 px-5 sm:px-0 sm:w-2/3 md:w-8/12 pb-15 mx-auto py-3">
       Sigmie UG (haftungsbeschränkt), Feldstr. 9, 58507 Lüdenscheid, Germany
       <br />Commercial Register: Amtsgericht Iserlohn, HRB 9701

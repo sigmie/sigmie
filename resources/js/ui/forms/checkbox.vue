@@ -10,7 +10,7 @@
       @change="$emit('change', $event.target.checked)"
       @blur="$emit('blur', $event.target.value)"
       @focus="$emit('touch', $event.target.value)"
-      class="form-checkbox h-4 w-4 mt-1 text-orange-400 transition duration-150 ease-in-out"
+      class="form-checkbox h-4 w-4 text-orange-400 transition duration-150 ease-in-out"
     />
     <label v-if="label" :for="id" class="ml-2 block leading-none text-gray-900">{{ label }}</label>
     <slot />

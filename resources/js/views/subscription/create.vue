@@ -20,7 +20,7 @@ export default {
   props: ["paylink", "vendor"],
   data() {
     return {
-      text: "Forwarding to our payment provider...",
+      text: "Processing...",
     };
   },
 };

@@ -15,28 +15,31 @@ export default {
   props: ["checkoutId"],
   data() {
     return {
-      text: "Waiting for authorization from our payment provider...",
+      text: "Waiting for authorization...",
     };
   },
   components: {
     Layout,
   },
   async mounted() {
-    this.$socket
+    let text = this.$socket
       .private(`user.${this.$page.user.id}`)
       .listen("Subscription\\UserWasSubscribed", (e) => {
-        this.text = "Authorization recieved, redirecting...";
+        this.updateText();
         this.reload();
       });
 
     let response = await this.$http.get(this.$route("subscirption.check"));
 
     if (response.data.subscribed) {
-      this.text = "Authorization recieved, redirecting...";
+      this.updateText();
       this.reload();
     }
   },
   methods: {
+    updateText() {
+      this.text = "Authorization received, redirecting...";
+    },
     reload() {
       this.$inertia.reload({
         method: "get",
