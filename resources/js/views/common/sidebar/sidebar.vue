@@ -9,16 +9,11 @@
         </div>
 
         <div class="h-0 flex-1 flex flex-col overflow-y-auto bg-gray-800">
-          <div class="px-10 py-2 mx-auto border-gray-600 border rounded-lg mt-5">
-            <div class>
-              <div class="space-y-1">
-                <div class="text-sm leading-5 font-medium text-white">My Awesome project</div>
-                <a href="#" class="group flex items-center space-x-2.5">
-                  <div class="text-sm leading-5 text-gray-500 font-medium">http://foo.bar.com</div>
-                </a>
-              </div>
-            </div>
-          </div>
+          <project-overview
+            :project-name="$page.project_name"
+            :cluster-url="$page.project_cluster_url"
+            class="pt-7 pb-5"
+          ></project-overview>
 
           <nav class="flex-1 px-2 py-4">
             <inertia-link
@@ -29,11 +24,7 @@
               :href="($page.project_id === null) ? '#':$route(item.name, item.routeParams)"
             >
               <component
-                :class="[ isRoute(item.name) ? 'text-gray-400': 'text-gray-300']"
-                class="mr-4 h-6 w-6 group-hover:text-gray-300 group-focus:text-gray-300 transition ease-in-out duration-150"
-                stroke="currentColor"
-                fill="none"
-                viewBox="0 0 24 24"
+                class="mr-4 h-6 w-6"
                 :is="'icon-'+item.icon"
               ></component>
               {{ item.text }}
@@ -77,6 +68,12 @@
           <logo-white height="50px" width="159px" class="mx-auto py-1"></logo-white>
         </div>
         <div class="flex-1 h-0 overflow-y-auto">
+          <project-overview
+            :project-name="$page.project_name"
+            :cluster-url="$page.project_cluster_url"
+            class="px-2 py-4"
+          ></project-overview>
+
           <nav class="px-2 py-4">
             <inertia-link
               v-for="(item, index) in items"
@@ -86,11 +83,7 @@
               :href="($page.project_id === null) ? '#':$route(item.name, item.routeParams)"
             >
               <component
-                :class="[ isRoute(item.name) ? 'text-gray-400': 'text-gray-300']"
-                class="mr-4 h-6 w-6 group-hover:text-gray-300 group-focus:text-gray-300 transition ease-in-out duration-150"
-                stroke="currentColor"
-                fill="none"
-                viewBox="0 0 24 24"
+                class="mr-4 h-6 w-6"
                 :is="'icon-'+item.icon"
               ></component>
               {{ item.text }}
@@ -108,7 +101,12 @@
 </template>
 
 <script>
+import ProjectOverview from "./projectOverview";
+
 export default {
+  components: {
+    ProjectOverview,
+  },
   data() {
     return {
       sidebar: "closed",

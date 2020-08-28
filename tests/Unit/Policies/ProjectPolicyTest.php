@@ -8,12 +8,15 @@ use App\Models\Project;
 use App\Models\User;
 use App\Policies\ProjectPolicy;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
 class ProjectPolicyTest extends TestCase
 {
+    use DatabaseTransactions;
+
     /**
      * @var ProjectPolicy
      */
