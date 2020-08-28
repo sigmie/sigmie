@@ -5,7 +5,7 @@
         :href="$route('landing')"
         class="float-right mt-10 cursor-pointer mr-10 sm:mr-10 md:mr-0 lg:mr-0 pr-5"
       >
-        <icon-x fill="#ffffff" height="25px" />
+        <icon-x class="text-white h-12 w-12" />
       </inertia-link>
 
       <div class="max-w-3xl mx-auto px-6 py-8 sm:py-16 md:py-24">

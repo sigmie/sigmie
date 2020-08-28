@@ -47,8 +47,8 @@ Route::prefix('newsletter')->name('newsletter.')->group(function () {
 
     Route::resource('/subscription', NewsletterSubscriptionController::class);
 
-    Route::get('/thank-you', [SubscriptionController::class, 'thankyou'])->name('thankyou');
-    Route::get('/confirmed', [SubscriptionController::class, 'confirmed'])->name('confirmed');
+    Route::get('/thank-you', [NewsletterSubscriptionController::class, 'thankyou'])->name('thankyou');
+    Route::get('/confirmed', [NewsletterSubscriptionController::class, 'confirmed'])->name('confirmed');
 });
 
 // Legal
@@ -64,7 +64,7 @@ Route::name('legal.')->group(function () {
 Route::middleware('feature:auth')->group(function () {
 
     Route::get('/sign-up', [RegisterController::class, 'showRegistrationForm'])->name('sign-up');
-    Route::get('/sign-in', [RegisterController::class, 'showLoginForm'])->name('sign-in');
+    Route::get('/sign-in', [LoginController::class, 'showLoginForm'])->name('sign-in');
 
     Route::post('/register', [RegisterController::class, 'createUser'])->name('register');
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');

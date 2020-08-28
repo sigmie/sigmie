@@ -1,12 +1,6 @@
 <template>
-  <svg viewBox="0 0 10 10">
-    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-      <g fill="currentColor" fill-rule="nonzero">
-        <path
-          d="M5.7,8.3 C5.99859023,8.6981203 5.95899874,9.25521483 5.60710678,9.60710678 C5.25521483,9.95899874 4.6981203,9.99859023 4.3,9.7 L0.3,5.7 C-0.0811428762,5.31115649 -0.0811428762,4.68884351 0.3,4.3 L4.3,0.3 C4.6981203,0.00140977404 5.25521483,0.0410012629 5.60710678,0.392893219 C5.95899874,0.744785175 5.99859023,1.3018797 5.7,1.7 L2.42,5 L5.72,8.3 L5.7,8.3 Z"
-        />
-      </g>
-    </g>
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
   </svg>
 </template>
 

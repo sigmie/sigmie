@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Tests\Feature;
 
@@ -13,6 +15,16 @@ use Tests\TestCase;
 class RegisterControllerTest extends TestCase
 {
     use DatabaseTransactions;
+
+    /**
+     * @test
+     */
+    public function sign_in_route()
+    {
+        $response = $this->get(route('sign-in'));
+
+        $response->assertOk();
+    }
 
     /**
      * @test

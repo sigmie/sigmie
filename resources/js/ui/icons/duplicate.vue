@@ -1,10 +1,11 @@
 <template>
-  <svg viewBox="0 0 18 18">
-    <g fill="currentColor">
-      <path
-        d="M14,4 L16.25,4 C17.22,4 18,4.78 18,5.75 L18,16.25 C18,17.22 17.22,18 16.25,18 L5.75,18 C4.78,18 4,17.22 4,16.25 L4,14 L1.75,14 C0.78,14 0,13.22 0,12.25 L0,1.75 C0,0.78 0.78,0 1.75,0 L12.25,0 C13.22,0 14,0.78 14,1.75 L14,4 Z M12,4 L12,2 L2,2 L2,12 L4,12 L4,5.75 C4,4.78 4.78,4 5.75,4 L12,4 Z M6,6 L6,16 L16,16 L16,6 L6,6 Z"
-      />
-    </g>
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+    />
   </svg>
 </template>
 
