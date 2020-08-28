@@ -17,8 +17,9 @@
           <a
             v-for="item in items"
             :key="item.key"
-            @click.prevent="onClick(item.key)"
-            :href="$route('account.settings',{section:item.key})" :class="(item.key === selected)?'text-orange-500 border-orange-400':'focus:text-gray-700 focus:border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+            @click.prevent="replace(item.key)"
+            :href="$route('account.settings',{section:item.key, project_id: $page.project_id})"
+            :class="(item.key === section)?'text-orange-500 border-orange-400':'focus:text-gray-700 focus:border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-300'"
             class="whitespace-no-wrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm leading-5 focus:outline-none"
           >{{ item.name }}</a>
         </nav>
@@ -31,23 +32,22 @@
 export default {
   methods: {
     onSelectChange() {
-      this.pushState(this.selected);
-      this.emitChange(this.selected);
+      this.replace(this.selected);
     },
-    pushState(section) {
-      window.history.replaceState(
-        {},
-        window.title,
-        this.$route("account.settings", { section: section })
+    replace(value) {
+      this.$inertia.replace(
+        this.$route("account.settings", {
+          section: value,
+          project_id: this.$page.project_id,
+        }),
+        {
+          method: "get",
+          data: {},
+          preserveState: true,
+          preserveScroll: false,
+          only: [],
+        }
       );
-    },
-    onClick(value) {
-      this.selected = value;
-      this.pushState(this.selected);
-      this.emitChange(this.selected);
-    },
-    emitChange(newValue) {
-      this.$emit("change", newValue);
     },
   },
   props: ["section"],

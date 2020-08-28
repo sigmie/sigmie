@@ -4,9 +4,9 @@
       <h1 class="leading-6 text-2xl font-medium text-gray-900 mb-10">Settings</h1>
       <div class="flex flex-col content-center justify-center">
         <div>
-          <navigation :section="selected" @change="updateSelected"></navigation>
+          <navigation :section="section"></navigation>
         </div>
-        <component :data="data[selected]" class="mt-5" :is="selected"></component>
+        <component :data="data" class="mt-5" :is="section"></component>
       </div>
     </div>
   </app>
@@ -23,16 +23,6 @@ export default {
     general: require("./general").default,
     notifications: require("./notifications").default,
     subscription: require("./subscription").default,
-  },
-  data() {
-    return {
-      selected: this.section,
-    };
-  },
-  methods: {
-    updateSelected(value) {
-      this.selected = value;
-    },
   },
 };
 </script>

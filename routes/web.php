@@ -27,7 +27,6 @@ use App\Http\Controllers\Newsletter\SubscriptionConfirmationController;
 use App\Http\Controllers\Newsletter\SubscriptionController as NewsletterSubscriptionController;
 use App\Http\Controllers\Project\ProjectController;
 use App\Http\Controllers\Subscription\SubscriptionController;
-use App\Http\Controllers\SupportController;
 use App\Http\Controllers\User\PasswordController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Middleware\AssignProject;
@@ -92,12 +91,14 @@ Route::prefix('subscription')->name('subscription.')->middleware(['user', Redire
 
 Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
 
-    Route::get('/account/settings/{section?}', [AccountSettingsController::class, 'index'])->name('account.settings');
-
+    //Settings
+    Route::get('/account/settings/{section?}', [AccountSettingsController::class, 'index'])->name('account.settings')->middleware(ShareProjectToView::class);
     Route::put('/user/{user}', [UserController::class, 'update'])->name('user.update');
     Route::put('/user/password/{user}', [PasswordController::class, 'update'])->name('user.password.update');
 
+
     Route::group(['middleware' => [MustBeSubscribed::class, ShareProjectToView::class]], function () {
+
 
         Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
 
@@ -112,8 +113,6 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
         Route::get('/playground', DashboardController::class)->name('playground');
 
         Route::get('/monitoring', DashboardController::class)->name('monitoring');
-
-        Route::get('/support', [SupportController::class, 'index'])->name('support');
 
         Route::get('/cluster/create', [ClusterController::class, 'create'])->name('cluster.create');
         Route::get('/cluster/edit/{cluster}', [ClusterController::class, 'edit'])->name('cluster.edit');

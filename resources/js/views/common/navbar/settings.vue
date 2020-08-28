@@ -24,36 +24,51 @@
         class="text-xs text-gray-300 font-semibold pl-4 pt-2 pb-1"
       >SETTINGS</inertia-link>
       <inertia-link
-        :href="$route('account.settings',{ section:'account' })"
+        :href="$route('account.settings',{ section:'account',project_id: $page.project_id })"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
       >Account</inertia-link>
       <!-- <inertia-link
         :href="$route('account.settings',{ section:'general' })"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
-      >General</inertia-link> -->
+      >General</inertia-link>-->
       <inertia-link
-        :href="$route('account.settings',{ section:'subscription' })"
+        :href="$route('account.settings',{ section:'subscription',project_id: $page.project_id })"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
       >Subscritpion</inertia-link>
+
       <!-- <inertia-link
         :href="$route('account.settings',{ section:'notifications' })"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
-      >Notifications</inertia-link> -->
+      >Notifications</inertia-link>-->
+
       <a
-        @click.prevent="logout"
-        onclick
+        href="https://docs.sigmie.com/app"
+        target="_blank"
         class="flex flex-row px-4 py-2 border-t border-gray-100 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150 cursor-pointer"
       >
-          <svg viewBox="0 0 20 20" fill="currentColor" class="logout h-4 text-gray-500 mr-1 self-center">
-            <path
-              fill-rule="evenodd"
-              d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
-              clip-rule="evenodd"
-            />
-          </svg>
-        <span>
-        Log out
-        </span>
+        <span>Documentation</span>
+      </a>
+      <a
+        class="flex flex-row px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150 cursor-pointer"
+      >
+        <span>Support</span>
+      </a>
+      <a
+        @click.prevent="logout"
+        class="flex flex-row px-4 py-2 border-t border-gray-100 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150 cursor-pointer"
+      >
+        <svg
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          class="logout h-4 text-gray-500 mr-1 self-center"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        <span>Log out</span>
       </a>
     </div>
   </div>

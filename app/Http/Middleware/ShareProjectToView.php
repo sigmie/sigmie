@@ -24,6 +24,9 @@ class ShareProjectToView
 
         if ($projectId === null && $project instanceof Project) {
             $projectId = $project->getAttribute('id');
+        }
+
+        if ($project instanceof Project) {
             $projectName = $project->getAttribute('name');
             $cluster = $project->clusters()->first();
         }
