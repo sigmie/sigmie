@@ -23,10 +23,7 @@
               class="group mx-1 my-2 flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
               :href="($page.project_id === null) ? '#':$route(item.name, item.routeParams)"
             >
-              <component
-                class="mr-4 h-6 w-6"
-                :is="'icon-'+item.icon"
-              ></component>
+              <component class="mr-4 h-6 w-6" :is="'icon-'+item.icon"></component>
               {{ item.text }}
               <span
                 v-if="item.badge"
@@ -40,18 +37,18 @@
     </div>
     <div class="md:hidden">
       <div
-        @click="open"
-        :class="{'opacity-75 pointer-events-auto': sidebar == 'open', 'opacity-0 pointer-events-none':sidebar == 'closed'}"
+        @click="closeSidebarRequest"
+        :class="{'opacity-75 pointer-events-auto': sidebarState == 'open', 'opacity-0 pointer-events-none':sidebarState == 'closed'}"
         class="fixed inset-0 z-30 bg-gray-600 opacity-0 pointer-events-none transition-opacity ease-linear duration-300"
       ></div>
       <div
         class="fixed inset-y-0 left-0 flex flex-col z-40 max-w-xs w-full bg-gray-800 transform ease-in-out duration-300"
-        :class="{'translate-x-0': sidebar == 'open', '-translate-x-full': sidebar == 'closed'}"
+        :class="{'translate-x-0': sidebarState === 'open', '-translate-x-full': sidebarState === 'closed'}"
       >
         <div class="absolute top-0 right-0 -mr-14 p-1">
           <button
-            v-show="sidebar == 'open'"
-            @click="sidebar = 'closed'"
+            v-show="sidebarState === 'open'"
+            @click="closeSidebarRequest"
             class="flex items-center justify-center h-12 w-12 rounded-full focus:outline-none focus:bg-gray-600"
           >
             <svg class="h-6 w-6 text-white" stroke="currentColor" fill="none" viewBox="0 0 24 24">
@@ -82,10 +79,7 @@
               class="group mx-2 my-4 flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
               :href="($page.project_id === null) ? '#':$route(item.name, item.routeParams)"
             >
-              <component
-                class="mr-4 h-6 w-6"
-                :is="'icon-'+item.icon"
-              ></component>
+              <component class="mr-4 h-6 w-6" :is="'icon-'+item.icon"></component>
               {{ item.text }}
               <span
                 v-if="item.badge"
@@ -104,12 +98,12 @@
 import ProjectOverview from "./projectOverview";
 
 export default {
+  props: ["sidebarState"],
   components: {
     ProjectOverview,
   },
   data() {
     return {
-      sidebar: "closed",
       path: "",
       items: [
         {
@@ -140,11 +134,8 @@ export default {
     isRoute(name) {
       return this.$route().current(name);
     },
-    close() {
-      this.sidebar = "closed";
-    },
-    open() {
-      this.sidebar = "open";
+    closeSidebarRequest() {
+      this.$emit("closeSidebarRequest");
     },
   },
 };

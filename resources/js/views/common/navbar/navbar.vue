@@ -1,7 +1,7 @@
 <template>
   <div class="relative z-10 flex-shrink-0 flex h-16 bg-white shadow">
     <button
-      @click="openSidebar"
+      @click="openSidebarRequest"
       class="px-4 border-r border-gray-200 text-gray-500 focus:outline-none focus:bg-gray-100 focus:text-gray-600 md:hidden"
     >
       <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
@@ -91,10 +91,9 @@ export default {
     settings: require("./settings").default,
     badge: require("./badge").default,
   },
-  props: ["avatarUrl", "userId", "sidebarRef"],
+  props: ["avatarUrl", "userId"],
   data() {
     return {
-      sidebar: "closed",
       settings: "closed",
       notifications: "closed",
       notificationsData: [],
@@ -150,11 +149,8 @@ export default {
 
       this.notificationsData = uniqueNotifications;
     },
-    openSidebar() {
-      this.sidebarRef.open();
-    },
-    closeSidebar() {
-      this.sidebarRef.close();
+    openSidebarRequest() {
+      this.$emit("openSidebarRequest");
     },
   },
 };

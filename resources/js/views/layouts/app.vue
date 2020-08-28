@@ -1,12 +1,12 @@
 <template>
   <layout :title="title">
     <div class="h-screen flex overflow-hidden bg-gray-100">
-      <sidebar ref="sidebar"></sidebar>
+      <sidebar :sidebar-state="sidebarState" @closeSidebarRequest="closeSidebar"></sidebar>
 
       <div class="flex flex-col w-0 flex-1 overflow-hidden">
         <navbar
           v-cloak
-          :sidebarRef="$refs.sidebar"
+          @openSidebarRequest="openSidebar"
           :user-id="$page.user.id"
           :avatar-url="$page.user.avatar_url"
         ></navbar>
@@ -31,8 +31,18 @@ export default {
     Layout,
   },
   props: ["user", "project", "title"],
-  mounted() {
-    console.log(this.$refs.sidebar);
+  data() {
+    return {
+      sidebarState: "closed",
+    };
+  },
+  methods: {
+    openSidebar() {
+      this.sidebarState = "open";
+    },
+    closeSidebar() {
+      this.sidebarState = "closed";
+    },
   },
 };
 </script>

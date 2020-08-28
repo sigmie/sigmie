@@ -1,7 +1,7 @@
 <template>
   <app title="Settings">
     <div class="shadow mx-auto sm:rounded-md sm:overflow-hidden max-w-xl">
-      <form class="px-4 pb-5 bg-white sm:p-6 rounded-t-md">
+      <form class="px-4 py-5 bg-white rounded-t-md">
         <div>
           <!-- <div>
             <div>
