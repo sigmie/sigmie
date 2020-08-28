@@ -6,6 +6,14 @@
         <p class="mt-1 max-w-2xl text-sm leading-5 text-gray-500">Personal information</p>
       </div>
 
+      <div class="bg-red-50 p-4" v-if="$page.errors">
+        <div class="text-sm leading-5 text-red-700">
+          <ul class="pl-5 list-disc" v-for="(errorArray, index) in $page.errors" :key="index">
+            <li v-for="(errorText,index) in errorArray" :key="index">{{ errorText }}</li>
+          </ul>
+        </div>
+      </div>
+
       <div class="sm:col-span-2">
         <dd class="mt-1text-sm leading-5 text-gray-900">
           <div class="block">
@@ -55,6 +63,7 @@
               v-if="edit.username"
             >
               <input
+                @keyup.enter="save"
                 v-model="username"
                 class="flex-1 bg-white border-gray-200 rounded block border py-1 px-3 sm:text-sm focus:border-cool-gray-300"
               />
@@ -101,6 +110,7 @@
                   name="new_password"
                   v-model="newPassword"
                   aria-label="New password"
+                  @keyup.enter="changePassword"
                   type="password"
                   class="flex-1 bg-white border-gray-200 rounded block border mt-3 py-1 px-3 sm:text-sm focus:border-cool-gray-300"
                 />

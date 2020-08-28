@@ -28,6 +28,14 @@
         </p>
       </div>
 
+      <div class="bg-green-50 px-3 sm:px-6 py-4" v-if="$page.flash.success">
+        <div class="text-sm leading-5 text-green-700">
+          <ul>
+            <li>{{$page.flash.success}}</li>
+          </ul>
+        </div>
+      </div>
+
       <dl
         class="grid grid-cols-1 col-gap-4 row-gap-8 sm:grid-cols-2 px-3 sm:px-6 py-4"
         v-if="data.was_subscribed"
@@ -114,7 +122,7 @@
         <div class="flex flex-col">
           <div class="text-sm leading-5 mb-2 text-gray-500">
             You haven't subscribed yet, click
-            <inertia-link class="text-orange-500" :href="$route('subscription.create')">here</inertia-link> to start your trial.
+            <inertia-link class="text-orange-500" :href="$route('subscription.create')">here</inertia-link>to start your trial.
           </div>
         </div>
       </div>

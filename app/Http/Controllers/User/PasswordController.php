@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateUserPassword;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class PasswordController extends Controller
@@ -26,9 +27,7 @@ class PasswordController extends Controller
 
             $user->update(['password' => $hash]);
 
-            $request->session()->flash('success', 'Your password was updated.');
-
-            return redirect()->route('account.settings', ['section' => 'account']);
+            return redirect()->route('sign-in', ['password_updated' => true]);
         }
 
         $request->session()->flash('error', 'Password does not match');
