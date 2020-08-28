@@ -48,7 +48,9 @@
       >
         <span>Documentation</span>
       </a>
+
       <a
+        href="mailto:nico@sigmie.com?subject=I%20need%20your%20help&body=Hey%20Nico!%0D%0A%0D%0ACloud%20you%20help%20me%20with "
         class="flex flex-row px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150 cursor-pointer"
       >
         <span>Support</span>
