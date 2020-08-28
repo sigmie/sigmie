@@ -7,8 +7,20 @@
             <logo-white height="50px" width="159px"></logo-white>
           </inertia-link>
         </div>
-        <div class="h-0 flex-1 flex flex-col overflow-y-auto">
-          <nav class="flex-1 px-2 py-4 bg-gray-800">
+
+        <div class="h-0 flex-1 flex flex-col overflow-y-auto bg-gray-800">
+          <div class="px-10 py-2 mx-auto border-gray-600 border rounded-lg mt-5">
+            <div class>
+              <div class="space-y-1">
+                <div class="text-sm leading-5 font-medium text-white">My Awesome project</div>
+                <a href="#" class="group flex items-center space-x-2.5">
+                  <div class="text-sm leading-5 text-gray-500 font-medium">http://foo.bar.com</div>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <nav class="flex-1 px-2 py-4">
             <inertia-link
               v-for="(item, index) in items"
               :key="index"

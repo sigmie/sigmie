@@ -89,16 +89,16 @@ export default {
   components: {
     notifications: require("./notifications").default,
     settings: require("./settings").default,
-    badge: require("./badge").default
+    badge: require("./badge").default,
   },
-  props: ["avatarUrl", "userId"],
+  props: ["avatarUrl", "userId", "sidebarRef"],
   data() {
     return {
       sidebar: "closed",
       settings: "closed",
       notifications: "closed",
       notificationsData: [],
-      unreadNotification: false
+      unreadNotification: false,
     };
   },
   async beforeMount() {
@@ -109,11 +109,11 @@ export default {
     notificationsData: {
       handler(newData, oldData) {
         this.unreadNotification = this.notificationsData.some(
-          notification => notification.read_at === null
+          (notification) => notification.read_at === null
         );
       },
-      deep: true
-    }
+      deep: true,
+    },
   },
   methods: {
     async fetchNotifications() {
@@ -130,7 +130,7 @@ export default {
     listenOnNotificationChannel() {
       this.$socket
         .private(`App.User.${this.userId}`)
-        .notification(notification => {
+        .notification((notification) => {
           this.addNotification(notification.id);
         });
     },
@@ -140,9 +140,7 @@ export default {
       this.addNotifications([response.data]);
     },
     markAsRead(index) {
-      const utcTime = moment()
-        .utc()
-        .format("YYYY-MM-DD H:mm:S");
+      const utcTime = moment().utc().format("YYYY-MM-DD H:mm:S");
 
       this.$set(this.notificationsData[index], "read_at", utcTime);
     },
@@ -153,12 +151,12 @@ export default {
       this.notificationsData = uniqueNotifications;
     },
     openSidebar() {
-      this.$parent.$refs.sidebar.open();
+      this.sidebarRef.open();
     },
     closeSidebar() {
-      this.$parent.$refs.sidebar.close();
-    }
-  }
+      this.sidebarRef.close();
+    },
+  },
 };
 </script>
 
