@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Controllers;
 
-use App\Http\Controllers\ClusterTokenController;
+use App\Http\Controllers\Cluster\TokenController;
 use App\Models\Cluster;
 use App\Models\ClusterToken;
 use App\Models\Project;
@@ -19,7 +19,7 @@ use Tests\TestCase;
 class ClusterTokenControllerTest extends TestCase
 {
     /**
-     * @var ClusterTokenController
+     * @var TokenController
      */
     private $controller;
 
@@ -59,14 +59,14 @@ class ClusterTokenControllerTest extends TestCase
 
         $this->adminTokenMock = $this->createMock(PersonalAccessToken::class);
         $this->adminTokenMock->method('only')->willReturn([
-            'name' => ClusterTokenController::ADMIN,
+            'name' => TokenController::ADMIN,
             'last_used_at' => '2000/01/01',
             'created_at' => '2001/01/01',
             'id' => 9
         ]);
         $this->searchTokenMock = $this->createMock(PersonalAccessToken::class);
         $this->searchTokenMock->method('only')->willReturn([
-            'name' => ClusterTokenController::SEARCH_ONLY,
+            'name' => TokenController::SEARCH_ONLY,
             'last_used_at' => '2020/01/01',
             'created_at' => '2021/01/01', 'id' => 0
         ]);
@@ -81,7 +81,7 @@ class ClusterTokenControllerTest extends TestCase
         $this->projectMock = $this->createMock(Project::class);
         $this->projectMock->method('clusters')->willReturn($this->clusterCollectionMock);
 
-        $this->controller = new ClusterTokenController();
+        $this->controller = new TokenController();
     }
 
     /**
@@ -130,7 +130,7 @@ class ClusterTokenControllerTest extends TestCase
 
         $tokens = ['tokens' => [
             [
-                'name' => ClusterTokenController::ADMIN,
+                'name' => TokenController::ADMIN,
                 'last_used_at' => '2000/01/01',
                 'created_at' => '2001/01/01',
                 'id' => 9,
@@ -139,7 +139,7 @@ class ClusterTokenControllerTest extends TestCase
                 'value' => null
             ],
             [
-                'name' => ClusterTokenController::SEARCH_ONLY,
+                'name' => TokenController::SEARCH_ONLY,
                 'last_used_at' => '2020/01/01',
                 'created_at' => '2021/01/01',
                 'id' => 0,

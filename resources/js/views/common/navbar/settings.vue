@@ -8,7 +8,7 @@
       <inertia-link
         href
         @click.prevent
-        v-if="!$page.projects"
+        v-if="!$page.projects || $page.projects.length === 0"
         :disabled="true"
         class="block px-4 py-2 text-sm text-gray-300 cursor-default"
       >- no project -</inertia-link>

@@ -1,11 +1,16 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Tests\Feature\Subscription;
 
+use Amp\ByteStream\Payload;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Laravel\Paddle\Receipt;
 use Laravel\Paddle\Subscription;
 use Laravel\Paddle\SubscriptionBuilder;
 use Tests\TestCase;
@@ -41,13 +46,11 @@ class SubscriptionControllerTest extends TestCase
         $subscriptionBuilderMock->method('trialDays')->willReturnSelf();
         $subscriptionBuilderMock->method('create')->willReturn($paylink);
 
-        $userMock = $this->createMock(User::class);
-        $userMock->method('subscription')->willReturn($subscriptionMock);
-        $userMock->method('subscribed')->willReturn(true);
-        $userMock->method('newSubscription')->willReturn($subscriptionBuilderMock);
+        $user = $this->createMock(User::class);
+        $user->method('subscription')->willReturn($subscriptionMock);
+        $user->method('newSubscription')->willReturn($subscriptionBuilderMock);
 
-        Auth::shouldReceive('check')->andReturn(true);
-        Auth::shouldReceive('user')->andReturn($userMock);
+        $this->actingAs($user);
 
         $subscriptionBuilderMock->expects($this->once())->method('trialDays')->with(0);
         $subscriptionBuilderMock->expects($this->once())->method('create');
@@ -117,14 +120,11 @@ class SubscriptionControllerTest extends TestCase
     /**
      * @test
      */
-    public function expired_returns_false_if_not_subscribed()
+    public function expired_returns_false_if_receipt_doesnt_exist()
     {
-        $billable = $this->createMock(User::class);
-        $billable->expects($this->any())->method('subscribed')->willReturn(false);
+        $receipt = factory(Receipt::class)->create();
 
-        Auth::shouldReceive('user')->andReturn($billable);
-
-        $response = $this->get(route('subscription.check'));
+        $response = $this->get(route('subscription.check', ['checkout' => 'non-existing-receipt']));
 
         $response->assertJson(['subscribed' => false]);
     }
@@ -133,14 +133,11 @@ class SubscriptionControllerTest extends TestCase
     /**
      * @test
      */
-    public function expired_returns_true_if_subscribed()
+    public function expired_returns_true_if_receipt_exists()
     {
-        $billable = $this->createMock(User::class);
-        $billable->expects($this->any())->method('subscribed')->willReturn(true);
+        $receipt = factory(Receipt::class)->create();
 
-        Auth::shouldReceive('user')->andReturn($billable);
-
-        $response = $this->get(route('subscription.check'));
+        $response = $this->get(route('subscription.check', ['checkout' => $receipt->checkout_id]));
 
         $response->assertJson(['subscribed' => true]);
     }

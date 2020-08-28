@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Cluster;
 
 use App\Models\Project;
 use Inertia\Inertia;
 
-class SettingsController extends Controller
+class SettingsController extends \App\Http\Controllers\Controller
 {
     /**
      * Show project settings page

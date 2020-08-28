@@ -115,28 +115,6 @@ export default {
           icon: "key",
         },
         {
-          text: "Playground",
-          name: "playground",
-          routeParams: [],
-          icon: "puzzle",
-          badge: {
-            text: "Soon",
-            color: "blue",
-          },
-        },
-        // {
-        //   text: "Monitoring",
-        //   name: "monitoring",
-        //   routeParams: [],
-        //   icon: "desktop",
-        // },
-        {
-          text: "Support",
-          name: "support",
-          routeParams:[],
-          icon: "chat",
-        },
-        {
           text: "Settings",
           name: "settings",
           routeParams: {

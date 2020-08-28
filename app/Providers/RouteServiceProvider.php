@@ -56,7 +56,6 @@ class RouteServiceProvider extends ServiceProvider
     {
         Route::middleware('web')
             ->domain(config('app.app_domain'))
-            ->namespace($this->namespace)
             ->group(base_path('routes/web.php'));
     }
 
@@ -71,7 +70,6 @@ class RouteServiceProvider extends ServiceProvider
     {
         Route::prefix('api')
             ->middleware('api')
-            ->namespace($this->namespace)
             ->group(base_path('routes/api.php'));
     }
 
@@ -86,7 +84,6 @@ class RouteServiceProvider extends ServiceProvider
     {
         Route::prefix('ajax')
             ->middleware('ajax')
-            ->namespace($this->namespace)
             ->group(base_path('routes/ajax.php'));
     }
 
@@ -95,7 +92,6 @@ class RouteServiceProvider extends ServiceProvider
     {
         Route::middleware('proxy')
             ->domain(config('app.proxy_domain'))
-            ->namespace($this->namespace)
             ->group(base_path('routes/proxy.php'));
     }
 }

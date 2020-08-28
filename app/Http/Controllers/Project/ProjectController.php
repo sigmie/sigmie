@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Project;
 
 use App\Http\Requests\StoreProject;
 use App\Models\Project;
@@ -10,7 +10,7 @@ use App\Repositories\ProjectRepository;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
-class ProjectController extends Controller
+class ProjectController extends \App\Http\Controllers\Controller
 {
     private ProjectRepository $projects;
 

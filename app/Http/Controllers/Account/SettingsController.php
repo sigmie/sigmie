@@ -15,45 +15,53 @@ class SettingsController extends Controller
     {
         $user = Auth::user();
 
-        $planName = config('services.paddle.plan_name');
+        $data = [
+            'subscription' => $this->subscriptionData($user),
+            'account' => $user->only(['username', 'email', 'avatar_url', 'created_at', 'id'])
+        ];
+
+        return Inertia::render('account/settings', ['section' => $section, 'data' => $data]);
+    }
+
+    private function subscriptionData($user)
+    {
         $data = [];
+        $planName = config('services.paddle.plan_name');
+
         $data['subscription'] = ['was_subscribed' => false];
 
         $subscription = $user->subscription($planName);
 
         if ($subscription !== null) {
-            $data['subscription'] = ['was_subscribed' => true];
+            $data['was_subscribed'] = true;
             $info = $subscription->paddleInfo();
             $method = $info['payment_information']['payment_method'];
             $nextPayment = $subscription->nextPayment();
             $lastPayment = $subscription->lastPayment();
 
             if ($method !== 'paypal') {
-                $data['subscription']['card_brand'] = $subscription->cardBrand();
-                $data['subscription']['card_last_four'] = $subscription->cardLastFour();
-                $data['subscription']['card_expire_date'] = $subscription->cardExpirationDate();
+                $data['card_brand'] = $subscription->cardBrand();
+                $data['card_last_four'] = $subscription->cardLastFour();
+                $data['card_expire_date'] = $subscription->cardExpirationDate();
             }
 
-            $data['subscription']['canceled'] = $subscription->cancelled();
-            $data['subscription']['ends_at'] = $subscription->getAttribute('ends_at');
-            $data['subscription']['plan'] = ucfirst($planName);
-            $data['subscription']['payment_method'] = $method;
-            $data['subscription']['email'] = $subscription->paddleEmail();
-            $data['subscription']['on_trial'] = $subscription->onTrial();
-            $data['subscription']['trail_ends_at'] = $subscription->getAttribute('trial_ends_at');
+            $data['canceled'] = $subscription->cancelled();
+            $data['ends_at'] = $subscription->getAttribute('ends_at');
+            $data['plan'] = ucfirst($planName);
+            $data['payment_method'] = $method;
+            $data['email'] = $subscription->paddleEmail();
+            $data['on_trial'] = $subscription->onTrial();
+            $data['trail_ends_at'] = $subscription->getAttribute('trial_ends_at');
 
             if ($lastPayment !== null) {
-                $data['subscription']['last_payment'] = $lastPayment->date();
+                $data['last_payment'] = $lastPayment->date();
             }
 
             if ($nextPayment !== null) {
-                $data['subscription']['next_payment'] = $nextPayment->date();
+                $data['next_payment'] = $nextPayment->date();
             }
         }
 
-        $data['account'] = $user->only(['username', 'email', 'avatar_url', 'created_at']);
-
-
-        return Inertia::render('account/settings', ['section' => $section, 'data' => $data]);
+        return $data;
     }
 }

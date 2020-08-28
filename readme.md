@@ -25,4 +25,29 @@ After the build process the application will be available at http://localhost:80
 ```
   <div v-on-clickaway="()=> $emit('away')">
   </div>
-    ```
+```
+
+### Sidebar
+```
+        {
+          text: "Playground",
+          name: "playground",
+          routeParams: {
+            project:
+              this.$page.project_id === null ? "" : this.$page.project_id,
+          },
+          icon: "puzzle",
+          badge: {
+            text: "Soon",
+            color: "blue",
+          },
+        }
+```
+
+
+### Factory
+```
+    $user = factory(Subscription::class)->create()->billable;
+    $project = factory(Project::class)->create(['user_id' => $user->id]);
+    $cluster = factory(Cluster::class)->create(['project_id' => $project->id]);
+```

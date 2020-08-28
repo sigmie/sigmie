@@ -56,7 +56,7 @@
             >
               <input
                 v-model="username"
-                class="flex-1 bg-white border-gray-200 rounded block border focus:border-gray-200 py-1 px-3 sm:text-sm"
+                class="flex-1 bg-white border-gray-200 rounded block border py-1 px-3 sm:text-sm focus:border-cool-gray-300"
               />
               <span @click="save" class="ml-2 text-orange-500 cursor-pointer hover:underline">Save</span>
               <span
@@ -83,8 +83,40 @@
             </dd>
           </div>
           <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-            <dt class="text-sm leading-5 font-medium self-center text-gray-500">Password</dt>
-            <dd class="mt-1 text-sm leading-5 cursor-pointer text-orange-500 sm:mt-0 sm:col-span-2">Change password</dd>
+            <dt class="text-sm leading-5 font-medium self-start text-gray-500">Password</dt>
+
+            <div v-if="edit.password">
+              <dd class="mt-1 text-sm flex flex-col leading-5 text-gray-900 sm:mt-0 col-span-1">
+                <input
+                  placeholder="Old password"
+                  name="old_password"
+                  aria-label="Current password"
+                  v-model="oldPassword"
+                  type="password"
+                  class="flex-1 bg-white border-gray-200 rounded block border py-1 px-3 sm:text-sm focus:border-cool-gray-300"
+                />
+
+                <input
+                  placeholder="New password"
+                  name="new_password"
+                  v-model="newPassword"
+                  aria-label="New password"
+                  type="password"
+                  class="flex-1 bg-white border-gray-200 rounded block border mt-3 py-1 px-3 sm:text-sm focus:border-cool-gray-300"
+                />
+              </dd>
+              <div class="flex flex-row col-span-2">
+                <span
+                  @click="changePassword"
+                  class="text-white px-3 py-1 rounded w-full text-sm text-center bg-theme-primary cursor-pointer mt-3 hover:underline"
+                >Change password</span>
+              </div>
+            </div>
+            <dd
+              v-else
+              @click="editSection('password')"
+              class="mt-1 text-sm leading-5 cursor-pointer text-orange-500 sm:mt-0 sm:col-span-2"
+            >Change password</dd>
           </div>
 
           <!-- <div class="sm:col-span-2 py-5 px-6">
@@ -108,9 +140,12 @@ export default {
   props: ["data"],
   data() {
     return {
-      edit: { username: false },
+      edit: { username: false, password: false },
       username: this.data.username,
       email: this.data.email,
+      oldPassword: "",
+      newPassword: "",
+      showPasswordModal: false,
     };
   },
   methods: {
@@ -121,9 +156,36 @@ export default {
       this.username = this.data.username;
       this.edit[section] = false;
     },
+    changePassword() {
+      let userId = this.data.id;
+      return this.$inertia.put(
+        this.$route("user.password.update", { user: userId }),
+        {
+          old_password: this.oldPassword,
+          new_password: this.newPassword,
+        },
+        {
+          replace: false,
+          preserveState: true,
+          preserveScroll: false,
+          only: [],
+        }
+      );
+    },
     save() {
-      console.log("save");
-      // inertia reaload
+      let userId = this.data.id;
+
+      this.edit["username"] = false;
+      return this.$inertia.put(
+        this.$route("user.update", { user: userId }),
+        { username: this.username },
+        {
+          replace: false,
+          preserveState: true,
+          preserveScroll: false,
+          only: [],
+        }
+      );
     },
     onlyDate(datetime) {
       return moment.utc(datetime).format("LL");

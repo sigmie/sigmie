@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Controllers;
 
-use App\Http\Controllers\ClusterController;
+use App\Http\Controllers\Cluster\ClusterController;
 use App\Http\Requests\StoreCluster;
 use App\Http\Requests\UpdateCluster;
 use App\Jobs\CreateCluster;

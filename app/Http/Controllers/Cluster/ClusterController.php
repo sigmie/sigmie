@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Cluster;
 
 use App\Http\Requests\StoreCluster;
 use App\Http\Requests\UpdateCluster;
@@ -12,7 +12,7 @@ use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
 use Inertia\Inertia;
 
-class ClusterController extends Controller
+class ClusterController extends \App\Http\Controllers\Controller
 {
     private ClusterRepository $clusters;
 

@@ -19,6 +19,7 @@ class SubscriptionController extends Controller
         $planName = config('services.paddle.plan_name');
         $trailDays = ($user->subscription($planName) === null) ? 14 : 0;
 
+
         $paylink = $user->newSubscription($planName, $planId)
             ->trialDays($trailDays)
             ->create();
@@ -51,6 +52,7 @@ class SubscriptionController extends Controller
         $checkoutId = $request->get('checkout');
 
         $receipt = Receipt::firstWhere('checkout_id', $checkoutId);
+
 
         $subscribed = $receipt instanceof Receipt;
 

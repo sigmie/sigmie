@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Cluster;
 
 use App\Models\Cluster;
 use App\Models\ClusterToken;
@@ -10,7 +10,7 @@ use App\Models\Project;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
-class ClusterTokenController extends Controller
+class TokenController extends \App\Http\Controllers\Controller
 {
     public const ADMIN = 'Admin';
 

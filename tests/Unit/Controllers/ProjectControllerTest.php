@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Controllers;
 
-use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\Project\ProjectController;
 use App\Http\Requests\StoreProject;
 use App\Models\User;
 use App\Repositories\ProjectRepository;

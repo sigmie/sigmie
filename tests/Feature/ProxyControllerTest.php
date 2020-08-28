@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\ClusterTokenController;
+use App\Http\Controllers\Cluster\TokenController;
 use App\Models\Cluster;
 use App\Models\Project;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -36,8 +36,8 @@ class ProxyControllerTest extends TestCase
 
         $this->cluster = factory(Cluster::class)->create();
 
-        $this->adminToken = $this->cluster->createToken(ClusterTokenController::ADMIN, ['*'])->plainTextToken;
-        $this->searchToken = $this->cluster->createToken(ClusterTokenController::SEARCH_ONLY, ['search'])->plainTextToken;
+        $this->adminToken = $this->cluster->createToken(TokenController::ADMIN, ['*'])->plainTextToken;
+        $this->searchToken = $this->cluster->createToken(TokenController::SEARCH_ONLY, ['search'])->plainTextToken;
     }
 
     /**

@@ -28,5 +28,6 @@ yarn-error.log
 .DS_Store
 
 v8-compile-cache-0
+psalm-cache
 .php_cs.cache
 graph.png

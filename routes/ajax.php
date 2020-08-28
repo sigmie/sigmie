@@ -11,18 +11,24 @@
 |
 */
 
+use App\Http\Controllers\Cluster\TokenController;
+use App\Http\Controllers\Cluster\ValidationController as ClusterValidationController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProjectValidationController;
+use App\Http\Controllers\Subscription\SubscriptionController;
+use App\Http\Controllers\UserValidationController;
 use Laravel\Sanctum\PersonalAccessToken;
 
-Route::resource('/notification', 'NotificationController', ['except' => ['edit', 'create', 'destroy']])->middleware('auth');
+Route::resource('/notification', NotificationController::class, ['except' => ['edit', 'create', 'destroy']])->middleware('auth');
 
-Route::get('/cluster/validate/name/{name}', 'ClusterValidationController@name')->name('cluster.validate.name');
+Route::get('/cluster/validate/name/{name}', [ClusterValidationController::class, 'name'])->name('cluster.validate.name');
 
-Route::get('/user/validate/email/{email}', 'UserValidationController@email')->name('user.validate.email');
+Route::get('/user/validate/email/{email}', [UserValidationController::class, 'email'])->name('user.validate.email');
 
-Route::post('/project/validate/provider', 'ProjectValidationController@provider')->name('project.validate.provider');
+Route::post('/project/validate/provider', [ProjectValidationController::class, 'provider'])->name('project.validate.provider');
 
-Route::put('/tokens/{cluster}/regenerate/{clusterToken}', 'ClusterTokenController@regenerate')->name('token.regenerate');
+Route::put('/tokens/{cluster}/regenerate/{clusterToken}', [TokenController::class, 'regenerate'])->name('token.regenerate');
 
-Route::put('/tokens/{cluster}/toogle/{clusterToken}', 'ClusterTokenController@toogle')->name('token.toogle');
+Route::put('/tokens/{cluster}/toogle/{clusterToken}', [TokenController::class, 'toogle'])->name('token.toogle');
 
-Route::get('/subscription/check', 'Subscription\SubscriptionController@check')->name('subscription.check');
+Route::get('/subscription/check', [SubscriptionController::class, 'check'])->name('subscription.check');

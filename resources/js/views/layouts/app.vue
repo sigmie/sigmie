@@ -8,6 +8,8 @@
 
         <main id="main" class="flex-1 relative overflow-y-auto py-6 focus:outline-none">
           <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+
+              <alert-info class="mb-3 shadow" text="We found an account with this email address."></alert-info>
             <slot></slot>
           </div>
         </main>
