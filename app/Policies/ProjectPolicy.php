@@ -24,7 +24,7 @@ class ProjectPolicy
 
     public function create(User $user)
     {
-        return $user->projects()->get()->isEmpty();
+        return $user->projects()->get()->isEmpty() && $user->subscribed(config('services.paddle.plan_name'));
     }
 
     public function update(User $user, Project $project)

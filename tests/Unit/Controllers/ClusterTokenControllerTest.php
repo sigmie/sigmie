@@ -11,6 +11,7 @@ use App\Models\Project;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
+use Laravel\Paddle\Subscription;
 use Laravel\Sanctum\NewAccessToken;
 use Laravel\Sanctum\PersonalAccessToken;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -82,6 +83,20 @@ class ClusterTokenControllerTest extends TestCase
         $this->projectMock->method('clusters')->willReturn($this->clusterCollectionMock);
 
         $this->controller = new TokenController();
+    }
+
+    /**
+     * @test
+     */
+    public function redirect_to_create_cluster_if_there_isnt_any()
+    {
+        $user = factory(Subscription::class)->create()->billable;
+        $project = factory(Project::class)->create(['user_id' => $user->id]);
+
+        $this->actingAs($user);
+
+        $response = $this->get(route('token.index', ['project' => $project->id]));
+        $response->assertRedirect(route('cluster.create'));
     }
 
     /**

@@ -10,7 +10,7 @@ use App\Policies\ProjectPolicy;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class ProjectPolicyTest extends TestCase
 {
@@ -36,7 +36,6 @@ class ProjectPolicyTest extends TestCase
         $this->collectionMock = $this->createMock(Collection::class);
         $this->collectionMock->expects($this->any())->method('get')->willReturnSelf();
 
-
         $relationMock = $this->createMock(Relation::class);
         $relationMock->method('get')->willReturn($this->collectionMock);
 
@@ -59,9 +58,32 @@ class ProjectPolicyTest extends TestCase
     /**
      * @test
      */
-    public function create_returns_true_if_empty()
+    public function create_returns_false_if_empty_and_subscribed()
     {
+        $this->userMock->method('subscribed')->willReturn(false);
         $this->collectionMock->method('isEmpty')->willReturn(false);
+
+        $this->assertFalse($this->policy->create($this->userMock));
+    }
+
+    /**
+     * @test
+     */
+    public function create_returns_true_if_empty_and_subscribed()
+    {
+        $this->userMock->method('subscribed')->willReturn(true);
+        $this->collectionMock->method('isEmpty')->willReturn(true);
+
+        $this->assertTrue($this->policy->create($this->userMock));
+    }
+
+    /**
+     * @test
+     */
+    public function create_returns_false_if_empty_and_not_subscribed()
+    {
+        $this->userMock->method('subscribed')->willReturn(false);
+        $this->collectionMock->method('isEmpty')->willReturn(true);
 
         $this->assertFalse($this->policy->create($this->userMock));
     }

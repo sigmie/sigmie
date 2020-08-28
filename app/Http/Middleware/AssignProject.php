@@ -16,6 +16,7 @@ class AssignProject
         $project = $request->route('project');
 
         if ($project !== null) {
+
             return $next($request);
         }
 
