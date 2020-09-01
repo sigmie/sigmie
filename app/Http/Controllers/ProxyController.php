@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
@@ -12,7 +14,7 @@ class ProxyController extends Controller
     /**
      * Proxy pass the incoming request to the Elasticsearch
      */
-    public function __invoke(string $endpoint = '', ProxyRequest $proxyRequest, Request $request, Client $client)
+    public function __invoke(ProxyRequest $proxyRequest, Request $request, Client $client, string $endpoint = '')
     {
         $cluster = $proxyRequest->cluster();
         $headers = $request->headers->all();

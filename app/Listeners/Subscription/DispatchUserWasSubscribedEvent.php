@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Listeners\Subscription;
 
@@ -13,7 +15,6 @@ class DispatchUserWasSubscribedEvent implements ShouldQueue
         $paddleEvent = $event->payload['alert_name'];
 
         if ($paddleEvent === 'subscription_created') {
-
             $passthrough = json_decode($event->payload['passthrough'], true);
 
             $userId = (int) $passthrough['billable_id'];

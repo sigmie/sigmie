@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Unit\Controllers;
 
 use App\Http\Controllers\Cluster\ValidationController;
-use App\Http\Controllers\UserValidationController;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -14,7 +13,7 @@ use Tests\TestCase;
 class ClusterValidationControllerTest extends TestCase
 {
     /**
-     * @var UserValidationController
+     * @var ValidationController
      */
     private $controller;
 

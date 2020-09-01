@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Subscription;
 
-use Amp\ByteStream\Payload;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Inertia\Inertia;
 use Laravel\Paddle\Receipt;
 use Laravel\Paddle\Subscription;
 use Laravel\Paddle\SubscriptionBuilder;

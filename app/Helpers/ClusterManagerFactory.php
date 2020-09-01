@@ -51,7 +51,7 @@ class ClusterManagerFactory
 
         $dnsProviderFactory = $this->createDnsProvider();
 
-        return  new ClusterManager($cloudProviderFactory, $dnsProviderFactory, config('app.debug'));
+        return  new ClusterManager($cloudProviderFactory, $dnsProviderFactory);
     }
 
     public function createDigitaloceanProvider()

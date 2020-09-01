@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUser;
+use App\Models\User;
 use App\Repositories\UserRepository;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Auth\RegistersUsers;
@@ -42,6 +43,7 @@ class RegisterController extends Controller
 
         $password = (isset($data['password'])) ? Hash::make($data['password']) : null;
 
+        /** @var  User */
         $user = $this->users->create(
             [
                 'email' => $data['email'],

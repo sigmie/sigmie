@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Events\Subscription;
 
@@ -10,7 +12,9 @@ use Illuminate\Queue\SerializesModels;
 
 class UserWasSubscribed implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 
     public int $userId;
 

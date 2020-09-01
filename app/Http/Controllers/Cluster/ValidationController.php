@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Cluster;
 
+use App\Http\Controllers\Controller;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
 
-class ValidationController extends \App\Http\Controllers\Controller
+class ValidationController extends Controller
 {
     private $clusters;
 

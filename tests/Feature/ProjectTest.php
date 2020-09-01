@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Tests\Feature;
 
@@ -21,7 +23,8 @@ class ProjectTest extends TestCase
     {
         $project = factory(Project::class)->make();
 
-        $this->assertInstanceOf(BelongsTo::class, $project->user()); }
+        $this->assertInstanceOf(BelongsTo::class, $project->user());
+    }
 
     /**
      * @test

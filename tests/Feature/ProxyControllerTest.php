@@ -6,9 +6,7 @@ namespace Tests\Feature;
 
 use App\Http\Controllers\Cluster\TokenController;
 use App\Models\Cluster;
-use App\Models\Project;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Laravel\Paddle\Subscription;
 use Tests\TestCase;
 
 class ProxyControllerTest extends TestCase

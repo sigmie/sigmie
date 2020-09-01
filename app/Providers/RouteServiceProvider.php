@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Models\ClusterToken;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Route;
-use Laravel\Sanctum\PersonalAccessToken as Token;;
 
 class RouteServiceProvider extends ServiceProvider
 {

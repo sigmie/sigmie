@@ -13,7 +13,11 @@ class NotificationController extends Controller
     {
         $beforeOneWeek = Carbon::now()->subWeek()->toDateString();
 
-        return Auth::user()->notifications->where('created_at', '>', $beforeOneWeek)->sortByDesc('created_at')->toArray();
+        return Auth::user()
+            ->notifications
+            ->where('created_at', '>', $beforeOneWeek)
+            ->sortByDesc('created_at')
+            ->toArray();
     }
 
     public function show($id)

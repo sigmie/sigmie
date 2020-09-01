@@ -63,6 +63,8 @@ class TokenController extends \App\Http\Controllers\Controller
     {
         Gate::authorize('update', [$clusterToken, $cluster]);
 
+        $newValue = null;
+
         if ($clusterToken->getAttribute('name') === self::SEARCH_ONLY) {
             $oldValue = $cluster->getAttribute('search_token_active');
             $cluster->update(['search_token_active' => !$oldValue]);
@@ -82,7 +84,10 @@ class TokenController extends \App\Http\Controllers\Controller
     {
         Gate::authorize('update', [$clusterToken, $cluster]);
 
-        $newToken = $cluster->createToken($clusterToken->getAttribute('name'), $clusterToken->getAttribute('abilities'));
+        $newToken = $cluster->createToken(
+            $clusterToken->getAttribute('name'),
+            $clusterToken->getAttribute('abilities')
+        );
 
         $clusterToken->delete();
 

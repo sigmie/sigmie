@@ -6,8 +6,7 @@
       class="block text-sm font-medium leading-5 text-gray-700 pb-1"
     >{{ label }}</label>
     <div class="relative rounded-md shadow-sm" v-if="suffix.length === 0">
-      <input
-        :id="id"
+      <input :id="id"
         :type="type"
         :placeholder="placeholder"
         :class="[validations.$anyError ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-300 focus:text-' : '']"

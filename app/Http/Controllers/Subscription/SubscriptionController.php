@@ -53,16 +53,14 @@ class SubscriptionController extends Controller
 
         $receipt = Receipt::firstWhere('checkout_id', $checkoutId);
 
-        $subscribed = $receipt instanceof Receipt;
-
-        return ['subscribed' => $subscribed];
+        return ['subscribed' => $receipt !== null];
     }
 
     public function cancel(Request $request)
     {
         Auth::user()->subscription(config('services.paddle.plan_name'))->cancel();
 
-        $request->session()->flash('success','Your subscription has been canceled.');
+        $request->session()->flash('success', 'Your subscription has been canceled.');
 
         return redirect()->route('account.settings', ['section' => 'subscription']);
     }

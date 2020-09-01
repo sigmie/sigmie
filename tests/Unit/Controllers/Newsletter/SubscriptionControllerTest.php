@@ -12,7 +12,6 @@ use Inertia\Inertia;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
-
 class SubscriptionControllerTest extends TestCase
 {
     /**

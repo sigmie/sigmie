@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateUserPassword;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class PasswordController extends Controller
@@ -22,7 +23,6 @@ class PasswordController extends Controller
         $oldPasswordMatches = Hash::check($data['old_password'], $user->getAttribute('password'));
 
         if ($oldPasswordMatches) {
-
             $hash = Hash::make($data['new_password']);
 
             $user->update(['password' => $hash]);

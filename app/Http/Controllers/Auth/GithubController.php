@@ -37,7 +37,6 @@ class GithubController extends Controller
         $user = $this->findUser($githubUser->getEmail());
 
         if ($user instanceof User) {
-
             $this->session()->flash('info', 'You already have an account.');
 
             return redirect()->route('sign-in')

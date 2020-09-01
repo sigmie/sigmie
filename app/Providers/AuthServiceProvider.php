@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Gates\DashboardGate;
-use App\Policies\ClusterTokenPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
-use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthServiceProvider extends ServiceProvider
 {

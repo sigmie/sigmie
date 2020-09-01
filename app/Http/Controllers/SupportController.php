@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
@@ -14,6 +16,5 @@ class SupportController extends Controller
 
     public function send(Request $request)
     {
-        
     }
 }

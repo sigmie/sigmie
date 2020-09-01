@@ -40,7 +40,9 @@ class PollState implements ShouldQueue
             return;
         }
 
-        throw new \Exception("Cluster run check failed after {$this->tries} tries with {$this->retryAfter} delay between each of them.");
+        throw new \Exception(
+            "Cluster run check failed after {$this->tries} tries with {$this->retryAfter} delay between each of them."
+        );
     }
 
     public function failed(ClusterWasCreated $event, Exception $exception): void
