@@ -143,9 +143,11 @@ return [
         'production' => [
             'supervisor-1' => [
                 'connection' => 'redis',
-                'queue' => ['defaultes'],
+                'queue' => ['default'],
                 'balance' => 'simple',
                 'processes' => 3,
+                'tries' => 1,
+                'timeout' => 1200
             ],
             'supervisor-long-running' => [
                 'connection' => 'redis-long-running',

@@ -7,7 +7,7 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
-class NewsletterSubscriptionController extends TestCase
+class NewsletterSubscriptionControllerTest extends TestCase
 {
     use DatabaseTransactions;
 
