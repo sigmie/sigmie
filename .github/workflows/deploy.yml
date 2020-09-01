@@ -64,7 +64,7 @@ jobs:
     - name: Generate prod routes and after set redis as cache driver
       run : |
         php artisan ziggy:generate resources/js/routes.js --url='https://app.sigmie.com' && \
-        echo "\nCACHE_DRIVER=redis" >> .env
+        echo "CACHE_DRIVER=redis" >> .env
 
     - name: Install node dependencies and generate production assets
       run: npm install && npm run production
