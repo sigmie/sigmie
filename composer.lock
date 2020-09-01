@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "452a85c75b6a69f43e57afd6044fbfeb",
+    "content-hash": "d0b95dbda0b66cd92c97f2f6e2f58f2c",
     "packages": [
         {
             "name": "amphp/amp",
@@ -5505,16 +5505,16 @@
         },
         {
             "name": "sigmie/app-core",
-            "version": "v0.3.11",
+            "version": "v0.4.0",
             "source": {
                 "type": "git",
                 "url": "git@github.com:sigmie/app-core.git",
-                "reference": "749a9e40b59b6cce0a2bbf72e38ca65fc18f1cb6"
+                "reference": "dcebc7aa74a753197f7310953c0898833f497d6f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sigmie/app-core/zipball/749a9e40b59b6cce0a2bbf72e38ca65fc18f1cb6",
-                "reference": "749a9e40b59b6cce0a2bbf72e38ca65fc18f1cb6",
+                "url": "https://api.github.com/repos/sigmie/app-core/zipball/dcebc7aa74a753197f7310953c0898833f497d6f",
+                "reference": "dcebc7aa74a753197f7310953c0898833f497d6f",
                 "shasum": ""
             },
             "require": {
@@ -5556,10 +5556,10 @@
             ],
             "description": "Sigmie application core library",
             "support": {
-                "source": "https://github.com/sigmie/app-core/tree/v0.3.11",
+                "source": "https://github.com/sigmie/app-core/tree/v0.4.0",
                 "issues": "https://github.com/sigmie/app-core/issues"
             },
-            "time": "2020-08-10T08:13:15+00:00"
+            "time": "2020-09-01T10:02:08+00:00"
         },
         {
             "name": "sigmie/nova-feature-flags",
