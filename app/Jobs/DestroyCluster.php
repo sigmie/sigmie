@@ -27,6 +27,7 @@ class DestroyCluster implements ShouldQueue
     public function __construct(int $clusterId)
     {
         $this->clusterId = $clusterId;
+        $this->queue = 'long-running-queue';
     }
 
     public function getClusterId(): int
