@@ -2,6 +2,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta http-equiv="X-UA-Compatible" content="ie=edge">
 <meta name="keywords" content="elasticseach,cloud,infastructure,sigma,sigmie,search,php">
+<meta name="description"
+    content="Now in early access, Sigmie application is a service that makes it easy for you to run Elasticsearch cost effectively at your own infrastructure.">
 <meta name="author" content="nicoorfi@yahoo.com">
 
 {{-- CSRF Token required by Laravel Echo --}}

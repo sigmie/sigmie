@@ -10,7 +10,9 @@
           <div
             class="toggleColour text-white no-underline hover:no-underline font-bold text-2xl lg:text-4xl"
           >
-            <logo-default class="h-16"></logo-default>
+            <inertia-link :href="$route('landing')" class="mx-auto">
+              <logo-default class="h-16"></logo-default>
+            </inertia-link>
           </div>
         </div>
 
@@ -134,9 +136,7 @@
       </div>
     </section>
 
-    <section-pricing :auth-feature="features.auth"
-     class="bg-white px-10 md:py-20"
-    ></section-pricing>
+    <section-pricing :auth-feature="features.auth" class="bg-white px-10 md:py-20"></section-pricing>
 
     <section style="background-color: #f8fafc" class="bg-white px-16 py-16">
       <div class="flex flex-col justify-center container mx-auto px-4">
