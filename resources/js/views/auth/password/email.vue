@@ -1,5 +1,5 @@
 <template>
-  <public>
+  <layout title="Password reset">
     <div class="min-h-screen flex flex-col justify-center sm:px-6 lg:px-8" v-cloak>
       <div class="sm:mx-auto sm:w-full sm:max-w-md pb-6">
         <div class="mx-auto pb-2">
@@ -25,7 +25,7 @@
         </div>
       </div>
 
-      <container-white class="mx-auto py-6 px-4 w-full max-w-md flex flex-col w-full">
+      <div class="mx-auto bg-white shadow rounded-lg py-6 px-4 max-w-md flex flex-col w-full">
         <form
           @submit.prevent
           :action="$route('password.email')"
@@ -52,31 +52,33 @@
             <button-primary @click="submit" text="Send" type="submit" />
           </div>
         </form>
-      </container-white>
+      </div>
     </div>
-  </public>
+  </layout>
 </template>
 
 <script>
-import Public from "../../layouts/public";
+import Layout from "../../layouts/public";
 
 export default {
   props: ["sent"],
   components: {
-    Public
+    Layout,
   },
   data() {
     return {
-      email: null
+      email: null,
     };
   },
   methods: {
-    submit() {
+    async submit() {
       let email = this.email;
 
-      this.$inertia.post(this.$route("password.email"), { email });
-    }
-  }
+      await this.$inertia.post(this.$route("password.email"), { email });
+
+      this.email = null;
+    },
+  },
 };
 </script>
 

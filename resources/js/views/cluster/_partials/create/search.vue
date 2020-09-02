@@ -72,6 +72,8 @@
                   @change="(value) => set('username',value)"
                   class="max-w-sm"
                   id="username"
+                  data-lpignore="true"
+                  :lpignore="true"
                   name="username"
                   :validations="$v.username"
                   :error-messages="errorMessages.username"
@@ -81,7 +83,9 @@
               <div class="col-span-2 sm:col-span-2">
                 <form-input
                   type="password"
+                  data-lpignore="true"
                   :value="password"
+                  :lpignore="true"
                   label="Password"
                   @change="(value) => set('password',value)"
                   class="max-w-sm"

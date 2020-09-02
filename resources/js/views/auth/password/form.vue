@@ -52,9 +52,9 @@ import {
   between,
   email,
   sameAs,
-  helpers
+  helpers,
 } from "vuelidate/lib/validators";
-import loginVue from '../login.vue';
+import loginVue from "../login.vue";
 
 export default {
   props: ["token"],
@@ -66,30 +66,30 @@ export default {
       errorMessages: {
         email: {
           required: "Email address is required.",
-          email: "Invalid email address format."
+          email: "Invalid email address format.",
         },
         password: {
           minLength: "Password should contain at least 8 chars.",
-          required: "Password can't be empty."
+          required: "Password can't be empty.",
         },
         password_confirmation: {
-          sameAsPassword: "Passwords don't match."
-        }
-      }
+          sameAsPassword: "Passwords don't match.",
+        },
+      },
     };
   },
   validations: {
     password: {
       required,
-      minLength: minLength(8)
+      minLength: minLength(8),
     },
     password_confirmation: {
-      sameAsPassword: sameAs("password")
+      sameAsPassword: sameAs("password"),
     },
     email: {
       required,
-      email
-    }
+      email,
+    },
   },
   methods: {
     submit() {
@@ -102,14 +102,14 @@ export default {
         email,
         token,
         password,
-        password_confirmation
+        password_confirmation,
       });
     },
     set(key, value) {
       this[key] = value;
       this.$v[key].$touch();
-    }
-  }
+    },
+  },
 };
 </script>
 

@@ -6,9 +6,11 @@
       class="block text-sm font-medium leading-5 text-gray-700 pb-1"
     >{{ label }}</label>
     <div class="relative rounded-md shadow-sm" v-if="suffix.length === 0">
-      <input :id="id"
+      <input
+        :id="id"
         :type="type"
         :placeholder="placeholder"
+        :data-lpignore="lpignore"
         :class="[validations.$anyError ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-300 focus:text-' : '']"
         :autocomplete="autocomplete"
         :name="name"
@@ -62,11 +64,7 @@
       </div>
     </div>
 
-    <div
-      v-for="(message, rule) in errorMessages"
-      :key="rule"
-      v-if="validations.$pending === false"
-    >
+    <div v-for="(message, rule) in errorMessages" :key="rule" v-if="validations.$pending === false">
       <p
         v-if="!validations[rule] && validations.$dirty"
         class="mt-2 text-sm text-red-600"
@@ -79,59 +77,62 @@
 export default {
   props: {
     suffix: {
-      default: ""
+      default: "",
+    },
+    lpignore: {
+      default: false,
     },
     name: {
-      default: ""
+      default: "",
     },
     validations: {
       default: () => {
         return {
-          $anyError: false
+          $anyError: false,
         };
-      }
+      },
     },
     blur: {
-      default: () => {}
+      default: () => {},
     },
     value: {
-      default: ""
+      default: "",
     },
     placeholder: {
-      default: ""
+      default: "",
     },
     label: {
-      default: ""
+      default: "",
     },
     old: {
-      default: ""
+      default: "",
     },
     type: {
-      default: ""
+      default: "",
     },
     error: {
-      default: ""
+      default: "",
     },
     type: {
-      default: ""
+      default: "",
     },
     autocomplete: {
-      default: ""
+      default: "",
     },
     id: {
-      default: ""
+      default: "",
     },
     required: {
-      default: true
+      default: true,
     },
     errorMessages: {
-      default: () => {}
-    }
+      default: () => {},
+    },
   },
   data() {
     return {};
   },
   mounted() {},
-  methods: {}
+  methods: {},
 };
 </script>

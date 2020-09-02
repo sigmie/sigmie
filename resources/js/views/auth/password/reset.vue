@@ -1,6 +1,6 @@
 <template>
-  <public>
-    <div class="min-h-screen flex flex-col justify-center sm:px-6 lg:px-8" v-cloak>
+  <layout title="Password reset">
+    <div class="min-h-screen flex flex-col justify-center sm:px-6 lg:px-8">
       <div class="sm:mx-auto sm:w-full sm:max-w-md pb-4">
         <div class="mx-auto">
           <inertia-link :href="$route('landing')">
@@ -26,22 +26,22 @@
         </div>
       </div>
 
-      <container-white class="mx-auto py-6 px-4 w-full max-w-md flex flex-col w-full">
+      <div class="mx-auto py-6 px-4 w-full max-w-md flex flex-col bg-white shadow rounded-lg">
         <password-form :token="token"></password-form>
-      </container-white>
+      </div>
     </div>
-  </public>
+  </layout>
 </template>
 
 <script>
-import Public from "../../layouts/public";
+import Layout from "../../layouts/public";
 
 export default {
   props: ["token", "reset"],
   components: {
-    Public,
-    passwordForm: require("./form").default
-  }
+    Layout,
+    passwordForm: require("./form").default,
+  },
 };
 </script>
 
