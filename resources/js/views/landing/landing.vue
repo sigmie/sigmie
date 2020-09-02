@@ -142,10 +142,11 @@
       <div class="flex flex-col justify-center container mx-auto px-4">
         <h1 class="text-2xl text-center font-normal text-cool-gray-600 pb-1">Wan't to learn more ?</h1>
         <p
-          class="text-lg text-center font-normal text-cool-gray-400 pb-4"
+          class="text-lg text-center font-normal text-cool-gray-500 pb-4"
         >Check out our documentation for guides and more!</p>
         <a
           href="https://docs.sigmie.com/app"
+          rel="noreferrer"
           target="_blank"
           class="bg-theme-secondary-lighter w-60 md:w-48 flex items-center justify-center px-4 rounded-lg h-12 self-center text-sm leading-5 text-white"
         >Read the docs</a>
@@ -188,23 +189,25 @@
       </g>
     </svg>
 
-    <section id="subscribe" class="container mx-auto text-center pt-6">
-      <h3 class="my-4 text-3xl leading-tight">Subscribe for project updates</h3>
+    <form
+      method="POST"
+      :action="$route('newsletter.subscription.store')"
+      @submit.prevent="submit"
+      id="subscribe"
+      class="container mx-auto text-center pt-6"
+    >
+      <label for="email" class="my-4 text-3xl leading-tight">Subscribe for project updates</label>
 
       <div class="w-full pt-4">
         <div class="h-1 mx-auto bg-white w-1/6 opacity-25 my-0 py-0 rounded-t"></div>
       </div>
 
-      <form
-        method="POST"
-        :action="$route('newsletter.subscription.store')"
-        @submit.prevent="submit"
-        class="inline-block pt-4 w-full px-6 pb-4"
-      >
+      <div class="inline-block pt-4 w-full px-6 pb-4">
         <div class="inline-block w-full sm:max-w-xs pr-4">
           <input
             class="bg-white text-cool-gray-600 rounded-lg focus:outline-none focus:shadow-outline py-3 px-8 block w-full appearance-none leading-normal"
             name="email"
+            id="email"
             v-model="email"
             required
             type="email"
@@ -217,8 +220,8 @@
             class="mx-auto lg:mx-0 text-theme-secondary tracking-wide bg-white hover:bg-cool-gray-50 font-semibold rounded-lg my-6 py-3 px-8 shadow cursor-pointer transition-shadow"
           >Subscribe</button>
         </div>
-      </form>
-    </section>
+      </div>
+    </form>
     <legal-footer class="md:px-7 md:space-x-8 mx-auto w-full justify-center flex-wrap flex"></legal-footer>
     <p class="text-center w-full opacity-75 px-5 sm:px-0 sm:w-2/3 md:w-8/12 pb-15 mx-auto py-3">
       Sigmie UG (haftungsbeschränkt), Feldstr. 9, 58507 Lüdenscheid, Germany

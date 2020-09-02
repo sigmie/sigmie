@@ -9,10 +9,10 @@
             <h2 class="font-bold text-gray-800 text-xl md:text-3xl">
               Starting at $12 a month
               <span
-                class="hidden md:inline-block leading-none text-gray-400 font-normal text-sm"
+                class="hidden md:inline-block leading-none text-gray-500 font-normal text-sm"
               >/ per project.</span>
               <span
-                class="block md:hidden leading-none text-gray-400 font-normal text-sm"
+                class="block md:hidden leading-none text-gray-500 font-normal text-sm"
               >per project.</span>
             </h2>
           </div>
@@ -32,7 +32,7 @@
         <div class="flex-col md:flex-row flex md:space-x-4 justify-between pt-8">
           <div class="md:w-1/3 mx-auto flex-1 md:mx-0">
             <h3 class="font-bold text-gray-800 text-3xl mb-4 leading-none">All-in-One</h3>
-            <p class="font-normal text-base text-cool-gray-400">
+            <p class="font-normal text-base text-cool-gray-500">
               Simple and affordable pricing. Since the infastructure remains on your side,
               you don't have to worry about pricing units.
             </p>
@@ -45,7 +45,7 @@
                 </div>
                 <div>
                   <h4 class="font-semibold text-base text-gray-700 mb-1">14 day free trial</h4>
-                  <p class="text-gray-400 text-sm h-16">
+                  <p class="text-gray-500 text-sm h-16">
                     Try out all our features and if you aren't satisfied
                     you will still keep your cluster.
                   </p>
@@ -58,7 +58,7 @@
                 <div>
                   <h4 class="font-semibold text-base text-gray-700 mb-1">Alerts</h4>
                   <p
-                    class="text-gray-400 text-sm h-16"
+                    class="text-gray-500 text-sm h-16"
                   >Get notifications regarding significant changes via Email, Slack and SMS.</p>
                 </div>
               </li>
@@ -69,7 +69,7 @@
                 <div>
                   <h4 class="font-semibold text-base text-gray-700 mb-1">Cloud Providers</h4>
                   <p
-                    class="text-gray-400 text-sm h-16"
+                    class="text-gray-500 text-sm h-16"
                   >Choose your desired Cloud Provider between Google Cloud, AWS, Digital Ocean and Microsoft Azure.</p>
                 </div>
               </li>
@@ -84,7 +84,7 @@
                 <div>
                   <h4 class="font-semibold text-base text-gray-700 mb-1">Proxy</h4>
                   <p
-                    class="text-gray-400 text-sm h-16"
+                    class="text-gray-500 text-sm h-16"
                   >Make 50.000 requests each month, by using your access tokens.</p>
                 </div>
               </li>
@@ -95,7 +95,7 @@
                 <div>
                   <h4 class="font-semibold text-base text-gray-700 mb-1">Playground</h4>
                   <p
-                    class="text-gray-400 text-sm h-16"
+                    class="text-gray-500 text-sm h-16"
                   >Query your search, and recieve analysis regarding your search results.</p>
                 </div>
               </li>
@@ -106,7 +106,7 @@
                 <div>
                   <h4 class="font-semibold text-base text-gray-700 mb-1">Multiple environment</h4>
                   <p
-                    class="text-gray-400 text-sm h-16"
+                    class="text-gray-500 text-sm h-16"
                   >Create a test and staging environment for your development workflow.</p>
                 </div>
               </li>

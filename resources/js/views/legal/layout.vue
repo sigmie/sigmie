@@ -33,7 +33,7 @@
           <h3
             class="px-3 text-xs leading-4 font-semibold text-gray-500 uppercase tracking-wider"
           >Contents</h3>
-          <div class="mt-1" role="group" aria-labelledby="projects-headline">
+          <div class="mt-1" role="group">
             <inertia-link
               :href="$route('legal.about')"
               :class="[ isRoute('legal.about') ? 'bg-gray-200': '']"
