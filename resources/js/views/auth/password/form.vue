@@ -5,6 +5,7 @@
     method="POST"
     :action="$route('password.update')"
   >
+    <h2 class="text-base mb-5 font-semibold text-gray-800">Password reset</h2>
     <form-input
       :value="email"
       @change="(value) => set('email',value)"

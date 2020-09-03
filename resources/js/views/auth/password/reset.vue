@@ -2,10 +2,10 @@
   <layout title="Password reset">
     <div class="min-h-screen flex flex-col justify-center sm:px-6 lg:px-8">
       <div class="sm:mx-auto sm:w-full sm:max-w-md pb-4">
-        <div class="mx-auto">
-          <inertia-link :href="$route('landing')">
-            <logo-default></logo-default>
-          </inertia-link>
+        <div class="mx-auto pb-5">
+          <a :href="$route('landing')">
+            <logo-default class="mx-3 sm:mx-0"></logo-default>
+          </a>
         </div>
 
         <div v-if="$page.errors" class="pt-4">

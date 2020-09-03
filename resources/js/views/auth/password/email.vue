@@ -2,9 +2,9 @@
   <layout title="Password reset">
     <div class="min-h-screen flex flex-col justify-center sm:px-6 lg:px-8" v-cloak>
       <div class="sm:mx-auto sm:w-full sm:max-w-md pb-6">
-        <div class="mx-auto pb-2">
+        <div class="mx-auto pb-5">
           <a :href="$route('landing')">
-            <logo-default />
+            <logo-default class="mx-3 sm:mx-0"></logo-default>
           </a>
         </div>
 
