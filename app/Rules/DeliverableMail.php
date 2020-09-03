@@ -44,9 +44,9 @@ class DeliverableMail implements Rule
         $content = $response->getBody()->getContents();
         $result = json_decode($content, true);
 
-        if ($result['is_disposable_address']) {
-            return false;
-        }
+        // if ($result['is_disposable_address']) {
+        //     return false;
+        // }
 
         return $result['result'] === 'deliverable';
     }

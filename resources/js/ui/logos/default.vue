@@ -25,8 +25,7 @@
                 <tspan x="49.2788049" y="55">gmie</tspan>
               </text>
             </g>
-          </g>
-        </g>
+          </g> </g>
         <g>
           <g>
             <g fill="#403C56" fill-rule="nonzero">

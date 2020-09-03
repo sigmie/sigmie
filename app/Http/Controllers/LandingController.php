@@ -11,10 +11,8 @@ class LandingController extends Controller
 {
     public function __invoke(FeatureFlagManager $manager)
     {
-        return Inertia::render('landing/landing', [
-            'features' => [
-                'auth' => $manager->accessible('auth')
-            ]
-        ]);
+        return view('landing/landing', ['features' => [
+            'auth' => $manager->accessible('auth')
+        ]]);
     }
 }

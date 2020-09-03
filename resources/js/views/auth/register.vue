@@ -5,9 +5,9 @@
         <div class="flex justify-center">
           <div class="self-center">
             <div class="sm:mx-auto sm:w-full sm:max-w-md pt-5">
-              <inertia-link :href="$route('landing')" class="mx-auto">
+              <a :href="$route('landing')" class="mx-auto">
                 <logo-default class="h-20 mx-auto mb-10"></logo-default>
-              </inertia-link>
+              </a>
             </div>
 
             <register-form

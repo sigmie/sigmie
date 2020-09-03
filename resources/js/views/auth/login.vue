@@ -2,9 +2,9 @@
   <layout title="Sign Up">
     <div class="min-h-screen flex flex-col justify-center sm:px-6 lg:px-8" v-cloak>
       <div class="sm:mx-auto sm:w-full sm:max-w-md">
-        <inertia-link :href="$route('landing')" class="mx-auto">
+        <a :href="$route('landing')" class="mx-auto">
           <logo-default class="mx-3 sm:mx-0"></logo-default>
-        </inertia-link>
+        </a>
         <h2
           class="mt-6 text-center text-3xl leading-9 font-bold text-gray-900"
         >Sign in to your account</h2>
