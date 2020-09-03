@@ -21,14 +21,14 @@
           <a
             class="text-orange-400"
             target="_blank"
-            :href="'https://'+name+'.sigmie.app'"
+            :href="'https://'+cluster.name+'.sigmie.app'"
           >https://{{ cluster.name }}.sigmie.app</a>
         </p>
         <div class="py-5">
           <dl class="grid col-gap-4 row-gap-8 grid-cols-3">
             <div class="col-span-1">
               <dt class="text-sm leading-5 font-medium text-gray-500">Name</dt>
-              <dd class="mt-1 text-sm leading-5 text-gray-900">{{ name }}</dd>
+              <dd class="mt-1 text-sm leading-5 text-gray-900">{{ cluster.name }}</dd>
             </div>
             <div class="col-span-1" v-if="dataCenter">
               <dt class="text-sm leading-5 font-medium text-gray-500">Data center</dt>
