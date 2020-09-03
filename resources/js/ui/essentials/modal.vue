@@ -1,6 +1,6 @@
  <template>
   <div
-    class="z-50 fixed bottom-0 inset-x-0 px-4 pb-4 sm:inset-0 sm:flex sm:items-center sm:justify-center"
+    class="z-50 fixed bottom-0 inset-x-0 px-4 pb-4 inset-0 flex items-center justify-center"
     :class="show ? 'ease-out duration-300 opacity-100 visible' : 'ease-in duration-200 opacity-0 invisible'"
   >
     <div @click="$emit('clickAway')" class="fixed inset-0 transition-opacity">

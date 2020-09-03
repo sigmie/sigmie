@@ -113,7 +113,7 @@
           </div>
         </dd>
         <dd class="mt-1 text-sm leading-5 text-gray-900" v-else>
-          <div class="w-60">
+          <div class="w-full sm:w-60">
             <button-danger @click="showConfirmation = true" text="Cancel subscription"></button-danger>
           </div>
         </dd>
