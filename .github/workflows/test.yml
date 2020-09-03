@@ -96,6 +96,10 @@ jobs:
     - name: Seed
       run: php artisan --env=testing db:seed --force
 
+    - name: Cache routes
+      run: |
+        php artisan route:cache --env=testing
+
     - name: PHPUnit
       run: vendor/bin/phpunit
 

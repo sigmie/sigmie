@@ -121,9 +121,4 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
     });
 });
 
-
-Route::bind('cluster', function ($id) {
-    return App\Models\Cluster::withTrashed()->where('id', $id)->first();
-});
-
 Broadcast::routes();

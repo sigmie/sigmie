@@ -6,8 +6,7 @@ ENV DEBIAN_FRONTEND noninteractive
 # app directory
 WORKDIR /var/www/app
 
-# time zone
-ENV TZ=Europe/Berlin
+# time zone ENV TZ=Europe/Berlin
 
 # setup the timezone
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
@@ -74,9 +73,7 @@ CMD php artisan cache:clear         && \
     php artisan clear-compiled      && \
     php artisan migrate --force     && \
     php artisan optimize            && \
-    php artisan view:clear          && \
     php artisan view:cache          && \
-    php artisan event:clear         && \
     php artisan event:cache         && \
     rm .env                         && \
     rm auth.json                    && \
