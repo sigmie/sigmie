@@ -24,7 +24,15 @@
                 @if ($features['auth'])
                 <div>
                     <a aria-label="Sign-In" href="{{ route('sign-in') }}"
-                        class="items-center px-4 py-2 text-sm leading-5 font-semibold rounded-md text-cool-gray-800 tracking-wide bg-white hover:bg-cool-gray-50 focus:outline-none focus:border-cool-gray-100 active:bg-cool-gray-100 transition duration-150 ease-in-out">Sign-In</a>
+                        class="items-center px-4 py-2 text-sm leading-5 font-semibold rounded-md text-cool-gray-800 tracking-wide bg-white hover:bg-cool-gray-50 focus:outline-none focus:border-cool-gray-100 active:bg-cool-gray-100 transition duration-150 ease-in-out flex">Sign-In
+                        <span>
+                            <svg class="h-4 ml-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                    d="M9 5l7 7-7 7" />
+                            </svg>
+                        </span>
+                    </a>
                 </div>
                 @endif
 
