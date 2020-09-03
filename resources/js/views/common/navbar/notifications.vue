@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="py-1 rounded-md bg-white shadow-xs overflow-auto max-h-128"
-    v-on-clickaway="()=> $emit('away')"
-  >
+  <div class="py-1 rounded-md bg-white shadow-xs overflow-auto max-h-128" v-on-clickaway="emitAway">
     <ul v-cloak>
       <li
         v-for="(notification,index) in notifications"
@@ -75,6 +72,9 @@ export default {
       this.$emit("read", index);
 
       this.markAsRead(index, id);
+    },
+    emitAway() {
+      this.$emit("away");
     },
     async markAsRead(index, id) {
       const response = await this.$http.put(`notification/${id}`);
