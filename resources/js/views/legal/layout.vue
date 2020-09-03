@@ -3,13 +3,13 @@
     <vue-headful :title="title + ' | Sigmie'" />
     <div class="flex flex-col-reverse md:flex-row flex-wrap-reverse">
       <div class="flex-1 md:border-none border-t-2 border-gray-200 mx-10 md:mx-0 py-10 md:pt-24">
-        <inertia-link
+        <a
           v-if="hasHistory() === false"
           class="md:float-right mx-auto w-8 block md:mr-15"
           :href="$route('landing')"
         >
           <icon-cheveron-left class="text-gray-300 md:mb-24"></icon-cheveron-left>
-        </inertia-link>
+        </a>
 
         <a v-else class="md:float-right mx-auto w-8 block md:mr-15 cursor-pointer" @click.prevent="back">
           <icon-cheveron-left class="text-gray-300 md:mb-24"></icon-cheveron-left>
