@@ -18,7 +18,7 @@
               :github-route="$route('github.redirect', {action :'register'})"
               :github-user="githubUser"
             />
-            <div class="text-gray-400 text-base antialiased mt-5 mx-auto text-center">
+            <div class="text-gray-500 text-base antialiased mt-5 mx-auto text-center">
               Already having an account ?
               <inertia-link class="text-orange-400 font-semibold" :href="$route('sign-in')">Sign-in</inertia-link>
             </div>

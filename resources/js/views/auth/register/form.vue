@@ -75,7 +75,7 @@
             @change="(value) => set('consent',value)"
             :required="true"
           >
-            <label class="ml-2 block leading-6 text-sm text-gray-400" for="terms">
+            <label class="ml-2 block leading-6 text-sm text-gray-500" for="terms">
               I agree to the
               <inertia-link
                 target="_blank"

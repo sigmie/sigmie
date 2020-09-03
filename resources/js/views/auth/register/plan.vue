@@ -1,8 +1,8 @@
 <template>
-  <div class="md:px-4 pt-10 md:pt-0 md:w-full mx-auto self-center">
+  <div class="md:px-4 pt-10 pb-5 sm:pb-0 md:pt-0 md:w-full mx-auto self-center">
     <div class="bg-white overflow-hidden shadow-md sm:rounded-lg">
       <div class="px-8 sm:px-12 pb-5 pt-10 md:px-14 md:pb-6">
-        <div class="flex flex-col w-96">
+        <div class="flex flex-col sm:w-96">
           <div
             class="flex flex-row flex-wrap-dreverse justify-between mx-0 border-b border-gray-200 pb-6 md:pb-3"
           >
@@ -12,7 +12,7 @@
               </div>
               <h2 class="font-semibold text-gray-800 text-xl">$12 a month</h2>
               <p
-                class="leading-none text-gray-400 font-normal text-xs"
+                class="leading-none text-gray-500 font-normal text-xs"
               >Price does not include your Cloud Provider costs.</p>
               <span></span>
             </div>
@@ -26,7 +26,7 @@
                   </div>
                   <div>
                     <h4 class="font-semibold text-sm text-gray-700 mb-1">14 day free trial</h4>
-                    <p class="text-gray-400 text-sm">
+                    <p class="text-gray-500 text-sm">
                       Try out all our features and if you aren't satisfied
                       you will still keep your cluster.
                     </p>
@@ -39,7 +39,7 @@
                   <div>
                     <h4 class="font-semibold text-sm text-gray-700 mb-1">Alerts</h4>
                     <p
-                      class="text-gray-400 text-sm"
+                      class="text-gray-500 text-sm"
                     >Get notifications regarding significant changes via Email, Slack and SMS.</p>
                   </div>
                 </li>
@@ -50,7 +50,7 @@
                   <div>
                     <h4 class="font-semibold text-sm text-gray-700 mb-1">Cloud Providers</h4>
                     <p
-                      class="text-gray-400 text-sm"
+                      class="text-gray-500 text-sm"
                     >Choose your desired Cloud Provider between Google Cloud, AWS, Digital Ocean and Microsoft Azure.</p>
                   </div>
                 </li>
@@ -61,7 +61,7 @@
                   <div>
                     <h4 class="font-semibold text-sm text-gray-700 mb-1">Proxy</h4>
                     <p
-                      class="text-gray-400 text-sm"
+                      class="text-gray-500 text-sm"
                     >Make 50.000 requests each month, by using your access tokens.</p>
                   </div>
                 </li>
@@ -72,7 +72,7 @@
                   <div>
                     <h4 class="font-semibold text-sm text-gray-700 mb-1">Playground</h4>
                     <p
-                      class="text-gray-400 text-sm"
+                      class="text-gray-500 text-sm"
                     >Query your search, and recieve analysis regarding your search results.</p>
                   </div>
                 </li>
@@ -83,7 +83,7 @@
                   <div>
                     <h4 class="font-semibold text-sm text-gray-700 mb-1">Multiple environments</h4>
                     <p
-                      class="text-gray-400 text-sm"
+                      class="text-gray-500 text-sm"
                     >Create a test and staging environment for your development workflow.</p>
                   </div>
                 </li>
