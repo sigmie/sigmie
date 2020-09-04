@@ -39,6 +39,14 @@ return [
             'via' => App\Logging\CreateStackdriverLogger::class,
         ],
 
+        'logstash' => [
+            'driver' => 'custom',
+            'via'    => \App\Logging\LogstashLogger::class,
+            'host'   => env('LOGSTASH_HOST', '127.0.0.1'),
+            'port'   => env('LOGSTASH_PORT', 4718),
+            'channel'   => env('LOGSTASH_CHANNEL', 'logstash'),
+        ],
+
         'stack' => [
             'driver' => 'stack',
             'channels' => ['daily'],
