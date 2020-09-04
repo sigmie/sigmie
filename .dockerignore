@@ -3,6 +3,7 @@
 
 node_modules
 tests
+stubs
 
 v8-compile-cache-0
 
@@ -15,12 +16,15 @@ docker
 .gitattributes
 .styleci.yml
 
+service-account.json
 google.json
 
 package-lock.json
+yarn.lock
 package.json
 phpstan.neon
 phpunit.xml
+psalm.xml
 readme.md
 
 standard.xml
