@@ -122,6 +122,14 @@ class CreateClusterTest extends TestCase
     /**
      * @test
      */
+    public function is_in_long_queue()
+    {
+        $this->assertEquals('long-running-queue', $this->job->queue);
+    }
+
+    /**
+     * @test
+     */
     public function handle_calls_cluster_manager_crete_with_core_cluster_instance()
     {
         $this->clusterManagerMock->expects($this->once())->method('create')->with($this->isInstanceOf(CoreCluster::class));

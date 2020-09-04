@@ -8,8 +8,7 @@ use App\Events\ClusterWasDestroyed;
 use App\Helpers\ClusterManagerFactory;
 use App\Jobs\DestroyCluster;
 use App\Models\Cluster;
-use App\Models\Project;
-use App\Repositories\ClusterRepository;
+use App\Models\Project; use App\Repositories\ClusterRepository;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -117,6 +116,14 @@ class DestroyClusterTest extends TestCase
         $this->clusterRepositoryMock->expects($this->once())->method('updateTrashed')->with($this->clusterId, ['state' => 'destroyed']);
 
         $this->job->handle($this->clusterRepositoryMock, $this->clusterManagerFactoryMock);
+    }
+
+    /**
+     * @test
+     */
+    public function is_in_long_queue()
+    {
+        $this->assertEquals('long-running-queue', $this->job->queue);
     }
 
     /**
