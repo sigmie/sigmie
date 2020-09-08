@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
+use Amp\Parallel\Worker\TaskFailureException;
+use Exception;
 use Google\Cloud\ErrorReporting\Bootstrap;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,6 +36,17 @@ class Handler extends ExceptionHandler
         // Report to stackdriver on app engine
         if (isset($_SERVER['GAE_SERVICE']) && $this->shouldReport($exception)) {
             Bootstrap::exceptionHandler($exception);
+        }
+
+        if ($exception instanceof TaskFailureException) {
+
+            $taskException = new TaskException(
+                $exception->getOriginalMessage(),
+                $exception->getOriginalTraceAsString(),
+                $exception->getOriginalCode()
+            );
+
+            parent::report($taskException);
         }
 
         parent::report($exception);
