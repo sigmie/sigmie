@@ -30,11 +30,6 @@ class LogRequestInfo
         $route = $request->route();
         $code = $response->getStatusCode();
 
-        if (isset($_SERVER['GAE_SERVICE'])) {
-            $forwardedFor = array_map('trim', explode(',', $request->header('X-Forwarded-For')));
-            $request->server->set('REMOTE_ADDR', $_SERVER['REMOTE_ADDR'] = $forwardedFor[0]);
-        }
-
         if ($route !== null) {
             $path = $request->route()->uri();
         }
@@ -44,6 +39,7 @@ class LogRequestInfo
         }
 
         $responseTime = microtime(true) - LARAVEL_START;
+        $ip = array_map('trim', explode(',', $request->header('X-Forwarded-For')))[0];
 
         dispatch(fn () => Log::info('HTTP Request', [
             'ip' => $ip,
