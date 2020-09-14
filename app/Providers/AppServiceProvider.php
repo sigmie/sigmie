@@ -6,6 +6,10 @@ namespace App\Providers;
 
 use App\Http\Middleware\ProxyRequest;
 use App\Models\ClusterToken;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -61,5 +65,36 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }
+
+        Queue::before(function (JobProcessing $event) {
+            $job = $event->job;
+
+            $context = [
+                'name' => $job->getName(),
+                'queue' => $job->getQueue(),
+                'maxTries' => $job->maxTries(),
+            ];
+
+            Log::info('Job Processing', $context);
+        });
+
+        Queue::after(function (JobProcessed $event) {
+
+            $job = $event->job;
+
+            $context = [
+                'name' => $job->getName(),
+                'queue' => $job->getQueue(),
+                'maxTries' => $job->maxTries(),
+                'attempts' => $job->attempts(),
+            ];
+
+            if ($job->hasFailed()) {
+                Log::error('Job Failed', $context);
+                return;
+            }
+
+            Log::info('Job Processed', $context);
+        });
     }
 }
