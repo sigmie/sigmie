@@ -39,7 +39,7 @@
                         class="text-sm leading-5 text-gray-500 hidden md:block"
                         v-if="token.name === 'Admin'"
                       >
-                        This is the API key
+                        This is the API key to use
                         <b>only</b> in your backend.
                       </div>
                       <div class="text-sm leading-5 text-gray-500 hidden md:block" v-else>

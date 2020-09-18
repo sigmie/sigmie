@@ -79,8 +79,10 @@
 <script>
 export default {
   methods: {
-    logout() {
-      this.$inertia.post(this.$route("logout"), {});
+    async logout() {
+      await this.$http.post(this.$route("logout"), {});
+
+      window.location = this.$route("login");
     },
   },
 };
