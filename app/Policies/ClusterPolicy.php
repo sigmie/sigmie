@@ -43,7 +43,7 @@ class ClusterPolicy
      */
     public function update(User $user, Cluster $cluster): bool
     {
-        return $cluster->isOwnedBy($user);
+        return $cluster->isOwnedBy($user) && $cluster->getAttribute('state') === Cluster::DESTROYED;
     }
 
     /**
