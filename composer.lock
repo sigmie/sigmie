@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5990d7ff34c93a2cc1eabf7529c48a99",
+    "content-hash": "9e077f83bb9f429a8deb395daa5f66c6",
     "packages": [
         {
             "name": "amphp/amp",
@@ -5505,16 +5505,16 @@
         },
         {
             "name": "sigmie/app-core",
-            "version": "v0.4.1",
+            "version": "v0.5.0",
             "source": {
                 "type": "git",
                 "url": "git@github.com:sigmie/app-core.git",
-                "reference": "dafd3fa8af511ebe8ba7079159ebe1a53f4eeab3"
+                "reference": "beb4b482618d0561ca37202d4e486d2ba09155ac"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sigmie/app-core/zipball/dafd3fa8af511ebe8ba7079159ebe1a53f4eeab3",
-                "reference": "dafd3fa8af511ebe8ba7079159ebe1a53f4eeab3",
+                "url": "https://api.github.com/repos/sigmie/app-core/zipball/beb4b482618d0561ca37202d4e486d2ba09155ac",
+                "reference": "beb4b482618d0561ca37202d4e486d2ba09155ac",
                 "shasum": ""
             },
             "require": {
@@ -5524,7 +5524,7 @@
                 "markrogoyski/ipv4-subnet-calculator": "^3.1",
                 "php": "^7.4",
                 "phpseclib/phpseclib": "~2.0",
-                "sigmie/promises": "^0.2.0",
+                "sigmie/poll-ops": "^0.3.2",
                 "spatie/ssh": "^1.4",
                 "symfony/filesystem": "^5.0"
             },
@@ -5556,10 +5556,10 @@
             ],
             "description": "Sigmie application core library",
             "support": {
-                "source": "https://github.com/sigmie/app-core/tree/v0.4.1",
+                "source": "https://github.com/sigmie/app-core/tree/v0.5.0",
                 "issues": "https://github.com/sigmie/app-core/issues"
             },
-            "time": "2020-09-07T17:53:53+00:00"
+            "time": "2020-09-18T11:41:12+00:00"
         },
         {
             "name": "sigmie/nova-feature-flags",
@@ -5604,17 +5604,17 @@
             "time": "2020-08-17T14:31:14+00:00"
         },
         {
-            "name": "sigmie/promises",
-            "version": "v0.2.0",
+            "name": "sigmie/poll-ops",
+            "version": "v0.3.2",
             "source": {
                 "type": "git",
-                "url": "https://github.com/sigmie/promises.git",
-                "reference": "33d5fabc2fdf2b25999539b5d96162f78996435f"
+                "url": "https://github.com/sigmie/poll-ops.git",
+                "reference": "17efa076c6a877dda24dd12ff8f992274e367425"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sigmie/promises/zipball/33d5fabc2fdf2b25999539b5d96162f78996435f",
-                "reference": "33d5fabc2fdf2b25999539b5d96162f78996435f",
+                "url": "https://api.github.com/repos/sigmie/poll-ops/zipball/17efa076c6a877dda24dd12ff8f992274e367425",
+                "reference": "17efa076c6a877dda24dd12ff8f992274e367425",
                 "shasum": ""
             },
             "require": {
@@ -5629,17 +5629,16 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Sigmie\\Promises\\": "src/"
+                    "Sigmie\\PollOps\\": "src/"
                 },
+                "files": [
+                    "src/functions.php"
+                ],
                 "exclude-from-classmap": [
                     "tests/"
                 ]
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Sigmie\\Promises\\Tests\\": "tests/"
-                }
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -5649,12 +5648,8 @@
                     "email": "nico@sigmie.com"
                 }
             ],
-            "description": "PHP package for handling async chains'",
-            "support": {
-                "source": "https://github.com/sigmie/promises/tree/v0.2.0",
-                "issues": "https://github.com/sigmie/promises/issues"
-            },
-            "time": "2020-07-17T08:12:24+00:00"
+            "description": "PHP package for handling polled operations'",
+            "time": "2020-09-17T09:59:13+00:00"
         },
         {
             "name": "sigmie/sigmie",
@@ -8636,12 +8631,12 @@
             "version": "0.9.x-dev",
             "source": {
                 "type": "git",
-                "url": "https://github.com/tightenco/ziggy.git",
+                "url": "https://github.com/tighten/ziggy.git",
                 "reference": "82ea6ec6cb6ab3545b0245310b2a424316fe48d8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tightenco/ziggy/zipball/82ea6ec6cb6ab3545b0245310b2a424316fe48d8",
+                "url": "https://api.github.com/repos/tighten/ziggy/zipball/82ea6ec6cb6ab3545b0245310b2a424316fe48d8",
                 "reference": "82ea6ec6cb6ab3545b0245310b2a424316fe48d8",
                 "shasum": ""
             },
@@ -11220,7 +11215,7 @@
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "git@github.com:Seldaek/phar-utils.git",
+                "url": "https://github.com/Seldaek/phar-utils.git",
                 "reference": "8674b1d84ffb47cc59a101f5d5a3b61e87d23796"
             },
             "dist": {
@@ -11258,6 +11253,59 @@
                 "phar"
             ],
             "time": "2020-07-07T18:42:57+00:00"
+        },
+        {
+            "name": "sigmie/promises",
+            "version": "v0.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sigmie/promises.git",
+                "reference": "33d5fabc2fdf2b25999539b5d96162f78996435f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sigmie/promises/zipball/33d5fabc2fdf2b25999539b5d96162f78996435f",
+                "reference": "33d5fabc2fdf2b25999539b5d96162f78996435f",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.4"
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^0.12.18",
+                "phpunit/phpunit": "^9.1",
+                "squizlabs/php_codesniffer": "^3.5",
+                "symfony/var-dumper": "^5.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Sigmie\\Promises\\": "src/"
+                },
+                "exclude-from-classmap": [
+                    "tests/"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Sigmie\\Promises\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nico",
+                    "email": "nico@sigmie.com"
+                }
+            ],
+            "description": "PHP package for handling async chains'",
+            "support": {
+                "source": "https://github.com/sigmie/promises/tree/v0.2.0",
+                "issues": "https://github.com/sigmie/promises/issues"
+            },
+            "time": "2020-07-17T08:12:24+00:00"
         },
         {
             "name": "sirbrillig/phpcs-import-detection",
