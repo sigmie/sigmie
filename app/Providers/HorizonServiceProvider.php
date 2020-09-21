@@ -23,8 +23,9 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
             'https://hooks.slack.com/services/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',
             '#horizon'
         );
+
         // Horizon::routeSmsNotificationsTo('15556667777');
-        // Horizon::night();
+        Horizon::night();
     }
 
     /**
