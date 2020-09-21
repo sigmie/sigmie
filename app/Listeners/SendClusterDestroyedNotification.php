@@ -10,9 +10,16 @@ use App\Repositories\ClusterRepository;
 
 class SendClusterDestroyedNotification
 {
-    public function handle(ClusterWasDestroyed $event, ClusterRepository $clusters): void
+    private ClusterRepository $clusters;
+
+    public function __construct(ClusterRepository $clusterRepository)
     {
-        $cluster = $clusters->findTrashed($event->clusterId);
+        $this->clusters = $clusterRepository;
+    }
+
+    public function handle(ClusterWasDestroyed $event): void
+    {
+        $cluster = $this->clusters->findTrashed($event->clusterId);
 
         $user = $cluster->getAttribute('user');
 

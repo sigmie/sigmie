@@ -76,7 +76,7 @@ class SendClusterDestroyedNotificationTest extends TestCase
         $this->clusterRepositoryMock = $this->createMock(ClusterRepository::class);
         $this->clusterRepositoryMock->method('findTrashed')->willReturn($this->clusterMock);
 
-        $this->listener = new SendClusterDestroyedNotification();
+        $this->listener = new SendClusterDestroyedNotification($this->clusterRepositoryMock);
     }
 
     /**
@@ -87,6 +87,6 @@ class SendClusterDestroyedNotificationTest extends TestCase
         $this->clusterRepositoryMock->expects($this->once())->method('findTrashed')->with($this->clusterId);
         $this->notifiableMock->expects($this->once())->method('notify')->with(new ClusterWasDestroyedNotification($this->projectName));
 
-        $this->listener->handle($this->eventMock, $this->clusterRepositoryMock);
+        $this->listener->handle($this->eventMock);
     }
 }
