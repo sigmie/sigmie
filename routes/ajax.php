@@ -13,10 +13,13 @@
 
 use App\Http\Controllers\Cluster\TokenController;
 use App\Http\Controllers\Cluster\ValidationController as ClusterValidationController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProjectValidationController;
 use App\Http\Controllers\Subscription\SubscriptionController;
 use App\Http\Controllers\UserValidationController;
+use App\Http\Middleware\AssignProject;
+use App\Http\Middleware\NeedsCluster;
 use Laravel\Sanctum\PersonalAccessToken;
 
 Route::resource('/notification', NotificationController::class, ['except' => ['edit', 'create', 'destroy']])->middleware('auth');
@@ -32,3 +35,5 @@ Route::put('/tokens/{cluster}/regenerate/{clusterToken}', [TokenController::clas
 Route::put('/tokens/{cluster}/toogle/{clusterToken}', [TokenController::class, 'toogle'])->name('token.toogle');
 
 Route::get('/subscription/check', [SubscriptionController::class, 'check'])->name('subscription.check');
+
+Route::get('/dashboard/data/{project?}', [DashboardController::class, 'data'])->name('dashboard.data')->middleware([AssignProject::class, NeedsCluster::class]);

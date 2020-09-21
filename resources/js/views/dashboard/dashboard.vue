@@ -19,7 +19,7 @@ import throttle from "lodash/throttle";
 import loginVue from "../auth/login.vue";
 
 export default {
-  props: ["clusterState", "clusterId", "indices", "clusterInfo"],
+  props: [],
   components: {
     App,
     creating: require("./_creating").default,
@@ -27,6 +27,28 @@ export default {
     running: require("./_running").default,
     destroyed: require("./_destroyed").default,
     null: require("./_null").default,
+  },
+  data() {
+    return {
+      clusterState: null,
+      clusterId: null,
+      indices: null,
+      clusterInfo: null,
+    };
+  },
+  mounted() {
+    this.loadData();
+  },
+  methods: {
+    async loadData() {
+      let response = await this.$http.get(
+        this.$route("dashboard.data", { project: this.$page.project_id })
+      );
+
+      console.log(response);
+
+      setTimeout(this.loadData, 6000000);
+    },
   },
   beforeMount() {
     throttle(() => {

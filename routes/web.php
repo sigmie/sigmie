@@ -103,15 +103,11 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
 
         Route::resource('project', ProjectController::class);
 
-        Route::get('/dashboard/{project?}', DashboardController::class)->name('dashboard')->middleware([AssignProject::class, NeedsCluster::class]);
+        Route::get('/dashboard/{project?}', [DashboardController::class, 'show'])->name('dashboard')->middleware([AssignProject::class, NeedsCluster::class]);
 
         Route::get('/tokens/{project?}', [TokenController::class, 'index'])->name('token.index')->middleware([AssignProject::class, NeedsCluster::class]);
 
         Route::get('/settings/{project?}', [ClusterSettingsController::class, 'index'])->name('settings')->middleware(AssignProject::class);
-
-        Route::get('/playground', DashboardController::class)->name('playground');
-
-        Route::get('/monitoring', DashboardController::class)->name('monitoring');
 
         Route::get('/cluster/create', [ClusterController::class, 'create'])->name('cluster.create');
         Route::get('/cluster/edit/{cluster}', [ClusterController::class, 'edit'])->name('cluster.edit');

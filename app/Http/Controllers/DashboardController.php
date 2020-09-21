@@ -21,11 +21,10 @@ class DashboardController extends Controller
         $this->clusters = $clusterRepository;
     }
 
-    public function __invoke(Request $request, Project $project, SigmieClient $sigmieClient)
+    public function data(Project $project, SigmieClient $sigmieClient)
     {
-        Gate::authorize('view-dashboard', $project);
-
         $cluster = $this->clusters->findOneTrashedBy('project_id', (string) $project->getAttribute('id'));
+
         $id = null;
         $state = null;
         $indices = null;
@@ -43,11 +42,18 @@ class DashboardController extends Controller
             $indices = array_map(fn ($index) => (array) $index, $indices);
         }
 
-        return Inertia::render('dashboard/dashboard', [
+        return [
             'clusterState' => $state,
             'clusterId' => $id,
             'indices' => $indices,
             'clusterInfo' => $clusterInfo
-        ]);
+        ];
+    }
+
+    public function show(Project $project)
+    {
+        Gate::authorize('view-dashboard', $project);
+
+        return Inertia::render('dashboard/dashboard',);
     }
 }

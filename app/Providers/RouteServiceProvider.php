@@ -90,7 +90,6 @@ class RouteServiceProvider extends ServiceProvider
             ->group(base_path('routes/ajax.php'));
     }
 
-
     protected function mapProxyRoutes()
     {
         Route::middleware('proxy')
