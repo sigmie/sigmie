@@ -29,9 +29,9 @@ abstract class TestCase extends BaseTestCase
         }
     }
 
-    public function expectsInertiaToRender($view)
+    public function expectsInertiaToRender($view, ...$args)
     {
-        Inertia::shouldReceive('render')->once()->with($view);
+        Inertia::shouldReceive('render')->once()->with($view, ...$args);
 
         $this->assertFileExists(base_path("resources/js/views/{$view}.vue"));
     }

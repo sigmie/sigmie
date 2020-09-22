@@ -60,7 +60,7 @@ class ClusterControllerTest extends TestCase
     */
     public function create_renders_inertia_cluster_create()
     {
-        Inertia::shouldReceive('render')->once()->with('cluster/create');
+        $this->expectsInertiaToRender('cluster/create');
 
         $this->controller->create();
     }
@@ -95,7 +95,7 @@ class ClusterControllerTest extends TestCase
      */
     public function edit_renders_inertia_cluster_edit_with_cluster_data_arguments()
     {
-        Inertia::shouldReceive('render')->once()->with('cluster/edit', ['cluster' => [
+        $this->expectsInertiaToRender('cluster/edit', ['cluster' => [
             'id' => $this->clusterId,
             'name' => $this->clusterName
         ]]);

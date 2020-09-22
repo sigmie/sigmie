@@ -17,7 +17,7 @@ class LeagalControllerTest extends TestCase
      */
     public function about()
     {
-        Inertia::shouldReceive('render')->once()->with('legal/about');
+        $this->expectsInertiaToRender('legal/about');
 
         $this->get(route('legal.about'));
     }
@@ -27,7 +27,7 @@ class LeagalControllerTest extends TestCase
      */
     public function terms()
     {
-        Inertia::shouldReceive('render')->once()->with('legal/terms');
+        $this->expectsInertiaToRender('legal/terms');
 
         $this->get(route('legal.terms'));
     }
@@ -37,7 +37,7 @@ class LeagalControllerTest extends TestCase
      */
     public function privacy()
     {
-        Inertia::shouldReceive('render')->once()->with('legal/privacy');
+        $this->expectsInertiaToRender('legal/privacy');
 
         $this->get(route('legal.privacy'));
     }
@@ -47,7 +47,7 @@ class LeagalControllerTest extends TestCase
      */
     public function imprint()
     {
-        Inertia::shouldReceive('render')->once()->with('legal/imprint');
+        $this->expectsInertiaToRender('legal/imprint');
 
         $this->get(route('legal.imprint'));
     }
@@ -57,7 +57,7 @@ class LeagalControllerTest extends TestCase
      */
     public function disclaimer()
     {
-        Inertia::shouldReceive('render')->once()->with('legal/disclaimer');
+        $this->expectsInertiaToRender('legal/disclaimer');
 
         $this->get(route('legal.disclaimer'));
     }

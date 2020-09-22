@@ -54,7 +54,7 @@ class SubscriptionControllerTest extends TestCase
      */
     public function confirmed_renders_newsletter_confirmed(): void
     {
-        Inertia::shouldReceive('render')->once()->with('newsletter/confirmed');
+        $this->expectsInertiaToRender('newsletter/confirmed');
 
         $this->controller->confirmed();
     }
@@ -64,7 +64,7 @@ class SubscriptionControllerTest extends TestCase
      */
     public function thankyou_renders_newsletter_thankyou(): void
     {
-        Inertia::shouldReceive('render')->once()->with('newsletter/thankyou');
+        $this->expectsInertiaToRender('newsletter/thankyou');
 
         $this->controller->thankyou();
     }
