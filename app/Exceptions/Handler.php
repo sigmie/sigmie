@@ -38,17 +38,6 @@ class Handler extends ExceptionHandler
             Bootstrap::exceptionHandler($exception);
         }
 
-        if ($exception instanceof TaskFailureException) {
-
-            $taskException = new TaskException(
-                $exception->getOriginalMessage(),
-                $exception->getOriginalTraceAsString(),
-                $exception->getOriginalCode()
-            );
-
-            parent::report($taskException);
-        }
-
         parent::report($exception);
     }
 

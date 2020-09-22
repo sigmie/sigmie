@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Logging;
 
-use Monolog\Formatter\LogstashFormatter;
 use Monolog\Handler\SocketHandler;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;

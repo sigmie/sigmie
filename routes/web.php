@@ -11,6 +11,7 @@
 |
 */
 
+use Amp\Parallel\Worker\TaskFailureException;
 use App\Http\Controllers\Account\SettingsController as AccountSettingsController;
 use App\Http\Controllers\Cluster\SettingsController as ClusterSettingsController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -44,7 +45,7 @@ Route::prefix('newsletter')->name('newsletter.')->group(function () {
 
     Route::get('/confirmation/{newsletterSubscription}', [SubscriptionConfirmationController::class, 'store'])->name('subscription.confirmation')->middleware(['signed', 'throttle:6,1']);
 
-    Route::resource('/subscription', NewsletterSubscriptionController::class);
+    Route::post('newsletter/subscription/create', [NewsletterSubscriptionController::class, 'store'])->name('subscription.store');
 
     Route::get('/thank-you', [NewsletterSubscriptionController::class, 'thankyou'])->name('thankyou');
     Route::get('/confirmed', [NewsletterSubscriptionController::class, 'confirmed'])->name('confirmed');
