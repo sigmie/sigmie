@@ -49,8 +49,8 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['daily'],
             'ignore_exceptions' => false,
+            'channels' => ['logstash', 'slack'],
         ],
 
         'single' => [
@@ -71,9 +71,9 @@ return [
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
-            'username' => 'Laravel Log',
+            'username' => 'Application Log',
             'emoji' => ':boom:',
-            'level' => 'critical',
+            'level' => 'error',
         ],
 
         'papertrail' => [

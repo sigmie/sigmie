@@ -11,7 +11,6 @@
 |
 */
 
-use Amp\Parallel\Worker\TaskFailureException;
 use App\Http\Controllers\Account\SettingsController as AccountSettingsController;
 use App\Http\Controllers\Cluster\SettingsController as ClusterSettingsController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -35,8 +34,6 @@ use App\Http\Middleware\MustBeSubscribed;
 use App\Http\Middleware\NeedsCluster;
 use App\Http\Middleware\RedirectIfSubscribed;
 use App\Http\Middleware\ShareProjectToView;
-
-$launched = true;
 
 Route::get('/', LandingController::class)->name('landing')->middleware('guest');
 
