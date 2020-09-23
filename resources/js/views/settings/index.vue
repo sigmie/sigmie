@@ -20,10 +20,10 @@
                     </div>
                     <div class="max-w-sm py-1">
                       <button-danger
-                        :disabled="clusterId === null"
+                        :disabled="clusterId === null || clusterState === 'destroyed'"
                         id="destroy_cluster"
                         @click="showDestroy = true"
-                        :text="clusterId === null ?  'Destroyed': 'Destroy'"
+                        :text="clusterId === null || clusterState === 'destroyed' ? 'Destroyed': 'Destroy'"
                       ></button-danger>
                     </div>
                   </div>
@@ -56,21 +56,19 @@ import App from "../layouts/app";
 
 export default {
   components: {
-    App
+    App,
   },
-  props: ["clusterId"],
+  props: ["clusterId", "clusterState"],
   data() {
     return {
-      showDestroy: false
+      showDestroy: false,
     };
   },
   methods: {
     destroy() {
-      this.$inertia.delete(
-        this.$route("cluster.destroy", this.clusterId)
-      );
-    }
-  }
+      this.$inertia.delete(this.$route("cluster.destroy", this.clusterId));
+    },
+  },
 };
 </script>
 

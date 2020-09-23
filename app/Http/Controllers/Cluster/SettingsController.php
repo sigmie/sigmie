@@ -16,11 +16,16 @@ class SettingsController extends \App\Http\Controllers\Controller
     {
         $cluster = $project->getAttribute('clusters')->first();
         $clusterId = null;
+        $clusterState = null;
 
         if ($cluster !== null) {
             $clusterId = $cluster->getAttribute('id');
+            $clusterState = $cluster->getAttribute('state');
         }
 
-        return Inertia::render('settings/index', ['clusterId' => $clusterId]);
+        return Inertia::render('settings/index', [
+            'clusterId' => $clusterId,
+            'clusterState' => $clusterState
+        ]);
     }
 }
