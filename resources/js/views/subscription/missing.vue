@@ -1,5 +1,5 @@
 <template>
-  <app title="Payment">
+  <app title="Payment" :sidebarDisabled="true">
     <div class="flex content-center justify-center h-128">
       <div class="self-center prose">
 

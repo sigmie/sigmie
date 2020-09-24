@@ -1,5 +1,5 @@
 <template>
-  <layout title="Sign Up">
+  <layout title="Sign Up" :sidebarDisabled="true">
     <div class="flex content-center justify-center h-128">
       <div class="self-center">
         <spinner class="mx-auto block" color="cool-gray-400"></spinner>

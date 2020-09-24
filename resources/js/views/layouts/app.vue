@@ -1,7 +1,7 @@
 <template>
   <layout :title="title">
     <div class="h-screen flex overflow-hidden bg-gray-100">
-      <sidebar :sidebar-state="sidebarState" @closeSidebarRequest="closeSidebar"></sidebar>
+      <sidebar :disabled="sidebarDisabled" :sidebar-state="sidebarState" @closeSidebarRequest="closeSidebar"></sidebar>
 
       <div class="flex flex-col w-0 flex-1 overflow-hidden">
         <navbar
@@ -30,7 +30,20 @@ export default {
     navbar: require("../common/navbar/navbar").default,
     Layout,
   },
-  props: ["user", "project", "title"],
+  props: {
+    name: {
+      default: '',
+    },
+    project: {
+      default: null,
+    },
+    title: {
+      default: "Application",
+    },
+    sidebarDisabled: {
+      default: false,
+    },
+  },
   data() {
     return {
       sidebarState: "closed",
