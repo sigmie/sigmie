@@ -52,8 +52,10 @@ class DashboardController extends Controller
 
     public function show(Project $project)
     {
+        $cluster = $this->clusters->findOneTrashedBy('project_id', (string) $project->getAttribute('id'));
+
         Gate::authorize('view-dashboard', $project);
 
-        return Inertia::render('dashboard/dashboard',);
+        return Inertia::render('dashboard/dashboard', ['clusterId' => $cluster->getAttribute('id')]);
     }
 }

@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'domain' => env('HORIZON_DOMAIN', null),
+    'domain' => null,
 
 
     /*
@@ -26,7 +26,7 @@ return [
     |
     */
 
-    'path' => '/horizon',
+    'path' => 'horizon',
 
     /*
     |--------------------------------------------------------------------------

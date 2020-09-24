@@ -19,6 +19,7 @@ Vue.use(Vuelidate)
 Vue.use(Clipboard)
 Vue.prototype.$http = axios.create({
   baseURL: process.env.MIX_APP_URL + '/ajax/',
+  timeout: 1000,
   headers: {
     'X-CSRF-TOKEN': document.head.querySelector('meta[name="csrf-token"]').getAttribute('content')
   }

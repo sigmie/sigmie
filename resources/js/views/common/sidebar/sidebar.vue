@@ -19,7 +19,9 @@
             <inertia-link
               v-for="(item, index) in items"
               :key="index"
-              :class="[isRoute(item.name) ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white']"
+              :class="[
+                isRoute(item.name) ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white',
+                (active) ? '':'pointer-events-none']"
               class="group mx-1 my-2 flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
               :href="($page.project_id === null) ? '#':$route(item.name, item.routeParams)"
             >
@@ -75,7 +77,9 @@
             <inertia-link
               v-for="(item, index) in items"
               :key="index"
-              :class="[isRoute(item.name) ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white']"
+              :class="[
+                isRoute(item.name) ? 'text-white bg-gray-900 focus:outline-none' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:text-white',
+                (active) ? '':'pointer-events-none']"
               class="group mx-2 my-4 flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
               :href="($page.project_id === null) ? '#':$route(item.name, item.routeParams)"
             >
@@ -104,6 +108,7 @@ export default {
   },
   data() {
     return {
+      active: this.$page.sidebarActive ? this.$page.sidebarActive : true,
       path: "",
       items: [
         {
