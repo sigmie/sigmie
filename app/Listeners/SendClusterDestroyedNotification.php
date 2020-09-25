@@ -21,7 +21,7 @@ class SendClusterDestroyedNotification
     {
         $cluster = $this->clusters->findTrashed($event->clusterId);
 
-        $user = $cluster->getAttribute('user');
+        $user = $cluster->findUser();
 
         $projectName = $cluster->getAttribute('project')->getAttribute('name');
 
