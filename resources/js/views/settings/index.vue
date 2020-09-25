@@ -20,11 +20,12 @@
                     </div>
                     <div class="max-w-sm py-1">
                       <button-danger
-                        :disabled="clusterId === null || clusterState === 'destroyed'"
+                        :disabled="clusterId === null || clusterState !== 'running'"
                         id="destroy_cluster"
                         @click="showDestroy = true"
-                        :text="clusterId === null || clusterState === 'destroyed' ? 'Destroyed': 'Destroy'"
+                        text="Destroy"
                       ></button-danger>
+                      
                     </div>
                   </div>
                 </div>

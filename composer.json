@@ -48,7 +48,7 @@
         "predis/predis": "^1.1",
         "pusher/pusher-php-server": "~4.0",
         "ramsey/uuid": "^3.9",
-        "sigmie/app-core": "^0.5",
+        "sigmie/app-core": "0.5.1",
         "sigmie/nova-feature-flags": "@dev",
         "sigmie/sigmie": "^0.3.3",
         "tightenco/ziggy": "^0.9.3"
