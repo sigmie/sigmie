@@ -54,7 +54,7 @@ class Kernel extends ConsoleKernel
 
     private function logTaskFailure(string $task)
     {
-        Log::error('Schedule Task failed', ['task' => $task]);
+        Log::info('Schedule Task failed', ['task' => $task]);
     }
 
     /**
