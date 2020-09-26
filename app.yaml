@@ -28,7 +28,7 @@ network:
   session_affinity: true
 
 vpc_access_connector:
-  name: "projects/sigmie/locations/europe-west1/connectors/app-engine"
+  name: "projects/sigmie/locations/europe-west2/connectors/app-engine"
 
 beta_settings:
     cloud_sql_instances: "sigmie:europe-west1:sigmie-application"
