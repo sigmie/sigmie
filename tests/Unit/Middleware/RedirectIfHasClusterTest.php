@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Middleware;
 
-use App\Http\Middleware\RedirectIfHasCluster;
+use App\Http\Middleware\Redirects\RedirectToDashboardIfHasCluster;
 use App\Models\Project;
 use App\Repositories\ProjectRepository;
 use Illuminate\Http\RedirectResponse;
@@ -19,7 +19,7 @@ class RedirectIfHasClusterTest extends TestCase
     use NeedsClosure;
 
     /**
-     * @var RedirectIfHasCluster
+     * @var RedirectToDashboardIfHasCluster
      */
     private $middleware;
 
@@ -65,7 +65,7 @@ class RedirectIfHasClusterTest extends TestCase
         $this->projectRepositoryMock = $this->createMock(ProjectRepository::class);
         $this->projectRepositoryMock->method('find')->willReturn($this->projectMock);
 
-        $this->middleware = new RedirectIfHasCluster($this->projectRepositoryMock);
+        $this->middleware = new RedirectToDashboardIfHasCluster($this->projectRepositoryMock);
     }
 
     /**

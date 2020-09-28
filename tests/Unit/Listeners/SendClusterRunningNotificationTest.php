@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Listeners;
 
-use App\Events\ClusterWasBooted;
-use App\Listeners\SendClusterRunningNotification;
+use App\Events\Cluster\ClusterWasBooted;
+use App\Listeners\Notifications\SendClusterRunningNotification;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\User;
-use App\Notifications\ClusterIsRunning;
+use App\Notifications\Cluster\ClusterIsRunning;
 use App\Repositories\ClusterRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -25,7 +25,7 @@ class SendClusterRunningNotificationTest extends TestCase
     private $listener;
 
     /**
-     * @var ClusterWasBooted|MockObject
+     * @var MockObject|ClusterWasBooted
      */
     private $eventMock;
 

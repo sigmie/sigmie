@@ -22,8 +22,7 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
-        \App\Http\Middleware\GaeProxyIp::class,
-        \App\Http\Middleware\LogRequestInfo::class
+        Middleware\Logging\LogRequest::class
     ];
 
     /**
@@ -55,7 +54,7 @@ class Kernel extends HttpKernel
         ],
         'proxy' => [
             'auth:sanctum',
-            \App\Http\Middleware\ProxyRequest::class,
+            Middleware\Proxy\ProxyRequest::class,
         ]
     ];
 
@@ -72,13 +71,13 @@ class Kernel extends HttpKernel
         'bindings' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
         'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
         'can' => \Illuminate\Auth\Middleware\Authorize::class,
-        'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+        'guest' => Middleware\Redirects\RedirectToDashboardIfAuthenticated::class,
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-        'user' =>   \App\Http\Middleware\ShareUserToView::class,
+        'user' =>   Middleware\Shares\ShareUserToView::class,
         'feature' => \YlsIdeas\FeatureFlags\Middleware\FeatureFlagState::class,
-        'projects' => \App\Http\Middleware\ShareProjectsToView::class,
+        'projects' => Middleware\Shares\ShareProjectsToView::class,
         'password.confirm' => \Illuminate\Auth\Middleware\RequirePassword::class
     ];
 

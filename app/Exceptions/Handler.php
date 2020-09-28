@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
-use Amp\Parallel\Worker\TaskFailureException;
 use Exception;
 use Google\Cloud\ErrorReporting\Bootstrap;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;

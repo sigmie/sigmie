@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Controllers;
 
-use App\Http\Controllers\LandingController;
+use App\Http\Controllers\Landing\LandingController;
 use Inertia\Inertia;
 use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\NovaFeatureFlags\FeatureFlagManager;

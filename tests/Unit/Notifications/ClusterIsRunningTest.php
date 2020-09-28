@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Notifications;
 
-use App\Notifications\ClusterIsRunning;
+use App\Notifications\Cluster\ClusterIsRunning;
 use App\Repositories\ClusterRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\Helpers\NeedsNotifiable;

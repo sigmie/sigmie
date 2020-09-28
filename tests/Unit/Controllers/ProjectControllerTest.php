@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Controllers;
 
 use App\Http\Controllers\Project\ProjectController;
-use App\Http\Requests\StoreProject;
+use App\Http\Requests\Project\StoreProject;
 use App\Models\User;
 use App\Repositories\ProjectRepository;
 use Illuminate\Http\RedirectResponse;
@@ -22,7 +22,7 @@ class ProjectControllerTest extends TestCase
     private $controller;
 
     /**
-     * @var StoreProject|MockObject
+     * @var MockObject|StoreProject
      */
     private $requestMock;
 

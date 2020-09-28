@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Events;
 
-use App\Events\ClusterHasFailed;
+use App\Events\Cluster\ClusterHasFailed;
 use Tests\TestCase;
 
 class ClusterHasFailedTest extends TestCase

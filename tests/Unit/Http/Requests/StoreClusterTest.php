@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Http\Requests;
 
-use App\Http\Requests\StoreCluster;
+use App\Http\Requests\Cluster\StoreCluster;
 use PHPUnit\Framework\TestCase;
 
 class StoreClusterTest extends TestCase

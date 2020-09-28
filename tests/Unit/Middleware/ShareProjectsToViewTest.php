@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Middleware;
 
-use App\Http\Middleware\ShareProjectsToView;
+use App\Http\Middleware\Shares\ShareProjectsToView;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;

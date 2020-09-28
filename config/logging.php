@@ -34,10 +34,6 @@ return [
     */
 
     'channels' => [
-        'stackdriver' => [
-            'driver' => 'custom',
-            'via' => App\Logging\CreateStackdriverLogger::class,
-        ],
 
         'logstash' => [
             'driver' => 'custom',

@@ -8,7 +8,6 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
-use Inertia\Inertia;
 use Laravel\Paddle\Subscription;
 use Tests\TestCase;
 

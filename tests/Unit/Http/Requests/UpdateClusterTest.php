@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Http\Requests;
 
-use App\Http\Requests\UpdateCluster;
+use App\Http\Requests\Cluster\UpdateCluster;
 use PHPUnit\Framework\TestCase;
 
 class UpdateClusterTest extends TestCase

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Events;
 
-use App\Events\ClusterWasCreated;
+use App\Events\Cluster\ClusterWasCreated;
 use Tests\TestCase;
 
 class ClusterWasCreatedTest extends TestCase

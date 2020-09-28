@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Events;
 
-use App\Events\ClusterWasDestroyed;
+use App\Events\Cluster\ClusterWasDestroyed;
 use Illuminate\Broadcasting\PrivateChannel;
 use Tests\TestCase;
 

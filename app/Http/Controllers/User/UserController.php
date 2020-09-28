@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\UpdateUser;
+use App\Http\Requests\User\UpdateUser;
 use App\Models\User;
 
 class UserController extends Controller

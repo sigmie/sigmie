@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Notifications;
 
-use App\Notifications\ConfirmSubscription;
+use App\Notifications\Newsletter\ConfirmSubscription;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\URL;
 use Tests\Helpers\NeedsNotifiable;

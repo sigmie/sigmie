@@ -1,5 +1,29 @@
 # Frontend
 
+
+## Folder structure
+
+```
+- views
+	- layouts // Layout templates
+		- app // In App layout
+			- app.vue // Layout
+			- navbar.vue // Navbar component
+			- sidebar.vue // Sidebar component
+		- public // Layout for guest users
+			- footer.vue // Footer component
+			- public.vue // Layout
+	- token // Token views
+	- settings // ???
+	- legal // Legal texts like imprint, terms, etc...
+	- subscription //Subscription views
+	- dashboard // Dashboard
+	- cluster // Cluster views
+	- project // Projects views
+	- navbar // Navigation bar components
+	- landing // Landing page
+```
+
 ## Sidebar
 
 Use the following to add a new sidebar item

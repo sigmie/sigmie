@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Middleware;
 
-use App\Http\Middleware\AssignProject;
+use App\Http\Middleware\Redirects\RedirecToSameRouteWithProject;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -20,7 +20,7 @@ class AssignProjectTest extends TestCase
     use NeedsClosure;
 
     /**
-     * @var AssignProject
+     * @var RedirecToSameRouteWithProject
      */
     private $middleware;
 
@@ -65,7 +65,7 @@ class AssignProjectTest extends TestCase
 
         $this->requestMock = $this->getMockBuilder(Request::class)->addMethods(['getName'])->setMethods(['route'])->getMock();
 
-        $this->middleware = new AssignProject();
+        $this->middleware = new RedirecToSameRouteWithProject();
     }
 
     /**

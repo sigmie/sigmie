@@ -11,7 +11,7 @@
 |
 */
 
-use App\Http\Controllers\Account\SettingsController as AccountSettingsController;
+use App\Http\Controllers\User\SettingsController as AccountSettingsController;
 use App\Http\Controllers\Cluster\SettingsController as ClusterSettingsController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\GithubController;
@@ -20,20 +20,20 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Cluster\ClusterController;
 use App\Http\Controllers\Cluster\TokenController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\LandingController;
-use App\Http\Controllers\LegalController;
+use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Landing\LandingController;
+use App\Http\Controllers\Legal\LegalController;
 use App\Http\Controllers\Newsletter\SubscriptionConfirmationController;
 use App\Http\Controllers\Newsletter\SubscriptionController as NewsletterSubscriptionController;
 use App\Http\Controllers\Project\ProjectController;
 use App\Http\Controllers\Subscription\SubscriptionController;
 use App\Http\Controllers\User\PasswordController;
 use App\Http\Controllers\User\UserController;
-use App\Http\Middleware\AssignProject;
-use App\Http\Middleware\MustBeSubscribed;
-use App\Http\Middleware\NeedsCluster;
-use App\Http\Middleware\RedirectIfSubscribed;
-use App\Http\Middleware\ShareProjectToView;
+use App\Http\Middleware\Redirects\RedirecToSameRouteWithProject;
+use App\Http\Middleware\Redirects\RedirectToRenewSubscriptionIfNotSubscribed;
+use App\Http\Middleware\Redirects\RedirectToClusterCreateIfHasntCluster;
+use App\Http\Middleware\Redirects\RedirectToDashboardIfSubscribed;
+use App\Http\Middleware\Shares\ShareSelectedProjectToView;
 
 Route::get('/', LandingController::class)->name('landing')->middleware('guest');
 
@@ -80,7 +80,7 @@ Route::middleware('feature:auth')->group(function () {
     });
 });
 
-Route::prefix('subscription')->name('subscription.')->middleware(['user', RedirectIfSubscribed::class])->group(function () {
+Route::prefix('subscription')->name('subscription.')->middleware(['user', RedirectToDashboardIfSubscribed::class])->group(function () {
     Route::get('/await', [SubscriptionController::class, 'await'])->name('await');
     Route::get('/create', [SubscriptionController::class, 'create'])->name('create');
     Route::get('/missing', [SubscriptionController::class, 'missing'])->name('missing');
@@ -90,22 +90,22 @@ Route::prefix('subscription')->name('subscription.')->middleware(['user', Redire
 Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
 
     //Settings
-    Route::get('/account/settings/{section?}', [AccountSettingsController::class, 'index'])->name('account.settings')->middleware(ShareProjectToView::class);
+    Route::get('/account/settings/{section?}', [AccountSettingsController::class, 'index'])->name('account.settings')->middleware(ShareSelectedProjectToView::class);
     Route::put('/user/{user}', [UserController::class, 'update'])->name('user.update');
     Route::put('/user/password/{user}', [PasswordController::class, 'update'])->name('user.password.update');
 
 
-    Route::group(['middleware' => [MustBeSubscribed::class, ShareProjectToView::class]], function () {
+    Route::group(['middleware' => [RedirectToRenewSubscriptionIfNotSubscribed::class, ShareSelectedProjectToView::class]], function () {
 
         Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
 
         Route::resource('project', ProjectController::class);
 
-        Route::get('/dashboard/{project?}', [DashboardController::class, 'show'])->name('dashboard')->middleware([AssignProject::class, NeedsCluster::class]);
+        Route::get('/dashboard/{project?}', [DashboardController::class, 'show'])->name('dashboard')->middleware([RedirecToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
 
-        Route::get('/tokens/{project?}', [TokenController::class, 'index'])->name('token.index')->middleware([AssignProject::class, NeedsCluster::class]);
+        Route::get('/tokens/{project?}', [TokenController::class, 'index'])->name('token.index')->middleware([RedirecToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
 
-        Route::get('/settings/{project?}', [ClusterSettingsController::class, 'index'])->name('settings')->middleware(AssignProject::class);
+        Route::get('/settings/{project?}', [ClusterSettingsController::class, 'index'])->name('settings')->middleware(RedirecToSameRouteWithProject::class);
 
         Route::get('/cluster/create', [ClusterController::class, 'create'])->name('cluster.create');
         Route::get('/cluster/edit/{cluster}', [ClusterController::class, 'edit'])->name('cluster.edit');

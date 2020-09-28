@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use App\Events\ClusterWasCreated;
+use App\Events\Cluster\ClusterWasCreated;
 use App\Helpers\ClusterManagerFactory;
-use App\Jobs\CreateCluster;
+use App\Jobs\Cluster\CreateCluster;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Repositories\ClusterRepository;
@@ -106,7 +106,7 @@ class CreateClusterTest extends TestCase
     {
         $this->job->handle($this->clusterRepositoryMock, $this->clusterManagerFactoryMock);
 
-        Event::assertDispatched(fn (ClusterWasCreated $event) => $event->clusterId === $this->clusterId);
+        Event::assertDispatched(fn (\App\Events\Cluster\ClusterWasCreated $event) => $event->clusterId === $this->clusterId);
     }
 
     /**

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Controllers;
 
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Dashboard\DashboardController;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Repositories\ClusterRepository;
@@ -79,8 +79,8 @@ class DashboardControllerTest extends TestCase
     {
         Gate::shouldReceive('authorize')->once()->with('view-dashboard', $this->projectMock);
 
-        $this->expectsInertiaToRender('dashboard/dashboard');
+        $this->expectsInertiaToRender('dashboard/dashboard', ['clusterId' => 'some-id']);
 
-        $this->controller->show($this->projectMock, $this->sigmieClientMock);
+        $this->controller->show($this->projectMock);
     }
 }

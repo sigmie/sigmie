@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Events;
 
-use App\Events\NewsletterSubscriptionWasCreated;
+use App\Events\Newsletter\NewsletterSubscriptionWasCreated;
 use App\Models\NewsletterSubscription;
 use Tests\TestCase;
 

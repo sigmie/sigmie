@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Listeners;
 
-use App\Events\ClusterWasDestroyed;
-use App\Listeners\SendClusterDestroyedNotification;
+use App\Events\Cluster\ClusterWasDestroyed;
+use App\Listeners\Notifications\SendClusterDestroyedNotification;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\User;
-use App\Notifications\ClusterWasDestroyed as ClusterWasDestroyedNotification;
+use App\Notifications\Cluster\ClusterWasDestroyed as ClusterWasDestroyedNotification;
 use App\Repositories\ClusterRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -25,7 +25,7 @@ class SendClusterDestroyedNotificationTest extends TestCase
     private $listener;
 
     /**
-     * @var ClusterWasDestroyed|MockObject
+     * @var MockObject|ClusterWasDestroyed
      */
     private $eventMock;
 
@@ -68,10 +68,11 @@ class SendClusterDestroyedNotificationTest extends TestCase
         $this->notifiableMock = $this->notifiable();
 
         $this->projectMock = $this->createMock(Project::class);
-        $this->projectMock->method('getAttribute')->willReturn($this->projectName);
+        $this->projectMock->method('getAttribute')->willReturnMap([['name', $this->projectName]]);
 
         $this->clusterMock = $this->createMock(Cluster::class);
-        $this->clusterMock->method('getAttribute')->willReturn($this->notifiableMock, $this->projectMock);
+        $this->clusterMock->method('getAttribute')->willReturnMap([['project', $this->projectMock]]);
+        $this->clusterMock->method('findUser')->willReturn($this->notifiableMock);
 
         $this->clusterRepositoryMock = $this->createMock(ClusterRepository::class);
         $this->clusterRepositoryMock->method('findTrashed')->willReturn($this->clusterMock);

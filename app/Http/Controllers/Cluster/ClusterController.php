@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Cluster;
 
-use App\Http\Requests\StoreCluster;
-use App\Http\Requests\UpdateCluster;
-use App\Jobs\CreateCluster;
-use App\Jobs\DestroyCluster;
+use App\Http\Requests\Cluster\StoreCluster;
+use App\Http\Requests\Cluster\UpdateCluster;
+use App\Jobs\Cluster\CreateCluster;
+use App\Jobs\Cluster\DestroyCluster;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
 use Inertia\Inertia;

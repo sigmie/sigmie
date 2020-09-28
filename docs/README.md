@@ -18,3 +18,16 @@ $ docker exec -it app php artisan migrate
 ```
 
 After the build process the application will be available at http://localhost:8080
+
+## Domains
+
+* Auth
+* Subscription
+* Notifications
+* Project
+	* Setting
+* Cluster
+* Token
+* User
+* Newsletter subscription
+* Proxy

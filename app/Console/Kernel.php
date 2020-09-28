@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console;
 
-use App\Jobs\CleanNotifications;
+use App\Jobs\Notifications\CleanNotifications;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\Log;
@@ -28,9 +28,9 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->job(new CleanNotifications())
-            ->before(fn () => $this->logTaskStart(CleanNotifications::class))
-            ->onFailure(fn () => $this->logTaskFailure(CleanNotifications::class))
-            ->onSuccess(fn () => $this->logTaskSuccess(CleanNotifications::class))
+            ->before(fn () => $this->logTaskStart(\App\Jobs\Notifications\CleanNotifications::class))
+            ->onFailure(fn () => $this->logTaskFailure(\App\Jobs\Notifications\CleanNotifications::class))
+            ->onSuccess(fn () => $this->logTaskSuccess(\App\Jobs\Notifications\CleanNotifications::class))
             ->daily()
             ->onOneServer();
 
@@ -40,6 +40,18 @@ class Kernel extends ConsoleKernel
             ->onSuccess(fn () => $this->logTaskSuccess('telescope:prune --hours=48'))
             ->daily()
             ->onOneServer();
+    }
+
+    /**
+     * Register the commands for the application.
+     *
+     * @return void
+     */
+    protected function commands()
+    {
+        $this->load(__DIR__ . '/Commands');
+
+        include base_path('routes/console.php');
     }
 
     private function logTaskStart(string $task)
@@ -55,17 +67,5 @@ class Kernel extends ConsoleKernel
     private function logTaskFailure(string $task)
     {
         Log::info('Schedule Task failed', ['task' => $task]);
-    }
-
-    /**
-     * Register the commands for the application.
-     *
-     * @return void
-     */
-    protected function commands()
-    {
-        $this->load(__DIR__ . '/Commands');
-
-        include base_path('routes/console.php');
     }
 }

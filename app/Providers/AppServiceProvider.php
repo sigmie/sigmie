@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Http\Middleware\ProxyRequest;
-use App\Models\ClusterToken;
+use App\Http\Middleware\Proxy\ProxyRequest;
+use App\Models\Token;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Log;
@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         Sanctum::ignoreMigrations();
-        Sanctum::usePersonalAccessTokenModel(ClusterToken::class);
+        Sanctum::usePersonalAccessTokenModel(Token::class);
 
         Inertia::share('flash', function () {
             return [

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Listeners;
 
-use App\Events\ClusterHasFailed;
-use App\Events\ClusterWasBooted;
-use App\Events\ClusterWasCreated;
-use App\Listeners\PollState;
+use App\Events\Cluster\ClusterHasFailed;
+use App\Events\Cluster\ClusterWasBooted;
+use App\Events\Cluster\ClusterWasCreated;
+use App\Listeners\Cluster\PollClusterState;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
 use Exception;
@@ -24,7 +24,7 @@ class PollStateTest extends TestCase
     use NeedsModel;
 
     /**
-     * @var PollState
+     * @var PollClusterState
      */
     private $listener;
 
@@ -61,7 +61,7 @@ class PollStateTest extends TestCase
 
         $this->eventMock = $this->createEventMock();
 
-        $this->listener = new PollState($this->repository);
+        $this->listener = new PollClusterState($this->repository);
     }
 
     /**
@@ -75,7 +75,7 @@ class PollStateTest extends TestCase
 
         $this->listener->handle($this->eventMock);
 
-        Event::assertDispatched(function (ClusterWasBooted $event) {
+        Event::assertDispatched(function (\App\Events\Cluster\ClusterWasBooted $event) {
             return $event->clusterId === 0;
         });
     }
@@ -116,7 +116,7 @@ class PollStateTest extends TestCase
 
         $this->listener->failed($this->eventMock, new Exception());
 
-        Event::assertDispatched(function (ClusterHasFailed $event) {
+        Event::assertDispatched(function (\App\Events\Cluster\ClusterHasFailed $event) {
             return $event->clusterId === 0;
         });
     }

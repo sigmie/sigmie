@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\UpdateUserPassword;
+use App\Http\Requests\User\UpdatePassword;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
@@ -16,7 +16,7 @@ class PasswordController extends Controller
         $this->authorizeResource(User::class, 'user');
     }
 
-    public function update(UpdateUserPassword $request, User $user)
+    public function update(UpdatePassword $request, User $user)
     {
         $data = $request->validated();
 

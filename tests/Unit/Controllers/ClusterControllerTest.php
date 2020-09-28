@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Tests\Unit\Controllers;
 
 use App\Http\Controllers\Cluster\ClusterController;
-use App\Http\Requests\StoreCluster;
-use App\Http\Requests\UpdateCluster;
-use App\Jobs\CreateCluster;
-use App\Jobs\DestroyCluster;
+use App\Http\Requests\Cluster\StoreCluster;
+use App\Http\Requests\Cluster\UpdateCluster;
+use App\Jobs\Cluster\CreateCluster;
+use App\Jobs\Cluster\DestroyCluster;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
 use Illuminate\Http\RedirectResponse;
@@ -84,7 +84,7 @@ class ClusterControllerTest extends TestCase
 
         $response = $this->controller->store($storeRequest);
 
-        Bus::assertDispatched(fn (CreateCluster $job) => $job->getClusterId() === $this->clusterId);
+        Bus::assertDispatched(fn (\App\Jobs\Cluster\CreateCluster $job) => $job->getClusterId() === $this->clusterId);
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertEquals(route('dashboard'), $response->getTargetUrl());
@@ -121,7 +121,7 @@ class ClusterControllerTest extends TestCase
 
         $response = $this->controller->update($updateRequest, $this->clusterMock);
 
-        Bus::assertDispatched(fn (CreateCluster $job) => $job->getClusterId() === $this->clusterId);
+        Bus::assertDispatched(fn (\App\Jobs\Cluster\CreateCluster $job) => $job->getClusterId() === $this->clusterId);
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertEquals(route('dashboard'), $response->getTargetUrl());
@@ -137,7 +137,7 @@ class ClusterControllerTest extends TestCase
 
         $response = $this->controller->destroy($this->clusterMock);
 
-        Bus::assertDispatched(fn (DestroyCluster $job) => $job->getClusterId() === $this->clusterId);
+        Bus::assertDispatched(fn (\App\Jobs\Cluster\DestroyCluster $job) => $job->getClusterId() === $this->clusterId);
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertEquals(route('dashboard'), $response->getTargetUrl());

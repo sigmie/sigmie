@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use App\Events\ClusterWasDestroyed;
+use App\Events\Cluster\ClusterWasDestroyed;
 use App\Helpers\ClusterManagerFactory;
-use App\Jobs\DestroyCluster;
+use App\Jobs\Cluster\DestroyCluster;
 use App\Models\Cluster;
 use App\Models\Project; use App\Repositories\ClusterRepository;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -105,7 +105,7 @@ class DestroyClusterTest extends TestCase
     {
         $this->job->handle($this->clusterRepositoryMock, $this->clusterManagerFactoryMock);
 
-        Event::assertDispatched(fn (ClusterWasDestroyed $event) => $event->clusterId === $this->clusterId);
+        Event::assertDispatched(fn (\App\Events\Cluster\ClusterWasDestroyed $event) => $event->clusterId === $this->clusterId);
     }
 
     /**

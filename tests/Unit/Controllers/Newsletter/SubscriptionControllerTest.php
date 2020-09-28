@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Controllers\Newsletter;
 
 use App\Http\Controllers\Newsletter\SubscriptionController;
-use App\Http\Requests\StoreNewsletterSubscription;
+use App\Http\Requests\Newsletter\StoreSubscription;
 use App\Repositories\NewsletterSubscriptionRepository;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -38,7 +38,7 @@ class SubscriptionControllerTest extends TestCase
      */
     public function store_creates_or_finds_and_triggers_event()
     {
-        $request = $this->createMock(StoreNewsletterSubscription::class);
+        $request = $this->createMock(StoreSubscription::class);
         $request->expects($this->any())->method('validated')->willReturn(['key' => 'value']);
 
         $this->subscriptionRepository->expects($this->once())->method('firstOrCreate')->with(['key' => 'value']);

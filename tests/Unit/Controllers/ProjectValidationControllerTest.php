@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Controllers;
 
-use App\Http\Controllers\ProjectValidationController;
+use App\Http\Controllers\Project\ValidationController;
 use App\Rules\ValidProvider;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Http\JsonResponse;
@@ -15,7 +15,7 @@ use Tests\TestCase;
 class ProjectValidationControllerTest extends TestCase
 {
     /**
-     * @var ProjectValidationController
+     * @var ValidationController
      */
     private $controller;
 
@@ -37,7 +37,7 @@ class ProjectValidationControllerTest extends TestCase
 
         $this->ruleMock = $this->createMock(ValidProvider::class);
 
-        $this->controller = new ProjectValidationController($this->ruleMock);
+        $this->controller = new ValidationController($this->ruleMock);
     }
 
     /**

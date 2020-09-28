@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Project;
 
-use App\Http\Requests\StoreProject;
+use App\Http\Requests\Project\StoreProject;
 use App\Models\Project;
 use App\Repositories\ProjectRepository;
 use Illuminate\Support\Facades\Auth;

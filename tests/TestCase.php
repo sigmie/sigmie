@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests;
 
-use App\Http\Middleware\LogRequestInfo;
+use App\Http\Middleware\Logging\LogRequest;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Inertia\Inertia;
 use Tests\Helpers\ElasticsearchCleanup;
@@ -17,7 +17,7 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        $this->withoutMiddleware(LogRequestInfo::class);
+        $this->withoutMiddleware(LogRequest::class);
 
         $this->elasticsearchCleanup();
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Traits;
 
-use App\Notifications\ConfirmSubscription;
+use App\Notifications\Newsletter\ConfirmSubscription;
 
 trait MustConfirmSubscription
 {
@@ -20,6 +20,6 @@ trait MustConfirmSubscription
 
     public function sendConfirmationEmailNotification(): void
     {
-        $this->notify(new ConfirmSubscription());
+        $this->notify(new ConfirmSubscription);
     }
 }

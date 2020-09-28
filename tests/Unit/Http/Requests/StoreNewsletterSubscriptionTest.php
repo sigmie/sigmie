@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Http\Requests;
 
-use App\Http\Requests\StoreNewsletterSubscription;
+use App\Http\Requests\Newsletter\StoreSubscription;
 use GuzzleHttp\Client;
 use Tests\TestCase;
 
@@ -13,7 +13,7 @@ class StoreNewsletterSubscriptionTest extends TestCase
     /**
      * Store Newsletter subscription request
      *
-     * @var StoreNewsletterSubscription
+     * @var StoreSubscription
      */
     private $request;
 
@@ -31,7 +31,7 @@ class StoreNewsletterSubscriptionTest extends TestCase
     {
         parent::setUp();
 
-        $this->request = new StoreNewsletterSubscription();
+        $this->request = new StoreSubscription();
         $this->guzzleMock = $this->createMock(Client::class);
     }
 

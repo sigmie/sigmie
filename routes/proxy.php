@@ -11,6 +11,6 @@
 |
 */
 
-use App\Http\Controllers\ProxyController;
+use App\Http\Controllers\Proxy\ProxyController;
 
 Route::any('/{endpoint?}', ProxyController::class)->where('endpoint', '.*')->name('proxy');

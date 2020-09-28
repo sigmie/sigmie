@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Traits;
 
 use App\Contracts\MustConfirmSubscription;
-use App\Notifications\ConfirmSubscription;
+use App\Notifications\Newsletter\ConfirmSubscription;
 use App\Traits\MustConfirmSubscription as MustConfirmSubscriptionTrait;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;

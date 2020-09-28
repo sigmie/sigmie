@@ -31,7 +31,7 @@ class Cluster extends Model
 
     public function tokens()
     {
-        return $this->morphMany(ClusterToken::class, 'tokenable');
+        return $this->morphMany(Token::class, 'tokenable');
     }
 
     public function project()
