@@ -115,11 +115,13 @@ import {
 import forEach from "lodash/forEach";
 import findKey from "lodash/findKey";
 
+import github from "./_github"
+
 const mustBeTrue = (value) => value === true;
 
 export default {
   components: {
-    github: require("./github").default,
+    github
   },
   props: ["githubUser"],
   data() {

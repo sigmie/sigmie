@@ -8,7 +8,6 @@
 </template>
 
 <script>
-import loginVue from "../views/auth/login.vue";
 
 export default {
   props: ["paylink", "vendor"],

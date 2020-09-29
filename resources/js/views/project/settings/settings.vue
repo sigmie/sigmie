@@ -25,7 +25,7 @@
                         @click="showDestroy = true"
                         text="Destroy"
                       ></button-danger>
-                      
+
                     </div>
                   </div>
                 </div>
@@ -53,7 +53,7 @@
 </template>
 
 <script>
-import App from "../layouts/app";
+import App from "../../layouts/app";
 
 export default {
   components: {

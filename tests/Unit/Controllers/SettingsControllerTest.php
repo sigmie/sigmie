@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Controllers;
 
-use App\Http\Controllers\Cluster\SettingsController;
+use App\Http\Controllers\Project\SettingsController;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Repositories\ProjectRepository;

@@ -8,8 +8,8 @@
         <p>
           You account has been created,
           but in order to start using our application,
-          you will need an active subscription.
-          Afterwards you can cancel your subscritpion at anytime.
+          you need an active subscription.
+          After you can cancel your subscritpion at anytime.
         </p>
 
         <div class="float-left w-full sm:w-40 pt-1">

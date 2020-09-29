@@ -27,7 +27,7 @@
       </div>
 
       <div class="mx-auto py-6 px-4 w-full max-w-md flex flex-col bg-white shadow rounded-lg">
-        <password-form :token="token"></password-form>
+        <form-component :token="token"></form-component>
       </div>
     </div>
   </layout>
@@ -35,12 +35,13 @@
 
 <script>
 import Layout from "../../layouts/public";
+import formComponent from "./_form"
 
 export default {
   props: ["token", "reset"],
   components: {
     Layout,
-    passwordForm: require("./form").default,
+    formComponent
   },
 };
 </script>

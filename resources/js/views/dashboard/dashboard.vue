@@ -1,9 +1,15 @@
 <template>
   <app title="Dashboard">
-    <div v-if="state=== 'loaded'">
-      <creating class="pt-4" v-if="cluster.state=== 'queued_create' || cluster.state === 'created'"></creating>
+    <div v-if="state === 'loaded'">
+      <creating
+        class="pt-4"
+        v-if="cluster.state === 'queued_create' || cluster.state === 'created'"
+      ></creating>
 
-      <destroying class="pt-4" v-if="cluster.state=== 'queued_destroy'"></destroying>
+      <destroying
+        class="pt-4"
+        v-if="cluster.state === 'queued_destroy'"
+      ></destroying>
 
       <running
         v-if="cluster.state === 'running'"
@@ -17,7 +23,7 @@
         class="max-w-md mx-auto"
       ></destroyed>
 
-      <null v-if="cluster.state === null" class="max-w-md mx-auto"></null>
+      <none v-if="cluster.state === null" class="max-w-md mx-auto"></none>
     </div>
     <div v-else-if="state === 'error'" class="mx-auto max-w-sm">
       <error></error>
@@ -29,18 +35,23 @@
 import App from "../layouts/app";
 import delay from "lodash/delay";
 import throttle from "lodash/throttle";
-import loginVue from "../auth/login.vue";
+
+import creating from "./_creating";
+import error from "./_error";
+import destroying from "./_destroying";
+import running from "./_running";
+import destroyed from "./_destroyed";
+import none from "./_none";
 
 export default {
   props: ["clusterId"],
   components: {
     App,
-    creating: require("./_creating").default,
-    error: require("./_error").default,
-    destroying: require("./_destroying").default,
-    running: require("./_running").default,
-    destroyed: require("./_destroyed").default,
-    null: require("./_null").default,
+    creating,
+    destroying,
+    running,
+    destroyed,
+    none,
   },
   data() {
     return {
@@ -69,7 +80,6 @@ export default {
           this.$set(this.cluster, "info", data.clusterInfo);
 
           this.state = "loaded";
-
         })
         .catch((e) => {
           this.state = "error";

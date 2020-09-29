@@ -25,7 +25,7 @@ class ClusterController extends \App\Http\Controllers\Controller
 
     public function create()
     {
-        return Inertia::render('cluster/create');
+        return Inertia::render('cluster/create/create');
     }
 
     public function store(StoreCluster $request)
@@ -49,7 +49,7 @@ class ClusterController extends \App\Http\Controllers\Controller
 
     public function edit(Cluster $cluster)
     {
-        return Inertia::render('cluster/edit', ['cluster' =>
+        return Inertia::render('cluster/edit/edit', ['cluster' =>
         [
             'id' => $cluster->getAttribute('id'),
             'name' => $cluster->getAttribute('name')

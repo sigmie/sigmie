@@ -104,7 +104,7 @@
 </template>
 
 <script>
-import Layout from "../layouts/public";
+import Layout from "../../layouts/public";
 
 export default {
   components: {

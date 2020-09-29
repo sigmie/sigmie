@@ -1,7 +1,9 @@
 <template>
   <app title="Settings">
     <div class="mx-auto max-w-xl">
-      <h1 class="leading-6 text-2xl font-medium text-gray-900 mb-10">Settings</h1>
+      <h1 class="leading-6 text-2xl font-medium text-gray-900 mb-10">
+        Settings
+      </h1>
       <div class="flex flex-col content-center justify-center">
         <div>
           <navigation :section="section"></navigation>
@@ -13,16 +15,18 @@
 </template>
 
 <script>
-import App from "../layouts/app";
+import App from "../../layouts/app";
+import navigation from "./_navigation";
+import account from "./_account";
+import subscription from "./_subscription";
+
 export default {
   props: ["section", "data"],
   components: {
     App,
-    navigation: require("./navigation").default,
-    account: require("./account").default,
-    general: require("./general").default,
-    notifications: require("./notifications").default,
-    subscription: require("./subscription").default,
+    navigation,
+    account,
+    subscription,
   },
 };
 </script>

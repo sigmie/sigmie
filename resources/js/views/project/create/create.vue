@@ -55,7 +55,9 @@
 </template>
 
 <script>
-import App from "../layouts/app";
+import App from "../../layouts/app";
+
+import provider from './_provider';
 
 import { required, helpers } from "vuelidate/lib/validators";
 const alphaNum = helpers.regex("alpha", /^[a-zA-Z0-9-_]*$/i);
@@ -70,7 +72,7 @@ export default {
   },
   components: {
     App,
-    provider: require("./_partials/create/provider").default
+    provider
   },
   data() {
     return {

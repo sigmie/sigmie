@@ -19,7 +19,7 @@ class SettingsController extends Controller
             'account' => $user->only(['username', 'email', 'avatar_url', 'created_at', 'id'])
         ];
 
-        return Inertia::render('account/settings', ['section' => $section, 'data' => $data[$section]]);
+        return Inertia::render('user/settings/settings', ['section' => $section, 'data' => $data[$section]]);
     }
 
     private function subscriptionData($user)

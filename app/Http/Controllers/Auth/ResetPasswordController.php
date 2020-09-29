@@ -34,6 +34,6 @@ class ResetPasswordController extends Controller
     {
         $reset = Session::has('status');
 
-        return Inertia::render('auth/password/reset', ['reset' => $reset, 'token' => $token]);
+        return Inertia::render('auth/reset/reset', ['reset' => $reset, 'token' => $token]);
     }
 }

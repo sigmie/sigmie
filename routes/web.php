@@ -12,7 +12,7 @@
 */
 
 use App\Http\Controllers\User\SettingsController as AccountSettingsController;
-use App\Http\Controllers\Cluster\SettingsController as ClusterSettingsController;
+use App\Http\Controllers\Project\SettingsController as ClusterSettingsController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\GithubController;
 use App\Http\Controllers\Auth\LoginController;

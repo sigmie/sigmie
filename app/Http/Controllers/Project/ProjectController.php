@@ -23,7 +23,7 @@ class ProjectController extends \App\Http\Controllers\Controller
 
     public function create()
     {
-        return Inertia::render('project/create');
+        return Inertia::render('project/create/create');
     }
 
     public function store(StoreProject $request)

@@ -14,15 +14,11 @@ class LoginController extends Controller
 
     /**
      * Where to redirect users after login.
-     *
-     * @var string
      */
     protected $redirectTo = '/dashboard';
 
     /**
      * Create a new controller instance.
-     *
-     * @return void
      */
     public function __construct()
     {
@@ -31,11 +27,9 @@ class LoginController extends Controller
 
     /**
      * Show the application's login form.
-     *
-     * @return \Illuminate\View\View
      */
     public function showLoginForm()
     {
-        return Inertia::render('auth/login');
+        return Inertia::render('auth/login/login');
     }
 }

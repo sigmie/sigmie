@@ -118,11 +118,11 @@
           </div>
         </dd>
       </div>
-      <div class="sm:col-span-2 py-5 px-6" v-if="data.was_subscribed === false">
+      <div class="sm:col-span-2 py-5 px-6" v-if="data.subscription.was_subscribed === false">
         <div class="flex flex-col">
           <div class="text-sm leading-5 mb-2 text-gray-500">
             You haven't subscribed yet, click
-            <inertia-link class="text-orange-500" :href="$route('subscription.create')">here</inertia-link>to start your trial.
+            <inertia-link class="text-orange-500" :href="$route('subscription.create')"> here </inertia-link>to start your trial.
           </div>
         </div>
       </div>

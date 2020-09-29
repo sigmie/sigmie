@@ -55,7 +55,6 @@ import {
   sameAs,
   helpers,
 } from "vuelidate/lib/validators";
-import loginVue from "../login.vue";
 
 export default {
   props: ["token"],

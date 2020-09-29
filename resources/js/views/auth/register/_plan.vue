@@ -97,9 +97,11 @@
 </template>
 
 <script>
+import illustration from "./_illustration";
+
 export default {
   components: {
-    illustration: require("./illustration").default,
+    illustration
   },
 };
 </script>

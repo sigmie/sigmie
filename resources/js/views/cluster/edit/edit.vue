@@ -89,13 +89,15 @@
 </template>
 
 <script>
-import App from "../layouts/app";
+import App from "../../layouts/app";
+import separator from "./_separator";
+import search from "./_search";
 
 export default {
   components: {
     App,
-    separator: require("./_partials/create/separator").default,
-    search: require("./_partials/create/search").default
+    separator,
+    search
   },
   props: ["cluster"],
   data() {

@@ -24,11 +24,14 @@
 <script>
 import Layout from "./layout";
 
+import sidebar from "../sidebar/sidebar"
+import navbar from "../navbar/navbar"
+
 export default {
   components: {
-    sidebar: require("../common/sidebar/sidebar").default,
-    navbar: require("../common/navbar/navbar").default,
-    Layout,
+    sidebar,
+    navbar,
+    Layout
   },
   props: {
     name: {

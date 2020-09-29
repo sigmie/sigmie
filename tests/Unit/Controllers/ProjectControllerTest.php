@@ -67,7 +67,7 @@ class ProjectControllerTest extends TestCase
      */
     public function create_renders_inertia_project_create()
     {
-        $this->expectsInertiaToRender('project/create');
+        $this->expectsInertiaToRender('project/create/create');
 
         $this->controller->create();
     }

@@ -27,6 +27,6 @@ class ForgotPasswordController extends Controller
     {
         $sent = Session::has('status');
 
-        return Inertia::render('auth/password/email', ['sent' => $sent]);
+        return Inertia::render('auth/email/email', ['sent' => $sent]);
     }
 }

@@ -11,7 +11,7 @@ services:
     extra_hosts:
      - "proxy.localhost:127.0.0.1"
     ports:
-        - '35729:35729' # Live reload port
+      # - '35729:35729' # Live reload port
         - '8080:8080'
     volumes:
         - ../:/var/www/app:delegated

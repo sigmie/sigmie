@@ -9,11 +9,11 @@
         </div>
 
         <div class="h-0 flex-1 flex flex-col overflow-y-auto bg-gray-800">
-          <project-overview
+          <info
             :project-name="$page.project_name"
             :cluster-url="$page.project_cluster_url"
             class="pt-7 pb-5"
-          ></project-overview>
+          ></info>
 
           <nav class="flex-1 px-2 py-4">
             <inertia-link
@@ -67,11 +67,11 @@
           <logo-white height="50px" width="159px" class="mx-auto py-1"></logo-white>
         </div>
         <div class="flex-1 h-0 overflow-y-auto">
-          <project-overview
+          <info
             :project-name="$page.project_name"
             :cluster-url="$page.project_cluster_url"
             class="px-2 py-4"
-          ></project-overview>
+          ></info>
 
           <nav class="px-2 py-4">
             <inertia-link
@@ -99,13 +99,13 @@
 </template>
 
 <script>
-import ProjectOverview from "./projectOverview";
+import info from "./_info";
 import isUndefined from "lodash/isUndefined";
 
 export default {
   props: ["sidebarState", "disabled"],
   components: {
-    ProjectOverview,
+    info,
   },
   data() {
     return {

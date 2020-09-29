@@ -74,7 +74,7 @@
           >
             <img class="h-8 w-8 rounded-full" :src="avatarUrl" />
           </button>
-          <settings v-if="settings == 'open'" @away="closeSettings"></settings>
+          <dropdown-menu v-if="settings == 'open'" @away="closeSettings"></dropdown-menu>
         </div>
       </div>
     </div>
@@ -85,11 +85,15 @@
 import moment from "moment";
 import uniqBy from "lodash/uniqBy";
 
+import notifications from "./_notifications"
+import dropdownMenu from "./_dropdown-menu"
+import badge from "./_badge"
+
 export default {
   components: {
-    notifications: require("./notifications").default,
-    settings: require("./settings").default,
-    badge: require("./badge").default,
+    notifications,
+    dropdownMenu,
+    badge,
   },
   props: ["avatarUrl", "userId"],
   data() {
