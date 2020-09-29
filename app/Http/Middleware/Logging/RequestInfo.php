@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Http\Middleware\Logging;
 
@@ -6,7 +8,7 @@ use Closure;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 
-class LogRequest
+class RequestInfo
 {
     private array $ignoredPaths = [
         'horizon',
@@ -29,6 +31,11 @@ class LogRequest
         $path = $request->getPathInfo();
         $route = $request->route();
         $code = $response->getStatusCode();
+        $forwardedHeader = $request->header('X-Forwarded-For');
+
+        if ($forwardedHeader !== null) {
+            $ip = array_map('trim', explode(',', $forwardedHeader))[0];
+        }
 
         if ($route !== null) {
             $path = $request->route()->uri();
@@ -39,7 +46,6 @@ class LogRequest
         }
 
         $responseTime = microtime(true) - LARAVEL_START;
-        $ip = array_map('trim', explode(',', $request->header('X-Forwarded-For')))[0];
 
         dispatch(fn () => Log::info('HTTP Request', [
             'ip' => $ip,

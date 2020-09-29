@@ -5,24 +5,30 @@
 
 ```
 - views
-	- layouts // Layout templates
-		- app // In App layout
-			- app.vue // Layout
-			- navbar.vue // Navbar component
-			- sidebar.vue // Sidebar component
-		- public // Layout for guest users
-			- footer.vue // Footer component
-			- public.vue // Layout
-	- token // Token views
-	- settings // ???
-	- legal // Legal texts like imprint, terms, etc...
-	- subscription //Subscription views
-	- dashboard // Dashboard
-	- cluster // Cluster views
-	- project // Projects views
-	- navbar // Navigation bar components
-	- landing // Landing page
+    - auth //Authentication views
+    - cluster // Cluster views
+    - dashboard // Dashboard view and components
+    - layouts // Application layouts
+    - legal // Legal texts
+    - navbar // Application navigation bar
+    - newsletter // Newsletter views
+    - project // Project views
+    - sidebar // Application sidebar
+    - subscription // Subscription and payments views
+    - token // Token views
+    - user // User account views
 ```
+
+## View structure rules
+* Components are prefixed with an underscore `_`.
+* Views don't have a prefix.
+* Views and their components belong to a sub folder with the view name.
+* A folder can contain:
+  * **Only** folders
+  * **Only** views
+  * A view with it's components
+
+**Don't try to imitate the php domains in the view since it's a different context.**
 
 ## Sidebar
 
