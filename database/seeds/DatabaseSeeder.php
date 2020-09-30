@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -12,10 +14,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('subscription_plans')->insert([
-            'name' => 'Hobby',
-            'search_requests_rate' => 5000,
-            'admin_requests_rate' => 5000,
+        $this->call([
+            UserSeeder::class
         ]);
     }
 }
