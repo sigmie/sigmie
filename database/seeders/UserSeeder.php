@@ -1,5 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Database\Seeders;
+
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -37,10 +41,5 @@ class UserSeeder extends Seeder
             'paused_from' => null,
             'ends_at' => null,
         ]);
-
-        /**
-         *
-                   '2020-09-15 00:00:00', NULL, NULL, '2020-09-01 14:18:28', '2020-09-01 14:18:28');
-         */
     }
 }

@@ -1,23 +1,30 @@
-<?php declare(strict_types=1);
+<?php
 
-/** @var \Illuminate\Database\Eloquent\Factory $factory */
+declare(strict_types=1);
+
+namespace Database\Factories;
 
 use App\Models\User;
 use Carbon\Carbon;
-use Faker\Generator as Faker;
 use Laravel\Paddle\Subscription;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
-$factory->define(Subscription::class, function (Faker $faker) {
+class SubscriptionFactory extends Factory
+{
+    protected $model = Subscription::class;
 
-    return [
-        'billable_id' => factory(User::class)->create(),
-        'billable_type' => User::class,
-        'name' => config('services.paddle.plan_name'),
-        'paddle_id' => $faker->numberBetween(1000, 9999),
-        'paddle_plan' => $faker->numberBetween(10000, 99999),
-        'paddle_status' => 'active',
-        'quantity' => 1,
-        'trial_ends_at' => Carbon::today()->addDays(14),
-        // 'ends_at' => Carbon::today()->addMonth(1),
-    ];
-});
+    public function definition()
+    {
+        return [
+            'billable_id' => User::factory(),
+            'billable_type' => User::class,
+            'name' => config('services.paddle.plan_name'),
+            'paddle_id' => $this->faker->numberBetween(1000, 9999),
+            'paddle_plan' => $this->faker->numberBetween(10000, 99999),
+            'paddle_status' => 'active',
+            'quantity' => 1,
+            'trial_ends_at' => Carbon::today()->addDays(14),
+            // 'ends_at' => Carbon::today()->addMonth(1),
+        ];
+    }
+}

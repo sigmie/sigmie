@@ -19,7 +19,7 @@ class ClusterTest extends TestCase
      */
     public function cluster_project_returns_belongs_to()
     {
-        $cluster = factory(Cluster::class)->make();
+        $cluster = Cluster::factory()->make();
 
         $this->assertInstanceOf(BelongsTo::class, $cluster->project());
     }
@@ -29,7 +29,7 @@ class ClusterTest extends TestCase
      */
     public function cluster_is_owned_by_returns_true_on_correct_user()
     {
-        $cluster = factory(Cluster::class)->make();
+        $cluster = Cluster::factory()->make();
 
         $user = $cluster->getAttribute('project')->getAttribute('user');
 
@@ -41,9 +41,9 @@ class ClusterTest extends TestCase
      */
     public function cluster_is_owned_by_returns_false_on_wrong_user()
     {
-        $cluster = factory(Cluster::class)->make();
+        $cluster = Cluster::factory()->make();
 
-        $user = factory(User::class)->make();
+        $user = User::factory()->make();
 
         $this->assertFalse($cluster->isOwnedBy($user));
     }
@@ -53,7 +53,7 @@ class ClusterTest extends TestCase
      */
     public function find_user_returns_user_instance()
     {
-        $cluster = factory(Cluster::class)->make();
+        $cluster = Cluster::factory()->make();
         $user = $cluster->project->user;
 
         $this->assertInstanceOf(User::class, $cluster->findUser());

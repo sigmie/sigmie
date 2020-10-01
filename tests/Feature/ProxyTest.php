@@ -17,7 +17,7 @@ class ProxyTest extends TestCase
      */
     public function proxy_route_responds_on_proxy_domain()
     {
-        $token =  factory(Cluster::class)->create()->createToken('some-token')->plainTextToken;
+        $token = Cluster::factory()->create()->createToken('some-token')->plainTextToken;
 
         $response = $this->json('GET', 'http://proxy.localhost:8080/_cluster/health', [], ['Authorization' => "Bearer {$token}", 'Accept' => 'application/json']);
 
@@ -29,7 +29,7 @@ class ProxyTest extends TestCase
      */
     public function proxy_route_not_found_on_app_domain()
     {
-        $token =  factory(Cluster::class)->create()->createToken('some-token')->plainTextToken;
+        $token = Cluster::factory()->create()->createToken('some-token')->plainTextToken;
 
         $response = $this->json('GET', 'http://localhost:8080/_cluster/health', [], ['Authorization' => "Bearer {$token}"]);
 

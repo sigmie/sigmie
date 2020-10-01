@@ -1,16 +1,25 @@
-<?php declare(strict_types=1);
+<?php
 
+declare(strict_types=1);
+
+namespace Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\Project;
 use App\Models\User;
-use Faker\Generator as Faker;
 
-$factory->define(Project::class, function (Faker $faker) {
+class ProjectFactory extends Factory
+{
+    protected $model = Project::class;
 
-    return [
-        'name' => $faker->name,
-        'description' => $faker->text(40),
-        'provider' => $faker->randomElement(['google', 'aws', 'digitalocean']),
-        'creds' => encrypt($faker->text(20)),
-        'user_id' => factory(User::class)
-    ];
-});
+    public function definition()
+    {
+        return [
+            'name' => $this->faker->name,
+            'description' => $this->faker->text(40),
+            'provider' => $this->faker->randomElement(['google', 'aws', 'digitalocean']),
+            'creds' => encrypt($this->faker->text(20)),
+            'user_id' => User::factory()
+        ];
+    }
+}

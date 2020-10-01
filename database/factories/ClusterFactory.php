@@ -1,27 +1,37 @@
-<?php declare(strict_types=1);
+<?php
 
+declare(strict_types=1);
+
+namespace Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\Cluster;
 use App\Models\Project;
-use Faker\Generator as Faker;
 
-$factory->define(Cluster::class, function (Faker $faker) {
-    return [
-        'name' => $faker->text(20),
-        'data_center' => $faker->randomElement(['america', 'europe', 'asia']),
-        'username' => $faker->text(10),
-        'password' => encrypt($faker->text(10)),
-        'state' => $faker->randomElement([
-            Cluster::RUNNING,
-            // Cluster::QUEUED_CREATE,
-            // Cluster::QUEUED_DESTROY,
-            // Cluster::CREATED,
-            // Cluster::DESTROYED,
-            // Cluster::FAILED,
-        ]),
-        // 'deleted_at' => $faker->randomElement([null, $faker->dateTime()]),
-        // 'nodes_count' => $faker->numberBetween(1, 3),
-        'deleted_at' => null,
-        'nodes_count' => 1,
-        'project_id' => factory(Project::class)
-    ];
-});
+class ClusterFactory extends Factory
+{
+    protected $model = Cluster::class;
+
+    public function definition()
+    {
+        return [
+            'name' => $this->faker->text(20),
+            'data_center' => $this->faker->randomElement(['america', 'europe', 'asia']),
+            'username' => $this->faker->text(10),
+            'password' => encrypt($this->faker->text(10)),
+            'state' => $this->faker->randomElement([
+                Cluster::RUNNING,
+                // Cluster::QUEUED_CREATE,
+                // Cluster::QUEUED_DESTROY,
+                // Cluster::CREATED,
+                // Cluster::DESTROYED,
+                // Cluster::FAILED,
+            ]),
+            // 'deleted_at' => $faker->randomElement([null, $faker->dateTime()]),
+            // 'nodes_count' => $faker->numberBetween(1, 3),
+            'deleted_at' => null,
+            'nodes_count' => 1,
+            'project_id' => Project::factory()
+        ];
+    }
+}

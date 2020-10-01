@@ -20,7 +20,7 @@ class NotificationTest extends TestCase
      */
     public function index_returns_json_with_users_notifications()
     {
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
 
         $this->actingAs($user);
 
@@ -34,7 +34,7 @@ class NotificationTest extends TestCase
      */
     public function show_returns_notification_data()
     {
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
 
         $this->actingAs($user);
 
@@ -52,7 +52,7 @@ class NotificationTest extends TestCase
      */
     public function update_marks_notification_as_read()
     {
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
 
         $this->actingAs($user);
 
@@ -76,7 +76,7 @@ class NotificationTest extends TestCase
     {
         Carbon::setTestNow('2030-01-01');
 
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
 
         $user->notify(new FakeNotification());
 
@@ -98,7 +98,7 @@ class NotificationTest extends TestCase
     {
         Carbon::setTestNow('2030-01-01');
 
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
 
         $this->actingAs($user);
 
@@ -116,7 +116,7 @@ class NotificationTest extends TestCase
      */
     public function index_returns_notifications_newer_than_a_week()
     {
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
 
         $this->actingAs($user);
 

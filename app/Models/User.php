@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Paddle\Billable;
@@ -12,6 +13,7 @@ class User extends Authenticatable
 {
     use Notifiable;
     use Billable;
+    use HasFactory;
 
     protected $fillable = [
         'email', 'username', 'password', 'avatar_url', 'github',

@@ -8,7 +8,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
-use Laravel\Paddle\Subscription;
+use App\Models\Subscription;
 use Tests\TestCase;
 
 class RegisterControllerTest extends TestCase
@@ -114,7 +114,7 @@ class RegisterControllerTest extends TestCase
      */
     public function registered_users_are_redirected_to_dashboard()
     {
-        $user = factory(Subscription::class)->create()->billable;
+        $user = Subscription::factory()->create()->billable;
 
         $this->actingAs($user);
 

@@ -7,7 +7,7 @@ namespace Tests\Feature;
 use App\Models\Cluster;
 use App\Models\Project;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Laravel\Paddle\Subscription;
+use App\Models\Subscription;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
@@ -29,8 +29,8 @@ class DashboardTest extends TestCase
      */
     public function assign_first_project_id_if_no_project_id_is_provided()
     {
-        $user = factory(Subscription::class)->create()->billable;
-        $project = factory(Project::class)->create(['user_id' => $user->id]);
+        $user = Subscription::factory()->create()->billable;
+        $project = Project::factory()->create(['user_id' => $user->id]);
 
         $this->actingAs($project->getAttribute('user'));
 
@@ -44,11 +44,11 @@ class DashboardTest extends TestCase
      */
     public function user_can_see_dashboard_only_from_owned_project()
     {
-        $user = factory(Subscription::class)->create()->billable;
-        $project = factory(Project::class)->create(['user_id' => $user->id]);
-        factory(Cluster::class)->create(['project_id' => $project->id]);
+        $user = Subscription::factory()->create()->billable;
+        $project = Project::factory()->create(['user_id' => $user->id]);
+        $cluster = Cluster::factory()->create(['project_id' => $project->id]);
 
-        $secondUser = factory(Subscription::class)->create()->billable;
+        $secondUser= Subscription::factory()->create()->billable;
 
         $this->actingAs($secondUser);
 
@@ -66,8 +66,8 @@ class DashboardTest extends TestCase
      */
     public function dashboard_redirects_if_project_has_not_a_cluster()
     {
-        $project = factory(Project::class)->create();
-        $user = factory(Subscription::class)->create()->billable;
+        $user = Subscription::factory()->create()->billable;
+        $project = Project::factory()->create(['user_id' => $user->id]);
 
         $this->actingAs($user);
 
@@ -80,7 +80,7 @@ class DashboardTest extends TestCase
      */
     public function redirect_to_create_project_if_no_project_exists()
     {
-        $user = factory(Subscription::class)->create()->billable;
+        $user = Subscription::factory()->create()->billable;
 
         $this->actingAs($user);
 

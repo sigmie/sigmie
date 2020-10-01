@@ -26,29 +26,28 @@
     ],
     "require": {
         "php": "^7.4",
-        "facade/ignition": "^2.0",
+        "facade/ignition": "^2.3.6",
         "fideloper/proxy": "^4.0",
         "fruitcake/laravel-cors": "^1.0",
         "google/cloud-error-reporting": "^0.16.2",
         "google/cloud-logging": "^1.20",
-        "guzzlehttp/guzzle": "^6.4",
+        "guzzlehttp/guzzle": "^7.0.1",
         "inertiajs/inertia-laravel": "^0.2.5",
         "laravel/cashier-paddle": "^1.0@beta",
-        "laravel/framework": "^7.0",
-        "laravel/horizon": "^4.0",
+        "laravel/framework": "^8.0",
+        "laravel/horizon": "^5.0",
         "laravel/nova": "^3.0",
         "laravel/sanctum": "^2.4",
         "laravel/scout": "^8.0",
         "laravel/slack-notification-channel": "^2.0",
-        "laravel/socialite": "^4.3",
-        "laravel/telescope": "^3",
+        "laravel/socialite": "^5.0",
+        "laravel/telescope": "^4.0",
         "laravel/tinker": "^2.0",
-        "laravel/ui": "^2.0",
-        "nunomaduro/collision": "^4.1",
+        "laravel/ui": "^3.0",
+        "nunomaduro/collision": "^5.0",
         "predis/predis": "^1.1",
         "pusher/pusher-php-server": "~4.0",
-        "ramsey/uuid": "^3.9",
-        "sigmie/app-core": "0.5.1",
+        "sigmie/app-core": "0.6",
         "sigmie/nova-feature-flags": "@dev",
         "sigmie/sigmie": "^0.3.3",
         "tightenco/ziggy": "^0.9.3"
@@ -60,7 +59,7 @@
         "mockery/mockery": "^1.0",
         "nunomaduro/larastan": "^0.6.1",
         "phpstan/phpstan": "^0.12.6",
-        "phpunit/phpunit": "^8.5",
+        "phpunit/phpunit": "^9.0",
         "squizlabs/php_codesniffer": "^3.5",
         "symfony/var-dumper": "^5"
     },
@@ -80,11 +79,11 @@
     "autoload": {
         "psr-4": {
             "App\\": "app/",
-            "Tests\\": "tests/"
+            "Tests\\": "tests/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
         },
         "classmap": [
-            "database/seeds",
-            "database/factories"
         ],
         "files": [
             "helpers.php"
@@ -96,7 +95,7 @@
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": false,
+    "prefer-stable": true,
     "scripts": {
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

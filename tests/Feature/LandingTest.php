@@ -17,7 +17,7 @@ class LandingTest extends TestCase
      */
     public function authenticated_user_is_redirected_to_dashboard()
     {
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
 
         $this->actingAs($user);
 

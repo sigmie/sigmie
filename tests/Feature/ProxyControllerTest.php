@@ -32,7 +32,7 @@ class ProxyControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->cluster = factory(Cluster::class)->create();
+        $this->cluster = Cluster::factory()->create();
 
         $this->adminToken = $this->cluster->createToken(TokenController::ADMIN, ['*'])->plainTextToken;
         $this->searchToken = $this->cluster->createToken(TokenController::SEARCH_ONLY, ['search'])->plainTextToken;

@@ -6,7 +6,7 @@ namespace Tests\Feature;
 
 use App\Models\Project;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Laravel\Paddle\Subscription;
+use App\Models\Subscription;
 use Tests\TestCase;
 
 class ProjectPoliciesTest extends TestCase
@@ -18,9 +18,9 @@ class ProjectPoliciesTest extends TestCase
      */
     public function project_create_is_allowed_only_if_user_doesn_have_project()
     {
-        $user = factory(Subscription::class)->create()->billable;
 
-        factory(Project::class)->create(['user_id' => $user->id]);
+        $user = Subscription::factory()->create()->billable;
+        $project = Project::factory()->create(['user_id' => $user->id]);
 
         $this->actingAs($user);
 

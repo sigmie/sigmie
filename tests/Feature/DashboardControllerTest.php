@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\Cluster;
 use App\Models\Project;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Laravel\Paddle\Subscription;
+use App\Models\Subscription;
 use Tests\Helpers\ElasticsearchCleanup;
 use Tests\TestCase;
 
@@ -19,9 +19,9 @@ class DashboardControllerTest extends TestCase
      */
     public function dashboard_data_returns_cluster_info()
     {
-        $user = factory(Subscription::class)->create()->billable;
-        $project = factory(Project::class)->create(['user_id' => $user->id]);
-        $cluster = factory(Cluster::class)->create(['project_id' => $project->id]);
+        $user = Subscription::factory()->create()->billable;
+        $project = Project::factory()->create(['user_id' => $user->id]);
+        $cluster = Cluster::factory()->create(['project_id' => $project->id]);
 
         $this->actingAs($user);
 

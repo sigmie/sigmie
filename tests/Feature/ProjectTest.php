@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Config;
-use Laravel\Paddle\Subscription;
+use App\Models\Subscription;
 use Tests\TestCase;
 
 class ProjectTest extends TestCase
@@ -21,7 +21,7 @@ class ProjectTest extends TestCase
      */
     public function project_user_returns_belongs_to()
     {
-        $project = factory(Project::class)->make();
+        $project = Project::factory()->make();
 
         $this->assertInstanceOf(BelongsTo::class, $project->user());
     }
@@ -31,7 +31,7 @@ class ProjectTest extends TestCase
      */
     public function project_clusters_returns_has_many()
     {
-        $project = factory(Project::class)->make();
+        $project = Project::factory()->make();
 
         $this->assertInstanceOf(HasMany::class, $project->clusters());
     }
@@ -43,7 +43,7 @@ class ProjectTest extends TestCase
     {
         Config::set('override.provider.rule', true);
 
-        $user = factory(Subscription::class)->create()->billable;
+        $user = Subscription::factory()->create()->billable;
 
         $this->actingAs($user);
 

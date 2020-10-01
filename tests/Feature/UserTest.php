@@ -19,8 +19,8 @@ class UserTest extends TestCase
      */
     public function projects_returns_has_many()
     {
-        $user = factory(User::class)->create();
-        $project = factory(Project::class)->make();
+        $user = User::factory()->create();
+        $project = Project::factory()->make();
 
         $user->projects()->save($project);
 

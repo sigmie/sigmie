@@ -17,7 +17,7 @@ class AjaxValidationsTest extends TestCase
      */
     public function cluster_validation_controller_returns_false_if_cluster_with_name_exists()
     {
-        $cluster = factory(Cluster::class)->create();
+        $cluster = Cluster::factory()->create();
 
         $response = $this->get(route('cluster.validate.name', ['name' => $cluster->getAttribute('name')]));
 

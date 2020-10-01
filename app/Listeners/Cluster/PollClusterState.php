@@ -17,7 +17,7 @@ class PollClusterState implements ShouldQueue
 {
     public $tries = 10;
 
-    public $retryAfter = 15;
+    public $backoff = 15;
 
     public $delay = 15;
 
@@ -41,7 +41,7 @@ class PollClusterState implements ShouldQueue
         }
 
         throw new Exception(
-            "Cluster run check failed after {$this->tries} tries with {$this->retryAfter} delay between each of them."
+            "Cluster run check failed after {$this->tries} tries with {$this->backoff} delay between each of them."
         );
     }
 

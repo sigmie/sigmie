@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Contracts\MustConfirmSubscription as MustConfirmSubscriptionInterface;
 use App\Traits\MustConfirmSubscription;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Nova\Actions\Actionable;
 
@@ -14,6 +15,7 @@ class NewsletterSubscription extends Model implements MustConfirmSubscriptionInt
     use Actionable;
     use Notifiable;
     use MustConfirmSubscription;
+    use HasFactory;
 
     protected $casts = [
         'confirmed' => 'boolean'

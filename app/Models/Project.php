@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Laravel\Paddle\Billable;
 
 class Project extends Model
 {
     use Billable;
+    use HasFactory;
 
     public function clusters()
     {

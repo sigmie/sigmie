@@ -11,7 +11,7 @@ use App\Models\Project;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
-use Laravel\Paddle\Subscription;
+use App\Models\Subscription;
 use Laravel\Sanctum\NewAccessToken;
 use Laravel\Sanctum\PersonalAccessToken;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -90,8 +90,8 @@ class ClusterTokenControllerTest extends TestCase
      */
     public function redirect_to_create_cluster_if_there_isnt_any()
     {
-        $user = factory(Subscription::class)->create()->billable;
-        $project = factory(Project::class)->create(['user_id' => $user->id]);
+        $user = Subscription::factory()->create()->billable;
+        $project = Project::factory()->create(['user_id' => $user->id]);
 
         $this->actingAs($user);
 

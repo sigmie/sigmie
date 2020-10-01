@@ -19,7 +19,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Tests\Helpers\NeedsModel;
 use Tests\TestCase;
 
-class PollStateTest extends TestCase
+class PollClusterStateTest extends TestCase
 {
     use NeedsModel;
 
@@ -142,7 +142,7 @@ class PollStateTest extends TestCase
      */
     public function retry_after_seconds()
     {
-        $this->assertEquals(15, $this->listener->retryAfter);
+        $this->assertEquals(15, $this->listener->backoff);
     }
 
     private function createEventMock()

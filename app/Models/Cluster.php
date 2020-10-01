@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -11,6 +12,7 @@ class Cluster extends Model
 {
     use SoftDeletes;
     use HasApiTokens;
+    use HasFactory;
 
     public const QUEUED_DESTROY = 'queued_destroy';
 

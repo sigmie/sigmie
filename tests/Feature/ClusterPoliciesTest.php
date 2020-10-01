@@ -7,7 +7,7 @@ namespace Tests\Feature;
 use App\Models\Cluster;
 use App\Models\Project;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Laravel\Paddle\Subscription;
+use App\Models\Subscription;
 use Tests\TestCase;
 
 class ClusterPoliciesTest extends TestCase
@@ -19,9 +19,9 @@ class ClusterPoliciesTest extends TestCase
      */
     public function user_cant_create_cluster_if_he_already_has_one()
     {
-        $user = factory(Subscription::class)->create()->billable;
-        $project = factory(Project::class)->create(['user_id' => $user->id]);
-        $cluster = factory(Cluster::class)->create(['project_id' => $project->id]);
+        $user = Subscription::factory()->create()->billable;
+        $project = Project::factory()->create(['user_id' => $user->id]);
+        $cluster = Cluster::factory()->create(['project_id' => $project->id]);
 
         $this->actingAs($user);
 
@@ -35,9 +35,9 @@ class ClusterPoliciesTest extends TestCase
      */
     public function user_cant_store_cluster_if_he_already_has_one()
     {
-        $user = factory(Subscription::class)->create()->billable;
-        $project = factory(Project::class)->create(['user_id' => $user->id]);
-        $cluster = factory(Cluster::class)->create(['project_id' => $project->id]);
+        $user = Subscription::factory()->create()->billable;
+        $project = Project::factory()->create(['user_id' => $user->id]);
+        $cluster = Cluster::factory()->create(['project_id' => $project->id]);
 
         $this->actingAs($user);
 

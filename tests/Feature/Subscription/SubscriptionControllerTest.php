@@ -7,8 +7,8 @@ namespace Tests\Feature\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
-use Laravel\Paddle\Receipt;
-use Laravel\Paddle\Subscription;
+use App\Models\Receipt;
+use App\Models\Subscription;
 use Laravel\Paddle\SubscriptionBuilder;
 use Tests\TestCase;
 
@@ -25,7 +25,7 @@ class SubscriptionControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = factory(User::class)->create();
+        $this->user = User::factory()->create();
 
         $this->actingAs($this->user);
     }
@@ -73,7 +73,7 @@ class SubscriptionControllerTest extends TestCase
      */
     public function await_redirects_if_receipt_is_found()
     {
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
         $paddleId = 9999999;
         $checkoutId = '64294199-chref4b2b852724-c2d7392sad6';
 
@@ -119,7 +119,7 @@ class SubscriptionControllerTest extends TestCase
      */
     public function expired_returns_false_if_receipt_doesnt_exist()
     {
-        $receipt = factory(Receipt::class)->create();
+        $receipt = Receipt::factory()->create();
 
         $response = $this->get(route('subscription.check', ['checkout' => 'non-existing-receipt']));
 
@@ -132,7 +132,7 @@ class SubscriptionControllerTest extends TestCase
      */
     public function expired_returns_true_if_receipt_exists()
     {
-        $receipt = factory(Receipt::class)->create();
+        $receipt = Receipt::factory()->create();
 
         $response = $this->get(route('subscription.check', ['checkout' => $receipt->checkout_id]));
 
