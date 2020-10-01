@@ -36,7 +36,7 @@ class DashboardControllerTest extends TestCase
             'clusterInfo' => [
                 'health' => 'green',
                 'nodesCount' => 1,
-                'name' => 'sigmie-dev',
+                'name' => 'docker-cluster',
             ]
         ]);
     }

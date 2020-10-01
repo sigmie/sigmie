@@ -14,6 +14,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Throwable;
 
 class CreateCluster implements ShouldQueue
 {
@@ -53,5 +54,13 @@ class CreateCluster implements ShouldQueue
         $clusters->update($this->clusterId, ['state' => Cluster::CREATED]);
 
         event(new ClusterWasCreated($clusterId));
+    }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(Throwable $exception, ClusterRepository $clusters)
+    {
+        $clusters->update($this->clusterId, ['state' => Cluster::FAILED]);
     }
 }

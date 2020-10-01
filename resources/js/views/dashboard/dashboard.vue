@@ -105,7 +105,7 @@ export default {
 
     this.$socket
       .private(`cluster.${this.clusterId}`)
-      .listen("ClusterWasBooted", (e) => {
+      .listen("Cluster\\ClusterWasBooted", (e) => {
         // Wait 5 seconds for the cluster state to change
         // in the database before reloading the page
         delay(() => {
@@ -121,7 +121,7 @@ export default {
 
     this.$socket
       .private(`cluster.${this.clusterId}`)
-      .listen("ClusterWasDestroyed", (e) => {
+      .listen("Cluster\\ClusterWasDestroyed", (e) => {
         // Wait 5 seconds for the cluster state to change
         // in the database before reloading the page
         delay(() => {
