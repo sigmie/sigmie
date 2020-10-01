@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Http\Middleware\Logging;
 
@@ -28,12 +30,15 @@ class LogProxyRequest
         $responseTime = microtime(true) - LARAVEL_START;
         $ip = array_map('trim', explode(',', $request->header('X-Forwarded-For')))[0];
 
-        dispatch(fn () => Log::info('Proxy Request', [
-            'ip' => $ip,
-            'path' => $path,
-            'response_code' => $code,
-            'response_time' => $responseTime
-        ]));
+        dispatch(function () use ($ip, $path, $code, $responseTime) {
+
+            Log::info('Proxy Request', [
+                'ip' => $ip,
+                'path' => $path,
+                'response_code' => $code,
+                'response_time' => $responseTime
+            ]);
+        });
 
         return $response;
     }

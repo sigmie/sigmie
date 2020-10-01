@@ -6,12 +6,11 @@ namespace Tests\Unit\Controllers;
 
 use App\Http\Controllers\Cluster\TokenController;
 use App\Models\Cluster;
-use App\Models\Token;
 use App\Models\Project;
+use App\Models\Subscription;
+use App\Models\Token;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
-use Inertia\Inertia;
-use App\Models\Subscription;
 use Laravel\Sanctum\NewAccessToken;
 use Laravel\Sanctum\PersonalAccessToken;
 use PHPUnit\Framework\MockObject\MockObject;

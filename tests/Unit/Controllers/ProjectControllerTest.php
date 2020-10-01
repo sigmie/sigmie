@@ -10,7 +10,6 @@ use App\Models\User;
 use App\Repositories\ProjectRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Inertia\Inertia;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 

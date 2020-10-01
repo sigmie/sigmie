@@ -6,6 +6,7 @@ namespace Tests\Helpers;
 
 use Closure;
 use PHPUnit\Framework\MockObject\MockObject;
+use stdClass;
 
 trait NeedsClosure
 {
@@ -23,7 +24,7 @@ trait NeedsClosure
 
     public function closure()
     {
-        $this->callableMock = $this->getMockBuilder(\stdClass::class)->addMethods(['closure'])->getMock();
+        $this->callableMock = $this->getMockBuilder(stdClass::class)->addMethods(['closure'])->getMock();
 
         $this->closureMock = fn (...$args) => $this->callableMock->closure(...$args);
     }

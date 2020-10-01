@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Subscription;
 
+use App\Models\Receipt;
+use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
-use App\Models\Receipt;
-use App\Models\Subscription;
 use Laravel\Paddle\SubscriptionBuilder;
 use Tests\TestCase;
 

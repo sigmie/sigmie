@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Unit\Controllers;
 
 use App\Http\Controllers\Landing\LandingController;
-use Inertia\Inertia;
 use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\NovaFeatureFlags\FeatureFlagManager;
 use Tests\TestCase;
@@ -36,7 +35,6 @@ class LandingControllerTest extends TestCase
      */
     public function inertia_render_landing_with_auth_feature(): void
     {
-	$this->assertTrue(true);
-
+        $this->assertTrue(true);
     }
 }

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Listeners;
 
-use App\Events\Cluster\ClusterHasFailed;
-use App\Events\Cluster\ClusterWasBooted;
 use App\Events\Cluster\ClusterWasCreated;
 use App\Listeners\Cluster\PollClusterState;
 use App\Models\Cluster;

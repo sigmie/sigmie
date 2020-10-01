@@ -6,8 +6,8 @@ namespace Tests\Feature;
 
 use App\Models\Cluster;
 use App\Models\Project;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use App\Models\Subscription;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
@@ -48,7 +48,7 @@ class DashboardTest extends TestCase
         $project = Project::factory()->create(['user_id' => $user->id]);
         $cluster = Cluster::factory()->create(['project_id' => $project->id]);
 
-        $secondUser= Subscription::factory()->create()->billable;
+        $secondUser = Subscription::factory()->create()->billable;
 
         $this->actingAs($secondUser);
 

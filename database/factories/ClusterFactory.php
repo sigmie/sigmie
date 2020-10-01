@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\Cluster;
 use App\Models\Project;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ClusterFactory extends Factory
 {

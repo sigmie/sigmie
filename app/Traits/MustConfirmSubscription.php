@@ -20,6 +20,6 @@ trait MustConfirmSubscription
 
     public function sendConfirmationEmailNotification(): void
     {
-        $this->notify(new ConfirmSubscription);
+        $this->notify(new ConfirmSubscription());
     }
 }

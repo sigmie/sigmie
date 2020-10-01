@@ -8,7 +8,6 @@ use App\Http\Controllers\Newsletter\SubscriptionController;
 use App\Http\Requests\Newsletter\StoreSubscription;
 use App\Repositories\NewsletterSubscriptionRepository;
 use Illuminate\Http\RedirectResponse;
-use Inertia\Inertia;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 

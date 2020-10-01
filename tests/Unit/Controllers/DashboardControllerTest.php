@@ -10,7 +10,6 @@ use App\Models\Project;
 use App\Repositories\ClusterRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Inertia\Inertia;
 use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\Search\SigmieClient;
 use Tests\Helpers\SigmieClientMock;

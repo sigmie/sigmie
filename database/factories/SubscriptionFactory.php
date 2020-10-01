@@ -6,8 +6,8 @@ namespace Database\Factories;
 
 use App\Models\User;
 use Carbon\Carbon;
-use Laravel\Paddle\Subscription;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Laravel\Paddle\Subscription;
 
 class SubscriptionFactory extends Factory
 {

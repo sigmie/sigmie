@@ -13,7 +13,6 @@ class LogstashFormatter extends MonologLogstashFormatter
     protected function normalizeException(Throwable $e, int $depth = 0)
     {
         if ($e instanceof TaskFailureException) {
-
             $trace = [];
 
             foreach ($e->getOriginalTrace() as $frame) {

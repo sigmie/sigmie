@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use App\Events\Cluster\ClusterWasDestroyed;
 use App\Helpers\ClusterManagerFactory;
 use App\Jobs\Cluster\DestroyCluster;
 use App\Models\Cluster;
-use App\Models\Project; use App\Repositories\ClusterRepository;
+use App\Models\Project;
+use App\Repositories\ClusterRepository;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\MockObject\MockObject;

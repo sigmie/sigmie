@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Inertia\Inertia;
 use Tests\TestCase;
 
 class LeagalControllerTest extends TestCase

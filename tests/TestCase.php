@@ -22,11 +22,11 @@ abstract class TestCase extends BaseTestCase
         $this->elasticsearchCleanup();
     }
 
-    private function elasticsearchCleanup()
+    public function tearDown(): void
     {
-        if (method_exists($this, 'deleteAllIndices')) {
-            $this->deleteAllIndices();
-        }
+        parent::tearDown();
+
+        $this->elasticsearchCleanup();
     }
 
     public function expectsInertiaToRender($view, ...$args)
@@ -36,10 +36,10 @@ abstract class TestCase extends BaseTestCase
         $this->assertFileExists(base_path("resources/js/views/{$view}.vue"));
     }
 
-    public function tearDown(): void
+    private function elasticsearchCleanup()
     {
-        parent::tearDown();
-
-        $this->elasticsearchCleanup();
+        if (method_exists($this, 'deleteAllIndices')) {
+            $this->deleteAllIndices();
+        }
     }
 }

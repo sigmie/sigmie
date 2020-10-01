@@ -7,13 +7,10 @@ namespace Tests\Unit\Controllers;
 use App\Http\Controllers\Cluster\ClusterController;
 use App\Http\Requests\Cluster\StoreCluster;
 use App\Http\Requests\Cluster\UpdateCluster;
-use App\Jobs\Cluster\CreateCluster;
-use App\Jobs\Cluster\DestroyCluster;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Bus;
-use Inertia\Inertia;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 

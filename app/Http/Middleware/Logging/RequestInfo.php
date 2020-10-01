@@ -47,12 +47,16 @@ class RequestInfo
 
         $responseTime = microtime(true) - LARAVEL_START;
 
-        dispatch(fn () => Log::info('HTTP Request', [
-            'ip' => $ip,
-            'path' => $path,
-            'response_code' => $code,
-            'response_time' => $responseTime
-        ]));
+        dispatch(function () use ($ip, $path, $code, $responseTime) {
+
+            Log::info('HTTP Request', [
+                'ip' => $ip,
+                'path' => $path,
+                'response_code' => $code,
+                'response_time' => $responseTime
+            ]);
+        });
+
 
         return $response;
     }

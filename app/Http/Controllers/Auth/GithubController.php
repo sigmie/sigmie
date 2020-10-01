@@ -58,10 +58,10 @@ class GithubController extends Controller
 
     private function findGithubUser(string $email)
     {
-        return User::firstWhere([
-            'email' => $email,
-            'github' => true
-        ]);
+        return User::where([
+            ['email', '=', $email],
+            ['github', '=', true]
+        ])->first();
     }
 
     private function findUser(string $email)
