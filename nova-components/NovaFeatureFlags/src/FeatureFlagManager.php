@@ -10,6 +10,6 @@ class FeatureFlagManager extends Manager
 {
     protected function createChainDriver()
     {
-        return $this->app->make(ChainRepository::class);
+        return $this->container->make(ChainRepository::class);
     }
 }
