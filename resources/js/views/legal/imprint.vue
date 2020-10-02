@@ -14,7 +14,7 @@
         <br />Phone: +49 (0) 173 46500 91
       </p>
       <p>Commercial Register: Amtsgericht Iserlohn, HRB 9701</p>
-      <p>VAT ID: DE000000000 / Managing Partner: Markos Nikolaos Orfanos</p>
+      <p>VAT ID: DE333570897 / Managing Partner: Markos Nikolaos Orfanos</p>
     </div>
   </layout>
 </template>
