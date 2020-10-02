@@ -28,7 +28,7 @@
               class="group mx-1 my-2 flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
               :href="
                 $page.project_id === null
-                  ? '#'
+                  ? $route('dashboard')
                   : $route(item.name, item.routeParams)
               "
             >
@@ -116,7 +116,7 @@
               class="group mx-2 my-4 flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
               :href="
                 $page.project_id === null
-                  ? '#'
+                  ? $route('dashboard')
                   : $route(item.name, item.routeParams)
               "
             >

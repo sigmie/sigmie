@@ -19,9 +19,9 @@ class DashboardTest extends TestCase
      */
     public function gest_redirects_to_login()
     {
-        $response = $this->get('/dashboard');
+        $response = $this->get(route('dashboard'));
 
-        $response->assertRedirect('/login');
+        $response->assertRedirect(route('sign-in'));
     }
 
     /**

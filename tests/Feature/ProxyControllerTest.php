@@ -54,7 +54,10 @@ class ProxyControllerTest extends TestCase
      */
     public function proxy_returns_login_without_token()
     {
-        $this->get(route('proxy'), ['Authorization' => ""])->assertRedirect('https://localhost/login');
+        $this->get(route('proxy'), ['Authorization' => ""])
+            ->assertJson([
+                'message' => 'Unauthenticated.'
+            ]);
     }
 
     /**
