@@ -27,7 +27,7 @@ class SettingsController extends Controller
         $data = [];
         $planName = config('services.paddle.plan_name');
 
-        $data['subscription'] = ['was_subscribed' => false];
+        $data['was_subscribed'] = false;
 
         $subscription = $user->subscription($planName);
 

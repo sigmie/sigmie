@@ -1,7 +1,7 @@
 <template>
   <app title="Tokens">
 
-    <div class="flex md:items-center md:justify-between md:mb-4">
+    <div class="flex md:items-center md:justify-between mb-4">
       <div class="flex-1 min-w-0">
         <h2
           class="text-lg font-bold leading-7 text-gray-900 sm:text-3xl sm:leading-9 sm:truncate"
@@ -14,24 +14,24 @@
         <div
           class="align-middle inline-block min-w-full shadow overflow-hidden rounded-lg border-b border-gray-200"
         >
-          <table class="min-w-full">
+          <table class="min-w-full max-w-full">
             <thead>
               <tr>
                 <th
-                  class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"
+                  class="pl-4 md:pl-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"
                 >Name</th>
                 <th
                   class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"
                 >Status</th>
                 <th
-                  class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-2 md:px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"
                 >Token</th>
                 <th class="px-6 py-3 border-b border-gray-200 bg-gray-50"></th>
               </tr>
             </thead>
             <tbody class="bg-white">
               <tr v-for="(token, index) in reactiveTokens" :key="index">
-                <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                <td class="pl-4 md:pl-6 py-4 whitespace-no-wrap border-b border-gray-200">
                   <div class="flex items-center">
                     <div class>
                       <div class="text-sm leading-5 font-medium text-gray-900">{{ token.name }}</div>
@@ -49,7 +49,7 @@
                     </div>
                   </div>
                 </td>
-                <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                <td class="px-4 md:px-6 py-4 whitespace-no-wrap border-b border-gray-200">
                   <div
                     @click="()=> toogleActive(token.id, token.cluster_id, index)"
                     v-if="token.active"
@@ -67,24 +67,24 @@
                 </td>
                 <td
                   v-if="token.value"
-                  class="px-6 py-1 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 text-gray-500"
+                  class="px-0 md:px-6 py-1 border-b border-gray-200 text-sm leading-5 text-gray-500 w-full"
                 >
                   <textarea
                     @click="selectElement"
-                    rows="2"
+                    rows="1"
                     readonly
                     :value="token.value"
-                    class="focus:outline-none resize-none p-1 w-96"
+                    class="focus:outline-none inline-flex resize-none p-1 w-full"
                   />
                 </td>
                 <td
                   v-else
-                  class="px-6 py-4 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 text-gray-400"
+                  class="px-6 py-4 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 text-gray-400 w-full"
                 >
                   <div class="italic w-10 md:w-96">hidden</div>
                 </td>
                 <td
-                  class="pr-2 md:px-6 py-4 whitespace-no-wrap text-right border-b border-gray-200 text-sm leading-5 font-medium w-60"
+                  class="pr-2 md:px-6 py-4 whitespace-no-wrap text-right border-b border-gray-200 text-sm leading-5 font-medium w-0 md:w-60"
                 >
                   <a
                     v-if="token.value"
