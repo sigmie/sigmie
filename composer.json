@@ -18,7 +18,7 @@
         },
         {
             "type": "path",
-            "url": "./nova-components/NovaFeatureFlags",
+            "url": "./packages/*",
             "options": {
                 "symlink": true
             }
@@ -26,11 +26,9 @@
     ],
     "require": {
         "php": "^7.4",
-        "facade/ignition": "^2.3.6",
         "fideloper/proxy": "^4.0",
         "fruitcake/laravel-cors": "^1.0",
         "google/cloud-error-reporting": "^0.16.2",
-        "google/cloud-logging": "^1.20",
         "guzzlehttp/guzzle": "^7.0.1",
         "inertiajs/inertia-laravel": "^0.2.5",
         "laravel/cashier-paddle": "^1.0@beta",
@@ -45,7 +43,6 @@
         "laravel/tinker": "^2.0",
         "laravel/ui": "^3.0",
         "nunomaduro/collision": "^5.0",
-        "predis/predis": "^1.1",
         "pusher/pusher-php-server": "~4.0",
         "sigmie/app-core": "0.6",
         "sigmie/nova-feature-flags": "@dev",
@@ -83,8 +80,7 @@
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         },
-        "classmap": [
-        ],
+        "classmap": [],
         "files": [
             "helpers.php"
         ]

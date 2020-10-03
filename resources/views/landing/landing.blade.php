@@ -224,7 +224,7 @@
         <p class="text-center w-full opacity-75 px-5 sm:px-0 sm:w-2/3 md:w-8/12 pb-15 mx-auto py-3">
             Sigmie UG (haftungsbeschränkt), Feldstr. 9, 58507 Lüdenscheid, Germany
             <br />Commercial Register: Amtsgericht Iserlohn, HRB 9701
-            <br />VAT ID: DE000000000 / Managing Partner: Markos Nikolaos Orfanos
+            <br />VAT ID: DE333570897 / Managing Partner: Markos Nikolaos Orfanos
             <br />
         </p>
     </div>

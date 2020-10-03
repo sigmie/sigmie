@@ -23,4 +23,12 @@ class LandingTest extends TestCase
 
         $this->get('/')->assertRedirect('/dashboard');
     }
+
+    /**
+     * @test
+     */
+    public function landing_page_response_is_200()
+    {
+        $this->get(route('landing'))->assertOk();
+    }
 }
