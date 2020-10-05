@@ -21,9 +21,8 @@ class ProxyController extends \App\Http\Controllers\Controller
         $method = strtolower($request->method());
         $username = $cluster->getAttribute('username');
         $password = decrypt($cluster->getAttribute('password'));
-        $domain = config('services.cloudflare.domain');
 
-        $url = (App::runningUnitTests()) ? 'http://es:9200/' : "https://{$cluster->name}.{$domain}/";
+        $url = $cluster->getAttribute('url');
 
         $options = [
             'auth' => [$username, $password],
@@ -34,7 +33,9 @@ class ProxyController extends \App\Http\Controllers\Controller
             $options['json'] = $request->toArray();
         }
 
-        $response = $client->$method($url . $endpoint, $options);
+        $url = $url . '/' . $endpoint . '?' . $request->getQueryString();
+
+        $response = $client->$method($url, $options);
 
         return $response->getBody()->getContents();
     }

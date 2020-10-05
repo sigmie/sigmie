@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Models\Cluster;
+use App\Models\Project;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +19,8 @@ class UserSeeder extends Seeder
      */
     public function run()
     {
+        $userId = 1;
+
         DB::table('users')->insert([
             'id' => 1,
             'email' => 'nico@sigmie.com',
@@ -41,5 +45,8 @@ class UserSeeder extends Seeder
             'paused_from' => null,
             'ends_at' => null,
         ]);
+
+        $project = Project::factory()->create(['user_id' => $userId]);
+        $cluster = Cluster::factory()->create(['project_id' => $project->id]);
     }
 }

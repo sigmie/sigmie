@@ -15,7 +15,7 @@ class ProjectFactory extends Factory
     public function definition()
     {
         return [
-            'name' => $this->faker->name,
+            'name' => 'Local development',
             'description' => $this->faker->text(40),
             'provider' => $this->faker->randomElement(['google', 'aws', 'digitalocean']),
             'creds' => encrypt($this->faker->text(20)),

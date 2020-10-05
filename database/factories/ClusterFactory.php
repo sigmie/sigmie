@@ -15,10 +15,11 @@ class ClusterFactory extends Factory
     public function definition()
     {
         return [
-            'name' => $this->faker->text(20),
+            'name' => $this->faker->word(),
             'data_center' => $this->faker->randomElement(['america', 'europe', 'asia']),
             'username' => $this->faker->text(10),
             'password' => encrypt($this->faker->text(10)),
+            'url' => 'http://es:9200',
             'state' => $this->faker->randomElement([
                 Cluster::RUNNING,
                 // Cluster::QUEUED_CREATE,

@@ -31,11 +31,10 @@ class ShareSelectedProjectToView
             $cluster = $project->clusters()->first();
         }
 
-        $domain = config('services.cloudflare.domain');
-
         $clusterUrl = '';
+
         if ($cluster !== null) {
-            $clusterUrl = "https://{$cluster->name}.{$domain}";
+            $clusterUrl = $cluster->getAttribute('url');
         }
 
         Inertia::share('project_id', $projectId);

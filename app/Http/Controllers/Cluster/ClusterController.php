@@ -32,13 +32,17 @@ class ClusterController extends \App\Http\Controllers\Controller
     {
         $validated = $request->validated();
 
+        $name = $validated['name'];
+        $domain = config('services.cloudflare.domain');
+
         $cluster = $this->clusters->create([
-            'name' => $validated['name'],
+            'name' => $name,
             'data_center' => $validated['data_center'],
             'project_id' => $validated['project_id'],
             'nodes_count' => $validated['nodes_count'],
             'username' => $validated['username'],
             'password' => encrypt($validated['password']),
+            'url' => "https://{$name}.{$domain}",
             'state' => Cluster::QUEUED_CREATE
         ]);
 

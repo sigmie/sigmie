@@ -33,8 +33,7 @@ class SigmieServiceProvider extends ServiceProvider
 
             $username = $cluster->getAttribute('username');
             $password = decrypt($cluster->getAttribute('password'));
-            $domain = config('services.cloudflare.domain');
-            $url = (config('app.env') === 'testing') ? 'http://es:9200' : "https://{$cluster->name}.{$domain}";
+            $url = $cluster->getAttribute('url');
 
             return SigmieClient::createFromBasicAuth($username, $password, $url);
         });
