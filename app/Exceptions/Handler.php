@@ -34,11 +34,6 @@ class Handler extends ExceptionHandler
      */
     public function report(Throwable $exception): void
     {
-        // Report to stackdriver on app engine
-        if (isset($_SERVER['GAE_SERVICE']) && $this->shouldReport($exception)) {
-            Bootstrap::exceptionHandler($exception);
-        }
-
         parent::report($exception);
     }
 

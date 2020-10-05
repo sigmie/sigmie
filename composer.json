@@ -28,7 +28,6 @@
         "php": "^7.4",
         "fideloper/proxy": "^4.0",
         "fruitcake/laravel-cors": "^1.0",
-        "google/cloud-error-reporting": "^0.16.2",
         "guzzlehttp/guzzle": "^7.0.1",
         "inertiajs/inertia-laravel": "^0.2.5",
         "laravel/cashier-paddle": "^1.0@beta",

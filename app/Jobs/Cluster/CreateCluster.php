@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Jobs\Cluster;
 
+use App\Events\Cluster\ClusterHasFailed;
 use App\Events\Cluster\ClusterWasCreated;
 use App\Helpers\ClusterAdapter;
 use App\Helpers\ClusterManagerFactory;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
+use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -24,6 +26,8 @@ class CreateCluster implements ShouldQueue
     use SerializesModels;
 
     private int $clusterId;
+
+    private $clusters;
 
     public function __construct(int $clusterId)
     {
@@ -59,8 +63,8 @@ class CreateCluster implements ShouldQueue
     /**
      * Handle a job failure.
      */
-    public function failed(Throwable $exception, ClusterRepository $clusters)
+    public function failed(Throwable $throwable)
     {
-        $clusters->update($this->clusterId, ['state' => Cluster::FAILED]);
+        event(new ClusterHasFailed($this->clusterId));
     }
 }

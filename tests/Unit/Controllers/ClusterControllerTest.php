@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Controllers;
 
 use App\Http\Controllers\Cluster\ClusterController;
-use App\Http\Requests\Cluster\StoreCluster; use App\Http\Requests\Cluster\UpdateCluster;
+use App\Http\Requests\Cluster\StoreCluster;
+use App\Http\Requests\Cluster\UpdateCluster;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
 use Illuminate\Http\RedirectResponse;
@@ -52,8 +53,8 @@ class ClusterControllerTest extends TestCase
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function create_renders_inertia_cluster_create()
     {
         $this->expectsInertiaToRender('cluster/create/create');
