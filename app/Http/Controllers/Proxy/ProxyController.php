@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Proxy;
 
 use App\Http\Middleware\Proxy\ProxyRequest;
 use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 
@@ -35,8 +36,13 @@ class ProxyController extends \App\Http\Controllers\Controller
 
         $url = $url . '/' . $endpoint . '?' . $request->getQueryString();
 
+        /** @var  Response */
         $response = $client->$method($url, $options);
 
-        return $response->getBody()->getContents();
+        $headers = $response->getHeaders();
+        $contents = $response->getBody()->getContents();
+        $code = $response->getStatusCode();
+
+        return response($contents, $code, $headers);
     }
 }

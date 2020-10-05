@@ -43,6 +43,22 @@ class ProxyControllerTest extends TestCase
     /**
      * @test
      */
+    public function proxy_allows_only_search_with_search_token_type()
+    {
+        $this->get(route('proxy'), ['Authorization' => "Bearer {$this->searchToken}"])
+            ->assertJson([
+                "message" => "Unauthorized token type."
+            ]);
+
+        $path = '/someindex/_search';
+        $response = $this->get(route('proxy') . $path, ['Authorization' => "Bearer {$this->searchToken}"]);
+
+        $response->assertStatus(404); //Index not found
+    }
+
+    /**
+     * @test
+     */
     public function proxy_sends_inactive_token_message_on_admin_request()
     {
         $this->cluster->update(['admin_token_active' => false]);

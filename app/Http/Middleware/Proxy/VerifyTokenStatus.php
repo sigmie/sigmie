@@ -15,18 +15,18 @@ class VerifyTokenStatus
         $this->cluster = $proxyRequest->cluster();
     }
 
-    public function isSearchTokenRequest(): bool
+    private function isSearchTokenRequest(): bool
     {
         return $this->cluster->currentAccessToken()->getAttribute('name') === TokenController::SEARCH_ONLY;
     }
 
-    public function isAdminTokenRequest(): bool
+    private function isAdminTokenRequest(): bool
     {
         return $this->cluster->currentAccessToken()->getAttribute('name') === TokenController::ADMIN;
     }
 
     /**
-     * Handle an incoming request.
+     * @param  \Illuminate\Http\Request  $request
      */
     public function handle($request, Closure $next)
     {
@@ -37,7 +37,6 @@ class VerifyTokenStatus
         if ($this->isSearchTokenRequest() && $this->cluster->isSearchTokenActive()) {
             return $next($request);
         }
-
 
         return response()->json(['message' => 'Inactive token.'], 403);
     }
