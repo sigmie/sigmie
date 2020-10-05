@@ -7,11 +7,13 @@ namespace Tests\Feature;
 use App\Http\Controllers\Cluster\TokenController;
 use App\Models\Cluster;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Tests\Helpers\ElasticsearchCleanup;
 use Tests\TestCase;
 
 class ProxyControllerTest extends TestCase
 {
     use DatabaseTransactions;
+    use ElasticsearchCleanup;
 
     /**
      * @var Cluster
@@ -41,22 +43,48 @@ class ProxyControllerTest extends TestCase
     /**
      * @test
      */
-    public function proxy_returns_json_response()
+    public function proxy_sends_inactive_token_message_on_admin_request()
     {
+        $this->cluster->update(['admin_token_active' => false]);
+
         $this->get(route('proxy'), ['Authorization' => "Bearer {$this->adminToken}"])
             ->assertJson([
-                "tagline" => "You Know, for Search"
+                "message" => "Inactive token."
             ]);
     }
 
     /**
      * @test
      */
-    public function proxy_returns_login_without_token()
+    public function proxy_sends_inactive_token_message_on_search_request()
     {
-        $this->get(route('proxy'), ['Authorization' => ""])
+        $this->cluster->update(['search_token_active' => false]);
+
+        $this->get(route('proxy'), ['Authorization' => "Bearer {$this->searchToken}"])
             ->assertJson([
-                'message' => 'Unauthenticated.'
+                "message" => "Inactive token."
+            ]);
+    }
+
+    /**
+     * @test
+     */
+    public function proxy_passes_query_string()
+    {
+        $path = '/_cat/indices?format=json&pretty=true';
+        $response = $this->get(route('proxy') . $path, ['Authorization' => "Bearer {$this->adminToken}"]);
+
+        $response->assertJson([]);
+    }
+
+    /**
+     * @test
+     */
+    public function proxy_returns_json_response()
+    {
+        $this->get(route('proxy'), ['Authorization' => "Bearer {$this->adminToken}"])
+            ->assertJson([
+                "tagline" => "You Know, for Search"
             ]);
     }
 

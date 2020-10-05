@@ -31,6 +31,16 @@ class Cluster extends Model
         'search_token_active' => 'boolean'
     ];
 
+    public function isAdminTokenActive(): bool
+    {
+        return $this->getAttribute('admin_token_active');
+    }
+
+    public function isSearchTokenActive(): bool
+    {
+        return $this->getAttribute('search_token_active');
+    }
+
     public function tokens()
     {
         return $this->morphMany(Token::class, 'tokenable');

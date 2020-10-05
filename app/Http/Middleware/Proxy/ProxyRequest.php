@@ -32,7 +32,7 @@ class ProxyRequest
         return $next($request);
     }
 
-    public function cluster()
+    public function cluster(): Cluster
     {
         return $this->cluster;
     }

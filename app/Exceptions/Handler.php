@@ -53,7 +53,7 @@ class Handler extends ExceptionHandler
     {
         return $request->expectsJson() || $this->isProxyRequest($request)
             ? response()->json(['message' => $exception->getMessage()], 401)
-            : redirect()->guest($exception->redirectTo() ?? route('login'));
+            : redirect()->guest($exception->redirectTo() ?? route('sign-in'));
     }
 
     public function isProxyRequest(Request $request): bool
