@@ -40,6 +40,17 @@ class ProxyControllerTest extends TestCase
         $this->searchToken = $this->cluster->createToken(TokenController::SEARCH_ONLY, ['search'])->plainTextToken;
     }
 
+   /**
+     * @test
+     */
+    public function proxy_returns_unauthenticated_without_token()
+    {
+        $this->get(route('proxy'), [])
+            ->assertJson([
+                'message' => 'Unauthenticated.'
+            ]);
+    }
+
     /**
      * @test
      */

@@ -47,6 +47,6 @@ class UserSeeder extends Seeder
         ]);
 
         $project = Project::factory()->create(['user_id' => $userId]);
-        // $cluster = Cluster::factory()->create(['project_id' => $project->id]);
+        $cluster = Cluster::factory()->create(['project_id' => $project->id]);
     }
 }

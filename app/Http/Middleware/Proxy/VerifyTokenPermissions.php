@@ -14,9 +14,11 @@ class VerifyTokenPermissions
         '@\/*\/_search@'
     ];
 
+    protected ProxyRequest $proxyRequest;
+
     public function __construct(ProxyRequest $proxyRequest)
     {
-        $this->cluster = $proxyRequest->cluster();
+        $this->proxyRequest = $proxyRequest;
     }
 
     private function isAdminTokenRequest(): bool
@@ -40,6 +42,8 @@ class VerifyTokenPermissions
      */
     public function handle($request, Closure $next)
     {
+        $this->cluster = $this->proxyRequest->cluster();
+
         if ($this->isAdminTokenRequest()) {
             return $next($request);
         }

@@ -10,9 +10,11 @@ class VerifyTokenStatus
 {
     protected Cluster $cluster;
 
+    protected ProxyRequest $proxyRequest;
+
     public function __construct(ProxyRequest $proxyRequest)
     {
-        $this->cluster = $proxyRequest->cluster();
+        $this->proxyRequest = $proxyRequest;
     }
 
     private function isSearchTokenRequest(): bool
@@ -30,6 +32,8 @@ class VerifyTokenStatus
      */
     public function handle($request, Closure $next)
     {
+        $this->cluster = $this->proxyRequest->cluster();
+
         if ($this->isAdminTokenRequest() && $this->cluster->isAdminTokenActive()) {
             return $next($request);
         }
