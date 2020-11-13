@@ -6,31 +6,23 @@ namespace Tests\Unit\Jobs;
 
 use App\Helpers\ClusterManagerFactory;
 use App\Jobs\Cluster\CreateCluster;
-use App\Models\Cluster;
-use App\Models\Project; use App\Repositories\ClusterRepository;
+use App\Repositories\ClusterRepository;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\App\Core\Cluster as CoreCluster;
 use Sigmie\App\Core\Contracts\ClusterManager;
+use Tests\Helpers\NeedsCluster;
 use Tests\TestCase;
 
 class CreateClusterTest extends TestCase
 {
+    use NeedsCluster;
+
     /**
      * @var CreateCluster
      */
     private $job;
-
-    /**
-     * @var integer
-     */
-    private $clusterId = 0;
-
-    /**
-     * @var integer
-     */
-    private $projectId = -1;
 
     /**
      * @var ClusterRepository|MockObject
@@ -43,16 +35,6 @@ class CreateClusterTest extends TestCase
     private $clusterManagerFactoryMock;
 
     /**
-     * @var Cluster|MockObject
-     */
-    private $clusterMock;
-
-    /**
-     * @var Project|MockObject
-     */
-    private $projectMock;
-
-    /**
      * @var ClusterManager|MockObject
      */
     private $clusterManagerMock;
@@ -63,9 +45,6 @@ class CreateClusterTest extends TestCase
 
         Event::fake();
 
-        $this->clusterMock = $this->createMock(Cluster::class);
-        $this->projectMock = $this->createMock(Project::class);
-
         $this->clusterRepositoryMock = $this->createMock(ClusterRepository::class);
         $this->clusterManagerFactoryMock = $this->createMock(ClusterManagerFactory::class);
         $this->clusterManagerMock = $this->createMock(ClusterManager::class);
@@ -73,20 +52,11 @@ class CreateClusterTest extends TestCase
         $this->clusterManagerFactoryMock->method('create')->willReturn($this->clusterManagerMock);
         $this->clusterRepositoryMock->method('findTrashed')->willReturn($this->clusterMock);
 
-        $clusterAttributes = [
-            ['project', $this->projectMock],
-            ['id', $this->clusterId],
-            ['data_center', 'europe'],
-            ['name', 'foo'],
-            ['username', 'bar'],
-            ['password', encrypt('baz')],
-            ['nodes_count', 3],
-        ];
-
-        $this->clusterMock->method('getAttribute')->willReturnMap($clusterAttributes);
-        $this->projectMock->method('getAttribute')->willReturnMap([['id', $this->projectId]]);
-
-        $this->job = new CreateCluster($this->clusterId);
+        $this->job = new CreateCluster($this->clusterId, [
+            'memory' => 2024,
+            'disk' => 10,
+            'cores' => 2,
+        ]);
     }
 
     /**

@@ -14,6 +14,26 @@
             "command": "php artisan test"
         },
         {
+            "label": "decrypt:env",
+            "type": "shell",
+            "command": "gpg --quiet --batch --yes --decrypt --passphrase='${input:params}' --output .env.prod .github/secrets/.env.gpg",
+        },
+        {
+            "label": "horizon:clear:long-running-queue",
+            "type": "shell",
+            "command": "php artisan horizon:clear --queue=long-running-queue",
+        },
+        {
+            "label": "horizon:clear:default",
+            "type": "shell",
+            "command": "php artisan horizon:clear",
+        },
+        {
+            "label": "update:env",
+            "type": "shell",
+            "command": "echo '${input:params}' | gpg --batch --yes --passphrase-fd 0 --symmetric --cipher-algo AES256 .env.prod && mv .env.prod.gpg .github/secrets/.env.gpg"
+        },
+        {
             "label": "fresh:seed",
             "type": "shell",
             "command": "php artisan migrate:fresh --seed"
@@ -22,6 +42,21 @@
             "label": "make:test:unit",
             "type": "shell",
             "command": "php artisan make:test --unit ${input:params}"
+        },
+        {
+            "label": "seed:only-user",
+            "type": "shell",
+            "command": "php artisan db:seed --class='UserSeeder'"
+        },
+        {
+            "label": "seed:without-cluster",
+            "type": "shell",
+            "command": "php artisan db:seed --class='WithoutCluster'"
+        },
+        {
+            "label": "seed:deleted-cluster",
+            "type": "shell",
+            "command": "php artisan db:seed --class='WithDeletedCluster'"
         },
         {
             "label": "db:seed",
@@ -224,6 +259,12 @@
         {
             "id": "params",
             "description": "Parameters",
+            "default": "",
+            "type": "promptString"
+        },
+        {
+            "id": "passphrase",
+            "description": "Passphrase",
             "default": "",
             "type": "promptString"
         },

@@ -45,6 +45,7 @@
 
       <div class="pt-3">
         <provider
+          :isProjectValid="$v.$invalid === false"
           @submit="submit"
           @providerChange="(value)=> provider.data = value"
           @validate="(invalid)=> this.provider.invalid = invalid"

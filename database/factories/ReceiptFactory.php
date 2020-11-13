@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Database\Factories;
 
@@ -13,7 +15,10 @@ class ReceiptFactory extends Factory
 
     public function definition()
     {
-        $checkoutId = $this->faker->randomElement(['64959728-chred25af386582-b459e0c42d', '64959872-chre1a42ab872b2-a6efd4e3c7']);
+        $checkoutId = $this->faker->randomElement([
+            '64959728-chred25af386582-b459e0c42d',
+            '64959872-chre1a42ab872b2-a6efd4e3c7'
+        ]);
 
         $user = Subscription::factory()->create()->billable;
 

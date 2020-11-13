@@ -5,8 +5,8 @@
 
 # Sigmie App
 
-User docs: https://docs.sigmie/app
+User docs: https://docs.sigmie.com/app
 
 Application: https://app.sigmie.com
 
-Developer docs: https://github.com/sigmie/app/docs
+Developer docs: https://github.com/sigmie/app/tree/master/docs

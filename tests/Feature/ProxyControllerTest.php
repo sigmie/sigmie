@@ -40,7 +40,7 @@ class ProxyControllerTest extends TestCase
         $this->searchToken = $this->cluster->createToken(TokenController::SEARCH_ONLY, ['search'])->plainTextToken;
     }
 
-   /**
+    /**
      * @test
      */
     public function proxy_returns_unauthenticated_without_token()
@@ -48,6 +48,51 @@ class ProxyControllerTest extends TestCase
         $this->get(route('proxy'), [])
             ->assertJson([
                 'message' => 'Unauthenticated.'
+            ]);
+    }
+
+    /**
+     * @test
+     */
+    public function proxy_returns_cluster_not_ready_if_cluster_state_creating()
+    {
+        $cluster = Cluster::factory(['state' => 'queued_create', 'name' => 'hmm'])->create();
+
+        $adminToken = $cluster->createToken(TokenController::ADMIN, ['*'])->plainTextToken;
+
+        $this->get(route('proxy'), ['Authorization' => "Bearer {$adminToken}"])
+            ->assertJson([
+                'message' => 'Cluster not ready yet.'
+            ]);
+    }
+
+    /**
+     * @test
+     */
+    public function proxy_returns_cluster_has_failed_if_cluster_state_is_failed()
+    {
+        $cluster = Cluster::factory(['state' => 'failed', 'name' => 'hmm'])->create();
+
+        $adminToken = $cluster->createToken(TokenController::ADMIN, ['*'])->plainTextToken;
+
+        $this->get(route('proxy'), ['Authorization' => "Bearer {$adminToken}"])
+            ->assertJson([
+                'message' => 'Cluster has failed.'
+            ]);
+    }
+
+    /**
+     * @test
+     */
+    public function proxy_returns_cluster_destroyed_if_cluster_state_destroyed()
+    {
+        $cluster = Cluster::factory(['state' => 'destroyed', 'name' => 'hmm'])->create();
+
+        $adminToken = $cluster->createToken(TokenController::ADMIN, ['*'])->plainTextToken;
+
+        $this->get(route('proxy'), ['Authorization' => "Bearer {$adminToken}"])
+            ->assertJson([
+                'message' => 'Cluster destroyed.'
             ]);
     }
 

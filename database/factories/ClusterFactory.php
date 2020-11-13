@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Models\Cluster;
 use App\Models\Project;
+use Composer\InstalledVersions;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ClusterFactory extends Factory
@@ -16,7 +17,7 @@ class ClusterFactory extends Factory
     {
         return [
             'name' => $this->faker->word(),
-            'data_center' => $this->faker->randomElement(['america', 'europe', 'asia']),
+            'region_id' => 2,
             'username' => $this->faker->text(10),
             'password' => encrypt($this->faker->text(10)),
             'url' => 'http://es:9200',
@@ -28,11 +29,12 @@ class ClusterFactory extends Factory
                 // Cluster::DESTROYED,
                 // Cluster::FAILED,
             ]),
-            // 'deleted_at' => $faker->randomElement([null, $faker->dateTime()]),
-            // 'nodes_count' => $faker->numberBetween(1, 3),
             'deleted_at' => null,
+            // 'deleted_at' => $faker->randomElement([null, $faker->dateTime()]),
             'nodes_count' => 1,
-            'project_id' => Project::factory()
+            // 'nodes_count' => $faker->numberBetween(1, 3),
+            'project_id' => Project::factory(),
+            'core_version' =>  InstalledVersions::getVersion('sigmie/app-core')
         ];
     }
 }

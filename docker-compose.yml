@@ -4,7 +4,7 @@ services:
   app:
     container_name: app
     build:
-      context: '..'
+      context: '.'
     dns:
      - 1.1.1.1 # Cloudflare
      - 8.8.8.8 # Google
@@ -14,7 +14,7 @@ services:
       # - '35729:35729' # Live reload port
         - '8080:8080'
     volumes:
-        - ../:/var/www/app:delegated
+        - ./:/var/www/app:delegated
         - ~/.composer:/root/.composer
         - ~/.npm:/root/.npm
     depends_on:

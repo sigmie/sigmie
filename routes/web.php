@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
@@ -11,8 +11,7 @@
 |
 */
 
-use App\Http\Controllers\User\SettingsController as AccountSettingsController;
-use App\Http\Controllers\Project\SettingsController as ClusterSettingsController;
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\GithubController;
 use App\Http\Controllers\Auth\LoginController;
@@ -26,13 +25,15 @@ use App\Http\Controllers\Legal\LegalController;
 use App\Http\Controllers\Newsletter\SubscriptionConfirmationController;
 use App\Http\Controllers\Newsletter\SubscriptionController as NewsletterSubscriptionController;
 use App\Http\Controllers\Project\ProjectController;
+use App\Http\Controllers\Project\SettingsController as ClusterSettingsController;
 use App\Http\Controllers\Subscription\SubscriptionController;
 use App\Http\Controllers\User\PasswordController;
+use App\Http\Controllers\User\SettingsController as AccountSettingsController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Middleware\Redirects\RedirecToSameRouteWithProject;
-use App\Http\Middleware\Redirects\RedirectToRenewSubscriptionIfNotSubscribed;
 use App\Http\Middleware\Redirects\RedirectToClusterCreateIfHasntCluster;
 use App\Http\Middleware\Redirects\RedirectToDashboardIfSubscribed;
+use App\Http\Middleware\Redirects\RedirectToRenewSubscriptionIfNotSubscribed;
 use App\Http\Middleware\Shares\ShareSelectedProjectToView;
 
 Route::get('/', LandingController::class)->name('landing')->middleware('guest');
@@ -51,7 +52,7 @@ Route::prefix('newsletter')->name('newsletter.')->group(function () {
 // Legal
 Route::name('legal.')->group(function () {
     Route::get('/about-us', [LegalController::class, 'about'])->name('about');
-    Route::get('/terms-of-service',  [LegalController::class, 'terms'])->name('terms');
+    Route::get('/terms-of-service', [LegalController::class, 'terms'])->name('terms');
     Route::get('/privacy-policy', [LegalController::class, 'privacy'])->name('privacy');
     Route::get('/imprint', [LegalController::class, 'imprint'])->name('imprint');
     Route::get('/disclaimer', [LegalController::class, 'disclaimer'])->name('disclaimer');

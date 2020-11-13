@@ -1,6 +1,5 @@
 <template>
   <div>
-
     <div class="flex flex-col-reverse lg:grid lg:grid-cols-3 gap-6">
       <div class="flex-1 md:col-span-2 sm:px-0 sm:pt-2">
         <div class="shadow rounded-md sm:overflow-hidden">
@@ -10,7 +9,7 @@
                 <form-input
                   :value="name"
                   label="Name"
-                  @change="(value) => set('name',value)"
+                  @change="(value) => set('name', value)"
                   class="max-w-sm"
                   id="name"
                   name="name"
@@ -29,25 +28,25 @@
       </div>
       <div class="flex-1 md:col-span-1 pt-4 sm:pt-0">
         <div class="pb-2 md:pb-4 lg:pb-0 lg:px-4">
-          <h3 class="text-lg font-medium md:leading-6 text-gray-900">General</h3>
+          <h3 class="text-lg font-medium md:leading-6 text-gray-900">Name</h3>
           <p
-            v-if="name !== '' && $v.name.invalid === false"
+            v-if="name !== '' && $v.name.$invalid === false"
             class="mt-1 text-sm leading-5 text-gray-600"
           >
-            Basic information about your search.
+            Pick you unique cluster name.
             <br />
-            <br />You search will be available at
+            <br />You Elasticsearch will be available at
             <br />
             <a
               class="text-orange-700"
-              :href="'https://'+name+'.sigmie.app'"
+              :href="'https://' + name + '.sigmie.app'"
               target="_blank"
-            >https://{{ name + domain }}</a>.
+              >https://{{ name }}.sigmie.app</a
+            >.
           </p>
-          <p
-            v-else
-            class="mt-1 text-sm leading-5 text-gray-600"
-          >General information about your search.</p>
+          <p v-else class="mt-1 text-sm leading-5 text-gray-600">
+            Pick you unique cluster name.
+          </p>
         </div>
       </div>
     </div>
@@ -72,9 +71,9 @@ export default {
 
         let route = this.$route("cluster.validate.name", [value]);
 
-        return this.$http.get(route).then(response => response.data.valid);
-      }
-    }
+        return this.$http.get(route).then((response) => response.data.valid);
+      },
+    },
   },
   data() {
     return {
@@ -83,15 +82,15 @@ export default {
         name: {
           required: "Name field is required.",
           alphaDashes: "Name must be lowercase letters, numbers, and hyphens.",
-          isUnique: "A search with this name already exists."
-        }
-      }
+          isUnique: "A search with this name already exists.",
+        },
+      },
     };
   },
   watch: {
-    "$v.$invalid": function(value) {
+    "$v.$invalid": function (value) {
       this.$emit("validate", value);
-    }
+    },
   },
   methods: {
     set(key, value) {
@@ -99,8 +98,8 @@ export default {
       this.$v[key].$touch();
 
       this.$emit(`${key}Change`, value);
-    }
-  }
+    },
+  },
 };
 </script>
 

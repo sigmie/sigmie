@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Middleware\Proxy;
 
 use App\Http\Controllers\Cluster\TokenController;
@@ -15,16 +17,6 @@ class VerifyTokenStatus
     public function __construct(ProxyRequest $proxyRequest)
     {
         $this->proxyRequest = $proxyRequest;
-    }
-
-    private function isSearchTokenRequest(): bool
-    {
-        return $this->cluster->currentAccessToken()->getAttribute('name') === TokenController::SEARCH_ONLY;
-    }
-
-    private function isAdminTokenRequest(): bool
-    {
-        return $this->cluster->currentAccessToken()->getAttribute('name') === TokenController::ADMIN;
     }
 
     /**
@@ -43,5 +35,15 @@ class VerifyTokenStatus
         }
 
         return response()->json(['message' => 'Inactive token.'], 403);
+    }
+
+    private function isSearchTokenRequest(): bool
+    {
+        return $this->cluster->currentAccessToken()->getAttribute('name') === TokenController::SEARCH_ONLY;
+    }
+
+    private function isAdminTokenRequest(): bool
+    {
+        return $this->cluster->currentAccessToken()->getAttribute('name') === TokenController::ADMIN;
     }
 }

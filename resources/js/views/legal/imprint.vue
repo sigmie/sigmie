@@ -5,7 +5,7 @@
       <p>
         Sigmie UG (haftungsbeschränkt),
         <br />Feldstr. 9
-        <br />59507 Lüdenscheid
+        <br />58507 Lüdenscheid
         <br />Germany
       </p>
       <p>

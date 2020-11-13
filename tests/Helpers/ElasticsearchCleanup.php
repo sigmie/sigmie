@@ -8,7 +8,7 @@ use Sigmie\Search\SigmieClient;
 
 trait ElasticsearchCleanup
 {
-    public function deleteAllIndices()
+    final public function deleteAllIndices()
     {
         $client = SigmieClient::createWithoutAuth('http://es:9200');
 

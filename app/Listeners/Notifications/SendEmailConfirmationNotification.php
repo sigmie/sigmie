@@ -11,8 +11,7 @@ class SendEmailConfirmationNotification
 {
     public function handle(NewsletterSubscriptionWasCreated $event): void
     {
-        if (
-            $event->newsletterSubscription instanceof MustConfirmSubscription
+        if ($event->newsletterSubscription instanceof MustConfirmSubscription
             && !$event->newsletterSubscription->subscriptionConfirmed()
         ) {
             $event->newsletterSubscription->sendConfirmationEmailNotification();

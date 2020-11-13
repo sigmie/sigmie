@@ -76,7 +76,7 @@
           <a class="px-4 py-2 tracking-wide text-sm text-gray-400 float-right" href>Cancel</a>
         </span>
         <span class="inline-flex rounded-md shadow-sm mr-3">
-          <button-primary @click="$emit('submit')" text="Create"></button-primary>
+          <button-primary @click="$emit('submit')" :disabled="!isProjectValid || $v.$invalid" text="Create"></button-primary>
         </span>
       </div>
     </div>
@@ -90,6 +90,7 @@ import { forEach } from "lodash";
 const assetUrl = process.env.MIX_ASSET_URL;
 
 export default {
+  props: ['isProjectValid'],
   validations: {
     serviceAccount: {
       required,
@@ -120,7 +121,7 @@ export default {
         serviceAccount: {
           required: "JSON Service account key is required.",
           isValid: "The service account JSON isn't valid"
-        }
+          }
       },
       providers: {
         google: {

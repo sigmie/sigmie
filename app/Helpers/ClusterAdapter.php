@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace App\Helpers;
 
 use App\Models\Cluster as AppCluster;
-use Sigmie\App\Core\Cloud\Regions\America;
-use Sigmie\App\Core\Cloud\Regions\Asia;
-use Sigmie\App\Core\Cloud\Regions\Europe;
 use Sigmie\App\Core\Cluster as CoreCluster;
 
 class ClusterAdapter
@@ -20,26 +17,15 @@ class ClusterAdapter
         $coreCluster = new CoreCluster();
 
         $name = $cluster->getAttribute('name');
-        $dataCenter = $cluster->getAttribute('data_center');
+        $region = $cluster->getAttribute('region');
         $nodesCount = $cluster->getAttribute('nodes_count');
         $username = $cluster->getAttribute('username');
         $password = decrypt($cluster->getAttribute('password'));
 
+        $regionClass = $region->getAttribute('class');
+
+        $coreCluster->setRegion(new $regionClass());
         $coreCluster->setName($name);
-
-        if ($dataCenter === 'europe') {
-            $coreCluster->setRegion(new Europe());
-        }
-
-        if ($dataCenter === 'asia') {
-            $coreCluster->setRegion(new Asia());
-        }
-
-        if ($dataCenter === 'america') {
-            $coreCluster->setRegion(new America());
-        }
-
-        $coreCluster->setDiskSize(15);
         $coreCluster->setNodesCount($nodesCount);
 
         $coreCluster->setUsername($username);

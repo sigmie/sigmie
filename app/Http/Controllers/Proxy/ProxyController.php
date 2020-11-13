@@ -8,7 +8,6 @@ use App\Http\Middleware\Proxy\ProxyRequest;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
 
 class ProxyController extends \App\Http\Controllers\Controller
 {

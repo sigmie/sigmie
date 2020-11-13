@@ -26,6 +26,8 @@
     ],
     "require": {
         "php": "^7.4",
+        "composer-runtime-api": "^2.0",
+        "calebporzio/sushi": "^2.1",
         "fideloper/proxy": "^4.0",
         "fruitcake/laravel-cors": "^1.0",
         "guzzlehttp/guzzle": "^7.0.1",
@@ -43,13 +45,12 @@
         "laravel/ui": "^3.0",
         "nunomaduro/collision": "^5.0",
         "pusher/pusher-php-server": "~4.0",
-        "sigmie/app-core": "0.6",
+        "sigmie/app-core": "0.9.2",
         "sigmie/nova-feature-flags": "@dev",
         "sigmie/sigmie": "^0.3.3",
         "tightenco/ziggy": "^0.9.3"
     },
     "require-dev": {
-        "emielmolenaar/phpcs-laravel": "^1.2",
         "filp/whoops": "^2.0",
         "fzaninotto/faker": "^1.4",
         "mockery/mockery": "^1.0",

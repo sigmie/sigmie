@@ -6,9 +6,8 @@ namespace Tests\Unit\Helpers;
 
 use App\Helpers\ClusterAdapter;
 use App\Models\Cluster;
-use Sigmie\App\Core\Cloud\Regions\America;
+use App\Models\Region;
 use Sigmie\App\Core\Cloud\Regions\Asia;
-use Sigmie\App\Core\Cloud\Regions\Europe;
 use Sigmie\App\Core\Cluster as CoreCluster;
 use Tests\TestCase;
 
@@ -21,30 +20,30 @@ class ClusterAdapterTest extends TestCase
     {
         $appCluster = new Cluster([
             'name' => 'foo',
-            'data_center' => 'europe',
             'nodes_count' => 3,
             'username' => 'bar',
             'password' => encrypt('baz')
         ]);
+        $appCluster->setAttribute(
+            'region',
+            new Region([
+                'id' => 1,
+                'class' => Asia::class,
+                'name' => 'Asia',
+            ],)
+        );
 
         $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
 
-        $this->assertEquals(new Europe(), $coreCluster->region);
+        $this->assertEquals(new Asia, $coreCluster->region);
         $this->assertEquals('foo', $coreCluster->name);
         $this->assertEquals('bar', $coreCluster->username);
         $this->assertEquals('baz', $coreCluster->password);
-        $this->assertEquals(15, $coreCluster->diskSize);
+
+        $this->assertFalse(isset($coreCluster->memory));
+        $this->assertFalse(isset($coreCluster->cpus));
+        $this->assertFalse(isset($coreCluster->diskSize));
 
         $this->assertInstanceOf(CoreCluster::class, $coreCluster);
-
-        //Check asia region mapping
-        $appCluster->setAttribute('data_center', 'asia');
-        $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
-        $this->assertEquals(new Asia(), $coreCluster->region);
-
-        //Check america region mapping
-        $appCluster->setAttribute('data_center', 'america');
-        $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
-        $this->assertEquals(new America(), $coreCluster->region);
     }
 }

@@ -1,7 +1,7 @@
 {
     "name": "Sigmie app",
     "dockerComposeFile": [
-        "docker-compose.yml"
+        "../docker-compose.yml" // Has to be in root to use Tinkerwell app
     ],
     "service": "app",
     "workspaceFolder": "/var/www/app",
@@ -9,7 +9,7 @@
         "terminal.integrated.shell.linux": "/bin/bash"
     },
     "runArgs": ["--env-file","/dev/null"],
-    "postCreateCommand": "add-apt-repository ppa:ondrej/php --remove -y && apt-get update && apt-get install -y npm && npm install -g yarn",
+    //"postCreateCommand": "add-apt-repository ppa:ondrej/php --remove -y && apt-get update && apt-get install -y npm && npm install -g yarn",
     "overrideCommand": false,
     "extensions": [
         "bmewburn.vscode-intelephense-client",

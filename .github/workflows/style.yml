@@ -57,10 +57,7 @@ jobs:
       run: vendor/bin/phpstan analyse --memory-limit=-1
 
     - name: PHPCS app dir
-      run: vendor/bin/phpcs --standard=phpcs-laravel app
-
-    - name: PHPCS tests dir
-      run: vendor/bin/phpcs --standard=phpcs-laravel tests
+      run: vendor/bin/phpcs --standard=PSR2 {app,database/factories,database/seeders}
 
     - name: JS Standard
       run: node_modules/standard/bin/cmd.js resources | node_modules/snazzy/bin/cmd.js

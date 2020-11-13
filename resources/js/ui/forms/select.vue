@@ -13,7 +13,7 @@
           @blur="$emit('blur', $event.target.value)"
           @focus="$emit('touch', $event.target.value)"
           @change="$emit('change', items[$event.target.value])"
-          class="form-select relative block w-full rounded-none rounded-md bg-transparent focus:z-10 transition ease-in-out duration-150 sm:text-sm sm:leading-5"
+          class="form-select relative block w-full rounded-md bg-transparent focus:z-10 transition ease-in-out duration-150 sm:text-sm sm:leading-5"
         >
           <option class="hidden" disabled selected value></option>
           <option v-for="(item, index) in items" :value="index" :key="index">{{ item[displayKey] }}</option>

@@ -10,11 +10,11 @@ use App\Events\Cluster\ClusterWasCreated;
 use App\Events\Cluster\ClusterWasDestroyed;
 use App\Events\Newsletter\NewsletterSubscriptionWasCreated;
 use App\Listeners\Cluster\PollClusterState;
+use App\Listeners\Cluster\UpdateClusterStateToError;
 use App\Listeners\Notifications\SendClusterDestroyedNotification;
 use App\Listeners\Notifications\SendClusterRunningNotification;
 use App\Listeners\Notifications\SendEmailConfirmationNotification;
 use App\Listeners\Subscription\DispatchUserWasSubscribedEvent;
-use App\Listeners\Cluster\UpdateClusterStateToError;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Laravel\Paddle\Events\WebhookHandled;
 

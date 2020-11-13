@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Exceptions;
 
 use Exception;
-use Google\Cloud\ErrorReporting\Bootstrap;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
@@ -37,6 +36,19 @@ class Handler extends ExceptionHandler
         parent::report($exception);
     }
 
+    public function isProxyRequest(Request $request): bool
+    {
+        return $request->getHost() === env('PROXY_DOMAIN');
+    }
+
+    /**
+     * Render an exception into an HTTP response.
+     */
+    public function render($request, Throwable $exception): Response
+    {
+        return parent::render($request, $exception);
+    }
+
     /**
      * Convert an authentication exception into a response.
      *
@@ -49,18 +61,5 @@ class Handler extends ExceptionHandler
         return $request->expectsJson() || $this->isProxyRequest($request)
             ? response()->json(['message' => $exception->getMessage()], 401)
             : redirect()->guest($exception->redirectTo() ?? route('sign-in'));
-    }
-
-    public function isProxyRequest(Request $request): bool
-    {
-        return $request->getHost() === env('PROXY_DOMAIN');
-    }
-
-    /**
-     * Render an exception into an HTTP response.
-     */
-    public function render($request, Throwable $exception): Response
-    {
-        return parent::render($request, $exception);
     }
 }

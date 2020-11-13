@@ -31,6 +31,11 @@ class Cluster extends Model
         'search_token_active' => 'boolean'
     ];
 
+    public function region()
+    {
+        return $this->belongsTo(Region::class);
+    }
+
     public function isAdminTokenActive(): bool
     {
         return $this->getAttribute('admin_token_active');
@@ -58,6 +63,6 @@ class Cluster extends Model
 
     public function isOwnedBy(User $user)
     {
-        return $this->project->user->id === $user->id;
+        return $this->getAttribute('project')->user->id === $user->id;
     }
 }

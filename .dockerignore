@@ -9,6 +9,7 @@ v8-compile-cache-0
 
 docker
 .devcontainer
+docker-compose.yml
 
 .editorconfig
 .env.example

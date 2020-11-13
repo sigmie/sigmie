@@ -10,7 +10,6 @@ use App\Helpers\ClusterAdapter;
 use App\Helpers\ClusterManagerFactory;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
-use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -29,9 +28,12 @@ class CreateCluster implements ShouldQueue
 
     private $clusters;
 
-    public function __construct(int $clusterId)
+    private array $specs;
+
+    public function __construct(int $clusterId, array $specs)
     {
         $this->clusterId = $clusterId;
+        $this->specs = $specs;
         $this->queue = 'long-running-queue';
     }
 
@@ -52,6 +54,9 @@ class CreateCluster implements ShouldQueue
         $clusterId = $appCluster->getAttribute('id');
 
         $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
+        $coreCluster->setCpus($this->specs['cores']);
+        $coreCluster->setMemory($this->specs['memory']);
+        $coreCluster->setDiskSize($this->specs['disk']);
 
         $managerFactory->create($projectId)->create($coreCluster);
 

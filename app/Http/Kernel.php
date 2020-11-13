@@ -55,6 +55,7 @@ class Kernel extends HttpKernel
         'proxy' => [
             'auth:sanctum',
             Middleware\Proxy\ProxyRequest::class,
+            Middleware\Proxy\VerifyClusterState::class,
             Middleware\Proxy\VerifyTokenStatus::class,
             Middleware\Proxy\VerifyTokenPermissions::class,
         ]

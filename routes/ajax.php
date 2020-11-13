@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
@@ -20,7 +20,6 @@ use App\Http\Controllers\Subscription\SubscriptionController;
 use App\Http\Controllers\User\ValidationController as UserValidationController;
 use App\Http\Middleware\Redirects\RedirecToSameRouteWithProject;
 use App\Http\Middleware\Redirects\RedirectToClusterCreateIfHasntCluster;
-use Laravel\Sanctum\PersonalAccessToken;
 
 Route::resource('/notification', NotificationController::class, ['except' => ['edit', 'create', 'destroy']])->middleware('auth');
 

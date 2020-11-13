@@ -9,13 +9,17 @@ use App\Http\Requests\Cluster\StoreCluster;
 use App\Http\Requests\Cluster\UpdateCluster;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
+use Composer\InstalledVersions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\MockObject\MockObject;
+use Tests\Helpers\NeedsRegionRepository;
 use Tests\TestCase;
 
 class ClusterControllerTest extends TestCase
 {
+    use NeedsRegionRepository;
+
     /**
      * @var ClusterController
      */
@@ -57,9 +61,9 @@ class ClusterControllerTest extends TestCase
      */
     public function create_renders_inertia_cluster_create()
     {
-        $this->expectsInertiaToRender('cluster/create/create');
+        $this->expectsInertiaToRender('cluster/create/create', ['regions' => $this->regions]);
 
-        $this->controller->create();
+        $this->controller->create($this->regionRepositoryMock);
     }
 
     /**
@@ -69,12 +73,16 @@ class ClusterControllerTest extends TestCase
     {
         $storeRequest = $this->createMock(StoreCluster::class);
         $storeRequest->expects($this->once())->method('validated')->willReturn([
-            'data_center' => 'america',
+            'region_id' => 1,
             'nodes_count' => 3,
             'username' => 'foo',
             'password' => 'bar',
+            'memory' => 2024,
+            'disk' => 10,
+            'cores' => 2,
             'project_id' => 9,
-            'name' => 'baz'
+            'name' => 'baz',
+            'core_version' => InstalledVersions::getVersion('sigmie/app-core')
         ]);
 
         $this->clusterRepositoryMock->expects($this->once())->method('create')->willReturn($this->clusterMock);
@@ -92,12 +100,15 @@ class ClusterControllerTest extends TestCase
      */
     public function edit_renders_inertia_cluster_edit_with_cluster_data_arguments()
     {
-        $this->expectsInertiaToRender('cluster/edit/edit', ['cluster' => [
-            'id' => $this->clusterId,
-            'name' => $this->clusterName
-        ]]);
+        $this->expectsInertiaToRender('cluster/edit/edit', [
+            'regions' => $this->regions,
+            'cluster' => [
+                'id' => $this->clusterId,
+                'name' => $this->clusterName
+            ]
+        ]);
 
-        $this->controller->edit($this->clusterMock);
+        $this->controller->edit($this->clusterMock, $this->regionRepositoryMock);
     }
 
     /**
@@ -107,10 +118,13 @@ class ClusterControllerTest extends TestCase
     {
         $updateRequest = $this->createMock(UpdateCluster::class);
         $updateRequest->expects($this->once())->method('validated')->willReturn([
-            'data_center' => 'america',
+            'region_id' => 3,
             'nodes_count' => 3,
             'username' => 'foo',
             'password' => 'bar',
+            'memory' => 2024,
+            'disk' => 10,
+            'cores' => 2,
         ]);
 
         $this->clusterRepositoryMock->expects($this->once())->method('updateTrashed');
