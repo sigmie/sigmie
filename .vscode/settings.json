@@ -8,7 +8,7 @@
     "workbench.colorCustomizations": {
         "titleBar.activeBackground": "#B8C4D1",
         "titleBar.activeForeground": "#403C56",
-        "statusBarItem.remoteBackground": "#FF6347",
+        "statusBarItem.remoteBackground": "#ff826c",
         "statusBarItem.remoteForeground": "#ffffff",
     },
     "remote.containers.defaultExtensions": [

@@ -9,6 +9,7 @@
       :cluster="{
         nodes: nodes,
         cores: cores,
+        url: `https://${name}.sigmie.app`,
         memory: memoryInGb,
         disk: disk,
         data_center: dataCenter ? dataCenter.name : null,

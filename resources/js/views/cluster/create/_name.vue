@@ -38,7 +38,7 @@
             <br />You Elasticsearch will be available at
             <br />
             <a
-              class="text-orange-700"
+              class="text-theme-orange-light-900"
               :href="'https://' + name + '.sigmie.app'"
               target="_blank"
               >https://{{ name }}.sigmie.app</a

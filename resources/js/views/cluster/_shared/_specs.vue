@@ -64,7 +64,7 @@
                   :value="disk"
                   label="Disk size"
                   class="max-w-sm"
-                  @change="(value) => set('disk', value)"
+                  @change="(value) => set('disk', parseInt(value))"
                   :error-messages="errorMessages.disk"
                   :validations="$v.disk"
                   id="disk"
