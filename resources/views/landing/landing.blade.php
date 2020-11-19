@@ -205,19 +205,19 @@
         </form>
         <footer class="md:px-7 md:space-x-8 mx-auto w-full justify-center flex-wrap flex text-center">
             <div class="pb-3 mx-auto md:mx-0 block px-3">
-                <a aria-label="About-us" href="{{ route('legal.about') }}">About Us</inertia-link>
+                <a aria-label="About-us" href="{{ route('legal.about') }}">About Us</a>
             </div>
             <div class="pb-3 mx-auto block px-3">
-                <a aria-label="Terms-of-service" href="{{ route('legal.terms') }}">Terms of Service</inertia-link>
+                <a aria-label="Terms-of-service" href="{{ route('legal.terms') }}">Terms of Service</a>
             </div>
             <div class="pb-3 mx-auto block px-3">
-                <a aria-label="Privacy-policy" href="{{ route('legal.privacy') }}">Privacy Policy</inertia-link>
+                <a aria-label="Privacy-policy" href="{{ route('legal.privacy') }}">Privacy Policy</a>
             </div>
             <div class="pb-3 mx-auto block px-3">
-                <a aria-label="Imprint" href="{{ route('legal.imprint')}}">Imprint</inertia-link>
+                <a aria-label="Imprint" href="{{ route('legal.imprint')}}">Imprint</a>
             </div>
             <div class="pb-3 mx-auto block px-3">
-                <a aria-label="Disclaimer" href="{{ route('legal.disclaimer')}}">Disclaimer</inertia-link>
+                <a aria-label="Disclaimer" href="{{ route('legal.disclaimer')}}">Disclaimer</a>
             </div>
 
         </footer>
