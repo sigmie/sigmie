@@ -34,7 +34,7 @@
       <inertia-link
         :href="$route('account.settings',{ section:'subscription',project_id: $page.project_id })"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
-      >Subscritpion</inertia-link>
+      >Subscription</inertia-link>
 
       <!-- <inertia-link
         :href="$route('account.settings',{ section:'notifications' })"

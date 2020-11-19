@@ -9,7 +9,7 @@
           You account has been created,
           but in order to start using our application,
           you need an active subscription.
-          After you can cancel your subscritpion at anytime.
+          After you can cancel your subscription at anytime.
         </p>
 
         <div class="float-left w-full sm:w-40 pt-1">
