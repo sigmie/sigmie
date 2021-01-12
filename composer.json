@@ -25,7 +25,7 @@
         }
     ],
     "require": {
-        "php": "^7.4",
+        "php": "^8.0",
         "composer-runtime-api": "^2.0",
         "calebporzio/sushi": "^2.1",
         "fideloper/proxy": "^4.0",
@@ -45,7 +45,7 @@
         "laravel/ui": "^3.0",
         "nunomaduro/collision": "^5.0",
         "pusher/pusher-php-server": "~4.0",
-        "sigmie/app-core": "0.9.2",
+        "sigmie/app-core": "^0.10.0",
         "sigmie/nova-feature-flags": "@dev",
         "sigmie/sigmie": "^0.3.3",
         "tightenco/ziggy": "^0.9.3"
