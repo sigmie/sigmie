@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Mapping\Types;
+namespace Sigmie\Base\Mappings\Types;
 
 use Sigmie\Base\Contracts\Type;
 

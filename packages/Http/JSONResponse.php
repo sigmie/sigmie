@@ -8,7 +8,7 @@ use ArrayAccess;
 use LogicException;
 use Psr\Http\Message\ResponseInterface;
 
-class JsonResponse implements ArrayAccess
+class JSONResponse implements ArrayAccess
 {
     /**
      * PSR response.

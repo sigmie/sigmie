@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Tests\Documents;
+namespace Sigmie\Tests\Base\Documents;
 
 use PHPUnit\Framework\TestCase;
 use Sigmie\Base\Documents\Document;

@@ -6,7 +6,7 @@ namespace Sigmie\Http;
 
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Uri;
-use Sigmie\Http\Contracts\JsonRequest as JsonRequestInterface;
+use Sigmie\Http\Contracts\JSONRequest as JsonRequestInterface;
 
 class JsonRequest extends Request implements JsonRequestInterface
 {

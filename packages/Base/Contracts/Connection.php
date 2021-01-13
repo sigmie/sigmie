@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Base\Contracts;
 
 use Sigmie\Base\Http\ElasticsearchResponse;
-use Sigmie\Http\Contracts\JsonRequest;
+use Sigmie\Http\Contracts\JSONRequest;
 
 interface Connection
 {
-    public function __invoke(JsonRequest $request, string $responseClass = ElasticsearchResponse::class): ElasticsearchResponse;
+    public function __invoke(JSONRequest $request, string $responseClass = ElasticsearchResponse::class): ElasticsearchResponse;
 }

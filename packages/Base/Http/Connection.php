@@ -7,7 +7,7 @@ namespace Sigmie\Base\Http;
 use Exception;
 use Sigmie\Base\Contracts\Connection as ConnectionInterface;
 use Sigmie\Http\Contracts\JsonClient as JsonClientInterface;
-use Sigmie\Http\Contracts\JsonRequest;
+use Sigmie\Http\Contracts\JSONRequest;
 
 class Connection implements ConnectionInterface
 {
@@ -18,7 +18,7 @@ class Connection implements ConnectionInterface
         $this->http = $http;
     }
 
-    public function __invoke(JsonRequest $request, string $responseClass = ElasticsearchResponse::class): ElasticsearchResponse
+    public function __invoke(JSONRequest $request, string $responseClass = ElasticsearchResponse::class): ElasticsearchResponse
     {
         $uri = $request->getUri();
 

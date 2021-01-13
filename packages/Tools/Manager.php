@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base;
+namespace Sigmie\Tools;
 
 use Exception;
 use GuzzleHttp\Psr7\Uri;
@@ -14,7 +14,7 @@ use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Index\Index;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\Contracts\JsonClient as JsonClientInterface;
-use Sigmie\Http\Contracts\JsonRequest as JsonRequestInterface;
+use Sigmie\Http\Contracts\JSONRequest as JsonRequestInterface;
 use Sigmie\Http\JsonClient;
 use Sigmie\Http\JsonRequest;
 use Sigmie\Support\Contracts\Collection;

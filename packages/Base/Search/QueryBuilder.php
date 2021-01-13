@@ -11,7 +11,7 @@ use Sigmie\Base\Index\Index;
 use Sigmie\Base\Search\Clauses\Boolean;
 use Sigmie\Base\Search\Clauses\Filtered;
 use Sigmie\Base\Search\Clauses\Query as QueryClause;
-use Sigmie\Http\Contracts\JsonRequest;
+use Sigmie\Http\Contracts\JSONRequest;
 
 class QueryBuilder
 {
@@ -64,7 +64,7 @@ class QueryBuilder
         return $this->index->find($query);
     }
 
-    protected function call(JsonRequest $request): ElasticsearchResponse
+    protected function call(JSONRequest $request): ElasticsearchResponse
     {
         return ($this->call)($request);
     }

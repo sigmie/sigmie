@@ -7,7 +7,7 @@ namespace Sigmie\Http;
 use GuzzleHttp\Client as GuzzleHttpClient;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\Contracts\JsonClient as JsonClientInterface;
-use Sigmie\Http\Contracts\JsonRequest;
+use Sigmie\Http\Contracts\JSONRequest;
 
 class JsonClient implements JsonClientInterface
 {
@@ -18,7 +18,7 @@ class JsonClient implements JsonClientInterface
         $this->http = $http;
     }
 
-    public function request(JsonRequest $jsonRequest): JsonResponse
+    public function request(JSONRequest $jsonRequest): JsonResponse
     {
         $psrResponse = $this->http->send($jsonRequest);
 

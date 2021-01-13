@@ -7,7 +7,7 @@ namespace Sigmie\Base\Contracts;
 use Exception;
 use GuzzleHttp\Psr7\Request;
 
-interface ElasticsearchException
+interface ElasticsearchResponse
 {
     public function exception(Request $request): Exception;
 }

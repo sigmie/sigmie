@@ -6,6 +6,6 @@ namespace Sigmie\Http\Contracts;
 
 use Psr\Http\Message\RequestInterface;
 
-interface JsonRequest extends RequestInterface
+interface JSONRequest extends RequestInterface
 {
 }

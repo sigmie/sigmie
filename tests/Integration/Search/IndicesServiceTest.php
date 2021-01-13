@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Tests\Integration;
+namespace Sigmie\Tests\Integration\Search;
 
 use Sigmie\Search\FailedOperation;
 use Sigmie\Search\Indices\Index;
