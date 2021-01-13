@@ -8,12 +8,12 @@
           </a>
         </div>
 
-        <div v-if="$page.errors" class="pt-4">
+        <div v-if="$page.props.errors" class="pt-4">
           <alert-danger
             class="mb-3 shadow"
             title="Whoops!"
-            v-if="$page.errors.email"
-            :text="$page.errors.email[0]"
+            v-if="$page.props.errors.email"
+            :text="$page.props.errors.email[0]"
           ></alert-danger>
         </div>
 

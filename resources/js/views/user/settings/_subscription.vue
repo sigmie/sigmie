@@ -28,10 +28,10 @@
         </p>
       </div>
 
-      <div class="bg-green-50 px-3 sm:px-6 py-4" v-if="$page.flash.success">
+      <div class="bg-green-50 px-3 sm:px-6 py-4" v-if="$page.props.flash.success">
         <div class="text-sm leading-5 text-green-700">
           <ul>
-            <li>{{$page.flash.success}}</li>
+            <li>{{$page.props.flash.success}}</li>
           </ul>
         </div>
       </div>

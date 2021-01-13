@@ -126,11 +126,11 @@ export default {
   props: ["githubUser"],
   data() {
     return {
-      name: this.$page.old.name ? this.$page.old.name : "",
-      email: this.$page.old.email ? this.$page.old.email : "",
+      name: this.$page.props.old.name ? this.$page.props.old.name : "",
+      email: this.$page.props.old.email ? this.$page.props.old.email : "",
       password: "",
       password_confirmation: "",
-      username: this.$page.old.username ? this.$page.old.username : "",
+      username: this.$page.props.old.username ? this.$page.props.old.username : "",
       consent: false,
       github: false,
       avatar_url: null,

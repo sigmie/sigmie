@@ -8,7 +8,7 @@
           </a>
         </div>
 
-        <div v-if="$page.errors" class="pt-4">
+        <div v-if="$page.props.errors" class="pt-4">
           <alert-danger
             class="shadow"
             title="Whoops!"
@@ -43,7 +43,7 @@
               v-model="email"
               name="email"
               type="email"
-              :value="$page.old.email"
+              :value="$page.props.old.email"
               required
             />
           </div>

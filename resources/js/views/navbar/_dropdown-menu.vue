@@ -8,12 +8,12 @@
       <inertia-link
         href
         @click.prevent
-        v-if="!$page.projects || $page.projects.length === 0"
+        v-if="!$page.props.projects || $page.props.projects.length === 0"
         :disabled="true"
         class="block px-4 py-2 text-sm text-gray-300 cursor-default"
       >- no project -</inertia-link>
       <inertia-link
-        v-for="(project, index) in $page.projects"
+        v-for="(project, index) in $page.props.projects"
         :key="index"
         :href="$route('dashboard',{project: project.id})"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
@@ -24,7 +24,7 @@
         class="text-xs text-gray-300 font-semibold pl-4 pt-2 pb-1"
       >SETTINGS</inertia-link>
       <inertia-link
-        :href="$route('account.settings',{ section:'account',project_id: $page.project_id })"
+        :href="$route('account.settings',{ section:'account',project_id: $page.props.project_id })"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
       >Account</inertia-link>
       <!-- <inertia-link
@@ -32,7 +32,7 @@
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
       >General</inertia-link>-->
       <inertia-link
-        :href="$route('account.settings',{ section:'subscription',project_id: $page.project_id })"
+        :href="$route('account.settings',{ section:'subscription',project_id: $page.props.project_id })"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
       >Subscription</inertia-link>
 

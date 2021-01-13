@@ -7,8 +7,8 @@
         <navbar
           v-cloak
           @openSidebarRequest="openSidebar"
-          :user-id="$page.user.id"
-          :avatar-url="$page.user.avatar_url"
+          :user-id="$page.props.user.id"
+          :avatar-url="$page.props.user.avatar_url"
         ></navbar>
 
         <main id="main" class="flex-1 relative overflow-y-auto py-6 focus:outline-none">

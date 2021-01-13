@@ -123,7 +123,7 @@ export default {
         disk: this.disk,
         region_id: this.dataCenter.id,
         name: this.name,
-        project_id: this.$page.project_id,
+        project_id: this.$page.props.project_id,
       };
 
       this.$inertia.post("/cluster", cluster);

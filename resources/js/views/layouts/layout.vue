@@ -9,8 +9,8 @@
 export default {
   props: ["title"],
   beforeMount() {
-    this.$http.defaults.headers["X-CSRF-TOKEN"] = this.$page.csrf_token;
-    this.$socket.options.auth.headers["X-CSRF-TOKEN"] =this.$page.csrf_token;
+    this.$http.defaults.headers["X-CSRF-TOKEN"] = this.$page.props.csrf_token;
+    this.$socket.options.auth.headers["X-CSRF-TOKEN"] =this.$page.props.csrf_token;
   },
 };
 </script>

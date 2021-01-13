@@ -10,8 +10,8 @@
 
         <div class="h-0 flex-1 flex flex-col overflow-y-auto bg-gray-800">
           <info
-            :project-name="$page.project_name"
-            :cluster-url="$page.project_cluster_url"
+            :project-name="$page.props.project_name"
+            :cluster-url="$page.props.project_cluster_url"
             class="pt-7 pb-5"
           ></info>
 
@@ -27,7 +27,7 @@
               ]"
               class="group mx-1 my-2 flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
               :href="
-                $page.project_id === null
+                $page.props.project_id === null
                   ? $route('dashboard')
                   : $route(item.name, item.routeParams)
               "
@@ -98,8 +98,8 @@
         </div>
         <div class="flex-1 h-0 overflow-y-auto">
           <info
-            :project-name="$page.project_name"
-            :cluster-url="$page.project_cluster_url"
+            :project-name="$page.props.project_name"
+            :cluster-url="$page.props.project_cluster_url"
             class="px-2 py-4"
           ></info>
 
@@ -115,7 +115,7 @@
               ]"
               class="group mx-2 my-4 flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md focus:bg-gray-700 transition ease-in-out duration-150"
               :href="
-                $page.project_id === null
+                $page.props.project_id === null
                   ? $route('dashboard')
                   : $route(item.name, item.routeParams)
               "
@@ -177,7 +177,7 @@ export default {
           name: "settings",
           routeParams: {
             project:
-              this.$page.project_id === null ? "" : this.$page.project_id,
+              this.$page.props.project_id === null ? "" : this.$page.props.project_id,
           },
           icon: "cog",
         },

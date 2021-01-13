@@ -18,13 +18,13 @@
       </div>
 
       <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div v-if="$page.flash.info">
+        <div v-if="$page.props.flash.info">
           <div>
             <alert-info class="mb-3 shadow" text="We found an account with this email address."></alert-info>
           </div>
         </div>
 
-        <div v-if="$page.errors" class="red">
+        <div v-if="$page.props.errors" class="red">
           <div>
             <alert-danger
               class="mb-3 shadow"
@@ -42,7 +42,7 @@
               id="email"
               name="email"
               type="email"
-              :value="$page.old.email"
+              :value="$page.props.old.email"
               v-model="form.email"
               required
               label="Email address"
@@ -113,7 +113,7 @@ export default {
   data() {
     return {
       form: {
-        email: this.$page.old.email ? this.$page.old.email : "",
+        email: this.$page.props.old.email ? this.$page.props.old.email : "",
         password: null,
         remember: null,
       },

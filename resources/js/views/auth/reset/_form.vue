@@ -60,7 +60,7 @@ export default {
   props: ["token"],
   data() {
     return {
-      email: this.$page.old.email ? this.$page.old.email : "",
+      email: this.$page.props.old.email ? this.$page.props.old.email : "",
       password: "",
       password_confirmation: "",
       errorMessages: {

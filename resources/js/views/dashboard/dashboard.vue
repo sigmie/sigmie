@@ -70,7 +70,7 @@ export default {
   methods: {
     loadData() {
       let response = this.$http
-        .get(this.$route("dashboard.data", { project: this.$page.project_id }))
+        .get(this.$route("dashboard.data", { project: this.$page.props.project_id }))
         .then((response) => {
           let data = response.data;
 

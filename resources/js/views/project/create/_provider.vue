@@ -72,7 +72,7 @@
 
     <div class="pt-5 pb-3">
       <div class="flex justify-end">
-        <span v-if="$page.projects.length > 0" class="mr-6 inline-flex rounded-md">
+        <span v-if="$page.props.projects.length > 0" class="mr-6 inline-flex rounded-md">
           <a class="px-4 py-2 tracking-wide text-sm text-gray-400 float-right" href>Cancel</a>
         </span>
         <span class="inline-flex rounded-md shadow-sm mr-3">

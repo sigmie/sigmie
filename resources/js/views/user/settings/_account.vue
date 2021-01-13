@@ -6,9 +6,9 @@
         <p class="mt-1 max-w-2xl text-sm leading-5 text-gray-500">Personal information</p>
       </div>
 
-      <div class="bg-red-50 p-4" v-if="$page.errors">
+      <div class="bg-red-50 p-4" v-if="$page.props.errors">
         <div class="text-sm leading-5 text-red-700">
-          <ul class="pl-5 list-disc" v-for="(errorArray, index) in $page.errors" :key="index">
+          <ul class="pl-5 list-disc" v-for="(errorArray, index) in $page.props.errors" :key="index">
             <li v-for="(errorText,index) in errorArray" :key="index">{{ errorText }}</li>
           </ul>
         </div>

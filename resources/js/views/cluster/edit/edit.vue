@@ -108,7 +108,7 @@ export default {
         disk: this.disk,
         memory: this.memory,
         region_id: this.dataCenter.id,
-        project_id: this.$page.project_id,
+        project_id: this.$page.props.project_id,
       };
 
       this.$inertia.put(`/cluster/${this.cluster.id}`, cluster);

@@ -18,7 +18,7 @@
             v-for="item in items"
             :key="item.key"
             @click.prevent="replace(item.key)"
-            :href="$route('account.settings',{section:item.key, project_id: $page.project_id})"
+            :href="$route('account.settings',{section:item.key, project_id: $page.props.project_id})"
             :class="(item.key === section)?'text-orange-500 border-orange-400':'focus:text-gray-700 focus:border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-300'"
             class="whitespace-no-wrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm leading-5 focus:outline-none"
           >{{ item.name }}</a>
@@ -38,7 +38,7 @@ export default {
       this.$inertia.replace(
         this.$route("account.settings", {
           section: value,
-          project_id: this.$page.project_id,
+          project_id: this.$page.props.project_id,
         }),
         {
           method: "get",
