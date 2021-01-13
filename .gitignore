@@ -16,3 +16,4 @@ coverage-html
 
 tmp/*
 !tmp/.gitkeep
+ray.php
