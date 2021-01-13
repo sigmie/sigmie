@@ -65,12 +65,12 @@
               <input
                 @keyup.enter="save"
                 v-model="username"
-                class="flex-1 bg-white border-gray-200 rounded block border py-1 px-3 sm:text-sm focus:border-cool-gray-300"
+                class="flex-1 bg-white border-gray-200 rounded block border py-1 px-3 sm:text-sm focus:border-gray-300"
               />
-              <span @click="save" class="ml-2 text-orange-500 cursor-pointer hover:underline">Save</span>
+              <span @click="save" class="ml-2 text-theme-orange-light-900 cursor-pointer hover:underline">Save</span>
               <span
                 @click="cancel('username')"
-                class="ml-2 text-orange-500 cursor-pointer hover:underline"
+                class="ml-2 text-theme-orange-light-900 cursor-pointer hover:underline"
               >Cancel</span>
             </dd>
             <dd
@@ -80,7 +80,7 @@
               {{username }}
               <span
                 @click="editSection('username')"
-                class="ml-2 text-orange-500 cursor-pointer hover:underline"
+                class="ml-2 text-theme-orange-light-900 cursor-pointer hover:underline"
               >Edit</span>
             </dd>
           </div>
@@ -88,7 +88,7 @@
             <dt class="text-sm leading-5 font-medium self-center text-gray-500">Email</dt>
             <dd class="mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2">
               {{email }}
-              <!-- <span class="ml-2 text-orange-500 cursor-pointer hover:underline">Edit</span> -->
+              <!-- <span class="ml-2 text-theme-orange-light-900 cursor-pointer hover:underline">Edit</span> -->
             </dd>
           </div>
           <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
@@ -102,7 +102,7 @@
                   aria-label="Current password"
                   v-model="oldPassword"
                   type="password"
-                  class="flex-1 bg-white border-gray-200 rounded block border py-1 px-3 sm:text-sm focus:border-cool-gray-300"
+                  class="flex-1 bg-white border-gray-200 rounded block border py-1 px-3 sm:text-sm focus:border-gray-300"
                 />
 
                 <input
@@ -112,7 +112,7 @@
                   aria-label="New password"
                   @keyup.enter="changePassword"
                   type="password"
-                  class="flex-1 bg-white border-gray-200 rounded block border mt-3 py-1 px-3 sm:text-sm focus:border-cool-gray-300"
+                  class="flex-1 bg-white border-gray-200 rounded block border mt-3 py-1 px-3 sm:text-sm focus:border-gray-300"
                 />
               </dd>
               <div class="flex flex-row col-span-2">
@@ -125,7 +125,7 @@
             <dd
               v-else
               @click="editSection('password')"
-              class="mt-1 text-sm leading-5 cursor-pointer text-orange-500 sm:mt-0 sm:col-span-2"
+              class="mt-1 text-sm leading-5 cursor-pointer text-theme-orange-light-900 sm:mt-0 sm:col-span-2"
             >Change password</dd>
           </div>
 

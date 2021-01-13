@@ -28,7 +28,7 @@
           </h2>
           <p class="text-sm text-gray-400">
             You are editing
-            <span class="text-orange-500"
+            <span class="text-theme-orange-light-900"
               >https://{{ cluster.name }}.sigmie.app</span
             >
           </p>

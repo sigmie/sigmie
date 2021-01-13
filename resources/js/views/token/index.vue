@@ -31,7 +31,7 @@
             </thead>
             <tbody class="bg-white">
               <tr v-for="(token, index) in reactiveTokens" :key="index">
-                <td class="pl-4 md:pl-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                <td class="pl-4 md:pl-6 py-4 whitespace-nowrap border-b border-gray-200">
                   <div class="flex items-center">
                     <div class>
                       <div class="text-sm leading-5 font-medium text-gray-900">{{ token.name }}</div>
@@ -49,7 +49,7 @@
                     </div>
                   </div>
                 </td>
-                <td class="px-4 md:px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                <td class="px-4 md:px-6 py-4 whitespace-nowrap border-b border-gray-200">
                   <div
                     @click="()=> toogleActive(token.id, token.cluster_id, index)"
                     v-if="token.active"
@@ -74,30 +74,30 @@
                     rows="1"
                     readonly
                     :value="token.value"
-                    class="focus:outline-none inline-flex resize-none p-1 w-full"
+                    class="focus:outline-none inline-flex resize-none p-1 w-full border-0"
                   />
                 </td>
                 <td
                   v-else
-                  class="px-6 py-4 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 text-gray-400 w-full"
+                  class="px-6 py-4 whitespace-nowrap border-b border-gray-200 text-sm leading-5 text-gray-400 w-full"
                 >
                   <div class="italic w-10 md:w-96">hidden</div>
                 </td>
                 <td
-                  class="pr-2 md:px-6 py-4 whitespace-no-wrap text-right border-b border-gray-200 text-sm leading-5 font-medium w-0 md:w-60"
+                  class="pr-2 md:px-6 py-4 whitespace-nowrap text-right border-b border-gray-200 text-sm leading-5 font-medium w-0 md:w-60"
                 >
                   <a
                     v-if="token.value"
                     v-clipboard="()=> token.value"
                     v-clipboard:success="() => onCopy(index)"
                     href="#"
-                    class="text-orange-500 cursor-pointer hidden md:block w-full"
+                    class="text-theme-orange-light-900 cursor-pointer hidden md:block w-full"
                   >{{ token.actionText }}</a>
 
                   <a
                     v-else
                     @click="() => regenerate(token.id, token.cluster_id, index)"
-                    class="text-orange-500 cursor-pointer hidden md:block w-full"
+                    class="text-theme-orange-light-900 cursor-pointer hidden md:block w-full"
                   >Regenerate</a>
 
                   <a
@@ -105,20 +105,20 @@
                     v-clipboard="()=> token.value"
                     v-clipboard:success="() => onCopy(index)"
                     href="#"
-                    class="text-orange-500 cursor-pointer"
+                    class="text-theme-orange-light-900 cursor-pointer"
                   >
                     <component
-                      class="text-orange-500 cursor-pointer h-5 block md:hidden w-full"
+                      class="text-theme-orange-light-900 cursor-pointer h-5 block md:hidden w-full"
                       :is="'icon-'+token.actionIcon"
                     ></component>
                   </a>
                   <a
                     v-else
                     @click="() => regenerate(token.id, token.cluster_id, index)"
-                    class="text-orange-500 cursor-pointer"
+                    class="text-theme-orange-light-900 cursor-pointer"
                   >
                     <component
-                      class="text-orange-500 cursor-pointer h-5 block md:hidden w-full"
+                      class="text-theme-orange-light-900 cursor-pointer h-5 block md:hidden w-full"
                       :is="'icon-'+token.actionIcon"
                     ></component>
                   </a>

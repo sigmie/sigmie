@@ -10,7 +10,7 @@
           </div>
         </div>
 
-        <h2 class="text-lg leading-6 font-medium text-cool-gray-900">Overview</h2>
+        <h2 class="text-lg leading-6 font-medium text-gray-900">Overview</h2>
         <div class="mt-2 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <div class="bg-white overflow-hidden shadow rounded-lg">
             <div class="p-5">
@@ -21,11 +21,11 @@
                 <div class="ml-5 w-0 flex-1">
                   <dl>
                     <dt
-                      class="text-sm leading-5 font-medium text-cool-gray-500 truncate"
+                      class="text-sm leading-5 font-medium text-gray-500 truncate"
                     >Cluster health</dt>
                     <dd>
                       <div
-                        class="text-lg leading-7 font-medium text-cool-gray-900"
+                        class="text-lg leading-7 font-medium text-gray-900"
                       >{{ clusterInfo.health }}</div>
                     </dd>
                   </dl>
@@ -43,11 +43,11 @@
                 <div class="ml-5 w-0 flex-1">
                   <dl>
                     <dt
-                      class="text-sm leading-5 font-medium text-cool-gray-500 truncate"
+                      class="text-sm leading-5 font-medium text-gray-500 truncate"
                     >Nodes count</dt>
                     <dd>
                       <div
-                        class="text-lg leading-7 font-medium text-cool-gray-900"
+                        class="text-lg leading-7 font-medium text-gray-900"
                       >{{ clusterInfo.nodesCount }}</div>
                     </dd>
                   </dl>
@@ -64,10 +64,10 @@
                 </div>
                 <div class="ml-5 w-0 flex-1">
                   <dl>
-                    <dt class="text-sm leading-5 font-medium text-cool-gray-500 truncate">Indices</dt>
+                    <dt class="text-sm leading-5 font-medium text-gray-500 truncate">Indices</dt>
                     <dd>
                       <div
-                        class="text-lg leading-7 font-medium text-cool-gray-900"
+                        class="text-lg leading-7 font-medium text-gray-900"
                       >{{ indices.length }}</div>
                     </dd>
                   </dl>
@@ -105,13 +105,13 @@
                     :class="(index % 2 === 0)? 'bg-white':'bg-gray-50'"
                   >
                     <td
-                      class="px-6 py-4 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900"
+                      class="px-6 py-4 whitespace-nowrap text-sm leading-5 font-medium text-gray-900"
                     >{{ esIndex.name }}</td>
                     <td
-                      class="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500"
+                      class="px-6 py-4 whitespace-nowrap text-sm leading-5 text-gray-500"
                     >{{ esIndex.size }}</td>
                     <td
-                      class="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500"
+                      class="px-6 py-4 whitespace-nowrap text-sm leading-5 text-gray-500"
                     >{{ esIndex.docsCount}}</td>
                   </tr>
                 </tbody>

@@ -11,7 +11,7 @@
         <p class="mt-2 text-center text-sm leading-5 text-gray-600 max-w">
           Or
           <inertia-link
-            class="font-medium text-orange-500 focus:outline-none focus:underline transition ease-in-out duration-150"
+            class="font-medium text-theme-orange-light-900 focus:outline-none focus:underline transition ease-in-out duration-150"
             :href="$route('sign-up')"
           >start your 14-day free trial</inertia-link>
         </p>
@@ -69,7 +69,7 @@
               <div class="text-sm leading-5">
                 <inertia-link
                   :href="$route('password.request')"
-                  class="font-medium text-orange-500 hover:text-orange-500 focus:outline-none focus:underline transition ease-in-out duration-150"
+                  class="font-medium text-theme-orange-light-800 focus:outline-none focus:underline transition ease-in-out duration-150"
                 >Forgot your password?</inertia-link>
               </div>
             </div>

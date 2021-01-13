@@ -6,7 +6,7 @@
       </main>
 
       <footer
-        class="bottom-0 absolute text-cool-gray-500 text-sm w-full h-20 pt-5"
+        class="bottom-0 absolute text-gray-500 text-sm w-full h-20 pt-5"
       >
         <div class="text-center md:px-7 md:space-x-8 mx-auto w-full justify-center flex-wrap flex">
           <div class="pb-3 mx-auto md:mx-0 block px-3">

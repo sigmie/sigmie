@@ -2,7 +2,7 @@
   <div class>
     <div v-if="githubUser">
       <div class="bg-black p-4 mb-2 rounded-lg">
-        <div class="-ml-4 -mt-4 flex justify-between items-center flex-wrap sm:flex-no-wrap">
+        <div class="-ml-4 -mt-4 flex justify-between items-center flex-wrap sm:flex-nowrap">
           <div class="ml-4 mt-4">
             <div class="flex items-center">
               <div class="flex-shrink-0">

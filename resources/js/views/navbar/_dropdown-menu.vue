@@ -3,7 +3,7 @@
     v-on-clickaway="()=> $emit('away')"
     class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg"
   >
-    <div class="py-1 rounded-md bg-white shadow-xs">
+    <div class="py-1 rounded-md bg-white ring-1 ring-black ring-opacity-5">
       <p class="text-xs text-gray-300 font-semibold pl-4 pt-2 pb-1">PROJECTS</p>
       <inertia-link
         href

@@ -21,7 +21,7 @@
         <p class="mt-1 max-w-2xl text-sm leading-5 text-gray-500">
           Your subscription is managed with
           <a
-            class="text-orange-500"
+            class="text-theme-orange-light-900"
             target="_blank"
             href="http://paddle.com/"
           >Paddle</a>.
@@ -37,7 +37,7 @@
       </div>
 
       <dl
-        class="grid grid-cols-1 col-gap-4 row-gap-8 sm:grid-cols-2 px-3 sm:px-6 py-4"
+        class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 px-3 sm:px-6 py-4"
         v-if="data.was_subscribed"
       >
         <div class="sm:col-span-1">
@@ -71,7 +71,7 @@
       </dl>
 
       <div class="bg-gray-50 px-3 sm:px-6 py-4" v-if="data.payment_method === 'paypal'">
-        <dl class="grid grid-cols-1 col-gap-4 row-gap-8 sm:grid-cols-3">
+        <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-3">
           <div class="sm:col-span-1">
             <dt class="text-sm leading-5 font-medium text-gray-500">Payment method</dt>
             <dd class="mt-1 text-sm leading-5 text-gray-900">PayPal</dd>
@@ -81,7 +81,7 @@
 
       <div class="bg-gray-50 px-3 sm:px-6 py-4" v-if="data.payment_method === 'card'">
         <dt class="text-sm leading-5 mb-3 font-medium text-gray-500">Card details</dt>
-        <dl class="grid grid-cols-1 col-gap-4 row-gap-8 sm:grid-cols-3">
+        <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-3">
           <div class="sm:col-span-1">
             <dt class="text-sm leading-5 font-medium text-gray-500">Type</dt>
             <dd class="mt-1 text-sm leading-5 text-gray-900">{{ startCase(data.card_brand) }}</dd>
@@ -122,7 +122,7 @@
         <div class="flex flex-col">
           <div class="text-sm leading-5 mb-2 text-gray-500">
             You haven't subscribed yet, click
-            <inertia-link class="text-orange-500" :href="$route('subscription.create')"> here </inertia-link>to start your trial.
+            <inertia-link class="text-theme-orange-light-900" :href="$route('subscription.create')"> here </inertia-link>to start your trial.
           </div>
         </div>
       </div>

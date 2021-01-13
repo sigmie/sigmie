@@ -28,7 +28,7 @@
         ref="modal"
         @keyup.esc="$emit('onEsc')"
       >
-        <div class="grid grid-cols-3 row-gap-2 mx-auto">
+        <div class="grid grid-cols-3 gap-y-2 mx-auto">
           <div class="col-span-3 pt-3">
             <icon-sigmie class="mx-auto w-16 text-gray-400"></icon-sigmie>
             <h3 class="text-center font-medium text-gray-900 text-lg pt-3">
@@ -138,7 +138,7 @@
                   <button
                     @click="() => $emit('cancel')"
                     type="button"
-                    class="inline-flex justify-center w-full rounded-md border border-transparent px-4 py-2 text-base leading-6 font-medium focus:outline-none transition ease-in-out duration-150 sm:text-sm sm:leading-5 focus:shadow-outline-blue text-gray-800"
+                    class="inline-flex justify-center w-full rounded-md border border-transparent px-4 py-2 text-base leading-6 font-medium focus:outline-none transition ease-in-out duration-150 sm:text-sm sm:leading-5 focus:ring-blue text-gray-800"
                   >
                     Cancel
                   </button>
@@ -152,7 +152,7 @@
                   <button
                     @click="() => $emit('confirm')"
                     type="button"
-                    class="inline-flex justify-center w-full rounded-md border border-transparent px-4 py-2 text-base leading-6 font-medium shadow-sm focus:outline-none transition ease-in-out duration-150 sm:text-sm sm:leading-5 bg-blue-500 focus:border-blue-700 hover:bg-blue-600 focus:shadow-outline-blue text-white"
+                    class="inline-flex justify-center w-full rounded-md border border-transparent px-4 py-2 text-base leading-6 font-medium shadow-sm focus:outline-none transition ease-in-out duration-150 sm:text-sm sm:leading-5 bg-blue-500 focus:border-blue-700 hover:bg-blue-600 focus:ring-blue text-white"
                   >
                     Create
                   </button>

@@ -3,14 +3,14 @@
     <div class="px-6 py-2">
       <div class="space-y-1">
         <div class="text-base leading-5 font-medium text-white" v-if="projectName">{{ projectName }}</div>
-        <div class="text-base leading-5 font-medium text-center text-cool-gray-400" v-else>- no project -</div>
+        <div class="text-base leading-5 font-medium text-center text-gray-400" v-else>- no project -</div>
         <a
           :href="clusterUrl"
           v-if="clusterUrl"
           target="_blank"
           class="group flex items-center space-x-2.5"
         >
-          <div class="text-sm leading-5 text-cool-gray-400 font-medium">{{ clusterUrl }}</div>
+          <div class="text-sm leading-5 text-gray-400 font-medium">{{ clusterUrl }}</div>
         </a>
       </div>
     </div>

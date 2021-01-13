@@ -1,3 +1,5 @@
+const colors = require('tailwindcss/colors')
+
 module.exports = {
   plugins: [
     require('@tailwindcss/forms'),
@@ -5,8 +7,10 @@ module.exports = {
     require('@tailwindcss/aspect-ratio')
   ],
   purge: [
-    './resources/js/**/*.vue',
-    './resources/views/**/*.blade.php'
+    './storage/framework/views/*.php',
+    './resources/**/*.blade.php',
+    './resources/**/*.js',
+    './resources/**/*.vue'
   ],
   variants: {
     borderWidth: ['first', 'responsive']

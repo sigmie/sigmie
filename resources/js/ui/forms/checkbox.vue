@@ -1,5 +1,6 @@
 <template>
-  <div class="flex">
+  <div class="flex items-center">
+
     <input
       :id="id"
       type="checkbox"
@@ -10,9 +11,9 @@
       @change="$emit('change', $event.target.checked)"
       @blur="$emit('blur', $event.target.value)"
       @focus="$emit('touch', $event.target.value)"
-      class="form-checkbox h-4 w-4 text-orange-400 transition duration-150 ease-in-out"
+      class="h-4 w-4 text-theme-orange-light-800 border-gray-300 rounded"
     />
-    <label v-if="label" :for="id" class="ml-2 block leading-none text-gray-900">{{ label }}</label>
+    <label v-if="label" :for="id" class="ml-2 block text-sm text-gray-900">{{ label }}</label>
     <slot />
   </div>
 </template>

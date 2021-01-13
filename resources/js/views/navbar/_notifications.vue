@@ -1,5 +1,5 @@
 <template>
-  <div class="py-1 rounded-md bg-white shadow-xs overflow-auto max-h-128" v-on-clickaway="emitAway">
+  <div class="py-1 rounded-md bg-white ring-1 ring-black ring-opacity-5 overflow-auto max-h-128" v-on-clickaway="emitAway">
     <ul v-cloak>
       <li
         v-for="(notification,index) in notifications"

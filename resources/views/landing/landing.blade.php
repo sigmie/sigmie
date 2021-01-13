@@ -24,7 +24,7 @@
                 @if ($features['auth'])
                 <div>
                     <a aria-label="Sign-In" href="{{ route('sign-in') }}"
-                        class="items-center px-4 py-2 text-sm leading-5 font-semibold rounded-md text-cool-gray-800 tracking-wide bg-white hover:bg-cool-gray-50 focus:outline-none focus:border-cool-gray-100 active:bg-cool-gray-100 transition duration-150 ease-in-out flex">Sign-In
+                        class="items-center px-4 py-2 text-sm leading-5 font-semibold rounded-md text-gray-800 tracking-wide bg-white hover:bg-gray-50 focus:outline-none focus:border-gray-100 active:bg-gray-100 transition duration-150 ease-in-out flex">Sign-In
                         <span>
                             <svg class="h-4 ml-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
@@ -53,11 +53,11 @@
 
                     @if ($features['auth'])
                     <a aria-label="Sign-up" href="{{ route('sign-up') }}"
-                        class="mx-auto lg:mx-0 bg-white hover:bg-cool-gray-50 text-gray-600 font-semibold rounded-lg my-6 py-3 px-8 shadow cursor-pointer transition-shadow">Get
+                        class="mx-auto lg:mx-0 bg-white hover:bg-gray-50 text-gray-600 font-semibold rounded-lg my-6 py-3 px-8 shadow cursor-pointer transition-shadow">Get
                         early access</a>
                     @else
                     <a href="#!" aria-label="Soon"
-                        class="mx-auto lg:mx-0 bg-white hover:bg-cool-gray-50 text-gray-600 font-semibold rounded-lg my-6 py-3 px-8 shadow cursor-pointer transition-shadow">Soon
+                        class="mx-auto lg:mx-0 bg-white hover:bg-gray-50 text-gray-600 font-semibold rounded-lg my-6 py-3 px-8 shadow cursor-pointer transition-shadow">Soon
                         available</a>
                     @endif
                 </div>
@@ -94,7 +94,7 @@
             <div class="container max-w-5xl mx-auto">
                 <h2 class="w-full my-2 text-3xl font-semibold leading-tight text-center text-gray-800">Create your
                     cluster in some minutes</h2>
-                <p class="text-cool-gray-500 text-center pb-8 text-xl max-w-3xl mx-auto">You chose one of our supported
+                <p class="text-gray-500 text-center pb-8 text-xl max-w-3xl mx-auto">You chose one of our supported
                     cloud providers, and we set up an Elasticsearch cluster on your behalf.</p>
                 <div class="w-full mb-4 mt-2">
                     <div class="h-1 mx-auto gradient w-64 opacity-25 my-0 py-0 rounded-t"></div>
@@ -126,9 +126,9 @@
                     </div>
                     <div class="w-full sm:w-1/2 p-6 mt-6">
                         <div class="align-middle">
-                            <h3 class="text-2xl text-cool-gray-800 font-semibold kleading-none mb-3">Save yourself
+                            <h3 class="text-2xl text-gray-800 font-semibold kleading-none mb-3">Save yourself
                                 trouble and work</h3>
-                            <p class="text-cool-gray-600 mb-8">
+                            <p class="text-gray-600 mb-8">
                                 We hide your cluster's real IP address behind Cloudflare, and
                                 configure a loadbalancer with a basic authentication to keep you safe.
                                 <br />
@@ -145,8 +145,8 @@
 
         <section style="background-color: #f8fafc" class="bg-white px-16 py-16">
             <div class="flex flex-col justify-center container mx-auto px-4">
-                <h1 class="text-2xl text-center font-normal text-cool-gray-600 pb-1">Wan't to learn more ?</h1>
-                <p class="text-lg text-center font-normal text-cool-gray-500 pb-4">Check out our documentation for
+                <h1 class="text-2xl text-center font-normal text-gray-600 pb-1">Wan't to learn more ?</h1>
+                <p class="text-lg text-center font-normal text-gray-500 pb-4">Check out our documentation for
                     guides and more!</p>
                 <a aria-label="Documentation" href="https://docs.sigmie.com/app" rel="noreferrer" target="_blank"
                     class="bg-theme-secondary-lighter w-60 md:w-48 flex items-center justify-center px-4 rounded-lg h-12 self-center text-sm leading-5 text-white">Read
@@ -194,12 +194,12 @@
             <div class="inline-block pt-4 w-full px-6 pb-4">
                 <div class="inline-block w-full sm:max-w-xs pr-4">
                     <input
-                        class="bg-white text-cool-gray-600 rounded-lg focus:outline-none focus:shadow-outline py-3 px-8 block w-full appearance-none leading-normal"
+                        class="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:theme-orange-light-800 sm:text-sm"
                         name="email" id="email" required type="email" placeholder="jane@example.com" />
                 </div>
                 <div class="inline-block w-full sm:w-auto">
                     <button type="submit"
-                        class="mx-auto lg:mx-0 text-theme-secondary tracking-wide bg-white hover:bg-cool-gray-50 font-semibold rounded-lg my-6 py-3 px-8 shadow cursor-pointer transition-shadow">Subscribe</button>
+                        class="mx-auto lg:mx-0 text-gray-600 tracking-wide bg-white hover:bg-gray-50 font-semibold rounded-lg my-6 py-3 px-8 shadow cursor-pointer transition-shadow">Subscribe</button>
                 </div>
             </div>
         </form>

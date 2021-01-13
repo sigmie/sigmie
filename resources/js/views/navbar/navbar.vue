@@ -39,7 +39,7 @@
       <div class="ml-4 flex items-center md:ml-6">
         <div class="ml-3 relative">
           <button
-            class="p-1 text-gray-400 rounded-full hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:shadow-outline focus:text-gray-500"
+            class="p-1 text-gray-400 rounded-full hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring focus:text-gray-500"
             @click="notifications = 'open'"
           >
             <badge
@@ -69,7 +69,7 @@
 
         <div class="ml-3 relative">
           <button
-            class="max-w-xs flex items-center text-sm rounded-full focus:outline-none focus:shadow-outline"
+            class="max-w-xs flex items-center text-sm rounded-full focus:outline-none focus:ring"
             @click="settings = 'open'"
           >
             <img class="h-8 w-8 rounded-full" :src="avatarUrl" />
