@@ -45,13 +45,11 @@ jobs:
     - name: Install php dependencies
       run: composer install
 
-    - uses: borales/actions-yarn@v2.0.0
+    - uses: actions/setup-node@v2
       with:
-       cmd: install
-
-    - uses: borales/actions-yarn@v2.0.0
-      with:
-       cmd: prod
+        node-version: '15'
+    - run: npm install
+    - run: npm run prod
 
     - name: PHPStan
       run: vendor/bin/phpstan analyse --memory-limit=-1

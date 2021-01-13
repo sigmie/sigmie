@@ -83,12 +83,11 @@ jobs:
     - name: Validate composer and install dependecies
       run: composer validate && composer install -q --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
 
-    - uses: borales/actions-yarn@v2.0.0
+    - uses: actions/setup-node@v2
       with:
-       cmd: install
-    - uses: borales/actions-yarn@v2.0.0
-      with:
-       cmd: prod
+        node-version: '15'
+    - run: npm install
+    - run: npm run prod
 
     - name: Migrate
       run: php artisan --env=testing migrate --force

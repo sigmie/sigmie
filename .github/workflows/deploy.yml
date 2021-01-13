@@ -67,8 +67,11 @@ jobs:
         echo "" >> .env
         echo "CACHE_DRIVER=redis" >> .env
 
-    - name: Install node dependencies and generate production assets
-      run: npm install && npm run production
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '15'
+    - run: npm install
+    - run: npm run prod
 
     - name: Install GCloud SDK
       run: if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
