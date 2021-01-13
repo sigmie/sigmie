@@ -16,7 +16,7 @@ class ClusterFactory extends Factory
     public function definition()
     {
         return [
-            'name' => $this->faker->word(),
+            'name' => $this->faker->unique()->word(),
             'region_id' => 2,
             'username' => $this->faker->text(10),
             'password' => encrypt($this->faker->text(10)),
