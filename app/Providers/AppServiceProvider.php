@@ -27,28 +27,6 @@ class AppServiceProvider extends ServiceProvider
         Sanctum::ignoreMigrations();
         Sanctum::usePersonalAccessTokenModel(Token::class);
 
-        Inertia::share('flash', function () {
-            return [
-                'success' => Session::get('success'),
-                'error' => Session::get('error'),
-                'info' => Session::get('info'),
-            ];
-        });
-
-        Inertia::share('old', function () {
-            return Session::getOldInput();
-        });
-
-        Inertia::share('csrf_token', function () {
-            return csrf_token();
-        });
-
-        Inertia::share('errors', function () {
-            return Session::get('errors')
-                ? Session::get('errors')->getBag('default')->getMessages()
-                : null;
-        });
-
         $this->app->singleton(ProxyRequest::class);
     }
 

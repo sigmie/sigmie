@@ -32,7 +32,7 @@
         "fideloper/proxy": "^4.0",
         "fruitcake/laravel-cors": "^1.0",
         "guzzlehttp/guzzle": "^7.0.1",
-        "inertiajs/inertia-laravel": "^0.2.5",
+        "inertiajs/inertia-laravel": "^0.3.6",
         "laravel/cashier-paddle": "^1.0@beta",
         "laravel/framework": "^8.0",
         "laravel/horizon": "^5.0",

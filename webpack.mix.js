@@ -1,7 +1,6 @@
 const mix = require('laravel-mix')
 const path = require('path')
 const tailwindcss = require('tailwindcss')
-const LiveReloadPlugin = require('webpack-livereload-plugin')
 require('laravel-mix-purgecss')
 
 /*
@@ -20,16 +19,22 @@ mix.webpackConfig({
     alias: {
       ziggy: path.resolve('vendor/tightenco/ziggy/src/js/route.js')
     }
-  },
-  plugins: [
-    new LiveReloadPlugin()
-  ]
-}).js('resources/js/app.js', 'public/js')
-  .sass('resources/sass/app.scss', 'public/css')
+  }
+})
+
+mix.browserSync({
+  ui: false,
+  proxy: 'localhost:8080'
+})
+
+mix.js('resources/js/app.js', 'public/js').vue()
+
+mix.sass('resources/sass/app.scss', 'public/css')
   .options({
     processCssUrls: false,
     postCss: [tailwindcss('./tailwind.config.js')]
   })
-  .extract()
+
+mix.extract()
   .version()
   .sourceMaps()

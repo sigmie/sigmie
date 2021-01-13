@@ -1,7 +1,8 @@
 module.exports = {
   plugins: [
-    require('@tailwindcss/ui'),
-    require('@tailwindcss/typography')
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/typography'),
+    require('@tailwindcss/aspect-ratio')
   ],
   purge: [
     './resources/js/**/*.vue',

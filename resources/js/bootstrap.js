@@ -4,7 +4,7 @@ import Vuelidate from 'vuelidate'
 import Echo from 'laravel-echo'
 import axios from 'axios'
 import route from 'ziggy'
-import { InertiaApp } from '@inertiajs/inertia-vue'
+import { plugin } from '@inertiajs/inertia-vue'
 import Pusher from 'pusher-js'
 import { Ziggy } from './routes'
 import Clipboard from 'v-clipboard'
@@ -14,7 +14,7 @@ import { mixin as clickaway } from 'vue-clickaway'
 window.Pusher = Pusher
 
 Vue.mixin(clickaway)
-Vue.use(InertiaApp)
+Vue.use(plugin)
 Vue.use(Vuelidate)
 Vue.use(Clipboard)
 Vue.prototype.$http = axios.create({

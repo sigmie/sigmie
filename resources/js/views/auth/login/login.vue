@@ -7,7 +7,7 @@
         </a>
         <h2
           class="mt-6 text-center text-3xl leading-9 font-bold text-gray-900"
-        >Sign in to your account</h2>
+        >Sign in to your accounts</h2>
         <p class="mt-2 text-center text-sm leading-5 text-gray-600 max-w">
           Or
           <inertia-link
