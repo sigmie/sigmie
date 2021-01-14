@@ -7,23 +7,28 @@ namespace Sigmie\Testing;
 use Sigmie\Base\Documents\Actions as DocumentsActions;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Index\Index;
+use Sigmie\Testing\Testing as SigmieTesting;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    use IndexActions, TestConnection;
+    use  Testing;
 
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->setUpTraits();
+        $uses = $this->usedTraits();
+
+        $this->setUpSigmieTesting($uses);
     }
 
     public function tearDown(): void
     {
         parent::tearDown();
 
-        $this->tearDownTraits();
+        $uses = $this->usedTraits();
+
+        $this->tearDownSigmieTesting($uses);
     }
 
     public function assertIndexExists(string $name)
@@ -31,32 +36,6 @@ class TestCase extends \PHPUnit\Framework\TestCase
         $index = $this->getIndex($name);
 
         $this->assertInstanceOf(Index::class, $index);
-    }
-
-    public function tearDownTraits()
-    {
-        $uses = $this->usedTraits();
-
-        if (isset($uses[ClearIndices::class])) {
-            $this->clearIndices();
-        }
-    }
-
-    protected function setUpTraits()
-    {
-        $uses = $this->usedTraits();
-
-        if (isset($uses[TestConnection::class])) {
-            $this->setupTestConnection();
-        }
-
-        if (isset($uses[ClearIndices::class])) {
-            $this->clearIndices();
-        }
-
-        if (isset($uses[TestIndex::class])) {
-            $this->createTestIndex();
-        }
     }
 
     private function classUsesTrait($class, $trait): bool
