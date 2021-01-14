@@ -10,6 +10,17 @@ import { Ziggy } from './routes'
 import Clipboard from 'v-clipboard'
 import vueHeadful from 'vue-headful'
 import { mixin as clickaway } from 'vue-clickaway'
+import { InertiaProgress } from '@inertiajs/progress'
+
+InertiaProgress.init({
+  delay: 250,
+  color: '#ff826c',
+  // Whether to include the default NProgress styles.
+  includeCSS: true,
+  // Whether the NProgress spinner will be shown.
+  showSpinner: false,
+})
+
 
 window.Pusher = Pusher
 

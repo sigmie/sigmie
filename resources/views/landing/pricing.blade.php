@@ -26,7 +26,7 @@
             <div class="flex-col md:flex-row flex md:space-x-4 justify-between pt-8">
                 <div class="md:w-1/3 mx-auto flex-1 md:mx-0">
                     <h3 class="font-bold text-gray-800 text-3xl mb-4 leading-none">All-in-One</h3>
-                    <p class="font-normal text-base text-cool-gray-500">
+                    <p class="font-normal text-base text-gray-500">
                         Simple and affordable pricing. Since the infastructure remains on your side,
                         you don't have to worry about pricing units.
                     </p>

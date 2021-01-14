@@ -54,5 +54,8 @@
             "tests",
             "bootstrap"
         ]
+    },
+    "dependencies": {
+        "@inertiajs/progress": "^0.2.4"
     }
 }

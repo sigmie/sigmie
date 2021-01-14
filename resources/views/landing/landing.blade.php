@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{{-- <!DOCTYPE html> --}}
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full min-h-full">
 
 <head>
