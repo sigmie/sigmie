@@ -16,7 +16,7 @@ class LoginControllerTest extends TestCase
      */
     public function login_inertia_renders_login_view()
     {
-        $this->expectsInertiaToRender('auth/login/login');
+        $this->assertInertiaViewExists('auth/login/login');
 
         $this->get(route('login'));
     }

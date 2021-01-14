@@ -7,13 +7,12 @@ namespace Tests\Feature;
 use App\Http\Controllers\Cluster\TokenController;
 use App\Models\Cluster;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Tests\Helpers\ElasticsearchCleanup;
+use Sigmie\Testing\Laravel\ClearIndices;
 use Tests\TestCase;
 
 class ProxyControllerTest extends TestCase
 {
-    use DatabaseTransactions;
-    use ElasticsearchCleanup;
+    use DatabaseTransactions, ClearIndices;
 
     /**
      * @var Cluster
@@ -173,9 +172,6 @@ class ProxyControllerTest extends TestCase
      */
     public function create_index()
     {
-        // Delete if already exists to avoid duplicate index error
-        $this->delete(route('proxy', ['endpoint' => 'my-index']), [], ['Authorization' => "Bearer {$this->adminToken}"]);
-
         $this->put(route('proxy', ['endpoint' => 'my-index']), [], ['Authorization' => "Bearer {$this->adminToken}"])->assertJson(["acknowledged" => true]);
     }
 

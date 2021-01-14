@@ -53,7 +53,7 @@ class SubscriptionControllerTest extends TestCase
      */
     public function confirmed_renders_newsletter_confirmed(): void
     {
-        $this->expectsInertiaToRender('newsletter/confirmed');
+        $this->assertInertiaViewExists('newsletter/confirmed');
 
         $this->controller->confirmed();
     }
@@ -63,7 +63,7 @@ class SubscriptionControllerTest extends TestCase
      */
     public function thankyou_renders_newsletter_thankyou(): void
     {
-        $this->expectsInertiaToRender('newsletter/thankyou');
+        $this->assertInertiaViewExists('newsletter/thankyou');
 
         $this->controller->thankyou();
     }

@@ -61,7 +61,7 @@ class ClusterControllerTest extends TestCase
      */
     public function create_renders_inertia_cluster_create()
     {
-        $this->expectsInertiaToRender('cluster/create/create', ['regions' => $this->regions]);
+        $this->assertInertiaViewExists('cluster/create/create', ['regions' => $this->regions]);
 
         $this->controller->create($this->regionRepositoryMock);
     }
@@ -100,7 +100,7 @@ class ClusterControllerTest extends TestCase
      */
     public function edit_renders_inertia_cluster_edit_with_cluster_data_arguments()
     {
-        $this->expectsInertiaToRender('cluster/edit/edit', [
+        $this->assertInertiaViewExists('cluster/edit/edit', [
             'regions' => $this->regions,
             'cluster' => [
                 'id' => $this->clusterId,

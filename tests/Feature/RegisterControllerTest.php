@@ -80,7 +80,7 @@ class RegisterControllerTest extends TestCase
      */
     public function show_register_form_renders_without_githubuser()
     {
-        $this->expectsInertiaToRender(
+        $this->assertInertiaViewExists(
             'auth/register/register',
             [
                 'githubUser' => null,
@@ -96,7 +96,7 @@ class RegisterControllerTest extends TestCase
      */
     public function show_register_form_with_github_user_data()
     {
-        $this->expectsInertiaToRender(
+        $this->assertInertiaViewExists(
             'auth/register/register',
             [
                 'githubUser' => 'some user data',

@@ -78,7 +78,7 @@ class DashboardControllerTest extends TestCase
     {
         Gate::shouldReceive('authorize')->once()->with('view-dashboard', $this->projectMock);
 
-        $this->expectsInertiaToRender('dashboard/dashboard', ['clusterId' => 'some-id']);
+        $this->assertInertiaViewExists('dashboard/dashboard', ['clusterId' => 'some-id']);
 
         $this->controller->show($this->projectMock);
     }

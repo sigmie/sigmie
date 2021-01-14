@@ -17,6 +17,10 @@
             "url": "https://packages.sigmie.com"
         },
         {
+            "type": "vcs",
+            "url": "https://github.com/sigmie/sigmie.git"
+        },
+        {
             "type": "path",
             "url": "./packages/*",
             "options": {
@@ -48,15 +52,18 @@
         "pusher/pusher-php-server": "~4.0",
         "sigmie/app-core": "^0.10.0",
         "sigmie/nova-feature-flags": "@dev",
-        "sigmie/sigmie": "^0.3.3",
+        "sigmie/sigmie-laravel-testing": "@dev",
+        "sigmie/sigmie": "dev-develop",
         "tightenco/ziggy": "^0.9.3"
     },
     "require-dev": {
+        "claudiodekker/inertia-laravel-testing": "^1.2",
         "filp/whoops": "^2.0",
         "mockery/mockery": "^1.0",
         "nunomaduro/larastan": "^0.6.1",
         "phpstan/phpstan": "^0.12.6",
         "phpunit/phpunit": "^9.0",
+        "spatie/laravel-ray": "^1.5",
         "squizlabs/php_codesniffer": "^3.5",
         "symfony/var-dumper": "^5"
     },

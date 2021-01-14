@@ -8,13 +8,12 @@ use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\Subscription;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Tests\Helpers\ElasticsearchCleanup;
+use Sigmie\Testing\Laravel\ClearIndices;
 use Tests\TestCase;
 
 class DashboardControllerTest extends TestCase
 {
-    use DatabaseTransactions;
-    use ElasticsearchCleanup;
+    use DatabaseTransactions, ClearIndices;
 
     /**
      * @test

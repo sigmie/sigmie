@@ -163,7 +163,7 @@ class ClusterTokenControllerTest extends TestCase
             ],
         ]];
 
-        $this->expectsInertiaToRender('token/index', $tokens);
+        $this->assertInertiaViewExists('token/index', $tokens);
 
         Gate::shouldReceive('authorize')->once()->with('index', [Token::class, $this->clusterMock]);
 
