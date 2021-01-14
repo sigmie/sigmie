@@ -10,7 +10,6 @@ trait Traits
     {
         if (isset($uses[ClearIndices::class])) {
             $this->clearIndices();
-
             $this->beforeApplicationDestroyed(fn () => $this->clearIndices());
         }
     }

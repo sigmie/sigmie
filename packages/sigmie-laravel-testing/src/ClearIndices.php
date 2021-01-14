@@ -11,7 +11,5 @@ trait ClearIndices
         $helper = $this->app->make(TestingHelper::class);
 
         $helper->clearIndices();
-
-        return;
     }
 }
