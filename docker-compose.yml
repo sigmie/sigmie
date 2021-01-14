@@ -1,5 +1,7 @@
 version: '3'
+
 services:
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.8.0
     ports:
@@ -16,12 +18,12 @@ services:
         hard: -1
     volumes:
       - elasticsearch:/usr/share/elasticsearch/data
+
   php:
     build: '.'
-    environment:
-      - XDEBUG_MODE=coverage
     volumes:
         - ./:/var/www/sigmie:cached
         - ~/.composer:/root/.composer
+
 volumes:
   elasticsearch:

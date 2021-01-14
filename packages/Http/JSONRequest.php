@@ -8,7 +8,7 @@ use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Http\Contracts\JSONRequest as JsonRequestInterface;
 
-class JsonRequest extends Request implements JsonRequestInterface
+class JSONRequest extends Request implements JsonRequestInterface
 {
     protected $headers = [
         'Content-type' => 'application/json',

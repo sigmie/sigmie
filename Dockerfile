@@ -31,12 +31,8 @@ RUN apt-get install -y php8.0 php8.0-fpm php8.0-zip php8.0-dom php8.0-intl php8.
 # remove apt-cache leftovers
 RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
-# copy app folders
-COPY . /var/www/poll-ops
-
-# install composer and the project dependecies
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composercurl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
-    composer validate && composer install --no-dev --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
+# install composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # command
 CMD sleep infinity

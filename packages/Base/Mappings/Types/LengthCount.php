@@ -6,7 +6,7 @@ namespace Sigmie\Base\Mappings\Types;
 
 use Sigmie\Base\Contracts\Type;
 
-class Hashed implements Type
+class LengthCount implements Type
 {
     public function field(): string
     {
