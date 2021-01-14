@@ -8,6 +8,7 @@ use App\Http\Controllers\Project\ProjectController;
 use App\Http\Requests\Project\StoreProject;
 use App\Models\User;
 use App\Repositories\ProjectRepository;
+use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -66,6 +67,7 @@ class ProjectControllerTest extends TestCase
      */
     public function create_renders_inertia_project_create()
     {
+        throw new Exception('Should change this');
         $this->assertInertiaViewExists('project/create/create');
 
         $this->controller->create();

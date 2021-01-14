@@ -7,6 +7,7 @@ namespace Tests\Unit\Controllers\Newsletter;
 use App\Http\Controllers\Newsletter\SubscriptionController;
 use App\Http\Requests\Newsletter\StoreSubscription;
 use App\Repositories\NewsletterSubscriptionRepository;
+use Exception;
 use Illuminate\Http\RedirectResponse;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
@@ -53,6 +54,8 @@ class SubscriptionControllerTest extends TestCase
      */
     public function confirmed_renders_newsletter_confirmed(): void
     {
+        throw new Exception('Should change this!');
+
         $this->assertInertiaViewExists('newsletter/confirmed');
 
         $this->controller->confirmed();
@@ -63,6 +66,8 @@ class SubscriptionControllerTest extends TestCase
      */
     public function thankyou_renders_newsletter_thankyou(): void
     {
+        throw new Exception('Should change this!');
+
         $this->assertInertiaViewExists('newsletter/thankyou');
 
         $this->controller->thankyou();

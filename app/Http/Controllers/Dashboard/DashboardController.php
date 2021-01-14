@@ -7,9 +7,10 @@ namespace App\Http\Controllers\Dashboard;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Repositories\ClusterRepository;
+use App\Services\Sigmie;
+use Exception;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
-use Sigmie\Search\SigmieClient;
 
 class DashboardController extends \App\Http\Controllers\Controller
 {
@@ -20,7 +21,7 @@ class DashboardController extends \App\Http\Controllers\Controller
         $this->clusters = $clusterRepository;
     }
 
-    public function data(Project $project, SigmieClient $sigmieClient)
+    public function data(Project $project, Sigmie $sigmie)
     {
         $cluster = $this->clusters->findOneTrashedBy('project_id', (string) $project->getAttribute('id'));
 
@@ -35,10 +36,12 @@ class DashboardController extends \App\Http\Controllers\Controller
         }
 
         if ($cluster->getAttribute('state') === Cluster::RUNNING) {
-            $clusterInfo = $sigmieClient->cluster()->get();
-            $indices = $sigmieClient->indices()->list()->toArray();
+            throw new Exception("Show be implemented");
 
-            $indices = array_map(fn ($index) => (array) $index, $indices);
+            // $clusterInfo = $sigmieClient->cluster()->get();
+            // $indices = $sigmieClient->indices()->list()->toArray();
+
+            // $indices = array_map(fn ($index) => (array) $index, $indices);
         }
 
         return [

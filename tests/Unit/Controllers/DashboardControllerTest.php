@@ -8,6 +8,7 @@ use App\Http\Controllers\Dashboard\DashboardController;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Repositories\ClusterRepository;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -78,6 +79,7 @@ class DashboardControllerTest extends TestCase
     {
         Gate::shouldReceive('authorize')->once()->with('view-dashboard', $this->projectMock);
 
+        throw new Exception('Should change this');
         $this->assertInertiaViewExists('dashboard/dashboard', ['clusterId' => 'some-id']);
 
         $this->controller->show($this->projectMock);

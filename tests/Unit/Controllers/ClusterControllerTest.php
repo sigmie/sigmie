@@ -10,6 +10,7 @@ use App\Http\Requests\Cluster\UpdateCluster;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
 use Composer\InstalledVersions;
+use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -61,6 +62,7 @@ class ClusterControllerTest extends TestCase
      */
     public function create_renders_inertia_cluster_create()
     {
+        throw new Exception('Should handle this');
         $this->assertInertiaViewExists('cluster/create/create', ['regions' => $this->regions]);
 
         $this->controller->create($this->regionRepositoryMock);
@@ -100,6 +102,7 @@ class ClusterControllerTest extends TestCase
      */
     public function edit_renders_inertia_cluster_edit_with_cluster_data_arguments()
     {
+        throw new Exception('Should change this');
         $this->assertInertiaViewExists('cluster/edit/edit', [
             'regions' => $this->regions,
             'cluster' => [

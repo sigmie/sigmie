@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Services\Sigmie;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Sigmie\Search\SigmieClient;
@@ -27,7 +28,7 @@ class SigmieServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->app->singleton(SigmieClient::class, function ($app) {
+        $this->app->singleton(Sigmie::class, function ($app) {
 
             $cluster = Route::getCurrentRoute()->parameter('project')->clusters()->first();
 
@@ -35,7 +36,9 @@ class SigmieServiceProvider extends ServiceProvider
             $password = decrypt($cluster->getAttribute('password'));
             $url = $cluster->getAttribute('url');
 
-            return SigmieClient::createFromBasicAuth($username, $password, $url);
+            return new Sigmie($url);
+
+            // return SigmieClient::createFromBasicAuth($username, $password, $url);
         });
     }
 }

@@ -18,6 +18,6 @@ class LoginControllerTest extends TestCase
     {
         $this->assertInertiaViewExists('auth/login/login');
 
-        $this->get(route('login'));
+        $this->get(route('login'))->assertInertia('auth/login/login');
     }
 }

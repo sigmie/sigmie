@@ -9,6 +9,7 @@ use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\Subscription;
 use App\Models\Token;
+use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Sanctum\NewAccessToken;
@@ -163,6 +164,7 @@ class ClusterTokenControllerTest extends TestCase
             ],
         ]];
 
+        throw new Exception('Should change this');
         $this->assertInertiaViewExists('token/index', $tokens);
 
         Gate::shouldReceive('authorize')->once()->with('index', [Token::class, $this->clusterMock]);

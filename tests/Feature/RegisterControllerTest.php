@@ -78,16 +78,17 @@ class RegisterControllerTest extends TestCase
     /**
      * @test
      */
-    public function show_register_form_renders_without_githubuser()
+    public function show_register_form_renders_without_github_user()
     {
-        $this->assertInertiaViewExists(
+        $this->assertInertiaViewExists('auth/register/register');
+
+        $response = $this->get(route('sign-up'))->assertInertia(
             'auth/register/register',
             [
                 'githubUser' => null,
             ]
-        );
 
-        $response = $this->get(route('sign-up'));
+        );
         $response->assertOk();
     }
 
@@ -96,16 +97,16 @@ class RegisterControllerTest extends TestCase
      */
     public function show_register_form_with_github_user_data()
     {
-        $this->assertInertiaViewExists(
+        $this->assertInertiaViewExists('auth/register/register');
+
+        $this->withSession(['githubUser' => 'some user data']);
+
+        $response = $this->get(route('sign-up'))->assertInertia(
             'auth/register/register',
             [
                 'githubUser' => 'some user data',
             ]
         );
-
-        $this->withSession(['githubUser' => 'some user data']);
-
-        $response = $this->get(route('sign-up'));
         $response->assertOk();
     }
 
