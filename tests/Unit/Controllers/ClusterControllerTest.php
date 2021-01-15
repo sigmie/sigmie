@@ -60,17 +60,6 @@ class ClusterControllerTest extends TestCase
     /**
      * @test
      */
-    public function create_renders_inertia_cluster_create()
-    {
-        throw new Exception('Should handle this');
-        $this->assertInertiaViewExists('cluster/create/create', ['regions' => $this->regions]);
-
-        $this->controller->create($this->regionRepositoryMock);
-    }
-
-    /**
-     * @test
-     */
     public function store_saves_dispatches_cluster_create_and_redirects_to_dashboard()
     {
         $storeRequest = $this->createMock(StoreCluster::class);
@@ -95,23 +84,6 @@ class ClusterControllerTest extends TestCase
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertEquals(route('dashboard'), $response->getTargetUrl());
-    }
-
-    /**
-     * @test
-     */
-    public function edit_renders_inertia_cluster_edit_with_cluster_data_arguments()
-    {
-        throw new Exception('Should change this');
-        $this->assertInertiaViewExists('cluster/edit/edit', [
-            'regions' => $this->regions,
-            'cluster' => [
-                'id' => $this->clusterId,
-                'name' => $this->clusterName
-            ]
-        ]);
-
-        $this->controller->edit($this->clusterMock, $this->regionRepositoryMock);
     }
 
     /**

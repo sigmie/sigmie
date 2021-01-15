@@ -70,6 +70,9 @@ RUN chown -R www-data:www-data /var/www/app && \
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
     composer validate && composer install --no-dev --optimize-autoloader --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
 
+# Add composer bin to path
+ENV PATH="${HOME}/.composer/vendor/bin/:${PATH}"
+
 # publish app engine port 8080
 EXPOSE 8080
 

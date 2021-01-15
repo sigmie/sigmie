@@ -65,17 +65,6 @@ class ProjectControllerTest extends TestCase
     /**
      * @test
      */
-    public function create_renders_inertia_project_create()
-    {
-        throw new Exception('Should change this');
-        $this->assertInertiaViewExists('project/create/create');
-
-        $this->controller->create();
-    }
-
-    /**
-     * @test
-     */
     public function store_create_project_and_redirects_to_cluster_creation()
     {
         $this->projectRepositoryMock->expects($this->once())->method('create')->with($this->callback(function ($array) {

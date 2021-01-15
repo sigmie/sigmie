@@ -22,7 +22,6 @@ class Sigmie
     public function indices()
     {
         $d = $this->listIndices();
-        dd($d);
         return;
     }
 }

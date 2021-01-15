@@ -39,7 +39,7 @@ abstract class TestCase extends BaseTestCase
         parent::tearDown();
     }
 
-    public function assertInertiaViewExists($view)
+    protected function assertInertiaViewExists($view)
     {
         $this->assertFileExists(base_path("resources/js/views/{$view}.vue"));
     }

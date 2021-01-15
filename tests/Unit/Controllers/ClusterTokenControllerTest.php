@@ -131,44 +131,4 @@ class ClusterTokenControllerTest extends TestCase
 
         $this->assertEquals(['value' => 'foo-bar-token', 'id' => 0000], $result);
     }
-
-    /**
-     * @test
-     */
-    public function index_renders_inertia_view(): void
-    {
-        $clusterId = 99;
-        $adminTokenActive = false;
-        $searchTokenActive = true;
-        $this->clusterMock->method('getAttribute')->willReturn($this->tokensCollectionMock, $clusterId, [$this->adminTokenMock, $this->searchTokenMock], $adminTokenActive, $searchTokenActive);
-        $this->tokensCollectionMock->method('isEmpty')->willReturn(false);
-
-        $tokens = ['tokens' => [
-            [
-                'name' => TokenController::ADMIN,
-                'last_used_at' => '2000/01/01',
-                'created_at' => '2001/01/01',
-                'id' => 9,
-                'active' => $adminTokenActive,
-                'cluster_id' => $clusterId,
-                'value' => null
-            ],
-            [
-                'name' => TokenController::SEARCH_ONLY,
-                'last_used_at' => '2020/01/01',
-                'created_at' => '2021/01/01',
-                'id' => 0,
-                'active' => $searchTokenActive,
-                'cluster_id' => $clusterId,
-                'value' => null
-            ],
-        ]];
-
-        throw new Exception('Should change this');
-        $this->assertInertiaViewExists('token/index', $tokens);
-
-        Gate::shouldReceive('authorize')->once()->with('index', [Token::class, $this->clusterMock]);
-
-        $this->controller->index($this->projectMock);
-    }
 }

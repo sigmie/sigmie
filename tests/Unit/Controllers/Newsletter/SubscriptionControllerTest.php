@@ -48,28 +48,4 @@ class SubscriptionControllerTest extends TestCase
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertEquals(route('newsletter.thankyou'), $response->getTargetUrl());
     }
-
-    /**
-     * @test
-     */
-    public function confirmed_renders_newsletter_confirmed(): void
-    {
-        throw new Exception('Should change this!');
-
-        $this->assertInertiaViewExists('newsletter/confirmed');
-
-        $this->controller->confirmed();
-    }
-
-    /**
-     * @test
-     */
-    public function thankyou_renders_newsletter_thankyou(): void
-    {
-        throw new Exception('Should change this!');
-
-        $this->assertInertiaViewExists('newsletter/thankyou');
-
-        $this->controller->thankyou();
-    }
 }
