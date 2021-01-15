@@ -7,12 +7,12 @@ namespace Tests\Unit\Notifications;
 use App\Notifications\Cluster\ClusterIsRunning;
 use App\Repositories\ClusterRepository;
 use PHPUnit\Framework\MockObject\MockObject;
-use Tests\Helpers\NeedsNotifiable;
+use Tests\Helpers\WithNotifiableMock;
 use Tests\TestCase;
 
 class ClusterIsRunningTest extends TestCase
 {
-    use NeedsNotifiable;
+    use WithNotifiableMock;
 
     /**
      * @var ClusterIsRunning
@@ -48,7 +48,7 @@ class ClusterIsRunningTest extends TestCase
      */
     public function notification_via_broadcast_and_database()
     {
-        $this->assertEquals(['broadcast', 'database'], $this->notification->via($this->notifiable()));
+        $this->assertEquals(['broadcast', 'database'], $this->notification->via($this->withNotifiableMock()));
     }
 
     /**
@@ -62,6 +62,6 @@ class ClusterIsRunningTest extends TestCase
             'project' => 'foo'
         ];
 
-        $this->assertEquals($values, $this->notification->toArray($this->notifiable()));
+        $this->assertEquals($values, $this->notification->toArray($this->withNotifiableMock()));
     }
 }

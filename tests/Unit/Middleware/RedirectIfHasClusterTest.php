@@ -11,12 +11,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\HttpFoundation\Request;
-use Tests\Helpers\NeedsClosure;
+use Tests\Helpers\WithClosureMock;
 use Tests\TestCase;
 
 class RedirectIfHasClusterTest extends TestCase
 {
-    use NeedsClosure;
+    use WithClosureMock;
 
     /**
      * @var RedirectToDashboardIfHasCluster
@@ -52,7 +52,7 @@ class RedirectIfHasClusterTest extends TestCase
     {
         parent::setUp();
 
-        $this->closure();
+        $this->withClosureMock();
 
         $this->requestMock = $this->createMock(Request::class);
         $this->requestMock->method('get')->willReturn($this->projectId);
@@ -75,7 +75,7 @@ class RedirectIfHasClusterTest extends TestCase
     {
         $this->clustersCollectionMock->method('isEmpty')->willReturn(true);
 
-        $this->expectClosureCalledWith($this->requestMock);
+        $this->expectClosureMockCalledWith($this->requestMock);
 
         $this->middleware->handle($this->requestMock, $this->closureMock);
     }

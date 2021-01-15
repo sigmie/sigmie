@@ -14,12 +14,12 @@ use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\MockObject\MockObject;
-use Tests\Helpers\NeedsRegionRepository;
+use Tests\Helpers\WithRegionRepositoryMock;
 use Tests\TestCase;
 
 class ClusterControllerTest extends TestCase
 {
-    use NeedsRegionRepository;
+    use WithRegionRepositoryMock;
 
     /**
      * @var ClusterController

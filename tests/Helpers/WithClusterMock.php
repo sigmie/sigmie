@@ -10,7 +10,7 @@ use App\Models\Region;
 use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\App\Core\Cloud\Regions\Asia;
 
-trait NeedsCluster
+trait WithClusterMock
 {
     /**
      * @var Cluster|MockObject
@@ -32,7 +32,7 @@ trait NeedsCluster
      */
     private $projectId = -1;
 
-    final public function cluster()
+    final public function withClusterMock()
     {
         $this->clusterMock = $this->createMock(Cluster::class);
         $this->projectMock = $this->createMock(Project::class);

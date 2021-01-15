@@ -12,12 +12,12 @@ use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\App\Core\Cluster as CoreCluster;
 use Sigmie\App\Core\Contracts\ClusterManager;
-use Tests\Helpers\NeedsCluster;
+use Tests\Helpers\WithClusterMock;
 use Tests\TestCase;
 
 class CreateClusterTest extends TestCase
 {
-    use NeedsCluster;
+    use WithClusterMock;
 
     /**
      * @var CreateCluster
@@ -44,6 +44,8 @@ class CreateClusterTest extends TestCase
         parent::setUp();
 
         Event::fake();
+
+        $this->withClusterMock();
 
         $this->clusterRepositoryMock = $this->createMock(ClusterRepository::class);
         $this->clusterManagerFactoryMock = $this->createMock(ClusterManagerFactory::class);
@@ -72,8 +74,6 @@ class CreateClusterTest extends TestCase
      */
     public function handle_triggers_cluster_was_created_event()
     {
-        $this->markTestSkipped('Should be revisited.');
-
         $this->job->handle($this->clusterRepositoryMock, $this->clusterManagerFactoryMock);
 
         Event::assertDispatched(fn (\App\Events\Cluster\ClusterWasCreated $event) => $event->clusterId === $this->clusterId);

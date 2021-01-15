@@ -10,12 +10,12 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\HttpFoundation\Request;
-use Tests\Helpers\NeedsClosure;
+use Tests\Helpers\WithClosureMock;
 use Tests\TestCase;
 
 class ShareUserToViewTest extends TestCase
 {
-    use NeedsClosure;
+    use WithClosureMock;
 
     /**
      * @var ShareUserToView
@@ -36,7 +36,7 @@ class ShareUserToViewTest extends TestCase
     {
         parent::setUp();
 
-        $this->closure();
+        $this->withClosureMock();
 
         $this->userMock = $this->createMock(User::class);
 
@@ -58,7 +58,7 @@ class ShareUserToViewTest extends TestCase
         Auth::shouldReceive('check')->once()->andReturn(true);
         Inertia::shouldReceive('share')->once()->with('user', ['username', 'avatar-url']);
 
-        $this->expectClosureCalledWith($this->requestMock);
+        $this->expectClosureMockCalledWith($this->requestMock);
 
         $this->middleware->handle($this->requestMock, $this->closureMock);
     }
@@ -72,7 +72,7 @@ class ShareUserToViewTest extends TestCase
 
         Inertia::shouldReceive('share')->once()->with('user', null);
 
-        $this->expectClosureCalledWith($this->requestMock);
+        $this->expectClosureMockCalledWith($this->requestMock);
 
         $this->middleware->handle($this->requestMock, $this->closureMock);
     }

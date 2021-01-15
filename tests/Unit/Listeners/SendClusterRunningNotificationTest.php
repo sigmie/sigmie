@@ -13,11 +13,11 @@ use App\Notifications\Cluster\ClusterIsRunning;
 use App\Repositories\ClusterRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Tests\Helpers\NeedsNotifiable;
+use Tests\Helpers\WithNotifiableMock;
 
 class SendClusterRunningNotificationTest extends TestCase
 {
-    use NeedsNotifiable;
+    use WithNotifiableMock;
 
     /**
      * @var SendClusterRunningNotification
@@ -68,7 +68,7 @@ class SendClusterRunningNotificationTest extends TestCase
     {
         parent::setUp();
 
-        $this->notifiableMock = $this->notifiable();
+        $this->withNotifiableMock();
 
         $this->eventMock = $this->createMock(ClusterWasBooted::class);
         $this->eventMock->clusterId = $this->clusterId;

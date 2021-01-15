@@ -7,11 +7,11 @@ namespace Tests\Unit\Repositories;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
 use PHPUnit\Framework\TestCase;
-use Tests\Helpers\NeedsModel;
+use Tests\Helpers\WithModelMock;
 
 class ClusterRepositoryTest extends TestCase
 {
-    use NeedsModel;
+    use WithModelMock;
 
     /**
      * @var ClusterRepository
@@ -22,7 +22,7 @@ class ClusterRepositoryTest extends TestCase
     {
         parent::setUp();
 
-        $this->repository = new ClusterRepository($this->model(Cluster::class));
+        $this->repository = new ClusterRepository($this->withModelMock(Cluster::class));
     }
 
     /**
@@ -30,13 +30,13 @@ class ClusterRepositoryTest extends TestCase
      */
     public function with_trashed()
     {
-        $this->model()->method('withTrashed')->willReturnSelf();
-        $this->model()->method('where')->willReturnSelf();
-        $this->model()->method('first')->willReturn(new Cluster(['prop' => 'value']));
+        $this->withModelMock()->method('withTrashed')->willReturnSelf();
+        $this->withModelMock()->method('where')->willReturnSelf();
+        $this->withModelMock()->method('first')->willReturn(new Cluster(['prop' => 'value']));
 
-        $this->model()->expects($this->once())->method('withTrashed');
-        $this->model()->expects($this->once())->method('where')->with('id', 123);
-        $this->model()->expects($this->once())->method('first');
+        $this->withModelMock()->expects($this->once())->method('withTrashed');
+        $this->withModelMock()->expects($this->once())->method('where')->with('id', 123);
+        $this->withModelMock()->expects($this->once())->method('first');
 
         $this->assertEquals(new Cluster(['prop' => 'value']), $this->repository->findTrashed(123));
     }
@@ -46,12 +46,12 @@ class ClusterRepositoryTest extends TestCase
      */
     public function restore()
     {
-        $this->model()->method('withTrashed')->willReturnSelf();
-        $this->model()->method('firstWhere')->willReturnSelf();
-        $this->model()->method('restore')->willReturn(true);
+        $this->withModelMock()->method('withTrashed')->willReturnSelf();
+        $this->withModelMock()->method('firstWhere')->willReturnSelf();
+        $this->withModelMock()->method('restore')->willReturn(true);
 
-        $this->model()->expects($this->once())->method('firstWhere')->with('id', 1);
-        $this->model()->expects($this->once())->method('restore');
+        $this->withModelMock()->expects($this->once())->method('firstWhere')->with('id', 1);
+        $this->withModelMock()->expects($this->once())->method('restore');
 
         $this->assertTrue($this->repository->restore(1));
     }
@@ -61,15 +61,15 @@ class ClusterRepositoryTest extends TestCase
      */
     public function update_trashed()
     {
-        $this->model()->method('withTrashed')->willReturnSelf();
-        $this->model()->method('where')->willReturnSelf();
-        $this->model()->method('first')->willReturnSelf();
-        $this->model()->method('update')->willReturn(true);
+        $this->withModelMock()->method('withTrashed')->willReturnSelf();
+        $this->withModelMock()->method('where')->willReturnSelf();
+        $this->withModelMock()->method('first')->willReturnSelf();
+        $this->withModelMock()->method('update')->willReturn(true);
 
-        $this->model()->expects($this->once())->method('withTrashed');
-        $this->model()->expects($this->once())->method('where')->with('id', 1);
-        $this->model()->expects($this->once())->method('first');
-        $this->model()->expects($this->once())->method('update')->with(['foo' => 'bar']);
+        $this->withModelMock()->expects($this->once())->method('withTrashed');
+        $this->withModelMock()->expects($this->once())->method('where')->with('id', 1);
+        $this->withModelMock()->expects($this->once())->method('first');
+        $this->withModelMock()->expects($this->once())->method('update')->with(['foo' => 'bar']);
 
         $this->assertTrue($this->repository->updateTrashed(1, ['foo' => 'bar']));
     }

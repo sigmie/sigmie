@@ -13,11 +13,11 @@ use App\Notifications\Cluster\ClusterWasDestroyed as ClusterWasDestroyedNotifica
 use App\Repositories\ClusterRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Tests\Helpers\NeedsNotifiable;
+use Tests\Helpers\WithNotifiableMock;
 
 class SendClusterDestroyedNotificationTest extends TestCase
 {
-    use NeedsNotifiable;
+    use WithNotifiableMock;
 
     /**
      * @var SendClusterDestroyedNotification
@@ -45,11 +45,6 @@ class SendClusterDestroyedNotificationTest extends TestCase
     private $clusterId = 0;
 
     /**
-     * @var User|MockObject
-     */
-    private $notifiableMock;
-
-    /**
      * @var Project|MockObject
      */
     private $projectMock;
@@ -63,9 +58,10 @@ class SendClusterDestroyedNotificationTest extends TestCase
     {
         parent::setUp();
 
+        $this->withNotifiableMock();
+
         $this->eventMock = $this->createMock(ClusterWasDestroyed::class);
         $this->eventMock->clusterId = $this->clusterId;
-        $this->notifiableMock = $this->notifiable();
 
         $this->projectMock = $this->createMock(Project::class);
         $this->projectMock->method('getAttribute')->willReturnMap([['name', $this->projectName]]);

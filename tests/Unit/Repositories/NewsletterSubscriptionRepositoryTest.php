@@ -8,11 +8,11 @@ use App\Models\NewsletterSubscription;
 use App\Repositories\NewsletterSubscriptionRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Tests\Helpers\NeedsModel;
+use Tests\Helpers\WithModelMock;
 
 class NewsletterSubscriptionRepositoryTest extends TestCase
 {
-    use NeedsModel;
+    use WithModelMock;
 
     /**
      * @var NewsletterSubscriptionRepository
@@ -28,7 +28,7 @@ class NewsletterSubscriptionRepositoryTest extends TestCase
     {
         parent::setUp();
 
-        $this->model = $this->model(NewsletterSubscription::class);
+        $this->model = $this->withModelMock(NewsletterSubscription::class);
         $this->model->method('firstOrCreate')->willReturnSelf();
 
         $this->repository = new NewsletterSubscriptionRepository($this->model);

@@ -13,12 +13,12 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\HttpFoundation\Request;
-use Tests\Helpers\NeedsClosure;
+use Tests\Helpers\WithClosureMock;
 use Tests\TestCase;
 
 class ShareProjectsToViewTest extends TestCase
 {
-    use NeedsClosure;
+    use WithClosureMock;
 
     /**
      * @var ShareProjectsToView
@@ -58,7 +58,7 @@ class ShareProjectsToViewTest extends TestCase
     {
         parent::setUp();
 
-        $this->closure();
+        $this->withClosureMock();
 
         $this->projectMock = $this->createMock(Project::class);
 
@@ -92,7 +92,7 @@ class ShareProjectsToViewTest extends TestCase
         Auth::shouldReceive('check')->once()->andReturn(true);
         Auth::shouldReceive('user')->once()->andReturn($this->userMock);
 
-        $this->expectClosureCalledWith($this->requestMock);
+        $this->expectClosureMockCalledWith($this->requestMock);
         Inertia::shouldReceive('share')->once()->with('projects', $this->projects);
 
         $this->middleware->handle($this->requestMock, $this->closureMock);

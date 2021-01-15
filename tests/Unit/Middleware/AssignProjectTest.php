@@ -12,12 +12,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use PHPUnit\Framework\MockObject\MockObject;
-use Tests\Helpers\NeedsClosure;
+use Tests\Helpers\WithClosureMock;
 use Tests\TestCase;
 
 class AssignProjectTest extends TestCase
 {
-    use NeedsClosure;
+    use WithClosureMock;
 
     /**
      * @var RedirecToSameRouteWithProject
@@ -53,7 +53,7 @@ class AssignProjectTest extends TestCase
     {
         parent::setUp();
 
-        $this->closure();
+        $this->withClosureMock();
 
         $this->projectMock = $this->createMock(Project::class);
         $this->projectMock->method('getAttribute')->willReturn($this->projectId);
@@ -76,7 +76,7 @@ class AssignProjectTest extends TestCase
         $this->projectsCollectionMock->method('first')->willReturn($this->projectMock);
         $this->requestMock->expects($this->once())->method('route')->willReturn(new Project());
 
-        $this->expectClosureCalledWith($this->requestMock);
+        $this->expectClosureMockCalledWith($this->requestMock);
 
         $this->middleware->handle($this->requestMock, $this->closureMock);
     }

@@ -13,12 +13,12 @@ use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\App\Core\Cluster as CoreCluster;
 use Sigmie\App\Core\Contracts\ClusterManager;
-use Tests\Helpers\NeedsCluster;
+use Tests\Helpers\WithClusterMock;
 use Tests\TestCase;
 
 class DestroyClusterTest extends TestCase
 {
-    use NeedsCluster;
+    use WithClusterMock;
 
     /**
      * @var DestroyCluster
@@ -45,6 +45,8 @@ class DestroyClusterTest extends TestCase
         parent::setUp();
 
         Event::fake();
+
+        $this->withClusterMock();
 
         $this->clusterRepositoryMock = $this->createMock(ClusterRepository::class);
         $this->clusterManagerFactoryMock = $this->createMock(ClusterManagerFactory::class);

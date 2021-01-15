@@ -6,11 +6,11 @@ namespace Tests\Unit\Repositories;
 
 use App\Repositories\BaseRepository;
 use PHPUnit\Framework\TestCase;
-use Tests\Helpers\NeedsModel;
+use Tests\Helpers\WithModelMock;
 
 class BaseRepositoryTest extends TestCase
 {
-    use NeedsModel;
+    use WithModelMock;
 
     /**
      * @var BaseRepository
@@ -21,7 +21,7 @@ class BaseRepositoryTest extends TestCase
     {
         parent::setUp();
 
-        $this->repository = new class ($this->model()) extends BaseRepository
+        $this->repository = new class ($this->withModelMock()) extends BaseRepository
         {
         };
     }
@@ -31,8 +31,8 @@ class BaseRepositoryTest extends TestCase
      */
     public function find(): void
     {
-        $this->model()->method('find')->willReturnSelf();
-        $this->model()->expects($this->once())->method('find')->with(0);
+        $this->withModelMock()->method('find')->willReturnSelf();
+        $this->withModelMock()->expects($this->once())->method('find')->with(0);
 
         $this->repository->find(0);
     }
@@ -42,10 +42,10 @@ class BaseRepositoryTest extends TestCase
      */
     public function update(): void
     {
-        $this->model()->method('find')->willReturnSelf();
-        $this->model()->method('update')->willReturn(true);
-        $this->model()->expects($this->once())->method('find')->with(1);
-        $this->model()->expects($this->once())->method('update')->with(['column' => 'value']);
+        $this->withModelMock()->method('find')->willReturnSelf();
+        $this->withModelMock()->method('update')->willReturn(true);
+        $this->withModelMock()->expects($this->once())->method('find')->with(1);
+        $this->withModelMock()->expects($this->once())->method('update')->with(['column' => 'value']);
 
         $this->assertTrue($this->repository->update(1, ['column' => 'value']));
     }
@@ -55,10 +55,10 @@ class BaseRepositoryTest extends TestCase
      */
     public function delete(): void
     {
-        $this->model()->method('find')->willReturnSelf();
-        $this->model()->method('delete')->willReturn(true);
-        $this->model()->expects($this->once())->method('find')->with(1);
-        $this->model()->expects($this->once())->method('delete')->with();
+        $this->withModelMock()->method('find')->willReturnSelf();
+        $this->withModelMock()->method('delete')->willReturn(true);
+        $this->withModelMock()->expects($this->once())->method('find')->with(1);
+        $this->withModelMock()->expects($this->once())->method('delete')->with();
 
         $this->assertTrue($this->repository->delete(1));
     }
@@ -68,8 +68,8 @@ class BaseRepositoryTest extends TestCase
      */
     public function find_one_by()
     {
-        $this->model()->method('firstWhere')->willReturn(null);
-        $this->model()->expects($this->once())->method('firstWhere')->with('foo', 'bar');
+        $this->withModelMock()->method('firstWhere')->willReturn(null);
+        $this->withModelMock()->expects($this->once())->method('firstWhere')->with('foo', 'bar');
 
         $result = $this->repository->findOneBy('foo', 'bar');
         $this->assertNull($result);
@@ -80,8 +80,8 @@ class BaseRepositoryTest extends TestCase
      */
     public function create()
     {
-        $this->model()->method('create')->willReturnSelf();
-        $this->model()->expects($this->once())->method('create')->with(['foo' => 'bar']);
+        $this->withModelMock()->method('create')->willReturnSelf();
+        $this->withModelMock()->expects($this->once())->method('create')->with(['foo' => 'bar']);
 
         $this->repository->create(['foo' => 'bar']);
     }

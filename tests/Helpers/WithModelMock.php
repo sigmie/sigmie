@@ -11,14 +11,14 @@ use App\Models\Project;
 use App\Models\User;
 use PHPUnit\Framework\MockObject\MockObject;
 
-trait NeedsModel
+trait WithModelMock
 {
     private $modelMock = null;
 
     /**
      * @return MockObject|Project|Cluster|User|NewsletterSubscription
      */
-    public function model($model = null)
+    public function withModelMock($model = null)
     {
         if ($model === null) {
             $model = Model::class;

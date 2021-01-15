@@ -8,17 +8,19 @@ use App\Models\User;
 use Illuminate\Notifications\Notifiable;
 use PHPUnit\Framework\MockObject\MockObject;
 
-trait NeedsNotifiable
+trait WithNotifiableMock
 {
+    private $notifiableMock;
+
     /**
      * @return MockObject|User
      */
-    public function notifiable()
+    public function withNotifiableMock()
     {
         $methods = [
             'getKey', 'notify', 'getAttribute'
         ];
 
-        return $this->getMockBuilder(Notifiable::class)->setMethods($methods)->getMockForTrait();
+        $this->notifiableMock = $this->getMockBuilder(Notifiable::class)->setMethods($methods)->getMockForTrait();
     }
 }

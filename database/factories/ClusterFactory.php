@@ -20,7 +20,7 @@ class ClusterFactory extends Factory
             'region_id' => 2,
             'username' => $this->faker->text(10),
             'password' => encrypt($this->faker->text(10)),
-            'url' => 'http://es:9200',
+            'url' => env('ES_HOST'),
             'state' => $this->faker->randomElement([
                 Cluster::RUNNING,
                 // Cluster::QUEUED_CREATE,

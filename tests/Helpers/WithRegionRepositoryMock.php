@@ -10,7 +10,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\App\Core\Cloud\Regions\Asia;
 use Sigmie\App\Core\Cloud\Regions\Australia;
 
-trait NeedsRegionRepository
+trait WithRegionRepositoryMock
 {
     private Collection $regions;
 

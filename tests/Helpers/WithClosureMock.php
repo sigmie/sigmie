@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Tests\Helpers;
 
 use Closure;
-use PHPUnit\Framework\MockObject\MockObject;
 use stdClass;
+use PHPUnit\Framework\MockObject\MockObject;
 
-trait NeedsClosure
+trait WithClosureMock
 {
     /**
      * @var Closure|MockObject
@@ -22,14 +22,14 @@ trait NeedsClosure
      */
     private $callableMock;
 
-    public function closure()
+    public function withClosureMock()
     {
         $this->callableMock = $this->getMockBuilder(stdClass::class)->addMethods(['closure'])->getMock();
 
         $this->closureMock = fn (...$args) => $this->callableMock->closure(...$args);
     }
 
-    public function expectClosureCalledWith(...$args)
+    public function expectClosureMockCalledWith(...$args)
     {
         $this->callableMock->expects($this->once())
             ->method('closure')

@@ -14,12 +14,12 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\MockObject\MockObject;
-use Tests\Helpers\NeedsModel;
+use Tests\Helpers\WithModelMock;
 use Tests\TestCase;
 
 class PollClusterStateTest extends TestCase
 {
-    use NeedsModel;
+    use WithModelMock;
 
     /**
      * @var PollClusterState
@@ -154,7 +154,7 @@ class PollClusterStateTest extends TestCase
 
     private function createCluster()
     {
-        $cluster = $this->model(Cluster::class);
+        $cluster = $this->withModelMock(Cluster::class);
         $cluster->method('getAttribute')->willReturnMap([
             ['username', 'foo'],
             ['password', encrypt('bar')],

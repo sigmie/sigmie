@@ -8,11 +8,11 @@ use App\Models\Project;
 use App\Repositories\ProjectRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Tests\Helpers\NeedsModel;
+use Tests\Helpers\WithModelMock;
 
 class ProjectRepositoryTest extends TestCase
 {
-    use NeedsModel;
+    use WithModelMock;
 
     /**
      * @var ProjectRepository
@@ -28,7 +28,7 @@ class ProjectRepositoryTest extends TestCase
     {
         parent::setUp();
 
-        $this->model = $this->model(Project::class);
+        $this->model = $this->withModelMock(Project::class);
 
         $this->repository = new ProjectRepository($this->model);
     }

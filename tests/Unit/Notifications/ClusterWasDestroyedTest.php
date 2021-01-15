@@ -6,11 +6,11 @@ namespace Tests\Unit\Notifications;
 
 use App\Notifications\Cluster\ClusterWasDestroyed;
 use PHPUnit\Framework\TestCase;
-use Tests\Helpers\NeedsNotifiable;
+use Tests\Helpers\WithNotifiableMock;
 
 class ClusterWasDestroyedTest extends TestCase
 {
-    use NeedsNotifiable;
+    use WithNotifiableMock;
 
     /**
      * @var ClusterWasDestroyed
@@ -34,7 +34,7 @@ class ClusterWasDestroyedTest extends TestCase
      */
     public function notification_via_broadcast_and_database()
     {
-        $this->assertEquals(['broadcast', 'database'], $this->notification->via($this->notifiable()));
+        $this->assertEquals(['broadcast', 'database'], $this->notification->via($this->withNotifiableMock()));
     }
 
     /**
@@ -48,6 +48,6 @@ class ClusterWasDestroyedTest extends TestCase
             'project' => 'foo'
         ];
 
-        $this->assertEquals($values, $this->notification->toArray($this->notifiable()));
+        $this->assertEquals($values, $this->notification->toArray($this->withNotifiableMock()));
     }
 }
