@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Http;
 
 use Exception;
-use Sigmie\Base\Contracts\Connection as ConnectionInterface;
+use Sigmie\Base\Contracts\HttpConnection as ConnectionInterface;
 use Sigmie\Http\Contracts\JsonClient as JsonClientInterface;
 use Sigmie\Http\Contracts\JSONRequest;
 

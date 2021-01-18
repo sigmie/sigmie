@@ -6,7 +6,7 @@ namespace Sigmie\Tools;
 
 use Exception;
 use GuzzleHttp\Psr7\Uri;
-use Sigmie\Base\Contracts\Connection as RequestInterface;
+use Sigmie\Base\Contracts\HttpConnection as RequestInterface;
 use Sigmie\Base\Contracts\Manager as ManagerInterface;
 use Sigmie\Base\Http\Connection as Connection;
 use Sigmie\Base\Http\ElasticsearchResponse;

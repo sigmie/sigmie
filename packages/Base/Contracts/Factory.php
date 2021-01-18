@@ -6,5 +6,5 @@ namespace Sigmie\Base\Contracts;
 
 interface Factory
 {
-    public function connection(Connection $connection): self;
+    public function connection(HttpConnection $connection): self;
 }
