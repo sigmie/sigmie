@@ -49,9 +49,16 @@ class Index implements DocumentCollectionInterface
         $this->settings = $settings;
     }
 
-    public function setSize(string $size)
+    public function setSize(string $size): self
     {
-        return $this->size = $size;
+        $this->size = $size;
+
+        return $this;
+    }
+
+    public function getSize(): string
+    {
+        return $this->size;
     }
 
     /**
