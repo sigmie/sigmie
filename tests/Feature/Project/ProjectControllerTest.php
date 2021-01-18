@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature;
+namespace Tests\Feature\Project;
 
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;

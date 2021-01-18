@@ -32,11 +32,7 @@ class SigmieServiceProvider extends ServiceProvider
 
             $cluster = Route::getCurrentRoute()->parameter('project')->clusters()->first();
 
-            $username = $cluster->getAttribute('username');
-            $password = decrypt($cluster->getAttribute('password'));
-            $url = $cluster->getAttribute('url');
-
-            return new Sigmie($url);
+            return new Sigmie($cluster);
 
             // return SigmieClient::createFromBasicAuth($username, $password, $url);
         });

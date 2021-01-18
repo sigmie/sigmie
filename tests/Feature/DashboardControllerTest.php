@@ -54,8 +54,6 @@ class DashboardControllerTest extends TestCase
      */
     public function dashboard_data_returns_cluster_info()
     {
-        $this->markTestSkipped('must be revisited.');
-
         $this->withRunningCluster();
 
         $this->actingAs($this->user);

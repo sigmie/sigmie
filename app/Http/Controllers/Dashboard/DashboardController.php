@@ -36,9 +36,15 @@ class DashboardController extends \App\Http\Controllers\Controller
         }
 
         if ($cluster->getAttribute('state') === Cluster::RUNNING) {
-            throw new Exception("Show be implemented");
 
-            // $clusterInfo = $sigmieClient->cluster()->get();
+            $indices = $cluster->indices()->toArray();
+            $health = $cluster->health();
+
+            $clusterInfo = [
+                'health' => $health['status'],
+                'nodesCount' => $health['number_of_nodes'],
+                'name' => $health['cluster_name']
+            ];
             // $indices = $sigmieClient->indices()->list()->toArray();
 
             // $indices = array_map(fn ($index) => (array) $index, $indices);

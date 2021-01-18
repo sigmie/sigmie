@@ -7,12 +7,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
+use Sigmie\Http\JsonClient;
+use Sigmie\Base\Http\Connection;
+use Sigmie\Http\Auth\BasicAuth;
+use Sigmie\Base\APIs\Calls\Cluster as ClusterAPI;
+use Sigmie\Base\Index\Actions as IndexActions;
 
 class Cluster extends Model
 {
     use SoftDeletes;
     use HasApiTokens;
     use HasFactory;
+    use ClusterAPI;
+    use IndexActions;
 
     public const QUEUED_DESTROY = 'queued_destroy';
 
@@ -30,6 +37,33 @@ class Cluster extends Model
         'admin_token_active' => 'boolean',
         'search_token_active' => 'boolean'
     ];
+
+    public function clusterConnection(): Connection
+    {
+        $url = $this->getAttribute('url');
+        $username = $this->getAttribute('username');
+        $password = decrypt($this->getAttribute('password'));
+        $client = JsonClient::create(
+            $url,
+            new BasicAuth($username, $password)
+        );
+
+        return new Connection($client);
+    }
+
+    public function health(): array
+    {
+        $this->setHttpConnection($this->clusterConnection());
+
+        return $this->clusterAPICall('/health')->json();
+    }
+
+    public function indices()
+    {
+        $this->setHttpConnection($this->clusterConnection());
+
+        return $this->listIndices();
+    }
 
     public function region()
     {
