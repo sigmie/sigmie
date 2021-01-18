@@ -19,7 +19,7 @@ class SubscriptionFactory extends Factory
             'billable_id' => User::factory(),
             'billable_type' => User::class,
             'name' => config('services.paddle.plan_name'),
-            'paddle_id' => $this->faker->unique()->numberBetween(1000, 9999),
+            'paddle_id' => $this->faker->unique()->randomDigit(1000, 9999),
             'paddle_plan' => $this->faker->numberBetween(10000, 99999),
             'paddle_status' => 'active',
             'quantity' => 1,

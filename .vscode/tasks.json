@@ -14,9 +14,14 @@
             "command": "php artisan test"
         },
         {
-            "label": "decrypt:env",
+            "label": "decrypt:env:prod",
             "type": "shell",
             "command": "gpg --quiet --batch --yes --decrypt --passphrase='${input:params}' --output .env.prod .github/secrets/.env.gpg",
+        },
+        {
+            "label": "decrypt:env:testing",
+            "type": "shell",
+            "command": "gpg --quiet --batch --yes --decrypt --passphrase='${input:params}' --output .env.testing .github/secrets/.env.testing.gpg",
         },
         {
             "label": "horizon:clear:long-running-queue",
@@ -29,9 +34,14 @@
             "command": "php artisan horizon:clear",
         },
         {
-            "label": "update:env",
+            "label": "encrypt:env:prod",
             "type": "shell",
             "command": "echo '${input:params}' | gpg --batch --yes --passphrase-fd 0 --symmetric --cipher-algo AES256 .env.prod && mv .env.prod.gpg .github/secrets/.env.gpg"
+        },
+        {
+            "label": "encrypt:env:testing",
+            "type": "shell",
+            "command": "echo '${input:params}' | gpg --batch --yes --passphrase-fd 0 --symmetric --cipher-algo AES256 .env.testing && mv .env.testing.gpg .github/secrets/.env.testing.gpg"
         },
         {
             "label": "fresh:seed",

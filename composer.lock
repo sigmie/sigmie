@@ -5427,12 +5427,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sigmie/sigmie.git",
-                "reference": "0d5eb044738853592b9a11cba0cffbf4e4b77773"
+                "reference": "f6d1bb1040cf075f37fff84aee5edcd51c1c55cb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sigmie/sigmie/zipball/0d5eb044738853592b9a11cba0cffbf4e4b77773",
-                "reference": "0d5eb044738853592b9a11cba0cffbf4e4b77773",
+                "url": "https://api.github.com/repos/sigmie/sigmie/zipball/f6d1bb1040cf075f37fff84aee5edcd51c1c55cb",
+                "reference": "f6d1bb1040cf075f37fff84aee5edcd51c1c55cb",
                 "shasum": ""
             },
             "require": {
@@ -5484,7 +5484,7 @@
                 "source": "https://github.com/sigmie/sigmie/tree/develop",
                 "issues": "https://github.com/sigmie/sigmie/issues"
             },
-            "time": "2021-01-18T10:12:52+00:00"
+            "time": "2021-01-18T11:26:26+00:00"
         },
         {
             "name": "sigmie/sigmie-laravel-testing",

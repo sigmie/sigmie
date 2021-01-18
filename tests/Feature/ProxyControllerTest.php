@@ -8,16 +8,12 @@ use App\Http\Controllers\Cluster\TokenController;
 use App\Models\Cluster;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Sigmie\Testing\Laravel\ClearIndices;
+use Tests\Helpers\WithRunningCluster;
 use Tests\TestCase;
 
 class ProxyControllerTest extends TestCase
 {
-    use DatabaseTransactions, ClearIndices;
-
-    /**
-     * @var Cluster
-     */
-    private $cluster;
+    use DatabaseTransactions, ClearIndices, WithRunningCluster;
 
     /**
      * @var string
@@ -33,7 +29,7 @@ class ProxyControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->cluster = Cluster::factory()->create();
+        $this->withRunningCluster();
 
         $this->adminToken = $this->cluster->createToken(TokenController::ADMIN, ['*'])->plainTextToken;
         $this->searchToken = $this->cluster->createToken(TokenController::SEARCH_ONLY, ['search'])->plainTextToken;

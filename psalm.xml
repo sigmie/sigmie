@@ -15,11 +15,12 @@
     <projectFiles>
         <directory name="app" />
         <directory name="tests" />
-        <directory name="nova-components" />
         <directory name="config" />
         <directory name="database" />
         <directory name="routes" />
         <ignoreFiles>
+            <directory name="packages" />
+            <directory name=".devcontainer" />
             <directory name="vendor" />
             <directory name="node_modules" />
             <directory name="cov-html" />

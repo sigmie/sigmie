@@ -37,7 +37,7 @@ class DashboardController extends \App\Http\Controllers\Controller
 
         if ($cluster->getAttribute('state') === Cluster::RUNNING) {
 
-            $indices = $cluster->indices()->toArray();
+            $indices = $cluster->indices();
             $health = $cluster->health();
 
             $clusterInfo = [
@@ -45,9 +45,12 @@ class DashboardController extends \App\Http\Controllers\Controller
                 'nodesCount' => $health['number_of_nodes'],
                 'name' => $health['cluster_name']
             ];
-            // $indices = $sigmieClient->indices()->list()->toArray();
 
-            // $indices = array_map(fn ($index) => (array) $index, $indices);
+            $indices = $indices->map(fn ($index) => [
+                'name' => $index->getName(),
+                'size' => $index->getSize(),
+                'docsCount' => $index->count()
+            ])->toArray();
         }
 
         return [
