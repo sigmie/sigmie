@@ -34,7 +34,7 @@ abstract class BaseCommand extends Command
 
         $url = $this->input->getArgument('es_url');
 
-        $this->client = JsonClient::createWithoutAuth($url);
+        $this->client = JsonClient::createWithoutAuth();
 
         $this->renderInfo();
 
