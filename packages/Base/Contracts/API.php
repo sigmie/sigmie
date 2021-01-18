@@ -11,14 +11,14 @@ trait API
 {
     protected Connection $connection;
 
-    public function setConnection(Connection $connection): self
+    public function setHttpConnection(Connection $connection): self
     {
         $this->connection = $connection;
 
         return $this;
     }
 
-    public function getConnection()
+    public function getHttpConnection()
     {
         return $this->connection;
     }

@@ -14,6 +14,6 @@ trait TestConnection
 
     public function setupTestConnection()
     {
-        $this->setConnection(new Connection(JsonClient::create(getenv('ES_HOST'))));
+        $this->setHttpConnection(new Connection(JsonClient::create(getenv('ES_HOST'))));
     }
 }

@@ -33,7 +33,7 @@ class Manager implements ManagerInterface
     public function newIndex(string $name): Index
     {
         $index = $this->createIndex(new Index($name));
-        $index->setConnection($this->request);
+        $index->setHttpConnection($this->request);
 
         return $index;
     }
@@ -41,7 +41,7 @@ class Manager implements ManagerInterface
     public function index(string $name): Index
     {
         $index = $this->getIndex($name);
-        $index->setConnection($this->request);
+        $index->setHttpConnection($this->request);
 
         return $index;
     }

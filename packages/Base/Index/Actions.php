@@ -25,7 +25,7 @@ trait Actions
 
         $this->indexAPICall("/{$index->getName()}", 'PUT', $settings);
 
-        $index->setConnection($this->getConnection());
+        $index->setHttpConnection($this->getHttpConnection());
 
         return $index;
     }
@@ -36,7 +36,7 @@ trait Actions
             ->filter(fn (Index $index) => $index->getName() === $identifier)
             ->first();
 
-        $index->setConnection($this->getConnection());
+        $index->setConnection($this->getHttpConnection());
 
         return $index;
     }
@@ -48,7 +48,7 @@ trait Actions
         return (new Collection($catResponse->json()))
             ->map(function ($values) {
                 $index = new Index($values['index']);
-                $index->setConnection($this->getConnection());
+                $index->setHttpConnection($this->getHttpConnection());
 
                 return $index;
             });
