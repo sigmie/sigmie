@@ -49,6 +49,7 @@ trait Actions
             ->map(function ($values) {
                 $index = new Index($values['index']);
                 $index->setHttpConnection($this->getHttpConnection());
+                $index->setSize($values['store.size']);
 
                 return $index;
             });

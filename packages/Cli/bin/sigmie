@@ -9,7 +9,8 @@ foreach ([
     __DIR__ . '/../../../autoload.php',
     __DIR__ . '/../../vendor/autoload.php',
     __DIR__ . '/../vendor/autoload.php'
-] as $file) { if (file_exists($file)) {
+] as $file) {
+    if (file_exists($file)) {
         $autoload = true;
         require $file;
         break;
@@ -28,14 +29,16 @@ if ($autoload === false) {
 }
 
 use Sigmie\Cli\Commands\Authenticate;
-use Sigmie\Cli\Commands\IndexList;
+use Sigmie\Cli\Commands\Index\Create;
+use Sigmie\Cli\Commands\ListIndex;
 use Symfony\Component\Console\Application;
 
 $application = new Application();
 
 $application->addCommands([
-    // new IndexList(),
-    new Authenticate()
+    new Authenticate(),
+    new ListIndex(),
+    new Create()
 ]);
 
 $application->run();

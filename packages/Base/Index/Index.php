@@ -23,6 +23,12 @@ class Index implements DocumentCollectionInterface
 
     protected string $name;
 
+    protected int $count;
+
+    protected string $size;
+
+    protected int $docsCount;
+
     protected Settings $settings;
 
     protected DocumentCollectionInterface $docs;
@@ -41,6 +47,11 @@ class Index implements DocumentCollectionInterface
 
         $this->name = $name;
         $this->settings = $settings;
+    }
+
+    public function setSize(string $size)
+    {
+        return $this->size = $size;
     }
 
     /**
