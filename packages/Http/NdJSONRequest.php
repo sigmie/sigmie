@@ -32,3 +32,4 @@ class NdJSONRequest extends Request implements JSONRequestInterface
         return $result;
     }
 }
+
