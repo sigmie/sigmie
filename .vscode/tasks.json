@@ -4,6 +4,11 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "psalm:test",
+            "type": "shell",
+            "command": "packages/psalm/psalm-refactor --rename \"Tests\\Unit\\Controllers\\ClusterControllerTest\" --to \"Tests\\Unit\\Controllers\\Cluster\\ClusterControllerTest\" --root=$PWD"
+        },
+        {
             "label": "php artisan",
             "type": "shell",
             "command": "php artisan ${input:params}"
