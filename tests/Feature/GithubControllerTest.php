@@ -13,8 +13,6 @@ use Tests\TestCase;
 
 class GithubControllerTest extends TestCase
 {
-    use DatabaseTransactions;
-
     /**
      * @test
      */

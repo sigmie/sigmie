@@ -14,8 +14,6 @@ use Tests\TestCase;
 
 class ProjectTest extends TestCase
 {
-    use DatabaseTransactions;
-
     /**
      * @test
      */

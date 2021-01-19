@@ -10,7 +10,7 @@ use Tests\TestCase;
 
 class ProjectControllerTest extends TestCase
 {
-    use DatabaseTransactions, WithSubscribedUser;
+    use WithSubscribedUser;
 
     /**
      * @test

@@ -14,8 +14,6 @@ use Tests\TestCase;
 
 class SubscriptionControllerTest extends TestCase
 {
-    use DatabaseTransactions;
-
     /**
      * @var User
      */

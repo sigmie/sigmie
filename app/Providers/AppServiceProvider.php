@@ -10,10 +10,8 @@ use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
-use Inertia\Inertia;
 use Laravel\Sanctum\Sanctum;
 use YlsIdeas\FeatureFlags\Facades\Features;
 

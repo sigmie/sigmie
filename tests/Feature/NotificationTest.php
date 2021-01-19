@@ -13,8 +13,6 @@ use Tests\TestCase;
 
 class NotificationTest extends TestCase
 {
-    use DatabaseTransactions;
-
     /**
      * @test
      */

@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Tests;
 
 use App\Http\Middleware\Logging\RequestInfo;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Sigmie\Testing\Laravel\Traits as SigmieTraits;
 
 abstract class TestCase extends BaseTestCase
 {
     use CreatesApplication;
+    use DatabaseTransactions;
     use SigmieTraits;
 
     protected function setUp(): void

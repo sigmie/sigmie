@@ -10,8 +10,6 @@ use Tests\TestCase;
 
 class LandingTest extends TestCase
 {
-    use DatabaseTransactions;
-
     /**
      * @test
      */

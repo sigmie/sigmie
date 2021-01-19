@@ -13,8 +13,6 @@ use Tests\TestCase;
 
 class RegisterControllerTest extends TestCase
 {
-    use DatabaseTransactions;
-
     /**
      * @test
      */

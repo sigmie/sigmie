@@ -12,7 +12,7 @@ use Tests\TestCase;
 
 class DashboardControllerTest extends TestCase
 {
-    use DatabaseTransactions, ClearIndices, WithRunningCluster;
+    use ClearIndices, WithRunningCluster;
 
     /**
      * @test

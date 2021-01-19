@@ -11,7 +11,7 @@ use Tests\TestCase;
 
 class TokenControllerTest extends TestCase
 {
-    use DatabaseTransactions, WithRunningCluster;
+    use WithRunningCluster;
 
     public function setUp(): void
     {

@@ -10,8 +10,6 @@ use Tests\TestCase;
 
 class UserValidationControllerTest extends TestCase
 {
-    use DatabaseTransactions;
-
     /**
      * @test
      */

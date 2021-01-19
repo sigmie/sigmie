@@ -7,13 +7,15 @@ namespace App\Http\Controllers\Dashboard;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Repositories\ClusterRepository;
-use App\Services\Sigmie;
-use Exception;
+use App\Services\BaseSigmieService;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
+use Sigmie\Base\APIs\Calls\Cat as CatAPI;
 
 class DashboardController extends \App\Http\Controllers\Controller
 {
+    use CatAPI;
+
     private ClusterRepository $clusters;
 
     public function __construct(ClusterRepository $clusterRepository)
@@ -21,7 +23,7 @@ class DashboardController extends \App\Http\Controllers\Controller
         $this->clusters = $clusterRepository;
     }
 
-    public function data(Project $project, Sigmie $sigmie)
+    public function data(Project $project)
     {
         $cluster = $this->clusters->findOneTrashedBy('project_id', (string) $project->getAttribute('id'));
 
@@ -37,7 +39,10 @@ class DashboardController extends \App\Http\Controllers\Controller
 
         if ($cluster->getAttribute('state') === Cluster::RUNNING) {
 
-            $indices = $cluster->indices();
+            $this->setHttpConnection($cluster->newHttpConnection());
+
+            $catResponse = $this->catAPICall('/indices', 'GET',);
+
             $health = $cluster->health();
 
             $clusterInfo = [
@@ -46,11 +51,12 @@ class DashboardController extends \App\Http\Controllers\Controller
                 'name' => $health['cluster_name']
             ];
 
-            $indices = $indices->map(fn ($index) => [
-                'name' => $index->getName(),
-                'size' => $index->getSize(),
-                'docsCount' => $index->count()
-            ])->toArray();
+            $indices = collect($catResponse->json())
+                ->map(fn ($values) => [
+                    'name' => $values['index'],
+                    'size' => $values['store.size'],
+                    'docsCount' => $values['docs.count']
+                ])->toArray();
         }
 
         return [

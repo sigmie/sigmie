@@ -7,11 +7,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
-use Sigmie\Http\JsonClient;
-use Sigmie\Base\Http\Connection;
-use Sigmie\Http\Auth\BasicAuth;
 use Sigmie\Base\APIs\Calls\Cluster as ClusterAPI;
+use Sigmie\Base\Http\Connection;
 use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Http\Auth\BasicAuth;
+use Sigmie\Http\JsonClient;
 
 class Cluster extends Model
 {
@@ -38,29 +38,27 @@ class Cluster extends Model
         'search_token_active' => 'boolean'
     ];
 
-    public function clusterConnection(): Connection
+    /**
+     * Create assemble new Cluster Connection
+     */
+    public function newHttpConnection(): Connection
     {
-        $url = $this->getAttribute('url');
-        $username = $this->getAttribute('username');
-        $password = decrypt($this->getAttribute('password'));
-        $client = JsonClient::create(
-            $url,
-            new BasicAuth($username, $password)
-        );
+        $auth = new BasicAuth($this->username, decrypt($this->password));
+        $client = JsonClient::create($this->url,            $auth);
 
         return new Connection($client);
     }
 
     public function health(): array
     {
-        $this->setHttpConnection($this->clusterConnection());
+        $this->setHttpConnection($this->newHttpConnection());
 
         return $this->clusterAPICall('/health')->json();
     }
 
     public function indices()
     {
-        $this->setHttpConnection($this->clusterConnection());
+        $this->setHttpConnection($this->newHttpConnection());
 
         return $this->listIndices();
     }

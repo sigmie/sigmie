@@ -9,8 +9,6 @@ use Tests\TestCase;
 
 class LegalControllerTest extends TestCase
 {
-    use DatabaseTransactions;
-
     /**
      * @test
      */

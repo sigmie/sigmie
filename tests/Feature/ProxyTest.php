@@ -10,8 +10,6 @@ use Tests\TestCase;
 
 class ProxyTest extends TestCase
 {
-    use DatabaseTransactions;
-
     /**
      * @test
      */

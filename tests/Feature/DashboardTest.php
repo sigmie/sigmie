@@ -12,8 +12,6 @@ use Tests\TestCase;
 
 class DashboardTest extends TestCase
 {
-    use DatabaseTransactions;
-
     /**
      * @test
      */

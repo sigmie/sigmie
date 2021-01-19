@@ -9,8 +9,6 @@ use Tests\TestCase;
 
 class NewsletterSubscriptionControllerTest extends TestCase
 {
-    use DatabaseTransactions;
-
     /**
     * @test
     */

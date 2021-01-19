@@ -10,8 +10,6 @@ use Tests\TestCase;
 
 class AjaxValidationsTest extends TestCase
 {
-    use DatabaseTransactions;
-
     /**
      * @test
      */

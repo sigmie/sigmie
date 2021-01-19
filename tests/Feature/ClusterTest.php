@@ -12,8 +12,6 @@ use Tests\TestCase;
 
 class ClusterTest extends TestCase
 {
-    use DatabaseTransactions;
-
     /**
      * @test
      */

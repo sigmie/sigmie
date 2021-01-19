@@ -49,7 +49,7 @@
         "sigmie/app-core": "^0.10.0",
         "sigmie/nova-feature-flags": "@dev",
         "sigmie/sigmie-laravel-testing": "@dev",
-        "sigmie/sigmie": "@dev",
+        "sigmie/sigmie": "dev-develop",
         "tightenco/ziggy": "^0.9.3"
     },
     "require-dev": {

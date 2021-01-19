@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 class ProxyControllerTest extends TestCase
 {
-    use DatabaseTransactions, ClearIndices, WithRunningCluster;
+    use ClearIndices, WithRunningCluster;
 
     /**
      * @var string

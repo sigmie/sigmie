@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 class ClusterControllerTest extends TestCase
 {
-    use DatabaseTransactions, WithProject, WithDestroyedCluster;
+    use WithProject, WithDestroyedCluster;
 
     public function setUp(): void
     {
