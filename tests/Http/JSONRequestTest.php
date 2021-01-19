@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Http\NdJSONRequest;
 
-class JSONRequestsTest extends TestCase
+class JSONRequestTest extends TestCase
 {
     public function setUp(): void
     {
