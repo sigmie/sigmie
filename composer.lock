@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "63438befdc111056c09f035b17a41b66",
+    "content-hash": "4c14a21b3e67be14c615f0d0237c3da4",
     "packages": [
         {
             "name": "amphp/amp",
@@ -5424,11 +5424,17 @@
         },
         {
             "name": "sigmie/sigmie",
-            "version": "dev-develop",
+            "version": "v0.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sigmie/sigmie.git",
+                "reference": "6de3f65f7e60a6e29b4dc131a120b4ebcda1dd90"
+            },
             "dist": {
-                "type": "path",
-                "url": "./packages/sigmie",
-                "reference": "83161aeece3870e47e9d2daa95d7d1f8a6792127"
+                "type": "zip",
+                "url": "https://api.github.com/repos/sigmie/sigmie/zipball/6de3f65f7e60a6e29b4dc131a120b4ebcda1dd90",
+                "reference": "6de3f65f7e60a6e29b4dc131a120b4ebcda1dd90",
+                "shasum": ""
             },
             "require": {
                 "doctrine/collections": "^1.6",
@@ -5461,6 +5467,7 @@
                     "Sigmie\\": "packages/"
                 }
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -5475,10 +5482,11 @@
                 "elasticsearch",
                 "sigmie"
             ],
-            "transport-options": {
-                "symlink": true,
-                "relative": true
-            }
+            "support": {
+                "issues": "https://github.com/sigmie/sigmie/issues",
+                "source": "https://github.com/sigmie/sigmie/tree/v0.4.0"
+            },
+            "time": "2021-01-19T11:24:08+00:00"
         },
         {
             "name": "sigmie/sigmie-laravel-testing",
@@ -11776,8 +11784,7 @@
     "stability-flags": {
         "laravel/cashier-paddle": 10,
         "sigmie/nova-feature-flags": 20,
-        "sigmie/sigmie-laravel-testing": 20,
-        "sigmie/sigmie": 20
+        "sigmie/sigmie-laravel-testing": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,

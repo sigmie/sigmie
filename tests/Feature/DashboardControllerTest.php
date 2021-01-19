@@ -9,10 +9,12 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Sigmie\Testing\Laravel\ClearIndices;
 use Tests\Helpers\WithRunningCluster;
 use Tests\TestCase;
+use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Base\Index\Index;
 
 class DashboardControllerTest extends TestCase
 {
-    use ClearIndices, WithRunningCluster;
+    use ClearIndices, WithRunningCluster, IndexActions;
 
     /**
      * @test
@@ -34,8 +36,8 @@ class DashboardControllerTest extends TestCase
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function can_not_see_dashboard_if_not_owning_the_project()
     {
         $this->withRunningCluster();
@@ -58,17 +60,31 @@ class DashboardControllerTest extends TestCase
 
         $this->actingAs($this->user);
 
+        $this->setHttpConnection($this->cluster->newHttpConnection());
+
+        $this->createIndex(new Index('foo'));
+
         $response = $this->get(route('dashboard.data', ['project' => $this->project->id]));
 
-        $response->assertJson([
+        $json = $response->json();
+
+        $expected = [
             'clusterState' => 'running',
             'clusterId' => $this->cluster->id,
-            'indices' => [],
+            'indices' => [
+                [
+                    'name' => 'foo',
+                    'size' => '230b',
+                    'docsCount' => '0'
+                ]
+            ],
             'clusterInfo' => [
-                'health' => 'green',
+                'health' => 'yellow',
                 'nodesCount' => 1,
                 'name' => 'docker-cluster',
             ]
-        ]);
+        ];
+
+        $this->assertEquals($expected, $json);
     }
 }

@@ -51,6 +51,7 @@ class DashboardController extends \App\Http\Controllers\Controller
                 'name' => $health['cluster_name']
             ];
 
+
             $indices = collect($catResponse->json())
                 ->map(fn ($values) => [
                     'name' => $values['index'],
