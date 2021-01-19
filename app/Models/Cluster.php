@@ -11,7 +11,7 @@ use Sigmie\Base\APIs\Calls\Cluster as ClusterAPI;
 use Sigmie\Base\Http\Connection;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Http\Auth\BasicAuth;
-use Sigmie\Http\JsonClient;
+use Sigmie\Http\JSONClient;
 
 class Cluster extends Model
 {
@@ -44,7 +44,7 @@ class Cluster extends Model
     public function newHttpConnection(): Connection
     {
         $auth = new BasicAuth($this->username, decrypt($this->password));
-        $client = JsonClient::create($this->url,            $auth);
+        $client = JSONClient::create($this->url, $auth);
 
         return new Connection($client);
     }

@@ -10,11 +10,11 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 trait WithNotifiableMock
 {
+    /**
+     * @var MockObject|User
+     */
     private $notifiableMock;
 
-    /**
-     * @return MockObject|User
-     */
     public function withNotifiableMock()
     {
         $methods = [

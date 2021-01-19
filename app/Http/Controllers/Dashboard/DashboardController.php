@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Dashboard;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Repositories\ClusterRepository;
-use App\Services\BaseSigmieService;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Sigmie\Base\APIs\Calls\Cat as CatAPI;
@@ -38,17 +37,16 @@ class DashboardController extends \App\Http\Controllers\Controller
         }
 
         if ($cluster->getAttribute('state') === Cluster::RUNNING) {
-
             $this->setHttpConnection($cluster->newHttpConnection());
 
-            $catResponse = $this->catAPICall('/indices', 'GET',);
+            $catResponse = $this->catAPICall('/indices', 'GET');
 
             $health = $cluster->health();
 
             $clusterInfo = [
                 'health' => $health['status'],
                 'nodesCount' => $health['number_of_nodes'],
-                'name' => $health['cluster_name']
+                'name' => $health['cluster_name'],
             ];
 
 

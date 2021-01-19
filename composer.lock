@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4c14a21b3e67be14c615f0d0237c3da4",
+    "content-hash": "6c3fc428f9fdf117df324a4fdbfdd5d5",
     "packages": [
         {
             "name": "amphp/amp",
@@ -5424,16 +5424,16 @@
         },
         {
             "name": "sigmie/sigmie",
-            "version": "v0.4.0",
+            "version": "v0.4.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sigmie/sigmie.git",
-                "reference": "6de3f65f7e60a6e29b4dc131a120b4ebcda1dd90"
+                "reference": "ed4a87c8c3e2735226f2a562e871b3c83a09f15d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sigmie/sigmie/zipball/6de3f65f7e60a6e29b4dc131a120b4ebcda1dd90",
-                "reference": "6de3f65f7e60a6e29b4dc131a120b4ebcda1dd90",
+                "url": "https://api.github.com/repos/sigmie/sigmie/zipball/ed4a87c8c3e2735226f2a562e871b3c83a09f15d",
+                "reference": "ed4a87c8c3e2735226f2a562e871b3c83a09f15d",
                 "shasum": ""
             },
             "require": {
@@ -5484,9 +5484,9 @@
             ],
             "support": {
                 "issues": "https://github.com/sigmie/sigmie/issues",
-                "source": "https://github.com/sigmie/sigmie/tree/v0.4.0"
+                "source": "https://github.com/sigmie/sigmie/tree/v0.4.3"
             },
-            "time": "2021-01-19T11:24:08+00:00"
+            "time": "2021-01-19T13:27:53+00:00"
         },
         {
             "name": "sigmie/sigmie-laravel-testing",
