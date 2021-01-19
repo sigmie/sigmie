@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Controllers;
+namespace Tests\Unit\Controllers\Cluster;
 
 use App\Http\Controllers\Cluster\ClusterController;
 use App\Http\Requests\Cluster\StoreCluster;
@@ -10,7 +10,6 @@ use App\Http\Requests\Cluster\UpdateCluster;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
 use Composer\InstalledVersions;
-use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\MockObject\MockObject;

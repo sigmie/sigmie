@@ -20,6 +20,11 @@ abstract class TestCase extends BaseTestCase
         $this->withoutMiddleware(RequestInfo::class);
     }
 
+    public function tearDown(): void
+    {
+        parent::tearDown();
+    }
+
     /**
      * Boot the testing helper traits.
      *
@@ -32,11 +37,6 @@ abstract class TestCase extends BaseTestCase
         $this->setUpSigmieTraits($uses);
 
         return $uses;
-    }
-
-    public function tearDown(): void
-    {
-        parent::tearDown();
     }
 
     protected function assertInertiaViewExists($view)

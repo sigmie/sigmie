@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Events;
+namespace Tests\Unit\Events\Newsletter;
 
 use App\Events\Newsletter\NewsletterSubscriptionWasCreated;
 use App\Models\NewsletterSubscription;
 use Tests\TestCase;
 
-class NewsletterSubscribedTest extends TestCase
+class NewsletterSubscriptionWasCreatedTest extends TestCase
 {
     private $event;
 

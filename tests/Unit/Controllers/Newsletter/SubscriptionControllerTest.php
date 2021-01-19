@@ -7,7 +7,6 @@ namespace Tests\Unit\Controllers\Newsletter;
 use App\Http\Controllers\Newsletter\SubscriptionController;
 use App\Http\Requests\Newsletter\StoreSubscription;
 use App\Repositories\NewsletterSubscriptionRepository;
-use Exception;
 use Illuminate\Http\RedirectResponse;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;

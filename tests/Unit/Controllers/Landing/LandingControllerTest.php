@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Controllers;
+namespace Tests\Unit\Controllers\Landing;
 
 use App\Http\Controllers\Landing\LandingController;
 use PHPUnit\Framework\MockObject\MockObject;

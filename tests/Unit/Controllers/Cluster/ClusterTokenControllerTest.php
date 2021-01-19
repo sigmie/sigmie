@@ -2,14 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Controllers;
+namespace Tests\Unit\Controllers\Cluster;
 
 use App\Http\Controllers\Cluster\TokenController;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\Subscription;
 use App\Models\Token;
-use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Sanctum\NewAccessToken;
@@ -25,7 +24,7 @@ class ClusterTokenControllerTest extends TestCase
     private $controller;
 
     /**
-     * @var Project|MockObject
+     * @var MockObject|Project
      */
     private $projectMock;
 
@@ -45,12 +44,12 @@ class ClusterTokenControllerTest extends TestCase
     private $tokensCollectionMock;
 
     /**
-     * @var PersonalAccessToken|MockObject
+     * @var MockObject|PersonalAccessToken
      */
     private $searchTokenMock;
 
     /**
-     * @var PersonalAccessToken|MockObject
+     * @var MockObject|PersonalAccessToken
      */
     private $adminTokenMock;
 

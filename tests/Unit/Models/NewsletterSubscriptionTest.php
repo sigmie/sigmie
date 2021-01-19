@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Http\Requests;
+namespace Tests\Unit\Models;
 
 use App\Models\NewsletterSubscription;
 use Tests\TestCase;

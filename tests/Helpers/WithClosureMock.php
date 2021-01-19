@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Helpers;
 
 use Closure;
-use stdClass;
 use PHPUnit\Framework\MockObject\MockObject;
+use stdClass;
 
 trait WithClosureMock
 {

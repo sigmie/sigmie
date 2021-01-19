@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Events;
+namespace Tests\Unit\Events\Subscription;
 
 use App\Events\Subscription\UserWasSubscribed;
 use Illuminate\Broadcasting\PrivateChannel;

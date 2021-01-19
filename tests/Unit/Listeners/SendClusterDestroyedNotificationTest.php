@@ -8,7 +8,6 @@ use App\Events\Cluster\ClusterWasDestroyed;
 use App\Listeners\Notifications\SendClusterDestroyedNotification;
 use App\Models\Cluster;
 use App\Models\Project;
-use App\Models\User;
 use App\Notifications\Cluster\ClusterWasDestroyed as ClusterWasDestroyedNotification;
 use App\Repositories\ClusterRepository;
 use PHPUnit\Framework\MockObject\MockObject;

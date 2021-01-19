@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Controllers;
+namespace Tests\Unit\Controllers\Cluster;
 
 use App\Http\Controllers\Cluster\ValidationController;
 use App\Models\Cluster;

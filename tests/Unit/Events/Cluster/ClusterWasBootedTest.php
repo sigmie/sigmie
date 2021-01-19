@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Events;
+namespace Tests\Unit\Events\Cluster;
 
 use App\Events\Cluster\ClusterWasBooted;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -16,7 +16,7 @@ class ClusterWasBootedTest extends TestCase
     private $event;
 
     /**
-     * @var integer
+     * @var int
      */
     private $clusterId = 998;
 

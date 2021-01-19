@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Tests\Unit;
+namespace Tests\Unit\Listeners\Cluster;
 
 use App\Events\Cluster\ClusterHasFailed;
 use App\Listeners\Cluster\UpdateClusterStateToError;

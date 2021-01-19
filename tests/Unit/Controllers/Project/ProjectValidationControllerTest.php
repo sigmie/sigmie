@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Controllers;
+namespace Tests\Unit\Controllers\Project;
 
 use App\Http\Controllers\Project\ValidationController;
 use App\Rules\ValidProvider;
@@ -20,12 +20,12 @@ class ProjectValidationControllerTest extends TestCase
     private $controller;
 
     /**
-     * @var Rule|MockObject
+     * @var MockObject|Rule
      */
     private $ruleMock;
 
     /**
-     * @var Request|MockObject
+     * @var MockObject|Request
      */
     private $requestMock;
 

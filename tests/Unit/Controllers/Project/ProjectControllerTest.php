@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Controllers;
+namespace Tests\Unit\Controllers\Project;
 
 use App\Http\Controllers\Project\ProjectController;
 use App\Http\Requests\Project\StoreProject;
 use App\Models\User;
 use App\Repositories\ProjectRepository;
-use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -27,17 +26,17 @@ class ProjectControllerTest extends TestCase
     private $requestMock;
 
     /**
-     * @var ProjectRepository|MockObject
+     * @var MockObject|ProjectRepository
      */
     private $projectRepositoryMock;
 
     /**
-     * @var integer
+     * @var int
      */
     private $userId = 0;
 
     /**
-     * @var User|MockObject
+     * @var MockObject|User
      */
     private $userMock;
 

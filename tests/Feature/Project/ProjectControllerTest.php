@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Project;
 
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Tests\TestCase;
 use Tests\Helpers\WithSubscribedUser;
+use Tests\TestCase;
 
 class ProjectControllerTest extends TestCase
 {

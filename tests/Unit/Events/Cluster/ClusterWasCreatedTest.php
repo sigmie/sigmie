@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Events;
+namespace Tests\Unit\Events\Cluster;
 
 use App\Events\Cluster\ClusterWasCreated;
 use Tests\TestCase;
@@ -15,7 +15,7 @@ class ClusterWasCreatedTest extends TestCase
     private $event;
 
     /**
-     * @var integer
+     * @var int
      */
     private $clusterId = 999;
 

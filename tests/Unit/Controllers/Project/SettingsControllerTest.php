@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Controllers;
+namespace Tests\Unit\Controllers\Project;
 
 use App\Http\Controllers\Project\SettingsController;
 use App\Models\Cluster;
@@ -11,7 +11,6 @@ use App\Repositories\ProjectRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
-use phpDocumentor\Reflection\Types\Integer;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 
@@ -23,22 +22,22 @@ class SettingsControllerTest extends TestCase
     private $controller;
 
     /**
-     * @var Request|MockObject
+     * @var MockObject|Request
      */
     private $requestMock;
 
     /**
-     * @var ProjectRepository|MockObject
+     * @var MockObject|ProjectRepository
      */
     private $projectRepositoryMock;
 
     /**
-     * @var integer
+     * @var int
      */
     private $projectId = 999;
 
     /**
-     * @var Project|MockObject
+     * @var MockObject|Project
      */
     private $projectMock;
 
@@ -53,7 +52,7 @@ class SettingsControllerTest extends TestCase
     private $clusterMock;
 
     /**
-     * @var integer
+     * @var int
      */
     private $clusterId = 0;
 
