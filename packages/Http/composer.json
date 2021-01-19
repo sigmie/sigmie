@@ -1,0 +1,35 @@
+{
+    "name": "sigmie/http",
+    "description": "The Sigmie HTTP package.",
+    "license": "MIT",
+    "homepage": "https://docs.sigmie.com",
+    "support": {
+        "issues": "https://github.com/sigmie/sigmie/issues",
+        "source": "https://github.com/sigmie/sigmie"
+    },
+    "authors": [
+        {
+            "name": "Nico Orfi",
+            "email": "nico@sigmie.com"
+        }
+    ],
+    "require": {
+        "php": "^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sigmie\\HTTP\\": ""
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.x-dev"
+        }
+    },
+    "suggest": {},
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

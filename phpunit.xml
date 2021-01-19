@@ -1,38 +1,33 @@
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/6.3/phpunit.xsd"
-    backupGlobals="false"
-    bootstrap="vendor/autoload.php"
-    failOnRisky="true"
-    failOnWarning="true"
-    backupStaticAttributes="false"
-    colors="true"
-    verbose="false">
-  <logging>
-    <log type="coverage-html" target="coverage-html"/>
-    <log type="coverage-text" target="coverage.txt"/>
-    <log type="coverage-clover" target="coverage.xml"/>
-  </logging>
-   <php>
-        <ini name="error_reporting" value="-1" />
-        <ini name="intl.default_locale" value="en" />
-        <ini name="intl.error_level" value="0" />
-        <ini name="memory_limit" value="-1" />
-        <env name="ES_HOST" value="elasticsearch" />
-        <env name="ES_PORT" value="9200" />
-    </php>
-  <filter>
-    <whitelist addUncoveredFilesFromWhitelist="true">
-      <directory suffix=".php">src</directory>
-      <exclude>
-      </exclude>
-    </whitelist>
-  </filter>
+<?xml version="1.0"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd" backupGlobals="false" bootstrap="vendor/autoload.php" failOnRisky="true" failOnWarning="true" backupStaticAttributes="false" colors="true" verbose="false">
+  <coverage includeUncoveredFiles="true">
+    <include>
+      <directory suffix=".php">packages</directory>
+    </include>
+    <report>
+      <clover outputFile="build/coverage.xml"/>
+      <html outputDirectory="build/coverage-html"/>
+      <text outputFile="build/coverage.txt"/>
+    </report>
+  </coverage>
+  <logging/>
+  <php>
+    <env name="ES_HOST" value="elasticsearch:9200"/>
+  </php>
   <testsuites>
-    <testsuite name="unit">
-      <directory>tests/Unit</directory>
+
+    <testsuite name="all">
+      <directory>tests</directory>
     </testsuite>
-    <testsuite name="integration">
-      <directory>tests/Integration</directory>
+
+    <testsuite name="base">
+      <directory>tests/Base</directory>
+    </testsuite>
+    <testsuite name="http">
+      <directory>tests/Http</directory>
+    </testsuite>
+    <testsuite name="testing">
+      <directory>tests/Testing</directory>
     </testsuite>
   </testsuites>
 </phpunit>

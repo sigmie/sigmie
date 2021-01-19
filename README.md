@@ -39,8 +39,6 @@ require 'vendor/autoload.php';
 
 You can find the documentation on the [website](https://docs.sigmie.com/sigmie).
 
-<!-- Check out the [Getting Started](https://docs.sigmie.com/sigmie) page for a quick overview. -->
-
 ## Contributing
  Thank you for considering contributing to the Sigmie. The main purpose of this repository is to make Elasticsearch easier to use with PHP. We would be grateful to the community for contributing bugfixes and improvements. So feel free to open a pull request.
 
