@@ -6,13 +6,13 @@ namespace Sigmie\Tests\Http;
 
 use GuzzleHttp\Psr7\Uri;
 use PHPUnit\Framework\TestCase;
-use Sigmie\Http\JsonClient;
+use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 
 class JsonClientTest extends TestCase
 {
     /**
-     * @var JsonClient
+     * @var JSONClient
      */
     private $client;
 
@@ -20,7 +20,7 @@ class JsonClientTest extends TestCase
     {
         parent::setUp();
 
-        $this->client = JsonClient::create(getenv('ES_HOST'));
+        $this->client = JSONClient::create(getenv('ES_HOST'));
     }
 
     /**

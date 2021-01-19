@@ -13,9 +13,9 @@ use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Index\Index;
 use Sigmie\Http\Contracts\Auth;
-use Sigmie\Http\Contracts\JsonClient as JsonClientInterface;
+use Sigmie\Http\Contracts\JSONClient as JSONClientInterface;
 use Sigmie\Http\Contracts\JSONRequest as JSONRequestInterface;
-use Sigmie\Http\JsonClient;
+use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Support\Contracts\Collection;
 
@@ -69,7 +69,7 @@ class Manager implements ManagerInterface
 
     public static function create(string $host, ?Auth $auth = null)
     {
-        $client = JsonClient::create($host, $auth);
+        $client = JSONClient::create($host, $auth);
 
         return new Manager($client);
     }
