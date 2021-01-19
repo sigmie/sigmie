@@ -21,6 +21,6 @@ trait Mget
 
         $esRequest = new JsonRequest('POST', $uri, $body);
 
-        return $this->call($esRequest, \Sigmie\Base\APIs\Responses\MgetResponse::class);
+        return $this->httpCall($esRequest, \Sigmie\Base\APIs\Responses\MgetResponse::class);
     }
 }

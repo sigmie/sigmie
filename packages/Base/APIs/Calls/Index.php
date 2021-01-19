@@ -19,6 +19,6 @@ trait Index
 
         $esRequest = new JsonRequest($method, $uri, $body);
 
-        return $this->call($esRequest, ElasticsearchResponse::class);
+        return $this->httpCall($esRequest, ElasticsearchResponse::class);
     }
 }

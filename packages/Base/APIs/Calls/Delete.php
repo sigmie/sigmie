@@ -24,6 +24,6 @@ trait Delete
 
         $esRequest = new JsonRequest('DELETE', $uri);
 
-        return $this->call($esRequest);
+        return $this->httpCall($esRequest);
     }
 }

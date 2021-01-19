@@ -19,6 +19,6 @@ trait Cat
 
         $esRequest = new JsonRequest($method, $uri, []);
 
-        return $this->call($esRequest);
+        return $this->httpCall($esRequest);
     }
 }

@@ -19,6 +19,6 @@ trait Cluster
 
         $esRequest = new JsonRequest('GET', $uri, []);
 
-        return $this->call($esRequest);
+        return $this->httpCall($esRequest);
     }
 }

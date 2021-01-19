@@ -74,7 +74,7 @@ class Manager implements ManagerInterface
         return new Manager($client);
     }
 
-    protected function call(JsonRequestInterface $request, string $responseClass = ElasticsearchResponse::class): ElasticsearchResponse
+    protected function httpCall(JsonRequestInterface $request, string $responseClass = ElasticsearchResponse::class): ElasticsearchResponse
     {
         return ($this->request)($request, $responseClass);
     }

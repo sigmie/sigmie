@@ -19,6 +19,6 @@ trait Count
 
         $esRequest = new JsonRequest('GET', $uri);
 
-        return $this->call($esRequest, ElasticsearchResponse::class);
+        return $this->httpCall($esRequest, ElasticsearchResponse::class);
     }
 }

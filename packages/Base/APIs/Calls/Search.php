@@ -19,6 +19,6 @@ trait Search
 
         $esRequest = new JsonRequest('POST', $uri, $query->toArray());
 
-        return $this->call($esRequest, ElasticsearchResponse::class);
+        return $this->httpCall($esRequest, ElasticsearchResponse::class);
     }
 }

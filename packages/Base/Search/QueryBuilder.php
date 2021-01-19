@@ -64,7 +64,7 @@ class QueryBuilder
         return $this->index->find($query);
     }
 
-    protected function call(JSONRequest $request): ElasticsearchResponse
+    protected function httpCall(JSONRequest $request): ElasticsearchResponse
     {
         return ($this->call)($request);
     }

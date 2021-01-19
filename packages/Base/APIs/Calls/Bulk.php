@@ -23,6 +23,6 @@ trait Bulk
 
         $request = new NdJsonRequest('POST', $uri, $data);
 
-        return $this->call($request, \Sigmie\Base\APIs\Responses\Bulk::class);
+        return $this->httpCall($request, \Sigmie\Base\APIs\Responses\Bulk::class);
     }
 }
