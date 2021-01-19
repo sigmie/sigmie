@@ -23,23 +23,17 @@ abstract class BaseCommand extends Command
 
     protected JsonClient $client;
 
-    abstract public function executeCommand(): int;
+    protected Config $config;
+
+    abstract protected function executeCommand(): int;
 
     protected function configure()
     {
-        $this->addArgument('es_url');
-    }
+        parent::configure();
 
-    private function createConnection()
-    {
-        $home = getenv('HOME');
-        $homePath = "{$home}/.sigmie";
-        $filePath = "{$homePath}/auth.json";
-        $content = file_get_contents($filePath);
-        $json  = json_decode($content, true);
+        $this->config = new Config;
 
-        $key = $json['default'];
-        return new Connection(JsonClient::create($key));
+        $this->setHttpConnection($this->createHttpConnection());
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -47,8 +41,6 @@ abstract class BaseCommand extends Command
         $this->input = $input;
 
         $this->output = $output;
-
-        $this->setHttpConnection($this->createConnection());
 
         $this->renderInfo();
 
@@ -60,18 +52,18 @@ abstract class BaseCommand extends Command
         $outputFormat->output($this->output);
     }
 
+    private function createHttpConnection()
+    {
+        $cluster = $this->config->getActiveCluster();
+
+        return new Connection(JsonClient::create($cluster['host'] . ':' . $cluster['port']));
+    }
+
     private function renderInfo()
     {
-        $home = getenv('HOME');
-        $homePath = "{$home}/.sigmie";
-        $filePath = "{$homePath}/auth.json";
-        $content = file_get_contents($filePath);
-        $json  = json_decode($content, true);
+        $cluster = $this->config->getActiveCluster();
 
-        $key = $json['default'];
-        [$url, $port] = explode(':', $key);
-
-        $info = new ClientInfo($url, $port, '7.8.0');
+        $info = new ClientInfo($cluster['host'], $cluster['port'], '7.8.0');
         $info->output($this->output);
     }
 }

@@ -4,22 +4,25 @@ declare(strict_types=1);
 
 namespace Sigmie\Cli\Commands;
 
-use Sigmie\Cli\BaseCommand;
+use Sigmie\Base\APIs\Calls\Cat;
 use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Cli\BaseCommand;
+use Sigmie\Cli\Outputs\IndexListTable;
 
-class ListIndex extends BaseCommand
+class ListIndices extends BaseCommand
 {
-    use IndexActions;
+    use Cat;
 
     protected static $defaultName = 'index:list';
 
     public function executeCommand(): int
     {
-        $res = $this->listIndices();
+        $catResponse = $this->catAPICall('/indices', 'GET');
 
-        foreach ($res as $index) {
-            dump($index->getName());
-        }
+
+        $table = new IndexListTable($catResponse->json());
+
+        $table->output($this->output);
 
         return 1;
     }

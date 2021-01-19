@@ -29,16 +29,18 @@ if ($autoload === false) {
 }
 
 use Sigmie\Cli\Commands\Authenticate;
+use Sigmie\Cli\Commands\Index\Clear;
 use Sigmie\Cli\Commands\Index\Create;
-use Sigmie\Cli\Commands\ListIndex;
+use Sigmie\Cli\Commands\ListIndices;
 use Symfony\Component\Console\Application;
 
 $application = new Application();
 
 $application->addCommands([
     new Authenticate(),
-    new ListIndex(),
-    new Create()
+    new ListIndices(),
+    new Create(),
+    new Clear()
 ]);
 
 $application->run();

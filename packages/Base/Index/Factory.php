@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Factory as FactoryInterface;
+use Sigmie\Base\Contracts\HttpConnection;
 
 class Factory implements FactoryInterface
 {

@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
-use Sigmie\Base\Documents\Actions as DocumentsActions;
-use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Index\Index;
-use Sigmie\Testing\Testing as SigmieTesting;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {

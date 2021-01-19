@@ -25,16 +25,14 @@ class IndexListTable implements OutputFormat
     {
         $table = new Table($output);
 
-        $rows = collect($this->json)
-            ->map(fn ($result) => [
-                $result['index'],
-                '<fg=' . $result['health'] . '>' . $result['health'] . '</>',
-                $result['docs.count'],
-                $result['pri'],
-                $result['rep'],
-                $result['store.size'],
-            ])
-            ->toArray();
+        $rows = array_map(fn ($result) => [
+            $result['index'],
+            '<fg=' . $result['health'] . '>' . $result['health'] . '</>',
+            $result['docs.count'],
+            $result['pri'],
+            $result['rep'],
+            $result['store.size'],
+        ], $this->json);
 
         $table->setHeaders($this->headers)->setRows($rows)->render();
     }
