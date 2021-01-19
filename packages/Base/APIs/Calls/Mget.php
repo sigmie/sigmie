@@ -8,7 +8,7 @@ use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\APIs\Responses\MgetResponse;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\RequiresIndexAware;
-use Sigmie\Http\JsonRequest;
+use Sigmie\Http\JSONRequest;
 
 trait Mget
 {
@@ -19,7 +19,7 @@ trait Mget
         $indexName = $this->index()->getName();
         $uri = new Uri("/{$indexName}/_mget");
 
-        $esRequest = new JsonRequest('POST', $uri, $body);
+        $esRequest = new JSONRequest('POST', $uri, $body);
 
         return $this->httpCall($esRequest, \Sigmie\Base\APIs\Responses\MgetResponse::class);
     }

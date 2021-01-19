@@ -6,9 +6,9 @@ namespace Sigmie\Http;
 
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Uri;
-use Sigmie\Http\Contracts\JSONRequest as JsonRequestInterface;
+use Sigmie\Http\Contracts\JSONRequest as JSONRequestInterface;
 
-class NdJsonRequest extends Request implements JsonRequestInterface
+class NdJSONRequest extends Request implements JSONRequestInterface
 {
     protected $headers = [
         'Content-type' => 'application/x-ndjson',

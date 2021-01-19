@@ -7,7 +7,7 @@ namespace Sigmie\Tests\Http;
 use GuzzleHttp\Psr7\Uri;
 use PHPUnit\Framework\TestCase;
 use Sigmie\Http\JsonClient;
-use Sigmie\Http\JsonRequest;
+use Sigmie\Http\JSONRequest;
 
 class JsonClientTest extends TestCase
 {
@@ -28,7 +28,7 @@ class JsonClientTest extends TestCase
      */
     public function request(): void
     {
-        $res = $this->client->request(new JsonRequest('GET',new Uri('/')));
+        $res = $this->client->request(new JSONRequest('GET',new Uri('/')));
 
         $this->assertEquals('You Know, for Search',$res->json('tagline'));
     }
@@ -38,7 +38,7 @@ class JsonClientTest extends TestCase
      */
     public function doesnt_throw_on_http_errors()
     {
-        $res = $this->client->request(new JsonRequest('GET',new Uri('/unknown-index')));
+        $res = $this->client->request(new JSONRequest('GET',new Uri('/unknown-index')));
 
         $this->assertEquals(404, $res->code());
     }

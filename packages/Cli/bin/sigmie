@@ -13,6 +13,7 @@ foreach ([
     if (file_exists($file)) {
         $autoload = true;
         require $file;
+        
         break;
     }
 }

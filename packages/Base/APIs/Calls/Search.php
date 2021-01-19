@@ -7,7 +7,7 @@ namespace Sigmie\Base\APIs\Calls;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Base\Search\Query;
-use Sigmie\Http\JsonRequest;
+use Sigmie\Http\JSONRequest;
 
 trait Search
 {
@@ -17,7 +17,7 @@ trait Search
     {
         $uri = $query->uri();
 
-        $esRequest = new JsonRequest('POST', $uri, $query->toArray());
+        $esRequest = new JSONRequest('POST', $uri, $query->toArray());
 
         return $this->httpCall($esRequest, ElasticsearchResponse::class);
     }
