@@ -9,7 +9,7 @@ use Sigmie\Base\Exceptions\ElasticsearchException;
 use Sigmie\Base\Http\Connection;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Base\Index\Index;
-use Sigmie\Http\JsonClient;
+use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
@@ -35,7 +35,7 @@ class ConnectionTest extends TestCase
      */
     public function es_request_class(): void
     {
-        $request = new Connection(JsonClient::create(getenv('ES_HOST')));
+        $request = new Connection(JSONClient::create(getenv('ES_HOST')));
 
         $res = $request(new JSONRequest('GET', new Uri('/')));
 

@@ -8,7 +8,7 @@ use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\Connection;
 use Sigmie\Cli\Contracts\OutputFormat;
 use Sigmie\Cli\Outputs\ClientInfo;
-use Sigmie\Http\JsonClient;
+use Sigmie\Http\JSONClient;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -21,7 +21,7 @@ abstract class BaseCommand extends Command
 
     protected OutputInterface $output;
 
-    protected JsonClient $client;
+    protected JSONClient $client;
 
     protected Config $config;
 
@@ -56,7 +56,7 @@ abstract class BaseCommand extends Command
     {
         $cluster = $this->config->getActiveCluster();
 
-        return new Connection(JsonClient::create($cluster['host'] . ':' . $cluster['port']));
+        return new Connection(JSONClient::create($cluster['host'] . ':' . $cluster['port']));
     }
 
     private function renderInfo()

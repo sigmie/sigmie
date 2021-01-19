@@ -9,9 +9,9 @@ use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\ResponseInterface;
 use Sigmie\Base\Contracts\ElasticsearchResponse as ElasticsearchResponseInterface;
 use Sigmie\Base\Exceptions\ElasticsearchException;
-use Sigmie\Http\JsonResponse;
+use Sigmie\Http\JSONResponse;
 
-class ElasticsearchResponse extends JsonResponse implements ElasticsearchResponseInterface
+class ElasticsearchResponse extends JSONResponse implements ElasticsearchResponseInterface
 {
     public function __construct(ResponseInterface $psr)
     {
