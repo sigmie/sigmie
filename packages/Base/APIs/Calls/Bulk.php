@@ -7,7 +7,7 @@ namespace Sigmie\Base\APIs\Calls;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\APIs\Responses\Bulk as BulkResponse;
 use Sigmie\Base\Contracts\API;
-use Sigmie\Http\NdJsonRequest;
+use Sigmie\Http\NdJSONRequest;
 
 trait Bulk
 {
@@ -21,7 +21,7 @@ trait Bulk
             $uri = Uri::withQueryValue($uri, 'refresh', 'wait_for');
         }
 
-        $request = new NdJsonRequest('POST', $uri, $data);
+        $request = new NdJSONRequest('POST', $uri, $data);
 
         return $this->httpCall($request, \Sigmie\Base\APIs\Responses\Bulk::class);
     }

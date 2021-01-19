@@ -18,9 +18,9 @@ class JsonClient implements JsonClientInterface
         $this->http = $http;
     }
 
-    public function request(JSONRequest $jsonRequest): JsonResponse
+    public function request(JSONRequest $JSONRequest): JsonResponse
     {
-        $psrResponse = $this->http->send($jsonRequest);
+        $psrResponse = $this->http->send($JSONRequest);
 
         return new JsonResponse($psrResponse);
     }

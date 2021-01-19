@@ -36,7 +36,7 @@ trait Actions
             ->filter(fn (Index $index) => $index->getName() === $identifier)
             ->first();
 
-        $index->setConnection($this->getHttpConnection());
+        $index->setHttpConnection($this->getHttpConnection());
 
         return $index;
     }

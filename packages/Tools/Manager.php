@@ -14,9 +14,9 @@ use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Index\Index;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\Contracts\JsonClient as JsonClientInterface;
-use Sigmie\Http\Contracts\JSONRequest as JsonRequestInterface;
+use Sigmie\Http\Contracts\JSONRequest as JSONRequestInterface;
 use Sigmie\Http\JsonClient;
-use Sigmie\Http\JsonRequest;
+use Sigmie\Http\JSONRequest;
 use Sigmie\Support\Contracts\Collection;
 
 class Manager implements ManagerInterface
@@ -59,7 +59,7 @@ class Manager implements ManagerInterface
     public function isConnected(): bool
     {
         try {
-            $res = ($this->request)(new JsonRequest('GET', new Uri()));
+            $res = ($this->request)(new JSONRequest('GET', new Uri()));
 
             return !$res->failed();
         } catch (Exception $e) {
@@ -74,7 +74,7 @@ class Manager implements ManagerInterface
         return new Manager($client);
     }
 
-    protected function httpCall(JsonRequestInterface $request, string $responseClass = ElasticsearchResponse::class): ElasticsearchResponse
+    protected function httpCall(JSONRequestInterface $request, string $responseClass = ElasticsearchResponse::class): ElasticsearchResponse
     {
         return ($this->request)($request, $responseClass);
     }

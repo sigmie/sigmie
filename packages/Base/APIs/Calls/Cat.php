@@ -7,7 +7,7 @@ namespace Sigmie\Base\APIs\Calls;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\ElasticsearchResponse;
-use Sigmie\Http\JsonRequest;
+use Sigmie\Http\JSONRequest;
 
 trait Cat
 {
@@ -17,7 +17,7 @@ trait Cat
     {
         $uri = Uri::withQueryValue(new Uri('/_cat' . $path), 'format', 'json');
 
-        $esRequest = new JsonRequest($method, $uri, []);
+        $esRequest = new JSONRequest($method, $uri, []);
 
         return $this->httpCall($esRequest);
     }

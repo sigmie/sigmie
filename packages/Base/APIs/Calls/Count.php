@@ -7,7 +7,7 @@ namespace Sigmie\Base\APIs\Calls;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\ElasticsearchResponse;
-use Sigmie\Http\JsonRequest;
+use Sigmie\Http\JSONRequest;
 
 trait Count
 {
@@ -17,7 +17,7 @@ trait Count
     {
         $uri = Uri::withQueryValue(new Uri("/$indexName/_count"), 'format', 'json');
 
-        $esRequest = new JsonRequest('GET', $uri);
+        $esRequest = new JSONRequest('GET', $uri);
 
         return $this->httpCall($esRequest, ElasticsearchResponse::class);
     }

@@ -7,7 +7,7 @@ namespace Sigmie\Base\APIs\Calls;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\ElasticsearchResponse;
-use Sigmie\Http\JsonRequest;
+use Sigmie\Http\JSONRequest;
 
 trait Index
 {
@@ -17,7 +17,7 @@ trait Index
     {
         $uri = new Uri($index);
 
-        $esRequest = new JsonRequest($method, $uri, $body);
+        $esRequest = new JSONRequest($method, $uri, $body);
 
         return $this->httpCall($esRequest, ElasticsearchResponse::class);
     }

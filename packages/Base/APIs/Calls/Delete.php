@@ -8,7 +8,7 @@ use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\RequiresIndexAware;
 use Sigmie\Base\Http\ElasticsearchResponse;
-use Sigmie\Http\JsonRequest;
+use Sigmie\Http\JSONRequest;
 
 trait Delete
 {
@@ -22,7 +22,7 @@ trait Delete
             $uri = Uri::withQueryValue($uri, 'refresh', 'wait_for');
         }
 
-        $esRequest = new JsonRequest('DELETE', $uri);
+        $esRequest = new JSONRequest('DELETE', $uri);
 
         return $this->httpCall($esRequest);
     }
