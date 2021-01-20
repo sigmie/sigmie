@@ -46,7 +46,7 @@
         "laravel/ui": "^3.0",
         "nunomaduro/collision": "^5.0",
         "pusher/pusher-php-server": "~4.0",
-        "sigmie/app-core": "^0.10.0",
+        "sigmie/app-core": "^0.11",
         "sigmie/nova-feature-flags": "@dev",
         "sigmie/sigmie": "^0.4.2",
         "sigmie/sigmie-laravel-testing": "@dev",
