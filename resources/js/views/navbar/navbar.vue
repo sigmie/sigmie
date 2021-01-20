@@ -120,9 +120,9 @@ export default {
   },
   methods: {
     async fetchNotifications() {
-      const response = await this.$http.get("/notification");
+    //   const response = await this.$http.get("/notification");
 
-      this.addNotifications(response.data);
+    //   this.addNotifications(response.data);
     },
     closeSettings() {
       this.settings = "close";

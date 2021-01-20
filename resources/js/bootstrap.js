@@ -12,46 +12,43 @@ import vueHeadful from 'vue-headful'
 import { mixin as clickaway } from 'vue-clickaway'
 import { InertiaProgress } from '@inertiajs/progress'
 
+window.Pusher = Pusher
+
+Vue.prototype.$http = axios.create({
+  baseURL: process.env.MIX_APP_URL + '/ajax/',
+  timeout: 5000,
+  withCredentials: true,
+  //   headers: { 'X-Requested-With': 'XMLHttpRequest' },
+  // `xsrfCookieName` is the name of the cookie to use as a value for xsrf token
+  xsrfCookieName: 'XSRF-TOKEN', // default
+  // `xsrfHeaderName` is the name of the http header that carries the xsrf token value
+  xsrfHeaderName: 'X-XSRF-TOKEN' // default
+})
+
 InertiaProgress.init({
   delay: 250,
   color: '#ff826c',
   // Whether to include the default NProgress styles.
   includeCSS: true,
   // Whether the NProgress spinner will be shown.
-  showSpinner: false,
+  showSpinner: false
 })
-
-
-window.Pusher = Pusher
 
 Vue.mixin(clickaway)
 Vue.use(plugin)
 Vue.use(Vuelidate)
 Vue.use(Clipboard)
-Vue.prototype.$http = axios.create({
-  baseURL: process.env.MIX_APP_URL + '/ajax/',
-  timeout: 5000,
-  headers: {
-    'X-CSRF-TOKEN': document.head.querySelector('meta[name="csrf-token"]').getAttribute('content')
-  }
-})
-
 Vue.prototype.$route = (name, params, absolute) => route(name, params, absolute, Ziggy)
 
 Vue.prototype.$socket = new Echo({
   broadcaster: 'pusher',
   key: process.env.MIX_PUSHER_APP_KEY,
   cluster: process.env.MIX_PUSHER_APP_CLUSTER,
-  auth: {
-    headers: {
-      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-    }
-  }
+  forceTLS: true
 })
 
 Vue.component('vue-headful', vueHeadful)
 
-Vue.component('csrf', require('./essentials/csrf').default)
 Vue.component('stripe', require('./essentials/stripe').default)
 Vue.component('paddle', require('./essentials/paddle').default)
 

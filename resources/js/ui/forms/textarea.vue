@@ -13,11 +13,12 @@
           :class="[validations.$anyError ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-300 focus:text-' : '']"
           :placeholder="placeholder"
           :value="value"
+          type="text"
           @input="$emit('input', $event.target.value)"
           @blur="$emit('blur', $event.target.value)"
           @focus="$emit('touch', $event.target.value)"
           @change="$emit('change', $event.target.value)"
-          class="form-textarea block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5"
+          class="flex outline-none ring-0 flex-1 appearance-none w-full px-3 py-2 border border-gray-300 focus:text-gray-700 rounded-md placeholder-gray-400 focus:outline-none focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
         ></textarea>
       </div>
       <slot name="info"></slot>

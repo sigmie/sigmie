@@ -13,7 +13,8 @@ module.exports = {
     './resources/**/*.vue'
   ],
   variants: {
-    borderWidth: ['first', 'responsive']
+    borderWidth: ['first', 'responsive'],
+    outline: ['focus']
   },
   theme: {
     extend: {

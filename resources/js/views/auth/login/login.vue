@@ -11,7 +11,7 @@
         <p class="mt-2 text-center text-sm leading-5 text-gray-600 max-w">
           Or
           <inertia-link
-            class="font-medium text-theme-orange-light-900 focus:outline-none focus:underline transition ease-in-out duration-150"
+            class="font-medium text-theme-orange-dark-200 focus:outline-none focus:underline transition ease-in-out duration-150"
             :href="$route('sign-up')"
           >start your 14-day free trial</inertia-link>
         </p>

@@ -4,16 +4,20 @@
       <div class="shadow rounded-md sm:overflow-hidden">
         <div class="px-4 py-5 bg-white sm:p-6 rounded-md">
           <div class="pb-2">
-            <h3 class="text-lg leading-6 font-medium text-gray-900">New project</h3>
-            <p
-              class="mt-1 text-sm leading-5 text-gray-500"
-            >Project is a space where your clusters will belong.</p>
+            <h3 class="text-lg leading-6 font-medium text-gray-900">
+              New project
+            </h3>
+            <p class="mt-1 text-sm leading-5 text-gray-500">
+              Project is a space where your clusters will belong.
+            </p>
           </div>
           <div class="grid grid-cols-3 gap-6">
             <div class="col-span-3 lg:col-span-2">
-              <form-input :value="name"
+              <form-input
+                :value="name"
+                type="text"
                 label="Name"
-                @change="(value) => set('name',value)"
+                @change="(value) => set('name', value)"
                 id="name"
                 name="name"
                 :validations="$v.name"
@@ -24,18 +28,17 @@
             <div class="col-span-3 lg:col-span-2">
               <form-textarea
                 :value="description"
-                @change="(value) => set('description',value)"
+                @change="(value) => set('description', value)"
                 id="description"
                 name="description"
-                type="text"
                 :validations="$v.description"
                 :error-messages="errorMessages.description"
                 label="Description"
               >
                 <template v-slot:info>
-                  <p
-                    class="text-gray-500 text-sm mt-2"
-                  >Optionaly write some notes about the project.</p>
+                  <p class="text-gray-500 text-sm mt-2">
+                    Optionaly write some notes about the project.
+                  </p>
                 </template>
               </form-textarea>
             </div>
@@ -47,8 +50,8 @@
         <provider
           :isProjectValid="$v.$invalid === false"
           @submit="submit"
-          @providerChange="(value)=> provider.data = value"
-          @validate="(invalid)=> this.provider.invalid = invalid"
+          @providerChange="(value) => (provider.data = value)"
+          @validate="(invalid) => (this.provider.invalid = invalid)"
         ></provider>
       </div>
     </div>
@@ -58,7 +61,7 @@
 <script>
 import App from "../../layouts/app";
 
-import provider from './_provider';
+import provider from "./_provider";
 
 import { required, helpers } from "vuelidate/lib/validators";
 const alphaNum = helpers.regex("alpha", /^[a-zA-Z0-9-_]*$/i);
@@ -67,13 +70,13 @@ export default {
   validations: {
     name: {
       required,
-      alphaNum
+      alphaNum,
     },
-    description: {}
+    description: {},
   },
   components: {
     App,
-    provider
+    provider,
   },
   data() {
     return {
@@ -81,15 +84,15 @@ export default {
       description: "",
       provider: {
         data: "",
-        invalid: true
+        invalid: true,
       },
       errorMessages: {
         name: {
           required: "Name is required.",
-          alphaNum: "Name can contain only letters and numbers and dashes."
+          alphaNum: "Name can contain only letters and numbers and dashes.",
         },
-        description: {}
-      }
+        description: {},
+      },
     };
   },
   methods: {
@@ -97,14 +100,14 @@ export default {
       this.$inertia.post(this.$route("project.store"), {
         name: this.name,
         description: this.description,
-        provider: this.provider.data
+        provider: this.provider.data,
       });
     },
     set(key, value) {
       this[key] = value;
       this.$v[key].$touch();
-    }
-  }
+    },
+  },
 };
 </script>
 

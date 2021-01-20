@@ -24,7 +24,6 @@
         class="pt-4"
         id="serviceAccount"
         name="json"
-        type="text"
         :validations="$v.serviceAccount"
         :error-messages="errorMessages.serviceAccount"
         label="Service account JSON"
@@ -34,7 +33,7 @@
             More info at
             <a
               target="_blank"
-              class="text-orange-700"
+              class="text-theme-orange-light-900"
               href="https://docs.sigmie.com"
             >https://docs.sigmie.com/app/google</a>
           </p>
