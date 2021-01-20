@@ -7,6 +7,7 @@
             <div class="grid grid-cols-3 gap-6">
               <div class="col-span-3 lg:col-span-2">
                 <form-input
+                type="text"
                   :value="name"
                   label="Name"
                   @change="(value) => set('name', value)"

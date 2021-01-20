@@ -43,8 +43,8 @@ Vue.prototype.$route = (name, params, absolute) => route(name, params, absolute,
 Vue.prototype.$socket = new Echo({
   broadcaster: 'pusher',
   key: process.env.MIX_PUSHER_APP_KEY,
-  cluster: process.env.MIX_PUSHER_APP_CLUSTER,
-  forceTLS: true
+  cluster: process.env.MIX_PUSHER_APP_CLUSTER
+//   forceTLS: true
 })
 
 Vue.component('vue-headful', vueHeadful)

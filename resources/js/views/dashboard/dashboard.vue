@@ -70,7 +70,11 @@ export default {
   methods: {
     loadData() {
       let response = this.$http
-        .get(this.$route("dashboard.data", { project: this.$page.props.project_id }))
+        .get(
+          this.$route("dashboard.data", {
+            project: this.$page.props.project_id,
+          })
+        )
         .then((response) => {
           let data = response.data;
 
@@ -89,10 +93,13 @@ export default {
     },
   },
   beforeMount() {
+    let currentRoute = this.$route(this.$route().current());
+
     throttle(() => {
-      this.$inertia.reload({
+      this.$inertia.get(currentRoute, {
         method: "get",
         data: {},
+        replace: true,
         preserveState: false,
         preserveScroll: false,
         only: ["indices", "clusterInfo"],
@@ -109,9 +116,9 @@ export default {
         // Wait 5 seconds for the cluster state to change
         // in the database before reloading the page
         delay(() => {
-          this.$inertia.reload({
-            method: "get",
+          this.$inertia.get(currentRoute, {
             data: {},
+            replace: true,
             preserveState: false,
             preserveScroll: false,
             only: [],
@@ -125,9 +132,9 @@ export default {
         // Wait 5 seconds for the cluster state to change
         // in the database before reloading the page
         delay(() => {
-          this.$inertia.reload({
-            method: "get",
+          this.$inertia.get(currentRoute, {
             data: {},
+            replace: true,
             preserveState: false,
             preserveScroll: false,
             only: [],

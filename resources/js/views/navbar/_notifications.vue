@@ -1,38 +1,54 @@
 <template>
-  <div class="py-1 rounded-md bg-white ring-1 ring-black ring-opacity-5 overflow-auto max-h-128" v-on-clickaway="emitAway">
+  <div
+    class="py-1 rounded-md bg-white ring-1 ring-black ring-opacity-5 overflow-auto max-h-128"
+    v-on-clickaway="emitAway"
+  >
     <ul v-cloak>
       <li
-        v-for="(notification,index) in notifications"
+        v-for="(notification, index) in notifications"
         :key="index"
         class="border-t border-gray-200 first:border-t-0 hover:bg-gray-50 focus:bg-gray-50"
       >
         <a
-          @click.prevent="(notification.read_at === null) ? readNotification(index, notification.id): ()=>{}"
-          :class="[(notification.read_at === null) ? 'bg-gray-100':'']"
+          @click.prevent="
+            notification.read_at === null
+              ? readNotification(index, notification.id)
+              : () => {}
+          "
+          :class="[notification.read_at === null ? 'bg-gray-100' : '']"
           class="block cursor-pointer focus:outline-none transition duration-150 ease-in-out"
         >
           <div class="px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between">
               <div
-                class="text-sm leading-5 font-medium text-orange-600 truncate"
-              >{{ notification.data.title }}</div>
+                class="text-sm leading-5 font-medium text-theme-orange-light-900 truncate"
+              >
+                {{ notification.data.title }}
+              </div>
               <div class="ml-2 flex-shrink-0 flex">
                 <span
-                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-700"
-                >#{{ notification.data.project.toLowerCase().replace(' ', '_') }}</span>
+                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-theme-orange-light-100 text-theme-orange-light-800"
+                  >#{{
+                    notification.data.project.toLowerCase().replace(" ", "_")
+                  }}</span
+                >
               </div>
             </div>
             <div class="mt-2 sm:flex sm:justify-between">
               <div class="sm:flex">
-                <div class="mr-6 flex items-center text-sm leading-5 text-gray-500">
+                <div
+                  class="mr-6 flex items-center text-sm leading-5 text-gray-500"
+                >
                   <span v-html="notification.data.body"></span>
                 </div>
               </div>
-              <div class="mt-2 flex items-center text-sm leading-5 text-gray-400 sm:mt-0">
+              <div
+                class="mt-2 flex items-center text-sm leading-5 text-gray-400 sm:mt-0"
+              >
                 <span class="w-full md:w-24 text-right text-xs">
-                  <time
-                    :datetime="notification.create_at"
-                  >{{relativeTime(notification.created_at) }}</time>
+                  <time :datetime="notification.create_at">{{
+                    relativeTime(notification.created_at)
+                  }}</time>
                 </span>
               </div>
             </div>

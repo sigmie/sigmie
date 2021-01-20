@@ -36,7 +36,6 @@
 
         <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form @submit.prevent :action="$route('login')" method="POST">
-            <csrf></csrf>
 
             <form-input
               id="email"

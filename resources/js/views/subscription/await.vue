@@ -43,8 +43,9 @@ export default {
       this.text = "Authorization received, redirecting...";
     },
     reload() {
-      this.$inertia.reload({
-        method: "get",
+      let currentRoute = this.$route(this.$route().current());
+
+      this.$inertia.get(currentRoute ,{
         data: {},
         preserveState: false,
         preserveScroll: false,

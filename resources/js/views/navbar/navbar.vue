@@ -44,7 +44,7 @@
           >
             <badge
               v-if="unreadNotification"
-              class="absolute top-1 right-1 text-orange-400"
+              class="absolute top-1 right-1 text-theme-orange-light-600"
               stroke="currentColor"
               fill="currentColor"
               width="10px"
@@ -120,9 +120,9 @@ export default {
   },
   methods: {
     async fetchNotifications() {
-    //   const response = await this.$http.get("/notification");
+      const response = await this.$http.get("/notification");
 
-    //   this.addNotifications(response.data);
+      this.addNotifications(response.data);
     },
     closeSettings() {
       this.settings = "close";

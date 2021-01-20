@@ -35,7 +35,7 @@ export default {
       this.replace(this.selected);
     },
     replace(value) {
-      this.$inertia.replace(
+      this.$inertia.get(
         this.$route("account.settings", {
           section: value,
           project_id: this.$page.props.project_id,
