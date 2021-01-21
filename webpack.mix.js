@@ -11,10 +11,7 @@ mix.webpackConfig({
 })
 
 // browser sync
-mix.browserSync({
-  ui: false,
-  proxy: 'localhost:8080'
-})
+mix.browserSync('localhost:8080')
 
 // vue
 mix.js('resources/js/app.js', 'public/js').vue()

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
@@ -20,6 +22,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Cluster\ClusterController;
 use App\Http\Controllers\Cluster\TokenController;
 use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Indexing\IndexingController;
 use App\Http\Controllers\Landing\LandingController;
 use App\Http\Controllers\Legal\LegalController;
 use App\Http\Controllers\Newsletter\SubscriptionConfirmationController;
@@ -113,6 +116,8 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
         Route::post('/cluster', [ClusterController::class, 'store'])->name('cluster.store');
         Route::put('/cluster/{cluster}', [ClusterController::class, 'update'])->name('cluster.update');
         Route::delete('/cluster/{cluster}', [ClusterController::class, 'destroy'])->name('cluster.destroy');
+
+        Route::get('/indexing', IndexingController::class)->name('indexing.indexing');
     });
 });
 

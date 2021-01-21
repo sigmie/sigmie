@@ -173,6 +173,16 @@ export default {
           },
         },
         {
+          text: "Indexing",
+          name: "indexing.indexing",
+          routeParams: [],
+          icon: "document-add",
+          badge: {
+            text: "Beta",
+            color: "blue",
+          },
+        },
+        {
           text: "Settings",
           name: "settings",
           routeParams: {

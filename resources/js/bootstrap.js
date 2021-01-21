@@ -102,3 +102,6 @@ Vue.component('icon-info', require('./ui/icons/info').default)
 Vue.component('icon-cog', require('./ui/icons/cog').default)
 Vue.component('icon-heart', require('./ui/icons/heart').default)
 Vue.component('icon-list', require('./ui/icons/list').default)
+Vue.component('icon-document-add', require('./ui/icons/document/add').default)
+Vue.component('icon-plus', require('./ui/icons/plus').default)
+
