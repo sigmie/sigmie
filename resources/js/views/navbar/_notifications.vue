@@ -62,7 +62,7 @@
 <script>
 import moment from "moment";
 import includes from "lodash/includes";
-import { mixin as clickaway } from "vue-clickaway";
+import { mixin as clickaway } from "vue-clickaway2";
 
 export default {
   mixins: [clickaway],

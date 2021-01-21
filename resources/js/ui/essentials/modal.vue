@@ -60,7 +60,7 @@
 </template>
 
 <script>
-import { mixin as clickaway } from "vue-clickaway";
+import { mixin as clickaway } from "vue-clickaway2";
 
 export default {
   mixins: [clickaway],

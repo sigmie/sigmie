@@ -9,7 +9,7 @@ import Pusher from 'pusher-js'
 import { Ziggy } from './routes'
 import Clipboard from 'v-clipboard'
 import vueHeadful from 'vue-headful'
-import { mixin as clickaway } from 'vue-clickaway'
+import { mixin as clickaway } from 'vue-clickaway2'
 import { InertiaProgress } from '@inertiajs/progress'
 
 window.Pusher = Pusher
@@ -81,6 +81,7 @@ Vue.component('icon-server', require('./ui/icons/server').default)
 Vue.component('icon-notification', require('./ui/icons/notification').default)
 Vue.component('icon-refresh', require('./ui/icons/refresh').default)
 Vue.component('icon-cheveron-right', require('./ui/icons/cheveron/right').default)
+Vue.component('icon-cheveron-down', require('./ui/icons/cheveron/down').default)
 Vue.component('icon-cheveron-left', require('./ui/icons/cheveron/left').default)
 Vue.component('icon-arrow-right', require('./ui/icons/arrow/right').default)
 Vue.component('icon-check', require('./ui/icons/check').default)
