@@ -71,6 +71,7 @@ Vue.component('modal', require('./ui/essentials/modal').default)
 Vue.component('bar', require('./ui/essentials/bar').default)
 Vue.component('spinner', require('./ui/essentials/spinner').default)
 Vue.component('loader', require('./ui/essentials/loader').default)
+Vue.component('link-default', require('./ui/link/default').default)
 
 Vue.component('icon-sigmie', require('./ui/icons/sigmie').default)
 Vue.component('icon-link', require('./ui/icons/link').default)

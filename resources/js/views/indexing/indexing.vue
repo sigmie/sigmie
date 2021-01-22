@@ -15,6 +15,7 @@
       </h2>
 
         <activities></activities>
+        <create-form></create-form>
     </div>
   </app>
 </template>
@@ -23,12 +24,14 @@
 import App from "../layouts/app";
 import Plans from "./_plans";
 import Activities from "./_activities";
+import CreateForm from './_form';
 
 export default {
   components: {
     App,
     Plans,
     Activities,
+    CreateForm
   },
 };
 </script>
