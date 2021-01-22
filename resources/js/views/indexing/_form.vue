@@ -74,12 +74,12 @@
                       ></form-input>
                     </div>
                     <div>
-              <form-textarea
-                id="description"
-                name="description"
-                label="Description"
-              >
-              </form-textarea>
+                      <form-textarea
+                        id="description"
+                        name="description"
+                        label="Description"
+                      >
+                      </form-textarea>
                     </div>
                     <fieldset>
                       <legend class="text-sm font-medium text-gray-900">

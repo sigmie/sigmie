@@ -23,6 +23,7 @@ use App\Http\Controllers\Cluster\ClusterController;
 use App\Http\Controllers\Cluster\TokenController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Indexing\IndexingController;
+use App\Http\Controllers\Indexing\PlanController;
 use App\Http\Controllers\Landing\LandingController;
 use App\Http\Controllers\Legal\LegalController;
 use App\Http\Controllers\Newsletter\SubscriptionConfirmationController;
@@ -118,6 +119,7 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
         Route::delete('/cluster/{cluster}', [ClusterController::class, 'destroy'])->name('cluster.destroy');
 
         Route::get('/indexing', IndexingController::class)->name('indexing.indexing');
+        Route::post('/indexing/plan', [PlanController::class, 'store'])->name('indexing.plan');
     });
 });
 
