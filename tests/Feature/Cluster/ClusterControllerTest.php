@@ -6,7 +6,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Cluster;
 
 use App\Models\Region;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\Helpers\WithDestroyedCluster;
 use Tests\Helpers\WithProject;
 use Tests\TestCase;

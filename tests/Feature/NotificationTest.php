@@ -6,7 +6,6 @@ namespace Tests\Feature;
 
 use App\Jobs\Notifications\CleanNotifications;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Carbon;
 use Tests\Fakes\FakeNotification;
 use Tests\TestCase;

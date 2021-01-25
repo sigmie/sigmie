@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Subscription;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Base\Index\Index;
 use Sigmie\Testing\Laravel\ClearIndices;
 use Tests\Helpers\WithRunningCluster;
 use Tests\TestCase;
-use Sigmie\Base\Index\Actions as IndexActions;
-use Sigmie\Base\Index\Index;
 
 class DashboardControllerTest extends TestCase
 {

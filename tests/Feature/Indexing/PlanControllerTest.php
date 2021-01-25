@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature\Cluster;
 
 use App\Models\IndexingPlan;
-use Carbon\Carbon;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\Helpers\WithNotSubscribedUser;
 use Tests\Helpers\WithRunningCluster;
-use Tests\Helpers\WithSubscribedUser;
 use Tests\TestCase;
 
 class PlanControllerTest extends TestCase

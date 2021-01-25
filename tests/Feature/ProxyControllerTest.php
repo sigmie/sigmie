@@ -6,7 +6,6 @@ namespace Tests\Feature;
 
 use App\Http\Controllers\Cluster\TokenController;
 use App\Models\Cluster;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Sigmie\Testing\Laravel\ClearIndices;
 use Tests\Helpers\WithRunningCluster;
 use Tests\TestCase;

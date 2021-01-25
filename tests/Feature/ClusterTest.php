@@ -7,7 +7,6 @@ namespace Tests\Feature;
 use App\Models\Cluster;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class ClusterTest extends TestCase

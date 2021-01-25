@@ -7,8 +7,6 @@ namespace App\Http\Controllers\Indexing;
 use App\Http\Requests\Indexing\StorePlan;
 use App\Http\Requests\UpdatePlan;
 use App\Models\IndexingPlan;
-use Inertia\Inertia;
-use Throwable;
 
 class PlanController extends \App\Http\Controllers\Controller
 {

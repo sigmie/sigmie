@@ -7,7 +7,6 @@ namespace Tests\Feature;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\Subscription;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase

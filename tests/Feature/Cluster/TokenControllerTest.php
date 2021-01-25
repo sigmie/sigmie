@@ -5,7 +5,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Cluster;
 
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\Helpers\WithRunningCluster;
 use Tests\TestCase;
 

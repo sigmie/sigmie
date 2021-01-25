@@ -6,7 +6,6 @@ namespace Tests\Feature;
 
 use App\Models\Subscription;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
