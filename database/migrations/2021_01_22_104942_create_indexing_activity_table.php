@@ -21,17 +21,7 @@ class CreateIndexingActivityTable extends Migration
         });
 
         Schema::table('indexing_activity', function ($table) {
-            $table->foreign('plan_id')->references('id')->on('indexing_plan');
+            $table->foreign('plan_id')->references('id')->on('indexing_plans');
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
-    public function down()
-    {
-        Schema::dropIfExists('indexing_activity');
     }
 }

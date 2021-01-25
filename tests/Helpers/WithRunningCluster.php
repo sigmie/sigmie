@@ -17,9 +17,13 @@ trait WithRunningCluster
 
     private Cluster $cluster;
 
-    private function withRunningCluster()
+    private function withRunningCluster(User $user = null)
     {
-        $this->user = Subscription::factory()->create()->billable;
+        if (is_null($user)) {
+            $user = Subscription::factory()->create()->billable;
+        }
+
+        $this->user = $user;
         $this->project = Project::factory()->create(['user_id' => $this->user->id]);
         $this->cluster = Cluster::factory()->create(['project_id' => $this->project->id]);
     }

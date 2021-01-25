@@ -68,6 +68,11 @@ class Cluster extends Model
         return $this->belongsTo(Region::class);
     }
 
+    public function plans()
+    {
+        return $this->hasMany(IndexingPlan::class);
+    }
+
     public function isAdminTokenActive(): bool
     {
         return $this->getAttribute('admin_token_active');

@@ -100,7 +100,10 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
     Route::put('/user/password/{user}', [PasswordController::class, 'update'])->name('user.password.update');
 
 
-    Route::group(['middleware' => [RedirectToRenewSubscriptionIfNotSubscribed::class, ShareSelectedProjectToView::class]], function () {
+    Route::group(['middleware' => [
+        RedirectToRenewSubscriptionIfNotSubscribed::class,
+        ShareSelectedProjectToView::class
+    ]], function () {
 
         Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
 
@@ -119,7 +122,9 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
         Route::delete('/cluster/{cluster}', [ClusterController::class, 'destroy'])->name('cluster.destroy');
 
         Route::get('/indexing', IndexingController::class)->name('indexing.indexing');
-        Route::post('/indexing/plan', [PlanController::class, 'store'])->name('indexing.plan');
+        Route::post('/indexing/plan', [PlanController::class, 'store'])->name('indexing.plan.store');
+        Route::put('/indexing/plan/{plan}', [PlanController::class, 'update'])->name('indexing.plan.update');
+        Route::delete('/indexing/plan/{plan}', [PlanController::class, 'destroy'])->name('indexing.plan.destroy');
     });
 });
 

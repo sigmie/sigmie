@@ -14,7 +14,6 @@ class User extends Authenticatable
     use Notifiable;
     use Billable;
     use HasFactory;
-
     protected $fillable = [
         'email', 'username', 'password', 'avatar_url', 'github',
     ];
@@ -32,6 +31,11 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function isSubscribed()
+    {
+        return $this->subscribed(config('services.paddle.plan_name'));
+    }
 
     public function projects()
     {

@@ -1,12 +1,11 @@
 <?php
 
-namespace App\Http\Requests\Indexing;
+namespace App\Http\Requests;
 
-use App\Rules\InArray as OneFrom;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StorePlan extends FormRequest
+class UpdatePlan extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -26,10 +25,9 @@ class StorePlan extends FormRequest
     public function rules()
     {
         return [
-            'name' => ['required', 'min:4', 'max:30'],
+            'name' => ['min:4', 'max:30'],
             'description' => ['max:140'],
-            'type' => [Rule::in(['file']), 'required'],
-            'cluster_id' => ['integer', 'required']
+            'type' => [Rule::in(['file'])],
         ];
     }
 }

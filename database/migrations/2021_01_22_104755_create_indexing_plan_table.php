@@ -13,30 +13,20 @@ class CreateIndexingPlanTable extends Migration
      */
     public function up()
     {
-        Schema::create('indexing_plan', function (Blueprint $table) {
+        Schema::create('indexing_plans', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('description');
             $table->bigInteger('cluster_id')->unsigned()->index();
             $table->string('type');
             $table->string('state')->default('none');
-            $table->dateTime('run_at');
+            $table->dateTime('run_at')->nullable();
             $table->dateTime('deactivated_at')->nullable()->default(null);
             $table->timestamps();
         });
 
-        Schema::table('indexing_plan', function ($table) {
+        Schema::table('indexing_plans', function ($table) {
             $table->foreign('cluster_id')->references('id')->on('clusters');
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
-    public function down()
-    {
-        Schema::dropIfExists('indexing_plan');
     }
 }
