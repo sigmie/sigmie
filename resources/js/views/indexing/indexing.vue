@@ -33,6 +33,7 @@ export default {
     Activities,
     CreateForm
   },
+  props:['plans']
 };
 </script>
 

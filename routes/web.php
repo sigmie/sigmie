@@ -121,7 +121,7 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
         Route::put('/cluster/{cluster}', [ClusterController::class, 'update'])->name('cluster.update');
         Route::delete('/cluster/{cluster}', [ClusterController::class, 'destroy'])->name('cluster.destroy');
 
-        Route::get('/indexing', IndexingController::class)->name('indexing.indexing');
+        Route::get('/indexing/{project?}', IndexingController::class)->name('indexing.indexing')->middleware([RedirecToSameRouteWithProject::class]);
         Route::post('/indexing/plan', [PlanController::class, 'store'])->name('indexing.plan.store');
         Route::put('/indexing/plan/{plan}', [PlanController::class, 'update'])->name('indexing.plan.update');
         Route::delete('/indexing/plan/{plan}', [PlanController::class, 'destroy'])->name('indexing.plan.destroy');
