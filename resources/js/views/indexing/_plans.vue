@@ -9,8 +9,10 @@
         class="mt-3 grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 w-full"
       >
         <new-plan
+          @createRequest="() => $emit('createRequest')"
           class="col-span-1 flex shadow-sm rounded-md bg-white"
         ></new-plan>
+
         <plan
           @deleteRequest="deleteRequest"
           :plan="plan"
@@ -49,10 +51,10 @@ export default {
       this.planId = id;
     },
     deleteAction() {
-        console.log(this.planId);
+      console.log(this.planId);
       let route = this.$route("indexing.plan.destroy", { plan: this.planId });
       console.log(route);
-      this.$inertia.delete(route,{
+      this.$inertia.delete(route, {
         preserveState: false,
         preserveScroll: false,
         only: ["plans"],

@@ -1,5 +1,8 @@
 <template>
-  <div class="fixed inset-0 overflow-hidden">
+  <div
+    :class="hidden ? 'hidden' : 'block'"
+    class="fixed inset-0 overflow-hidden"
+  >
     <div class="absolute inset-0 overflow-hidden">
       <section
         class="absolute inset-y-0 pl-16 max-w-full right-0 flex"
@@ -16,7 +19,7 @@
           To: "translate-x-full"
       -->
         <div
-          v-on-clickaway="() => (show = false)"
+          v-on-clickaway="show ? hideForm : null"
           :class="
             show
               ? 'transform transition ease-in-out duration-500 sm:duration-700 translate-x-0'
@@ -25,19 +28,18 @@
           class="w-screen max-w-md"
         >
           <form
+            @submit.prevent="form.post($route('indexing.plan.store'))"
             class="h-full pt-14 divide-y divide-gray-200 flex flex-col bg-white shadow-xl"
           >
             <div class="flex-1 h-0 overflow-y-auto">
               <div class="py-6 px-4 bg-theme-gray-600 sm:px-6">
                 <div class="flex items-center justify-between">
-                  <h2
-                    id="slide-over-heading"
-                    class="text-lg font-medium text-gray-700"
-                  >
+                  <h2 id="slide-over-heading" class="text-lg font-medium">
                     New Plan
                   </h2>
                   <div class="ml-3 h-7 flex items-center">
                     <button
+                      @click="hideForm"
                       class="rounded-md text-gray-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-white"
                     >
                       <span class="sr-only">Close panel</span>
@@ -69,12 +71,31 @@
                         class="pt-2"
                         id="name"
                         type="text"
+                        v-model="form.name"
                         required
                         label="Name"
+                      ></form-input>
+                      <form-input
+                        class="pt-2"
+                        id="name"
+                        type="text"
+                        v-model="form.type"
+                        required
+                        label="type"
+                      ></form-input>
+
+                      <form-input
+                        class="pt-2"
+                        id="name"
+                        type="text"
+                        v-model="form.cluster_id"
+                        required
+                        label="Cluster id"
                       ></form-input>
                     </div>
                     <div>
                       <form-textarea
+                        v-model="form.description"
                         id="description"
                         name="description"
                         label="Description"
@@ -203,8 +224,15 @@
             <div
               class="flex-shrink-0 px-4 py-4 flex space-x-4 justify-end w-full"
             >
-              <button-primary text="Save"></button-primary>
-              <button-secondary text="Cancel"></button-secondary>
+              <button-primary
+                :disabled="form.processing"
+                type="submit"
+                text="Save"
+              ></button-primary>
+              <button-secondary
+                @click="hideForm"
+                text="Cancel"
+              ></button-secondary>
             </div>
           </form>
         </div>
@@ -214,11 +242,54 @@
 </template>
 
 <script>
+import delay from "lodash/delay";
+
 export default {
+  props: ["showForm"],
+  watch: {
+    showForm(newVal, oldVal) {
+      this.hidden = !newVal;
+
+      delay(() => {
+        this.show = newVal;
+      }, 5);
+    },
+  },
   data() {
     return {
-      show: true,
+      show: this.showForm,
+      hidden: true,
+      form: this.$inertia.form({
+        type: "file",
+        cluster_id: 1,
+        name: "",
+        description: "",
+      }),
     };
+  },
+  methods: {
+    inertiaToVuelidate() {
+      return {
+        validations: {
+          $anyError: form.errors.name,
+          $pending: form.processing,
+          $dirty: true,
+        },
+        errorMessages: {
+          required: "JSON Service account key is required.",
+          isValid: "The service account JSON isn't valid",
+        },
+      };
+    },
+    hideForm() {
+      this.show = false;
+
+      delay(() => {
+        this.hidden = true;
+
+        this.$emit("hide");
+      }, 700);
+    },
   },
 };
 </script>

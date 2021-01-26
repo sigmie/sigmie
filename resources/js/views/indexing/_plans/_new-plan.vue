@@ -9,9 +9,9 @@
           <icon-plus></icon-plus>
       </span>
       <div class="flex-1 px-4 py-2 text-sm truncate">
-        <a href="#" class="text-gray-900 font-medium hover:text-gray-600">
+        <div class="text-gray-900 font-medium hover:text-gray-600">
             New Plan
-        </a>
+        </div>
       </div>
     </div>
   </li>

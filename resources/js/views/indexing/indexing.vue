@@ -3,7 +3,7 @@
     <div class="mt-8">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        <plans :plans="plans"></plans>
+        <plans @createRequest="showCreateForm" :plans="plans"></plans>
 
         </div>
       </div>
@@ -15,7 +15,7 @@
       </h2>
 
         <activities></activities>
-        <!-- <create-form></create-form> -->
+        <create-form @hide="showForm = false" :showForm="showForm"></create-form>
     </div>
   </app>
 </template>
@@ -34,6 +34,16 @@ export default {
     CreateForm,
   },
   props: ["plans"],
+  methods: {
+    showCreateForm() {
+      this.showForm = true;
+    },
+  },
+  data() {
+    return {
+      showForm: false,
+    };
+  },
 };
 </script>
 
