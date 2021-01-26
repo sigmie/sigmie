@@ -6,12 +6,30 @@
         Plans
       </h2>
       <ul
-        class="mt-3 grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-5 w-full"
+        class="mt-3 grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 w-full"
       >
         <new-plan
           class="col-span-1 flex shadow-sm rounded-md bg-white"
         ></new-plan>
-        <plan v-for="(plan, index) in plans" :key="index" class=""></plan>
+        <plan
+          @deleteRequest="deleteRequest"
+          :plan="plan"
+          v-for="(plan, index) in plans"
+          :key="index"
+        ></plan>
+        <modal
+          title="Delete Plan ?"
+          content="Are you sure you want to delete plan?"
+          primaryText="Delete"
+          secondaryText="Cancel"
+          @primaryAction="deleteAction"
+          @secondaryAction="state = 'NONE'"
+          @clickAway="state = 'NONE'"
+          @onEsc="state = 'NONE'"
+          :icon="true"
+          :show="state === STATE_DELETE_REQUEST"
+          type="danger"
+        ></modal>
       </ul>
     </div>
   </div>
@@ -21,21 +39,39 @@
 import Plan from "./_plans/_plan.vue";
 import NewPlan from "./_plans/_new-plan.vue";
 
+const STATE_DELETE_REQUEST = "DELETE_REQUEST";
+const STATE_NONE = "NONE";
+
 export default {
+  methods: {
+    deleteRequest(id) {
+      this.state = STATE_DELETE_REQUEST;
+      this.planId = id;
+    },
+    deleteAction() {
+        console.log(this.planId);
+      let route = this.$route("indexing.plan.destroy", { plan: this.planId });
+      console.log(route);
+      this.$inertia.delete(route,{
+        preserveState: false,
+        preserveScroll: false,
+        only: ["plans"],
+      });
+    },
+  },
+  created() {
+    this.STATE_DELETE_REQUEST = STATE_DELETE_REQUEST;
+    this.STATE_NONE = STATE_DELETE_REQUEST;
+  },
   components: {
     Plan,
     NewPlan,
   },
-  props: {
-    plans: {
-      default() {
-        return [{}, {}, {}, {}];
-      },
-    },
-  },
+  props: ["plans"],
   data() {
     return {
-      show: false,
+      state: STATE_NONE,
+      planId: null,
     };
   },
 };

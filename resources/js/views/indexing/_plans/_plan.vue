@@ -2,13 +2,22 @@
   <li
     class="relative col-span-1 flex shadow-sm rounded-md border-t border-r border-b border-gray-200 bg-white"
   >
-    <div class="flex-1 flex items-center justify-between rounded-r-md truncate pl-4">
-      <span class="h-2 w-2 bg-green-400 rounded-full"></span>
+    <div
+      class="flex-1 flex items-center justify-between rounded-r-md truncate pl-4"
+    >
+      <span
+        v-if="plan.deactivated_at === null"
+        class="h-2 w-2 bg-green-400 rounded-full"
+      ></span>
+      <span v-else class="h-2 w-2 bg-red-400 rounded-full"></span>
       <div class="flex-1 px-4 py-2 text-sm truncate">
         <a href="#" class="text-gray-900 font-medium hover:text-gray-600">
-          GraphQL API
+          {{ plan.name }}
         </a>
-        <p class="text-gray-500">12 Members</p>
+        <p v-if="plan.state === 'none'" class="text-gray-500">
+          {{ relativeTime(plan.last_run) }}
+        </p>
+        <p v-else class="text-gray-500">Running...</p>
       </div>
       <div class="flex-shrink-0 pr-2">
         <button
@@ -31,16 +40,6 @@
             />
           </svg>
         </button>
-        <!--
-                  Dropdown panel, show/hide based on dropdown state.
-
-                  Entering: "transition ease-out duration-100"
-                    From: "transform opacity-0 scale-95"
-                    To: "transform opacity-100 scale-100"
-                  Leaving: "transition ease-in duration-75"
-                    From: "transform opacity-100 scale-100"
-                    To: "transform opacity-0 scale-95"
-                -->
         <div
           v-on-clickaway="() => (show = false)"
           :class="show ? 'block' : 'hidden'"
@@ -56,19 +55,28 @@
               role="menuitem"
               >View</a
             >
+            <a
+              href="#"
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+              role="menuitem"
+              >Edit</a
+            >
           </div>
           <div class="py-1" role="none">
             <a
               href="#"
               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
               role="menuitem"
-              >Removed from pinned</a
+              >Trigger</a
             >
+          </div>
+          <div class="py-1" role="none">
             <a
+              @click="deleteRequest"
               href="#"
               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
               role="menuitem"
-              >Share</a
+              >Delete</a
             >
           </div>
         </div>
@@ -78,11 +86,23 @@
 </template>
 
 <script>
+import moment from "moment";
+
 export default {
+  props: ["plan"],
   data() {
     return {
       show: false,
     };
+  },
+  methods: {
+    relativeTime(utcDatetime) {
+      return moment.utc(utcDatetime).local().fromNow();
+    },
+    deleteRequest() {
+      this.$emit("deleteRequest", this.plan.id);
+      this.show = false;
+    },
   },
 };
 </script>

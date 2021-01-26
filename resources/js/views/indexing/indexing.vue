@@ -3,7 +3,7 @@
     <div class="mt-8">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        <plans></plans>
+        <plans :plans="plans"></plans>
 
         </div>
       </div>
@@ -15,7 +15,7 @@
       </h2>
 
         <activities></activities>
-        <create-form></create-form>
+        <!-- <create-form></create-form> -->
     </div>
   </app>
 </template>
@@ -24,16 +24,16 @@
 import App from "../layouts/app";
 import Plans from "./_plans";
 import Activities from "./_activities";
-import CreateForm from './_form';
+import CreateForm from "./_form";
 
 export default {
   components: {
     App,
     Plans,
     Activities,
-    CreateForm
+    CreateForm,
   },
-  props:['plans']
+  props: ["plans"],
 };
 </script>
 
