@@ -48,7 +48,7 @@
 
     <div class="col-span-3 sm:col-span-2" v-if="suffix.length > 0">
       <label
-        for="company_website"
+        :for="id"
         class="block text-sm font-medium leading-5 text-gray-700"
         >{{ label }}</label
       >
@@ -162,7 +162,7 @@ export default {
       default: () => {},
     },
     errors: {
-      default: () => {},
+      default: null,
     },
   },
   data() {

@@ -63,7 +63,7 @@ Bellow is the click away usage
 ## Form fields
 
 ### Select
-```
+```jsx
 <form-select
   v-model.trim="$v.version.$model"
   :validations="$v.version"
@@ -78,7 +78,7 @@ Bellow is the click away usage
 ```
 
 ### Input
-```
+```jsx
 <form-input
   suffix="GB"
   type="text"
@@ -89,5 +89,18 @@ Bellow is the click away usage
   :error-messages="errorMessages.size"
   id="disk"
   name="disk"
+></form-input>
+```
+
+### Inertia Form Input
+```jsx
+<form-input
+  class="pt-2"
+  id="name"
+  type="text"
+  v-model="form.name"
+  :errors="form.errors.name"
+  required
+  label="Name"
 ></form-input>
 ```

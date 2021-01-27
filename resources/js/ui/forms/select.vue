@@ -1,66 +1,83 @@
 <template>
-  <fieldset>
-    <legend class="block text-sm font-medium leading-5 text-gray-700">{{ label }}</legend>
+  <div>
+    <legend class="block text-sm font-medium leading-5 text-gray-700">
+      {{ label }}
+    </legend>
     <div class="mt-1 rounded-md shadow-sm">
-      <div>
-        <select
-          :id="id"
-          :name="name"
-          :aria-label="label"
-          :class="[validations.$anyError ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-300 focus:text-' : '']"
-          :required="required"
-          @input="$emit('input', $event.target.value)"
-          @blur="$emit('blur', $event.target.value)"
-          @focus="$emit('touch', $event.target.value)"
-          @change="$emit('change', items[$event.target.value])"
-          class="max-w-lg block focus:ring-indigo-500 focus:border-indigo-500 w-full shadow-sm sm:max-w-xs sm:text-sm border-gray-300 rounded-md"
+      <select
+        :id="id"
+        :name="name"
+        :aria-label="label"
+        :class="[
+          validations.$anyError || errors
+            ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-300 focus:text-'
+            : '',
+        ]"
+        :required="required"
+        @input="$emit('input', $event.target.value)"
+        @blur="$emit('blur', $event.target.value)"
+        @focus="$emit('touch', $event.target.value)"
+        @change="$emit('change', items[$event.target.value])"
+        class="block focus:ring-indigo-500 focus:border-indigo-500 w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+      >
+        <option
+          class="hidden"
+          disabled
+          value
+          :selected="value === null"
+        ></option>
+        <option v-for="(item, index) in items" :value="index" :key="index"
+        :selected="item === value"
+
         >
-          <option class="hidden" disabled selected value></option>
-          <option v-for="(item, index) in items" :value="index" :key="index">{{ item[displayKey] }}</option>
-        </select>
-      </div>
+          {{ item[displayKey] }}
+        </option>
+      </select>
     </div>
-  </fieldset>
+  </div>
 </template>
 
 <script>
 export default {
   props: {
     value: {
-      default: ""
+      default: "",
     },
     displayKey: {
-      default: "name"
+      default: "name",
     },
     items: {
-      default: ""
+      default: "",
     },
     selected: {
-      default: ""
+      default: "",
     },
     "aria-label": {
-      default: ""
+      default: "",
     },
     label: {
-      default: ""
+      default: "",
     },
     name: {
-      default: ""
+      default: "",
     },
     id: {
-      default: ""
+      default: "",
+    },
+    errors: {
+      default: null,
     },
     validations: {
       default() {
         return {
-          $anyError: false
+          $anyError: false,
         };
-      }
+      },
     },
     required: {
-      default: ""
-    }
-  }
+      default: "",
+    },
+  },
 };
 </script>
 

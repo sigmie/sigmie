@@ -26,6 +26,10 @@ class IndexingController extends \App\Http\Controllers\Controller
             ]
         );
 
-        return Inertia::render('indexing/indexing', ['plans' => $plans]);
+        // User should have at least one cluster before coming to the indexing view.
+        // RedirectToClusterCreateIfHasntCluster::class takes care of that
+        $clusterId = $project->clusters->first()->id;
+
+        return Inertia::render('indexing/indexing', ['plans' => $plans, 'clusterId' => $clusterId]);
     }
 }

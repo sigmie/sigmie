@@ -3,14 +3,19 @@
     <label
       :for="id"
       class="block text-sm font-medium leading-5 text-gray-700 sm:mt-px sm:pt-2 pb-1"
-    >{{ label }}</label>
+      >{{ label }}</label
+    >
     <div class="md:mt-2 sm:col-span-2">
       <div class="max-w-lg flex rounded-md shadow-sm">
         <textarea
           :id="id"
           :rows="rows"
           :required="required"
-          :class="[validations.$anyError ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-300 focus:text-' : '']"
+          :class="[
+            validations.$anyError || errors
+              ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-300 focus:text-'
+              : '',
+          ]"
           :placeholder="placeholder"
           :value="value"
           type="text"
@@ -22,12 +27,28 @@
         ></textarea>
       </div>
       <slot name="info"></slot>
-      <p v-if="info.length > 0" slot="info" class="mt-2 text-sm text-gray-500">{{ info }}</p>
-      <div v-if="validations.$pending === false" v-for="(message, rule) in errorMessages" :key="rule">
+      <p v-if="info.length > 0" slot="info" class="mt-2 text-sm text-gray-500">
+        {{ info }}
+      </p>
+
+      <!-- Inertia form validation -->
+      <div v-for="(message, index) in errors" :key="index">
+        <p class="mt-2 text-sm text-red-600">
+          {{ message }}
+        </p>
+      </div>
+
+      <div v-for="(message, rule) in errorMessages" :key="rule">
         <p
-          v-if="!validations[rule] && validations.$dirty"
+          v-if="
+            validations[rule] === false &&
+            validations.$dirty &&
+            validations.$pending === false
+          "
           class="mt-2 text-sm text-red-600"
-        >{{ message }}</p>
+        >
+          {{ message }}
+        </p>
       </div>
     </div>
   </div>
@@ -37,49 +58,52 @@
 export default {
   props: {
     name: {
-      default: ""
+      default: "",
     },
     rows: {
-      default: "5"
+      default: "5",
     },
     validations: {
       default: () => {
         return {
-          $anyError: false
+          $anyError: false,
         };
-      }
+      },
     },
     blur: {
-      default: () => {}
+      default: () => {},
     },
     info: {
-      default: ""
+      default: "",
     },
     value: {
-      default: ""
+      default: "",
     },
     placeholder: {
-      default: ""
+      default: "",
     },
     label: {
-      default: ""
+      default: "",
     },
     old: {
-      default: ""
+      default: "",
     },
     error: {
-      default: ""
+      default: "",
     },
     id: {
-      default: ""
+      default: "",
     },
     required: {
-      default: true
+      default: true,
+    },
+    errors: {
+      default: null,
     },
     errorMessages: {
-      default: () => {}
-    }
-  }
+      default: () => {},
+    },
+  },
 };
 </script>
 

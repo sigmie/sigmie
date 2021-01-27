@@ -79,7 +79,6 @@ export default {
   props: ["regions"],
   components: {
     App,
-
     separator,
     name,
     specs,

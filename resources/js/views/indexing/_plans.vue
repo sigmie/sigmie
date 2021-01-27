@@ -15,6 +15,7 @@
 
         <plan
           @deleteRequest="deleteRequest"
+          @editRequest="(plan)=> $emit('editRequest',plan)"
           :plan="plan"
           v-for="(plan, index) in plans"
           :key="index"
@@ -51,9 +52,7 @@ export default {
       this.planId = id;
     },
     deleteAction() {
-      console.log(this.planId);
       let route = this.$route("indexing.plan.destroy", { plan: this.planId });
-      console.log(route);
       this.$inertia.delete(route, {
         preserveState: false,
         preserveScroll: false,

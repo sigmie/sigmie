@@ -14,9 +14,13 @@
         <a href="#" class="text-gray-900 font-medium hover:text-gray-600">
           {{ plan.name }}
         </a>
-        <p v-if="plan.state === 'none'" class="text-gray-500">
-          {{ relativeTime(plan.last_run) }}
+        <p
+          v-if="plan.state === 'none' && plan.run_at !== null"
+          class="text-gray-500"
+        >
+          {{ relativeTime(plan.run_at) }}
         </p>
+        <p v-else-if="plan.run_at === null" class="text-gray-500">Never</p>
         <p v-else class="text-gray-500">Running...</p>
       </div>
       <div class="flex-shrink-0 pr-2">
@@ -55,12 +59,13 @@
               role="menuitem"
               >View</a
             >
-            <a
-              href="#"
-              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            <button
+              @click="editRequest"
+              class="block text-left w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
               role="menuitem"
-              >Edit</a
             >
+              Edit
+            </button>
           </div>
           <div class="py-1" role="none">
             <a
@@ -71,13 +76,13 @@
             >
           </div>
           <div class="py-1" role="none">
-            <a
+            <button
               @click="deleteRequest"
-              href="#"
-              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+              class="block text-left w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
               role="menuitem"
-              >Delete</a
             >
+              Delete
+            </button>
           </div>
         </div>
       </div>
@@ -96,6 +101,10 @@ export default {
     };
   },
   methods: {
+    editRequest() {
+      this.$emit("editRequest", this.plan);
+      this.show = false;
+    },
     relativeTime(utcDatetime) {
       return moment.utc(utcDatetime).local().fromNow();
     },
