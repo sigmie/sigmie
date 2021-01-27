@@ -72,6 +72,7 @@
                         id="name"
                         type="text"
                         v-model="form.name"
+                        :errors="form.errors.name"
                         required
                         label="Name"
                       ></form-input>
@@ -270,15 +271,9 @@ export default {
   methods: {
     inertiaToVuelidate() {
       return {
-        validations: {
-          $anyError: form.errors.name,
-          $pending: form.processing,
-          $dirty: true,
-        },
-        errorMessages: {
-          required: "JSON Service account key is required.",
-          isValid: "The service account JSON isn't valid",
-        },
+        $anyError: form.errors.name,
+        $pending: form.processing,
+        $dirty: true,
       };
     },
     hideForm() {

@@ -52,6 +52,7 @@ export default {
     running,
     destroyed,
     none,
+    error
   },
   data() {
     return {
