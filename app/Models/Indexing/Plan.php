@@ -2,11 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Models;
+namespace App\Models\Indexing;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Project;
+use App\Models\Cluster;
+use App\Models\IndexingPlanDetails;
+use App\Models\Model;
 
-class IndexingPlan extends Model
+class Plan extends Model
 {
     public const TYPES = ['file'];
 
@@ -19,9 +23,9 @@ class IndexingPlan extends Model
         return $this->belongsTo(Cluster::class);
     }
 
-    public function details()
+    public function attributes()
     {
-        return $this->hasMany(IndexingPlanDetails::class, 'indexing_plan_id');
+        return $this->hasOne(IndexingPlanDetails::class);
     }
 
     /**

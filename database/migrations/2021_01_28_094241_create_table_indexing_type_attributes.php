@@ -13,16 +13,16 @@ class CreateTableIndexingTypeAttributes extends Migration
      */
     public function up()
     {
-        Schema::create('plan_attributes', function (Blueprint $table) {
+        Schema::create('indexing_plan_details', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('value');
-            $table->bigInteger('plan_id')->unsigned()->index();
+            $table->bigInteger('indexing_plan_id')->unsigned()->index();
             $table->timestamps();
         });
 
-        Schema::table('plan_attributes', function ($table) {
-            $table->foreign('plan_id')->references('id')->on('indexing_plans');
+        Schema::table('indexing_plan_details', function ($table) {
+            $table->foreign('indexing_plan_id')->references('id')->on('indexing_plans');
         });
     }
 

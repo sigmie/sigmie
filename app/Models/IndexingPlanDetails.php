@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-class PlanAttribute extends Model
+class IndexingPlanDetails extends Model
 {
     public function plan()
     {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Cluster;
 
 use App\Models\IndexingPlan;
+use App\Models\IndexingPlanDetails;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\Helpers\WithNotSubscribedUser;
 use Tests\Helpers\WithRunningCluster;
@@ -68,7 +69,7 @@ class PlanControllerTest extends TestCase
 
         $plan = $this->cluster->plans->first();
 
-        dd($plan->attributes);
+        $this->assertCount(2, $plan->details);
 
         $this->assertNotNull($plan);
         $this->assertEquals('John', $plan->name);

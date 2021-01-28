@@ -30,10 +30,10 @@ class StorePlan extends FormRequest
         return [
             'name' => ['required', 'min:4', 'max:30'],
             'description' => ['max:140'],
+            'cluster_id' => ['integer', 'required'],
             'type' => [Rule::in(IndexingPlan::TYPES), 'required'],
             'location' => ['required_if:type,file', 'active_url'],
             'frequency' => [Rule::in(IndexingPlan::FREQUENCIES), 'required'],
-            'cluster_id' => ['integer', 'required'],
             'index_alias' => ['required', 'alpha_dash']
         ];
     }
