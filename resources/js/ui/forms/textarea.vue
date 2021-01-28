@@ -5,7 +5,7 @@
       class="block text-sm font-medium leading-5 text-gray-700 sm:mt-px sm:pt-2 pb-1"
       >{{ label }}</label
     >
-    <div class="md:mt-2 sm:col-span-2">
+    <div class="mt-2">
       <div class="max-w-lg flex rounded-md shadow-sm">
         <textarea
           :id="id"

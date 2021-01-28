@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Indexing;
 use App\Http\Requests\Indexing\StorePlan;
 use App\Http\Requests\UpdatePlan;
 use App\Models\IndexingPlan;
+use App\Models\PlanAttribute;
 
 class PlanController extends \App\Http\Controllers\Controller
 {
@@ -17,7 +18,30 @@ class PlanController extends \App\Http\Controllers\Controller
 
     public function store(StorePlan $request)
     {
-        IndexingPlan::create($request->validated());
+        $validated = $request->validated();
+
+        $plan = IndexingPlan::create([
+            'type' => $validated['type'],
+            'name' => $validated['name'],
+            'description' => $validated['description'],
+            'cluster_id' => $validated['cluster_id'],
+            'frequency' => $validated['frequency']
+        ]);
+
+        if ($plan->type = 'file') {
+            PlanAttribute::create([
+                'name' => 'location',
+                'value' => $validated['location'],
+                'plan_id' => $plan->id
+            ]);
+        }
+
+        PlanAttribute::create([
+            'name' => 'index_alias',
+            'value' => $validated['index_alias'],
+            'plan_id' => $plan->id
+        ]);
+
 
         return redirect(route('indexing.indexing'));
     }

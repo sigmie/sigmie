@@ -8,12 +8,22 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class IndexingPlan extends Model
 {
+    public const TYPES = ['file'];
+
+    public const FREQUENCIES = ['daily', 'weekly', 'monthly', 'never'];
+
     use HasFactory;
 
     public function cluster()
     {
         return $this->belongsTo(Cluster::class);
     }
+
+    public function attributes()
+    {
+        return $this->hasOne(PlanAttribute::class);
+    }
+
     /**
      * Scope a query to only include users of a given type.
      *

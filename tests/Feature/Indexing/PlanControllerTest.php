@@ -61,9 +61,15 @@ class PlanControllerTest extends TestCase
             'description' => 'Bar',
             'cluster_id' => $this->cluster->id,
             'type' => 'file',
+            'frequency' => 'daily',
+            'index_alias' => 'demo_index_0111',
+            'location' => 'https://google.com'
         ]);
 
         $plan = $this->cluster->plans->first();
+
+        dd($plan->attributes);
+
         $this->assertNotNull($plan);
         $this->assertEquals('John', $plan->name);
         $this->assertEquals('Bar', $plan->description);

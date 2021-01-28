@@ -19,6 +19,7 @@
     <activities></activities>
     <create-form
       :clusterId="clusterId"
+      :types="types"
       @hide="showCreateForm = false"
       :showForm="showCreateForm"
     ></create-form>
@@ -47,7 +48,7 @@ export default {
     createForm,
     updateForm,
   },
-  props: ["plans", "clusterId"],
+  props: ["plans", "clusterId","types"],
   methods: {
     editRequest(plan) {
       this.showUpdateForm = true;

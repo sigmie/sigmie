@@ -3,7 +3,7 @@
     <legend class="block text-sm font-medium leading-5 text-gray-700">
       {{ label }}
     </legend>
-    <div class="mt-1 rounded-md shadow-sm">
+    <div class="mt-2 rounded-md shadow-sm">
       <select
         :id="id"
         :name="name"

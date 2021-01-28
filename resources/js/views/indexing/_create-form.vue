@@ -69,9 +69,8 @@
               <div class="flex-1 flex flex-col justify-between">
                 <div class="px-4 divide-y divide-gray-200 sm:px-6">
                   <div class="space-y-6 pt-6 pb-5">
-                    <div>
+                    <div class="space-y-2">
                       <form-input
-                        class="pt-2"
                         id="name"
                         type="text"
                         v-model="form.name"
@@ -79,17 +78,6 @@
                         required
                         label="Name"
                       ></form-input>
-                      <form-select
-                        class="pt-2"
-                        id="type"
-                        v-model="form.type"
-                        :errors="form.errors.type"
-                        required
-                        :items="{
-                          file: { name: 'File' },
-                        }"
-                        label="Type"
-                      ></form-select>
                       <form-textarea
                         id="description"
                         name="description"
@@ -98,6 +86,64 @@
                         label="Description"
                       >
                       </form-textarea>
+
+                      <form-select
+                        id="type"
+                        v-model="form.type"
+                        :errors="form.errors.type"
+                        required
+                        :items="formatTypes(types)"
+                        label="Type"
+                      ></form-select>
+
+                      <div class="relative my-3">
+                        <div
+                          class="absolute inset-0 flex items-center"
+                          aria-hidden="true"
+                        >
+                          <div class="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div class="relative flex justify-center">
+                          <span class="px-2 bg-white text-sm text-gray-500">
+                            Details
+                          </span>
+                        </div>
+                      </div>
+
+                      <form-input
+                        id="index_alias"
+                        type="text"
+                        v-model="form.index_alias"
+                        :errors="form.errors.index_alias"
+                        required
+                        label="Index alias"
+                      ></form-input>
+
+                      <form-input
+                        v-if="form.type === 'file'"
+                        id="location"
+                        type="text"
+                        v-model="form.location"
+                        :errors="form.errors.location"
+                        required
+                        placeholder="https://example.com"
+                        label="File Location"
+                      ></form-input>
+
+                      <form-select
+                        class="pt-2"
+                        id="frequency"
+                        v-model="form.frequency"
+                        :errors="form.errors.frequency"
+                        required
+                        :items="{
+                          never: { name: 'Never' },
+                          daily: { name: 'Every day' },
+                          weekly: { name: 'Every week' },
+                          monthly: { name: 'Every month' },
+                        }"
+                        label="Frequency"
+                      ></form-select>
                     </div>
                   </div>
                 </div>
@@ -125,9 +171,10 @@
 
 <script>
 import delay from "lodash/delay";
+import startCase from "lodash/startCase";
 
 export default {
-  props: ["showForm", "clusterId"],
+  props: ["showForm", "clusterId", "types"],
   watch: {
     showForm(newVal, oldVal) {
       this.hidden = !newVal;
@@ -151,6 +198,9 @@ export default {
         cluster_id: this.clusterId,
         name: "",
         description: "",
+        frequency: "",
+        location: "",
+        index_alias: "",
       }),
     };
   },
@@ -160,6 +210,12 @@ export default {
         $anyError: form.errors.name,
         $pending: form.processing,
         $dirty: true,
+      };
+    },
+    formatTypes(types) {
+      // TODO: Use types dynamicly
+      return {
+        file: { name: "File" },
       };
     },
     hideForm() {

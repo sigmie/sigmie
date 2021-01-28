@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Indexing;
 
 use App\Models\IndexingPlan;
+use App\Models\IndexingType;
 use App\Models\Project;
+use Database\Factories\IndexingPlanFactory;
 use Inertia\Inertia;
 
 class IndexingController extends \App\Http\Controllers\Controller
@@ -30,6 +32,6 @@ class IndexingController extends \App\Http\Controllers\Controller
         // RedirectToClusterCreateIfHasntCluster::class takes care of that
         $clusterId = $project->clusters->first()->id;
 
-        return Inertia::render('indexing/indexing', ['plans' => $plans, 'clusterId' => $clusterId]);
+        return Inertia::render('indexing/indexing', ['plans' => $plans, 'clusterId' => $clusterId, 'types' => IndexingPlan::TYPES]);
     }
 }

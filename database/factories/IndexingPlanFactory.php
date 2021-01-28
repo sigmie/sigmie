@@ -14,11 +14,14 @@ class IndexingPlanFactory extends Factory
 
     public function definition()
     {
+        $type = $this->faker->randomElement(IndexingPlan::TYPES);
+
         return [
             'name' => $this->faker->word,
             'description' => $this->faker->text(120),
             'cluster_id' => Cluster::factory(),
-            'type' => $this->faker->randomElement(['file']),
+            'frequency' => $this->faker->randomElement(IndexingPlan::FREQUENCIES),
+            'type' => $type,
             'state' => $this->faker->randomElement(['running', 'none']),
             'run_at' => $this->faker->dateTimeBetween('-5 days', 'now'),
             'deactivated_at' => $this->faker->randomElement([null, $this->faker->dateTimeBetween('-5 days', 'now')])

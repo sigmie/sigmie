@@ -1,7 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Http\Requests\Indexing;
 
+use App\Models\IndexingPlan;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -27,8 +30,11 @@ class StorePlan extends FormRequest
         return [
             'name' => ['required', 'min:4', 'max:30'],
             'description' => ['max:140'],
-            'type' => [Rule::in(['file']), 'required'],
-            'cluster_id' => ['integer', 'required']
+            'type' => [Rule::in(IndexingPlan::TYPES), 'required'],
+            'location' => ['required_if:type,file', 'active_url'],
+            'frequency' => [Rule::in(IndexingPlan::FREQUENCIES), 'required'],
+            'cluster_id' => ['integer', 'required'],
+            'index_alias' => ['required', 'alpha_dash']
         ];
     }
 }

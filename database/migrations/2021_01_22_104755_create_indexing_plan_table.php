@@ -17,6 +17,7 @@ class CreateIndexingPlanTable extends Migration
             $table->id();
             $table->string('name');
             $table->string('description');
+            $table->string('frequency');
             $table->bigInteger('cluster_id')->unsigned()->index();
             $table->string('type');
             $table->string('state')->default('none');

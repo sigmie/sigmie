@@ -1,7 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Models\IndexingPlan;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -27,7 +30,7 @@ class UpdatePlan extends FormRequest
         return [
             'name' => ['min:4', 'max:30'],
             'description' => ['max:140'],
-            'type' => [Rule::in(['file'])],
+            'type' => [Rule::in(IndexingPlan::TYPES)],
         ];
     }
 }
