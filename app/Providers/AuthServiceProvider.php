@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Gates\DashboardGate;
+use App\Models\User;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
@@ -25,6 +26,10 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         Gate::define('view-dashboard', $this->classMethodCallback(DashboardGate::class, 'view'));
+
+        Gate::define('trigger-webhook', function (User $user) {
+            return $user->isSubscribed();
+        });
     }
 
     private function classMethodCallback($class, $method)

@@ -24,6 +24,7 @@ use App\Http\Controllers\Cluster\TokenController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Indexing\IndexingController;
 use App\Http\Controllers\Indexing\PlanController;
+use App\Http\Controllers\Indexing\WebhookController;
 use App\Http\Controllers\Landing\LandingController;
 use App\Http\Controllers\Legal\LegalController;
 use App\Http\Controllers\Newsletter\SubscriptionConfirmationController;
@@ -39,6 +40,7 @@ use App\Http\Middleware\Redirects\RedirectToClusterCreateIfHasntCluster;
 use App\Http\Middleware\Redirects\RedirectToDashboardIfSubscribed;
 use App\Http\Middleware\Redirects\RedirectToRenewSubscriptionIfNotSubscribed;
 use App\Http\Middleware\Shares\ShareSelectedProjectToView;
+use Illuminate\Routing\Middleware\ValidateSignature;
 
 Route::get('/', LandingController::class)->name('landing')->middleware('guest');
 
@@ -125,7 +127,14 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
         Route::post('/indexing/plan', [PlanController::class, 'store'])->name('indexing.plan.store');
         Route::put('/indexing/plan/{plan}', [PlanController::class, 'update'])->name('indexing.plan.update');
         Route::delete('/indexing/plan/{plan}', [PlanController::class, 'destroy'])->name('indexing.plan.destroy');
+
+        Route::delete('/indexing/plan/{plan}', [PlanController::class, 'destroy'])->name('indexing.plan.destroy');
     });
 });
+
+Route::get('/indexing/webhook/{plan}', WebhookController::class)->name('indexing.webhook')->middleware([
+    ValidateSignature::class,
+    //TODO validate subscription
+]);
 
 Broadcast::routes();

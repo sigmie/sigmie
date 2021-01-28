@@ -8,6 +8,7 @@ use App\Http\Requests\Indexing\StorePlan;
 use App\Http\Requests\UpdatePlan;
 use App\Models\IndexingPlan;
 use App\Models\IndexingPlanDetails;
+use Illuminate\Support\Facades\URL;
 
 class PlanController extends \App\Http\Controllers\Controller
 {
@@ -27,6 +28,7 @@ class PlanController extends \App\Http\Controllers\Controller
             'cluster_id' => $validated['cluster_id'],
             'frequency' => $validated['frequency']
         ]);
+
 
         if ($plan->type = 'file') {
             IndexingPlanDetails::create([

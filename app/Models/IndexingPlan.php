@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\URL;
 
 class IndexingPlan extends Model
 {
@@ -22,6 +23,11 @@ class IndexingPlan extends Model
     public function details()
     {
         return $this->hasMany(IndexingPlanDetails::class, 'indexing_plan_id');
+    }
+
+    public function createWebhook()
+    {
+        $this->update(['webhook_url' => URL::signedRoute('indexing.webhook', ['plan' => $this->id])]);
     }
 
     /**

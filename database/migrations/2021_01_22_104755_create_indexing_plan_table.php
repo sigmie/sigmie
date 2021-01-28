@@ -20,6 +20,7 @@ class CreateIndexingPlanTable extends Migration
             $table->string('frequency');
             $table->bigInteger('cluster_id')->unsigned()->index();
             $table->string('type');
+            $table->string('webhook_url')->nullable();
             $table->string('state')->default('none');
             $table->dateTime('run_at')->nullable();
             $table->dateTime('deactivated_at')->nullable()->default(null);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Helpers;
 
 use App\Models\IndexingPlan;
+use App\Models\User;
 
 trait WithIndexingPlan
 {
@@ -12,10 +13,14 @@ trait WithIndexingPlan
 
     private IndexingPlan $indexingPlan;
 
-    private function withIndexingPlan()
+    private function withIndexingPlan(bool $withWebhook = false, User $user = null)
     {
-        $this->withRunningCluster();
+        $this->withRunningCluster($user);
 
         $this->indexingPlan = IndexingPlan::factory()->create(['cluster_id' => $this->cluster->id]);
+
+        if ($withWebhook) {
+            $this->indexingPlan->createWebhook();
+        }
     }
 }
