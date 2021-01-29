@@ -24,6 +24,7 @@ use App\Http\Controllers\Cluster\TokenController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Indexing\IndexingController;
 use App\Http\Controllers\Indexing\PlanController;
+use App\Http\Controllers\Indexing\TriggerController;
 use App\Http\Controllers\Indexing\WebhookController;
 use App\Http\Controllers\Landing\LandingController;
 use App\Http\Controllers\Legal\LegalController;
@@ -129,12 +130,12 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
         Route::delete('/indexing/plan/{plan}', [PlanController::class, 'destroy'])->name('indexing.plan.destroy');
 
         Route::delete('/indexing/plan/{plan}', [PlanController::class, 'destroy'])->name('indexing.plan.destroy');
+        Route::post('/indexing/plan/trigger/{plan}', TriggerController::class)->name('indexing.plan.trigger');
     });
 });
 
 Route::get('/indexing/webhook/{plan}', WebhookController::class)->name('indexing.webhook')->middleware([
     ValidateSignature::class,
-    //TODO validate subscription
 ]);
 
 Broadcast::routes();

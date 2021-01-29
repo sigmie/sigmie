@@ -1,11 +1,15 @@
 <template>
   <div v-on-clickaway="() => (showDatepicker = false)">
-    <label for="datepicker" class="font-bold mb-1 text-gray-700 block"
-      >Select Date</label
+    <label
+      v-if="label.length > 0"
+      :for="name"
+      class="block text-sm font-medium leading-5 text-gray-700 pb-1"
+      >{{ label }}</label
     >
-    <div class="relative">
+    <div class="relative rounded-md shadow-sm mt-2">
       <input type="hidden" name="date" ref="date" />
       <input
+        :name="name"
         type="text"
         readonly
         v-model="datepickerValue"
@@ -30,11 +34,6 @@
           />
         </svg>
       </div>
-
-      <!-- <div x-text="no_of_days.length"></div>
-                          <div x-text="32 - new Date(year, month, 32).getDate()"></div>
-                          <div x-text="new Date(year, month).getDay()"></div> -->
-
       <div
         class="bg-white mt-12 rounded-lg shadow-md p-4 absolute top-0 left-0"
         style="width: 17rem"
@@ -150,6 +149,7 @@ const MONTH_NAMES = [
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default {
+  props: ["name","label"],
   mounted() {
     this.initDate();
     this.getNoOfDays();

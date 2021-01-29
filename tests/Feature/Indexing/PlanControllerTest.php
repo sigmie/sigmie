@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Cluster;
+namespace Tests\Feature\Indexing;
 
 use App\Models\IndexingPlan;
 use App\Models\IndexingPlanDetails;

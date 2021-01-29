@@ -50,6 +50,7 @@
         "sigmie/nova-feature-flags": "@dev",
         "sigmie/sigmie": "^0.4.2",
         "sigmie/sigmie-laravel-testing": "@dev",
+        "spatie/laravel-ray": "^1.9",
         "tightenco/ziggy": "^0.9.3"
     },
     "require-dev": {
@@ -59,7 +60,6 @@
         "nunomaduro/larastan": "^0.6.1",
         "phpstan/phpstan": "^0.12.6",
         "phpunit/phpunit": "^9.0",
-        "spatie/ray": "^1.12",
         "squizlabs/php_codesniffer": "^3.5",
         "symfony/var-dumper": "^5"
     },

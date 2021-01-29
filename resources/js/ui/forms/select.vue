@@ -1,8 +1,8 @@
 <template>
   <div>
-    <legend class="block text-sm font-medium leading-5 text-gray-700">
+    <label :for="name" class="block text-sm font-medium leading-5 text-gray-700">
       {{ label }}
-    </legend>
+    </label>
     <div class="mt-2 rounded-md shadow-sm">
       <select
         :id="id"

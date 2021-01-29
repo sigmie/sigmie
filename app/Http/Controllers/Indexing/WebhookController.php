@@ -15,9 +15,8 @@ class WebhookController extends Controller
         $user = $plan->cluster->findUser();
 
         if (Gate::forUser($user)->allows('trigger-webhook')) {
-            // The user can update the post...
 
-            //TODO dispatch plan indexing
+            $plan->dispatch();
 
             return;
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Jobs\Indexing\ExecuteIndexingPlan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\URL;
 
@@ -14,6 +15,20 @@ class IndexingPlan extends Model
     public const FREQUENCIES = ['daily', 'weekly', 'monthly', 'never'];
 
     use HasFactory;
+
+    public static function boot()
+    {
+        parent::boot();
+
+        self::created(function (IndexingPlan $model) {
+            $model->createWebhook();
+        });
+    }
+
+    public function dispatch(): void
+    {
+        dispatch(new ExecuteIndexingPlan($this->id));
+    }
 
     public function cluster()
     {

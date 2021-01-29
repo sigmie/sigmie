@@ -130,7 +130,10 @@
                         label="File Location"
                       ></form-input>
 
-                      <form-datetime>
+                      <form-datetime
+                      label="Start date"
+                      name="date"
+                      >
 
                       </form-datetime>
 
