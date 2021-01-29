@@ -13,14 +13,10 @@ trait WithIndexingPlan
 
     private IndexingPlan $indexingPlan;
 
-    private function withIndexingPlan(bool $withWebhook = false, User $user = null)
+    private function withIndexingPlan(User $user = null)
     {
         $this->withRunningCluster($user);
 
         $this->indexingPlan = IndexingPlan::factory()->create(['cluster_id' => $this->cluster->id]);
-
-        if ($withWebhook) {
-            $this->indexingPlan->createWebhook();
-        }
     }
 }

@@ -19,7 +19,7 @@ class ExecuteIndexingPlan implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    public function __construct(private int $planId)
+    public function __construct(public int $planId)
     {
         $this->queue = 'long-running-queue';
     }
@@ -27,6 +27,8 @@ class ExecuteIndexingPlan implements ShouldQueue
     public function handle(): void
     {
         $plan = IndexingPlan::find($this->planId);
+
+        dump('handle');
     }
 
     /**

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Indexing;
 
+use App\Jobs\Indexing\ExecuteIndexingPlan;
+use Illuminate\Support\Facades\Queue;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\Helpers\WithNotSubscribedUser;
 use Tests\Helpers\WithRunningCluster;
@@ -18,7 +20,7 @@ class WebhookControllerTest extends TestCase
      */
     public function webhook_is_publicly_accessible()
     {
-        $this->withIndexingPlan(true);
+        $this->withIndexingPlan();
 
         $url = $this->indexingPlan->webhook_url;
 
@@ -34,12 +36,27 @@ class WebhookControllerTest extends TestCase
         $this->withNotSubscribedUser();
 
         $this->withIndexingPlan(
-            withWebhook: true,
             user: $this->user
         );
 
         $url = $this->indexingPlan->webhook_url;
 
         $this->get($url)->assertUnauthorized();
+    }
+
+    /**
+    * @test
+    */
+    public function plan_execute_job_is_dispatched()
+    {
+        Queue::fake();
+
+        $this->withIndexingPlan();
+
+        $url = $this->indexingPlan->webhook_url;
+
+        $this->get($url);
+
+        Queue::assertPushed(fn (ExecuteIndexingPlan $job) => $this->indexingPlan->id === $job->planId);
     }
 }
