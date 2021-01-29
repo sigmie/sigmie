@@ -53,6 +53,7 @@ Vue.component('stripe', require('./essentials/stripe').default)
 Vue.component('paddle', require('./essentials/paddle').default)
 
 Vue.component('form-input', require('./ui/forms/input').default)
+Vue.component('form-datetime', require('./ui/forms/datetime').default)
 Vue.component('form-slider', require('./ui/forms/slider').default)
 Vue.component('form-checkbox', require('./ui/forms/checkbox').default)
 Vue.component('form-textarea', require('./ui/forms/textarea').default)
