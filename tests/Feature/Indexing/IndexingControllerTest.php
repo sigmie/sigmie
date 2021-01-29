@@ -51,6 +51,7 @@ class IndexingControllerTest extends TestCase
                 'indexing_plans.description',
                 'indexing_plans.state',
                 'indexing_plans.type',
+                'indexing_plans.webhook_url',
                 'indexing_plans.deactivated_at',
                 'indexing_plans.created_at',
                 'indexing_plans.updated_at',

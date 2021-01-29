@@ -39,12 +39,20 @@ class PlanControllerTest extends TestCase
         $this->actingAs($this->user);
 
         $this->put(route('indexing.plan.update', ['plan' => $this->indexingPlan->id]), [
-            'name' => 'Johnyy'
+            'name' => 'Johny',
+            'type' => 'file',
+            'description' => 'blah',
+            'location' => 'https://github.com',
+            'index_alias' => 'bar'
         ]);
 
         $this->indexingPlan->refresh();
 
-        $this->assertEquals('Johnyy', $this->indexingPlan->name);
+        $this->assertEquals($this->indexingPlan->details_data['location'], 'https://github.com');
+        $this->assertEquals($this->indexingPlan->details_data['index_alias'], 'bar');
+        $this->assertCount(2, $this->indexingPlan->details_data); // Location and index_alias
+
+        $this->assertEquals('Johny', $this->indexingPlan->name);
     }
 
 
@@ -113,6 +121,8 @@ class PlanControllerTest extends TestCase
             'description' => 'Bar',
             'cluster_id' => $this->cluster->id,
             'type' => 'file',
+            'location' => 'https://github.com',
+            'index_alias' => 'bar'
         ]);
 
         $res->assertRedirect(route('indexing.indexing'));

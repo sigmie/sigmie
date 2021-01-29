@@ -18,6 +18,16 @@ class IndexingPlan extends Model
 
     public const FREQUENCIES = ['daily', 'weekly', 'monthly', 'never'];
 
+    protected $appends = ['details_data'];
+
+    public function getDetailsDataAttribute()
+    {
+        return $this->details()->get()
+            ->flatMap(
+                fn (IndexingPlanDetails $indexingPlanDetails) => [$indexingPlanDetails->name => $indexingPlanDetails->value]
+            )->toArray();
+    }
+
     use HasFactory;
 
     public static function boot()
@@ -41,6 +51,11 @@ class IndexingPlan extends Model
     public function cluster()
     {
         return $this->belongsTo(Cluster::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function details()

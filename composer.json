@@ -49,11 +49,12 @@
         "sigmie/app-core": "^0.11",
         "sigmie/nova-feature-flags": "@dev",
         "sigmie/sigmie": "^0.4.2",
-        "sigmie/sigmie-laravel-testing": "@dev",
-        "spatie/laravel-ray": "^1.9",
         "tightenco/ziggy": "^0.9.3"
     },
     "require-dev": {
+        "brianium/paratest": "^6.1",
+        "sigmie/sigmie-laravel-testing": "@dev",
+        "spatie/laravel-ray": "^1.9",
         "claudiodekker/inertia-laravel-testing": "^1.2",
         "filp/whoops": "^2.0",
         "mockery/mockery": "^1.0",

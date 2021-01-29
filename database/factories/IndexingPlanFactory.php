@@ -20,7 +20,6 @@ class IndexingPlanFactory extends Factory
             'name' => $this->faker->word,
             'description' => $this->faker->text(120),
             'cluster_id' => Cluster::factory(),
-            'frequency' => $this->faker->randomElement(IndexingPlan::FREQUENCIES),
             'type' => $type,
             'state' => $this->faker->randomElement([IndexingPlan::NO_STATE]),
             'run_at' => $this->faker->dateTimeBetween('-5 days', 'now'),

@@ -8,16 +8,6 @@
         class="absolute inset-y-0 pl-16 max-w-full right-0 flex"
         aria-labelledby="slide-over-heading"
       >
-        <!--
-        Slide-over panel, show/hide based on slide-over state.
-
-        Entering: "transform transition ease-in-out duration-500 sm:duration-700"
-          From: "translate-x-full"
-          To: "translate-x-0"
-        Leaving: "transform transition ease-in-out duration-500 sm:duration-700"
-          From: "translate-x-0"
-          To: "translate-x-full"
-      -->
         <div
           v-on-clickaway="show ? hideForm : () => null"
           :class="
@@ -48,22 +38,8 @@
                       class="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-white"
                     >
                       <span class="sr-only">Close panel</span>
-                      <!-- Heroicon name: x -->
-                      <svg
-                        class="h-6 w-6"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
+
+                      <icon-x class="h-6 text-gray-700"></icon-x>
                     </button>
                   </div>
                 </div>
@@ -81,6 +57,15 @@
                         required
                         label="Name"
                       ></form-input>
+                      <form-textarea
+                        id="description"
+                        name="description"
+                        v-model="form.description"
+                        :errors="form.errors.description"
+                        label="Description"
+                      >
+                      </form-textarea>
+
                       <form-select
                         class="pt-2"
                         id="type"
@@ -92,14 +77,40 @@
                         }"
                         label="Type"
                       ></form-select>
-                      <form-textarea
-                        id="description"
-                        name="description"
-                        v-model="form.description"
-                        :errors="form.errors.description"
-                        label="Description"
-                      >
-                      </form-textarea>
+
+                      <div class="relative my-3">
+                        <div
+                          class="absolute inset-0 flex items-center"
+                          aria-hidden="true"
+                        >
+                          <div class="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div class="relative flex justify-center">
+                          <span class="px-2 bg-white text-sm text-gray-500">
+                            Details
+                          </span>
+                        </div>
+                      </div>
+
+                      <form-input
+                        id="index_alias"
+                        type="text"
+                        v-model="form.index_alias"
+                        :errors="form.errors.index_alias"
+                        required
+                        label="Index alias"
+                      ></form-input>
+
+                      <form-input
+                        v-if="form.type === 'file'"
+                        id="location"
+                        type="text"
+                        v-model="form.location"
+                        :errors="form.errors.location"
+                        required
+                        placeholder="https://example.com"
+                        label="File Location"
+                      ></form-input>
                     </div>
                   </div>
                 </div>
@@ -154,6 +165,8 @@ export default {
         cluster_id: this.clusterId,
         name: "",
         description: "",
+        location: "",
+        index_alias: "",
       }),
     };
   },
@@ -163,6 +176,8 @@ export default {
       this.form.type = plan.type;
       this.form.name = plan.name;
       this.form.description = plan.description;
+      this.form.index_alias = plan.details_data.index_alias;
+      this.form.location = plan.details_data.location;
     },
     inertiaToVuelidate() {
       return {

@@ -36,7 +36,9 @@ class IndexingPlanRequestTest extends TestCase
             'name' => 'John',
             'description' => 'Bar',
             'cluster_id' => $this->cluster->id,
-            'type' => 'file', //Invalid value
+            'type' => 'file',
+            'location' => 'https://github.com',
+            'index_alias' => 'shop_id_001',
         ])->assertSessionHasNoErrors();
     }
 
@@ -49,7 +51,12 @@ class IndexingPlanRequestTest extends TestCase
 
         $this->actingAs($this->user);
 
-        $res = $this->put(route('indexing.plan.update', ['plan' => $this->indexingPlan->id]), []);
+        $res = $this->put(
+            route('indexing.plan.update', ['plan' => $this->indexingPlan->id]),
+            [
+                'index_alias' => 'foo_bar'
+            ]
+        );
 
         $res->assertSessionHasNoErrors(); // No field is required
 
@@ -69,6 +76,8 @@ class IndexingPlanRequestTest extends TestCase
             route('indexing.plan.update', ['plan' => $this->indexingPlan->id]),
             [
                 'name' => 'Valid name',
+                'location' => 'https://github.com',
+                'index_alias' => 'shop_id_001',
             ]
         )->assertSessionHasNoErrors();
     }

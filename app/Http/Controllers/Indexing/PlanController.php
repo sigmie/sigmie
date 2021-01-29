@@ -8,7 +8,6 @@ use App\Http\Requests\Indexing\StorePlan;
 use App\Http\Requests\UpdatePlan;
 use App\Models\IndexingPlan;
 use App\Models\IndexingPlanDetails;
-use Illuminate\Support\Facades\URL;
 
 class PlanController extends \App\Http\Controllers\Controller
 {
@@ -26,11 +25,9 @@ class PlanController extends \App\Http\Controllers\Controller
             'name' => $validated['name'],
             'description' => $validated['description'],
             'cluster_id' => $validated['cluster_id'],
-            'frequency' => $validated['frequency']
         ]);
 
-
-        if ($plan->type = 'file') {
+        if ($plan->type === 'file') {
             IndexingPlanDetails::create([
                 'name' => 'location',
                 'value' => $validated['location'],
@@ -44,13 +41,37 @@ class PlanController extends \App\Http\Controllers\Controller
             'indexing_plan_id' => $plan->id
         ]);
 
-
         return redirect(route('indexing.indexing'));
     }
 
     public function update(UpdatePlan $request, IndexingPlan $plan)
     {
-        $plan->fill($request->validated())->save();
+        $validated = $request->validated();
+
+        $plan->fill(
+            [
+                'type' => $validated['type'],
+                'name' => $validated['name'],
+                'description' => $validated['description'],
+            ]
+        )->save();
+
+
+        IndexingPlanDetails::where('indexing_plan_id', $plan->id)->delete();
+
+        if ($plan->type === 'file') {
+            IndexingPlanDetails::create([
+                'name' => 'location',
+                'value' => $validated['location'],
+                'indexing_plan_id' => $plan->id
+            ]);
+        }
+
+        IndexingPlanDetails::create([
+            'name' => 'index_alias',
+            'value' => $validated['index_alias'],
+            'indexing_plan_id' => $plan->id
+        ]);
 
         return redirect(route('indexing.indexing'));
     }

@@ -33,7 +33,6 @@ class StorePlan extends FormRequest
             'cluster_id' => ['integer', 'required'],
             'type' => [Rule::in(IndexingPlan::TYPES), 'required'],
             'location' => ['required_if:type,file', 'active_url'],
-            'frequency' => [Rule::in(IndexingPlan::FREQUENCIES), 'required'],
             'index_alias' => ['required', 'alpha_dash']
         ];
     }

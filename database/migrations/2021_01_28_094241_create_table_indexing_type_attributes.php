@@ -21,8 +21,9 @@ class CreateTableIndexingTypeAttributes extends Migration
             $table->timestamps();
         });
 
-        Schema::table('indexing_plan_details', function ($table) {
+        Schema::table('indexing_plan_details', function (Blueprint $table) {
             $table->foreign('indexing_plan_id')->references('id')->on('indexing_plans');
+            $table->unique(['indexing_plan_id', 'name']);
         });
     }
 

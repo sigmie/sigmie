@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Indexing;
 
 use App\Models\IndexingPlan;
+use App\Models\IndexingPlanDetails;
 use App\Models\IndexingType;
 use App\Models\Project;
 use Database\Factories\IndexingPlanFactory;

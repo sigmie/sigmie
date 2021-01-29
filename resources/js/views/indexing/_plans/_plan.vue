@@ -72,7 +72,7 @@
           </div>
           <div class="py-1" role="none">
             <button
-            @click="triggerRequest"
+              @click="triggerRequest"
               class="block text-left w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
               role="menuitem"
             >
@@ -123,10 +123,10 @@ export default {
       this.$emit("deleteRequest", this.plan.id);
       this.show = false;
     },
-    triggerRequest(){
+    triggerRequest() {
       this.$emit("triggerRequest", this.plan.id);
       this.show = false;
-    }
+    },
   },
 };
 </script>

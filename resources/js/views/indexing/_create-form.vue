@@ -8,16 +8,6 @@
         class="absolute inset-y-0 pl-16 max-w-full right-0 flex"
         aria-labelledby="slide-over-heading"
       >
-        <!--
-        Slide-over panel, show/hide based on slide-over state.
-
-        Entering: "transform transition ease-in-out duration-500 sm:duration-700"
-          From: "translate-x-full"
-          To: "translate-x-0"
-        Leaving: "transform transition ease-in-out duration-500 sm:duration-700"
-          From: "translate-x-0"
-          To: "translate-x-full"
-      -->
         <div
           v-on-clickaway="show ? hideForm : () => null"
           :class="
@@ -46,22 +36,7 @@
                       class="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-white"
                     >
                       <span class="sr-only">Close panel</span>
-                      <!-- Heroicon name: x -->
-                      <svg
-                        class="h-6 w-6"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
+                        <icon-x class="h-6 text-gray-700"></icon-x>
                     </button>
                   </div>
                 </div>
@@ -129,28 +104,6 @@
                         placeholder="https://example.com"
                         label="File Location"
                       ></form-input>
-
-                      <form-datetime
-                      label="Start date"
-                      name="date"
-                      >
-
-                      </form-datetime>
-
-                      <form-select
-                        class="pt-2"
-                        id="frequency"
-                        v-model="form.frequency"
-                        :errors="form.errors.frequency"
-                        required
-                        :items="{
-                          never: { name: 'Never' },
-                          daily: { name: 'Every day' },
-                          weekly: { name: 'Every week' },
-                          monthly: { name: 'Every month' },
-                        }"
-                        label="Frequency"
-                      ></form-select>
                     </div>
                   </div>
                 </div>
@@ -205,7 +158,6 @@ export default {
         cluster_id: this.clusterId,
         name: "",
         description: "",
-        frequency: "",
         location: "",
         index_alias: "",
       }),
@@ -220,7 +172,6 @@ export default {
       };
     },
     formatTypes(types) {
-      // TODO: Use types dynamicly
       return {
         file: { name: "File" },
       };
