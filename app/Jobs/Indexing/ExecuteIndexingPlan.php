@@ -28,7 +28,9 @@ class ExecuteIndexingPlan implements ShouldQueue
     {
         $plan = IndexingPlan::find($this->planId);
 
-        dump('handle');
+        ray('handled')->green();
+
+        $plan->update(['state' => IndexingPlan::NO_STATE]);
     }
 
     /**

@@ -12,7 +12,7 @@ return [
     * When enabled, all things logged to the application log
     * will be sent to Ray as well.
     */
-    'send_log_calls_to_ray' => env('SEND_LOG_CALLS_TO_RAY', true),
+    'send_log_calls_to_ray' => env('SEND_LOG_CALLS_TO_RAY', false),
 
     /*
     * When enabled, all things passed to `dump` or `dd`

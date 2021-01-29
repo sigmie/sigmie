@@ -22,7 +22,7 @@ class IndexingPlanFactory extends Factory
             'cluster_id' => Cluster::factory(),
             'frequency' => $this->faker->randomElement(IndexingPlan::FREQUENCIES),
             'type' => $type,
-            'state' => $this->faker->randomElement(['running', 'none']),
+            'state' => $this->faker->randomElement([IndexingPlan::NO_STATE]),
             'run_at' => $this->faker->dateTimeBetween('-5 days', 'now'),
             'deactivated_at' => $this->faker->randomElement([null, $this->faker->dateTimeBetween('-5 days', 'now')])
         ];

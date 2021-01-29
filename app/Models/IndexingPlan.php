@@ -12,6 +12,10 @@ class IndexingPlan extends Model
 {
     public const TYPES = ['file'];
 
+    public const RUNNING_STATE = 'running';
+
+    public const NO_STATE = 'none';
+
     public const FREQUENCIES = ['daily', 'weekly', 'monthly', 'never'];
 
     use HasFactory;
@@ -27,7 +31,11 @@ class IndexingPlan extends Model
 
     public function dispatch(): void
     {
-        dispatch(new ExecuteIndexingPlan($this->id));
+        if ($this->state !== self::RUNNING_STATE) {
+            $this->update(['state' => 'running']);
+
+            dispatch(new ExecuteIndexingPlan($this->id));
+        }
     }
 
     public function cluster()

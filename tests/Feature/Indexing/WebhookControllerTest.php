@@ -59,4 +59,22 @@ class WebhookControllerTest extends TestCase
 
         Queue::assertPushed(fn (ExecuteIndexingPlan $job) => $this->indexingPlan->id === $job->planId);
     }
+
+    /**
+    * @test
+    */
+    public function plan_state_is_running()
+    {
+        Queue::fake();
+
+        $this->withIndexingPlan();
+
+        $url = $this->indexingPlan->webhook_url;
+
+        $this->get($url);
+
+        $this->indexingPlan->refresh();
+
+        $this->assertEquals('running', $this->indexingPlan->state);
+    }
 }

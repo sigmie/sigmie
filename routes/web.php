@@ -135,6 +135,7 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
 });
 
 Route::get('/indexing/webhook/{plan}', WebhookController::class)->name('indexing.webhook')->middleware([
+    'throttle:6,1',
     ValidateSignature::class,
 ]);
 

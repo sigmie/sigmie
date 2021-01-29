@@ -15,7 +15,8 @@
 
         <plan
           @deleteRequest="deleteRequest"
-          @editRequest="(plan)=> $emit('editRequest',plan)"
+          @editRequest="(plan) => $emit('editRequest', plan)"
+          @triggerRequest="triggerAction"
           :plan="plan"
           v-for="(plan, index) in plans"
           :key="index"
@@ -43,6 +44,7 @@ import Plan from "./_plans/_plan.vue";
 import NewPlan from "./_plans/_new-plan.vue";
 
 const STATE_DELETE_REQUEST = "DELETE_REQUEST";
+const STATE_TRIGGER_REQUEST = "STATE_TRIGGER_REQUEST";
 const STATE_NONE = "NONE";
 
 export default {
@@ -59,10 +61,20 @@ export default {
         only: ["plans"],
       });
     },
+    triggerAction(id) {
+      this.state = STATE_TRIGGER_REQUEST;
+      let route = this.$route("indexing.plan.trigger", { plan: id});
+      this.$inertia.post(route, {
+        preserveState: false,
+        preserveScroll: false,
+        only: ["plans"],
+      });
+    },
   },
   created() {
     this.STATE_DELETE_REQUEST = STATE_DELETE_REQUEST;
     this.STATE_NONE = STATE_DELETE_REQUEST;
+    this.STATE_TRIGGER_REQUEST = STATE_TRIGGER_REQUEST;
   },
   components: {
     Plan,
