@@ -31,9 +31,10 @@ class StorePlan extends FormRequest
             'name' => ['required', 'min:4', 'max:30'],
             'description' => ['max:140'],
             'cluster_id' => ['integer', 'required'],
-            'type' => [Rule::in(IndexingPlan::TYPES), 'required'],
-            'location' => ['required_if:type,file', 'active_url'],
-            'index_alias' => ['required', 'alpha_dash']
+            'type' => ['required'],
+            'type.type' => [Rule::in(['file'])],
+            'type.location' => ['required_if:type.type,file', 'active_url'],
+            'type.index_alias' => ['required', 'alpha_dash']
         ];
     }
 }

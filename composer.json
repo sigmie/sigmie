@@ -44,6 +44,7 @@
         "laravel/telescope": "^4.0",
         "laravel/tinker": "^2.0",
         "laravel/ui": "^3.0",
+        "myclabs/php-enum": "^1.7",
         "nunomaduro/collision": "^5.0",
         "pusher/pusher-php-server": "~4.0",
         "sigmie/app-core": "^0.11",

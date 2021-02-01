@@ -6,8 +6,11 @@ namespace App\Http\Controllers\Indexing;
 
 use App\Http\Requests\Indexing\StorePlan;
 use App\Http\Requests\UpdatePlan;
+use App\Models\FileType;
 use App\Models\IndexingPlan;
 use App\Models\IndexingPlanDetails;
+use PhpParser\Node\Stmt\Catch_;
+use Throwable;
 
 class PlanController extends \App\Http\Controllers\Controller
 {
@@ -20,26 +23,21 @@ class PlanController extends \App\Http\Controllers\Controller
     {
         $validated = $request->validated();
 
-        $plan = IndexingPlan::create([
-            'type' => $validated['type'],
+        $plan = new IndexingPlan([
             'name' => $validated['name'],
             'description' => $validated['description'],
             'cluster_id' => $validated['cluster_id'],
         ]);
 
-        if ($plan->type === 'file') {
-            IndexingPlanDetails::create([
-                'name' => 'location',
-                'value' => $validated['location'],
-                'indexing_plan_id' => $plan->id
+
+        if ($validated['type']['type'] === 'file') {
+            $type = FileType::create([
+                'location' => $validated['type']['location'],
+                'index_alias' => $validated['type']['index_alias']
             ]);
         }
 
-        IndexingPlanDetails::create([
-            'name' => 'index_alias',
-            'value' => $validated['index_alias'],
-            'indexing_plan_id' => $plan->id
-        ]);
+        $plan->type()->associate($type)->save();
 
         return redirect(route('indexing.indexing'));
     }
@@ -50,28 +48,21 @@ class PlanController extends \App\Http\Controllers\Controller
 
         $plan->fill(
             [
-                'type' => $validated['type'],
                 'name' => $validated['name'],
                 'description' => $validated['description'],
             ]
-        )->save();
+        );
 
+        $plan->type->delete();
 
-        IndexingPlanDetails::where('indexing_plan_id', $plan->id)->delete();
-
-        if ($plan->type === 'file') {
-            IndexingPlanDetails::create([
-                'name' => 'location',
-                'value' => $validated['location'],
-                'indexing_plan_id' => $plan->id
+        if ($validated['type']['type'] === 'file') {
+            $type = FileType::create([
+                'location' => $validated['type']['location'],
+                'index_alias' => $validated['type']['index_alias']
             ]);
         }
 
-        IndexingPlanDetails::create([
-            'name' => 'index_alias',
-            'value' => $validated['index_alias'],
-            'indexing_plan_id' => $plan->id
-        ]);
+        $plan->type()->associate($type)->save();
 
         return redirect(route('indexing.indexing'));
     }

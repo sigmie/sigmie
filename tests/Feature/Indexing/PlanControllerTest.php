@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Indexing;
 
+use App\Models\FileType;
 use App\Models\IndexingPlan;
-use App\Models\IndexingPlanDetails;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\Helpers\WithNotSubscribedUser;
 use Tests\Helpers\WithRunningCluster;
@@ -38,23 +38,27 @@ class PlanControllerTest extends TestCase
 
         $this->actingAs($this->user);
 
+        $oldPlanId = $this->indexingPlan->type->id;
+
         $this->put(route('indexing.plan.update', ['plan' => $this->indexingPlan->id]), [
-            'name' => 'Johny',
-            'type' => 'file',
-            'description' => 'blah',
-            'location' => 'https://github.com',
-            'index_alias' => 'bar'
-        ]);
+            'name' => 'John',
+            'description' => 'Bar',
+            'type' => [
+                'type' => 'file',
+                'index_alias' => 'bar',
+                'location' => 'https://github.com'
+            ],
+        ])->assertSessionHasNoErrors();
 
         $this->indexingPlan->refresh();
 
-        $this->assertEquals($this->indexingPlan->details_data['location'], 'https://github.com');
-        $this->assertEquals($this->indexingPlan->details_data['index_alias'], 'bar');
-        $this->assertCount(2, $this->indexingPlan->details_data); // Location and index_alias
+        $this->assertEquals($this->indexingPlan->type->location, 'https://github.com');
+        $this->assertEquals('bar', $this->indexingPlan->type->index_alias);
+        $this->assertNotEquals($oldPlanId, $this->indexingPlan->type->id);
 
-        $this->assertEquals('Johny', $this->indexingPlan->name);
+        $this->assertEquals('John', $this->indexingPlan->name);
+        $this->assertEquals('Bar', $this->indexingPlan->description);
     }
-
 
     /**
      * @test
@@ -65,24 +69,27 @@ class PlanControllerTest extends TestCase
 
         $this->actingAs($this->user);
 
-        $this->post(route('indexing.plan.store'), [
+        $res = $this->post(route('indexing.plan.store'), [
             'name' => 'John',
             'description' => 'Bar',
             'cluster_id' => $this->cluster->id,
-            'type' => 'file',
-            'frequency' => 'daily',
-            'index_alias' => 'demo_index_0111',
-            'location' => 'https://google.com'
+            'type' => [
+                'type' => 'file',
+                'index_alias' => 'demo_index_0111',
+                'location' => 'https://google.com'
+            ],
         ]);
 
-        $plan = $this->cluster->plans->first();
+        $res->assertSessionHasNoErrors();
+        $res->assertRedirect(route('indexing.indexing'));
 
-        $this->assertCount(2, $plan->details);
+        $plan = $this->cluster->plans->first();
 
         $this->assertNotNull($plan);
         $this->assertEquals('John', $plan->name);
         $this->assertEquals('Bar', $plan->description);
-        $this->assertEquals('file', $plan->type);
+        $this->assertInstanceOf(FileType::class, $plan->type);
+        $this->assertTrue($plan->type->exists);
         $this->assertEquals('none', $plan->state);
         $this->assertNull($plan->run_at);
     }
@@ -105,26 +112,5 @@ class PlanControllerTest extends TestCase
         ]);
 
         $res->assertRedirect(route('subscription.missing'));
-    }
-
-    /**
-     * @test
-     */
-    public function redirect_after_store_plan()
-    {
-        $this->withRunningCluster();
-
-        $this->actingAs($this->user);
-
-        $res = $this->post(route('indexing.plan.store'), [
-            'name' => 'John',
-            'description' => 'Bar',
-            'cluster_id' => $this->cluster->id,
-            'type' => 'file',
-            'location' => 'https://github.com',
-            'index_alias' => 'bar'
-        ]);
-
-        $res->assertRedirect(route('indexing.indexing'));
     }
 }

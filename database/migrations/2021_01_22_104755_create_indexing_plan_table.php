@@ -18,16 +18,20 @@ class CreateIndexingPlanTable extends Migration
             $table->string('name');
             $table->string('description');
             $table->bigInteger('cluster_id')->unsigned()->index();
-            $table->string('type');
+            $table->bigInteger('project_id')->unsigned()->index();
+            $table->string('type_type');
+            $table->integer('type_id');
             $table->string('webhook_url')->nullable();
-            $table->string('state')->default('none');
+            $table->string('state');
             $table->dateTime('run_at')->nullable();
             $table->dateTime('deactivated_at')->nullable()->default(null);
             $table->timestamps();
         });
 
-        Schema::table('indexing_plans', function ($table) {
+        Schema::table('indexing_plans', function (Blueprint $table) {
             $table->foreign('cluster_id')->references('id')->on('clusters');
+            $table->foreign('project_id')->references('id')->on('projects');
+            $table->unique(['type_type', 'type_id']);
         });
     }
 }

@@ -36,7 +36,7 @@
                       class="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-white"
                     >
                       <span class="sr-only">Close panel</span>
-                        <icon-x class="h-6 text-gray-700"></icon-x>
+                      <icon-x class="h-6 text-gray-700"></icon-x>
                     </button>
                   </div>
                 </div>
@@ -61,15 +61,6 @@
                         label="Description"
                       >
                       </form-textarea>
-
-                      <form-select
-                        id="type"
-                        v-model="form.type"
-                        :errors="form.errors.type"
-                        required
-                        :items="formatTypes(types)"
-                        label="Type"
-                      ></form-select>
 
                       <div class="relative my-3">
                         <div
@@ -98,7 +89,7 @@
                         v-if="form.type === 'file'"
                         id="location"
                         type="text"
-                        v-model="form.location"
+                        v-model="form.type.location"
                         :errors="form.errors.location"
                         required
                         placeholder="https://example.com"
@@ -154,12 +145,12 @@ export default {
       show: this.showForm,
       hidden: true,
       form: this.$inertia.form({
-        type: null,
+        type: "file",
+        location: "",
+        index_alias: "",
         cluster_id: this.clusterId,
         name: "",
         description: "",
-        location: "",
-        index_alias: "",
       }),
     };
   },
@@ -169,11 +160,6 @@ export default {
         $anyError: form.errors.name,
         $pending: form.processing,
         $dirty: true,
-      };
-    },
-    formatTypes(types) {
-      return {
-        file: { name: "File" },
       };
     },
     hideForm() {

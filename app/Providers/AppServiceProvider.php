@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Http\Middleware\Proxy\ProxyRequest;
+use App\Models\FileType;
 use App\Models\Token;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Log;
@@ -41,6 +43,10 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }
+
+        Relation::morphMap([
+            'file.type' => FileType::class,
+        ]);
 
         Queue::before(function (JobProcessing $event) {
             $job = $event->job;

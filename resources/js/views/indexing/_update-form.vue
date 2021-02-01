@@ -19,7 +19,7 @@
         >
           <form
             @submit.prevent="
-              form.put($route('indexing.plan.update', { plan: planId }))
+              form.transform().put($route('indexing.plan.update', { plan: planId }))
             "
             class="h-full pt-16 divide-y divide-gray-200 flex flex-col bg-white shadow-xl"
           >
@@ -66,18 +66,6 @@
                       >
                       </form-textarea>
 
-                      <form-select
-                        class="pt-2"
-                        id="type"
-                        v-model="form.type"
-                        :errors="form.errors.type"
-                        required
-                        :items="{
-                          file: { name: 'File', id: 'file' },
-                        }"
-                        label="Type"
-                      ></form-select>
-
                       <div class="relative my-3">
                         <div
                           class="absolute inset-0 flex items-center"
@@ -95,18 +83,18 @@
                       <form-input
                         id="index_alias"
                         type="text"
-                        v-model="form.index_alias"
-                        :errors="form.errors.index_alias"
+                        v-model="form.type.index_alias"
+                        :errors="form.errors.type.index_alias"
                         required
                         label="Index alias"
                       ></form-input>
 
                       <form-input
-                        v-if="form.type === 'file'"
+                        v-if="form.type.type === 'file'"
                         id="location"
                         type="text"
-                        v-model="form.location"
-                        :errors="form.errors.location"
+                        v-model="form.type.location"
+                        :errors="form.errors.type.location"
                         required
                         placeholder="https://example.com"
                         label="File Location"
@@ -161,12 +149,12 @@ export default {
       hidden: true,
       planId: null,
       form: this.$inertia.form({
-        type: "",
+        type: "file",
+        location: "",
+        index_alias: "",
         cluster_id: this.clusterId,
         name: "",
         description: "",
-        location: "",
-        index_alias: "",
       }),
     };
   },
@@ -176,8 +164,8 @@ export default {
       this.form.type = plan.type;
       this.form.name = plan.name;
       this.form.description = plan.description;
-      this.form.index_alias = plan.details_data.index_alias;
-      this.form.location = plan.details_data.location;
+      this.form.index_alias = plan.type.index_alias;
+      this.form.location = plan.type.location;
     },
     inertiaToVuelidate() {
       return {

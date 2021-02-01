@@ -30,9 +30,10 @@ class UpdatePlan extends FormRequest
         return [
             'name' => ['min:4', 'max:30'],
             'description' => ['max:140'],
-            'type' => [Rule::in(IndexingPlan::TYPES)],
-            'location' => ['required_if:type,file', 'active_url'],
-            'index_alias' => ['required', 'alpha_dash']
+            'type' => ['required'],
+            'type.type' => [Rule::in(['file'])],
+            'type.location' => ['required_if:type.type,file', 'active_url'],
+            'type.index_alias' => ['required', 'alpha_dash']
         ];
     }
 }

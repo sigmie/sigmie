@@ -4,31 +4,16 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\PlanState;
 use App\Jobs\Indexing\ExecuteIndexingPlan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\URL;
 
 class IndexingPlan extends Model
 {
-    public const TYPES = ['file'];
-
-    public const RUNNING_STATE = 'running';
-
-    public const NO_STATE = 'none';
-
-    public const FREQUENCIES = ['daily', 'weekly', 'monthly', 'never'];
-
-    protected $appends = ['details_data'];
-
-    public function getDetailsDataAttribute()
-    {
-        return $this->details()->get()
-            ->flatMap(
-                fn (IndexingPlanDetails $indexingPlanDetails) => [$indexingPlanDetails->name => $indexingPlanDetails->value]
-            )->toArray();
-    }
-
-    use HasFactory;
+    protected $attributes = [
+        'state' => PlanState::NONE
+    ];
 
     public static function boot()
     {
@@ -41,11 +26,16 @@ class IndexingPlan extends Model
 
     public function dispatch(): void
     {
-        if ($this->state !== self::RUNNING_STATE) {
+        if ($this->state !== PlanState::RUNNING()) {
             $this->update(['state' => 'running']);
 
             dispatch(new ExecuteIndexingPlan($this->id));
         }
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(Project::class);
     }
 
     public function cluster()
@@ -58,24 +48,13 @@ class IndexingPlan extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function details()
+    public function type()
     {
-        return $this->hasMany(IndexingPlanDetails::class, 'indexing_plan_id');
+        return $this->morphTo();
     }
 
     public function createWebhook()
     {
         $this->update(['webhook_url' => URL::signedRoute('indexing.webhook', ['plan' => $this->id])]);
-    }
-
-    /**
-     * Scope a query to only include users of a given type.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     */
-    public function scopeForProject($query, Project $project)
-    {
-        return $query->leftJoin('clusters', 'indexing_plans.cluster_id', '=', 'clusters.id')
-            ->where('clusters.project_id', '=', $project->id);
     }
 }
