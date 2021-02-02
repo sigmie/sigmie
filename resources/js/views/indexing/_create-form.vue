@@ -134,6 +134,7 @@ export default {
     "form.recentlySuccessful": function (newVal, oldVal) {
       if (newVal === true) {
         this.form.reset();
+        this.hideForm();
       }
     },
   },

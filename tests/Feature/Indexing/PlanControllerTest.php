@@ -43,7 +43,7 @@ class PlanControllerTest extends TestCase
 
         $this->put(route('indexing.plan.update', ['plan' => $this->indexingPlan->id]), [
             'name' => 'John',
-            'description' => 'Bar',
+            'description' => '',
             'type' => [
                 'type' => 'file',
                 'index_alias' => 'bar',
@@ -58,7 +58,7 @@ class PlanControllerTest extends TestCase
         $this->assertNotEquals($oldPlanId, $this->indexingPlan->type->id);
 
         $this->assertEquals('John', $this->indexingPlan->name);
-        $this->assertEquals('Bar', $this->indexingPlan->description);
+        $this->assertEquals(null, $this->indexingPlan->description);
     }
 
     /**
@@ -74,7 +74,7 @@ class PlanControllerTest extends TestCase
             'name' => 'John',
             'description' => 'Bar',
             'cluster_id' => $this->cluster->id,
-            'project_id'=> $this->project->id,
+            'project_id' => $this->project->id,
             'type' => [
                 'type' => 'file',
                 'index_alias' => 'demo_index_0111',

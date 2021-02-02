@@ -171,12 +171,16 @@ export default {
     },
   },
   beforeMount() {
+    // Delay the reload because if the update is done
+    // on the same page then the panel is not closing
+    // and the controller redirect isnt' taken into
+    // consideration
     this.$socket
       .private(`plan.${this.plan.id}`)
       .listen(".plan.updated", (e) => {
         delay(() => {
           this.$inertia.reload({ only: ["plans"] });
-        }, 5);
+        }, 500);
       });
   },
 };

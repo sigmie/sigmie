@@ -16,7 +16,7 @@ class CreateIndexingPlanTable extends Migration
         Schema::create('indexing_plans', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('description');
+            $table->string('description')->nullable();
             $table->bigInteger('cluster_id')->unsigned()->index();
             $table->bigInteger('project_id')->unsigned()->index();
             $table->bigInteger('user_id')->unsigned()->index();

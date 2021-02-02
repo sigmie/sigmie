@@ -50,7 +50,6 @@ export default {
   props: ["plans", "clusterId"],
   methods: {
     editRequest(plan) {
-        console.log(plan);
       this.showUpdateForm = true;
       this.$refs.updateForm.edit(plan)
     },

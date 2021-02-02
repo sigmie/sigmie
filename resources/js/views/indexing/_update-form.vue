@@ -134,7 +134,7 @@ export default {
     },
     "form.recentlySuccessful": function (newVal, oldVal) {
       if (newVal === true) {
-        this.form.reset();
+        this.hideForm();
       }
     },
   },
@@ -158,7 +158,6 @@ export default {
       this.planId = plan.id;
 
       this.form.name = plan.name;
-      this.form.description = plan.description;
 
       this.form.type = plan.type_type;
       this.form.index_alias = plan.type.index_alias;
@@ -174,7 +173,7 @@ export default {
     submit() {
       let route = this.$route("indexing.plan.update", { plan: this.planId });
 
-      this.form
+      return this.form
         .transform((data) => {
           data.type = {
             type: data.type,
@@ -191,6 +190,8 @@ export default {
 
       delay(() => {
         this.hidden = true;
+
+        this.form.reset();
 
         this.$emit("hide");
       }, 700);
