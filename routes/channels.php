@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
@@ -12,6 +14,7 @@
 */
 
 use App\Models\Cluster;
+use App\Models\IndexingPlan;
 
 Broadcast::channel('App.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
@@ -23,4 +26,8 @@ Broadcast::channel('cluster.{clusterId}', function ($user, $clusterId) {
 
 Broadcast::channel('user.{userId}', function ($user, $userId) {
     return (int) $user->id === (int) $userId;
+});
+
+Broadcast::channel('plan.{planId}', function ($user, $planId) {
+    return (int) $user->id === IndexingPlan::find($planId)->user->id;
 });

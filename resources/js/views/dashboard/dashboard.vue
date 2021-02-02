@@ -7,8 +7,7 @@
       ></creating>
 
       <destroying
-        class="pt-4"
-        v-if="cluster.state === 'queued_destroy'"
+        class="pt-4" v-if="cluster.state === 'queued_destroy'"
       ></destroying>
 
       <running

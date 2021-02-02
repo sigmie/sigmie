@@ -19,7 +19,7 @@ class ProjectPolicy
 
     public function view(User $user, Project $project)
     {
-        return false;
+        return $user->id === $project->user->id;
     }
 
     public function create(User $user)

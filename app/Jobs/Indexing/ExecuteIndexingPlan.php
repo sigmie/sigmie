@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs\Indexing;
 
 use App\Enums\PlanState;
+use App\Events\Indexing\PlanWasUpdated;
 use App\Models\IndexingPlan;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -32,10 +33,14 @@ class ExecuteIndexingPlan implements ShouldQueue
         $plan->setAttribute('run_at', Carbon::now())
             ->save();
 
+        event(new PlanWasUpdated($plan->id));
+
         ray('handled')->green();
 
         $plan->setAttribute('state', PlanState::NONE())
             ->save();
+
+        event(new PlanWasUpdated($plan->id));
     }
 
     /**

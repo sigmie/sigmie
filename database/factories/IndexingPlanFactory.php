@@ -24,6 +24,7 @@ class IndexingPlanFactory extends Factory
             'description' => $this->faker->text(120),
             'cluster_id' => $cluster->id,
             'project_id' => $cluster->project->id,
+            'user_id' => $cluster->project->user->id,
             'type_type' => $type->getMorphClass(),
             'type_id' => $type->id,
             'state' => $this->faker->randomElement([PlanState::NONE()]),

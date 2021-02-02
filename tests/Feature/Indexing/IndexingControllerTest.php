@@ -8,12 +8,13 @@ use App\Http\Controllers\Indexing\PlanController;
 use App\Models\IndexingPlan;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\Helpers\WithNotSubscribedUser;
+use Tests\Helpers\WithProject;
 use Tests\Helpers\WithRunningCluster;
 use Tests\TestCase;
 
 class IndexingControllerTest extends TestCase
 {
-    use WithRunningCluster, WithNotSubscribedUser, WithIndexingPlan;
+    use WithRunningCluster, WithNotSubscribedUser, WithIndexingPlan, WithProject;
 
     /**
      * @test
@@ -26,6 +27,23 @@ class IndexingControllerTest extends TestCase
 
         $this->get(route('indexing.indexing'))
             ->assertRedirect(route('indexing.indexing', ['project' => $this->project->id]));
+    }
+
+    /**
+     * @test
+     */
+    public function can_view_only_owning_project()
+    {
+        $this->withProject();
+
+        $projectId = $this->project->id;
+
+        $this->withProject();
+        $this->actingAs($this->user);
+
+        $res = $this->get(route('indexing.indexing', ['project' => $projectId]));
+
+        $res->assertStatus(403);
     }
 
     /**

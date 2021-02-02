@@ -46,7 +46,6 @@
                 <div class="px-4 divide-y divide-gray-200 sm:px-6">
                   <div class="space-y-6 pt-6 pb-5">
                     <div class="space-y-3">
-
                       <form-input
                         id="name"
                         type="text"

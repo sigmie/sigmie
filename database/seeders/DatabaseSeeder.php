@@ -24,12 +24,17 @@ class DatabaseSeeder extends Seeder
 
         $project = Project::factory()->create(['user_id' => 1]);
         $cluster = Cluster::factory()->create(['project_id' => $project->id]);
-        $plan = IndexingPlan::factory()->create(['cluster_id' => $cluster->id, 'project_id' => $project->id]);
-        $plan = IndexingPlan::factory()->create(['cluster_id' => $cluster->id, 'project_id' => $project->id]);
-        $plan = IndexingPlan::factory()->create(['cluster_id' => $cluster->id, 'project_id' => $project->id]);
-        $plan = IndexingPlan::factory()->create(['cluster_id' => $cluster->id, 'project_id' => $project->id]);
-        $plan = IndexingPlan::factory()->create(['cluster_id' => $cluster->id, 'project_id' => $project->id]);
-        $plan = IndexingPlan::factory()->create(['cluster_id' => $cluster->id, 'project_id' => $project->id]);
-        $plan = IndexingPlan::factory()->create(['cluster_id' => $cluster->id, 'project_id' => $project->id]);
+        $plan = IndexingPlan::factory()->create([
+            'cluster_id' => $cluster->id, 'project_id' => $project->id,
+            'user_id' => $project->user->id
+        ]);
+        $plan = IndexingPlan::factory()->create([
+            'cluster_id' => $cluster->id, 'project_id' => $project->id,
+            'user_id' => $project->user->id
+        ]);
+        $plan = IndexingPlan::factory()->create([
+            'cluster_id' => $cluster->id, 'project_id' => $project->id,
+            'user_id' => $project->user->id
+        ]);
     }
 }

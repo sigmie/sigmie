@@ -19,6 +19,7 @@ class CreateIndexingPlanTable extends Migration
             $table->string('description');
             $table->bigInteger('cluster_id')->unsigned()->index();
             $table->bigInteger('project_id')->unsigned()->index();
+            $table->bigInteger('user_id')->unsigned()->index();
             $table->string('type_type');
             $table->integer('type_id');
             $table->string('webhook_url')->nullable();
@@ -31,6 +32,7 @@ class CreateIndexingPlanTable extends Migration
         Schema::table('indexing_plans', function (Blueprint $table) {
             $table->foreign('cluster_id')->references('id')->on('clusters');
             $table->foreign('project_id')->references('id')->on('projects');
+            $table->foreign('user_id')->references('id')->on('users');
             $table->unique(['type_type', 'type_id']);
         });
     }

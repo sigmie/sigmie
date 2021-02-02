@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\PlanState;
+use App\Events\Indexing\PlanWasUpdated;
 use App\Jobs\Indexing\ExecuteIndexingPlan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\URL;
@@ -30,6 +31,8 @@ class IndexingPlan extends Model
             $this->setAttribute('state', PlanState::RUNNING())->save();
 
             dispatch(new ExecuteIndexingPlan($this->id));
+
+            event(new PlanWasUpdated($this->id));
         }
     }
 

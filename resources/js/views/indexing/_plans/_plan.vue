@@ -170,6 +170,15 @@ export default {
       this.show = false;
     },
   },
+  beforeMount() {
+    this.$socket
+      .private(`plan.${this.plan.id}`)
+      .listen(".plan.updated", (e) => {
+        delay(() => {
+          this.$inertia.reload({ only: ["plans"] });
+        }, 5);
+      });
+  },
 };
 </script>
 

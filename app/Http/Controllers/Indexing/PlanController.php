@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Indexing;
 
+use App\Events\Indexing\PlanWasUpdated;
 use App\Http\Requests\Indexing\StorePlan;
 use App\Http\Requests\UpdatePlan;
 use App\Models\FileType;
@@ -29,6 +30,7 @@ class PlanController extends \App\Http\Controllers\Controller
             'description' => $validated['description'],
             'cluster_id' => $validated['cluster_id'],
             'project_id' => $validated['project_id'],
+            'user_id' => Auth::id(),
         ]);
 
 
@@ -66,12 +68,16 @@ class PlanController extends \App\Http\Controllers\Controller
 
         $plan->type()->associate($type)->save();
 
+        event(new PlanWasUpdated($plan->id));
+
         return redirect(route('indexing.indexing'));
     }
 
     public function deactivate(IndexingPlan $plan)
     {
         $plan->setAttribute('deactivated_at', Carbon::now())->save();
+
+        event(new PlanWasUpdated($plan->id));
 
         return redirect(route('indexing.indexing'));
     }
@@ -80,12 +86,16 @@ class PlanController extends \App\Http\Controllers\Controller
     {
         $plan->setAttribute('deactivated_at', null)->save();
 
+        event(new PlanWasUpdated($plan->id));
+
         return redirect(route('indexing.indexing'));
     }
 
     public function destroy(IndexingPlan $plan)
     {
         $plan->delete();
+
+        event(new PlanWasUpdated($plan->id));
 
         return redirect(route('indexing.indexing'));
     }

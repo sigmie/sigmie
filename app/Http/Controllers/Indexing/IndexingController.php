@@ -9,12 +9,15 @@ use App\Models\IndexingPlanDetails;
 use App\Models\IndexingType;
 use App\Models\Project;
 use Database\Factories\IndexingPlanFactory;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class IndexingController extends \App\Http\Controllers\Controller
 {
-    public function __invoke(Project $project)
+    public function __invoke(Project $project, Request $request)
     {
+        $this->authorize('view', $project);
+
         $plans = IndexingPlan::where('project_id', $project->id)
             ->with('type')
             ->get()
