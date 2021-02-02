@@ -131,6 +131,8 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
 
         Route::delete('/indexing/plan/{plan}', [PlanController::class, 'destroy'])->name('indexing.plan.destroy');
         Route::post('/indexing/plan/trigger/{plan}', TriggerController::class)->name('indexing.plan.trigger');
+        Route::patch('/indexing/plan/deactivate/{plan}', [PlanController::class, 'deactivate'])->name('indexing.plan.deactivate');
+        Route::patch('/indexing/plan/activate/{plan}', [PlanController::class, 'activate'])->name('indexing.plan.activate');
     });
 });
 

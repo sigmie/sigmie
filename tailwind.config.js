@@ -58,6 +58,7 @@ module.exports = {
         'theme-gray-900': '#bfcad6'
       },
       spacing: {
+        18: '4.5rem',
         72: '18rem',
         84: '21rem',
         96: '24rem',

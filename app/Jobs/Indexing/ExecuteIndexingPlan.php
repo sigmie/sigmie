@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Jobs\Indexing;
 
+use App\Enums\PlanState;
 use App\Models\IndexingPlan;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -27,10 +29,13 @@ class ExecuteIndexingPlan implements ShouldQueue
     public function handle(): void
     {
         $plan = IndexingPlan::find($this->planId);
+        $plan->setAttribute('run_at', Carbon::now())
+            ->save();
 
         ray('handled')->green();
 
-        $plan->update(['state' => IndexingPlan::NO_STATE]);
+        $plan->setAttribute('state', PlanState::NONE())
+            ->save();
     }
 
     /**

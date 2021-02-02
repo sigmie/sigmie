@@ -13,7 +13,7 @@ class CreateTableIndexingTypeAttributes extends Migration
      */
     public function up()
     {
-        Schema::create('indexing_type_file', function (Blueprint $table) {
+        Schema::create('indexing_file_types', function (Blueprint $table) {
             $table->id();
             $table->string('location');
             $table->string('index_alias');

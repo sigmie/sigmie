@@ -9,6 +9,7 @@ use App\Http\Requests\UpdatePlan;
 use App\Models\FileType;
 use App\Models\IndexingPlan;
 use App\Models\IndexingPlanDetails;
+use Carbon\Carbon;
 use PhpParser\Node\Stmt\Catch_;
 use Throwable;
 
@@ -27,6 +28,7 @@ class PlanController extends \App\Http\Controllers\Controller
             'name' => $validated['name'],
             'description' => $validated['description'],
             'cluster_id' => $validated['cluster_id'],
+            'project_id' => $validated['project_id'],
         ]);
 
 
@@ -63,6 +65,20 @@ class PlanController extends \App\Http\Controllers\Controller
         }
 
         $plan->type()->associate($type)->save();
+
+        return redirect(route('indexing.indexing'));
+    }
+
+    public function deactivate(IndexingPlan $plan)
+    {
+        $plan->setAttribute('deactivated_at', Carbon::now())->save();
+
+        return redirect(route('indexing.indexing'));
+    }
+
+    public function activate(IndexingPlan $plan)
+    {
+        $plan->setAttribute('deactivated_at', null)->save();
 
         return redirect(route('indexing.indexing'));
     }

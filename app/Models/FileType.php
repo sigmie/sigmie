@@ -4,5 +4,5 @@ namespace App\Models;
 
 class FileType extends IndexingType
 {
-    protected $table = 'indexing_type_file';
+    protected $table = 'indexing_file_types';
 }

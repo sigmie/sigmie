@@ -45,7 +45,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Relation::morphMap([
-            'file.type' => FileType::class,
+            'file' => FileType::class,
         ]);
 
         Queue::before(function (JobProcessing $event) {

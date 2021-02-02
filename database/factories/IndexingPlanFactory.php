@@ -26,7 +26,7 @@ class IndexingPlanFactory extends Factory
             'project_id' => $cluster->project->id,
             'type_type' => $type->getMorphClass(),
             'type_id' => $type->id,
-            'state' => $this->faker->randomElement([PlanState::NONE]),
+            'state' => $this->faker->randomElement([PlanState::NONE()]),
             'run_at' => $this->faker->dateTimeBetween('-5 days', 'now'),
             'deactivated_at' => $this->faker->randomElement([null, $this->faker->dateTimeBetween('-5 days', 'now')])
         ];

@@ -6,6 +6,7 @@ namespace Tests\Feature\Indexing;
 
 use App\Models\FileType;
 use App\Models\IndexingPlan;
+use Carbon\Carbon;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\Helpers\WithNotSubscribedUser;
 use Tests\Helpers\WithRunningCluster;
@@ -92,6 +93,42 @@ class PlanControllerTest extends TestCase
         $this->assertTrue($plan->type->exists);
         $this->assertEquals('none', $plan->state);
         $this->assertNull($plan->run_at);
+    }
+
+    /**
+     * @test
+     */
+    public function activate_plan()
+    {
+        $this->withIndexingPlan();
+        $this->indexingPlan->setAttribute('deactivated_at', Carbon::now())->save();
+
+        $this->actingAs($this->user);
+
+        $this->patch(route('indexing.plan.activate', ['plan' => $this->indexingPlan->id]))
+            ->assertRedirect(route('indexing.indexing'));
+
+        $this->indexingPlan->refresh();
+
+        $this->assertNull($this->indexingPlan->deactivated_at);
+    }
+
+    /**
+     * @test
+     */
+    public function deactivate_plan()
+    {
+        $this->withIndexingPlan();
+        $this->indexingPlan->setAttribute('deactivated_at', null)->save();
+
+        $this->actingAs($this->user);
+
+        $this->patch(route('indexing.plan.deactivate', ['plan' => $this->indexingPlan->id]))
+            ->assertRedirect(route('indexing.indexing'));
+
+        $this->indexingPlan->refresh();
+
+        $this->assertNotNull($this->indexingPlan->deactivated_at);
     }
 
     /**

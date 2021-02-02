@@ -1,6 +1,6 @@
 <template>
   <li
-    class="relative col-span-1 flex shadow-sm rounded-md border-t border-r border-b border-gray-200 bg-white"
+    class="relative col-span-1 flex shadow-sm cursor-pointer rounded-md border-t border-r border-b hover:bg-gray-50 border-gray-200 bg-white"
   >
     <div
       class="flex-1 flex items-center justify-between rounded-r-md truncate pl-4"
@@ -10,7 +10,7 @@
         class="h-2 w-2 bg-green-400 rounded-full"
       ></span>
       <span v-else class="h-2 w-2 bg-red-400 rounded-full"></span>
-      <div class="flex-1 px-4 py-2 text-sm truncate">
+      <div class="flex-1 px-4 py-4 text-sm truncate">
         <a href="#" class="text-gray-900 font-medium hover:text-gray-600">
           {{ plan.name }}
         </a>
@@ -18,9 +18,11 @@
           v-if="plan.state === 'none' && plan.run_at !== null"
           class="text-gray-500"
         >
-          {{ relativeTime(plan.run_at) }}
+          Last run: {{ relativeTime(plan.run_at) }}
         </p>
-        <p v-else-if="plan.run_at === null" class="text-gray-500">Never</p>
+        <p v-else-if="plan.run_at === null" class="text-gray-500">
+          Last run: Never
+        </p>
         <p v-else class="text-gray-500">Running...</p>
       </div>
       <div class="flex-shrink-0 pr-2">
@@ -47,7 +49,7 @@
         <div
           v-on-clickaway="() => (show = false)"
           :class="show ? 'block' : 'hidden'"
-          class="z-10 mx-3 origin-top-right absolute right-10 top-3 w-48 mt-1 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-200"
+          class="z-20 mx-3 origin-top-right absolute right-10 top-3 w-48 mt-1 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-200"
           role="menu"
           aria-orientation="vertical"
           aria-labelledby="pinned-project-options-menu-0"
@@ -72,11 +74,28 @@
           </div>
           <div class="py-1" role="none">
             <button
+              v-if="plan.deactivated_at === null"
               @click="triggerRequest"
               class="block text-left w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
               role="menuitem"
             >
               Trigger
+            </button>
+            <button
+              v-if="plan.deactivated_at === null"
+              @click="toogleActive"
+              class="block text-left w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+              role="menuitem"
+            >
+              Deactivate
+            </button>
+            <button
+              v-else
+              @click="toogleActive"
+              class="block text-left w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+              role="menuitem"
+            >
+              Activate
             </button>
           </div>
           <div class="py-1" role="none">
@@ -114,7 +133,30 @@ export default {
     onCopy() {
       this.copying = true;
 
-      delay(([self, index]) => (self.copying = false), 300, [this]);
+      delay(
+        ([self, index]) => {
+          self.copying = false;
+          self.show = false;
+        },
+        300,
+        [this]
+      );
+    },
+    toogleActive() {
+      if (this.plan.deactivated_at === null) {
+        let route = this.$route("indexing.plan.deactivate", {
+          plan: this.plan.id,
+        });
+
+        this.$inertia.patch(route);
+      } else {
+        let route = this.$route("indexing.plan.activate", {
+          plan: this.plan.id,
+        });
+        this.$inertia.patch(route);
+      }
+
+      this.show = false;
     },
     relativeTime(utcDatetime) {
       return moment.utc(utcDatetime).local().fromNow();

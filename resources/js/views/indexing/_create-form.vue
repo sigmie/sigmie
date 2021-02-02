@@ -18,14 +18,14 @@
           class="w-screen max-w-md"
         >
           <form
-            @submit.prevent="form.post($route('indexing.plan.store'))"
+            @submit.prevent="submit"
+            v-on:keydown.enter.prevent='submit'
             class="h-full pt-16 divide-y divide-gray-200 flex flex-col bg-white shadow-xl"
           >
             <div class="flex-1 h-0 overflow-y-auto">
-              <div class="py-6 px-4 sm:px-6 bg-gray-50">
+              <div class="py-6 px-4 sm:px-6">
                 <div class="flex items-center justify-between">
                   <h2
-                    id="slide-over-heading"
                     class="text-lg font-medium text-gray-900"
                   >
                     New Plan
@@ -36,7 +36,7 @@
                       class="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-white"
                     >
                       <span class="sr-only">Close panel</span>
-                      <icon-x class="h-6 text-gray-700"></icon-x>
+                      <icon-x class="h-6 text-gray-500"></icon-x>
                     </button>
                   </div>
                 </div>
@@ -44,13 +44,12 @@
               <div class="flex-1 flex flex-col justify-between">
                 <div class="px-4 divide-y divide-gray-200 sm:px-6">
                   <div class="space-y-6 pt-6 pb-5">
-                    <div class="space-y-2">
+                    <div class="space-y-3">
                       <form-input
                         id="name"
                         type="text"
                         v-model="form.name"
                         :errors="form.errors.name"
-                        required
                         label="Name"
                       ></form-input>
                       <form-textarea
@@ -62,7 +61,7 @@
                       >
                       </form-textarea>
 
-                      <div class="relative my-3">
+                      <div class="relative py-3">
                         <div
                           class="absolute inset-0 flex items-center"
                           aria-hidden="true"
@@ -80,8 +79,7 @@
                         id="index_alias"
                         type="text"
                         v-model="form.index_alias"
-                        :errors="form.errors.index_alias"
-                        required
+                        :errors="form.errors['type.index_alias']"
                         label="Index alias"
                       ></form-input>
 
@@ -89,9 +87,8 @@
                         v-if="form.type === 'file'"
                         id="location"
                         type="text"
-                        v-model="form.type.location"
-                        :errors="form.errors.location"
-                        required
+                        v-model="form.location"
+                        :errors="form.errors['type.location']"
                         placeholder="https://example.com"
                         label="File Location"
                       ></form-input>
@@ -149,6 +146,7 @@ export default {
         location: "",
         index_alias: "",
         cluster_id: this.clusterId,
+        project_id: this.$page.props.project_id,
         name: "",
         description: "",
       }),
@@ -161,6 +159,21 @@ export default {
         $pending: form.processing,
         $dirty: true,
       };
+    },
+    submit() {
+      let route = this.$route("indexing.plan.store");
+
+      this.form
+        .transform((data) => {
+          data.type = {
+            type: data.type,
+            location: data.location,
+            index_alias: data.index_alias,
+          };
+
+          return data;
+        })
+        .post(route);
     },
     hideForm() {
       this.show = false;

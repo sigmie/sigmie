@@ -1,12 +1,12 @@
 <template>
   <div class="mt-2 flex-row lg:flex lg:space-x-6">
     <!-- This example requires Tailwind CSS v2.0+ -->
-    <div>
+    <div class="w-full">
       <h2 class="text-gray-500 text-xs font-medium uppercase tracking-wide">
         Plans
       </h2>
       <ul
-        class="mt-3 grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 w-full"
+        class="mt-3 grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 w-full"
       >
         <new-plan
           @createRequest="() => $emit('createRequest')"
@@ -22,8 +22,8 @@
           :key="index"
         ></plan>
         <modal
-          title="Delete Plan ?"
-          content="Are you sure you want to delete plan?"
+          title="Delete"
+          content="Are you sure you want to delete this plan permanently ?"
           primaryText="Delete"
           secondaryText="Cancel"
           @primaryAction="deleteAction"

@@ -95,7 +95,7 @@ export default {
       default: "",
     },
     required: {
-      default: true,
+      default:false,
     },
     errors: {
       default: null,

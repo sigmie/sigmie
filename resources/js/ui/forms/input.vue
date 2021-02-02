@@ -29,7 +29,9 @@
       />
 
       <div
-        v-if="(validations.$anyError && validations.$pending === false) || errors"
+        v-if="
+          (validations.$anyError && validations.$pending === false) || errors
+        "
         class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
       >
         <svg
@@ -80,24 +82,20 @@
     </div>
 
     <!-- Inertia form validation -->
-    <div
-      v-for="(message, index) in errors"
-      :key="index"
-    >
-      <p
-        class="mt-2 text-sm text-red-600"
-      >
+    <div v-for="(message, index) in errors" :key="index">
+      <p class="mt-2 text-sm text-red-600">
         {{ message }}
       </p>
     </div>
 
     <!-- Vuelidate validations -->
-    <div
-      v-for="(message, rule) in errorMessages"
-      :key="rule"
-    >
+    <div v-for="(message, rule) in errorMessages" :key="rule">
       <p
-        v-if="validations[rule] === false && validations.$dirty && validations.$pending === false"
+        v-if="
+          validations[rule] === false &&
+          validations.$dirty &&
+          validations.$pending === false
+        "
         class="mt-2 text-sm text-red-600"
       >
         {{ message }}
@@ -156,7 +154,7 @@ export default {
       default: "",
     },
     required: {
-      default: true,
+      default: false,
     },
     errorMessages: {
       default: () => {},

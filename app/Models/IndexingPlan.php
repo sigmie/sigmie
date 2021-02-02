@@ -27,10 +27,17 @@ class IndexingPlan extends Model
     public function dispatch(): void
     {
         if ($this->state !== PlanState::RUNNING()) {
-            $this->update(['state' => 'running']);
+            $this->setAttribute('state', PlanState::RUNNING())->save();
 
             dispatch(new ExecuteIndexingPlan($this->id));
         }
+    }
+
+    public function setStateAttribute(PlanState $value)
+    {
+        $this->attributes['state'] = (string) $value;
+
+        return $this;
     }
 
     public function project()
