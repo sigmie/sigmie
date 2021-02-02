@@ -74,6 +74,7 @@ class PlanControllerTest extends TestCase
             'name' => 'John',
             'description' => 'Bar',
             'cluster_id' => $this->cluster->id,
+            'project_id'=> $this->project->id,
             'type' => [
                 'type' => 'file',
                 'index_alias' => 'demo_index_0111',

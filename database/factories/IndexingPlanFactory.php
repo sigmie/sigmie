@@ -29,7 +29,7 @@ class IndexingPlanFactory extends Factory
             'type_id' => $type->id,
             'state' => $this->faker->randomElement([PlanState::NONE()]),
             'run_at' => $this->faker->dateTimeBetween('-5 days', 'now'),
-            'deactivated_at' => $this->faker->randomElement([null, $this->faker->dateTimeBetween('-5 days', 'now')])
+            'deactivated_at' => null
         ];
     }
 }

@@ -11,11 +11,13 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\MockObject\MockObject;
+use Tests\Helpers\WithProject;
+use Tests\Helpers\WithRunningCluster;
 use Tests\TestCase;
 
 class ProjectPolicyTest extends TestCase
 {
-    use DatabaseTransactions;
+    use DatabaseTransactions, WithProject;
 
     /**
      * @var ProjectPolicy
@@ -119,9 +121,28 @@ class ProjectPolicyTest extends TestCase
     /**
      * @test
      */
-    public function view_returns_false()
+    public function view_returns_false_if_user_isnt_owning_project()
     {
-        $this->assertFalse($this->policy->view($this->userMock, $this->createMock(Project::class)));
+        $this->withProject();
+        $project =  $this->project;
+
+        $this->withProject();
+
+        $result = $this->policy->view($this->user, $project);
+
+        $this->assertFalse($result);
+    }
+
+    /**
+     * @test
+     */
+    public function view_returns_true_if_user_is_owning_project()
+    {
+        $this->withProject();
+
+        $result = $this->policy->view($this->user, $this->project);
+
+        $this->assertTrue($result);
     }
 
     /**

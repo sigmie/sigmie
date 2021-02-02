@@ -5,24 +5,25 @@ declare(strict_types=1);
 namespace Tests\Feature\Indexing;
 
 use App\Jobs\Indexing\ExecuteIndexingPlan;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Queue;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\Helpers\WithNotSubscribedUser;
 use Tests\Helpers\WithRunningCluster;
 use Tests\TestCase;
 
-class WebhookControllerTest extends TestCase
+class PingControllerTest extends TestCase
 {
     use WithRunningCluster, WithNotSubscribedUser, WithIndexingPlan;
 
     /**
      * @test
      */
-    public function webhook_is_publicly_accessible()
+    public function ping_url_is_publicly_accessible()
     {
         $this->withIndexingPlan();
 
-        $url = $this->indexingPlan->webhook_url;
+        $url = $this->indexingPlan->ping_url;
 
         $this->get($url)->assertOk();
         $this->assertTrue($this->user->isSubscribed());
@@ -31,7 +32,7 @@ class WebhookControllerTest extends TestCase
     /**
      * @test
      */
-    public function webhook_returns_unauthorized_if_user_is_not_subscribed()
+    public function ping_returns_unauthorized_if_user_is_not_subscribed()
     {
         $this->withNotSubscribedUser();
 
@@ -39,21 +40,39 @@ class WebhookControllerTest extends TestCase
             user: $this->user
         );
 
-        $url = $this->indexingPlan->webhook_url;
+        $url = $this->indexingPlan->ping_url;
 
         $this->get($url)->assertUnauthorized();
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
+    public function plan_cant_be_dispatched_if_not_active()
+    {
+        Queue::fake();
+
+        $this->withIndexingPlan();
+
+        $this->indexingPlan->setAttribute('deactivated_at', Carbon::now())->save();
+
+        $url = $this->indexingPlan->ping_url;
+
+        $this->get($url);
+
+        Queue::assertNotPushed(ExecuteIndexingPlan::class);
+    }
+
+    /**
+     * @test
+     */
     public function plan_execute_job_is_dispatched()
     {
         Queue::fake();
 
         $this->withIndexingPlan();
 
-        $url = $this->indexingPlan->webhook_url;
+        $url = $this->indexingPlan->ping_url;
 
         $this->get($url);
 
@@ -61,15 +80,15 @@ class WebhookControllerTest extends TestCase
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function plan_state_is_running()
     {
         Queue::fake();
 
         $this->withIndexingPlan();
 
-        $url = $this->indexingPlan->webhook_url;
+        $url = $this->indexingPlan->ping_url;
 
         $this->get($url);
 

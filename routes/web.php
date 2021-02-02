@@ -25,7 +25,7 @@ use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Indexing\IndexingController;
 use App\Http\Controllers\Indexing\PlanController;
 use App\Http\Controllers\Indexing\TriggerController;
-use App\Http\Controllers\Indexing\WebhookController;
+use App\Http\Controllers\Indexing\PingController;
 use App\Http\Controllers\Landing\LandingController;
 use App\Http\Controllers\Legal\LegalController;
 use App\Http\Controllers\Newsletter\SubscriptionConfirmationController;
@@ -136,7 +136,7 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
     });
 });
 
-Route::get('/indexing/webhook/{plan}', WebhookController::class)->name('indexing.webhook')->middleware([
+Route::get('/indexing/plan/ping/{plan}', PingController::class)->name('indexing.plan.ping')->middleware([
     'throttle:6,1',
     ValidateSignature::class,
 ]);

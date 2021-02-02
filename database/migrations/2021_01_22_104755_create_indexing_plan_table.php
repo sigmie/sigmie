@@ -22,7 +22,7 @@ class CreateIndexingPlanTable extends Migration
             $table->bigInteger('user_id')->unsigned()->index();
             $table->string('type_type');
             $table->integer('type_id');
-            $table->string('webhook_url')->nullable();
+            $table->string('ping_url')->nullable();
             $table->string('state');
             $table->dateTime('run_at')->nullable();
             $table->dateTime('deactivated_at')->nullable()->default(null);

@@ -34,7 +34,7 @@ class IndexingControllerTest extends TestCase
      */
     public function can_view_only_owning_project()
     {
-        $this->withProject();
+        $this->withRunningCluster();
 
         $projectId = $this->project->id;
 
@@ -62,20 +62,22 @@ class IndexingControllerTest extends TestCase
 
         $res = $this->get(route('indexing.indexing', ['project' => $this->cluster->project->id]));
 
-        $plans = IndexingPlan::where('cluster_id', '=', $this->cluster->id)->get(
-            [
-                'indexing_plans.id',
-                'indexing_plans.name',
-                'indexing_plans.description',
-                'indexing_plans.state',
-                'indexing_plans.type',
-                'indexing_plans.webhook_url',
-                'indexing_plans.deactivated_at',
-                'indexing_plans.created_at',
-                'indexing_plans.updated_at',
-                'indexing_plans.run_at'
-            ]
-        );
+        $plans = IndexingPlan::where('project_id', $this->project->id)
+            ->with('type')
+            ->get()
+            ->map(fn ($plan) => $plan->only([
+                'id',
+                'name',
+                'description',
+                'state',
+                'type_type',
+                'ping_url',
+                'deactivated_at',
+                'created_at',
+                'type',
+                'updated_at',
+                'run_at',
+            ]));
 
         $this->assertNotEquals(count($plans), count(IndexingPlan::all()));
 

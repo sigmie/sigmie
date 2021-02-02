@@ -64,12 +64,12 @@
             </button>
 
             <button
-              v-clipboard="() => plan.webhook_url"
+              v-clipboard="() => plan.ping_url"
               v-clipboard:success="() => onCopy()"
               class="group w-full text-left flex px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
               role="menuitem"
             >
-              {{ copying ? "Copied!" : "Copy Webhook Url" }}
+              {{ copying ? "Copied!" : "Copy Ping Url" }}
             </button>
           </div>
           <div class="py-1" role="none">

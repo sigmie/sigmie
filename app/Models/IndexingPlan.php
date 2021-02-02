@@ -21,8 +21,13 @@ class IndexingPlan extends Model
         parent::boot();
 
         self::created(function (IndexingPlan $model) {
-            $model->createWebhook();
+            $model->createPingUrl();
         });
+    }
+
+    public function isActive(): bool
+    {
+        return $this->deactivated_at === null;
     }
 
     public function dispatch(): void
@@ -63,8 +68,8 @@ class IndexingPlan extends Model
         return $this->morphTo();
     }
 
-    public function createWebhook()
+    public function createPingUrl()
     {
-        $this->update(['webhook_url' => URL::signedRoute('indexing.webhook', ['plan' => $this->id])]);
+        $this->update(['ping_url' => URL::signedRoute('indexing.plan.ping', ['plan' => $this->id])]);
     }
 }

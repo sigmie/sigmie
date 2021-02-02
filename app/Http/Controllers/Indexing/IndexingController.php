@@ -27,7 +27,7 @@ class IndexingController extends \App\Http\Controllers\Controller
                 'description',
                 'state',
                 'type_type',
-                'webhook_url',
+                'ping_url',
                 'deactivated_at',
                 'created_at',
                 'type',

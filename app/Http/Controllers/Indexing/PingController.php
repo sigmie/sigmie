@@ -8,13 +8,13 @@ use App\Models\IndexingPlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
-class WebhookController extends Controller
+class PingController extends Controller
 {
     public function __invoke(IndexingPlan $plan)
     {
         $user = $plan->cluster->findUser();
 
-        if (Gate::forUser($user)->allows('trigger-webhook')) {
+        if (Gate::forUser($user)->allows('trigger-plan') && $plan->isActive()) {
 
             $plan->dispatch();
 

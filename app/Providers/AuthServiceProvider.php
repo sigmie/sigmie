@@ -27,7 +27,7 @@ class AuthServiceProvider extends ServiceProvider
 
         Gate::define('view-dashboard', $this->classMethodCallback(DashboardGate::class, 'view'));
 
-        Gate::define('trigger-webhook', function (User $user) {
+        Gate::define('trigger-plan', function (User $user) {
             return $user->isSubscribed();
         });
     }
