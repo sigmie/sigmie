@@ -95,6 +95,17 @@ class Index implements DocumentCollectionInterface
         return $this;
     }
 
+    public function addOrUpdateDocuments(DocumentCollectionInterface | array &$docs): self
+    {
+        if (is_array($docs)) {
+            $docs = new DocumentsCollection($docs);
+        }
+
+        $this->upsertDocuments($docs);
+
+        return $this;
+    }
+
     public function addAsyncDocument(Document $element): self
     {
         $this->createDocument($element, async: true);

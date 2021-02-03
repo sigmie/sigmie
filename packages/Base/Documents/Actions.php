@@ -8,12 +8,47 @@ use Sigmie\Base\APIs\Calls\Bulk as BulkAPI;
 use Sigmie\Base\APIs\Calls\Delete as DeleteAPI;
 use Sigmie\Base\APIs\Calls\Mget as MgetAPI;
 use Sigmie\Base\APIs\Calls\Search as SearchAPI;
+use Sigmie\Base\APIs\Calls\Update as UpdateAPI;
 use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Search\Query;
 
 trait Actions
 {
-    use SearchAPI, DeleteAPI, MgetAPI, BulkAPI;
+    use SearchAPI, DeleteAPI, MgetAPI, BulkAPI, UpdateAPI;
+
+    protected function upsertDocuments(DocumentCollection $documentCollection): DocumentCollection
+    {
+        $indexName = $this->index()->getName();
+        $body = [];
+        $documentCollection->forAll(function ($index, Document $document) use (&$body) {
+            $body = [
+                ...$body,
+                ['update' => ($document->getId() !== null) ? ['_id' => $document->getId()] : (object) []],
+                ['doc' => $document->attributes(), 'doc_as_upsert' => true],
+            ];
+        });
+
+        $response = $this->bulkAPICall($indexName, $body);
+
+        $ids = [];
+
+        foreach ($response->getAll() as [$action, $item]) {
+            $ids[] = $item['_id'];
+        }
+
+        $tempCollection = $documentCollection;
+        $documentCollection = new DocumentsCollection();
+
+        // The bulk api response order is guaranteed see:
+        // https://discuss.elastic.co/t/ordering-of-responses-in-the-bulk-api/13264
+        $tempCollection->forAll(function ($index, Document $doc) use ($ids, &$documentCollection) {
+            $id = $ids[$index];
+            $doc->setId($id);
+            $documentCollection[$id] = $doc;
+        });
+
+        return $documentCollection;
+    }
 
     /**
      * @param bool $async Should we wait for the
@@ -97,7 +132,7 @@ trait Actions
 
         foreach ($values as $data) {
             $collection->addDocument(
-                new Document($data['_source'],$data['_id'])
+                new Document($data['_source'], $data['_id'])
             );
         }
 
