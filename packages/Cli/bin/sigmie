@@ -13,7 +13,7 @@ foreach ([
     if (file_exists($file)) {
         $autoload = true;
         require $file;
-        
+
         break;
     }
 }
@@ -34,12 +34,15 @@ use Sigmie\Cli\Commands\Index\Clear;
 use Sigmie\Cli\Commands\Index\Create;
 use Sigmie\Cli\Commands\ListIndices;
 use Symfony\Component\Console\Application;
+use Sigmie\Cli\Commands\Documents;
 
 $application = new Application();
 
 $application->addCommands([
     new Authenticate(),
     new ListIndices(),
+    new Documents\Show(),
+    new Documents\ListDocs(),
     new Create(),
     new Clear()
 ]);
