@@ -42,11 +42,12 @@ class ListDocs extends BaseCommand
 
         $query = new Query(['match_all' => (object) []]);
         $query->index($this->index());
-        $query->setFrom(0)->setSize(10);
+        $query->setFrom(0)->setSize(10000);
 
         $response = $this->searchAPICall($query);
 
         $data = $response->json('hits')['hits'];
+
         $table = new DocumentsTable($data, $this->index()->getName());
 
         $table->output($this->output);
