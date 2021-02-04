@@ -19,7 +19,6 @@ class ListIndices extends BaseCommand
     {
         $catResponse = $this->catAPICall('/indices', 'GET');
 
-
         $table = new IndexListTable($catResponse->json());
 
         $table->output($this->output);
