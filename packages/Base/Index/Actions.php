@@ -30,11 +30,15 @@ trait Actions
         return $index;
     }
 
-    protected function getIndex(string $identifier): Index
+    protected function getIndex(string $identifier): ?Index
     {
         $index = $this->listIndices()
             ->filter(fn (Index $index) => $index->getName() === $identifier)
             ->first();
+
+        if (is_null($index)) {
+            return $index;
+        }
 
         $index->setHttpConnection($this->getHttpConnection());
 
@@ -43,7 +47,7 @@ trait Actions
 
     protected function listIndices($offset = 0, $limit = 100): Collection
     {
-        $catResponse = $this->catAPICall('/indices', 'GET', );
+        $catResponse = $this->catAPICall('/indices', 'GET',);
 
         return (new Collection($catResponse->json()))
             ->map(function ($values) {

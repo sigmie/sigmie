@@ -54,7 +54,13 @@ class DocumentsTable implements OutputFormat
         foreach ($docs as $doc) {
             $row = [];
             foreach ($headers as $header) {
-                $row[] = (isset($doc[$header])) ? $doc[$header] : '-';
+                $docRow = (isset($doc[$header])) ? $doc[$header] : '-';
+
+                if (is_string($docRow) || is_int($docRow)) {
+                    $row[] = $docRow;
+                } elseif (is_array($docRow)) {
+                    $row[] = json_encode($docRow);
+                }
             }
 
             $table->addRow($row);

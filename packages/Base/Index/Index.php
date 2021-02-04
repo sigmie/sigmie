@@ -140,7 +140,7 @@ class Index implements DocumentCollectionInterface
         return (int) $this->count() > 0;
     }
 
-    public function remove(string $identifier): bool
+    public function remove(string|array $identifier): bool
     {
         return $this->deleteDocument($identifier);
     }

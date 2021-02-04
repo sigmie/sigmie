@@ -145,4 +145,21 @@ trait Actions
 
         return $response->json('result') === 'deleted';
     }
+
+    protected function deleteDocuments(array $ids): bool
+    {
+        $indexName = $this->index()->getName();
+
+        // { "delete" : { "_index" : "test", "_id" : "2" } }
+        $body = [];
+        foreach ($ids as $id) {
+            $body = [
+                ...$body,
+                ['delete' => ['_index' => $indexName, '_id' => $id]],
+            ];
+        }
+        $response = $this->bulkAPICall($indexName, $body);
+
+        return $response->failed() === false;
+    }
 }
