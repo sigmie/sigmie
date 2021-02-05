@@ -26,7 +26,7 @@ class MgetResponse extends ElasticsearchResponse implements DocumentCollectionIn
         $this->createCollection($this->json('docs'));
     }
 
-    public function toDocumentCollection():DocumentCollectionInterface
+    public function toDocumentCollection(): DocumentCollectionInterface
     {
         return new DocumentsCollection($this->collection->toArray());
     }
@@ -38,7 +38,7 @@ class MgetResponse extends ElasticsearchResponse implements DocumentCollectionIn
         return $this;
     }
 
-    public function addDocuments(DocumentCollectionInterface &$documents): DocumentCollectionInterface
+    public function addDocuments(array|DocumentCollectionInterface $documents): DocumentCollectionInterface
     {
         throw new LogicException('Mget response data may not be mutated');
 

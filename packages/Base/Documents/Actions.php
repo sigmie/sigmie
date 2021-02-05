@@ -9,14 +9,15 @@ use Sigmie\Base\APIs\Calls\Delete as DeleteAPI;
 use Sigmie\Base\APIs\Calls\Mget as MgetAPI;
 use Sigmie\Base\APIs\Calls\Search as SearchAPI;
 use Sigmie\Base\APIs\Calls\Update as UpdateAPI;
+use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Search\Query;
 
 trait Actions
 {
-    use SearchAPI, DeleteAPI, MgetAPI, BulkAPI, UpdateAPI;
+    use SearchAPI, DeleteAPI, MgetAPI, BulkAPI, UpdateAPI, API;
 
-    protected function upsertDocuments(DocumentCollection $documentCollection): DocumentCollection
+    protected function upsertDocuments(DocumentCollection &$documentCollection): DocumentCollection
     {
         $indexName = $this->index()->getName();
         $body = [];
@@ -131,9 +132,8 @@ trait Actions
         $values = $response->json('hits')['hits'];
 
         foreach ($values as $data) {
-            $collection->addDocument(
-                new Document($data['_source'], $data['_id'])
-            );
+            $doc = new Document($data['_source'], $data['_id']);
+            $collection->addDocument($doc);
         }
 
         return $collection;

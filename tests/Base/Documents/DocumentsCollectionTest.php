@@ -12,13 +12,13 @@ use TypeError;
 class DocumentsCollectionTest extends TestCase
 {
     /**
-    * @test
-    */
+     * @test
+     */
     public function add_documents_array()
     {
         $docs = new DocumentsCollection();
 
-         $docs2 = [
+        $docs2 = [
             new Document(['baz' => 'first baz value'], '00'),
             new Document(['baz' => 'john'], '99'),
             new Document(['baz' => 'last baz value'], '88'),
@@ -26,16 +26,16 @@ class DocumentsCollectionTest extends TestCase
 
         $docs->addDocuments($docs2);
 
-        $this->assertCount(3,$docs);
+        $this->assertCount(3, $docs);
     }
     /**
-    * @test
-    */
+     * @test
+     */
     public function add_documents_collection()
     {
         $docs = new DocumentsCollection();
 
-         $docs2 = new DocumentsCollection([
+        $docs2 = new DocumentsCollection([
             new Document(['baz' => 'first baz value'], '00'),
             new Document(['baz' => 'john'], '99'),
             new Document(['baz' => 'last baz value'], '88'),
@@ -43,11 +43,11 @@ class DocumentsCollectionTest extends TestCase
 
         $docs->addDocuments($docs2);
 
-        $this->assertCount(3,$docs);
+        $this->assertCount(3, $docs);
     }
     /**
-    * @test
-    */
+     * @test
+     */
     public function empty_methods()
     {
         $docs = new DocumentsCollection();
@@ -116,7 +116,8 @@ class DocumentsCollectionTest extends TestCase
     public function add_single_document()
     {
         $docs = new DocumentsCollection();
-        $docs->addDocument(new Document(['foo' => 'bar']));
+        $doc =  new Document(['foo' => 'bar']);
+        $docs->addDocument($doc);
 
         $this->assertCount(1, $docs);
     }

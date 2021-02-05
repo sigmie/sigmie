@@ -35,6 +35,8 @@ class TestCaseTest extends TestCase
 
         parent::tearDown();
 
-        $this->assertCount(0, $this->listIndices());
+        $indicesNames = $this->listIndices()->map(fn (Index $index) => $index->getName())->toArray();
+
+        $this->assertNotContains($indexName,$indicesNames);
     }
 }
