@@ -22,7 +22,9 @@ class DeleteTest extends TestCase
     {
         $index = $this->getTestIndex();
 
-        $index->addDocument(new Document(['foo' => 'bar'], '0'));
+        $doc = new Document(['foo' => 'bar'], '0');
+
+        $index->addDocument($doc);
 
         $this->assertCount(1, $index);
 

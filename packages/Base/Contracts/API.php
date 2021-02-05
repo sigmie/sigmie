@@ -9,22 +9,20 @@ use Sigmie\Http\Contracts\JSONRequest;
 
 trait API
 {
-    protected HttpConnection $httpConnection;
+    public static HttpConnection $httpConnection;
 
-    public function setHttpConnection(HttpConnection $connection): self
+    public function setHttpConnection(HttpConnection $connection): void
     {
-        $this->httpConnection = $connection;
-
-        return $this;
+        self::$httpConnection = $connection;
     }
 
     public function getHttpConnection()
     {
-        return $this->httpConnection;
+        return self::$httpConnection;
     }
 
     protected function httpCall(JSONRequest $request, string $responseClass = ElasticsearchResponse::class): ElasticsearchResponse
     {
-        return ($this->httpConnection)($request, $responseClass);
+        return (self::$httpConnection)($request, $responseClass);
     }
 }

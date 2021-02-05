@@ -23,6 +23,24 @@ class ActionsTest extends TestCase
     /**
      * @test
      */
+    public function index_exists()
+    {
+        $indexName = $this->testId() . '_foo';
+        $index = new Index($indexName);
+
+        $exists = $this->indexExists($index);
+
+        $this->assertFalse($exists);
+
+        $this->createIndex($index);
+
+        $exists = $this->indexExists($index);
+        $this->assertTrue($exists);
+    }
+
+    /**
+     * @test
+     */
     public function create_index(): void
     {
         $indexName = $this->testId() . '_bar';

@@ -19,8 +19,6 @@ trait ClearIndices
             if (str_starts_with($index->getName(), $this->testId())) {
                 $this->deleteIndex($index->getName());
             }
-
-            continue;
         }
     }
 }

@@ -21,9 +21,13 @@ class CountTest extends TestCase
     {
         $index = $this->getTestIndex();
 
-        $index->addDocument(new Document(['foo' => 'bar'], '0'));
-        $index->addDocument(new Document(['foo' => 'bar'], '1'));
-        $index->addDocument(new Document(['foo' => 'bar'], '2'));
+        $doc1 = new Document(['foo' => 'bar'], '0');
+        $doc2 = new Document(['foo' => 'bar'], '1');
+        $doc3 = new Document(['foo' => 'bar'], '2');
+
+        $index->addDocument($doc1);
+        $index->addDocument($doc2);
+        $index->addDocument($doc3);
 
         $res = $this->countAPICall($index->getName());
 

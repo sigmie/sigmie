@@ -19,45 +19,73 @@ class IndexTest extends TestCase
     use TestIndex;
 
     /**
-    * @test
-    */
+     * @test
+     */
+    public function mass_delete_docs()
+    {
+        $index = $this->getTestIndex();
+
+        $docs = [new Document(['bar' => 'foo'], '1'), new Document(['foo' => 'bar'], '2')];
+
+        $index->addDocuments($docs);
+
+        $this->assertCount(2, $index);
+
+        $index->remove(['1', '2']);
+
+        $this->assertCount(0, $index);
+    }
+
+    /**
+     * @test
+     */
+    public function add_or_update()
+    {
+        $index = $this->getTestIndex();
+
+        $document = new Document(['foo' => 'bar'], 'id');
+
+        $index->addDocument($document);
+
+        $document->setAttribute('foo', 'john');
+
+        $doc = $index['id'];
+
+        $this->assertEquals($doc->getAttribute('foo'), 'john');
+    }
+
+    /**
+     * @test
+     */
     public function offset_unset()
     {
         $index = $this->getTestIndex();
 
-        $docs = [
-            new Document(['foo' => 'bar'], '4'),
-        ];
+        $index->addAsyncDocuments([new Document(['foo' => 'bar'], '4'),]);
 
-        $index->addAsyncDocuments($docs);
-
-        $this->assertCount(1,$index);
+        $this->assertCount(1, $index);
 
         unset($index['4']);
 
-        $this->assertCount(0,$index);
+        $this->assertCount(0, $index);
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function offset_exists()
     {
         $index = $this->getTestIndex();
 
-        $docs = [
-            new Document(['foo' => 'bar'], '4'),
-        ];
-
-        $index->addAsyncDocuments($docs);
+        $index->addAsyncDocuments([new Document(['foo' => 'bar'], '4'),]);
 
         $this->assertTrue($index->offsetExists('4'));
         $this->assertFalse($index->offsetExists('6'));
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function offset_set_with_offset()
     {
         $index = $this->getTestIndex();
@@ -75,16 +103,13 @@ class IndexTest extends TestCase
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function offset_set()
     {
         $index = $this->getTestIndex();
 
-        $docs = [
-            new Document(['foo' => 'bar'], '4'),
-        ];
-        $index->addAsyncDocuments($docs);
+        $index->addAsyncDocuments([new Document(['foo' => 'bar'], '4'),]);
 
         $doc = new Document(['foo' => 'baz'], '89');
 
@@ -96,8 +121,8 @@ class IndexTest extends TestCase
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function offset_get()
     {
         $index = $this->getTestIndex();
@@ -117,48 +142,48 @@ class IndexTest extends TestCase
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function remove_document()
     {
         $index = $this->getTestIndex();
 
         $docs = [
-            new Document(['foo' => 'bar'],'4'),
-            new Document(['foo' => 'bar'],'89'),
+            new Document(['foo' => 'bar'], '4'),
+            new Document(['foo' => 'bar'], '89'),
             new Document(['baz' => 'john'], '2'),
         ];
 
         $index->addDocuments($docs);
 
-        $this->assertCount(3,$index);
+        $this->assertCount(3, $index);
 
         $index->remove('89');
 
-        $this->assertCount(2,$index);
+        $this->assertCount(2, $index);
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function last_and_first()
     {
         $index = $this->getTestIndex();
 
         $docs = [
-            new Document(['foo' => 'bar'],'4'),
-            new Document(['foo' => 'bar'],'5'),
-            new Document(['foo' => 'bar'],'8'),
-            new Document(['foo' => 'bar'],'9'),
-            new Document(['foo' => 'bar'],'0'),
-            new Document(['foo' => 'bar'],'89'),
+            new Document(['foo' => 'bar'], '4'),
+            new Document(['foo' => 'bar'], '5'),
+            new Document(['foo' => 'bar'], '8'),
+            new Document(['foo' => 'bar'], '9'),
+            new Document(['foo' => 'bar'], '0'),
+            new Document(['foo' => 'bar'], '89'),
             new Document(['baz' => 'john'], '2'),
         ];
 
         $index->addDocuments($docs);
 
-        $this->assertEquals('4',$index->first()->getId());
-        $this->assertEquals('2',$index->last()->getId());
+        $this->assertEquals('4', $index->first()->getId());
+        $this->assertEquals('2', $index->last()->getId());
     }
 
     public function index_to_array()
@@ -176,12 +201,12 @@ class IndexTest extends TestCase
         $array = $index->toArray();
 
         $this->assertIsArray($array);
-        $this->assertCount(3,$array);
+        $this->assertCount(3, $array);
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function index_clear_and_is_empty()
     {
         $index = $this->getTestIndex();
@@ -195,14 +220,14 @@ class IndexTest extends TestCase
 
         $index->clear();
 
-        $this->assertCount(0,$index);
+        $this->assertCount(0, $index);
         $this->assertTrue($index->isEmpty());
         $this->assertFalse($index->isNotEmpty());
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function add_documents_accepts_collection_or_array()
     {
         $index = $this->getTestIndex();
@@ -221,12 +246,12 @@ class IndexTest extends TestCase
 
         $index->addDocuments($docs);
 
-        $this->assertCount(4,$index);
+        $this->assertCount(4, $index);
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function add_document_assigns_id()
     {
         $index = $this->getTestIndex();
@@ -254,7 +279,7 @@ class IndexTest extends TestCase
 
         $this->assertNull($docs->first()->getId());
 
-        $index->addAsyncDocuments($docs);
+        $index->addAsyncDocuments($docs->toArray());
 
         $this->assertNotNull($docs->first()->getId());
         $this->assertEquals(2, $docs->last()->getId());
@@ -275,7 +300,7 @@ class IndexTest extends TestCase
 
         $this->assertNull($docs->first()->getId());
 
-        $index->addAsyncDocuments($docs);
+        $index->addAsyncDocuments($docs->toArray());
 
         $this->assertNotNull($docs->first()->getId());
     }

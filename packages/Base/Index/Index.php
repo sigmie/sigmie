@@ -23,9 +23,9 @@ class Index implements DocumentCollectionInterface
 
     protected string $name;
 
-    protected int $count;
+    protected ?int $count;
 
-    protected string $size;
+    protected ?string $size;
 
     protected int $docsCount;
 
@@ -49,7 +49,7 @@ class Index implements DocumentCollectionInterface
         $this->settings = $settings;
     }
 
-    public function setSize(string $size): self
+    public function setSize(?string $size): self
     {
         $this->size = $size;
 
@@ -81,10 +81,12 @@ class Index implements DocumentCollectionInterface
     {
         $this->createDocument($element, async: false);
 
+        $element->setIndex($this);
+
         return $this;
     }
 
-    public function addDocuments(DocumentCollectionInterface | array &$docs): self
+    public function addDocuments(array|DocumentCollectionInterface $docs): self
     {
         if (is_array($docs)) {
             $docs = new DocumentsCollection($docs);
@@ -95,10 +97,10 @@ class Index implements DocumentCollectionInterface
         return $this;
     }
 
-    public function addOrUpdateDocuments(DocumentCollectionInterface | array &$docs): self
+    public function addOrUpdateDocuments(array|DocumentCollectionInterface $docs): self
     {
         if (is_array($docs)) {
-            $docs = new DocumentsCollection($docs);
+            $docs =new DocumentsCollection($docs);
         }
 
         $this->upsertDocuments($docs);
@@ -113,7 +115,7 @@ class Index implements DocumentCollectionInterface
         return $this;
     }
 
-    public function addAsyncDocuments(DocumentCollectionInterface | array $docs): self
+    public function addAsyncDocuments(array|DocumentCollectionInterface $docs): self
     {
         if (is_array($docs)) {
             $docs = new DocumentsCollection($docs);
@@ -140,9 +142,13 @@ class Index implements DocumentCollectionInterface
         return (int) $this->count() > 0;
     }
 
-    public function remove(string|array $identifier): bool
+    public function remove(string|array $ids): bool
     {
-        return $this->deleteDocument($identifier);
+        if (is_array($ids)) {
+            return $this->deleteDocuments($ids);
+        }
+
+        return $this->deleteDocument($ids);
     }
 
     public function contains(string $identifier): bool
@@ -164,7 +170,7 @@ class Index implements DocumentCollectionInterface
         }
     }
 
-    public function set(string $identifier, Document $document)
+    public function set(string $identifier, Document &$document)
     {
         $document->setId($identifier);
 

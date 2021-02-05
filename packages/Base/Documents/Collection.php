@@ -19,7 +19,7 @@ trait Collection
         return $this;
     }
 
-    public function addDocuments(DocumentCollection|array &$documents): self
+    public function addDocuments(array|DocumentCollection $documents): self
     {
         if (is_array($documents))
         {

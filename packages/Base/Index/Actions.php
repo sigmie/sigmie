@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
+use PhpParser\Node\Expr\Instanceof_;
 use Sigmie\Base\APIs\Calls\Cat as CatAPI;
 use Sigmie\Base\APIs\Calls\Index as IndexAPI;
 use Sigmie\Support\Collection;
+
+use function PHPUnit\Framework\isInstanceOf;
 
 trait Actions
 {
@@ -25,10 +28,16 @@ trait Actions
 
         $this->indexAPICall("/{$index->getName()}", 'PUT', $settings);
 
-        $index->setHttpConnection($this->getHttpConnection());
+        $index->setHttpConnection(self::$httpConnection);
 
         return $index;
     }
+
+    protected function indexExists(Index $index): bool
+    {
+        return $this->getIndex($index->getName()) instanceof Index;
+    }
+
 
     protected function getIndex(string $identifier): ?Index
     {
@@ -50,7 +59,7 @@ trait Actions
         $catResponse = $this->catAPICall('/indices', 'GET',);
 
         return (new Collection($catResponse->json()))
-            ->map(function ($values) {
+            ->map(function ($values) use ($catResponse) {
                 $index = new Index($values['index']);
                 $index->setHttpConnection($this->getHttpConnection());
                 $index->setSize($values['store.size']);
