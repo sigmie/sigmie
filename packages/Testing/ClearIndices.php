@@ -11,28 +11,16 @@ trait ClearIndices
 {
     use IndexActions;
 
-    private ?array $existingIndices = null;
-
-    private function settingUp(): bool
-    {
-        return $this->existingIndices === null;
-    }
+    abstract protected function testId(): string;
 
     public function clearIndices()
     {
-        $indices = $this->listIndices()->map(fn (Index $index) => $index->getName())->toArray();
-
-        if ($this->settingUp()) {
-            $this->existingIndices = $indices;
-            return;
-        }
-
         foreach ($this->listIndices() as $index) {
-            if (in_array($index->getName(), $this->existingIndices)) {
-                continue;
+            if (str_starts_with($index->getName(), $this->testId())) {
+                $this->deleteIndex($index->getName());
             }
 
-            $this->deleteIndex($index->getName());
+            continue;
         }
     }
 }
