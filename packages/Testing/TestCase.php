@@ -28,6 +28,13 @@ class TestCase extends \PHPUnit\Framework\TestCase
         $this->tearDownSigmieTesting($uses);
     }
 
+    protected function testId(): string
+    {
+        $class = strtolower(static::class);
+        $class = str_replace('\\', '_', $class);
+        return  $class . '_' . $this->getName();
+    }
+
     public function assertIndexExists(string $name)
     {
         $index = $this->getIndex($name);

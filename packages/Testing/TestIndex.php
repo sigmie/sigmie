@@ -13,9 +13,11 @@ trait TestIndex
 
     private $testIndexName;
 
+    abstract protected function testId(): string;
+
     public function createTestIndex()
     {
-        $this->testIndexName = bin2hex(openssl_random_pseudo_bytes(10));
+        $this->testIndexName = $this->testId() . '_' . bin2hex(openssl_random_pseudo_bytes(10));
 
         $this->createIndex(new Index($this->testIndexName));
     }

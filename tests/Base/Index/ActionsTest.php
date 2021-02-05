@@ -25,9 +25,11 @@ class ActionsTest extends TestCase
      */
     public function create_index(): void
     {
-        $this->createIndex(new Index('bar'));
+        $indexName = $this->testId() . '_bar';
 
-        $this->assertIndexExists('bar');
+        $this->createIndex(new Index($indexName));
+
+        $this->assertIndexExists($indexName);
     }
 
     /**
@@ -35,11 +37,14 @@ class ActionsTest extends TestCase
      */
     public function delete_index()
     {
-        $this->createIndex(new Index('bar'));
+        $indexName = $this->testId() . '_bar';
+        $this->createIndex(new Index($indexName));
 
-        $this->deleteIndex('bar');
+        $this->deleteIndex($indexName);
 
-        $this->assertCount(0, $this->listIndices());
+        $array = $this->listIndices()->map(fn (Index $index) => $index->getName())->toArray();
+
+        $this->assertNotContains($indexName, $array);
     }
 
     /**
@@ -47,12 +52,18 @@ class ActionsTest extends TestCase
      */
     public function list_indices()
     {
-        $this->createIndex(new Index('foo'));
-        $this->createIndex(new Index('bar'));
+        $fooIndexName = $this->testId() . '_foo';
+        $barIndexName = $this->testId() . '_bar';
+
+        $this->createIndex(new Index($fooIndexName));
+        $this->createIndex(new Index($barIndexName));
 
         $list = $this->listIndices();
+        $array = $list->map(fn (Index $index) => $index->getName())->toArray();
 
-        $this->assertCount(2, $list);
+        $this->assertContains($fooIndexName, $array);
+        $this->assertContains($barIndexName, $array);
+
         $this->assertInstanceOf(Collection::class, $list);
 
         $list->forAll(fn ($key, $index) => $this->assertInstanceOf(Index::class, $index));

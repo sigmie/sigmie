@@ -150,7 +150,6 @@ trait Actions
     {
         $indexName = $this->index()->getName();
 
-        // { "delete" : { "_index" : "test", "_id" : "2" } }
         $body = [];
         foreach ($ids as $id) {
             $body = [
