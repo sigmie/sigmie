@@ -7,6 +7,7 @@ namespace Sigmie\Base\APIs\Calls;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\RequiresIndexAware;
+use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Http\JSONRequest;
 
@@ -22,7 +23,7 @@ trait Delete
             $uri = Uri::withQueryValue($uri, 'refresh', 'wait_for');
         }
 
-        $esRequest = new JSONRequest('DELETE', $uri);
+        $esRequest = new ElasticsearchRequest('DELETE', $uri);
 
         return $this->httpCall($esRequest);
     }

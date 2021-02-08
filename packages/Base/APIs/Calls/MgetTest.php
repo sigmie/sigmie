@@ -1,4 +1,4 @@
-\PHPUnit\Framework\TestCase?php
+<?php
 
 declare(strict_types=1);
 

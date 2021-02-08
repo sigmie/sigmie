@@ -75,7 +75,7 @@ class JSONResponse implements ArrayAccess
         return $this->response->getHeaderLine($header);
     }
 
-    public function failed()
+    public function failed(): bool
     {
         return $this->serverError() || $this->clientError();
     }

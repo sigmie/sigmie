@@ -56,7 +56,7 @@ class Document
     {
         $this->attributes[$attribute] = $value;
 
-        if (isset(self::$httpConnection)) {
+        if (isset(self::$httpConnection) && is_null($this->index) === false) {
             $docs = $this->newCollection()->addDocument($this);
             $this->upsertDocuments($docs);
         }

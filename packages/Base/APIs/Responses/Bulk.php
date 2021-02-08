@@ -7,6 +7,7 @@ namespace Sigmie\Base\APIs\Responses;
 use Exception;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\ResponseInterface;
+use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Exceptions\BulkException;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Support\Collection;
@@ -30,7 +31,7 @@ class Bulk extends ElasticsearchResponse
         $this->createCollections($this->json('items'));
     }
 
-    public function exception(Request $request): Exception
+    public function exception(ElasticsearchRequest $request): Exception
     {
         return new BulkException($this->failCollection);
     }
@@ -50,7 +51,7 @@ class Bulk extends ElasticsearchResponse
         return $this->successCollection;
     }
 
-    public function failed()
+    public function failed(): bool
     {
         return parent::failed() || $this->json('errors');
     }

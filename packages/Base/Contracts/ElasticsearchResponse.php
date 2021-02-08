@@ -6,8 +6,9 @@ namespace Sigmie\Base\Contracts;
 
 use Exception;
 use GuzzleHttp\Psr7\Request;
+use Sigmie\Http\Contracts\JSONResponse;
 
-interface ElasticsearchResponse
+interface ElasticsearchResponse extends JSONResponse
 {
-    public function exception(Request $request): Exception;
+    public function exception(ElasticsearchRequest $request): Exception;
 }

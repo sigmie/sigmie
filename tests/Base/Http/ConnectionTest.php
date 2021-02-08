@@ -7,6 +7,7 @@ namespace Sigmie\Base\Tests\Http;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Exceptions\ElasticsearchException;
 use Sigmie\Base\Http\Connection;
+use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Base\Index\Index;
 use Sigmie\Http\JSONClient;
@@ -38,7 +39,7 @@ class ConnectionTest extends TestCase
     {
         $request = new Connection(JSONClient::create(getenv('ES_HOST')));
 
-        $res = $request(new JSONRequest('GET', new Uri('/')));
+        $res = $request(new ElasticsearchRequest('GET', new Uri('/')));
 
         $this->assertInstanceOf(ElasticsearchResponse::class, $res);
         $this->assertFalse($res->failed());

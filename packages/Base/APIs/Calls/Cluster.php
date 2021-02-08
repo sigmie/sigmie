@@ -6,6 +6,7 @@ namespace Sigmie\Base\APIs\Calls;
 
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
+use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Http\JSONRequest;
 
@@ -17,7 +18,7 @@ trait Cluster
     {
         $uri = new Uri('/_cluster' . $path);
 
-        $esRequest = new JSONRequest('GET', $uri, []);
+        $esRequest = new ElasticsearchRequest('GET', $uri, []);
 
         return $this->httpCall($esRequest);
     }

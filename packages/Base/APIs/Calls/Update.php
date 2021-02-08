@@ -6,6 +6,7 @@ namespace Sigmie\Base\APIs\Calls;
 
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
+use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Http\JSONRequest;
 
@@ -17,8 +18,8 @@ trait Update
     {
         $uri = Uri::withQueryValue(new Uri("/{$indexName}/_update/{$id}"), 'format', 'json');
 
-        $esRequest = new JSONRequest('POST', $uri);
+        $esRequest = new ElasticsearchRequest('POST', $uri);
 
-        return $this->httpCall($esRequest, ElasticsearchResponse::class);
+        return $this->httpCall($esRequest);
     }
 }
