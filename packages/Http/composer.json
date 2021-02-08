@@ -14,22 +14,17 @@
         }
     ],
     "require": {
-        "php": "^8.0"
+        "php": "^8.0",
+        "guzzlehttp/guzzle": "^7.2"
     },
     "autoload": {
         "psr-4": {
             "Sigmie\\HTTP\\": ""
         }
     },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "0.x-dev"
-        }
-    },
     "suggest": {},
     "config": {
         "sort-packages": true
     },
-    "minimum-stability": "dev",
-    "prefer-stable": true
+    "minimum-stability": "dev"
 }
