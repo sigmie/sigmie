@@ -15,17 +15,12 @@
     ],
     "require": {
         "php": "^7.4",
-        "illuminate/collections": "9.x-dev",
-        "symfony/console": "^5.1"
+        "symfony/console": "^5.2",
+        "sigmie/base": "^0.6"
     },
     "autoload": {
         "psr-4": {
             "Sigmie\\Cli\\": ""
-        }
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "0.x-dev"
         }
     },
     "suggest": {},
@@ -35,6 +30,5 @@
     "bin": [
         "bin/sigmie"
     ],
-    "minimum-stability": "dev",
-    "prefer-stable": true
+    "minimum-stability": "dev"
 }
