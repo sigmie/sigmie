@@ -9,7 +9,7 @@ use Sigmie\Http\Contracts\JSONRequest;
 
 trait API
 {
-    public static HttpConnection $httpConnection;
+    private static HttpConnection $httpConnection;
 
     public function setHttpConnection(HttpConnection $connection): void
     {
