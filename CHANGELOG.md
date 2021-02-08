@@ -7,10 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2021-02-08
+
 - Add document `upsert` actions
 - Index mass document deletion
-
-## [0.5.0] - 2021-01-20
+- Allow only array on document collection actions
 
 [Unreleased]: https://github.com/sigmie/app-core/compare/v0.5.0...HEAD
 [0.5.0]: https://github.com/sigmie/sigmie/compare/v0.4.3...v0.5.0
