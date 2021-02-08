@@ -9,5 +9,5 @@ use Sigmie\Http\Contracts\JSONRequest;
 
 interface HttpConnection
 {
-    public function __invoke(JSONRequest $request, string $responseClass = ElasticsearchResponse::class): ElasticsearchResponse;
+    public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse;
 }

@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Sigmie\Base\Exceptions;
 
 use Exception;
+use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
-use Sigmie\Http\Contracts\JSONRequest;
 
 class ElasticsearchException extends Exception
 {
-    protected JSONRequest $request;
+    protected ElasticsearchRequest $request;
 
     protected ElasticsearchResponse $response;
 
-    public function __construct(JSONRequest $request, ElasticsearchResponse $response)
+    public function __construct(ElasticsearchRequest $request, ElasticsearchResponse $response)
     {
         $text = $response->json('error')['type'];
         $text = str_replace('_', ' ', $text);

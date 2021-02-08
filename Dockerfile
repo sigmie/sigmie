@@ -5,7 +5,7 @@ FROM debian:buster
 ENV DEBIAN_FRONTEND noninteractive
 
 # app directory
-WORKDIR /var/www/app
+WORKDIR /var/www/sigmie
 
 # time zone
 ENV TZ=UTC

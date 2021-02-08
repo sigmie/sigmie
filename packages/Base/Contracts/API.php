@@ -21,8 +21,8 @@ trait API
         return self::$httpConnection;
     }
 
-    protected function httpCall(JSONRequest $request, string $responseClass = ElasticsearchResponse::class): ElasticsearchResponse
+    protected function httpCall(ElasticsearchRequest $request): ElasticsearchResponse
     {
-        return (self::$httpConnection)($request, $responseClass);
+        return (self::$httpConnection)($request);
     }
 }
