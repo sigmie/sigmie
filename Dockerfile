@@ -6,6 +6,8 @@ ENV DEBIAN_FRONTEND noninteractive
 # app directory
 WORKDIR /var/www/app
 
+USER www-data
+
 # time zone
 ENV TZ=UTC
 
@@ -19,7 +21,7 @@ RUN mkdir -p /run/php && chown www-data:www-data /run/php
 RUN apt-get update
 
 # install system dependencies
-RUN apt-get install -y git unzip zip vim wget curl nginx supervisor curl
+RUN apt-get install -y git unzip zip vim wget curl nginx supervisor curl sudo
 
 RUN apt -y install lsb-release apt-transport-https ca-certificates && \
     wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg && \
@@ -61,8 +63,16 @@ COPY .docker/supervisor/stop-supervisor /bin
 # copy the scheduler script into container's path
 COPY .docker/supervisor/scheduler /bin
 
-# Assign app folder ownership to www-data and set permissions
-RUN chown -R www-data:www-data /var/www/app && \
+# create sudoer web user without password
+RUN adduser --disabled-password --gecos '' web && \
+    adduser web sudo && \
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+# set web as default user
+USER web
+
+# assign app folder ownership to www-data and set permissions
+RUN chown -R web:www-data /var/www/app && \
     find /var/www/app -type f -exec chmod 644 {} \; && \
     find /var/www/app -type d -exec chmod 755 {} \;
 
