@@ -15,10 +15,11 @@ services:
      - "proxy.localhost:127.0.0.1"
     ports:
         - '8080:8080'
+        - '3000:3000'
     volumes:
-        - ./:/var/www/app:delegated
+        # - ./:/var/www/app:delegated
         - ~/.composer:/root/.composer
-        - ~/.npm:/root/.npm
+        #- ~/.npm:/root/.npm
     depends_on:
       - redis
       - db
