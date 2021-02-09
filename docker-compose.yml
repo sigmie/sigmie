@@ -19,7 +19,6 @@ services:
     volumes:
         # - ./:/var/www/app:delegated
         - ~/.composer:/root/.composer
-        #- ~/.npm:/root/.npm
     depends_on:
       - redis
       - db
