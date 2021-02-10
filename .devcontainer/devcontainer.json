@@ -8,8 +8,10 @@
     "settings": {
         "terminal.integrated.shell.linux": "/bin/bash"
     },
+    "initializeCommand" : "git pull origin $(git rev-parse --abbrev-ref HEAD)",
+    "postAttachCommand": "git pull origin $(git rev-parse --abbrev-ref HEAD)",
+    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y git vim curl zsh",
     "runArgs": ["--env-file","/dev/null"],
-    //"postCreateCommand": "add-apt-repository ppa:ondrej/php --remove -y && apt-get update && apt-get install -y npm && npm install -g yarn",
     "overrideCommand": false,
     "extensions": [
         "bmewburn.vscode-intelephense-client",
