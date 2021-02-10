@@ -9,6 +9,7 @@ use Sigmie\Base\Index\Index;
 use Sigmie\Cli\BaseCommand;
 use Sigmie\Cli\Commands\ListIndices;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\StringInput;
 
 class Create extends BaseCommand
@@ -20,8 +21,17 @@ class Create extends BaseCommand
     public function executeCommand(): int
     {
         $name = $this->input->getArgument('name');
+        $alias = $this->input->getOption('alias');
 
-        $this->createIndex(new Index($name));
+        $index = new Index($name);
+
+        $this->createIndex($index);
+
+        if (is_null($alias) === false) {
+            $index->setAlias($alias);
+
+            $index->removeAlias();
+        }
 
         $this->output->writeln("Index {$name} created.");
 
@@ -31,6 +41,8 @@ class Create extends BaseCommand
     protected function configure()
     {
         $this->addArgument('name', InputArgument::REQUIRED, 'Index name');
+
+        $this->addOption('alias', 'a', InputOption::VALUE_OPTIONAL, 'Index alias');
 
         parent::configure();
     }

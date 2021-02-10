@@ -2,7 +2,6 @@
 <?php
 
 $autoload = false;
-
 foreach ([
     __DIR__ . '/../../../../../../vendor/autoload.php', //Monorepo global folder
     __DIR__ . '/../../../vendor/autoload.php', //Monorepo local folder
@@ -29,22 +28,33 @@ if ($autoload === false) {
     die(1);
 }
 
+
 use Sigmie\Cli\Commands\Authenticate;
-use Sigmie\Cli\Commands\Index\Clear;
-use Sigmie\Cli\Commands\Index\Create;
-use Sigmie\Cli\Commands\ListIndices;
+use Sigmie\Cli\Commands\Index;
+use Sigmie\Cli\Commands\Alias;
 use Symfony\Component\Console\Application;
 use Sigmie\Cli\Commands\Documents;
+use Sigmie\Cli\ErrorListener;
+use Symfony\Component\Console\ConsoleEvents;
+use Symfony\Component\Console\Event\ConsoleErrorEvent;
+use Symfony\Component\Console\Event\ConsoleEvent;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+
+$dispatcher = new EventDispatcher;
+$dispatcher->addListener(ConsoleEvents::ERROR, [new ErrorListener(), 'onConsoleError']);
 
 $application = new Application();
+$application->setDispatcher($dispatcher);
 
 $application->addCommands([
     new Authenticate(),
-    new ListIndices(),
+    new Index\ListIndices(),
     new Documents\Show(),
     new Documents\ListDocs(),
-    new Create(),
-    new Clear()
+    new Index\Create(),
+    new Index\Clear(),
+    new Index\Alias(),
+    new Alias\SwitchAlias()
 ]);
 
 $application->run();

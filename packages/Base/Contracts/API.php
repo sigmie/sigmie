@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\Contracts;
 
 use Sigmie\Base\Http\ElasticsearchResponse;
-use Sigmie\Http\Contracts\JSONRequest;
 
 trait API
 {

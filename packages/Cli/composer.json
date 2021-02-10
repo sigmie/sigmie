@@ -14,9 +14,11 @@
         }
     ],
     "require": {
-        "php": "^7.4",
+        "php": "^8.0",
+        "sigmie/base": "^0.6",
         "symfony/console": "^5.2",
-        "sigmie/base": "^0.6"
+        "symfony/event-dispatcher": "^5.2",
+        "symfony/event-dispatcher-contracts": "^2.2"
     },
     "autoload": {
         "psr-4": {
@@ -30,5 +32,9 @@
     "bin": [
         "bin/sigmie"
     ],
-    "minimum-stability": "dev"
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require-dev": {
+        "nunomaduro/collision": "^5.3"
+    }
 }

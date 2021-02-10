@@ -19,13 +19,15 @@ use Sigmie\Support\Collection;
 
 class Index implements DocumentCollectionInterface
 {
-    use CountAPI, DocumentsActions, IndexActions, Searchable, API;
+    use CountAPI, DocumentsActions, IndexActions, Searchable, API, AliasActions;
 
     protected string $name;
 
     protected ?int $count;
 
     protected ?string $size;
+
+    protected ?string $alias = null;
 
     protected int $docsCount;
 
@@ -47,6 +49,25 @@ class Index implements DocumentCollectionInterface
 
         $this->name = $name;
         $this->settings = $settings;
+    }
+
+    public function setAlias(string $alias): self
+    {
+        $this->alias = $alias;
+
+        $this->createAlias($this);
+
+        return $this;
+    }
+
+    public function getAlias(): ?string
+    {
+        return $this->alias;
+    }
+
+    public function removeAlias(string $alias)
+    {
+        return $this->deleteAlias($this, $alias);
     }
 
     public function setSize(?string $size): self
@@ -100,7 +121,7 @@ class Index implements DocumentCollectionInterface
     public function addOrUpdateDocuments(array|DocumentCollectionInterface $docs): self
     {
         if (is_array($docs)) {
-            $docs =new DocumentsCollection($docs);
+            $docs = new DocumentsCollection($docs);
         }
 
         $this->upsertDocuments($docs);
