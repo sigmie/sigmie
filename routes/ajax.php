@@ -20,6 +20,7 @@ use App\Http\Controllers\Subscription\SubscriptionController;
 use App\Http\Controllers\User\ValidationController as UserValidationController;
 use App\Http\Middleware\Redirects\RedirecToSameRouteWithProject;
 use App\Http\Middleware\Redirects\RedirectToClusterCreateIfHasntCluster;
+use Tightenco\Ziggy\Ziggy;
 
 Route::resource('/notification', NotificationController::class, ['except' => ['edit', 'create', 'destroy']])->middleware('auth');
 

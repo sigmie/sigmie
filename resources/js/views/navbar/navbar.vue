@@ -4,7 +4,12 @@
       @click="openSidebarRequest"
       class="px-4 border-r border-gray-200 text-gray-500 focus:outline-none focus:bg-gray-100 focus:text-gray-600 md:hidden"
     >
-      <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+      <svg
+        class="h-6 w-6"
+        stroke="currentColor"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -52,7 +57,12 @@
               viewBox="0 0 12 12"
             ></badge>
 
-            <icon-bell class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24"></icon-bell>
+            <icon-bell
+              class="h-6 w-6"
+              stroke="currentColor"
+              fill="none"
+              viewBox="0 0 24 24"
+            ></icon-bell>
           </button>
           <div
             class="origin-top-right absolute right-0 mt-2 w-64 md:w-96 rounded-md shadow-lg"
@@ -74,7 +84,10 @@
           >
             <img class="h-8 w-8 rounded-full" :src="avatarUrl" />
           </button>
-          <dropdown-menu v-if="settings == 'open'" @away="closeSettings"></dropdown-menu>
+          <dropdown-menu
+            v-if="settings == 'open'"
+            @away="closeSettings"
+          ></dropdown-menu>
         </div>
       </div>
     </div>
@@ -85,9 +98,9 @@
 import moment from "moment";
 import uniqBy from "lodash/uniqBy";
 
-import notifications from "./_notifications"
-import dropdownMenu from "./_dropdown-menu"
-import badge from "./_badge"
+import notifications from "./_notifications";
+import dropdownMenu from "./_dropdown-menu";
+import badge from "./_badge";
 
 export default {
   components: {
@@ -120,7 +133,8 @@ export default {
   },
   methods: {
     async fetchNotifications() {
-      const response = await this.$http.get("/notification");
+      const route = this.$route("notification.index");
+      const response = await this.$http.get(route);
 
       this.addNotifications(response.data);
     },
@@ -138,7 +152,8 @@ export default {
         });
     },
     async addNotification(id) {
-      const response = await this.$http.get(`notification/${id}`);
+      const route = this.$route("notification.show", { notification: id });
+      const response = await this.$http.get(route);
 
       this.addNotifications([response.data]);
     },

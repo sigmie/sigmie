@@ -53,9 +53,9 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 RUN adduser --disabled-password --gecos '' sigmie && \
     adduser sigmie sudo && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
-    chown -R sigmie:sigmie /var/www/app && \
+    chown -R www-data:www-data /var/www/app && \
     find /var/www/app -type f -exec chmod 664 {} \; && \
-    find /var/www/app -type d -exec chmod 755 {} \; && \
+    find /var/www/app -type d -exec chmod 775 {} \; && \
     mkdir -p /run/php && chown sigmie:sigmie /run/php
 
 # publish app engine port 8080

@@ -7,7 +7,8 @@
       ></creating>
 
       <destroying
-        class="pt-4" v-if="cluster.state === 'queued_destroy'"
+        class="pt-4"
+        v-if="cluster.state === 'queued_destroy'"
       ></destroying>
 
       <running
@@ -51,7 +52,7 @@ export default {
     running,
     destroyed,
     none,
-    error
+    error,
   },
   data() {
     return {
@@ -69,12 +70,12 @@ export default {
   },
   methods: {
     loadData() {
+      let route = this.$route("dashboard.data", {
+        project: this.$page.props.project_id,
+      });
+      console.log(route.url());
       let response = this.$http
-        .get(
-          this.$route("dashboard.data", {
-            project: this.$page.props.project_id,
-          })
-        )
+        .get(route)
         .then((response) => {
           let data = response.data;
 
