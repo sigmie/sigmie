@@ -45,10 +45,6 @@ COPY .docker/supervisor/stop-supervisor /usr/local/bin
 # copy the scheduler script into container's path
 COPY .docker/supervisor/scheduler /usr/local/bin
 
-# install composer and the project dependecies
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
-    composer install
-
 # Create sigmie user and hadle permissions
 RUN adduser --disabled-password --gecos '' sigmie && \
     adduser sigmie sudo && \
@@ -63,6 +59,10 @@ EXPOSE 8080
 
 # set web as default user
 USER sigmie
+
+# install composer and the project dependecies as the sigmie user
+RUN curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer && \
+    composer install
 
 # production command
 CMD composer validate && \
