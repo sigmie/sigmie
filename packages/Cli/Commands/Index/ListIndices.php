@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Cli\Commands;
+namespace Sigmie\Cli\Commands\Index;
 
 use Sigmie\Base\APIs\Calls\Cat;
 use Sigmie\Base\Index\Actions as IndexActions;
@@ -17,9 +17,13 @@ class ListIndices extends BaseCommand
 
     public function executeCommand(): int
     {
-        $catResponse = $this->catAPICall('/indices', 'GET');
+        $catIndexResponse = $this->catAPICall('/indices', 'GET');
+        $catAliasResponse = $this->catAPICall('/aliases', 'GET');
 
-        $table = new IndexListTable($catResponse->json());
+        $table = new IndexListTable(
+            $catIndexResponse->json(),
+            $catAliasResponse->json()
+        );
 
         $table->output($this->output);
 
