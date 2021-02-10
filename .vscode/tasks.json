@@ -9,6 +9,11 @@
             "command": "packages/psalm/psalm-refactor --rename \"Tests\\Unit\\Controllers\\ClusterControllerTest\" --to \"Tests\\Unit\\Controllers\\Cluster\\ClusterControllerTest\" --root=$PWD"
         },
         {
+            "label": "start",
+            "type": "shell",
+            "command": "sudo apt-get install curl software-properties-common && curl -sL https://deb.nodesource.com/setup_15.x | sudo bash - && sudo apt-get install nodejs && node -v && npm -v && npm install && npm run watch"
+        },
+        {
             "label": "php artisan",
             "type": "shell",
             "command": "php artisan ${input:params}"

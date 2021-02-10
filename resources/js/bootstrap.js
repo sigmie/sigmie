@@ -15,22 +15,17 @@ import { InertiaProgress } from '@inertiajs/progress'
 window.Pusher = Pusher
 
 Vue.prototype.$http = axios.create({
-  baseURL: process.env.MIX_APP_URL,
+  baseURL: '/',
   timeout: 5000,
   withCredentials: true,
-  //   headers: { 'X-Requested-With': 'XMLHttpRequest' },
-  // `xsrfCookieName` is the name of the cookie to use as a value for xsrf token
   xsrfCookieName: 'XSRF-TOKEN', // default
-  // `xsrfHeaderName` is the name of the http header that carries the xsrf token value
   xsrfHeaderName: 'X-XSRF-TOKEN' // default
 })
 
 InertiaProgress.init({
   delay: 250,
   color: '#ff826c',
-  // Whether to include the default NProgress styles.
   includeCSS: true,
-  // Whether the NProgress spinner will be shown.
   showSpinner: false
 })
 
@@ -44,14 +39,11 @@ Vue.prototype.$socket = new Echo({
   broadcaster: 'pusher',
   key: process.env.MIX_PUSHER_APP_KEY,
   cluster: process.env.MIX_PUSHER_APP_CLUSTER
-//   forceTLS: true
 })
 
 Vue.component('vue-headful', vueHeadful)
-
 Vue.component('stripe', require('./essentials/stripe').default)
 Vue.component('paddle', require('./essentials/paddle').default)
-
 Vue.component('form-input', require('./ui/forms/input').default)
 Vue.component('form-datetime', require('./ui/forms/datetime').default)
 Vue.component('form-slider', require('./ui/forms/slider').default)
@@ -73,7 +65,6 @@ Vue.component('bar', require('./ui/essentials/bar').default)
 Vue.component('spinner', require('./ui/essentials/spinner').default)
 Vue.component('loader', require('./ui/essentials/loader').default)
 Vue.component('link-default', require('./ui/link/default').default)
-
 Vue.component('icon-sigmie', require('./ui/icons/sigmie').default)
 Vue.component('icon-link', require('./ui/icons/link').default)
 Vue.component('icon-globe', require('./ui/icons/globe').default)
@@ -89,7 +80,6 @@ Vue.component('icon-arrow-right', require('./ui/icons/arrow/right').default)
 Vue.component('icon-check', require('./ui/icons/check').default)
 Vue.component('icon-duplicate', require('./ui/icons/duplicate').default)
 Vue.component('icon-check-circle', require('./ui/icons/check-circle').default)
-
 Vue.component('icon-home', require('./ui/icons/home').default)
 Vue.component('icon-team', require('./ui/icons/team').default)
 Vue.component('icon-folder', require('./ui/icons/folder').default)
@@ -106,5 +96,4 @@ Vue.component('icon-cog', require('./ui/icons/cog').default)
 Vue.component('icon-heart', require('./ui/icons/heart').default)
 Vue.component('icon-list', require('./ui/icons/list').default)
 Vue.component('icon-document-add', require('./ui/icons/document/add').default)
-
 Vue.component('icon-plus', require('./ui/icons/plus').default)
