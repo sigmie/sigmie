@@ -63,6 +63,9 @@ class IndexingPlan extends Model
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return IndexingType
+     */
     public function type()
     {
         return $this->morphTo();

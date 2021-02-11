@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Jobs\Indexing;
 
+use App\Contracts\Indexer;
 use App\Enums\PlanState;
 use App\Events\Indexing\PlanWasUpdated;
+use App\Models\FileType;
 use App\Models\IndexingPlan;
+use App\Models\IndexingType;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -15,7 +18,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Throwable;
 
-class ExecuteIndexingPlan implements ShouldQueue
+final class ExecuteIndexingPlan implements ShouldQueue
 {
     use Dispatchable;
     use InteractsWithQueue;
@@ -29,13 +32,15 @@ class ExecuteIndexingPlan implements ShouldQueue
 
     public function handle(): void
     {
+        /** @var  IndexingPlan */
         $plan = IndexingPlan::find($this->planId);
         $plan->setAttribute('run_at', Carbon::now())
             ->save();
 
         event(new PlanWasUpdated($plan->id));
 
-        ray('handled')->green();
+        /** @var Indexer */
+        $import = $plan->type->indexer()->index();
 
         $plan->setAttribute('state', PlanState::NONE())
             ->save();
