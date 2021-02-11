@@ -8,8 +8,8 @@
     "settings": {
         "terminal.integrated.shell.linux": "/bin/bash"
     },
-    "initializeCommand" : "git pull origin $(git rev-parse --abbrev-ref HEAD)",
-    "postAttachCommand": "git pull origin $(git rev-parse --abbrev-ref HEAD)",
+    "initializeCommand" : "git fetch && git rebase origin/$(git rev-parse --abbrev-ref HEAD)",
+    "postAttachCommand": "git fetch && git rebase origin/$(git rev-parse --abbrev-ref HEAD)",
     "postCreateCommand": "sudo apt-get update && sudo apt-get install -y git vim curl zsh",
     "runArgs": ["--env-file","/dev/null"],
     "overrideCommand": false,
