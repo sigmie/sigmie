@@ -1,5 +1,7 @@
 FROM debian:buster AS prod
 
+LABEL maintainer="Nico Orfanos"
+
 # avoid errro message
 ENV DEBIAN_FRONTEND noninteractive
 
