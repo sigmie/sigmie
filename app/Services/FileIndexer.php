@@ -34,6 +34,10 @@ class FileIndexer extends BaseIndexer
 
         $index = new Index($timestamp);
 
+        //TODO validate
+        //TODO switch index
+        //TODO move index creation to BaseIndexer
+
         $this->createIndex($index);
 
         $docs = [];
