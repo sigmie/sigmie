@@ -18,7 +18,7 @@ services:
         - '3000:3000'
     volumes:
         # - ./:/var/www/app:delegated
-        - ~/.composer:/root/.composer
+        - ~/.composer:/home/sigmie/.config/composer
     depends_on:
       - redis
       - db
