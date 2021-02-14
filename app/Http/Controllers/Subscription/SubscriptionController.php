@@ -19,7 +19,6 @@ class SubscriptionController extends Controller
         $planName = config('services.paddle.plan_name');
         $trailDays = ($user->subscription($planName) === null) ? 14 : 0;
 
-
         $paylink = $user->newSubscription($planName, $planId)
             ->trialDays($trailDays)
             ->create();

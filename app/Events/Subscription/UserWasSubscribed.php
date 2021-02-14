@@ -27,4 +27,9 @@ class UserWasSubscribed implements ShouldBroadcast
     {
         return new PrivateChannel("user.{$this->userId}");
     }
+
+    public function broadcastAs()
+    {
+        return 'user.subscribed';
+    }
 }

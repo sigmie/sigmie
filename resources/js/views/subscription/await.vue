@@ -24,7 +24,7 @@ export default {
   async mounted() {
     let text = this.$socket
       .private(`user.${this.$page.props.user.id}`)
-      .listen("Subscription\\UserWasSubscribed", (e) => {
+      .listen(".user.subscribed", (e) => {
         this.updateText();
         this.reload();
       });
