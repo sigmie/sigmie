@@ -67,9 +67,6 @@ jobs:
         echo "" >> .env
         echo "CACHE_DRIVER=redis" >> .env
 
-    - name: Move .dockerignore to root directory
-      run : mv .docker/.dockerignore .
-
     - uses: actions/setup-node@v2
       with:
         node-version: '15'

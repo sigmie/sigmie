@@ -47,8 +47,6 @@ COPY .docker/supervisor/stop-supervisor /usr/local/bin
 # copy the scheduler script into container's path
 COPY .docker/supervisor/scheduler /usr/local/bin
 
-COPY .docker/php.ini /etc/php/8.0/cli/php.ini
-
 # Create sigmie user and hadle permissions
 RUN adduser --disabled-password --gecos '' sigmie && \
     adduser sigmie sudo && \

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\GithubProvider;
+use Throwable;
 
 class GithubController extends Controller
 {
@@ -26,17 +27,20 @@ class GithubController extends Controller
 
     public function handle()
     {
-        $githubUser = $this->github()->user();
+        $githubUser = $this->github()->stateless()->user();
 
+        ray($githubUser);
         $user = $this->findGithubUser($githubUser->getEmail());
 
         if ($user instanceof User) {
+            ray('login user');
             return $this->loginUser($user);
         }
 
         $user = $this->findUser($githubUser->getEmail());
 
         if ($user instanceof User) {
+            ray('already');
             $this->session()->flash('info', 'You already have an account.');
 
             return redirect()->route('sign-in')

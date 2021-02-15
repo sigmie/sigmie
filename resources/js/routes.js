@@ -3,7 +3,7 @@
         baseUrl: '',
         baseProtocol: 'http',
         baseDomain: 'localhost',
-        basePort:3000,
+        basePort: '8080',
         defaultParameters: []
     };
 

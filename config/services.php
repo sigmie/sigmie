@@ -57,6 +57,6 @@ return [
     'paddle' => [
         'vendor_id' => env('PADDLE_VENDOR_ID'),
         'plan_id' => env('PADDLE_PLAN_ID'),
-        'plan_name' => 'Hobby Sandbox	'
+        'plan_name' => 'hobby'
     ]
 ];
