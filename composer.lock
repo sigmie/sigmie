@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1105e2583b273638879cda33db3459b3",
+    "content-hash": "45d61c4a89caed448b0a075ffcd737a2",
     "packages": [
         {
             "name": "amphp/amp",
@@ -1898,16 +1898,16 @@
         },
         {
             "name": "google/apiclient-services",
-            "version": "v0.159.0",
+            "version": "v0.160.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/googleapis/google-api-php-client-services.git",
-                "reference": "d5334e9853afe16e7d8215006a475061d8023216"
+                "reference": "b8a448056ced89d1bc2d68ca10c22e7b2ed06512"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/googleapis/google-api-php-client-services/zipball/d5334e9853afe16e7d8215006a475061d8023216",
-                "reference": "d5334e9853afe16e7d8215006a475061d8023216",
+                "url": "https://api.github.com/repos/googleapis/google-api-php-client-services/zipball/b8a448056ced89d1bc2d68ca10c22e7b2ed06512",
+                "reference": "b8a448056ced89d1bc2d68ca10c22e7b2ed06512",
                 "shasum": ""
             },
             "require": {
@@ -1933,9 +1933,9 @@
             ],
             "support": {
                 "issues": "https://github.com/googleapis/google-api-php-client-services/issues",
-                "source": "https://github.com/googleapis/google-api-php-client-services/tree/v0.159.0"
+                "source": "https://github.com/googleapis/google-api-php-client-services/tree/v0.160.0"
             },
-            "time": "2021-02-05T12:20:02+00:00"
+            "time": "2021-02-13T12:20:02+00:00"
         },
         {
             "name": "google/auth",
@@ -5446,17 +5446,11 @@
         },
         {
             "name": "sigmie/sigmie",
-            "version": "v0.7.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sigmie/sigmie.git",
-                "reference": "672cdba5d057d9a8472a0416cc170cd10801c83f"
-            },
+            "version": "dev-feature/file-indexing",
             "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sigmie/sigmie/zipball/672cdba5d057d9a8472a0416cc170cd10801c83f",
-                "reference": "672cdba5d057d9a8472a0416cc170cd10801c83f",
-                "shasum": ""
+                "type": "path",
+                "url": "./packages/sigmie",
+                "reference": "2bd35cf7af07881481965f9176d70ca87db464e1"
             },
             "require": {
                 "doctrine/collections": "^1.6",
@@ -5492,7 +5486,6 @@
                     "Sigmie\\": "packages/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -5507,17 +5500,10 @@
                 "elasticsearch",
                 "sigmie"
             ],
-            "support": {
-                "issues": "https://github.com/sigmie/sigmie/issues",
-                "source": "https://github.com/sigmie/sigmie/tree/v0.7.0"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/nicoorfi",
-                    "type": "github"
-                }
-            ],
-            "time": "2021-02-11T13:32:28+00:00"
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
         },
         {
             "name": "spatie/macroable",
@@ -12232,6 +12218,7 @@
     "minimum-stability": "dev",
     "stability-flags": {
         "sigmie/nova-feature-flags": 20,
+        "sigmie/sigmie": 20,
         "sigmie/sigmie-laravel-testing": 20
     },
     "prefer-stable": true,

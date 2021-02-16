@@ -1,5 +1,8 @@
 <?php
 
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
 if (!function_exists('get_gravatar')) {
     /**
      * Get a Gravatar URL for a specified email address.
@@ -19,8 +22,18 @@ if (!function_exists('get_gravatar')) {
     }
 }
 
-function isJson($string)
-{
-    json_decode($string);
-    return (json_last_error() == JSON_ERROR_NONE);
+if (!function_exists('temp_file_path')) {
+    /**
+     * Get the path to the base of the install.
+     *
+     * @param  string  $path
+     * @return string
+     */
+    function temp_file_path()
+    {
+        $filesystem = Storage::disk('local');
+        $filename = Str::random(40);
+        $path = "temp/{$filename}";
+        return $filesystem->path($path);
+    }
 }

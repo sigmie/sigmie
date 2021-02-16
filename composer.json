@@ -48,7 +48,7 @@
         "pusher/pusher-php-server": "~4.0",
         "sigmie/app-core": "^0.11",
         "sigmie/nova-feature-flags": "@dev",
-        "sigmie/sigmie": "^0.7",
+        "sigmie/sigmie": "@dev",
         "tightenco/ziggy": "^0.9.3"
     },
     "require-dev": {

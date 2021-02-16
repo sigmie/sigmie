@@ -6,45 +6,41 @@ namespace App\Services;
 
 use App\Models\FileType;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Base\Index\AliasActions;
 use Sigmie\Base\Index\Index;
 
 class FileIndexer extends BaseIndexer
 {
-    use IndexActions;
-
     protected FileType $type;
 
-    public function index()
+    protected function __invoke()
     {
-        $filesystem = Storage::disk('local');
-        $filename = Str::random(40);
-        $path = "temp/{$filename}";
-        $fullPath = $filesystem->path($path);
+        $tempPath = temp_file_path();
 
-        copy($this->type->location, $fullPath);
+        copy($this->type->location, $tempPath);
 
-        $contents = file_get_contents($fullPath);
+        if (filesize($tempPath) > 1073741824) // 1 GB
+        {
+            throw new Exception('File size bigger than 1GB');
+        }
+
+        $contents = file_get_contents($tempPath);
+
         $json = json_decode($contents, true);
 
-        $timestamp = Carbon::now()->format('YmdHis');
-
-        $index = new Index($timestamp);
-
-        //TODO validate
-        //TODO switch index
-        //TODO move index creation to BaseIndexer
-
-        $this->createIndex($index);
-
         $docs = [];
+
         foreach ($json as $doc) {
             $docs[] = new Document($doc);
         }
 
-        $index->addAsyncDocuments($docs);
+        $this->index->addAsyncDocuments($docs);
+
+        Storage::delete($tempPath);
     }
 }

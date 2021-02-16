@@ -8,7 +8,7 @@
     "settings": {
         "terminal.integrated.shell.linux": "/bin/bash"
     },
-    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y git vim curl zsh",
+    "postCreateCommand": "",
     "runArgs": ["--env-file","/dev/null"],
     "overrideCommand": false,
     "extensions": [

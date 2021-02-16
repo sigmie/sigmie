@@ -22,7 +22,7 @@ services:
     depends_on:
       - redis
       - db
-    command: php artisan config:clear && sudo /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+    command: sudo /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
 
   db:
     container_name: db
