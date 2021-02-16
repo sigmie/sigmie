@@ -24,9 +24,6 @@ if (!function_exists('get_gravatar')) {
 
 if (!function_exists('temp_file_path')) {
     /**
-     * Get the path to the base of the install.
-     *
-     * @param  string  $path
      * @return string
      */
     function temp_file_path()
@@ -35,5 +32,25 @@ if (!function_exists('temp_file_path')) {
         $filename = Str::random(40);
         $path = "temp/{$filename}";
         return $filesystem->path($path);
+    }
+}
+
+if (!function_exists('is_json')) {
+    /**
+     * @return string
+     */
+    function is_json($content)
+    {
+        if ($content === '') {
+            return false;
+        }
+
+        json_decode($content);
+
+        if (json_last_error()) {
+            return false;
+        }
+
+        return true;
     }
 }

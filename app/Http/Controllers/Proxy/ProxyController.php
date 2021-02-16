@@ -6,42 +6,38 @@ namespace App\Http\Controllers\Proxy;
 
 use App\Http\Middleware\Proxy\ProxyRequest;
 use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Response;
-use Illuminate\Http\Request;
+use GuzzleHttp\Psr7\Uri;
+use Nyholm\Psr7\Factory\Psr17Factory;
+use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 
 class ProxyController extends \App\Http\Controllers\Controller
 {
     /**
      * Proxy pass the incoming request to the Elasticsearch
      */
-    public function __invoke(ProxyRequest $proxyRequest, Request $request, Client $client, string $endpoint = '')
+    public function __invoke(ProxyRequest $proxyRequest, ServerRequestInterface $request, Client $client)
     {
         $cluster = $proxyRequest->cluster();
-        $headers = $request->headers->all();
-        $method = strtolower($request->method());
         $username = $cluster->getAttribute('username');
         $password = decrypt($cluster->getAttribute('password'));
 
-        $url = $cluster->getAttribute('url');
+        $tempUri = new Uri($cluster->getAttribute('url'));
 
         $options = [
-            'auth' => [$username, $password],
+            'auth' => [
+                $username,
+                $password
+            ],
             'http_errors' => false,
         ];
 
-        if ($request->isJson()) {
-            $options['json'] = $request->toArray();
-        }
+        $uri = $request->getUri()
+            ->withHost($tempUri->getHost())
+            ->withPort($tempUri->getPort());
 
-        $url = $url . '/' . $endpoint . '?' . $request->getQueryString();
+        $psrRequest = $request->withUri($uri);
 
-        /** @var  Response */
-        $response = $client->$method($url, $options);
-
-        $headers = $response->getHeaders();
-        $contents = $response->getBody()->getContents();
-        $code = $response->getStatusCode();
-
-        return response($contents, $code, $headers);
+        return $client->send($psrRequest, $options);
     }
 }

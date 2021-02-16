@@ -26,10 +26,14 @@ class FileIndexer extends BaseIndexer
 
         if (filesize($tempPath) > 1073741824) // 1 GB
         {
-            throw new Exception('File size bigger than 1GB');
+            throw new Exception('File size bigger than 1GB.');
         }
 
         $contents = file_get_contents($tempPath);
+
+        if (is_json($contents) === false) {
+            throw new Exception('File isn\'t a JSON.');
+        }
 
         $json = json_decode($contents, true);
 

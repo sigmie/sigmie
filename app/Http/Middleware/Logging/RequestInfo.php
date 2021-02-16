@@ -6,7 +6,9 @@ namespace App\Http\Middleware\Logging;
 
 use Closure;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use NunoMaduro\Larastan\Methods\Pipes\Auths;
 
 class RequestInfo
 {
