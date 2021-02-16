@@ -73,7 +73,6 @@ export default {
       let route = this.$route("dashboard.data", {
         project: this.$page.props.project_id,
       });
-      console.log(route.url());
       let response = this.$http
         .get(route)
         .then((response) => {

@@ -33,7 +33,7 @@
       </div>
       <div class="flex px-10 md:px-0 md:w-2/6 lg:w-1/3 w-full">
         <div
-          class="md:pl-10 py-10 md:border-none fixed border-b-2 border-gray-200 sm:pt-16 w-full md:w-72 mx-auto"
+          class="md:pl-10 py-10 md:border-none md:fixed border-b-2 border-gray-200 sm:pt-16 w-full md:w-72 mx-auto"
         >
           <h3
             class="px-3 text-xs leading-4 font-semibold text-gray-500 uppercase tracking-wider"
