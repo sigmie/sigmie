@@ -16,7 +16,7 @@
       Recent activity
     </h2>
 
-    <activities></activities>
+    <activities :activities="activities"></activities>
     <create-form
       :clusterId="clusterId"
       @hide="showCreateForm = false"
@@ -47,7 +47,7 @@ export default {
     createForm,
     updateForm,
   },
-  props: ["plans", "clusterId"],
+  props: ["plans", "clusterId", "activities"],
   methods: {
     editRequest(plan) {
       this.showUpdateForm = true;

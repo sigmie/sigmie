@@ -1,15 +1,30 @@
 <template>
   <li>
-
-    <a @click="expand = !expand" href="#" class="block hover:bg-gray-50">
+    <button
+      @click="activity.description ? (expand = !expand) : null"
+      class="block w-full hover:bg-gray-50"
+    >
       <div class="px-4 py-4 flex items-center sm:px-6">
         <div class="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
           <div>
             <div
               class="flex text-sm font-medium text-theme-orange-light-800 truncate"
             >
-              <p>Back End Developer</p>
-              <p class="ml-1 font-normal text-gray-500">by Schedule</p>
+              <p v-if="activity.type === 'dispatch'">
+                Plan {{ activity.plan_name }} was dispatched
+              </p>
+              <p
+                v-if="activity.trigger === 'manual'"
+                class="ml-1 font-normal text-gray-500"
+              >
+              by User
+              </p>
+              <p
+                v-else-if="activity.trigger === 'ping'"
+                class="ml-1 font-normal text-gray-500"
+              >
+                by Ping
+              </p>
             </div>
             <div class="mt-2 flex">
               <div class="flex items-center text-sm text-gray-500">
@@ -29,20 +44,23 @@
                 </svg>
                 <p>
                   Happend on
-                  <time datetime="2020-01-07">January 7, 2020</time>
+                  <time>{{ humanDate(activity.timestamp) }}</time>
                 </p>
               </div>
             </div>
           </div>
         </div>
-        <div class="ml-5 flex-shrink-0">
+        <div v-if="activity.description" class="ml-5 flex-shrink-0">
           <icon-cheveron-down
             class="text-gray-400 h-4 w-4"
           ></icon-cheveron-down>
         </div>
       </div>
-    </a>
-    <div v-if="expand" class="border-t bg-gray-50 border-gray-200 px-4 py-5 sm:px-6">
+    </button>
+    <div
+      v-if="expand"
+      class="border-t bg-gray-50 border-gray-200 px-4 py-5 sm:px-6"
+    >
       <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
         <div class="sm:col-span-1">
           <dt class="text-sm font-medium text-gray-500">Full name</dt>
@@ -76,7 +94,18 @@
 </template>
 
 <script>
+import moment from "moment";
 export default {
+  props: ["activity"],
+  methods: {
+    humanDate(utcDatetime) {
+      return (
+        moment.utc(utcDatetime).local().format("LL") +
+        " at " +
+        moment.utc(utcDatetime).local().format("HH:mm")
+      );
+    },
+  },
   data() {
     return {
       expand: false,

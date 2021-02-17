@@ -179,8 +179,8 @@ export default {
       .private(`plan.${this.plan.id}`)
       .listen(".plan.updated", (e) => {
         delay(() => {
-          this.$inertia.reload({ only: ["plans"] });
-        }, 500);
+          this.$inertia.reload({ only: ["plans", "activities"] });
+        }, 1000);
       });
   },
 };

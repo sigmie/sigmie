@@ -38,6 +38,12 @@ class ProxyController extends \App\Http\Controllers\Controller
 
         $psrRequest = $request->withUri($uri);
 
+        foreach ($psrRequest->getHeaders() as $header => $value) {
+            $psrRequest = $psrRequest->withoutHeader($header);
+        }
+
+        $psrRequest = $psrRequest->withAddedHeader('Content-Type', 'application/json');
+
         return $client->send($psrRequest, $options);
     }
 }

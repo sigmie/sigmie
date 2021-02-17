@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
@@ -13,4 +15,14 @@
 
 use App\Http\Controllers\Proxy\ProxyController;
 
-Route::any('/{endpoint?}', ProxyController::class)->where('endpoint', '.*')->name('proxy');
+Route::any('/{endpoint?}', ProxyController::class)
+    ->where('endpoint', '.*')
+    ->name('proxy')
+    ->middleware([
+        \App\Http\Middleware\Proxy\HandleCors::class,
+        'auth:sanctum',
+        \App\Http\Middleware\Proxy\ProxyRequest::class,
+        \App\Http\Middleware\Proxy\VerifyClusterState::class,
+        \App\Http\Middleware\Proxy\VerifyTokenStatus::class,
+        \App\Http\Middleware\Proxy\VerifyTokenPermissions::class,
+    ]);

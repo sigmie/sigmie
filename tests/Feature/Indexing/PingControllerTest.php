@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Indexing;
 
-use App\Jobs\Indexing\ExecuteIndexingPlan;
+use App\Jobs\Indexing\IndexPlan;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Queue;
 use Tests\Helpers\WithIndexingPlan;
@@ -60,7 +60,7 @@ class PingControllerTest extends TestCase
 
         $this->get($url);
 
-        Queue::assertNotPushed(ExecuteIndexingPlan::class);
+        Queue::assertNotPushed(IndexPlan::class);
     }
 
     /**
@@ -76,7 +76,7 @@ class PingControllerTest extends TestCase
 
         $this->get($url);
 
-        Queue::assertPushed(fn (ExecuteIndexingPlan $job) => $this->indexingPlan->id === $job->planId);
+        Queue::assertPushed(fn (IndexPlan $job) => $this->indexingPlan->id === $job->planId);
     }
 
     /**

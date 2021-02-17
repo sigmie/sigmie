@@ -8,6 +8,7 @@ use App\Events\Indexing\PlanWasUpdated;
 use App\Http\Requests\Indexing\StorePlan;
 use App\Http\Requests\UpdatePlan;
 use App\Models\FileType;
+use App\Models\IndexingActivity;
 use App\Models\IndexingPlan;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -92,6 +93,8 @@ class PlanController extends \App\Http\Controllers\Controller
 
     public function destroy(IndexingPlan $plan)
     {
+        IndexingActivity::where('plan_id', $plan->id)->delete();
+
         $plan->delete();
 
         event(new PlanWasUpdated($plan->id));

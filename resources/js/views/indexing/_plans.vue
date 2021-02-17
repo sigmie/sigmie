@@ -23,7 +23,7 @@
         ></plan>
         <modal
           title="Delete"
-          content="Are you sure you want to delete this plan permanently ?"
+          content="Are you sure you want to permanently delete this plan and all it's activities ?"
           primaryText="Delete"
           secondaryText="Cancel"
           @primaryAction="deleteAction"

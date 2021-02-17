@@ -18,7 +18,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Throwable;
 
-final class ExecuteIndexingPlan implements ShouldQueue
+final class IndexPlan implements ShouldQueue
 {
     use Dispatchable;
     use InteractsWithQueue;
@@ -39,8 +39,7 @@ final class ExecuteIndexingPlan implements ShouldQueue
 
         event(new PlanWasUpdated($plan->id));
 
-        /** @var Indexer */
-        $import = $plan->type->indexer()->index();
+        rescue(fn () => $plan->type->indexer()->index(), null, false);
 
         $plan->setAttribute('state', PlanState::NONE())
             ->save();

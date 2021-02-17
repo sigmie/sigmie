@@ -93,7 +93,7 @@ export default {
       this.$emit("away");
     },
     async markAsRead(index, id) {
-      const route = this.$route('notification.update',{notification: id});
+      const route = this.$route("notification.update", { notification: id });
       const response = await this.$http.put(route);
     },
   },

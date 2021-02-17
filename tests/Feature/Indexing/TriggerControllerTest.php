@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Indexing;
 
-use App\Jobs\Indexing\ExecuteIndexingPlan;
+use App\Jobs\Indexing\IndexPlan;
 use Illuminate\Support\Facades\Queue;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\TestCase;
@@ -28,7 +28,7 @@ class TriggerControllerTest extends TestCase
 
         $this->post($route)->assertRedirect();
 
-        Queue::assertPushed(fn (ExecuteIndexingPlan $job) => $this->indexingPlan->id === $job->planId);
+        Queue::assertPushed(fn (IndexPlan $job) => $this->indexingPlan->id === $job->planId);
     }
 
     /**

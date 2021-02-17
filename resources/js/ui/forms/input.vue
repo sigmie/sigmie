@@ -2,7 +2,7 @@
   <div>
     <label
       v-if="label.length > 0 && suffix.length === 0"
-      :for="name"
+      :for="id"
       class="block text-sm font-medium leading-5 text-gray-700 pb-1"
       >{{ label }}</label
     >

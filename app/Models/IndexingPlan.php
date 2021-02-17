@@ -6,7 +6,7 @@ namespace App\Models;
 
 use App\Enums\PlanState;
 use App\Events\Indexing\PlanWasUpdated;
-use App\Jobs\Indexing\ExecuteIndexingPlan;
+use App\Jobs\Indexing\IndexPlan as IndexPlan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\URL;
 
@@ -30,12 +30,12 @@ class IndexingPlan extends Model
         return $this->deactivated_at === null;
     }
 
-    public function dispatch(): void
+    public function run(): void
     {
         if ($this->state !== PlanState::RUNNING()) {
             $this->setAttribute('state', PlanState::RUNNING())->save();
 
-            dispatch(new ExecuteIndexingPlan($this->id));
+            dispatch(new IndexPlan($this->id));
 
             event(new PlanWasUpdated($this->id));
         }

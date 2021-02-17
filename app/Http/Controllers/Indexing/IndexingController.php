@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Indexing;
 
+use App\Models\IndexingActivity;
 use App\Models\IndexingPlan;
 use App\Models\IndexingPlanDetails;
 use App\Models\IndexingType;
@@ -38,7 +39,19 @@ class IndexingController extends \App\Http\Controllers\Controller
         // User should have at least one cluster before coming to the indexing view.
         // RedirectToClusterCreateIfHasntCluster::class takes care of that
         $clusterId = $project->clusters->first()->id;
+        $activities =
+            IndexingActivity::where('project_id', $project->id)
+            ->orderBy('timestamp','DESC')
+            ->take(30)
+            ->get();
 
-        return Inertia::render('indexing/indexing', ['plans' => $plans, 'clusterId' => $clusterId]);
+        return Inertia::render(
+            'indexing/indexing',
+            [
+                'plans' => $plans,
+                'clusterId' => $clusterId,
+                'activities' => $activities
+            ]
+        );
     }
 }
