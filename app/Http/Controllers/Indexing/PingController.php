@@ -21,7 +21,8 @@ class PingController extends Controller
         if (Gate::forUser($user)->allows('trigger-plan') && $plan->isActive()) {
 
             IndexingActivity::create([
-                'type' => (string) ActivityTypes::DISPATCH(),
+                'title' => $plan->name . ' was triggered',
+                'type' => (string) ActivityTypes::INFO(),
                 'trigger' => (string) PlanTriggers::PING(),
                 'timestamp' => Carbon::now(),
                 'plan_id' => $plan->id,

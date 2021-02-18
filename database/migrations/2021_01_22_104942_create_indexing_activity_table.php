@@ -16,8 +16,9 @@ class CreateIndexingActivityTable extends Migration
         Schema::create('indexing_activities', function (Blueprint $table) {
             $table->id();
             $table->string('type');
+            $table->string('title');
             $table->text('description')->nullable();
-            $table->string('trigger');
+            $table->string('trigger')->nullable();
             $table->dateTime('timestamp');
             $table->bigInteger('plan_id')->unsigned()->index();
             $table->bigInteger('project_id')->unsigned()->index();

@@ -167,10 +167,6 @@ export default {
           name: "token.index",
           routeParams: [],
           icon: "key",
-          badge: {
-            text: "Beta",
-            color: "blue",
-          },
         },
         {
           text: "Indexing",

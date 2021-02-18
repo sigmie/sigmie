@@ -8,22 +8,17 @@
         <div class="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
           <div>
             <div
-              class="flex text-sm font-medium text-theme-orange-light-800 truncate"
+              :class="
+                activity.type === 'info'
+                  ? 'text-theme-orange-light-800'
+                  : activity.type === 'error'
+                  ? 'text-red-600'
+                  : null
+              "
+              class="flex text-sm font-medium truncate"
             >
-              <p v-if="activity.type === 'dispatch'">
-                Plan {{ activity.plan_name }} was dispatched
-              </p>
-              <p
-                v-if="activity.trigger === 'manual'"
-                class="ml-1 font-normal text-gray-500"
-              >
-              by User
-              </p>
-              <p
-                v-else-if="activity.trigger === 'ping'"
-                class="ml-1 font-normal text-gray-500"
-              >
-                by Ping
+              <p>
+                {{ activity.title }}
               </p>
             </div>
             <div class="mt-2 flex">

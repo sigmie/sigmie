@@ -14,7 +14,8 @@ class TriggerController extends Controller
     public function __invoke(IndexingPlan $plan)
     {
         IndexingActivity::create([
-            'type' => (string) ActivityTypes::DISPATCH(),
+            'title' => $plan->name . ' was triggered',
+            'type' => (string) ActivityTypes::INFO(),
             'trigger' => (string) PlanTriggers::MANUAL(),
             'timestamp' => Carbon::now(),
             'plan_id' => $plan->id,

@@ -32,7 +32,7 @@
                   </h2>
                   <div class="ml-3 h-7 flex items-center">
                     <button
-                      @click="hideForm"
+                      @click.prevent="hideForm"
                       class="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-white"
                     >
                       <span class="sr-only">Close panel</span>
@@ -162,6 +162,7 @@ export default {
       };
     },
     submit() {
+        console.log('submited');
       let route = this.$route("indexing.plan.store");
 
       this.form

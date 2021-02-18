@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace App\Jobs\Indexing;
 
 use App\Contracts\Indexer;
+use App\Enums\ActivityTypes;
 use App\Enums\PlanState;
+use App\Enums\PlanTriggers;
+use App\Events\Indexing\IndexingHasFailed;
 use App\Events\Indexing\PlanWasUpdated;
+use App\Exceptions\IndexingException;
 use App\Models\FileType;
+use App\Models\IndexingActivity;
 use App\Models\IndexingPlan;
 use App\Models\IndexingType;
 use Carbon\Carbon;
@@ -39,12 +44,19 @@ final class IndexPlan implements ShouldQueue
 
         event(new PlanWasUpdated($plan->id));
 
-        rescue(fn () => $plan->type->indexer()->index(), null, false);
+        try {
 
-        $plan->setAttribute('state', PlanState::NONE())
-            ->save();
+            $plan->type->indexer()->index();
+        } catch (IndexingException $e) {
 
-        event(new PlanWasUpdated($plan->id));
+            event(new IndexingHasFailed($e));
+        } finally {
+
+            $plan->setAttribute('state', PlanState::NONE())
+                ->save();
+
+            event(new PlanWasUpdated($plan->id));
+        }
     }
 
     /**

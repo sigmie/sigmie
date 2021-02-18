@@ -9,12 +9,14 @@ use App\Events\Cluster\ClusterWasBooted;
 use App\Events\Cluster\ClusterWasCreated;
 use App\Events\Cluster\ClusterWasDestroyed;
 use App\Events\Newsletter\NewsletterSubscriptionWasCreated;
+use App\Listeners\Indexing\CreateErrorActivity;
 use App\Listeners\Cluster\PollClusterState;
 use App\Listeners\Cluster\UpdateClusterStateToError;
 use App\Listeners\Notifications\SendClusterDestroyedNotification;
 use App\Listeners\Notifications\SendClusterRunningNotification;
 use App\Listeners\Notifications\SendEmailConfirmationNotification;
 use App\Listeners\Subscription\DispatchUserWasSubscribedEvent;
+use App\Events\Indexing\IndexingHasFailed;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Laravel\Paddle\Events\WebhookHandled;
 
@@ -41,6 +43,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         ClusterHasFailed::class => [
             UpdateClusterStateToError::class
+        ],
+        IndexingHasFailed::class => [
+            CreateErrorActivity::class
         ]
     ];
 

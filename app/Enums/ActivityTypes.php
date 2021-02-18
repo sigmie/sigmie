@@ -8,7 +8,9 @@ use MyCLabs\Enum\Enum;
 
 class ActivityTypes extends Enum
 {
-    private const DISPATCH = 'dispatch';
+    private const INFO = 'info';
+
+    private const WARNING = 'info';
 
     private const ERROR = 'error';
 }

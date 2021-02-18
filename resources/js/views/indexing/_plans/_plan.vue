@@ -180,7 +180,7 @@ export default {
       .listen(".plan.updated", (e) => {
         delay(() => {
           this.$inertia.reload({ only: ["plans", "activities"] });
-        }, 1000);
+        }, 100000);
       });
   },
 };

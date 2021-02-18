@@ -55,6 +55,5 @@
             "tests",
             "bootstrap"
         ]
-    },
-    "dependencies": {}
+    }
 }
