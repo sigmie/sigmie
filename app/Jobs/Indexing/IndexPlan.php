@@ -44,12 +44,12 @@ final class IndexPlan implements ShouldQueue
 
         event(new PlanWasUpdated($plan->id));
 
+        $indexer = $plan->type->indexer();
         try {
-
-            $plan->type->indexer()->index();
+            $indexer->index();
         } catch (IndexingException $e) {
-
             event(new IndexingHasFailed($e));
+            $indexer->onFailure();
         } finally {
 
             $plan->setAttribute('state', PlanState::NONE())

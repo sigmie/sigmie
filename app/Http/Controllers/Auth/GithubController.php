@@ -27,20 +27,17 @@ class GithubController extends Controller
 
     public function handle()
     {
-        $githubUser = $this->github()->stateless()->user();
+        $githubUser = $this->github()->user();
 
-        ray($githubUser);
         $user = $this->findGithubUser($githubUser->getEmail());
 
         if ($user instanceof User) {
-            ray('login user');
             return $this->loginUser($user);
         }
 
         $user = $this->findUser($githubUser->getEmail());
 
         if ($user instanceof User) {
-            ray('already');
             $this->session()->flash('info', 'You already have an account.');
 
             return redirect()->route('sign-in')

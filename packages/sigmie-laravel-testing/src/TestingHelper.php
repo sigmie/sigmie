@@ -13,6 +13,16 @@ class TestingHelper
         ClearIndices::clearIndices as nativeClearIndices;
     }
 
+    protected function testId(): string
+    {
+        return $this->testId;
+    }
+
+    public function setTestId(string $identifier)
+    {
+        $this->testId = $identifier;
+    }
+
     public function __construct()
     {
         $this->setupTestConnection();

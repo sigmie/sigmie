@@ -9,6 +9,7 @@ use App\Models\Cluster;
 use App\Models\FileType;
 use App\Models\IndexingPlan;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 class IndexingPlanFactory extends Factory
 {
@@ -25,6 +26,7 @@ class IndexingPlanFactory extends Factory
             'cluster_id' => $cluster->id,
             'project_id' => $cluster->project->id,
             'user_id' => $cluster->project->user->id,
+            'random_identifier' => strtolower(Str::random(5)),
             'type_type' => $type->getMorphClass(),
             'type_id' => $type->id,
             'state' => $this->faker->randomElement([PlanState::NONE()]),

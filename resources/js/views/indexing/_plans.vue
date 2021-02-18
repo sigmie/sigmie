@@ -58,16 +58,16 @@ export default {
       this.$inertia.delete(route, {
         preserveState: false,
         preserveScroll: false,
-        only: ["plans"],
+        only: ["plans","activities"],
       });
     },
     triggerAction(id) {
       this.state = STATE_TRIGGER_REQUEST;
-      let route = this.$route("indexing.plan.trigger", { plan: id});
+      let route = this.$route("indexing.plan.trigger", { plan: id });
       this.$inertia.post(route, {
         preserveState: false,
         preserveScroll: false,
-        only: ["plans"],
+        only: ["plans", "activities"],
       });
     },
   },

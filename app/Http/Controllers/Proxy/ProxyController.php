@@ -34,7 +34,8 @@ class ProxyController extends \App\Http\Controllers\Controller
 
         $uri = $request->getUri()
             ->withHost($tempUri->getHost())
-            ->withPort($tempUri->getPort());
+            ->withPort($tempUri->getPort())
+            ->withScheme($tempUri->getScheme());
 
         $psrRequest = $request->withUri($uri);
 

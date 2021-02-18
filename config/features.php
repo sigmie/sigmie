@@ -23,6 +23,7 @@ return [
 
     'feature' => [
         'auth' => true,
+        'indexing' => false,
     ],
 
     /*

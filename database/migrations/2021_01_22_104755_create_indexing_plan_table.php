@@ -16,6 +16,7 @@ class CreateIndexingPlanTable extends Migration
         Schema::create('indexing_plans', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('random_identifier');
             $table->string('description')->nullable();
             $table->bigInteger('cluster_id')->unsigned()->index();
             $table->bigInteger('project_id')->unsigned()->index();
@@ -34,6 +35,7 @@ class CreateIndexingPlanTable extends Migration
             $table->foreign('project_id')->references('id')->on('projects');
             $table->foreign('user_id')->references('id')->on('users');
             $table->unique(['type_type', 'type_id']);
+            $table->unique(['project_id', 'random_identifier']);
         });
     }
 }

@@ -1,13 +1,19 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Inertia\Middleware;
+use Sigmie\NovaFeatureFlags\FeatureFlagManager;
 
 class HandleInertiaRequests extends Middleware
 {
+    public function __construct(private FeatureFlagManager $featureFlag)
+    {
+    }
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -37,6 +43,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request)
     {
         return array_merge(parent::share($request), [
+            'features' => $this->featureFlag->all(),
             'old' => Session::getOldInput(),
             'errors' => Session::get('errors') ? Session::get('errors')->getBag('default')->getMessages() : null,
             'flash' => fn () => [

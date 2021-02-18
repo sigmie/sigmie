@@ -34,7 +34,7 @@ abstract class BaseIndexer extends BaseSigmieService implements Indexer
 
     public function index()
     {
-        $indexName = Carbon::now()->format('YmdHis');
+        $indexName = Carbon::now()->format('YmdHis') . '_' . $this->type->plan->random_identifier;
 
         $this->index = new Index($indexName);
 
@@ -47,7 +47,12 @@ abstract class BaseIndexer extends BaseSigmieService implements Indexer
         $this->switchIndex();
     }
 
-    abstract protected function __invoke();
+    public function onFailure()
+    {
+        $this->deleteIndex($this->index->getName());
+    }
+
+    abstract public function __invoke();
 
     private function switchIndex()
     {

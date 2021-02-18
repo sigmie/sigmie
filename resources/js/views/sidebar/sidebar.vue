@@ -17,7 +17,7 @@
 
           <nav class="flex-1 px-2 py-4">
             <inertia-link
-              v-for="(item, index) in items"
+              v-for="(item, index) in enabledItems"
               :key="index"
               :class="[
                 isRoute(item.name)
@@ -105,7 +105,7 @@
 
           <nav class="px-2 py-4">
             <inertia-link
-              v-for="(item, index) in items"
+              v-for="(item, index) in enabledItems"
               :key="index"
               :class="[
                 isRoute(item.name)
@@ -146,29 +146,38 @@
 <script>
 import info from "./_info";
 import isUndefined from "lodash/isUndefined";
+import filter from 'lodash/filter'
 
 export default {
   props: ["sidebarState", "disabled"],
   components: {
     info,
   },
+  computed: {
+    enabledItems: function () {
+      return filter(this.items, function(i) { return i.enabled });
+    }
+  },
   data() {
     return {
       path: "",
       items: [
         {
+          enabled: true,
           text: "Dashboard",
           name: "dashboard",
           routeParams: [],
           icon: "home",
         },
         {
+          enabled: true,
           text: "API tokens",
           name: "token.index",
           routeParams: [],
           icon: "key",
         },
         {
+          enabled: this.$page.props.features.indexing,
           text: "Indexing",
           name: "indexing.indexing",
           routeParams: [],
@@ -179,11 +188,14 @@ export default {
           },
         },
         {
+          enabled: true,
           text: "Settings",
           name: "settings",
           routeParams: {
             project:
-              this.$page.props.project_id === null ? "" : this.$page.props.project_id,
+              this.$page.props.project_id === null
+                ? ""
+                : this.$page.props.project_id,
           },
           icon: "cog",
         },

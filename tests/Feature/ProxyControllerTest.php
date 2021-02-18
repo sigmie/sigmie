@@ -167,7 +167,9 @@ class ProxyControllerTest extends TestCase
      */
     public function create_index()
     {
-        $this->put(route('proxy', ['endpoint' => 'my-index']), [], ['Authorization' => "Bearer {$this->adminToken}"])->assertJson(["acknowledged" => true]);
+        $indexName = $this->testId() . '_my-index';
+
+        $this->put(route('proxy', ['endpoint' => $indexName]), [], ['Authorization' => "Bearer {$this->adminToken}"])->assertJson(["acknowledged" => true]);
     }
 
     /**
@@ -175,22 +177,25 @@ class ProxyControllerTest extends TestCase
      */
     public function dont_throw_on_http_error()
     {
-        $this->put(route('proxy', ['endpoint' => 'duplicate-index']), [], ['Authorization' => "Bearer {$this->adminToken}"]);
+        $indexName = $this->testId() . '_duplicate-index';
 
-        $this->put(route('proxy', ['endpoint' => 'duplicate-index']), [], ['Authorization' => "Bearer {$this->adminToken}"])->assertJson(['status' => 400]);
+        $this->put(route('proxy', ['endpoint' => $indexName]), [], ['Authorization' => "Bearer {$this->adminToken}"]);
+
+        $this->put(route('proxy', ['endpoint' => $indexName]), [], ['Authorization' => "Bearer {$this->adminToken}"])->assertJson(['status' => 400]);
     }
 
     /**
      * @test
      */
-    public function crete_doc()
+    public function create_doc()
     {
-        $this->put(route('proxy', ['endpoint' => 'my-index']), [], ['Authorization' => "Bearer {$this->adminToken}"]);
+        $indexName = $this->testId() . '_my-index';
+        $this->put(route('proxy', ['endpoint' => $indexName]), [], ['Authorization' => "Bearer {$this->adminToken}"]);
 
         $response = $this->withHeaders(['Authorization' => "Bearer {$this->adminToken}", 'Content-Type' => 'application/json'])
             ->json(
                 'POST',
-                route('proxy', ['endpoint' => 'my-index/_doc']),
+                route('proxy', ['endpoint' => "{$indexName}/_doc"]),
                 [
                     "timestamp" => "2099-11-15T13:12:00",
                     "user" => [

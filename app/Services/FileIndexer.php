@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Exceptions\IndexingException;
 use App\Models\FileType;
 use Carbon\Carbon;
+use ErrorException;
 use Exception;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -19,12 +20,16 @@ class FileIndexer extends BaseIndexer
 {
     protected FileType $type;
 
-    protected function __invoke()
+    public function __invoke()
     {
         $tempPath = temp_file_path();
         $fetchLocation = $this->type->location;
 
-        copy($fetchLocation, $tempPath);
+        try {
+            copy($fetchLocation, $tempPath);
+        } catch (ErrorException $e) {
+            throw new IndexingException($e->getMessage(), $this->type->plan);
+        }
 
         if (filesize($tempPath) > 1073741824) // 1 GB
         {

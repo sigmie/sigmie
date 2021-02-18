@@ -25,7 +25,7 @@ class PingControllerTest extends TestCase
 
         $url = $this->indexingPlan->ping_url;
 
-        $this->get($url)->assertOk();
+        $this->get($url)->ray()->assertOk();
         $this->assertTrue($this->user->isSubscribed());
     }
 

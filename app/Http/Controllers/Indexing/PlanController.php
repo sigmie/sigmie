@@ -12,6 +12,7 @@ use App\Models\IndexingActivity;
 use App\Models\IndexingPlan;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Throwable;
 
 class PlanController extends \App\Http\Controllers\Controller
@@ -30,6 +31,7 @@ class PlanController extends \App\Http\Controllers\Controller
             'description' => $validated['description'],
             'cluster_id' => $validated['cluster_id'],
             'project_id' => $validated['project_id'],
+            'random_identifier' => strtolower(Str::random(5)),
             'user_id' => Auth::id(),
         ]);
 

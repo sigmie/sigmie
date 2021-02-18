@@ -61,7 +61,7 @@ class DashboardControllerTest extends TestCase
 
         $this->setHttpConnection($this->cluster->newHttpConnection());
 
-        $this->createIndex(new Index('foo'));
+        $this->createIndex(new Index($this->testId() . '_foo'));
 
         $response = $this->get(route('dashboard.data', ['project' => $this->project->id]));
 
@@ -72,7 +72,7 @@ class DashboardControllerTest extends TestCase
             'clusterId' => $this->cluster->id,
             'indices' => [
                 [
-                    'name' => 'foo',
+                    'name' => $this->testId() . '_foo',
                     'size' => '230b',
                     'docsCount' => '0'
                 ]
