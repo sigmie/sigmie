@@ -73,7 +73,6 @@ class User extends Authenticatable
             //TODO clean up CORS
             //TODO test plan activity
             //TODO test plan indexing
-            //TODO test user delete
         });
 
         //Delete subscription and receipts

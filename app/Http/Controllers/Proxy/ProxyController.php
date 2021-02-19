@@ -7,9 +7,7 @@ namespace App\Http\Controllers\Proxy;
 use App\Http\Middleware\Proxy\ProxyRequest;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Uri;
-use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Message\ServerRequestInterface;
-use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 
 class ProxyController extends \App\Http\Controllers\Controller
 {

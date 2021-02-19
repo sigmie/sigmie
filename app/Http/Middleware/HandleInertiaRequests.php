@@ -11,9 +11,6 @@ use Sigmie\NovaFeatureFlags\FeatureFlagManager;
 
 class HandleInertiaRequests extends Middleware
 {
-    public function __construct(private FeatureFlagManager $featureFlag)
-    {
-    }
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -21,6 +18,9 @@ class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+    public function __construct(private FeatureFlagManager $featureFlag)
+    {
+    }
 
     /**
      * Determines the current asset version.

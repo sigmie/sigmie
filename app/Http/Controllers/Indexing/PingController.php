@@ -1,15 +1,13 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Http\Controllers\Indexing;
 
 use App\Enums\ActivityTypes;
 use App\Enums\PlanTriggers;
 use App\Http\Controllers\Controller;
-use App\Models\Indexing\Plan;
 use App\Models\IndexingActivity;
 use App\Models\IndexingPlan;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class PingController extends Controller

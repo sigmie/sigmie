@@ -7,7 +7,6 @@ namespace App\Models;
 use App\Enums\PlanState;
 use App\Events\Indexing\PlanWasUpdated;
 use App\Jobs\Indexing\IndexPlan as IndexPlan;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\URL;
 
 class IndexingPlan extends Model

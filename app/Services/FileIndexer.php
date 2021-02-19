@@ -6,15 +6,9 @@ namespace App\Services;
 
 use App\Exceptions\IndexingException;
 use App\Models\FileType;
-use Carbon\Carbon;
 use ErrorException;
-use Exception;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Index\Actions as IndexActions;
-use Sigmie\Base\Index\AliasActions;
-use Sigmie\Base\Index\Index;
 
 class FileIndexer extends BaseIndexer
 {

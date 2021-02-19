@@ -6,11 +6,7 @@ namespace App\Http\Controllers\Indexing;
 
 use App\Models\IndexingActivity;
 use App\Models\IndexingPlan;
-use App\Models\IndexingPlanDetails;
-use App\Models\IndexingType;
-use App\Models\Project;
-use Database\Factories\IndexingPlanFactory;
-use Illuminate\Http\Request;
+use App\Models\Project;use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class IndexingController extends \App\Http\Controllers\Controller

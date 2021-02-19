@@ -19,7 +19,7 @@ Route::any('/{endpoint?}', ProxyController::class)
     ->where('endpoint', '.*')
     ->name('proxy')
     ->middleware([
-        \App\Http\Middleware\Proxy\HandleCors::class,
+        \App\Http\Middleware\Proxy\HandleProxyCors::class,
         'auth:sanctum',
         \App\Http\Middleware\Proxy\ProxyRequest::class,
         \App\Http\Middleware\Proxy\VerifyClusterState::class,

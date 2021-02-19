@@ -19,8 +19,8 @@ use Illuminate\Support\ServiceProvider;
 use Laravel\Sanctum\Sanctum;
 use Sigmie\App\Core\CloudflareFactory;
 use Sigmie\App\Core\Contracts\DNSFactory;
-use YlsIdeas\FeatureFlags\Facades\Features;
 use Sigmie\App\Core\DNS\Contracts\Provider as DNSProvider;
+use YlsIdeas\FeatureFlags\Facades\Features;
 
 class AppServiceProvider extends ServiceProvider
 {

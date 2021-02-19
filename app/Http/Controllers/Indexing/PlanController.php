@@ -13,7 +13,6 @@ use App\Models\IndexingPlan;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Throwable;
 
 class PlanController extends \App\Http\Controllers\Controller
 {

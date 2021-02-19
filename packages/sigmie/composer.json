@@ -1,0 +1,52 @@
+{
+    "name": "sigmie/sigmie",
+    "description": "Sigmie Elasticsearch utils",
+    "keywords": [
+        "elasticsearch",
+        "sigmie"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "nicoorfi",
+            "email": "nico@sigmie.com"
+        }
+    ],
+    "require": {
+        "php": "^8.0",
+        "doctrine/collections": "^1.6",
+        "guzzlehttp/guzzle": "^7.2",
+        "symfony/console": "^5.2",
+        "symfony/event-dispatcher": "^5.2",
+        "symfony/event-dispatcher-contracts": "^2.2"
+    },
+    "require-dev": {
+        "symfony/var-dumper": "^5.2",
+        "phpunit/phpunit": "^9.5",
+        "phpstan/phpstan": "^0.12.60",
+        "squizlabs/php_codesniffer": "^3.5",
+        "spatie/ray": "^1.1",
+        "brianium/paratest": "^6.2",
+        "nunomaduro/collision": "^5.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sigmie\\Tests\\": "tests/",
+            "Sigmie\\": "packages/"
+        }
+    },
+    "autoload-dev": {},
+    "replace": {
+        "sigmie/base": "self.version",
+        "sigmie/cli": "self.version",
+        "sigmie/http": "self.version",
+        "sigmie/support": "self.version",
+        "sigmie/testing": "self.version"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "bin": [
+        "packages/Cli/bin/sigmie"
+    ]
+}

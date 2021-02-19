@@ -1,0 +1,40 @@
+{
+    "name": "sigmie/cli",
+    "description": "The Sigmie Cli package.",
+    "license": "MIT",
+    "homepage": "https://docs.sigmie.com",
+    "support": {
+        "issues": "https://github.com/sigmie/sigmie/issues",
+        "source": "https://github.com/sigmie/sigmie"
+    },
+    "authors": [
+        {
+            "name": "Nico Orfi",
+            "email": "nico@sigmie.com"
+        }
+    ],
+    "require": {
+        "php": "^8.0",
+        "sigmie/base": "^0.6",
+        "symfony/console": "^5.2",
+        "symfony/event-dispatcher": "^5.2",
+        "symfony/event-dispatcher-contracts": "^2.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sigmie\\Cli\\": ""
+        }
+    },
+    "suggest": {},
+    "config": {
+        "sort-packages": true
+    },
+    "bin": [
+        "bin/sigmie"
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require-dev": {
+        "nunomaduro/collision": "^5.3"
+    }
+}

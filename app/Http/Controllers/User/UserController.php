@@ -6,9 +6,6 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\UpdateUser;
-use App\Jobs\Indexing\IndexPlan;
-use App\Models\IndexingActivity;
-use App\Models\IndexingPlan;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
