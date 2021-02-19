@@ -67,7 +67,7 @@ class ClusterManagerFactory
 
     public function createDnsProvider(): DNSFactory
     {
-        return app(DNSProvider::class);
+        return app(DNSFactory::class);
     }
 
     public function createGoogleProvider(Project $project): CloudFactory

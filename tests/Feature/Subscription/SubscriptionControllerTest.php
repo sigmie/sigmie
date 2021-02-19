@@ -95,7 +95,7 @@ class SubscriptionControllerTest extends TestCase
         DB::table('subscriptions')->insert(
             [
                 'billable_id' => $user->getAttribute('id'),
-                'billable_type' => User::class,
+                'billable_type' => 'user',
                 'name' => 'hobby',
                 'paddle_id' => $paddleId,
                 'paddle_status' => 'trailing',

@@ -48,6 +48,7 @@ class UserControllerTest extends TestCase
 
         ray($res = $this->delete(route('user.destroy', ['user' => $this->user->id])));
 
+        //Cancel subscription request
         Http::assertSent(function (Request $request) use ($subscriptionId) {
             return
                 $request->url() == Cashier::vendorsUrl() . '/api/2.0/subscription/users_cancel' &&
@@ -74,8 +75,6 @@ class UserControllerTest extends TestCase
 
         $this->assertFalse($this->isAuthenticated(), 'The user is authenticated');
         $res->assertHeader('x-inertia-location', route('landing'));
-
-        return;
     }
 
     /**
