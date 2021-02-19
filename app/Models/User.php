@@ -73,7 +73,9 @@ class User extends Authenticatable
 
         //Delete subscription and receipts
         $this->subscriptions->each(function (Subscription $subscription) {
-            $subscription->receipts->each(fn (Receipt $receipt) => $receipt->delete());
+            $subscription->receipts->each(function (Receipt $receipt) {
+                $receipt->delete();
+            });
 
             $subscription->delete();
         });

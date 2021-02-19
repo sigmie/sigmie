@@ -45,7 +45,6 @@ final class IndexPlan implements ShouldQueue
             event(new IndexingHasFailed($e));
             $indexer->onFailure();
         } finally {
-
             $plan->setAttribute('state', PlanState::NONE())
                 ->save();
 

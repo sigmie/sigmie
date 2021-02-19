@@ -15,7 +15,8 @@ class ClusterPolicy
     /**
      * There is no cluster view action
      */
-    public function viewAny(User $user) {
+    public function viewAny(User $user)
+    {
         return false;
     }
 
@@ -34,7 +35,8 @@ class ClusterPolicy
      */
     public function create(User $user): bool
     {
-        return $user->projects()->first()->getAttribute('clusters')->isEmpty() && $user->subscribed(config('services.paddle.plan_name'));
+        return $user->projects()->first()->getAttribute('clusters')->isEmpty()
+            && $user->subscribed(config('services.paddle.plan_name'));
     }
 
     /**

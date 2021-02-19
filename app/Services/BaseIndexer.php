@@ -64,6 +64,5 @@ abstract class BaseIndexer extends BaseSigmieService implements Indexer
         } else {
             throw new Exception("Unexpected old index value.");
         }
-        
     }
 }

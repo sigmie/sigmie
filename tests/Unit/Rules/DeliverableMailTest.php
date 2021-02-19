@@ -55,7 +55,6 @@ class DeliverableMailTest extends TestCase
 
         $this->responseMock = $this->createMock(ResponseInterface::class);
 
-        /** @var Client|MockObject */
         $this->clientMock = $this->getMockBuilder(Client::class)->setMethods(['get'])->getMock();
         $this->clientMock->method('get')->willReturn($this->responseMock);
 

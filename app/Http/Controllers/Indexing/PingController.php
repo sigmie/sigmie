@@ -17,7 +17,6 @@ class PingController extends Controller
         $user = $plan->cluster->findUser();
 
         if (Gate::forUser($user)->allows('trigger-plan') && $plan->isActive()) {
-
             IndexingActivity::create([
                 'title' => $plan->name . ' was triggered',
                 'type' => (string) ActivityTypes::INFO(),
@@ -32,6 +31,6 @@ class PingController extends Controller
             return;
         }
 
-        return abort(401);
+        abort(401);
     }
 }

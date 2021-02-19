@@ -37,7 +37,6 @@ class IndexingPlan extends Model
     public function run(): void
     {
         if ($this->state !== PlanState::RUNNING()) {
-
             $this->setAttribute('state', PlanState::RUNNING())->save();
 
             dispatch(new IndexPlan($this->id));
@@ -68,9 +67,6 @@ class IndexingPlan extends Model
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * @return IndexingType
-     */
     public function type()
     {
         return $this->morphTo();

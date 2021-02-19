@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-
 class IndexingActivity extends Model
 {
     protected $appends = ['plan_name'];

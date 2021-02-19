@@ -25,15 +25,20 @@ class FileIndexer extends BaseIndexer
             throw new IndexingException($e->getMessage(), $this->type->plan);
         }
 
-        if (filesize($tempPath) > 1073741824) // 1 GB
-        {
-            throw new IndexingException('File fetched from ' . $fetchLocation . ' size bigger than 1GB.', $this->type->plan);
+        if (filesize($tempPath) > 1073741824) { // 1 GB
+            throw new IndexingException(
+                'File fetched from ' . $fetchLocation . ' size bigger than 1GB.',
+                $this->type->plan
+            );
         }
 
         $contents = file_get_contents($tempPath);
 
-        if (is_json($contents) === false) {
-            throw new IndexingException('File fetched from ' . $fetchLocation . ' isn\'t a valid JSON.', $this->type->plan);
+        if (!is_json($contents)) {
+            throw new IndexingException(
+                'File fetched from ' . $fetchLocation . ' isn\'t a valid JSON.',
+                $this->type->plan
+            );
         }
 
         $json = json_decode($contents, true);

@@ -14,6 +14,5 @@ abstract class BaseSigmieService
     public function __construct(Cluster $cluster)
     {
         $this->setHttpConnection($cluster->newHttpConnection());
-
     }
 }

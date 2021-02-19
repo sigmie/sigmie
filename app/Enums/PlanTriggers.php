@@ -13,4 +13,19 @@ class PlanTriggers extends Enum
     private const MANUAL = 'manual';
 
     private const SCHEDULED = 'scheduled';
+
+    public static function SCHEDULED(): PlanTriggers
+    {
+        return new PlanTriggers(self::SCHEDULED);
+    }
+
+    public static function PING(): PlanTriggers
+    {
+        return new PlanTriggers(self::PING);
+    }
+
+    public static function MANUAL(): PlanTriggers
+    {
+        return new PlanTriggers(self::MANUAL);
+    }
 }

@@ -34,6 +34,7 @@ class PlanController extends \App\Http\Controllers\Controller
             'user_id' => Auth::id(),
         ]);
 
+        $type = null;
 
         if ($validated['type']['type'] === 'file') {
             $type = FileType::create([
@@ -59,6 +60,8 @@ class PlanController extends \App\Http\Controllers\Controller
         );
 
         $plan->type->delete();
+
+        $type = null;
 
         if ($validated['type']['type'] === 'file') {
             $type = FileType::create([

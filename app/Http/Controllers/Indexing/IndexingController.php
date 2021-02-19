@@ -6,7 +6,8 @@ namespace App\Http\Controllers\Indexing;
 
 use App\Models\IndexingActivity;
 use App\Models\IndexingPlan;
-use App\Models\Project;use Illuminate\Http\Request;
+use App\Models\Project;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class IndexingController extends \App\Http\Controllers\Controller
@@ -37,7 +38,7 @@ class IndexingController extends \App\Http\Controllers\Controller
         $clusterId = $project->clusters->first()->id;
         $activities =
             IndexingActivity::where('project_id', $project->id)
-            ->orderBy('timestamp','DESC')
+            ->orderBy('timestamp', 'DESC')
             ->take(30)
             ->get();
 
