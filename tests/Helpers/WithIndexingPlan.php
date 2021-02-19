@@ -17,6 +17,10 @@ trait WithIndexingPlan
     {
         $this->withRunningCluster($user);
 
-        $this->indexingPlan = IndexingPlan::factory()->create(['cluster_id' => $this->cluster->id]);
+        $this->indexingPlan = IndexingPlan::factory()->create([
+            'cluster_id' => $this->cluster->id,
+            'user_id' => $this->user->id,
+            'project_id' => $this->cluster->project->id
+        ]);
     }
 }

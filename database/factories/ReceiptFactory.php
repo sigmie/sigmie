@@ -25,17 +25,17 @@ class ReceiptFactory extends Factory
         return [
             'billable_id' => $user->id,
             'billable_type' => User::class,
-            'paddle_subscription_id' => $this->faker->numberBetween(11111, 99999),
-            'checkout_id' => $checkoutId,
-            'order_id' => $this->faker->numberBetween(1111, 99999) . '-' . $this->faker->numberBetween(0000, 9999),
+            'paddle_subscription_id' => '83637',
+            'checkout_id' => '114155-chre3f9b3f70a3f-8d46b03ead',
+            'order_id' => '91704-376973',
             'amount' => 0,
             'tax' => 0,
             'currency' => 'USD',
             'quantity' => 1,
-            'receipt_url' => "http://my.paddle.com/receipt/17024121-13001986/{$checkoutId}",
-            'paid_at' => '2020-08-19 09:45:09',
-            'created_at' => '2020-08-19 09:45:08',
-            'updated_at' => '2020-08-19 09:45:08'
+            'receipt_url' => "http://sandbox-my.paddle.com/receipt/91704-376973/114155-chre3f9b3f70a3f-8d46b03ead",
+            'paid_at' => '2021-02-18 14:26:18',
+            'created_at' => '2021-02-18 14:26:19',
+            'updated_at' => '2021-02-18 14:26:19'
         ];
     }
 }

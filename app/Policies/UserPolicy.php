@@ -15,4 +15,9 @@ class UserPolicy
     {
         return $user->getAttribute('id') === $authenticated->getAttribute('id');
     }
+
+    public function delete(User $authenticated, User $user): bool
+    {
+        return $authenticated->id === $user->id;
+    }
 }

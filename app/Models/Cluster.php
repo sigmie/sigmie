@@ -12,6 +12,8 @@ use Sigmie\Base\Http\Connection;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Http\Auth\BasicAuth;
 use Sigmie\Http\JSONClient;
+use Sigmie\App\Core\DNS\Contracts\Provider as DNSProvider;
+use Sigmie\App\Core\DNS\Records\ARecord;
 
 class Cluster extends Model
 {
@@ -47,6 +49,14 @@ class Cluster extends Model
         $client = JSONClient::create($this->url, $auth);
 
         return new Connection($client);
+    }
+
+    public function removeDNSRecord(): void
+    {
+        /** @var DNSProvider */
+        $dnsProvider = app(DNSProvider::class);
+
+        $dnsProvider->removeRecord(new ARecord($this->name));
     }
 
     public function health(): array

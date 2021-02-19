@@ -8,12 +8,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Paddle\Billable;
+use Laravel\Paddle\Subscription;
 
 class User extends Authenticatable
 {
     use Notifiable;
     use Billable;
     use HasFactory;
+
     protected $fillable = [
         'email', 'username', 'password', 'avatar_url', 'github',
     ];
@@ -40,5 +42,51 @@ class User extends Authenticatable
     public function projects()
     {
         return $this->hasMany(Project::class);
+    }
+
+    public function deleteUserData()
+    {
+        $this->projects->each(function (Project $project) {
+            // Clean cluster records and it's dns entries
+            $project->clusters->each(function (Cluster $cluster) {
+                // Delete indexing plans
+                $cluster->plans->each(function (IndexingPlan $plan) {
+                    // Delete plan activities
+                    IndexingActivity::where('plan_id', $plan->id)->delete();
+
+                    $plan->delete();
+                });
+
+                //Delete cluster tokens
+                $cluster->tokens->each(fn (Token $token) => $token->delete());
+
+                //Remove cluster dns record
+                $cluster->removeDNSRecord();
+
+                // Force delete cluster
+                $cluster->forceDelete();
+            });
+
+            // Delete the project
+            $project->delete();
+
+            //TODO clean up CORS
+            //TODO test plan activity
+            //TODO test plan indexing
+            //TODO test user delete
+        });
+
+        //Delete subscription and receipts
+        $this->subscriptions->each(function (Subscription $subscription) {
+            $subscription->receipts->each(fn (Receipt $receipt) => $receipt->delete());
+
+            $subscription->delete();
+        });
+
+        //Remove notifications
+        $this->notifications->each(fn ($notification) => $notification->delete());
+
+        //Delete user
+        $this->delete();
     }
 }

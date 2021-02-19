@@ -19,7 +19,7 @@
             :key="item.key"
             @click.prevent="replace(item.key)"
             :href="$route('account.settings',{section:item.key, project_id: $page.props.project_id})"
-            :class="(item.key === section)?'text-theme-orange-light-900 border-orange-400':'focus:text-gray-700 focus:border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+            :class="(item.key === section)?'text-theme-orange-light-900 border-theme-orange-light-900':'focus:text-gray-700 focus:border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-300'"
             class="whitespace-nowrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm leading-5 focus:outline-none"
           >{{ item.name }}</a>
         </nav>

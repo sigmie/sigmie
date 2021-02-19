@@ -58,7 +58,7 @@ export default {
       this.$inertia.delete(route, {
         preserveState: false,
         preserveScroll: false,
-        only: ["plans","activities"],
+        only: ["plans", "activities"],
       });
     },
     triggerAction(id) {
@@ -73,7 +73,7 @@ export default {
   },
   created() {
     this.STATE_DELETE_REQUEST = STATE_DELETE_REQUEST;
-    this.STATE_NONE = STATE_DELETE_REQUEST;
+    this.STATE_NONE = STATE_NONE;
     this.STATE_TRIGGER_REQUEST = STATE_TRIGGER_REQUEST;
   },
   components: {

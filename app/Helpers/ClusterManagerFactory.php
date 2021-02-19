@@ -13,6 +13,7 @@ use Sigmie\App\Core\ClusterManager;
 use Sigmie\App\Core\Contracts\CloudFactory;
 use Sigmie\App\Core\Contracts\ClusterManager as ClusterManagerInterface;
 use Sigmie\App\Core\Contracts\DNSFactory;
+use Sigmie\App\Core\DNS\Contracts\Provider as DNSProvider;
 
 class ClusterManagerFactory
 {
@@ -66,11 +67,7 @@ class ClusterManagerFactory
 
     public function createDnsProvider(): DNSFactory
     {
-        return new CloudflareFactory(
-            config('services.cloudflare.api_token'),
-            config('services.cloudflare.zone_id'),
-            config('services.cloudflare.domain')
-        );
+        return app(DNSProvider::class);
     }
 
     public function createGoogleProvider(Project $project): CloudFactory

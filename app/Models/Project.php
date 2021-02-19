@@ -22,6 +22,11 @@ class Project extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function plans()
+    {
+        return $this->hasMany(IndexingPlan::class);
+    }
+
     // public function productionCluster()
     // {
     //     return $this->hasMany(Cluster::class)->where(['environment' => 'prod']);

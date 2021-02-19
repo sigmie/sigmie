@@ -31,13 +31,13 @@ class UserSeeder extends Seeder
         DB::table('subscriptions')->insert([
             'id' => 1,
             'billable_id' => 1,
-            'billable_type' => 'App\\Models\\User',
+            'billable_type' => 'user',
             'name' => 'hobby',
-            'paddle_id' => '4344590',
+            'paddle_id' => '83637',
             'paddle_status' => 'trialing',
-            'paddle_plan' => '593241',
+            'paddle_plan' => '7669',
             'quantity' => 1,
-            'trial_ends_at' => Carbon::now()->addDays(15)->resetToStringFormat(),
+            'trial_ends_at' => '2021-03-04 00:00:00',
             'paused_from' => null,
             'ends_at' => null,
         ]);

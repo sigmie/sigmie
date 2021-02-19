@@ -25,6 +25,11 @@ class IndexingPlan extends Model
         });
     }
 
+    public function activities()
+    {
+        return $this->hasMany(IndexingActivity::class);
+    }
+
     public function isActive(): bool
     {
         return $this->deactivated_at === null;
@@ -33,6 +38,7 @@ class IndexingPlan extends Model
     public function run(): void
     {
         if ($this->state !== PlanState::RUNNING()) {
+
             $this->setAttribute('state', PlanState::RUNNING())->save();
 
             dispatch(new IndexPlan($this->id));

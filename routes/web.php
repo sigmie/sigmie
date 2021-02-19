@@ -88,7 +88,11 @@ Route::middleware('feature:auth')->group(function () {
     });
 });
 
-Route::prefix('subscription')->name('subscription.')->middleware(['user', RedirectToDashboardIfSubscribed::class])->group(function () {
+Route::prefix('subscription')->name('subscription.')->middleware([
+    'auth',
+    'user',
+    RedirectToDashboardIfSubscribed::class
+])->group(function () {
     Route::get('/await', [SubscriptionController::class, 'await'])->name('await');
     Route::get('/create', [SubscriptionController::class, 'create'])->name('create');
     Route::get('/missing', [SubscriptionController::class, 'missing'])->name('missing');
@@ -101,6 +105,7 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
     Route::get('/account/settings/{section?}', [AccountSettingsController::class, 'index'])->name('account.settings')->middleware(ShareSelectedProjectToView::class);
     Route::put('/user/{user}', [UserController::class, 'update'])->name('user.update');
     Route::put('/user/password/{user}', [PasswordController::class, 'update'])->name('user.password.update');
+    Route::delete('/user/{user}', [UserController::class, 'destroy'])->name('user.destroy');
 
 
     Route::group(['middleware' => [

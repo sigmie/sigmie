@@ -13,6 +13,7 @@ class RedirectToDashboardIfSubscribed
     {
         $planName = config('services.paddle.plan_name');
         $user = Auth::user();
+
         $subscription = $user->subscription($planName);
 
         if ($subscription !== null && $user->subscription($planName)->cancelled() === false) {

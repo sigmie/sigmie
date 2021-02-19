@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Http\Middleware\Proxy\ProxyRequest;
+use App\Models\Cluster;
 use App\Models\FileType;
 use App\Models\Token;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
@@ -15,7 +17,9 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Sanctum\Sanctum;
+use Sigmie\App\Core\CloudflareFactory;
 use YlsIdeas\FeatureFlags\Facades\Features;
+use Sigmie\App\Core\DNS\Contracts\Provider as DNSProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,6 +32,13 @@ class AppServiceProvider extends ServiceProvider
         Sanctum::usePersonalAccessTokenModel(Token::class);
 
         $this->app->singleton(ProxyRequest::class);
+        $this->app->singleton(DNSProvider::class, function () {
+            return (new CloudflareFactory(
+                config('services.cloudflare.api_token'),
+                config('services.cloudflare.zone_id'),
+                config('services.cloudflare.domain')
+            ))->create();
+        });
     }
 
     /**
@@ -46,6 +57,8 @@ class AppServiceProvider extends ServiceProvider
 
         Relation::morphMap([
             'file' => FileType::class,
+            'user' => User::class,
+            'cluster' => Cluster::class
         ]);
 
         Queue::before(function (JobProcessing $event) {

@@ -6,7 +6,12 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\UpdateUser;
+use App\Jobs\Indexing\IndexPlan;
+use App\Models\IndexingActivity;
+use App\Models\IndexingPlan;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class UserController extends Controller
 {
@@ -22,5 +27,16 @@ class UserController extends Controller
         $user->update($data);
 
         return redirect()->route('account.settings', ['section' => 'account']);
+    }
+
+    public function destroy(User $user)
+    {
+        $user->subscription(config('services.paddle.plan_name'))->cancelNow();
+
+        $user->deleteUserData();
+
+        Auth::logout();
+
+        return Inertia::location(route('landing'));
     }
 }
