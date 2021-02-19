@@ -69,10 +69,6 @@ class User extends Authenticatable
 
             // Delete the project
             $project->delete();
-
-            //TODO clean up CORS
-            //TODO test plan activity
-            //TODO test plan indexing
         });
 
         //Delete subscription and receipts

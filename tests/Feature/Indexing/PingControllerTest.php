@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Indexing;
 
+use App\Enums\PlanTriggers;
 use App\Jobs\Indexing\IndexPlan;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Queue;
@@ -77,6 +78,12 @@ class PingControllerTest extends TestCase
         $this->get($url);
 
         Queue::assertPushed(fn (IndexPlan $job) => $this->indexingPlan->id === $job->planId);
+
+        $this->assertDatabaseHas('indexing_activities', [
+            'plan_id' => $this->indexingPlan->id,
+            'project_id' => $this->project->id,
+            'trigger' => (string)PlanTriggers::PING(),
+        ]);
     }
 
     /**
