@@ -7,7 +7,7 @@
 <script src="{{ mix('js/vendor.js') }}" defer></script>
 
 @if(config('app.env') == 'local')
-
+<script src="http://localhost:8098"></script>
 @routes
 
 @endif

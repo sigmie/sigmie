@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Receipt;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -60,6 +61,8 @@ class SettingsController extends Controller
                 $data['next_payment'] = $nextPayment->date();
             }
         }
+
+        $data['receipts'] = Receipt::where('billable_id', 1)->where('billable_type', 'user')->get(['paid_at', 'amount', 'receipt_url']);
 
         return $data;
     }

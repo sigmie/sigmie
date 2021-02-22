@@ -41,5 +41,24 @@ class UserSeeder extends Seeder
             'paused_from' => null,
             'ends_at' => null,
         ]);
+
+        DB::table('receipts')->insert([
+            [
+                "id" => 1,
+                "billable_id" => 1,
+                "billable_type" => "user",
+                "paddle_subscription_id" => '83637',
+                "checkout_id" => "65501514-chre1c0b60b423b-2fb3ffc609",
+                "order_id" => "17412651-13427044",
+                "amount" => "0",
+                "tax" => "0",
+                "currency" => "USD",
+                "quantity" => 1,
+                "receipt_url" => "http://my.paddle.com/receipt/17412651-13427044/65501514-chre1c0b60b423b-2fb3ffc609",
+                "paid_at" => "2020-09-01 14:18:22",
+                "created_at" => "2020-09-01 14:18:25",
+                "updated_at" => "2020-09-01 14:18:25"
+            ]
+        ]);
     }
 }

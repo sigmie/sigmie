@@ -17,21 +17,27 @@
 
     <div class="bg-white shadow overflow-hidden rounded-lg">
       <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">Subscription</h3>
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          Subscription
+        </h3>
         <p class="mt-1 max-w-2xl text-sm leading-5 text-gray-500">
           Your subscription is managed with
           <a
             class="text-theme-orange-light-900"
             target="_blank"
             href="http://paddle.com/"
-          >Paddle</a>.
+            >Paddle</a
+          >.
         </p>
       </div>
 
-      <div class="bg-green-50 px-3 sm:px-6 py-4" v-if="$page.props.flash.success">
+      <div
+        class="bg-green-50 px-3 sm:px-6 py-4"
+        v-if="$page.props.flash.success"
+      >
         <div class="text-sm leading-5 text-green-700">
           <ul>
-            <li>{{$page.props.flash.success}}</li>
+            <li>{{ $page.props.flash.success }}</li>
           </ul>
         </div>
       </div>
@@ -41,7 +47,9 @@
         v-if="data.was_subscribed"
       >
         <div class="sm:col-span-1">
-          <dt class="text-sm leading-5 font-medium text-gray-500">Billing email</dt>
+          <dt class="text-sm leading-5 font-medium text-gray-500">
+            Billing email
+          </dt>
           <dd class="mt-1 text-sm leading-5 text-gray-900">{{ data.email }}</dd>
         </div>
         <div class="sm:col-span-1">
@@ -49,56 +57,95 @@
           <dd class="mt-1 text-sm leading-5 text-gray-900">{{ data.plan }}</dd>
         </div>
 
-        <div class="sm:col-span-1" v-if="data.last_payment && data.on_trial === false">
-          <dt class="text-sm leading-5 font-medium text-gray-500">Last payment on</dt>
+        <div
+          class="sm:col-span-1"
+          v-if="data.last_payment && data.on_trial === false"
+        >
+          <dt class="text-sm leading-5 font-medium text-gray-500">
+            Last payment on
+          </dt>
           <dd class="mt-1 text-sm leading-5 text-gray-900">
-            <time :datetime="data.last_payment">{{ onlyDate(data.last_payment) }}</time>
+            <time :datetime="data.last_payment">{{
+              onlyDate(data.last_payment)
+            }}</time>
           </dd>
         </div>
 
         <div class="sm:col-span-1" v-if="data.on_trial">
-          <dt class="text-sm leading-5 font-medium text-gray-500">Trial until</dt>
+          <dt class="text-sm leading-5 font-medium text-gray-500">
+            Trial until
+          </dt>
           <dd class="mt-1 text-sm leading-5 text-gray-900">
-            <time :datetime="data.trial_ends_at">{{ onlyDate(data.trail_ends_at) }}</time>
+            <time :datetime="data.trial_ends_at">{{
+              onlyDate(data.trail_ends_at)
+            }}</time>
           </dd>
         </div>
         <div class="sm:col-span-1" v-if="data.canceled === false">
-          <dt class="text-sm leading-5 font-medium text-gray-500">Next payment on</dt>
+          <dt class="text-sm leading-5 font-medium text-gray-500">
+            Next payment on
+          </dt>
           <dd class="mt-1 text-sm leading-5 text-gray-900">
-            <time :datetime="data.next_payment">{{ onlyDate(data.next_payment) }}</time>
+            <time :datetime="data.next_payment">{{
+              onlyDate(data.next_payment)
+            }}</time>
           </dd>
         </div>
       </dl>
 
-      <div class="bg-gray-50 px-3 sm:px-6 py-4" v-if="data.payment_method === 'paypal'">
+      <div
+        class="bg-gray-50 px-3 sm:px-6 py-4"
+        v-if="data.payment_method === 'paypal'"
+      >
         <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-3">
           <div class="sm:col-span-1">
-            <dt class="text-sm leading-5 font-medium text-gray-500">Payment method</dt>
+            <dt class="text-sm leading-5 font-medium text-gray-500">
+              Payment method
+            </dt>
             <dd class="mt-1 text-sm leading-5 text-gray-900">PayPal</dd>
           </div>
         </dl>
       </div>
 
-      <div class="bg-gray-50 px-3 sm:px-6 py-4" v-if="data.payment_method === 'card'">
-        <dt class="text-sm leading-5 mb-3 font-medium text-gray-500">Card details</dt>
+      <div
+        class="bg-gray-50 px-3 sm:px-6 py-4"
+        v-if="data.payment_method === 'card'"
+      >
+        <dt class="text-sm leading-5 mb-3 font-medium text-gray-500">
+          Card details
+        </dt>
         <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-3">
           <div class="sm:col-span-1">
             <dt class="text-sm leading-5 font-medium text-gray-500">Type</dt>
-            <dd class="mt-1 text-sm leading-5 text-gray-900">{{ startCase(data.card_brand) }}</dd>
+            <dd class="mt-1 text-sm leading-5 text-gray-900">
+              {{ startCase(data.card_brand) }}
+            </dd>
           </div>
           <div class="sm:col-span-1">
-            <dt class="text-sm leading-5 font-medium text-gray-500">Card number</dt>
-            <dd class="mt-1 text-sm leading-5 text-gray-900">************{{ data.card_last_four }}</dd>
+            <dt class="text-sm leading-5 font-medium text-gray-500">
+              Card number
+            </dt>
+            <dd class="mt-1 text-sm leading-5 text-gray-900">
+              ************{{ data.card_last_four }}
+            </dd>
           </div>
           <div class="sm:col-span-1">
-            <dt class="text-sm leading-5 font-medium text-gray-500">Expire date</dt>
-            <dd class="mt-1 text-sm leading-5 text-gray-900">{{ data.card_expire_date }}</dd>
+            <dt class="text-sm leading-5 font-medium text-gray-500">
+              Expire date
+            </dt>
+            <dd class="mt-1 text-sm leading-5 text-gray-900">
+              {{ data.card_expire_date }}
+            </dd>
           </div>
         </dl>
       </div>
 
       <div class="sm:col-span-2 py-5 px-6" v-if="data.was_subscribed">
-        <dt class="text-sm leading-5 hidden sm:block mb-3 font-medium text-gray-500">Manage</dt>
+        <dt
+          class="text-sm leading-5 hidden sm:block mb-3 font-medium text-gray-500"
+        >
+          Manage
+        </dt>
         <dd class="mt-1 text-sm leading-5 text-gray-900" v-if="data.canceled">
           <div class="flex flex-col">
             <div class="w-full md:w-60 mb-2">
@@ -114,7 +161,10 @@
         </dd>
         <dd class="mt-1 text-sm leading-5 text-gray-900" v-else>
           <div class="w-full sm:w-60">
-            <button-danger @click="showConfirmation = true" text="Cancel subscription"></button-danger>
+            <button-danger
+              @click="showConfirmation = true"
+              text="Cancel subscription"
+            ></button-danger>
           </div>
         </dd>
       </div>
@@ -122,20 +172,38 @@
         <div class="flex flex-col">
           <div class="text-sm leading-5 mb-2 text-gray-500">
             You haven't subscribed yet, click
-            <inertia-link class="text-theme-orange-light-900" :href="$route('subscription.create')"> here </inertia-link>to start your trial.
+            <inertia-link
+              class="text-theme-orange-light-900"
+              :href="$route('subscription.create')"
+            >
+              here </inertia-link
+            >to start your trial.
           </div>
         </div>
       </div>
     </div>
+
+    <div v-if="data.receipts.length > 0" class="relative py-5">
+      <div class="absolute inset-0 flex items-center" aria-hidden="true">
+        <div class="w-full border-t border-gray-200"></div>
+      </div>
+      <div class="relative flex justify-center"></div>
+    </div>
+
+    <receipts v-if="data.receipts.length > 0" :receipts="data.receipts"> </receipts>
   </div>
 </template>
 
 <script>
 import moment from "moment";
 import startCase from "lodash/startCase";
+import receipts from "./_receipts";
 
 export default {
   props: ["data"],
+  components: {
+    receipts,
+  },
   data() {
     return {
       showConfirmation: false,
