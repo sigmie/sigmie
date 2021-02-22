@@ -60,9 +60,12 @@ class SettingsController extends Controller
             if ($nextPayment !== null) {
                 $data['next_payment'] = $nextPayment->date();
             }
+
+            $data['method_update_url'] = $subscription->updateUrl();
         }
 
         $data['receipts'] = Receipt::where('billable_id', 1)->where('billable_type', 'user')->get(['paid_at', 'amount', 'receipt_url']);
+        $data['vendor'] = (int) config('services.paddle.vendor_id');
 
         return $data;
     }

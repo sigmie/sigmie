@@ -93,81 +93,6 @@
         </div>
       </dl>
 
-      <div
-        class="bg-gray-50 px-3 sm:px-6 py-4"
-        v-if="data.payment_method === 'paypal'"
-      >
-        <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-3">
-          <div class="sm:col-span-1">
-            <dt class="text-sm leading-5 font-medium text-gray-500">
-              Payment method
-            </dt>
-            <dd class="mt-1 text-sm leading-5 text-gray-900">PayPal</dd>
-          </div>
-        </dl>
-      </div>
-
-      <div
-        class="bg-gray-50 px-3 sm:px-6 py-4"
-        v-if="data.payment_method === 'card'"
-      >
-        <dt class="text-sm leading-5 mb-3 font-medium text-gray-500">
-          Card details
-        </dt>
-        <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-3">
-          <div class="sm:col-span-1">
-            <dt class="text-sm leading-5 font-medium text-gray-500">Type</dt>
-            <dd class="mt-1 text-sm leading-5 text-gray-900">
-              {{ startCase(data.card_brand) }}
-            </dd>
-          </div>
-          <div class="sm:col-span-1">
-            <dt class="text-sm leading-5 font-medium text-gray-500">
-              Card number
-            </dt>
-            <dd class="mt-1 text-sm leading-5 text-gray-900">
-              ************{{ data.card_last_four }}
-            </dd>
-          </div>
-          <div class="sm:col-span-1">
-            <dt class="text-sm leading-5 font-medium text-gray-500">
-              Expire date
-            </dt>
-            <dd class="mt-1 text-sm leading-5 text-gray-900">
-              {{ data.card_expire_date }}
-            </dd>
-          </div>
-        </dl>
-      </div>
-
-      <div class="sm:col-span-2 py-5 px-6" v-if="data.was_subscribed">
-        <dt
-          class="text-sm leading-5 hidden sm:block mb-3 font-medium text-gray-500"
-        >
-          Manage
-        </dt>
-        <dd class="mt-1 text-sm leading-5 text-gray-900" v-if="data.canceled">
-          <div class="flex flex-col">
-            <div class="w-full md:w-60 mb-2">
-              <inertia-link :href="$route('subscription.create')">
-                <button-primary text="Renew your subscription"></button-primary>
-              </inertia-link>
-            </div>
-            <div class="text-sm leading-5 text-gray-500">
-              Your subscription ends on
-              <time :datetime="data.ends_at">{{ onlyDate(data.ends_at) }}</time>
-            </div>
-          </div>
-        </dd>
-        <dd class="mt-1 text-sm leading-5 text-gray-900" v-else>
-          <div class="w-full sm:w-60">
-            <button-danger
-              @click="showConfirmation = true"
-              text="Cancel subscription"
-            ></button-danger>
-          </div>
-        </dd>
-      </div>
       <div class="sm:col-span-2 py-5 px-6" v-if="data.was_subscribed === false">
         <div class="flex flex-col">
           <div class="text-sm leading-5 mb-2 text-gray-500">
@@ -183,6 +108,68 @@
       </div>
     </div>
 
+    <div v-if="data.canceled" class="relative py-5">
+      <div class="absolute inset-0 flex items-center" aria-hidden="true">
+        <div class="w-full border-t border-gray-200"></div>
+      </div>
+      <div class="relative flex justify-center"></div>
+    </div>
+
+    <renew-subscription v-if="data.canceled" :ends="data.ends_at">
+    </renew-subscription>
+
+    <div
+      v-if="data.was_subscribed && data.canceled === false"
+      class="relative py-5"
+    >
+      <div class="absolute inset-0 flex items-center" aria-hidden="true">
+        <div class="w-full border-t border-gray-200"></div>
+      </div>
+      <div class="relative flex justify-center"></div>
+    </div>
+
+    <payment-update
+      :currentType="data.payment_method"
+      :expireDate="data.card_expire_date"
+      :lastFour="data.card_last_four"
+      :url="data.method_update_url"
+      :vendor="data.vendor"
+      v-if="data.was_subscribed && data.canceled === false"
+    >
+    </payment-update>
+
+    <div
+      v-if="data.was_subscribed && data.canceled === false"
+      class="relative py-5"
+    >
+      <div class="absolute inset-0 flex items-center" aria-hidden="true">
+        <div class="w-full border-t border-gray-200"></div>
+      </div>
+      <div class="relative flex justify-center"></div>
+    </div>
+
+    <div
+      v-if="data.was_subscribed && data.canceled === false"
+      class="border-gray-200 w-full bg-white shadow overflow-hidden rounded-lg"
+    >
+      <div class="flex justify-between px-6 py-5">
+        <div class>
+          <div class="font-semibold text-base text-gray-800">
+            Cancel Subscription
+          </div>
+          <div class="text-sm text-gray-600">
+            Your subscription will remain active until the end of your trail.
+          </div>
+        </div>
+        <div class="max-w-sm py-1">
+          <button-danger
+            @click="showConfirmation = true"
+            text="Cancel"
+          ></button-danger>
+        </div>
+      </div>
+    </div>
+
     <div v-if="data.receipts.length > 0" class="relative py-5">
       <div class="absolute inset-0 flex items-center" aria-hidden="true">
         <div class="w-full border-t border-gray-200"></div>
@@ -190,7 +177,8 @@
       <div class="relative flex justify-center"></div>
     </div>
 
-    <receipts v-if="data.receipts.length > 0" :receipts="data.receipts"> </receipts>
+    <receipts v-if="data.receipts.length > 0" :receipts="data.receipts">
+    </receipts>
   </div>
 </template>
 
@@ -198,11 +186,15 @@
 import moment from "moment";
 import startCase from "lodash/startCase";
 import receipts from "./_receipts";
+import paymentUpdate from "./_payment-update";
+import renewSubscription from "./_renew-subscription";
 
 export default {
   props: ["data"],
   components: {
     receipts,
+    paymentUpdate,
+    renewSubscription,
   },
   data() {
     return {

@@ -17,7 +17,7 @@
                 class="bg-white"
               >
                 <td
-                  class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500"
+                  class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                 >
                   {{ toHumanDate(receipt.paid_at) }}
                 </td>

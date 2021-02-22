@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Paddle\Billable;
 use Laravel\Paddle\Subscription;
+use Laravel\Paddle\Receipt;
 
 class User extends Authenticatable
 {

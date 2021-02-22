@@ -175,21 +175,36 @@
               Change password
             </dd>
           </div>
-
-          <div class="sm:col-span-2 py-5 px-6">
-            <dt class="text-sm leading-5 mb-5 font-medium text-gray-500">
-              Manage
-            </dt>
-            <dd class="mt-1text-sm leading-5 text-gray-900">
-              <div class="w-40">
-                <button-danger
-                  @click="deleteRequest"
-                  text="Delete my account"
-                ></button-danger>
-              </div>
-            </dd>
-          </div>
         </dl>
+      </div>
+    </div>
+
+    <div v-if="true" class="relative py-5">
+      <div class="absolute inset-0 flex items-center" aria-hidden="true">
+        <div class="w-full border-t border-gray-200"></div>
+      </div>
+      <div class="relative flex justify-center"></div>
+    </div>
+
+    <div
+      v-if="true"
+      class="border-gray-200 w-full bg-white shadow overflow-hidden rounded-lg"
+    >
+      <div class="flex justify-between px-6 py-5">
+        <div class>
+          <div class="font-semibold text-base text-gray-800">
+            Delete Account
+          </div>
+          <div class="text-sm text-gray-600">
+            This will delete all your data.
+          </div>
+        </div>
+        <div class="max-w-sm py-1">
+          <button-danger
+            @click="deleteRequest"
+            text="Delete my account"
+          ></button-danger>
+        </div>
       </div>
     </div>
 
