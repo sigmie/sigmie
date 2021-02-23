@@ -2,7 +2,7 @@
   <app title="Settings">
     <div class="mx-auto max-w-xl">
       <h1 class="leading-6 text-2xl font-medium text-gray-900 mb-10">
-        Settings
+        Account Settings
       </h1>
       <div class="flex flex-col content-center justify-center">
         <div>

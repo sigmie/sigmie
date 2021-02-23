@@ -5,7 +5,7 @@
         <select
           aria-label="Selected tab"
           v-model="selected"
-          class="form-select block w-full pl-3 pr-10 py-2 text-base leading-6 border-gray-300 focus:outline-none focus:ring-blue focus:border-blue-300 sm:text-sm sm:leading-5 transition ease-in-out duration-150"
+          class="rounded-lg form-select block w-full pl-3 pr-10 py-2 text-base leading-6 border-gray-300 focus:outline-none focus:ring-blue focus:border-blue-300 sm:text-sm sm:leading-5 transition ease-in-out duration-150"
           @change="onSelectChange"
         >
           <option v-for="item in items" :value="item.key" :key="item.key">{{ item.name }}</option>
