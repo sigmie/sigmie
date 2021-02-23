@@ -6,7 +6,7 @@ namespace App\Models;
 
 use App\Enums\PlanState;
 use App\Events\Indexing\PlanWasUpdated;
-use App\Jobs\Indexing\IndexPlan as IndexPlan;
+use App\Jobs\Indexing\IndexAction as IndexAction;
 use Illuminate\Support\Facades\URL;
 
 class IndexingPlan extends Model
@@ -39,7 +39,7 @@ class IndexingPlan extends Model
         if ($this->state !== PlanState::RUNNING()) {
             $this->setAttribute('state', PlanState::RUNNING())->save();
 
-            dispatch(new IndexPlan($this->id));
+            dispatch(new IndexAction($this->id));
 
             event(new PlanWasUpdated($this->id));
         }

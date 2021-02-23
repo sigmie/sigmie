@@ -39,7 +39,13 @@ class DashboardController extends \App\Http\Controllers\Controller
         if ($cluster->getAttribute('state') === Cluster::RUNNING) {
             $this->setHttpConnection($cluster->newHttpConnection());
 
-            $catResponse = $this->catAPICall('/indices', 'GET');
+            $catIndexResponse = $this->catAPICall('/indices', 'GET');
+            $catAliasResponse = $this->catAPICall('/aliases', 'GET');
+
+            $aliases = collect($catAliasResponse->json())
+                ->mapToDictionary(
+                    fn ($data) => [$data['index'] => $data['alias']]
+                );
 
             $health = $cluster->health();
 
@@ -49,9 +55,9 @@ class DashboardController extends \App\Http\Controllers\Controller
                 'name' => $health['cluster_name'],
             ];
 
-
-            $indices = collect($catResponse->json())
+            $indices = collect($catIndexResponse->json())
                 ->map(fn ($values) => [
+                    'aliases' => (isset($aliases[$values['index']])) ? $aliases[$values['index']] : '',
                     'name' => $values['index'],
                     'size' => $values['store.size'],
                     'docsCount' => $values['docs.count']

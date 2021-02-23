@@ -23,7 +23,7 @@ return [
 
     'feature' => [
         'auth' => true,
-        'indexing' => false,
+        'indexing' => config('app.env') === 'local' ? true : false,
     ],
 
     /*

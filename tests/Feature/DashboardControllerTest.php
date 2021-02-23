@@ -61,7 +61,11 @@ class DashboardControllerTest extends TestCase
 
         $this->setHttpConnection($this->cluster->newHttpConnection());
 
-        $this->createIndex(new Index($this->testId() . '_foo'));
+        $index = new Index($this->testId() . '_foo');
+
+        $this->createIndex($index);
+
+        $index->setAlias('baz');
 
         $response = $this->get(route('dashboard.data', ['project' => $this->project->id]));
 
@@ -72,9 +76,10 @@ class DashboardControllerTest extends TestCase
             'clusterId' => $this->cluster->id,
             'indices' => [
                 [
+                    'aliases'=> ['baz'],
                     'name' => $this->testId() . '_foo',
                     'size' => '230b',
-                    'docsCount' => '0'
+                    'docsCount' => '0',
                 ]
             ],
             'clusterInfo' => [

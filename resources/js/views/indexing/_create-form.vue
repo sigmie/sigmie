@@ -19,17 +19,15 @@
         >
           <form
             @submit.prevent="submit"
-            v-on:keydown.enter.prevent='submit'
+            v-on:keydown.enter.prevent="submit"
             class="h-full pt-16 divide-y divide-gray-200 flex flex-col bg-white shadow-xl"
           >
             <div class="flex-1 h-0 overflow-y-auto">
               <div class="py-6 px-4 sm:px-6">
                 <div class="flex items-center justify-between">
-                  <h2
-                    class="text-lg font-medium text-gray-900"
-                  >
-                    New Plan
-                  </h2>
+                  <div>
+                    <h2 class="text-lg font-medium text-gray-900">New Plan</h2>
+                  </div>
                   <div class="ml-3 h-7 flex items-center">
                     <button
                       @click.prevent="hideForm"
@@ -162,7 +160,6 @@ export default {
       };
     },
     submit() {
-        console.log('submited');
       let route = this.$route("indexing.plan.store");
 
       this.form
