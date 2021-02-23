@@ -12,7 +12,6 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\Helpers\WithProject;
-use Tests\Helpers\WithRunningCluster;
 use Tests\TestCase;
 
 class ProjectPolicyTest extends TestCase

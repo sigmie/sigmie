@@ -43,7 +43,6 @@ final class IndexAction implements ShouldQueue
         try {
             $indexer->index();
         } catch (IndexingException $e) {
-
             event(new IndexingHasFailed($e));
 
             $indexer->onFailure();

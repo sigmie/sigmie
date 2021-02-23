@@ -15,13 +15,6 @@ abstract class TestCase extends BaseTestCase
     use DatabaseTransactions;
     use SigmieTraits;
 
-    protected function testId(): string
-    {
-        $class = strtolower(static::class);
-        $class = str_replace('\\', '_', $class);
-        return  $class . '_' . $this->getName();
-    }
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -32,6 +25,13 @@ abstract class TestCase extends BaseTestCase
     public function tearDown(): void
     {
         parent::tearDown();
+    }
+
+    protected function testId(): string
+    {
+        $class = strtolower(static::class);
+        $class = str_replace('\\', '_', $class);
+        return  $class . '_' . $this->getName();
     }
 
     /**

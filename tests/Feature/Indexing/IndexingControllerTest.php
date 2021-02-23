@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Indexing;
 
-use App\Http\Controllers\Indexing\PlanController;
 use App\Models\IndexingPlan;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\Helpers\WithNotSubscribedUser;

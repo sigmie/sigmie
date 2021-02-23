@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Paddle\Billable;
-use Laravel\Paddle\Subscription;
 use Laravel\Paddle\Receipt;
+use Laravel\Paddle\Subscription;
 
 class User extends Authenticatable
 {

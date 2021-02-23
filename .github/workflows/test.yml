@@ -46,7 +46,10 @@ jobs:
            curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "Test workflow has started."}' $SLACK_HOOK_URL
 
     - name: Add elasticsearch host
-      run: echo "127.0.0.1 es" | sudo tee -a /etc/hosts
+      run: |
+        echo "127.0.0.1 es" | sudo tee -a /etc/hosts
+        echo "127.0.0.1 redis" | sudo tee -a /etc/hosts
+        echo "127.0.0.1 db" | sudo tee -a /etc/hosts
 
     - name: Cache node modules
       uses: actions/cache@v1
@@ -64,12 +67,6 @@ jobs:
       run: |
           gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/auth.json.gpg
           gpg --quiet --batch --yes --decrypt --passphrase=$VARIABLES_PASSPHRASE --output .env.testing .github/secrets/.env.testing.gpg
-
-    - name: Set host names
-      run: |
-          sudo sh -c "echo 127.0.0.1 redis.internal.mos-sigma.com >> /etc/hosts"
-          sudo sh -c "echo 127.0.0.1 db.internal.mos-sigma.com >> /etc/hosts"
-          sudo sh -c "echo 127.0.0.1 es.internal.mos-sigma.com >> /etc/hosts"
 
     - name: Install curl zip
       run: sudo apt-get update && sudo apt-get install -y curl zip
