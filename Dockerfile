@@ -62,9 +62,8 @@ EXPOSE 8080
 # set web as default user
 USER sigmie
 
-# install composer and the project dependecies as the sigmie user
-RUN curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer && \
-    composer install
+# install composer
+RUN curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 
 # production command
 CMD composer validate && \
