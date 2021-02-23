@@ -9,8 +9,10 @@ use Sigmie\Base\Http\Connection;
 use Sigmie\Cli\Contracts\OutputFormat;
 use Sigmie\Cli\Outputs\ClientInfo;
 use Sigmie\Http\JSONClient;
+use Sigmie\Http\JSONResponse;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class BaseCommand extends Command
@@ -31,9 +33,16 @@ abstract class BaseCommand extends Command
     {
         parent::configure();
 
+        $this->addOption('raw', 'w', InputOption::VALUE_NONE, 'Render the raw json response returned from Elasticsearch');
+
         $this->config = new Config;
 
         $this->setHttpConnection($this->createHttpConnection());
+    }
+
+    public function handleRaw(JSONResponse $response)
+    {
+        $this->output->writeln(json_encode($response->json(), JSON_PRETTY_PRINT));
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)

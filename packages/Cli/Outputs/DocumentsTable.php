@@ -34,6 +34,19 @@ class DocumentsTable implements OutputFormat
             $docs[] = $doc['_source'];
         }
 
+        foreach ($headers as $index => $value) {
+            // $table->setColumnMaxWidth($index, 50);
+        }
+
+        //Truncate long text
+        foreach ($docs as $docIndex => $doc) {
+            foreach ($doc as $dataIndex => $data) {
+                if (is_string($data) && strlen($data) > 50) {
+                    $docs[$docIndex][$dataIndex] = substr($data, 0, 47) . '...';
+                }
+            }
+        }
+
         $table->setHeaders([
             [new TableCell(
                 'Index name ' . $this->indexName,

@@ -13,6 +13,7 @@ use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Cli\Outputs\DocumentsTable;
 use Sigmie\Cli\Outputs\DocumentTable;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 
 class ListDocs extends BaseCommand
 {
@@ -45,6 +46,14 @@ class ListDocs extends BaseCommand
         $query->setFrom(0)->setSize(10000);
 
         $response = $this->searchAPICall($query);
+
+        $raw = $this->input->getOption('raw');
+
+        if ($raw) {
+            $this->handleRaw($response);
+
+            return 0;
+        }
 
         $data = $response->json('hits')['hits'];
 

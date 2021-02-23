@@ -28,8 +28,6 @@ class Alias extends BaseCommand
         $this->addArgument('action', InputOption::VALUE_REQUIRED, 'Action to perform. (add, remove)');
         $this->addArgument('index', InputOption::VALUE_REQUIRED, 'Index name');
         $this->addArgument('alias', InputOption::VALUE_REQUIRED, 'Alias');
-        $this->addOption('from', '-o', InputOption::VALUE_OPTIONAL, 'from');
-        $this->addOption('to', '-n', InputOption::VALUE_OPTIONAL, 'to');
     }
 
     public function executeCommand(): int
@@ -54,21 +52,6 @@ class Alias extends BaseCommand
             $index->removeAlias($alias);
 
             $this->output->writeln("Alias removed from index {$index->getName()}.");
-
-            return 0;
-        }
-
-
-        if ($action === 'switch') {
-
-            $body = ['actions' => [
-                ['remove' => ['index' => $index, 'alias' => $alias]],
-                ['add' => ['index' => $index, 'alias' => $alias]]
-            ]];
-
-            $this->aliasAPICall('POST', $body);
-
-            $this->output->writeln("Alias moved from index {$index->getName()} to {$alias}.");
 
             return 0;
         }

@@ -1,6 +1,5 @@
 #!/usr/bin/env php
 <?php
-
 $autoload = false;
 foreach ([
     __DIR__ . '/../../../../../../vendor/autoload.php', //Monorepo global folder
@@ -54,7 +53,7 @@ $application->addCommands([
     new Index\Create(),
     new Index\Clear(),
     new Index\Alias(),
-    new Alias\SwitchAlias()
+    new Alias\SwitchAlias(),
 ]);
 
 $application->run();
