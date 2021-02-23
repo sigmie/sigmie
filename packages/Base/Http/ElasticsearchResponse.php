@@ -9,6 +9,7 @@ use Psr\Http\Message\ResponseInterface;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse as ElasticsearchResponseInterface;
 use Sigmie\Base\Exceptions\ElasticsearchException;
+use Sigmie\Base\Exceptions\NotFound;
 use Sigmie\Http\JSONResponse;
 
 class ElasticsearchResponse extends JSONResponse implements ElasticsearchResponseInterface
@@ -25,6 +26,10 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
 
     public function exception(ElasticsearchRequest $request): Exception
     {
+        if ($this->code() === 404) {
+            return new NotFound('Some resource wasn\'t found');
+        }
+
         return  new ElasticsearchException($request, $this);
     }
 

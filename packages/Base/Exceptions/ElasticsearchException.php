@@ -16,17 +16,7 @@ class ElasticsearchException extends Exception
 
     public function __construct(ElasticsearchRequest $request, ElasticsearchResponse $response)
     {
-        throw new  Exception("Error Processing Request", 1);
-        
-        $text = $response->json('error')['type'];
-        $text = str_replace('_', ' ', $text);
-        $text = ucfirst($text);
-        $text .= '.';
-
-        parent::__construct($text, $response->json('status'));
-
-        // dump($request->getBody()->getContents());
-        // dump($response->json());
+        parent::__construct('Es error', 1);
 
         $this->request = $request;
         $this->response = $response;

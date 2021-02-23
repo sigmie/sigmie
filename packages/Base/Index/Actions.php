@@ -7,6 +7,7 @@ namespace Sigmie\Base\Index;
 use PhpParser\Node\Expr\Instanceof_;
 use Sigmie\Base\APIs\Calls\Cat as CatAPI;
 use Sigmie\Base\APIs\Calls\Index as IndexAPI;
+use Sigmie\Base\Exceptions\NotFound;
 use Sigmie\Support\Collection;
 
 use function PHPUnit\Framework\isInstanceOf;
@@ -41,17 +42,26 @@ trait Actions
 
     protected function getIndex(string $identifier): ?Index
     {
-        $index = $this->listIndices()
-            ->filter(fn (Index $index) => $index->getName() === $identifier)
-            ->first();
+        try {
+            $res = $this->indexAPICall("/{$identifier}", 'GET',);
 
-        if (is_null($index)) {
+            $data = array_values($res->json())[0];
+            $name = $data['settings']['index']['provided_name'];
+            $aliases = $data['aliases'];
+            $index = new Index($name);
+
+            if (count($aliases) > 0) {
+                foreach ($aliases as $alias => $value) {
+                    $index->setAlias($alias);
+                }
+            }
+
+            $index->setHttpConnection($this->getHttpConnection());
+
             return $index;
+        } catch (NotFound) {
+            return null;
         }
-
-        $index->setHttpConnection($this->getHttpConnection());
-
-        return $index;
     }
 
     protected function listIndices($offset = 0, $limit = 100): Collection

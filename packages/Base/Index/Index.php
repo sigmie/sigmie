@@ -27,7 +27,7 @@ class Index implements DocumentCollectionInterface
 
     protected ?string $size;
 
-    protected ?string $alias = null;
+    protected array $aliases = [];
 
     protected int $docsCount;
 
@@ -53,16 +53,18 @@ class Index implements DocumentCollectionInterface
 
     public function setAlias(string $alias): self
     {
-        $this->alias = $alias;
+        $this->aliases[] = $alias;
 
-        $this->createAlias($this);
+        if (isset(self::$httpConnection)) {
+            $this->createAlias($this, $alias);
+        }
 
         return $this;
     }
 
-    public function getAlias(): ?string
+    public function getAliases(): array
     {
-        return $this->alias;
+        return $this->aliases;
     }
 
     public function removeAlias(string $alias)

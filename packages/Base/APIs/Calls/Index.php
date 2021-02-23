@@ -14,11 +14,11 @@ trait Index
 {
     use API;
 
-    public function indexAPICall(string $index, string $method, array $body = []): ElasticsearchResponse
+    public function indexAPICall(string $index, string $method, ?array $body = null): ElasticsearchResponse
     {
         $uri = new Uri($index);
 
-        $esRequest = new ElasticsearchRequest($method, $uri, $body);
+        $esRequest = new ElasticsearchRequest($method, $uri, null);
 
         return $this->httpCall($esRequest);
     }
