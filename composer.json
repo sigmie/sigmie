@@ -50,6 +50,7 @@
         "sigmie/app-core": "^0.11",
         "sigmie/nova-feature-flags": "@dev",
         "sigmie/sigmie": "dev-master#9000d39224d9aa3ae9d20125809ff0be6702166f",
+        "symfony/psr-http-message-bridge": "^2.1",
         "tightenco/ziggy": "^0.9.3"
     },
     "require-dev": {
