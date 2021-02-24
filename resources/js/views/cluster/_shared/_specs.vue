@@ -150,10 +150,10 @@ export default {
   },
   data() {
     return {
-      dataCenter: "",
+      dataCenter: null,
       nodes: 3,
       cores: 1,
-      version: "",
+      version: null,
       disk: 10,
       direction: "decrease",
       memory: 2048,
