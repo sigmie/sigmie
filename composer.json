@@ -22,6 +22,18 @@
             "options": {
                 "symlink": true
             }
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/sigmie/nova-backup-tool"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/sigmie/laravel-backup"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/sigmie/db-dumper"
         }
     ],
     "require": {
@@ -52,7 +64,7 @@
         "sigmie/app-core": "^0.11",
         "sigmie/nova-feature-flags": "@dev",
         "sigmie/sigmie": "dev-master#9000d39224d9aa3ae9d20125809ff0be6702166f",
-        "spatie/nova-backup-tool": "^4.1",
+        "spatie/nova-backup-tool": "dev-fix/mysql-socket",
         "superbalist/laravel-google-cloud-storage": "^2.2",
         "symfony/psr-http-message-bridge": "^2.1",
         "tightenco/ziggy": "^0.9.3"
