@@ -65,7 +65,7 @@ class SettingsController extends Controller
         }
 
 
-        $data['receipts'] = Receipt::where('billable_id', 1)
+        $data['receipts'] = Receipt::where('billable_id', $user->id)
             ->where('billable_type', 'user')
             ->get(['paid_at', 'amount', 'receipt_url']);
         $data['vendor'] = (int) config('services.paddle.vendor_id');
