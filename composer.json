@@ -32,6 +32,7 @@
         "fruitcake/laravel-cors": "^1.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "inertiajs/inertia-laravel": "^0.3.6",
+        "kabbouchi/nova-impersonate": "^1.5",
         "laravel/cashier-paddle": "^1.0",
         "laravel/framework": "^8.0",
         "laravel/horizon": "^5.0",
