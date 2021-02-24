@@ -41,7 +41,9 @@ class Kernel extends ConsoleKernel
             ->daily()
             ->onOneServer();
 
-        $schedule->command('backup:run')->daily()->at('01:30');
+        if (config('app.env') === 'production') {
+            $schedule->command('backup:run --only-db')->daily()->at('01:30')->onOneServer();
+        }
     }
 
     /**

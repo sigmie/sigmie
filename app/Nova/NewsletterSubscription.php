@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Nova;
 
+use App\Models\NewsletterSubscription as ModelsNewsletterSubscription;
 use App\Nova\Actions\SendNewsletterSubscriptionConfirmation;
 use Illuminate\Http\Request;
 use Laravel\Nova\Fields\Boolean;
@@ -18,7 +19,10 @@ class NewsletterSubscription extends Resource
      *
      * @var string
      */
-    public static $model = 'App\Models\NewsletterSubscription';
+    public static $model = ModelsNewsletterSubscription::class;
+
+
+    public static $displayInNavigation = false;
 
     /**
      * The single value that should be used to represent the resource when being displayed.

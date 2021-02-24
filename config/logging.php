@@ -43,10 +43,14 @@ return [
             'channel'   => env('LOGSTASH_CHANNEL', 'logstash'),
         ],
 
+        'bugsnag' => [
+            'driver' => 'bugsnag',
+        ],
+
         'stack' => [
             'driver' => 'stack',
             'ignore_exceptions' => false,
-            'channels' => ['logstash', 'slack'],
+            'channels' => ['logstash', 'slack', 'bugsnag'],
         ],
 
         'single' => [

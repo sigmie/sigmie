@@ -27,6 +27,7 @@
     "require": {
         "php": "^8.0",
         "composer-runtime-api": "^2.0",
+        "bugsnag/bugsnag-laravel": "^2.0",
         "calebporzio/sushi": "^2.1",
         "fideloper/proxy": "^4.0",
         "fruitcake/laravel-cors": "^1.0",
