@@ -40,6 +40,8 @@ class Kernel extends ConsoleKernel
             ->onSuccess(fn () => $this->logTaskSuccess('telescope:prune --hours=48'))
             ->daily()
             ->onOneServer();
+
+        $schedule->command('backup:run')->daily()->at('01:30');
     }
 
     /**
