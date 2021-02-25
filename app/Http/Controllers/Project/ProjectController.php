@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Project;
 
 use App\Http\Requests\Project\StoreProject;
+use App\Http\Requests\Project\UpdateProject;
 use App\Models\Project;
 use App\Repositories\ProjectRepository;
 use Illuminate\Support\Facades\Auth;
@@ -12,12 +13,8 @@ use Inertia\Inertia;
 
 class ProjectController extends \App\Http\Controllers\Controller
 {
-    private ProjectRepository $projects;
-
-    public function __construct(ProjectRepository $projectRepository)
+    public function __construct()
     {
-        $this->projects = $projectRepository;
-
         $this->authorizeResource(Project::class, 'project');
     }
 
@@ -33,7 +30,7 @@ class ProjectController extends \App\Http\Controllers\Controller
         $provider = $validated['provider']['id'];
         $userId = Auth::user()->getAttribute('id');
 
-        $this->projects->create([
+        Project::create([
             'name' => $validated['name'],
             'description' => $validated['description'],
             'creds' => encrypt($credentials),
@@ -42,5 +39,12 @@ class ProjectController extends \App\Http\Controllers\Controller
         ]);
 
         return redirect()->route('cluster.create');
+    }
+
+    public function update(Project $project, UpdateProject $request)
+    {
+        $project->fill($request->validated())->save();
+
+        return redirect()->route('settings', ['project' => $project->id]);
     }
 }

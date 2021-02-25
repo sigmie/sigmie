@@ -76,7 +76,7 @@ class DashboardControllerTest extends TestCase
             'clusterId' => $this->cluster->id,
             'indices' => [
                 [
-                    'aliases'=> ['baz'],
+                    'aliases' => ['baz'],
                     'name' => $this->testId() . '_foo',
                     'size' => '230b',
                     'docsCount' => '0',

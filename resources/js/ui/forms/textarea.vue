@@ -1,6 +1,7 @@
 <template>
   <div class>
     <label
+      v-if="label.length > 0"
       :for="id"
       class="block text-sm font-medium leading-5 text-gray-700 sm:mt-px sm:pt-2 pb-1"
       >{{ label }}</label

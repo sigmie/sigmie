@@ -27,6 +27,11 @@ class Project extends Model
         return $this->hasMany(IndexingPlan::class);
     }
 
+    public function decryptedCloudCredentials(): array
+    {
+        return decrypt($this->getAttribute('creds'));
+    }
+
     // public function productionCluster()
     // {
     //     return $this->hasMany(Cluster::class)->where(['environment' => 'prod']);

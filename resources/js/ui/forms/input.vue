@@ -14,7 +14,7 @@
         :data-lpignore="lpignore"
         :class="[
           validations.$anyError || errors
-            ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-300 focus:text-'
+            ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-300'
             : '',
         ]"
         :autocomplete="autocomplete"

@@ -31,7 +31,7 @@ use App\Http\Controllers\Legal\LegalController;
 use App\Http\Controllers\Newsletter\SubscriptionConfirmationController;
 use App\Http\Controllers\Newsletter\SubscriptionController as NewsletterSubscriptionController;
 use App\Http\Controllers\Project\ProjectController;
-use App\Http\Controllers\Project\SettingsController as ClusterSettingsController;
+use App\Http\Controllers\Project\SettingsController as ProjectSettingsController;
 use App\Http\Controllers\Subscription\SubscriptionController;
 use App\Http\Controllers\User\PasswordController;
 use App\Http\Controllers\User\SettingsController as AccountSettingsController;
@@ -115,13 +115,14 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
 
         Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
 
-        Route::resource('project', ProjectController::class);
-
         Route::get('/dashboard/{project?}', [DashboardController::class, 'show'])->name('dashboard')->middleware([RedirecToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
 
         Route::get('/tokens/{project?}', [TokenController::class, 'index'])->name('token.index')->middleware([RedirecToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
 
-        Route::get('/settings/{project?}', [ClusterSettingsController::class, 'index'])->name('settings')->middleware(RedirecToSameRouteWithProject::class);
+        Route::get('/project/settings/{project?}', [ProjectSettingsController::class, 'index'])->name('settings')->middleware(RedirecToSameRouteWithProject::class);
+        Route::put('/project/{project?}', [ProjectController::class, 'update'])->name('project.update');
+        Route::post('/project', [ProjectController::class, 'store'])->name('project.store');
+        Route::get('/project', [ProjectController::class, 'create'])->name('project.create');
 
         Route::get('/cluster/create', [ClusterController::class, 'create'])->name('cluster.create');
         Route::get('/cluster/edit/{cluster}', [ClusterController::class, 'edit'])->name('cluster.edit');

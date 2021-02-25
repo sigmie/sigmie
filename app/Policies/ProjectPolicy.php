@@ -29,7 +29,7 @@ class ProjectPolicy
 
     public function update(User $user, Project $project)
     {
-        return false;
+        return $user->id === $project->user->id;
     }
 
     public function delete(User $user, Project $project)

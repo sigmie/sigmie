@@ -71,7 +71,7 @@ class ClusterManagerFactory
     public function createGoogleProvider(Project $project): CloudFactory
     {
         $projectId = $project->getAttribute('id');
-        $serviceAccount = decrypt($project->getAttribute('creds'));
+        $serviceAccount = $project->decryptedCloudCredentials();
         $path = "creds/{$projectId}.json";
 
         return $this->newGoogleFactory($path, json_encode($serviceAccount));

@@ -4,7 +4,12 @@
     :type="type"
     :disabled="disabled"
     @click="$emit('click', $event)"
-    class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full"
+    :class="
+      disabled
+        ? 'cursor-not-allowed border-gray-100 text-gray-400'
+        : 'bg-white shadow-sm border-gray-300 text-gray-700 hover:bg-gray-50 '
+    "
+    class="py-2 px-4 border rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full"
   >
     {{ text }}
   </button>

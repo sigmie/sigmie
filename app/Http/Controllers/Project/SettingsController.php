@@ -25,7 +25,8 @@ class SettingsController extends \App\Http\Controllers\Controller
 
         return Inertia::render('project/settings/settings', [
             'clusterId' => $clusterId,
-            'clusterState' => $clusterState
+            'clusterState' => $clusterState,
+            'project' => $project->only(['id', 'name', 'description']),
         ]);
     }
 }
