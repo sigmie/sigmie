@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8915799348b35ccad622462ba8e7fe9b",
+    "content-hash": "f38e7fda367d52472c4544033dab95f1",
     "packages": [
         {
             "name": "amphp/amp",
@@ -6350,16 +6350,16 @@
         },
         {
             "name": "spatie/db-dumper",
-            "version": "dev-fix/mysql-socket",
+            "version": "2.21.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/sigmie/db-dumper.git",
-                "reference": "4349c22d7e183a8e9eeb60406cf1ba69e1927072"
+                "url": "https://github.com/spatie/db-dumper.git",
+                "reference": "05e5955fb882008a8947c5a45146d86cfafa10d1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sigmie/db-dumper/zipball/4349c22d7e183a8e9eeb60406cf1ba69e1927072",
-                "reference": "4349c22d7e183a8e9eeb60406cf1ba69e1927072",
+                "url": "https://api.github.com/repos/spatie/db-dumper/zipball/05e5955fb882008a8947c5a45146d86cfafa10d1",
+                "reference": "05e5955fb882008a8947c5a45146d86cfafa10d1",
                 "shasum": ""
             },
             "require": {
@@ -6375,16 +6375,7 @@
                     "Spatie\\DbDumper\\": "src"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Spatie\\DbDumper\\Test\\": "tests"
-                }
-            },
-            "scripts": {
-                "test": [
-                    "vendor/bin/phpunit"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -6406,28 +6397,29 @@
                 "spatie"
             ],
             "support": {
-                "source": "https://github.com/sigmie/db-dumper/tree/fix/mysql-socket"
+                "issues": "https://github.com/spatie/db-dumper/issues",
+                "source": "https://github.com/spatie/db-dumper/tree/2.21.1"
             },
             "funding": [
                 {
-                    "type": "github",
-                    "url": "https://github.com/spatie"
+                    "url": "https://github.com/spatie",
+                    "type": "github"
                 }
             ],
-            "time": "2021-02-24T13:10:43+00:00"
+            "time": "2021-02-24T14:56:42+00:00"
         },
         {
             "name": "spatie/laravel-backup",
-            "version": "dev-fix/mysql-socket",
+            "version": "6.14.4",
             "source": {
                 "type": "git",
-                "url": "https://github.com/sigmie/laravel-backup.git",
-                "reference": "e11e6695cce434f4567cc84907e304afc695071b"
+                "url": "https://github.com/spatie/laravel-backup.git",
+                "reference": "54bdd6d1f460ff16dc1322bbb249be46b2b28b7b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sigmie/laravel-backup/zipball/e11e6695cce434f4567cc84907e304afc695071b",
-                "reference": "e11e6695cce434f4567cc84907e304afc695071b",
+                "url": "https://api.github.com/repos/spatie/laravel-backup/zipball/54bdd6d1f460ff16dc1322bbb249be46b2b28b7b",
+                "reference": "54bdd6d1f460ff16dc1322bbb249be46b2b28b7b",
                 "shasum": ""
             },
             "require": {
@@ -6439,7 +6431,7 @@
                 "illuminate/support": "^6.0|^7.0|^8.0",
                 "league/flysystem": "^1.0.49",
                 "php": "^7.3|^8.0",
-                "spatie/db-dumper": "dev-fix/mysql-socket",
+                "spatie/db-dumper": "^2.12",
                 "spatie/temporary-directory": "^1.1",
                 "symfony/finder": "^4.2|^5.0"
             },
@@ -6469,19 +6461,7 @@
                     "src/Helpers/functions.php"
                 ]
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Spatie\\Backup\\Tests\\": "tests"
-                }
-            },
-            "scripts": {
-                "test": [
-                    "vendor/bin/phpunit"
-                ],
-                "format": [
-                    "vendor/bin/php-cs-fixer fix --allow-risky=yes"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -6502,19 +6482,20 @@
                 "spatie"
             ],
             "support": {
-                "source": "https://github.com/sigmie/laravel-backup/tree/fix/mysql-socket"
+                "issues": "https://github.com/spatie/laravel-backup/issues",
+                "source": "https://github.com/spatie/laravel-backup/tree/6.14.4"
             },
             "funding": [
                 {
-                    "type": "github",
-                    "url": "https://github.com/sponsors/spatie"
+                    "url": "https://github.com/sponsors/spatie",
+                    "type": "github"
                 },
                 {
-                    "type": "other",
-                    "url": "https://spatie.be/open-source/support-us"
+                    "url": "https://spatie.be/open-source/support-us",
+                    "type": "other"
                 }
             ],
-            "time": "2021-02-24T14:47:09+00:00"
+            "time": "2021-01-29T07:29:58+00:00"
         },
         {
             "name": "spatie/macroable",
@@ -6568,16 +6549,16 @@
         },
         {
             "name": "spatie/nova-backup-tool",
-            "version": "dev-fix/mysql-socket",
+            "version": "4.1.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/sigmie/nova-backup-tool.git",
-                "reference": "32b661e6e4233238eb0a650d01af1c75a901c6ba"
+                "url": "https://github.com/spatie/nova-backup-tool.git",
+                "reference": "361f11c3a48eda96fffab277a9ce4267ed279691"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sigmie/nova-backup-tool/zipball/32b661e6e4233238eb0a650d01af1c75a901c6ba",
-                "reference": "32b661e6e4233238eb0a650d01af1c75a901c6ba",
+                "url": "https://api.github.com/repos/spatie/nova-backup-tool/zipball/361f11c3a48eda96fffab277a9ce4267ed279691",
+                "reference": "361f11c3a48eda96fffab277a9ce4267ed279691",
                 "shasum": ""
             },
             "require": {
@@ -6585,7 +6566,7 @@
                 "laravel/nova": "^3.0",
                 "nesbot/carbon": "^2.31",
                 "php": "^8.0|^7.3",
-                "spatie/laravel-backup": "dev-fix/mysql-socket"
+                "spatie/laravel-backup": "^6.0"
             },
             "require-dev": {
                 "orchestra/testbench": "^5.0|^6.0",
@@ -6605,16 +6586,7 @@
                     "Spatie\\BackupTool\\": "src/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Spatie\\BackupTool\\Tests\\": "tests"
-                }
-            },
-            "scripts": {
-                "test": [
-                    "vendor/bin/phpunit"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -6633,15 +6605,16 @@
                 "nova"
             ],
             "support": {
-                "source": "https://github.com/sigmie/nova-backup-tool/tree/fix/mysql-socket"
+                "issues": "https://github.com/spatie/nova-backup-tool/issues",
+                "source": "https://github.com/spatie/nova-backup-tool/tree/4.1.0"
             },
             "funding": [
                 {
-                    "type": "custom",
-                    "url": "https://spatie.be/open-source/support-us"
+                    "url": "https://spatie.be/open-source/support-us",
+                    "type": "custom"
                 }
             ],
-            "time": "2021-02-24T13:50:47+00:00"
+            "time": "2020-12-08T07:34:59+00:00"
         },
         {
             "name": "spatie/once",
@@ -13478,7 +13451,6 @@
     "stability-flags": {
         "sigmie/nova-feature-flags": 20,
         "sigmie/sigmie": 20,
-        "spatie/nova-backup-tool": 20,
         "sigmie/sigmie-laravel-testing": 20
     },
     "prefer-stable": true,
