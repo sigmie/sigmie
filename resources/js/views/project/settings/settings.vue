@@ -1,17 +1,11 @@
 <template>
   <app title="Settings">
     <div
-      class="shadow mx-auto sm:rounded-md sm:overflow-hidden max-w-lg bg-white px-6 py-5 rounded-t-md"
+      class="shadow mx-auto rounded-md sm:overflow-hidden max-w-lg bg-white px-6 py-5"
     >
       <div class="">
-        <div>
-          <div>
-            <h3 class="text-lg leading-6 font-medium text-gray-900">
-              Settings
-            </h3>
-            <p class="text-sm text-gray-500">Your project setttings.</p>
-          </div>
-        </div>
+        <h3 class="text-lg leading-6 font-medium text-gray-900">Settings</h3>
+        <p class="text-sm text-gray-500">Your project setttings.</p>
         <form
           @submit.prevent="submit"
           class="mt-6 sm:mt-5 space-y-6 sm:space-y-5"
@@ -54,13 +48,16 @@
             </div>
           </div>
 
-          <div class="float-right flex">
-            <p v-if="form.processing" class="text-sm text-gray-500 py-2 mr-5">
+          <div class="flex flex-row items-center justify-end">
+            <p
+              v-if="form.processing"
+              class="text-sm text-gray-500 py-2 mr-5 float-right"
+            >
               Saving...
             </p>
             <p
               v-if="form.recentlySuccessful"
-              class="mr-3 flex items-center text-sm text-gray-500"
+              class="mr-3 flex items-center text-sm text-gray-500 float-right"
             >
               <svg
                 class="mr-1 h-5 w-5 text-green-400"
@@ -78,44 +75,44 @@
               Saved!
             </p>
 
-            <button-secondary
-              :disabled="form.processing"
-              type="submit"
-              text="Save"
-            ></button-secondary>
+            <div class="w-auto flex">
+              <button-secondary
+                :disabled="form.processing"
+                type="submit"
+                text="Save"
+              ></button-secondary>
+            </div>
           </div>
         </form>
       </div>
     </div>
 
-    <div class="shadow mx-auto sm:rounded-md sm:overflow-hidden max-w-lg mt-6">
-      <div class="px-6 py-5 bg-white rounded-t-md">
-        <fieldset class>
-          <legend class="text-base font-medium text-red-700">
-            Danger zone
-          </legend>
-          <div class="pt-5 mt-3 border-t border-gray-200 w-full">
-            <div class="flex justify-between">
-              <div class>
-                <div class="font-semibold text-base text-gray-800">
-                  Destroy this cluster
-                </div>
-                <div class="text-sm text-gray-600">
-                  This will destroy your production cluster.
-                </div>
+    <div
+      class="px-6 py-5 shadow mx-auto bg-white rounded-md sm:overflow-hidden max-w-lg mt-6"
+    >
+      <fieldset class>
+        <legend class="text-base font-medium text-red-700">Danger zone</legend>
+        <div class="pt-5 mt-3 border-t border-gray-200 w-full">
+          <div class="flex justify-between">
+            <div class>
+              <div class="font-semibold text-base text-gray-800">
+                Destroy this cluster
               </div>
-              <div class="max-w-sm py-1">
-                <button-danger
-                  :disabled="clusterId === null || clusterState !== 'running'"
-                  id="destroy_cluster"
-                  @click="showDestroy = true"
-                  text="Destroy"
-                ></button-danger>
+              <div class="text-sm text-gray-600">
+                This will destroy your production cluster.
               </div>
             </div>
+            <div class="max-w-sm py-1">
+              <button-danger
+                :disabled="clusterId === null || clusterState !== 'running'"
+                id="destroy_cluster"
+                @click="showDestroy = true"
+                text="Destroy"
+              ></button-danger>
+            </div>
           </div>
-        </fieldset>
-      </div>
+        </div>
+      </fieldset>
     </div>
 
     <modal
