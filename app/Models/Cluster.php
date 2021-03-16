@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Helpers\ProxyCert;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
@@ -45,8 +46,10 @@ class Cluster extends Model
      */
     public function newHttpConnection(): Connection
     {
-        $auth = new BasicAuth($this->username, decrypt($this->password));
-        $client = JSONClient::create($this->url, $auth);
+        $port = 8066;
+        $domain = config('services.cloudflare.domain');
+        $url = "https://proxy.{$this->name}.{$domain}:{$port}";
+        $client = JSONClient::create($url, new ProxyCert);
 
         return new Connection($client);
     }

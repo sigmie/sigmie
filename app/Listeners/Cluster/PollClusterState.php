@@ -10,8 +10,10 @@ use App\Events\Cluster\ClusterWasCreated;
 use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
 use Exception;
+use GuzzleHttp\Client;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 class PollClusterState implements ShouldQueue
 {
@@ -54,11 +56,18 @@ class PollClusterState implements ShouldQueue
 
     private function clusterCallWasSuccessful(Cluster $cluster): bool
     {
+        $port = 8066;
         $domain = config('services.cloudflare.domain');
-        $url = "https://{$cluster->name}.{$domain}";
+        $url = "https://proxy.{$cluster->name}.{$domain}:{$port}";
+        $client = new Client();
 
-        $response = Http::withBasicAuth($cluster->username, decrypt($cluster->password))->timeout(3)->get($url);
+        $response = $client->request('GET', 'https://proxy.test.sigmie.xyz:8066', [
+            'verify' => false,
+            'json' => [],
+            'cert' => storage_path('app/proxy/proxy.crt'),
+            'ssl_key' => storage_path('app/proxy/proxy.key')
+        ]);
 
-        return $response->successful();
+        return $response->getStatusCode() === 200;
     }
 }

@@ -49,7 +49,7 @@
         "nunomaduro/collision": "^5.0",
         "nyholm/psr7": "^1.3",
         "pusher/pusher-php-server": "~4.0",
-        "sigmie/app-core": "^0.11",
+        "sigmie/app-core": "^0.12",
         "sigmie/nova-feature-flags": "@dev",
         "sigmie/sigmie": "dev-master#9000d39224d9aa3ae9d20125809ff0be6702166f",
         "spatie/nova-backup-tool": "^4.1",
@@ -58,6 +58,7 @@
         "tightenco/ziggy": "^0.9.3"
     },
     "require-dev": {
+        "barryvdh/laravel-debugbar": "^3.5",
         "brianium/paratest": "^6.1",
         "claudiodekker/inertia-laravel-testing": "^1.2",
         "fakerphp/faker": "^1.13",

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Controllers\Project;
+namespace Tests\Feature\Project;
 
 use App\Http\Controllers\Project\SettingsController;
 use App\Models\Cluster;
