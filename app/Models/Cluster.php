@@ -36,10 +36,17 @@ class Cluster extends Model
 
     public const FAILED = 'failed';
 
+    protected $attributes = [];
+
     protected $casts = [
         'admin_token_active' => 'boolean',
-        'search_token_active' => 'boolean'
+        'search_token_active' => 'boolean',
     ];
+
+    public function allowedIps()
+    {
+        return $this->hasMany(AllowedIp::class);
+    }
 
     /**
      * Create assemble new Cluster Connection

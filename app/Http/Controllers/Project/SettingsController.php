@@ -15,17 +15,10 @@ class SettingsController extends \App\Http\Controllers\Controller
     public function index(Project $project)
     {
         $cluster = $project->getAttribute('clusters')->first();
-        $clusterId = null;
-        $clusterState = null;
 
-        if ($cluster !== null) {
-            $clusterId = $cluster->getAttribute('id');
-            $clusterState = $cluster->getAttribute('state');
-        }
-
+        dd($cluster->allowedIps);
         return Inertia::render('project/settings/settings', [
-            'clusterId' => $clusterId,
-            'clusterState' => $clusterState,
+            'cluster' => $cluster?->only(['id', 'state', 'allowed_ips']),
             'project' => $project->only(['id', 'name', 'description']),
         ]);
     }

@@ -1,0 +1,39 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class AddAllowedIpsColumnToCluster extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('allowed_ips', function (Blueprint $table) {
+            $table->string('name');
+            $table->string('ip');
+            $table->unsignedBigInteger('cluster_id')->nullable(false);
+        });
+
+        Schema::table('allowed_ips', function (Blueprint $table) {
+            $table->foreign('cluster_id')->references('id')->on('clusters');
+            $table->unique(['name', 'cluster_id']);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::table('cluster', function (Blueprint $table) {
+            //
+        });
+    }
+}

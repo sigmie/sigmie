@@ -87,9 +87,9 @@
       </div>
     </div>
 
-    <security></security>
+    <security :ips="cluster.allowed_ips"></security>
 
-    <danger :clusterState="clusterState" :clusterId="clusterId"></danger>
+    <danger :clusterState="cluster.state" :clusterId="cluster.id"></danger>
   </app>
 </template>
 
@@ -104,7 +104,7 @@ export default {
     Security,
     Danger,
   },
-  props: ["clusterId", "clusterState", "project"],
+  props: ["cluster", "project"],
   data() {
     return {
       form: this.$inertia.form({
