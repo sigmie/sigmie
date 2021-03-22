@@ -19,6 +19,7 @@ use App\Http\Controllers\Auth\GithubController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Cluster\AllowedIpsController;
 use App\Http\Controllers\Cluster\ClusterController;
 use App\Http\Controllers\Cluster\TokenController;
 use App\Http\Controllers\Dashboard\DashboardController;
@@ -129,6 +130,9 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
         Route::post('/cluster', [ClusterController::class, 'store'])->name('cluster.store');
         Route::put('/cluster/{cluster}', [ClusterController::class, 'update'])->name('cluster.update');
         Route::delete('/cluster/{cluster}', [ClusterController::class, 'destroy'])->name('cluster.destroy');
+        Route::post('/cluster/{cluster}/allowed-ips', [AllowedIpsController::class, 'store'])->name('cluster.allowed-ips.store');
+        Route::put('/cluster/{cluster}/allowed-ips/{address}', [AllowedIpsController::class, 'update'])->name('cluster.allowed-ips.update');
+        Route::delete('/cluster/{cluster}/allowed-ips/{address}', [AllowedIpsController::class, 'destroy'])->name('cluster.allowed-ips.destroy');
 
         Route::get('/indexing/{project?}', IndexingController::class)->name('indexing.indexing')->middleware([RedirecToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
         Route::post('/indexing/plan', [PlanController::class, 'store'])->name('indexing.plan.store');

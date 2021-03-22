@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ProjectClusterType;
 use App\Helpers\ProxyCert;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -110,7 +111,7 @@ class Cluster extends Model
 
     public function project()
     {
-        return $this->belongsTo(Project::class);
+        return $this->morphOne(Project::class, 'cluster');
     }
 
     public function findUser()

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ProjectClusterType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Laravel\Paddle\Billable;
 
@@ -14,7 +15,7 @@ class Project extends Model
 
     public function clusters()
     {
-        return $this->hasMany(Cluster::class)->withTrashed();
+        return $this->morphTo('cluster');
     }
 
     public function user()
@@ -27,23 +28,13 @@ class Project extends Model
         return $this->hasMany(IndexingPlan::class);
     }
 
+    public function name()
+    {
+        return $this->morphOne(ClusterName::class, 'cluster');
+    }
+
     public function decryptedCloudCredentials(): array
     {
         return decrypt($this->getAttribute('creds'));
     }
-
-    // public function productionCluster()
-    // {
-    //     return $this->hasMany(Cluster::class)->where(['environment' => 'prod']);
-    // }
-
-    // public function stagingCluster()
-    // {
-    //     return $this->hasMany(Cluster::class)->where(['environment' => 'staging']);
-    // }
-
-    // public function testCluster()
-    // {
-    //     return $this->hasMany(Cluster::class)->where(['environment' => 'test']);
-    // }
 }

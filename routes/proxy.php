@@ -25,4 +25,5 @@ Route::any('/{endpoint?}', ProxyController::class)
         \App\Http\Middleware\Proxy\VerifyClusterState::class,
         \App\Http\Middleware\Proxy\VerifyTokenStatus::class,
         \App\Http\Middleware\Proxy\VerifyTokenPermissions::class,
+        \App\Http\Middleware\Proxy\SaveRequestStats::class,
     ]);

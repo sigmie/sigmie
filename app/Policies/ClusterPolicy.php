@@ -35,7 +35,7 @@ class ClusterPolicy
      */
     public function create(User $user): bool
     {
-        return $user->projects()->first()->getAttribute('clusters')->isEmpty()
+        return $user->projects()->first()->clusters()->isEmpty()
             && $user->subscribed(config('services.paddle.plan_name'));
     }
 

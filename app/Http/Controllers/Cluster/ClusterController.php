@@ -23,7 +23,7 @@ class ClusterController extends \App\Http\Controllers\Controller
     public function __construct(ClusterRepository $clusterRepository)
     {
         $this->clusters = $clusterRepository;
-        $this->appCoreVersion =   InstalledVersions::getVersion('sigmie/app-core');
+        $this->appCoreVersion = InstalledVersions::getVersion('sigmie/app-core');
 
         $this->authorizeResource(Cluster::class, 'cluster');
     }

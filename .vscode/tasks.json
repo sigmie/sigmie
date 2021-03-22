@@ -111,7 +111,7 @@
         {
             "label": "horizon:terminate",
             "type": "shell",
-            "command": "php artisan horizon:terminate"
+            "command": "sudo php artisan horizon:terminate"
         },
         {
             "label": "dump:autoload",

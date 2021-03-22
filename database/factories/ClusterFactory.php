@@ -8,6 +8,7 @@ use App\Models\Cluster;
 use App\Models\Project;
 use Composer\InstalledVersions;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 class ClusterFactory extends Factory
 {
@@ -33,7 +34,7 @@ class ClusterFactory extends Factory
             // 'deleted_at' => $faker->randomElement([null, $faker->dateTime()]),
             'nodes_count' => 1,
             // 'nodes_count' => $faker->numberBetween(1, 3),
-            'project_id' => Project::factory(),
+            'project_id' => Project::factory(['cluster_type' => 'cluster']),
             'core_version' =>  InstalledVersions::getVersion('sigmie/app-core')
         ];
     }

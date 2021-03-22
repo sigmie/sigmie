@@ -24,7 +24,7 @@ class RedirectToDashboardIfHasCluster
     public function handle($request, Closure $next)
     {
         $project =  $this->projects->find($request->get('project_id'));
-        $clusters = $project->getAttribute('clusters');
+        $clusters = $project->clusters()->get();
 
         if ($clusters->isEmpty()) {
             return $next($request);

@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Http\Middleware\Proxy\ProxyRequest;
 use App\Models\Cluster;
+use App\Models\ExternalCluster;
 use App\Models\FileType;
 use App\Models\Token;
 use App\Models\User;
@@ -64,7 +65,8 @@ class AppServiceProvider extends ServiceProvider
         Relation::morphMap([
             'file' => FileType::class,
             'user' => User::class,
-            'cluster' => Cluster::class
+            'cluster' => Cluster::class,
+            'external_cluster' => ExternalCluster::class
         ]);
 
         Queue::before(function (JobProcessing $event) {

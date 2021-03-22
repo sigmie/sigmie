@@ -15,16 +15,11 @@ class DashboardController extends \App\Http\Controllers\Controller
 {
     use CatAPI;
 
-    private ClusterRepository $clusters;
-
-    public function __construct(ClusterRepository $clusterRepository)
-    {
-        $this->clusters = $clusterRepository;
-    }
-
     public function data(Project $project)
     {
-        $cluster = $this->clusters->findOneTrashedBy('project_id', (string) $project->getAttribute('id'));
+        $cluster =  $project->clusters()->get()->first();
+        ray($cluster);
+        // $this->clusters->findOneTrashedBy('project_id', (string) $project->getAttribute('id'));
 
         $id = null;
         $state = null;
@@ -55,9 +50,10 @@ class DashboardController extends \App\Http\Controllers\Controller
                 'name' => $health['cluster_name'],
             ];
 
+
             $indices = collect($catIndexResponse->json())
                 ->map(fn ($values) => [
-                    'aliases' => (isset($aliases[$values['index']])) ? $aliases[$values['index']] : '',
+                    'aliases' => (isset($aliases[$values['index']])) ? $aliases[$values['index']] : [],
                     'name' => $values['index'],
                     'size' => $values['store.size'],
                     'docsCount' => $values['docs.count']
@@ -74,7 +70,8 @@ class DashboardController extends \App\Http\Controllers\Controller
 
     public function show(Project $project)
     {
-        $cluster = $this->clusters->findOneTrashedBy('project_id', (string) $project->getAttribute('id'));
+        $cluster = $project->clusters()->first();
+        // $cluster = $this->clusters->findOneTrashedBy('project_id', (string) $project->getAttribute('id'));
 
         Gate::authorize('view-dashboard', $project);
 

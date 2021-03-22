@@ -14,6 +14,7 @@ declare(strict_types=1);
 */
 
 use App\Models\Cluster;
+use App\Models\ExternalCluster;
 use App\Models\IndexingPlan;
 
 Broadcast::channel('App.User.{id}', function ($user, $id) {
@@ -21,7 +22,8 @@ Broadcast::channel('App.User.{id}', function ($user, $id) {
 });
 
 Broadcast::channel('cluster.{clusterId}', function ($user, $clusterId) {
-    return $user->id === Cluster::withTrashed()->where('id', $clusterId)->first()->project->user->id;
+    return ($user->id === Cluster::withTrashed()->where('id', $clusterId)->first()?->project->user->id) ||
+        ($user->id === ExternalCluster::find($clusterId)->project->user->id);
 });
 
 Broadcast::channel('user.{userId}', function ($user, $userId) {

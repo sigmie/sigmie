@@ -13,11 +13,47 @@ use App\Repositories\ClusterRepository;
 use App\Repositories\RegionRepository;
 use Composer\InstalledVersions;
 use Inertia\Inertia;
+use App\Http\Requests\AllowedIpRequest;
+use App\Http\Requests\Cluster\StoreAllowedIp;
+use App\Http\Requests\Cluster\UpdateAllowedIp;
+use App\Jobs\Cluster\UpdateClusterAllowedIps;
+use App\Models\AllowedIp;
 
-class AllowedIps extends \App\Http\Controllers\Controller
+class AllowedIpsController extends \App\Http\Controllers\Controller
 {
-    public function update()
+    public function store(Cluster $cluster, StoreAllowedIp $request)
     {
-        return;
+        $cluster->allowedIps()->create(
+            $request->validated()
+        );
+
+        UpdateClusterAllowedIps::dispatch($cluster->id);
+
+        return redirect()->route('settings');
+    }
+
+    public function update(Cluster $cluster, AllowedIp $address, UpdateAllowedIp $request)
+    {
+        $data =  $request->validated();
+
+        $shouldUpdate = $data['ip'] !== $address->ip;
+
+        $address->update($data);
+
+        // If the Ip has been updated dispatch job
+        if ($shouldUpdate) {
+            UpdateClusterAllowedIps::dispatch($cluster->id);
+        }
+
+        return redirect()->route('settings');
+    }
+
+    public function destroy(Cluster $cluster, AllowedIp $address)
+    {
+        $address->delete();
+
+        UpdateClusterAllowedIps::dispatch($cluster->id);
+
+        return redirect()->route('settings');
     }
 }
