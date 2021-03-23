@@ -11,7 +11,7 @@ class RedirectToClusterCreateIfHasntCluster
     public function handle($request, Closure $next)
     {
         $project = $request->route('project');
-        $clusters = $project->clusters()->get();
+        $clusters = $project->clusters;
 
         if ($clusters->isEmpty()) {
             return redirect()->route('cluster.create');

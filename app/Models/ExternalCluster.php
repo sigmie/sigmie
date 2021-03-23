@@ -29,6 +29,11 @@ class ExternalCluster extends Cluster
         // static::addGlobalScope(new SoftDeletingScope);
     }
 
+    public function settingsData()
+    {
+        return $this->only(['id', 'state']);
+    }
+
     /**
      * Create assemble new Cluster Connection
      */

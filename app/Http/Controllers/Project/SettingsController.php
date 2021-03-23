@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Project;
 
 use App\Models\Cluster;
+use App\Models\ExternalCluster;
 use App\Models\Project;
 use Inertia\Inertia;
 
@@ -16,10 +17,10 @@ class SettingsController extends \App\Http\Controllers\Controller
     public function index(Project $project)
     {
         /** @var  Cluster */
-        $cluster = $project->clusters()->first();
+        $cluster = $project->clusters->first();
 
         return Inertia::render('project/settings/settings', [
-            'cluster' => $cluster?->only(['id', 'state', 'allowedIps']),
+            'cluster' => $cluster?->settingsData(),
             'project' => $project->only(['id', 'name', 'description']),
         ]);
     }

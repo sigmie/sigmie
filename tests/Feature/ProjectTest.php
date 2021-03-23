@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
+use Exception;
 
 class ProjectTest extends TestCase
 {
@@ -28,9 +29,11 @@ class ProjectTest extends TestCase
      */
     public function project_clusters_returns_has_many()
     {
+        $this->expectException(Exception::class);
+
         $project = Project::factory()->make();
 
-        $this->assertInstanceOf(HasMany::class, $project->clusters());
+        $project->clusters();
     }
 
     /**

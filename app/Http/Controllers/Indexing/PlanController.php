@@ -10,6 +10,7 @@ use App\Http\Requests\UpdatePlan;
 use App\Models\FileType;
 use App\Models\IndexingActivity;
 use App\Models\IndexingPlan;
+use App\Models\Project;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -25,10 +26,14 @@ class PlanController extends \App\Http\Controllers\Controller
     {
         $validated = $request->validated();
 
+        $project = Project::find($validated['project_id']);
+        $cluster = $project->clusters->first();
+
         $plan = new IndexingPlan([
             'name' => $validated['name'],
             'description' => $validated['description'],
-            'cluster_id' => $validated['cluster_id'],
+            'cluster_id' => $cluster->id,
+            'cluster_type' => $cluster->getMorphClass(),
             'project_id' => $validated['project_id'],
             'random_identifier' => strtolower(Str::random(5)),
             'user_id' => Auth::id(),

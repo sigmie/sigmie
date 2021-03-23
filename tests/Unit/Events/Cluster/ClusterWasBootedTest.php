@@ -6,25 +6,24 @@ namespace Tests\Unit\Events\Cluster;
 
 use App\Events\Cluster\ClusterWasBooted;
 use Illuminate\Broadcasting\PrivateChannel;
+use Tests\Helpers\WithRunningCluster;
 use Tests\TestCase;
 
 class ClusterWasBootedTest extends TestCase
 {
+    use WithRunningCluster;
     /**
      * @var ClusterWasBooted
      */
     private $event;
 
-    /**
-     * @var int
-     */
-    private $clusterId = 998;
-
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->event = new ClusterWasBooted($this->clusterId);
+        $this->withRunningCluster();
+
+        $this->event = new ClusterWasBooted($this->project->id);
     }
 
     /**
@@ -32,7 +31,7 @@ class ClusterWasBootedTest extends TestCase
      */
     public function create_was_booted_has_public_cluster_id_property()
     {
-        $this->assertEquals($this->clusterId, $this->event->clusterId);
+        $this->assertEquals($this->project->id, $this->event->projectId);
     }
 
     /**
@@ -40,6 +39,6 @@ class ClusterWasBootedTest extends TestCase
      */
     public function cluster_was_booted_is_broadcasted_on_private_cluster_channel()
     {
-        $this->assertEquals(new PrivateChannel("cluster.{$this->clusterId}"), $this->event->broadcastOn());
+        $this->assertEquals(new PrivateChannel("cluster.{$this->cluster->id}"), $this->event->broadcastOn());
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\Cluster;
+use App\Models\ExternalCluster;
 use App\Models\Project;
 use App\Models\Subscription;
 use Illuminate\Database\Seeder;
@@ -18,8 +19,13 @@ class WithRunningCluster extends Seeder
      */
     public function run()
     {
-        $user = Subscription::factory()->create()->billable;
-        $project = Project::factory()->create(['user_id' => $user->id]);
-        $cluster = Cluster::factory()->create(['project_id' => $project->id]);
+        $this->call([
+            UserSeeder::class
+        ]);
+
+        $project = Project::factory()->create(['user_id' => UserSeeder::$userId]);
+        $externalCluster = ExternalCluster::factory()->create(['project_id' => $project->id]);
+
+        $project->externalClusters()->attach($externalCluster);
     }
 }

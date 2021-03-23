@@ -144,7 +144,7 @@ export default {
         type: "file",
         location: "",
         index_alias: "",
-        cluster_id: this.clusterId,
+        // cluster_id: this.clusterId,
         project_id: this.$page.props.project_id,
         name: "",
         description: "",

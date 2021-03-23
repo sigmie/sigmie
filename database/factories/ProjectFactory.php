@@ -18,8 +18,6 @@ class ProjectFactory extends Factory
             'name' => 'Local development',
             'description' => $this->faker->text(40),
             'provider' => $this->faker->randomElement(['google', 'aws', 'digitalocean']),
-            'cluster_id'=> null,
-            'cluster_type'=> 'cluster',
             'creds' => encrypt($this->faker->text(20)),
             'user_id' => User::factory()
         ];

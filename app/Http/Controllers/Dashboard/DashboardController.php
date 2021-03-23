@@ -17,9 +17,7 @@ class DashboardController extends \App\Http\Controllers\Controller
 
     public function data(Project $project)
     {
-        $cluster =  $project->clusters()->get()->first();
-        ray($cluster);
-        // $this->clusters->findOneTrashedBy('project_id', (string) $project->getAttribute('id'));
+        $cluster =  $project->clusters->first();
 
         $id = null;
         $state = null;
@@ -70,7 +68,7 @@ class DashboardController extends \App\Http\Controllers\Controller
 
     public function show(Project $project)
     {
-        $cluster = $project->clusters()->first();
+        $cluster = $project->clusters->first();
         // $cluster = $this->clusters->findOneTrashedBy('project_id', (string) $project->getAttribute('id'));
 
         Gate::authorize('view-dashboard', $project);

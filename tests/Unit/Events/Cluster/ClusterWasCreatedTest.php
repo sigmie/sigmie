@@ -31,6 +31,6 @@ class ClusterWasCreatedTest extends TestCase
      */
     public function create_was_created_has_public_cluster_id_property()
     {
-        $this->assertEquals($this->clusterId, $this->event->clusterId);
+        $this->assertEquals($this->clusterId, $this->event->projectId);
     }
 }

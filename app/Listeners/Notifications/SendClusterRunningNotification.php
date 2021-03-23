@@ -22,7 +22,7 @@ class SendClusterRunningNotification implements ShouldQueue
 
     public function handle(ClusterWasBooted $event): void
     {
-        $cluster = $this->clusters->find($event->clusterId);
+        $cluster = $this->clusters->find($event->projectId);
 
         if ($cluster instanceof Cluster) {
             $user = $cluster->findUser();
@@ -36,6 +36,6 @@ class SendClusterRunningNotification implements ShouldQueue
             return;
         }
 
-        throw new Exception("Cluster with the id {$event->clusterId} was not found.");
+        throw new Exception("Cluster with the id {$event->projectId} was not found.");
     }
 }

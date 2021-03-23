@@ -34,7 +34,7 @@ class ClusterFactory extends Factory
             // 'deleted_at' => $faker->randomElement([null, $faker->dateTime()]),
             'nodes_count' => 1,
             // 'nodes_count' => $faker->numberBetween(1, 3),
-            'project_id' => Project::factory(['cluster_type' => 'cluster']),
+            'project_id' => Project::factory(),
             'core_version' =>  InstalledVersions::getVersion('sigmie/app-core')
         ];
     }

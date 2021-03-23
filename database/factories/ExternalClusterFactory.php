@@ -17,12 +17,13 @@ class ExternalClusterFactory extends Factory
     {
         return [
             'username' => $this->faker->text(10),
+            'name' => $this->faker->unique()->text(10),
             'state' => 'running',
             'password' => encrypt($this->faker->text(10)),
             'url' => 'http://' . env('ES_HOST'),
             'project_id' => Project::factory(),
-            'search_token_active' => false,
-            'admin_token_active' => false,
+            'search_token_active' => true,
+            'admin_token_active' => true,
         ];
     }
 }

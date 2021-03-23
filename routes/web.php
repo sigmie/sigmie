@@ -37,8 +37,9 @@ use App\Http\Controllers\Subscription\SubscriptionController;
 use App\Http\Controllers\User\PasswordController;
 use App\Http\Controllers\User\SettingsController as AccountSettingsController;
 use App\Http\Controllers\User\UserController;
-use App\Http\Middleware\Redirects\RedirecToSameRouteWithProject;
+use App\Http\Middleware\Redirects\RedirecToSameRouteWithProject as RedirectToSameRouteWithProject;
 use App\Http\Middleware\Redirects\RedirectToClusterCreateIfHasntCluster;
+use App\Http\Middleware\Redirects\RedirectToDashboardIfHasCluster;
 use App\Http\Middleware\Redirects\RedirectToDashboardIfSubscribed;
 use App\Http\Middleware\Redirects\RedirectToRenewSubscriptionIfNotSubscribed;
 use App\Http\Middleware\Shares\ShareSelectedProjectToView;
@@ -116,16 +117,16 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
 
         Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
 
-        Route::get('/dashboard/{project?}', [DashboardController::class, 'show'])->name('dashboard')->middleware([RedirecToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
+        Route::get('/dashboard/{project?}', [DashboardController::class, 'show'])->name('dashboard')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
 
-        Route::get('/tokens/{project?}', [TokenController::class, 'index'])->name('token.index')->middleware([RedirecToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
+        Route::get('/tokens/{project?}', [TokenController::class, 'index'])->name('token.index')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
 
-        Route::get('/project/settings/{project?}', [ProjectSettingsController::class, 'index'])->name('settings')->middleware(RedirecToSameRouteWithProject::class);
+        Route::get('/project/settings/{project?}', [ProjectSettingsController::class, 'index'])->name('settings')->middleware(RedirectToSameRouteWithProject::class);
         Route::put('/project/{project?}', [ProjectController::class, 'update'])->name('project.update');
         Route::post('/project', [ProjectController::class, 'store'])->name('project.store');
         Route::get('/project', [ProjectController::class, 'create'])->name('project.create');
 
-        Route::get('/cluster/create', [ClusterController::class, 'create'])->name('cluster.create');
+        Route::get('/cluster/create', [ClusterController::class, 'create'])->name('cluster.create')->middleware([]);
         Route::get('/cluster/edit/{cluster}', [ClusterController::class, 'edit'])->name('cluster.edit');
         Route::post('/cluster', [ClusterController::class, 'store'])->name('cluster.store');
         Route::put('/cluster/{cluster}', [ClusterController::class, 'update'])->name('cluster.update');
@@ -134,7 +135,7 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
         Route::put('/cluster/{cluster}/allowed-ips/{address}', [AllowedIpsController::class, 'update'])->name('cluster.allowed-ips.update');
         Route::delete('/cluster/{cluster}/allowed-ips/{address}', [AllowedIpsController::class, 'destroy'])->name('cluster.allowed-ips.destroy');
 
-        Route::get('/indexing/{project?}', IndexingController::class)->name('indexing.indexing')->middleware([RedirecToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
+        Route::get('/indexing/{project?}', IndexingController::class)->name('indexing.indexing')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
         Route::post('/indexing/plan', [PlanController::class, 'store'])->name('indexing.plan.store');
         Route::put('/indexing/plan/{plan}', [PlanController::class, 'update'])->name('indexing.plan.update');
         Route::delete('/indexing/plan/{plan}', [PlanController::class, 'destroy'])->name('indexing.plan.destroy');

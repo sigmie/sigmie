@@ -6,22 +6,17 @@ namespace App\Http\Controllers\Cluster;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cluster;
+use App\Models\ExternalCluster;
 use App\Repositories\ClusterRepository;
+use App\Rules\UniqueClusterName;
 
 class ValidationController extends Controller
 {
-    private $clusters;
-
-    public function __construct(ClusterRepository $clusterRepository)
-    {
-        $this->clusters = $clusterRepository;
-    }
-
     public function name(string $name)
     {
-        $cluster = $this->clusters->findOneTrashedBy('name', $name);
+        $rule = new UniqueClusterName;
 
-        $valid = ($cluster instanceof Cluster) ? false : true;
+        $valid = $rule->passes('name', $name);
 
         return response()->json(['valid' => $valid]);
     }

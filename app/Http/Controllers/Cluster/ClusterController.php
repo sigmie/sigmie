@@ -9,6 +9,7 @@ use App\Http\Requests\Cluster\UpdateCluster;
 use App\Jobs\Cluster\CreateCluster;
 use App\Jobs\Cluster\DestroyCluster;
 use App\Models\Cluster;
+use App\Models\Project;
 use App\Repositories\ClusterRepository;
 use App\Repositories\RegionRepository;
 use Composer\InstalledVersions;
@@ -16,20 +17,10 @@ use Inertia\Inertia;
 
 class ClusterController extends \App\Http\Controllers\Controller
 {
-    private ClusterRepository $clusters;
-
-    private string $appCoreVersion;
-
-    public function __construct(ClusterRepository $clusterRepository)
-    {
-        $this->clusters = $clusterRepository;
-        $this->appCoreVersion = InstalledVersions::getVersion('sigmie/app-core');
-
-        $this->authorizeResource(Cluster::class, 'cluster');
-    }
-
     public function create(RegionRepository $regions)
     {
+        $this->authorize('create', Cluster::class);
+
         return Inertia::render('cluster/create/create', ['regions' => $regions->all()]);
     }
 
@@ -37,10 +28,13 @@ class ClusterController extends \App\Http\Controllers\Controller
     {
         $validated = $request->validated();
 
+        $this->authorize('create', Cluster::class);
+
         $name = $validated['name'];
         $domain = config('services.cloudflare.domain');
+        $project = Project::find($validated['project_id']);
 
-        $cluster = $this->clusters->create([
+        $cluster = Cluster::create([
             'name' => $name,
             'region_id' => $validated['region_id'],
             'project_id' => $validated['project_id'],
@@ -49,8 +43,10 @@ class ClusterController extends \App\Http\Controllers\Controller
             'password' => encrypt($validated['password']),
             'url' => "https://{$name}.{$domain}",
             'state' => Cluster::QUEUED_CREATE,
-            'core_version' => $this->appCoreVersion
+            'core_version' => app_core_version()
         ]);
+
+        $project->internalClusters()->attach($cluster);
 
         $clusterId = $cluster->getAttribute('id');
 
@@ -65,6 +61,8 @@ class ClusterController extends \App\Http\Controllers\Controller
 
     public function edit(Cluster $cluster, RegionRepository $regions)
     {
+        $this->authorize('update', $cluster);
+
         return Inertia::render('cluster/edit/edit', [
             'regions' => $regions->all(),
             'cluster' => [
@@ -77,19 +75,21 @@ class ClusterController extends \App\Http\Controllers\Controller
     public function update(UpdateCluster $request, Cluster $cluster)
     {
         $validated = $request->validated();
-        $clusterId = $cluster->getAttribute('id');
 
-        $this->clusters->updateTrashed($clusterId, [
+        $this->authorize('restore', $cluster);
+
+        $cluster->update([
             'region_id' => $validated['region_id'],
             'nodes_count' => $validated['nodes_count'],
             'username' => $validated['username'],
             'password' =>  encrypt($validated['password']),
-            'state' => Cluster::QUEUED_CREATE
+            'state' => Cluster::QUEUED_CREATE,
+            'core_version' => app_core_version()
         ]);
 
-        $this->clusters->restore($clusterId);
+        $cluster->restore();
 
-        CreateCluster::dispatch($clusterId, [
+        CreateCluster::dispatch($cluster->id, [
             'memory' => $validated['memory'],
             'cores' => $validated['cores'],
             'disk' => $validated['disk'],
@@ -100,13 +100,13 @@ class ClusterController extends \App\Http\Controllers\Controller
 
     public function destroy(Cluster $cluster)
     {
-        $clusterId = $cluster->getAttribute('id');
+        $this->authorize('delete', $cluster);
 
-        DestroyCluster::dispatch($clusterId);
+        DestroyCluster::dispatch($cluster->id);
 
-        $this->clusters->update($clusterId, ['state' => Cluster::QUEUED_DESTROY]);
+        $cluster->update(['state' => Cluster::QUEUED_DESTROY]);
 
-        $this->clusters->delete($clusterId);
+        $cluster->delete();
 
         return redirect()->route('dashboard');
     }

@@ -17,13 +17,13 @@ class ClusterHasFailedTest extends TestCase
     /**
      * @var int
      */
-    private $clusterId = 998;
+    private $projectId = 998;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->event = new ClusterHasFailed($this->clusterId);
+        $this->event = new ClusterHasFailed($this->projectId);
     }
 
     /**
@@ -31,6 +31,6 @@ class ClusterHasFailedTest extends TestCase
      */
     public function create_has_failed_has_public_cluster_id_property()
     {
-        $this->assertEquals($this->clusterId, $this->event->clusterId);
+        $this->assertEquals($this->projectId, $this->event->projectId);
     }
 }

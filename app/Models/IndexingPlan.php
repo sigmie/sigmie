@@ -59,7 +59,7 @@ class IndexingPlan extends Model
 
     public function cluster()
     {
-        return $this->belongsTo(Cluster::class);
+        return $this->morphTo();
     }
 
     public function user()

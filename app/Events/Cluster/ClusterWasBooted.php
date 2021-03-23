@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Events\Cluster;
 
+use App\Models\Project;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -16,15 +17,17 @@ class ClusterWasBooted implements ShouldBroadcast
     use InteractsWithSockets;
     use SerializesModels;
 
-    public int $clusterId;
+    public int $projectId;
 
-    public function __construct(int $clusterId)
+    public function __construct(int $projectId)
     {
-        $this->clusterId = $clusterId;
+        $this->projectId = $projectId;
     }
 
     public function broadcastOn()
     {
-        return new PrivateChannel("cluster.{$this->clusterId}");
+        $cluster = Project::find($this->projectId)->clusters->first();
+
+        return new PrivateChannel("cluster.{$cluster->id}");
     }
 }

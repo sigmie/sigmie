@@ -34,8 +34,10 @@ class SettingsControllerTest extends TestCase
 
         $this->assertNotNull($this->cluster);
 
-        $response->assertInertiaHas('clusterId', $this->cluster->id);
-        $response->assertInertiaHas('clusterState', $this->cluster->state);
+        $response->assertInertiaHas('cluster', [
+            'id' => $this->cluster->id,
+            'state' => $this->cluster->state,
+        ]);
     }
 
     /**
@@ -49,8 +51,7 @@ class SettingsControllerTest extends TestCase
 
         $response = $this->get(route('settings', ['project' => $this->project->id]));
 
-        $response->assertInertiaHas('clusterId', null);
-        $response->assertInertiaHas('clusterState', null);
+        $response->assertInertiaHas('cluster', null);
         $response->assertInertiaHas(
             'project',
             [

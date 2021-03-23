@@ -6,19 +6,14 @@ namespace App\Listeners\Cluster;
 
 use App\Events\Cluster\ClusterHasFailed;
 use App\Models\Cluster;
-use App\Repositories\ClusterRepository;
+use App\Models\Project;
 
 class UpdateClusterStateToError
 {
-    private ClusterRepository $clusters;
-
-    public function __construct(ClusterRepository $clusters)
-    {
-        $this->clusters = $clusters;
-    }
-
     public function handle(ClusterHasFailed $event)
     {
-        $this->clusters->update($event->clusterId, ['state' => Cluster::FAILED]);
+        $cluster = Project::find($event->projectId)->clusters->first();
+
+        $cluster->update(['state' => Cluster::FAILED]);
     }
 }

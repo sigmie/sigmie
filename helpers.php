@@ -1,5 +1,6 @@
 <?php
 
+use Composer\InstalledVersions;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -19,6 +20,17 @@ if (!function_exists('get_gravatar')) {
         $url .= "?s=$s&d=$d&r=$r";
 
         return $url;
+    }
+}
+
+
+if (!function_exists('app_core_version')) {
+    /**
+     * @return string
+     */
+    function app_core_version(): string
+    {
+        return InstalledVersions::getVersion('sigmie/app-core');
     }
 }
 

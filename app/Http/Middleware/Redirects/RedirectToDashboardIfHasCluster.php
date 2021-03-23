@@ -10,21 +10,14 @@ use Closure;
 
 class RedirectToDashboardIfHasCluster
 {
-    private ProjectRepository $projects;
-
-    public function __construct(ProjectRepository $projectRepository)
-    {
-        $this->projects = $projectRepository;
-    }
-
     /**
      * If the project id has already a cluster
      * redirect to the dashboard
      */
     public function handle($request, Closure $next)
     {
-        $project =  $this->projects->find($request->get('project_id'));
-        $clusters = $project->clusters()->get();
+        $project = Project::find($request->get('project_id'));
+        $clusters = $project->clusters;
 
         if ($clusters->isEmpty()) {
             return $next($request);

@@ -23,7 +23,7 @@ class TokenController extends \App\Http\Controllers\Controller
      */
     public function index(Project $project)
     {
-        $cluster = $project->clusters()->first();
+        $cluster = $project->clusters->first();
         $plainTextTokens = [self::ADMIN => null, self::SEARCH_ONLY => null];
 
         Gate::authorize('index', [Token::class, $cluster]);

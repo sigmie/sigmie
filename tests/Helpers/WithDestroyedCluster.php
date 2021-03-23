@@ -25,5 +25,7 @@ trait WithDestroyedCluster
             'project_id' => $this->project->id,
             'state' => Cluster::DESTROYED
         ]);
+
+        $this->project->internalClusters()->attach($this->cluster);
     }
 }

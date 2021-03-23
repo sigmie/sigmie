@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\ProjectClusterType;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Laravel\Paddle\Billable;
+
+use function Amp\Iterator\merge;
 
 class Project extends Model
 {
@@ -15,7 +18,26 @@ class Project extends Model
 
     public function clusters()
     {
-        return $this->morphTo('cluster');
+        throw new Exception('Project::clusters isn\'t a relationship.');
+    }
+
+    public function getClustersAttribute($value)
+    {
+        $internal = $this->internalClusters()->get();
+
+        $external =  $this->externalClusters()->get();
+
+        return $internal->push(...$external);
+    }
+
+    public function externalClusters()
+    {
+        return $this->morphedByMany(ExternalCluster::class, 'cluster', 'project_cluster_rel')->withTimestamps();
+    }
+
+    public function internalClusters()
+    {
+        return $this->morphedByMany(Cluster::class, 'cluster', 'project_cluster_rel')->withTimestamps()->withTrashed();
     }
 
     public function user()

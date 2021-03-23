@@ -28,7 +28,7 @@ class ShareSelectedProjectToView
 
         if ($project instanceof Project) {
             $projectName = $project->getAttribute('name');
-            $cluster = $project->clusters()->first();
+            $cluster = $project->clusters->first();
         }
 
         $clusterUrl = '';

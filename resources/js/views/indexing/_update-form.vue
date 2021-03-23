@@ -147,7 +147,7 @@ export default {
         type: "file",
         location: "",
         index_alias: "",
-        cluster_id: this.clusterId,
+        // cluster_id: this.clusterId,
         name: "",
         description: "",
       }),

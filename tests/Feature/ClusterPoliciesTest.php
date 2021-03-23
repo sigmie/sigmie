@@ -7,20 +7,21 @@ namespace Tests\Feature;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\Subscription;
+use Tests\Helpers\WithRunningCluster;
 use Tests\TestCase;
 
 class ClusterPoliciesTest extends TestCase
 {
+    use WithRunningCluster;
+
     /**
      * @test
      */
     public function user_cant_create_cluster_if_he_already_has_one()
     {
-        $user = Subscription::factory()->create()->billable;
-        $project = Project::factory()->create(['user_id' => $user->id]);
-        $cluster = Cluster::factory()->create(['project_id' => $project->id]);
+        $this->withRunningCluster();
 
-        $this->actingAs($user);
+        $this->actingAs($this->user);
 
         $response = $this->get(route('cluster.create'));
 
@@ -32,20 +33,22 @@ class ClusterPoliciesTest extends TestCase
      */
     public function user_cant_store_cluster_if_he_already_has_one()
     {
-        $user = Subscription::factory()->create()->billable;
-        $project = Project::factory()->create(['user_id' => $user->id]);
-        $cluster = Cluster::factory()->create(['project_id' => $project->id]);
+        $this->withRunningCluster();
 
-        $this->actingAs($user);
+        $this->actingAs($this->user);
 
         $response = $this->post(route('cluster.store'), [
             'name' => 'foo',
             'nodes_count' => '3',
             'data_center' => 'europe',
             'username' => 'bar',
-            'password' => 'baz',
+            'password' => '1234',
+            'region_id' => 1,
+            'memory' => '1024',
+            'disk' => '15',
+            'cores' => '2',
             'project_id' => '1'
-        ]);
+        ])->assertSessionHasNoErrors();
 
         $response->assertForbidden();
     }

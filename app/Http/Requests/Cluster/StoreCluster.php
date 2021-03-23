@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Cluster;
 
 use App\Rules\MultipleOf;
+use App\Rules\UniqueClusterName;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCluster extends FormRequest
@@ -20,7 +21,7 @@ class StoreCluster extends FormRequest
     public function rules()
     {
         return [
-            'name' => ['alpha_num', 'required'],
+            'name' => ['alpha_num', 'required', new UniqueClusterName],
             'nodes_count' => ['min:1', 'max:3', 'required'],
             'region_id' => ['required', 'integer'],
             'username' => ['required', 'alpha_num', 'not_regex:/:.*/'],

@@ -49,6 +49,11 @@ class Cluster extends Model
         return $this->hasMany(AllowedIp::class);
     }
 
+    public function settingsData()
+    {
+        return $this->only(['id', 'state', 'allowedIps']);
+    }
+
     /**
      * Create assemble new Cluster Connection
      */
@@ -91,7 +96,7 @@ class Cluster extends Model
 
     public function plans()
     {
-        return $this->hasMany(IndexingPlan::class);
+        return $this->morphMany(IndexingPlan::class, 'cluster');
     }
 
     public function isAdminTokenActive(): bool
@@ -111,7 +116,7 @@ class Cluster extends Model
 
     public function project()
     {
-        return $this->morphOne(Project::class, 'cluster');
+        return $this->belongsTo(Project::class);
     }
 
     public function findUser()

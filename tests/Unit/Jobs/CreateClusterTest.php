@@ -76,7 +76,7 @@ class CreateClusterTest extends TestCase
     {
         $this->job->handle($this->clusterRepositoryMock, $this->clusterManagerFactoryMock);
 
-        Event::assertDispatched(fn (\App\Events\Cluster\ClusterWasCreated $event) => $event->clusterId === $this->clusterId);
+        Event::assertDispatched(fn (\App\Events\Cluster\ClusterWasCreated $event) => $event->projectId === $this->clusterId);
     }
 
     /**

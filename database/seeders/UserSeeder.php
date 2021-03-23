@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class UserSeeder extends Seeder
 {
+    public static $userId = 1;
     /**
      * Run the database seeds.
      *
@@ -17,7 +18,7 @@ class UserSeeder extends Seeder
     public function run()
     {
         DB::table('users')->insert([
-            'id' => 1,
+            'id' => self::$userId,
             'email' => 'nico@sigmie.com',
             'email_verified_at' => null,
             'password' => '$2y$10$3HE6WsVokRAUvioLJfQ5CedIjp9Xz1ylcG2VqWiH.h1Q9MtUNa3lq', //demo
@@ -29,7 +30,7 @@ class UserSeeder extends Seeder
 
         DB::table('subscriptions')->insert([
             'id' => 1,
-            'billable_id' => 1,
+            'billable_id' => self::$userId,
             'billable_type' => 'user',
             'name' => 'hobby',
             'paddle_id' => '83633',

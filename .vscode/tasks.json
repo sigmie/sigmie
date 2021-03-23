@@ -69,6 +69,11 @@
             "command": "php artisan db:seed --class='UserSeeder'"
         },
         {
+            "label": "seed:only-user",
+            "type": "shell",
+            "command": "php artisan db:seed --class='UserSeeder'"
+        },
+        {
             "label": "seed:without-cluster",
             "type": "shell",
             "command": "php artisan db:seed --class='WithoutCluster'"

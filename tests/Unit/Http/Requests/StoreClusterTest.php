@@ -6,6 +6,7 @@ namespace Tests\Unit\Http\Requests;
 
 use App\Http\Requests\Cluster\StoreCluster;
 use App\Rules\MultipleOf;
+use App\Rules\UniqueClusterName;
 use PHPUnit\Framework\TestCase;
 
 class StoreClusterTest extends TestCase
@@ -37,7 +38,7 @@ class StoreClusterTest extends TestCase
     {
         $colonRegex = '/:.*/';
         $expected = [
-            'name' => ['alpha_num', 'required'],
+            'name' => ['alpha_num', 'required', new UniqueClusterName],
             'nodes_count' => ['min:1', 'max:3', 'required'],
             'region_id' => ['required', 'integer'],
             'username' => ['required', 'alpha_num', 'not_regex:/:.*/'],

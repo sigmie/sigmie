@@ -29,7 +29,6 @@ class StorePlan extends FormRequest
         return [
             'name' => ['required', 'min:4', 'max:30'],
             'description' => ['max:140'],
-            'cluster_id' => ['integer', 'required'],
             'project_id' => ['integer', 'required'],
             'type' => ['required'],
             'type.type' => [Rule::in(['file'])],

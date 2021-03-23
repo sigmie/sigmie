@@ -73,7 +73,6 @@ class PlanControllerTest extends TestCase
         $res = $this->post(route('indexing.plan.store'), [
             'name' => 'John',
             'description' => 'Bar',
-            'cluster_id' => $this->cluster->id,
             'project_id' => $this->project->id,
             'type' => [
                 'type' => 'file',

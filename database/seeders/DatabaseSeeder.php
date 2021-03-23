@@ -23,27 +23,18 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         $this->call([
-            UserSeeder::class
+            WithRunningCluster::class
         ]);
 
-        $project = Project::factory()->create(['user_id' => 1]);
-        // $cluster = Cluster::factory()->create(['project_id' => $project->id]);
-        $cluster = ExternalCluster::factory()->create(['project_id' => $project->id]);
+        // $name = ClusterName::create([
+        //     'name' => 'test',
+        //     'cluster_id' => $externalCluster->id,
+        //     'cluster_type' => $externalCluster->getMorphClass()
+        // ]);
 
-        $name = ClusterName::create([
-            'name' => 'test',
-            'cluster_id' => $cluster->id,
-            'cluster_type' => $cluster->getMorphClass()
-        ]);
-
-        $cluster->update([
-            'name_id' => $name->id
-        ]);
-
-        $project->update([
-            'cluster_id' => $cluster->id,
-            'cluster_type' => $cluster->getMorphClass()
-        ]);
+        // $externalCluster->update([
+        //     'name_id' => $name->id
+        // ]);
 
         // $allowedIps = AllowedIp::factory()->create(['cluster_id' => $cluster->id]);
         // $allowedIps = AllowedIp::factory()->create(['cluster_id' => $cluster->id]);

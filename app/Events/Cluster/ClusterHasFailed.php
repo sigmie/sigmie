@@ -14,10 +14,7 @@ class ClusterHasFailed
     use InteractsWithSockets;
     use SerializesModels;
 
-    public int $clusterId;
-
-    public function __construct(int $clusterId)
+    public function __construct(public int $projectId)
     {
-        $this->clusterId = $clusterId;
     }
 }

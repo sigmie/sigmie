@@ -8,12 +8,15 @@ use App\Events\Cluster\ClusterHasFailed;
 use App\Events\Cluster\ClusterWasBooted;
 use App\Events\Cluster\ClusterWasCreated;
 use App\Models\Cluster;
+use App\Models\Project;
 use App\Repositories\ClusterRepository;
 use Exception;
 use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Uri;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Sigmie\Base\Http\ElasticsearchRequest;
 
 class PollClusterState implements ShouldQueue
 {
@@ -25,19 +28,19 @@ class PollClusterState implements ShouldQueue
 
     private $clusters;
 
-    public function __construct(ClusterRepository $clusterRepository)
+    public function __construct()
     {
-        $this->clusters = $clusterRepository;
     }
 
     public function handle(ClusterWasCreated $event): void
     {
-        $cluster = $this->clusters->find($event->clusterId);
+        $cluster = Project::find($event->projectId)->clusters->first();
 
         if ($this->clusterCallWasSuccessful($cluster)) {
-            $this->clusters->update($event->clusterId, ['state' => Cluster::RUNNING]);
 
-            event(new ClusterWasBooted($event->clusterId));
+            $cluster->update(['state' => Cluster::RUNNING]);
+
+            event(new ClusterWasBooted($event->projectId));
 
             return;
         }
@@ -49,25 +52,19 @@ class PollClusterState implements ShouldQueue
 
     public function failed(ClusterWasCreated $event, Exception $exception): void
     {
-        $this->clusters->update($event->clusterId, ['state' => Cluster::FAILED]);
+        $cluster = Project::findOrFail($event->projectId)->clusters->first();
 
-        event(new ClusterHasFailed($event->clusterId));
+        $cluster->update(['state' => Cluster::FAILED]);
+
+        event(new ClusterHasFailed($event->projectId));
     }
 
     private function clusterCallWasSuccessful(Cluster $cluster): bool
     {
-        $port = 8066;
-        $domain = config('services.cloudflare.domain');
-        $url = "https://proxy.{$cluster->name}.{$domain}:{$port}";
-        $client = new Client();
+        $request = new ElasticsearchRequest('GET', new Uri(''));
 
-        $response = $client->request('GET', 'https://proxy.test.sigmie.xyz:8066', [
-            'verify' => false,
-            'json' => [],
-            'cert' => storage_path('app/proxy/proxy.crt'),
-            'ssl_key' => storage_path('app/proxy/proxy.key')
-        ]);
+        $res = $cluster->newHttpConnection()($request);
 
-        return $response->getStatusCode() === 200;
+        return $res->code() === 200;
     }
 }

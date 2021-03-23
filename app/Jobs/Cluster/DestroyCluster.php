@@ -22,17 +22,12 @@ class DestroyCluster implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    private int $clusterId;
+    public int $clusterId;
 
     public function __construct(int $clusterId)
     {
         $this->clusterId = $clusterId;
         $this->queue = 'long-running-queue';
-    }
-
-    public function getClusterId(): int
-    {
-        return $this->clusterId;
     }
 
     /**

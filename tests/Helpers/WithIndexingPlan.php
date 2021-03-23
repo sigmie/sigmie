@@ -19,6 +19,7 @@ trait WithIndexingPlan
 
         $this->indexingPlan = IndexingPlan::factory()->create([
             'cluster_id' => $this->cluster->id,
+            'cluster_type' => $this->cluster->getMorphClass(),
             'user_id' => $this->user->id,
             'project_id' => $this->cluster->project->id
         ]);
