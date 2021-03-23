@@ -29,9 +29,23 @@ class ExternalCluster extends Cluster
         // static::addGlobalScope(new SoftDeletingScope);
     }
 
+    public function getHasAllowedIpsAttribute()
+    {
+        return false;
+    }
+
+    public function getCanBeDestroyedAttribute()
+    {
+        return false;
+    }
+
     public function settingsData()
     {
-        return $this->only(['id', 'state']);
+        $data = $this->only(['id', 'state', 'has_allowed_ips', 'can_be_destroyed']);
+
+        $data['type'] = $this->getMorphClass();
+
+        return $data;
     }
 
     /**

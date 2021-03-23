@@ -30,9 +30,9 @@ Route::get('/user/validate/email/{email}', [UserValidationController::class, 'em
 
 Route::post('/project/validate/provider', [ProjectValidationController::class, 'provider'])->name('project.validate.provider');
 
-Route::put('/tokens/{cluster}/regenerate/{clusterToken}', [TokenController::class, 'regenerate'])->name('token.regenerate');
+Route::put('/tokens/{project}/regenerate/{clusterToken}', [TokenController::class, 'regenerate'])->name('token.regenerate');
 
-Route::put('/tokens/{cluster}/toogle/{clusterToken}', [TokenController::class, 'toogle'])->name('token.toogle');
+Route::put('/tokens/{project}/toogle/{clusterToken}', [TokenController::class, 'toogle'])->name('token.toogle');
 
 Route::get('/subscription/check', [SubscriptionController::class, 'check'])->name('subscription.check');
 

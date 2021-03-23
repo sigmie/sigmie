@@ -6295,16 +6295,16 @@
         },
         {
             "name": "sigmie/app-core",
-            "version": "v0.12.3",
+            "version": "v0.12.4",
             "source": {
                 "type": "git",
                 "url": "git@github.com:sigmie/app-core.git",
-                "reference": "672e964432f7190aca057829240944555a3226bf"
+                "reference": "af2490b56933688893f7860d9d0fd020877dc48a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sigmie/app-core/zipball/672e964432f7190aca057829240944555a3226bf",
-                "reference": "672e964432f7190aca057829240944555a3226bf",
+                "url": "https://api.github.com/repos/sigmie/app-core/zipball/af2490b56933688893f7860d9d0fd020877dc48a",
+                "reference": "af2490b56933688893f7860d9d0fd020877dc48a",
                 "shasum": ""
             },
             "require": {
@@ -6350,10 +6350,10 @@
             ],
             "description": "Sigmie application core library",
             "support": {
-                "source": "https://github.com/sigmie/app-core/tree/v0.12.3",
+                "source": "https://github.com/sigmie/app-core/tree/v0.12.4",
                 "issues": "https://github.com/sigmie/app-core/issues"
             },
-            "time": "2021-03-16T08:04:24+00:00"
+            "time": "2021-03-23T07:06:48+00:00"
         },
         {
             "name": "sigmie/docker",

@@ -1,11 +1,12 @@
 <template>
   <app title="Tokens">
-
     <div class="flex md:items-center md:justify-between mb-4">
       <div class="flex-1 min-w-0">
         <h2
           class="text-lg font-bold leading-7 text-gray-900 sm:text-3xl sm:leading-9 sm:truncate"
-        >API Tokens</h2>
+        >
+          API Tokens
+        </h2>
       </div>
     </div>
 
@@ -19,22 +20,32 @@
               <tr>
                 <th
                   class="pl-4 md:pl-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"
-                >Name</th>
+                >
+                  Name
+                </th>
                 <th
                   class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"
-                >Status</th>
+                >
+                  Status
+                </th>
                 <th
                   class="px-2 md:px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"
-                >Token</th>
+                >
+                  Token
+                </th>
                 <th class="px-6 py-3 border-b border-gray-200 bg-gray-50"></th>
               </tr>
             </thead>
             <tbody class="bg-white">
               <tr v-for="(token, index) in reactiveTokens" :key="index">
-                <td class="pl-4 md:pl-6 py-4 whitespace-nowrap border-b border-gray-200">
+                <td
+                  class="pl-4 md:pl-6 py-4 whitespace-nowrap border-b border-gray-200"
+                >
                   <div class="flex items-center">
                     <div class>
-                      <div class="text-sm leading-5 font-medium text-gray-900">{{ token.name }}</div>
+                      <div class="text-sm leading-5 font-medium text-gray-900">
+                        {{ token.name }}
+                      </div>
                       <div
                         class="text-sm leading-5 text-gray-500 hidden md:block"
                         v-if="token.name === 'Admin'"
@@ -42,23 +53,32 @@
                         This is the API key to use
                         <b>only</b> in your backend.
                       </div>
-                      <div class="text-sm leading-5 text-gray-500 hidden md:block" v-else>
+                      <div
+                        class="text-sm leading-5 text-gray-500 hidden md:block"
+                        v-else
+                      >
                         This is the public API key to use in
                         <br />your frontend code.
                       </div>
                     </div>
                   </div>
                 </td>
-                <td class="px-4 md:px-6 py-4 whitespace-nowrap border-b border-gray-200">
+                <td
+                  class="px-4 md:px-6 py-4 whitespace-nowrap border-b border-gray-200"
+                >
                   <div
-                    @click="()=> toogleActive(token.id, token.cluster_id, index)"
+                    @click="
+                      () => toogleActive(token.id, token.cluster_id, index)
+                    "
                     v-if="token.active"
                     class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 cursor-pointer w-16 text-center"
                   >
                     <span class="mx-auto">Active</span>
                   </div>
                   <div
-                    @click="()=> toogleActive(token.id, token.cluster_id, index)"
+                    @click="
+                      () => toogleActive(token.id, token.cluster_id, index)
+                    "
                     v-else
                     class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 cursor-pointer w-16 text-center"
                   >
@@ -88,28 +108,30 @@
                 >
                   <a
                     v-if="token.value"
-                    v-clipboard="()=> token.value"
+                    v-clipboard="() => token.value"
                     v-clipboard:success="() => onCopy(index)"
                     href="#"
                     class="text-theme-orange-light-900 cursor-pointer hidden md:block w-full"
-                  >{{ token.actionText }}</a>
+                    >{{ token.actionText }}</a
+                  >
 
                   <a
                     v-else
                     @click="() => regenerate(token.id, token.cluster_id, index)"
                     class="text-theme-orange-light-900 cursor-pointer hidden md:block w-full"
-                  >Regenerate</a>
+                    >Regenerate</a
+                  >
 
                   <a
                     v-if="token.value"
-                    v-clipboard="()=> token.value"
+                    v-clipboard="() => token.value"
                     v-clipboard:success="() => onCopy(index)"
                     href="#"
                     class="text-theme-orange-light-900 cursor-pointer"
                   >
                     <component
                       class="text-theme-orange-light-900 cursor-pointer h-5 block md:hidden w-full"
-                      :is="'icon-'+token.actionIcon"
+                      :is="'icon-' + token.actionIcon"
                     ></component>
                   </a>
                   <a
@@ -119,7 +141,7 @@
                   >
                     <component
                       class="text-theme-orange-light-900 cursor-pointer h-5 block md:hidden w-full"
-                      :is="'icon-'+token.actionIcon"
+                      :is="'icon-' + token.actionIcon"
                     ></component>
                   </a>
                 </td>
@@ -139,12 +161,12 @@ import forEach from "lodash/forEach";
 
 export default {
   components: {
-    App
+    App,
   },
   props: ["tokens"],
   data() {
     return {
-      reactiveTokens: {}
+      reactiveTokens: {},
     };
   },
   beforeMount() {
@@ -179,11 +201,11 @@ export default {
       let response = await this.$http.put(
         this.$route("token.toogle", {
           clusterToken: tokenId,
-          cluster: clusterId
+          project: this.$page.props.project_id,
         })
       );
 
-      this.reactiveTokens[index].active = response.data === 1;
+      this.reactiveTokens[index].active = response.data.active;
 
       this.$forceUpdate();
     },
@@ -191,7 +213,7 @@ export default {
       let response = await this.$http.put(
         this.$route("token.regenerate", {
           clusterToken: tokenId,
-          cluster: clusterId
+          project: this.$page.props.project_id,
         })
       );
 
@@ -205,8 +227,8 @@ export default {
         300,
         [this, index]
       );
-    }
-  }
+    },
+  },
 };
 </script>
 

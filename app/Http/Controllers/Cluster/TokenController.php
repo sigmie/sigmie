@@ -24,44 +24,19 @@ class TokenController extends \App\Http\Controllers\Controller
     public function index(Project $project)
     {
         $cluster = $project->clusters->first();
-        $plainTextTokens = [self::ADMIN => null, self::SEARCH_ONLY => null];
 
-        Gate::authorize('index', [Token::class, $cluster]);
+        $this->authorize('index', [Token::class, $cluster]);
 
-        if ($cluster->getAttribute('tokens')->isEmpty()) {
-            $plainTextTokens[self::ADMIN] = $cluster->createToken(self::ADMIN, ['*'])->plainTextToken;
-            $plainTextTokens[self::SEARCH_ONLY] = $cluster->createToken(self::SEARCH_ONLY, ['search'])->plainTextToken;
-
-            $cluster->refresh();
-        }
-
-        $clusterId = $cluster->getAttribute('id');
-
-        $tokens = [];
-        foreach ($cluster->getAttribute('tokens') as $token) {
-            $token = $token->only(['name', 'last_used_at', 'created_at', 'id']);
-
-            $token['cluster_id'] = $clusterId;
-
-            if ($token['name'] === self::ADMIN) {
-                $token['active'] = $cluster->getAttribute('admin_token_active');
-                $token['value'] = $plainTextTokens[self::ADMIN];
-            }
-
-            if ($token['name'] === self::SEARCH_ONLY) {
-                $token['active'] = $cluster->getAttribute('search_token_active');
-                $token['value'] = $plainTextTokens[self::SEARCH_ONLY];
-            }
-
-            $tokens[] = $token;
-        }
+        $tokens = $cluster->tokensArray();
 
         return Inertia::render('token/index', ['tokens' => $tokens]);
     }
 
-    public function toogle(Cluster $cluster, Token $clusterToken)
+    public function toogle(Project $project, Token $clusterToken)
     {
-        Gate::authorize('update', [$clusterToken, $cluster]);
+        $cluster = $project->clusters->first();
+
+        $this->authorize('update', [$clusterToken, $cluster]);
 
         $newValue = null;
 
@@ -77,12 +52,14 @@ class TokenController extends \App\Http\Controllers\Controller
             $newValue = $cluster->getAttribute('admin_token_active');
         }
 
-        return $newValue;
+        return ['active' => $newValue];
     }
 
-    public function regenerate(Cluster $cluster, Token $clusterToken)
+    public function regenerate(Project $project, Token $clusterToken)
     {
-        Gate::authorize('update', [$clusterToken, $cluster]);
+        $cluster = $project->clusters->first();
+
+        $this->authorize('update', [$clusterToken, $cluster]);
 
         $newToken = $cluster->createToken(
             $clusterToken->getAttribute('name'),
@@ -91,6 +68,9 @@ class TokenController extends \App\Http\Controllers\Controller
 
         $clusterToken->delete();
 
-        return ['value' => $newToken->plainTextToken, 'id' => $newToken->accessToken->getAttribute('id')];
+        return [
+            'value' => $newToken->plainTextToken,
+            'id' => $newToken->accessToken->getAttribute('id')
+        ];
     }
 }

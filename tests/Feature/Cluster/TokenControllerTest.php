@@ -12,9 +12,42 @@ class TokenControllerTest extends TestCase
 {
     use WithRunningCluster;
 
-    public function setUp(): void
+    /**
+     * @test
+     */
+    public function ajax_toogle()
     {
-        parent::setUp();
+        $this->withRunningCluster();
+
+        $this->actingAs($this->user);
+
+        [$adminToken, $searchToken] = $this->cluster->tokensArray();
+
+        $res = $this->put(route('token.toogle', [
+            'project' => $this->project->id,
+            'clusterToken' => $adminToken['id']
+        ]));
+
+        $this->assertEquals(!$adminToken['active'], $res->json('active'));
+    }
+
+    /**
+     * @test
+     */
+    public function ajax_regenerate()
+    {
+        $this->withRunningCluster();
+
+        $this->actingAs($this->user);
+
+        [$adminToken, $searchToken] = $this->cluster->tokensArray();
+        $res = $this->put(route('token.regenerate', [
+            'project' => $this->project->id,
+            'clusterToken' => $adminToken['id']
+        ]));
+
+        $this->assertNotNull($res->json('id'));
+        $this->assertNotNull($res->json('value'));
     }
 
     /**

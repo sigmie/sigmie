@@ -37,6 +37,9 @@ class SettingsControllerTest extends TestCase
         $response->assertInertiaHas('cluster', [
             'id' => $this->cluster->id,
             'state' => $this->cluster->state,
+            'has_allowed_ips' => false,
+            'can_be_destroyed' => false,
+            'type' => $this->cluster->getMorphClass()
         ]);
     }
 

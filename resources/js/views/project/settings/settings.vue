@@ -5,7 +5,8 @@
     >
       <div class="">
         <h3 class="text-lg leading-6 font-medium text-gray-900">Settings</h3>
-        <p class="text-sm text-gray-500">Your project setttings.</p> <form
+        <p class="text-sm text-gray-500">Your project setttings.</p>
+        <form
           @submit.prevent="submit"
           class="mt-6 sm:mt-5 space-y-6 sm:space-y-5"
         >
@@ -86,9 +87,17 @@
       </div>
     </div>
 
-    <security :clusterId="cluster.id" :ips="cluster.allowedIps"></security>
+    <security
+      v-if="cluster.has_allowed_ips"
+      :clusterId="cluster.id"
+      :ips="cluster.allowedIps"
+    ></security>
 
-    <danger :clusterState="cluster.state" :clusterId="cluster.id"></danger>
+    <danger
+      v-if="cluster.can_be_destroyed"
+      :clusterState="cluster.state"
+      :clusterId="cluster.id"
+    ></danger>
   </app>
 </template>
 

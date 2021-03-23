@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\ProjectClusterType;
 use App\Helpers\ProxyCert;
+use App\Http\Controllers\Cluster\TokenController;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
@@ -49,9 +50,57 @@ class Cluster extends Model
         return $this->hasMany(AllowedIp::class);
     }
 
+    public function getHasAllowedIpsAttribute()
+    {
+        return true;
+    }
+
+    public function getCanBeDestroyedAttribute()
+    {
+        return true;
+    }
+
     public function settingsData()
     {
-        return $this->only(['id', 'state', 'allowedIps']);
+        $data = $this->only(['id', 'state', 'allowedIps', 'has_allowed_ips', 'can_be_destroyed']);
+
+        $data['type'] = $this->getMorphClass();
+
+        return $data;
+    }
+
+    public function tokensArray()
+    {
+        $plainTextTokens = [TokenController::ADMIN => null, TokenController::SEARCH_ONLY => null];
+
+        if ($this->getAttribute('tokens')->isEmpty()) {
+            $plainTextTokens[TokenController::ADMIN] = $this->createToken(TokenController::ADMIN, ['*'])->plainTextToken;
+            $plainTextTokens[TokenController::SEARCH_ONLY] = $this->createToken(TokenController::SEARCH_ONLY, ['search'])->plainTextToken;
+
+            $this->refresh();
+        }
+
+        $tokens = [];
+
+        foreach ($this->getAttribute('tokens') as $token) {
+            $token = $token->only(['name', 'last_used_at', 'created_at', 'id']);
+
+            $token['cluster_id'] = $this->id;
+
+            if ($token['name'] === TokenController::ADMIN) {
+                $token['active'] = $this->getAttribute('admin_token_active');
+                $token['value'] = $plainTextTokens[TokenController::ADMIN];
+            }
+
+            if ($token['name'] === TokenController::SEARCH_ONLY) {
+                $token['active'] = $this->getAttribute('search_token_active');
+                $token['value'] = $plainTextTokens[TokenController::SEARCH_ONLY];
+            }
+
+            $tokens[] = $token;
+        }
+
+        return $tokens;
     }
 
     /**
