@@ -19,7 +19,7 @@ class SendClusterDestroyedNotification
 
     public function handle(ClusterWasDestroyed $event): void
     {
-        $cluster = $this->clusters->findTrashed($event->clusterId);
+        $cluster = $this->clusters->findTrashed($event->projectId);
 
         $user = $cluster->findUser();
 

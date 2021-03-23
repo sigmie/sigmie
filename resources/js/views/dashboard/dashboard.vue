@@ -110,9 +110,11 @@ export default {
       return;
     }
 
+    const clusterType = this.$page.props.project_cluster_type;
+
     this.$socket
-      .private(`cluster.${this.clusterId}`)
-      .listen("Cluster\\ClusterWasBooted", (e) => {
+      .private(`${clusterType}.${this.clusterId}`)
+      .listen(".cluster.booted", (e) => {
         // Wait 5 seconds for the cluster state to change
         // in the database before reloading the page
         delay(() => {
@@ -127,8 +129,8 @@ export default {
       });
 
     this.$socket
-      .private(`cluster.${this.clusterId}`)
-      .listen("Cluster\\ClusterWasDestroyed", (e) => {
+      .private(`${clusterType}.${this.clusterId}`)
+      .listen(".cluster.destroyed", (e) => {
         // Wait 5 seconds for the cluster state to change
         // in the database before reloading the page
         delay(() => {

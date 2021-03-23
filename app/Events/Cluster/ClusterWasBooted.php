@@ -28,6 +28,11 @@ class ClusterWasBooted implements ShouldBroadcast
     {
         $cluster = Project::find($this->projectId)->clusters->first();
 
-        return new PrivateChannel("cluster.{$cluster->id}");
+        return new PrivateChannel("{$cluster->getMorphClass()}.{$cluster->id}");
+    }
+
+    public function broadcastAs()
+    {
+        return 'cluster.booted';
     }
 }

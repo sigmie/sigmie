@@ -37,8 +37,16 @@ class ClusterWasBootedTest extends TestCase
     /**
      * @test
      */
+    public function broadcast_as()
+    {
+        $this->assertEquals('cluster.booted', $this->event->broadcastAs());
+    }
+
+    /**
+     * @test
+     */
     public function cluster_was_booted_is_broadcasted_on_private_cluster_channel()
     {
-        $this->assertEquals(new PrivateChannel("cluster.{$this->cluster->id}"), $this->event->broadcastOn());
+        $this->assertEquals(new PrivateChannel("{$this->cluster->getMorphClass()}.{$this->cluster->id}"), $this->event->broadcastOn());
     }
 }

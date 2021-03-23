@@ -60,7 +60,7 @@ class SendClusterDestroyedNotificationTest extends TestCase
         $this->withNotifiableMock();
 
         $this->eventMock = $this->createMock(ClusterWasDestroyed::class);
-        $this->eventMock->clusterId = $this->clusterId;
+        $this->eventMock->projectId = $this->clusterId;
 
         $this->projectMock = $this->createMock(Project::class);
         $this->projectMock->method('getAttribute')->willReturnMap([['name', $this->projectName]]);

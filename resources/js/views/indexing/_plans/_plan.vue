@@ -1,8 +1,7 @@
 <template>
   <li
     class="relative col-span-1 flex shadow-sm cursor-pointer rounded-md border-t border-r border-b hover:bg-gray-50 border-gray-200 bg-white"
-  >
-    <div
+  > <div
       class="flex-1 flex items-center justify-between rounded-r-md truncate pl-4"
     >
       <span

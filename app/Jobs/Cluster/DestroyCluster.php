@@ -47,6 +47,6 @@ class DestroyCluster implements ShouldQueue
 
         $clusters->updateTrashed($clusterId, ['state' => Cluster::DESTROYED]);
 
-        event(new ClusterWasDestroyed($clusterId));
+        event(new ClusterWasDestroyed($projectId));
     }
 }
