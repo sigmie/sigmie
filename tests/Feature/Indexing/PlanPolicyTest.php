@@ -7,12 +7,12 @@ namespace Tests\Feature\Indexing;
 use App\Http\Middleware\Redirects\RedirectToRenewSubscriptionIfNotSubscribed;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\Helpers\WithNotSubscribedUser;
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class PlanPolicyTest extends TestCase
 {
-    use WithRunningCluster, WithNotSubscribedUser, WithIndexingPlan;
+    use WithRunningExternalCluster, WithNotSubscribedUser, WithIndexingPlan;
 
     /**
      * @test
@@ -41,7 +41,7 @@ class PlanPolicyTest extends TestCase
         $this->withoutMiddleware(RedirectToRenewSubscriptionIfNotSubscribed::class);
 
         $this->withNotSubscribedUser();
-        $this->withRunningCluster($this->user);
+        $this->withRunningExternalCluster($this->user);
 
         $this->actingAs($this->user);
 

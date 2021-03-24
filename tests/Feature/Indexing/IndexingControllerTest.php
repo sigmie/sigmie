@@ -8,19 +8,19 @@ use App\Models\IndexingPlan;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\Helpers\WithNotSubscribedUser;
 use Tests\Helpers\WithProject;
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class IndexingControllerTest extends TestCase
 {
-    use WithRunningCluster, WithNotSubscribedUser, WithIndexingPlan, WithProject;
+    use WithRunningExternalCluster, WithNotSubscribedUser, WithIndexingPlan, WithProject;
 
     /**
      * @test
      */
     public function redirects_to_same_route_with_project()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->actingAs($this->user);
 
@@ -33,7 +33,7 @@ class IndexingControllerTest extends TestCase
      */
     public function can_view_only_owning_project()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $projectId = $this->project->id;
 

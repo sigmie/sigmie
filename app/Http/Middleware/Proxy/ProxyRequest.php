@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware\Proxy;
 
+use App\Models\AbstractCluster;
 use App\Models\Cluster;
 use Closure;
 use Illuminate\Http\Request;
 
 class ProxyRequest
 {
-    private Cluster $cluster;
+    private AbstractCluster $cluster;
 
     /**
      * Because of the limitation on the laravel sectum the
@@ -32,7 +33,7 @@ class ProxyRequest
         return $next($request);
     }
 
-    public function cluster(): Cluster
+    public function cluster(): AbstractCluster
     {
         return $this->cluster;
     }

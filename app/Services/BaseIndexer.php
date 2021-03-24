@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Contracts\Indexer;
+use App\Models\AbstractCluster;
 use App\Models\Cluster;
 use App\Models\IndexingType;
 use Carbon\Carbon;
@@ -24,7 +25,7 @@ abstract class BaseIndexer extends BaseSigmieService implements Indexer
 
     protected string $alias;
 
-    public function __construct(Cluster $cluster, IndexingType $type)
+    public function __construct(AbstractCluster $cluster, IndexingType $type)
     {
         parent::__construct($cluster);
 

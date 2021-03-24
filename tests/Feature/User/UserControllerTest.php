@@ -12,12 +12,13 @@ use Mockery\MockInterface;
 use Sigmie\App\Core\DNS\Contracts\Provider as DNSProvider;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningInternalCluster;
 use Tests\Helpers\WithSubscribedUser;
 use Tests\TestCase;
 
 class UserControllerTest extends TestCase
 {
-    use WithSubscribedUser, WithRunningCluster, WithIndexingPlan;
+    use WithSubscribedUser, WithRunningInternalCluster, WithIndexingPlan;
 
     /**
      * @test
@@ -39,7 +40,7 @@ class UserControllerTest extends TestCase
 
         $subscriptionId = $this->user->subscription(config('services.paddle.plan_name'))->paddle_id;
 
-        ray($res = $this->delete(route('user.destroy', ['user' => $this->user->id])));
+        $res = $this->delete(route('user.destroy', ['user' => $this->user->id]));
 
         //Cancel subscription request
         Http::assertSent(function (Request $request) use ($subscriptionId) {

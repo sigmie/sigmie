@@ -7,12 +7,12 @@ namespace Tests\Feature;
 use App\Http\Controllers\Cluster\TokenController;
 use App\Models\Cluster;
 use Sigmie\Testing\Laravel\ClearIndices;
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class ProxyControllerTest extends TestCase
 {
-    use ClearIndices, WithRunningCluster;
+    use ClearIndices, WithRunningExternalCluster;
 
     /**
      * @var string
@@ -28,7 +28,7 @@ class ProxyControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->adminToken = $this->cluster->createToken(TokenController::ADMIN, ['*'])->plainTextToken;
         $this->searchToken = $this->cluster->createToken(TokenController::SEARCH_ONLY, ['search'])->plainTextToken;

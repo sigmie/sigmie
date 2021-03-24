@@ -10,12 +10,12 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Queue;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\Helpers\WithNotSubscribedUser;
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class PingControllerTest extends TestCase
 {
-    use WithRunningCluster, WithNotSubscribedUser, WithIndexingPlan;
+    use WithRunningExternalCluster, WithNotSubscribedUser, WithIndexingPlan;
 
     /**
      * @test
@@ -26,7 +26,9 @@ class PingControllerTest extends TestCase
 
         $url = $this->indexingPlan->ping_url;
 
-        $this->get($url)->ray()->assertOk();
+        $res = $this->get($url);
+
+        $res->assertOk();
         $this->assertTrue($this->user->isSubscribed());
     }
 

@@ -49,7 +49,7 @@ class User extends Authenticatable
     {
         $this->projects->each(function (Project $project) {
             // Clean cluster records and it's dns entries
-            $project->clusters->each(function (Cluster $cluster) {
+            $project->clusters->each(function (AbstractCluster $cluster) {
                 // Delete indexing plans
                 $cluster->plans->each(function (IndexingPlan $plan) {
                     // Delete plan activities

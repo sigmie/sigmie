@@ -9,13 +9,13 @@ use App\Models\User;
 
 trait WithIndexingPlan
 {
-    use WithRunningCluster;
+    use WithRunningExternalCluster;
 
     private IndexingPlan $indexingPlan;
 
     private function withIndexingPlan(User $user = null)
     {
-        $this->withRunningCluster($user);
+        $this->withRunningExternalCluster($user);
 
         $this->indexingPlan = IndexingPlan::factory()->create([
             'cluster_id' => $this->cluster->id,

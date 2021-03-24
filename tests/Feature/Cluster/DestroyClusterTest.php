@@ -1,12 +1,12 @@
 <?php
 
-
 declare(strict_types=1);
 
-namespace Tests\Unit\Jobs;
+namespace Tests\Feature\Cluster;
 
 use App\Helpers\ClusterManagerFactory;
 use App\Jobs\Cluster\DestroyCluster;
+use App\Models\Cluster;
 use App\Repositories\ClusterRepository;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Event;
@@ -14,21 +14,17 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\App\Core\Cluster as CoreCluster;
 use Sigmie\App\Core\Contracts\ClusterManager;
 use Tests\Helpers\WithClusterMock;
+use Tests\Helpers\WithRunningInternalCluster;
 use Tests\TestCase;
 
 class DestroyClusterTest extends TestCase
 {
-    use WithClusterMock;
+    use WithRunningInternalCluster;
 
     /**
      * @var DestroyCluster
      */
     private $job;
-
-    /**
-     * @var ClusterRepository|MockObject
-     */
-    private $clusterRepositoryMock;
 
     /**
      * @var ClusterManagerFactory|MockObject
@@ -46,16 +42,14 @@ class DestroyClusterTest extends TestCase
 
         Event::fake();
 
-        $this->withClusterMock();
-
-        $this->clusterRepositoryMock = $this->createMock(ClusterRepository::class);
         $this->clusterManagerFactoryMock = $this->createMock(ClusterManagerFactory::class);
         $this->clusterManagerMock = $this->createMock(ClusterManager::class);
 
         $this->clusterManagerFactoryMock->method('create')->willReturn($this->clusterManagerMock);
-        $this->clusterRepositoryMock->method('findTrashed')->willReturn($this->clusterMock);
 
-        $this->job = new DestroyCluster($this->clusterId);
+        $this->withRunningInternalCluster();
+
+        $this->job = new DestroyCluster($this->cluster->id);
     }
 
     /**
@@ -69,21 +63,23 @@ class DestroyClusterTest extends TestCase
     /**
      * @test
      */
-    public function handle_triggers_cluster_was_created_event()
+    public function handle_triggers_cluster_event()
     {
-        $this->job->handle($this->clusterRepositoryMock, $this->clusterManagerFactoryMock);
+        $this->job->handle($this->clusterManagerFactoryMock);
 
-        Event::assertDispatched(fn (\App\Events\Cluster\ClusterWasDestroyed $event) => $event->projectId === $this->clusterId);
+        Event::assertDispatched(fn (\App\Events\Cluster\ClusterWasDestroyed $event) => $event->projectId === $this->project->id);
     }
 
     /**
      * @test
      */
-    public function handle_updates_cluster_state_to_created()
+    public function handle_updates_cluster_state()
     {
-        $this->clusterRepositoryMock->expects($this->once())->method('updateTrashed')->with($this->clusterId, ['state' => 'destroyed']);
+        $this->job->handle($this->clusterManagerFactoryMock);
 
-        $this->job->handle($this->clusterRepositoryMock, $this->clusterManagerFactoryMock);
+        $this->cluster->refresh();
+
+        $this->assertEquals(Cluster::DESTROYED, $this->cluster->state);
     }
 
     /**
@@ -97,10 +93,10 @@ class DestroyClusterTest extends TestCase
     /**
      * @test
      */
-    public function handle_calls_cluster_manager_crete_with_core_cluster_instance()
+    public function handle_calls_cluster_manager_destroy_with_core_cluster_instance()
     {
         $this->clusterManagerMock->expects($this->once())->method('destroy')->with($this->isInstanceOf(CoreCluster::class));
 
-        $this->job->handle($this->clusterRepositoryMock, $this->clusterManagerFactoryMock);
+        $this->job->handle($this->clusterManagerFactoryMock);
     }
 }

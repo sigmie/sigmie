@@ -9,12 +9,12 @@ use App\Models\IndexingPlan;
 use Carbon\Carbon;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\Helpers\WithNotSubscribedUser;
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class PlanControllerTest extends TestCase
 {
-    use WithRunningCluster, WithNotSubscribedUser, WithIndexingPlan;
+    use WithRunningExternalCluster, WithNotSubscribedUser, WithIndexingPlan;
 
     /**
      * @test
@@ -66,7 +66,7 @@ class PlanControllerTest extends TestCase
      */
     public function create_plan()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->actingAs($this->user);
 
@@ -137,7 +137,7 @@ class PlanControllerTest extends TestCase
     public function can_create_plan_only_if_subscribed()
     {
         $this->withNotSubscribedUser();
-        $this->withRunningCluster($this->user);
+        $this->withRunningExternalCluster($this->user);
 
         $this->actingAs($this->user);
 

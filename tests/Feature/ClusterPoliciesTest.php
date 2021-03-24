@@ -7,19 +7,19 @@ namespace Tests\Feature;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\Subscription;
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class ClusterPoliciesTest extends TestCase
 {
-    use WithRunningCluster;
+    use WithRunningExternalCluster;
 
     /**
      * @test
      */
     public function user_cant_create_cluster_if_he_already_has_one()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->actingAs($this->user);
 
@@ -33,7 +33,7 @@ class ClusterPoliciesTest extends TestCase
      */
     public function user_cant_store_cluster_if_he_already_has_one()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->actingAs($this->user);
 

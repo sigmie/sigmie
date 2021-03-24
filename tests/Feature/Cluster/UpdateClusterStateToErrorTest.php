@@ -7,12 +7,12 @@ namespace Tests\Feature\Cluster;
 use App\Events\Cluster\ClusterHasFailed;
 use App\Listeners\Cluster\UpdateClusterStateToError;
 use App\Repositories\ClusterRepository;
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class UpdateClusterStateToErrorTest extends TestCase
 {
-    use WithRunningCluster;
+    use WithRunningExternalCluster;
     /**
      * @var UpdateClusterStateToError
      */
@@ -30,7 +30,7 @@ class UpdateClusterStateToErrorTest extends TestCase
      */
     public function handle_sets_cluster_state_to_error()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->listener->handle(new ClusterHasFailed($this->project->id));
 

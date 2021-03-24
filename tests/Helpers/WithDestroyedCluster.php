@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Helpers;
 
+use App\Models\AbstractCluster;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\Subscription;
@@ -15,7 +16,7 @@ trait WithDestroyedCluster
 
     private Project $project;
 
-    private Cluster $cluster;
+    private AbstractCluster $cluster;
 
     private function withDestroyedCluster()
     {

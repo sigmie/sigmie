@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
+use App\Models\AbstractCluster;
 use App\Models\Cluster;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
@@ -23,7 +24,7 @@ class ClusterPolicy
     /**
      * There is no cluster view
      */
-    public function view(User $user, Cluster $cluster)
+    public function view(User $user, AbstractCluster $cluster)
     {
         return false;
     }
@@ -42,7 +43,7 @@ class ClusterPolicy
     /**
      * Determine whether the user can update the cluster.
      */
-    public function update(User $user, Cluster $cluster): bool
+    public function update(User $user, AbstractCluster  $cluster): bool
     {
         return $cluster->isOwnedBy($user) && $cluster->getAttribute('state') === Cluster::DESTROYED;
     }
@@ -50,7 +51,7 @@ class ClusterPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Cluster $cluster): bool
+    public function delete(User $user, AbstractCluster  $cluster): bool
     {
         return $cluster->isOwnedBy($user);
     }
@@ -58,7 +59,7 @@ class ClusterPolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, Cluster $cluster): bool
+    public function restore(User $user, AbstractCluster $cluster): bool
     {
         return $cluster->isOwnedBy($user);
     }
@@ -66,7 +67,7 @@ class ClusterPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Cluster $cluster): bool
+    public function forceDelete(User $user, AbstractCluster $cluster): bool
     {
         return false;
     }

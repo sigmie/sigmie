@@ -6,12 +6,12 @@ namespace Tests\Unit\Events\Cluster;
 
 use App\Events\Cluster\ClusterWasBooted;
 use Illuminate\Broadcasting\PrivateChannel;
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class ClusterWasBootedTest extends TestCase
 {
-    use WithRunningCluster;
+    use WithRunningExternalCluster;
     /**
      * @var ClusterWasBooted
      */
@@ -21,7 +21,7 @@ class ClusterWasBootedTest extends TestCase
     {
         parent::setUp();
 
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->event = new ClusterWasBooted($this->project->id);
     }

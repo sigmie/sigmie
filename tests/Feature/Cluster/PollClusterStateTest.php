@@ -11,12 +11,12 @@ use Exception;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\Helpers\WithDestroyedCluster;
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class PollClusterStateTest extends TestCase
 {
-    use WithRunningCluster, WithDestroyedCluster;
+    use WithRunningExternalCluster, WithDestroyedCluster;
 
     /**
      * @var PollClusterState
@@ -63,7 +63,7 @@ class PollClusterStateTest extends TestCase
      */
     public function poll_dispatches_event_on_success_connection(): void
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->listener->handle(new ClusterWasCreated($this->project->id));
 

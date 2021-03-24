@@ -5,19 +5,19 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Cluster;
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class AjaxValidationsTest extends TestCase
 {
-    use WithRunningCluster;
+    use WithRunningExternalCluster;
 
     /**
      * @test
      */
     public function cluster_validation_controller_returns_false_if_cluster_with_name_exists()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $response = $this->get(route('cluster.validate.name', ['name' => $this->cluster->getAttribute('name')]));
 

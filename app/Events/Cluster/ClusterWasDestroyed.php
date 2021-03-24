@@ -19,9 +19,9 @@ class ClusterWasDestroyed implements ShouldBroadcast
 
     public int $projectId;
 
-    public function __construct(int $clusterId)
+    public function __construct(int $projectId)
     {
-        $this->projectId = $clusterId;
+        $this->projectId = $projectId;
     }
 
     public function broadcastOn()

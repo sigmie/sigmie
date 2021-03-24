@@ -35,17 +35,16 @@ class DestroyCluster implements ShouldQueue
      * initialize the Cluster manager and call the destroy method. After
      * fire the cluster was created event.
      */
-    public function handle(ClusterRepository $clusters, ClusterManagerFactory $managerFactory): void
+    public function handle(ClusterManagerFactory $managerFactory): void
     {
-        $appCluster = $clusters->findTrashed($this->clusterId);
+        $appCluster = Cluster::firstWhere('id', $this->clusterId);
         $projectId = $appCluster->getAttribute('project')->getAttribute('id');
-        $clusterId = $appCluster->getAttribute('id');
 
         $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
 
         $managerFactory->create($projectId)->destroy($coreCluster);
 
-        $clusters->updateTrashed($clusterId, ['state' => Cluster::DESTROYED]);
+        $appCluster->update(['state' => Cluster::DESTROYED]);
 
         event(new ClusterWasDestroyed($projectId));
     }

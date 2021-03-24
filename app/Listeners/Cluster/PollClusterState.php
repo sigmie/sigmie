@@ -7,6 +7,7 @@ namespace App\Listeners\Cluster;
 use App\Events\Cluster\ClusterHasFailed;
 use App\Events\Cluster\ClusterWasBooted;
 use App\Events\Cluster\ClusterWasCreated;
+use App\Models\AbstractCluster;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Repositories\ClusterRepository;
@@ -59,7 +60,7 @@ class PollClusterState implements ShouldQueue
         event(new ClusterHasFailed($event->projectId));
     }
 
-    private function clusterCallWasSuccessful(Cluster $cluster): bool
+    private function clusterCallWasSuccessful(AbstractCluster $cluster): bool
     {
         $request = new ElasticsearchRequest('GET', new Uri(''));
 

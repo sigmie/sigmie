@@ -8,19 +8,19 @@ use App\Models\Subscription;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Index\Index;
 use Sigmie\Testing\Laravel\ClearIndices;
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class DashboardControllerTest extends TestCase
 {
-    use ClearIndices, WithRunningCluster, IndexActions;
+    use ClearIndices, WithRunningExternalCluster, IndexActions;
 
     /**
      * @test
      */
     public function render_inertia_dashboard_with_id()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->actingAs($this->user);
 
@@ -39,7 +39,7 @@ class DashboardControllerTest extends TestCase
      */
     public function can_not_see_dashboard_if_not_owning_the_project()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $user = Subscription::factory()->create()->billable;
 
@@ -55,7 +55,7 @@ class DashboardControllerTest extends TestCase
      */
     public function dashboard_data_returns_cluster_info()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->actingAs($this->user);
 

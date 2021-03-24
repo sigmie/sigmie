@@ -14,19 +14,19 @@ use Inertia\Inertia;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\Helpers\WithDestroyedCluster;
 use Tests\Helpers\WithProject;
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class SettingsControllerTest extends TestCase
 {
-    use WithProject, WithRunningCluster, WithDestroyedCluster;
+    use WithProject, WithRunningExternalCluster, WithDestroyedCluster;
 
     /**
      * @test
      */
     public function index_has_cluster_state()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->actingAs($this->user);
 

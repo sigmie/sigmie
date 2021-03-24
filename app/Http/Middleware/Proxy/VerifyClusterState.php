@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware\Proxy;
 
+use App\Models\AbstractCluster;
 use App\Models\Cluster;
 use Closure;
 use Exception;
 
 class VerifyClusterState
 {
-    protected Cluster $cluster;
+    protected AbstractCluster $cluster;
 
     protected ProxyRequest $proxyRequest;
 

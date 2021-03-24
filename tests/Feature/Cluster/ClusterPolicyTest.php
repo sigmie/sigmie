@@ -9,20 +9,20 @@ use App\Listeners\Cluster\UpdateClusterStateToError;
 use App\Models\Cluster;
 use App\Policies\ClusterPolicy;
 use App\Repositories\ClusterRepository;
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\Helpers\WithSubscribedUser;
 use Tests\TestCase;
 
 class ClusterPolicyTest extends TestCase
 {
-    use WithRunningCluster, WithSubscribedUser;
+    use WithRunningExternalCluster, WithSubscribedUser;
 
     /**
      * @test
      */
     public function not_allowed_actions()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->actingAs($this->user);
 
@@ -44,7 +44,7 @@ class ClusterPolicyTest extends TestCase
 
         $user = $this->user;
 
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->assertFalse($policy->restore($user, $this->cluster));
         $this->assertFalse($policy->update($user, $this->cluster));

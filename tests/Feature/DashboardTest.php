@@ -7,12 +7,12 @@ namespace Tests\Feature;
 use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\Subscription;
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
 {
-    use WithRunningCluster;
+    use WithRunningExternalCluster;
 
     /**
      * @test
@@ -44,7 +44,7 @@ class DashboardTest extends TestCase
      */
     public function user_can_see_dashboard_only_from_owned_project()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $secondUser = Subscription::factory()->create()->billable;
 

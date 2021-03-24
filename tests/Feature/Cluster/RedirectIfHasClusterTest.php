@@ -7,19 +7,19 @@ namespace Tests\Feature\Cluster;
 use App\Events\Cluster\ClusterHasFailed;
 use App\Listeners\Cluster\UpdateClusterStateToError;
 use App\Repositories\ClusterRepository;
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class RedirectIfHasClusterTest extends TestCase
 {
-    use WithRunningCluster;
+    use WithRunningExternalCluster;
 
     /**
      * @test
      */
     public function redirect_to_dashboard_if_has_cluster()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->actingAs($this->user);
 

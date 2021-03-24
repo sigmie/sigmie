@@ -5,19 +5,19 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Cluster;
 
-use Tests\Helpers\WithRunningCluster;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class TokenControllerTest extends TestCase
 {
-    use WithRunningCluster;
+    use WithRunningExternalCluster;
 
     /**
      * @test
      */
     public function ajax_toogle()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->actingAs($this->user);
 
@@ -36,7 +36,7 @@ class TokenControllerTest extends TestCase
      */
     public function ajax_regenerate()
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->actingAs($this->user);
 
@@ -55,7 +55,7 @@ class TokenControllerTest extends TestCase
      */
     public function index_renders_inertia_view(): void
     {
-        $this->withRunningCluster();
+        $this->withRunningExternalCluster();
 
         $this->actingAs($this->user);
 

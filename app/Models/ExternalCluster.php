@@ -17,18 +17,8 @@ use Sigmie\Http\Auth\BasicAuth;
 use Sigmie\Http\JSONClient;
 
 
-class ExternalCluster extends Cluster
+class ExternalCluster extends AbstractCluster
 {
-    /**
-     * Boot the soft deleting trait for a model.
-     *
-     * @return void
-     */
-    public static function bootSoftDeletes()
-    {
-        // static::addGlobalScope(new SoftDeletingScope);
-    }
-
     public function getHasAllowedIpsAttribute()
     {
         return false;
