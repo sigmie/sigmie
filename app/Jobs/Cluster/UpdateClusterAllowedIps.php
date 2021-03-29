@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs\Cluster;
 
 use App\Events\Cluster\ClusterWasDestroyed;
+use App\Events\Cluster\ClusterWasUpdated;
 use App\Helpers\ClusterAdapter;
 use App\Helpers\ClusterManagerFactory;
 use App\Models\Cluster;
@@ -34,5 +35,7 @@ class UpdateClusterAllowedIps extends ClusterJob
         $managerFactory->create($projectId)->update($coreCluster)->allowedIps($allowedIps);
 
         $appCluster->update(['state' => Cluster::RUNNING]);
+
+        event(new ClusterWasUpdated($projectId));
     }
 }

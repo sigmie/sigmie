@@ -72,9 +72,12 @@
       class="pt-5 shadow mx-auto bg-white rounded-md sm:overflow-hidden max-w-lg mt-6"
     >
       <div class="">
-        <h3 class="px-6 text-md mb-3 leading-6 font-medium text-gray-900">
-          Authorized Addresses
-        </h3>
+        <div class="flex items-center justify-between px-6 mb-3">
+          <h3 class="text-md self-start leading-6 font-medium text-gray-900">
+            Authorized Addresses
+          </h3>
+          <div class="ml-3 h-7 flex items-center"></div>
+        </div>
 
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50 min-w-full border-t border-b">
@@ -113,9 +116,15 @@
                 class="pr-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
               >
                 <button
+                  :disabled="disabled"
                   @click="edit(address)"
                   type="button"
-                  class="bg-white rounded-md font-medium text-theme-orange-light-900 hover:text-theme-orange-light-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                  :class="
+                    disabled
+                      ? 'text-theme-orange-light-500 cursor-not-allowed'
+                      : 'text-theme-orange-light-900 hover:text-theme-orange-light-800 '
+                  "
+                  class="bg-white rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
                 >
                   <icon-edit class="h-6"></icon-edit>
                 </button>
@@ -127,8 +136,9 @@
                 class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
               >
                 <button-secondary
+                  :disabled="disabled"
                   @click="create"
-                  text="Add IP Address"
+                  :text="disabled ? 'Updating...' : 'Add IP Address'"
                 ></button-secondary>
               </td>
             </tr>
@@ -141,7 +151,7 @@
 
 <script>
 export default {
-  props: ["ips", "clusterId"],
+  props: ["ips", "clusterId", "disabled"],
   data() {
     return {
       createRequest: false,
@@ -184,6 +194,7 @@ export default {
         onSuccess: () => {
           this.createForm.reset();
           this.closeCreateForm();
+          this.$inertia.reload({ only: cluster });
         },
       });
     },
@@ -194,7 +205,10 @@ export default {
       });
 
       this.updateForm.put(route, {
-        onSuccess: () => this.closeUpdateForm(),
+        onSuccess: () => {
+          this.closeUpdateForm();
+          this.$inertia.reload({ only: ['cluster'] });
+        },
       });
     },
     destroy() {

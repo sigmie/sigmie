@@ -88,6 +88,9 @@
     </div>
 
     <security
+      :disabled="
+        cluster.state === 'updating' || cluster.state === 'queued_update'
+      "
       v-if="cluster.has_allowed_ips"
       :clusterId="cluster.id"
       :ips="cluster.allowedIps"
@@ -105,6 +108,7 @@
 import App from "../../layouts/app";
 import Danger from "./danger";
 import Security from "./security";
+import delay from "lodash/delay";
 
 export default {
   components: {
@@ -131,6 +135,19 @@ export default {
         })
         .put(route);
     },
+  },
+  mounted() {
+    // Delay the reload because if the update is done
+    // on the same page then the panel is not closing
+    // and the controller redirect isnt' taken into
+    // consideration
+    this.$socket
+      .private(`cluster.${this.cluster.id}`)
+      .listen(".cluster.updated", (e) => {
+        delay(() => {
+        this.$inertia.reload({ only: ["cluster"] });
+        }, 1000);
+      });
   },
 };
 </script>
