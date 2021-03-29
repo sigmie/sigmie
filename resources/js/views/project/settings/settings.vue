@@ -87,14 +87,16 @@
       </div>
     </div>
 
-    <security
+    <basicauth :username="cluster.username"> </basicauth>
+
+    <addresses
       :disabled="
         cluster.state === 'updating' || cluster.state === 'queued_update'
       "
       v-if="cluster.has_allowed_ips"
       :clusterId="cluster.id"
       :ips="cluster.allowedIps"
-    ></security>
+    ></addresses>
 
     <danger
       v-if="cluster.can_be_destroyed"
@@ -107,13 +109,15 @@
 <script>
 import App from "../../layouts/app";
 import Danger from "./danger";
-import Security from "./security";
+import Addresses from "./addresses";
+import Basicauth from "./basicauth";
 import delay from "lodash/delay";
 
 export default {
   components: {
     App,
-    Security,
+    Addresses,
+    Basicauth,
     Danger,
   },
   props: ["cluster", "project"],
@@ -145,7 +149,7 @@ export default {
       .private(`cluster.${this.cluster.id}`)
       .listen(".cluster.updated", (e) => {
         delay(() => {
-        this.$inertia.reload({ only: ["cluster"] });
+          this.$inertia.reload({ only: ["cluster"] });
         }, 1000);
       });
   },

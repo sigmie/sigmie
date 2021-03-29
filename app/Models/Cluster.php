@@ -54,6 +54,11 @@ class Cluster extends AbstractCluster
         return $this->hasMany(AllowedIp::class);
     }
 
+    public function getHasBasicAuthAttribute()
+    {
+        return true;
+    }
+
     public function getHasAllowedIpsAttribute()
     {
         return true;
@@ -72,7 +77,12 @@ class Cluster extends AbstractCluster
 
     public function settingsData()
     {
-        $data = $this->only(['id', 'state', 'allowedIps', 'has_allowed_ips', 'can_be_destroyed']);
+        $data = $this->only([
+            'id',
+            'state',
+            'username', 'allowedIps', 'has_allowed_ips', 'can_be_destroyed',
+            'has_basic_auth'
+        ]);
 
         $data['type'] = $this->getMorphClass();
 
