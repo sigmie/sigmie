@@ -12,24 +12,12 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\App\Core\ClusterManager;
+use Tests\Helpers\WithProject;
 use Tests\TestCase;
 
 class ClusterManagerFactoryTest extends TestCase
 {
-    /**
-     * @var ProjectRepository|MockObject
-     */
-    private $projectRepositoryMock;
-
-    /**
-     * @var int
-     */
-    private $projectId = 99;
-
-    /**
-     * @var Project|MockObject
-     */
-    private $project;
+    use WithProject;
 
     /**
      * @var ClusterManagerFactory
@@ -49,10 +37,7 @@ class ClusterManagerFactoryTest extends TestCase
 
         $this->project = $this->createMock(Project::class);
 
-        $this->projectRepositoryMock = $this->createMock(ProjectRepository::class);
-        $this->projectRepositoryMock->method('find')->willReturn($this->project);
-
-        $this->factory = new ClusterManagerFactory($this->projectRepositoryMock);
+        $this->factory = new ClusterManagerFactory();
     }
 
     /**
@@ -60,11 +45,13 @@ class ClusterManagerFactoryTest extends TestCase
      */
     public function create_google_provider_initializes_google_factory()
     {
-        $this->setProjectProvider('google');
+        $this->withProject();
 
-        $this->factory->create($this->projectId);
+        $this->project->update(['provider' => 'google']);
 
-        Storage::assertExists("creds/{$this->projectId}.json");
+        $this->factory->create($this->project->id);
+
+        Storage::assertExists("creds/{$this->project->id}.json");
     }
 
     /**
@@ -72,7 +59,9 @@ class ClusterManagerFactoryTest extends TestCase
      */
     public function create_aws_throws_exception()
     {
-        $this->setProjectProvider('aws');
+        $this->withProject();
+
+        $this->project->update(['provider' => 'aws']);
 
         $this->expectException(Exception::class);
 
@@ -84,23 +73,13 @@ class ClusterManagerFactoryTest extends TestCase
      */
     public function create_do_throws_exception()
     {
-        $this->setProjectProvider('digitalocean');
+        $this->withProject();
+
+        $this->project->update(['provider' => 'digitalocean']);
 
         $this->expectException(Exception::class);
 
-        $this->factory->create($this->projectId);
-    }
-
-    /**
-     * @test
-     */
-    public function create_finds_project()
-    {
-        $this->setProjectProvider('google');
-
-        $this->projectRepositoryMock->expects($this->once())->method('find')->with($this->projectId);
-
-        $this->factory->create($this->projectId);
+        $this->factory->create($this->project->id);
     }
 
     /**
@@ -108,21 +87,12 @@ class ClusterManagerFactoryTest extends TestCase
      */
     public function create_creates_instance_provider()
     {
-        $this->setProjectProvider('google');
+        $this->withProject();
 
-        $instance = $this->factory->create($this->projectId);
+        $this->project->update(['provider' => 'google']);
+
+        $instance = $this->factory->create($this->project->id);
 
         $this->assertInstanceOf(ClusterManager::class, $instance);
-    }
-
-    private function setProjectProvider($provider)
-    {
-        $creds = null;
-
-        if ($provider === 'google') {
-            $creds =  encrypt('[]');
-        }
-
-        $this->project->method('getAttribute')->willReturnMap([['provider', $provider], ['creds', $creds], ['id', $this->projectId]]);
     }
 }

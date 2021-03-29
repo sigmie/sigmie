@@ -68,6 +68,7 @@ class UserControllerTest extends TestCase
         $this->assertEmpty($user);
 
         $this->assertFalse($this->isAuthenticated(), 'The user is authenticated');
+
         $res->assertHeader('x-inertia-location', route('landing'));
     }
 

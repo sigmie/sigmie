@@ -31,6 +31,6 @@ class ClusterHasFailedTest extends TestCase
      */
     public function create_has_failed_has_public_cluster_id_property()
     {
-        $this->assertEquals($this->projectId, $this->event->projectId);
+        $this->assertEquals($this->projectId, $this->event->clusterId);
     }
 }

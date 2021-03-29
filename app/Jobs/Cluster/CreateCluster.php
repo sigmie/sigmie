@@ -17,29 +17,17 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Throwable;
 
-class CreateCluster implements ShouldQueue
+class CreateCluster extends ClusterJob
 {
-    use Dispatchable;
-    use InteractsWithQueue;
-    use Queueable;
-    use SerializesModels;
-
-    private int $clusterId;
-
-    private $clusters;
+    public $tries = 1;
 
     private array $specs;
 
     public function __construct(int $clusterId, array $specs)
     {
-        $this->clusterId = $clusterId;
-        $this->specs = $specs;
-        $this->queue = 'long-running-queue';
-    }
+        parent::__construct($clusterId);
 
-    public function getClusterId()
-    {
-        return $this->clusterId;
+        $this->specs = $specs;
     }
 
     /**
@@ -47,9 +35,9 @@ class CreateCluster implements ShouldQueue
      * initialize the Cluster manager and call the create method. After
      * fire the cluster was created event.
      */
-    public function handle(ClusterRepository $clusters, ClusterManagerFactory $managerFactory): void
+    public function handle(ClusterManagerFactory $managerFactory): void
     {
-        $appCluster = $clusters->findTrashed($this->clusterId);
+        $appCluster = Cluster::withTrashed()->firstWhere('id', $this->clusterId);
         $projectId = $appCluster->getAttribute('project')->getAttribute('id');
         $clusterId = $appCluster->getAttribute('id');
 
@@ -58,11 +46,14 @@ class CreateCluster implements ShouldQueue
         $coreCluster->setMemory($this->specs['memory']);
         $coreCluster->setDiskSize($this->specs['disk']);
 
-        $managerFactory->create($projectId)->create($coreCluster);
+        $design = $managerFactory->create($projectId)->create($coreCluster);
 
-        $clusters->update($this->clusterId, ['state' => Cluster::CREATED]);
+        $appCluster->update([
+            'state' => Cluster::CREATED,
+            'design' => $design
+        ]);
 
-        event(new ClusterWasCreated($clusterId));
+        event(new ClusterWasCreated($projectId));
     }
 
     /**
@@ -70,6 +61,9 @@ class CreateCluster implements ShouldQueue
      */
     public function failed(Throwable $throwable)
     {
+        $appCluster = Cluster::withTrashed()->firstWhere('id', $this->clusterId);
+        $appCluster->update(['state' => Cluster::DESTROYED]);
+
         event(new ClusterHasFailed($this->clusterId));
     }
 }

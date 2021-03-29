@@ -27,12 +27,6 @@ class PollClusterState implements ShouldQueue
 
     public $delay = 15;
 
-    private $clusters;
-
-    public function __construct()
-    {
-    }
-
     public function handle(ClusterWasCreated $event): void
     {
         $cluster = Project::find($event->projectId)->clusters->first();

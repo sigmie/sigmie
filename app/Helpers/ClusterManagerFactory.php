@@ -17,19 +17,12 @@ class ClusterManagerFactory
 {
     use InitializesGoogleFactory;
 
-    private ProjectRepository $projects;
-
-    public function __construct(ProjectRepository $projectRepository)
-    {
-        $this->projects = $projectRepository;
-    }
-
     public function create(int $projectId): ClusterManagerInterface
     {
         $cloudProviderFactory = null;
         $dnsProviderFactory = null;
 
-        $project = $this->projects->find($projectId);
+        $project = Project::find($projectId);
         $provider = $project->getAttribute('provider');
 
         if (($project instanceof Project) === false) {

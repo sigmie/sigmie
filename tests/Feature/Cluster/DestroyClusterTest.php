@@ -75,9 +75,36 @@ class DestroyClusterTest extends TestCase
      */
     public function handle_updates_cluster_state()
     {
+        $this->cluster->update(['design' => ['some' => 'design']]);
+
+        $this->assertEquals(['some' => 'design'], $this->cluster->design);
+
         $this->job->handle($this->clusterManagerFactoryMock);
 
         $this->cluster->refresh();
+
+        $this->assertEquals(Cluster::DESTROYED, $this->cluster->state);
+        $this->assertEquals([], $this->cluster->design);
+    }
+
+    /**
+     * @test
+     */
+    public function handle_removes_ip_addresses()
+    {
+        $this->cluster
+            ->allowedIps()
+            ->create(
+                ['name' => 'foo', 'ip' => '192.0.0.1']
+            );
+
+        $this->assertTrue($this->cluster->allowedIps->isNotEmpty());
+
+        $this->job->handle($this->clusterManagerFactoryMock);
+
+        $this->cluster->refresh();
+
+        $this->assertTrue($this->cluster->allowedIps->isEmpty());
 
         $this->assertEquals(Cluster::DESTROYED, $this->cluster->state);
     }

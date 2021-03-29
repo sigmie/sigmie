@@ -30,6 +30,7 @@ class ClusterFactory extends Factory
                 // Cluster::DESTROYED,
                 // Cluster::FAILED,
             ]),
+            'design' => ['some' => 'design'],
             'deleted_at' => null,
             // 'deleted_at' => $faker->randomElement([null, $faker->dateTime()]),
             'nodes_count' => 1,

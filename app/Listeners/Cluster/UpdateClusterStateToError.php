@@ -12,7 +12,7 @@ class UpdateClusterStateToError
 {
     public function handle(ClusterHasFailed $event)
     {
-        $cluster = Project::find($event->projectId)->clusters->first();
+        $cluster = Project::find($event->clusterId)->clusters->first();
 
         $cluster->update(['state' => Cluster::FAILED]);
     }

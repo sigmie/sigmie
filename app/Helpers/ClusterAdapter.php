@@ -20,10 +20,12 @@ class ClusterAdapter
         $region = $cluster->getAttribute('region');
         $nodesCount = $cluster->getAttribute('nodes_count');
         $username = $cluster->getAttribute('username');
+        $design = $cluster->getAttribute('design');
         $password = decrypt($cluster->getAttribute('password'));
 
         $regionClass = $region->getAttribute('class');
 
+        $coreCluster->setDesign($design);
         $coreCluster->setRegion(new $regionClass());
         $coreCluster->setName($name);
         $coreCluster->setNodesCount($nodesCount);

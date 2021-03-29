@@ -8,27 +8,10 @@ use App\Events\Cluster\ClusterWasDestroyed;
 use App\Helpers\ClusterAdapter;
 use App\Helpers\ClusterManagerFactory;
 use App\Models\Cluster;
-use App\Repositories\ClusterRepository;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 
-class DestroyCluster implements ShouldQueue
+class DestroyCluster extends ClusterJob
 {
-    use Dispatchable;
-    use InteractsWithQueue;
-    use Queueable;
-    use SerializesModels;
-
-    public int $clusterId;
-
-    public function __construct(int $clusterId)
-    {
-        $this->clusterId = $clusterId;
-        $this->queue = 'long-running-queue';
-    }
+    public $tries = 1;
 
     /**
      * Map the application Cluster instance to the sigmie Cluster instance
@@ -37,14 +20,20 @@ class DestroyCluster implements ShouldQueue
      */
     public function handle(ClusterManagerFactory $managerFactory): void
     {
-        $appCluster = Cluster::firstWhere('id', $this->clusterId);
+        $appCluster = Cluster::withTrashed()->firstWhere('id', $this->clusterId);
+
         $projectId = $appCluster->getAttribute('project')->getAttribute('id');
 
         $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
 
         $managerFactory->create($projectId)->destroy($coreCluster);
 
-        $appCluster->update(['state' => Cluster::DESTROYED]);
+        $appCluster->update([
+            'state' => Cluster::DESTROYED,
+            'design' => []
+        ]);
+
+        $appCluster->allowedIps()->delete();
 
         event(new ClusterWasDestroyed($projectId));
     }

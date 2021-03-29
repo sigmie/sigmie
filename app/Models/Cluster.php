@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\ProjectClusterType;
 use App\Helpers\ProxyCert;
 use App\Http\Controllers\Cluster\TokenController;
+use App\Jobs\Cluster\UpdateClusterAllowedIps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
@@ -30,6 +31,10 @@ class Cluster extends AbstractCluster
 
     public const QUEUED_CREATE = 'queued_create';
 
+    public const QUEUED_UPDATE = 'queued_update';
+
+    public const UPDATING = 'updating';
+
     public const CREATED = 'created';
 
     public const RUNNING = 'running';
@@ -37,6 +42,12 @@ class Cluster extends AbstractCluster
     public const DESTROYED = 'destroyed';
 
     public const FAILED = 'failed';
+
+    protected $casts = [
+        'admin_token_active' => 'boolean',
+        'search_token_active' => 'boolean',
+        'design' => 'array'
+    ];
 
     public function allowedIps()
     {
@@ -51,6 +62,12 @@ class Cluster extends AbstractCluster
     public function getCanBeDestroyedAttribute()
     {
         return true;
+    }
+
+    public function dispatchUpdateAllowedIps(): void
+    {
+        $this->update(['state' => Cluster::QUEUED_UPDATE]);
+        UpdateClusterAllowedIps::dispatch($this->id);
     }
 
     public function settingsData()

@@ -54,7 +54,7 @@ class PollClusterStateTest extends TestCase
         $this->listener->failed(new ClusterWasCreated($this->project->id), new Exception('Something'));
 
         Event::assertDispatched(function (\App\Events\Cluster\ClusterHasFailed $event) {
-            return $event->projectId === $this->project->id;
+            return $event->clusterId === $this->project->id;
         });
     }
 

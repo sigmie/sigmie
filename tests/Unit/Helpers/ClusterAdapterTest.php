@@ -22,6 +22,7 @@ class ClusterAdapterTest extends TestCase
             'name' => 'foo',
             'nodes_count' => 3,
             'username' => 'bar',
+            'design' => ['some' => 'value'],
             'password' => encrypt('baz')
         ]);
         $appCluster->setAttribute(
@@ -39,6 +40,7 @@ class ClusterAdapterTest extends TestCase
         $this->assertEquals('foo', $coreCluster->name);
         $this->assertEquals('bar', $coreCluster->username);
         $this->assertEquals('baz', $coreCluster->password);
+        $this->assertEquals(['some' => 'value'], $coreCluster->design);
 
         $this->assertFalse(isset($coreCluster->memory));
         $this->assertFalse(isset($coreCluster->cpus));

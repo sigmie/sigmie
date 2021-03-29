@@ -27,7 +27,7 @@ class AllowedIpsController extends \App\Http\Controllers\Controller
             $request->validated()
         );
 
-        UpdateClusterAllowedIps::dispatch($cluster->id);
+        $cluster->dispatchUpdateAllowedIps();
 
         return redirect()->route('settings');
     }
@@ -42,7 +42,7 @@ class AllowedIpsController extends \App\Http\Controllers\Controller
 
         // If the Ip has been updated dispatch job
         if ($shouldUpdate) {
-            UpdateClusterAllowedIps::dispatch($cluster->id);
+            $cluster->dispatchUpdateAllowedIps();
         }
 
         return redirect()->route('settings');
@@ -52,7 +52,7 @@ class AllowedIpsController extends \App\Http\Controllers\Controller
     {
         $address->delete();
 
-        UpdateClusterAllowedIps::dispatch($cluster->id);
+        $cluster->dispatchUpdateAllowedIps();
 
         return redirect()->route('settings');
     }

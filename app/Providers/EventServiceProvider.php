@@ -42,7 +42,7 @@ class EventServiceProvider extends ServiceProvider
             DispatchUserWasSubscribedEvent::class
         ],
         ClusterHasFailed::class => [
-            UpdateClusterStateToError::class
+            // UpdateClusterStateToError::class
         ],
         IndexingHasFailed::class => [
             CreateErrorActivity::class
