@@ -6,7 +6,11 @@
       class="block text-sm font-medium leading-5 text-gray-700 pb-1"
       >{{ label }}</label
     >
-    <div class="relative rounded-md shadow-sm mt-2" v-if="suffix.length === 0">
+    <div
+      :class="label.length > 0 ?'mt-2':''"
+      class="relative rounded-md shadow-sm"
+      v-if="suffix.length === 0"
+    >
       <input
         :id="id"
         :type="type"
