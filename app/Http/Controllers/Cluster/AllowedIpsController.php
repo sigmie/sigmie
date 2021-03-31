@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Cluster;
 
+use App\Events\Cluster\ClusterWasUpdated;
 use App\Http\Requests\Cluster\StoreCluster;
 use App\Http\Requests\Cluster\UpdateCluster;
 use App\Jobs\Cluster\CreateCluster;
@@ -42,8 +43,13 @@ class AllowedIpsController extends \App\Http\Controllers\Controller
 
         // If the Ip has been updated dispatch job
         if ($shouldUpdate) {
-            $cluster->dispatchUpdateAllowedIps();
+            $cluster->dispatchClusterUpdateJob(
+                UpdateClusterAllowedIps::class,
+                $cluster->id
+            );
         }
+
+        event(new ClusterWasUpdated($cluster->project->id));
 
         return redirect()->route('settings');
     }

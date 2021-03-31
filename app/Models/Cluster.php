@@ -8,6 +8,7 @@ use App\Enums\ProjectClusterType;
 use App\Helpers\ProxyCert;
 use App\Http\Controllers\Cluster\TokenController;
 use App\Jobs\Cluster\UpdateClusterAllowedIps;
+use App\Jobs\Cluster\UpdateClusterBasicAuth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
@@ -64,15 +65,35 @@ class Cluster extends AbstractCluster
         return true;
     }
 
+    public function getCanUpdateAllowedIpsAttribute()
+    {
+        $job = new UpdateClusterAllowedIps($this->id);
+
+        return $job->isLocked() === false;
+    }
+
+    public function getCanUpdateBasicAuthAttribute()
+    {
+        $job = new UpdateClusterAllowedIps($this->id);
+
+        return $job->isLocked() === false;
+    }
+
     public function getCanBeDestroyedAttribute()
     {
         return true;
     }
 
-    public function dispatchUpdateAllowedIps(): void
+    public function dispatchClusterUpdateJob(string $class, ...$args)
     {
-        $this->update(['state' => Cluster::QUEUED_UPDATE]);
-        UpdateClusterAllowedIps::dispatch($this->id);
+        $job = new $class(...$args);
+
+        if ($job->lockAction()) {
+            dispatch($job);
+            return;
+        }
+
+        throw new \Exception("Couldn't lock {$job->uniqueActionIdentifier()}");
     }
 
     public function settingsData()
@@ -80,7 +101,11 @@ class Cluster extends AbstractCluster
         $data = $this->only([
             'id',
             'state',
-            'username', 'allowedIps', 'has_allowed_ips', 'can_be_destroyed',
+            'username',
+            'allowedIps',
+            'has_allowed_ips',
+            'can_be_destroyed',
+            'can_update_allowed_ips',
             'has_basic_auth'
         ]);
 

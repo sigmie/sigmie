@@ -18,9 +18,14 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 
-class UpdateClusterAllowedIps extends ClusterJob
+class UpdateClusterBasicAuth extends ClusterJob
 {
     public $tries = 10;
+
+    public function actionId(): string
+    {
+        return '';
+    }
 
     public function handle(ClusterManagerFactory $managerFactory): void
     {
@@ -33,10 +38,14 @@ class UpdateClusterAllowedIps extends ClusterJob
         // $allowedIps = $appCluster->allowedIps->pluck('ip')->toArray();
 
         // $managerFactory->create($projectId)->update($coreCluster)->allowedIps($allowedIps);
-        sleep(5);
 
-        $this->releaseAction();
+        // $appCluster->update(['state' => Cluster::RUNNING]);
+
+        // event(new ClusterWasUpdated($projectId));
+        sleep(15);
 
         event(new ClusterWasUpdated($projectId));
+
+        $this->releaseAction();
     }
 }

@@ -90,7 +90,7 @@
     <basicauth :username="cluster.username"> </basicauth>
 
     <addresses
-      :disabled="cluster.state !== 'running'"
+      :disabled="!cluster.can_update_allowed_ips"
       v-if="cluster.has_allowed_ips"
       :clusterId="cluster.id"
       :ips="cluster.allowedIps"
