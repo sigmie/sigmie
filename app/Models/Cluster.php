@@ -74,7 +74,7 @@ class Cluster extends AbstractCluster
 
     public function getCanUpdateBasicAuthAttribute()
     {
-        $job = new UpdateClusterAllowedIps($this->id);
+        $job = new UpdateClusterBasicAuth($this->id);
 
         return $job->isLocked() === false;
     }
@@ -106,6 +106,7 @@ class Cluster extends AbstractCluster
             'has_allowed_ips',
             'can_be_destroyed',
             'can_update_allowed_ips',
+            'can_update_basic_auth',
             'has_basic_auth'
         ]);
 

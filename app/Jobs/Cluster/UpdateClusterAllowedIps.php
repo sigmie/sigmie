@@ -28,15 +28,15 @@ class UpdateClusterAllowedIps extends ClusterJob
 
         $projectId = $appCluster->getAttribute('project')->getAttribute('id');
 
-        // $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
+        $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
 
-        // $allowedIps = $appCluster->allowedIps->pluck('ip')->toArray();
+        $allowedIps = $appCluster->allowedIps->pluck('ip')->toArray();
 
-        // $managerFactory->create($projectId)->update($coreCluster)->allowedIps($allowedIps);
-        sleep(5);
+        $managerFactory->create($projectId)->update($coreCluster)->allowedIps($allowedIps);
 
         $this->releaseAction();
 
         event(new ClusterWasUpdated($projectId));
+
     }
 }

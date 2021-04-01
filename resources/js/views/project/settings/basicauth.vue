@@ -2,10 +2,10 @@
   <div
     class="pt-5 shadow mx-auto bg-white rounded-md sm:overflow-hidden max-w-lg mt-6"
   >
-    <div class="">
+    <form @submit.prevent="submit">
       <div class="mb-3 px-6">
         <h3 class="text-md self-start leading-6 font-medium text-gray-900">
-          Authentication
+          Basic Authentication
         </h3>
       </div>
       <div class="grid grid-cols-1 gap-x-4 sm:grid-cols-1 border-t">
@@ -19,17 +19,18 @@
           <form-input
             class="col-span-2 md:col-span-1"
             v-if="state === STATE_EDIT"
+            v-model="updateForm.username"
+            :errors="updateForm.errors.username"
             id="username"
             type="text"
             label=""
-            :value="username"
           ></form-input>
 
           <div
             v-else
             class="col-span-2 md:col-span-1 font-semibold text-base text-gray-900"
           >
-            {{ username }}
+            {{ cluster.username }}
           </div>
         </div>
         <div
@@ -44,6 +45,8 @@
           <form-input
             class="col-span-2 md:col-span-1"
             v-if="state === STATE_EDIT"
+            v-model="updateForm.password"
+            :errors="updateForm.errors.password"
             id="password"
             type="text"
             label=""
@@ -52,9 +55,9 @@
           ></form-input>
           <div
             v-else
-            class="col-span-2 md:col-span-1 font-semibold text-base italic text-gray-600"
+            class="col-span-2 md:col-span-1 font-normal text-sm italic text-gray-500"
           >
-            **************
+            hidden
           </div>
         </div>
       </div>
@@ -62,18 +65,23 @@
       <div class="flex justify-end px-6 py-4">
         <div class="w-full md:w-auto" v-if="state === STATE_NONE">
           <button-secondary
+            :disabled="cluster.can_update_basic_auth === false"
             @click="edit"
-            text="Edit authentication"
+            :text="
+              cluster.can_update_basic_auth
+                ? 'Edit authentication'
+                : 'Updating...'
+            "
           ></button-secondary>
         </div>
         <div class="w-full md:w-auto pr-1 md:pr-2" v-if="state === STATE_EDIT">
-          <button-secondary text="Cancel" @click="cancel"></button-secondary>
+          <button-secondary text="Cancel" @click.prevent="cancel"></button-secondary>
         </div>
         <div class="w-full md:w-auto pl-1 md:p-0" v-if="state === STATE_EDIT">
-          <button-primary text="Update"></button-primary>
+          <button-primary type="submit" text="Update"></button-primary>
         </div>
       </div>
-    </div>
+    </form>
   </div>
 </template>
 
@@ -88,11 +96,29 @@ export default {
   data() {
     return {
       state: STATE_NONE,
+      updateForm: this.$inertia.form({
+        username: this.cluster.username,
+        password: "",
+      }),
     };
   },
-  props: ["username"],
+  props: ["cluster"],
   methods: {
+    submit() {
+      const route = this.$route("cluster.basic-auth.update", {
+        cluster: this.cluster.id,
+      });
+
+      this.updateForm.put(route, {
+        onSuccess: () => {
+          this.state = STATE_NONE;
+          this.$inertia.reload({ only: ["cluster"] });
+          this.updateForm.password = "";
+        },
+      });
+    },
     cancel() {
+      this.updateForm.clearErrors();
       this.state = this.STATE_NONE;
     },
     edit() {

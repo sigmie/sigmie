@@ -28,7 +28,10 @@ class AllowedIpsController extends \App\Http\Controllers\Controller
             $request->validated()
         );
 
-        $cluster->dispatchUpdateAllowedIps();
+        $cluster->dispatchClusterUpdateJob(
+            UpdateClusterAllowedIps::class,
+            $cluster->id
+        );
 
         return redirect()->route('settings');
     }
@@ -58,7 +61,10 @@ class AllowedIpsController extends \App\Http\Controllers\Controller
     {
         $address->delete();
 
-        $cluster->dispatchUpdateAllowedIps();
+        $cluster->dispatchClusterUpdateJob(
+            UpdateClusterAllowedIps::class,
+            $cluster->id
+        );
 
         return redirect()->route('settings');
     }

@@ -87,7 +87,7 @@
       </div>
     </div>
 
-    <basicauth :username="cluster.username"> </basicauth>
+    <basicauth :cluster="cluster"> </basicauth>
 
     <addresses
       :disabled="!cluster.can_update_allowed_ips"
