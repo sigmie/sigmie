@@ -34,6 +34,7 @@ class ClusterController extends \App\Http\Controllers\Controller
         $domain = config('services.cloudflare.domain');
         $project = Project::find($validated['project_id']);
 
+        /** @var  Cluster $cluster */
         $cluster = Cluster::create([
             'name' => $name,
             'region_id' => $validated['region_id'],
@@ -50,11 +51,13 @@ class ClusterController extends \App\Http\Controllers\Controller
 
         $clusterId = $cluster->getAttribute('id');
 
-        CreateCluster::dispatch($clusterId, [
+        $job = new CreateCluster($clusterId, [
             'memory' => $validated['memory'],
             'cores' => $validated['cores'],
             'disk' => $validated['disk'],
         ]);
+
+        dispatch($job);
 
         return redirect()->route('dashboard');
     }
@@ -89,11 +92,13 @@ class ClusterController extends \App\Http\Controllers\Controller
 
         $cluster->restore();
 
-        CreateCluster::dispatch($cluster->id, [
+        $job = new CreateCluster($cluster->id, [
             'memory' => $validated['memory'],
             'cores' => $validated['cores'],
             'disk' => $validated['disk'],
         ]);
+
+        dispatch($job);
 
         return redirect()->route('dashboard');
     }
@@ -102,7 +107,9 @@ class ClusterController extends \App\Http\Controllers\Controller
     {
         $this->authorize('delete', $cluster);
 
-        DestroyCluster::dispatch($cluster->id);
+        $job = new DestroyCluster($cluster->id);
+
+        dispatch($job);
 
         $cluster->update(['state' => Cluster::QUEUED_DESTROY]);
 

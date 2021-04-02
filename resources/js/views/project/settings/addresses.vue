@@ -13,7 +13,11 @@
       :show="createRequest"
       type="info"
     >
-      <form class="space-y-3 w-full">
+      <form
+        @submit.prevent="store"
+        v-on:keydown.enter.prevent="store"
+        class="space-y-3 w-full"
+      >
         <form-input
           id="name"
           type="text"
@@ -48,7 +52,11 @@
       :show="editRequest"
       type="info"
     >
-      <form class="space-y-3 w-full">
+      <form
+        @submit.prevent="update"
+        v-on:keydown.enter.prevent="update"
+        class="space-y-3 w-full"
+      >
         <form-input
           id="name"
           type="text"
@@ -207,7 +215,7 @@ export default {
       this.updateForm.put(route, {
         onSuccess: () => {
           this.closeUpdateForm();
-          this.$inertia.reload({ only: ['cluster'] });
+          this.$inertia.reload({ only: ["cluster"] });
         },
       });
     },

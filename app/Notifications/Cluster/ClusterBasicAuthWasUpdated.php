@@ -6,10 +6,12 @@ namespace App\Notifications\Cluster;
 
 use App\Models\User;
 use App\Notifications\UserNotification;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class ClusterIsRunning extends UserNotification
+class ClusterBasicAuthWasUpdated extends UserNotification
 {
-    public function __construct(private string $clusterName, private string $projectName)
+    public function __construct(private string $projectName)
     {
     }
 
@@ -19,8 +21,8 @@ class ClusterIsRunning extends UserNotification
     public function toArray($notifiable): array
     {
         return [
-            'title' => 'Cluster',
-            'body' => "Your cluster <b>{$this->clusterName}</b> is up and running.",
+            'title' => 'Basic Authentication',
+            'body' => "Your cluster's <b>authentication</b> was updated.",
             'project' => $this->projectName
         ];
     }

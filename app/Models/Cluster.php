@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\ProjectClusterType;
 use App\Helpers\ProxyCert;
 use App\Http\Controllers\Cluster\TokenController;
+use App\Jobs\Cluster\ClusterJob;
 use App\Jobs\Cluster\UpdateClusterAllowedIps;
 use App\Jobs\Cluster\UpdateClusterBasicAuth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -82,18 +83,6 @@ class Cluster extends AbstractCluster
     public function getCanBeDestroyedAttribute()
     {
         return true;
-    }
-
-    public function dispatchClusterUpdateJob(string $class, ...$args)
-    {
-        $job = new $class(...$args);
-
-        if ($job->lockAction()) {
-            dispatch($job);
-            return;
-        }
-
-        throw new \Exception("Couldn't lock {$job->uniqueActionIdentifier()}");
     }
 
     public function settingsData()

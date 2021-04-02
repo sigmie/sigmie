@@ -9,36 +9,32 @@ use App\Events\Cluster\ClusterWasUpdated;
 use App\Helpers\ClusterAdapter;
 use App\Helpers\ClusterManagerFactory;
 use App\Models\Cluster;
+use App\Models\Project;
+use App\Notifications\Cluster\ClusterBasicAuthWasUpdated;
 use App\Repositories\ClusterRepository;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Notifications\Notification;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
+use Sigmie\App\Core\Contracts\ClusterManager;
+use Sigmie\App\Core\Contracts\Update;
 
-class UpdateClusterBasicAuth extends ClusterJob
+class UpdateClusterBasicAuth extends UpdateJob
 {
-    public $tries = 10;
-
-    public function handle(ClusterManagerFactory $managerFactory): void
+    protected function notification(Project $project): Notification
     {
-        $appCluster = Cluster::withTrashed()->where('id', $this->clusterId)->first();
+        return new ClusterBasicAuthWasUpdated($project->name);
+    }
 
-        $projectId = $appCluster->getAttribute('project')->getAttribute('id');
-
-        $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
-
-        $managerFactory->create($projectId)
-            ->update($coreCluster)
-            ->basicAuth(
-                $appCluster->username,
-                $appCluster->password
-            );
-
-        $this->releaseAction();
-
-        event(new ClusterWasUpdated($projectId));
+    protected function update(Update $update, Cluster $appCluster)
+    {
+        $update->basicAuth(
+            $appCluster->username,
+            $appCluster->password
+        );
     }
 }

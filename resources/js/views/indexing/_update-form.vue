@@ -19,6 +19,7 @@
         >
           <form
             @submit.prevent="submit"
+            v-on:keydown.enter.prevent="submit"
             class="h-full pt-16 divide-y divide-gray-200 flex flex-col bg-white shadow-xl"
           >
             <div class="flex-1 h-0 overflow-y-auto">

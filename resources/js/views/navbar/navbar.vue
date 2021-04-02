@@ -146,7 +146,7 @@ export default {
     },
     listenOnNotificationChannel() {
       this.$socket
-        .private(`App.User.${this.userId}`)
+        .private(`user.${this.userId}`)
         .notification((notification) => {
           this.addNotification(notification.id);
         });

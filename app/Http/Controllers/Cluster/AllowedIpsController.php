@@ -24,20 +24,23 @@ class AllowedIpsController extends \App\Http\Controllers\Controller
 {
     public function store(Cluster $cluster, StoreAllowedIp $request)
     {
+        $this->authorize('update', $cluster);
+
         $cluster->allowedIps()->create(
             $request->validated()
         );
 
-        $cluster->dispatchClusterUpdateJob(
-            UpdateClusterAllowedIps::class,
-            $cluster->id
-        );
+        $job = new UpdateClusterAllowedIps($cluster->id);
+
+        dispatch($job);
 
         return redirect()->route('settings');
     }
 
     public function update(Cluster $cluster, AllowedIp $address, UpdateAllowedIp $request)
     {
+        $this->authorize('update', $cluster);
+
         $data =  $request->validated();
 
         $shouldUpdate = $data['ip'] !== $address->ip;
@@ -46,10 +49,9 @@ class AllowedIpsController extends \App\Http\Controllers\Controller
 
         // If the Ip has been updated dispatch job
         if ($shouldUpdate) {
-            $cluster->dispatchClusterUpdateJob(
-                UpdateClusterAllowedIps::class,
-                $cluster->id
-            );
+            $job = new UpdateClusterAllowedIps($cluster->id);
+
+            dispatch($job);
         }
 
         event(new ClusterWasUpdated($cluster->project->id));
@@ -59,12 +61,13 @@ class AllowedIpsController extends \App\Http\Controllers\Controller
 
     public function destroy(Cluster $cluster, AllowedIp $address)
     {
+        $this->authorize('update', $cluster);
+
         $address->delete();
 
-        $cluster->dispatchClusterUpdateJob(
-            UpdateClusterAllowedIps::class,
-            $cluster->id
-        );
+        $job = new UpdateClusterAllowedIps($cluster->id);
+
+        dispatch($job);
 
         return redirect()->route('settings');
     }

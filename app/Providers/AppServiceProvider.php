@@ -46,6 +46,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(DNSProvider::class, function () {
             return app(DNSFactory::class)->create();
         });
+
+        $this->app->extend(\Illuminate\Bus\Dispatcher::class, function ($dispatcher, $app) {
+            return new \App\Services\Dispatcher($app, $dispatcher);
+        });
     }
 
     /**

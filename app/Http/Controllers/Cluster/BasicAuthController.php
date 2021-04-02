@@ -26,14 +26,20 @@ class BasicAuthController extends \App\Http\Controllers\Controller
 {
     public function update(Cluster $cluster, UpdateBasicAuth $request)
     {
+        $this->authorize('update', $cluster);
+
         $data =  $request->validated();
 
-        $cluster->update($data);
-
-        $cluster->dispatchClusterUpdateJob(
-            UpdateClusterBasicAuth::class,
-            $cluster->id
+        $cluster->update(
+            [
+                'username' => $data['username'],
+                'password' => encrypt($data['username'])
+            ],
         );
+
+        $job = new UpdateClusterBasicAuth($cluster->id);
+
+        dispatch($job);
 
         event(new ClusterWasUpdated($cluster->project->id));
 

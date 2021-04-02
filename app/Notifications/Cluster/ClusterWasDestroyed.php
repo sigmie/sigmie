@@ -4,24 +4,12 @@ declare(strict_types=1);
 
 namespace App\Notifications\Cluster;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
+use App\Notifications\UserNotification;
 
-class ClusterWasDestroyed extends Notification implements ShouldQueue
+class ClusterWasDestroyed extends UserNotification
 {
-    use Queueable;
-
-    private string $projectName;
-
-    public function __construct($projectName)
+    public function __construct(private string $projectName)
     {
-        $this->projectName = $projectName;
-    }
-
-    public function via($notifiable)
-    {
-        return ['broadcast', 'database'];
     }
 
     public function toArray($notifiable)

@@ -19,8 +19,6 @@ use Throwable;
 
 class CreateCluster extends ClusterJob
 {
-    public $tries = 1;
-
     private array $specs;
 
     public function __construct(int $clusterId, array $specs)
@@ -35,11 +33,10 @@ class CreateCluster extends ClusterJob
      * initialize the Cluster manager and call the create method. After
      * fire the cluster was created event.
      */
-    public function handle(ClusterManagerFactory $managerFactory): void
+    public function handleJob(ClusterManagerFactory $managerFactory): void
     {
         $appCluster = Cluster::withTrashed()->firstWhere('id', $this->clusterId);
         $projectId = $appCluster->getAttribute('project')->getAttribute('id');
-        $clusterId = $appCluster->getAttribute('id');
 
         $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
         $coreCluster->setCpus($this->specs['cores']);

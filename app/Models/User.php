@@ -87,4 +87,9 @@ class User extends Authenticatable
         //Delete user
         $this->delete();
     }
+
+    public function receivesBroadcastNotificationsOn()
+    {
+        return 'user.' . $this->id;
+    }
 }

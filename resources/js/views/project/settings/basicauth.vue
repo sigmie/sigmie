@@ -2,7 +2,7 @@
   <div
     class="pt-5 shadow mx-auto bg-white rounded-md sm:overflow-hidden max-w-lg mt-6"
   >
-    <form @submit.prevent="submit">
+    <form @submit.prevent="submit" v-on:keydown.enter.prevent="submit">
       <div class="mb-3 px-6">
         <h3 class="text-md self-start leading-6 font-medium text-gray-900">
           Basic Authentication
@@ -75,7 +75,10 @@
           ></button-secondary>
         </div>
         <div class="w-full md:w-auto pr-1 md:pr-2" v-if="state === STATE_EDIT">
-          <button-secondary text="Cancel" @click.prevent="cancel"></button-secondary>
+          <button-secondary
+            text="Cancel"
+            @click.prevent="cancel"
+          ></button-secondary>
         </div>
         <div class="w-full md:w-auto pl-1 md:p-0" v-if="state === STATE_EDIT">
           <button-primary type="submit" text="Update"></button-primary>
