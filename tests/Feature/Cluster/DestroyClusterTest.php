@@ -65,6 +65,7 @@ class DestroyClusterTest extends TestCase
      */
     public function handle_triggers_cluster_event()
     {
+        $this->job->lockAction();
         $this->job->handle($this->clusterManagerFactoryMock);
 
         Event::assertDispatched(fn (\App\Events\Cluster\ClusterWasDestroyed $event) => $event->projectId === $this->project->id);
@@ -79,6 +80,7 @@ class DestroyClusterTest extends TestCase
 
         $this->assertEquals(['some' => 'design'], $this->cluster->design);
 
+        $this->job->lockAction();
         $this->job->handle($this->clusterManagerFactoryMock);
 
         $this->cluster->refresh();
@@ -100,6 +102,7 @@ class DestroyClusterTest extends TestCase
 
         $this->assertTrue($this->cluster->allowedIps->isNotEmpty());
 
+        $this->job->lockAction();
         $this->job->handle($this->clusterManagerFactoryMock);
 
         $this->cluster->refresh();
@@ -124,6 +127,7 @@ class DestroyClusterTest extends TestCase
     {
         $this->clusterManagerMock->expects($this->once())->method('destroy')->with($this->isInstanceOf(CoreCluster::class));
 
+        $this->job->lockAction();
         $this->job->handle($this->clusterManagerFactoryMock);
     }
 }

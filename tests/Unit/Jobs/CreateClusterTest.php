@@ -69,6 +69,7 @@ class CreateClusterTest extends TestCase
      */
     public function handle_triggers_cluster_was_created_event()
     {
+        $this->job->lockAction();
         $this->job->handle($this->clusterManagerFactoryMock);
 
         Event::assertDispatched(fn (\App\Events\Cluster\ClusterWasCreated $event) => $event->projectId === $this->project->id);
@@ -81,6 +82,8 @@ class CreateClusterTest extends TestCase
     {
         $this->clusterManagerMock->method('create')->willReturn(['some' => 'design']);
         $this->cluster->update(['state' => Cluster::DESTROYED]);
+
+        $this->job->lockAction();
         $this->job->handle($this->clusterManagerFactoryMock);
 
         $this->cluster->refresh();
@@ -104,6 +107,7 @@ class CreateClusterTest extends TestCase
     {
         $this->clusterManagerMock->expects($this->once())->method('create')->with($this->isInstanceOf(CoreCluster::class));
 
+        $this->job->lockAction();
         $this->job->handle($this->clusterManagerFactoryMock);
     }
 }
