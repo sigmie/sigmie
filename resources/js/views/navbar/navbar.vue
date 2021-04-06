@@ -121,6 +121,13 @@ export default {
     this.listenOnNotificationChannel();
     this.fetchNotifications();
   },
+  mounted() {
+    this.$socket
+      .private(`user.${this.$page.props.user.id}`)
+      .listen(".notification.read", (e) => {
+        this.fetchNotifications();
+      });
+  },
   watch: {
     notificationsData: {
       handler(newData, oldData) {

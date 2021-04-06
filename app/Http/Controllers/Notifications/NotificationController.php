@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Notifications;
 
+use App\Events\Notifications\NotificationWasRead;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -27,6 +28,10 @@ class NotificationController extends \App\Http\Controllers\Controller
 
     public function update($id)
     {
-        Auth::user()->notifications->firstWhere('id', $id)->markAsRead();
+        $user = Auth::user();
+
+        $user->notifications->firstWhere('id', $id)->markAsRead();
+
+        event(new NotificationWasRead($user->id));
     }
 }
