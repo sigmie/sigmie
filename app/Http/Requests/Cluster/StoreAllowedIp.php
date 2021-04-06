@@ -16,6 +16,7 @@ class StoreAllowedIp extends FormRequest
 
     public function rules(Request $request)
     {
+        //Name should be unique per cluster
         $uniquePerCluster = Rule::unique('allowed_ips')->where(function (Builder $query) use ($request) {
 
             $cluster = $request->route('cluster');

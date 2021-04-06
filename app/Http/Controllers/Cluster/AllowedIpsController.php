@@ -56,9 +56,7 @@ class AllowedIpsController extends \App\Http\Controllers\Controller
 
         $address->delete();
 
-        $job = new UpdateClusterAllowedIps($cluster->id);
-
-        dispatch($job);
+        dispatch(new UpdateClusterAllowedIps($cluster->id));
 
         return redirect()->route('settings');
     }
