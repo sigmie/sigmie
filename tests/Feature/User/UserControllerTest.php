@@ -11,7 +11,6 @@ use Laravel\Paddle\Cashier;
 use Mockery\MockInterface;
 use Sigmie\App\Core\DNS\Contracts\Provider as DNSProvider;
 use Tests\Helpers\WithIndexingPlan;
-use Tests\Helpers\WithRunningCluster;
 use Tests\Helpers\WithRunningInternalCluster;
 use Tests\Helpers\WithSubscribedUser;
 use Tests\TestCase;

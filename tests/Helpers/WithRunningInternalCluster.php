@@ -6,7 +6,6 @@ namespace Tests\Helpers;
 
 use App\Models\AbstractCluster;
 use App\Models\Cluster;
-use App\Models\ExternalCluster;
 use App\Models\Project;
 use App\Models\Subscription;
 use App\Models\User;

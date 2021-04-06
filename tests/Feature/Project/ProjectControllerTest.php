@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Project;
 
-use App\Models\Project;
 use Illuminate\Support\Facades\Config;
 use Tests\Helpers\WithProject;
 use Tests\Helpers\WithSubscribedUser;

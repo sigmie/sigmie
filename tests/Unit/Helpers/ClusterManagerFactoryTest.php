@@ -6,11 +6,9 @@ namespace Tests\Unit\Helpers;
 
 use App\Helpers\ClusterManagerFactory;
 use App\Models\Project;
-use App\Repositories\ProjectRepository;
 use Exception;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
-use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\App\Core\ClusterManager;
 use Tests\Helpers\WithProject;
 use Tests\TestCase;

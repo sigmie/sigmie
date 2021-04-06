@@ -4,14 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Traits;
 
-use App\Contracts\MustConfirmSubscription;
 use App\Models\NewsletterSubscription;
-use App\Models\Subscription;
 use App\Notifications\Newsletter\ConfirmSubscription;
-use App\Traits\MustConfirmSubscription as MustConfirmSubscriptionTrait;
 use Illuminate\Support\Facades\Notification;
-use PHPUnit\Framework\MockObject\MockObject;
-use Tests\Feature\NewsletterSubscriptionControllerTest;
 use Tests\TestCase;
 
 class MustConfirmSubscriptionTest extends TestCase

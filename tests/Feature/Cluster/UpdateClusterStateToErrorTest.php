@@ -6,7 +6,6 @@ namespace Tests\Feature\Cluster;
 
 use App\Events\Cluster\ClusterHasFailed;
 use App\Listeners\Cluster\UpdateClusterStateToError;
-use App\Repositories\ClusterRepository;
 use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 

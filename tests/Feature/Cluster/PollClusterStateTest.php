@@ -6,10 +6,8 @@ namespace Tests\Feature\Cluster;
 
 use App\Events\Cluster\ClusterWasCreated;
 use App\Listeners\Cluster\PollClusterState;
-use App\Models\Cluster;
 use Exception;
 use Illuminate\Support\Facades\Event;
-use PHPUnit\Framework\MockObject\MockObject;
 use Tests\Helpers\WithDestroyedCluster;
 use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;

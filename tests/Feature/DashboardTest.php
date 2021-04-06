@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\Subscription;
 use Tests\Helpers\WithRunningExternalCluster;

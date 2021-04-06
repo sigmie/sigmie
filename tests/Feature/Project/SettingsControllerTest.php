@@ -4,14 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Project;
 
-use App\Http\Controllers\Project\SettingsController;
-use App\Models\Cluster;
-use App\Models\Project;
-use App\Repositories\ProjectRepository;
-use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
-use Inertia\Inertia;
-use PHPUnit\Framework\MockObject\MockObject;
 use Tests\Helpers\WithDestroyedCluster;
 use Tests\Helpers\WithProject;
 use Tests\Helpers\WithRunningExternalCluster;

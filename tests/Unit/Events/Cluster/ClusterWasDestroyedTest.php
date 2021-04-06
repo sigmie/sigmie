@@ -7,7 +7,6 @@ namespace Tests\Unit\Events\Cluster;
 use App\Events\Cluster\ClusterWasDestroyed;
 use Illuminate\Broadcasting\PrivateChannel;
 use Tests\Helpers\WithDestroyedCluster;
-use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class ClusterWasDestroyedTest extends TestCase

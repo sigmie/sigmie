@@ -6,11 +6,10 @@ namespace Tests\Feature;
 
 use App\Models\Project;
 use App\Models\Subscription;
+use Exception;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
-use Exception;
 
 class ProjectTest extends TestCase
 {
