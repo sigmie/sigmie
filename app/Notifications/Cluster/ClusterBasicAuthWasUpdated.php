@@ -6,8 +6,6 @@ namespace App\Notifications\Cluster;
 
 use App\Models\User;
 use App\Notifications\UserNotification;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
 class ClusterBasicAuthWasUpdated extends UserNotification
 {

@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Project;
 use App\Http\Requests\Project\StoreProject;
 use App\Http\Requests\Project\UpdateProject;
 use App\Models\Project;
-use App\Repositories\ProjectRepository;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 

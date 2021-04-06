@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Contracts\MustConfirmSubscription as MustConfirmSubscriptionInterface;
-use App\Traits\MustConfirmSubscription;
+use App\Notifications\Newsletter\ConfirmSubscription;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Nova\Actions\Actionable;
@@ -14,7 +14,6 @@ class NewsletterSubscription extends Model implements MustConfirmSubscriptionInt
 {
     use Actionable;
     use Notifiable;
-    use MustConfirmSubscription;
     use HasFactory;
 
     protected $casts = [
@@ -24,4 +23,19 @@ class NewsletterSubscription extends Model implements MustConfirmSubscriptionInt
     protected $attributes = [
         'confirmed' => false
     ];
+
+    public function subscriptionConfirmed(): bool
+    {
+        return $this->getAttribute('confirmed');
+    }
+
+    public function confirmSubscription(): void
+    {
+        $this->forceFill(['confirmed' => true])->save();
+    }
+
+    public function sendConfirmationEmailNotification(): void
+    {
+        $this->notify(new ConfirmSubscription());
+    }
 }

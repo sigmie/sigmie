@@ -6,8 +6,6 @@ namespace App\Rules;
 
 use App\Models\Cluster;
 use App\Models\ExternalCluster;
-use Exception;
-use GuzzleHttp\Client;
 use Illuminate\Contracts\Validation\Rule;
 
 class UniqueClusterName implements Rule

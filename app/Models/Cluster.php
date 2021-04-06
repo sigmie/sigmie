@@ -4,21 +4,15 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\ProjectClusterType;
 use App\Helpers\ProxyCert;
-use App\Http\Controllers\Cluster\TokenController;
-use App\Jobs\Cluster\ClusterJob;
 use App\Jobs\Cluster\UpdateClusterAllowedIps;
 use App\Jobs\Cluster\UpdateClusterBasicAuth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
-use Sigmie\App\Core\DNS\Contracts\Provider as DNSProvider;
-use Sigmie\App\Core\DNS\Records\ARecord;
 use Sigmie\Base\APIs\Calls\Cluster as ClusterAPI;
 use Sigmie\Base\Http\Connection;
 use Sigmie\Base\Index\Actions as IndexActions;
-use Sigmie\Http\Auth\BasicAuth;
 use Sigmie\Http\JSONClient;
 
 class Cluster extends AbstractCluster

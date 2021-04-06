@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Jobs\Proxy;
 
@@ -7,8 +7,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Sigmie\Base\Contracts\ElasticsearchRequest;
-use Sigmie\Base\Contracts\ElasticsearchResponse;
 
 class SaveProxyRequest implements ShouldQueue
 {

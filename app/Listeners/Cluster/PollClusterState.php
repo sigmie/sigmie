@@ -10,13 +10,9 @@ use App\Events\Cluster\ClusterWasCreated;
 use App\Models\AbstractCluster;
 use App\Models\Cluster;
 use App\Models\Project;
-use App\Repositories\ClusterRepository;
 use Exception;
-use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Uri;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
 use Sigmie\Base\Http\ElasticsearchRequest;
 
 class PollClusterState implements ShouldQueue

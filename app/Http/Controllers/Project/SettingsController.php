@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Project;
 
 use App\Models\Cluster;
-use App\Models\ExternalCluster;
 use App\Models\Project;
 use Inertia\Inertia;
 

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Middleware\Proxy;
 
 use Closure;
-use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class ProfileResponse
@@ -14,7 +13,7 @@ class ProfileResponse
      * Handle an incoming request.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
+     * @param  Closure  $next
      * @return mixed
      */
     public function handle($request, Closure $next)

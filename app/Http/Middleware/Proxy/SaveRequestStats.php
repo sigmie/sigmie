@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware\Proxy;
 
-use App\Http\Controllers\Cluster\TokenController;
 use App\Jobs\Proxy\SaveProxyRequest;
-use App\Models\Cluster;
 use Closure;
 
 class SaveRequestStats

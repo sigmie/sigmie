@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Middleware\Redirects;
 
 use App\Models\Project;
-use App\Repositories\ProjectRepository;
 use Closure;
 
 class RedirectToDashboardIfHasCluster

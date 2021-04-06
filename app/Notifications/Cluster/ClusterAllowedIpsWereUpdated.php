@@ -7,8 +7,6 @@ namespace App\Notifications\Cluster;
 use App\Models\User;
 use App\Notifications\UserNotification;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
 
 class ClusterAllowedIpsWereUpdated extends UserNotification
 {

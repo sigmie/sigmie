@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Helpers;
 
 use App\Models\Project;
-use App\Repositories\ProjectRepository;
 use App\Traits\InitializesGoogleFactory;
 use Exception;
 use Sigmie\App\Core\ClusterManager;

@@ -4,22 +4,15 @@ declare(strict_types=1);
 
 namespace App\Jobs\Cluster;
 
-use App\Events\Cluster\ClusterUpdateLockAcquired;
-use App\Events\Cluster\ClusterWasDestroyed;
-use App\Helpers\ClusterAdapter;
 use App\Helpers\ClusterManagerFactory;
 use App\Models\Cluster;
-use App\Repositories\ClusterRepository;
+use Exception;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
-use Sigmie\App\Core\Cluster as CoreCluster;
-use Sigmie\App\Core\Contracts\ClusterManager;
 
 abstract class ClusterJob implements ShouldQueue
 {
@@ -64,8 +57,6 @@ abstract class ClusterJob implements ShouldQueue
         }
     }
 
-    abstract protected function handleJob(ClusterManagerFactory $managerFactory): void;
-
     /**
      * Method with identifies the update action type like
      * update basic auth or update ip addresses
@@ -86,7 +77,7 @@ abstract class ClusterJob implements ShouldQueue
         $lock = Cache::lock($this->uniqueActionIdentifier());
 
         if ((bool)$lock->get() === false) {
-            throw new \Exception("Couldn't lock {$this->uniqueActionIdentifier()}");
+            throw new Exception("Couldn't lock {$this->uniqueActionIdentifier()}");
         }
 
         $this->lockOwner = $lock->owner();
@@ -116,4 +107,6 @@ abstract class ClusterJob implements ShouldQueue
 
         return $isLocked;
     }
+
+    abstract protected function handleJob(ClusterManagerFactory $managerFactory): void;
 }

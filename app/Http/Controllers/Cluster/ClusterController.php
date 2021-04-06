@@ -10,9 +10,7 @@ use App\Jobs\Cluster\CreateCluster;
 use App\Jobs\Cluster\DestroyCluster;
 use App\Models\Cluster;
 use App\Models\Project;
-use App\Repositories\ClusterRepository;
 use App\Repositories\RegionRepository;
-use Composer\InstalledVersions;
 use Inertia\Inertia;
 
 class ClusterController extends \App\Http\Controllers\Controller

@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\ProjectClusterType;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Laravel\Paddle\Billable;
 
-use function Amp\Iterator\merge;
 
 class Project extends Model
 {

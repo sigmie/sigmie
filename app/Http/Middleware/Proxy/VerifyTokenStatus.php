@@ -6,7 +6,6 @@ namespace App\Http\Middleware\Proxy;
 
 use App\Http\Controllers\Cluster\TokenController;
 use App\Models\AbstractCluster;
-use App\Models\Cluster;
 use Closure;
 
 class VerifyTokenStatus

@@ -6,7 +6,6 @@ namespace App\Services;
 
 use App\Contracts\Indexer;
 use App\Models\AbstractCluster;
-use App\Models\Cluster;
 use App\Models\IndexingType;
 use Carbon\Carbon;
 use Exception;
