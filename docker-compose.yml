@@ -24,7 +24,8 @@ services:
     depends_on:
       - redis
       - db
-    command: sudo /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+    #command: sudo /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+    command: sleep infinity
 
   db:
     container_name: db

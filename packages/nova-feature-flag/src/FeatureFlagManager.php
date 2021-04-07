@@ -12,4 +12,9 @@ class FeatureFlagManager extends Manager
     {
         return $this->container->make(ChainRepository::class);
     }
+
+    public function getContainer()
+    {
+        return $this->app ?? $this->container;
+    }
 }
