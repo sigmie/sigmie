@@ -8,6 +8,7 @@ use App\Helpers\ClusterManagerFactory;
 use App\Models\Cluster;
 use Exception;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -35,11 +36,11 @@ abstract class ClusterJob implements ShouldQueue
         $this->queue = 'long-running-queue';
     }
 
-    public function handle(ClusterManagerFactory $clusterManagerFactory): void
+    public function handle(ClusterManagerFactory $clusterManagerFactory, LockProvider $cache): void
     {
         // Lock which identifies if an cluster job is running
         //to prevent overlapping cluster jobs actions
-        $lock = Cache::lock(self::class . $this->clusterId);
+        $lock = $cache->lock(self::class . '_' . $this->clusterId);
 
         if ((bool)$lock->get()) {
 
@@ -98,7 +99,6 @@ abstract class ClusterJob implements ShouldQueue
     public function isLocked(): bool
     {
         $lock = Cache::lock($this->uniqueActionIdentifier());
-
         $isLocked = (bool) $lock->get() === false;
 
         if ($isLocked === false) {

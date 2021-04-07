@@ -17,7 +17,7 @@ class ClusterWasUpdated implements ShouldBroadcast
     use InteractsWithSockets;
     use SerializesModels;
 
-    public function __construct(protected int $projectId)
+    public function __construct(public int $projectId)
     {
     }
 

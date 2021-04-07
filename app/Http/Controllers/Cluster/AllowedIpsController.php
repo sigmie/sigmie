@@ -25,6 +25,8 @@ class AllowedIpsController extends \App\Http\Controllers\Controller
 
         dispatch($job);
 
+        event(new ClusterWasUpdated($cluster->project->id));
+
         return redirect()->route('settings');
     }
 
@@ -57,6 +59,8 @@ class AllowedIpsController extends \App\Http\Controllers\Controller
         $address->delete();
 
         dispatch(new UpdateClusterAllowedIps($cluster->id));
+
+        event(new ClusterWasUpdated($cluster->project->id));
 
         return redirect()->route('settings');
     }

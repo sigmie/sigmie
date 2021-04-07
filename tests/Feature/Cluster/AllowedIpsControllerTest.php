@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Cluster;
 
+use App\Events\Cluster\ClusterWasUpdated;
 use App\Jobs\Cluster\UpdateClusterAllowedIps;
 use App\Models\AllowedIp;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Event;
 use Tests\Helpers\WithRunningInternalCluster;
 use Tests\TestCase;
 
@@ -19,6 +21,7 @@ class AllowedIpsControllerTest extends TestCase
         parent::setUp();
 
         Bus::fake();
+        Event::fake();
     }
 
     /**
@@ -43,6 +46,10 @@ class AllowedIpsControllerTest extends TestCase
         $res->assertSessionHasNoErrors();
 
         Bus::assertNotDispatched(UpdateClusterAllowedIps::class);
+
+        Event::assertDispatched(ClusterWasUpdated::class, function (ClusterWasUpdated $event) {
+            return $event->projectId = $this->project->id;
+        });
     }
 
     public function update_action()
@@ -67,6 +74,10 @@ class AllowedIpsControllerTest extends TestCase
 
         Bus::assertDispatched(UpdateClusterAllowedIps::class, function (UpdateClusterAllowedIps $job) {
             return $job->clusterId === $this->cluster->id;
+        });
+
+        Event::assertDispatched(ClusterWasUpdated::class, function (ClusterWasUpdated $event) {
+            return $event->projectId = $this->project->id;
         });
 
         $this->cluster->refresh();
@@ -122,6 +133,7 @@ class AllowedIpsControllerTest extends TestCase
 
         $res = $this->delete($route);
 
+
         $res->assertForbidden();
     }
 
@@ -151,6 +163,9 @@ class AllowedIpsControllerTest extends TestCase
         Bus::assertDispatched(UpdateClusterAllowedIps::class, function (UpdateClusterAllowedIps $job) {
             return $job->clusterId === $this->cluster->id;
         });
+        Event::assertDispatched(ClusterWasUpdated::class, function (ClusterWasUpdated $event) {
+            return $event->projectId = $this->project->id;
+        });
 
         $this->assertNull($this->cluster->allowedIps->first());
     }
@@ -173,6 +188,9 @@ class AllowedIpsControllerTest extends TestCase
 
         Bus::assertDispatched(UpdateClusterAllowedIps::class, function (UpdateClusterAllowedIps $job) {
             return $job->clusterId === $this->cluster->id;
+        });
+        Event::assertDispatched(ClusterWasUpdated::class, function (ClusterWasUpdated $event) {
+            return $event->projectId = $this->project->id;
         });
 
         $res->assertRedirect(route('settings'));
