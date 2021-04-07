@@ -31,10 +31,9 @@ abstract class UpdateJob extends ClusterJob
             throw new RuntimeException("Can't update a cluster which isn't running.");
         }
 
-        sleep(5);
-        // $update = $managerFactory->create($project->id)->update($coreCluster);
+        $update = $managerFactory->create($project->id)->update($coreCluster);
 
-        // $this->update($update, $appCluster);
+        $this->update($update, $appCluster);
 
         event(new ClusterWasUpdated($project->id));
 

@@ -7,6 +7,8 @@ namespace Tests\Unit\Jobs;
 use App\Helpers\ClusterManagerFactory;
 use App\Jobs\Cluster\CreateCluster;
 use App\Models\Cluster;
+use Illuminate\Contracts\Cache\Lock;
+use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -34,6 +36,16 @@ class CreateClusterTest extends TestCase
      */
     private $clusterManagerMock;
 
+    /**
+     * @var LockProvider|MockObject
+     */
+    private $lockProviderMock;
+
+    /**
+     * @var Lock|MockObject
+     */
+    private $lockMock;
+
     public function setUp(): void
     {
         parent::setUp();
@@ -41,6 +53,12 @@ class CreateClusterTest extends TestCase
         Event::fake();
 
         $this->withRunningInternalCluster();
+
+        $this->lockProviderMock = $this->createMock(LockProvider::class);
+        $this->lockMock = $this->createMock(Lock::class);
+        $this->lockMock->method('get')->willReturn(true);
+
+        $this->lockProviderMock->method('lock')->willReturn($this->lockMock);
 
         $this->clusterManagerFactoryMock = $this->createMock(ClusterManagerFactory::class);
         $this->clusterManagerMock = $this->createMock(ClusterManager::class);
@@ -68,7 +86,7 @@ class CreateClusterTest extends TestCase
     public function handle_triggers_cluster_was_created_event()
     {
         $this->job->lockAction();
-        $this->job->handle($this->clusterManagerFactoryMock);
+        $this->job->handle($this->clusterManagerFactoryMock, $this->lockProviderMock);
 
         Event::assertDispatched(fn (\App\Events\Cluster\ClusterWasCreated $event) => $event->projectId === $this->project->id);
     }
@@ -82,7 +100,7 @@ class CreateClusterTest extends TestCase
         $this->cluster->update(['state' => Cluster::DESTROYED]);
 
         $this->job->lockAction();
-        $this->job->handle($this->clusterManagerFactoryMock);
+        $this->job->handle($this->clusterManagerFactoryMock, $this->lockProviderMock);
 
         $this->cluster->refresh();
 
@@ -106,6 +124,6 @@ class CreateClusterTest extends TestCase
         $this->clusterManagerMock->expects($this->once())->method('create')->with($this->isInstanceOf(CoreCluster::class));
 
         $this->job->lockAction();
-        $this->job->handle($this->clusterManagerFactoryMock);
+        $this->job->handle($this->clusterManagerFactoryMock, $this->lockProviderMock);
     }
 }

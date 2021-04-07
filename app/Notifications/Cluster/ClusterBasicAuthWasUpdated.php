@@ -9,7 +9,7 @@ use App\Notifications\UserNotification;
 
 class ClusterBasicAuthWasUpdated extends UserNotification
 {
-    public function __construct(private string $projectName)
+    public function __construct(public string $projectName)
     {
     }
 

@@ -7,6 +7,8 @@ namespace Tests\Feature\Cluster;
 use App\Helpers\ClusterManagerFactory;
 use App\Jobs\Cluster\DestroyCluster;
 use App\Models\Cluster;
+use Illuminate\Contracts\Cache\Lock;
+use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -34,6 +36,16 @@ class DestroyClusterTest extends TestCase
      */
     private $clusterManagerMock;
 
+    /**
+     * @var LockProvider|MockObject
+     */
+    private $lockProviderMock;
+
+    /**
+     * @var Lock|MockObject
+     */
+    private $lockMock;
+
     public function setUp(): void
     {
         parent::setUp();
@@ -46,6 +58,12 @@ class DestroyClusterTest extends TestCase
         $this->clusterManagerFactoryMock->method('create')->willReturn($this->clusterManagerMock);
 
         $this->withRunningInternalCluster();
+
+        $this->lockProviderMock = $this->createMock(LockProvider::class);
+        $this->lockMock = $this->createMock(Lock::class);
+        $this->lockMock->method('get')->willReturn(true);
+
+        $this->lockProviderMock->method('lock')->willReturn($this->lockMock);
 
         $this->job = new DestroyCluster($this->cluster->id);
     }
@@ -64,7 +82,7 @@ class DestroyClusterTest extends TestCase
     public function handle_triggers_cluster_event()
     {
         $this->job->lockAction();
-        $this->job->handle($this->clusterManagerFactoryMock);
+        $this->job->handle($this->clusterManagerFactoryMock, $this->lockProviderMock);
 
         Event::assertDispatched(fn (\App\Events\Cluster\ClusterWasDestroyed $event) => $event->projectId === $this->project->id);
     }
@@ -79,7 +97,7 @@ class DestroyClusterTest extends TestCase
         $this->assertEquals(['some' => 'design'], $this->cluster->design);
 
         $this->job->lockAction();
-        $this->job->handle($this->clusterManagerFactoryMock);
+        $this->job->handle($this->clusterManagerFactoryMock, $this->lockProviderMock);
 
         $this->cluster->refresh();
 
@@ -101,7 +119,7 @@ class DestroyClusterTest extends TestCase
         $this->assertTrue($this->cluster->allowedIps->isNotEmpty());
 
         $this->job->lockAction();
-        $this->job->handle($this->clusterManagerFactoryMock);
+        $this->job->handle($this->clusterManagerFactoryMock, $this->lockProviderMock);
 
         $this->cluster->refresh();
 
@@ -126,6 +144,6 @@ class DestroyClusterTest extends TestCase
         $this->clusterManagerMock->expects($this->once())->method('destroy')->with($this->isInstanceOf(CoreCluster::class));
 
         $this->job->lockAction();
-        $this->job->handle($this->clusterManagerFactoryMock);
+        $this->job->handle($this->clusterManagerFactoryMock, $this->lockProviderMock);
     }
 }

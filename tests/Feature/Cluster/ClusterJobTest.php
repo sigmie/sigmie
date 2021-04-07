@@ -10,10 +10,13 @@ use App\Jobs\Cluster\ClusterJob;
 use App\Jobs\Cluster\UpdateClusterAllowedIps;
 use App\Jobs\Cluster\UpdateClusterBasicAuth;
 use App\Models\AllowedIp;
+use App\Services\Dispatcher;
 use Composer\Command\DiagnoseCommand;
 use Exception;
 use Illuminate\Cache\Lock;
 use Illuminate\Contracts\Cache\LockProvider;
+use Illuminate\Contracts\Container\Container;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
@@ -126,6 +129,16 @@ class ClusterJobTest extends TestCase
         $job->releaseAction();
 
         $this->assertFalse($job->isLocked());
+    }
+
+    /**
+     * @test
+     */
+    public function custom_dispatcher()
+    {
+        $dispatcher = app(\Illuminate\Bus\Dispatcher::class);
+
+        $this->assertInstanceOf(\App\Services\Dispatcher::class, $dispatcher);
     }
 
     /**

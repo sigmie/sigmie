@@ -12,7 +12,7 @@ class ClusterAllowedIpsWereUpdated extends UserNotification
 {
     use Queueable;
 
-    public function __construct(private string $projectName)
+    public function __construct(public string $projectName)
     {
     }
 
