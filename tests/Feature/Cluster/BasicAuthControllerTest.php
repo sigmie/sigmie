@@ -57,9 +57,14 @@ class BasicAuthControllerTest extends TestCase
         $route = route('cluster.basic-auth.update', ['cluster' => $this->cluster->id]);
 
         $res = $this->put($route, ['username' => 'leo', 'password' => '12334']);
+        $this->cluster->refresh();
+
+        $this->assertEquals('leo', $this->cluster->username);
+        $this->assertEquals('12334', decrypt($this->cluster->password));
 
         $res->assertRedirect(route('settings'));
         $res->assertSessionHasNoErrors();
+
 
         Bus::assertDispatched(UpdateClusterBasicAuth::class, function (UpdateClusterBasicAuth $job) {
             return $job->clusterId === $this->cluster->id;

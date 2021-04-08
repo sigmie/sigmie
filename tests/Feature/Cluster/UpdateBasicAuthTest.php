@@ -99,7 +99,7 @@ class UpdateBasicAuthTest extends TestCase
         $job = new UpdateClusterBasicAuth($this->cluster->id);
         $job->lockAction();
 
-        $this->updateMock->expects($this->once())->method('basicAuth')->with($this->cluster->username, $this->cluster->password);
+        $this->updateMock->expects($this->once())->method('basicAuth')->with($this->cluster->username, decrypt($this->cluster->password));
 
         $job->handle($this->clusterManagerFactoryMock, $this->lockProviderMock);
 

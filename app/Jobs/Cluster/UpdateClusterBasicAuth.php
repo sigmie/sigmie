@@ -21,7 +21,7 @@ class UpdateClusterBasicAuth extends UpdateJob
     {
         $update->basicAuth(
             $appCluster->username,
-            $appCluster->password
+            decrypt($appCluster->password)
         );
     }
 }

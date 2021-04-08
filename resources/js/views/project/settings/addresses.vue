@@ -14,8 +14,14 @@
       type="info"
     >
       <form
-        @submit.prevent="store"
-        v-on:keydown.enter.prevent="store"
+        @submit.prevent="
+          () =>
+            debounce(store, 250, {
+              maxWait: 1000,
+              leading: true,
+              trailing: false,
+            })
+        "
         class="space-y-3 w-full"
       >
         <form-input
@@ -53,8 +59,14 @@
       type="info"
     >
       <form
-        @submit.prevent="update"
-        v-on:keydown.enter.prevent="update"
+        @submit.prevent="
+          () =>
+            debounce(update, 250, {
+              maxWait: 1000,
+              leading: true,
+              trailing: false,
+            })
+        "
         class="space-y-3 w-full"
       >
         <form-input
@@ -201,10 +213,10 @@ export default {
       this.createForm.post(route, {
         onSuccess: () => {
           this.createForm.reset();
-          this.closeCreateForm();
-          this.$inertia.reload({ only: cluster });
         },
       });
+
+      this.closeCreateForm();
     },
     update() {
       const route = this.$route("cluster.allowed-ips.update", {
@@ -214,8 +226,8 @@ export default {
 
       this.updateForm.put(route, {
         onSuccess: () => {
+          this.updateForm.reset();
           this.closeUpdateForm();
-          this.$inertia.reload({ only: ["cluster"] });
         },
       });
     },
@@ -225,9 +237,12 @@ export default {
         address: this.updateForm.id,
       });
 
-      this.$inertia.delete(route);
-
-      this.closeUpdateForm();
+      this.$inertia.delete(route, {
+        onSuccess: () => {
+          this.updateForm.reset();
+          this.closeUpdateForm();
+        },
+      });
     },
   },
 };

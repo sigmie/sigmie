@@ -20,7 +20,7 @@ class BasicAuthController extends \App\Http\Controllers\Controller
         $cluster->update(
             [
                 'username' => $data['username'],
-                'password' => encrypt($data['username'])
+                'password' => encrypt($data['password'])
             ],
         );
 

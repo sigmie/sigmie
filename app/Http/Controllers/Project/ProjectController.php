@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Project;
 
+use App\Events\Project\ProjectWasUpdated;
 use App\Http\Requests\Project\StoreProject;
 use App\Http\Requests\Project\UpdateProject;
 use App\Models\Project;
@@ -29,7 +30,7 @@ class ProjectController extends \App\Http\Controllers\Controller
         $provider = $validated['provider']['id'];
         $userId = Auth::user()->getAttribute('id');
 
-        Project::create([
+        $project = $project = Project::create([
             'name' => $validated['name'],
             'description' => $validated['description'],
             'creds' => encrypt($credentials),
@@ -37,12 +38,16 @@ class ProjectController extends \App\Http\Controllers\Controller
             'user_id' => $userId,
         ]);
 
+        event(new ProjectWasUpdated($project->id));
+
         return redirect()->route('cluster.create');
     }
 
     public function update(Project $project, UpdateProject $request)
     {
         $project->fill($request->validated())->save();
+
+        event(new ProjectWasUpdated($project->id));
 
         return redirect()->route('settings', ['project' => $project->id]);
     }

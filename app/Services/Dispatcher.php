@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Services;
 
@@ -13,11 +15,10 @@ class Dispatcher extends \Illuminate\Bus\Dispatcher
 
     public function dispatchToQueue($command)
     {
-        if ($command instanceof ClusterJob) {
+        if ($command instanceof ClusterJob && !$command->isRedispatch()) {
             $command->lockAction();
         }
 
-        // do anything you like during dispatch
         return parent::dispatchToQueue($command);
     }
 }

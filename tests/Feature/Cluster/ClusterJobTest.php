@@ -110,7 +110,7 @@ class ClusterJobTest extends TestCase
         $job->handle($this->clusterManagerFactoryMock, $this->lockProviderMock);
 
         Bus::assertDispatched(UpdateClusterBasicAuth::class, function (UpdateClusterBasicAuth $job) use ($lockOwner) {
-            return ($job->clusterId === $this->cluster->id) && $job->lockOwner === $lockOwner;
+            return ($job->clusterId === $this->cluster->id) && ($job->lockOwner === $lockOwner) && $job->isRedispatch();
         });
     }
 

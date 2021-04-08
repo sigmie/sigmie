@@ -138,17 +138,29 @@ export default {
         .put(route);
     },
   },
+  watch: {
+    project() {
+      this.form.name = this.project.name;
+      this.form.description = this.project.description;
+    },
+  },
   mounted() {
-    // Delay the reload because if the update is done
-    // on the same page then the panel is not closing
-    // and the controller redirect isnt' taken into
-    // consideration
+    //Delay the reload for 2 seconds
     this.$socket
       .private(`cluster.${this.cluster.id}`)
       .listen(".cluster.updated", (e) => {
         delay(() => {
           this.$inertia.reload({ only: ["cluster"] });
-        }, 1000);
+        }, 2000);
+      });
+
+    //Delay the reload for 2 seconds
+    this.$socket
+      .private(`project.${this.project.id}`)
+      .listen(".project.updated", (e) => {
+        delay(() => {
+          this.$inertia.reload({ only: ["project"] });
+        }, 2000);
       });
   },
 };

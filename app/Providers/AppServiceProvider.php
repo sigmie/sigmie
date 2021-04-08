@@ -10,9 +10,14 @@ use App\Models\ExternalCluster;
 use App\Models\FileType;
 use App\Models\Token;
 use App\Models\User;
+use App\Services\RedisStore as ServicesRedisStore;
+use Illuminate\Cache\RedisLock;
+use Illuminate\Cache\RedisStore;
+use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
@@ -47,8 +52,16 @@ class AppServiceProvider extends ServiceProvider
             return app(DNSFactory::class)->create();
         });
 
+        $this->app->singleton(LockProvider::class, function () {
+            return Cache::getStore();
+        });
+
         $this->app->extend(\Illuminate\Bus\Dispatcher::class, function ($dispatcher, $app) {
             return new \App\Services\Dispatcher($app, $dispatcher);
+        });
+
+        $this->app->extend(\Illuminate\Cache\CacheManager::class, function ($manager, $app) {
+            return new \App\Services\CacheManager($app);
         });
     }
 
@@ -61,6 +74,10 @@ class AppServiceProvider extends ServiceProvider
         Features::noScheduling();
         Features::noValidations();
         Features::noCommands();
+
+        Cache::macro('lockExists', function ($lock) {
+            return !is_null(Cache::get($lock));
+        });
 
         if ($this->app->environment('production')) {
             URL::forceScheme('https');

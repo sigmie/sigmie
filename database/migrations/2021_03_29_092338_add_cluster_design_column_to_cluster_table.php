@@ -14,7 +14,7 @@ class AddClusterDesignColumnToClusterTable extends Migration
     public function up()
     {
         Schema::table('clusters', function (Blueprint $table) {
-            $table->json('design')->default([]);
+            $table->json('design');
         });
     }
 

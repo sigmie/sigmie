@@ -30,10 +30,13 @@ abstract class ClusterJob implements ShouldQueue
 
     public $backoff = 0;
 
-    public function __construct(int $clusterId)
+    public $isRedispatch;
+
+    public function __construct(int $clusterId, bool $redispatch = false)
     {
         $this->clusterId = $clusterId;
         $this->queue = 'long-running-queue';
+        $this->isRedispatch = $redispatch;
     }
 
     public function handle(ClusterManagerFactory $clusterManagerFactory, LockProvider $cache): void
@@ -51,11 +54,28 @@ abstract class ClusterJob implements ShouldQueue
                 $this->releaseAction();
             }
         } else {
-            $class = new static($this->clusterId);
-            $class->lockOwner = $this->lockOwner;
-
-            dispatch($class)->delay(now()->addSeconds(5));
+            $this->redispatch();
         }
+    }
+
+    public function redispatch()
+    {
+        $class = new static(
+            clusterId: $this->clusterId,
+            redispatch: true
+        );
+        $class->lockOwner = $this->lockOwner;
+
+        dispatch($class)->delay(now()->addSeconds(5));
+    }
+
+    /**
+     * Indicate if the job is re dispatched so the
+     * dispatcher wont' try to local the action.
+     */
+    public function isRedispatch(): bool
+    {
+        return $this->isRedispatch;
     }
 
     /**
@@ -64,7 +84,7 @@ abstract class ClusterJob implements ShouldQueue
      */
     public function uniqueActionIdentifier(): string
     {
-        return static::class . $this->clusterId;
+        return static::class . '_' . $this->clusterId;
     }
 
     /**
@@ -98,14 +118,9 @@ abstract class ClusterJob implements ShouldQueue
      */
     public function isLocked(): bool
     {
-        $lock = Cache::lock($this->uniqueActionIdentifier());
-        $isLocked = (bool) $lock->get() === false;
+        $result = Cache::get($this->uniqueActionIdentifier());
 
-        if ($isLocked === false) {
-            $lock->release();
-        }
-
-        return $isLocked;
+        return !is_null($result);
     }
 
     abstract protected function handleJob(ClusterManagerFactory $managerFactory): void;

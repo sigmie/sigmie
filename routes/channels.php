@@ -30,6 +30,10 @@ Broadcast::channel('user.{userId}', function ($user, $userId) {
     return (int) $user->id === (int) $userId;
 });
 
+Broadcast::channel('project.{projectId}', function ($user, $projectId) {
+    return in_array($projectId, $user->projects->pluck('id')->toArray());
+});
+
 Broadcast::channel('plan.{planId}', function ($user, $planId) {
     return (int) $user->id === IndexingPlan::find($planId)->user->id;
 });

@@ -89,7 +89,7 @@
 </template>
 
 <script>
-const STATE_EDIT = "EDIT ";
+const STATE_EDIT = "EDIT";
 const STATE_NONE = "NONE";
 export default {
   created() {

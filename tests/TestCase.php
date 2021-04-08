@@ -7,6 +7,7 @@ namespace Tests;
 use App\Http\Middleware\Logging\RequestInfo;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\Cache;
 use Sigmie\Testing\Laravel\Traits as SigmieTraits;
 
 abstract class TestCase extends BaseTestCase
@@ -19,11 +20,15 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        // Cache::flush();
+
         $this->withoutMiddleware(RequestInfo::class);
     }
 
     public function tearDown(): void
     {
+        // Cache::flush();
+
         parent::tearDown();
     }
 

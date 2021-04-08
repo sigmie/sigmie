@@ -45,6 +45,10 @@ class Cluster extends AbstractCluster
         'design' => 'array'
     ];
 
+    protected $attributes = [
+        'design' => '{}',
+    ];
+
     public function allowedIps()
     {
         return $this->hasMany(AllowedIp::class);
@@ -63,6 +67,8 @@ class Cluster extends AbstractCluster
     public function getCanUpdateAllowedIpsAttribute()
     {
         $job = new UpdateClusterAllowedIps($this->id);
+
+        ray($job->isLocked())->green();
 
         return $job->isLocked() === false;
     }
