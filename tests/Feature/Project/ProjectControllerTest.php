@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Project;
 
+use App\Events\Project\ProjectWasUpdated;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Event;
 use Tests\Helpers\WithProject;
 use Tests\Helpers\WithSubscribedUser;
 use Tests\TestCase;
@@ -12,6 +14,13 @@ use Tests\TestCase;
 class ProjectControllerTest extends TestCase
 {
     use WithSubscribedUser, WithProject, WithSubscribedUser;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        Event::fake();
+    }
 
     /**
      * @test
@@ -31,6 +40,7 @@ class ProjectControllerTest extends TestCase
         ]);
 
         $project = $this->user->refresh()->projects->first();
+
 
         $this->assertEquals('foo', $project->name);
         $this->assertEquals('bar', $project->description);
@@ -74,6 +84,10 @@ class ProjectControllerTest extends TestCase
         );
 
         $this->project->refresh();
+
+        Event::assertDispatched(ProjectWasUpdated::class, function (ProjectWasUpdated $event) {
+            return $event->projectId === $this->project->id;
+        });
 
         $this->assertEquals('something', $this->project->name);
         $this->assertEquals('something else', $this->project->description);

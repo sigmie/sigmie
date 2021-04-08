@@ -30,15 +30,13 @@ class ProjectController extends \App\Http\Controllers\Controller
         $provider = $validated['provider']['id'];
         $userId = Auth::user()->getAttribute('id');
 
-        $project = $project = Project::create([
+        $project = Project::create([
             'name' => $validated['name'],
             'description' => $validated['description'],
             'creds' => encrypt($credentials),
             'provider' => $provider,
             'user_id' => $userId,
         ]);
-
-        event(new ProjectWasUpdated($project->id));
 
         return redirect()->route('cluster.create');
     }

@@ -95,7 +95,8 @@ abstract class ClusterJob implements ShouldQueue
      */
     public function lockAction(): void
     {
-        $lock = Cache::lock($this->uniqueActionIdentifier());
+        $minutes = 10;
+        $lock = Cache::lock($this->uniqueActionIdentifier(), $minutes * 60);
 
         if ((bool)$lock->get() === false) {
             throw new Exception("Couldn't lock {$this->uniqueActionIdentifier()}");
