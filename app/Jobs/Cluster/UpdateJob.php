@@ -17,7 +17,7 @@ abstract class UpdateJob extends ClusterJob
 {
     abstract protected function update(Update $update, AppCluster $cluster);
 
-    abstract protected function notification(Project $project): Notification;
+    abstract protected function notification(Project $project): ?Notification;
 
     protected function handleJob(ClusterManagerFactory $managerFactory): void
     {
@@ -38,6 +38,10 @@ abstract class UpdateJob extends ClusterJob
         event(new ClusterWasUpdated($project->id));
 
         $notification = $this->notification($project);
+
+        if (is_null($notification)) {
+            return;
+        }
 
         $project->user->notify($notification);
     }

@@ -12,7 +12,7 @@ use Sigmie\App\Core\Contracts\Update;
 
 class UpdateClusterBasicAuth extends UpdateJob
 {
-    protected function notification(Project $project): Notification
+    protected function notification(Project $project): ?Notification
     {
         return new ClusterBasicAuthWasUpdated($project->name);
     }

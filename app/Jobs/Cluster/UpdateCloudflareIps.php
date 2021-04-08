@@ -10,17 +10,16 @@ use App\Notifications\Cluster\ClusterAllowedIpsWereUpdated;
 use Illuminate\Notifications\Notification;
 use Sigmie\App\Core\Contracts\Update;
 
-class UpdateClusterAllowedIps extends UpdateJob
+class UpdateCloudflareIps extends UpdateJob
 {
     protected function notification(Project $project): ?Notification
     {
-        return new ClusterAllowedIpsWereUpdated($project->name);
+        return null;
     }
 
     protected function update(Update $update, Cluster $appCluster)
     {
-        $allowedIps = $appCluster->allowedIps->pluck('ip')->toArray();
-
-        $update->allowedIps($allowedIps);
+        ray('update');
+        // $update->refreshCloudflareIps();
     }
 }

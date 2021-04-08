@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Console;
 
+use App\Jobs\Cluster\UpdateCloudflareIps;
 use App\Jobs\Notifications\CleanNotifications;
+use App\Models\Cluster;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\Log;
@@ -40,6 +42,7 @@ class Kernel extends ConsoleKernel
             ->onSuccess(fn () => $this->logTaskSuccess('telescope:prune --hours=48'))
             ->daily()
             ->onOneServer();
+
 
         if (config('app.env') === 'production') {
             $schedule->command('backup:run --only-db')->daily()->at('01:30')->onOneServer();
