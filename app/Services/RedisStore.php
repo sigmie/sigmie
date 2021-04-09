@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Jobs\Cluster\ClusterJob;
 use ErrorException;
 use Illuminate\Cache\RedisStore as LaravelRedisStore;
 

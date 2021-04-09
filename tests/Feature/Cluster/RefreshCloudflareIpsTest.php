@@ -6,8 +6,7 @@ namespace Tests\Feature\Cluster;
 
 use App\Events\Cluster\ClusterWasUpdated;
 use App\Helpers\ClusterManagerFactory;
-use App\Jobs\Cluster\UpdateClusterBasicAuth;
-use App\Notifications\Cluster\ClusterBasicAuthWasUpdated;
+use App\Jobs\Cluster\RefreshCloudflareIps;
 use Illuminate\Cache\Lock;
 use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Support\Facades\Bus;
@@ -19,7 +18,7 @@ use Sigmie\App\Core\Software\Update;
 use Tests\Helpers\WithRunningInternalCluster;
 use Tests\TestCase;
 
-class UpdateBasicAuthTest extends TestCase
+class RefreshCloudflareIpsTest extends TestCase
 {
     use WithRunningInternalCluster;
 
@@ -76,10 +75,10 @@ class UpdateBasicAuthTest extends TestCase
     {
         $this->withRunningInternalCluster();
 
-        $job = new UpdateClusterBasicAuth($this->cluster->id);
+        $job = new RefreshCloudflareIps($this->cluster->id);
         $job->lockAction();
 
-        $this->updateMock->expects($this->once())->method('basicAuth')->with($this->cluster->username, decrypt($this->cluster->password));
+        $this->updateMock->expects($this->once())->method('refreshCloudflareIps');
 
         $job->handle($this->clusterManagerFactoryMock, $this->lockProviderMock);
 
@@ -87,8 +86,6 @@ class UpdateBasicAuthTest extends TestCase
             return $event->projectId === $this->project->id;
         });
 
-        Notification::assertSentTo($this->user, ClusterBasicAuthWasUpdated::class, function (ClusterBasicAuthWasUpdated $notification) {
-            return $notification->projectName === $this->project->name;
-        });
+        Notification::assertNothingSent();
     }
 }

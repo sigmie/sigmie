@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Console;
 
-use App\Jobs\Cluster\UpdateCloudflareIps;
+use App\Jobs\Cluster;
 use App\Jobs\Notifications\CleanNotifications;
-use App\Models\Cluster;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\Log;
@@ -33,6 +32,13 @@ class Kernel extends ConsoleKernel
             ->before(fn () => $this->logTaskStart(\App\Jobs\Notifications\CleanNotifications::class))
             ->onFailure(fn () => $this->logTaskFailure(\App\Jobs\Notifications\CleanNotifications::class))
             ->onSuccess(fn () => $this->logTaskSuccess(\App\Jobs\Notifications\CleanNotifications::class))
+            ->daily()
+            ->onOneServer();
+
+        $schedule->job(new Cluster\Maintenance)
+            ->before(fn () => $this->logTaskStart(Cluster\Maintenance::class))
+            ->onFailure(fn () => $this->logTaskFailure(Cluster\Maintenance::class))
+            ->onSuccess(fn () => $this->logTaskSuccess(Cluster\Maintenance::class))
             ->daily()
             ->onOneServer();
 

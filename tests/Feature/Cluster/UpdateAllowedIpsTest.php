@@ -6,39 +6,18 @@ namespace Tests\Feature\Cluster;
 
 use App\Events\Cluster\ClusterWasUpdated;
 use App\Helpers\ClusterManagerFactory;
-use App\Jobs\Cluster\ClusterJob;
 use App\Jobs\Cluster\UpdateClusterAllowedIps;
-use App\Jobs\Cluster\UpdateClusterBasicAuth;
-use App\Jobs\Cluster\UpdateJob;
-use App\Models\AllowedIp;
 use App\Notifications\Cluster\ClusterAllowedIpsWereUpdated;
-use App\Notifications\Cluster\ClusterBasicAuthWasUpdated;
-use App\Notifications\UserNotification;
-use Composer\Command\DiagnoseCommand;
-use Exception;
 use Illuminate\Cache\Lock;
 use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
-use PHPUnit\Framework\InvalidArgumentException;
-use PHPUnit\Framework\MockObject\ClassAlreadyExistsException;
-use PHPUnit\Framework\MockObject\ClassIsFinalException;
-use PHPUnit\Framework\MockObject\DuplicateMethodException;
-use PHPUnit\Framework\MockObject\InvalidMethodNameException;
-use PHPUnit\Framework\MockObject\OriginalConstructorInvocationRequiredException;
-use PHPUnit\Framework\MockObject\ReflectionException;
-use PHPUnit\Framework\MockObject\RuntimeException;
-use PHPUnit\Framework\MockObject\UnknownClassException;
-use PHPUnit\Framework\MockObject\UnknownTypeException;
-use SebastianBergmann\RecursionContext\InvalidArgumentException as RecursionContextInvalidArgumentException;
-use PHPUnit\Framework\ExpectationFailedException;
-use PHPUnit\Framework\MockObject\MockObject;
-use Tests\Helpers\WithRunningInternalCluster;
-use Tests\TestCase;
 use Illuminate\Support\Facades\Notification;
+use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\App\Core\Contracts\ClusterManager;
 use Sigmie\App\Core\Software\Update;
+use Tests\Helpers\WithRunningInternalCluster;
+use Tests\TestCase;
 
 class UpdateAllowedIpsTest extends TestCase
 {

@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Cluster;
 
 use App\Events\Cluster\ClusterWasUpdated;
-use App\Jobs\Cluster\UpdateClusterAllowedIps;
 use App\Jobs\Cluster\UpdateClusterBasicAuth;
-use App\Models\AllowedIp;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
 use Tests\Helpers\WithRunningInternalCluster;
