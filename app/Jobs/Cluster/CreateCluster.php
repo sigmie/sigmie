@@ -13,15 +13,6 @@ use Throwable;
 
 class CreateCluster extends ClusterJob
 {
-    private array $specs;
-
-    public function __construct(int $clusterId, array $specs)
-    {
-        parent::__construct($clusterId);
-
-        $this->specs = $specs;
-    }
-
     /**
      * Map the application Cluster instance to the sigmie Cluster instance
      * initialize the Cluster manager and call the create method. After
@@ -33,9 +24,6 @@ class CreateCluster extends ClusterJob
         $projectId = $appCluster->getAttribute('project')->getAttribute('id');
 
         $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
-        $coreCluster->setCpus($this->specs['cores']);
-        $coreCluster->setMemory($this->specs['memory']);
-        $coreCluster->setDiskSize($this->specs['disk']);
 
         $design = $managerFactory->create($projectId)->create($coreCluster);
 

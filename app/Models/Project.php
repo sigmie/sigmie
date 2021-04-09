@@ -8,7 +8,6 @@ use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Laravel\Paddle\Billable;
 
-
 class Project extends Model
 {
     use Billable;

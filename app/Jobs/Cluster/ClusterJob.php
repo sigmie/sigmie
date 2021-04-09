@@ -32,7 +32,7 @@ abstract class ClusterJob implements ShouldQueue
 
     public $isRedispatch;
 
-    public function __construct(int $clusterId, bool $redispatch = false)
+    final public function __construct(int $clusterId, bool $redispatch = false)
     {
         $this->clusterId = $clusterId;
         $this->queue = 'long-running-queue';
@@ -46,7 +46,6 @@ abstract class ClusterJob implements ShouldQueue
         $lock = $cache->lock(self::class . '_' . $this->clusterId);
 
         if ((bool)$lock->get()) {
-
             try {
                 $this->handleJob($clusterManagerFactory);
             } finally {

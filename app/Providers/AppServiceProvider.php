@@ -72,10 +72,6 @@ class AppServiceProvider extends ServiceProvider
         Features::noValidations();
         Features::noCommands();
 
-        Cache::macro('lockExists', function ($lock) {
-            return !is_null(Cache::get($lock));
-        });
-
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }

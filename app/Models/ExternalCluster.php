@@ -5,7 +5,6 @@ namespace App\Models;
 use Sigmie\Base\Http\Connection;
 use Sigmie\Http\JSONClient;
 
-
 class ExternalCluster extends AbstractCluster
 {
     public function getHasAllowedIpsAttribute()

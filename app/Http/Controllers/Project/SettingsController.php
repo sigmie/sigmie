@@ -15,7 +15,6 @@ class SettingsController extends \App\Http\Controllers\Controller
      */
     public function index(Project $project)
     {
-        /** @var  Cluster */
         $cluster = $project->clusters->first();
 
         return Inertia::render('project/settings/settings', [

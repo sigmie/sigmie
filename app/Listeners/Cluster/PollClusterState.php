@@ -28,7 +28,6 @@ class PollClusterState implements ShouldQueue
         $cluster = Project::find($event->projectId)->clusters->first();
 
         if ($this->clusterCallWasSuccessful($cluster)) {
-
             $cluster->update(['state' => Cluster::RUNNING]);
 
             event(new ClusterWasBooted($event->projectId));

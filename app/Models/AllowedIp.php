@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-
 class AllowedIp extends Model
 {
     public function cluster()

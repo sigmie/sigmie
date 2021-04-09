@@ -40,20 +40,19 @@ class ClusterController extends \App\Http\Controllers\Controller
             'nodes_count' => $validated['nodes_count'],
             'username' => $validated['username'],
             'password' => encrypt($validated['password']),
+            'memory' => $validated['memory'],
+            'cores' => $validated['cores'],
+            'disk' => $validated['disk'],
             'url' => "https://{$name}.{$domain}",
             'state' => Cluster::QUEUED_CREATE,
-            'core_version' => app_core_version()
+            'core_version' => app_core_version(),
         ]);
 
         $project->internalClusters()->attach($cluster);
 
         $clusterId = $cluster->getAttribute('id');
 
-        $job = new CreateCluster($clusterId, [
-            'memory' => $validated['memory'],
-            'cores' => $validated['cores'],
-            'disk' => $validated['disk'],
-        ]);
+        $job = new CreateCluster($clusterId);
 
         dispatch($job);
 
@@ -85,16 +84,15 @@ class ClusterController extends \App\Http\Controllers\Controller
             'username' => $validated['username'],
             'password' =>  encrypt($validated['password']),
             'state' => Cluster::QUEUED_CREATE,
-            'core_version' => app_core_version()
-        ]);
-
-        $cluster->restore();
-
-        $job = new CreateCluster($cluster->id, [
+            'core_version' => app_core_version(),
             'memory' => $validated['memory'],
             'cores' => $validated['cores'],
             'disk' => $validated['disk'],
         ]);
+
+        $cluster->restore();
+
+        $job = new CreateCluster($cluster->id);
 
         dispatch($job);
 

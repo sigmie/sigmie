@@ -13,7 +13,7 @@ class MailgunTest extends TestCase
     /**
      * @var string
      */
-    private $list = 'testing@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org';
+    private $list = 'development@sandbox20241fedda3c484aab06b1eb83f79d23.mailgun.org';
     /**
      * @var MailgunList
      */
@@ -26,9 +26,9 @@ class MailgunTest extends TestCase
 
     public function setUp(): void
     {
-        $this->markTestIncomplete();
-
         parent::setUp();
+
+        $this->markTestIncomplete();
 
         $this->client = new Client();
 

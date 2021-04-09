@@ -9,22 +9,24 @@ use App\Models\Cluster;
 use App\Models\Region;
 use Sigmie\App\Core\Cloud\Regions\Asia;
 use Sigmie\App\Core\Cluster as CoreCluster;
+use Tests\Helpers\WithDestroyedCluster;
+use Tests\Helpers\WithRunningInternalCluster;
 use Tests\TestCase;
 
 class ClusterAdapterTest extends TestCase
 {
+    use WithDestroyedCluster;
+
     /**
      * @test
      */
     public function cluster_values_are_correctly_mapped(): void
     {
-        $appCluster = new Cluster([
-            'name' => 'foo',
-            'nodes_count' => 3,
-            'username' => 'bar',
-            'design' => ['some' => 'value'],
-            'password' => encrypt('baz')
-        ]);
+        $this->withDestroyedCluster();
+
+        /** @var  Cluster $appCluster */
+        $appCluster = $this->cluster;
+
         $appCluster->setAttribute(
             'region',
             new Region([
@@ -37,14 +39,13 @@ class ClusterAdapterTest extends TestCase
         $coreCluster = ClusterAdapter::toCoreCluster($appCluster);
 
         $this->assertEquals(new Asia, $coreCluster->region);
-        $this->assertEquals('foo', $coreCluster->name);
-        $this->assertEquals('bar', $coreCluster->username);
-        $this->assertEquals('baz', $coreCluster->password);
-        $this->assertEquals(['some' => 'value'], $coreCluster->design);
-
-        $this->assertFalse(isset($coreCluster->memory));
-        $this->assertFalse(isset($coreCluster->cpus));
-        $this->assertFalse(isset($coreCluster->diskSize));
+        $this->assertEquals($appCluster->name, $coreCluster->name);
+        $this->assertEquals($appCluster->username, $coreCluster->username);
+        $this->assertEquals(decrypt($appCluster->password), $coreCluster->password);
+        $this->assertEquals($appCluster->design, $coreCluster->design);
+        $this->assertEquals($appCluster->cores, $coreCluster->cpus);
+        $this->assertEquals($appCluster->memory, $coreCluster->memory);
+        $this->assertEquals($appCluster->disk, $coreCluster->diskSize);
 
         $this->assertInstanceOf(CoreCluster::class, $coreCluster);
     }

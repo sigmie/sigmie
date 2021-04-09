@@ -68,8 +68,6 @@ class Cluster extends AbstractCluster
     {
         $job = new UpdateClusterAllowedIps($this->id);
 
-        ray($job->isLocked())->green();
-
         return $job->isLocked() === false;
     }
 

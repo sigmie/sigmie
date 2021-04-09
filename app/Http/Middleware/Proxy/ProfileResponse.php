@@ -21,8 +21,7 @@ class ProfileResponse
         /** @var Response */
         $response = $next($request);
 
-        if (
-            app()->bound('debugbar') &&
+        if (app()->bound('debugbar') &&
             app('debugbar')->isEnabled()
         ) {
             $response->setContent(json_encode(app('debugbar')->getData()));

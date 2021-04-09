@@ -16,6 +16,12 @@ class UpdateClustersTable extends Migration
         Schema::table('projects', function (Blueprint $blueprint) {
         });
 
+        Schema::table('clusters', function (Blueprint $blueprint) {
+            $blueprint->integer('memory');
+            $blueprint->integer('cores');
+            $blueprint->integer('disk');
+        });
+
         Schema::create('project_cluster_rel', function (Blueprint $blueprint) {
             $blueprint->bigInteger('project_id')->unsigned()->index()->nullable();
             $blueprint->unsignedBigInteger('cluster_id')->nullable();

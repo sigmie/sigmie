@@ -21,7 +21,7 @@ class StoreAllowedIp extends FormRequest
 
             $cluster = $request->route('cluster');
 
-            return $query->where('cluster_id', $cluster->id)->whereNotIn('id',[]);
+            return $query->where('cluster_id', $cluster->id)->whereNotIn('id', []);
         });
 
         return [

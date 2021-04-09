@@ -22,6 +22,13 @@ class ClusterAdapter
         $username = $cluster->getAttribute('username');
         $design = $cluster->getAttribute('design');
         $password = decrypt($cluster->getAttribute('password'));
+        $memory = $cluster->getAttribute('memory');
+        $cores = $cluster->getAttribute('cores');
+        $disk = $cluster->getAttribute('disk');
+
+        $coreCluster->setCpus($cores);
+        $coreCluster->setMemory($memory);
+        $coreCluster->setDiskSize($disk);
 
         $regionClass = $region->getAttribute('class');
 

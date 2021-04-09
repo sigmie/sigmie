@@ -84,6 +84,10 @@ class ClusterControllerTest extends TestCase
 
         $cluster = $this->project->clusters->first();
 
+        $this->assertEquals(1024, $cluster->memory);
+        $this->assertEquals(2, $cluster->cores);
+        $this->assertEquals(30, $cluster->disk);
+
         $this->assertEquals(Cluster::QUEUED_CREATE, $cluster->state);
         $this->assertEquals("https://booyah.{$domain}", $cluster->url);
         $this->assertEquals(app_core_version(), $cluster->core_version);

@@ -65,11 +65,7 @@ class CreateClusterTest extends TestCase
 
         $this->clusterManagerFactoryMock->method('create')->willReturn($this->clusterManagerMock);
 
-        $this->job = new CreateCluster($this->cluster->id, [
-            'memory' => 2024,
-            'disk' => 10,
-            'cores' => 2,
-        ]);
+        $this->job = new CreateCluster($this->cluster->id);
     }
 
     /**

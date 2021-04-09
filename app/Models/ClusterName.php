@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-
 class ClusterName extends Model
 {
     public function cluster()
