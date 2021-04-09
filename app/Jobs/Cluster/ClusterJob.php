@@ -41,9 +41,11 @@ abstract class ClusterJob implements ShouldQueue
 
     public function handle(ClusterManagerFactory $clusterManagerFactory, LockProvider $cache): void
     {
+        $minutes = 10;
+
         // Lock which identifies if an cluster job is running
         //to prevent overlapping cluster jobs actions
-        $lock = $cache->lock(self::class . '_' . $this->clusterId);
+        $lock = $cache->lock(self::class . '_' . $this->clusterId, $minutes * 60);
 
         if ((bool)$lock->get()) {
             try {

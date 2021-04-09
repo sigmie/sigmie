@@ -38,6 +38,7 @@
         "laravel/framework": "^8.0",
         "laravel/horizon": "^5.0",
         "laravel/nova": "^3.0",
+        "laravel/octane": "^0.1.1",
         "laravel/sanctum": "^2.4",
         "laravel/scout": "^8.0",
         "laravel/slack-notification-channel": "^2.0",
@@ -55,7 +56,7 @@
         "spatie/nova-backup-tool": "^4.1",
         "superbalist/laravel-google-cloud-storage": "^2.2",
         "symfony/psr-http-message-bridge": "^2.1",
-        "tightenco/ziggy": "^0.9.3"
+        "tightenco/ziggy": "^1.1"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.5",

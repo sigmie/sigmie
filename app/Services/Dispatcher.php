@@ -15,10 +15,22 @@ class Dispatcher extends \Illuminate\Bus\Dispatcher
 
     public function dispatchToQueue($command)
     {
-        if ($command instanceof ClusterJob && !$command->isRedispatch()) {
-            $command->lockAction();
+        if ($command instanceof ClusterJob) {
+
+            return $this->handleClusterJobLock($command);
         }
 
         return parent::dispatchToQueue($command);
+    }
+
+    private function handleClusterJobLock(ClusterJob $job)
+    {
+        if ($job->isRedispatch()) {
+            return parent::dispatchToQueue($job);
+        }
+
+        $job->lockAction();
+
+        return parent::dispatchToQueue($job);
     }
 }

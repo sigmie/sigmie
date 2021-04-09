@@ -1,13 +1,8 @@
 const mix = require('laravel-mix')
 const path = require('path')
 
-// ziggy
-mix.webpackConfig({
-  resolve: {
-    alias: {
-      ziggy: path.resolve('vendor/tightenco/ziggy/src/js/route.js')
-    }
-  }
+mix.alias({
+  ziggy: path.resolve('vendor/tightenco/ziggy/dist')
 })
 
 // browser sync

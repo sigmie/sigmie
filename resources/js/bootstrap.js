@@ -29,11 +29,16 @@ InertiaProgress.init({
   showSpinner: false
 })
 
+Vue.mixin({
+  methods: {
+    $route: (name, params, absolute) => route(name, params, absolute, Ziggy)
+  }
+})
 Vue.mixin(clickaway)
 Vue.use(plugin)
 Vue.use(Vuelidate)
 Vue.use(Clipboard)
-Vue.prototype.$route = (name, params, absolute) => route(name, params, absolute, Ziggy)
+// Vue.prototype.$route = (name, params, absolute) => route(name, params, absolute, Ziggy)
 
 Vue.prototype.$socket = new Echo({
   broadcaster: 'pusher',
