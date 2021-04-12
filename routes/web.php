@@ -48,6 +48,10 @@ use Illuminate\Routing\Middleware\ValidateSignature;
 
 Route::get('/', LandingController::class)->name('landing')->middleware('guest');
 
+Route::get('/foo', function () {
+    ray('bar');
+})->name('foo');
+
 // Newsletter routes
 Route::prefix('newsletter')->name('newsletter.')->group(function () {
 

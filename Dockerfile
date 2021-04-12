@@ -16,8 +16,8 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # update
 RUN apt-get update && \
-    apt-get install -y git unzip zip vim wget curl nginx supervisor curl sudo && \
-    apt -y install lsb-release apt-transport-https ca-certificates software-properties-common default-mysql-client libcurl4-openssl-dev && \
+    apt-get install -y git unzip zip vim wget curl supervisor curl sudo && \
+    apt -y install lsb-release apt-transport-https ca-certificates && \
     wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg && \
     echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list && \
     apt-get update && \
@@ -27,14 +27,8 @@ RUN apt-get update && \
 # Install swoole
 RUN pecl install swoole
 
-# disable default vhost
-RUN unlink /etc/nginx/sites-enabled/default && rm -rf /var/www/html
-
 # copy the application code
 COPY . /var/www/app
-
-# copy the nginx configuration
-COPY .docker/nginx/conf.d /etc/nginx/conf.d
 
 # copy the supervisor configuration
 COPY .docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf

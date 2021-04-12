@@ -1,9 +1,14 @@
 import Vue from 'vue'
-
-import './bootstrap'
+import bootstrap from './bootstrap'
 
 import $root, { app } from './root'
 
-const vm = new Vue($root)
+async function init () {
+  await bootstrap()
 
-vm.$mount(app)
+  const vm = new Vue($root)
+
+  vm.$mount(app)
+}
+
+init()

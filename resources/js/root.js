@@ -1,6 +1,8 @@
 import { InertiaApp } from '@inertiajs/inertia-vue'
 import isNull from 'lodash/isNull'
 import { debounce } from 'lodash'
+import route from 'ziggy-js'
+import axios from 'axios'
 
 export const app = document.getElementById('app')
 
