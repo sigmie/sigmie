@@ -27,5 +27,6 @@ class UserWasSubscribedTest extends TestCase
         $this->assertEquals($userId, $event->userId);
         $this->assertInstanceOf(PrivateChannel::class, $event->broadcastOn());
         $this->assertEquals($event->broadcastOn()->name, 'private-user.1');
+        $this->assertEquals('user.subscribed', $event->broadcastAs());
     }
 }

@@ -15,7 +15,6 @@ resources/js/routes.js
 
 cov-html
 
-auth.json
 google.json
 
 Homestead.json

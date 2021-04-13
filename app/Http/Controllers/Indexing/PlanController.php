@@ -24,6 +24,8 @@ class PlanController extends \App\Http\Controllers\Controller
 
     public function store(StorePlan $request)
     {
+        $this->authorize('create', IndexingPlan::class);
+
         $validated = $request->validated();
 
         $project = Project::find($validated['project_id']);
@@ -55,6 +57,8 @@ class PlanController extends \App\Http\Controllers\Controller
 
     public function update(UpdatePlan $request, IndexingPlan $plan)
     {
+        $this->authorize('update', $plan);
+
         $validated = $request->validated();
 
         $plan->fill(

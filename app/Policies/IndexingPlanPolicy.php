@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Policies;
 
@@ -9,16 +11,6 @@ use Illuminate\Auth\Access\HandlesAuthorization;
 class IndexingPlanPolicy
 {
     use HandlesAuthorization;
-
-    public function viewAny(User $user)
-    {
-        return $user->isSubscribed();
-    }
-
-    public function view(User $user, IndexingPlan $indexingPlan)
-    {
-        return $indexingPlan->cluster->isOwnedBy($user);
-    }
 
     public function create(User $user)
     {
@@ -39,15 +31,5 @@ class IndexingPlanPolicy
     public function delete(User $user, IndexingPlan $indexingPlan)
     {
         return $indexingPlan->cluster->isOwnedBy($user);
-    }
-
-    public function restore(User $user, IndexingPlan $indexingPlan)
-    {
-        return false;
-    }
-
-    public function forceDelete(User $user, IndexingPlan $indexingPlan)
-    {
-        return false;
     }
 }

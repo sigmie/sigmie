@@ -3,20 +3,19 @@ name: Code style
 on: [push]
 
 jobs:
-  style_check:
-    runs-on: ubuntu-18.04
-    if: github.ref != 'refs/heads/master'
 
-    env:
-      COMPOSER_PASSPHRASE: ${{ secrets.composer_passphrase }}
-      SLACK_HOOK_URL: ${{ secrets.slack_webhook_url }}
+  style_check:
+
+    runs-on: ubuntu-18.04
+
+    if: github.ref != 'refs/heads/master'
 
     steps:
     - uses: actions/checkout@v2
 
     - name: Slack notification
       run: |
-           curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "Code style workflow has started."}' $SLACK_HOOK_URL
+           curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "Code style workflow has started."}' ${{ secrets.SLACK_WEBHOOK_URL }}
 
     - name: Cache node modules
       uses: actions/cache@v1
@@ -36,8 +35,11 @@ jobs:
     - name: Install composer
       run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 
-    - name: Decrypt composer secret
-      run: gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/auth.json.gpg
+    - name: Authorize private repositories
+      run: |
+        composer config github-oauth.github.com ${{ secrets.COMPOSER_GITHUB_TOKEN }}
+        composer config http-basic.nova.laravel.com "nico@sigmie.com" ${{ secrets.SATIS_NOVA_PASSWORD }}
+        composer config http-basic.packages.sigmie.com "nico@sigmie.com" "${{ secrets.SATIS_SIGMIE_PASSWORD }}"
 
     - name: Validate composer.json and composer.lock
       run: composer validate
@@ -62,4 +64,4 @@ jobs:
 
     - name: Slack finish notification
       run: |
-           curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "Code style checks have passed."}' $SLACK_HOOK_URL
+           curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "Code style checks have passed."}' ${{ secrets.SLACK_WEBHOOK_URL }}
