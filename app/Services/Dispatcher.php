@@ -16,7 +16,6 @@ class Dispatcher extends \Illuminate\Bus\Dispatcher
     public function dispatchToQueue($command)
     {
         if ($command instanceof ClusterJob) {
-
             return $this->handleClusterJobLock($command);
         }
 

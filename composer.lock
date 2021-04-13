@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "33c105092859d0e89bc0a77e98668db3",
+    "content-hash": "07efb57adeb21157569b97e747fe2af9",
     "packages": [
         {
             "name": "amphp/amp",
@@ -6731,12 +6731,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sigmie/sigmie.git",
-                "reference": "9000d39224d9aa3ae9d20125809ff0be6702166f"
+                "reference": "90a042eaa6e1afc1744c3b86154af3fa43bfe3fd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sigmie/sigmie/zipball/9000d39224d9aa3ae9d20125809ff0be6702166f",
-                "reference": "9000d39224d9aa3ae9d20125809ff0be6702166f",
+                "url": "https://api.github.com/repos/sigmie/sigmie/zipball/90a042eaa6e1afc1744c3b86154af3fa43bfe3fd",
+                "reference": "90a042eaa6e1afc1744c3b86154af3fa43bfe3fd",
                 "shasum": ""
             },
             "require": {

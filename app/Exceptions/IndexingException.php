@@ -9,7 +9,7 @@ use RuntimeException;
 
 class IndexingException extends RuntimeException
 {
-    public function __construct($message, public IndexingPlan $plan)
+    final public function __construct($message, public IndexingPlan $plan)
     {
         parent::__construct($message);
     }

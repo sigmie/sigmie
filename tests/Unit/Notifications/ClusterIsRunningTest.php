@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Tests\Unit\Notifications;
 
 use App\Notifications\Cluster\ClusterIsRunning;
-use App\Repositories\ClusterRepository;
-use PHPUnit\Framework\MockObject\MockObject;
 use Tests\Helpers\WithNotifiableMock;
 use Tests\TestCase;
 
@@ -18,11 +16,6 @@ class ClusterIsRunningTest extends TestCase
      * @var ClusterIsRunning
      */
     private $notification;
-
-    /**
-     * @var ClusterRepository|MockObject
-     */
-    private $clusterRepositoryMock;
 
     /**
      * @var string

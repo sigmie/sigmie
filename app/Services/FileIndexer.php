@@ -10,6 +10,7 @@ use ErrorException;
 use Illuminate\Support\Facades\Storage;
 use Sigmie\Base\Documents\Document;
 
+use function App\Helpers\is_json;
 use function App\Helpers\temp_file_path;
 
 class FileIndexer extends BaseIndexer

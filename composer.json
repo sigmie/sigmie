@@ -52,7 +52,7 @@
         "pusher/pusher-php-server": "~4.0",
         "sigmie/app-core": "^0.12",
         "sigmie/nova-feature-flags": "@dev",
-        "sigmie/sigmie": "dev-master#9000d39224d9aa3ae9d20125809ff0be6702166f",
+        "sigmie/sigmie": "dev-master#90a042eaa6e1afc1744c3b86154af3fa43bfe3fd",
         "spatie/nova-backup-tool": "^4.1",
         "superbalist/laravel-google-cloud-storage": "^2.2",
         "symfony/psr-http-message-bridge": "^2.1",
