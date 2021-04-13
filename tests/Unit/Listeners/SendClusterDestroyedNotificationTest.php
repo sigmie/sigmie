@@ -6,83 +6,42 @@ namespace Tests\Unit\Listeners;
 
 use App\Events\Cluster\ClusterWasDestroyed;
 use App\Listeners\Notifications\SendClusterDestroyedNotification;
-use App\Models\Cluster;
-use App\Models\Project;
 use App\Notifications\Cluster\ClusterWasDestroyed as ClusterWasDestroyedNotification;
-use App\Repositories\ClusterRepository;
-use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
-use Tests\Helpers\WithNotifiableMock;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
+use Tests\Helpers\WithDestroyedCluster;
+use Tests\TestCase;
 
 class SendClusterDestroyedNotificationTest extends TestCase
 {
-    use WithNotifiableMock;
-
-    /**
-     * @var SendClusterDestroyedNotification
-     */
-    private $listener;
-
-    /**
-     * @var MockObject|ClusterWasDestroyed
-     */
-    private $eventMock;
-
-    /**
-     * @var ClusterRepository|MockObject
-     */
-    private $clusterRepositoryMock;
-
-    /**
-     * @var Cluster|MockObject
-     */
-    private $clusterMock;
-
-    /**
-     * @var integer
-     */
-    private $clusterId = 0;
-
-    /**
-     * @var Project|MockObject
-     */
-    private $projectMock;
-
-    /**
-     * @var string
-     */
-    private $projectName = 'foo';
+    use WithDestroyedCluster;
 
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->withNotifiableMock();
-
-        $this->eventMock = $this->createMock(ClusterWasDestroyed::class);
-        $this->eventMock->projectId = $this->clusterId;
-
-        $this->projectMock = $this->createMock(Project::class);
-        $this->projectMock->method('getAttribute')->willReturnMap([['name', $this->projectName]]);
-
-        $this->clusterMock = $this->createMock(Cluster::class);
-        $this->clusterMock->method('getAttribute')->willReturnMap([['project', $this->projectMock]]);
-        $this->clusterMock->method('findUser')->willReturn($this->notifiableMock);
-
-        $this->clusterRepositoryMock = $this->createMock(ClusterRepository::class);
-        $this->clusterRepositoryMock->method('findTrashed')->willReturn($this->clusterMock);
-
-        $this->listener = new SendClusterDestroyedNotification($this->clusterRepositoryMock);
+        Notification::fake();
+        Event::fake();
+        Bus::fake();
     }
 
-    /**
-     * @test
-     */
-    public function handle_finds_trashed_cluster_and_notifies_cluster_user()
+    public function test_listener()
     {
-        $this->clusterRepositoryMock->expects($this->once())->method('findTrashed')->with($this->clusterId);
-        $this->notifiableMock->expects($this->once())->method('notify')->with(new ClusterWasDestroyedNotification($this->projectName));
+        $this->withDestroyedCluster();
 
-        $this->listener->handle($this->eventMock);
+        $listener = new SendClusterDestroyedNotification();
+
+        $listener->handle(new ClusterWasDestroyed($this->project->id));
+
+        Notification::assertSentTo(
+            $this->user,
+            ClusterWasDestroyedNotification::class,
+            function (ClusterWasDestroyedNotification $notification) {
+                return $notification->projectName === $this->project->name;
+            }
+        );
+
+        
     }
 }

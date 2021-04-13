@@ -5,12 +5,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Cluster;
 
+use function App\Helpers\app_core_version;
 use App\Jobs\Cluster\DestroyCluster;
 use App\Models\Cluster;
 use App\Models\Region;
 use Illuminate\Support\Facades\Bus;
 use Tests\Helpers\WithDestroyedCluster;
 use Tests\Helpers\WithProject;
+
 use Tests\TestCase;
 
 class ClusterControllerTest extends TestCase

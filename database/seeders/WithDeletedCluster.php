@@ -6,19 +6,11 @@ namespace Database\Seeders;
 
 use App\Models\Cluster;
 use App\Models\Project;
-use App\Repositories\ClusterRepository;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class WithDeletedCluster extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
-    public function run(ClusterRepository $clusterRepository)
+    public function run()
     {
         $userId = 1;
 

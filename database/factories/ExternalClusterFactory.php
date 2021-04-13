@@ -1,13 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\Cluster;
-use App\Models\ClusterName;
 use App\Models\ExternalCluster;
 use App\Models\Project;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 
 class ExternalClusterFactory extends Factory
 {

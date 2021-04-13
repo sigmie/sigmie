@@ -1,12 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Database\Factories;
 
 use App\Models\AllowedIp;
 use App\Models\Cluster;
-use App\Models\Model;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 
 class AllowedIpFactory extends Factory
 {

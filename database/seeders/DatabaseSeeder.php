@@ -7,7 +7,6 @@ namespace Database\Seeders;
 use App\Models\AllowedIp;
 use App\Models\Cluster;
 use App\Models\ClusterName;
-use App\Models\ExternalCluster;
 use App\Models\FileType;
 use App\Models\IndexingPlan;
 use App\Models\Project;

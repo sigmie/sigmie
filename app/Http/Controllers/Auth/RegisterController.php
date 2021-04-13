@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\StoreUser;
 use App\Models\User;
-use App\Repositories\UserRepository;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
@@ -18,12 +17,8 @@ class RegisterController extends Controller
 {
     use RegistersUsers;
 
-    protected UserRepository $users;
-
-    public function __construct(UserRepository $userRepository)
+    public function __construct()
     {
-        $this->users = $userRepository;
-
         $this->middleware('guest');
     }
 
@@ -44,7 +39,7 @@ class RegisterController extends Controller
         $password = (isset($data['password'])) ? Hash::make($data['password']) : null;
 
         /** @var  User */
-        $user = $this->users->create(
+        $user = User::create(
             [
                 'email' => $data['email'],
                 'username' => $data['username'],

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Indexing;
 
-use App\Enums\PlanTriggers;
 use App\Jobs\Indexing\IndexAction;
 use App\Models\IndexingPlan;
 use Illuminate\Support\Facades\Queue;

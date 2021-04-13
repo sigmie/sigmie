@@ -95,7 +95,7 @@
         },
         "classmap": [],
         "files": [
-            "helpers.php"
+            "app/Helpers/functions.php"
         ]
     },
     "autoload-dev": {

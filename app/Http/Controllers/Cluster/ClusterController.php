@@ -10,16 +10,20 @@ use App\Jobs\Cluster\CreateCluster;
 use App\Jobs\Cluster\DestroyCluster;
 use App\Models\Cluster;
 use App\Models\Project;
+use App\Models\Region;
 use App\Repositories\RegionRepository;
+
 use Inertia\Inertia;
+
+use function App\Helpers\app_core_version;
 
 class ClusterController extends \App\Http\Controllers\Controller
 {
-    public function create(RegionRepository $regions)
+    public function create()
     {
         $this->authorize('create', Cluster::class);
 
-        return Inertia::render('cluster/create/create', ['regions' => $regions->all()]);
+        return Inertia::render('cluster/create/create', ['regions' => Region::all()]);
     }
 
     public function store(StoreCluster $request)
@@ -59,12 +63,12 @@ class ClusterController extends \App\Http\Controllers\Controller
         return redirect()->route('dashboard');
     }
 
-    public function edit(Cluster $cluster, RegionRepository $regions)
+    public function edit(Cluster $cluster)
     {
         $this->authorize('update', $cluster);
 
         return Inertia::render('cluster/edit/edit', [
-            'regions' => $regions->all(),
+            'regions' => Region::all(),
             'cluster' => [
                 'id' => $cluster->getAttribute('id'),
                 'name' => $cluster->getAttribute('name')

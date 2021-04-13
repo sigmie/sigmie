@@ -8,7 +8,6 @@ use App\Models\Cluster;
 use App\Models\Project;
 use Composer\InstalledVersions;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Database\Eloquent\Relations\Relation;
 
 class ClusterFactory extends Factory
 {

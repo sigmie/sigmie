@@ -10,7 +10,6 @@ use App\Models\Region;
 use Sigmie\App\Core\Cloud\Regions\Asia;
 use Sigmie\App\Core\Cluster as CoreCluster;
 use Tests\Helpers\WithDestroyedCluster;
-use Tests\Helpers\WithRunningInternalCluster;
 use Tests\TestCase;
 
 class ClusterAdapterTest extends TestCase

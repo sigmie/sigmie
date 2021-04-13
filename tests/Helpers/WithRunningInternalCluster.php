@@ -28,6 +28,6 @@ trait WithRunningInternalCluster
         $this->project = Project::factory()->create(['user_id' => $this->user->id]);
         $this->cluster = Cluster::factory()->create(['project_id' => $this->project->id]);
 
-        $this->project->externalClusters()->attach($this->cluster);
+        $this->project->internalClusters()->attach($this->cluster);
     }
 }

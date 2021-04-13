@@ -57,6 +57,7 @@ class DashboardController extends \App\Http\Controllers\Controller
                 ])->toArray();
         }
 
+
         return [
             'clusterState' => $state,
             'clusterId' => $id,

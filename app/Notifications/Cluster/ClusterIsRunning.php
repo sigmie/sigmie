@@ -9,7 +9,7 @@ use App\Notifications\UserNotification;
 
 class ClusterIsRunning extends UserNotification
 {
-    public function __construct(private string $clusterName, private string $projectName)
+    public function __construct(public string $clusterName, public string $projectName)
     {
     }
 

@@ -13,7 +13,6 @@ declare(strict_types=1);
 |
 */
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\GithubController;
 use App\Http\Controllers\Auth\LoginController;
@@ -25,9 +24,9 @@ use App\Http\Controllers\Cluster\ClusterController;
 use App\Http\Controllers\Cluster\TokenController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Indexing\IndexingController;
+use App\Http\Controllers\Indexing\PingController;
 use App\Http\Controllers\Indexing\PlanController;
 use App\Http\Controllers\Indexing\TriggerController;
-use App\Http\Controllers\Indexing\PingController;
 use App\Http\Controllers\Landing\LandingController;
 use App\Http\Controllers\Legal\LegalController;
 use App\Http\Controllers\Newsletter\SubscriptionConfirmationController;
@@ -40,11 +39,11 @@ use App\Http\Controllers\User\SettingsController as AccountSettingsController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Middleware\Redirects\RedirecToSameRouteWithProject as RedirectToSameRouteWithProject;
 use App\Http\Middleware\Redirects\RedirectToClusterCreateIfHasntCluster;
-use App\Http\Middleware\Redirects\RedirectToDashboardIfHasCluster;
 use App\Http\Middleware\Redirects\RedirectToDashboardIfSubscribed;
 use App\Http\Middleware\Redirects\RedirectToRenewSubscriptionIfNotSubscribed;
 use App\Http\Middleware\Shares\ShareSelectedProjectToView;
 use Illuminate\Routing\Middleware\ValidateSignature;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', LandingController::class)->name('landing')->middleware('guest');
 

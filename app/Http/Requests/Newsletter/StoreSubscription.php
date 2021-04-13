@@ -27,8 +27,14 @@ class StoreSubscription extends FormRequest
      */
     public function rules(Client $client)
     {
-        return [
-            'email' => ['email:rfc,dns', 'required', new DeliverableMail($client)]
+        $rules = [
+            'email' => ['email:rfc,dns', 'required']
         ];
+
+        if (config('app.env') !== 'testing') {
+            $rules[] =  new DeliverableMail($client);
+        }
+
+        return $rules;
     }
 }

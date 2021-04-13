@@ -38,7 +38,6 @@ class ClusterIsRunningTest extends TestCase
     {
         parent::setUp();
 
-        $this->clusterRepositoryMock = $this->createMock(ClusterRepository::class);
         $this->notification = new ClusterIsRunning($this->clusterName, $this->projectName);
     }
 

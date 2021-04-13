@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\Cluster;
 use App\Models\ExternalCluster;
 use App\Models\Project;
-use App\Models\Subscription;
 use Illuminate\Database\Seeder;
 
 class WithRunningCluster extends Seeder
