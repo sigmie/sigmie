@@ -15,7 +15,7 @@ class CreateErrorActivity
     {
         IndexingActivity::create([
             'title' => $event->indexingException->getMessage(),
-            'type' => (string) ActivityTypes::ERROR(),
+            'type' => IndexingActivity::TYPE_ERROR,
             'timestamp' => Carbon::now(),
             'plan_id' => $event->indexingException->plan->id,
             'project_id' => $event->indexingException->plan->project->id

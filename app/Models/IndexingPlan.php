@@ -11,6 +11,12 @@ use Illuminate\Support\Facades\URL;
 
 class IndexingPlan extends Model
 {
+    public const TRIGGER_PING = 'ping';
+
+    public const TRIGGER_MANUAL = 'manual';
+
+    public const TRIGGER_SCHEDULED = 'scheduled';
+
     protected $attributes = [
         'state' => PlanState::NONE
     ];

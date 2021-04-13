@@ -1,9 +1,9 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Http\Controllers\Indexing;
 
-use App\Enums\ActivityTypes;
-use App\Enums\PlanTriggers;
 use App\Http\Controllers\Controller;
 use App\Models\IndexingActivity;
 use App\Models\IndexingPlan;
@@ -15,8 +15,8 @@ class TriggerController extends Controller
     {
         IndexingActivity::create([
             'title' => $plan->name . ' was triggered',
-            'type' => (string) ActivityTypes::INFO(),
-            'trigger' => (string) PlanTriggers::MANUAL(),
+            'type' => IndexingActivity::TYPE_INFO,
+            'trigger' => IndexingPlan::TRIGGER_MANUAL,
             'timestamp' => Carbon::now(),
             'plan_id' => $plan->id,
             'project_id' => $plan->project->id
