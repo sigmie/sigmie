@@ -20,9 +20,6 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Sanctum\Sanctum;
-use Sigmie\App\Core\CloudflareFactory;
-use Sigmie\App\Core\Contracts\DNSFactory;
-use Sigmie\App\Core\DNS\Contracts\Provider as DNSProvider;
 use YlsIdeas\FeatureFlags\Facades\Features;
 
 class AppServiceProvider extends ServiceProvider
@@ -36,18 +33,6 @@ class AppServiceProvider extends ServiceProvider
         Sanctum::usePersonalAccessTokenModel(Token::class);
 
         $this->app->singleton(ProxyRequest::class);
-
-        $this->app->singleton(DNSFactory::class, function () {
-            return new CloudflareFactory(
-                config('services.cloudflare.api_token'),
-                config('services.cloudflare.zone_id'),
-                config('services.cloudflare.domain')
-            );
-        });
-
-        $this->app->singleton(DNSProvider::class, function () {
-            return app(DNSFactory::class)->create();
-        });
 
         $this->app->singleton(LockProvider::class, function () {
             return Cache::getStore();

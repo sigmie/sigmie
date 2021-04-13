@@ -169,9 +169,7 @@ return [
          * Package Service Providers...
          */
         Tightenco\Ziggy\ZiggyServiceProvider::class,
-
         Bugsnag\BugsnagLaravel\BugsnagServiceProvider::class,
-
 
         /*
          * Application Service Providers...
@@ -185,6 +183,7 @@ return [
         App\Providers\RouteServiceProvider::class,
         App\Providers\MailingListServiceProvider::class,
         App\Providers\SigmieServiceProvider::class,
+        App\Providers\SigmieCoreServiceProvider::class,
     ],
 
     /*

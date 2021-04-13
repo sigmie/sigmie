@@ -22,23 +22,17 @@ class FileIndexer extends BaseIndexer
         try {
             copy($fetchLocation, $tempPath);
         } catch (ErrorException $e) {
-            throw new IndexingException($e->getMessage(), $this->type->plan);
+            throw IndexingException::copy($fetchLocation, $this->type->plan);
         }
 
         if (filesize($tempPath) > 1073741824) { // 1 GB
-            throw new IndexingException(
-                'File fetched from ' . $fetchLocation . ' size bigger than 1GB.',
-                $this->type->plan
-            );
+            throw IndexingException::filesize($fetchLocation, '1', $this->type->plan);
         }
 
         $contents = file_get_contents($tempPath);
 
         if (!is_json($contents)) {
-            throw new IndexingException(
-                'File fetched from ' . $fetchLocation . ' isn\'t a valid JSON.',
-                $this->type->plan
-            );
+            throw IndexingException::json($fetchLocation, $this->type->plan);
         }
 
         $json = json_decode($contents, true);
