@@ -87,17 +87,17 @@
       </div>
     </div>
 
-    <basicauth :cluster="cluster"> </basicauth>
+    <basicauth v-if="cluster" :cluster="cluster"> </basicauth>
 
     <addresses
       :disabled="!cluster.can_update_allowed_ips"
-      v-if="cluster.has_allowed_ips"
+      v-if="cluster && cluster.has_allowed_ips"
       :clusterId="cluster.id"
       :ips="cluster.allowedIps"
     ></addresses>
 
     <danger
-      v-if="cluster.can_be_destroyed"
+      v-if="cluster && cluster.can_be_destroyed"
       :clusterState="cluster.state"
       :clusterId="cluster.id"
     ></danger>
@@ -145,14 +145,16 @@ export default {
     },
   },
   mounted() {
-    //Delay the reload for 2 seconds
-    this.$socket
-      .private(`cluster.${this.cluster.id}`)
-      .listen(".cluster.updated", (e) => {
-        delay(() => {
-          this.$inertia.reload({ only: ["cluster"] });
-        }, 2000);
-      });
+    if (this.cluster) {
+      //Delay the reload for 2 seconds
+      this.$socket
+        .private(`cluster.${this.cluster.id}`)
+        .listen(".cluster.updated", (e) => {
+          delay(() => {
+            this.$inertia.reload({ only: ["cluster"] });
+          }, 2000);
+        });
+    }
 
     //Delay the reload for 2 seconds
     this.$socket

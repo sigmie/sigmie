@@ -22,7 +22,7 @@ jobs:
 
     - name: Slack notification
       run: |
-           curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "Deploy workflow has started."}' $SLACK_HOOK_URL
+           curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "Deploy workflow has started."}' ${{ secrets.SLACK_WEBHOOK_URL }}
 
     - name: Cache node modules
       uses: actions/cache@v1
@@ -44,7 +44,6 @@ jobs:
     - name: Decrypt secrets
       run: |
           gpg --quiet --batch --yes --decrypt --passphrase=$GOOGLE_PASSPHRASE --output service-account.json .github/secrets/service-account.json.gpg
-          gpg --quiet --batch --yes --decrypt --passphrase=$COMPOSER_PASSPHRASE --output auth.json .github/secrets/auth.json.gpg
           gpg --quiet --batch --yes --decrypt --passphrase=$VARIABLES_PASSPHRASE --output .env .github/secrets/.env.gpg
 
     - name: Install curl curl nodejs-dev node-gyp libssl1.0-dev zip
@@ -52,6 +51,12 @@ jobs:
 
     - name: Install composer
       run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+
+    - name: Authorize private repositories
+      run: |
+        composer config github-oauth.github.com ${{ secrets.COMPOSER_GITHUB_TOKEN }}
+        composer config http-basic.nova.laravel.com "nico@sigmie.com" ${{ secrets.SATIS_NOVA_PASSWORD }}
+        composer config http-basic.packages.sigmie.com "nico@sigmie.com" "${{ secrets.SATIS_SIGMIE_PASSWORD }}"
 
     - name: Validate composer and install prod dependencies
       run: |
@@ -86,4 +91,4 @@ jobs:
 
     - name: Slack deploy finish notification
       run: |
-           curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "New app version has been deployed to Google App Engine."}' $SLACK_HOOK_URL
+           curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "New app version has been deployed to Google App Engine."}' ${{ secrets.SLACK_WEBHOOK_URL }}
