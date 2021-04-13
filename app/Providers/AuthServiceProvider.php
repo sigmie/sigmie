@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Gates\DashboardGate;
-use App\Models\User;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
+use App\Models\Project;
+use App\Models\User;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -25,15 +25,8 @@ class AuthServiceProvider extends ServiceProvider
             return 'App\\Policies\\' . class_basename($modelClass) . 'Policy';
         });
 
-        Gate::define('view-dashboard', $this->classMethodCallback(DashboardGate::class, 'view'));
-
-        Gate::define('trigger-plan', function (User $user) {
-            return $user->isSubscribed();
+        Gate::define('viewDashboard', function (User $user, Project $project) {
+            return $project->getAttribute('user_id') === $user->getAttribute('id');
         });
-    }
-
-    private function classMethodCallback($class, $method)
-    {
-        return $class . '@' . $method;
     }
 }

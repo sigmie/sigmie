@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Indexing;
 
 use App\Events\Indexing\PlanWasUpdated;
 use App\Http\Requests\Indexing\StorePlan;
-use App\Http\Requests\UpdatePlan;
+use App\Http\Requests\Indexing\UpdatePlan;
 use App\Models\FileType;
 use App\Models\IndexingActivity;
 use App\Models\IndexingPlan;
