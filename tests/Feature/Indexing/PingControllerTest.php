@@ -29,6 +29,7 @@ class PingControllerTest extends TestCase
         $res = $this->get($url);
 
         $res->assertOk();
+
         $this->assertTrue($this->user->isSubscribed());
     }
 
@@ -45,7 +46,7 @@ class PingControllerTest extends TestCase
 
         $url = $this->indexingPlan->ping_url;
 
-        $this->get($url)->assertUnauthorized();
+        $this->get($url)->assertForbidden();
     }
 
     /**

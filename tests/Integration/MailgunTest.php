@@ -28,8 +28,6 @@ class MailgunTest extends TestCase
     {
         parent::setUp();
 
-        $this->markTestIncomplete();
-
         $this->client = new Client();
 
         $this->mailgun = new MailgunList(

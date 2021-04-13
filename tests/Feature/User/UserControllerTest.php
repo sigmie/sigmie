@@ -87,6 +87,7 @@ class UserControllerTest extends TestCase
 
         $this->user->refresh();
 
-        $this->assertEquals($this->user->username, 'John Doe');
+
+        $this->assertEquals('John Doe', $this->user->username);
     }
 }

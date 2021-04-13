@@ -37,7 +37,7 @@ class ClusterPolicy
     public function create(User $user): bool
     {
         return $user->projects()->first()->clusters->isEmpty()
-            && $user->subscribed(config('services.paddle.plan_name'));
+            && $user->isSubscribed();
     }
 
     /**
@@ -61,7 +61,7 @@ class ClusterPolicy
      */
     public function restore(User $user, AbstractCluster $cluster): bool
     {
-        return $cluster->isOwnedBy($user);
+        return $cluster->isOwnedBy($user) && $user->isSubscribed();
     }
 
     /**

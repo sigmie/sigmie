@@ -31,6 +31,11 @@ class IndexingPlanPolicy
             && $indexingPlan->cluster->isOwnedBy($user);
     }
 
+    public function trigger(User $user, IndexingPlan $indexingPlan)
+    {
+        return $user->isSubscribed() && $indexingPlan->isActive();
+    }
+
     public function delete(User $user, IndexingPlan $indexingPlan)
     {
         return $indexingPlan->cluster->isOwnedBy($user);

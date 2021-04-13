@@ -20,14 +20,14 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        // Cache::flush();
+        Cache::flush();
 
         $this->withoutMiddleware(RequestInfo::class);
     }
 
     public function tearDown(): void
     {
-        // Cache::flush();
+        Cache::flush();
 
         parent::tearDown();
     }

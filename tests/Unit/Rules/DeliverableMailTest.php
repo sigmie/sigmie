@@ -55,7 +55,7 @@ class DeliverableMailTest extends TestCase
 
         $this->responseMock = $this->createMock(ResponseInterface::class);
 
-        $this->clientMock = $this->getMockBuilder(Client::class)->setMethods(['get'])->getMock();
+        $this->clientMock = $this->createMock(Client::class);
         $this->clientMock->method('get')->willReturn($this->responseMock);
 
         $this->streamMock = $this->createMock(StreamInterface::class);
@@ -87,7 +87,7 @@ class DeliverableMailTest extends TestCase
             [
                 'auth' => [
                     'api',
-                    env('MAILGUN_SECRET')
+                    config('services.mailgun.secret')
                 ],
                 'query' => ['address' => 'example.com'],
                 'connect_timeout' => 2.5

@@ -89,6 +89,9 @@ class DashboardControllerTest extends TestCase
             ]
         ];
 
-        $this->assertEquals($expected, $json);
+        $this->assertEquals($expected['clusterState'], $json['clusterState']);
+        $this->assertEquals($expected['clusterId'], $json['clusterId']);
+        $this->assertContains($expected['indices'][0], $json['indices']);
+        $this->assertEquals($expected['clusterInfo'], $json['clusterInfo']);
     }
 }

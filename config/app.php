@@ -182,7 +182,6 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\NovaServiceProvider::class,
         App\Providers\HorizonServiceProvider::class,
-        App\Providers\TelescopeServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\MailingListServiceProvider::class,
         App\Providers\SigmieServiceProvider::class,

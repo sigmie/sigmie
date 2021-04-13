@@ -1,7 +1,7 @@
 <?php
 
-use Laravel\Telescope\Watchers;
 use Laravel\Telescope\Http\Middleware\Authorize;
+use Laravel\Telescope\Watchers;
 
 return [
 
@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'domain' => null,
+    'domain' => env('TELESCOPE_DOMAIN', null),
 
     /*
     |--------------------------------------------------------------------------
@@ -29,7 +29,7 @@ return [
     |
     */
 
-    'path' => 'telescope',
+    'path' => env('TELESCOPE_PATH', 'telescope'),
 
     /*
     |--------------------------------------------------------------------------
@@ -47,6 +47,7 @@ return [
     'storage' => [
         'database' => [
             'connection' => env('DB_CONNECTION', 'mysql'),
+            'chunk' => 1000,
         ],
     ],
 
@@ -81,7 +82,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Ignored Paths & Commands
+    | Allowed / Ignored Paths & Commands
     |--------------------------------------------------------------------------
     |
     | The following array lists the URI paths and Artisan commands that will
@@ -90,8 +91,12 @@ return [
     |
     */
 
+    'only_paths' => [
+        // 'api/*'
+    ],
+
     'ignore_paths' => [
-        //
+        'nova-api*',
     ],
 
     'ignore_commands' => [
@@ -110,6 +115,7 @@ return [
     */
 
     'watchers' => [
+        Watchers\BatchWatcher::class => env('TELESCOPE_BATCH_WATCHER', true),
         Watchers\CacheWatcher::class => env('TELESCOPE_CACHE_WATCHER', true),
 
         Watchers\CommandWatcher::class => [
@@ -118,7 +124,12 @@ return [
         ],
 
         Watchers\DumpWatcher::class => env('TELESCOPE_DUMP_WATCHER', true),
-        Watchers\EventWatcher::class => env('TELESCOPE_EVENT_WATCHER', true),
+
+        Watchers\EventWatcher::class => [
+            'enabled' => env('TELESCOPE_EVENT_WATCHER', true),
+            'ignore' => [],
+        ],
+
         Watchers\ExceptionWatcher::class => env('TELESCOPE_EXCEPTION_WATCHER', true),
         Watchers\JobWatcher::class => env('TELESCOPE_JOB_WATCHER', true),
         Watchers\LogWatcher::class => env('TELESCOPE_LOG_WATCHER', true),
@@ -127,6 +138,7 @@ return [
         Watchers\ModelWatcher::class => [
             'enabled' => env('TELESCOPE_MODEL_WATCHER', true),
             'events' => ['eloquent.*'],
+            'hydrations' => true,
         ],
 
         Watchers\NotificationWatcher::class => env('TELESCOPE_NOTIFICATION_WATCHER', true),
@@ -151,5 +163,7 @@ return [
         ],
 
         Watchers\ScheduleWatcher::class => env('TELESCOPE_SCHEDULE_WATCHER', true),
+
+        Watchers\ViewWatcher::class => env('TELESCOPE_VIEW_WATCHER', true),
     ],
 ];
