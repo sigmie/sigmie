@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Traits;
+namespace App\Helpers;
 
 use Illuminate\Support\Facades\Storage;
 use Sigmie\App\Core\GoogleFactory;

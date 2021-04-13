@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
-use App\Traits\InitializesGoogleFactory;
 use Illuminate\Contracts\Validation\Rule;
 
 class MultipleOf implements Rule
 {
-    use InitializesGoogleFactory;
+    use \App\Helpers\InitializesGoogleFactory;
 
     protected int $of;
 

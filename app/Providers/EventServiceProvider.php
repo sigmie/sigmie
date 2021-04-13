@@ -11,7 +11,6 @@ use App\Events\Cluster\ClusterWasDestroyed;
 use App\Events\Indexing\IndexingHasFailed;
 use App\Events\Newsletter\NewsletterSubscriptionWasCreated;
 use App\Listeners\Cluster\PollClusterState;
-use App\Listeners\Cluster\UpdateClusterStateToError;
 use App\Listeners\Indexing\CreateErrorActivity;
 use App\Listeners\Notifications\SendClusterDestroyedNotification;
 use App\Listeners\Notifications\SendClusterRunningNotification;
@@ -42,7 +41,6 @@ class EventServiceProvider extends ServiceProvider
             DispatchUserWasSubscribedEvent::class
         ],
         ClusterHasFailed::class => [
-            // UpdateClusterStateToError::class
         ],
         IndexingHasFailed::class => [
             CreateErrorActivity::class
@@ -55,13 +53,5 @@ class EventServiceProvider extends ServiceProvider
     public function shouldDiscoverEvents(): bool
     {
         return false;
-    }
-
-    /**
-     * Register any events for your application.
-     */
-    public function boot(): void
-    {
-        parent::boot();
     }
 }

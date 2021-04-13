@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
-use App\Traits\InitializesGoogleFactory;
 use Exception;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Support\Str;
 
 class ValidProvider implements Rule
 {
-    use InitializesGoogleFactory;
+    use \App\Helpers\InitializesGoogleFactory;
 
     /**
      * Determine if the validation rule passes.

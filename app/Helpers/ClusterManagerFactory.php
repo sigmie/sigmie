@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Helpers;
 
 use App\Models\Project;
-use App\Traits\InitializesGoogleFactory;
 use Exception;
 use Sigmie\App\Core\ClusterManager;
 use Sigmie\App\Core\Contracts\CloudFactory;
@@ -14,7 +13,7 @@ use Sigmie\App\Core\Contracts\DNSFactory;
 
 class ClusterManagerFactory
 {
-    use InitializesGoogleFactory;
+    use \App\Helpers\InitializesGoogleFactory;
 
     public function create(int $projectId): ClusterManagerInterface
     {
