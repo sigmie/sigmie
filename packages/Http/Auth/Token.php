@@ -15,13 +15,10 @@ final class Token implements Auth
         $this->token = $token;
     }
 
-    public function key(): string
+    public function keys(): array
     {
-        return 'headers';
-    }
-
-    public function value()
-    {
-        return ['Authorization' => "Bearer {$this->token}"];
+        return [
+            'headers' => ['Authorization' => "Bearer {$this->token}"]
+        ];
     }
 }

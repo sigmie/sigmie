@@ -34,7 +34,7 @@ class JSONClient implements JSONClientInterface
         ];
 
         if (is_null($auth) === false) {
-            $config[$auth->key()] = $auth->value();
+            $config = array_merge($config, $auth->keys());
         }
 
         $client = new GuzzleHttpClient($config);
