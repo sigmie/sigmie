@@ -16,7 +16,7 @@ class UniqueClusterName implements Rule
     public function passes($attribute, $name)
     {
         $externalClusters = ExternalCluster::where('name', $name)->get();
-        $internalClusters = Cluster::where('name', $name)->get();
+        $internalClusters = Cluster::withTrashed()->where('name', $name)->get();
 
         return $externalClusters->isEmpty() && $internalClusters->isEmpty();
     }

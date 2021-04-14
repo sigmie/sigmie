@@ -18,7 +18,7 @@ class Project extends Model
         throw new Exception('Project::clusters isn\'t a relationship.');
     }
 
-    public function getClustersAttribute($value)
+    public function getClustersAttribute()
     {
         $internal = $this->internalClusters()->get();
 

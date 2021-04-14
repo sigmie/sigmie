@@ -9,6 +9,7 @@ use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\Subscription;
 use App\Models\User;
+use Carbon\Carbon;
 
 trait WithDestroyedCluster
 {
@@ -24,7 +25,8 @@ trait WithDestroyedCluster
         $this->project = Project::factory()->create(['user_id' => $this->user->id]);
         $this->cluster = Cluster::factory()->create([
             'project_id' => $this->project->id,
-            'state' => Cluster::DESTROYED
+            'state' => Cluster::DESTROYED,
+            'deleted_at' => Carbon::now()
         ]);
 
         $this->project->internalClusters()->attach($this->cluster);

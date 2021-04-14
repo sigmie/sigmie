@@ -31,8 +31,6 @@ class ClusterPolicy
 
     /**
      * Check if the user already owns a project with a cluster
-     *
-     * TODO allow create new cluster for different project
      */
     public function create(User $user): bool
     {
