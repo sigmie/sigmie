@@ -16,6 +16,20 @@ class SettingsControllerTest extends TestCase
     /**
      * @test
      */
+    public function cluster_is_null_when_cluster_is_destroyed()
+    {
+        $this->withDestroyedCluster();
+
+        $this->actingAs($this->user);
+
+        $response = $this->get(route('settings', ['project' => $this->project->id]));
+
+        $this->assertNull($response->inertiaProps('cluster'));
+    }
+
+    /**
+     * @test
+     */
     public function index_has_cluster_state()
     {
         $this->withRunningExternalCluster();
@@ -45,6 +59,8 @@ class SettingsControllerTest extends TestCase
         $this->actingAs($this->user);
 
         $response = $this->get(route('settings', ['project' => $this->project->id]));
+
+        $response->assertOk();
 
         $response->assertInertiaHas('cluster', null);
         $response->assertInertiaHas(

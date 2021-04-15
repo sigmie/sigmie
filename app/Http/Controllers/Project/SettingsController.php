@@ -16,8 +16,10 @@ class SettingsController extends \App\Http\Controllers\Controller
     {
         $cluster = $project->clusters->first();
 
+        $cluster = ($cluster?->deleted_at) ? null : $cluster?->settingsData();
+
         return Inertia::render('project/settings/settings', [
-            'cluster' => $cluster?->settingsData(),
+            'cluster' => $cluster,
             'project' => $project->only(['id', 'name', 'description']),
         ]);
     }
