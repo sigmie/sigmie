@@ -79,6 +79,7 @@ jobs:
       run: |
           gcloud auth activate-service-account --key-file=service-account.json
           gcloud config set project sigmie
+          gcloud config set app/cloud_build_timeout 1000
 
     - name: Deploy to app-engine
       run: gcloud app deploy --stop-previous-version
