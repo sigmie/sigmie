@@ -24,7 +24,8 @@ services:
     depends_on:
       - redis
       - db
-    command: /usr/bin/php -d variables_order=EGPCS /var/www/app/artisan octane:start --server=swoole --host=0.0.0.0 --port=8080 --watch --workers=4
+    command: sleep infinity
+# /usr/bin/php -d variables_order=EGPCS /var/www/app/artisan octane:start --server=swoole --host=0.0.0.0 --port=8080 --watch --workers=4
 
   db:
     container_name: db
