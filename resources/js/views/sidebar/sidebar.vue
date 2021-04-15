@@ -146,7 +146,7 @@
 <script>
 import info from "./_info";
 import isUndefined from "lodash/isUndefined";
-import filter from 'lodash/filter'
+import filter from "lodash/filter";
 
 export default {
   props: ["sidebarState", "disabled"],
@@ -155,8 +155,10 @@ export default {
   },
   computed: {
     enabledItems: function () {
-      return filter(this.items, function(i) { return i.enabled });
-    }
+      return filter(this.items, function (i) {
+        return i.enabled;
+      });
+    },
   },
   data() {
     return {

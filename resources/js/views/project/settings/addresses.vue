@@ -150,6 +150,14 @@
                 </button>
               </td>
             </tr>
+            <tr v-if="ips.length === 0">
+              <td
+                colspan="3"
+                class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500"
+              >
+                You have no allowed addresses yet.
+              </td>
+            </tr>
             <tr>
               <td
                 colspan="3"
@@ -213,10 +221,9 @@ export default {
       this.createForm.post(route, {
         onSuccess: () => {
           this.createForm.reset();
+          this.closeCreateForm();
         },
       });
-
-      this.closeCreateForm();
     },
     update() {
       const route = this.$route("cluster.allowed-ips.update", {
