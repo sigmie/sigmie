@@ -138,6 +138,15 @@
     >
     </payment-update>
 
+    <div class="relative py-5">
+      <div class="absolute inset-0 flex items-center" aria-hidden="true">
+        <div class="w-full border-t border-gray-200"></div>
+      </div>
+      <div class="relative flex justify-center"></div>
+    </div>
+
+    <billing-address> </billing-address>
+
     <div
       v-if="data.was_subscribed && data.canceled === false"
       class="relative py-5"
@@ -188,6 +197,7 @@ import startCase from "lodash/startCase";
 import receipts from "./_receipts";
 import paymentUpdate from "./_payment-update";
 import renewSubscription from "./_renew-subscription";
+import billingAddress from "./_billing-address";
 
 export default {
   props: ["data"],
@@ -195,6 +205,7 @@ export default {
     receipts,
     paymentUpdate,
     renewSubscription,
+    billingAddress,
   },
   data() {
     return {

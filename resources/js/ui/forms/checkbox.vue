@@ -13,7 +13,7 @@
       @focus="$emit('touch', $event.target.value)"
       class="h-4 w-4 text-theme-orange-light-800 border-gray-300 rounded"
     />
-    <label v-if="label" :for="id" class="ml-2 block text-sm text-gray-900">{{ label }}</label>
+    <label v-if="label" :for="id" class="ml-2 block text-sm text-gray-800">{{ label }}</label>
     <slot />
   </div>
 </template>

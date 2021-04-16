@@ -69,6 +69,7 @@ export const bootstrap = async () => {
   Vue.component('loader', require('./ui/essentials/loader').default)
   Vue.component('link-default', require('./ui/link/default').default)
   Vue.component('icon-sigmie', require('./ui/icons/sigmie').default)
+  Vue.component('icon-loading', require('./ui/icons/loading').default)
   Vue.component('icon-link', require('./ui/icons/link').default)
   Vue.component('icon-globe', require('./ui/icons/globe').default)
   Vue.component('icon-x', require('./ui/icons/x').default)

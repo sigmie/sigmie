@@ -17,7 +17,8 @@ class SettingsController extends Controller
 
         $data = [
             'subscription' => $this->subscriptionData($user),
-            'account' => $user->only(['username', 'email', 'avatar_url', 'created_at', 'id'])
+            'account' => $user->only(['username', 'email', 'avatar_url', 'created_at', 'id']),
+            'notifications' => 'some data'
         ];
 
         return Inertia::render('user/settings/settings', ['section' => $section, 'data' => $data[$section]]);

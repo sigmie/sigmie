@@ -19,6 +19,7 @@ import App from "../../layouts/app";
 import navigation from "./_navigation";
 import account from "./_account";
 import subscription from "./_subscription";
+import notifications from "./_notifications";
 
 export default {
   props: ["section", "data"],
@@ -27,6 +28,7 @@ export default {
     navigation,
     account,
     subscription,
+    notifications
   },
 };
 </script>
