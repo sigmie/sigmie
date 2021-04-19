@@ -49,6 +49,13 @@
               >
             </inertia-link>
           </nav>
+
+          <divider></divider>
+
+          <secondary-links></secondary-links>
+
+          <tail> </tail>
+
         </div>
       </div>
     </div>
@@ -137,6 +144,13 @@
               >
             </inertia-link>
           </nav>
+
+          <divider></divider>
+
+          <secondary-links></secondary-links>
+
+          <tail> </tail>
+
         </div>
       </div>
     </div>
@@ -147,11 +161,19 @@
 import info from "./_info";
 import isUndefined from "lodash/isUndefined";
 import filter from "lodash/filter";
+import tail from "./_tail";
+import secondaryLinks from "./_secondary-links";
+import divider from "./_divider";
+import primaryLinks from "./_primary-links";
 
 export default {
   props: ["sidebarState", "disabled"],
   components: {
     info,
+    tail,
+    secondaryLinks,
+    primaryLinks,
+    divider
   },
   computed: {
     enabledItems: function () {
@@ -163,6 +185,16 @@ export default {
   data() {
     return {
       path: "",
+
+      secondaryItems: [
+        {
+          enabled: true,
+          text: "Notifications",
+          name: "settings",
+          routeParams: [],
+          icon: "chat",
+        },
+      ],
       items: [
         {
           enabled: true,
@@ -188,18 +220,6 @@ export default {
             text: "Beta",
             color: "blue",
           },
-        },
-        {
-          enabled: true,
-          text: "Settings",
-          name: "settings",
-          routeParams: {
-            project:
-              this.$page.props.project_id === null
-                ? ""
-                : this.$page.props.project_id,
-          },
-          icon: "cog",
         },
       ],
     };
