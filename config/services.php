@@ -58,5 +58,10 @@ return [
         'vendor_id' => env('PADDLE_VENDOR_ID'),
         'plan_id' => env('PADDLE_PLAN_ID'),
         'plan_name' => 'hobby'
+    ],
+    'elasticsearch' => [
+        'host' => env('ES_HOST'),
+        'port' => env('ES_PORT'),
+        'auth' => 'none'
     ]
 ];

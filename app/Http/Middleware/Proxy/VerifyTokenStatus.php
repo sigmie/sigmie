@@ -34,7 +34,7 @@ class VerifyTokenStatus
             return $next($request);
         }
 
-        return response()->json(['message' => 'Inactive token.'], 403);
+        return response()->json(['error' => 403, 'status' => 'Inactive token.'], 403);
     }
 
     private function isSearchTokenRequest(): bool

@@ -182,7 +182,7 @@ return [
         App\Providers\HorizonServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\MailingListServiceProvider::class,
-        App\Providers\SigmieServiceProvider::class,
+        App\Providers\ElasticsearchServiceProvider::class,
         App\Providers\SigmieCoreServiceProvider::class,
     ],
 

@@ -38,7 +38,7 @@ class VerifyTokenPermissions
             return $next($request);
         }
 
-        return response()->json(['message' => 'Unauthorized token type.'], 403);
+        return response()->json(['error' => 403, 'status' => 'Unauthorized token type.'], 403);
     }
 
     private function isAdminTokenRequest(): bool

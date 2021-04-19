@@ -1,26 +1,29 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Jobs\Proxy;
 
+use App\Services\ElasticsearchService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class SaveProxyRequest implements ShouldQueue
-{
+class SaveProxyRequest implements ShouldQueue {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * Create a new job instance.
-     *
-     * @return void
-     */
+    private array $request;
+
+    private array $response;
+
     public function __construct(
-        protected $response,
-        protected $request,
+        array $data,
+        private int $clusterId
     ) {
+        $this->request = $data['request'];
+        $this->response = $data['response'];
     }
 
     /**
@@ -28,9 +31,12 @@ class SaveProxyRequest implements ShouldQueue
      *
      * @return void
      */
-    public function handle()
+    public function handle(ElasticsearchService $elasticsearch)
     {
-        ray($this->response);
-        ray($this->request);
+        $elasticsearch->add([
+            'cluster' => $this->clusterId,
+            'request' => $this->request,
+            'response' => $this->response,
+        ]);
     }
 }

@@ -4,20 +4,29 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware\Proxy;
 
+use App\Helpers\ProxyRequestResponse;
 use App\Jobs\Proxy\SaveProxyRequest;
 use Closure;
 
 class SaveRequestStats
 {
-    /**
-     * @param  \Illuminate\Http\Request  $request
-     */
+    public function __construct(private ProxyRequest $proxyRequest)
+    {
+    }
     public function handle($request, Closure $next)
     {
-        $response = $next($request);
+        return $next($request);
+    }
 
-        dispatch(new SaveProxyRequest($response, $request))->afterResponse();
+    public function terminate($request, $response)
+    {
+        $data = new ProxyRequestResponse($request, $response);
 
-        return $response;
+        dispatch(
+            new SaveProxyRequest(
+                $data(),
+                $this->proxyRequest->cluster()->id
+            )
+        );
     }
 }

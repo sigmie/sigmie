@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Http\Controllers\Cluster\TokenController;
+use App\Jobs\Proxy\SaveProxyRequest;
 use App\Models\Cluster;
+use Illuminate\Support\Facades\Bus;
 use Sigmie\Testing\Laravel\ClearIndices;
 use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
@@ -32,6 +34,26 @@ class ProxyControllerTest extends TestCase
 
         $this->adminToken = $this->cluster->createToken(TokenController::ADMIN, ['*'])->plainTextToken;
         $this->searchToken = $this->cluster->createToken(TokenController::SEARCH_ONLY, ['search'])->plainTextToken;
+    }
+
+    /**
+     * @test
+     */
+    public function foo()
+    {
+        $this->get(route('proxy'), ['Authorization' => "Bearer {$this->adminToken}"]);
+    }
+
+    /**
+     * @test
+     */
+    public function save_request_has_been_dispatched()
+    {
+        Bus::fake();
+
+        $this->get(route('proxy'), ['Authorization' => "Bearer {$this->adminToken}"]);
+
+        Bus::assertDispatched(SaveProxyRequest::class);
     }
 
     /**

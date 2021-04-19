@@ -29,15 +29,15 @@ class VerifyClusterState
         }
 
         if ($this->clusterIsCreating()) {
-            return response()->json(['message' => 'Cluster not ready yet.'], $code);
+            return response()->json(['error' => $code, 'status' => 'Cluster not ready.'], $code);
         }
 
         if ($this->clusterIsDestroyed()) {
-            return response()->json(['message' => 'Cluster destroyed.'], $code);
+            return response()->json(['error' => $code, 'status' => 'Cluster destroyed.'], $code);
         }
 
         if ($this->clusterHasFailed()) {
-            return response()->json(['message' => 'Cluster has failed.'], $code);
+            return response()->json(['error' => $code, 'status' => 'Cluster failed.'], $code);
         }
 
         throw new Exception('Cluster has an invalid state.');
