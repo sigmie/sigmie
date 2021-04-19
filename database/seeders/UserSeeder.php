@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 class UserSeeder extends Seeder
 {
     public static $userId = 1;
+
     /**
      * Run the database seeds.
      *
@@ -17,6 +19,10 @@ class UserSeeder extends Seeder
      */
     public function run()
     {
+        if (User::find(self::$userId) !== null) {
+            return;
+        }
+
         DB::table('users')->insert([
             'id' => self::$userId,
             'email' => 'nico@sigmie.com',

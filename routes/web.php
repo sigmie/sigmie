@@ -31,6 +31,7 @@ use App\Http\Controllers\Landing\LandingController;
 use App\Http\Controllers\Legal\LegalController;
 use App\Http\Controllers\Newsletter\SubscriptionConfirmationController;
 use App\Http\Controllers\Newsletter\SubscriptionController as NewsletterSubscriptionController;
+use App\Http\Controllers\Notifications\NotificationController;
 use App\Http\Controllers\Project\ProjectController;
 use App\Http\Controllers\Project\SettingsController as ProjectSettingsController;
 use App\Http\Controllers\Subscription\SubscriptionController;
@@ -113,6 +114,7 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
     Route::put('/user/password/{user}', [PasswordController::class, 'update'])->name('user.password.update');
     Route::delete('/user/{user}', [UserController::class, 'destroy'])->name('user.destroy');
 
+    Route::get('/notification', [NotificationController::class, 'list'])->name('notification.list');
 
     Route::group(['middleware' => [
         RedirectToRenewSubscriptionIfNotSubscribed::class,

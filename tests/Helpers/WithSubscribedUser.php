@@ -6,6 +6,7 @@ namespace Tests\Helpers;
 
 use App\Models\Subscription;
 use App\Models\User;
+use Database\Seeders\UserSeeder;
 
 trait WithSubscribedUser
 {
@@ -13,6 +14,9 @@ trait WithSubscribedUser
 
     private function withSubscribedUser()
     {
-        $this->user = Subscription::factory()->create()->billable;
+        $seeder = new UserSeeder();
+        $seeder->run();
+
+        $this->user = User::find(UserSeeder::$userId);
     }
 }

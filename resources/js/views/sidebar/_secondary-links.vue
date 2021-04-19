@@ -39,7 +39,7 @@ export default {
         {
           enabled: true,
           text: "Notifications",
-          name: "settings",
+          name: "notification.list",
           routeParams: [],
           icon: "chat",
         },

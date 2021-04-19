@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Notifications;
 use App\Events\Notifications\NotificationWasRead;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class NotificationController extends \App\Http\Controllers\Controller
 {
@@ -19,6 +20,11 @@ class NotificationController extends \App\Http\Controllers\Controller
             ->where('created_at', '>', $beforeOneWeek)
             ->sortByDesc('created_at')
             ->toArray();
+    }
+
+    public function list()
+    {
+        return Inertia::render('notification/list');
     }
 
     public function show($id)

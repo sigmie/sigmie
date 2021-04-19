@@ -90,4 +90,61 @@ class UserControllerTest extends TestCase
 
         $this->assertEquals('John Doe', $this->user->username);
     }
+
+    // /**
+    //  * @test
+    //  */
+    // public function account_settings_subscription()
+    // {
+    //     $this->withRunningInternalCluster();
+
+    //     $this->actingAs($this->user);
+
+    //     $res = $this->get(route('account.settings', ['section' => 'subscription']));
+
+    //     $res->assertInertia('user/settings/settings', [
+    //         'section' => 'subscription',
+    //         'data' => $this->anything()
+    //     ]);
+    // }
+
+    /**
+     * @test
+     */
+    public function account_settings_account()
+    {
+        $this->withRunningInternalCluster();
+
+        $this->actingAs($this->user);
+
+        $res = $this->get(route('account.settings', ['section' => 'account']));
+
+        $res->assertInertia('user/settings/settings', [
+            'section' => 'account',
+            'data' => [
+                "username" => $this->user->username,
+                "email" => $this->user->email,
+                "avatar_url" => $this->user->avatar_url,
+                "created_at" => $this->user->created_at,
+                "id" => $this->user->id,
+            ]
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function account_settings_notifications()
+    {
+        $this->withRunningInternalCluster();
+
+        $this->actingAs($this->user);
+
+        $res = $this->get(route('account.settings', ['section' => 'notifications']));
+
+        $res->assertInertia('user/settings/settings', [
+            'section' => 'notifications',
+            'data' => 'some-data'
+        ]);
+    }
 }

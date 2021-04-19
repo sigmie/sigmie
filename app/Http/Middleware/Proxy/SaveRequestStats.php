@@ -22,11 +22,11 @@ class SaveRequestStats
     {
         $data = new ProxyRequestResponse($request, $response);
 
-        dispatch(
-            new SaveProxyRequest(
-                $data(),
-                $this->proxyRequest->cluster()->id
-            )
-        );
+        // dispatch(
+        //     new SaveProxyRequest(
+        //         $data(),
+        //         $this->proxyRequest->cluster()->id
+        //     )
+        // );
     }
 }

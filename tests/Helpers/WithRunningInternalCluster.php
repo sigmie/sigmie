@@ -9,6 +9,7 @@ use App\Models\Cluster;
 use App\Models\Project;
 use App\Models\Subscription;
 use App\Models\User;
+use Database\Seeders\UserSeeder;
 
 trait WithRunningInternalCluster
 {
@@ -21,7 +22,10 @@ trait WithRunningInternalCluster
     private function withRunningInternalCluster(User $user = null)
     {
         if (is_null($user)) {
-            $user = Subscription::factory()->create()->billable;
+            $userSeeder = new UserSeeder;
+            $userSeeder->run();
+
+            $user = User::find($userSeeder::$userId);
         }
 
         $this->user = $user;
