@@ -25,7 +25,7 @@ class UserControllerTest extends TestCase
     public function destroy()
     {
         $this->withSubscribedUser();
-        $this->withIndexingPlan($this->user);
+        $this->witUserSeederlan($this->user);
 
         $this->actingAs($this->user);
 

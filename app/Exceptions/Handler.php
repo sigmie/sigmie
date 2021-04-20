@@ -59,7 +59,7 @@ class Handler extends ExceptionHandler
     protected function unauthenticated($request, AuthenticationException $exception)
     {
         return $request->expectsJson() || $this->isProxyRequest($request)
-            ? response()->json(['message' => $exception->getMessage()], 401)
+            ? response()->json(['error' => 401, 'status' => $exception->getMessage()], 401)
             : redirect()->guest($exception->redirectTo() ?? route('sign-in'));
     }
 }

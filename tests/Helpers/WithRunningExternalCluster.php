@@ -9,6 +9,7 @@ use App\Models\ExternalCluster;
 use App\Models\Project;
 use App\Models\Subscription;
 use App\Models\User;
+use Database\Seeders\UserSeeder;
 
 trait WithRunningExternalCluster
 {
@@ -21,7 +22,11 @@ trait WithRunningExternalCluster
     private function withRunningExternalCluster(User $user = null)
     {
         if (is_null($user)) {
-            $user = Subscription::factory()->create()->billable;
+
+            $userSeeder = new UserSeeder;
+            $userSeeder->run();
+
+            $user = User::find($userSeeder::$userId);
         }
 
         $this->user = $user;

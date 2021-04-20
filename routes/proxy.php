@@ -19,7 +19,6 @@ Route::any('/{endpoint?}', ProxyController::class)
     ->where('endpoint', '.*')
     ->name('proxy')
     ->middleware([
-        \App\Http\Middleware\Proxy\FormatUnauthenticatedResponse::class,
         \App\Http\Middleware\Proxy\HandleProxyCors::class,
         'auth:sanctum',
         \App\Http\Middleware\Proxy\ProxyRequest::class,

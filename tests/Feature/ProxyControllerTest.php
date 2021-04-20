@@ -55,8 +55,6 @@ class ProxyControllerTest extends TestCase
      */
     public function proxy_returns_unauthenticated_without_token()
     {
-        $this->markTestSkipped();
-
         $this->get(route('proxy'), [])
             ->assertJson([
                 "error" => 401,
