@@ -10,13 +10,16 @@ use App\Models\User;
 
 trait WithProject
 {
+    use WithSubscribedUser;
+
     private User $user;
 
     private Project $project;
 
     private function withProject()
     {
-        $this->user = Subscription::factory()->create()->billable;
+        $this->withSubscribedUser();
+
         $this->project = Project::factory()->create(['user_id' => $this->user->id]);
     }
 }

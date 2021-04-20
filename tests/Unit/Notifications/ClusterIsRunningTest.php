@@ -5,33 +5,26 @@ declare(strict_types=1);
 namespace Tests\Unit\Notifications;
 
 use App\Notifications\Cluster\ClusterIsRunning;
-use Tests\Helpers\WithNotifiableMock;
+use Tests\Helpers\WithRunningInternalCluster;
+use Tests\Helpers\WithSubscribedUser;
 use Tests\TestCase;
 
 class ClusterIsRunningTest extends TestCase
 {
-    use WithNotifiableMock;
+    use WithRunningInternalCluster;
 
     /**
      * @var ClusterIsRunning
      */
     private $notification;
 
-    /**
-     * @var string
-     */
-    private $clusterName = 'bar';
-
-    /**
-     * @var string
-     */
-    private $projectName = 'foo';
-
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->notification = new ClusterIsRunning($this->clusterName, $this->projectName);
+        $this->withRunningInternalCluster();
+
+        $this->notification = new ClusterIsRunning($this->cluster->name, $this->project->name);
     }
 
     /**
@@ -39,7 +32,7 @@ class ClusterIsRunningTest extends TestCase
      */
     public function notification_via_broadcast_and_database()
     {
-        $this->assertEquals(['broadcast', 'database'], $this->notification->via($this->withNotifiableMock()));
+        $this->assertEquals(['broadcast', 'database'], $this->notification->via($this->user));
     }
 
     /**
@@ -49,10 +42,10 @@ class ClusterIsRunningTest extends TestCase
     {
         $values = [
             'title' => 'Cluster',
-            'body' => "Your cluster <b>bar</b> is up and running.",
-            'project' => 'foo'
+            'body' => "Your cluster <b>{$this->cluster->name}</b> is up and running.",
+            'project' => $this->project->name
         ];
 
-        $this->assertEquals($values, $this->notification->toArray($this->withNotifiableMock()));
+        $this->assertEquals($values, $this->notification->toArray($this->user));
     }
 }

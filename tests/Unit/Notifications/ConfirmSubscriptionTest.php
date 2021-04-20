@@ -7,12 +7,12 @@ namespace Tests\Unit\Notifications;
 use App\Notifications\Newsletter\ConfirmSubscription;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\URL;
-use Tests\Helpers\WithNotifiableMock;
+use Tests\Helpers\WithSubscribedUser;
 use Tests\TestCase;
 
 class ConfirmSubscriptionTest extends TestCase
 {
-    use WithNotifiableMock;
+    use WithSubscribedUser;
 
     /**
      * @var ConfirmSubscription
@@ -23,6 +23,8 @@ class ConfirmSubscriptionTest extends TestCase
     {
         parent::setUp();
 
+        $this->withSubscribedUser();
+
         $this->notification = new ConfirmSubscription();
     }
 
@@ -31,7 +33,7 @@ class ConfirmSubscriptionTest extends TestCase
      */
     public function notification_via_mail()
     {
-        $this->assertEquals(['mail'], $this->notification->via($this->withNotifiableMock()));
+        $this->assertEquals(['mail'], $this->notification->via($this->user));
     }
 
     /**
@@ -39,8 +41,6 @@ class ConfirmSubscriptionTest extends TestCase
      */
     public function to_mail()
     {
-        $this->withNotifiableMock();
-
         URL::shouldReceive('temporarySignedRoute')->andReturn('some-link');
 
         $expected = (new MailMessage())
@@ -48,6 +48,6 @@ class ConfirmSubscriptionTest extends TestCase
             ->line('Please click the button below to confirm your newsletter subscription.')
             ->action('Confirm newsletter subscription', 'some-link');
 
-        $this->assertEquals($expected, $this->notification->toMail($this->notifiableMock));
+        $this->assertEquals($expected, $this->notification->toMail($this->user));
     }
 }

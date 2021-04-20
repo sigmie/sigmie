@@ -5,28 +5,27 @@ declare(strict_types=1);
 namespace Tests\Unit\Notifications;
 
 use App\Notifications\Cluster\ClusterWasDestroyed;
-use PHPUnit\Framework\TestCase;
-use Tests\Helpers\WithNotifiableMock;
+use Tests\Helpers\WithDestroyedCluster;
+use Tests\TestCase;
+
 
 class ClusterWasDestroyedTest extends TestCase
 {
-    use WithNotifiableMock;
+    use WithDestroyedCluster;
 
     /**
      * @var ClusterWasDestroyed
      */
     private $notification;
 
-    /**
-     * @var string
-     */
-    private $projectName = 'foo';
 
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->notification = new ClusterWasDestroyed($this->projectName);
+        $this->withDestroyedCluster();
+
+        $this->notification = new ClusterWasDestroyed($this->project->name);
     }
 
     /**
@@ -34,7 +33,7 @@ class ClusterWasDestroyedTest extends TestCase
      */
     public function notification_via_broadcast_and_database()
     {
-        $this->assertEquals(['broadcast', 'database'], $this->notification->via($this->withNotifiableMock()));
+        $this->assertEquals(['broadcast', 'database'], $this->notification->via($this->user));
     }
 
     /**
@@ -45,9 +44,9 @@ class ClusterWasDestroyedTest extends TestCase
         $values = [
             'title' => 'Cluster',
             'body' => "Your cluster has been destroyed.",
-            'project' => 'foo'
+            'project' => $this->project->name
         ];
 
-        $this->assertEquals($values, $this->notification->toArray($this->withNotifiableMock()));
+        $this->assertEquals($values, $this->notification->toArray($this->user));
     }
 }

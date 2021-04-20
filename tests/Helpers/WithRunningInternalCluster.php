@@ -13,22 +13,18 @@ use Database\Seeders\UserSeeder;
 
 trait WithRunningInternalCluster
 {
+    use WithSubscribedUser;
+
     private User $user;
 
     private Project $project;
 
     private AbstractCluster $cluster;
 
-    private function withRunningInternalCluster(User $user = null)
+    private function withRunningInternalCluster()
     {
-        if (is_null($user)) {
-            $userSeeder = new UserSeeder;
-            $userSeeder->run();
+        $this->withSubscribedUser();
 
-            $user = User::find($userSeeder::$userId);
-        }
-
-        $this->user = $user;
         $this->project = Project::factory()->create(['user_id' => $this->user->id]);
         $this->cluster = Cluster::factory()->create(['project_id' => $this->project->id]);
 
