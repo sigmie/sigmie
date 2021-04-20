@@ -7,9 +7,7 @@ namespace Tests\Helpers;
 use App\Models\AbstractCluster;
 use App\Models\Cluster;
 use App\Models\Project;
-use App\Models\Subscription;
 use App\Models\User;
-use Database\Seeders\UserSeeder;
 
 trait WithRunningInternalCluster
 {

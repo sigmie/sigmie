@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Newsletter;
 
-use App\Events\Newsletter\NewsletterSubscriptionWasCreated;
-use App\Models\NewsletterSubscription;
-use Illuminate\Support\Facades\Event;
 use Tests\Helpers\WithRunningInternalCluster;
 use Tests\TestCase;
 

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Helpers;
 
 use App\Models\Project;
-use App\Models\Subscription;
 use App\Models\User;
 
 trait WithProject

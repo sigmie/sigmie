@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Helpers\ProxyCert;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Http\JSONClient;
-use Sigmie\Base\Http\Connection;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Index\Index;
 

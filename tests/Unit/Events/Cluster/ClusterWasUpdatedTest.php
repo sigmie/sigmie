@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Events\Cluster;
 
-use App\Events\Cluster\ClusterWasDestroyed;
 use App\Events\Cluster\ClusterWasUpdated;
 use Illuminate\Broadcasting\PrivateChannel;
-use Tests\Helpers\WithDestroyedCluster;
 use Tests\Helpers\WithRunningInternalCluster;
 use Tests\TestCase;
 

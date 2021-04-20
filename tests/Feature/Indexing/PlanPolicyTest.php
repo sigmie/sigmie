@@ -7,8 +7,8 @@ namespace Tests\Feature\Indexing;
 use App\Http\Middleware\Redirects\RedirectToRenewSubscriptionIfNotSubscribed;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\Helpers\WithNotSubscribedUser;
-use Tests\Helpers\WithRunningExternalCluster;
 use Tests\Helpers\WithRunningClusterAndExpiredSubscription;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class PlanPolicyTest extends TestCase

@@ -6,7 +6,6 @@ namespace Tests\Unit\Notifications;
 
 use App\Notifications\Cluster\ClusterIsRunning;
 use Tests\Helpers\WithRunningInternalCluster;
-use Tests\Helpers\WithSubscribedUser;
 use Tests\TestCase;
 
 class ClusterIsRunningTest extends TestCase

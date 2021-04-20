@@ -6,6 +6,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Receipt;
+use Exception;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -19,6 +20,7 @@ class SettingsController extends Controller
             'subscription' => $this->subscriptionData($user),
             'account' => $user->only(['username', 'email', 'avatar_url', 'created_at', 'id']),
             'notifications' => 'some-data',
+            default => throw new Exception("Section {$section} doesn't exist.")
         };
 
         return Inertia::render('user/settings/settings', ['section' => $section, 'data' => $data]);

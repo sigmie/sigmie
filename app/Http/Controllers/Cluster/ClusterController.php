@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Cluster;
 
+use function App\Helpers\app_core_version;
 use App\Http\Requests\Cluster\StoreCluster;
 use App\Http\Requests\Cluster\UpdateCluster;
 use App\Jobs\Cluster\CreateCluster;
 use App\Jobs\Cluster\DestroyCluster;
 use App\Models\Cluster;
 use App\Models\Project;
+
 use App\Models\Region;
-use App\Repositories\RegionRepository;
 
 use Inertia\Inertia;
-
-use function App\Helpers\app_core_version;
 
 class ClusterController extends \App\Http\Controllers\Controller
 {

@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Exceptions\IndexingException;
-use App\Models\FileType;
-use ErrorException;
-use Illuminate\Support\Facades\Storage;
-use Sigmie\Base\Documents\Document;
-
 use function App\Helpers\is_json;
 use function App\Helpers\temp_file_path;
+use App\Models\FileType;
+use ErrorException;
+
+use Illuminate\Support\Facades\Storage;
+use Sigmie\Base\Documents\Document;
 
 class FileIndexer extends BaseIndexer
 {

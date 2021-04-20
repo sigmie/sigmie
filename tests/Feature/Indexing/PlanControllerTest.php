@@ -9,8 +9,8 @@ use App\Models\IndexingPlan;
 use Carbon\Carbon;
 use Tests\Helpers\WithIndexingPlan;
 use Tests\Helpers\WithNotSubscribedUser;
-use Tests\Helpers\WithRunningExternalCluster;
 use Tests\Helpers\WithRunningClusterAndExpiredSubscription;
+use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class PlanControllerTest extends TestCase

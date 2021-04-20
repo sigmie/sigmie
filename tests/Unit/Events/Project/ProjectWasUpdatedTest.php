@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Unit\Events\Project;
 
 use App\Events\Project\ProjectWasUpdated;
-use App\Events\Subscription\UserWasSubscribed;
 use Illuminate\Broadcasting\PrivateChannel;
 use Tests\Helpers\WithProject;
 use Tests\TestCase;

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Helpers;
 
-use App\Models\Subscription;
 use App\Models\User;
-use Database\Seeders\UserSeeder;
 use Illuminate\Support\Facades\DB;
 
 trait WithPaddleSubscribedUser

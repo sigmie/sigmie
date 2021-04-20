@@ -6,7 +6,6 @@ namespace Tests\Helpers;
 
 use App\Models\Subscription;
 use App\Models\User;
-use Database\Seeders\UserSeeder;
 
 trait WithSubscribedUser
 {
