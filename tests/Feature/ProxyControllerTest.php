@@ -30,6 +30,8 @@ class ProxyControllerTest extends TestCase
     {
         parent::setUp();
 
+        Bus::fake();
+
         $this->withRunningExternalCluster();
 
         $this->adminToken = $this->cluster->createToken(TokenController::ADMIN, ['*'])->plainTextToken;
@@ -41,10 +43,6 @@ class ProxyControllerTest extends TestCase
      */
     public function save_request_has_been_dispatched()
     {
-        $this->markTestSkipped('Need to fix ');
-
-        Bus::fake();
-
         $this->get(route('proxy'), ['Authorization' => "Bearer {$this->adminToken}"]);
 
         Bus::assertDispatched(SaveProxyRequest::class);
@@ -60,6 +58,8 @@ class ProxyControllerTest extends TestCase
                 "error" => 401,
                 'status' => 'Unauthenticated.'
             ]);
+
+        Bus::assertNotDispatched(SaveProxyRequest::class);
     }
 
     /**

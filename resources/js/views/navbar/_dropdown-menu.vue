@@ -1,6 +1,6 @@
 <template>
   <div
-    v-on-clickaway="()=> $emit('away')"
+    v-on-clickaway="() => $emit('away')"
     class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg"
   >
     <div class="py-1 rounded-md bg-white ring-1 ring-black ring-opacity-5">
@@ -11,35 +11,51 @@
         v-if="!$page.props.projects || $page.props.projects.length === 0"
         :disabled="true"
         class="block px-4 py-2 text-sm text-gray-300 cursor-default"
-      >- no project -</inertia-link>
+        >- no project -</inertia-link
+      >
       <inertia-link
         v-for="(project, index) in $page.props.projects"
         :key="index"
-        :href="$route('dashboard',{project: project.id})"
+        :href="$route('dashboard', { project: project.id })"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
-      >{{ project.name }}</inertia-link>
+        >{{ project.name }}</inertia-link
+      >
       <div class="border-t border-gray-100"></div>
       <inertia-link
         :href="$route('account.settings')"
         class="text-xs text-gray-300 font-semibold pl-4 pt-2 pb-1"
-      >SETTINGS</inertia-link>
+        >SETTINGS</inertia-link
+      >
       <inertia-link
-        :href="$route('account.settings',{ section:'account',project_id: $page.props.project_id })"
+        :href="
+          $route('account.settings', {
+            section: 'account',
+            project_id: $page.props.project_id,
+          })
+        "
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
-      >Account</inertia-link>
+        >Account</inertia-link
+      >
       <!-- <inertia-link
         :href="$route('account.settings',{ section:'general' })"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
       >General</inertia-link>-->
       <inertia-link
-        :href="$route('account.settings',{ section:'subscription',project_id: $page.props.project_id })"
+        :href="
+          $route('account.settings', {
+            section: 'subscription',
+            project_id: $page.props.project_id,
+          })
+        "
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
-      >Subscription</inertia-link>
+        >Subscription</inertia-link
+      >
 
-      <!-- <inertia-link
-        :href="$route('account.settings',{ section:'notifications' })"
+      <inertia-link
+        :href="$route('account.settings', { section: 'notifications' })"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition ease-in-out duration-150"
-      >Notifications</inertia-link>-->
+        >Notifications</inertia-link
+      >
 
       <a
         href="https://docs.sigmie.com/app"
