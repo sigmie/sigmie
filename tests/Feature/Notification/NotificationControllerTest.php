@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Newsletter;
+namespace Tests\Feature\Notification;
 
 use Tests\Helpers\WithRunningInternalCluster;
 use Tests\TestCase;
