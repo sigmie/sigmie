@@ -11,21 +11,21 @@ use Laravel\Paddle\Cashier;
 use Mockery\MockInterface;
 use Sigmie\App\Core\DNS\Contracts\Provider as DNSProvider;
 use Tests\Helpers\WithIndexingPlan;
+use Tests\Helpers\WithPaddleSubscribedUser;
 use Tests\Helpers\WithRunningInternalCluster;
 use Tests\Helpers\WithSubscribedUser;
 use Tests\TestCase;
 
 class UserControllerTest extends TestCase
 {
-    use WithSubscribedUser, WithRunningInternalCluster, WithIndexingPlan;
+    use WithSubscribedUser, WithRunningInternalCluster, WithIndexingPlan, WithPaddleSubscribedUser;
 
     /**
      * @test
      */
     public function destroy()
     {
-        $this->withSubscribedUser();
-        $this->witUserSeederlan($this->user);
+        $this->withRunningInternalCluster();
 
         $this->actingAs($this->user);
 
@@ -91,22 +91,21 @@ class UserControllerTest extends TestCase
         $this->assertEquals('John Doe', $this->user->username);
     }
 
-    // /**
-    //  * @test
-    //  */
-    // public function account_settings_subscription()
-    // {
-    //     $this->withRunningInternalCluster();
+    /**
+     * @test
+     */
+    public function account_settings_subscription()
+    {
+        $this->withPaddleSubscribedUser();
 
-    //     $this->actingAs($this->user);
+        $this->actingAs($this->user);
 
-    //     $res = $this->get(route('account.settings', ['section' => 'subscription']));
+        $res = $this->get(route('account.settings', ['section' => 'subscription']));
 
-    //     $res->assertInertia('user/settings/settings', [
-    //         'section' => 'subscription',
-    //         'data' => $this->anything()
-    //     ]);
-    // }
+        $res->assertInertia('user/settings/settings');
+        $res->assertInertiaHas('section');
+        $res->assertInertiaHas('data');
+    }
 
     /**
      * @test

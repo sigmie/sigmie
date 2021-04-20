@@ -26,10 +26,10 @@ use Tightenco\Ziggy\Ziggy as Routes;
 
 Route::get('/routes', fn () => response()->json(new Routes()));
 
-Route::get('/notification', [NotificationController::class, 'index'])->name('notification.index');
-Route::post('/notification', [NotificationController::class, 'store'])->name('notification.store');
-Route::get('/notification/{notification}', [NotificationController::class, 'show'])->name('notification.get');
-Route::put('/notification/{notification}', [NotificationController::class, 'update'])->name('notification.update');
+Route::get('/notification', [NotificationController::class, 'index'])->name('notification.index')->middleware('auth');
+Route::post('/notification', [NotificationController::class, 'store'])->name('notification.store')->middleware('auth');
+Route::get('/notification/{notification}', [NotificationController::class, 'show'])->name('notification.get')->middleware('auth');
+Route::put('/notification/{notification}', [NotificationController::class, 'update'])->name('notification.update')->middleware('auth');
 
 Route::get('/cluster/validate/name/{name}', [ClusterValidationController::class, 'name'])->name('cluster.validate.name');
 

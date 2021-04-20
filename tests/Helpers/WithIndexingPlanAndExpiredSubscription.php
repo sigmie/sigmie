@@ -7,15 +7,15 @@ namespace Tests\Helpers;
 use App\Models\IndexingPlan;
 use App\Models\User;
 
-trait WithIndexingPlan
+trait WithIndexingPlanAndExpiredSubscription
 {
-    use WithRunningExternalCluster;
+    use WithRunningClusterAndExpiredSubscription;
 
     private IndexingPlan $indexingPlan;
 
-    private function withIndexingPlan()
+    private function withIndexingPlanAndExpiredSubscription()
     {
-        $this->withRunningExternalCluster();
+        $this->withRunningClusterAndExpiredSubscription();
 
         $this->indexingPlan = IndexingPlan::factory()->create([
             'cluster_id' => $this->cluster->id,

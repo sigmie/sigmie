@@ -14,10 +14,6 @@ trait WithSubscribedUser
 
     private function withSubscribedUser()
     {
-        $seeder = new UserSeeder();
-        $seeder->run();
-
-        // $this->user = Subscription::factory()->create()->billable;
-        $this->user = User::find(UserSeeder::$userId);
+        $this->user = Subscription::factory()->create()->billable;
     }
 }

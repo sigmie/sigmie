@@ -8,10 +8,13 @@ use App\Jobs\Notifications\CleanNotifications;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Tests\Fakes\FakeNotification;
+use Tests\Helpers\WithSubscribedUser;
 use Tests\TestCase;
 
 class NotificationTest extends TestCase
 {
+    use WithSubscribedUser;
+
     /**
      * @test
      */

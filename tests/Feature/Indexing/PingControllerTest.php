@@ -9,13 +9,14 @@ use App\Models\IndexingPlan;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Queue;
 use Tests\Helpers\WithIndexingPlan;
+use Tests\Helpers\WithIndexingPlanAndExpiredSubscription;
 use Tests\Helpers\WithNotSubscribedUser;
 use Tests\Helpers\WithRunningExternalCluster;
 use Tests\TestCase;
 
 class PingControllerTest extends TestCase
 {
-    use WithRunningExternalCluster, WithNotSubscribedUser, WithIndexingPlan;
+    use WithRunningExternalCluster, WithNotSubscribedUser, WithIndexingPlan, WithIndexingPlanAndExpiredSubscription;
 
     /**
      * @test
@@ -38,11 +39,7 @@ class PingControllerTest extends TestCase
      */
     public function ping_returns_unauthorized_if_user_is_not_subscribed()
     {
-        $this->withNotSubscribedUser();
-
-        $this->withIndexingPlan(
-            user: $this->user
-        );
+        $this->withIndexingPlanAndExpiredSubscription();
 
         $url = $this->indexingPlan->ping_url;
 

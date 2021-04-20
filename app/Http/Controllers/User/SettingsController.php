@@ -15,13 +15,13 @@ class SettingsController extends Controller
     {
         $user = Auth::user();
 
-        $data = [
+        $data = match ($section) {
             'subscription' => $this->subscriptionData($user),
             'account' => $user->only(['username', 'email', 'avatar_url', 'created_at', 'id']),
-            'notifications' => 'some-data'
-        ];
+            'notifications' => 'some-data',
+        };
 
-        return Inertia::render('user/settings/settings', ['section' => $section, 'data' => $data[$section]]);
+        return Inertia::render('user/settings/settings', ['section' => $section, 'data' => $data]);
     }
 
     private function subscriptionData($user)

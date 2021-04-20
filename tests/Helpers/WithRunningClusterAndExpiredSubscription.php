@@ -11,9 +11,9 @@ use App\Models\Subscription;
 use App\Models\User;
 use Database\Seeders\UserSeeder;
 
-trait WithRunningExternalCluster
+trait WithRunningClusterAndExpiredSubscription
 {
-    use WithSubscribedUser;
+    use WithNotSubscribedUser;
 
     private User $user;
 
@@ -21,12 +21,9 @@ trait WithRunningExternalCluster
 
     private AbstractCluster $cluster;
 
-    private function withRunningExternalCluster(
-        array $project = [],
-        array $cluster = [],
-        array $user = []
-    ) {
-        $this->withSubscribedUser();
+    private function withRunningClusterAndExpiredSubscription()
+    {
+        $this->withNotSubscribedUser();
 
         $this->project = Project::factory()->create(['user_id' => $this->user->id]);
         $this->cluster = ExternalCluster::factory()->create(['project_id' => $this->project->id]);

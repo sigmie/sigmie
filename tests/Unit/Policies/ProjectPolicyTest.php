@@ -123,6 +123,7 @@ class ProjectPolicyTest extends TestCase
     public function view_returns_false_if_user_isnt_owning_project()
     {
         $this->withProject();
+
         $project =  $this->project;
 
         $this->withProject();
