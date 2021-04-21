@@ -13,6 +13,7 @@ declare(strict_types=1);
 |
 */
 
+use App\Http\Controllers\Analytics\AnalyticsController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\GithubController;
 use App\Http\Controllers\Auth\LoginController;
@@ -32,6 +33,7 @@ use App\Http\Controllers\Legal\LegalController;
 use App\Http\Controllers\Newsletter\SubscriptionConfirmationController;
 use App\Http\Controllers\Newsletter\SubscriptionController as NewsletterSubscriptionController;
 use App\Http\Controllers\Notifications\NotificationController;
+use App\Http\Controllers\Playground\PlaygroundController;
 use App\Http\Controllers\Project\ProjectController;
 use App\Http\Controllers\Project\SettingsController as ProjectSettingsController;
 use App\Http\Controllers\Subscription\SubscriptionController;
@@ -151,6 +153,10 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
         Route::post('/indexing/plan/trigger/{plan}', TriggerController::class)->name('indexing.plan.trigger');
         Route::patch('/indexing/plan/deactivate/{plan}', [PlanController::class, 'deactivate'])->name('indexing.plan.deactivate');
         Route::patch('/indexing/plan/activate/{plan}', [PlanController::class, 'activate'])->name('indexing.plan.activate');
+
+        Route::get('/playground/{project?}', PlaygroundController::class)->name('playground.playground')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
+
+        Route::get('/analytics/{project?}', AnalyticsController::class)->name('analytics.analytics')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
     });
 });
 

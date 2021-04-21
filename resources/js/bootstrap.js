@@ -69,6 +69,8 @@ export const bootstrap = async () => {
   Vue.component('loader', require('./ui/essentials/loader').default)
   Vue.component('link-default', require('./ui/link/default').default)
   Vue.component('icon-sigmie', require('./ui/icons/sigmie').default)
+  Vue.component('icon-chart-bar', require('./ui/icons/chart-bar').default)
+  Vue.component('icon-play', require('./ui/icons/play').default)
   Vue.component('icon-circle-green', require('./ui/icons/circle-green').default)
   Vue.component('icon-circle-yellow', require('./ui/icons/circle-yellow').default)
   Vue.component('icon-circle-red', require('./ui/icons/circle-red').default)

@@ -6,9 +6,7 @@ namespace App\Http\Controllers\Indexing;
 
 use App\Models\IndexingActivity;
 use App\Models\IndexingPlan;
-use App\Models\Project;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
+use App\Models\Project; use Illuminate\Http\Request; use Inertia\Inertia;
 
 class IndexingController extends \App\Http\Controllers\Controller
 {

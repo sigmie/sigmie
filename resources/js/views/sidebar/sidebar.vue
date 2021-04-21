@@ -204,11 +204,25 @@ export default {
           icon: "home",
         },
         {
+          enabled: this.$page.props.features.indexing,
+          text: "Analytics",
+          name: "analytics.analytics",
+          routeParams: [],
+          icon: "chart-bar",
+        },
+        {
           enabled: true,
           text: "API tokens",
           name: "token.index",
           routeParams: [],
           icon: "key",
+        },
+        {
+          enabled: this.$page.props.features.indexing,
+          text: "Playground",
+          name: "playground.playground",
+          routeParams: [],
+          icon: "play",
         },
         {
           enabled: this.$page.props.features.indexing,
