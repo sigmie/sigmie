@@ -6,7 +6,10 @@
       class="block text-sm font-medium leading-5 text-gray-700 pb-1"
       >{{ label }}</label
     >
-    <div class="relative rounded-md shadow-sm mt-2">
+    <div
+      :class="label.length > 0 ? 'mt-2' : ''"
+      class="relative rounded-md shadow-sm"
+    >
       <input type="hidden" name="date" ref="date" />
       <input
         :name="name"
@@ -149,7 +152,14 @@ const MONTH_NAMES = [
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default {
-  props: ["name","label"],
+  props: {
+    name: {
+      default: "",
+    },
+    label: {
+      default: "",
+    },
+  },
   mounted() {
     this.initDate();
     this.getNoOfDays();
