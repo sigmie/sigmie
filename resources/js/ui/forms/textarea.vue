@@ -18,6 +18,7 @@
               : '',
           ]"
           :placeholder="placeholder"
+          :disabled="disabled"
           :value="value"
           type="text"
           @input="$emit('input', $event.target.value)"
@@ -91,6 +92,9 @@ export default {
     },
     error: {
       default: "",
+    },
+    disabled: {
+      default: false,
     },
     id: {
       default: "",

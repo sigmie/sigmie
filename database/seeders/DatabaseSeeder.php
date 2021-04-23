@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Models\AllowedIp;
 use App\Models\Cluster;
 use App\Models\ClusterName;
+use App\Models\ExternalCluster;
 use App\Models\FileType;
 use App\Models\IndexingPlan;
 use App\Models\Project;
@@ -40,18 +41,21 @@ class DatabaseSeeder extends Seeder
         // $allowedIps = AllowedIp::factory()->create(['cluster_id' => $cluster->id]);
         // $allowedIps = AllowedIp::factory()->create(['cluster_id' => $cluster->id]);
 
-        // $type = FileType::create([
-        //     'location' => 'https://gist.githubusercontent.com/nicoorfi/e1e70646515e983f9563fbcb174f52ff/raw/1dc1e7ae7a1ff57f047c4eb7a1dfeef9e27aabe4/docs.sigmie.content.json',
-        //     'index_alias' => 'docs'
-        // ]);
+        $cluster = ExternalCluster::find(1);
 
-        // $plan = IndexingPlan::factory()->create([
-        //     'cluster_id' => $cluster->id,
-        //     'project_id' => $project->id,
-        //     'user_id' => $project->user->id,
-        //     'name' => 'Sigmie Docs'
-        // ]);
+        $type = FileType::create([
+            'location' => 'https://gist.githubusercontent.com/nicoorfi/e1e70646515e983f9563fbcb174f52ff/raw/1dc1e7ae7a1ff57f047c4eb7a1dfeef9e27aabe4/docs.sigmie.content.json',
+            'index_alias' => 'docs'
+        ]);
 
-        // $plan->type()->associate($type)->save();
+        $plan = IndexingPlan::factory()->create([
+            'cluster_id' => $cluster->id,
+            'cluster_type'=> 'external_cluster',
+            'project_id' => $cluster->project->id,
+            'user_id' => $cluster->project->user->id,
+            'name' => 'Sigmie Docs'
+        ]);
+
+        $plan->type()->associate($type)->save();
     }
 }

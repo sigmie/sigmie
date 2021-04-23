@@ -77,6 +77,19 @@ Bellow is the click away usage
 ></form-select>
 ```
 
+### Multiselect
+```jsx
+<form-multiselect
+  label="Version"
+  name="version"
+  id="version"
+  aria-label="Elasticsearch version"
+  :items="{
+    '7.3': { id: 1, name: '7.3' },
+  }"
+></form-multiselect>
+```
+
 ### Input
 ```jsx
 <form-input

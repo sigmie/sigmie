@@ -53,6 +53,7 @@ export const bootstrap = async () => {
   Vue.component('form-checkbox', require('./ui/forms/checkbox').default)
   Vue.component('form-textarea', require('./ui/forms/textarea').default)
   Vue.component('form-select', require('./ui/forms/select').default)
+  Vue.component('form-multiselect', require('./ui/forms/multiselect').default)
   Vue.component('button-primary', require('./ui/buttons/primary').default)
   Vue.component('button-secondary', require('./ui/buttons/secondary').default)
   Vue.component('button-github', require('./ui/buttons/github').default)
