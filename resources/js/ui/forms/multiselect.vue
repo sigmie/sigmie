@@ -17,18 +17,62 @@
         >
           <div class="flex flex-auto flex-wrap">
             <div
-              v-for="(item, index) in selectedValues"
-              :key="index"
-              @click="() => deselect(item)"
-              :class="isSelectedForRemoval(item) ? 'bg-gray-100' : ''"
-              class="flex cursor-pointer justify-center items-center m-1 font-medium py-1 px-2 bg-white rounded-full text-teal-700 bg-teal-100 border border-teal-300"
+              class="flex flex-auto flex-wrap"
+              v-if="isEmpty(selectedValues) === false"
             >
               <div
-                class="text-xs font-normal leading-none max-w-full flex-initial"
+                v-for="(item, index) in selectedValues"
+                :key="index"
+                @click="() => deselect(item)"
+                :class="isSelectedForRemoval(item) ? 'bg-gray-100' : ''"
+                class="flex cursor-pointer justify-center items-center m-1 font-medium py-1 px-2 bg-white rounded-full text-teal-700 bg-teal-100 border border-teal-300"
               >
-                {{ item[displayKey] }}
+                <div
+                  class="text-xs font-normal leading-none max-w-full flex-initial"
+                >
+                  {{ item[displayKey] }}
+                </div>
+                <icon-x class="w-3 h-3"></icon-x>
               </div>
-              <icon-x class="w-3 h-3"></icon-x>
+            </div>
+            <div class="w-full h-full" v-else>&nbsp;</div>
+
+            <div class="relative block h-full w-full -mr-4">
+              <ul
+                v-if="showDropdown"
+                class="absolute z-20 left-0 right-0 mt-2 w-full outline-none ring-1 ring-gray-100 bg-white shadow-lg max-h-56 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm"
+                role="listbox"
+                aria-labelledby="listbox-label"
+                aria-activedescendant="listbox-option-3"
+              >
+                <li
+                  v-for="(item, index) in items"
+                  :key="index"
+                  :class="isFocused(item) ? 'bg-gray-100' : ''"
+                  class="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-gray-100"
+                  id="listbox-option-0"
+                  role="option"
+                  @click="
+                    () => (isSelected(item) ? deselect(item) : select(item))
+                  "
+                >
+                  <div class="flex items-center">
+                    <span
+                      :class="isSelected(item) ? 'font-semibold' : ''"
+                      class="font-normal block truncate"
+                    >
+                      {{ item[displayKey] }}
+                    </span>
+                  </div>
+
+                  <span
+                    v-if="isSelected(item)"
+                    class="text-gray-600 absolute inset-y-0 right-0 flex items-center pr-4"
+                  >
+                    <icon-check class="h-5 w-5"></icon-check>
+                  </span>
+                </li>
+              </ul>
             </div>
             <!-- <div class="flex-1">
               <input
@@ -51,40 +95,6 @@
               <icon-cheveron-down v-else class="h-4 w-4"></icon-cheveron-down>
             </button>
           </div>
-
-          <ul
-            v-if="showDropdown"
-            class="absolute left-0 right-0 mt-10 w-full outline-none ring-1 ring-gray-100 bg-white shadow-lg max-h-56 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm"
-            role="listbox"
-            aria-labelledby="listbox-label"
-            aria-activedescendant="listbox-option-3"
-          >
-            <li
-              v-for="(item, index) in items"
-              :key="index"
-              :class="isFocused(item) ? 'bg-gray-100' : ''"
-              class="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-gray-100"
-              id="listbox-option-0"
-              role="option"
-              @click="() => (isSelected(item) ? deselect(item) : select(item))"
-            >
-              <div class="flex items-center">
-                <span
-                  :class="isSelected(item) ? 'font-semibold' : ''"
-                  class="font-normal block truncate"
-                >
-                  {{ item[displayKey] }}
-                </span>
-              </div>
-
-              <span
-                v-if="isSelected(item)"
-                class="text-gray-600 absolute inset-y-0 right-0 flex items-center pr-4"
-              >
-                <icon-check class="h-5 w-5"></icon-check>
-              </span>
-            </li>
-          </ul>
         </div>
       </div>
     </div>
@@ -93,6 +103,7 @@
 
 <script>
 import has from "lodash/has";
+import isEmpty from "lodash/isEmpty";
 import forEach from "lodash/forEach";
 import isNull from "lodash/isNull";
 import { mixin as clickaway } from "vue-clickaway2";
@@ -147,6 +158,9 @@ export default {
     };
   },
   methods: {
+    isEmpty(value) {
+      return isEmpty(value);
+    },
     select(item) {
       if (this.isSelected(item)) {
         return;
@@ -179,9 +193,11 @@ export default {
         this.deselect(this.selectedForRemove);
       }
       if (e.key === "ArrowDown" || e.key === "Down") {
+        e.preventDefault();
         this.handleDown();
       }
       if (e.key === "ArrowUp" || e.key === "Up") {
+        e.preventDefault();
         this.handleUp();
       }
 
@@ -210,6 +226,8 @@ export default {
       let keys = Object.keys(this.items);
       let nextIndex = keys.indexOf(this.focused.id) + 1;
 
+      console.log("next index:" + nextIndex);
+
       // If it's the last element focus the first again
       if (nextIndex + 1 > keys.length) {
         this.focused = Object.values(this.items)[0];
@@ -217,6 +235,7 @@ export default {
       }
 
       let nextKey = keys[nextIndex];
+      console.log("next key:" + nextKey);
 
       this.focused = this.items[nextKey];
     },
@@ -232,15 +251,19 @@ export default {
       let keys = Object.keys(this.items);
       let nextIndex = keys.indexOf(this.focused.id) - 1;
 
+      console.log("prev index:" + nextIndex);
+
       // If it's the last element focus the first again
       if (nextIndex < 0) {
         this.focused = this.items[
           Object.keys(this.items)[Object.keys(this.items).length - 1]
         ];
+        console.log("reset");
         return;
       }
 
       let nextKey = keys[nextIndex];
+      console.log("prev key:" + nextKey);
 
       this.focused = this.items[nextKey];
     },

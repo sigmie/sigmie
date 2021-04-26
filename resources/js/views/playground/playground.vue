@@ -14,16 +14,6 @@
                   name="query-text"
                 ></form-input>
 
-                <form-select
-                  label="Indices"
-                  name="data_center"
-                  id="data-center"
-                  aria-label="Data center"
-                  displayKey="name"
-                  v-model="index"
-                  :items="indicesNames"
-                ></form-select>
-
                 <form-multiselect
                   @change="handleIndicesChange"
                   label="Multiselect"
@@ -33,13 +23,28 @@
                   displayKey="name"
                   :items="indicesNames"
                 ></form-multiselect>
+
+                <form-multiselect
+                  @change="handleMappingsChange"
+                  label="Mappings"
+                  name="nameee"
+                  id="idddd"
+                  aria-label="Data center"
+                  displayKey="name"
+                  :items="mappings"
+                ></form-multiselect>
               </div>
             </div>
           </div>
 
           <highlight v-if="results" :results="results.hits.hits"> </highlight>
 
-          <results v-if="results" :results="results.hits.hits"> </results>
+          <results
+            v-if="results"
+            :mappings="selectedMappings"
+            :results="results.hits.hits"
+          >
+          </results>
 
           <div class="col-span-1">
             <div class="grid grid-cols-2 gap-x-2 grid-flow-row">
@@ -126,6 +131,7 @@ import App from "../layouts/app";
 import forEach from "lodash/forEach";
 import results from "./_results";
 import highlight from "./_highlight";
+import map from "lodash/map";
 
 export default {
   props: ["indices"],
@@ -138,14 +144,21 @@ export default {
     queryText(newValue, oldValue) {
       const axios = require("axios");
 
+      let indices = map(this.selectedIndices, (index) => index.name);
+
+      if (Object.values(this.selectedIndices).length === 0) {
+        indices = "_all";
+      }
+
+      const url = `http://proxy.localhost:8080/${indices}/_search`;
       const options = {
         method: "POST",
         headers: {
           Authorization: "Bearer 3|AOczTk7IA6PSikmnAZ5nLJ7zFQ9ghJCeay8LdgZD",
           "Content-Type": "application/json",
         },
-        data: this.createQuery(newValue),
-        url: "http://proxy.localhost:8080/docs/_search",
+        data: this.createQuery(newValue, url),
+        url: url,
       };
 
       const self = this;
@@ -162,30 +175,49 @@ export default {
   methods: {
     handleIndicesChange(indices) {
       console.log(indices);
-        this.selectedIndices = indices;
+      this.selectedIndices = indices;
     },
-    createQuery(queryText) {
+    handleMappingsChange(mappings) {
+      this.selectedMappings = map(mappings, (field) => field.field);
+    },
+    createQuery(queryText, url) {
       let res = this.query.replace("$QUERY", queryText);
 
       let query = JSON.parse(res);
 
-      this.querySent = JSON.stringify(query, null, 2);
+      let querySent = `POST ${url} \n\n`;
+      this.querySent = querySent + JSON.stringify(query, null, 2);
 
       return query;
     },
   },
   mounted() {
-    let result = {};
-    forEach(this.indices, (data, index) => {
-      result[index] = { id: index, name: index };
+    let indicesNames = {};
+    let mappings = {};
+    forEach(this.indices, (indexData, index) => {
+      indicesNames[index] = { id: index, name: index };
+
+      forEach(indexData.mappings.properties, (data, field) => {
+        let id = index + "_" + field;
+
+        mappings[id] = {
+          id: id,
+          name: `${field} (${index})`,
+          field: field,
+        };
+      });
     });
-    this.indicesNames = result;
+
+    this.indicesNames = indicesNames;
+    this.mappings = mappings;
   },
   data: function () {
     return {
       indicesNames: {},
+      mappings: {},
       index: "20210423065152_hvbmb",
       selectedIndices: {},
+      selectedMappings: [],
       queryText: "",
       querySent: "",
       rawResult: "",
