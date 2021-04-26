@@ -13,6 +13,7 @@ declare(strict_types=1);
 |
 */
 
+use App\Http\Controllers\Analysis\AnalysisController;
 use App\Http\Controllers\Analytics\AnalyticsController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\GithubController;
@@ -157,6 +158,8 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
         Route::get('/playground/{project?}', PlaygroundController::class)->name('playground.playground')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
 
         Route::get('/analytics/{project?}', AnalyticsController::class)->name('analytics.analytics')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
+
+        Route::get('/analysis/{project?}', AnalysisController::class)->name('analysis.analysis')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
     });
 });
 

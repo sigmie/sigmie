@@ -55,7 +55,6 @@
           <secondary-links></secondary-links>
 
           <tail> </tail>
-
         </div>
       </div>
     </div>
@@ -150,7 +149,6 @@
           <secondary-links></secondary-links>
 
           <tail> </tail>
-
         </div>
       </div>
     </div>
@@ -173,7 +171,7 @@ export default {
     tail,
     secondaryLinks,
     primaryLinks,
-    divider
+    divider,
   },
   computed: {
     enabledItems: function () {
@@ -234,6 +232,13 @@ export default {
             text: "Beta",
             color: "blue",
           },
+        },
+        {
+          enabled: this.$page.props.features.indexing,
+          text: "Analysis",
+          name: "analysis.analysis",
+          routeParams: [],
+          icon: "document-search",
         },
       ],
     };

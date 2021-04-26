@@ -18,7 +18,7 @@
         @blur="$emit('blur', $event.target.value)"
         @focus="$emit('touch', $event.target.value)"
         @change="$emit('change', items[$event.target.value])"
-        class="block focus:ring-indigo-500 w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+        class="block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
       >
         <option
           disabled

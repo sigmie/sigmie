@@ -29,7 +29,7 @@
         @blur="$emit('blur', $event.target.value)"
         @focus="$emit('touch', $event.target.value)"
         @change="$emit('change', $event.target.value)"
-        class="flex flex-1 appearance-none w-full px-3 py-2 border border-gray-300 focus:text-gray-700 rounded-md placeholder-gray-400 focus:outline-none focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
+        class="flex flex-1 appearance-none w-full px-3 py-2 border border-gray-300 focus:text-gray-700 rounded-md placeholder-gray-400 transition duration-150 ease-in-out sm:text-sm sm:leading-5"
       />
 
       <div
@@ -76,7 +76,7 @@
           @blur="$emit('blur', $event.target.value)"
           @focus="$emit('touch', $event.target.value)"
           @change="$emit('change', $event.target.value)"
-          class="flex-1 block w-full focus:ring-indigo-500 focus:border-indigo-500 min-w-0 rounded-none rounded-l-md sm:text-sm border-gray-300"
+          class="flex-1 block w-full min-w-0 rounded-none rounded-l-md sm:text-sm border-gray-300"
         />
         <span
           class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm"
