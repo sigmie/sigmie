@@ -7,13 +7,13 @@
       {{ label }}
     </label>
     <div class="flex flex-col items-center relative">
-      <div class="w-full svelte-1l8159u">
+      <div class="w-full">
         <div
           tabindex="0"
           @keydown="handleInput"
-          @focus="openDropdown"
           @blur="closeDropdown"
-          class="focus:ring-indigo-500 my-2 p-1 flex border border-gray-300 bg-white shadow-sm rounded-md"
+          @focus="openDropdown"
+          class="my-2 p-1 outline-none flex border border-gray-300 bg-white shadow-sm rounded-md"
         >
           <div class="flex flex-auto flex-wrap">
             <div
@@ -30,17 +30,15 @@
               </div>
               <icon-x class="w-3 h-3"></icon-x>
             </div>
-            <div class="flex-1">
+            <!-- <div class="flex-1">
               <input
                 readonly
                 tabindex="-1"
                 @keydown="handleInput"
                 @focus="openDropdown"
-                @blur="closeDropdown"
-                placeholder=""
                 class="bg-transparent p-1 px-2 appearance-none outline-none h-full w-full text-gray-800"
               />
-            </div>
+            </div> -->
           </div>
           <div class="text-gray-300 w-8 py-1 pl-2 pr-1 flex items-center">
             <button
@@ -48,53 +46,47 @@
             >
               <icon-cheveron-up
                 v-if="showDropdown"
-                @click="closeDropdown"
                 class="h-4 w-4"
               ></icon-cheveron-up>
-              <icon-cheveron-down
-                @click="closeDropdown"
-                v-else
-                class="h-4 w-4"
-              ></icon-cheveron-down>
+              <icon-cheveron-down v-else class="h-4 w-4"></icon-cheveron-down>
             </button>
           </div>
+
+          <ul
+            v-if="showDropdown"
+            class="absolute left-0 right-0 mt-10 w-full outline-none ring-1 ring-gray-100 bg-white shadow-lg max-h-56 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm"
+            role="listbox"
+            aria-labelledby="listbox-label"
+            aria-activedescendant="listbox-option-3"
+          >
+            <li
+              v-for="(item, index) in items"
+              :key="index"
+              :class="isFocused(item) ? 'bg-gray-100' : ''"
+              class="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-gray-100"
+              id="listbox-option-0"
+              role="option"
+              @click="() => (isSelected(item) ? deselect(item) : select(item))"
+            >
+              <div class="flex items-center">
+                <span
+                  :class="isSelected(item) ? 'font-semibold' : ''"
+                  class="font-normal block truncate"
+                >
+                  {{ item[displayKey] }}
+                </span>
+              </div>
+
+              <span
+                v-if="isSelected(item)"
+                class="text-gray-600 absolute inset-y-0 right-0 flex items-center pr-4"
+              >
+                <icon-check class="h-5 w-5"></icon-check>
+              </span>
+            </li>
+          </ul>
         </div>
       </div>
-
-      <ul
-        v-if="showDropdown"
-        class="absolute mt-14 w-full bg-white shadow-lg max-h-56 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
-        tabindex="-1"
-        role="listbox"
-        aria-labelledby="listbox-label"
-        aria-activedescendant="listbox-option-3"
-      >
-        <li
-          v-for="(item, index) in items"
-          :key="index"
-          :class="isFocused(item) ? 'bg-gray-100' : ''"
-          class="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-gray-100"
-          id="listbox-option-0"
-          role="option"
-          @click="() => (isSelected(item) ? deselect(item) : select(item))"
-        >
-          <div class="flex items-center">
-            <span
-              :class="isSelected(item) ? 'font-semibold' : ''"
-              class="font-normal block truncate"
-            >
-              {{ item[displayKey] }}
-            </span>
-          </div>
-
-          <span
-            v-if="isSelected(item)"
-            class="text-gray-600 absolute inset-y-0 right-0 flex items-center pr-4"
-          >
-            <icon-check class="h-5 w-5"></icon-check>
-          </span>
-        </li>
-      </ul>
     </div>
   </div>
 </template>
@@ -161,10 +153,12 @@ export default {
       }
 
       this.$set(this.selectedValues, item.id, item);
+      this.$emit("change", this.selectedValues);
     },
     deselect(item) {
       this.$delete(this.selectedValues, item.id, item);
       this.selectedForRemove = null;
+      this.$emit("change", this.selectedValues);
     },
     isSelected(item) {
       return has(this.selectedValues, item.id);
@@ -199,8 +193,6 @@ export default {
 
         this.select(this.focused);
       }
-
-      console.log(e.key);
     },
     handleDown() {
       this.focusNext();
@@ -284,15 +276,3 @@ export default {
   },
 };
 </script>
-
-<style>
-.top-100 {
-  top: 100%;
-}
-.bottom-100 {
-  bottom: 100%;
-}
-.max-h-select {
-  max-height: 300px;
-}
-</style>

@@ -25,6 +25,7 @@
                 ></form-select>
 
                 <form-multiselect
+                  @change="handleIndicesChange"
                   label="Multiselect"
                   name="nameee"
                   id="idddd"
@@ -124,14 +125,14 @@
 import App from "../layouts/app";
 import forEach from "lodash/forEach";
 import results from "./_results";
-import highlight from './_highlight'
+import highlight from "./_highlight";
 
 export default {
   props: ["indices"],
   components: {
     App,
     results,
-    highlight
+    highlight,
   },
   watch: {
     queryText(newValue, oldValue) {
@@ -159,6 +160,10 @@ export default {
     },
   },
   methods: {
+    handleIndicesChange(indices) {
+      console.log(indices);
+        this.selectedIndices = indices;
+    },
     createQuery(queryText) {
       let res = this.query.replace("$QUERY", queryText);
 
@@ -180,6 +185,7 @@ export default {
     return {
       indicesNames: {},
       index: "20210423065152_hvbmb",
+      selectedIndices: {},
       queryText: "",
       querySent: "",
       rawResult: "",
