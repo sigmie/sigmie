@@ -1,69 +1,69 @@
 <template>
   <app>
-<!--
-  This example requires Tailwind CSS v2.0+
+    <navigation></navigation>
 
-  This example requires some changes to your config:
+    <form-select
+      @change="changeIndex"
+      label="Index"
+      name="name"
+      id="id"
+      aria-label="Index"
+      displayKey="name"
+      :items="indicesNames"
+    ></form-select>
 
-  ```
-  // tailwind.config.js
-  module.exports = {
-    // ...
-    plugins: [
-      // ...
-      require('@tailwindcss/forms'),
-    ]
-  }
-  ```
--->
-<div>
-  <div class="sm:hidden">
-    <label for="tabs" class="sr-only">Select a tab</label>
-    <select id="tabs" name="tabs" class="block w-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md">
-      <option>Synonyms</option>
-
-      <option>Stopwords</option>
-
-      <option selected>Stemming</option>
-
-      <option>Scores</option>
-    </select>
-  </div>
-  <div class="hidden sm:block">
-    <div class="border-b border-gray-200">
-      <nav class="-mb-px flex" aria-label="Tabs">
-        <!-- Current: "border-indigo-500 text-indigo-600", Default: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" -->
-        <a href="#" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm">
-          My Account
-        </a>
-
-        <a href="#" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm">
-          Company
-        </a>
-
-        <a href="#" class="border-indigo-500 text-indigo-600 w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm" aria-current="page">
-          Team Members
-        </a>
-
-        <a href="#" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm">
-          Billing
-        </a>
-      </nav>
-    </div>
-  </div>
-</div>
+    <component
+      :data="data"
+      :indexName="indexName"
+      :indices="indices"
+      :is="section"
+    ></component>
 
   </app>
 </template>
 
 <script>
 import App from "../layouts/app";
+import pagination from "./_pagination";
+import navigation from "./_navigation";
+import stopwords from "./_stopwords";
+import mapping from "./_mapping";
+import forEach from "lodash/forEach";
 
 export default {
+  props: ["data", "section", "indices"],
+  methods: {
+    changeIndex(index) {
+      const route = this.$route(this.$route().current());
+      this.$inertia.get(route, {
+        index: index.id,
+      });
+    },
+  },
+  mounted() {
+    let indicesNames = {};
+
+    forEach(this.indices, (indexData, index) => {
+      indicesNames[index] = { id: indexData.name, name: indexData.name };
+    });
+
+    this.indicesNames = indicesNames;
+
+    this.indexName = this.$route().params["index"];
+  },
+  data() {
+    return {
+      indicesNames: {},
+      indexName: null,
+    };
+  },
   components: {
     App,
+    pagination,
+    navigation,
+    mapping,
+    stopwords
   },
-  mounted() {},
 };
 </script>
 

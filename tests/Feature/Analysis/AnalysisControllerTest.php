@@ -30,7 +30,7 @@ class AnalysisControllerTest extends TestsTestCase
     /**
      * @test
      */
-    public function playground_route_redirects_with_project()
+    public function analysis_route_redirects_with_project()
     {
         $this->withRunningInternalCluster();
 
@@ -44,7 +44,21 @@ class AnalysisControllerTest extends TestsTestCase
     /**
      * @test
      */
-    public function playground_route()
+    public function analysis_route_redirects_with_project_and_custom_query_params()
+    {
+        $this->withRunningInternalCluster();
+
+        $this->actingAs($this->user);
+
+        $res = $this->get(route('analysis.analysis') . '?foo=bar',);
+
+        $res->assertRedirect(route('analysis.analysis', ['project' => $this->project->id]) . '?foo=bar');
+    }
+
+    /**
+     * @test
+     */
+    public function analysis_route()
     {
         $this->withRunningInternalCluster();
 

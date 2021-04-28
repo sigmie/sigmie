@@ -26,10 +26,11 @@ class RedirecToSameRouteWithProject
 
         if ($project instanceof Project) {
             $projectId = $project->getAttribute('id');
+            $params = array_merge($request->all(), ['project' => $projectId]);
 
             $routeName = $request->route()->getName();
 
-            return redirect()->route($routeName, ['project' => $projectId]);
+            return redirect()->route($routeName, $params);
         }
 
 

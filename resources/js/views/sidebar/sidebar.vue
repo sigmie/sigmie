@@ -236,7 +236,7 @@ export default {
         {
           enabled: this.$page.props.features.indexing,
           text: "Analysis",
-          name: "analysis.analysis",
+          name: "analysis.mapping",
           routeParams: [],
           icon: "document-search",
         },

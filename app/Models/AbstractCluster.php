@@ -22,7 +22,6 @@ abstract class AbstractCluster extends Model
         'admin_token_active' => 'boolean',
         'search_token_active' => 'boolean',
     ];
-
     abstract public function getHasAllowedIpsAttribute();
 
     abstract public function getCanBeDestroyedAttribute();
@@ -120,5 +119,28 @@ abstract class AbstractCluster extends Model
     public function isOwnedBy(User $user)
     {
         return $this->getAttribute('project')->user->id === $user->id;
+    }
+
+    public function aliases()
+    {
+        $this->setHttpConnection($this->newHttpConnection());
+
+        $catIndexResponse = $this->catAPICall('/indices', 'GET');
+        $catAliasResponse = $this->catAPICall('/aliases', 'GET');
+
+        $aliases = collect($catAliasResponse->json())
+            ->mapToDictionary(
+                fn ($data) => [$data['index'] => $data['alias']]
+            );
+
+        $indices = collect($catIndexResponse->json())
+            ->map(fn ($values) => [
+                'aliases' => (isset($aliases[$values['index']])) ? $aliases[$values['index']] : [],
+                'name' => $values['index'],
+                'size' => $values['store.size'],
+                'docsCount' => $values['docs.count']
+            ])->toArray();
+
+        return $indices;
     }
 }

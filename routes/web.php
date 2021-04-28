@@ -13,7 +13,11 @@ declare(strict_types=1);
 |
 */
 
-use App\Http\Controllers\Analysis\AnalysisController;
+use App\Http\Controllers\Analysis\MappingController;
+use App\Http\Controllers\Analysis\ScoreController;
+use App\Http\Controllers\Analysis\StemmingController;
+use App\Http\Controllers\Analysis\StopwordController as StopwordsController;
+use App\Http\Controllers\Analysis\SynonymController as SynonymsController;
 use App\Http\Controllers\Analytics\AnalyticsController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\GithubController;
@@ -159,7 +163,11 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
 
         Route::get('/analytics/{project?}', AnalyticsController::class)->name('analytics.analytics')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
 
-        Route::get('/analysis/{project?}', AnalysisController::class)->name('analysis.analysis')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
+        Route::get('/analysis/mapping/{project?}/', MappingController::class)->name('analysis.mapping')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
+        Route::get('/analysis/stemming/{project?}/', StemmingController::class)->name('analysis.stemming')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
+        Route::get('/analysis/synonyms/{project?}/', SynonymsController::class)->name('analysis.synonyms')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
+        Route::get('/analysis/stopwords/{project?}/', StopwordsController::class)->name('analysis.stopwords')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
+        Route::get('/analysis/scores/{project?}/', ScoreController::class)->name('analysis.scores')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
     });
 });
 

@@ -29,6 +29,7 @@
     "cSpell.words": [
         "laravel",
         "paylink",
+        "stopword",
         "tokenable"
     ],
 }
