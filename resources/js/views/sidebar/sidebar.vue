@@ -202,6 +202,13 @@ export default {
           icon: "home",
         },
         {
+          enabled: true,
+          text: "Indices",
+          name: "indices.index",
+          routeParams: [],
+          icon: "server",
+        },
+        {
           enabled: this.$page.props.features.indexing,
           text: "Analytics",
           name: "analytics.analytics",

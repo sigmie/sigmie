@@ -33,6 +33,7 @@ use App\Http\Controllers\Indexing\IndexingController;
 use App\Http\Controllers\Indexing\PingController;
 use App\Http\Controllers\Indexing\PlanController;
 use App\Http\Controllers\Indexing\TriggerController;
+use App\Http\Controllers\Indices\IndexController;
 use App\Http\Controllers\Landing\LandingController;
 use App\Http\Controllers\Legal\LegalController;
 use App\Http\Controllers\Newsletter\SubscriptionConfirmationController;
@@ -168,6 +169,9 @@ Route::group(['middleware' => ['auth', 'user', 'projects']], function () {
         Route::get('/analysis/synonyms/{project?}/', SynonymsController::class)->name('analysis.synonyms')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
         Route::get('/analysis/stopwords/{project?}/', StopwordsController::class)->name('analysis.stopwords')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
         Route::get('/analysis/scores/{project?}/', ScoreController::class)->name('analysis.scores')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
+
+        Route::get('/indices/{project?}/', [IndexController::class, 'index'])->name('indices.index')->middleware([RedirectToSameRouteWithProject::class, RedirectToClusterCreateIfHasntCluster::class]);
+        Route::post('/indices/{project?}/', [IndexController::class, 'store'])->name('indices.index.store')->middleware();
     });
 });
 

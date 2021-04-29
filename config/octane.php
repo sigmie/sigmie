@@ -180,4 +180,27 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | File Watching
+    |--------------------------------------------------------------------------
+    |
+    | The following list of files and directories will be watched when using
+    | the --watch option offered by Octane. If any of the directories and
+    | files are changed, Octane will automatically reload your workers.
+    |
+    */
+
+    'watch' => [
+        'app',
+        'bootstrap',
+        'config',
+        'database',
+        'public/**/*.php',
+        'resources/**/*.php',
+        'routes',
+        'packages',
+        'composer.lock',
+        '.env',
+    ],
 ];
