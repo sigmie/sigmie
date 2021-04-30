@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-class Synonym extends StaticModel
+use Sushi\Sushi;
+
+class Synonym extends Model
 {
+    use Sushi;
+
     protected $rows = [
         [
             'id' => 1,

@@ -26,6 +26,7 @@
 import App from "../layouts/app";
 import pagination from "./_pagination";
 import navigation from "./_navigation";
+import stemming from "./_stemming";
 import stopwords from "./_stopwords";
 import mapping from "./_mapping";
 import forEach from "lodash/forEach";
@@ -62,7 +63,8 @@ export default {
     pagination,
     navigation,
     mapping,
-    stopwords
+    stopwords,
+    stemming
   },
 };
 </script>

@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Sigmie\App\Core\Cloud\Providers\Google\Google;
+use Sushi\Sushi;
 
-class Provider extends StaticModel
+class Provider 
 {
+    use Sushi;
+
     protected $rows = [
         [
             'name' => 'Google',

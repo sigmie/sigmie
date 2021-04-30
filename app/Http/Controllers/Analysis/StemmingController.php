@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Analysis;
 
 use App\Models\Cluster;
+use App\Models\Keywords;
 use App\Models\Project;
+use App\Models\Stem;
+use App\Models\Keyword;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Sigmie\Base\APIs\Calls\Cat as CatAPI;
@@ -20,7 +23,6 @@ class StemmingController extends \App\Http\Controllers\Controller
     {
         $this->authorize('view', $project);
 
-        ray($request->all());
         $index = $request->get('index', '*');
 
         $cluster = $project->clusters->first();
@@ -29,12 +31,15 @@ class StemmingController extends \App\Http\Controllers\Controller
 
         $res = $this->mappingAPICall($index);
 
-        ray($index);
+        $stemRules = Stem::all();
+
+        $keywords = Keyword::all();
 
         return Inertia::render(
             'analysis/analysis',
             [
-                'mapping' => $res->json(),
+                'section' => 'stemming',
+                'data' => ['rules' => $stemRules, 'keywords' => $keywords],
                 'indices' => $cluster->aliases()
             ]
         );

@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-class Stopword extends StaticModel
+use Sushi\Sushi;
+
+class Stopword extends Model
 {
+    use Sushi;
+
     protected $rows = [
         [
             'id' => 1,

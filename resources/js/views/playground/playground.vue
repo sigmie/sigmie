@@ -14,6 +14,14 @@
                   name="query-text"
                 ></form-input>
 
+                <form-input
+                  v-model="analyzeText"
+                  type="text"
+                  label="Analyze"
+                  id="query-text"
+                  name="query-text"
+                ></form-input>
+
                 <form-multiselect
                   @change="handleIndicesChange"
                   label="Multiselect"
@@ -171,6 +179,34 @@ export default {
           console.log(error);
         });
     },
+    analyzeText(newValue, oldValue) {
+      const axios = require("axios");
+
+      let indices = map(this.selectedIndices[0], (index) => index.name);
+
+      const url = `http://proxy.localhost:8080/${indices}/_analyze`;
+      const options = {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer 3|AOczTk7IA6PSikmnAZ5nLJ7zFQ9ghJCeay8LdgZD",
+          "Content-Type": "application/json",
+        },
+        data: {
+          analyzer: "sigmie_default",
+          text: newValue,
+        },
+        url: url,
+      };
+
+      const self = this;
+      axios(options)
+        .then(function (response) {
+          self.rawResult = JSON.stringify(response.data, null, 2);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    },
   },
   methods: {
     handleIndicesChange(indices) {
@@ -219,6 +255,8 @@ export default {
       selectedIndices: {},
       selectedMappings: [],
       queryText: "",
+      analyzeText: "",
+      analyzeResult: {},
       querySent: "",
       rawResult: "",
       query: JSON.stringify(

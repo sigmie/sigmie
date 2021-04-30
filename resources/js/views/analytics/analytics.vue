@@ -12,7 +12,6 @@
     <top-results></top-results>
     <top-searches></top-searches>
     <without-results></without-results>
-
 </div>
 
       </div>

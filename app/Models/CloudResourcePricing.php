@@ -8,9 +8,12 @@ use Sigmie\App\Core\Cloud\Providers\Google\Google;
 use Sigmie\App\Core\Cloud\Regions\America;
 use Sigmie\App\Core\Cloud\Regions\Asia;
 use Sigmie\App\Core\Cloud\Regions\Europe;
+use Sushi\Sushi;
 
-class CloudResourcePricing extends StaticModel
+class CloudResourcePricing extends Model
 {
+    use Sushi;
+
     protected $rows = [
         [
             'provider' => Google::class,

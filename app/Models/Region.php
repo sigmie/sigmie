@@ -9,9 +9,12 @@ use Sigmie\App\Core\Cloud\Regions\Asia;
 use Sigmie\App\Core\Cloud\Regions\Australia;
 use Sigmie\App\Core\Cloud\Regions\Europe;
 use Sigmie\App\Core\Cloud\Regions\SouthAmerica;
+use Sushi\Sushi;
 
-class Region extends StaticModel
+class Region extends Model
 {
+    use Sushi;
+
     protected $rows = [
         [
             'id' => 1,
