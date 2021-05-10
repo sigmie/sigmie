@@ -6,10 +6,10 @@ namespace Sigmie\Base\Mappings\Types;
 
 use Sigmie\Base\Contracts\Type;
 
-class Hashed implements Type
+class Number extends BaseType 
 {
     public function field(): string
     {
-        return 'mapper-murmur3';
+        return 'long';
     }
 }

@@ -6,7 +6,7 @@ namespace Sigmie\Base\Mappings\Types;
 
 use Sigmie\Base\Contracts\Type;
 
-class Text implements Type
+class Text extends BaseType 
 {
     public function field(): string
     {

@@ -31,16 +31,25 @@ class DocumentsTable implements OutputFormat
 
         foreach ($this->json as $doc) {
             $headers = array_unique(array_merge(array_keys($doc['_source']), $headers));
-            $docs[] = $doc['_source'];
+            array_unshift($headers, 'id');
+            $document = $doc['_source'];
+            $document['id'] = $doc['_id'];
+
+            $docs[] = $document;
         }
 
         foreach ($headers as $index => $value) {
-            // $table->setColumnMaxWidth($index, 50);
+            $table->setColumnMaxWidth($index, 50);
         }
 
         //Truncate long text
         foreach ($docs as $docIndex => $doc) {
             foreach ($doc as $dataIndex => $data) {
+                if (is_array($data)) {
+                    $data = json_encode($data);
+                    // $docs[$docIndex][$dataIndex] = json_encode($data, JSON_PRETTY_PRINT);
+                    // continue;
+                }
                 if (is_string($data) && strlen($data) > 50) {
                     $docs[$docIndex][$dataIndex] = substr($data, 0, 47) . '...';
                 }

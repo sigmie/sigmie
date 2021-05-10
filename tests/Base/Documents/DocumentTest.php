@@ -25,12 +25,12 @@ class DocumentTest extends TestCase
 
         $docWithId = new Document([], '1');
 
-        $this->assertEquals(1,$docWithId->getId());
+        $this->assertEquals(1, $docWithId->getId());
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function set_attribute()
     {
         $doc = new Document(['foo' => 'bar', 'john' => 'doe']);

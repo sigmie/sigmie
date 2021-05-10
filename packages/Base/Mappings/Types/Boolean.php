@@ -6,7 +6,7 @@ namespace Sigmie\Base\Mappings\Types;
 
 use Sigmie\Base\Contracts\Type;
 
-class Boolean implements Type
+class Boolean extends BaseType
 {
     public function field(): string
     {

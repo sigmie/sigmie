@@ -6,10 +6,9 @@ namespace Sigmie\Base\Mappings\Types;
 
 use Sigmie\Base\Contracts\Type;
 
-class LengthCount implements Type
+abstract class BaseType implements Type
 {
-    public function field(): string
+    public function __construct(protected string $name)
     {
-        return 'token_count';
     }
 }
