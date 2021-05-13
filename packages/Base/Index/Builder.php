@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Carbon\Carbon;
-use Sigmie\Base\APIs\Calls\Index;
+use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Contracts\HttpConnection;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Builder
 {
-    use Index;
+    use IndexActions, AliasActions;
 
     private int $replicas = 2;
 
@@ -18,15 +19,21 @@ class Builder
 
     private string $prefix = '';
 
+    private string $alias;
+
     private bool $dynamicMappings = false;
 
-    public function __construct(HttpConnection $connection)
+    public function __construct(HttpConnection $connection, EventDispatcherInterface $events)
     {
+        $this->events = $events;
+
         $this->setHttpConnection($connection);
     }
 
     public function alias(string $alias)
     {
+        $this->alias = $alias;
+
         return $this;
     }
 
@@ -107,7 +114,9 @@ class Builder
     {
         $name = Carbon::now()->format('YmdHisu');
 
-        $this->indexAPICall("/{$name}", 'PUT');
+        $this->createIndex(new Index($name));
+
+        $this->createAlias($name, $this->alias);
 
         return;
     }

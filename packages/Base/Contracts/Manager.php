@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Contracts;
 
-use Sigmie\Base\Index\Index;
+use Sigmie\Base\Index;
 
 interface Manager
 {
     public function isConnected(): bool;
 
-    public function newIndex(string $name): Index;
+    public function newIndex(string $name): Index\Builder;
 }

@@ -6,12 +6,13 @@ namespace Sigmie\Base\Index;
 
 use Sigmie\Base\APIs\Calls\Cat as CatAPI;
 use Sigmie\Base\APIs\Calls\Index as IndexAPI;
+use Sigmie\Base\Contracts\Events;
 use Sigmie\Base\Exceptions\NotFound;
 use Sigmie\Support\Collection;
 
 trait Actions
 {
-    use CatAPI, IndexAPI;
+    use CatAPI, IndexAPI, Events;
 
     protected function createIndex(Index $index): Index
     {
@@ -26,7 +27,9 @@ trait Actions
 
         $this->indexAPICall("/{$index->getName()}", 'PUT', $body);
 
-        $index->setHttpConnection(self::$httpConnection);
+        $index->setHttpConnection($this->httpConnection);
+
+        $this->events()->dispatch($index, 'index.created');
 
         return $index;
     }
@@ -36,26 +39,46 @@ trait Actions
         return $this->getIndex($index->getName()) instanceof Index;
     }
 
-
     protected function getIndex(string $identifier): ?Index
     {
         try {
             $res = $this->indexAPICall("/{$identifier}", 'GET',);
 
             $data = array_values($res->json())[0];
+
             $name = $data['settings']['index']['provided_name'];
             $aliases = $data['aliases'];
             $index = new Index($name);
 
-            if (count($aliases) > 0) {
-                foreach ($aliases as $alias => $value) {
-                    $index->setAlias($alias);
-                }
-            }
+            // if (count($aliases) > 0) {
+            //     foreach ($aliases as $alias => $value) {
+            //         $index->setAlias($alias);
+            //     }
+            // }
 
             $index->setHttpConnection($this->getHttpConnection());
 
             return $index;
+        } catch (NotFound) {
+            return null;
+        }
+    }
+
+    protected function getIndices(string $identifier)
+    {
+        try {
+            $res = $this->indexAPICall("/{$identifier}", 'GET',);
+
+            $collection = new Collection();
+
+            foreach ($res->json() as $indexName => $indexData) {
+                $index = new Index($indexName);
+                $index->setHttpConnection($this->getHttpConnection());
+
+                $collection->add($index);
+            }
+
+            return $collection;
         } catch (NotFound) {
             return null;
         }

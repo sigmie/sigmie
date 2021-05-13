@@ -4,15 +4,24 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
+use Sigmie\Base\Contracts\Events;
+use Sigmie\Base\Index\AliasActions;
 use Sigmie\Base\Index\Index;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    use Testing;
+    use Testing, Events, AliasActions;
 
     public function setUp(): void
     {
         parent::setUp();
+
+        $this->events = new EventDispatcher;
+
+        $this->events->addListener('index.created', function (Index $index) {
+            $this->createAlias($index->getName(), $this->testId());
+        });
 
         $uses = $this->usedTraits();
 
@@ -25,6 +34,12 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
         $uses = $this->usedTraits();
 
+        $indices = $this->getIndices($this->testId());
+
+        foreach ($indices as $index) {
+            $index->delete();
+        }
+
         $this->tearDownSigmieTesting($uses);
     }
 
@@ -32,6 +47,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
     {
         $class = strtolower(static::class);
         $class = str_replace('\\', '_', $class);
+
         return  $class . '_' . $this->getName();
     }
 

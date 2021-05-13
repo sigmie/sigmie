@@ -12,9 +12,9 @@ trait AliasActions
 {
     use AliasAPI;
 
-    protected function createAlias(Index $index, $alias): Index
+    protected function createAlias(string $index, string $alias)
     {
-        $path = "/{$index->getName()}/_alias/{$alias}";
+        $path = "/{$index}/_alias/{$alias}";
 
         $this->indexAPICall($path, 'PUT');
 
@@ -34,20 +34,20 @@ trait AliasActions
         }
     }
 
-    protected function deleteAlias(Index $index, string $alias): bool
+    protected function deleteAlias(string $index, string $alias): bool
     {
-        $path = "/{$index->getName()}/_alias/{$alias}";
+        $path = "/{$index}/_alias/{$alias}";
 
         $response = $this->indexAPICall($path, 'DELETE');
 
         return $response->json('acknowledged');
     }
 
-    public function switchAlias(string $alias, Index $from, Index $to): bool
+    public function switchAlias(string $alias, string $from, string $to): bool
     {
         $body = ['actions' => [
-            ['remove' => ['index' => $from->getName(), 'alias' => $alias]],
-            ['add' => ['index' => $to->getName(), 'alias' => $alias]]
+            ['remove' => ['index' => $from, 'alias' => $alias]],
+            ['add' => ['index' => $to, 'alias' => $alias]]
         ]];
 
         $res = $this->aliasAPICall('POST', $body);

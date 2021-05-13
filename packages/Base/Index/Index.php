@@ -16,10 +16,18 @@ use Sigmie\Base\Documents\DocumentsCollection;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Search\Searchable;
 use Sigmie\Support\Collection;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Index implements DocumentCollectionInterface
 {
     use CountAPI, DocumentsActions, IndexActions, Searchable, API, AliasActions;
+
+    protected EventDispatcherInterface $events;
+
+    protected function events(): EventDispatcherInterface
+    {
+        return $this->events;
+    }
 
     protected string $name;
 
@@ -50,14 +58,17 @@ class Index implements DocumentCollectionInterface
         $this->name = $name;
         $this->settings = $settings;
     }
+    
+    public function delete()
+    {
+        return $this->deleteIndex($this->name);
+    }
 
     public function setAlias(string $alias): self
     {
         $this->aliases[] = $alias;
 
-        if (isset(self::$httpConnection)) {
-            $this->createAlias($this, $alias);
-        }
+        $this->createAlias($this->name, $alias);
 
         return $this;
     }
@@ -69,7 +80,7 @@ class Index implements DocumentCollectionInterface
 
     public function removeAlias(string $alias)
     {
-        return $this->deleteAlias($this, $alias);
+        return $this->deleteAlias($this->name, $alias);
     }
 
     public function setSize(?string $size): self

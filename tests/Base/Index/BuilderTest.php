@@ -10,14 +10,17 @@ use RachidLaasri\Travel\Travel;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\APIs\Calls\Index;
+use Sigmie\Base\Index\AliasActions;
 use Sigmie\Base\Index\Builder as NewIndex;
 use Sigmie\Base\Mappings\Blueprint;
 use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
+use Sigmie\Tools\Sigmie;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class BuilderTest extends TestCase
 {
-    use Index, ClearIndices;
+    use Index, ClearIndices, AliasActions;
 
     /**
      * @var MockObject|\Sigmie\Base\Index\Actions
@@ -163,14 +166,12 @@ class BuilderTest extends TestCase
      */
     public function index_has_timestamp_name()
     {
-        Travel::to('2020-01-01 16:00:35');
+        $sigmie = new Sigmie($this->httpConnection, $this->events);
 
-        (new NewIndex($this->httpConnection))
-            ->alias('foo')
+        $sigmie->newIndex('foo')
             ->create();
 
-        $res = $this->indexAPICall('/foo/_mappings', 'GET');
-
-        dd($res);
+        //     //Add suffix on testing index names
+        // $res = $this->indexAPICall('/foo/_mappings', 'GET');
     }
 }

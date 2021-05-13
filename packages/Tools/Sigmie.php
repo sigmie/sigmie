@@ -11,37 +11,42 @@ use Sigmie\Base\Contracts\Manager as ManagerInterface;
 use Sigmie\Base\Http\Connection as Connection;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Base\Index\Actions as IndexActions;
-use Sigmie\Base\Index\Index;
+use Sigmie\Base\Index\Builder;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\Contracts\JSONClient as JSONClientInterface;
 use Sigmie\Http\Contracts\JSONRequest as JSONRequestInterface;
 use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Support\Contracts\Collection;
+use Sigmie\Base\Index;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-class Manager implements ManagerInterface
+class Sigmie implements ManagerInterface
 {
     use IndexActions;
 
-    private RequestInterface $request;
-
-    public function __construct(JsonClientInterface $http)
+    public function __construct(Connection $httpConnection, EventDispatcherInterface $events = null)
     {
-        $this->request = new Connection($http);
+        $this->httpConnection = $httpConnection;
+
+        if (is_null($events)) {
+            $events = new EventDispatcher;
+        }
+
+        $this->events = $events;
     }
 
-    public function newIndex(string $name): Index
+    public function newIndex(string $name): Builder
     {
-        $index = $this->createIndex(new Index($name));
-        $index->setHttpConnection($this->request);
+        $builder = new Index\Builder($this->httpConnection, $this->events);
 
-        return $index;
+        return $builder->alias($name);
     }
 
-    public function index(string $name): Index
+    public function index(string $name): Index\Index
     {
         $index = $this->getIndex($name);
-        $index->setHttpConnection($this->request);
 
         return $index;
     }
@@ -51,7 +56,7 @@ class Manager implements ManagerInterface
         return $this->listIndices();
     }
 
-    public function delete(Index $index)
+    public function delete(Index\Index $index)
     {
         $this->deleteIndex($index->getName());
     }
@@ -59,7 +64,7 @@ class Manager implements ManagerInterface
     public function isConnected(): bool
     {
         try {
-            $res = ($this->request)(new JSONRequest('GET', new Uri()));
+            $res = ($this->httpConnection)(new JSONRequest('GET', new Uri()));
 
             return !$res->failed();
         } catch (Exception $e) {
@@ -71,11 +76,11 @@ class Manager implements ManagerInterface
     {
         $client = JSONClient::create($host, $auth);
 
-        return new Manager($client);
+        return new Sigmie($client);
     }
 
     protected function httpCall(JSONRequestInterface $request, string $responseClass = ElasticsearchResponse::class): ElasticsearchResponse
     {
-        return ($this->request)($request, $responseClass);
+        return ($this->httpConnection)($request, $responseClass);
     }
 }
