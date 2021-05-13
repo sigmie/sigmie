@@ -6,7 +6,7 @@ namespace Sigmie\Testing;
 
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\Connection;
-use Sigmie\Testing\JSONClient as TestingJsonClient;
+use Sigmie\Http\JSONClient;
 
 trait TestConnection
 {
@@ -16,9 +16,7 @@ trait TestConnection
 
     public function setupTestConnection()
     {
-        $client = TestingJsonClient::create(getenv('ES_HOST'));
-
-        $client->foo($this->testId());
+        $client = JSONClient::create(getenv('ES_HOST'));
 
         $this->setHttpConnection(new Connection($client));
     }

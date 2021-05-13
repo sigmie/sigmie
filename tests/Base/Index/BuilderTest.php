@@ -22,14 +22,6 @@ class BuilderTest extends TestCase
 {
     use Index, ClearIndices, AliasActions;
 
-    /**
-     * @var MockObject|\Sigmie\Base\Index\Actions
-     */
-    private $actionsTrait;
-
-    // /**
-    //  * @test
-    //  */
     public function foo(): void
     {
         $expectedBody = [
@@ -161,17 +153,34 @@ class BuilderTest extends TestCase
         // ->keywords(['skies'])
     }
 
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        $this->sigmie = new Sigmie($this->httpConnection, $this->events);
+    }
+
     /**
      * @test
      */
-    public function index_has_timestamp_name()
+    public function creates_and_index_with_alias()
     {
-        $sigmie = new Sigmie($this->httpConnection, $this->events);
+        $this->sigmie->newIndex('foo')->create();
 
-        $sigmie->newIndex('foo')
-            ->create();
+        $this->assertIndexExists('foo');
+    }
 
-        //     //Add suffix on testing index names
-        // $res = $this->indexAPICall('/foo/_mappings', 'GET');
+    /**
+     * @test
+     */
+    public function index_name_is_current_timestamp()
+    {
+        Travel::to('2020-01-01 23:59:59');
+
+        $this->sigmie->newIndex('foo')->create();
+
+        $index = $this->getIndex('foo');
+
+        $this->assertIndexExists('20200101235959000000', $index->getName());
     }
 }
