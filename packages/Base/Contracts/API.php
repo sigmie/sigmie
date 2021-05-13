@@ -8,20 +8,20 @@ use Sigmie\Base\Http\ElasticsearchResponse;
 
 trait API
 {
-    private static HttpConnection $httpConnection;
+    protected HttpConnection $httpConnection;
 
     public function setHttpConnection(HttpConnection $connection): void
     {
-        self::$httpConnection = $connection;
+        $this->httpConnection = $connection;
     }
 
     public function getHttpConnection()
     {
-        return self::$httpConnection;
+        return $this->httpConnection;
     }
 
     protected function httpCall(ElasticsearchRequest $request): ElasticsearchResponse
     {
-        return (self::$httpConnection)($request);
+        return ($this->httpConnection)($request);
     }
 }

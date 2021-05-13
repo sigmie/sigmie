@@ -26,10 +26,6 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
 
     public function exception(ElasticsearchRequest $request): Exception
     {
-        if ($this->code() === 404) {
-            return new NotFound('Some resource wasn\'t found');
-        }
-
         return  new ElasticsearchException($request, $this);
     }
 

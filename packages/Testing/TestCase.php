@@ -8,7 +8,7 @@ use Sigmie\Base\Index\Index;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    use  Testing;
+    use Testing;
 
     public function setUp(): void
     {

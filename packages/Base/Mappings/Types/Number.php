@@ -6,10 +6,26 @@ namespace Sigmie\Base\Mappings\Types;
 
 use Sigmie\Base\Contracts\Type;
 
-class Number extends BaseType 
+class Number extends BaseType
 {
-    public function field(): string
+    protected string $type;
+
+    public function integer()
     {
-        return 'long';
+        $this->type = 'integer';
+    }
+
+    public function float()
+    {
+        $this->type = 'float';
+    }
+
+    protected function raw()
+    {
+        return [
+            $this->name => [
+                'type' => $this->type,
+            ]
+        ];
     }
 }

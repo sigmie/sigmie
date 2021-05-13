@@ -15,6 +15,7 @@
     ],
     "require": {
         "php": "^8.0",
+        "nesbot/carbon": "^2.48",
         "sigmie/http": "^0.6",
         "sigmie/support": "^0.6"
     },
@@ -31,5 +32,5 @@
     "config": {
         "sort-packages": true
     },
-    "minimum-stability": "dev"
+    "minimum-stability": "stable"
 }

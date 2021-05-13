@@ -11,4 +11,11 @@ abstract class BaseType implements Type
     public function __construct(protected string $name)
     {
     }
+
+    abstract protected function raw();
+
+    public function __invoke()
+    {
+        return $this->raw();
+    }
 }

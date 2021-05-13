@@ -8,8 +8,12 @@ use Sigmie\Base\Contracts\Type;
 
 class Boolean extends BaseType
 {
-    public function field(): string
+    protected function raw()
     {
-        return 'boolean';
+        return [
+            $this->name => [
+                'type' => 'boolean',
+            ]
+        ];
     }
 }

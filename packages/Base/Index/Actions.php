@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use PhpParser\Node\Expr\Instanceof_;
 use Sigmie\Base\APIs\Calls\Cat as CatAPI;
 use Sigmie\Base\APIs\Calls\Index as IndexAPI;
 use Sigmie\Base\Exceptions\NotFound;
 use Sigmie\Support\Collection;
-
-use function PHPUnit\Framework\isInstanceOf;
 
 trait Actions
 {
@@ -20,14 +17,14 @@ trait Actions
     {
         $settings = $index->getSettings();
 
-        $settings = [
+        $body = [
             'settings' => [
                 'number_of_shards' => $settings->primaryShards,
                 'number_of_replicas' => $settings->replicaShards,
             ],
         ];
 
-        $this->indexAPICall("/{$index->getName()}", 'PUT', $settings);
+        $this->indexAPICall("/{$index->getName()}", 'PUT', $body);
 
         $index->setHttpConnection(self::$httpConnection);
 

@@ -6,10 +6,22 @@ namespace Sigmie\Base\Mappings\Types;
 
 use Sigmie\Base\Contracts\Type;
 
-class Date extends BaseType 
+class Date extends BaseType
 {
-    public function field(): string
+    protected array $formats = [];
+
+    public function format(string $format)
     {
-        return 'date';
+        $this->formats[] = $format;
+    }
+
+    protected function raw()
+    {
+        return [
+            $this->name => [
+                'type' => 'date',
+                'format' => implode('|', $this->formats)
+            ]
+        ];
     }
 }
