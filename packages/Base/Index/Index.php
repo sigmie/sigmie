@@ -7,6 +7,8 @@ namespace Sigmie\Base\Index;
 use Closure;
 use Exception;
 use Generator;
+use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Calls\Count as CountAPI;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
@@ -41,6 +43,8 @@ class Index implements DocumentCollectionInterface
 
     protected Settings $settings;
 
+    protected Mappings $mappings;
+
     protected DocumentCollectionInterface $docs;
 
     protected array $metadata = [];
@@ -49,16 +53,27 @@ class Index implements DocumentCollectionInterface
 
     protected bool $withIds;
 
-    public function __construct(string $name, Settings $settings = null)
-    {
+    public function __construct(
+        string $name,
+        Settings $settings = null,
+        Mappings $mappings = null
+    ) {
         if ($settings === null) {
             $settings = new Settings();
         }
 
+        if ($mappings === null) {
+            //TODO make mappings required parameter
+            $mappings = new Mappings(
+                new Analyzer('demo', new WordBoundaries(100), [])
+            );
+        }
+
         $this->name = $name;
         $this->settings = $settings;
+        $this->mappings = $mappings;
     }
-    
+
     public function delete()
     {
         return $this->deleteIndex($this->name);
@@ -101,6 +116,11 @@ class Index implements DocumentCollectionInterface
     public function getSettings(): Settings
     {
         return $this->settings;
+    }
+
+    public function getMappings(): Mappings
+    {
+        return $this->mappings;
     }
 
     /**

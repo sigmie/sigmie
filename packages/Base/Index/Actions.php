@@ -17,12 +17,11 @@ trait Actions
     protected function createIndex(Index $index): Index
     {
         $settings = $index->getSettings();
+        $mappings = $index->getMappings();
 
         $body = [
-            'settings' => [
-                'number_of_shards' => $settings->primaryShards,
-                'number_of_replicas' => $settings->replicaShards,
-            ],
+            'settings' => $settings->raw(),
+            'mappings' => $mappings->raw()
         ];
 
         $this->indexAPICall("/{$index->getName()}", 'PUT', $body);
@@ -48,7 +47,7 @@ trait Actions
 
             $name = $data['settings']['index']['provided_name'];
             $aliases = $data['aliases'];
-            $index = new Index($name);
+            $index = new Index($name, Settings::fromResponse($data), Mappings::fromResponse($data));
 
             // if (count($aliases) > 0) {
             //     foreach ($aliases as $alias => $value) {

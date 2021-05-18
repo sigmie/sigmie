@@ -8,10 +8,16 @@ use Carbon\Carbon;
 use PHPUnit\Framework\MockObject\MockObject;
 use RachidLaasri\Travel\Travel;
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\Languages\English;
+use Sigmie\Base\Analysis\Languages\German;
+use Sigmie\Base\Analysis\Languages\Greek;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\APIs\Calls\Index;
+use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Index\AliasActions;
 use Sigmie\Base\Index\Builder as NewIndex;
+use Sigmie\Base\Index\Index as IndexIndex;
+use Sigmie\Base\Index\Settings;
 use Sigmie\Base\Mappings\Blueprint;
 use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
@@ -21,6 +27,11 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 class BuilderTest extends TestCase
 {
     use Index, ClearIndices, AliasActions;
+
+    /**
+     * @var Sigmie
+     */
+    private $sigmie;
 
     public function foo(): void
     {
@@ -33,7 +44,8 @@ class BuilderTest extends TestCase
                         "sigmie_default" => [
                             "tokenizer" => "whitespace",
                             "filter" => [
-                                "no_stem", "custom_stem",
+                                "no_stem",
+                                "custom_stem",
                                 "english_possessive_stemmer",
                                 "lowercase",
                                 "english_stop",
@@ -41,6 +53,12 @@ class BuilderTest extends TestCase
                                 "english_stemmer",
                                 "my_synonym",
                                 "my_stop"
+                            ]
+                        ],
+                        'tokenizer' => [
+                            'my_tokenizer' => [
+                                "type" => "pattern",
+                                "pattern" => ","
                             ]
                         ]
                     ],
@@ -108,23 +126,11 @@ class BuilderTest extends TestCase
         ];
 
 
-        $this->actionsTrait
-            ->expects($this->once())
-            ->method('indexAPICall')
-            ->with('/foo', 'PUT', $expectedBody);
-
         //TODO add mapping analyzers to index
-        $builder = (new NewIndex('docs'))
-            ->setHttpConnection($this->httpConnection)
-            ->shards(2)
-            ->replicas(3)
-            ->create();
-        // ->prefix('sigmie')
         // ->language(new English)
         // ->withLanguageDefaults()
         // ->withDefaultStopwords()
         // ->withoutMappings()
-        // ->tokenizeOn(new Whitespaces)
         // ->mappings(function (Blueprint $blueprint) {
 
         //     $analyzer = new Analyzer;
@@ -140,17 +146,7 @@ class BuilderTest extends TestCase
         //     $blueprint->bool('bar');
 
         //     return $blueprint;
-        // })
-        // ->stopwords(['if', 'we', 'ours'])
-        // ->synonyms([
-        //     ['i-pad', 'ipad', 'ipad'], // two-way
-        //     ['goog' => 'google'] // one-way
-        // ])
-        // ->stemming([
-        //     'mice' => 'mouse',
-        //     'skies' => 'sky'
-        // ])
-        // ->keywords(['skies'])
+        // });
     }
 
     public function setUp(): void
@@ -158,6 +154,33 @@ class BuilderTest extends TestCase
         parent::setUp();
 
         $this->sigmie = new Sigmie($this->httpConnection, $this->events);
+    }
+
+    /**
+     * @test
+     */
+    public function index_language()
+    {
+        $this->sigmie->newIndex('foo')
+            ->language(new Greek)
+            ->tokenizeOn(new Whitespaces)
+            ->stopwords(['foo', 'bar', 'baz'])
+            ->keywords(['foo', 'bar', 'paz'])
+            ->stemming([
+                [['mice'], 'mouse'],
+                [['goog'], 'google'],
+            ])
+            ->oneWaySynonyms([
+                [
+                    ['ipod', 'i-pod'], ['i pod']
+                ]
+            ])
+            ->twoWaySynonyms([
+                ["universe", "cosmos"]
+            ])
+            ->create();
+
+        $index = $this->getIndex('foo');
     }
 
     /**
@@ -179,8 +202,25 @@ class BuilderTest extends TestCase
 
         $this->sigmie->newIndex('foo')->create();
 
+        $this->assertIndexExists('20200101235959000000');
+    }
+
+    /**
+     * @test
+     */
+    public function index_name_prefix()
+    {
+        Travel::to('2020-01-01 23:59:59');
+
+        $this->sigmie->newIndex('foo')
+            ->shards(4)
+            ->replicas(3)
+            ->prefix('.sigmie')
+            ->create();
+
         $index = $this->getIndex('foo');
 
-        $this->assertIndexExists('20200101235959000000', $index->getName());
+        $this->assertEquals(3, $index->getSettings()->getReplicaShards());
+        $this->assertEquals(4, $index->getSettings()->getPrimaryShards());
     }
 }

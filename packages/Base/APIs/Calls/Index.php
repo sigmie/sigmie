@@ -18,7 +18,7 @@ trait Index
     {
         $uri = new Uri($index);
 
-        $esRequest = new ElasticsearchRequest($method, $uri, null);
+        $esRequest = new ElasticsearchRequest($method, $uri, $body);
 
         return $this->httpCall($esRequest);
     }

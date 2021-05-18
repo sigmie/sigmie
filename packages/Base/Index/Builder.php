@@ -5,27 +5,50 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Carbon\Carbon;
+use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\TokenFilter\Keywords;
+use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
+use Sigmie\Base\Analysis\TokenFilter\Stemmer;
+use Sigmie\Base\Analysis\TokenFilter\Stopwords;
+use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
+use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
+use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Contracts\HttpConnection;
+use Sigmie\Base\Contracts\Language;
+use Sigmie\Base\Contracts\Tokenizer;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Builder
 {
     use IndexActions, AliasActions;
 
-    private int $replicas = 2;
+    protected int $replicas = 2;
 
-    private int $shards = 1;
+    protected int $shards = 1;
 
-    private string $prefix = '';
+    protected string $prefix = '';
 
-    private string $alias;
+    protected string $alias;
 
-    private bool $dynamicMappings = false;
+    protected Language $language;
+
+    protected bool $dynamicMappings = false;
+
+    protected Tokenizer $tokenizer;
+
+    protected array $stopwords = [];
+
+    protected array $twoWaySynonyms = [];
+
+    protected array $oneWasSynonyms = [];
+
+    protected array $stemming = [];
 
     public function __construct(HttpConnection $connection, EventDispatcherInterface $events)
     {
         $this->events = $events;
+        $this->tokenizer = new WordBoundaries();
 
         $this->setHttpConnection($connection);
     }
@@ -37,14 +60,16 @@ class Builder
         return $this;
     }
 
-    public function language()
+    public function language(Language $language)
     {
+        $this->language = $language;
+
         return $this;
     }
 
     public function prefix(string $prefix)
     {
-        $this->prefix = $prefix;
+        $this->prefix = "{$prefix}_";
 
         return $this;
     }
@@ -53,7 +78,6 @@ class Builder
     {
         return $this;
     }
-
     public function withDefaultStopwords()
     {
         return $this;
@@ -66,8 +90,10 @@ class Builder
         return $this;
     }
 
-    public function tokenizeOn()
+    public function tokenizeOn(Tokenizer $tokenizer)
     {
+        $this->tokenizer = $tokenizer;
+
         return $this;
     }
 
@@ -76,23 +102,38 @@ class Builder
         return $this;
     }
 
-    public function stopwords()
+    public function stopwords(array $stopwords)
     {
+        $this->stopwords = $stopwords;
+
         return $this;
     }
 
-    public function synonyms()
+    public function twoWaySynonyms(array $synonyms)
     {
+        $this->twoWaySynonyms = $synonyms;
+
         return $this;
     }
 
-    public function stemming()
+    public function oneWaySynonyms(array $synonyms)
     {
+        $this->oneWaySynonyms = $synonyms;
+
         return $this;
     }
 
-    public function keywords()
+    public function stemming(array $stemming)
     {
+        $this->stemming = $stemming;
+
+        return $this;
+    }
+
+    public function keywords(array $keywords)
+    {
+        $this->keywords = $keywords;
+
         return $this;
     }
 
@@ -112,9 +153,36 @@ class Builder
 
     public function create()
     {
-        $name = Carbon::now()->format('YmdHisu');
+        $timestamp = Carbon::now()->format('YmdHisu');
 
-        $this->createIndex(new Index($name));
+        $name = "{$this->prefix}{$timestamp}";
+
+        $analysis = new Analysis([
+            new Stopwords('sigmie_stopwords', $this->stopwords),
+            new TwoWaySynonyms('sigmie_synonyms', $this->twoWaySynonyms),
+            new OneWaySynonyms('sigmie_synonyms', $this->oneWaySynonyms),
+            new Stemmer('sigmie_stem', $this->stemming),
+            new Keywords('sigmie_keywords', $this->keywords)
+        ]);
+
+        if (isset($this->language)) {
+            $analysis->addLanguageFilters($this->language);
+        }
+
+        $analyzer = $analysis->createAnalyzer(
+            'sigmie_analyzer',
+            $this->tokenizer
+        );
+
+        $mappings = new Mappings($analyzer);
+
+        $settings = new Settings(
+            $this->shards,
+            $this->replicas,
+            $analysis
+        );
+
+        $this->createIndex(new Index($name, $settings, $mappings));
 
         $this->createAlias($name, $this->alias);
 

@@ -93,6 +93,24 @@ class Collection extends DoctrineCollection implements CollectionInterface
         return new static($result);
     }
 
+    public function mapToDictionary(callable $callback)
+    {
+        $dictionary = [];
+
+        foreach ($this->toArray() as $key => $item) {
+            $pair = $callback($item, $key);
+
+            $key = key($pair);
+
+            $value = reset($pair);
+
+            $dictionary[$key] = $value;
+        }
+
+        return new static($dictionary);
+    }
+
+
     public function last()
     {
         $last = parent::last();
