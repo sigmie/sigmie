@@ -16,6 +16,7 @@ use Sigmie\Base\Documents\Actions as DocumentsActions;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentsCollection;
 use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Search\Searchable;
 use Sigmie\Support\Collection;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -65,7 +66,8 @@ class Index implements DocumentCollectionInterface
         if ($mappings === null) {
             //TODO make mappings required parameter
             $mappings = new Mappings(
-                new Analyzer('demo', new WordBoundaries(100), [])
+                new Analyzer('demo', new WordBoundaries(100), []),
+                new Properties()
             );
         }
 

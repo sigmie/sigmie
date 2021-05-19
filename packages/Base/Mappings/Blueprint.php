@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Mappings;
 
+use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Mappings\Types\BaseType;
 use Sigmie\Base\Mappings\Types\Boolean;
 use Sigmie\Base\Mappings\Types\Date;
 use Sigmie\Base\Mappings\Types\Number;
@@ -11,28 +13,56 @@ use Sigmie\Base\Mappings\Types\Text;
 
 class Blueprint
 {
+    protected array $fields = [];
+
+    public function __invoke(Analyzer $analyzer)
+    {
+        $fields = [];
+        /** @var BaseType $type */
+        foreach ($this->fields as $type) {
+            if ($type instanceof Text && is_null($type->analyzer())) {
+                $type->withAnalyzer($analyzer);
+            }
+
+            $fields[] = $type;
+        }
+
+        return new Properties($fields);
+    }
+
     public function text(...$args): Text
     {
-        return new Text(...$args);
+        $field = new Text(...$args);
+
+        $this->fields[] = $field;
+
+        return $field;
     }
 
     public function number(...$args): Number
     {
-        return new Number(...$args);
+        $field = new Number(...$args);
+
+        $this->fields[] = $field;
+
+        return $field;
     }
 
     public function date(...$args): Date
     {
-        return new Date(...$args);
+        $field = new Date(...$args);
+
+        $this->fields[] = $field;
+
+        return $field;
     }
 
     public function bool(...$args): Boolean
     {
-        return new Boolean(...$args);
-    }
+        $field = new Boolean(...$args);
 
-    public function custom(array $custom): void
-    {
-        return;
+        $this->fields[] = $field;
+
+        return $field;
     }
 }

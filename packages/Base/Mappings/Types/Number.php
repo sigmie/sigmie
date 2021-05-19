@@ -20,12 +20,10 @@ class Number extends BaseType
         $this->type = 'float';
     }
 
-    protected function raw()
+    public function raw()
     {
         return [
-            $this->name => [
                 'type' => $this->type,
-            ]
         ];
     }
 }

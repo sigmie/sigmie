@@ -8,12 +8,10 @@ use Sigmie\Base\Contracts\Type;
 
 class Boolean extends BaseType
 {
-    protected function raw()
+    public function raw()
     {
         return [
-            $this->name => [
-                'type' => 'boolean',
-            ]
+            'type' => 'boolean',
         ];
     }
 }

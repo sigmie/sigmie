@@ -19,10 +19,11 @@ use Sigmie\Base\Index\Builder as NewIndex;
 use Sigmie\Base\Index\Index as IndexIndex;
 use Sigmie\Base\Index\Settings;
 use Sigmie\Base\Mappings\Blueprint;
+use Sigmie\Base\Mappings\Properties;
+use Sigmie\Base\Mappings\PropertiesBuilder;
 use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
 use Sigmie\Tools\Sigmie;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class BuilderTest extends TestCase
 {
@@ -35,118 +36,6 @@ class BuilderTest extends TestCase
 
     public function foo(): void
     {
-        $expectedBody = [
-            'settings' => [
-                'number_of_shards' => 2,
-                'number_of_replicas' => 5,
-                'analysis' => [
-                    'analyzer' => [
-                        "sigmie_default" => [
-                            "tokenizer" => "whitespace",
-                            "filter" => [
-                                "no_stem",
-                                "custom_stem",
-                                "english_possessive_stemmer",
-                                "lowercase",
-                                "english_stop",
-                                "english_keywords",
-                                "english_stemmer",
-                                "my_synonym",
-                                "my_stop"
-                            ]
-                        ],
-                        'tokenizer' => [
-                            'my_tokenizer' => [
-                                "type" => "pattern",
-                                "pattern" => ","
-                            ]
-                        ]
-                    ],
-                    "filter" => [
-                        "english_stop" => [
-                            "type" => "stop",
-                            "stopwords" => "_english_"
-                        ],
-                        "english_keywords" => [
-                            "type" => "keyword_marker",
-                            "keywords" => [
-                                "example"
-                            ]
-                        ],
-                        "english_stemmer" => [
-                            "type" => "stemmer",
-                            "language" => "english"
-                        ],
-                        "english_possessive_stemmer" => [
-                            "type" => "stemmer",
-                            "language" => "possessive_english"
-                        ],
-                        "no_stem" => [
-                            "type" => "keyword_marker",
-                            "keywords" => ['super', 'lazy', 'john']
-                        ],
-                        "custom_stem" => [
-                            "type" => "stemmer_override",
-                            "rules" => [
-                                'mice' => 'mouse',
-                                'skies' => 'sky'
-                            ],
-                        ],
-                        "stopwords" => [
-                            "type" => "stop",
-                            "stopwords" => ['foo', 'bar', 'baz']
-                        ],
-                        "synonyms" => [
-                            "type" => "synonym",
-                            "synonyms" => [
-                                "i-pod, i pod => ipod",
-                                "universe, cosmos"
-                            ]
-                        ]
-                    ]
-                ]
-            ],
-            "mappings" => [
-                // "properties" => [
-                //     'content' => [
-                //         "type" => "string"
-                //     ]
-                // ],
-                "dynamic_templates" => [
-                    ['sigmie' => [
-                        'match' => "*", // All field names
-                        "match_mapping_type" => 'string', // String fields
-                        "mapping" => [
-                            // 'type' => 'text',
-                            'analyzer' => 'sigmie_default'
-                        ]
-                    ]]
-                ]
-            ]
-        ];
-
-
-        //TODO add mapping analyzers to index
-        // ->language(new English)
-        // ->withLanguageDefaults()
-        // ->withDefaultStopwords()
-        // ->withoutMappings()
-        // ->mappings(function (Blueprint $blueprint) {
-
-        //     $analyzer = new Analyzer;
-
-        //     $blueprint->text('title')->searchAsYouType();
-        //     $blueprint->text('keywords')->keyword();
-        //     $blueprint->text('content')->unstructuredText($analyzer);
-
-        //     $blueprint->number('adults')->integer();
-        //     $blueprint->number('price')->float();
-
-        //     $blueprint->date('created_at');
-        //     $blueprint->bool('bar');
-
-        //     return $blueprint;
-        // });
     }
 
     public function setUp(): void
@@ -163,6 +52,22 @@ class BuilderTest extends TestCase
     {
         $this->sigmie->newIndex('foo')
             ->language(new Greek)
+            ->mappings(function (Blueprint $blueprint) {
+
+                $blueprint->text('title')->searchAsYouType();
+                // $blueprint->text('keywords')->keyword();
+                $blueprint->text('content')->unstructuredText();
+                // $blueprint->text('content')->unstructuredText($analyzer);
+
+                $blueprint->number('adults')->integer();
+                $blueprint->number('price')->float();
+
+                $blueprint->date('created_at');
+                $blueprint->bool('isValid');
+
+                return $blueprint;
+            })
+            // ->withoutMappings()
             ->tokenizeOn(new Whitespaces)
             ->stopwords(['foo', 'bar', 'baz'])
             ->keywords(['foo', 'bar', 'paz'])
@@ -181,6 +86,16 @@ class BuilderTest extends TestCase
             ->create();
 
         $index = $this->getIndex('foo');
+
+        $index->addAsyncDocument(new Document([
+            'title' => 'Hi babby how are you doing ?',
+            'keywords' => 'google',
+            'content' => 'The following request defines a dynamic template named strings_as_ip. When Elasticsearch detects new string fields matching the ip* pattern, it maps those fields as runtime fields of type ip. Because ip fields aren’t mapped dynamically, you can use this template with either "dynamic":"true" or "dynamic":"runtime".',
+            'adults' => 3,
+            'price' => 33.22,
+            'created_at' => '2020-01-01',
+            'isValid' => false
+        ]));
     }
 
     /**

@@ -15,13 +15,11 @@ class Date extends BaseType
         $this->formats[] = $format;
     }
 
-    protected function raw()
+    public function raw()
     {
         return [
-            $this->name => [
                 'type' => 'date',
                 'format' => implode('|', $this->formats)
-            ]
         ];
     }
 }

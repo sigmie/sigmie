@@ -17,6 +17,8 @@ class Analysis
 
     protected Tokenizer $tokenizer;
 
+    protected string $analyzerName;
+
     public function __construct(
         protected array $filters = []
     ) {
@@ -24,6 +26,7 @@ class Analysis
 
     public function createAnalyzer(string $name, Tokenizer $tokenizer,): Analyzer
     {
+        $this->analyzerName = $name;
         $this->tokenizer = $tokenizer;
         $this->analyzer = new Analyzer($name, $this->tokenizer, [
             ...$this->filters
@@ -59,7 +62,10 @@ class Analysis
 
         $result = [
             'analyzer' => $this->analyzer->raw(),
-            'filter' => $filter
+            'filter' => $filter,
+            'default' => [
+                'type' => $this->analyzerName
+            ]
         ];
 
         if ($this->tokenizer instanceof Configurable) {

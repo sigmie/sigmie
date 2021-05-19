@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Carbon\Carbon;
+use Closure;
+use Exception;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\TokenFilter\Keywords;
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
@@ -17,6 +19,10 @@ use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\Tokenizer;
+use Sigmie\Base\Exceptions\MissingMapping;
+use Sigmie\Base\Mappings\Blueprint;
+use Sigmie\Base\Mappings\Properties;
+use Sigmie\Base\Mappings\PropertiesBuilder;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Builder
@@ -45,7 +51,8 @@ class Builder
 
     protected array $stemming = [];
 
-    public function __construct(HttpConnection $connection, EventDispatcherInterface $events)
+    protected Closure $blueprintCallback;
+public function __construct(HttpConnection $connection, EventDispatcherInterface $events)
     {
         $this->events = $events;
         $this->tokenizer = new WordBoundaries();
@@ -97,8 +104,10 @@ class Builder
         return $this;
     }
 
-    public function mappings()
+    public function mappings(callable $callable)
     {
+        $this->blueprintCallback = $callable;
+
         return $this;
     }
 
@@ -157,6 +166,10 @@ class Builder
 
         $name = "{$this->prefix}{$timestamp}";
 
+        if ($this->dynamicMappings === false && isset($this->blueprintCallback) === false) {
+            throw new MissingMapping();
+        }
+
         $analysis = new Analysis([
             new Stopwords('sigmie_stopwords', $this->stopwords),
             new TwoWaySynonyms('sigmie_synonyms', $this->twoWaySynonyms),
@@ -174,7 +187,15 @@ class Builder
             $this->tokenizer
         );
 
-        $mappings = new Mappings($analyzer);
+        $mappings = new DynamicMappings($analyzer);
+
+        if ($this->dynamicMappings === false) {
+            $blueprint = ($this->blueprintCallback)(new Blueprint);
+
+            $properties = $blueprint($analyzer);
+
+            $mappings = new Mappings($analyzer, $properties);
+        }
 
         $settings = new Settings(
             $this->shards,

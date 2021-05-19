@@ -15,17 +15,25 @@ class Text extends BaseType
 
     public function searchAsYouType(Analyzer $analyzer = null)
     {
+        $this->analyzer = $analyzer;
         $this->type = 'search_as_you_type';
-    }
-
-    public function keyword(Analyzer $analyzer = null)
-    {
-        $this->type = 'keyword';
     }
 
     public function unstructuredText(Analyzer $analyzer = null)
     {
+        $this->analyzer = $analyzer;
         $this->type = 'text';
+    }
+
+    public function completion(Analyzer $analyzer = null)
+    {
+        $this->analyzer = $analyzer;
+        $this->type = 'completion';
+    }
+
+    public function withAnalyzer(Analyzer $analyzer)
+    {
+        $this->analyzer = $analyzer;
     }
 
     public function analyzer()
@@ -33,13 +41,11 @@ class Text extends BaseType
         return $this->analyzer;
     }
 
-    protected function raw()
+    public function raw()
     {
         return [
-            $this->name => [
-                'type' => $this->type,
-                'analyzer' => $this->analyzer
-            ]
+            'type' => $this->type,
+            'analyzer' => $this->analyzer->name()
         ];
     }
 }
