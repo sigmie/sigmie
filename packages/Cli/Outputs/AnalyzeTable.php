@@ -6,8 +6,6 @@ namespace Sigmie\Cli\Outputs;
 
 use Sigmie\Cli\Contracts\OutputFormat;
 use Symfony\Component\Console\Helper\Table;
-use Symfony\Component\Console\Helper\TableCell;
-use Symfony\Component\Console\Helper\TableCellStyle;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class AnalyzeTable implements OutputFormat

@@ -26,7 +26,6 @@ class ConnectionTest extends TestCase
     {
         $indexName = $this->testId() . '_foo';
         $this->expectException(ElasticsearchException::class);
-        $this->expectExceptionMessage('Resource already exists exception.');
 
         $this->createIndex(new Index($indexName));
         $this->createIndex(new Index($indexName));

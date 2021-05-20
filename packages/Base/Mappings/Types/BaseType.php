@@ -12,15 +12,15 @@ abstract class BaseType implements Type
     {
     }
 
+    public function __invoke()
+    {
+        return $this->raw();
+    }
+
     public function name(): string
     {
         return $this->name;
     }
 
     abstract protected function raw();
-
-    public function __invoke()
-    {
-        return $this->raw();
-    }
 }

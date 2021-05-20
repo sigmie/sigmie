@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
-use Sigmie\Base\Mappings\Properties;
 
 class DynamicMappings extends Mappings
 {

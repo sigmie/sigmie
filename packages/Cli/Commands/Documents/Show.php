@@ -1,13 +1,11 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Sigmie\Cli\Commands\Documents;
 
-use Sigmie\Base\APIs\Calls\Cat;
 use Sigmie\Base\APIs\Calls\Mget;
-use Sigmie\Cli\BaseCommand;
-use Sigmie\Cli\Outputs\IndexListTable;
-use Sigmie\Base\Index\Index;
 use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Base\Index\Index;
+use Sigmie\Cli\BaseCommand;
 use Sigmie\Cli\Outputs\DocumentTable;
 use Symfony\Component\Console\Input\InputArgument;
 
@@ -18,19 +16,6 @@ class Show extends BaseCommand
     protected static $defaultName = 'doc:show';
 
     protected Index $index;
-
-    protected function configure()
-    {
-        parent::configure();
-
-        $this->addArgument('index', InputArgument::REQUIRED, 'Index name');
-        $this->addArgument('document', InputArgument::REQUIRED, 'Document id');
-    }
-
-    protected function index(): Index
-    {
-        return $this->index;
-    }
 
     public function executeCommand(): int
     {
@@ -46,5 +31,18 @@ class Show extends BaseCommand
         $table->output($this->output);
 
         return 1;
+    }
+
+    protected function configure()
+    {
+        parent::configure();
+
+        $this->addArgument('index', InputArgument::REQUIRED, 'Index name');
+        $this->addArgument('document', InputArgument::REQUIRED, 'Document id');
+    }
+
+    protected function index(): Index
+    {
+        return $this->index;
     }
 }

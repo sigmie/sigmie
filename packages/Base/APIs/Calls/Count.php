@@ -8,7 +8,6 @@ use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
-use Sigmie\Http\JSONRequest;
 
 trait Count
 {

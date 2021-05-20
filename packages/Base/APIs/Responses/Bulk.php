@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\APIs\Responses;
 
 use Exception;
-use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\ResponseInterface;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Exceptions\BulkException;

@@ -7,7 +7,7 @@ namespace Sigmie\Base\Analysis\Tokenizers;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\Tokenizer;
 
-class Pattern implements Tokenizer, Configurable
+class Pattern implements Configurable, Tokenizer
 {
     public function __construct(protected string $pattern)
     {

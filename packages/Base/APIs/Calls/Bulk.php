@@ -8,7 +8,6 @@ use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\APIs\Requests\BulkRequest;
 use Sigmie\Base\APIs\Responses\Bulk as BulkResponse;
 use Sigmie\Base\Contracts\API;
-use Sigmie\Http\NdJSONRequest;
 
 trait Bulk
 {

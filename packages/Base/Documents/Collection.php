@@ -12,7 +12,7 @@ trait Collection
 {
     protected CollectionInterface $collection;
 
-    public function addDocument(Document $element): self
+    public function addDocument(Document &$element): self
     {
         $this->collection->add($element);
 

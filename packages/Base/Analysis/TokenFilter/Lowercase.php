@@ -8,7 +8,7 @@ use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\Languageable;
 use Sigmie\Base\Contracts\TokenFilter;
 
-class Lowercase implements TokenFilter, Languageable
+class Lowercase implements Languageable, TokenFilter
 {
     protected Language $language = null;
 

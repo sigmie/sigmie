@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Http;
 
-use Exception;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\HttpConnection as ConnectionInterface;
 use Sigmie\Http\Contracts\JSONClient as JSONClientInterface;
-use Sigmie\Http\Contracts\JSONRequest;
 
 class Connection implements ConnectionInterface
 {

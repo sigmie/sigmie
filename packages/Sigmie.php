@@ -2,23 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Tools;
+namespace Sigmie;
 
 use Exception;
 use GuzzleHttp\Psr7\Uri;
-use Sigmie\Base\Contracts\HttpConnection as RequestInterface;
 use Sigmie\Base\Contracts\Manager as ManagerInterface;
 use Sigmie\Base\Http\Connection as Connection;
 use Sigmie\Base\Http\ElasticsearchResponse;
+use Sigmie\Base\Index;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Index\Builder;
 use Sigmie\Http\Contracts\Auth;
-use Sigmie\Http\Contracts\JSONClient as JSONClientInterface;
 use Sigmie\Http\Contracts\JSONRequest as JSONRequestInterface;
 use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Support\Contracts\Collection;
-use Sigmie\Base\Index;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
@@ -46,9 +44,7 @@ class Sigmie implements ManagerInterface
 
     public function index(string $name): Index\Index
     {
-        $index = $this->getIndex($name);
-
-        return $index;
+        return $this->getIndex($name);
     }
 
     public function indices(): Collection

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Documents;
 
-use PHPUnit\Framework\MockObject\Api;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Index\Index;
 
@@ -18,21 +17,29 @@ class Document
 
     protected ?Index $index = null;
 
-    public function __construct($attributes = [], ?string $id = null)
+    public function __construct($attributes = [], string|int|null $id = null)
     {
         $this->attributes = $attributes;
         $this->id = $id;
     }
 
-    protected function index(): Index
+    public function __set($name, $value)
     {
-        return $this->index;
+        return $this->setAttribute($name, $value);
+    }
+
+    public function __get($attribute)
+    {
+        return $this->getAttribute($attribute);
+    }
+
+    public function save()
+    {
+        $this->index->updateDocument($this);
     }
 
     public function setIndex(Index $index): self
     {
-        self::$httpConnection = $index::$httpConnection;
-
         $this->index = $index;
 
         return $this;
@@ -87,5 +94,10 @@ class Document
     public function getId(): ?string
     {
         return $this->id;
+    }
+
+    protected function index(): Index
+    {
+        return $this->index;
     }
 }

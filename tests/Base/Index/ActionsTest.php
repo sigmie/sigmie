@@ -25,7 +25,7 @@ class ActionsTest extends TestCase
      */
     public function index_exists()
     {
-        $indexName = $this->testId() . '_foo';
+        $indexName = 'foo';
         $index = new Index($indexName);
 
         $exists = $this->indexExists($index);
@@ -35,6 +35,7 @@ class ActionsTest extends TestCase
         $this->createIndex($index);
 
         $exists = $this->indexExists($index);
+
         $this->assertTrue($exists);
     }
 
@@ -43,7 +44,7 @@ class ActionsTest extends TestCase
      */
     public function create_index(): void
     {
-        $indexName = $this->testId() . '_bar';
+        $indexName = 'bar';
 
         $this->createIndex(new Index($indexName));
 
@@ -55,7 +56,7 @@ class ActionsTest extends TestCase
      */
     public function delete_index()
     {
-        $indexName = $this->testId() . '_bar';
+        $indexName = 'bar';
         $this->createIndex(new Index($indexName));
 
         $this->deleteIndex($indexName);
@@ -70,8 +71,8 @@ class ActionsTest extends TestCase
      */
     public function list_indices()
     {
-        $fooIndexName = $this->testId() . '_foo';
-        $barIndexName = $this->testId() . '_bar';
+        $fooIndexName = 'foo';
+        $barIndexName = 'bar';
 
         $this->createIndex(new Index($fooIndexName));
         $this->createIndex(new Index($barIndexName));

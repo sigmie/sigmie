@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Cli\Commands\Index;
 
 use Sigmie\Base\Index\Actions as IndexActions;
-use Sigmie\Base\Index\Index;
 use Sigmie\Cli\BaseCommand;
-use Symfony\Component\Console\Helper\Helper;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 
@@ -16,11 +14,6 @@ class Clear extends BaseCommand
     use IndexActions;
 
     protected static $defaultName = 'index:clear';
-
-    protected function configure()
-    {
-        parent::configure();
-    }
 
     public function executeCommand(): int
     {
@@ -44,5 +37,10 @@ class Clear extends BaseCommand
         }
 
         return 1;
+    }
+
+    protected function configure()
+    {
+        parent::configure();
     }
 }

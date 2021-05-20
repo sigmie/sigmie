@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\Mappings\Types;
 
 use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Contracts\Type;
 
 class Text extends BaseType
 {

@@ -9,7 +9,6 @@ use Sigmie\Base\APIs\Requests\MgetRequest;
 use Sigmie\Base\APIs\Responses\MgetResponse;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\RequiresIndexAware;
-use Sigmie\Http\JSONRequest;
 
 trait Mget
 {

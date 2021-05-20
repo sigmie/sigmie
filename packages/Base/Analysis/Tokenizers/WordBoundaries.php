@@ -7,7 +7,7 @@ namespace Sigmie\Base\Analysis\Tokenizers;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\Tokenizer;
 
-class WordBoundaries implements Tokenizer, Configurable
+class WordBoundaries implements Configurable, Tokenizer
 {
     public function __construct(protected int $maxTokenLength = 255)
     {

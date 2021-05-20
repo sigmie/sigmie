@@ -49,6 +49,8 @@ class IndexTest extends TestCase
 
         $document->setAttribute('foo', 'john');
 
+        $document->save();
+
         $doc = $index['id'];
 
         $this->assertEquals($doc->getAttribute('foo'), 'john');

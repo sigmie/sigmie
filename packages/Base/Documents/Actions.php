@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Documents;
 
+use Exception;
 use Sigmie\Base\APIs\Calls\Bulk as BulkAPI;
 use Sigmie\Base\APIs\Calls\Delete as DeleteAPI;
 use Sigmie\Base\APIs\Calls\Mget as MgetAPI;
@@ -16,6 +17,22 @@ use Sigmie\Base\Search\Query;
 trait Actions
 {
     use SearchAPI, DeleteAPI, MgetAPI, BulkAPI, UpdateAPI, API;
+
+    public function updateDocument(Document $document): Document
+    {
+        $body = [
+            ['update' => ['_id' => $document->getId()]],
+            ['doc' => $document->attributes()],
+        ];
+
+        $response = $this->bulkAPICall($document->getIndex()->name, $body);
+
+        if ($response->failed()) {
+            throw new Exception('Document update failed.');
+        }
+
+        return $document;
+    }
 
     protected function upsertDocuments(DocumentCollection &$documentCollection): DocumentCollection
     {

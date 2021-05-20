@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\Analysis\Languages\English;
 
 use Sigmie\Base\Analysis\TokenFilter\LanguageStemmer;
-use Sigmie\Base\Analysis\TokenFilter\Stemmer as TokenFilterStemmer;
 
 class PossessiveStemmer extends LanguageStemmer
 {

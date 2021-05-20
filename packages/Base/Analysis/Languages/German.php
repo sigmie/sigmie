@@ -6,8 +6,8 @@ namespace Sigmie\Base\Analysis\Languages;
 
 use Sigmie\Base\Analysis\Languages\German\Stemmer as GermanStemmer;
 use Sigmie\Base\Analysis\Languages\German\Stopwords as GermanStopwords;
-use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
+use Sigmie\Base\Contracts\Language;
 
 class German implements Language
 {

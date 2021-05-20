@@ -7,7 +7,7 @@ namespace Sigmie\Base\Index;
 use Sigmie\Base\APIs\Calls\Cat as CatAPI;
 use Sigmie\Base\APIs\Calls\Index as IndexAPI;
 use Sigmie\Base\Contracts\Events;
-use Sigmie\Base\Exceptions\NotFound;
+use Sigmie\Base\Exceptions\ElasticsearchException;
 use Sigmie\Support\Collection;
 
 trait Actions
@@ -58,7 +58,7 @@ trait Actions
             $index->setHttpConnection($this->getHttpConnection());
 
             return $index;
-        } catch (NotFound) {
+        } catch (ElasticsearchException) {
             return null;
         }
     }
@@ -78,8 +78,8 @@ trait Actions
             }
 
             return $collection;
-        } catch (NotFound) {
-            return null;
+        } catch (ElasticsearchException) {
+            return new Collection();
         }
     }
 

@@ -43,19 +43,19 @@ class TestCase extends \PHPUnit\Framework\TestCase
         $this->tearDownSigmieTesting($uses);
     }
 
+    public function assertIndexExists(string $name)
+    {
+        $index = $this->getIndex($name);
+
+        $this->assertInstanceOf(Index::class, $index);
+    }
+
     protected function testId(): string
     {
         $class = strtolower(static::class);
         $class = str_replace('\\', '_', $class);
 
         return  $class . '_' . $this->getName();
-    }
-
-    public function assertIndexExists(string $name)
-    {
-        $index = $this->getIndex($name);
-
-        $this->assertInstanceOf(Index::class, $index);
     }
 
     private function classUsesTrait($class, $trait): bool

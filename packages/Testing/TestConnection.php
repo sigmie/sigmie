@@ -12,12 +12,12 @@ trait TestConnection
 {
     use API;
 
-    abstract protected function testId(): string;
-
     public function setupTestConnection()
     {
         $client = JSONClient::create(getenv('ES_HOST'));
 
         $this->setHttpConnection(new Connection($client));
     }
+
+    abstract protected function testId(): string;
 }

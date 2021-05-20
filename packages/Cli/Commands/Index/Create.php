@@ -7,10 +7,8 @@ namespace Sigmie\Cli\Commands\Index;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Index\Index;
 use Sigmie\Cli\BaseCommand;
-use Sigmie\Cli\Commands\ListIndices;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\StringInput;
 
 class Create extends BaseCommand
 {

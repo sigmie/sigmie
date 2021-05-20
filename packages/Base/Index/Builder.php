@@ -6,23 +6,17 @@ namespace Sigmie\Base\Index;
 
 use Carbon\Carbon;
 use Closure;
-use Exception;
-use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\TokenFilter\Keywords;
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
-use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\Tokenizer;
 use Sigmie\Base\Exceptions\MissingMapping;
+use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Mappings\Blueprint;
-use Sigmie\Base\Mappings\Properties;
-use Sigmie\Base\Mappings\PropertiesBuilder;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Builder
@@ -47,7 +41,7 @@ class Builder
 
     protected array $twoWaySynonyms = [];
 
-    protected array $oneWasSynonyms = [];
+    protected array $oneWaySynonyms = [];
 
     protected array $stemming = [];
 
@@ -139,13 +133,6 @@ public function __construct(HttpConnection $connection, EventDispatcherInterface
         return $this;
     }
 
-    public function keywords(array $keywords)
-    {
-        $this->keywords = $keywords;
-
-        return $this;
-    }
-
     public function shards(int $shards)
     {
         $this->shards = $shards;
@@ -174,8 +161,7 @@ public function __construct(HttpConnection $connection, EventDispatcherInterface
             new Stopwords('sigmie_stopwords', $this->stopwords),
             new TwoWaySynonyms('sigmie_synonyms', $this->twoWaySynonyms),
             new OneWaySynonyms('sigmie_synonyms', $this->oneWaySynonyms),
-            new Stemmer('sigmie_stem', $this->stemming),
-            new Keywords('sigmie_keywords', $this->keywords)
+            new Stemmer('sigmie_stem', $this->stemming)
         ]);
 
         if (isset($this->language)) {
@@ -207,6 +193,6 @@ public function __construct(HttpConnection $connection, EventDispatcherInterface
 
         $this->createAlias($name, $this->alias);
 
-        return;
+        
     }
 }

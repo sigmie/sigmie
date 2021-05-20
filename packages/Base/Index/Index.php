@@ -19,18 +19,10 @@ use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Search\Searchable;
 use Sigmie\Support\Collection;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Index implements DocumentCollectionInterface
 {
     use CountAPI, DocumentsActions, IndexActions, Searchable, API, AliasActions;
-
-    protected EventDispatcherInterface $events;
-
-    protected function events(): EventDispatcherInterface
-    {
-        return $this->events;
-    }
 
     protected string $name;
 
@@ -133,7 +125,7 @@ class Index implements DocumentCollectionInterface
         return $this->name;
     }
 
-    public function addDocument(Document $element): self
+    public function addDocument(Document &$element): self
     {
         $this->createDocument($element, async: false);
 

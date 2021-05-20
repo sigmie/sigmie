@@ -8,7 +8,6 @@ use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Base\Search\Query;
-use Sigmie\Http\JSONRequest;
 
 trait Search
 {

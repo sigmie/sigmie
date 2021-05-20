@@ -23,7 +23,7 @@ use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Mappings\PropertiesBuilder;
 use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
-use Sigmie\Tools\Sigmie;
+use Sigmie\Sigmie;
 
 class BuilderTest extends TestCase
 {
@@ -70,7 +70,6 @@ class BuilderTest extends TestCase
             // ->withoutMappings()
             ->tokenizeOn(new Whitespaces)
             ->stopwords(['foo', 'bar', 'baz'])
-            ->keywords(['foo', 'bar', 'paz'])
             ->stemming([
                 [['mice'], 'mouse'],
                 [['goog'], 'google'],
@@ -103,7 +102,8 @@ class BuilderTest extends TestCase
      */
     public function creates_and_index_with_alias()
     {
-        $this->sigmie->newIndex('foo')->create();
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()->create();
 
         $this->assertIndexExists('foo');
     }
@@ -115,7 +115,7 @@ class BuilderTest extends TestCase
     {
         Travel::to('2020-01-01 23:59:59');
 
-        $this->sigmie->newIndex('foo')->create();
+        $this->sigmie->newIndex('foo')->withoutMappings()->create();
 
         $this->assertIndexExists('20200101235959000000');
     }
@@ -128,6 +128,7 @@ class BuilderTest extends TestCase
         Travel::to('2020-01-01 23:59:59');
 
         $this->sigmie->newIndex('foo')
+            ->withoutMappings()
             ->shards(4)
             ->replicas(3)
             ->prefix('.sigmie')

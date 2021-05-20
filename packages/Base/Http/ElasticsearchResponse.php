@@ -9,7 +9,6 @@ use Psr\Http\Message\ResponseInterface;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse as ElasticsearchResponseInterface;
 use Sigmie\Base\Exceptions\ElasticsearchException;
-use Sigmie\Base\Exceptions\NotFound;
 use Sigmie\Http\JSONResponse;
 
 class ElasticsearchResponse extends JSONResponse implements ElasticsearchResponseInterface

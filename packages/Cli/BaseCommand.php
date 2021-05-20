@@ -27,6 +27,11 @@ abstract class BaseCommand extends Command
 
     protected Config $config;
 
+    public function handleRaw(JSONResponse $response)
+    {
+        $this->output->writeln(json_encode($response->json(), JSON_PRETTY_PRINT));
+    }
+
     abstract protected function executeCommand(): int;
 
     protected function configure()
@@ -38,11 +43,6 @@ abstract class BaseCommand extends Command
         $this->config = new Config;
 
         $this->setHttpConnection($this->createHttpConnection());
-    }
-
-    public function handleRaw(JSONResponse $response)
-    {
-        $this->output->writeln(json_encode($response->json(), JSON_PRETTY_PRINT));
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)

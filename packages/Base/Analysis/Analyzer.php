@@ -7,7 +7,6 @@ namespace Sigmie\Base\Analysis;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
-use Sigmie\Cli\Config;
 use Sigmie\Support\Collection;
 
 class Analyzer

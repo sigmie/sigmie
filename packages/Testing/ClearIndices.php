@@ -5,13 +5,10 @@ declare(strict_types=1);
 namespace Sigmie\Testing;
 
 use Sigmie\Base\Index\Actions as IndexActions;
-use Sigmie\Base\Index\Index;
 
 trait ClearIndices
 {
     use IndexActions;
-
-    abstract protected function testId(): string;
 
     public function clearIndices()
     {
@@ -21,4 +18,6 @@ trait ClearIndices
             }
         }
     }
+
+    abstract protected function testId(): string;
 }
