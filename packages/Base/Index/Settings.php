@@ -26,25 +26,6 @@ class Settings
         $this->replicaShards = $replicaShards;
     }
 
-    public function getAnalysis(): Analysis
-    {
-        return $this->analysis;
-    }
-
-    public function setPrimaryShards(int $number): self
-    {
-        $this->primaryShards = $number;
-
-        return $this;
-    }
-
-    public function setReplicaShards(int $number): self
-    {
-        $this->replicaShards = $number;
-
-        return $this;
-    }
-
     public function getPrimaryShards()
     {
         return $this->primaryShards;

@@ -11,12 +11,13 @@ use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Base\Contract\CharFilter;
+use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
 use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\Tokenizer;
 use Sigmie\Base\Exceptions\MissingMapping;
 use Sigmie\Base\Index\Actions as IndexActions;
-use Sigmie\Base\Mappings\Blueprint;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Builder
@@ -45,8 +46,10 @@ class Builder
 
     protected array $stemming = [];
 
+    protected array $charFilter = [];
+
     protected Closure $blueprintCallback;
-public function __construct(HttpConnection $connection, EventDispatcherInterface $events)
+    public function __construct(HttpConnection $connection, EventDispatcherInterface $events)
     {
         $this->events = $events;
         $this->tokenizer = new WordBoundaries();
@@ -72,15 +75,6 @@ public function __construct(HttpConnection $connection, EventDispatcherInterface
     {
         $this->prefix = "{$prefix}_";
 
-        return $this;
-    }
-
-    public function withLanguageDefaults()
-    {
-        return $this;
-    }
-    public function withDefaultStopwords()
-    {
         return $this;
     }
 
@@ -126,6 +120,13 @@ public function __construct(HttpConnection $connection, EventDispatcherInterface
         return $this;
     }
 
+    public function normalizer(ContractsCharFilter $charFilter)
+    {
+        $this->charFilter[] = $charFilter;
+
+        return $this;
+    }
+
     public function stemming(array $stemming)
     {
         $this->stemming = $stemming;
@@ -159,10 +160,10 @@ public function __construct(HttpConnection $connection, EventDispatcherInterface
 
         $analysis = new Analysis([
             new Stopwords('sigmie_stopwords', $this->stopwords),
-            new TwoWaySynonyms('sigmie_synonyms', $this->twoWaySynonyms),
-            new OneWaySynonyms('sigmie_synonyms', $this->oneWaySynonyms),
-            new Stemmer('sigmie_stem', $this->stemming)
-        ]);
+            new TwoWaySynonyms('sigmie_two_way_synonyms', $this->twoWaySynonyms),
+            new OneWaySynonyms('sigmie_one_way_synonyms', $this->oneWaySynonyms),
+            new Stemmer('sigmie_stemmer_overrides', $this->stemming)
+        ], $this->charFilter);
 
         if (isset($this->language)) {
             $analysis->addLanguageFilters($this->language);
@@ -192,7 +193,5 @@ public function __construct(HttpConnection $connection, EventDispatcherInterface
         $this->createIndex(new Index($name, $settings, $mappings));
 
         $this->createAlias($name, $this->alias);
-
-        
     }
 }

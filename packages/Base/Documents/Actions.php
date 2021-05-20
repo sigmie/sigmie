@@ -25,7 +25,7 @@ trait Actions
             ['doc' => $document->attributes()],
         ];
 
-        $response = $this->bulkAPICall($document->getIndex()->name, $body);
+        $response = $this->bulkAPICall($document->getIndex()->identifier, $body);
 
         if ($response->failed()) {
             throw new Exception('Document update failed.');

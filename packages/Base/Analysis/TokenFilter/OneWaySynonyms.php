@@ -16,7 +16,7 @@ class OneWaySynonyms implements TokenFilter
 
     public function name(): string
     {
-        return $this->name . '_one_way_synonyms';
+        return $this->name;
     }
 
     public function type(): string
@@ -26,10 +26,14 @@ class OneWaySynonyms implements TokenFilter
 
     public function value(): array
     {
-        $synonyms = array_map(fn ($value) => implode(',', $value[0]) . '=>' . implode(',', $value[1]), $this->synonyms);
+        $rules = [];
+        foreach ($this->synonyms as $to => $from) {
+            $from = implode(', ', $from);
+            $rules[] = "{$from} => {$to}";
+        }
 
         return [
-            "synonyms" => $synonyms
+            "synonyms" => $rules
         ];
     }
 }

@@ -8,7 +8,7 @@ use Sigmie\Base\Analysis\TokenFilter\Stopwords as TokenFilterStopwords;
 
 class Stopwords extends TokenFilterStopwords
 {
-    protected string $name = 'english_stop';
+    protected string $name = 'english_stopwords';
 
     public function __construct()
     {

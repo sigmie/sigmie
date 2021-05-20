@@ -11,11 +11,17 @@ class Pattern implements Configurable, Tokenizer
 {
     public function __construct(protected string $pattern)
     {
+
+    }
+
+    public function type(): string
+    {
+        return 'sigmie_pattern_tokenizer';
     }
 
     public function name(): string
     {
-        return 'sigmie_pattern_tokenizer';
+        return 'sigmie_tokenizer';
     }
 
     public function config(): array

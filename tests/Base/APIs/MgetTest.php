@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\APIs\Calls;
+namespace Sigmie\Test\Base\APIs;
 
 use Sigmie\Base\APIs\Calls\Mget as MgetAPI;
 use Sigmie\Base\Contracts\DocumentCollection;

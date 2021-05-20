@@ -26,7 +26,11 @@ class Stemmer implements TokenFilter
 
     public function value(): array
     {
-        $rules = array_map(fn ($value) => implode(', ', $value[0]) . '=>' . $value[1], $this->stems);
+        $rules = [];
+        foreach ($this->stems as $to => $from) {
+            $from = implode(', ', $from);
+            $rules[] = "{$from} => {$to}";
+        }
 
         return [
             "rules" => $rules

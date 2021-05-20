@@ -72,7 +72,7 @@ class Sigmie implements ManagerInterface
     {
         $client = JSONClient::create($host, $auth);
 
-        return new Sigmie($client);
+        return new Sigmie(new Connection($client));
     }
 
     protected function httpCall(JSONRequestInterface $request, string $responseClass = ElasticsearchResponse::class): ElasticsearchResponse

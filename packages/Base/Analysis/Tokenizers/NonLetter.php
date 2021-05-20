@@ -8,11 +8,7 @@ use Sigmie\Base\Contracts\Tokenizer;
 
 class NonLetter implements Tokenizer
 {
-    public function __construct(protected string $pattern)
-    {
-    }
-
-    public function name(): string
+    public function type(): string
     {
         return 'letter';
     }

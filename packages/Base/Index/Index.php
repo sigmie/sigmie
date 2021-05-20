@@ -24,7 +24,7 @@ class Index implements DocumentCollectionInterface
 {
     use CountAPI, DocumentsActions, IndexActions, Searchable, API, AliasActions;
 
-    protected string $name;
+    protected string $identifier;
 
     protected ?int $count;
 
@@ -63,21 +63,27 @@ class Index implements DocumentCollectionInterface
             );
         }
 
-        $this->name = $name;
+        $this->identifier = $name;
         $this->settings = $settings;
         $this->mappings = $mappings;
     }
 
+    public function rename(string $name)
+    {
+        //TODO
+         
+    }
+
     public function delete()
     {
-        return $this->deleteIndex($this->name);
+        return $this->deleteIndex($this->identifier);
     }
 
     public function setAlias(string $alias): self
     {
         $this->aliases[] = $alias;
 
-        $this->createAlias($this->name, $alias);
+        $this->createAlias($this->identifier, $alias);
 
         return $this;
     }
@@ -89,7 +95,7 @@ class Index implements DocumentCollectionInterface
 
     public function removeAlias(string $alias)
     {
-        return $this->deleteAlias($this->name, $alias);
+        return $this->deleteAlias($this->identifier, $alias);
     }
 
     public function setSize(?string $size): self
@@ -122,7 +128,7 @@ class Index implements DocumentCollectionInterface
      */
     public function getName()
     {
-        return $this->name;
+        return $this->identifier;
     }
 
     public function addDocument(Document &$element): self
@@ -176,7 +182,7 @@ class Index implements DocumentCollectionInterface
 
     public function clear(): void
     {
-        $this->deleteIndex($this->name);
+        $this->deleteIndex($this->identifier);
         $this->createIndex($this);
     }
 
@@ -256,7 +262,7 @@ class Index implements DocumentCollectionInterface
 
     public function count()
     {
-        $res = $this->countAPICall($this->name);
+        $res = $this->countAPICall($this->identifier);
 
         return $res->json('count');
     }

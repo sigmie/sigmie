@@ -15,7 +15,7 @@ class WordBoundaries implements Configurable, Tokenizer
 
     public function name(): string
     {
-        return 'my_tokenizer';
+        return 'sigmie_tokenizer';
     }
 
     final public function type(): string

@@ -16,7 +16,7 @@ class TwoWaySynonyms implements TokenFilter
 
     public function name(): string
     {
-        return $this->name . '_two_way_synonyms';
+        return $this->name;
     }
 
     public function type(): string
@@ -26,7 +26,7 @@ class TwoWaySynonyms implements TokenFilter
 
     public function value(): array
     {
-        $synonyms = array_map(fn ($value) => implode(',', $value), $this->synonyms);
+        $synonyms = array_map(fn ($value) => implode(', ', $value), $this->synonyms);
 
         return [
             "synonyms" => $synonyms
