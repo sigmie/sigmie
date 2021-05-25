@@ -8,10 +8,13 @@ use Sigmie\Base\Contracts\TokenFilter;
 
 class Stemmer implements TokenFilter
 {
+    protected string $name = 'stemmer_overrides';
+
     public function __construct(
-        protected string $name,
+        protected string $prefix,
         protected array $stems
     ) {
+        $this->name = "{$prefix}_{$this->name}";
     }
 
     public function name(): string

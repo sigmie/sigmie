@@ -8,10 +8,13 @@ use Sigmie\Base\Contracts\TokenFilter;
 
 class TwoWaySynonyms implements TokenFilter
 {
+    protected string $name = 'two_way_synonyms';
+
     public function __construct(
-        protected string $name,
+        protected string $prefix,
         protected array $synonyms
     ) {
+        $this->name = "{$prefix}_{$this->name}";
     }
 
     public function name(): string

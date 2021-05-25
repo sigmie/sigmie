@@ -28,7 +28,7 @@ class Builder
 
     protected int $shards = 1;
 
-    protected string $prefix = '';
+    protected string $prefix = 'sigmie';
 
     protected string $alias;
 
@@ -73,7 +73,7 @@ class Builder
 
     public function prefix(string $prefix)
     {
-        $this->prefix = "{$prefix}_";
+        $this->prefix = "$prefix";
 
         return $this;
     }
@@ -152,17 +152,17 @@ class Builder
     {
         $timestamp = Carbon::now()->format('YmdHisu');
 
-        $name = "{$this->prefix}{$timestamp}";
+        $name = "{$this->prefix}_{$timestamp}";
 
         if ($this->dynamicMappings === false && isset($this->blueprintCallback) === false) {
             throw new MissingMapping();
         }
 
         $analysis = new Analysis([
-            new Stopwords('sigmie_stopwords', $this->stopwords),
-            new TwoWaySynonyms('sigmie_two_way_synonyms', $this->twoWaySynonyms),
-            new OneWaySynonyms('sigmie_one_way_synonyms', $this->oneWaySynonyms),
-            new Stemmer('sigmie_stemmer_overrides', $this->stemming)
+            new Stopwords($this->prefix, $this->stopwords),
+            new TwoWaySynonyms($this->prefix, $this->twoWaySynonyms),
+            new OneWaySynonyms($this->prefix, $this->oneWaySynonyms),
+            new Stemmer($this->prefix, $this->stemming)
         ], $this->charFilter);
 
         if (isset($this->language)) {
@@ -170,7 +170,7 @@ class Builder
         }
 
         $analyzer = $analysis->createAnalyzer(
-            'sigmie_analyzer',
+            "{$this->prefix}_analyzer",
             $this->tokenizer
         );
 

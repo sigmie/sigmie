@@ -71,8 +71,12 @@ trait Actions
             $collection = new Collection();
 
             foreach ($res->json() as $indexName => $indexData) {
+
+                [$prefix, $res] = preg_split("/_/", $indexName);
+
                 $index = new Index($indexName);
                 $index->setHttpConnection($this->getHttpConnection());
+                $index->setPrefix($prefix);
 
                 $collection->add($index);
             }

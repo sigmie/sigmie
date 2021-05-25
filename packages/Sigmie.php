@@ -6,6 +6,7 @@ namespace Sigmie;
 
 use Exception;
 use GuzzleHttp\Psr7\Uri;
+use phpDocumentor\Reflection\DocBlock\Tags\Throws;
 use Sigmie\Base\Contracts\Manager as ManagerInterface;
 use Sigmie\Base\Http\Connection as Connection;
 use Sigmie\Base\Http\ElasticsearchResponse;
@@ -44,7 +45,13 @@ class Sigmie implements ManagerInterface
 
     public function index(string $name): Index\Index
     {
-        return $this->getIndex($name);
+        $indices = $this->getIndices($name);
+
+        if ($indices->count() > 1) {
+            throw new Exception("Multiple indices found for alias {$name}.");
+        }
+
+        return $indices->first();
     }
 
     public function indices(): Collection

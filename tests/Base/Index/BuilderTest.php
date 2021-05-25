@@ -53,6 +53,19 @@ class BuilderTest extends TestCase
     }
 
     /**
+    * @test
+    */
+    public function foo()
+    {
+        $this->sigmie->newIndex('foo')
+            ->tokenizeOn(new Pattern('/[ ]/'))
+            ->withoutMappings()
+            ->create();
+
+        $this->sigmie->index('foo')->update()->stopwords([]);
+    }
+
+    /**
      * @test
      */
     public function pattern_tokenizer()
@@ -99,7 +112,11 @@ class BuilderTest extends TestCase
 
         $data = $this->indexData('foo');
 
-        //TODO add assertions
+        $this->assertArrayHasKey('sigmie_mapping_char_filter', $data['settings']['index']['analysis']['char_filter']);
+        $this->assertEquals([
+            'type' => 'mapping',
+            'mappings' => ['a => bar', 'f => foo']
+        ], $data['settings']['index']['analysis']['char_filter']['sigmie_mapping_char_filter']);
     }
 
     /**
@@ -113,8 +130,13 @@ class BuilderTest extends TestCase
             ->create();
 
         $data = $this->indexData('foo');
-        //TODO add assertions
-        //TODO add docs with multiple pattern filters
+
+        $this->assertArrayHasKey('sigmie_pattern_char_filter', $data['settings']['index']['analysis']['char_filter']);
+        $this->assertEquals([
+            'pattern' => '/foo/',
+            'type' => 'pattern_replace',
+            'replacement' => '$1'
+        ], $data['settings']['index']['analysis']['char_filter']['sigmie_pattern_char_filter']);
     }
 
     /**
@@ -129,7 +151,7 @@ class BuilderTest extends TestCase
 
         $data = $this->indexData('foo');
 
-        //TODO add assertions
+        $this->assertContains('html_strip', $data['settings']['index']['analysis']['analyzer']['sigmie_analyzer']['char_filter']);
     }
 
     /**
@@ -495,22 +517,6 @@ class BuilderTest extends TestCase
         $this->assertEquals('sigmie_analyzer', $data['settings']['index']['analysis']['default']['type']);
     }
 
-    public function index_language()
-    {
-        $this->sigmie->newIndex('foo')
-            ->language(new Greek)
-            ->tokenizeOn(new Whitespaces)
-            ->oneWaySynonyms([
-                [
-                    ['ipod', 'i-pod'], ['i pod']
-                ]
-            ])
-            ->twoWaySynonyms([
-                ["universe", "cosmos"]
-            ])
-            ->create();
-    }
-
     /**
      * @test
      */
@@ -531,7 +537,7 @@ class BuilderTest extends TestCase
 
         $this->sigmie->newIndex('foo')->withoutMappings()->create();
 
-        $this->assertIndexExists('20200101235959000000');
+        $this->assertIndexExists('sigmie_20200101235959000000');
     }
 
     /**
@@ -545,7 +551,7 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->shards(4)
             ->replicas(3)
-            ->prefix('.sigmie')
+            ->prefix('sigmie')
             ->create();
 
         $index = $this->getIndex('foo');

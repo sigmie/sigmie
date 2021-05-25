@@ -18,6 +18,7 @@ use Sigmie\Base\Documents\DocumentsCollection;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Search\Searchable;
+use Sigmie\Base\Index\Update;
 use Sigmie\Support\Collection;
 
 class Index implements DocumentCollectionInterface
@@ -46,6 +47,8 @@ class Index implements DocumentCollectionInterface
 
     protected bool $withIds;
 
+    protected string $prefix;
+
     public function __construct(
         string $name,
         Settings $settings = null,
@@ -68,10 +71,21 @@ class Index implements DocumentCollectionInterface
         $this->mappings = $mappings;
     }
 
-    public function rename(string $name)
+    public function update(): Update
     {
-        //TODO
-         
+        return new Update($this);
+    }
+
+    public function getPrefix(): string
+    {
+        return $this->prefix;
+    }
+
+    public function setPrefix(string $prefix): self
+    {
+        $this->prefix = $prefix;
+
+        return $this;
     }
 
     public function delete()

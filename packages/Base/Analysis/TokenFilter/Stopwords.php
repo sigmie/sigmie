@@ -8,10 +8,13 @@ use Sigmie\Base\Contracts\TokenFilter;
 
 class Stopwords implements TokenFilter
 {
+    protected string $name = 'stopwords';
+
     public function __construct(
-        protected string $name,
+        protected string $prefix,
         protected array $stopwords
     ) {
+        $this->name = "{$prefix}_{$this->name}";
     }
 
     public function name(): string
