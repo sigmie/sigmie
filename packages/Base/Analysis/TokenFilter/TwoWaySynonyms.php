@@ -32,7 +32,8 @@ class TwoWaySynonyms implements TokenFilter
         $synonyms = array_map(fn ($value) => implode(', ', $value), $this->synonyms);
 
         return [
-            "synonyms" => $synonyms
+            'synonyms' => $synonyms,
+            'class' => static::class
         ];
     }
 }

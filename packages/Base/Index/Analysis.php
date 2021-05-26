@@ -60,6 +60,21 @@ class Analysis
         return $this;
     }
 
+    public static function fromRaw(array $data): Analysis
+    {
+        $rawFilters = $data['filter'];
+        $rawChar = $data['char_filter'];
+        $filters = [];
+        $charFilters = [];
+
+        foreach ($rawFilters as $filter) {
+            $type = $filter['type'];
+
+        }
+
+        return new Analysis();
+    }
+
     public function raw(): array
     {
         $filter = new Collection($this->filters);

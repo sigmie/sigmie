@@ -8,6 +8,7 @@ use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\APIs\Calls\Settings;
 use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Index\Index;
+use Sigmie\Base\Index\Settings as IndexSettings;
 
 class Update
 {
@@ -22,12 +23,17 @@ class Update
 
     public function stopwords(array $stopwords)
     {
-        $settings = $this->settingsAPICall($this->index->getName());
+        $settingsResponse = $this->settingsAPICall($this->index->getName());
 
         $prefix = $this->index->getPrefix();
 
+        dd($settingsResponse->json());
+        $settings = IndexSettings::fromRaw($settingsResponse->json());
+
         $stopwords = new Stopwords($prefix, $stopwords);
 
+        dd($settings);
+        dd($stopwords);
         $raw = $stopwords->raw();
 
         dd($settings->json());

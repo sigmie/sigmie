@@ -22,6 +22,9 @@ class Lowercase implements TokenFilter
 
     public function value(): array
     {
-        return ['language' => 'greek'];
+        return [
+            'language' => 'greek',
+            'class' => static::class
+        ];
     }
 }

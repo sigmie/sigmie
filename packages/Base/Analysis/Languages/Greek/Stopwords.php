@@ -16,6 +16,9 @@ class Stopwords extends TokenFilterStopwords
 
     public function value(): array
     {
-        return ['stopwords' => '_greek_'];
+        return [
+            'stopwords' => '_greek_',
+            'class' => static::class
+        ];
     }
 }

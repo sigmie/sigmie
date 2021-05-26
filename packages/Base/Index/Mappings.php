@@ -26,7 +26,7 @@ class Mappings
         ];
     }
 
-    public static function fromResponse(array $data): Mappings
+    public static function fromRaw(array $data): Mappings
     {
         // $analyzerName = $data['mappings']['dynamic_templates'][0]['sigmie']['mapping']['analyzer'];
         $analyzerName = 'TODO change this';

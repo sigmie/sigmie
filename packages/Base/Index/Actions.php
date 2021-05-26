@@ -41,13 +41,13 @@ trait Actions
     protected function getIndex(string $identifier): ?Index
     {
         try {
-            $res = $this->indexAPICall("/{$identifier}", 'GET',);
+            $res = $this->indexAPICall("/{$identifier}", 'GET', ['require_alias' => true]);
 
             $data = array_values($res->json())[0];
 
             $name = $data['settings']['index']['provided_name'];
             $aliases = $data['aliases'];
-            $index = new Index($name, Settings::fromResponse($data), Mappings::fromResponse($data));
+            $index = new Index($name, Settings::fromRaw($data), Mappings::fromRaw($data));
 
             // if (count($aliases) > 0) {
             //     foreach ($aliases as $alias => $value) {

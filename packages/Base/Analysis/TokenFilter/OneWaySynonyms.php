@@ -36,7 +36,8 @@ class OneWaySynonyms implements TokenFilter
         }
 
         return [
-            "synonyms" => $rules
+            'synonyms' => $rules,
+            'class' => static::class
         ];
     }
 }

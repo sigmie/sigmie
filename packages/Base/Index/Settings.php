@@ -36,13 +36,22 @@ class Settings
         return $this->replicaShards;
     }
 
-    public static function fromResponse(array $response)
+    public static function fromRaw(array $response)
     {
-        $shards = (int) $response['settings']['index']['number_of_shards'];
-        $replicas = (int) $response['settings']['index']['number_of_replicas'];
+        $indexIdentifier = array_key_first($response);
+        // $settings = $response[$indexIdentifier]['settings']['index'];
+        // $mappings = $response[$indexIdentifier]['mappings'];
 
+        // $mappings  = Mappings::fromRaw($response[$indexIdentifier]['mappings']);
+        // $analysis = Analysis::fromRaw($settings['analysis']);
 
-        return new static($shards, $replicas);
+        // $settings = new Settings(
+        //     $settings['number_of_shards'],
+        //     $settings['number_of_replicas'],
+        //     $analysis
+        // );
+
+        // return $settings;
     }
 
     public function raw()

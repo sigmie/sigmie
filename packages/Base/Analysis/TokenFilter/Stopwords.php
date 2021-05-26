@@ -29,6 +29,9 @@ class Stopwords implements TokenFilter
 
     public function value(): array
     {
-        return ['stopwords' => $this->stopwords];
+        return [
+            'stopwords' => $this->stopwords,
+            'class' => static::class
+        ];
     }
 }

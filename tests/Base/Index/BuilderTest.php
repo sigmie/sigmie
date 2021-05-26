@@ -16,8 +16,20 @@ use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\MappingFilter;
 use Sigmie\Base\Analysis\CharFilter\PatternFilter;
 use Sigmie\Base\Analysis\Languages\English;
+use Sigmie\Base\Analysis\Languages\English\PossessiveStemmer;
+use Sigmie\Base\Analysis\Languages\English\Stemmer as EnglishStemmer;
+use Sigmie\Base\Analysis\Languages\English\Stopwords as EnglishStopwords;
 use Sigmie\Base\Analysis\Languages\German;
+use Sigmie\Base\Analysis\Languages\German\Stemmer as GermanStemmer;
+use Sigmie\Base\Analysis\Languages\German\Stopwords as GermanStopwords;
 use Sigmie\Base\Analysis\Languages\Greek;
+use Sigmie\Base\Analysis\Languages\Greek\Lowercase;
+use Sigmie\Base\Analysis\Languages\Greek\Stemmer as GreekStemmer;
+use Sigmie\Base\Analysis\Languages\Greek\Stopwords as GreekStopwords;
+use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
+use Sigmie\Base\Analysis\TokenFilter\Stemmer;
+use Sigmie\Base\Analysis\TokenFilter\Stopwords;
+use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
@@ -53,12 +65,13 @@ class BuilderTest extends TestCase
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function foo()
     {
         $this->sigmie->newIndex('foo')
             ->tokenizeOn(new Pattern('/[ ]/'))
+            ->stemming([['foo' => 'bar']])
             ->withoutMappings()
             ->create();
 
@@ -215,13 +228,15 @@ class BuilderTest extends TestCase
         $this->assertArrayHasKey('german_stopwords', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
             'type' => 'stop',
-            'stopwords' => '_german_'
+            'stopwords' => '_german_',
+            'class' => GermanStopwords::class,
         ], $data['settings']['index']['analysis']['filter']['german_stopwords']);
 
         $this->assertArrayHasKey('german_stemmer', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
             'type' => 'stemmer',
-            'language' => 'light_german'
+            'language' => 'light_german',
+            'class' => GermanStemmer::class,
         ], $data['settings']['index']['analysis']['filter']['german_stemmer']);
     }
 
@@ -243,19 +258,22 @@ class BuilderTest extends TestCase
         $this->assertArrayHasKey('greek_stopwords', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
             'type' => 'stop',
-            'stopwords' => '_greek_'
+            'stopwords' => '_greek_',
+            'class' => GreekStopwords::class,
         ], $data['settings']['index']['analysis']['filter']['greek_stopwords']);
 
         $this->assertArrayHasKey('greek_lowercase', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
             'type' => 'lowercase',
-            'language' => 'greek'
+            'language' => 'greek',
+            'class' => Lowercase::class,
         ], $data['settings']['index']['analysis']['filter']['greek_lowercase']);
 
         $this->assertArrayHasKey('greek_stemmer', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
             'type' => 'stemmer',
-            'language' => 'greek'
+            'language' => 'greek',
+            'class' => GreekStemmer::class
         ], $data['settings']['index']['analysis']['filter']['greek_stemmer']);
     }
 
@@ -277,19 +295,22 @@ class BuilderTest extends TestCase
         $this->assertArrayHasKey('english_stopwords', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
             'type' => 'stop',
-            'stopwords' => '_english_'
+            'stopwords' => '_english_',
+            'class' => EnglishStopwords::class,
         ], $data['settings']['index']['analysis']['filter']['english_stopwords']);
 
         $this->assertArrayHasKey('english_stemmer', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
             'type' => 'stemmer',
-            'language' => 'english'
+            'language' => 'english',
+            'class' => EnglishStemmer::class,
         ], $data['settings']['index']['analysis']['filter']['english_stemmer']);
 
         $this->assertArrayHasKey('english_possessive_stemmer', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
             'type' => 'stemmer',
-            'language' => 'possessive_english'
+            'language' => 'possessive_english',
+            'class' => PossessiveStemmer::class,
         ], $data['settings']['index']['analysis']['filter']['english_possessive_stemmer']);
     }
 
@@ -311,6 +332,7 @@ class BuilderTest extends TestCase
         $this->assertArrayHasKey('sigmie_two_way_synonyms', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
             'type' => 'synonym',
+            'class' => TwoWaySynonyms::class,
             'synonyms' => [
                 'treasure, gem, gold, price',
                 'friend, buddy, partner'
@@ -335,9 +357,10 @@ class BuilderTest extends TestCase
         $this->assertArrayHasKey('sigmie_one_way_synonyms', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
             'type' => 'synonym',
+            'class' => OneWaySynonyms::class,
             'synonyms' => [
                 'i-pod, i pod => ipod',
-            ]
+            ],
         ], $data['settings']['index']['analysis']['filter']['sigmie_one_way_synonyms']);
     }
 
@@ -356,6 +379,7 @@ class BuilderTest extends TestCase
         $this->assertArrayHasKey('sigmie_stopwords', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
             'type' => 'stop',
+            'class' => Stopwords::class,
             'stopwords' => [
                 'about', 'after', 'again'
             ]
@@ -380,6 +404,7 @@ class BuilderTest extends TestCase
         $this->assertArrayHasKey('sigmie_stemmer_overrides', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
             'type' => 'stemmer_override',
+            'class' => Stemmer::class,
             'rules' => [
                 'be, are => am',
                 'mice => mouse',

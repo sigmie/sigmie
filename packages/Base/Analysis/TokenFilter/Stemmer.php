@@ -36,7 +36,8 @@ class Stemmer implements TokenFilter
         }
 
         return [
-            "rules" => $rules
+            'rules' => $rules,
+            'class' => static::class
         ];
     }
 }
