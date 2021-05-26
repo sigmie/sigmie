@@ -6,7 +6,10 @@ namespace Sigmie\Base\Index;
 
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
+use Sigmie\Base\Mappings\Field;
 use Sigmie\Base\Mappings\Properties;
+use Sigmie\Base\Mappings\Types\Boolean;
+use Sigmie\Base\Mappings\Types\Date;
 
 class Mappings
 {
@@ -28,6 +31,19 @@ class Mappings
 
     public static function fromRaw(array $data): Mappings
     {
+        $fields = [];
+
+        foreach ($data['properties'] as $fieldName => $value) {
+            $field = match ($value['type']) {
+                // This match arm:
+                'boolean' => new Boolean($fieldName),
+                'date' => new Date($fieldName),
+            };
+
+            $fields[] = $field;
+        }
+
+        dd($fields);
         // $analyzerName = $data['mappings']['dynamic_templates'][0]['sigmie']['mapping']['analyzer'];
         $analyzerName = 'TODO change this';
         // $analyzerData = $data['settings']['index']['analysis']['analyzer'][$analyzerName];

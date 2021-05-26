@@ -13,8 +13,8 @@ class Settings
     public Analysis $analysis;
 
     public function __construct(
-        $primaryShards = 1,
-        $replicaShards = 2,
+        int $primaryShards = 1,
+        int $replicaShards = 2,
         Analysis $analysis = null
     ) {
         if ($analysis === null) {
@@ -39,19 +39,19 @@ class Settings
     public static function fromRaw(array $response)
     {
         $indexIdentifier = array_key_first($response);
-        // $settings = $response[$indexIdentifier]['settings']['index'];
-        // $mappings = $response[$indexIdentifier]['mappings'];
+        $settings = $response[$indexIdentifier]['settings']['index'];
+        $mappings = $response[$indexIdentifier]['mappings'];
 
-        // $mappings  = Mappings::fromRaw($response[$indexIdentifier]['mappings']);
-        // $analysis = Analysis::fromRaw($settings['analysis']);
+        $mappings  = Mappings::fromRaw($response[$indexIdentifier]['mappings']);
+        $analysis = Analysis::fromRaw($settings['analysis']);
 
-        // $settings = new Settings(
-        //     $settings['number_of_shards'],
-        //     $settings['number_of_replicas'],
-        //     $analysis
-        // );
+        $settings = new Settings(
+            (int)$settings['number_of_shards'],
+            (int)$settings['number_of_replicas'],
+            $analysis
+        );
 
-        // return $settings;
+        return $settings;
     }
 
     public function raw()

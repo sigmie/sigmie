@@ -70,9 +70,17 @@ class BuilderTest extends TestCase
     public function foo()
     {
         $this->sigmie->newIndex('foo')
+            ->normalizer(new PatternFilter('/.*/', 'bar'))
             ->tokenizeOn(new Pattern('/[ ]/'))
-            ->stemming([['foo' => 'bar']])
-            ->withoutMappings()
+            ->stemming([
+                ['foo' => 'bar']
+            ])
+            ->mappings(function (Blueprint $blueprint) {
+                $blueprint->bool('foo');
+                $blueprint->date('from');
+
+                return $blueprint;
+            })
             ->create();
 
         $this->sigmie->index('foo')->update()->stopwords([]);

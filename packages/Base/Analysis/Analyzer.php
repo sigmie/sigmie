@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis;
 
+use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contract\CharFilter;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\TokenFilter;
@@ -37,6 +38,12 @@ class Analyzer
         }
 
         return $result;
+    }
+
+    public static function fromRaw(array $data): Analyzer
+    {
+        dd($data);
+        return new Analyzer('demo', new WordBoundaries(100), []);
     }
 
     public function filters(): array

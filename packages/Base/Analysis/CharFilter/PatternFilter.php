@@ -15,12 +15,18 @@ class PatternFilter implements CharFilter, Configurable
     {
     }
 
+    public static function fromRaw(array $raw)
+    {
+        return new static($raw['pattern'], $raw['replacement']);
+    }
+
     public function config(): array
     {
         return [
             'type' => 'pattern_replace',
             'pattern' => $this->pattern,
-            'replacement' => $this->replacement
+            'replacement' => $this->replacement,
+            'class' => static::class
         ];
     }
 

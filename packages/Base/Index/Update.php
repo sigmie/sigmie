@@ -27,7 +27,6 @@ class Update
 
         $prefix = $this->index->getPrefix();
 
-        dd($settingsResponse->json());
         $settings = IndexSettings::fromRaw($settingsResponse->json());
 
         $stopwords = new Stopwords($prefix, $stopwords);

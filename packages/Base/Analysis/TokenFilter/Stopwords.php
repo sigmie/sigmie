@@ -10,6 +10,9 @@ class Stopwords implements TokenFilter
 {
     protected string $name = 'stopwords';
 
+    //TODO add filter to analyzer based on priority
+    protected int $priority = 0;
+
     public function __construct(
         protected string $prefix,
         protected array $stopwords
@@ -25,6 +28,18 @@ class Stopwords implements TokenFilter
     public function type(): string
     {
         return 'stop';
+    }
+
+    public static function fromRaw(array $raw)
+    {
+        $instance = new static('', $raw['stopwords']);
+
+        return $instance;
+    }
+
+    public function setName(string $name): void
+    {
+        $this->name = $name;
     }
 
     public function value(): array

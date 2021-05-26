@@ -27,6 +27,18 @@ class OneWaySynonyms implements TokenFilter
         return 'synonym';
     }
 
+    public static function fromRaw(array $raw)
+    {
+        $instance = new static('', $raw['synonyms']);
+
+        return $instance;
+    }
+
+    public function setName(string $name): void
+    {
+        $this->name = $name;
+    }
+
     public function value(): array
     {
         $rules = [];

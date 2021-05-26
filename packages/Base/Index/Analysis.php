@@ -6,6 +6,9 @@ namespace Sigmie\Base\Index;
 
 use PhpParser\Node\Expr\Instanceof_;
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
+use Sigmie\Base\Analysis\TokenFilter\Stopwords;
+use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contract\CharFilter;
 use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
@@ -49,6 +52,11 @@ class Analysis
         return $this->analyzer;
     }
 
+    public function setAnalyzer(Analyzer $analyzer)
+    {
+        $this->analyzer = $analyzer;
+    }
+
     public function addLanguageFilters(Language $language)
     {
         $this->filters = [
@@ -64,15 +72,90 @@ class Analysis
     {
         $rawFilters = $data['filter'];
         $rawChar = $data['char_filter'];
+        $rawTokenizer = $data['tokenizer'];
         $filters = [];
         $charFilters = [];
+        $tokenizers = [];
 
-        foreach ($rawFilters as $filter) {
-            $type = $filter['type'];
+        foreach ($rawTokenizer as $name => $tokenizer) {
 
+            if (isset($tokenizer['class']) === false) {
+                //TODO create new raw filter
+                continue;
+            }
+
+            $class = $tokenizer['class'];
+
+            if (class_exists($class)) {
+                $class = $tokenizer['class'];
+
+                $tokenizerInstance = $class::fromRaw($tokenizer);
+
+                $tokenizers[$name] = $tokenizerInstance;
+            }
         }
 
-        return new Analysis();
+        foreach ($rawFilters as $name => $filter) {
+
+            if (isset($filter['class']) === false) {
+                //TODO create new raw filter
+                continue;
+            }
+
+            $class = $filter['class'];
+
+            if (class_exists($class)) {
+                $class = $filter['class'];
+
+                $filterInstance = $class::fromRaw($filter);
+                $filterInstance->setName($name);
+
+                $filters[$name] = $filterInstance;
+            }
+        }
+
+        foreach ($rawChar as $name => $filter) {
+
+            if (isset($filter['class']) === false) {
+                //TODO create new raw filter
+                continue;
+            }
+
+            $class = $filter['class'];
+
+            if (class_exists($class)) {
+                $class = $filter['class'];
+
+                $filterInstance = $class::fromRaw($filter);
+
+                $charFilters[$name] = $filterInstance;
+            }
+        }
+
+        $analyzerInstance = new Analyzer('demo', new WordBoundaries(100), []);
+
+        foreach ($data['analyzer'] as $name => $analyzer) {
+            $analyzerFilters = [];
+            foreach ($analyzer['filter'] as $filterName) {
+                $analyzerFilters[] = $filters[$filterName];
+            }
+
+            $analyzerCharFilters = [];
+            foreach ($analyzer['char_filter'] as $filterName) {
+                $analyzerCharFilters[] = $charFilters[$filterName];
+            }
+
+            $tokenizer = $tokenizers[$analyzer['tokenizer']];
+            //TODO tokenizer
+            $analyzerInstance = new Analyzer($name, $tokenizer, $analyzerFilters, $charFilters);
+            break; // Use only the first analyzer for now
+        }
+
+        // $analyzer = Analyzer::fromRaw();
+        $analysis = new Analysis(array_values($filters), array_values($charFilters));
+        $analysis->setAnalyzer($analyzerInstance);
+
+        return $analysis;
     }
 
     public function raw(): array

@@ -22,9 +22,21 @@ class Stemmer implements TokenFilter
         return $this->name;
     }
 
+    public function setName(string $name): void
+    {
+        $this->name = $name;
+    }
+
     public function type(): string
     {
         return 'stemmer_override';
+    }
+
+    public static function fromRaw(array $raw)
+    {
+        $instance = new static('', $raw['rules']);
+
+        return $instance;
     }
 
     public function value(): array
