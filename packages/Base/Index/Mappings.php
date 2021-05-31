@@ -27,10 +27,15 @@ class Mappings
         $this->defaultAnalyzerName = $analyzer->name();
     }
 
-    public function raw(): array
+    public function properties(): Properties
+    {
+        return $this->properties;
+    }
+
+    public function toRaw(): array
     {
         return [
-            'properties' => $this->properties->raw()
+            'properties' => $this->properties->toRaw()
         ];
     }
 
@@ -41,8 +46,10 @@ class Mappings
         $analyzer = $analyzers[array_key_first($analyzers)];
 
         if (isset($data['properties']) === false) {
+
             return new DynamicMappings($analyzer);
         }
+
         foreach ($data['properties'] as $fieldName => $value) {
 
             $field = match ($value['type']) {

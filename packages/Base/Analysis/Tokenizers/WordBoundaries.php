@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Sigmie\Base\Analysis\Tokenizers;
 
 use Sigmie\Base\Contracts\Configurable;
+use Sigmie\Base\Contracts\RawRepresentation;
 use Sigmie\Base\Contracts\Tokenizer;
 
-class WordBoundaries implements Configurable, Tokenizer
+class WordBoundaries implements Configurable, Tokenizer, RawRepresentation
 {
     public function __construct(protected int $maxTokenLength = 255)
     {
@@ -23,9 +24,14 @@ class WordBoundaries implements Configurable, Tokenizer
         return 'standard';
     }
 
-    public static function fromRaw(array $data)
+    public static function fromRaw(array $data): static
     {
         return new static((int)$data['max_token_length']);
+    }
+
+    public function toRaw(): array
+    {
+        return $this->config()[$this->name()];
     }
 
     public function config(): array

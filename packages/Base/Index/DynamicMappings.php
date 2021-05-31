@@ -17,7 +17,7 @@ class DynamicMappings extends Mappings
         $this->defaultAnalyzerName = $analyzer->name();
     }
 
-    public function raw(): array
+    public function toRaw(): array
     {
         return [
             'dynamic_templates' => $this->dynamicTemplate()

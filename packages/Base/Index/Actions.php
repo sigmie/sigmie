@@ -20,8 +20,8 @@ trait Actions
         $mappings = $index->getMappings();
 
         $body = [
-            'settings' => $settings->raw(),
-            'mappings' => $mappings->raw()
+            'settings' => $settings->toRaw(),
+            'mappings' => $mappings->toRaw()
         ];
 
         $this->indexAPICall("/{$index->getName()}", 'PUT', $body);
@@ -50,7 +50,7 @@ trait Actions
             $settings = Settings::fromRaw($data);
             $analyzers = $settings->analysis->analyzers();
 
-            $index = new Index($name, $settings, Mappings::fromRaw($data, $analyzers));
+            $index = new Index($name, $settings, Mappings::fromRaw($data['mappings'], $analyzers));
 
             // if (count($aliases) > 0) {
             //     foreach ($aliases as $alias => $value) {

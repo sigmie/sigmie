@@ -14,12 +14,13 @@ use Sigmie\Base\Contract\CharFilter;
 use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\Language;
+use Sigmie\Base\Contracts\RawRepresentation;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
 use Sigmie\Cli\Config;
 use Sigmie\Support\Collection;
 
-class Analysis
+class Analysis implements RawRepresentation
 {
     protected Analyzer $defaultAnalyzer;
 
@@ -34,6 +35,26 @@ class Analysis
     ) {
         $this->tokenizer = new WordBoundaries();
         $this->defaultAnalyzer = new Analyzer($this->analyzerName, $this->tokenizer, []);
+    }
+
+    public function tokenizer(): Tokenizer
+    {
+        return $this->tokenizer;
+    }
+
+    public function charFilters(): array
+    {
+        return $this->charFilters;
+    }
+
+    public function defaultAnalyzer(): Analyzer
+    {
+        return $this->defaultAnalyzer;
+    }
+
+    public function analyzers(): array
+    {
+        return $this->analyzers;
     }
 
     public function createAnalyzer(string $name, Tokenizer $tokenizer,): Analyzer
@@ -59,11 +80,6 @@ class Analysis
         return $this->defaultAnalyzer;
     }
 
-    public function analyzers(): array
-    {
-        return $this->analyzers;
-    }
-
     public function addAnalyzer(Analyzer $analyzer)
     {
         if (!isset($this->defaultAnalyzer)) {
@@ -84,7 +100,7 @@ class Analysis
         return $this;
     }
 
-    public static function fromRaw(array $data): Analysis
+    public static function fromRaw(array $data): static
     {
         $rawFilters = $data['filter'];
         $rawChar = $data['char_filter'];
@@ -176,7 +192,7 @@ class Analysis
         return $analysis;
     }
 
-    public function raw(): array
+    public function toRaw(): array
     {
         $filter = new Collection($this->filters);
 

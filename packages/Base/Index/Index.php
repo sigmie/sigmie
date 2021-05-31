@@ -12,6 +12,7 @@ use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Calls\Count as CountAPI;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
+use Sigmie\Base\Contracts\RawRepresentation;
 use Sigmie\Base\Documents\Actions as DocumentsActions;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentsCollection;
@@ -20,8 +21,9 @@ use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Search\Searchable;
 use Sigmie\Base\Index\Update;
 use Sigmie\Support\Collection;
+use Spatie\Ray\Settings\SettingsFactory;
 
-class Index implements DocumentCollectionInterface
+class Index implements DocumentCollectionInterface, RawRepresentation
 {
     use CountAPI, DocumentsActions, IndexActions, Searchable, API, AliasActions;
 
@@ -69,6 +71,18 @@ class Index implements DocumentCollectionInterface
         $this->identifier = $name;
         $this->settings = $settings;
         $this->mappings = $mappings;
+    }
+
+    public function toRaw(): array
+    {
+        return $this->indexAPICall($this->identifier, 'GET')->json();
+    }
+
+    public static function fromRaw(array $raw): static
+    {
+        //TODO implement
+
+        return new static('foo');
     }
 
     public function update(): Update

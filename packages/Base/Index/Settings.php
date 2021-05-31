@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-class Settings
+use Sigmie\Base\Contracts\RawRepresentation;
+
+class Settings implements RawRepresentation
 {
     public int $primaryShards;
 
@@ -36,7 +38,7 @@ class Settings
         return $this->replicaShards;
     }
 
-    public static function fromRaw(array $response)
+    public static function fromRaw(array $response): static
     {
         $indexIdentifier = array_key_first($response);
 
@@ -60,12 +62,12 @@ class Settings
         return $settings;
     }
 
-    public function raw()
+    public function toRaw(): array
     {
         return [
             'number_of_shards' => $this->primaryShards,
             'number_of_replicas' => $this->replicaShards,
-            'analysis' => $this->analysis->raw()
+            'analysis' => $this->analysis->toRaw()
         ];
     }
 }
