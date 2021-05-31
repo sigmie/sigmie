@@ -23,6 +23,11 @@ class WordBoundaries implements Configurable, Tokenizer
         return 'standard';
     }
 
+    public static function fromRaw(array $data)
+    {
+        return new static((int)$data['max_token_length']);
+    }
+
     public function config(): array
     {
         return [

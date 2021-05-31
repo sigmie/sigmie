@@ -12,17 +12,21 @@ class Number extends BaseType
     public function integer()
     {
         $this->type = 'integer';
+
+        return $this;
     }
 
     public function float()
     {
         $this->type = 'float';
+
+        return $this;
     }
 
     public function raw()
     {
         return [
-                'type' => $this->type,
+            'type' => $this->type,
         ];
     }
 }

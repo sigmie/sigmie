@@ -190,7 +190,15 @@ class Builder
             $analysis
         );
 
-        $this->createIndex(new Index($name, $settings, $mappings));
+        $index = $this->createIndex(new Index($name, $settings, $mappings));
+
+        // $analyzer = array_merge(
+        //     [
+        //         'default' => [
+        //             'type' => $this->analyzerName
+        //         ]
+        //     ]
+        // );
 
         $this->createAlias($name, $this->alias);
     }

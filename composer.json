@@ -36,7 +36,10 @@
         "psr-4": {
             "Sigmie\\Tests\\": "tests/",
             "Sigmie\\": "packages/"
-        }
+        },
+        "files": [
+            "packages/Support/functions.php"
+        ]
     },
     "autoload-dev": {},
     "replace": {

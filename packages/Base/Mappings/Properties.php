@@ -8,9 +8,7 @@ use Sigmie\Support\Collection;
 
 class Properties
 {
-    public function __construct(protected array $fields = [])
-    {
-    }
+    public function __construct(protected array $fields = []){}
 
     public function raw(): array
     {

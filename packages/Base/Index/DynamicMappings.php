@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\DefaultAnalyzer;
 
 class DynamicMappings extends Mappings
 {
@@ -22,6 +23,12 @@ class DynamicMappings extends Mappings
             'dynamic_templates' => $this->dynamicTemplate()
         ];
     }
+
+    // public static function fromRaw(array $raw)
+    // {
+    //     return;
+    // }
+
 
     public function dynamicTemplate()
     {

@@ -42,7 +42,6 @@ class Analyzer
 
     public static function fromRaw(array $data): Analyzer
     {
-        dd($data);
         return new Analyzer('demo', new WordBoundaries(100), []);
     }
 

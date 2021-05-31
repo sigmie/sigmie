@@ -47,7 +47,10 @@ trait Actions
 
             $name = $data['settings']['index']['provided_name'];
             $aliases = $data['aliases'];
-            $index = new Index($name, Settings::fromRaw($data), Mappings::fromRaw($data));
+            $settings = Settings::fromRaw($data);
+            $analyzers = $settings->analysis->analyzers();
+
+            $index = new Index($name, $settings, Mappings::fromRaw($data, $analyzers));
 
             // if (count($aliases) > 0) {
             //     foreach ($aliases as $alias => $value) {

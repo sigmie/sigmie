@@ -16,18 +16,24 @@ class Text extends BaseType
     {
         $this->analyzer = $analyzer;
         $this->type = 'search_as_you_type';
+
+        return $this;
     }
 
     public function unstructuredText(Analyzer $analyzer = null)
     {
         $this->analyzer = $analyzer;
         $this->type = 'text';
+
+        return $this;
     }
 
     public function completion(Analyzer $analyzer = null)
     {
         $this->analyzer = $analyzer;
         $this->type = 'completion';
+
+        return $this;
     }
 
     public function withAnalyzer(Analyzer $analyzer)

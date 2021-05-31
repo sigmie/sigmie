@@ -21,18 +21,19 @@ use Sigmie\Support\Collection;
 
 class Analysis
 {
-    protected Analyzer $analyzer;
+    protected Analyzer $defaultAnalyzer;
+
+    protected array $analyzers = [];
 
     protected Tokenizer $tokenizer;
 
-    protected string $analyzerName = 'default';
-
     public function __construct(
         protected array $filters = [],
-        protected array $charFilters = []
+        protected array $charFilters = [],
+        protected string $analyzerName = 'default'
     ) {
         $this->tokenizer = new WordBoundaries();
-        $this->analyzer = new Analyzer($this->analyzerName, $this->tokenizer, []);
+        $this->defaultAnalyzer = new Analyzer($this->analyzerName, $this->tokenizer, []);
     }
 
     public function createAnalyzer(string $name, Tokenizer $tokenizer,): Analyzer
@@ -45,16 +46,31 @@ class Analysis
 
         $this->analyzerName = $name;
         $this->tokenizer = $tokenizer;
-        $this->analyzer = new Analyzer($name, $this->tokenizer, [
+        $analyzer = new Analyzer($name, $this->tokenizer, [
             ...$this->filters
         ], $charFilterNames);
 
-        return $this->analyzer;
+        // if (!isset($this->defaultAnalyzer)) {
+        $this->defaultAnalyzer = $analyzer;
+        // }
+
+        $this->analyzers[$name] = $analyzer;
+
+        return $this->defaultAnalyzer;
     }
 
-    public function setAnalyzer(Analyzer $analyzer)
+    public function analyzers(): array
     {
-        $this->analyzer = $analyzer;
+        return $this->analyzers;
+    }
+
+    public function addAnalyzer(Analyzer $analyzer)
+    {
+        if (!isset($this->defaultAnalyzer)) {
+            $this->defaultAnalyzer = $analyzer;
+        }
+
+        $this->analyzers[$analyzer->name()] = $analyzer;
     }
 
     public function addLanguageFilters(Language $language)
@@ -147,13 +163,15 @@ class Analysis
 
             $tokenizer = $tokenizers[$analyzer['tokenizer']];
             //TODO tokenizer
+            // $defaultAnalyzerName = $data['default']['type'];
             $analyzerInstance = new Analyzer($name, $tokenizer, $analyzerFilters, $charFilters);
             break; // Use only the first analyzer for now
         }
 
+        // analyzerName 
         // $analyzer = Analyzer::fromRaw();
         $analysis = new Analysis(array_values($filters), array_values($charFilters));
-        $analysis->setAnalyzer($analyzerInstance);
+        $analysis->addAnalyzer($analyzerInstance);
 
         return $analysis;
     }
@@ -180,13 +198,11 @@ class Analysis
                 return [$filter->name() => $filter->config()];
             })->toArray();
 
+
         $result = [
-            'analyzer' => $this->analyzer->raw(),
+            'analyzer' => $this->defaultAnalyzer->raw(),
             'filter' => $filter,
             'char_filter' => $charFilters,
-            'default' => [
-                'type' => $this->analyzerName
-            ]
         ];
 
         if ($this->tokenizer instanceof Configurable) {
