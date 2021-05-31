@@ -6,7 +6,6 @@ namespace Sigmie\Tests\Base\APIs;
 
 use Sigmie\Base\APIs\Calls\Cluster as ClusterAPI;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
-use Sigmie\Base\Documents\Document;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestConnection;
 use Sigmie\Testing\TestIndex;

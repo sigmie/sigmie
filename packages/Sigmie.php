@@ -6,7 +6,6 @@ namespace Sigmie;
 
 use Exception;
 use GuzzleHttp\Psr7\Uri;
-use phpDocumentor\Reflection\DocBlock\Tags\Throws;
 use Sigmie\Base\Contracts\Manager as ManagerInterface;
 use Sigmie\Base\Http\Connection as Connection;
 use Sigmie\Base\Http\ElasticsearchResponse;

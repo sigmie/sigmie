@@ -6,15 +6,12 @@ namespace Sigmie\Base\Index;
 
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
-use Sigmie\Base\Mappings\Field;
 use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Mappings\Types\Boolean;
 use Sigmie\Base\Mappings\Types\Date;
 use Sigmie\Base\Mappings\Types\Number;
 use Sigmie\Base\Mappings\Types\Text;
 
-use function Sigmie\is_text_field;
 
 class Mappings
 {
@@ -69,7 +66,7 @@ class Mappings
                 $field->withAnalyzer($analyzer);
             }
 
-            $fields[] = $field;
+            $fields[$fieldName] = $field;
         }
 
         $properties = new Properties($fields);

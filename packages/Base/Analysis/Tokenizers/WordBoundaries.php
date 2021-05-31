@@ -8,7 +8,7 @@ use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\RawRepresentation;
 use Sigmie\Base\Contracts\Tokenizer;
 
-class WordBoundaries implements Configurable, Tokenizer, RawRepresentation
+class WordBoundaries implements Configurable, RawRepresentation, Tokenizer
 {
     public function __construct(protected int $maxTokenLength = 255)
     {

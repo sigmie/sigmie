@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\DefaultAnalyzer;
 
 class DynamicMappings extends Mappings
 {

@@ -11,7 +11,6 @@ use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Base\Index\Index;
 use Sigmie\Http\JSONClient;
-use Sigmie\Http\JSONRequest;
 use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
 

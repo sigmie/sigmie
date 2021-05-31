@@ -12,17 +12,13 @@ class Settings implements RawRepresentation
 
     public int $replicaShards;
 
-    public Analysis $analysis;
+    public ?Analysis $analysis;
 
     public function __construct(
         int $primaryShards = 1,
         int $replicaShards = 2,
         Analysis $analysis = null
     ) {
-        if ($analysis === null) {
-            $analysis = new Analysis();
-        }
-
         $this->analysis = $analysis;
         $this->primaryShards = $primaryShards;
         $this->replicaShards = $replicaShards;
@@ -53,13 +49,11 @@ class Settings implements RawRepresentation
         $analysis = Analysis::fromRaw($settings['analysis']);
         $mappings  = Mappings::fromRaw($mappings, $analysis->analyzers());
 
-        $settings = new Settings(
+        return new Settings(
             (int)$settings['number_of_shards'],
             (int)$settings['number_of_replicas'],
             $analysis
         );
-
-        return $settings;
     }
 
     public function toRaw(): array

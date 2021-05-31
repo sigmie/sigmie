@@ -6,8 +6,6 @@ namespace Sigmie\Base\Index;
 
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\APIs\Calls\Settings;
-use Sigmie\Base\Contracts\HttpConnection;
-use Sigmie\Base\Index\Index;
 use Sigmie\Base\Index\Settings as IndexSettings;
 
 class Update

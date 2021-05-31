@@ -4,37 +4,28 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use PhpParser\Node\Expr\Instanceof_;
 use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
-use Sigmie\Base\Analysis\TokenFilter\Stopwords;
-use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Base\Contract\CharFilter;
 use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\RawRepresentation;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
-use Sigmie\Cli\Config;
 use Sigmie\Support\Collection;
 
 class Analysis implements RawRepresentation
 {
     protected Analyzer $defaultAnalyzer;
 
-    protected array $analyzers = [];
-
-    protected Tokenizer $tokenizer;
-
     public function __construct(
+        protected Tokenizer $tokenizer,
         protected array $filters = [],
         protected array $charFilters = [],
-        protected string $analyzerName = 'default'
+        ?Analyzer $defaultAnalyzer = null
+
     ) {
-        $this->tokenizer = new WordBoundaries();
-        $this->defaultAnalyzer = new Analyzer($this->analyzerName, $this->tokenizer, []);
+        $this->defaultAnalyzer = $defaultAnalyzer ?: new Analyzer('default', $this->tokenizer, []);
     }
 
     public function tokenizer(): Tokenizer
@@ -50,6 +41,14 @@ class Analysis implements RawRepresentation
     public function defaultAnalyzer(): Analyzer
     {
         return $this->defaultAnalyzer;
+    }
+
+    public function setDefaultAnalyzer(Analyzer $analyzer): self
+    {
+        $this->addAnalyzer($analyzer);
+        $this->defaultAnalyzer = $analyzer;
+
+        return $this;
     }
 
     public function analyzers(): array
@@ -186,7 +185,7 @@ class Analysis implements RawRepresentation
 
         // analyzerName 
         // $analyzer = Analyzer::fromRaw();
-        $analysis = new Analysis(array_values($filters), array_values($charFilters));
+        $analysis = new Analysis($tokenizer, array_values($filters), array_values($charFilters));
         $analysis->addAnalyzer($analyzerInstance);
 
         return $analysis;

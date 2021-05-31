@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\Analysis;
 
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Base\Contract\CharFilter;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;

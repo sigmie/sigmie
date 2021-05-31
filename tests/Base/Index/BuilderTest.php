@@ -4,13 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\Index;
 
-use Carbon\Carbon;
-use PhpParser\NodeVisitor\NodeConnectingVisitor;
-use PHPUnit\Framework\Exception;
-use PHPUnit\Framework\ExpectationFailedException;
-use PHPUnit\Framework\MockObject\MockObject;
 use RachidLaasri\Travel\Travel;
-use SebastianBergmann\RecursionContext\InvalidArgumentException;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\MappingFilter;
@@ -35,18 +29,15 @@ use Sigmie\Base\Analysis\Tokenizers\Pattern;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Calls\Index;
-use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Exceptions\MissingMapping;
 use Sigmie\Base\Index\AliasActions;
-use Sigmie\Base\Index\Builder as NewIndex;
-use Sigmie\Base\Index\Index as IndexIndex;
-use Sigmie\Base\Index\Settings;
 use Sigmie\Base\Index\Blueprint;
+use Sigmie\Base\Index\Builder as NewIndex;
+use Sigmie\Base\Index\Settings;
 use Sigmie\Base\Mappings\Properties;
-use Sigmie\Base\Mappings\PropertiesBuilder;
+use Sigmie\Sigmie;
 use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
-use Sigmie\Sigmie;
 
 class BuilderTest extends TestCase
 {
@@ -464,13 +455,6 @@ class BuilderTest extends TestCase
         $this->assertEquals($data['mappings']['properties']['is_valid']['type'], 'boolean');
     }
 
-    private function indexData(string $name): array
-    {
-        $json = $this->indexAPICall($name, 'GET')->json();
-        $indexName = array_key_first($json);
-        return $json[$indexName];
-    }
-
     /**
      * @test
      */
@@ -572,5 +556,12 @@ class BuilderTest extends TestCase
 
         $this->assertEquals(3, $index->getSettings()->getReplicaShards());
         $this->assertEquals(4, $index->getSettings()->getPrimaryShards());
+    }
+
+    private function indexData(string $name): array
+    {
+        $json = $this->indexAPICall($name, 'GET')->json();
+        $indexName = array_key_first($json);
+        return $json[$indexName];
     }
 }

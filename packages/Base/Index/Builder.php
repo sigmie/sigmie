@@ -6,12 +6,12 @@ namespace Sigmie\Base\Index;
 
 use Carbon\Carbon;
 use Closure;
+use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Base\Contract\CharFilter;
 use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
 use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Language;
@@ -158,21 +158,31 @@ class Builder
             throw new MissingMapping();
         }
 
-        $analysis = new Analysis([
+        $filters = [
             new Stopwords($this->prefix, $this->stopwords),
             new TwoWaySynonyms($this->prefix, $this->twoWaySynonyms),
             new OneWaySynonyms($this->prefix, $this->oneWaySynonyms),
             new Stemmer($this->prefix, $this->stemming)
-        ], $this->charFilter);
+        ];
+
+        $analyzer = new Analyzer(
+            "{$this->prefix}_analyzer",
+            $this->tokenizer,
+            $filters,
+            $this->charFilter
+        );
+
+        $analysis = new Analysis(
+            $this->tokenizer,
+            $filters,
+            $this->charFilter
+        );
+
+        $analysis->setDefaultAnalyzer($analyzer);
 
         if (isset($this->language)) {
             $analysis->addLanguageFilters($this->language);
         }
-
-        $analyzer = $analysis->createAnalyzer(
-            "{$this->prefix}_analyzer",
-            $this->tokenizer
-        );
 
         $mappings = new DynamicMappings($analyzer);
 

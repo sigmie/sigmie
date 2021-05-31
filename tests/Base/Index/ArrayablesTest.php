@@ -4,49 +4,22 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\Index;
 
-use Carbon\Carbon;
-use PhpParser\NodeVisitor\NodeConnectingVisitor;
-use PHPUnit\Framework\Exception;
-use PHPUnit\Framework\ExpectationFailedException;
-use PHPUnit\Framework\MockObject\MockObject;
-use RachidLaasri\Travel\Travel;
-use SebastianBergmann\RecursionContext\InvalidArgumentException;
 use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
-use Sigmie\Base\Analysis\CharFilter\MappingFilter;
-use Sigmie\Base\Analysis\CharFilter\PatternFilter;
-use Sigmie\Base\Analysis\Languages\English;
-use Sigmie\Base\Analysis\Languages\English\PossessiveStemmer;
-use Sigmie\Base\Analysis\Languages\English\Stemmer as EnglishStemmer;
-use Sigmie\Base\Analysis\Languages\English\Stopwords as EnglishStopwords;
-use Sigmie\Base\Analysis\Languages\German;
-use Sigmie\Base\Analysis\Languages\German\Stemmer as GermanStemmer;
-use Sigmie\Base\Analysis\Languages\German\Stopwords as GermanStopwords;
-use Sigmie\Base\Analysis\Languages\Greek;
-use Sigmie\Base\Analysis\Languages\Greek\Lowercase;
-use Sigmie\Base\Analysis\Languages\Greek\Stemmer as GreekStemmer;
-use Sigmie\Base\Analysis\Languages\Greek\Stopwords as GreekStopwords;
-use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
-use Sigmie\Base\Analysis\TokenFilter\Stemmer;
-use Sigmie\Base\Analysis\TokenFilter\Stopwords;
-use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
-use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
-use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Calls\Index;
-use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Exceptions\MissingMapping;
 use Sigmie\Base\Index\AliasActions;
-use Sigmie\Base\Index\Builder as NewIndex;
-use Sigmie\Base\Index\Index as IndexIndex;
-use Sigmie\Base\Index\Settings;
 use Sigmie\Base\Index\Blueprint;
-use Sigmie\Base\Mappings\Properties;
-use Sigmie\Base\Mappings\PropertiesBuilder;
+use Sigmie\Base\Index\DynamicMappings;
+use Sigmie\Base\Index\Mappings;
+use Sigmie\Base\Index\Settings;
+use Sigmie\Base\Mappings\Types\Boolean;
+use Sigmie\Base\Mappings\Types\Date;
+use Sigmie\Base\Mappings\Types\Number;
+use Sigmie\Base\Mappings\Types\Text;
+use Sigmie\Sigmie;
 use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
-use Sigmie\Sigmie;
 
 class ArrayablesTest extends TestCase
 {
@@ -64,6 +37,92 @@ class ArrayablesTest extends TestCase
         $this->sigmie = new Sigmie($this->httpConnection, $this->events);
     }
 
+    /**
+     * @test
+     */
+    public function foo()
+    {
+        $this->sigmie->newIndex('foo')
+            ->mappings(function (Blueprint $blueprint) {
+                $blueprint->text('title')->searchAsYouType();
+                $blueprint->text('content')->unstructuredText();
+                $blueprint->number('adults')->integer();
+                $blueprint->number('price')->float();
+                $blueprint->date('created_at');
+                $blueprint->bool('is_valid');
+
+                return $blueprint;
+            })
+            ->create();
+
+        $index = $this->getIndex('foo');
+
+        dd($index->toRaw());
+    }
+
+    /**
+     * @test
+     */
+    public function mapping_properties()
+    {
+        $this->sigmie->newIndex('foo')
+            ->mappings(function (Blueprint $blueprint) {
+                $blueprint->text('title')->searchAsYouType();
+                $blueprint->text('content')->unstructuredText();
+                $blueprint->number('adults')->integer();
+                $blueprint->number('price')->float();
+                $blueprint->date('created_at');
+                $blueprint->bool('is_valid');
+
+                return $blueprint;
+            })
+            ->create();
+
+        $index = $this->getIndex('foo');
+
+        $mappings = $index->getMappings();
+        $properties = $mappings->properties();
+
+        $this->assertArrayHasKey('title', $properties);
+        $this->assertInstanceOf(Text::class, $properties['title']);
+        $this->assertEquals((new Text('title'))->searchAsYouType(), $properties['title']);
+
+        $this->assertArrayHasKey('content', $properties);
+        $this->assertInstanceOf(Text::class, $properties['content']);
+        $this->assertEquals((new Text('content'))->unstructuredText(), $properties['content']);
+
+        $this->assertArrayHasKey('adults', $properties);
+        $this->assertInstanceOf(Number::class, $properties['adults']);
+        $this->assertEquals((new Number('adults'))->integer(), $properties['adults']);
+
+        $this->assertArrayHasKey('price', $properties);
+        $this->assertInstanceOf(Number::class, $properties['price']);
+        $this->assertEquals((new Number('price'))->float(), $properties['price']);
+
+        $this->assertArrayHasKey('created_at', $properties);
+        $this->assertInstanceOf(Date::class, $properties['created_at']);
+        $this->assertEquals((new Date('created_at')), $properties['created_at']);
+
+        $this->assertArrayHasKey('is_valid', $properties);
+        $this->assertInstanceOf(Boolean::class, $properties['is_valid']);
+        $this->assertEquals((new Boolean('is_valid')), $properties['is_valid']);
+    }
+
+    /**
+     * @test
+     */
+    public function dynamic_mappings()
+    {
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->create();
+
+        $index = $this->getIndex('foo');
+
+        $mappings = $index->getMappings();
+
+        $this->assertInstanceOf(DynamicMappings::class, $mappings);
+    }
 
     /**
      * @test
@@ -81,26 +140,13 @@ class ArrayablesTest extends TestCase
 
                 return $blueprint;
             })
-            ->tokenizeOn(new Pattern('/[ ]/'))
             ->create();
 
         $index = $this->getIndex('foo');
 
-        // $data = $index->toRaw();
-        // $id = $index->getName();
-
         $mappings = $index->getMappings();
-        // dd($mappings);
 
-        // dd($mappings->toRaw());
-    }
-
-    private function indexData(string $name): array
-    {
-        $json = $this->indexAPICall($name, 'GET')->json();
-        $indexName = array_key_first($json);
-
-        return $json[$indexName];
+        $this->assertInstanceOf(Mappings::class, $mappings);
     }
 
     /**

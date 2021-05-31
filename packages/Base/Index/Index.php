@@ -19,9 +19,7 @@ use Sigmie\Base\Documents\DocumentsCollection;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Search\Searchable;
-use Sigmie\Base\Index\Update;
 use Sigmie\Support\Collection;
-use Spatie\Ray\Settings\SettingsFactory;
 
 class Index implements DocumentCollectionInterface, RawRepresentation
 {
