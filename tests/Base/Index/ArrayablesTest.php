@@ -40,29 +40,6 @@ class ArrayablesTest extends TestCase
     /**
      * @test
      */
-    public function foo()
-    {
-        $this->sigmie->newIndex('foo')
-            ->mappings(function (Blueprint $blueprint) {
-                $blueprint->text('title')->searchAsYouType();
-                $blueprint->text('content')->unstructuredText();
-                $blueprint->number('adults')->integer();
-                $blueprint->number('price')->float();
-                $blueprint->date('created_at');
-                $blueprint->bool('is_valid');
-
-                return $blueprint;
-            })
-            ->create();
-
-        $index = $this->getIndex('foo');
-
-        dd($index->toRaw());
-    }
-
-    /**
-     * @test
-     */
     public function mapping_properties()
     {
         $this->sigmie->newIndex('foo')
@@ -149,6 +126,13 @@ class ArrayablesTest extends TestCase
         $this->assertInstanceOf(Mappings::class, $mappings);
     }
 
+    private function indexData(string $name): array
+    {
+        $json = $this->indexAPICall($name, 'GET')->json();
+        $indexName = array_key_first($json);
+        return $json[$indexName];
+    }
+
     /**
      * @test
      */
@@ -164,7 +148,7 @@ class ArrayablesTest extends TestCase
 
         $analysis = $index->getSettings()->analysis;
 
-        $this->assertInstanceOf(WordBoundaries::class, $analysis->tokenizer());
+        $this->assertContainsOnlyInstancesOf(WordBoundaries::class, $analysis->tokenizer());
 
         $rawAnalysis = $analysis->toRaw();
 

@@ -148,60 +148,79 @@ class Builder
         return $this;
     }
 
+    protected function throwUnlessMappingsDefined(): void
+    {
+        if ($this->dynamicMappings === false && isset($this->blueprintCallback) === false) {
+            throw new MissingMapping();
+        }
+    }
+
     public function create()
     {
         $timestamp = Carbon::now()->format('YmdHisu');
 
-        $name = "{$this->prefix}_{$timestamp}";
+        $indexName = "{$this->prefix}_{$timestamp}";
 
-        if ($this->dynamicMappings === false && isset($this->blueprintCallback) === false) {
-            throw new MissingMapping();
-        }
+        $this->throwUnlessMappingsDefined();
 
-        $filters = [
+        $defaultFilters = [
             new Stopwords($this->prefix, $this->stopwords),
             new TwoWaySynonyms($this->prefix, $this->twoWaySynonyms),
             new OneWaySynonyms($this->prefix, $this->oneWaySynonyms),
             new Stemmer($this->prefix, $this->stemming)
         ];
 
-        $analyzer = new Analyzer(
-            "{$this->prefix}_analyzer",
-            $this->tokenizer,
-            $filters,
-            $this->charFilter
+        $defaultAnalyzer = new Analyzer(
+            prefix: $this->prefix,
+            tokenizer: $this->tokenizer,
+            filters: $defaultFilters,
+            charFilters: $this->charFilter
         );
+
+        $mappings = $this->createMappings($defaultAnalyzer);
+        $analyzers = $mappings->analyzers();
+        $analyzers->add($defaultAnalyzer);
 
         $analysis = new Analysis(
-            $this->tokenizer,
-            $filters,
-            $this->charFilter
+            tokenizers: [$this->tokenizer],
+            analyzers: $analyzers->toArray(),
+            filters: $defaultFilters,
+            charFilters: $this->charFilter,
+            defaultAnalyzer: $defaultAnalyzer
         );
 
-        $analysis->setDefaultAnalyzer($analyzer);
-
-        if (isset($this->language)) {
+        if ($this->languageIsDefined()) {
             $analysis->addLanguageFilters($this->language);
         }
 
-        $mappings = new DynamicMappings($analyzer);
+        $settings = new Settings(
+            primaryShards: $this->shards,
+            replicaShards: $this->replicas,
+            analysis: $analysis
+        );
+
+        $this->createIndex(new Index($indexName, $settings, $mappings));
+
+        $this->createAlias($indexName, $this->alias);
+    }
+
+    protected function languageIsDefined(): bool
+    {
+        return isset($this->language);
+    }
+
+    protected function createMappings(Analyzer $defaultAnalyzer): Mappings
+    {
+        $mappings = new DynamicMappings($defaultAnalyzer);
 
         if ($this->dynamicMappings === false) {
             $blueprint = ($this->blueprintCallback)(new Blueprint);
 
-            $properties = $blueprint($analyzer);
+            $properties = $blueprint($defaultAnalyzer);
 
-            $mappings = new Mappings($analyzer, $properties);
+            $mappings = new Mappings($properties);
         }
 
-        $settings = new Settings(
-            $this->shards,
-            $this->replicas,
-            $analysis
-        );
-
-        $index = $this->createIndex(new Index($name, $settings, $mappings));
-
-        $this->createAlias($name, $this->alias);
+        return $mappings;
     }
 }

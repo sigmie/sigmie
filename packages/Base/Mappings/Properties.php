@@ -6,11 +6,17 @@ namespace Sigmie\Base\Mappings;
 
 use ArrayAccess;
 use Sigmie\Support\Collection;
+use Sigmie\Support\Contracts\Arrayable;
 
-class Properties implements ArrayAccess
+class Properties implements ArrayAccess, Arrayable
 {
     public function __construct(protected array $fields = [])
     {
+    }
+
+    public function toArray(): array
+    {
+        return $this->fields;
     }
 
     public function offsetExists($offset)

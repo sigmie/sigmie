@@ -6,27 +6,33 @@ namespace Sigmie\Base\Index;
 
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Contracts\Type;
+use Sigmie\Base\Mappings\Field;
 use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Mappings\Types\Boolean;
 use Sigmie\Base\Mappings\Types\Date;
 use Sigmie\Base\Mappings\Types\Number;
 use Sigmie\Base\Mappings\Types\Text;
-
+use Sigmie\Support\Collection;
 
 class Mappings
 {
-    protected string $defaultAnalyzerName = 'default';
-
     public function __construct(
-        Analyzer $analyzer,
         protected Properties $properties
     ) {
-        $this->defaultAnalyzerName = $analyzer->name();
     }
 
     public function properties(): Properties
     {
         return $this->properties;
+    }
+
+    public function analyzers(): Collection
+    {
+        $collection = new Collection($this->properties->toArray());
+
+        return $collection->filter(fn (Type $field) => $field instanceof Text)
+            ->map(fn (Text $field) => $field->analyzer());
     }
 
     public function toRaw(): array
@@ -63,6 +69,7 @@ class Mappings
                 $analyzerName = $value['analyzer'];
                 $analyzer = $analyzers[$analyzerName];
 
+
                 $field->withAnalyzer($analyzer);
             }
 
@@ -71,6 +78,6 @@ class Mappings
 
         $properties = new Properties($fields);
 
-        return new static($analyzer, $properties);
+        return new static($properties);
     }
 }
