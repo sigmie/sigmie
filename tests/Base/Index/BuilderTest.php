@@ -60,12 +60,12 @@ class BuilderTest extends TestCase
      */
     public function pattern_tokenizer()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->tokenizeOn(new Pattern('/[ ]/'))
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertEquals('sigmie_tokenizer', $data['settings']['index']['analysis']['analyzer']['sigmie_analyzer']['tokenizer']);
         $this->assertArrayHasKey('sigmie_tokenizer', $data['settings']['index']['analysis']['tokenizer']);
@@ -81,12 +81,12 @@ class BuilderTest extends TestCase
      */
     public function non_letter_tokenizer()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->tokenizeOn(new NonLetter())
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertEquals('letter', $data['settings']['index']['analysis']['analyzer']['sigmie_analyzer']['tokenizer']);
     }
@@ -96,12 +96,12 @@ class BuilderTest extends TestCase
      */
     public function mapping_char_filters()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->normalizer(new MappingFilter(['a' => 'bar', 'f' => 'foo']))
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertArrayHasKey('sigmie_mapping_char_filter', $data['settings']['index']['analysis']['char_filter']);
         $this->assertEquals([
@@ -115,12 +115,12 @@ class BuilderTest extends TestCase
      */
     public function pattern_char_filters()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->normalizer(new PatternFilter('/foo/', '$1'))
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertArrayHasKey('pattern_char_filter', $data['settings']['index']['analysis']['char_filter']);
         $this->assertEquals([
@@ -136,12 +136,12 @@ class BuilderTest extends TestCase
      */
     public function html_char_filters()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->normalizer(new HTMLFilter)
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertContains('html_strip', $data['settings']['index']['analysis']['analyzer']['sigmie_analyzer']['char_filter']);
     }
@@ -151,12 +151,12 @@ class BuilderTest extends TestCase
      */
     public function word_boundaries_tokenizer()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->tokenizeOn(new WordBoundaries(40))
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertEquals('sigmie_tokenizer', $data['settings']['index']['analysis']['analyzer']['sigmie_analyzer']['tokenizer']);
         $this->assertArrayHasKey('sigmie_tokenizer', $data['settings']['index']['analysis']['tokenizer']);
@@ -172,12 +172,12 @@ class BuilderTest extends TestCase
      */
     public function whitespace_tokenizer()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->tokenizeOn(new Whitespaces)
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertEquals('whitespace', $data['settings']['index']['analysis']['analyzer']['sigmie_analyzer']['tokenizer']);
     }
@@ -186,7 +186,7 @@ class BuilderTest extends TestCase
     {
         $this->expectException(MissingMapping::class);
 
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->create();
     }
 
@@ -195,12 +195,12 @@ class BuilderTest extends TestCase
      */
     public function german_language()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->language(new German)
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertArrayHasKey('analyzer', $data['settings']['index']['analysis']);
         $this->assertArrayHasKey('sigmie_analyzer', $data['settings']['index']['analysis']['analyzer']);
@@ -225,12 +225,12 @@ class BuilderTest extends TestCase
      */
     public function greek_language()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->language(new Greek)
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertArrayHasKey('analyzer', $data['settings']['index']['analysis']);
         $this->assertArrayHasKey('sigmie_analyzer', $data['settings']['index']['analysis']['analyzer']);
@@ -262,12 +262,12 @@ class BuilderTest extends TestCase
      */
     public function english_language()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->language(new English)
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertArrayHasKey('analyzer', $data['settings']['index']['analysis']);
         $this->assertArrayHasKey('sigmie_analyzer', $data['settings']['index']['analysis']['analyzer']);
@@ -299,7 +299,7 @@ class BuilderTest extends TestCase
      */
     public function two_way_synonyms()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->twoWaySynonyms([
                 ['treasure', 'gem', 'gold', 'price'],
                 ['friend', 'buddy', 'partner']
@@ -307,7 +307,7 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertArrayHasKey('sigmie_two_way_synonyms', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
@@ -326,14 +326,14 @@ class BuilderTest extends TestCase
      */
     public function one_way_synonyms()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->oneWaySynonyms([
                 'ipod' => ['i-pod', 'i pod']
             ])
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertArrayHasKey('sigmie_one_way_synonyms', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
@@ -351,12 +351,12 @@ class BuilderTest extends TestCase
      */
     public function stopwords()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->stopwords(['about', 'after', 'again'])
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertArrayHasKey('sigmie_stopwords', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
@@ -374,7 +374,7 @@ class BuilderTest extends TestCase
      */
     public function stemming()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->stemming([
                 'am' => ['be', 'are'],
                 'mouse' => ['mice'],
@@ -382,7 +382,7 @@ class BuilderTest extends TestCase
             ])
             ->withoutMappings()->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertArrayHasKey('sigmie_stemmer_overrides', $data['settings']['index']['analysis']['filter']);
         $this->assertEquals([
@@ -402,9 +402,9 @@ class BuilderTest extends TestCase
      */
     public function analyzer_defaults()
     {
-        $this->sigmie->newIndex('foo')->withoutMappings()->create();
+        $this->sigmie->newIndex('sigmie')->withoutMappings()->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertArrayHasKey('analyzer', $data['settings']['index']['analysis']);
         $this->assertArrayHasKey('sigmie_analyzer', $data['settings']['index']['analysis']['analyzer']);
@@ -423,7 +423,7 @@ class BuilderTest extends TestCase
      */
     public function field_mappings()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->mappings(function (Blueprint $blueprint) {
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText();
@@ -435,7 +435,7 @@ class BuilderTest extends TestCase
             })
             ->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertArrayHasKey('mappings', $data);
         $this->assertArrayHasKey('dynamic_templates', $data['mappings']);
@@ -464,9 +464,9 @@ class BuilderTest extends TestCase
      */
     public function without_mappings_creates_dynamic_template()
     {
-        $this->sigmie->newIndex('foo')->withoutMappings()->create();
+        $this->sigmie->newIndex('sigmie')->withoutMappings()->create();
 
-        $data = $this->indexData('foo');
+        $data = $this->indexData('sigmie');
 
         $this->assertArrayHasKey('mappings', $data);
         $this->assertArrayHasKey('dynamic_templates', $data['mappings']);
@@ -486,13 +486,13 @@ class BuilderTest extends TestCase
     //  */
     // public function custom_analyzer_is_default()
     // {
-    //     $this->sigmie->newIndex('foo')->mappings(function (Blueprint $blueprint) {
+    //     $this->sigmie->newIndex('sigmie')->mappings(function (Blueprint $blueprint) {
     //         $blueprint->text('bar')->searchAsYouType();
 
     //         return $blueprint;
     //     })->create();
 
-    //     $data = $this->indexData('foo');
+    //     $data = $this->indexData('sigmie');
 
     //     $this->assertArrayHasKey('bar', $data['mappings']['properties']);
     //     $this->assertEquals($data['mappings']['properties']['bar']['analyzer'], 'sigmie_analyzer');
@@ -508,9 +508,9 @@ class BuilderTest extends TestCase
     //  */
     // public function custom_analyzer_is_default_with_dynamic_mappings()
     // {
-    //     $this->sigmie->newIndex('foo')->withoutMappings()->create();
+    //     $this->sigmie->newIndex('sigmie')->withoutMappings()->create();
 
-    //     $data = $this->indexData('foo');
+    //     $data = $this->indexData('sigmie');
 
     //     $this->assertArrayHasKey('settings', $data);
     //     $this->assertArrayHasKey('analysis', $data['settings']['index']);
@@ -524,10 +524,10 @@ class BuilderTest extends TestCase
      */
     public function creates_and_index_with_alias()
     {
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->withoutMappings()->create();
 
-        $this->assertIndexExists('foo');
+        $this->assertIndexExists('sigmie');
     }
 
     /**
@@ -537,7 +537,7 @@ class BuilderTest extends TestCase
     {
         Travel::to('2020-01-01 23:59:59');
 
-        $this->sigmie->newIndex('foo')->withoutMappings()->create();
+        $this->sigmie->newIndex('sigmie')->withoutMappings()->create();
 
         $this->assertIndexExists('sigmie_20200101235959000000');
     }
@@ -549,14 +549,13 @@ class BuilderTest extends TestCase
     {
         Travel::to('2020-01-01 23:59:59');
 
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex('sigmie')
             ->withoutMappings()
             ->shards(4)
             ->replicas(3)
-            ->prefix('sigmie')
             ->create();
 
-        $index = $this->getIndex('foo');
+        $index = $this->getIndex('sigmie');
 
         $this->assertEquals(3, $index->getSettings()->getReplicaShards());
         $this->assertEquals(4, $index->getSettings()->getPrimaryShards());

@@ -28,8 +28,6 @@ class Builder
 
     protected int $shards = 1;
 
-    protected string $prefix = 'sigmie';
-
     protected string $alias;
 
     protected Language $language;
@@ -67,13 +65,6 @@ class Builder
     public function language(Language $language)
     {
         $this->language = $language;
-
-        return $this;
-    }
-
-    public function prefix(string $prefix)
-    {
-        $this->prefix = "$prefix";
 
         return $this;
     }
@@ -159,19 +150,19 @@ class Builder
     {
         $timestamp = Carbon::now()->format('YmdHisu');
 
-        $indexName = "{$this->prefix}_{$timestamp}";
+        $indexName = "{$this->alias}_{$timestamp}";
 
         $this->throwUnlessMappingsDefined();
 
         $defaultFilters = [
-            new Stopwords($this->prefix, $this->stopwords, 1),
-            new TwoWaySynonyms($this->prefix, $this->twoWaySynonyms, 2),
-            new OneWaySynonyms($this->prefix, $this->oneWaySynonyms, 3),
-            new Stemmer($this->prefix, $this->stemming, 4)
+            new Stopwords($this->alias, $this->stopwords, 1),
+            new TwoWaySynonyms($this->alias, $this->twoWaySynonyms, 2),
+            new OneWaySynonyms($this->alias, $this->oneWaySynonyms, 3),
+            new Stemmer($this->alias, $this->stemming, 4)
         ];
 
         $defaultAnalyzer = new Analyzer(
-            prefix: $this->prefix,
+            prefix: $this->alias,
             tokenizer: $this->tokenizer,
             filters: $defaultFilters,
             charFilters: $this->charFilter
