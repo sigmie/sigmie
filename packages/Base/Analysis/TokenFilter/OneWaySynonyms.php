@@ -4,17 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\TokenFilter;
 
-use Sigmie\Base\Contracts\TokenFilter;
-
-class OneWaySynonyms implements TokenFilter
+class OneWaySynonyms extends TokenFilter
 {
-    protected string $name = 'one_way_synonyms';
-
-    public function __construct(
-        protected string $prefix,
-        protected array $synonyms
-    ) {
-        $this->name = "{$prefix}_{$this->name}";
+    protected function getName(): string
+    {
+        return  'one_way_synonyms';
     }
 
     public function name(): string
@@ -39,17 +33,16 @@ class OneWaySynonyms implements TokenFilter
         $this->name = $name;
     }
 
-    public function value(): array
+    protected function getValues(): array
     {
         $rules = [];
-        foreach ($this->synonyms as $to => $from) {
+        foreach ($this->settings as $to => $from) {
             $from = implode(', ', $from);
             $rules[] = "{$from} => {$to}";
         }
 
         return [
             'synonyms' => $rules,
-            'class' => static::class
         ];
     }
 }

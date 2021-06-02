@@ -122,13 +122,13 @@ class BuilderTest extends TestCase
 
         $data = $this->indexData('foo');
 
-        $this->assertArrayHasKey('sigmie_pattern_char_filter', $data['settings']['index']['analysis']['char_filter']);
+        $this->assertArrayHasKey('pattern_char_filter', $data['settings']['index']['analysis']['char_filter']);
         $this->assertEquals([
             'pattern' => '/foo/',
             'type' => 'pattern_replace',
             'replacement' => '$1',
             'class' => PatternFilter::class
-        ], $data['settings']['index']['analysis']['char_filter']['sigmie_pattern_char_filter']);
+        ], $data['settings']['index']['analysis']['char_filter']['pattern_char_filter']);
     }
 
     /**
@@ -313,6 +313,7 @@ class BuilderTest extends TestCase
         $this->assertEquals([
             'type' => 'synonym',
             'class' => TwoWaySynonyms::class,
+            'priority'=> '2',
             'synonyms' => [
                 'treasure, gem, gold, price',
                 'friend, buddy, partner'
@@ -338,6 +339,7 @@ class BuilderTest extends TestCase
         $this->assertEquals([
             'type' => 'synonym',
             'class' => OneWaySynonyms::class,
+            'priority'=> '3',
             'synonyms' => [
                 'i-pod, i pod => ipod',
             ],
@@ -360,6 +362,7 @@ class BuilderTest extends TestCase
         $this->assertEquals([
             'type' => 'stop',
             'class' => Stopwords::class,
+            'priority'=> '1',
             'stopwords' => [
                 'about', 'after', 'again'
             ]
@@ -385,6 +388,7 @@ class BuilderTest extends TestCase
         $this->assertEquals([
             'type' => 'stemmer_override',
             'class' => Stemmer::class,
+            'priority'=> '4',
             'rules' => [
                 'be, are => am',
                 'mice => mouse',
@@ -434,7 +438,7 @@ class BuilderTest extends TestCase
         $data = $this->indexData('foo');
 
         $this->assertArrayHasKey('mappings', $data);
-        $this->assertArrayNotHasKey('dynamic_templates', $data['mappings']);
+        $this->assertArrayHasKey('dynamic_templates', $data['mappings']);
 
         $this->assertArrayHasKey('title', $data['mappings']['properties']);
         $this->assertEquals($data['mappings']['properties']['title']['type'], 'search_as_you_type');

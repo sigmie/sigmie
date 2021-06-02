@@ -4,17 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\TokenFilter;
 
-use Sigmie\Base\Contracts\TokenFilter;
-
-class TwoWaySynonyms implements TokenFilter
+class TwoWaySynonyms extends TokenFilter 
 {
-    protected string $name = 'two_way_synonyms';
-
-    public function __construct(
-        protected string $prefix,
-        protected array $synonyms
-    ) {
-        $this->name = "{$prefix}_{$this->name}";
+    protected function getName(): string
+    {
+        return  'two_way_synonyms';
     }
 
     public function name(): string
@@ -39,13 +33,12 @@ class TwoWaySynonyms implements TokenFilter
         $this->name = $name;
     }
 
-    public function value(): array
+    protected function getValues(): array
     {
-        $synonyms = array_map(fn ($value) => implode(', ', $value), $this->synonyms);
+        $synonyms = array_map(fn ($value) => implode(', ', $value), $this->settings);
 
         return [
             'synonyms' => $synonyms,
-            'class' => static::class
         ];
     }
 }

@@ -61,7 +61,8 @@ class Index implements DocumentCollectionInterface, RawRepresentation
         if ($mappings === null) {
             //TODO make mappings required parameter
             $mappings = new Mappings(
-                new Properties()
+                new Properties(),
+                new Analyzer('demo', new WordBoundaries)
             );
         }
 

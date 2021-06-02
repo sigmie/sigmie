@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
-use Sigmie\Base\APIs\Calls\Settings;
+use Sigmie\Base\APIs\Calls\Settings as SettingsAPI;
+use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Index\Settings as IndexSettings;
+use Sigmie\Support\Collection;
 
 class Update
 {
-    use Settings, AliasActions;
+    use SettingsAPI, AliasActions;
 
     protected string $prefix;
 
@@ -21,18 +23,12 @@ class Update
 
     public function stopwords(array $stopwords)
     {
-        $settingsResponse = $this->settingsAPICall($this->index->getName());
+        $mappings = $this->index->getMappings();
 
-        $prefix = $this->index->getPrefix();
+        $settings = $this->index->getSettings();
 
-        $settings = IndexSettings::fromRaw($settingsResponse->json());
+        // $filters = new Collection($settings->analysis->filters());
 
-        $stopwords = new Stopwords($prefix, $stopwords);
-
-        dd($settings);
-        dd($stopwords);
-        $raw = $stopwords->raw();
-
-        dd($settings->json());
+        // $filters = $filters->filter(fn (TokenFilter $tokenFilter) => $tokenFilter instanceof Stopwords === false);
     }
 }

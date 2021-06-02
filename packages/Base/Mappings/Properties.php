@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Base\Mappings;
 
 use ArrayAccess;
+use Sigmie\Base\Contracts\Type;
+use Sigmie\Base\Mappings\Types\Text;
 use Sigmie\Support\Collection;
 use Sigmie\Support\Contracts\Arrayable;
 
@@ -12,6 +14,13 @@ class Properties implements ArrayAccess, Arrayable
 {
     public function __construct(protected array $fields = [])
     {
+    }
+
+    public function textFields()
+    {
+        $collection = new Collection($this->fields);
+
+        return $collection->filter(fn (Type $type) => $type instanceof Text);
     }
 
     public function toArray(): array

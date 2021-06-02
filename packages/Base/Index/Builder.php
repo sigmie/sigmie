@@ -164,10 +164,10 @@ class Builder
         $this->throwUnlessMappingsDefined();
 
         $defaultFilters = [
-            new Stopwords($this->prefix, $this->stopwords),
-            new TwoWaySynonyms($this->prefix, $this->twoWaySynonyms),
-            new OneWaySynonyms($this->prefix, $this->oneWaySynonyms),
-            new Stemmer($this->prefix, $this->stemming)
+            new Stopwords($this->prefix, $this->stopwords, 1),
+            new TwoWaySynonyms($this->prefix, $this->twoWaySynonyms, 2),
+            new OneWaySynonyms($this->prefix, $this->oneWaySynonyms, 3),
+            new Stemmer($this->prefix, $this->stemming, 4)
         ];
 
         $defaultAnalyzer = new Analyzer(
@@ -218,7 +218,7 @@ class Builder
 
             $properties = $blueprint($defaultAnalyzer);
 
-            $mappings = new Mappings($properties);
+            $mappings = new Mappings($properties, $defaultAnalyzer);
         }
 
         return $mappings;

@@ -40,14 +40,12 @@ class Settings implements RawRepresentation
 
         if (isset($response['settings']) === false) {
             $settings = $response[$indexIdentifier]['settings']['index'];
-            $mappings = $response[$indexIdentifier]['mappings'];
         } else {
             $settings = $response['settings']['index'];
-            $mappings = $response['mappings'];
         }
 
-        $analysis = Analysis::fromRaw($settings['analysis']);
-        $mappings  = Mappings::fromRaw($mappings, $analysis->analyzers());
+        $defaultAnalyzerName = $response['mappings']['dynamic_templates'][0]['sigmie']['mapping']['analyzer'];
+        $analysis = Analysis::fromRaw($settings['analysis'], $defaultAnalyzerName);
 
         return new Settings(
             (int)$settings['number_of_shards'],

@@ -9,7 +9,7 @@ use Sigmie\Base\Contracts\Configurable;
 
 class PatternFilter implements CharFilter, Configurable
 {
-    protected string $name = 'sigmie_pattern_char_filter';
+    protected string $name = 'pattern_char_filter';
 
     public function __construct(protected string $pattern, protected string $replacement)
     {

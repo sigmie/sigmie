@@ -2,7 +2,7 @@
 
 namespace Sigmie\Base\Contracts;
 
-interface TokenFilter
+interface TokenFilter extends Priority
 {
     public function name(): string;
 

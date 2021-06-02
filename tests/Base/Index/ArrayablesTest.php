@@ -6,6 +6,7 @@ namespace Sigmie\Tests\Base\Index;
 
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
+use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Calls\Index;
 use Sigmie\Base\Index\AliasActions;
@@ -40,6 +41,72 @@ class ArrayablesTest extends TestCase
     /**
      * @test
      */
+    public function whitespace_tokenizer()
+    {
+        $this->sigmie->newIndex('foo')
+            ->tokenizeOn(new Whitespaces)
+            ->withoutMappings()
+            ->create();
+
+        $index = $this->getIndex('foo');
+
+        $tokenizer = $index->getSettings()->analysis->defaultAnalyzer()->tokenizer();
+
+        $this->assertInstanceOf(Whitespaces::class, $tokenizer);
+    }
+
+    /**
+     * @test
+     */
+    public function pattern_tokenizer()
+    {
+        $this->sigmie->newIndex('foo')
+            ->tokenizeOn(new Pattern('/bar/'))
+            ->withoutMappings()
+            ->create();
+
+        $index = $this->getIndex('foo');
+
+        $tokenizer = $index->getSettings()->analysis->defaultAnalyzer()->tokenizer();
+
+        $this->assertInstanceOf(Pattern::class, $tokenizer);
+    }
+
+    /**
+     * @test
+     */
+    public function text_properties_analyzers()
+    {
+        $customFieldAnalyzer = new Analyzer('custom', new Whitespaces);
+
+        $this->sigmie->newIndex('foo')
+            ->mappings(function (Blueprint $blueprint) use ($customFieldAnalyzer) {
+
+                $blueprint->text('title')->searchAsYouType();
+                $blueprint->text('content')->unstructuredText($customFieldAnalyzer);
+
+                return $blueprint;
+            })
+            ->create();
+
+        $index = $this->getIndex('foo');
+
+        $defaultAnalyzer = $index->getSettings()->analysis->defaultAnalyzer();
+        $mappings = $index->getMappings();
+        $properties = $mappings->properties();
+
+        $this->assertArrayHasKey('title', $properties);
+        $this->assertInstanceOf(Text::class, $properties['title']);
+        $this->assertEquals((new Text('title'))->searchAsYouType($defaultAnalyzer), $properties['title']);
+
+        $this->assertArrayHasKey('content', $properties);
+        $this->assertInstanceOf(Text::class, $properties['content']);
+        $this->assertEquals((new Text('content'))->unstructuredText($customFieldAnalyzer), $properties['content']);
+    }
+
+    /**
+     * @test
+     */
     public function mapping_properties()
     {
         $this->sigmie->newIndex('foo')
@@ -57,16 +124,17 @@ class ArrayablesTest extends TestCase
 
         $index = $this->getIndex('foo');
 
+        $defaultAnalyzer = $index->getSettings()->analysis->defaultAnalyzer();
         $mappings = $index->getMappings();
         $properties = $mappings->properties();
 
         $this->assertArrayHasKey('title', $properties);
         $this->assertInstanceOf(Text::class, $properties['title']);
-        $this->assertEquals((new Text('title'))->searchAsYouType(), $properties['title']);
+        $this->assertEquals((new Text('title'))->searchAsYouType($defaultAnalyzer), $properties['title']);
 
         $this->assertArrayHasKey('content', $properties);
         $this->assertInstanceOf(Text::class, $properties['content']);
-        $this->assertEquals((new Text('content'))->unstructuredText(), $properties['content']);
+        $this->assertEquals((new Text('content'))->unstructuredText($defaultAnalyzer), $properties['content']);
 
         $this->assertArrayHasKey('adults', $properties);
         $this->assertInstanceOf(Number::class, $properties['adults']);

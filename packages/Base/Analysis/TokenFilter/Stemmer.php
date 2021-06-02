@@ -4,17 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\TokenFilter;
 
-use Sigmie\Base\Contracts\TokenFilter;
-
-class Stemmer implements TokenFilter
+class Stemmer extends TokenFilter
 {
-    protected string $name = 'stemmer_overrides';
-
-    public function __construct(
-        protected string $prefix,
-        protected array $stems
-    ) {
-        $this->name = "{$prefix}_{$this->name}";
+    protected function getName(): string
+    {
+        return  'stemmer_overrides';
     }
 
     public function name(): string
@@ -39,17 +33,17 @@ class Stemmer implements TokenFilter
         return $instance;
     }
 
-    public function value(): array
+    protected function getValues(): array
     {
         $rules = [];
-        foreach ($this->stems as $to => $from) {
+
+        foreach ($this->settings as $to => $from) {
             $from = implode(', ', $from);
             $rules[] = "{$from} => {$to}";
         }
 
         return [
             'rules' => $rules,
-            'class' => static::class
         ];
     }
 }

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
+use Exception;
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\Tokenizers\NonLetter;
+use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
 use Sigmie\Base\Contracts\Configurable;
@@ -15,29 +18,25 @@ use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
 use Sigmie\Support\Collection;
 
-class Analysis implements RawRepresentation
+class Analysis
 {
-    protected Analyzer $defaultAnalyzer;
-
     public function __construct(
+        protected Analyzer $defaultAnalyzer,
         protected array $tokenizers = [],
         protected array $analyzers = [],
         protected array $filters = [],
         protected array $charFilters = [],
-        ?Analyzer $defaultAnalyzer = null
-
     ) {
-        $this->defaultAnalyzer = $defaultAnalyzer ?: new Analyzer(
-            prefix: 'default',
-            tokenizer: new WordBoundaries(),
-            filters: $filters,
-            charFilters: $charFilters
-        );
     }
 
     public function tokenizer(): array
     {
         return $this->tokenizers;
+    }
+
+    public function filters(): array
+    {
+        return $this->filters;
     }
 
     public function charFilters(): array
@@ -106,7 +105,7 @@ class Analysis implements RawRepresentation
         return $this;
     }
 
-    public static function fromRaw(array $data): static
+    public static function fromRaw(array $data, string $defaultAnalyzerName): static
     {
         $rawFilters = $data['filter'];
         $rawChar = $data['char_filter'];
@@ -170,7 +169,7 @@ class Analysis implements RawRepresentation
             }
         }
 
-        $analyzerInstance = new Analyzer('demo', new WordBoundaries(100), []);
+        $analyzers = [];
 
         foreach ($data['analyzer'] as $name => $analyzer) {
             $analyzerFilters = [];
@@ -183,24 +182,30 @@ class Analysis implements RawRepresentation
                 $analyzerCharFilters[] = $charFilters[$filterName];
             }
 
-            $tokenizer = $tokenizers[$analyzer['tokenizer']];
-            //TODO tokenizer
-            // $defaultAnalyzerName = $data['default']['type'];
+            if (isset($tokenizers[$analyzer['tokenizer']])) {
+                $tokenizer = $tokenizers[$analyzer['tokenizer']];
+            } else {
+                $tokenizer = match ($analyzer['tokenizer']) {
+                    'whitespace' => new Whitespaces,
+                    'letter' => new NonLetter,
+                    default => throw new Exception("Tokenizer {$analyzer['tokenizer']} wasn't found")
+                };
+            }
+
             [$prefix, $res] = preg_split("/_/", $name);
-            $analyzerInstance = new Analyzer($prefix, $tokenizer, $analyzerFilters, $charFilters);
-            break; // Use only the first analyzer for now
+
+            $analyzers[$name] = new Analyzer($prefix, $tokenizer, $analyzerFilters, $charFilters);
         }
 
-        // analyzerName 
-        // $analyzer = Analyzer::fromRaw();
-        $analysis = new Analysis(
-            [$tokenizer],
-            [], // TODO 
-            array_values($filters),
-            array_values($charFilters)
-        );
+        $defaultAnalyzer = $analyzers[$defaultAnalyzerName];
 
-        $analysis->addAnalyzer($analyzerInstance);
+        $analysis = new Analysis(
+            $defaultAnalyzer,
+            [$tokenizer],
+            $analyzers,
+            array_values($filters),
+            array_values($charFilters),
+        );
 
         return $analysis;
     }
@@ -235,8 +240,15 @@ class Analysis implements RawRepresentation
                 return [$tokenizer->name() => $tokenizer->config()];
             })->toArray();
 
+        $analyzers = new Collection($this->analyzers);
+
+        $analyzers = $analyzers
+            ->mapToDictionary(function (Analyzer $analyzer) {
+                return [$analyzer->name() => $analyzer->raw()];
+            })->toArray();
+
         $result = [
-            'analyzer' => $this->defaultAnalyzer->raw(),
+            'analyzer' => $analyzers,
             'filter' => $filter,
             'char_filter' => $charFilters,
             'tokenizer' => $tokenizer
