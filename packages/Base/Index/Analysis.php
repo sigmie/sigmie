@@ -146,6 +146,7 @@ class Analysis
 
                 $filterInstance = $class::fromRaw($filter);
                 $filterInstance->setName($name);
+                $filterInstance->setPriority((int)$filter['priority']);
 
                 $filters[$name] = $filterInstance;
             }

@@ -313,7 +313,7 @@ class BuilderTest extends TestCase
         $this->assertEquals([
             'type' => 'synonym',
             'class' => TwoWaySynonyms::class,
-            'priority'=> '2',
+            'priority' => '2',
             'synonyms' => [
                 'treasure, gem, gold, price',
                 'friend, buddy, partner'
@@ -339,7 +339,7 @@ class BuilderTest extends TestCase
         $this->assertEquals([
             'type' => 'synonym',
             'class' => OneWaySynonyms::class,
-            'priority'=> '3',
+            'priority' => '3',
             'synonyms' => [
                 'i-pod, i pod => ipod',
             ],
@@ -362,7 +362,7 @@ class BuilderTest extends TestCase
         $this->assertEquals([
             'type' => 'stop',
             'class' => Stopwords::class,
-            'priority'=> '1',
+            'priority' => '1',
             'stopwords' => [
                 'about', 'after', 'again'
             ]
@@ -388,7 +388,7 @@ class BuilderTest extends TestCase
         $this->assertEquals([
             'type' => 'stemmer_override',
             'class' => Stemmer::class,
-            'priority'=> '4',
+            'priority' => '4',
             'rules' => [
                 'be, are => am',
                 'mice => mouse',
@@ -402,7 +402,9 @@ class BuilderTest extends TestCase
      */
     public function analyzer_defaults()
     {
-        $this->sigmie->newIndex('sigmie')->withoutMappings()->create();
+        $this->sigmie->newIndex('sigmie')
+            ->withoutMappings()
+            ->create();
 
         $data = $this->indexData('sigmie');
 

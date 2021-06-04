@@ -7,6 +7,7 @@ namespace Sigmie\Base\Index;
 use Closure;
 use Exception;
 use Generator;
+use Sigmie\Base\Aliases\Aliases;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Calls\Count as CountAPI;
@@ -21,17 +22,15 @@ use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Search\Searchable;
 use Sigmie\Support\Collection;
 
-class Index implements DocumentCollectionInterface, RawRepresentation
+class Index implements DocumentCollectionInterface
 {
-    use CountAPI, DocumentsActions, IndexActions, Searchable, API, AliasActions;
+    use CountAPI, DocumentsActions, IndexActions, Searchable, API, AliasActions, Aliases;
 
     protected string $identifier;
 
     protected ?int $count;
 
     protected ?string $size;
-
-    protected array $aliases = [];
 
     protected int $docsCount;
 
@@ -54,6 +53,7 @@ class Index implements DocumentCollectionInterface, RawRepresentation
         Settings $settings = null,
         Mappings $mappings = null
     ) {
+
         if ($settings === null) {
             $settings = new Settings();
         }
@@ -76,16 +76,24 @@ class Index implements DocumentCollectionInterface, RawRepresentation
         return $this->indexAPICall($this->identifier, 'GET')->json();
     }
 
-    public static function fromRaw(array $raw): static
+    public static function fromRaw(string $name, array $raw): static
     {
-        //TODO implement
+        $settings = Settings::fromRaw($raw);
+        $analyzers = $settings->analysis->analyzers();
+        $mappings = Mappings::fromRaw($raw['mappings'], $analyzers);
+        $aliases = array_keys($raw['aliases']);
 
-        return new static('foo');
+        $index = new static($name, $settings, $mappings);
+        $index->setAliases($aliases);
+
+        return $index;
     }
 
-    public function update(): Update
+    public function update(callable $update): Index
     {
-        return new Update($this);
+        $index = $update(new ManagedIndex($this));
+
+        return $this;
     }
 
     public function getPrefix(): string
@@ -105,24 +113,6 @@ class Index implements DocumentCollectionInterface, RawRepresentation
         return $this->deleteIndex($this->identifier);
     }
 
-    public function setAlias(string $alias): self
-    {
-        $this->aliases[] = $alias;
-
-        $this->createAlias($this->identifier, $alias);
-
-        return $this;
-    }
-
-    public function getAliases(): array
-    {
-        return $this->aliases;
-    }
-
-    public function removeAlias(string $alias)
-    {
-        return $this->deleteAlias($this->identifier, $alias);
-    }
 
     public function setSize(?string $size): self
     {

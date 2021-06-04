@@ -28,7 +28,18 @@ class Stemmer extends TokenFilter
 
     public static function fromRaw(array $raw)
     {
-        $instance = new static('', $raw['rules']);
+        $settings = [];
+
+        foreach ($raw['rules'] as $value) {
+            [$to, $from] = explode('=>', $value);
+            $to = explode(', ', $to);
+            $from = trim($from);
+            $to = array_map(fn ($value) => trim($value), $to);
+
+            $settings[$from] = $to;
+        }
+
+        $instance = new static('', $settings);
 
         return $instance;
     }

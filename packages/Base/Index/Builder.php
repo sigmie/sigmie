@@ -7,6 +7,7 @@ namespace Sigmie\Base\Index;
 use Carbon\Carbon;
 use Closure;
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\DefaultFilters;
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
@@ -22,7 +23,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Builder
 {
-    use IndexActions, AliasActions;
+    use IndexActions, AliasActions, DefaultFilters;
 
     protected int $replicas = 2;
 
@@ -36,17 +37,11 @@ class Builder
 
     protected Tokenizer $tokenizer;
 
-    protected array $stopwords = [];
-
-    protected array $twoWaySynonyms = [];
-
-    protected array $oneWaySynonyms = [];
-
-    protected array $stemming = [];
 
     protected array $charFilter = [];
 
     protected Closure $blueprintCallback;
+
     public function __construct(HttpConnection $connection, EventDispatcherInterface $events)
     {
         $this->events = $events;
@@ -55,16 +50,14 @@ class Builder
         $this->setHttpConnection($connection);
     }
 
+    public function getPrefix(): string
+    {
+        return $this->alias;
+    }
+
     public function alias(string $alias)
     {
         $this->alias = $alias;
-
-        return $this;
-    }
-
-    public function language(Language $language)
-    {
-        $this->language = $language;
 
         return $this;
     }
@@ -90,27 +83,6 @@ class Builder
         return $this;
     }
 
-    public function stopwords(array $stopwords)
-    {
-        $this->stopwords = $stopwords;
-
-        return $this;
-    }
-
-    public function twoWaySynonyms(array $synonyms)
-    {
-        $this->twoWaySynonyms = $synonyms;
-
-        return $this;
-    }
-
-    public function oneWaySynonyms(array $synonyms)
-    {
-        $this->oneWaySynonyms = $synonyms;
-
-        return $this;
-    }
-
     public function normalizer(ContractsCharFilter $charFilter)
     {
         $this->charFilter[] = $charFilter;
@@ -118,12 +90,6 @@ class Builder
         return $this;
     }
 
-    public function stemming(array $stemming)
-    {
-        $this->stemming = $stemming;
-
-        return $this;
-    }
 
     public function shards(int $shards)
     {
@@ -154,12 +120,7 @@ class Builder
 
         $this->throwUnlessMappingsDefined();
 
-        $defaultFilters = [
-            new Stopwords($this->alias, $this->stopwords, 1),
-            new TwoWaySynonyms($this->alias, $this->twoWaySynonyms, 2),
-            new OneWaySynonyms($this->alias, $this->oneWaySynonyms, 3),
-            new Stemmer($this->alias, $this->stemming, 4)
-        ];
+        $defaultFilters = $this->defaultFilters();
 
         $defaultAnalyzer = new Analyzer(
             prefix: $this->alias,
@@ -173,7 +134,7 @@ class Builder
         $analyzers->add($defaultAnalyzer);
 
         $analysis = new Analysis(
-            tokenizers: [$this->tokenizer],
+            tokenizers: [$this->tokenizer], // ????????????
             analyzers: $analyzers->toArray(),
             filters: $defaultFilters,
             charFilters: $this->charFilter,

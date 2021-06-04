@@ -26,15 +26,19 @@ class Analyzer
     ) {
         $this->name = "{$prefix}_{$this->name}";
 
-        $res = [];
+        $this->sortedFilters = $this->sortedFilters($filters);
+    }
 
+    private function sortedFilters(array $filters)
+    {
+        $res = [];
         foreach ($filters as $filter) {
             $res[$filter->getPriority()] = $filter;
         }
 
         ksort($res);
 
-        $this->sortedFilters = array_values($res);
+        return array_values($res);
     }
 
     public function raw(): array
@@ -58,6 +62,11 @@ class Analyzer
     public static function fromRaw(array $data): Analyzer
     {
         return new Analyzer('demo', new WordBoundaries(100), []);
+    }
+
+    public function setFilters(array $filters)
+    {
+        $this->sortedFilters = $this->sortedFilters($filters);
     }
 
     public function filters(): array

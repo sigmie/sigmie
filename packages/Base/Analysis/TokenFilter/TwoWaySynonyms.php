@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\TokenFilter;
 
-class TwoWaySynonyms extends TokenFilter 
+class TwoWaySynonyms extends TokenFilter
 {
     protected function getName(): string
     {
@@ -23,7 +23,15 @@ class TwoWaySynonyms extends TokenFilter
 
     public static function fromRaw(array $raw)
     {
-        $instance = new static('', $raw['synonyms']);
+        $settings = [];
+
+        foreach ($raw['synonyms'] as $value) {
+            $value = explode(',', $value);
+            $value = array_map(fn ($value) => trim($value), $value);
+            $settings[] = $value;
+        }
+
+        $instance = new static('', $settings);
 
         return $instance;
     }

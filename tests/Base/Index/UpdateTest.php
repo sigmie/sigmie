@@ -53,7 +53,7 @@ class UpdateTest extends TestCase
             })
             ->create();
 
-        $this->sigmie->index('foo')->update()->stopwords([]);
+        $this->sigmie->index('foo');
     }
 
     private function indexData(string $name): array

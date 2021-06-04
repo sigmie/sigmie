@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
+use Exception;
 use Sigmie\Base\APIs\Calls\Cat as CatAPI;
 use Sigmie\Base\APIs\Calls\Index as IndexAPI;
 use Sigmie\Base\Contracts\Events;
@@ -43,21 +44,14 @@ trait Actions
         try {
             $res = $this->indexAPICall("/{$identifier}", 'GET', ['require_alias' => true]);
 
+            if (count($res->json()) > 1) {
+                throw new Exception("Multiple indices found for alias {$identifier}.");
+            }
+
             $data = array_values($res->json())[0];
-
             $name = $data['settings']['index']['provided_name'];
-            $aliases = $data['aliases'];
-            $settings = Settings::fromRaw($data);
-            $analyzers = $settings->analysis->analyzers();
 
-            $index = new Index($name, $settings, Mappings::fromRaw($data['mappings'], $analyzers));
-
-            // if (count($aliases) > 0) {
-            //     foreach ($aliases as $alias => $value) {
-            //         $index->setAlias($alias);
-            //     }
-            // }
-
+            $index = Index::fromRaw($name, $data);
             $index->setHttpConnection($this->getHttpConnection());
 
             return $index;
@@ -75,11 +69,8 @@ trait Actions
 
             foreach ($res->json() as $indexName => $indexData) {
 
-                [$prefix, $res] = preg_split("/_/", $indexName);
-
-                $index = new Index($indexName);
+                $index = Index::fromRaw($indexName, $indexData);
                 $index->setHttpConnection($this->getHttpConnection());
-                $index->setPrefix($prefix);
 
                 $collection->add($index);
             }

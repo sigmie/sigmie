@@ -2,17 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Index;
+namespace Sigmie\Base\Index\Update;
 
-use Sigmie\Base\Analysis\TokenFilter\Stopwords;
-use Sigmie\Base\APIs\Calls\Settings as SettingsAPI;
-use Sigmie\Base\Contracts\TokenFilter;
-use Sigmie\Base\Index\Settings as IndexSettings;
-use Sigmie\Support\Collection;
+use Sigmie\Base\Index\AliasActions;
+use Sigmie\Base\Index\Index;
 
-class Update
+class Plan
 {
-    use SettingsAPI, AliasActions;
+    use AliasActions;
 
     protected string $prefix;
 

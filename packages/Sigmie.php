@@ -44,13 +44,8 @@ class Sigmie implements ManagerInterface
 
     public function index(string $name): Index\Index
     {
-        $indices = $this->getIndices($name);
+        return $this->getIndex($name);
 
-        if ($indices->count() > 1) {
-            throw new Exception("Multiple indices found for alias {$name}.");
-        }
-
-        return $indices->first();
     }
 
     public function indices(): Collection
