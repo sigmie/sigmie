@@ -6,6 +6,7 @@ namespace Sigmie\Base\Index;
 
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Contracts\Type;
 use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Mappings\Types\Boolean;
@@ -16,10 +17,17 @@ use Sigmie\Support\Collection;
 
 class Mappings
 {
+    protected Properties $properties;
+
+    protected Analyzer $defaultAnalyzer;
+
     public function __construct(
-        protected Properties $properties,
-        protected Analyzer $defaultAnalyzer
+        ?Properties $properties = null,
+        ?Analyzer $defaultAnalyzer = null
     ) {
+        $this->properties = $properties ?: new Properties();
+        //TODO change
+        $this->defaultAnalyzer = $defaultAnalyzer ?: new Analyzer('', new Whitespaces);
     }
 
     public function properties(): Properties
@@ -39,7 +47,7 @@ class Mappings
     {
         return [
             'properties' => $this->properties->toRaw(),
-            'dynamic_templates' => $this->dynamicTemplate()
+            // 'dynamic_templates' => $this->dynamicTemplate()
         ];
     }
 
@@ -53,7 +61,7 @@ class Mappings
             return new DynamicMappings($analyzer);
         }
 
-        $defaultAnalyzerName = $data['dynamic_templates'][0]['sigmie']['mapping']['analyzer'];
+        $defaultAnalyzerName = 'default';
         $defaultAnalyzer = $analyzers[$defaultAnalyzerName];
 
         foreach ($data['properties'] as $fieldName => $value) {
@@ -81,20 +89,5 @@ class Mappings
         $properties = new Properties($fields);
 
         return new static($properties, $defaultAnalyzer);
-    }
-
-    public function dynamicTemplate()
-    {
-        return [
-            [
-                'sigmie' => [
-                    'match' => "*", // All field names
-                    'match_mapping_type' => 'string', // String fields
-                    'mapping' => [
-                        'analyzer' => $this->defaultAnalyzer->name()
-                    ]
-                ]
-            ]
-        ];
     }
 }

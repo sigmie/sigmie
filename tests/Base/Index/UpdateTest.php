@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Tests\Base\Index;
 
 use Sigmie\Base\Analysis\CharFilter\PatternFilter;
+use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
 use Sigmie\Base\APIs\Calls\Index;
 use Sigmie\Base\Index\AliasActions;
@@ -53,7 +54,16 @@ class UpdateTest extends TestCase
             })
             ->create();
 
-        $this->sigmie->index('foo');
+        $index = $this->sigmie->index('foo');
+
+        $updatedIndex = $index->update(function (DefaultAnalyzer $defaultAnalyzer) {
+
+            $defaultAnalyzer->stopwords(['foo', 'bar', 'der']);
+
+            return $defaultAnalyzer;
+        });
+
+        dd($updatedIndex);
     }
 
     private function indexData(string $name): array

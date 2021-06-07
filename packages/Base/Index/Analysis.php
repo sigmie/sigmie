@@ -6,6 +6,7 @@ namespace Sigmie\Base\Index;
 
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
@@ -44,7 +45,7 @@ class Analysis
         return $this->charFilters;
     }
 
-    public function defaultAnalyzer(): Analyzer
+    public function defaultAnalyzer(): DefaultAnalyzer
     {
         return $this->defaultAnalyzer;
     }
@@ -193,9 +194,11 @@ class Analysis
                 };
             }
 
-            [$prefix, $res] = preg_split("/_/", $name);
-
-            $analyzers[$name] = new Analyzer($prefix, $tokenizer, $analyzerFilters, $charFilters);
+            if ($name === 'default') {
+                $analyzers[$name] = DefaultAnalyzer::fromRaw($name, $tokenizer, $analyzerFilters, $charFilters);
+            } else {
+                $analyzers[$name] = new Analyzer($name, $tokenizer, $analyzerFilters, $charFilters);
+            }
         }
 
         $defaultAnalyzer = $analyzers[$defaultAnalyzerName];
@@ -247,6 +250,7 @@ class Analysis
             ->mapToDictionary(function (Analyzer $analyzer) {
                 return [$analyzer->name() => $analyzer->raw()];
             })->toArray();
+
 
         $result = [
             'analyzer' => $analyzers,

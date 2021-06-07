@@ -44,7 +44,7 @@ class Settings implements RawRepresentation
             $settings = $response['settings']['index'];
         }
 
-        $defaultAnalyzerName = $response['mappings']['dynamic_templates'][0]['sigmie']['mapping']['analyzer'];
+        $defaultAnalyzerName = 'default';
         $analysis = Analysis::fromRaw($settings['analysis'], $defaultAnalyzerName);
 
         return new Settings(

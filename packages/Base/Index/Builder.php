@@ -6,7 +6,9 @@ namespace Sigmie\Base\Index;
 
 use Carbon\Carbon;
 use Closure;
+use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\DefaultFilters;
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
@@ -116,18 +118,25 @@ class Builder
     {
         $timestamp = Carbon::now()->format('YmdHisu');
 
-        $indexName = "{$this->alias}_{$timestamp}";
-
         $this->throwUnlessMappingsDefined();
 
         $defaultFilters = $this->defaultFilters();
 
-        $defaultAnalyzer = new Analyzer(
-            prefix: $this->alias,
-            tokenizer: $this->tokenizer,
-            filters: $defaultFilters,
-            charFilters: $this->charFilter
+        $defaultAnalyzer = new DefaultAnalyzer(
+            $this->alias,
+            $this->tokenizer,
+            $this->stopwords ?: null,
+            $this->twoWaySynonyms ?: null,
+            $this->oneWaySynonyms ?: null,
+            $this->stemming ?: null
         );
+
+        // $defaultAnalyzer = new Analyzer(
+        //     prefix: $this->alias,
+        //     tokenizer: $this->tokenizer,
+        //     filters: $defaultFilters,
+        //     charFilters: $this->charFilter
+        // );
 
         $mappings = $this->createMappings($defaultAnalyzer);
         $analyzers = $mappings->analyzers();
@@ -151,9 +160,12 @@ class Builder
             analysis: $analysis
         );
 
-        $this->createIndex(new Index($indexName, $settings, $mappings));
+        $indexName = "{$this->alias}_{$timestamp}";
+        $index = new AliasedIndex($indexName, $this->alias, [], $settings, $mappings);
 
-        $this->createAlias($indexName, $this->alias);
+        $index = $this->createIndex($index);
+
+        $this->createAlias($index->getName(), $this->alias);
     }
 
     protected function languageIsDefined(): bool

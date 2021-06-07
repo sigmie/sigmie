@@ -11,14 +11,11 @@ abstract class TokenFilter implements TokenFilterInterface
 {
     use Priority;
 
-    protected string $name = '';
-
     public function __construct(
-        string $prefix,
+        protected string $name,
         protected array $settings,
         int $priority = 0
     ) {
-        $this->name = "{$prefix}_{$this->getName()}";
         $this->setPriority($priority);
     }
 

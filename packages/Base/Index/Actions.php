@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Exception;
+use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\APIs\Calls\Cat as CatAPI;
 use Sigmie\Base\APIs\Calls\Index as IndexAPI;
 use Sigmie\Base\Contracts\Events;
@@ -39,13 +40,13 @@ trait Actions
         return $this->getIndex($index->getName()) instanceof Index;
     }
 
-    protected function getIndex(string $identifier): ?Index
+    protected function getIndex(string $alias): ?AliasedIndex
     {
         try {
-            $res = $this->indexAPICall("/{$identifier}", 'GET', ['require_alias' => true]);
+            $res = $this->indexAPICall("/{$alias}", 'GET', ['require_alias' => true]);
 
             if (count($res->json()) > 1) {
-                throw new Exception("Multiple indices found for alias {$identifier}.");
+                throw new Exception("Multiple indices found for alias {$alias}.");
             }
 
             $data = array_values($res->json())[0];
@@ -54,7 +55,7 @@ trait Actions
             $index = Index::fromRaw($name, $data);
             $index->setHttpConnection($this->getHttpConnection());
 
-            return $index;
+            return $index->alias($alias);
         } catch (ElasticsearchException) {
             return null;
         }

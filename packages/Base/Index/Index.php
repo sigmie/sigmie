@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
+use Carbon\Carbon;
 use Closure;
 use Exception;
 use Generator;
-use Sigmie\Base\Aliases\Aliases;
+use Sigmie\Base\Index\AliasedIndex;
+use Sigmie\Base\Aliases\Alias;
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Calls\Count as CountAPI;
 use Sigmie\Base\Contracts\API;
@@ -24,19 +27,13 @@ use Sigmie\Support\Collection;
 
 class Index implements DocumentCollectionInterface
 {
-    use CountAPI, DocumentsActions, IndexActions, Searchable, API, AliasActions, Aliases;
-
-    protected string $identifier;
+    use CountAPI, DocumentsActions, IndexActions, Searchable, API, AliasActions, Alias;
 
     protected ?int $count;
 
     protected ?string $size;
 
     protected int $docsCount;
-
-    protected Settings $settings;
-
-    protected Mappings $mappings;
 
     protected DocumentCollectionInterface $docs;
 
@@ -48,27 +45,29 @@ class Index implements DocumentCollectionInterface
 
     protected string $prefix;
 
+    protected Settings $settings;
+
+    protected Mappings $mappings;
+
     public function __construct(
-        string $name,
+        protected string $identifier,
+        protected array $aliases = [],
         Settings $settings = null,
         Mappings $mappings = null
     ) {
+        $this->settings = $settings ?: new Settings();
+        $this->mappings = $mappings ?: new Mappings();
+    }
 
-        if ($settings === null) {
-            $settings = new Settings();
-        }
-
-        if ($mappings === null) {
-            //TODO make mappings required parameter
-            $mappings = new Mappings(
-                new Properties(),
-                new Analyzer('demo', new WordBoundaries)
-            );
-        }
-
-        $this->identifier = $name;
-        $this->settings = $settings;
-        $this->mappings = $mappings;
+    public function alias(string $alias): AliasedIndex
+    {
+        return new AliasedIndex(
+            $this->identifier,
+            $alias,
+            $this->aliases,
+            $this->settings,
+            $this->mappings
+        );
     }
 
     public function toRaw(): array
@@ -83,17 +82,9 @@ class Index implements DocumentCollectionInterface
         $mappings = Mappings::fromRaw($raw['mappings'], $analyzers);
         $aliases = array_keys($raw['aliases']);
 
-        $index = new static($name, $settings, $mappings);
-        $index->setAliases($aliases);
+        $index = new static($name, $aliases, $settings, $mappings);
 
         return $index;
-    }
-
-    public function update(callable $update): Index
-    {
-        $index = $update(new ManagedIndex($this));
-
-        return $this;
     }
 
     public function getPrefix(): string

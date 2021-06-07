@@ -28,4 +28,19 @@ class DynamicMappings extends Mappings
     {
         return new Collection([$this->defaultAnalyzer]);
     }
+
+    public function dynamicTemplate()
+    {
+        return [
+            [
+                'sigmie' => [
+                    'match' => "*", // All field names
+                    'match_mapping_type' => 'string', // String fields
+                    'mapping' => [
+                        'analyzer' => $this->defaultAnalyzer->name()
+                    ]
+                ]
+            ]
+        ];
+    }
 }

@@ -14,25 +14,18 @@ use Sigmie\Support\Collection;
 
 class Analyzer
 {
-    protected string $name = 'analyzer';
-
-    protected array $sortedFilters = [];
-
     public function __construct(
-        string $prefix,
+        protected string $name,
         protected Tokenizer $tokenizer,
-        array $filters = [],
+        protected array $filters = [],
         protected array $charFilters = [],
     ) {
-        $this->name = "{$prefix}_{$this->name}";
-
-        $this->sortedFilters = $this->sortedFilters($filters);
     }
 
-    private function sortedFilters(array $filters)
+    protected function sortedFilters()
     {
         $res = [];
-        foreach ($filters as $filter) {
+        foreach ($this->filters as $filter) {
             $res[$filter->getPriority()] = $filter;
         }
 
@@ -43,7 +36,7 @@ class Analyzer
 
     public function raw(): array
     {
-        $filters = new Collection($this->sortedFilters);
+        $filters = new Collection($this->sortedFilters());
         $charFilters = new Collection($this->charFilters);
 
         $result = [
@@ -59,19 +52,14 @@ class Analyzer
         return $result;
     }
 
-    public static function fromRaw(array $data): Analyzer
-    {
-        return new Analyzer('demo', new WordBoundaries(100), []);
-    }
-
     public function setFilters(array $filters)
     {
-        $this->sortedFilters = $this->sortedFilters($filters);
+        $this->filters = $filters;
     }
 
     public function filters(): array
     {
-        return $this->sortedFilters;
+        return $this->sortedFilters();
     }
 
     public function tokenizer(): Tokenizer
