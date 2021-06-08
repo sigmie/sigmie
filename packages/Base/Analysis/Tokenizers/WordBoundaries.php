@@ -20,7 +20,7 @@ class WordBoundaries implements ConfigurableTokenizer, RawRepresentation
         return 'sigmie_tokenizer';
     }
 
-    final public function type(): string
+    public function type(): string
     {
         return 'standard';
     }

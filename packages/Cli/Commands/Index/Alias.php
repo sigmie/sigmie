@@ -29,7 +29,7 @@ class Alias extends BaseCommand
 
             $index->setAlias($alias);
 
-            $this->output->writeln("Alias {$alias} added to index {$index->getName()}.");
+            $this->output->writeln("Alias {$alias} added to index {$index->name()}.");
 
             return 0;
         }
@@ -38,7 +38,7 @@ class Alias extends BaseCommand
 
             $index->removeAlias($alias);
 
-            $this->output->writeln("Alias removed from index {$index->getName()}.");
+            $this->output->writeln("Alias removed from index {$index->name()}.");
 
             return 0;
         }

@@ -14,12 +14,14 @@ abstract class TokenFilter implements TokenFilterInterface
     public function __construct(
         protected string $name,
         protected array $settings,
-        int $priority = 0
+        private int $priority = 0
     ) {
-        $this->setPriority($priority);
     }
 
-    abstract protected function getName(): string;
+    public function name(): string
+    {
+        return $this->name;
+    }
 
     abstract protected function getValues(): array;
 

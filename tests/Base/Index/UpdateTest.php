@@ -37,38 +37,41 @@ class UpdateTest extends TestCase
      */
     public function foo()
     {
-        // $this->sigmie->newIndex('foo')
-        //     ->normalizer(new PatternFilter('/.*/', 'bar'))
-        //     ->tokenizeOn(new Pattern('/[ ]/'))
-        //     ->stemming([
-        //         ['foo' => 'bar']
-        //     ])
-        //     ->mappings(function (Blueprint $blueprint) {
-        //         $blueprint->bool('foo');
-        //         $blueprint->date('from');
-        //         $blueprint->number('price')->float();
-        //         $blueprint->number('count')->integer();
+        $this->sigmie->newIndex('foo')
+            ->normalizer(new PatternFilter('some_name', '/.*/', 'bar')) //TODO remove name necessity
+            ->tokenizeOn(new Pattern('/[ ]/')) //Todo 
+            ->stemming('name', [ //TODO remove name necessity
+                ['foo' => 'bar']
+            ])
+            ->mappings(function (Blueprint $blueprint) {
+                $blueprint->bool('foo');
+                $blueprint->date('from');
+                $blueprint->number('price')->float();
+                $blueprint->number('count')->integer();
 
-        //         $blueprint->text('title')->searchAsYouType(new Analyzer('barista', new Whitespaces));
-        //         $blueprint->text('description')->unstructuredText();
+                $blueprint->text('title')->searchAsYouType(new Analyzer('barista', new Whitespaces));
+                $blueprint->text('description')->unstructuredText();
 
-        //         return $blueprint;
-        //     })
-        //     ->create();
+                return $blueprint;
+            })
+            ->create();
 
-        // die();
+        $data = $this->indexData('foo');
+
+        $this->assertEmpty($data['settings']['index']['analysis']['filter']['foo_stopwords']['stopwords']);
 
         $index = $this->sigmie->index('foo');
 
         $updatedIndex = $index->update(function (DefaultAnalyzer $defaultAnalyzer) {
 
-            $defaultAnalyzer->stopwords(['foo', 'bar', 'der']);
-            $defaultAnalyzer->oneWaySynonyms([
-                'ipod' => ['i-pod', 'i pod']
-            ]);
+            $defaultAnalyzer->stopwords(['foo', 'bar', 'der']); //TODO implement stopwords method
 
             return $defaultAnalyzer;
         });
+
+        $data = $this->indexData('foo');
+
+        $this->assertEquals(['foo', 'bar', 'der'], $data['settings']['index']['analysis']['filter']['default_stopwords']['stopwords']);
     }
 
     private function indexData(string $name): array

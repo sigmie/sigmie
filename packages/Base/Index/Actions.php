@@ -26,7 +26,7 @@ trait Actions
             'mappings' => $mappings->toRaw()
         ];
 
-        $this->indexAPICall("/{$index->getName()}", 'PUT', $body);
+        $this->indexAPICall("/{$index->name()}", 'PUT', $body);
 
         $index->setHttpConnection($this->httpConnection);
 
@@ -37,7 +37,7 @@ trait Actions
 
     protected function indexExists(Index $index): bool
     {
-        return $this->getIndex($index->getName()) instanceof Index;
+        return $this->getIndex($index->name()) instanceof Index;
     }
 
     protected function getIndex(string $alias): ?AliasedIndex

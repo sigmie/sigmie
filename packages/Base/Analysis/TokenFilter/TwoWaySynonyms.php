@@ -6,16 +6,6 @@ namespace Sigmie\Base\Analysis\TokenFilter;
 
 class TwoWaySynonyms extends TokenFilter
 {
-    protected function getName(): string
-    {
-        return  'two_way_synonyms';
-    }
-
-    public function name(): string
-    {
-        return $this->name;
-    }
-
     public function type(): string
     {
         return 'synonym';
@@ -34,11 +24,6 @@ class TwoWaySynonyms extends TokenFilter
         $instance = new static('', $settings);
 
         return $instance;
-    }
-
-    public function setName(string $name): void
-    {
-        $this->name = $name;
     }
 
     protected function getValues(): array

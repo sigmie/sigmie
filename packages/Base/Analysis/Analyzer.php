@@ -5,51 +5,58 @@ declare(strict_types=1);
 namespace Sigmie\Base\Analysis;
 
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Base\Contracts\Analyzer as AnalyzerInterface;
 use Sigmie\Base\Contracts\CharFilter;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\Priority;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
+use Sigmie\Base\Name;
 use Sigmie\Support\Collection;
+use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
-class Analyzer
+use function Sigmie\Helpers\ensure_collection;
+
+class Analyzer implements AnalyzerInterface
 {
+    use Name;
+
+    protected CollectionInterface $filters;
+
+    protected CollectionInterface $charFilters;
+
     public function __construct(
         protected string $name,
         protected Tokenizer $tokenizer,
-        protected array $filters = [],
-        protected array $charFilters = [],
+        array|CollectionInterface $filters = [],
+        array|CollectionInterface $charFilters = [],
     ) {
+        $this->filters = ensure_collection($filters);
+        $this->charFilters = ensure_collection($charFilters);
     }
 
-    protected function sortedCharFilters()
+    protected function sortedCharFilters(): Collection
     {
-        $res = [];
-        foreach ($this->charFilters as $filter) {
-            $res[$filter->getPriority()] = $filter;
-        }
-
-        ksort($res);
-
-        return array_values($res);
+        return $this->charFilters
+            ->mapToDictionary(
+                fn (CharFilter $filter) => [$filter->getPriority() => $filter]
+            )
+            ->sortByKeys();
     }
 
-    protected function sortedFilters()
+    protected function sortedFilters(): Collection
     {
-        $res = [];
-        foreach ($this->filters as $filter) {
-            $res[$filter->getPriority()] = $filter;
-        }
-
-        ksort($res);
-
-        return array_values($res);
+        return $this->filters
+            ->mapToDictionary(
+                fn (TokenFilter $filter) => [$filter->getPriority() => $filter]
+            )
+            ->sortByKeys();
     }
 
     public function raw(): array
     {
-        $filters = new Collection($this->sortedFilters());
-        $charFilters = new Collection($this->charFilters);
+        $filters = $this->sortedFilters();
+        $charFilters = $this->charFilters;
 
         $result = [
             'tokenizer' => $this->tokenizer()->type(),
@@ -64,29 +71,18 @@ class Analyzer
         return $result;
     }
 
-    public function setFilters(array $filters)
-    {
-        $this->filters = $filters;
-    }
-
-    public function filters(): array
+    public function tokenFilters(): Collection
     {
         return $this->sortedFilters();
     }
 
-    public function charFilters(): array
+    public function charFilters(): Collection
     {
-        //TODO
-        return [];
+        return $this->charFilters;
     }
 
     public function tokenizer(): Tokenizer
     {
         return $this->tokenizer;
-    }
-
-    public function name()
-    {
-        return $this->name;
     }
 }

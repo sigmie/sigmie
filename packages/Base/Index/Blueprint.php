@@ -11,31 +11,28 @@ use Sigmie\Base\Mappings\Types\Boolean;
 use Sigmie\Base\Mappings\Types\Date;
 use Sigmie\Base\Mappings\Types\Number;
 use Sigmie\Base\Mappings\Types\Text;
+use Sigmie\Support\Collection;
+use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
 class Blueprint
 {
-    protected array $fields = [];
+    protected CollectionInterface $fields;
 
-    public function __invoke(Analyzer $analyzer)
+    public function __construct()
     {
-        $fields = [];
-        /** @var BaseType $type */
-        foreach ($this->fields as $type) {
-            if ($type instanceof Text && is_null($type->analyzer())) {
-                $type->withAnalyzer($analyzer);
-            }
+        return $this->fields = new Collection();
+    }
 
-            $fields[] = $type;
-        }
-
-        return new Properties($fields);
+    public function __invoke()
+    {
+        return new Properties($this->fields->toArray());
     }
 
     public function text(...$args): Text
     {
         $field = new Text(...$args);
 
-        $this->fields[] = $field;
+        $this->fields->add($field);
 
         return $field;
     }
@@ -44,7 +41,7 @@ class Blueprint
     {
         $field = new Number(...$args);
 
-        $this->fields[] = $field;
+        $this->fields->add($field);
 
         return $field;
     }
@@ -53,7 +50,7 @@ class Blueprint
     {
         $field = new Date(...$args);
 
-        $this->fields[] = $field;
+        $this->fields->add($field);
 
         return $field;
     }
@@ -62,7 +59,7 @@ class Blueprint
     {
         $field = new Boolean(...$args);
 
-        $this->fields[] = $field;
+        $this->fields->add($field);
 
         return $field;
     }

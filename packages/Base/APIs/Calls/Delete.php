@@ -16,7 +16,7 @@ trait Delete
 
     protected function deleteAPICall(string $identifier, bool $async = false): ElasticsearchResponse
     {
-        $uri = new Uri("/{$this->index()->getName()}/_doc/{$identifier}");
+        $uri = new Uri("/{$this->index()->name()}/_doc/{$identifier}");
 
         if (!$async) {
             $uri = Uri::withQueryValue($uri, 'refresh', 'wait_for');

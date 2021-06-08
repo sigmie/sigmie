@@ -27,7 +27,7 @@ class Query
 
     public function index(Index $index)
     {
-        $this->indexName = $index->getName();
+        $this->indexName = $index->name();
 
         return $this;
     }

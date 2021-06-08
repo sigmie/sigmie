@@ -1,9 +1,9 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Sigmie\Base\Contracts;
 
-//TODO extend priority
-interface CharFilter 
+interface CharFilter extends Name, Priority
 {
-    public function name(): string;
 }

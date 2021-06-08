@@ -20,7 +20,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
         $this->events = new EventDispatcher;
 
         $this->events->addListener('index.created', function (Index $index) {
-            $this->createAlias($index->getName(), $this->testId());
+            $this->createAlias($index->name(), $this->testId());
         });
 
         $uses = $this->usedTraits();
@@ -32,15 +32,15 @@ class TestCase extends \PHPUnit\Framework\TestCase
     {
         parent::tearDown();
 
-        // $uses = $this->usedTraits();
+        $uses = $this->usedTraits();
 
-        // $indices = $this->getIndices($this->testId());
+        $indices = $this->getIndices($this->testId());
 
-        // foreach ($indices as $index) {
-        //     $index->delete();
-        // }
+        foreach ($indices as $index) {
+            $index->delete();
+        }
 
-        // $this->tearDownSigmieTesting($uses);
+        $this->tearDownSigmieTesting($uses);
     }
 
     public function assertIndexExists(string $name)

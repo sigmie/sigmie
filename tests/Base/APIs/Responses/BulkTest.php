@@ -27,7 +27,7 @@ class BulkTest extends TestCase
             ['field_foo' => 'value_baz'],
         ];
 
-        $bulkRes = $this->bulkAPICall($index->getName(), $body);
+        $bulkRes = $this->bulkAPICall($index->name(), $body);
 
         $this->assertInstanceOf(Bulk::class, $bulkRes, 'Bulk API should return a Bulk response');
         $this->assertCount(2, $bulkRes->getSuccessful(), 'Bulk response getSuccessful method should contains 1 element.');

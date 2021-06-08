@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\CharFilter;
 
-use Sigmie\Base\Contracts\CharFilter;
-use Sigmie\Base\Contracts\Configurable;
+use Sigmie\Base\Priority;
 
-class MappingFilter implements CharFilter, Configurable
+class MappingFilter extends ConfigurableCharFilter
 {
-    protected string $name = 'sigmie_mapping_char_filter';
+    use Priority;
 
-    public function __construct(protected array $mappings = [])
-    {
+    public function __construct(
+        protected string $name,
+        protected array $mappings = []
+    ) {
+        parent::__construct($name);
     }
 
     public function config(): array
@@ -25,12 +27,8 @@ class MappingFilter implements CharFilter, Configurable
 
         return [
             'type' => 'mapping',
-            'mappings' => $mappings
+            'mappings' => $mappings,
+            'class' => static::class //TODO inerhit also from token filter
         ];
-    }
-
-    public function name(): string
-    {
-        return $this->name;
     }
 }

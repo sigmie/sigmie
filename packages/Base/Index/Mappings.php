@@ -19,15 +19,11 @@ class Mappings
 {
     protected Properties $properties;
 
-    protected Analyzer $defaultAnalyzer;
-
     public function __construct(
+        protected Analyzer $defaultAnalyzer,
         ?Properties $properties = null,
-        ?Analyzer $defaultAnalyzer = null
     ) {
         $this->properties = $properties ?: new Properties();
-        //TODO change
-        $this->defaultAnalyzer = $defaultAnalyzer ?: new Analyzer('', new Whitespaces);
     }
 
     public function properties(): Properties

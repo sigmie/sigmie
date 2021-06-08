@@ -36,7 +36,7 @@ trait Actions
 
     protected function upsertDocuments(DocumentCollection &$documentCollection): DocumentCollection
     {
-        $indexName = $this->index()->getName();
+        $indexName = $this->index()->name();
         $body = [];
         $documentCollection->forAll(function ($index, Document $document) use (&$body) {
             $body = [
@@ -74,7 +74,7 @@ trait Actions
      */
     protected function createDocument(Document &$doc, bool $async): Document
     {
-        $indexName = $this->index()->getName();
+        $indexName = $this->index()->name();
         $array = [];
 
         if ($doc->getId() !== null) {
@@ -97,7 +97,7 @@ trait Actions
 
     protected function createDocuments(DocumentCollection &$documentCollection, bool $async): DocumentCollection
     {
-        $indexName = $this->index()->getName();
+        $indexName = $this->index()->name();
         $body = [];
         $documentCollection->forAll(function ($index, Document $document) use (&$body) {
             $body = [
@@ -165,7 +165,7 @@ trait Actions
 
     protected function deleteDocuments(array $ids): bool
     {
-        $indexName = $this->index()->getName();
+        $indexName = $this->index()->name();
 
         $body = [];
         foreach ($ids as $id) {

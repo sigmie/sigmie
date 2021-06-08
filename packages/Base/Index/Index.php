@@ -16,6 +16,7 @@ use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Calls\Count as CountAPI;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
+use Sigmie\Base\Contracts\Name;
 use Sigmie\Base\Contracts\RawRepresentation;
 use Sigmie\Base\Documents\Actions as DocumentsActions;
 use Sigmie\Base\Documents\Document;
@@ -25,7 +26,7 @@ use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Search\Searchable;
 use Sigmie\Support\Collection;
 
-class Index implements DocumentCollectionInterface
+class Index implements DocumentCollectionInterface, Name
 {
     use CountAPI, DocumentsActions, IndexActions, Searchable, API, AliasActions, Alias;
 
@@ -130,10 +131,7 @@ class Index implements DocumentCollectionInterface
         return $this->mappings;
     }
 
-    /**
-     * Get the value of name
-     */
-    public function getName()
+    public function name(): string
     {
         return $this->identifier;
     }

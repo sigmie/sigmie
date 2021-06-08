@@ -55,7 +55,7 @@ class AliasedIndex extends Index
             throw new Exception('Docs count missmatch');
         }
 
-        // $this->switchAlias($this->alias, $oldIdentifier, $newIdentifier);
+        $this->switchAlias($this->alias, $oldIdentifier, $newIdentifier);
 
         $index->alias($this->alias);
 

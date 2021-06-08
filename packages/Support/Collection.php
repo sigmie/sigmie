@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Support;
 
 use Closure;
-use Doctrine\Common\Collections\ArrayCollection as DoctrineCollection; use Sigmie\Support\Contracts\Collection as CollectionInterface;
+use Doctrine\Common\Collections\ArrayCollection as DoctrineCollection;
+use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
 class Collection extends DoctrineCollection implements CollectionInterface
 {
@@ -32,6 +33,19 @@ class Collection extends DoctrineCollection implements CollectionInterface
         }
 
         return new static($result);
+    }
+
+    public function sortByKeys(): self
+    {
+        $result = [];
+
+        foreach ($this->toArray() as $item) {
+            $result[$item->getPriority()] = $item;
+        }
+
+        ksort($result);
+
+        return new static(array_values($result));
     }
 
     public function forAll(Closure $p)
@@ -93,7 +107,7 @@ class Collection extends DoctrineCollection implements CollectionInterface
         return new static($result);
     }
 
-    public function mapToDictionary(callable $callback)
+    public function mapToDictionary(callable $callback): self
     {
         $dictionary = [];
 

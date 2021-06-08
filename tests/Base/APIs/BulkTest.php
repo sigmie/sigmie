@@ -28,7 +28,7 @@ class BulkTest extends TestCase
             ['field_foo' => 'value_baz'],
         ];
 
-        $res = $this->bulkAPICall($index->getName(), $body);
+        $res = $this->bulkAPICall($index->name(), $body);
 
         $this->assertCount(2, $res->json('items'));
     }

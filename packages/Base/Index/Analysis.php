@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Exception;
+use Sigmie\Support\Contracts\Collection as CollectionInterface;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
@@ -19,41 +20,46 @@ use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
 use Sigmie\Support\Collection;
 
+use function Sigmie\Helpers\ensure_collection;
+
 class Analysis
 {
+    protected CollectionInterface $analyzers;
+
     public function __construct(
-        protected Analyzer $defaultAnalyzer,
-        protected array $analyzers = [],
+        protected DefaultAnalyzer $defaultAnalyzer,
+        array|CollectionInterface $analyzers = [],
     ) {
+        $this->analyzers = ensure_collection($analyzers);
     }
 
-    //TODO make private
-    public function allAnalyzers(): array
+    private function allAnalyzers(): CollectionInterface
     {
         $analyzers = $this->analyzers;
-        $analyzers[] = $this->defaultAnalyzer;
+
+        $analyzers->add($this->defaultAnalyzer);
 
         return $analyzers;
     }
 
-    public function tokenizers(): array
+    public function tokenizers(): CollectionInterface
     {
-        return array_map(fn (Analyzer $analyzer) => $analyzer->tokenizer(), $this->allAnalyzers());
+        return $this->allAnalyzers()
+            ->map(fn (Analyzer $analyzer) => $analyzer->tokenizer());
     }
 
-    public function filters(): array
+    public function filters(): CollectionInterface
     {
-        $analyzers = new Collection($this->allAnalyzers());
-
-        return $analyzers->map(function (Analyzer $analyzer) {
-            return $analyzer->filters();
-        })->flatten()->toArray();
+        return $this->allAnalyzers()
+            ->map(fn (Analyzer $analyzer) => $analyzer->tokenFilters())
+            ->flatten();
     }
 
-    public function charFilters(): array
+    public function charFilters(): CollectionInterface
     {
-        //TODO
-        return [];
+        return $this->allAnalyzers()
+            ->map(fn (Analyzer $analyzer) => $analyzer->charFilters())
+            ->flatten();
     }
 
     public function defaultAnalyzer(): DefaultAnalyzer
@@ -61,6 +67,7 @@ class Analysis
         return $this->defaultAnalyzer;
     }
 
+    //TODO hmm don't like the naming
     public function setDefaultAnalyzer(Analyzer $analyzer): self
     {
         $this->defaultAnalyzer = $analyzer;
@@ -68,9 +75,9 @@ class Analysis
         return $this;
     }
 
-    public function analyzers(): array
+    public function analyzers(): CollectionInterface
     {
-        return $this->analyzers;
+        return $this->allAnalyzers();
     }
 
     public function createAnalyzer(string $name, Tokenizer $tokenizer,): Analyzer
@@ -205,26 +212,22 @@ class Analysis
                 };
             }
 
-            if ($name === 'default') {
-                $analyzers[$name] = DefaultAnalyzer::fromRaw($name, $tokenizer, $analyzerFilters, $charFilters);
-            } else {
-                $analyzers[$name] = new Analyzer($name, $tokenizer, $analyzerFilters, $charFilters);
-            }
+            $analyzer[$name] = match ($name) {
+                'default' => new DefaultAnalyzer($tokenizer, $analyzerFilters, $charFilters),
+                default => new Analyzer($name, $tokenizer, $analyzerFilters, $charFilters)
+            };
         }
 
         $defaultAnalyzer = $analyzers[$defaultAnalyzerName];
 
-        $analysis = new Analysis(
-            $defaultAnalyzer,
-            $analyzers,
-        );
+        $analysis = new Analysis($defaultAnalyzer, $analyzers,);
 
         return $analysis;
     }
 
     public function toRaw(): array
     {
-        $filter = new Collection($this->filters());
+        $filter = $this->filters();
 
         $filter = $filter->mapToDictionary(function (TokenFilter $filter) {
 
@@ -236,7 +239,7 @@ class Analysis
             ];
         })->toArray();
 
-        $charFilters = new Collection($this->charFilters());
+        $charFilters = $this->charFilters();
 
         $charFilters = $charFilters
             ->filter(fn ($filter) => $filter instanceof Configurable)
@@ -244,7 +247,7 @@ class Analysis
                 return [$filter->name() => $filter->config()];
             })->toArray();
 
-        $tokenizer = new Collection($this->tokenizers());
+        $tokenizer = $this->tokenizers();
 
         $tokenizer = $tokenizer
             ->filter(fn (Tokenizer $tokenizer) => $tokenizer instanceof Configurable)
@@ -252,9 +255,9 @@ class Analysis
                 return [$tokenizer->name() => $tokenizer->config()];
             })->toArray();
 
-        $analyzers = new Collection($this->allAnalyzers());
+        $analyzers = $this->allAnalyzers();
 
-        $analyzers = $analyzers
+        $analyzers = $$this->analyzers
             ->mapToDictionary(function (Analyzer $analyzer) {
                 return [$analyzer->name() => $analyzer->raw()];
             })->toArray();
@@ -265,8 +268,6 @@ class Analysis
             'char_filter' => $charFilters,
             'tokenizer' => $tokenizer
         ];
-
-        ray($result);
 
         return $result;
     }

@@ -16,7 +16,7 @@ trait Mget
 
     public function mgetAPICall(array $body = []): MgetResponse
     {
-        $indexName = $this->index()->getName();
+        $indexName = $this->index()->name();
         $uri = new Uri("/{$indexName}/_mget");
 
         $esRequest = new MgetRequest('POST', $uri, $body);

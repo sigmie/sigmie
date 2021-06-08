@@ -23,6 +23,8 @@ use Sigmie\Base\Exceptions\MissingMapping;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
+use function Sigmie\Helpers\index_name;
+
 class Builder
 {
     use IndexActions, AliasActions, DefaultFilters;
@@ -38,7 +40,6 @@ class Builder
     protected bool $dynamicMappings = false;
 
     protected Tokenizer $tokenizer;
-
 
     protected array $charFilter = [];
 
@@ -116,37 +117,20 @@ class Builder
 
     public function create()
     {
-        $timestamp = Carbon::now()->format('YmdHisu');
-
         $this->throwUnlessMappingsDefined();
 
         $defaultFilters = $this->defaultFilters();
 
-        $defaultAnalyzer = new DefaultAnalyzer(
-            $this->alias,
-            $this->tokenizer,
-            $this->stopwords ?: null,
-            $this->twoWaySynonyms ?: null,
-            $this->oneWaySynonyms ?: null,
-            $this->stemming ?: null
-        );
-
-        // $defaultAnalyzer = new Analyzer(
-        //     prefix: $this->alias,
-        //     tokenizer: $this->tokenizer,
-        //     filters: $defaultFilters,
-        //     charFilters: $this->charFilter
-        // );
+        $defaultAnalyzer = new DefaultAnalyzer($this->tokenizer, $defaultFilters, $this->charFilter);
 
         $mappings = $this->createMappings($defaultAnalyzer);
+
         $analyzers = $mappings->analyzers();
-        // $analyzers->add($defaultAnalyzer);
 
         $analysis = new Analysis(
             defaultAnalyzer: $defaultAnalyzer,
-            analyzers: $analyzers->toArray(),
+            analyzers: $analyzers,
         );
-
 
         if ($this->languageIsDefined()) {
             $analysis->addLanguageFilters($this->language);
@@ -158,12 +142,13 @@ class Builder
             analysis: $analysis
         );
 
-        $indexName = "{$this->alias}_{$timestamp}";
+        $indexName = index_name($this->alias);
+
         $index = new AliasedIndex($indexName, $this->alias, [], $settings, $mappings);
 
         $index = $this->createIndex($index);
 
-        $this->createAlias($index->getName(), $this->alias);
+        $this->createAlias($index->name(), $this->alias);
     }
 
     protected function languageIsDefined(): bool
@@ -171,16 +156,19 @@ class Builder
         return isset($this->language);
     }
 
-    protected function createMappings(Analyzer $defaultAnalyzer): Mappings
+    protected function createMappings(DefaultAnalyzer $defaultAnalyzer): Mappings
     {
         $mappings = new DynamicMappings($defaultAnalyzer);
 
         if ($this->dynamicMappings === false) {
             $blueprint = ($this->blueprintCallback)(new Blueprint);
 
-            $properties = $blueprint($defaultAnalyzer);
+            $properties = $blueprint();
 
-            $mappings = new Mappings($properties, $defaultAnalyzer);
+            $mappings = new Mappings(
+                defaultAnalyzer: $defaultAnalyzer,
+                properties: $properties
+            );
         }
 
         return $mappings;

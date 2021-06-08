@@ -22,7 +22,7 @@ class ManagedIndex implements ManagedIndexInterface
     {
         $this->setHttpConnection($index->getHttpConnection());
 
-        $filters = $this->index->getSettings()->analysis->defaultAnalyzer()->filters();
+        $filters = $this->index->getSettings()->analysis->defaultAnalyzer()->tokenFilters();
 
         foreach ($filters as $filter) {
             $this->filters[$filter::class] = $filter;
@@ -36,7 +36,7 @@ class ManagedIndex implements ManagedIndexInterface
 
     public function getPrefix(): string
     {
-        return $this->index->getName();
+        return $this->index->name();
     }
 
     public function update()
@@ -57,7 +57,7 @@ class ManagedIndex implements ManagedIndexInterface
         $this->createIndex(new Index($indexName, $settings, $mappings));
 
         foreach ($this->index->getAliases() as $alias) {
-            $this->switchAlias($alias, $this->index->getName(), $indexName);
+            $this->switchAlias($alias, $this->index->name(), $indexName);
         }
 
         return;

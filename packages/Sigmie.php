@@ -56,7 +56,7 @@ class Sigmie implements ManagerInterface
 
     public function delete(Index\Index $index)
     {
-        $this->deleteIndex($index->getName());
+        $this->deleteIndex($index->name());
     }
 
     public function isConnected(): bool

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Contracts;
 
-interface Type
+interface Name
 {
-    public function type(): string;
+    public function name(): string;
 }

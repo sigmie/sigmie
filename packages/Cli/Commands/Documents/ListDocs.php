@@ -41,7 +41,7 @@ class ListDocs extends BaseCommand
 
         $data = $response->json('hits')['hits'];
 
-        $table = new DocumentsTable($data, $this->index()->getName());
+        $table = new DocumentsTable($data, $this->index()->name());
 
         $table->output($this->output);
 

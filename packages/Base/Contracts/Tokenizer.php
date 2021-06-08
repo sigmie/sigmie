@@ -1,9 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 
 namespace Sigmie\Base\Contracts;
 
-interface Tokenizer
+interface Tokenizer extends Name, Type
 {
-    public function type(): string;
 }

@@ -4,20 +4,32 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\CharFilter;
 
-use Sigmie\Base\Contracts\CharFilter;
 use Sigmie\Base\Contracts\Configurable;
+use Sigmie\Base\Priority;
 
-class PatternFilter implements CharFilter, Configurable
+use function Sigmie\Helpers\name_configs;
+
+class PatternFilter extends ConfigurableCharFilter
 {
-    protected string $name = 'pattern_char_filter';
+    use Priority;
 
-    public function __construct(protected string $pattern, protected string $replacement)
-    {
+    public function __construct(
+        protected string $name,
+        protected string $pattern,
+        protected string $replacement
+    ) {
+        parent::__construct($name);
     }
 
     public static function fromRaw(array $raw)
     {
-        return new static($raw['pattern'], $raw['replacement']);
+        [$name, $configs] = name_configs($raw);
+
+        return new static(
+            $name,
+            $configs['pattern'],
+            $configs['replacement']
+        );
     }
 
     public function config(): array
