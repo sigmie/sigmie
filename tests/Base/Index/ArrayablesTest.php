@@ -216,7 +216,7 @@ class ArrayablesTest extends TestCase
 
         $analysis = $index->getSettings()->analysis;
 
-        $this->assertContainsOnlyInstancesOf(WordBoundaries::class, $analysis->tokenizer());
+        $this->assertContainsOnlyInstancesOf(WordBoundaries::class, $analysis->tokenizers());
 
         $rawAnalysis = $analysis->toRaw();
 

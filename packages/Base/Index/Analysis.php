@@ -23,26 +23,37 @@ class Analysis
 {
     public function __construct(
         protected Analyzer $defaultAnalyzer,
-        protected array $tokenizers = [],
         protected array $analyzers = [],
-        protected array $filters = [],
-        protected array $charFilters = [],
     ) {
     }
 
-    public function tokenizer(): array
+    //TODO make private
+    public function allAnalyzers(): array
     {
-        return $this->tokenizers;
+        $analyzers = $this->analyzers;
+        $analyzers[] = $this->defaultAnalyzer;
+
+        return $analyzers;
+    }
+
+    public function tokenizers(): array
+    {
+        return array_map(fn (Analyzer $analyzer) => $analyzer->tokenizer(), $this->allAnalyzers());
     }
 
     public function filters(): array
     {
-        return $this->filters;
+        $analyzers = new Collection($this->allAnalyzers());
+
+        return $analyzers->map(function (Analyzer $analyzer) {
+            return $analyzer->filters();
+        })->flatten()->toArray();
     }
 
     public function charFilters(): array
     {
-        return $this->charFilters;
+        //TODO
+        return [];
     }
 
     public function defaultAnalyzer(): DefaultAnalyzer
@@ -52,7 +63,6 @@ class Analysis
 
     public function setDefaultAnalyzer(Analyzer $analyzer): self
     {
-        $this->addAnalyzer($analyzer);
         $this->defaultAnalyzer = $analyzer;
 
         return $this;
@@ -106,8 +116,9 @@ class Analysis
         return $this;
     }
 
-    public static function fromRaw(array $data, string $defaultAnalyzerName): static
+    public static function fromRaw(array $data): static
     {
+        $defaultAnalyzerName = 'default';
         $rawFilters = $data['filter'];
         $rawChar = $data['char_filter'];
         $rawTokenizer = $data['tokenizer'];
@@ -205,10 +216,7 @@ class Analysis
 
         $analysis = new Analysis(
             $defaultAnalyzer,
-            [$tokenizer],
             $analyzers,
-            array_values($filters),
-            array_values($charFilters),
         );
 
         return $analysis;
@@ -216,7 +224,7 @@ class Analysis
 
     public function toRaw(): array
     {
-        $filter = new Collection($this->filters);
+        $filter = new Collection($this->filters());
 
         $filter = $filter->mapToDictionary(function (TokenFilter $filter) {
 
@@ -228,7 +236,7 @@ class Analysis
             ];
         })->toArray();
 
-        $charFilters = new Collection($this->charFilters);
+        $charFilters = new Collection($this->charFilters());
 
         $charFilters = $charFilters
             ->filter(fn ($filter) => $filter instanceof Configurable)
@@ -236,7 +244,7 @@ class Analysis
                 return [$filter->name() => $filter->config()];
             })->toArray();
 
-        $tokenizer = new Collection($this->tokenizers);
+        $tokenizer = new Collection($this->tokenizers());
 
         $tokenizer = $tokenizer
             ->filter(fn (Tokenizer $tokenizer) => $tokenizer instanceof Configurable)
@@ -244,13 +252,12 @@ class Analysis
                 return [$tokenizer->name() => $tokenizer->config()];
             })->toArray();
 
-        $analyzers = new Collection($this->analyzers);
+        $analyzers = new Collection($this->allAnalyzers());
 
         $analyzers = $analyzers
             ->mapToDictionary(function (Analyzer $analyzer) {
                 return [$analyzer->name() => $analyzer->raw()];
             })->toArray();
-
 
         $result = [
             'analyzer' => $analyzers,
@@ -258,6 +265,8 @@ class Analysis
             'char_filter' => $charFilters,
             'tokenizer' => $tokenizer
         ];
+
+        ray($result);
 
         return $result;
     }

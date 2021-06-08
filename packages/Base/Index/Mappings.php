@@ -76,6 +76,10 @@ class Mappings
                 default => throw new Exception('Field couldn\'t be mapped')
             };
 
+            if ($field instanceof Text && !isset($value['analyzer'])) {
+                $value['analyzer'] = 'default';
+            }
+
             if ($field instanceof Text && isset($value['analyzer'])) {
                 $analyzerName = $value['analyzer'];
                 $analyzer = $analyzers[$analyzerName];

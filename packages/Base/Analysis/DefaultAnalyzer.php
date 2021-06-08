@@ -9,7 +9,10 @@ use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
+use Sigmie\Base\Contracts\CharFilter;
+use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
+use Sigmie\Support\Collection;
 
 class DefaultAnalyzer extends Analyzer
 {
@@ -25,8 +28,18 @@ class DefaultAnalyzer extends Analyzer
     ) {
         $tokenizer ?: new Whitespaces;
 
+        $this->stemming = $stemming;
+        $this->stopwords = $stopwords;
+        $this->twoWaySynonyms = $twoWaySynonyms;
+        $this->oneWaySynonyms = $oneWaySynonyms;
+
         //TODO fix empty string
-        parent::__construct('', $tokenizer, [], []);
+        parent::__construct(
+            '',
+            $tokenizer,
+            [$stopwords, $twoWaySynonyms, $oneWaySynonyms, $stemming],
+            []
+        );
 
         $this->name = "default";
     }
@@ -38,9 +51,21 @@ class DefaultAnalyzer extends Analyzer
         return parent::raw();
     }
 
-    public static function fromRaw(...$args)
+    public function filters(): array
     {
-        return new static('foo', new Whitespaces);
+        return $this->defaultFilters();
+    }
+
+    public static function fromRaw(string $name, Tokenizer $tokenizer, $analyzerFilters, $charFilters)
+    {
+        $filters = new Collection($analyzerFilters);
+
+        $stopwords = $filters->filter(fn (TokenFilter $charFilter) => $charFilter instanceof Stopwords)->first();
+        $twoWay = $filters->filter(fn (TokenFilter $charFilter) => $charFilter instanceof TwoWaySynonyms)->first();
+        $oneWay = $filters->filter(fn (TokenFilter $charFilter) => $charFilter instanceof OneWaySynonyms)->first();
+        $stemming = $filters->filter(fn (TokenFilter $charFilter) => $charFilter instanceof Stemmer)->first();
+
+        return new static($name, $tokenizer, $stopwords, $twoWay, $oneWay, $stemming);
     }
 
     protected function getPrefix(): string

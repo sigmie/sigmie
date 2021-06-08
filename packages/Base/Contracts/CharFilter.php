@@ -2,7 +2,8 @@
 
 namespace Sigmie\Base\Contracts;
 
-interface CharFilter
+//TODO extend priority
+interface CharFilter 
 {
     public function name(): string;
 }

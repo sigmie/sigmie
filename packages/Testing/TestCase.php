@@ -32,15 +32,15 @@ class TestCase extends \PHPUnit\Framework\TestCase
     {
         parent::tearDown();
 
-        $uses = $this->usedTraits();
+        // $uses = $this->usedTraits();
 
-        $indices = $this->getIndices($this->testId());
+        // $indices = $this->getIndices($this->testId());
 
-        foreach ($indices as $index) {
-            $index->delete();
-        }
+        // foreach ($indices as $index) {
+        //     $index->delete();
+        // }
 
-        $this->tearDownSigmieTesting($uses);
+        // $this->tearDownSigmieTesting($uses);
     }
 
     public function assertIndexExists(string $name)

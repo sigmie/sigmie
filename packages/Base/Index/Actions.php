@@ -55,7 +55,10 @@ trait Actions
             $index = Index::fromRaw($name, $data);
             $index->setHttpConnection($this->getHttpConnection());
 
-            return $index->alias($alias);
+            $aliased = $index->alias($alias);
+            $aliased->setHttpConnection($this->getHttpConnection());
+
+            return $aliased;
         } catch (ElasticsearchException) {
             return null;
         }

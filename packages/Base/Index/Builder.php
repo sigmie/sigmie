@@ -140,15 +140,13 @@ class Builder
 
         $mappings = $this->createMappings($defaultAnalyzer);
         $analyzers = $mappings->analyzers();
-        $analyzers->add($defaultAnalyzer);
+        // $analyzers->add($defaultAnalyzer);
 
         $analysis = new Analysis(
-            tokenizers: [$this->tokenizer], // ????????????
+            defaultAnalyzer: $defaultAnalyzer,
             analyzers: $analyzers->toArray(),
-            filters: $defaultFilters,
-            charFilters: $this->charFilter,
-            defaultAnalyzer: $defaultAnalyzer
         );
+
 
         if ($this->languageIsDefined()) {
             $analysis->addLanguageFilters($this->language);

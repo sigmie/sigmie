@@ -22,6 +22,18 @@ class Analyzer
     ) {
     }
 
+    protected function sortedCharFilters()
+    {
+        $res = [];
+        foreach ($this->charFilters as $filter) {
+            $res[$filter->getPriority()] = $filter;
+        }
+
+        ksort($res);
+
+        return array_values($res);
+    }
+
     protected function sortedFilters()
     {
         $res = [];
@@ -60,6 +72,12 @@ class Analyzer
     public function filters(): array
     {
         return $this->sortedFilters();
+    }
+
+    public function charFilters(): array
+    {
+        //TODO
+        return [];
     }
 
     public function tokenizer(): Tokenizer
