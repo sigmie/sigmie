@@ -13,7 +13,7 @@ trait ClearIndices
     public function clearIndices()
     {
         foreach ($this->listIndices() as $index) {
-            if (str_starts_with($index->getName(), $this->testId())) {
+            if (str_starts_with($index->name(), $this->testId())) {
                 $this->deleteIndex($index->getName());
             }
         }

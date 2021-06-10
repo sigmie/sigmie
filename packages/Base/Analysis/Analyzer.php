@@ -35,6 +35,22 @@ class Analyzer implements AnalyzerInterface
         $this->charFilters = ensure_collection($charFilters);
     }
 
+    public function addFilters(CollectionInterface|array $filters): void
+    {
+        $this->filters = new Collection(array_merge(
+            $this->filters->toArray(),
+            $filters->toArray(),
+        ));
+    }
+
+    public function addCharFilters(CollectionInterface|array $charFilters): void
+    {
+        $this->charFilters = new Collection(array_merge(
+            $this->charFilters->toArray(),
+            $charFilters->toArray(),
+        ));
+    }
+
     protected function sortedCharFilters(): Collection
     {
         return $this->charFilters
@@ -46,11 +62,11 @@ class Analyzer implements AnalyzerInterface
 
     protected function sortedFilters(): Collection
     {
-        return $this->filters
-            ->mapToDictionary(
-                fn (TokenFilter $filter) => [$filter->getPriority() => $filter]
-            )
-            ->sortByKeys();
+        $filters = $this->filters->toArray();
+
+        usort($filters, fn (Priority $a, Priority $b) => ($a->getPriority() < $b->getPriority()) ? -1 : 1);
+
+        return new Collection($filters);
     }
 
     public function raw(): array
@@ -71,7 +87,7 @@ class Analyzer implements AnalyzerInterface
         return $result;
     }
 
-    public function tokenFilters(): Collection
+    public function filters(): Collection
     {
         return $this->sortedFilters();
     }

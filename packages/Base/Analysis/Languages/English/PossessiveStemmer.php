@@ -5,13 +5,33 @@ declare(strict_types=1);
 namespace Sigmie\Base\Analysis\Languages\English;
 
 use Sigmie\Base\Analysis\TokenFilter\LanguageStemmer;
+use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
 
-class PossessiveStemmer extends LanguageStemmer
+use function Sigmie\Helpers\name_configs;
+
+class PossessiveStemmer extends TokenFilter
 {
-    protected string $name = 'english_possessive_stemmer';
-
-    public function language(): string
+    public function __construct($priority = 0)
     {
-        return 'possessive_english';
+        parent::__construct('english_possessive_stemmer', [], $priority);
+    }
+
+    public function type(): string
+    {
+        return 'stemmer';
+    }
+
+    public static function fromRaw(array $raw)
+    {
+        [$name, $config] = name_configs($raw);
+
+        return new static($config['priority']);
+    }
+
+    protected function getValues(): array
+    {
+        return [
+            'language' => 'possessive_english',
+        ];
     }
 }

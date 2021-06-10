@@ -14,8 +14,9 @@ abstract class TokenFilter implements TokenFilterInterface
     public function __construct(
         protected string $name,
         protected array $settings,
-        private int $priority = 0
+        string|int $priority = 0
     ) {
+        $this->priority = (int) $priority;
     }
 
     public function name(): string

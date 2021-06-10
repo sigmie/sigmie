@@ -6,19 +6,31 @@ namespace Sigmie\Base\Analysis\Languages\German;
 
 use Sigmie\Base\Analysis\TokenFilter\Stopwords as TokenFilterStopwords;
 
+use function Sigmie\Helpers\name_configs;
+
 class Stopwords extends TokenFilterStopwords
 {
-    protected string $name = 'german_stopwords';
-
-    public function __construct()
+    public function __construct($priority = 0)
     {
+        parent::__construct('german_stopwords', [], $priority);
     }
 
-    public function value(): array
+    public static function fromRaw(array $raw)
+    {
+        [$name, $config] = name_configs($raw);
+
+        return new static($config['priority']);
+    }
+
+    public function type(): string
+    {
+        return 'stop';
+    }
+
+    protected function getValues(): array
     {
         return [
             'stopwords' => '_german_',
-            'class' => static::class
         ];
     }
 }

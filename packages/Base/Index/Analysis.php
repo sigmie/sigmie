@@ -11,6 +11,7 @@ use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Base\Contracts\Analyzers;
 use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\ConfigurableTokenizer;
@@ -22,7 +23,7 @@ use Sigmie\Support\Collection;
 
 use function Sigmie\Helpers\ensure_collection;
 
-class Analysis
+class Analysis implements Analyzers
 {
     protected CollectionInterface $analyzers;
 
@@ -51,7 +52,7 @@ class Analysis
     public function filters(): CollectionInterface
     {
         return $this->allAnalyzers()
-            ->map(fn (Analyzer $analyzer) => $analyzer->tokenFilters())
+            ->map(fn (Analyzer $analyzer) => $analyzer->filters())
             ->flatten();
     }
 
@@ -94,9 +95,7 @@ class Analysis
             ...$this->filters
         ], $charFilterNames);
 
-        // if (!isset($this->defaultAnalyzer)) {
         $this->defaultAnalyzer = $analyzer;
-        // }
 
         $this->analyzers[$name] = $analyzer;
 
@@ -114,11 +113,7 @@ class Analysis
 
     public function addLanguageFilters(Language $language)
     {
-        $this->filters = [
-            ...$this->filters,
-            $language->stopwords(),
-            ...$language->stemmers()
-        ];
+        $this->defaultAnalyzer->addFilters($language->filters());
 
         return $this;
     }
@@ -163,9 +158,7 @@ class Analysis
             if (class_exists($class)) {
                 $class = $filter['class'];
 
-                $filterInstance = $class::fromRaw($filter);
-                $filterInstance->setName($name);
-                $filterInstance->setPriority((int)$filter['priority']);
+                $filterInstance = $class::fromRaw([$name => $filter]);
 
                 $filters[$name] = $filterInstance;
             }
@@ -218,7 +211,11 @@ class Analysis
             };
         }
 
-        $defaultAnalyzer = $analyzers[$defaultAnalyzerName];
+        if (isset($analyzers[$defaultAnalyzerName])) {
+            $defaultAnalyzer = $analyzers[$defaultAnalyzerName];
+        } else {
+            $defaultAnalyzer = new DefaultAnalyzer();
+        }
 
         $analysis = new Analysis($defaultAnalyzer, $analyzers,);
 
@@ -257,7 +254,7 @@ class Analysis
 
         $analyzers = $this->allAnalyzers();
 
-        $analyzers = $$this->analyzers
+        $analyzers = $this->analyzers
             ->mapToDictionary(function (Analyzer $analyzer) {
                 return [$analyzer->name() => $analyzer->raw()];
             })->toArray();

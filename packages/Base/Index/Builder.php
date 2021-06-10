@@ -21,13 +21,14 @@ use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\Tokenizer;
 use Sigmie\Base\Exceptions\MissingMapping;
 use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Support\Shared\Mappings;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 use function Sigmie\Helpers\index_name;
 
 class Builder
 {
-    use IndexActions, AliasActions, DefaultFilters;
+    use IndexActions, AliasActions, DefaultFilters, Mappings;
 
     protected int $replicas = 2;
 
@@ -72,16 +73,16 @@ class Builder
         return $this;
     }
 
-    public function tokenizeOn(Tokenizer $tokenizer)
+    public function stemming(array $stemming, string $name): self
     {
-        $this->tokenizer = $tokenizer;
+        $this->stemming = new Stemmer($name, $stemming);
 
         return $this;
     }
 
-    public function mappings(callable $callable)
+    public function tokenizeOn(Tokenizer $tokenizer)
     {
-        $this->blueprintCallback = $callable;
+        $this->tokenizer = $tokenizer;
 
         return $this;
     }
@@ -154,23 +155,5 @@ class Builder
     protected function languageIsDefined(): bool
     {
         return isset($this->language);
-    }
-
-    protected function createMappings(DefaultAnalyzer $defaultAnalyzer): Mappings
-    {
-        $mappings = new DynamicMappings($defaultAnalyzer);
-
-        if ($this->dynamicMappings === false) {
-            $blueprint = ($this->blueprintCallback)(new Blueprint);
-
-            $properties = $blueprint();
-
-            $mappings = new Mappings(
-                defaultAnalyzer: $defaultAnalyzer,
-                properties: $properties
-            );
-        }
-
-        return $mappings;
     }
 }

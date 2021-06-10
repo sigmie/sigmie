@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Support\Collection;
 
 class DynamicMappings extends Mappings
 {
-    protected Analyzer $defaultAnalyzer;
-
     public function __construct(
-        Analyzer $analyzer
+        ?Analyzer $defaultAnalyzer = null
     ) {
-        $this->defaultAnalyzer = $analyzer;
+        $this->defaultAnalyzer = $defaultAnalyzer ?: new DefaultAnalyzer();
+
+        parent::__construct($defaultAnalyzer);
     }
 
     public function toRaw(): array
@@ -31,6 +32,10 @@ class DynamicMappings extends Mappings
 
     public function dynamicTemplate()
     {
+        if ($this->defaultAnalyzer instanceof DefaultAnalyzer) {
+            return [];
+        }
+
         return [
             [
                 'sigmie' => [

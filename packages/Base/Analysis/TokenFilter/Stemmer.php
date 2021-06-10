@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\TokenFilter;
 
+use function Sigmie\Helpers\name_configs;
+
 class Stemmer extends TokenFilter
 {
     public function type(): string
@@ -13,9 +15,10 @@ class Stemmer extends TokenFilter
 
     public static function fromRaw(array $raw)
     {
+        [$name, $configs] = name_configs($raw);
         $settings = [];
 
-        foreach ($raw['rules'] as $value) {
+        foreach ($configs['rules'] as $value) {
             [$to, $from] = explode('=>', $value);
             $to = explode(', ', $to);
             $from = trim($from);
@@ -24,7 +27,7 @@ class Stemmer extends TokenFilter
             $settings[$from] = $to;
         }
 
-        $instance = new static('', $settings);
+        $instance = new static($name, $settings, $configs['priority']);
 
         return $instance;
     }

@@ -4,18 +4,15 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\Languages\Greek;
 
-use Sigmie\Base\Contracts\TokenFilter;
-use Sigmie\Base\Priority;
+use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
 
-class Lowercase implements TokenFilter
+use function Sigmie\Helpers\name_configs;
+
+class Lowercase extends TokenFilter
 {
-    use Priority;
-
-    protected string $name = 'greek_lowercase';
-
-    public function name(): string
+    public function __construct($priority = 0)
     {
-        return $this->name;
+        parent::__construct('greek_lowercase', [], $priority);
     }
 
     public function type(): string
@@ -23,11 +20,17 @@ class Lowercase implements TokenFilter
         return 'lowercase';
     }
 
-    public function value(): array
+    public static function fromRaw(array $raw)
+    {
+        [$name, $config] = name_configs($raw);
+
+        return new static($config['priority']);
+    }
+
+    protected function getValues(): array
     {
         return [
             'language' => 'greek',
-            'class' => static::class
         ];
     }
 }

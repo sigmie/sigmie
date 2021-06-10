@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis;
 
+use Ramsey\Collection\CollectionInterface;
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
@@ -21,19 +22,19 @@ class DefaultAnalyzer extends Analyzer
 
     public function __construct(
         ?Tokenizer $tokenizer = null,
-        protected array $filters = [],
-        protected array $charFilters = [],
+        array $filters = [],
+        array $charFilters = [],
     ) {
 
         // 'standard' is the default Elasticsearch
         // tokenizer when no other is specified
-        $this->tokenizer = $tokenizer ?: new WordBoundaries();
+        $tokenizer = $tokenizer ?: new WordBoundaries();
 
         parent::__construct(
             self::name,
             $tokenizer,
-            $this->filters,
-            $this->charFilters
+            $filters,
+            $charFilters
         );
     }
 

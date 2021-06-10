@@ -8,7 +8,11 @@ interface Analyzer extends Name
 {
     public function tokenizer(): Tokenizer;
 
-    public function tokenFilters(): Collection;
+    public function filters(): Collection;
+
+    public function addFilters(Collection|array $filters): void;
+
+    public function addCharFilters(Collection|array $charFilters): void;
 
     public function charFilters(): Collection;
 }

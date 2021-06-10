@@ -22,7 +22,7 @@ class ManagedIndex implements ManagedIndexInterface
     {
         $this->setHttpConnection($index->getHttpConnection());
 
-        $filters = $this->index->getSettings()->analysis->defaultAnalyzer()->tokenFilters();
+        $filters = $this->index->getSettings()->analysis->defaultAnalyzer()->filters();
 
         foreach ($filters as $filter) {
             $this->filters[$filter::class] = $filter;

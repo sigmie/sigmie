@@ -8,16 +8,16 @@ use Sigmie\Base\Analysis\Languages\German\Stemmer as GermanStemmer;
 use Sigmie\Base\Analysis\Languages\German\Stopwords as GermanStopwords;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Contracts\Language;
+use Sigmie\Support\Collection as SupportCollection;
+use Sigmie\Support\Contracts\Collection;
 
 class German implements Language
 {
-    public function stopwords(): Stopwords
+    public function filters(): Collection
     {
-        return new GermanStopwords;
-    }
-
-    public function stemmers(): array
-    {
-        return [new GermanStemmer];
+        return new SupportCollection([
+            new GermanStemmer,
+            new GermanStopwords
+        ]);
     }
 }

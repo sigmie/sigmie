@@ -15,6 +15,7 @@ use Sigmie\Base\Index\Blueprint;
 use Sigmie\Sigmie;
 use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
+use Sigmie\Support\Update\Update as Update;
 
 class UpdateTest extends TestCase
 {
@@ -62,12 +63,30 @@ class UpdateTest extends TestCase
 
         $index = $this->sigmie->index('foo');
 
-        $updatedIndex = $index->update(function (DefaultAnalyzer $defaultAnalyzer) {
+        $updatedIndex = $index->update(function (Update $update) {
 
-            $defaultAnalyzer->stopwords(['foo', 'bar', 'der']); //TODO implement stopwords method
+            // $update->analyzer('custom_analyzer')
+            //     ->stopwords(['foo', 'bar', 'bar']) // Stopwords class
+            //     ->filter('custom_filter', ['type' => 'some_type', 'param' => 'boo'])
+            //     ->addFilter('custom_name', ['values...'])
+            //     ->addCharFilter('name', ['values']);
 
-            return $defaultAnalyzer;
+            // $update->defaultAnalyzer()->stopwords('hmmm');
+
+            $update->mappings(function (Blueprint $blueprint) {
+            });
+
+            $update->shards(2)->replicas(3);
+
+            return $update;
         });
+
+        // $updatedIndex = $index->update(function (DefaultAnalyzer $defaultAnalyzer) {
+
+        //     $defaultAnalyzer->stopwords(['foo', 'bar', 'der']); //TODO implement stopwords method
+
+        //     return $defaultAnalyzer;
+        // });
 
         $data = $this->indexData('foo');
 

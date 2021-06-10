@@ -6,6 +6,8 @@ namespace Sigmie\Base\Analysis\TokenFilter;
 
 use Sigmie\Base\Priority;
 
+use function Sigmie\Helpers\name_configs;
+
 class Stopwords extends TokenFilter
 {
     public function type(): string
@@ -15,7 +17,9 @@ class Stopwords extends TokenFilter
 
     public static function fromRaw(array $raw)
     {
-        $instance = new static('', $raw['stopwords']);
+        [$name, $configs] = name_configs($raw);
+
+        $instance = new static($name, $configs['stopwords'], $configs['priority']);
 
         return $instance;
     }

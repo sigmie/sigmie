@@ -8,8 +8,6 @@ use Sigmie\Base\Analysis\Analyzer;
 
 class Text extends BaseType
 {
-    protected string $type;
-
     protected ?Analyzer $analyzer;
 
     public function searchAsYouType(Analyzer $analyzer = null)
@@ -48,9 +46,16 @@ class Text extends BaseType
 
     public function raw()
     {
-        return [
+        $raw = [
             'type' => $this->type,
-            'analyzer' => $this->analyzer->name()
         ];
+
+        if (is_null($this->analyzer)) {
+            return $raw;
+        }
+
+        $raw['analyzer'] = $this->analyzer->name();
+
+        return $raw;
     }
 }

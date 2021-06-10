@@ -6,7 +6,10 @@ namespace Sigmie\Base\Index;
 
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
+use Sigmie\Base\Contracts\Analyzer as ContractsAnalyzer;
+use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Contracts\Type;
 use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Mappings\Types\Boolean;
@@ -14,15 +17,19 @@ use Sigmie\Base\Mappings\Types\Date;
 use Sigmie\Base\Mappings\Types\Number;
 use Sigmie\Base\Mappings\Types\Text;
 use Sigmie\Support\Collection;
+use Sigmie\Support\Contracts\Collection as ContractsCollection;
 
-class Mappings
+class Mappings implements MappingsInterface
 {
     protected Properties $properties;
 
+    protected Analyzer $defaultAnalyzer;
+
     public function __construct(
-        protected Analyzer $defaultAnalyzer,
+        ?Analyzer $defaultAnalyzer = null,
         ?Properties $properties = null,
     ) {
+        $this->defaultAnalyzer = $defaultAnalyzer ?: new DefaultAnalyzer();
         $this->properties = $properties ?: new Properties();
     }
 
@@ -36,7 +43,7 @@ class Mappings
         $collection = new Collection($this->properties->toArray());
 
         return $collection->filter(fn (Type $field) => $field instanceof Text)
-            ->map(fn (Text $field) => $field->analyzer());
+            ->map(fn (Text $field) => $field->analyzer() ?: $this->defaultAnalyzer);
     }
 
     public function toRaw(): array
@@ -47,8 +54,12 @@ class Mappings
         ];
     }
 
-    public static function fromRaw(array $data, array $analyzers): Mappings
+    public static function fromRaw(array $data, ContractsCollection $analyzers): Mappings
     {
+        $analyzers = $analyzers->mapToDictionary(
+            fn (ContractsAnalyzer $analyzer) => [$analyzer->name() => $analyzer]
+        )->toArray();
+
         $fields = [];
 
         $analyzer = $analyzers[array_key_first($analyzers)];
@@ -88,6 +99,9 @@ class Mappings
 
         $properties = new Properties($fields);
 
-        return new static($properties, $defaultAnalyzer);
+        return new static(
+            defaultAnalyzer: $defaultAnalyzer,
+            properties: $properties,
+        );
     }
 }

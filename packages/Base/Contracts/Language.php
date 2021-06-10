@@ -2,13 +2,15 @@
 
 namespace Sigmie\Base\Contracts;
 
-use Sigmie\Base\Analysis\TokenFilter\Stopwords;
+use Sigmie\Support\Contracts\Collection;
 
 interface Language
 {
-    public function stopwords(): Stopwords;
+    public function filters(): Collection;
 
-    public function stemmers(): array;
+    // public function stopwords(): Stopwords;
+
+    // public function stemmers(): array;
 
     // public function normalizer(): string;
 

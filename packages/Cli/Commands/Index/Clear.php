@@ -28,7 +28,7 @@ class Clear extends BaseCommand
 
         if ($res) {
             foreach ($this->listIndices() as $index) {
-                $this->deleteIndex($index->getName());
+                $this->deleteIndex($index->name());
             }
 
             $this->output->writeln('Indices cleared.');
