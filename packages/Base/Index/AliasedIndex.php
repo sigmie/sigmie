@@ -12,6 +12,10 @@ use Sigmie\Base\APIs\Calls\Reindex;
 use Sigmie\Base\Index\Index;
 use Sigmie\Base\Index\Mappings;
 use Sigmie\Base\Index\Settings;
+use Sigmie\Support\Update\Update;
+
+use function Sigmie\Helpers\index_name;
+use function Sigmie\Helpers\name_configs;
 
 class AliasedIndex extends Index
 {
@@ -29,37 +33,33 @@ class AliasedIndex extends Index
 
     public function update(callable $update): Index
     {
-        $analyzer = $update($this->defaultAnalyzer());
+        /** @var  Update $update */
+        $update = $update(new Update);
+
         $oldDocsCount = count($this);
 
-        $this->settings->analysis->setDefaultAnalyzer($analyzer);
+        $newName = index_name($this->alias);
+        $oldName = $this->identifier;
+        $this->identifier = $newName;
 
-        $timestamp = Carbon::now()->format('YmdHisu');
+        $updateArray = $update->toRaw();
 
-        //TODO remove v2
-        $newIdentifier = "{$this->alias}_{$timestamp}_v2";
-        $oldIdentifier = $this->identifier;
-
-        $this->identifier = $newIdentifier;
-
-        ray($this->settings->analysis->defaultAnalyzer())->blue();
-        ray($this->settings->analysis->toRaw())->green();
+        $this->settings->primaryShards = $updateArray['settings']['number_of_shards'];
+        $this->settings->replicaShards = $updateArray['settings']['number_of_replicas'];
 
         $index = $this->createIndex($this);
 
-        $this->reindexAPICall($oldIdentifier, $newIdentifier);
+        // $this->reindexAPICall($oldName, $newName);
 
-        $newDocsCount = count($index);
+        // $newDocsCount = count($index);
 
-        if ($newDocsCount !== $oldDocsCount) {
-            throw new Exception('Docs count missmatch');
-        }
+        // if ($newDocsCount !== $oldDocsCount) {
+        //     throw new Exception('Docs count missmatch');
+        // }
 
-        $this->switchAlias($this->alias, $oldIdentifier, $newIdentifier);
+        $this->switchAlias($this->alias, $oldName, $newName);
 
-        $index->alias($this->alias);
-
-        return $index;
+        return $this->getIndex($this->alias);
     }
 
     protected function defaultAnalyzer(): Analyzer

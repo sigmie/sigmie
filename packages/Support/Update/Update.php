@@ -40,4 +40,14 @@ class Update
 
         return $this;
     }
+
+    public function toRaw()
+    {
+        return [
+            'settings' => [
+                'number_of_shards' => $this->shards,
+                'number_of_replicas' => $this->replicas,
+            ]
+        ];
+    }
 }

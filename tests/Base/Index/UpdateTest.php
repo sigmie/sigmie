@@ -17,6 +17,8 @@ use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
 use Sigmie\Support\Update\Update as Update;
 
+use function Sigmie\Helpers\name_configs;
+
 class UpdateTest extends TestCase
 {
     use Index, AliasActions;
@@ -36,61 +38,53 @@ class UpdateTest extends TestCase
     /**
      * @test
      */
-    public function foo()
+    public function index_name()
     {
         $this->sigmie->newIndex('foo')
-            ->normalizer(new PatternFilter('some_name', '/.*/', 'bar')) //TODO remove name necessity
-            ->tokenizeOn(new Pattern('/[ ]/')) //Todo 
-            ->stemming('name', [ //TODO remove name necessity
-                ['foo' => 'bar']
-            ])
-            ->mappings(function (Blueprint $blueprint) {
-                $blueprint->bool('foo');
-                $blueprint->date('from');
-                $blueprint->number('price')->float();
-                $blueprint->number('count')->integer();
-
-                $blueprint->text('title')->searchAsYouType(new Analyzer('barista', new Whitespaces));
-                $blueprint->text('description')->unstructuredText();
-
-                return $blueprint;
-            })
+            ->withoutMappings()
             ->create();
-
-        $data = $this->indexData('foo');
-
-        $this->assertEmpty($data['settings']['index']['analysis']['filter']['foo_stopwords']['stopwords']);
 
         $index = $this->sigmie->index('foo');
 
-        $updatedIndex = $index->update(function (Update $update) {
+        $oldIndexName = $index->name();
 
-            // $update->analyzer('custom_analyzer')
-            //     ->stopwords(['foo', 'bar', 'bar']) // Stopwords class
-            //     ->filter('custom_filter', ['type' => 'some_type', 'param' => 'boo'])
-            //     ->addFilter('custom_name', ['values...'])
-            //     ->addCharFilter('name', ['values']);
-
-            // $update->defaultAnalyzer()->stopwords('hmmm');
-
-            $update->mappings(function (Blueprint $blueprint) {
-            });
-
-            $update->shards(2)->replicas(3);
+        $index->update(function (Update $update) {
 
             return $update;
         });
 
-        // $updatedIndex = $index->update(function (DefaultAnalyzer $defaultAnalyzer) {
+        $this->assertNotEquals($oldIndexName, $index->name());
+    }
 
-        //     $defaultAnalyzer->stopwords(['foo', 'bar', 'der']); //TODO implement stopwords method
+    /**
+     * @test
+     */
+    public function index_shards_and_replicas()
+    {
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->shards(1)
+            ->replicas(1)
+            ->create();
 
-        //     return $defaultAnalyzer;
-        // });
+        $index = $this->sigmie->index('foo');
 
-        $data = $this->indexData('foo');
+        [$name, $config] = name_configs($index->toRaw());
 
-        $this->assertEquals(['foo', 'bar', 'der'], $data['settings']['index']['analysis']['filter']['default_stopwords']['stopwords']);
+        $this->assertEquals(1, $config['settings']['index']['number_of_shards']);
+        $this->assertEquals(1, $config['settings']['index']['number_of_replicas']);
+
+        $index->update(function (Update $update) {
+
+            $update->replicas(2)->shards(2);
+
+            return $update;
+        });
+
+        [$name, $config] = name_configs($index->toRaw());
+
+        $this->assertEquals(2, $config['settings']['index']['number_of_shards']);
+        $this->assertEquals(2, $config['settings']['index']['number_of_replicas']);
     }
 
     private function indexData(string $name): array
