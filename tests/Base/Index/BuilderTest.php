@@ -61,13 +61,13 @@ class BuilderTest extends TestCase
     public function pattern_tokenizer()
     {
         $this->sigmie->newIndex('sigmie')
-            ->tokenizeOn(new Pattern('/[ ]/'))
+            ->tokenizeOn(new Pattern('sigmie_tokenizer', '/[ ]/'))
             ->withoutMappings()
             ->create();
 
         $data = $this->indexData('sigmie');
 
-        $this->assertEquals('sigmie_tokenizer', $data['settings']['index']['analysis']['analyzer']['sigmie_analyzer']['tokenizer']);
+        $this->assertEquals('sigmie_tokenizer', $data['settings']['index']['analysis']['analyzer']['default']['tokenizer']);
         $this->assertArrayHasKey('sigmie_tokenizer', $data['settings']['index']['analysis']['tokenizer']);
         $this->assertEquals([
             'type' => 'pattern',
@@ -88,7 +88,7 @@ class BuilderTest extends TestCase
 
         $data = $this->indexData('sigmie');
 
-        $this->assertEquals('letter', $data['settings']['index']['analysis']['analyzer']['sigmie_analyzer']['tokenizer']);
+        $this->assertEquals('letter', $data['settings']['index']['analysis']['analyzer']['default']['tokenizer']);
     }
 
     /**
@@ -97,7 +97,7 @@ class BuilderTest extends TestCase
     public function mapping_char_filters()
     {
         $this->sigmie->newIndex('sigmie')
-            ->normalizer(new MappingFilter(['a' => 'bar', 'f' => 'foo']))
+            ->normalizer(new MappingFilter('sigmie_mapping_char_filter', ['a' => 'bar', 'f' => 'foo']))
             ->withoutMappings()
             ->create();
 
@@ -106,7 +106,8 @@ class BuilderTest extends TestCase
         $this->assertArrayHasKey('sigmie_mapping_char_filter', $data['settings']['index']['analysis']['char_filter']);
         $this->assertEquals([
             'type' => 'mapping',
-            'mappings' => ['a => bar', 'f => foo']
+            'mappings' => ['a => bar', 'f => foo'],
+            'class' => MappingFilter::class
         ], $data['settings']['index']['analysis']['char_filter']['sigmie_mapping_char_filter']);
     }
 
@@ -116,7 +117,7 @@ class BuilderTest extends TestCase
     public function pattern_char_filters()
     {
         $this->sigmie->newIndex('sigmie')
-            ->normalizer(new PatternFilter('/foo/', '$1'))
+            ->normalizer(new PatternFilter('pattern_char_filter', '/foo/', '$1'))
             ->withoutMappings()
             ->create();
 
@@ -152,19 +153,19 @@ class BuilderTest extends TestCase
     public function word_boundaries_tokenizer()
     {
         $this->sigmie->newIndex('sigmie')
-            ->tokenizeOn(new WordBoundaries(40))
+            ->tokenizeOn(new WordBoundaries('some_name', 40))
             ->withoutMappings()
             ->create();
 
         $data = $this->indexData('sigmie');
 
-        $this->assertEquals('sigmie_tokenizer', $data['settings']['index']['analysis']['analyzer']['default']['tokenizer']);
-        $this->assertArrayHasKey('sigmie_tokenizer', $data['settings']['index']['analysis']['tokenizer']);
+        $this->assertEquals('some_name', $data['settings']['index']['analysis']['analyzer']['default']['tokenizer']);
+        $this->assertArrayHasKey('some_name', $data['settings']['index']['analysis']['tokenizer']);
         $this->assertEquals([
             'type' => 'standard',
             'max_token_length' => 40,
             'class' => WordBoundaries::class
-        ], $data['settings']['index']['analysis']['tokenizer']['sigmie_tokenizer']);
+        ], $data['settings']['index']['analysis']['tokenizer']['some_name']);
     }
 
     /**
@@ -422,7 +423,7 @@ class BuilderTest extends TestCase
         $this->assertArrayHasKey('analyzer', $data['settings']['index']['analysis']);
         $this->assertArrayHasKey('default', $data['settings']['index']['analysis']['analyzer']);
         $this->assertArrayHasKey('filter', $data['settings']['index']['analysis']['analyzer']['default']);
-        $this->assertEquals('sigmie_tokenizer', $data['settings']['index']['analysis']['analyzer']['default']['tokenizer']);
+        $this->assertEquals('standard', $data['settings']['index']['analysis']['analyzer']['default']['tokenizer']);
         $this->assertEmpty($data['settings']['index']['analysis']['analyzer']['default']['filter']);
     }
 

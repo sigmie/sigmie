@@ -6,6 +6,8 @@ namespace Sigmie\Base\Analysis\CharFilter;
 
 use Sigmie\Base\Priority;
 
+use function Sigmie\Helpers\name_configs;
+
 class MappingFilter extends ConfigurableCharFilter
 {
     use Priority;
@@ -15,6 +17,21 @@ class MappingFilter extends ConfigurableCharFilter
         protected array $mappings = []
     ) {
         parent::__construct($name);
+    }
+
+    public static function fromRaw(array $raw)
+    {
+        [$name, $config] = name_configs($raw);
+        $mappings = [];
+
+        foreach ($config['mappings'] as $mapping) {
+
+            [$key, $value] = explode('=>', $mapping);
+
+            $mappings[$key] = $value;
+        }
+
+        return new static($name, $mappings);
     }
 
     public function config(): array

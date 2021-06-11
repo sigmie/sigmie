@@ -7,10 +7,14 @@ namespace Sigmie\Base\Analysis\Tokenizers;
 use Sigmie\Base\Contracts\ConfigurableTokenizer;
 use Sigmie\Base\Contracts\Tokenizer;
 
-class Pattern implements ConfigurableTokenizer, Tokenizer
+use function Sigmie\Helpers\name_configs;
+
+class Pattern implements ConfigurableTokenizer
 {
-    public function __construct(protected string $pattern)
-    {
+    public function __construct(
+        protected string $name,
+        protected string $pattern
+    ) {
     }
 
     public function type(): string
@@ -20,12 +24,14 @@ class Pattern implements ConfigurableTokenizer, Tokenizer
 
     public function name(): string
     {
-        return 'sigmie_tokenizer';
+        return $this->name;
     }
 
-    public static function fromRaw(array $data)
+    public static function fromRaw(array $raw)
     {
-        return new static($data['pattern']);
+        [$name, $config] = name_configs($raw);
+
+        return new static($name, $config['pattern']);
     }
 
     public function config(): array

@@ -7,6 +7,7 @@ namespace Sigmie\Base\Index;
 use Exception;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
@@ -140,7 +141,7 @@ class Analysis implements Analyzers
             if (class_exists($class)) {
                 $class = $tokenizer['class'];
 
-                $tokenizerInstance = $class::fromRaw($tokenizer);
+                $tokenizerInstance = $class::fromRaw([$name => $tokenizer]);
 
                 $tokenizers[$name] = $tokenizerInstance;
             }
@@ -176,7 +177,7 @@ class Analysis implements Analyzers
             if (class_exists($class)) {
                 $class = $filter['class'];
 
-                $filterInstance = $class::fromRaw($filter);
+                $filterInstance = $class::fromRaw([$name => $filter]);
 
                 $charFilters[$name] = $filterInstance;
             }
@@ -192,7 +193,10 @@ class Analysis implements Analyzers
 
             $analyzerCharFilters = [];
             foreach ($analyzer['char_filter'] as $filterName) {
-                $analyzerCharFilters[] = $charFilters[$filterName];
+                $analyzerCharFilters[] = match ($filterName) {
+                    'html_strip' => new HTMLFilter,
+                    default => $charFilters[$filterName]
+                };
             }
 
             if (isset($tokenizers[$analyzer['tokenizer']])) {
@@ -205,7 +209,7 @@ class Analysis implements Analyzers
                 };
             }
 
-            $analyzer[$name] = match ($name) {
+            $analyzers[$name] = match ($name) {
                 'default' => new DefaultAnalyzer($tokenizer, $analyzerFilters, $charFilters),
                 default => new Analyzer($name, $tokenizer, $analyzerFilters, $charFilters)
             };
@@ -243,6 +247,7 @@ class Analysis implements Analyzers
             ->mapToDictionary(function (Configurable $filter) {
                 return [$filter->name() => $filter->config()];
             })->toArray();
+
 
         $tokenizer = $this->tokenizers();
 

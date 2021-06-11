@@ -9,6 +9,7 @@ use Sigmie\Base\Analysis\Tokenizers\Pattern;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Calls\Index;
+use Sigmie\Base\Contracts\ConfigurableTokenizer;
 use Sigmie\Base\Index\AliasActions;
 use Sigmie\Base\Index\Blueprint;
 use Sigmie\Base\Index\DynamicMappings;
@@ -61,7 +62,7 @@ class ArrayablesTest extends TestCase
     public function pattern_tokenizer()
     {
         $this->sigmie->newIndex('foo')
-            ->tokenizeOn(new Pattern('/bar/'))
+            ->tokenizeOn(new Pattern('foo_tokenizer', '/bar/'))
             ->withoutMappings()
             ->create();
 
@@ -69,6 +70,8 @@ class ArrayablesTest extends TestCase
 
         $tokenizer = $index->getSettings()->analysis->defaultAnalyzer()->tokenizer();
 
+        $this->assertInstanceOf(ConfigurableTokenizer::class, $tokenizer);
+        $this->assertEquals($tokenizer->name(), 'foo_tokenizer');
         $this->assertInstanceOf(Pattern::class, $tokenizer);
     }
 
@@ -253,7 +256,7 @@ class ArrayablesTest extends TestCase
         $this->sigmie->newIndex('foo')
             ->replicas(2)
             ->shards(1)
-            ->tokenizeOn(new Pattern('/[ ]/'))
+            ->tokenizeOn(new Pattern('foo_pattern_name', '/[ ]/'))
             ->withoutMappings()
             ->create();
 

@@ -18,14 +18,19 @@ class TestCase extends \PHPUnit\Framework\TestCase
         parent::setUp();
 
         $this->events = new EventDispatcher;
-
-        $this->events->addListener('index.created', function (Index $index) {
+$this->events->addListener('index.created', function (Index $index) {
             $this->createAlias($index->name(), $this->testId());
         });
 
         $uses = $this->usedTraits();
 
         $this->setUpSigmieTesting($uses);
+
+        $indices = $this->getIndices('*');
+
+        foreach ($indices as $index) {
+            $index->delete();
+        }
     }
 
     public function tearDown(): void
@@ -34,7 +39,8 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
         $uses = $this->usedTraits();
 
-        $indices = $this->getIndices($this->testId());
+        // $indices = $this->getIndices($this->testId());
+        $indices = $this->getIndices('*');
 
         foreach ($indices as $index) {
             $index->delete();

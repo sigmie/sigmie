@@ -9,15 +9,19 @@ use Sigmie\Base\Contracts\ConfigurableTokenizer;
 use Sigmie\Base\Contracts\RawRepresentation;
 use Sigmie\Base\Contracts\Tokenizer;
 
+use function Sigmie\Helpers\name_configs;
+
 class WordBoundaries implements ConfigurableTokenizer, RawRepresentation
 {
-    public function __construct(protected int $maxTokenLength = 255)
-    {
+    public function __construct(
+        protected string $name = 'standard',
+        protected int $maxTokenLength = 255
+    ) {
     }
 
     public function name(): string
     {
-        return 'sigmie_tokenizer';
+        return $this->name;
     }
 
     public function type(): string
@@ -25,9 +29,11 @@ class WordBoundaries implements ConfigurableTokenizer, RawRepresentation
         return 'standard';
     }
 
-    public static function fromRaw(array $data): static
+    public static function fromRaw(array $raw): static
     {
-        return new static((int)$data['max_token_length']);
+        [$name, $config] = name_configs($raw);
+
+        return new static($name, (int)$config['max_token_length']);
     }
 
     public function toRaw(): array
