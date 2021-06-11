@@ -5,6 +5,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Support\Update;
 
+use Sigmie\Base\Analysis\DefaultAnalyzer;
+use Sigmie\Base\Contracts\Mappings as ContractsMappings;
 use Sigmie\Support\Analysis\AnalyzerUpdate;
 use Sigmie\Support\Analysis\Tokenizer\Builder as TokenizerBuilder;
 use Sigmie\Support\Shared\Mappings;
@@ -17,15 +19,19 @@ class Update
 
     protected int $shards = 1;
 
-    public function analyzer(string $name)
+    public function __construct(protected DefaultAnalyzer $defaultAnalyzer)
     {
-        return new AnalyzerUpdate($this, $name);
     }
 
-    public function defaultAnalyzer()
-    {
-        return new AnalyzerUpdate($this, 'default');
-    }
+    // public function analyzer(string $name)
+    // {
+    //     return new AnalyzerUpdate($this, $name);
+    // }
+
+    // public function defaultAnalyzer()
+    // {
+    //     return new AnalyzerUpdate($this, 'default');
+    // }
 
     public function shards(int $shards)
     {
@@ -41,13 +47,21 @@ class Update
         return $this;
     }
 
+    public function mappingsValue(): ContractsMappings
+    {
+        return $this->createMappings($this->defaultAnalyzer);
+    }
+
     public function toRaw()
     {
+        $mappings = $this->createMappings($this->defaultAnalyzer);
+
         return [
             'settings' => [
                 'number_of_shards' => $this->shards,
                 'number_of_replicas' => $this->replicas,
-            ]
+            ],
+            'mappings' => $mappings->toRaw()
         ];
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Support\Shared;
 
+use Closure;
+use Exception;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Index\Mappings as IndexMappings;
@@ -12,6 +14,10 @@ use Sigmie\Base\Index\DynamicMappings;
 
 trait Mappings
 {
+    protected bool $dynamicMappings = false;
+
+    protected Closure $blueprintCallback;
+
     public function mappings(callable $callable)
     {
         $this->blueprintCallback = $callable;
@@ -25,6 +31,10 @@ trait Mappings
 
         if ($this->dynamicMappings === false) {
             $blueprint = ($this->blueprintCallback)(new Blueprint);
+
+            if (is_null($blueprint)) {
+                throw new Exception('Did you forget to return the blueprint ?');
+            }
 
             $properties = $blueprint();
 

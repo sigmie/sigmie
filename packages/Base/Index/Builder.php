@@ -38,13 +38,9 @@ class Builder
 
     protected Language $language;
 
-    protected bool $dynamicMappings = false;
-
     protected Tokenizer $tokenizer;
 
     protected array $charFilter = [];
-
-    protected Closure $blueprintCallback;
 
     public function __construct(HttpConnection $connection, EventDispatcherInterface $events)
     {

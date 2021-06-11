@@ -12,7 +12,7 @@ use Sigmie\Base\Documents\Document;
 
 interface DocumentCollection extends ArrayAccess, Countable, IteratorAggregate
 {
-    public function addDocument(Document &$element): self;
+    public function addDocument(Document $element): self;
 
     public function addDocuments(array|DocumentCollection $documentCollection): self;
 

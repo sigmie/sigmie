@@ -13,6 +13,11 @@ use Sigmie\Base\APIs\Calls\Update as UpdateAPI;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Search\Query;
+use Sigmie\Support\BulkBody;
+
+use function Amp\Parallel\Worker\enqueue;
+use function Amp\Promise\all;
+use function Amp\Promise\wait;
 
 trait Actions
 {
@@ -99,13 +104,18 @@ trait Actions
     {
         $indexName = $this->index()->name();
         $body = [];
-        $documentCollection->forAll(function ($index, Document $document) use (&$body) {
-            $body = [
-                ...$body,
-                ['create' => ($document->getId() !== null) ? ['_id' => $document->getId()] : (object) []],
-                $document->attributes(),
-            ];
-        });
+        $docs = $documentCollection->toArray();
+
+        $docsChunk = array_chunk($docs, 2);
+
+        $promises = [];
+        foreach ($docsChunk as $docs) {
+            $promises[] = enqueue(new BulkBody($docs));
+        }
+
+        $all = wait(all($promises));
+
+        $body = array_merge(...$all);
 
         $response = $this->bulkAPICall($indexName, $body, $async);
 

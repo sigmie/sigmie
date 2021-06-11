@@ -136,7 +136,7 @@ class Index implements DocumentCollectionInterface, Name
         return $this->identifier;
     }
 
-    public function addDocument(Document &$element): self
+    public function addDocument(Document $element): self
     {
         $this->createDocument($element, async: false);
 

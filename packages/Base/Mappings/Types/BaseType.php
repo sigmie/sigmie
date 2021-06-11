@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Mappings\Types;
 
+use Sigmie\Base\Contracts\Name;
 use Sigmie\Base\Contracts\Type;
 
 abstract class BaseType implements Type

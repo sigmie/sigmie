@@ -24,6 +24,7 @@ trait Reindex
         ];
 
         $uri = new Uri("/_reindex");
+        $uri = Uri::withQueryValue($uri, 'refresh', 'true');
 
         $esRequest = new ElasticsearchRequest('POST', $uri, $body);
 

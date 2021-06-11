@@ -12,6 +12,7 @@ use Sigmie\Base\APIs\Calls\Reindex;
 use Sigmie\Base\Index\Index;
 use Sigmie\Base\Index\Mappings;
 use Sigmie\Base\Index\Settings;
+use Sigmie\Base\Mappings\Properties;
 use Sigmie\Support\Update\Update;
 
 use function Sigmie\Helpers\index_name;
@@ -34,9 +35,19 @@ class AliasedIndex extends Index
     public function update(callable $update): Index
     {
         /** @var  Update $update */
-        $update = $update(new Update);
+        $update = $update(new Update($this->settings->analysis->defaultAnalyzer()));
 
         $oldDocsCount = count($this);
+
+        $newProps = $update->mappingsValue()->properties()->toArray();
+        $oldProps = $this->getMappings()->properties()->toArray();
+
+        $props = array_merge($oldProps, $newProps);
+
+        $this->mappings = new Mappings(
+            $this->settings->analysis->defaultAnalyzer(),
+            new Properties($props)
+        );
 
         $newName = index_name($this->alias);
         $oldName = $this->identifier;
@@ -45,11 +56,16 @@ class AliasedIndex extends Index
         $updateArray = $update->toRaw();
 
         $this->settings->primaryShards = $updateArray['settings']['number_of_shards'];
-        $this->settings->replicaShards = $updateArray['settings']['number_of_replicas'];
+        // $this->settings->replicaShards = $updateArray['settings']['number_of_replicas'];
+
+        $this->settings->replicaShards = 0;
+        $this->settings->config('refresh_interval', '-1');
+
+        $properties = $this->mappings->properties();
 
         $index = $this->createIndex($this);
 
-        // $this->reindexAPICall($oldName, $newName);
+        $this->reindexAPICall($oldName, $newName);
 
         // $newDocsCount = count($index);
 
@@ -57,7 +73,15 @@ class AliasedIndex extends Index
         //     throw new Exception('Docs count missmatch');
         // }
 
+        $res = $this->indexAPICall("/{$newName}/_settings", 'PUT', [
+            'number_of_replicas' => $updateArray['settings']['number_of_replicas'],
+            'refresh_interval' => null
+        ]);
+
         $this->switchAlias($this->alias, $oldName, $newName);
+        $this->settings->replicaShards = $updateArray['settings']['number_of_replicas'];
+
+        $this->deleteIndex($oldName);
 
         return $this->getIndex($this->alias);
     }

@@ -15,6 +15,7 @@
     ],
     "require": {
         "php": "^8.0",
+        "amphp/parallel": "^1.4",
         "doctrine/collections": "^1.6"
     },
     "autoload": {

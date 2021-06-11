@@ -20,7 +20,8 @@
         "symfony/console": "^5.2",
         "symfony/event-dispatcher": "^5.2",
         "symfony/event-dispatcher-contracts": "^2.2",
-        "nesbot/carbon": "^2.48"
+        "nesbot/carbon": "^2.48",
+        "amphp/parallel": "^1.4"
     },
     "require-dev": {
         "symfony/var-dumper": "^5.2",

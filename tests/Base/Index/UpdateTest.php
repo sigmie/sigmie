@@ -10,8 +10,12 @@ use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\APIs\Calls\Index;
+use Sigmie\Base\Documents\Document;
+use Sigmie\Base\Documents\DocumentsCollection;
 use Sigmie\Base\Index\AliasActions;
 use Sigmie\Base\Index\Blueprint;
+use Sigmie\Base\Mappings\Types\Date;
+use Sigmie\Base\Mappings\Types\Text;
 use Sigmie\Sigmie;
 use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
@@ -33,6 +37,99 @@ class UpdateTest extends TestCase
         parent::setUp();
 
         $this->sigmie = new Sigmie($this->httpConnection, $this->events);
+    }
+
+    /**
+     * @test
+     */
+    public function mappings()
+    {
+        $this->sigmie->newIndex('foo')
+            ->mappings(function (Blueprint $blueprint) {
+
+                $blueprint->text('bar')->searchAsYouType();
+                $blueprint->text('created_at')->unstructuredText();
+
+                return $blueprint;
+            })
+            ->create();
+
+        $index = $this->sigmie->index('foo');
+
+        $props = $index->getMappings()->properties();
+
+        $this->assertInstanceOf(Text::class, $props['created_at']);
+
+        $updatedIndex = $index->update(function (Update $update) {
+
+            $update->mappings(function (Blueprint $blueprint) {
+                $blueprint->date('created_at');
+                $blueprint->number('count')->float();
+
+                return $blueprint;
+            });
+
+            return $update;
+        });
+
+        $props = $updatedIndex->getMappings()->properties();
+
+        $this->assertInstanceOf(Date::class, $props['created_at']);
+        $this->assertArrayHasKey('count', $props);
+    }
+
+    /**
+     * @test
+     */
+    public function reindex_docs()
+    {
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->create();
+
+        $index = $this->sigmie->index('foo');
+        $oldIndexName = $index->name();
+
+        $docs = new DocumentsCollection();
+        for ($i = 0; $i < 10; $i++) {
+            $docs->addDocument(new Document(['foo' => 'bar']));
+        }
+
+        $index->addDocuments($docs);
+
+        $this->assertCount(10, $index);
+
+        $updatedIndex = $index->update(function (Update $update) {
+            $update->replicas(3);
+            return $update;
+        });
+
+        [$name, $config] = name_configs($updatedIndex->toRaw());
+
+        $this->assertEquals(3, $config['settings']['index']['number_of_replicas']);
+        $this->assertNotEquals($oldIndexName, $index->name());
+        $this->assertCount(10, $index);
+    }
+
+    /**
+     * @test
+     */
+    public function delete_old_index()
+    {
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->create();
+
+        $index = $this->sigmie->index('foo');
+
+        $oldIndexName = $index->name();
+
+        $index->update(function (Update $update) {
+            return $update;
+        });
+
+        $this->assertNotEquals($oldIndexName, $index->name());
+        $this->assertTrue($this->getIndices($oldIndexName)->isEmpty());
     }
 
     /**

@@ -14,6 +14,8 @@ class Settings implements RawRepresentation
 
     public ?Analysis $analysis;
 
+    protected array $configs = [];
+
     public function __construct(
         int $primaryShards = 1,
         int $replicaShards = 2,
@@ -22,6 +24,13 @@ class Settings implements RawRepresentation
         $this->analysis = $analysis;
         $this->primaryShards = $primaryShards;
         $this->replicaShards = $replicaShards;
+    }
+
+    public function config(string $name, string $value)
+    {
+        $this->configs[$name] = $value;
+
+        return $this;
     }
 
     public function getPrimaryShards()
@@ -45,6 +54,7 @@ class Settings implements RawRepresentation
         }
 
         $defaultAnalyzerName = 'default';
+
         $analysis = Analysis::fromRaw($settings['analysis'], $defaultAnalyzerName);
 
         return new Settings(
@@ -56,10 +66,10 @@ class Settings implements RawRepresentation
 
     public function toRaw(): array
     {
-        return [
+        return array_merge([
             'number_of_shards' => $this->primaryShards,
             'number_of_replicas' => $this->replicaShards,
             'analysis' => $this->analysis->toRaw()
-        ];
+        ], $this->configs);
     }
 }
