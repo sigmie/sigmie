@@ -55,30 +55,28 @@ trait DefaultFilters
         return $this;
     }
 
-    abstract protected function getPrefix(): string;
-
     public function defaultFilters(): array
     {
         $results = [];
 
         if ($this->stopwords instanceof Stopwords) {
             $this->stopwords->setPriority(1);
-            $results[] = $this->stopwords;
+            $results[$this->stopwords->name()] = $this->stopwords;
         }
 
         if ($this->twoWaySynonyms instanceof TwoWaySynonyms) {
             $this->twoWaySynonyms->setPriority(2);
-            $results[] = $this->twoWaySynonyms;
+            $results[$this->twoWaySynonyms->name()] = $this->twoWaySynonyms;
         }
 
         if ($this->oneWaySynonyms instanceof OneWaySynonyms) {
             $this->oneWaySynonyms->setPriority(3);
-            $results[] = $this->oneWaySynonyms;
+            $results[$this->oneWaySynonyms->name()] = $this->oneWaySynonyms;
         }
 
         if ($this->stemming instanceof Stemmer) {
             $this->stemming->setPriority(4);
-            $results[] = $this->stemming;
+            $results[$this->stemming->name()] = $this->stemming;
         }
 
         return $results;

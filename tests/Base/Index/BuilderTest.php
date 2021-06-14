@@ -387,11 +387,11 @@ class BuilderTest extends TestCase
     public function stemming()
     {
         $this->sigmie->newIndex('sigmie')
-            ->stemming([
+            ->stemming('sigmie_stemmer_overrides', [
                 'am' => ['be', 'are'],
                 'mouse' => ['mice'],
                 'feet' => ['foot'],
-            ], 'sigmie_stemmer_overrides')
+            ],)
             ->withoutMappings()->create();
 
         $data = $this->indexData('sigmie');

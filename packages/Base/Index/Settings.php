@@ -21,7 +21,7 @@ class Settings implements RawRepresentation
         int $replicaShards = 2,
         Analysis $analysis = null
     ) {
-        $this->analysis = $analysis;
+        $this->analysis = $analysis ?: new Analysis();
         $this->primaryShards = $primaryShards;
         $this->replicaShards = $replicaShards;
     }

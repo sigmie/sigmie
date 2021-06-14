@@ -29,7 +29,7 @@ trait Mappings
     {
         $mappings = new DynamicMappings($defaultAnalyzer);
 
-        if ($this->dynamicMappings === false) {
+        if ($this->dynamicMappings === false && isset($this->blueprintCallback)) {
             $blueprint = ($this->blueprintCallback)(new Blueprint);
 
             if (is_null($blueprint)) {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\Index;
 
+use Exception;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\CharFilter\PatternFilter;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
@@ -37,6 +38,174 @@ class UpdateTest extends TestCase
         parent::setUp();
 
         $this->sigmie = new Sigmie($this->httpConnection, $this->events);
+    }
+
+    /**
+    * @test
+    */
+    public function foo()
+    {
+        //TODO Char filter 
+        //TODO Tokenizer
+        //TODO Default Analyzer
+        //TODO Analyzer
+        //TODO Config
+
+        $this->assertTrue(false);
+    }
+
+    /**
+     * @test
+     */
+    public function update_index_one_way_synonyms()
+    {
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->oneWaySynonyms('bar_name', [
+                'ipod' => ['i-pod', 'i pod']
+            ])
+            ->create();
+
+        $oldData = $this->indexData('foo');
+
+        $this->sigmie->index('foo')->update(function (Update $update) {
+
+            $update->oneWaySynonyms('bar_name', [
+                'mickey' => ['mouse', 'goofy'],
+            ]);
+
+            return $update;
+        });
+
+        $newData = $this->indexData('foo');
+
+        $this->assertArrayHasKey('bar_name', $oldData['settings']['index']['analysis']['filter']);
+        $this->assertEquals([
+                'i-pod, i pod => ipod',
+        ], $oldData['settings']['index']['analysis']['filter']['bar_name']['synonyms']);
+
+        $this->assertArrayHasKey('bar_name', $newData['settings']['index']['analysis']['filter']);
+        $this->assertEquals([
+            'mouse, goofy => mickey',
+        ], $newData['settings']['index']['analysis']['filter']['bar_name']['synonyms']);
+    }
+
+    /**
+     * @test
+     */
+    public function update_index_stemming()
+    {
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->stemming('bar_name', [
+                'am' => ['be', 'are'],
+                'mouse' => ['mice'],
+                'feet' => ['foot'],
+            ],)
+            ->create();
+
+        $oldData = $this->indexData('foo');
+
+        $this->sigmie->index('foo')->update(function (Update $update) {
+
+            $update->stemming('bar_name', [
+                'mickey' => ['mouse', 'goofy'],
+            ],);
+
+            return $update;
+        });
+
+        $newData = $this->indexData('foo');
+
+        $this->assertArrayHasKey('bar_name', $oldData['settings']['index']['analysis']['filter']);
+        $this->assertEquals([
+            'be, are => am',
+            'mice => mouse',
+            'foot => feet',
+        ], $oldData['settings']['index']['analysis']['filter']['bar_name']['rules']);
+
+        $this->assertArrayHasKey('bar_name', $newData['settings']['index']['analysis']['filter']);
+        $this->assertEquals([
+            'mouse, goofy => mickey',
+        ], $newData['settings']['index']['analysis']['filter']['bar_name']['rules']);
+    }
+
+    /**
+     * @test
+     */
+    public function update_index_synonyms()
+    {
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->twoWaySynonyms('foo_two_way_synonyms', [
+                ['treasure', 'gem', 'gold', 'price'],
+                ['friend', 'buddy', 'partner']
+            ])
+            ->create();
+
+        $oldData = $this->indexData('foo');
+
+        $this->sigmie->index('foo')->update(function (Update $update) {
+
+            $update->twoWaySynonyms('foo_two_way_synonyms', [['john', 'doe']]);
+
+            return $update;
+        });
+
+        $newData = $this->indexData('foo');
+
+        $this->assertArrayHasKey('foo_two_way_synonyms', $oldData['settings']['index']['analysis']['filter']);
+        $this->assertEquals([
+            'treasure, gem, gold, price',
+            'friend, buddy, partner'
+        ], $oldData['settings']['index']['analysis']['filter']['foo_two_way_synonyms']['synonyms']);
+
+        $this->assertArrayHasKey('foo_two_way_synonyms', $newData['settings']['index']['analysis']['filter']);
+        $this->assertEquals([
+            'john, doe',
+        ], $newData['settings']['index']['analysis']['filter']['foo_two_way_synonyms']['synonyms']);
+    }
+
+    /**
+     * @test
+     */
+    public function update_index_stopwords()
+    {
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->stopwords('foo_stopwords', ['foo', 'bar', 'baz'])
+            ->create();
+
+        $data = $this->indexData('foo');
+
+        $this->assertArrayHasKey('foo_stopwords', $data['settings']['index']['analysis']['filter']);
+
+        $this->sigmie->index('foo')->update(function (Update $update) {
+            $update->stopwords('foo_stopwords', ['john', 'doe']);
+
+            return $update;
+        });
+
+        $data = $this->indexData('foo');
+
+        $this->assertArrayHasKey('foo_stopwords', $data['settings']['index']['analysis']['filter']);
+        $this->assertEquals(['john', 'doe'], $data['settings']['index']['analysis']['filter']['foo_stopwords']['stopwords']);
+    }
+
+    /**
+     * @test
+     */
+    public function exception_when_not_returned()
+    {
+        $this->expectException(Exception::class);
+
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->stopwords('foo_stopwords', ['foo', 'bar', 'baz'])
+            ->create();
+
+        $updatedIndex = $this->sigmie->index('foo')->update(function (Update $update) {
+        });
     }
 
     /**
@@ -188,6 +357,7 @@ class UpdateTest extends TestCase
     {
         $json = $this->indexAPICall($name, 'GET')->json();
         $indexName = array_key_first($json);
+
         return $json[$indexName];
     }
 }

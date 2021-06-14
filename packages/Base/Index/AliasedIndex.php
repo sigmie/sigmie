@@ -14,7 +14,6 @@ use Sigmie\Base\Index\Mappings;
 use Sigmie\Base\Index\Settings;
 use Sigmie\Base\Mappings\Properties;
 use Sigmie\Support\Update\Update;
-
 use function Sigmie\Helpers\index_name;
 use function Sigmie\Helpers\name_configs;
 
@@ -37,12 +36,20 @@ class AliasedIndex extends Index
         /** @var  Update $update */
         $update = $update(new Update($this->settings->analysis->defaultAnalyzer()));
 
+        if (is_null($update)) {
+            throw new Exception('Did you forget to return ?');
+        }
+
         $oldDocsCount = count($this);
 
         $newProps = $update->mappingsValue()->properties()->toArray();
         $oldProps = $this->getMappings()->properties()->toArray();
 
         $props = array_merge($oldProps, $newProps);
+
+        $newFilters = $update->defaultFilters();
+
+        $this->settings->analysis->updateFilters($newFilters);
 
         $this->mappings = new Mappings(
             $this->settings->analysis->defaultAnalyzer(),
@@ -56,14 +63,11 @@ class AliasedIndex extends Index
         $updateArray = $update->toRaw();
 
         $this->settings->primaryShards = $updateArray['settings']['number_of_shards'];
-        // $this->settings->replicaShards = $updateArray['settings']['number_of_replicas'];
 
         $this->settings->replicaShards = 0;
         $this->settings->config('refresh_interval', '-1');
 
-        $properties = $this->mappings->properties();
-
-        $index = $this->createIndex($this);
+        $this->createIndex($this);
 
         $this->reindexAPICall($oldName, $newName);
 

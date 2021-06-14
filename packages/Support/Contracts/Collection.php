@@ -22,5 +22,10 @@ interface Collection extends DoctrineCollection
     /**
      * @return self
      */
+    public function map(Closure $func);
+
+    /**
+     * @return self
+     */
     public function filter(Closure $p);
 }

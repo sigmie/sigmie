@@ -28,11 +28,34 @@ class Analysis implements Analyzers
 {
     protected CollectionInterface $analyzers;
 
+    protected DefaultAnalyzer $defaultAnalyzer;
+
+    protected CollectionInterface $filter;
+
+    protected CollectionInterface $charFilter;
+
+    protected CollectionInterface $tokenizer;
+
     public function __construct(
-        protected DefaultAnalyzer $defaultAnalyzer,
+        ?DefaultAnalyzer $defaultAnalyzer = null,
         array|CollectionInterface $analyzers = [],
     ) {
+
+        $this->defaultAnalyzer = $defaultAnalyzer ?: new DefaultAnalyzer();
         $this->analyzers = ensure_collection($analyzers);
+
+        $this->filter = $this->allAnalyzers()
+            ->map(fn (Analyzer $analyzer) => $analyzer->filters())
+            ->flatten()
+            ->mapToDictionary(fn (TokenFilter $filter) => [$filter->name() => $filter]);
+
+        $this->charFilter = $this->allAnalyzers()
+            ->map(fn (Analyzer $analyzer) => $analyzer->charFilters())
+            ->flatten()
+            ->mapToDictionary(fn (ContractsCharFilter $filter) => [$filter->name() => $filter]);
+
+        $this->tokenizer = $this->allAnalyzers()
+            ->map(fn (Analyzer $analyzer) => $analyzer->tokenizer());
     }
 
     private function allAnalyzers(): CollectionInterface
@@ -46,22 +69,27 @@ class Analysis implements Analyzers
 
     public function tokenizers(): CollectionInterface
     {
-        return $this->allAnalyzers()
-            ->map(fn (Analyzer $analyzer) => $analyzer->tokenizer());
+        return $this->tokenizer;
+    }
+
+    public function updateFilters(array|CollectionInterface $filters)
+    {
+        $filters = ensure_collection($filters);
+
+        $oldFilters = $this->filter->toArray();
+        $newFilters = $filters->toArray();
+
+        $this->filter = new Collection(array_merge($oldFilters, $newFilters));
     }
 
     public function filters(): CollectionInterface
     {
-        return $this->allAnalyzers()
-            ->map(fn (Analyzer $analyzer) => $analyzer->filters())
-            ->flatten();
+        return $this->filter;
     }
 
     public function charFilters(): CollectionInterface
     {
-        return $this->allAnalyzers()
-            ->map(fn (Analyzer $analyzer) => $analyzer->charFilters())
-            ->flatten();
+        return $this->charFilter;
     }
 
     public function defaultAnalyzer(): DefaultAnalyzer
@@ -114,7 +142,12 @@ class Analysis implements Analyzers
 
     public function addLanguageFilters(Language $language)
     {
-        $this->defaultAnalyzer->addFilters($language->filters());
+        $filters = $language->filters()
+            ->mapToDictionary(fn (TokenFilter $filter) => [$filter->name() => $filter]);
+
+        $this->defaultAnalyzer->addFilters($filters);
+
+        $this->updateFilters($filters);
 
         return $this;
     }
@@ -263,8 +296,8 @@ class Analysis implements Analyzers
             ->mapToDictionary(function (Analyzer $analyzer) {
                 return [$analyzer->name() => $analyzer->raw()];
             })->toArray();
-
         $result = [
+
             'analyzer' => $analyzers,
             'filter' => $filter,
             'char_filter' => $charFilters,

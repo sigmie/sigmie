@@ -69,13 +69,6 @@ class Builder
         return $this;
     }
 
-    public function stemming(array $stemming, string $name): self
-    {
-        $this->stemming = new Stemmer($name, $stemming);
-
-        return $this;
-    }
-
     public function tokenizeOn(Tokenizer $tokenizer)
     {
         $this->tokenizer = $tokenizer;

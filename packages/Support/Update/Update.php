@@ -6,6 +6,7 @@ declare(strict_types=1);
 namespace Sigmie\Support\Update;
 
 use Sigmie\Base\Analysis\DefaultAnalyzer;
+use Sigmie\Base\Analysis\DefaultFilters;
 use Sigmie\Base\Contracts\Mappings as ContractsMappings;
 use Sigmie\Support\Analysis\AnalyzerUpdate;
 use Sigmie\Support\Analysis\Tokenizer\Builder as TokenizerBuilder;
@@ -13,7 +14,7 @@ use Sigmie\Support\Shared\Mappings;
 
 class Update
 {
-    use Mappings;
+    use Mappings, DefaultFilters;
 
     protected int $replicas = 2;
 
