@@ -10,6 +10,8 @@ interface Analyzer extends Name
 
     public function filters(): Collection;
 
+    public function updateTokenizer(Tokenizer $tokenizer): void;
+
     public function addFilters(Collection|array $filters): void;
 
     public function addCharFilters(Collection|array $charFilters): void;

@@ -6,6 +6,7 @@ namespace Sigmie\Helpers {
 
     use Carbon\Carbon;
     use Exception;
+    use Sigmie\Base\Contracts\Name;
     use Sigmie\Support\Collection;
     use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
@@ -26,6 +27,13 @@ namespace Sigmie\Helpers {
         [$configs] = array_values($values);
 
         return [$name, $configs];
+    }
+
+    function named_collection(array|CollectionInterface $values): CollectionInterface
+    {
+        $collection = ensure_collection($values);
+
+        return $collection->mapToDictionary(fn (Name $item) => [$item->name() => $item]);
     }
 
     function ensure_collection(array|CollectionInterface $values): CollectionInterface

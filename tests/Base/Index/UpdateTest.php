@@ -10,6 +10,7 @@ use Sigmie\Base\Analysis\CharFilter\PatternFilter;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
+use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Calls\Index;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentsCollection;
@@ -41,17 +42,104 @@ class UpdateTest extends TestCase
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function foo()
     {
-        //TODO Char filter 
-        //TODO Tokenizer
         //TODO Default Analyzer
         //TODO Analyzer
         //TODO Config
+        // Overwrite when same name
+        // ->defaultAnalyzer() // what can be updated
+        // ->analyzer('foo_bar')->stopwords() // like stopwords
+        // ->analyzer('foo_bar')->addFilters() // add
+        // ->analyzer('foo_bar')->addCharFilters() // add
+        // ->analyzer('foo_bar')->tokenizer($tokenizer) // set
+        // ->tokenizer(new Whitespaces,'some_tokenizer') // overwrite if 'some_tokenizer' exists else create
+        // ->stopwords(['foo'=>'bar']) // overwrite if prefix_stopwords exists else create
+        // ->stopwords(['foo'=>'bar'], 'some_stop' ) // overwrite if some_stop exists else create
 
         $this->assertTrue(false);
+    }
+
+    /**
+     * @test
+     */
+    public function default_char_filter()
+    {
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->create();
+
+        $oldData = $this->indexData('foo');
+
+        $this->sigmie->index('foo')->update(function (Update $update) {
+
+            $update->patternReplace('/foo/', 'bar');
+            $update->mapChars(['foo' => 'bar']);
+            $update->stripHTML();
+
+            return $update;
+        });
+
+        $newData = $this->indexData('foo');
+
+        $this->assertEquals([], $oldData['settings']['index']['analysis']['analyzer']['default']['char_filter']);
+        $this->assertEquals([
+            'default_pattern_replace_filter',
+            'default_mappings_filter',
+            'html_strip',
+        ], $newData['settings']['index']['analysis']['analyzer']['default']['char_filter']);
+    }
+
+    /**
+     * @test
+     */
+    public function default_tokenizer_configurable()
+    {
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->create();
+
+        $oldData = $this->indexData('foo');
+
+        $this->sigmie->index('foo')->update(function (Update $update) {
+
+            $update->tokenizeOn()->pattern('/foo/');
+
+            return $update;
+        });
+
+        $newData = $this->indexData('foo');
+
+        $this->assertEquals('standard', $oldData['settings']['index']['analysis']['analyzer']['default']['tokenizer']);
+        $this->assertEquals('default_analyzer_pattern_tokenizer', $newData['settings']['index']['analysis']['analyzer']['default']['tokenizer']);
+        $this->assertEquals('/foo/', $newData['settings']['index']['analysis']['tokenizer']['default_analyzer_pattern_tokenizer']['pattern']);
+    }
+
+    /**
+     * @test
+     */
+    public function default_tokenizer()
+    {
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->tokenizeOn(new Whitespaces)
+            ->create();
+
+        $oldData = $this->indexData('foo');
+
+        $this->sigmie->index('foo')->update(function (Update $update) {
+
+            $update->tokenizeOn()->wordBoundaries();
+
+            return $update;
+        });
+
+        $newData = $this->indexData('foo');
+
+        $this->assertEquals('whitespace', $oldData['settings']['index']['analysis']['analyzer']['default']['tokenizer']);
+        $this->assertEquals('standard', $newData['settings']['index']['analysis']['analyzer']['default']['tokenizer']);
     }
 
     /**
@@ -81,7 +169,7 @@ class UpdateTest extends TestCase
 
         $this->assertArrayHasKey('bar_name', $oldData['settings']['index']['analysis']['filter']);
         $this->assertEquals([
-                'i-pod, i pod => ipod',
+            'i-pod, i pod => ipod',
         ], $oldData['settings']['index']['analysis']['filter']['bar_name']['synonyms']);
 
         $this->assertArrayHasKey('bar_name', $newData['settings']['index']['analysis']['filter']);

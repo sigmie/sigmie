@@ -19,6 +19,8 @@ interface Collection extends DoctrineCollection
 
     public function sortByKeys(): self;
 
+    public function merge(Collection|array $values): self;
+
     /**
      * @return self
      */

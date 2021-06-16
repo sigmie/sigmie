@@ -8,8 +8,17 @@ use Closure;
 use Doctrine\Common\Collections\ArrayCollection as DoctrineCollection;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
+use function Sigmie\Helpers\ensure_collection;
+
 class Collection extends DoctrineCollection implements CollectionInterface
 {
+    public function merge(CollectionInterface|array $values): CollectionInterface
+    {
+        $values = ensure_collection($values);
+        $result = array_merge($this->toArray(), $values->toArray());
+
+        return new static($result);
+    }
     /**
      * Flatten a multi-dimensional array into a single level.
      */

@@ -35,6 +35,11 @@ class Analyzer implements AnalyzerInterface
         $this->charFilters = ensure_collection($charFilters);
     }
 
+    public function updateTokenizer(Tokenizer $tokenizer): void
+    {
+        $this->tokenizer = $tokenizer;
+    }
+
     public function addFilters(CollectionInterface|array $filters): void
     {
         $this->filters = new Collection(array_merge(
@@ -69,14 +74,14 @@ class Analyzer implements AnalyzerInterface
         return new Collection($filters);
     }
 
-    public function raw(): array
+    public function toRaw(): array
     {
         $filters = $this->sortedFilters();
         $charFilters = $this->charFilters;
 
         $result = [
             'tokenizer' => $this->tokenizer()->type(),
-            'char_filter' => $charFilters->map(fn (CharFilter $filter) => $filter->name())->toArray(),
+            'char_filter' => $charFilters->map(fn (CharFilter $filter) => $filter->name())->flatten()->toArray(),
             'filter' => $filters->map(fn (TokenFilter $filter) => $filter->name())->toArray()
         ];
 

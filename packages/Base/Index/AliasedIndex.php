@@ -42,6 +42,19 @@ class AliasedIndex extends Index
 
         $oldDocsCount = count($this);
 
+        $charFilters = $update->charFilters();
+
+        $this->defaultAnalyzer()->addCharFilters($charFilters);
+
+        // $oldTokenizers = $this->settings->analysis->tokenizers()->toArray();
+        // $newTokenizer = $update->tokenizerValue();
+        // $tokenizers = array_merge($oldTokenizers, [$newTokenizer->name() => $newTokenizer]);
+
+        // $this->settings->analysis->updateTokenizers($tokenizers);
+
+        $defaultAnalyzer =  $this->settings->analysis->defaultAnalyzer();
+        $this->settings->analysis->setDefaultAnalyzer($defaultAnalyzer);
+
         $newProps = $update->mappingsValue()->properties()->toArray();
         $oldProps = $this->getMappings()->properties()->toArray();
 

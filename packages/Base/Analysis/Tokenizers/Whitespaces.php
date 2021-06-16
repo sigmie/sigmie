@@ -12,4 +12,9 @@ class Whitespaces implements Tokenizer
     {
         return 'whitespace';
     }
+
+    public function name(): string
+    {
+        return 'whitespace';
+    }
 }

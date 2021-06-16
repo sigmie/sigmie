@@ -4,26 +4,34 @@ declare(strict_types=1);
 
 namespace Sigmie\Support\Analysis\Tokenizer;
 
+use Sigmie\Base\Analysis\Tokenizers\Pattern;
+use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
+use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Support\Update\Update as UpdateBuilder;
 
 class Builder
 {
-    public function __construct(protected UpdateBuilder $builder)
-    {
+    public function __construct(
+        protected Analyzer $analyzer,
+        protected UpdateBuilder $builder
+    ) {
     }
 
-    public function whiteSpaces()
+    public function whiteSpaces(): void
     {
-        return $this->builder;
+        $this->analyzer->updateTokenizer(new Whitespaces);
     }
 
-    public function pattern()
+    public function pattern(string $pattern, string|null $name = null): void
     {
-        return $this->builder;
+        $name = $name ?: $this->analyzer->name() . '_analyzer_pattern_tokenizer';
+
+        $this->analyzer->updateTokenizer(new Pattern($name, $pattern));
     }
 
-    public function wordBoundaries()
+    public function wordBoundaries(): void
     {
-        return $this->builder;
+        $this->analyzer->updateTokenizer(new WordBoundaries());
     }
 }
