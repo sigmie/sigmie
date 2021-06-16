@@ -58,6 +58,21 @@ class BuilderTest extends TestCase
     /**
      * @test
      */
+    public function foo()
+    {
+        $this->sigmie->newIndex('foo')
+            ->stripHTML()
+            ->withoutMappings()
+            ->stopwords('foo_stopwords', ['foo', 'bar'])
+            ->create();
+
+        $oldData = $this->indexData('foo');
+        $this->assertArrayHasKey('foo_stopwords', $oldData['settings']['index']['analysis']['filter'],);
+    }
+
+    /**
+     * @test
+     */
     public function pattern_tokenizer()
     {
         $this->sigmie->newIndex('sigmie')

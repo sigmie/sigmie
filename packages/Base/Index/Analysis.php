@@ -88,6 +88,35 @@ class Analysis implements Analyzers
         return $this->analyzers['default'];
     }
 
+    public function addAnalyzers(array|Collection $analyzers): void
+    {
+        $analyzers = ensure_collection($analyzers);
+
+        $analyzers->forAll(function (Analyzer $analyzer) {
+            $this->setAnalyzer($analyzer);
+        });
+
+        $this->filter = $this->filter->merge(
+            $this->allAnalyzers()
+                ->map(fn (Analyzer $analyzer) => $analyzer->filters())
+                ->flatten()
+                ->mapToDictionary(fn (TokenFilter $filter) => [$filter->name() => $filter])
+        );
+
+        $this->charFilter = $this->charFilter->merge(
+            $this->allAnalyzers()
+                ->map(fn (Analyzer $analyzer) => $analyzer->charFilters())
+                ->flatten()
+                ->mapToDictionary(fn (ContractsCharFilter $filter) => [$filter->name() => $filter])
+        );
+
+        $this->tokenizers = $this->tokenizers->merge(
+            $this->allAnalyzers()
+                ->map(fn (Analyzer $analyzer) => $analyzer->tokenizer())
+                ->mapToDictionary(fn (Name $analyzer) => [$analyzer->name() => $analyzer])
+        );
+    }
+
     //TODO hmm don't like the naming
     public function setDefaultAnalyzer(Analyzer $analyzer): self
     {
@@ -140,7 +169,7 @@ class Analysis implements Analyzers
         return $analyzer;
     }
 
-    public function addAnalyzer(Analyzer $analyzer)
+    public function setAnalyzer(Analyzer $analyzer)
     {
         $this->analyzers[$analyzer->name()] = $analyzer;
     }
@@ -157,12 +186,12 @@ class Analysis implements Analyzers
         return $this;
     }
 
-    public static function fromRaw(array $data): static
+    public static function fromRaw(array $raw): static
     {
         $defaultAnalyzerName = 'default';
-        $rawFilters = $data['filter'];
-        $rawChar = $data['char_filter'];
-        $rawTokenizer = $data['tokenizer'];
+        $rawFilters = $raw['filter'];
+        $rawChar = $raw['char_filter'];
+        $rawTokenizer = $raw['tokenizer'];
         $filters = [];
         $charFilters = [];
         $tokenizers = [];
@@ -223,15 +252,15 @@ class Analysis implements Analyzers
 
         $analyzers = [];
 
-        foreach ($data['analyzer'] as $name => $analyzer) {
+        foreach ($raw['analyzer'] as $name => $analyzer) {
             $analyzerFilters = [];
             foreach ($analyzer['filter'] as $filterName) {
-                $analyzerFilters[] = $filters[$filterName];
+                $analyzerFilters[$filterName] = $filters[$filterName];
             }
 
             $analyzerCharFilters = [];
             foreach ($analyzer['char_filter'] as $filterName) {
-                $analyzerCharFilters[] = match ($filterName) {
+                $analyzerCharFilters[$filterName] = match ($filterName) {
                     'html_strip' => new HTMLFilter,
                     default => $charFilters[$filterName]
                 };
@@ -248,8 +277,8 @@ class Analysis implements Analyzers
             }
 
             $analyzers[$name] = match ($name) {
-                'default' => new DefaultAnalyzer($tokenizer, $analyzerFilters, $charFilters),
-                default => new Analyzer($name, $tokenizer, $analyzerFilters, $charFilters)
+                'default' => new DefaultAnalyzer($tokenizer, $analyzerFilters, $analyzerCharFilters),
+                default => new Analyzer($name, $tokenizer, $analyzerFilters, $analyzerCharFilters)
             };
         }
 

@@ -34,11 +34,13 @@ class AliasedIndex extends Index
     public function update(callable $update): Index
     {
         /** @var  Update $update */
-        $update = $update(new Update($this->settings->analysis->defaultAnalyzer()));
+        $update = $update(new Update($this->settings->analysis->analyzers()));
 
         if (is_null($update)) {
             throw new Exception('Did you forget to return ?');
         }
+
+        $this->settings->analysis->addAnalyzers($update->analyzers());
 
         $oldDocsCount = count($this);
 

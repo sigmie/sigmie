@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Tests\Base\Index;
 
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
@@ -37,6 +38,24 @@ class ArrayablesTest extends TestCase
         parent::setUp();
 
         $this->sigmie = new Sigmie($this->httpConnection, $this->events);
+    }
+
+    /**
+     * @test
+     */
+    public function char_filters()
+    {
+        $this->sigmie->newIndex('foo')
+            ->stripHTML()
+            ->withoutMappings()
+            ->create();
+
+        $index = $this->getIndex('foo');
+
+        $analyzer = $index->getSettings()->analysis->analyzers()['default'];
+
+        $this->assertNotEmpty($analyzer->charFilters());
+        $this->assertInstanceOf(HTMLFilter::class,$analyzer->charFilters()->first());
     }
 
     /**

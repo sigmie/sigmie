@@ -25,14 +25,30 @@ class Analyzer implements AnalyzerInterface
 
     protected CollectionInterface $charFilters;
 
+    protected Tokenizer $tokenizer;
+
     public function __construct(
         protected string $name,
-        protected Tokenizer $tokenizer,
+        null|Tokenizer $tokenizer = null,
         array|CollectionInterface $filters = [],
         array|CollectionInterface $charFilters = [],
     ) {
+        // 'standard' is the default Elasticsearch
+        // tokenizer when no other is specified
+        $this->tokenizer = $tokenizer ?: new WordBoundaries();
+
         $this->filters = ensure_collection($filters);
         $this->charFilters = ensure_collection($charFilters);
+    }
+
+    public function removeFilter(string $name): void
+    {
+        $this->filters->remove($name);
+    }
+
+    public function removeCharFilter(string $name): void
+    {
+        $this->charFilters->remove($name);
     }
 
     public function updateTokenizer(Tokenizer $tokenizer): void
@@ -42,6 +58,8 @@ class Analyzer implements AnalyzerInterface
 
     public function addFilters(CollectionInterface|array $filters): void
     {
+        $filters = ensure_collection($filters);
+
         $this->filters = new Collection(array_merge(
             $this->filters->toArray(),
             $filters->toArray(),
@@ -50,6 +68,8 @@ class Analyzer implements AnalyzerInterface
 
     public function addCharFilters(CollectionInterface|array $charFilters): void
     {
+        $charFilters = ensure_collection($charFilters);
+
         $this->charFilters = new Collection(array_merge(
             $this->charFilters->toArray(),
             $charFilters->toArray(),

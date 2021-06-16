@@ -8,6 +8,9 @@ use Carbon\Carbon;
 use Closure;
 use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
+use Sigmie\Base\Analysis\CharFilter\MappingFilter;
+use Sigmie\Base\Analysis\CharFilter\PatternFilter;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\DefaultFilters;
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
@@ -72,6 +75,34 @@ class Builder
     public function tokenizeOn(Tokenizer $tokenizer)
     {
         $this->tokenizer = $tokenizer;
+
+        return $this;
+    }
+
+    public function stripHTML()
+    {
+        $this->charFilter[] = new HTMLFilter;
+
+        return $this;
+    }
+
+    public function patternReplace(
+        string $pattern,
+        string $replace,
+        string|null $name = null
+    ) {
+        $name = $name ?: 'default' . '_pattern_replace_filter';
+
+        $this->charFilter[] = new PatternFilter($name, $pattern, $replace);
+
+        return $this;
+    }
+
+    public function mapChars(array $mappings, string|null $name = null)
+    {
+        $name = $name ?: 'default' . '_mappings_filter';
+
+        $this->charFilter[] = new MappingFilter($name, $mappings);
 
         return $this;
     }

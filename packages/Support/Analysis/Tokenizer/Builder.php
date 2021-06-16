@@ -8,13 +8,11 @@ use Sigmie\Base\Analysis\Tokenizers\Pattern;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\Analyzer;
-use Sigmie\Support\Update\Update as UpdateBuilder;
 
 class Builder
 {
     public function __construct(
         protected Analyzer $analyzer,
-        protected UpdateBuilder $builder
     ) {
     }
 

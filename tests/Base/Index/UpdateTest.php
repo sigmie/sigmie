@@ -6,8 +6,10 @@ namespace Sigmie\Tests\Base\Index;
 
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\PatternFilter;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
+use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
@@ -46,20 +48,196 @@ class UpdateTest extends TestCase
      */
     public function foo()
     {
-        //TODO Default Analyzer
-        //TODO Analyzer
-        //TODO Config
-        // Overwrite when same name
-        // ->defaultAnalyzer() // what can be updated
-        // ->analyzer('foo_bar')->stopwords() // like stopwords
-        // ->analyzer('foo_bar')->addFilters() // add
-        // ->analyzer('foo_bar')->addCharFilters() // add
-        // ->analyzer('foo_bar')->tokenizer($tokenizer) // set
-        // ->tokenizer(new Whitespaces,'some_tokenizer') // overwrite if 'some_tokenizer' exists else create
-        // ->stopwords(['foo'=>'bar']) // overwrite if prefix_stopwords exists else create
-        // ->stopwords(['foo'=>'bar'], 'some_stop' ) // overwrite if some_stop exists else create
+        //TODO optional naming use analyzer name as prefix
+        //GROUP char filter helpers like stripHTML into a trait
+        $this->assertTrue(true);
+    }
 
-        $this->assertTrue(false);
+    /**
+     * @test
+     */
+    public function remove_filter()
+    {
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->stopwords('foo_stopwords', ['foo', 'bar'])
+            ->create();
+
+        $oldData = $this->indexData('foo');
+
+        $this->sigmie->index('foo')->update(function (Update $update) {
+
+            $update->analyzer('default')->removeFilter('foo_stopwords');
+
+            return $update;
+        });
+
+        $newData = $this->indexData('foo');
+
+        $this->assertArrayHasKey('default', $oldData['settings']['index']['analysis']['analyzer']);
+        $this->assertArrayHasKey('default', $newData['settings']['index']['analysis']['analyzer']);
+
+        $this->assertEquals(['foo_stopwords'], $oldData['settings']['index']['analysis']['analyzer']['default']['filter']);
+        $this->assertEquals([], $newData['settings']['index']['analysis']['analyzer']['default']['filter']);
+    }
+
+    /**
+     * @test
+     */
+    public function analyzer_remove_html_char_filters()
+    {
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->stopwords('demo', ['foo', 'bar'])
+            ->stripHTML()
+            ->create();
+
+        $oldData = $this->indexData('foo');
+
+        $this->sigmie->index('foo')->update(function (Update $update) {
+
+            $update->analyzer('default')->removeCharFilter(new HTMLFilter);
+
+            return $update;
+        });
+
+        $newData = $this->indexData('foo');
+
+        $this->assertArrayHasKey('default', $oldData['settings']['index']['analysis']['analyzer']);
+        $this->assertArrayHasKey('default', $newData['settings']['index']['analysis']['analyzer']);
+
+        $this->assertEquals(['html_strip'], $oldData['settings']['index']['analysis']['analyzer']['default']['char_filter']);
+        $this->assertEquals([], $newData['settings']['index']['analysis']['analyzer']['default']['char_filter']);
+    }
+
+    /**
+     * @test
+     */
+    public function analyzer_update_char_filter()
+    {
+        $this->sigmie->newIndex('foo')
+            ->mappings(function (Blueprint $blueprint) {
+
+                $blueprint->text('bar')->unstructuredText()->withAnalyzer(new Analyzer('bar'));
+
+                return $blueprint;
+            })
+            ->create();
+
+        $oldData = $this->indexData('foo');
+
+        $this->sigmie->index('foo')->update(function (Update $update) {
+
+            $update->analyzer('bar')->stripHTML();
+            $update->analyzer('bar')->patternReplace('/foo/', 'bar');
+            $update->analyzer('bar')->mapChars(['bar' => 'baz']);
+
+            return $update;
+        });
+
+        $newData = $this->indexData('foo');
+
+        $this->assertArrayHasKey('bar', $oldData['settings']['index']['analysis']['analyzer']);
+        $this->assertArrayHasKey('bar', $newData['settings']['index']['analysis']['analyzer']);
+
+        $this->assertEquals([], $oldData['settings']['index']['analysis']['analyzer']['bar']['char_filter']);
+        $this->assertEquals([
+            'html_strip',
+            'bar_pattern_replace_filter',
+            'bar_mappings_filter'
+        ], $newData['settings']['index']['analysis']['analyzer']['bar']['char_filter']);
+    }
+
+    /**
+     * @test
+     */
+    public function analyzer_update_tokenizer_using_tokenize_on()
+    {
+        $this->sigmie->newIndex('foo')
+            ->mappings(function (Blueprint $blueprint) {
+
+                $blueprint->text('bar')->unstructuredText()->withAnalyzer(new Analyzer('bar'));
+
+                return $blueprint;
+            })
+            ->create();
+
+        $oldData = $this->indexData('foo');
+
+        $this->sigmie->index('foo')->update(function (Update $update) {
+
+            $update->analyzer('bar')->tokenizeOn()->whiteSpaces();
+
+            return $update;
+        });
+
+        $newData = $this->indexData('foo');
+
+        $this->assertArrayHasKey('bar', $oldData['settings']['index']['analysis']['analyzer']);
+        $this->assertArrayHasKey('bar', $newData['settings']['index']['analysis']['analyzer']);
+
+        $this->assertEquals('standard', $oldData['settings']['index']['analysis']['analyzer']['bar']['tokenizer']);
+        $this->assertEquals('whitespace', $newData['settings']['index']['analysis']['analyzer']['bar']['tokenizer']);
+    }
+
+    /**
+     * @test
+     */
+    public function analyzer_update_tokenizer()
+    {
+        $this->sigmie->newIndex('foo')
+            ->mappings(function (Blueprint $blueprint) {
+
+                $blueprint->text('bar')->unstructuredText()->withAnalyzer(new Analyzer('bar'));
+
+                return $blueprint;
+            })
+            ->create();
+
+        $oldData = $this->indexData('foo');
+
+        $this->sigmie->index('foo')->update(function (Update $update) {
+
+            $update->analyzer('bar')->setTokenizer(new Whitespaces);
+
+            return $update;
+        });
+
+        $newData = $this->indexData('foo');
+
+        $this->assertArrayHasKey('bar', $oldData['settings']['index']['analysis']['analyzer']);
+        $this->assertArrayHasKey('bar', $newData['settings']['index']['analysis']['analyzer']);
+
+        $this->assertEquals('standard', $oldData['settings']['index']['analysis']['analyzer']['bar']['tokenizer']);
+        $this->assertEquals('whitespace', $newData['settings']['index']['analysis']['analyzer']['bar']['tokenizer']);
+    }
+
+    /**
+     * @test
+     */
+    public function analyzer_update()
+    {
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->create();
+
+        $oldData = $this->indexData('foo');
+
+        $this->sigmie->index('foo')->update(function (Update $update) {
+
+            $update->analyzer('bear')->addFilter(new Stopwords(
+                'new_stopwords',
+                ['who', 'he']
+            ));
+
+            return $update;
+        });
+
+        $newData = $this->indexData('foo');
+
+        $this->assertArrayNotHasKey('bear', $oldData['settings']['index']['analysis']['analyzer']);
+        $this->assertArrayHasKey('bear', $newData['settings']['index']['analysis']['analyzer']);
+        $this->assertEquals(['who', 'he'], $newData['settings']['index']['analysis']['filter']['new_stopwords']['stopwords']);
     }
 
     /**

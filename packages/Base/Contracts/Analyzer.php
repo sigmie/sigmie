@@ -16,5 +16,9 @@ interface Analyzer extends Name
 
     public function addCharFilters(Collection|array $charFilters): void;
 
+    public function removeCharFilter(string $name): void;
+
+    public function removeFilter(string $name): void;
+
     public function charFilters(): Collection;
 }

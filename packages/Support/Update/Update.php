@@ -5,6 +5,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Support\Update;
 
+use Exception;
+use Sigmie\Base\Analysis\Analyzer as AnalysisAnalyzer;
 use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\MappingFilter;
 use Sigmie\Base\Analysis\CharFilter\PatternFilter;
@@ -33,19 +35,42 @@ class Update
 
     protected array $charFilter = [];
 
-    public function __construct(protected DefaultAnalyzer $defaultAnalyzer)
+    protected array $settingsConf = [];
+
+    protected Collection $analyzers;
+
+    protected array $analyzerUpdates = [];
+
+    protected DefaultAnalyzer $defaultAnalyzer;
+
+    public function __construct(Collection|array $analyzers)
     {
+        $this->analyzers = ensure_collection($analyzers);
     }
 
-    // public function analyzer(string $name)
-    // {
-    //     return new AnalyzerUpdate($this, $name);
-    // }
+    public function analyzer(string $name): AnalyzerUpdate
+    {
+        if (!isset($this->analyzers[$name])) {
+            $this->analyzers[$name] = new AnalysisAnalyzer($name);
+        }
 
-    // public function defaultAnalyzer()
-    // {
-    //     return new AnalyzerUpdate($this, 'default');
-    // }
+        $analyzer = $this->analyzers[$name];
+
+        $this->analyzersUpdates[$name] = new AnalyzerUpdate($analyzer, $name);
+
+        return  $this->analyzersUpdates[$name];
+    }
+
+    public function analyzers(): Collection
+    {
+        return ensure_collection($this->analyzerUpdates)->map(function (AnalyzerUpdate $analyzerUpdate) {
+            return $analyzerUpdate->analyzer();
+        })->mapToDictionary(function (Analyzer $analyzer) {
+            return [$analyzer->name() => $analyzer];
+        });
+
+        return $this->analyzers;
+    }
 
     public function stripHTML()
     {
@@ -54,7 +79,7 @@ class Update
 
     public function mapChars(array $mappings, string|null $name = null)
     {
-        $name = $name ?: $this->defaultAnalyzer->name() . '_mappings_filter';
+        $name = $name ?: $this->analyzers['default']->name() . '_mappings_filter';
 
         $this->charFilter[] = new MappingFilter($name, $mappings);
     }
@@ -64,7 +89,7 @@ class Update
         string $replace,
         string|null $name = null
     ) {
-        $name = $name ?: $this->defaultAnalyzer->name() . '_pattern_replace_filter';
+        $name = $name ?: $this->analyzers['default']->name() . '_pattern_replace_filter';
 
         $this->charFilter[] = new PatternFilter($name, $pattern, $replace);
     }
@@ -78,8 +103,7 @@ class Update
 
     public function tokenizeOn()
     {
-
-        return new TokenizerBuilder($this->defaultAnalyzer, $this);
+        return new TokenizerBuilder($this->analyzers['default'], $this);
     }
 
     public function tokenizer(Tokenizer $tokenizer)
@@ -115,12 +139,12 @@ class Update
 
     public function mappingsValue(): ContractsMappings
     {
-        return $this->createMappings($this->defaultAnalyzer);
+        return $this->createMappings($this->analyzers['default']);
     }
 
     public function toRaw()
     {
-        $mappings = $this->createMappings($this->defaultAnalyzer);
+        $mappings = $this->mappingsValue();
 
         return [
             'settings' => [
