@@ -48,7 +48,7 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertAnalyzerTokenizerIs('sigmie', 'default', 'sigmie_tokenizer');
+        $this->assertAnalyzerHasTokenizer('sigmie', 'default', 'sigmie_tokenizer');
         $this->assertTokenizerEquals('sigmie', 'sigmie_tokenizer', [
             'type' => 'pattern',
             'pattern' => '/[ ]/',
@@ -66,7 +66,7 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertAnalyzerTokenizerIs('sigmie', 'default', 'letter');
+        $this->assertAnalyzerHasTokenizer('sigmie', 'default', 'letter');
     }
 
     /**
@@ -132,7 +132,7 @@ class BuilderTest extends TestCase
             ->create();
 
         $this->assertTokenizerExists('sigmie', 'some_name');
-        $this->assertAnalyzerTokenizerIs('sigmie', 'default', 'some_name');
+        $this->assertAnalyzerHasTokenizer('sigmie', 'default', 'some_name');
         $this->assertTokenizerEquals('sigmie', 'some_name', [
             'type' => 'standard',
             'max_token_length' => 40,
@@ -150,7 +150,7 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertIndexAnalyzerTokenizerIsWhitespaces('sigmie', 'default');
+        $this->assertAnalyzerTokenizerIsWhitespaces('sigmie', 'default');
     }
 
     /**
@@ -174,7 +174,7 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertIndexHasAnalyzer('sigmie', 'default');
+        $this->assertAnalyzerExists('sigmie', 'default');
 
         $this->assertFilterExists('sigmie', 'german_stopwords');
         $this->assertFilterExists('sigmie', 'german_stemmer');
@@ -204,7 +204,7 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertIndexHasAnalyzer('sigmie', 'default');
+        $this->assertAnalyzerExists('sigmie', 'default');
 
         $this->assertFilterExists('sigmie', 'greek_stopwords');
         $this->assertFilterExists('sigmie', 'greek_lowercase');
@@ -242,7 +242,7 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertIndexHasAnalyzer('sigmie', 'default');
+        $this->assertAnalyzerExists('sigmie', 'default');
         $this->assertFilterExists('sigmie', 'english_stopwords');
         $this->assertFilterExists('sigmie', 'english_stemmer');
         $this->assertFilterExists('sigmie', 'english_possessive_stemmer');
@@ -391,9 +391,9 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertIndexHasAnalyzer('sigmie', 'default');
-        $this->assertIndexAnalyzerFilterIsEmpty('sigmie', 'default');
-        $this->assertIndexAnalyzerTokenizerIsWordBoundaries('sigmie', 'default');
+        $this->assertAnalyzerExists('sigmie', 'default');
+        $this->assertAnalyzerFilterIsEmpty('sigmie', 'default');
+        $this->assertAnalyzerTokenizerIsWordBoundaries('sigmie', 'default');
     }
 
     /**
@@ -415,23 +415,23 @@ class BuilderTest extends TestCase
 
         $this->assertIndexHasMappings('sigmie');
 
-        $this->assertIndexPropertyExists('sigmie', 'title');
-        $this->assertIndexPropertyIsSearchAsYouType('sigmie', 'title');
+        $this->assertPropertyExists('sigmie', 'title');
+        $this->assertPropertyIsSearchAsYouType('sigmie', 'title');
 
-        $this->assertIndexPropertyExists('sigmie', 'content');
-        $this->assertIndexPropertyIsUnstructuredText('sigmie', 'content');
+        $this->assertPropertyExists('sigmie', 'content');
+        $this->assertPropertyIsUnstructuredText('sigmie', 'content');
 
-        $this->assertIndexPropertyExists('sigmie', 'adults');
-        $this->assertIndexPropertyIsInteger('sigmie', 'adults');
+        $this->assertPropertyExists('sigmie', 'adults');
+        $this->assertPropertyIsInteger('sigmie', 'adults');
 
-        $this->assertIndexPropertyExists('sigmie', 'price');
-        $this->assertIndexPropertyIsFloat('sigmie', 'price');
+        $this->assertPropertyExists('sigmie', 'price');
+        $this->assertPropertyIsFloat('sigmie', 'price');
 
-        $this->assertIndexPropertyExists('sigmie', 'created_at');
-        $this->assertIndexPropertyIsDate('sigmie', 'created_at');
+        $this->assertPropertyExists('sigmie', 'created_at');
+        $this->assertPropertyIsDate('sigmie', 'created_at');
 
-        $this->assertIndexPropertyExists('sigmie', 'is_valid');
-        $this->assertIndexPropertyIsBoolean('sigmie', 'is_valid');
+        $this->assertPropertyExists('sigmie', 'is_valid');
+        $this->assertPropertyIsBoolean('sigmie', 'is_valid');
     }
 
     /**

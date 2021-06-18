@@ -85,8 +85,8 @@ class UpdateTest extends TestCase
             })
             ->create();
 
-        $this->assertAnalyzerTokenizerIs('foo', 'bar', 'standard');
-        $this->assertIndexHasAnalyzer('foo', 'bar');
+        $this->assertAnalyzerHasTokenizer('foo', 'bar', 'standard');
+        $this->assertAnalyzerExists('foo', 'bar');
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
@@ -97,7 +97,7 @@ class UpdateTest extends TestCase
             return $update;
         });
 
-        $this->assertIndexHasAnalyzer('foo', 'bar');
+        $this->assertAnalyzerExists('foo', 'bar');
         $this->assertAnalyzerHasCharFilter('foo', 'bar', 'html_strip');
         $this->assertAnalyzerHasCharFilter('foo', 'bar', 'bar_pattern_replace_filter');
         $this->assertAnalyzerHasCharFilter('foo', 'bar', 'bar_mappings_filter');
@@ -117,8 +117,8 @@ class UpdateTest extends TestCase
             })
             ->create();
 
-        $this->assertAnalyzerTokenizerIs('foo', 'bar', 'standard');
-        $this->assertIndexHasAnalyzer('foo', 'bar');
+        $this->assertAnalyzerHasTokenizer('foo', 'bar', 'standard');
+        $this->assertAnalyzerExists('foo', 'bar');
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
@@ -127,8 +127,8 @@ class UpdateTest extends TestCase
             return $update;
         });
 
-        $this->assertAnalyzerTokenizerIs('foo', 'bar', 'whitespace');
-        $this->assertIndexHasAnalyzer('foo', 'bar');
+        $this->assertAnalyzerHasTokenizer('foo', 'bar', 'whitespace');
+        $this->assertAnalyzerExists('foo', 'bar');
     }
 
     /**
@@ -145,8 +145,8 @@ class UpdateTest extends TestCase
             })
             ->create();
 
-        $this->assertAnalyzerTokenizerIs('foo', 'bar', 'standard');
-        $this->assertIndexHasAnalyzer('foo', 'bar');
+        $this->assertAnalyzerHasTokenizer('foo', 'bar', 'standard');
+        $this->assertAnalyzerExists('foo', 'bar');
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
@@ -155,8 +155,8 @@ class UpdateTest extends TestCase
             return $update;
         });
 
-        $this->assertAnalyzerTokenizerIs('foo', 'bar', 'whitespace');
-        $this->assertIndexHasAnalyzer('foo', 'bar');
+        $this->assertAnalyzerHasTokenizer('foo', 'bar', 'whitespace');
+        $this->assertAnalyzerExists('foo', 'bar');
     }
 
     /**
@@ -168,7 +168,7 @@ class UpdateTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertIndexAnalyzerFilterIsEmpty('foo', 'default');
+        $this->assertAnalyzerFilterIsEmpty('foo', 'default');
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
@@ -193,7 +193,7 @@ class UpdateTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertIndexAnalyzerCharFilterIsEmpty('foo', 'default');
+        $this->assertAnalyzerCharFilterIsEmpty('foo', 'default');
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
@@ -218,8 +218,8 @@ class UpdateTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertIndexAnalyzerCharFilterIsEmpty('foo', 'default');
-        $this->assertIndexAnalyzerHasTokenizer('foo', 'default', 'standard');
+        $this->assertAnalyzerCharFilterIsEmpty('foo', 'default');
+        $this->assertAnalyzerTokenizerIs('foo', 'default', 'standard');
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
@@ -228,7 +228,7 @@ class UpdateTest extends TestCase
             return $update;
         });
 
-        $this->assertIndexAnalyzerHasTokenizer('foo', 'default', 'default_analyzer_pattern_tokenizer');
+        $this->assertAnalyzerTokenizerIs('foo', 'default', 'default_analyzer_pattern_tokenizer');
         $this->assertTokenizerEquals('foo', 'default_analyzer_pattern_tokenizer', [
             'pattern' => '/foo/',
             'type' => 'pattern',
@@ -246,7 +246,7 @@ class UpdateTest extends TestCase
             ->tokenizeOn(new Whitespaces)
             ->create();
 
-        $this->assertIndexAnalyzerTokenizerIsWhitespaces('foo', 'default');
+        $this->assertAnalyzerTokenizerIsWhitespaces('foo', 'default');
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
@@ -255,7 +255,7 @@ class UpdateTest extends TestCase
             return $update;
         });
 
-        $this->assertIndexAnalyzerTokenizerIsWordBoundaries('foo', 'default');
+        $this->assertAnalyzerTokenizerIsWordBoundaries('foo', 'default');
     }
 
     /**
@@ -412,7 +412,7 @@ class UpdateTest extends TestCase
 
         $index = $this->sigmie->index('foo');
 
-        $this->assertIndexPropertyIsUnstructuredText('foo', 'created_at');
+        $this->assertPropertyIsUnstructuredText('foo', 'created_at');
 
         $index->update(function (Update $update) {
 
@@ -426,9 +426,9 @@ class UpdateTest extends TestCase
             return $update;
         });
 
-        $this->assertIndexPropertyExists('foo', 'count');
-        $this->assertIndexPropertyExists('foo', 'created_at');
-        $this->assertIndexPropertyIsDate('foo', 'created_at');
+        $this->assertPropertyExists('foo', 'count');
+        $this->assertPropertyExists('foo', 'created_at');
+        $this->assertPropertyIsDate('foo', 'created_at');
     }
 
     /**
