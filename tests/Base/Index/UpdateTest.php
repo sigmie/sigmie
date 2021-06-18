@@ -219,7 +219,7 @@ class UpdateTest extends TestCase
             ->create();
 
         $this->assertAnalyzerCharFilterIsEmpty('foo', 'default');
-        $this->assertAnalyzerTokenizerIs('foo', 'default', 'standard');
+        $this->assertAnalyzerHasTokenizer('foo', 'default', 'standard');
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
@@ -228,7 +228,7 @@ class UpdateTest extends TestCase
             return $update;
         });
 
-        $this->assertAnalyzerTokenizerIs('foo', 'default', 'default_analyzer_pattern_tokenizer');
+        $this->assertAnalyzerHasTokenizer('foo', 'default', 'default_analyzer_pattern_tokenizer');
         $this->assertTokenizerEquals('foo', 'default_analyzer_pattern_tokenizer', [
             'pattern' => '/foo/',
             'type' => 'pattern',

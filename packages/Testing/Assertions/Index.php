@@ -28,7 +28,7 @@ trait Index
     {
         $data = $this->indexData($index);
 
-        $this->assertArrayHasKey('mappings', $data);
+        $this->assertArrayHasKey('mappings', $data, "Failed to assert that index {$index} has mappings.");
     }
 
     public function assertIndexNotExists(string $name)
@@ -40,13 +40,28 @@ trait Index
             $code = $e->getCode();
         }
 
-        $this->assertEquals(404, $code, "Failed to assert that index {$name} doesn't exists.");
+        $this->assertEquals(404, $code, "Failed to assert that index {$name} not exists.");
     }
 
     protected function assertAnalyzerExists(string $index, string $analyzer)
     {
         $data = $this->indexData($index);
 
-        $this->assertArrayHasKey($analyzer, $data['settings']['index']['analysis']['analyzer']);
+        $this->assertArrayHasKey(
+            $analyzer,
+            $data['settings']['index']['analysis']['analyzer'],
+            "Failed to assert that the {$analyzer} exists in index {$index}."
+        );
+    }
+
+    protected function assertAnalyzerNotExists(string $index, string $analyzer)
+    {
+        $data = $this->indexData($index);
+
+        $this->assertArrayNotHasKey(
+            $analyzer,
+            $data['settings']['index']['analysis']['analyzer'],
+            "Failed to assert that the {$analyzer} not exists in index {$index}."
+        );
     }
 }

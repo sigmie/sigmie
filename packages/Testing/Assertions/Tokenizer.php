@@ -12,20 +12,32 @@ trait Tokenizer
     {
         $data = $this->indexData($index);
 
-        $this->assertEquals($value, $data['settings']['index']['analysis']['tokenizer'][$tokenizer]);
+        $this->assertEquals(
+            $value,
+            $data['settings']['index']['analysis']['tokenizer'][$tokenizer],
+            "Failed to assert that the tokenizer '{$tokenizer}' equals to the given array in index {$index}."
+        );
     }
 
     protected function assertTokenizerExists(string $index, string $tokenizer)
     {
         $data = $this->indexData($index);
 
-        $this->assertArrayHasKey($tokenizer, $data['settings']['index']['analysis']['tokenizer']);
+        $this->assertArrayHasKey(
+            $tokenizer,
+            $data['settings']['index']['analysis']['tokenizer'],
+            "Failed to assert that the tokenizer '{$tokenizer}' exists in index {$index}."
+        );
     }
-    
+
     protected function assertTokenizerNotExists(string $index, string $tokenizer)
     {
         $data = $this->indexData($index);
 
-        $this->assertArrayNotHasKey($tokenizer, $data['settings']['index']['analysis']['tokenizer']);
+        $this->assertArrayNotHasKey(
+            $tokenizer,
+            $data['settings']['index']['analysis']['tokenizer'],
+            "Failed to assert that the tokenizer '{$tokenizer}' not exists in index {$index}."
+        );
     }
 }
