@@ -4,17 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis;
 
-use Ramsey\Collection\CollectionInterface;
-use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
-use Sigmie\Base\Analysis\TokenFilter\Stemmer;
-use Sigmie\Base\Analysis\TokenFilter\Stopwords;
-use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
-use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Base\Contracts\CharFilter;
-use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
-use Sigmie\Support\Collection;
 
 class DefaultAnalyzer extends Analyzer
 {

@@ -5,7 +5,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Support\Update;
 
-use Exception;
 use Sigmie\Base\Analysis\Analyzer as AnalysisAnalyzer;
 use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\MappingFilter;
@@ -15,13 +14,13 @@ use Sigmie\Base\Analysis\DefaultFilters;
 use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Base\Contracts\Mappings as ContractsMappings;
 use Sigmie\Base\Contracts\Tokenizer;
-use Sigmie\Support\Analysis\AnalyzerUpdate;
-use Sigmie\Support\Analysis\Tokenizer\Builder as TokenizerBuilder;
-use Sigmie\Support\Contracts\Collection;
-use Sigmie\Support\Shared\Mappings;
-
 use function Sigmie\Helpers\ensure_collection;
 use function Sigmie\Helpers\named_collection;
+use Sigmie\Support\Analysis\AnalyzerUpdate;
+use Sigmie\Support\Analysis\Tokenizer\Builder as TokenizerBuilder;
+
+use Sigmie\Support\Contracts\Collection;
+use Sigmie\Support\Shared\Mappings;
 
 class Update
 {

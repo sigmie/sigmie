@@ -4,25 +4,18 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use Carbon\Carbon;
 use Closure;
 use Exception;
 use Generator;
-use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Aliases\Alias;
-use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\DefaultAnalyzer;
-use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Calls\Count as CountAPI;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Contracts\Name;
-use Sigmie\Base\Contracts\RawRepresentation;
 use Sigmie\Base\Documents\Actions as DocumentsActions;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentsCollection;
 use Sigmie\Base\Index\Actions as IndexActions;
-use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Search\Searchable;
 use Sigmie\Support\Collection;
 

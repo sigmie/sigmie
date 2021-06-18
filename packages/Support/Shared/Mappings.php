@@ -8,9 +8,9 @@ use Closure;
 use Exception;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
-use Sigmie\Base\Index\Mappings as IndexMappings;
 use Sigmie\Base\Index\Blueprint;
 use Sigmie\Base\Index\DynamicMappings;
+use Sigmie\Base\Index\Mappings as IndexMappings;
 
 trait Mappings
 {

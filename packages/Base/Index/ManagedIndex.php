@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Carbon\Carbon;
-use Sigmie\Base\Contracts\ManagedIndex as ManagedIndexInterface;
 use Sigmie\Base\Analysis\DefaultFilters;
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
+use Sigmie\Base\Contracts\ManagedIndex as ManagedIndexInterface;
 
 class ManagedIndex implements ManagedIndexInterface
 {
@@ -60,6 +60,6 @@ class ManagedIndex implements ManagedIndexInterface
             $this->switchAlias($alias, $this->index->name(), $indexName);
         }
 
-        return;
+        
     }
 }

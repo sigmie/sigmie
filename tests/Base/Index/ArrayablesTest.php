@@ -20,8 +20,6 @@ use Sigmie\Base\Mappings\Types\Boolean;
 use Sigmie\Base\Mappings\Types\Date;
 use Sigmie\Base\Mappings\Types\Number;
 use Sigmie\Base\Mappings\Types\Text;
-use Sigmie\Sigmie;
-use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
 
 class ArrayablesTest extends TestCase
@@ -202,13 +200,6 @@ class ArrayablesTest extends TestCase
         $mappings = $index->getMappings();
 
         $this->assertInstanceOf(Mappings::class, $mappings);
-    }
-
-    private function indexData(string $name): array
-    {
-        $json = $this->indexAPICall($name, 'GET')->json();
-        $indexName = array_key_first($json);
-        return $json[$indexName];
     }
 
     /**

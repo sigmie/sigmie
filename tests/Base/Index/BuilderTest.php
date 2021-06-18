@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Tests\Base\Index;
 
 use RachidLaasri\Travel\Travel;
-use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\MappingFilter;
 use Sigmie\Base\Analysis\CharFilter\PatternFilter;
@@ -32,10 +31,6 @@ use Sigmie\Base\APIs\Calls\Index;
 use Sigmie\Base\Exceptions\MissingMapping;
 use Sigmie\Base\Index\AliasActions;
 use Sigmie\Base\Index\Blueprint;
-use Sigmie\Base\Index\Builder as NewIndex;
-use Sigmie\Base\Index\Settings;
-use Sigmie\Base\Mappings\Properties;
-use Sigmie\Sigmie;
 use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
 
@@ -438,66 +433,6 @@ class BuilderTest extends TestCase
         $this->assertIndexPropertyExists('sigmie', 'is_valid');
         $this->assertIndexPropertyIsBoolean('sigmie', 'is_valid');
     }
-
-    // /**
-    //  * @test
-    //  */
-    // public function without_mappings_creates_dynamic_template()
-    // {
-    //     $this->sigmie->newIndex('sigmie')->withoutMappings()->create();
-
-    //     $data = $this->indexData('sigmie');
-
-    //     $this->assertArrayHasKey('mappings', $data);
-    //     $this->assertArrayHasKey('dynamic_templates', $data['mappings']);
-    //     $this->assertNotEmpty($data['mappings']['dynamic_templates']);
-    //     $this->assertEquals(
-    //         ['sigmie' => [
-    //             'match' => '*',
-    //             'match_mapping_type' => 'string',
-    //             'mapping' => ['analyzer' => 'sigmie_analyzer']
-    //         ]],
-    //         $data['mappings']['dynamic_templates'][0]
-    //     );
-    // }
-
-    // /**
-    //  * @test
-    //  */
-    // public function custom_analyzer_is_default()
-    // {
-    //     $this->sigmie->newIndex('sigmie')->mappings(function (Blueprint $blueprint) {
-    //         $blueprint->text('bar')->searchAsYouType();
-
-    //         return $blueprint;
-    //     })->create();
-
-    //     $data = $this->indexData('sigmie');
-
-    //     $this->assertArrayHasKey('bar', $data['mappings']['properties']);
-    //     $this->assertEquals($data['mappings']['properties']['bar']['analyzer'], 'sigmie_analyzer');
-    //     $this->assertArrayHasKey('settings', $data);
-    //     $this->assertArrayHasKey('analysis', $data['settings']['index']);
-    //     $this->assertArrayHasKey('default', $data['settings']['index']['analysis']);
-    //     $this->assertArrayHasKey('type', $data['settings']['index']['analysis']['default']);
-    //     $this->assertEquals('sigmie_analyzer', $data['settings']['index']['analysis']['default']['type']);
-    // }
-
-    // /**
-    //  * @test
-    //  */
-    // public function custom_analyzer_is_default_with_dynamic_mappings()
-    // {
-    //     $this->sigmie->newIndex('sigmie')->withoutMappings()->create();
-
-    //     $data = $this->indexData('sigmie');
-
-    //     $this->assertArrayHasKey('settings', $data);
-    //     $this->assertArrayHasKey('analysis', $data['settings']['index']);
-    //     $this->assertArrayHasKey('default', $data['settings']['index']['analysis']['analyzer']);
-    //     $this->assertArrayHasKey('type', $data['settings']['index']['analysis']['analyzer']['default']);
-    //     $this->assertEquals('sigmie_analyzer', $data['settings']['index']['analysis']['analyzer']['default']['type']);
-    // }
 
     /**
      * @test

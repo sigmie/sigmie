@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\Languages\Greek;
 
-use Sigmie\Base\Analysis\TokenFilter\Stopwords as TokenFilterStopwords;
 use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
 
 use function Sigmie\Helpers\name_configs;

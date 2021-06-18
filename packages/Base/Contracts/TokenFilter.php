@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Contracts;
 
-interface TokenFilter extends Priority, Name
+interface TokenFilter extends Name, Priority
 {
     public function type(): string;
 

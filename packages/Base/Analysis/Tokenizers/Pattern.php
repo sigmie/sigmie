@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\Analysis\Tokenizers;
 
 use Sigmie\Base\Contracts\ConfigurableTokenizer;
-use Sigmie\Base\Contracts\Tokenizer;
 
 use function Sigmie\Helpers\name_configs;
 

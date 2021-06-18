@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Exception;
-use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\APIs\Calls\Cat as CatAPI;
 use Sigmie\Base\APIs\Calls\Index as IndexAPI;
 use Sigmie\Base\Contracts\Events;

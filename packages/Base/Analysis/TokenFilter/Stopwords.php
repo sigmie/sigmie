@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\TokenFilter;
 
-use Sigmie\Base\Priority;
 
 use function Sigmie\Helpers\name_configs;
 

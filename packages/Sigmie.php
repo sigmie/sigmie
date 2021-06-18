@@ -18,8 +18,6 @@ use Sigmie\Http\Contracts\JSONRequest as JSONRequestInterface;
 use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Support\Contracts\Collection;
-use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Sigmie implements ManagerInterface
 {

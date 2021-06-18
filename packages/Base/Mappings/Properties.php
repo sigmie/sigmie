@@ -10,7 +10,7 @@ use Sigmie\Base\Mappings\Types\Text;
 use Sigmie\Support\Collection;
 use Sigmie\Support\Contracts\Arrayable;
 
-class Properties implements ArrayAccess, Arrayable
+class Properties implements Arrayable, ArrayAccess
 {
     public function __construct(protected array $fields = [])
     {

@@ -5,25 +5,23 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Exception;
-use Sigmie\Support\Contracts\Collection as CollectionInterface;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
-use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\Analyzers;
 use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\ConfigurableTokenizer;
 use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\Name;
-use Sigmie\Base\Contracts\RawRepresentation;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
+use function Sigmie\Helpers\ensure_collection;
 use Sigmie\Support\Collection;
 
-use function Sigmie\Helpers\ensure_collection;
+use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
 class Analysis implements Analyzers
 {
@@ -46,11 +44,6 @@ class Analysis implements Analyzers
         }
 
         $this->initProps();
-    }
-
-    private function allAnalyzers(): CollectionInterface
-    {
-        return $this->analyzers;
     }
 
     public function tokenizers(): CollectionInterface
@@ -288,38 +281,7 @@ class Analysis implements Analyzers
             $defaultAnalyzer = new DefaultAnalyzer();
         }
 
-        $analysis = new Analysis($defaultAnalyzer, $analyzers,);
-
-        return $analysis;
-    }
-
-    private function initProps()
-    {
-        if (!isset($this->filter)) {
-            $this->filter = (new Collection())->merge(
-                $this->allAnalyzers()
-                    ->map(fn (Analyzer $analyzer) => $analyzer->filters())
-                    ->flatten()
-                    ->mapToDictionary(fn (TokenFilter $filter) => [$filter->name() => $filter])
-            );
-        }
-
-        if (!isset($this->charFilter)) {
-            $this->charFilter = (new Collection())->merge(
-                $this->allAnalyzers()
-                    ->map(fn (Analyzer $analyzer) => $analyzer->charFilters())
-                    ->flatten()
-                    ->mapToDictionary(fn (ContractsCharFilter $filter) => [$filter->name() => $filter])
-            );
-        }
-
-        if (!isset($this->tokenizers)) {
-            $this->tokenizers = (new Collection())->merge(
-                $this->allAnalyzers()
-                    ->map(fn (Analyzer $analyzer) => $analyzer->tokenizer())
-                    ->mapToDictionary(fn (Name $analyzer) => [$analyzer->name() => $analyzer])
-            );
-        }
+        return new Analysis($defaultAnalyzer, $analyzers,);
     }
 
     public function toRaw(): array
@@ -360,13 +322,45 @@ class Analysis implements Analyzers
                 return [$analyzer->name() => $analyzer->toRaw()];
             })->toArray();
 
-        $result = [
+        return [
             'analyzer' => $analyzers,
             'filter' => $filter,
             'char_filter' => $charFilters,
             'tokenizer' => $tokenizer
         ];
+    }
 
-        return $result;
+    private function allAnalyzers(): CollectionInterface
+    {
+        return $this->analyzers;
+    }
+
+    private function initProps()
+    {
+        if (!isset($this->filter)) {
+            $this->filter = (new Collection())->merge(
+                $this->allAnalyzers()
+                    ->map(fn (Analyzer $analyzer) => $analyzer->filters())
+                    ->flatten()
+                    ->mapToDictionary(fn (TokenFilter $filter) => [$filter->name() => $filter])
+            );
+        }
+
+        if (!isset($this->charFilter)) {
+            $this->charFilter = (new Collection())->merge(
+                $this->allAnalyzers()
+                    ->map(fn (Analyzer $analyzer) => $analyzer->charFilters())
+                    ->flatten()
+                    ->mapToDictionary(fn (ContractsCharFilter $filter) => [$filter->name() => $filter])
+            );
+        }
+
+        if (!isset($this->tokenizers)) {
+            $this->tokenizers = (new Collection())->merge(
+                $this->allAnalyzers()
+                    ->map(fn (Analyzer $analyzer) => $analyzer->tokenizer())
+                    ->mapToDictionary(fn (Name $analyzer) => [$analyzer->name() => $analyzer])
+            );
+        }
     }
 }

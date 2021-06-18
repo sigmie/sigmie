@@ -7,7 +7,6 @@ namespace Sigmie\Base\Index;
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
-use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Contracts\Analyzer as ContractsAnalyzer;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Contracts\Type;

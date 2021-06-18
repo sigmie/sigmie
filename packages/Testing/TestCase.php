@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Testing;
 
 use Sigmie\Base\Index\AliasActions;
-use Sigmie\Base\Index\Index;
 use Sigmie\Sigmie;
 
 class TestCase extends \PHPUnit\Framework\TestCase

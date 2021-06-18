@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Base\Contracts;
 
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
-use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
-use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Index\Index;
 
 interface ManagedIndex

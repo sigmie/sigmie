@@ -12,7 +12,6 @@ use Sigmie\Base\Contracts\CharFilter;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
 use Sigmie\Support\Analysis\Tokenizer\Builder as TokenizerBuilder;
-use Sigmie\Support\Update\Update as UpdateBuilder;
 
 class AnalyzerUpdate
 {

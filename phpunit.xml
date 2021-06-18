@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <phpunit bootstrap="vendor/autoload.php"
+         colors="true"
          failOnRisky="true"
          failOnWarning="true"
          backupGlobals="false"
@@ -7,7 +8,9 @@
          convertErrorsToExceptions="true"
          convertNoticesToExceptions="true"
          convertWarningsToExceptions="true"
-         colors="true">
+         processIsolation="true"
+         verbose="true"
+         >
 
     <php>
       <env name="ES_HOST" value="elasticsearch:9200"/>

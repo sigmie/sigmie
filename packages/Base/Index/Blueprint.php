@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Contracts\Type;
 use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Mappings\Types\BaseType;
 use Sigmie\Base\Mappings\Types\Boolean;

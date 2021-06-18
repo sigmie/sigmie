@@ -23,6 +23,26 @@ trait Assertions
         $this->assertEquals(200, $code, "Failed to assert that index {$name} exists.");
     }
 
+    public function assertIndexNotExists(string $name)
+    {
+        try {
+            $res = $this->indexAPICall("/{$name}", 'HEAD');
+            $code = $res->code();
+        } catch (ElasticsearchException $e) {
+            $code = $e->getCode();
+        }
+
+        $this->assertEquals(404, $code, "Failed to assert that index {$name} doesn't exists.");
+    }
+
+    abstract public static function assertContains($needle, iterable $haystack, string $message = ''): void;
+
+    abstract public static function assertArrayHasKey($key, $array, string $message = ''): void;
+
+    abstract public static function assertEquals($expected, $actual, string $message = ''): void;
+
+    abstract public static function assertNotContains($needle, iterable $haystack, string $message = ''): void;
+
     protected function indexData(string $name): array
     {
         $json = $this->indexAPICall($name, 'GET')->json();
@@ -104,6 +124,27 @@ trait Assertions
         $this->assertContains($charFilter, $data['settings']['index']['analysis']['analyzer'][$analyzer]['char_filter']);
     }
 
+    protected function assertAnalyzerHasNotFilter(string $index, string $analyzer, string $filter)
+    {
+        $data = $this->indexData($index);
+
+        $this->assertNotContains($filter, $data['settings']['index']['analysis']['analyzer'][$analyzer]['filter']);
+    }
+
+    protected function assertAnalyzerHasNotCharFilter(string $index, string $analyzer, string $charFilter)
+    {
+        $data = $this->indexData($index);
+
+        $this->assertNotContains($charFilter, $data['settings']['index']['analysis']['analyzer'][$analyzer]['char_filter']);
+    }
+
+    protected function assertAnalyzerHasFilter(string $index, string $analyzer, string $filter)
+    {
+        $data = $this->indexData($index);
+
+        $this->assertContains($filter, $data['settings']['index']['analysis']['analyzer'][$analyzer]['filter']);
+    }
+
     protected function assertAnalyzerTokenizerIs(string $index, string $analyzer, string $tokenizer)
     {
         $data = $this->indexData($index);
@@ -131,7 +172,21 @@ trait Assertions
     {
         $data = $this->indexData($index);
 
-        $this->assertEmpty($data['settings']['index']['analysis']['analyzer']['default']['filter']);
+        $this->assertEmpty($data['settings']['index']['analysis']['analyzer'][$analyzer]['filter']);
+    }
+
+    protected function assertIndexAnalyzerHasTokenizer(string $index, string $analyzer, string $tokenizer)
+    {
+        $data = $this->indexData($index);
+
+        $this->assertEquals($tokenizer, $data['settings']['index']['analysis']['analyzer'][$analyzer]['tokenizer']);
+    }
+
+    protected function assertIndexAnalyzerCharFilterIsEmpty(string $index, string $analyzer)
+    {
+        $data = $this->indexData($index);
+
+        $this->assertEmpty($data['settings']['index']['analysis']['analyzer'][$analyzer]['char_filter']);
     }
 
     protected function assertIndexHasAnalyzer(string $index, string $analyzer)
@@ -198,10 +253,4 @@ trait Assertions
 
         $this->assertEquals($data['mappings']['properties'][$property]['type'], 'boolean');
     }
-
-    abstract public static function assertContains($needle, iterable $haystack, string $message = ''): void;
-
-    abstract public static function assertArrayHasKey($key, $array, string $message = ''): void;
-
-    abstract public static function assertEquals($expected, $actual, string $message = ''): void;
 }

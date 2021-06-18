@@ -24,8 +24,6 @@ abstract class TokenFilter implements TokenFilterInterface
         return $this->name;
     }
 
-    abstract protected function getValues(): array;
-
     public function value(): array
     {
         return array_merge(
@@ -36,4 +34,6 @@ abstract class TokenFilter implements TokenFilterInterface
             ]
         );
     }
+
+    abstract protected function getValues(): array;
 }

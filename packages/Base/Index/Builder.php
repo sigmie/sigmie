@@ -4,19 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use Carbon\Carbon;
-use Closure;
-use Sigmie\Base\Index\AliasedIndex;
-use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\MappingFilter;
 use Sigmie\Base\Analysis\CharFilter\PatternFilter;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\DefaultFilters;
-use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
-use Sigmie\Base\Analysis\TokenFilter\Stemmer;
-use Sigmie\Base\Analysis\TokenFilter\Stopwords;
-use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
 use Sigmie\Base\Contracts\HttpConnection;
@@ -24,9 +16,9 @@ use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\Tokenizer;
 use Sigmie\Base\Exceptions\MissingMapping;
 use Sigmie\Base\Index\Actions as IndexActions;
-use Sigmie\Support\Shared\Mappings;
-
 use function Sigmie\Helpers\index_name;
+
+use Sigmie\Support\Shared\Mappings;
 
 class Builder
 {
@@ -127,13 +119,6 @@ class Builder
         return $this;
     }
 
-    protected function throwUnlessMappingsDefined(): void
-    {
-        if ($this->dynamicMappings === false && isset($this->blueprintCallback) === false) {
-            throw new MissingMapping();
-        }
-    }
-
     public function create()
     {
         $this->throwUnlessMappingsDefined();
@@ -168,6 +153,13 @@ class Builder
         $index = $this->createIndex($index);
 
         $this->createAlias($index->name(), $this->alias);
+    }
+
+    protected function throwUnlessMappingsDefined(): void
+    {
+        if ($this->dynamicMappings === false && isset($this->blueprintCallback) === false) {
+            throw new MissingMapping();
+        }
     }
 
     protected function languageIsDefined(): bool

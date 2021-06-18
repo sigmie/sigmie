@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use Carbon\Carbon;
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\APIs\Calls\Reindex;
-use Sigmie\Base\Index\Index;
-use Sigmie\Base\Index\Mappings;
-use Sigmie\Base\Index\Settings;
 use Sigmie\Base\Mappings\Properties;
-use Sigmie\Support\Update\Update;
 use function Sigmie\Helpers\index_name;
-use function Sigmie\Helpers\name_configs;
+use Sigmie\Support\Update\Update;
 
 class AliasedIndex extends Index
 {

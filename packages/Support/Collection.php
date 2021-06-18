@@ -6,9 +6,9 @@ namespace Sigmie\Support;
 
 use Closure;
 use Doctrine\Common\Collections\ArrayCollection as DoctrineCollection;
-use Sigmie\Support\Contracts\Collection as CollectionInterface;
-
 use function Sigmie\Helpers\ensure_collection;
+
+use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
 class Collection extends DoctrineCollection implements CollectionInterface
 {
