@@ -18,6 +18,4 @@ trait TestConnection
 
         $this->setHttpConnection(new Connection($client));
     }
-
-    abstract protected function testId(): string;
 }

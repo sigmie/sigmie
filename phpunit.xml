@@ -1,33 +1,27 @@
 <?xml version="1.0"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd" backupGlobals="false" bootstrap="vendor/autoload.php" failOnRisky="true" failOnWarning="true" backupStaticAttributes="false" colors="true" verbose="false">
-  <coverage includeUncoveredFiles="true">
-    <include>
-      <directory suffix=".php">packages</directory>
-    </include>
-    <report>
-      <clover outputFile="build/coverage.xml"/>
-      <html outputDirectory="build/coverage-html"/>
-      <text outputFile="build/coverage.txt"/>
-    </report>
-  </coverage>
-  <logging/>
-  <php>
-    <env name="ES_HOST" value="elasticsearch:9200"/>
-  </php>
-  <testsuites>
+<phpunit bootstrap="vendor/autoload.php"
+         failOnRisky="true"
+         failOnWarning="true"
+         backupGlobals="false"
+         backupStaticAttributes="false"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         processIsolation="false"
+         colors="true">
 
-    <testsuite name="all">
-      <directory>tests</directory>
-    </testsuite>
+    <php>
+      <env name="ES_HOST" value="elasticsearch:9200"/>
+    </php>
 
-    <testsuite name="base">
-      <directory>tests/Base</directory>
-    </testsuite>
-    <testsuite name="http">
-      <directory>tests/Http</directory>
-    </testsuite>
-    <testsuite name="testing">
-      <directory>tests/Testing</directory>
-    </testsuite>
-  </testsuites>
+    <extensions>
+        <extension class="Sigmie\Testing\SigmieTestHooks"/>
+    </extensions>
+
+    <testsuites>
+        <testsuite name="Sigmie Test Suite">
+            <directory suffix="Test.php">./tests</directory>
+        </testsuite>
+    </testsuites>
+
 </phpunit>
