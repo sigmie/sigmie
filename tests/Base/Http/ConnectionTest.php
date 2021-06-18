@@ -16,8 +16,6 @@ use Sigmie\Testing\TestCase;
 
 class ConnectionTest extends TestCase
 {
-    use ClearIndices;
-
     /**
     * @test
     */

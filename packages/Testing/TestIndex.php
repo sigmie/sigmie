@@ -9,7 +9,7 @@ use Sigmie\Base\Index\Index;
 
 trait TestIndex
 {
-    use TestConnection, IndexActions, ClearIndices;
+    use TestConnection, IndexActions;
 
     private $testIndexName;
 

@@ -10,8 +10,6 @@ use Sigmie\Testing\TestCase;
 
 class TestCaseTest extends TestCase
 {
-    use ClearIndices;
-
     /**
      * @test
      */

@@ -15,7 +15,7 @@ use Sigmie\Testing\TestCase;
 
 class MappingsTest extends TestCase
 {
-    use Index, ClearIndices, AliasActions;
+    use Index, AliasActions;
 
     /**
      * @test

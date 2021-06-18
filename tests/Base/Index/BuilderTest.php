@@ -36,7 +36,7 @@ use Sigmie\Testing\TestCase;
 
 class BuilderTest extends TestCase
 {
-    use Index, ClearIndices, AliasActions;
+    use Index, AliasActions;
 
     /**
      * @test

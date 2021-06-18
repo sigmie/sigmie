@@ -67,14 +67,12 @@ trait Analyzer
 
     protected function assertAnalyzerTokenizerIsWordBoundaries(string $index, string $analyzer)
     {
-        $data = $this->indexData($index);
-
-        $this->assertAnalyzerTokenizerIs($index, $analyzer, 'standard');
+        $this->assertAnalyzerHasTokenizer($index, $analyzer, 'standard');
     }
 
     protected function assertAnalyzerTokenizerIsWhitespaces(string $index, string $analyzer)
     {
-        $this->assertAnalyzerTokenizerIs($index, $analyzer, 'whitespace');
+        $this->assertAnalyzerHasTokenizer($index, $analyzer, 'whitespace');
     }
 
     protected function assertAnalyzerCharFilterIsEmpty(string $index, string $analyzer)

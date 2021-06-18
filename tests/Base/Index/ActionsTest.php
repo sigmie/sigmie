@@ -13,7 +13,7 @@ use Sigmie\Testing\TestConnection;
 
 class ActionsTest extends TestCase
 {
-    use ClearIndices, IndexActions, TestConnection;
+    use IndexActions, TestConnection;
 
     public function setUp(): void
     {
