@@ -27,8 +27,6 @@ trait TestIndex
         return $this->getIndex($this->testIndexName);
     }
 
-    abstract protected function testId(): string;
-
     protected function index(): Index
     {
         return $this->getTestIndex();

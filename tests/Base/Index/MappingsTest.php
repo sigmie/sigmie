@@ -45,18 +45,6 @@ class MappingsTest extends TestCase
     use Index, ClearIndices, AliasActions;
 
     /**
-     * @var Sigmie
-     */
-    private $sigmie;
-
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        $this->sigmie = new Sigmie($this->httpConnection, $this->events);
-    }
-
-    /**
      * @test
      */
     public function analyzers_collection()

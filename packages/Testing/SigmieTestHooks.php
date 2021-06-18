@@ -4,6 +4,7 @@ namespace Sigmie\Testing;
 
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\TestListener;
+use PHPUnit\Runner\AfterTestFailureHook;
 use PHPUnit\Runner\AfterTestHook;
 use PHPUnit\Runner\BeforeTestHook;
 use Sigmie\Base\APIs\Calls\Cat;
@@ -28,6 +29,7 @@ class SigmieTestHooks implements AfterTestHook, BeforeTestHook
             $this->indexAPICall(implode(',', $names), 'DELETE');
         }
     }
+
 
     public function executeBeforeTest(string $test): void
     {

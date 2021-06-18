@@ -31,27 +31,15 @@ class UpdateTest extends TestCase
 {
     use Index, AliasActions;
 
-    /**
-     * @var Sigmie
-     */
-    private $sigmie;
-
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        $this->sigmie = new Sigmie($this->httpConnection, $this->events);
-    }
-
-    /**
-     * @test
-     */
-    public function foo()
-    {
-        //TODO optional naming use analyzer name as prefix
-        //GROUP char filter helpers like stripHTML into a trait
-        $this->assertTrue(true);
-    }
+    // /**
+    //  * @test
+    //  */
+    // public function foo()
+    // {
+    //     //TODO optional naming use analyzer name as prefix
+    //     //GROUP char filter helpers like stripHTML into a trait
+    //     $this->assertTrue(true);
+    // }
 
     /**
      * @test

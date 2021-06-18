@@ -23,7 +23,8 @@ class ConnectionTest extends TestCase
     */
     public function throws_elasticsearch_exception()
     {
-        $indexName = $this->testId() . '_foo';
+        $indexName = 'foo';
+
         $this->expectException(ElasticsearchException::class);
 
         $this->createIndex(new Index($indexName));

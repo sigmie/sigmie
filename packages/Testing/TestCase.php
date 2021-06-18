@@ -6,11 +6,13 @@ namespace Sigmie\Testing;
 
 use Sigmie\Base\Index\AliasActions;
 use Sigmie\Base\Index\Index;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Sigmie\Sigmie;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    use Testing, AliasActions;
+    use Testing, AliasActions, Assertions;
+
+    protected Sigmie $sigmie;
 
     public function setUp(): void
     {
@@ -19,6 +21,8 @@ class TestCase extends \PHPUnit\Framework\TestCase
         $uses = $this->usedTraits();
 
         $this->setUpSigmieTesting($uses);
+
+        $this->sigmie = new Sigmie($this->httpConnection);
     }
 
     public function tearDown(): void
@@ -28,13 +32,6 @@ class TestCase extends \PHPUnit\Framework\TestCase
         $uses = $this->usedTraits();
 
         $this->tearDownSigmieTesting($uses);
-    }
-
-    public function assertIndexExists(string $name)
-    {
-        $index = $this->getIndex($name);
-
-        $this->assertInstanceOf(Index::class, $index);
     }
 
     private function classUsesTrait($class, $trait): bool

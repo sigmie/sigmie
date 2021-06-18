@@ -16,7 +16,11 @@ class ElasticsearchException extends Exception
 
     public function __construct(ElasticsearchRequest $request, ElasticsearchResponse $response)
     {
-        parent::__construct(ucfirst($response->json()['error']['reason']) . '.', 1);
+        if (is_null($response->json())) {
+            parent::__construct('Undefined error', $response->code());
+        } else {
+            parent::__construct(ucfirst($response->json()['error']['reason']) . '.', $response->code());
+        }
 
         $this->request = $request;
         $this->response = $response;

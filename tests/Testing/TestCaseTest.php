@@ -17,26 +17,10 @@ class TestCaseTest extends TestCase
      */
     public function index_exists()
     {
-        $indexName = $this->testId() . '_foo';
+        $indexName = 'foo';
 
         $this->createIndex(new Index($indexName));
 
         $this->assertIndexExists($indexName);
-    }
-
-    /**
-     * @test
-     */
-    public function clear_indices_is_called_on_teardown(): void
-    {
-        $indexName = $this->testId() . '_foo';
-
-        $this->createIndex(new Index($indexName));
-
-        parent::tearDown();
-
-        $indicesNames = $this->listIndices()->map(fn (Index $index) => $index->name())->toArray();
-
-        $this->assertNotContains($indexName,$indicesNames);
     }
 }

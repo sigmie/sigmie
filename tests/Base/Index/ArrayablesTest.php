@@ -29,18 +29,6 @@ class ArrayablesTest extends TestCase
     use Index, AliasActions;
 
     /**
-     * @var Sigmie
-     */
-    private $sigmie;
-
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        $this->sigmie = new Sigmie($this->httpConnection);
-    }
-
-    /**
      * @test
      */
     public function char_filters()

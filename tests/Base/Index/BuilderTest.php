@@ -44,33 +44,6 @@ class BuilderTest extends TestCase
     use Index, ClearIndices, AliasActions;
 
     /**
-     * @var Sigmie
-     */
-    private $sigmie;
-
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        $this->sigmie = new Sigmie($this->httpConnection, $this->events);
-    }
-
-    /**
-     * @test
-     */
-    public function foo()
-    {
-        $this->sigmie->newIndex('foo')
-            ->stripHTML()
-            ->withoutMappings()
-            ->stopwords('foo_stopwords', ['foo', 'bar'])
-            ->create();
-
-        $oldData = $this->indexData('foo');
-        $this->assertArrayHasKey('foo_stopwords', $oldData['settings']['index']['analysis']['filter'],);
-    }
-
-    /**
      * @test
      */
     public function pattern_tokenizer()
@@ -80,15 +53,12 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('sigmie');
-
-        $this->assertEquals('sigmie_tokenizer', $data['settings']['index']['analysis']['analyzer']['default']['tokenizer']);
-        $this->assertArrayHasKey('sigmie_tokenizer', $data['settings']['index']['analysis']['tokenizer']);
-        $this->assertEquals([
+        $this->assertAnalyzerTokenizerIs('sigmie', 'default', 'sigmie_tokenizer');
+        $this->assertTokenizerEquals('sigmie', 'sigmie_tokenizer', [
             'type' => 'pattern',
             'pattern' => '/[ ]/',
             'class' => Pattern::class
-        ], $data['settings']['index']['analysis']['tokenizer']['sigmie_tokenizer']);
+        ]);
     }
 
     /**
@@ -101,9 +71,7 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('sigmie');
-
-        $this->assertEquals('letter', $data['settings']['index']['analysis']['analyzer']['default']['tokenizer']);
+        $this->assertAnalyzerTokenizerIs('sigmie', 'default', 'letter');
     }
 
     /**
@@ -116,14 +84,12 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('sigmie');
-
-        $this->assertArrayHasKey('sigmie_mapping_char_filter', $data['settings']['index']['analysis']['char_filter']);
-        $this->assertEquals([
+        $this->assertCharFilterExists('sigmie', 'sigmie_mapping_char_filter');
+        $this->assertCharFilterEquals('sigmie', 'sigmie_mapping_char_filter', [
             'type' => 'mapping',
             'mappings' => ['a => bar', 'f => foo'],
             'class' => MappingFilter::class
-        ], $data['settings']['index']['analysis']['char_filter']['sigmie_mapping_char_filter']);
+        ]);
     }
 
     /**
@@ -136,15 +102,13 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('sigmie');
-
-        $this->assertArrayHasKey('pattern_char_filter', $data['settings']['index']['analysis']['char_filter']);
-        $this->assertEquals([
+        $this->assertCharFilterExists('sigmie', 'pattern_char_filter');
+        $this->assertCharFilterEquals('sigmie', 'pattern_char_filter', [
             'pattern' => '/foo/',
             'type' => 'pattern_replace',
             'replacement' => '$1',
             'class' => PatternFilter::class
-        ], $data['settings']['index']['analysis']['char_filter']['pattern_char_filter']);
+        ]);
     }
 
     /**
@@ -159,7 +123,7 @@ class BuilderTest extends TestCase
 
         $data = $this->indexData('sigmie');
 
-        $this->assertContains('html_strip', $data['settings']['index']['analysis']['analyzer']['default']['char_filter']);
+        $this->assertAnalyzerHasCharFilter('sigmie', 'default', 'html_strip');
     }
 
     /**
@@ -172,15 +136,13 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('sigmie');
-
-        $this->assertEquals('some_name', $data['settings']['index']['analysis']['analyzer']['default']['tokenizer']);
-        $this->assertArrayHasKey('some_name', $data['settings']['index']['analysis']['tokenizer']);
-        $this->assertEquals([
+        $this->assertTokenizerExists('sigmie', 'some_name');
+        $this->assertAnalyzerTokenizerIs('sigmie', 'default', 'some_name');
+        $this->assertTokenizerEquals('sigmie', 'some_name', [
             'type' => 'standard',
             'max_token_length' => 40,
             'class' => WordBoundaries::class
-        ], $data['settings']['index']['analysis']['tokenizer']['some_name']);
+        ]);
     }
 
     /**
@@ -193,9 +155,7 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('sigmie');
-
-        $this->assertEquals('whitespace', $data['settings']['index']['analysis']['analyzer']['default']['tokenizer']);
+        $this->assertIndexAnalyzerTokenizerIsWhitespaces('sigmie', 'default');
     }
 
     /**
@@ -219,26 +179,24 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('sigmie');
+        $this->assertIndexHasAnalyzer('sigmie', 'default');
 
-        $this->assertArrayHasKey('analyzer', $data['settings']['index']['analysis']);
-        $this->assertArrayHasKey('default', $data['settings']['index']['analysis']['analyzer']);
+        $this->assertFilterExists('sigmie', 'german_stopwords');
+        $this->assertFilterExists('sigmie', 'german_stemmer');
 
-        $this->assertArrayHasKey('german_stopwords', $data['settings']['index']['analysis']['filter']);
-        $this->assertEquals([
+        $this->assertFilterEquals('sigmie', 'german_stopwords', [
             'type' => 'stop',
             'stopwords' => '_german_',
             'class' => GermanStopwords::class,
             'priority' => '0'
-        ], $data['settings']['index']['analysis']['filter']['german_stopwords']);
+        ]);
 
-        $this->assertArrayHasKey('german_stemmer', $data['settings']['index']['analysis']['filter']);
-        $this->assertEquals([
+        $this->assertFilterEquals('sigmie', 'german_stemmer', [
             'type' => 'stemmer',
             'language' => 'light_german',
             'class' => GermanStemmer::class,
             'priority' => '0'
-        ], $data['settings']['index']['analysis']['filter']['german_stemmer']);
+        ]);
     }
 
     /**
@@ -251,34 +209,32 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('sigmie');
+        $this->assertIndexHasAnalyzer('sigmie', 'default');
 
-        $this->assertArrayHasKey('analyzer', $data['settings']['index']['analysis']);
-        $this->assertArrayHasKey('default', $data['settings']['index']['analysis']['analyzer']);
+        $this->assertFilterExists('sigmie', 'greek_stopwords');
+        $this->assertFilterExists('sigmie', 'greek_lowercase');
+        $this->assertFilterExists('sigmie', 'greek_stemmer');
 
-        $this->assertArrayHasKey('greek_stopwords', $data['settings']['index']['analysis']['filter']);
-        $this->assertEquals([
-            'type' => 'stop',
-            'stopwords' => '_greek_',
-            'class' => GreekStopwords::class,
-            'priority' => '0'
-        ], $data['settings']['index']['analysis']['filter']['greek_stopwords']);
-
-        $this->assertArrayHasKey('greek_lowercase', $data['settings']['index']['analysis']['filter']);
-        $this->assertEquals([
-            'type' => 'lowercase',
-            'language' => 'greek',
-            'class' => Lowercase::class,
-            'priority' => '0'
-        ], $data['settings']['index']['analysis']['filter']['greek_lowercase']);
-
-        $this->assertArrayHasKey('greek_stemmer', $data['settings']['index']['analysis']['filter']);
-        $this->assertEquals([
+        $this->assertFilterEquals('sigmie', 'greek_stemmer', [
             'type' => 'stemmer',
             'language' => 'greek',
             'class' => GreekStemmer::class,
             'priority' => '0'
-        ], $data['settings']['index']['analysis']['filter']['greek_stemmer']);
+        ]);
+
+        $this->assertFilterEquals('sigmie', 'greek_lowercase', [
+            'type' => 'lowercase',
+            'language' => 'greek',
+            'class' => Lowercase::class,
+            'priority' => '0'
+        ]);
+
+        $this->assertFilterEquals('sigmie', 'greek_stopwords', [
+            'type' => 'stop',
+            'stopwords' => '_greek_',
+            'class' => GreekStopwords::class,
+            'priority' => '0'
+        ]);
     }
 
     /**
@@ -291,34 +247,31 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('sigmie');
+        $this->assertIndexHasAnalyzer('sigmie', 'default');
+        $this->assertFilterExists('sigmie', 'english_stopwords');
+        $this->assertFilterExists('sigmie', 'english_stemmer');
+        $this->assertFilterExists('sigmie', 'english_possessive_stemmer');
 
-        $this->assertArrayHasKey('analyzer', $data['settings']['index']['analysis']);
-        $this->assertArrayHasKey('default', $data['settings']['index']['analysis']['analyzer']);
-
-        $this->assertArrayHasKey('english_stopwords', $data['settings']['index']['analysis']['filter']);
-        $this->assertEquals([
+        $this->assertFilterEquals('sigmie', 'english_stopwords', [
             'type' => 'stop',
             'stopwords' => '_english_',
             'class' => EnglishStopwords::class,
             'priority' => '0'
-        ], $data['settings']['index']['analysis']['filter']['english_stopwords']);
+        ]);
 
-        $this->assertArrayHasKey('english_stemmer', $data['settings']['index']['analysis']['filter']);
-        $this->assertEquals([
+        $this->assertFilterEquals('sigmie', 'english_stemmer', [
             'type' => 'stemmer',
             'language' => 'english',
             'class' => EnglishStemmer::class,
             'priority' => '0'
-        ], $data['settings']['index']['analysis']['filter']['english_stemmer']);
+        ]);
 
-        $this->assertArrayHasKey('english_possessive_stemmer', $data['settings']['index']['analysis']['filter']);
-        $this->assertEquals([
+        $this->assertFilterEquals('sigmie', 'english_possessive_stemmer', [
             'type' => 'stemmer',
             'language' => 'possessive_english',
             'class' => PossessiveStemmer::class,
             'priority' => '0'
-        ], $data['settings']['index']['analysis']['filter']['english_possessive_stemmer']);
+        ]);
     }
 
     /**
@@ -334,10 +287,12 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('sigmie');
-
-        $this->assertArrayHasKey('sigmie_two_way_synonyms', $data['settings']['index']['analysis']['filter']);
-        $this->assertEquals([
+        $this->assertFilterExists('sigmie', 'sigmie_two_way_synonyms');
+        $this->assertFilterHasSynonyms('sigmie', 'sigmie_two_way_synonyms', [
+            'treasure, gem, gold, price',
+            'friend, buddy, partner'
+        ]);
+        $this->assertFilterEquals('sigmie', 'sigmie_two_way_synonyms', [
             'type' => 'synonym',
             'class' => TwoWaySynonyms::class,
             'priority' => '2',
@@ -345,7 +300,7 @@ class BuilderTest extends TestCase
                 'treasure, gem, gold, price',
                 'friend, buddy, partner'
             ]
-        ], $data['settings']['index']['analysis']['filter']['sigmie_two_way_synonyms']);
+        ]);
     }
 
     /**
@@ -360,17 +315,18 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('sigmie');
-
-        $this->assertArrayHasKey('sigmie_one_way_synonyms', $data['settings']['index']['analysis']['filter']);
-        $this->assertEquals([
+        $this->assertFilterExists('sigmie', 'sigmie_one_way_synonyms');
+        $this->assertFilterHasSynonyms('sigmie', 'sigmie_one_way_synonyms', [
+            'i-pod, i pod => ipod',
+        ]);
+        $this->assertFilterEquals('sigmie', 'sigmie_one_way_synonyms', [
             'type' => 'synonym',
             'class' => OneWaySynonyms::class,
             'priority' => '3',
             'synonyms' => [
                 'i-pod, i pod => ipod',
             ],
-        ], $data['settings']['index']['analysis']['filter']['sigmie_one_way_synonyms']);
+        ]);
     }
 
     /**
@@ -383,17 +339,16 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('sigmie');
-
-        $this->assertArrayHasKey('sigmie_stopwords', $data['settings']['index']['analysis']['filter']);
-        $this->assertEquals([
+        $this->assertFilterExists('sigmie', 'sigmie_stopwords');
+        $this->assertFilterHasStopwords('sigmie', 'sigmie_stopwords', ['about', 'after', 'again']);
+        $this->assertFilterEquals('sigmie', 'sigmie_stopwords', [
             'type' => 'stop',
             'class' => Stopwords::class,
             'priority' => '1',
             'stopwords' => [
                 'about', 'after', 'again'
             ]
-        ], $data['settings']['index']['analysis']['filter']['sigmie_stopwords']);
+        ]);
     }
 
     /**
@@ -409,10 +364,18 @@ class BuilderTest extends TestCase
             ],)
             ->withoutMappings()->create();
 
-        $data = $this->indexData('sigmie');
+        $this->assertFilterExists('sigmie', 'sigmie_stemmer_overrides');
+        $this->assertFilterHasStemming(
+            'sigmie',
+            'sigmie_stemmer_overrides',
+            [
+                'be, are => am',
+                'mice => mouse',
+                'foot => feet',
+            ]
+        );
 
-        $this->assertArrayHasKey('sigmie_stemmer_overrides', $data['settings']['index']['analysis']['filter']);
-        $this->assertEquals([
+        $this->assertFilterEquals('sigmie', 'sigmie_stemmer_overrides', [
             'type' => 'stemmer_override',
             'class' => Stemmer::class,
             'priority' => '4',
@@ -421,7 +384,7 @@ class BuilderTest extends TestCase
                 'mice => mouse',
                 'foot => feet',
             ]
-        ], $data['settings']['index']['analysis']['filter']['sigmie_stemmer_overrides']);
+        ]);
     }
 
     /**
@@ -433,13 +396,9 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData('sigmie');
-
-        $this->assertArrayHasKey('analyzer', $data['settings']['index']['analysis']);
-        $this->assertArrayHasKey('default', $data['settings']['index']['analysis']['analyzer']);
-        $this->assertArrayHasKey('filter', $data['settings']['index']['analysis']['analyzer']['default']);
-        $this->assertEquals('standard', $data['settings']['index']['analysis']['analyzer']['default']['tokenizer']);
-        $this->assertEmpty($data['settings']['index']['analysis']['analyzer']['default']['filter']);
+        $this->assertIndexHasAnalyzer('sigmie', 'default');
+        $this->assertIndexAnalyzerFilterIsEmpty('sigmie', 'default');
+        $this->assertIndexAnalyzerTokenizerIsWordBoundaries('sigmie', 'default');
     }
 
     /**
@@ -459,28 +418,25 @@ class BuilderTest extends TestCase
             })
             ->create();
 
-        $data = $this->indexData('sigmie');
+        $this->assertIndexHasMappings('sigmie');
 
-        $this->assertArrayHasKey('mappings', $data);
-        // $this->assertArrayHasKey('dynamic_templates', $data['mappings']);
+        $this->assertIndexPropertyExists('sigmie', 'title');
+        $this->assertIndexPropertyIsSearchAsYouType('sigmie', 'title');
 
-        $this->assertArrayHasKey('title', $data['mappings']['properties']);
-        $this->assertEquals($data['mappings']['properties']['title']['type'], 'search_as_you_type');
+        $this->assertIndexPropertyExists('sigmie', 'content');
+        $this->assertIndexPropertyIsUnstructuredText('sigmie', 'content');
 
-        $this->assertArrayHasKey('content', $data['mappings']['properties']);
-        $this->assertEquals($data['mappings']['properties']['content']['type'], 'text');
+        $this->assertIndexPropertyExists('sigmie', 'adults');
+        $this->assertIndexPropertyIsInteger('sigmie', 'adults');
 
-        $this->assertArrayHasKey('adults', $data['mappings']['properties']);
-        $this->assertEquals($data['mappings']['properties']['adults']['type'], 'integer');
+        $this->assertIndexPropertyExists('sigmie', 'price');
+        $this->assertIndexPropertyIsFloat('sigmie', 'price');
 
-        $this->assertArrayHasKey('price', $data['mappings']['properties']);
-        $this->assertEquals($data['mappings']['properties']['price']['type'], 'float');
+        $this->assertIndexPropertyExists('sigmie', 'created_at');
+        $this->assertIndexPropertyIsDate('sigmie', 'created_at');
 
-        $this->assertArrayHasKey('created_at', $data['mappings']['properties']);
-        $this->assertEquals($data['mappings']['properties']['created_at']['type'], 'date');
-
-        $this->assertArrayHasKey('is_valid', $data['mappings']['properties']);
-        $this->assertEquals($data['mappings']['properties']['is_valid']['type'], 'boolean');
+        $this->assertIndexPropertyExists('sigmie', 'is_valid');
+        $this->assertIndexPropertyIsBoolean('sigmie', 'is_valid');
     }
 
     // /**
@@ -571,8 +527,6 @@ class BuilderTest extends TestCase
      */
     public function index_name_prefix()
     {
-        Travel::to('2020-01-01 23:59:59');
-
         $this->sigmie->newIndex('sigmie')
             ->withoutMappings()
             ->shards(4)
@@ -583,12 +537,5 @@ class BuilderTest extends TestCase
 
         $this->assertEquals(3, $index->getSettings()->getReplicaShards());
         $this->assertEquals(4, $index->getSettings()->getPrimaryShards());
-    }
-
-    private function indexData(string $name): array
-    {
-        $json = $this->indexAPICall($name, 'GET')->json();
-        $indexName = array_key_first($json);
-        return $json[$indexName];
     }
 }
