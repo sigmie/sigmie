@@ -26,7 +26,7 @@ use Sigmie\Testing\TestCase;
 
 class ArrayablesTest extends TestCase
 {
-    use Index, ClearIndices, AliasActions;
+    use Index, AliasActions;
 
     /**
      * @var Sigmie
@@ -37,7 +37,7 @@ class ArrayablesTest extends TestCase
     {
         parent::setUp();
 
-        $this->sigmie = new Sigmie($this->httpConnection, $this->events);
+        $this->sigmie = new Sigmie($this->httpConnection);
     }
 
     /**

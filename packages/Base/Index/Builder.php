@@ -25,7 +25,6 @@ use Sigmie\Base\Contracts\Tokenizer;
 use Sigmie\Base\Exceptions\MissingMapping;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Support\Shared\Mappings;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 use function Sigmie\Helpers\index_name;
 
@@ -45,9 +44,8 @@ class Builder
 
     protected array $charFilter = [];
 
-    public function __construct(HttpConnection $connection, EventDispatcherInterface $events)
+    public function __construct(HttpConnection $connection)
     {
-        $this->events = $events;
         $this->tokenizer = new WordBoundaries();
 
         $this->setHttpConnection($connection);

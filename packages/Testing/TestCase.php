@@ -4,33 +4,21 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
-use Sigmie\Base\Contracts\Events;
 use Sigmie\Base\Index\AliasActions;
 use Sigmie\Base\Index\Index;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    use Testing, Events, AliasActions;
+    use Testing, AliasActions;
 
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->events = new EventDispatcher;
-$this->events->addListener('index.created', function (Index $index) {
-            $this->createAlias($index->name(), $this->testId());
-        });
-
         $uses = $this->usedTraits();
 
         $this->setUpSigmieTesting($uses);
-
-        $indices = $this->getIndices('*');
-
-        foreach ($indices as $index) {
-            $index->delete();
-        }
     }
 
     public function tearDown(): void
@@ -38,13 +26,6 @@ $this->events->addListener('index.created', function (Index $index) {
         parent::tearDown();
 
         $uses = $this->usedTraits();
-
-        // $indices = $this->getIndices($this->testId());
-        $indices = $this->getIndices('*');
-
-        foreach ($indices as $index) {
-            $index->delete();
-        }
 
         $this->tearDownSigmieTesting($uses);
     }
@@ -54,14 +35,6 @@ $this->events->addListener('index.created', function (Index $index) {
         $index = $this->getIndex($name);
 
         $this->assertInstanceOf(Index::class, $index);
-    }
-
-    protected function testId(): string
-    {
-        $class = strtolower(static::class);
-        $class = str_replace('\\', '_', $class);
-
-        return  $class . '_' . $this->getName();
     }
 
     private function classUsesTrait($class, $trait): bool

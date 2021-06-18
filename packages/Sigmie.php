@@ -25,20 +25,14 @@ class Sigmie implements ManagerInterface
 {
     use IndexActions;
 
-    public function __construct(Connection $httpConnection, EventDispatcherInterface $events = null)
+    public function __construct(Connection $httpConnection)
     {
         $this->httpConnection = $httpConnection;
-
-        if (is_null($events)) {
-            $events = new EventDispatcher;
-        }
-
-        $this->events = $events;
     }
 
     public function newIndex(string $name): Builder
     {
-        $builder = new Index\Builder($this->httpConnection, $this->events);
+        $builder = new Index\Builder($this->httpConnection);
 
         return $builder->alias($name);
     }
