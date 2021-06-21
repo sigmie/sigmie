@@ -27,7 +27,7 @@ use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Base\APIs\Calls\Index;
+use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Exceptions\MissingMapping;
 use Sigmie\Base\Index\AliasActions;
 use Sigmie\Base\Index\Blueprint;

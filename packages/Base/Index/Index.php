@@ -8,7 +8,7 @@ use Closure;
 use Exception;
 use Generator;
 use Sigmie\Base\Aliases\Alias;
-use Sigmie\Base\APIs\Calls\Count as CountAPI;
+use Sigmie\Base\APIs\Count as CountAPI;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Contracts\Name;

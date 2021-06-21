@@ -7,7 +7,7 @@ namespace Sigmie\Base\Index;
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
-use Sigmie\Base\APIs\Calls\Reindex;
+use Sigmie\Base\APIs\Reindex;
 use Sigmie\Base\Mappings\Properties;
 use function Sigmie\Helpers\index_name;
 use Sigmie\Support\Update\Update;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use Sigmie\Base\APIs\Calls\Alias as AliasAPI;
+use Sigmie\Base\APIs\Alias as AliasAPI;
 use Sigmie\Base\Exceptions\ElasticsearchException;
 
 trait AliasActions

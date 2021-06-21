@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\APIs;
 
-use Sigmie\Base\APIs\Calls\Bulk;
+use Sigmie\Base\APIs\Bulk;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestConnection;

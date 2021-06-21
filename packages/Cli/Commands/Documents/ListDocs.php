@@ -2,8 +2,8 @@
 
 namespace Sigmie\Cli\Commands\Documents;
 
-use Sigmie\Base\APIs\Calls\Mget;
-use Sigmie\Base\APIs\Calls\Search;
+use Sigmie\Base\APIs\Mget;
+use Sigmie\Base\APIs\Search;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Index\Index;
 use Sigmie\Base\Search\Query;

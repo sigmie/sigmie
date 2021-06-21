@@ -4,8 +4,8 @@ namespace Sigmie\Testing;
 
 use PHPUnit\Runner\AfterTestHook;
 use PHPUnit\Runner\BeforeTestHook;
-use Sigmie\Base\APIs\Calls\Cat;
-use Sigmie\Base\APIs\Calls\Index;
+use Sigmie\Base\APIs\Cat;
+use Sigmie\Base\APIs\Index;
 
 class SigmieTestHooks implements AfterTestHook, BeforeTestHook
 {

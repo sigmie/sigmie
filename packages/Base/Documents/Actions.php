@@ -8,11 +8,11 @@ use function Amp\Parallel\Worker\enqueue;
 use function Amp\Promise\all;
 use function Amp\Promise\wait;
 use Exception;
-use Sigmie\Base\APIs\Calls\Bulk as BulkAPI;
-use Sigmie\Base\APIs\Calls\Delete as DeleteAPI;
-use Sigmie\Base\APIs\Calls\Mget as MgetAPI;
-use Sigmie\Base\APIs\Calls\Search as SearchAPI;
-use Sigmie\Base\APIs\Calls\Update as UpdateAPI;
+use Sigmie\Base\APIs\Bulk as BulkAPI;
+use Sigmie\Base\APIs\Delete as DeleteAPI;
+use Sigmie\Base\APIs\Mget as MgetAPI;
+use Sigmie\Base\APIs\Search as SearchAPI;
+use Sigmie\Base\APIs\Update as UpdateAPI;
 use Sigmie\Base\Contracts\API;
 
 use Sigmie\Base\Contracts\DocumentCollection;

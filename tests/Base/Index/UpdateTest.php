@@ -10,7 +10,7 @@ use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
-use Sigmie\Base\APIs\Calls\Index;
+use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentsCollection;
 use Sigmie\Base\Index\AliasActions;

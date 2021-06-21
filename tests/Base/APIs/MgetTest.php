@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Test\Base\APIs;
 
-use Sigmie\Base\APIs\Calls\Mget as MgetAPI;
+use Sigmie\Base\APIs\Mget as MgetAPI;
 use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentsCollection as DocumentsDocumentCollection;

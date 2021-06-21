@@ -3,10 +3,10 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\APIs\Requests;
+namespace Sigmie\Base\Http\Requests;
 
 use Psr\Http\Message\ResponseInterface;
-use Sigmie\Base\APIs\Responses\Mget as MgetResponse;
+use Sigmie\Base\Http\Responses\Mget as MgetResponse;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\ElasticsearchRequest as HttpElasticsearchRequest;

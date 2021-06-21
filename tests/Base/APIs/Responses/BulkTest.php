@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\APIs\Responses;
 
-use Sigmie\Base\APIs\Calls\Bulk as BulkAPI;
-use Sigmie\Base\APIs\Responses\Bulk;
+use Sigmie\Base\APIs\Bulk as BulkAPI;
+use Sigmie\Base\Http\Responses\Bulk;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestIndex;
 

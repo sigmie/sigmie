@@ -6,7 +6,7 @@ namespace Sigmie\Tests\Base\Index;
 
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Base\APIs\Calls\Index;
+use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Index\AliasActions;
 use Sigmie\Base\Index\Blueprint;
 use Sigmie\Base\Index\Mappings;

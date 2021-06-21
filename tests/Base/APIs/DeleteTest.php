@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\APIs;
 
-use Sigmie\Base\APIs\Calls\Delete as DeleteAPI;
+use Sigmie\Base\APIs\Delete as DeleteAPI;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Index\Index;
 use Sigmie\Testing\TestCase;

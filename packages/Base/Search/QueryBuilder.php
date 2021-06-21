@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Search;
 
 use Closure;
-use Sigmie\Base\APIs\Calls\Search as SearchAPI;
+use Sigmie\Base\APIs\Search as SearchAPI;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Base\Index\Index;
 use Sigmie\Base\Search\Clauses\Boolean;

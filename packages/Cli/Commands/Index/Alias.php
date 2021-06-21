@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Cli\Commands\Index;
 
-use Sigmie\Base\APIs\Calls\Alias as AliasAPI;
+use Sigmie\Base\APIs\Alias as AliasAPI;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Index\AliasActions;
 use Sigmie\Cli\BaseCommand;

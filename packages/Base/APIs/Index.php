@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\APIs\Calls;
+namespace Sigmie\Base\APIs;
 
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
 
-trait Cluster
+trait Index
 {
     use API;
 
-    protected function clusterAPICall(string $path): ElasticsearchResponse
+    public function indexAPICall(string $index, string $method, ?array $body = null): ElasticsearchResponse
     {
-        $uri = new Uri('/_cluster' . $path);
+        $uri = new Uri($index);
 
-        $esRequest = new ElasticsearchRequest('GET', $uri, []);
+        $esRequest = new ElasticsearchRequest($method, $uri, $body);
 
         return $this->httpCall($esRequest);
     }

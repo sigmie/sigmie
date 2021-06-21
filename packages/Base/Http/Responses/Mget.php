@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\APIs\Responses;
+namespace Sigmie\Base\Http\Responses;
 
 use LogicException;
 use Psr\Http\Message\ResponseInterface;

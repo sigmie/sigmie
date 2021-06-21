@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Exception;
-use Sigmie\Base\APIs\Calls\Cat as CatAPI;
-use Sigmie\Base\APIs\Calls\Index as IndexAPI;
+use Sigmie\Base\APIs\Cat as CatAPI;
+use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\Contracts\Events;
 use Sigmie\Base\Exceptions\ElasticsearchException;
 use Sigmie\Support\Collection;
