@@ -7,6 +7,7 @@ namespace Sigmie\Base\Index;
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
+use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\APIs\Reindex;
 use Sigmie\Base\Mappings\Properties;
 use function Sigmie\Helpers\index_name;
@@ -14,7 +15,7 @@ use Sigmie\Support\Update\Update;
 
 class AliasedIndex extends Index
 {
-    use Reindex;
+    use Reindex, IndexAPI;
 
     public function __construct(
         string $identifier,
@@ -66,9 +67,8 @@ class AliasedIndex extends Index
             new Properties($props)
         );
 
-        $newName = index_name($this->alias);
+        $newName = index_name($this->alias) . 'new';
         $oldName = $this->identifier;
-        $this->identifier = $newName;
 
         $updateArray = $update->toRaw();
 
@@ -77,17 +77,14 @@ class AliasedIndex extends Index
         $this->settings->replicaShards = 0;
         $this->settings->config('refresh_interval', '-1');
 
+        $this->disableWrite($oldName);
+
+        $this->identifier = $newName;
         $this->createIndex($this);
 
         $this->reindexAPICall($oldName, $newName);
 
-        // $newDocsCount = count($index);
-
-        // if ($newDocsCount !== $oldDocsCount) {
-        //     throw new Exception('Docs count missmatch');
-        // }
-
-        $res = $this->indexAPICall("/{$newName}/_settings", 'PUT', [
+        $this->indexAPICall("/{$newName}/_settings", 'PUT', [
             'number_of_replicas' => $updateArray['settings']['number_of_replicas'],
             'refresh_interval' => null
         ]);
@@ -98,6 +95,20 @@ class AliasedIndex extends Index
         $this->deleteIndex($oldName);
 
         return $this->getIndex($this->alias);
+    }
+
+    public function disableWrite(): void
+    {
+        $this->indexAPICall("/{$this->name()}/_settings", 'PUT', [
+            'index' => ['blocks.write' => true]
+        ]);
+    }
+
+    public function enableWrite(): void
+    {
+        $this->indexAPICall("/{$this->name()}/_settings", 'PUT', [
+            'index' => ['blocks.write' => false]
+        ]);
     }
 
     protected function defaultAnalyzer(): Analyzer

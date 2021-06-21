@@ -67,8 +67,8 @@ class Sigmie
         return new Sigmie(new Connection($client));
     }
 
-    protected function httpCall(JSONRequestInterface $request, string $responseClass = ElasticsearchResponse::class): ElasticsearchResponse
+    protected function httpCall(JSONRequestInterface $request): ElasticsearchResponse
     {
-        return ($this->httpConnection)($request, $responseClass);
+        return ($this->httpConnection)($request);
     }
 }
