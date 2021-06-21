@@ -13,7 +13,7 @@ use Sigmie\Base\Documents\DocumentsCollection;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Support\Collection;
 
-class MgetResponse extends ElasticsearchResponse implements DocumentCollectionInterface
+class Mget extends ElasticsearchResponse implements DocumentCollectionInterface
 {
     use DocumentCollection;
 

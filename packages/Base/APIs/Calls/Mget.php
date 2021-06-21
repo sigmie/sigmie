@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Base\APIs\Calls;
 
 use GuzzleHttp\Psr7\Uri;
-use Sigmie\Base\APIs\Requests\MgetRequest;
-use Sigmie\Base\APIs\Responses\MgetResponse;
+use Sigmie\Base\APIs\Requests\Mget as MgetRequest;
+use Sigmie\Base\APIs\Responses\Mget as MgetResponse;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\RequiresIndexAware;
 
