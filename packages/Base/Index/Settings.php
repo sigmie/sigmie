@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use Sigmie\Base\Contracts\RawRepresentation;
+use Sigmie\Base\Contracts\Raw;
 
-class Settings implements RawRepresentation
+class Settings implements Raw
 {
     public int $primaryShards;
 

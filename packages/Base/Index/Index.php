@@ -7,7 +7,6 @@ namespace Sigmie\Base\Index;
 use Closure;
 use Exception;
 use Generator;
-use Sigmie\Base\Aliases\Alias;
 use Sigmie\Base\APIs\Count as CountAPI;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
@@ -21,7 +20,7 @@ use Sigmie\Support\Collection;
 
 class Index implements DocumentCollectionInterface, Name
 {
-    use CountAPI, DocumentsActions, IndexActions, Searchable, API, AliasActions, Alias;
+    use CountAPI, DocumentsActions, IndexActions, Searchable, API, AliasActions;
 
     protected ?int $count;
 

@@ -6,13 +6,12 @@ namespace Sigmie\Base\APIs;
 
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
-use Sigmie\Base\Contracts\RequiresIndexAware;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
 
 trait Delete
 {
-    use API, RequiresIndexAware;
+    use API;
 
     protected function deleteAPICall(string $identifier, bool $async = false): ElasticsearchResponse
     {

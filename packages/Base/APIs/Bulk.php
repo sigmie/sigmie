@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Base\APIs;
 
 use GuzzleHttp\Psr7\Uri;
+use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\Requests\Bulk as BulkRequest;
 use Sigmie\Base\Http\Responses\Bulk as BulkResponse;
-use Sigmie\Base\Contracts\API;
 
 trait Bulk
 {

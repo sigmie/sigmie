@@ -2,7 +2,7 @@
 
 namespace Sigmie\Base\Contracts;
 
-interface RawRepresentation
+interface Raw
 {
     public function toRaw(): array;
 

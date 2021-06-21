@@ -24,13 +24,6 @@ trait Index
         $this->assertEquals(200, $code, "Failed to assert that index {$name} exists.");
     }
 
-    protected function assertIndexHasMappings(string $index)
-    {
-        $data = $this->indexData($index);
-
-        $this->assertArrayHasKey('mappings', $data, "Failed to assert that index {$index} has mappings.");
-    }
-
     public function assertIndexNotExists(string $name)
     {
         try {
@@ -41,6 +34,13 @@ trait Index
         }
 
         $this->assertEquals(404, $code, "Failed to assert that index {$name} not exists.");
+    }
+
+    protected function assertIndexHasMappings(string $index)
+    {
+        $data = $this->indexData($index);
+
+        $this->assertArrayHasKey('mappings', $data, "Failed to assert that index {$index} has mappings.");
     }
 
     protected function assertAnalyzerExists(string $index, string $analyzer)

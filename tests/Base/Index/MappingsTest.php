@@ -10,7 +10,6 @@ use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Index\AliasActions;
 use Sigmie\Base\Index\Blueprint;
 use Sigmie\Base\Index\Mappings;
-use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
 
 class MappingsTest extends TestCase

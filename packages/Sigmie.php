@@ -6,7 +6,6 @@ namespace Sigmie;
 
 use Exception;
 use GuzzleHttp\Psr7\Uri;
-use Sigmie\Base\Contracts\Manager as ManagerInterface;
 use Sigmie\Base\Http\Connection as Connection;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Base\Index;
@@ -19,7 +18,7 @@ use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Support\Contracts\Collection;
 
-class Sigmie implements ManagerInterface
+class Sigmie
 {
     use IndexActions;
 
@@ -35,10 +34,9 @@ class Sigmie implements ManagerInterface
         return $builder->alias($name);
     }
 
-    public function index(string $name): AliasedIndex 
+    public function index(string $name): AliasedIndex
     {
         return $this->getIndex($name);
-
     }
 
     public function indices(): Collection

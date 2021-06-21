@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing\Assertions;
 
-use Sigmie\Base\Exceptions\ElasticsearchException;
 
 trait Analyzer
 {

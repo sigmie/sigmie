@@ -7,12 +7,11 @@ namespace Sigmie\Base\APIs;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
-use Sigmie\Base\Contracts\RequiresIndexAware;
 use Sigmie\Base\Http\ElasticsearchRequest;
 
 trait Reindex
 {
-    use API, RequiresIndexAware;
+    use API;
 
     public function reindexAPICall(string $source, string $dest): ElasticsearchResponse
     {

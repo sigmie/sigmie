@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Sigmie\Base\Analysis\Tokenizers;
 
 use Sigmie\Base\Contracts\ConfigurableTokenizer;
-use Sigmie\Base\Contracts\RawRepresentation;
+use Sigmie\Base\Contracts\Raw;
 
 use function Sigmie\Helpers\name_configs;
 
-class WordBoundaries implements ConfigurableTokenizer, RawRepresentation
+class WordBoundaries implements ConfigurableTokenizer, Raw
 {
     public function __construct(
         protected string $name = 'standard',

@@ -7,13 +7,12 @@ namespace Sigmie\Base\Index;
 use Exception;
 use Sigmie\Base\APIs\Cat as CatAPI;
 use Sigmie\Base\APIs\Index as IndexAPI;
-use Sigmie\Base\Contracts\Events;
 use Sigmie\Base\Exceptions\ElasticsearchException;
 use Sigmie\Support\Collection;
 
 trait Actions
 {
-    use CatAPI, IndexAPI, Events;
+    use CatAPI, IndexAPI;
 
     protected function createIndex(Index $index): Index
     {
@@ -28,8 +27,6 @@ trait Actions
         $this->indexAPICall("/{$index->name()}", 'PUT', $body);
 
         $index->setHttpConnection($this->httpConnection);
-
-        $this->events()->dispatch($index, 'index.created');
 
         return $index;
     }

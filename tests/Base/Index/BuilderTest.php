@@ -31,7 +31,6 @@ use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Exceptions\MissingMapping;
 use Sigmie\Base\Index\AliasActions;
 use Sigmie\Base\Index\Blueprint;
-use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
 
 class BuilderTest extends TestCase
