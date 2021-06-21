@@ -24,6 +24,7 @@ trait Actions
             'mappings' => $mappings->toRaw()
         ];
 
+        ray($body);
         $this->indexAPICall("/{$index->name()}", 'PUT', $body);
 
         $index->setHttpConnection($this->httpConnection);

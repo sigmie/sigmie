@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\CharFilter;
 
-use Sigmie\Base\Priority;
+use Sigmie\Base\Shared\Priority;
 
 use function Sigmie\Helpers\name_configs;
 

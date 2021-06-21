@@ -20,7 +20,7 @@ class PossessiveStemmer extends TokenFilter
         return 'stemmer';
     }
 
-    public static function fromRaw(array $raw)
+    public static function fromRaw(array $raw):static
     {
         [$name, $config] = name_configs($raw);
 

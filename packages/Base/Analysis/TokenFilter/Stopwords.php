@@ -14,7 +14,7 @@ class Stopwords extends TokenFilter
         return 'stop';
     }
 
-    public static function fromRaw(array $raw)
+    public static function fromRaw(array $raw): static
     {
         [$name, $configs] = name_configs($raw);
 

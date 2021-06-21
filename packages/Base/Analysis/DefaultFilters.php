@@ -7,6 +7,7 @@ namespace Sigmie\Base\Analysis;
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
+use Sigmie\Base\Analysis\TokenFilter\Synonyms;
 use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
 use Sigmie\Base\Contracts\Language;
 
@@ -14,9 +15,11 @@ trait DefaultFilters
 {
     protected ?Stopwords $stopwords = null;
 
-    protected ?TwoWaySynonyms $twoWaySynonyms = null;
+    protected ?Synonyms $twoWaySynonyms = null;
 
-    protected ?OneWaySynonyms $oneWaySynonyms = null;
+    protected ?Synonyms $oneWaySynonyms = null;
+
+    protected ?Synonyms $synonyms = null;
 
     protected ?Stemmer $stemming = null;
 
@@ -36,14 +39,14 @@ trait DefaultFilters
 
     public function twoWaySynonyms(string $name, array $synonyms,): self
     {
-        $this->twoWaySynonyms = new TwoWaySynonyms($name, $synonyms);
+        $this->twoWaySynonyms = new Synonyms($name, $synonyms);
 
         return $this;
     }
 
     public function oneWaySynonyms(string $name, array $synonyms): self
     {
-        $this->oneWaySynonyms = new OneWaySynonyms($name, $synonyms);
+        $this->oneWaySynonyms = new Synonyms($name, $synonyms);
 
         return $this;
     }
@@ -64,12 +67,12 @@ trait DefaultFilters
             $results[$this->stopwords->name()] = $this->stopwords;
         }
 
-        if ($this->twoWaySynonyms instanceof TwoWaySynonyms) {
+        if ($this->twoWaySynonyms instanceof Synonyms) {
             $this->twoWaySynonyms->setPriority(2);
             $results[$this->twoWaySynonyms->name()] = $this->twoWaySynonyms;
         }
 
-        if ($this->oneWaySynonyms instanceof OneWaySynonyms) {
+        if ($this->oneWaySynonyms instanceof Synonyms) {
             $this->oneWaySynonyms->setPriority(3);
             $results[$this->oneWaySynonyms->name()] = $this->oneWaySynonyms;
         }

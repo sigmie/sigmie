@@ -181,14 +181,12 @@ class BuilderTest extends TestCase
         $this->assertFilterEquals('sigmie', 'german_stopwords', [
             'type' => 'stop',
             'stopwords' => '_german_',
-            'class' => GermanStopwords::class,
             'priority' => '0'
         ]);
 
         $this->assertFilterEquals('sigmie', 'german_stemmer', [
             'type' => 'stemmer',
             'language' => 'light_german',
-            'class' => GermanStemmer::class,
             'priority' => '0'
         ]);
     }
@@ -212,21 +210,18 @@ class BuilderTest extends TestCase
         $this->assertFilterEquals('sigmie', 'greek_stemmer', [
             'type' => 'stemmer',
             'language' => 'greek',
-            'class' => GreekStemmer::class,
             'priority' => '0'
         ]);
 
         $this->assertFilterEquals('sigmie', 'greek_lowercase', [
             'type' => 'lowercase',
             'language' => 'greek',
-            'class' => Lowercase::class,
             'priority' => '0'
         ]);
 
         $this->assertFilterEquals('sigmie', 'greek_stopwords', [
             'type' => 'stop',
             'stopwords' => '_greek_',
-            'class' => GreekStopwords::class,
             'priority' => '0'
         ]);
     }
@@ -249,21 +244,18 @@ class BuilderTest extends TestCase
         $this->assertFilterEquals('sigmie', 'english_stopwords', [
             'type' => 'stop',
             'stopwords' => '_english_',
-            'class' => EnglishStopwords::class,
             'priority' => '0'
         ]);
 
         $this->assertFilterEquals('sigmie', 'english_stemmer', [
             'type' => 'stemmer',
             'language' => 'english',
-            'class' => EnglishStemmer::class,
             'priority' => '0'
         ]);
 
         $this->assertFilterEquals('sigmie', 'english_possessive_stemmer', [
             'type' => 'stemmer',
             'language' => 'possessive_english',
-            'class' => PossessiveStemmer::class,
             'priority' => '0'
         ]);
     }
@@ -288,7 +280,6 @@ class BuilderTest extends TestCase
         ]);
         $this->assertFilterEquals('sigmie', 'sigmie_two_way_synonyms', [
             'type' => 'synonym',
-            'class' => TwoWaySynonyms::class,
             'priority' => '2',
             'synonyms' => [
                 'treasure, gem, gold, price',
@@ -315,7 +306,6 @@ class BuilderTest extends TestCase
         ]);
         $this->assertFilterEquals('sigmie', 'sigmie_one_way_synonyms', [
             'type' => 'synonym',
-            'class' => OneWaySynonyms::class,
             'priority' => '3',
             'synonyms' => [
                 'i-pod, i pod => ipod',
@@ -337,7 +327,6 @@ class BuilderTest extends TestCase
         $this->assertFilterHasStopwords('sigmie', 'sigmie_stopwords', ['about', 'after', 'again']);
         $this->assertFilterEquals('sigmie', 'sigmie_stopwords', [
             'type' => 'stop',
-            'class' => Stopwords::class,
             'priority' => '1',
             'stopwords' => [
                 'about', 'after', 'again'
@@ -371,7 +360,6 @@ class BuilderTest extends TestCase
 
         $this->assertFilterEquals('sigmie', 'sigmie_stemmer_overrides', [
             'type' => 'stemmer_override',
-            'class' => Stemmer::class,
             'priority' => '4',
             'rules' => [
                 'be, are => am',

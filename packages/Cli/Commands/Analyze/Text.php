@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Cli\Commands\Analyze;
 
-use Sigmie\Base\APIs\Calls\Alias as AliasAPI;
-use Sigmie\Base\APIs\Calls\Analyze;
+use Sigmie\Base\APIs\Alias as AliasAPI;
+use Sigmie\Base\APIs\Analyze;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Index\AliasActions;
 use Sigmie\Cli\BaseCommand;

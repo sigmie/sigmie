@@ -16,6 +16,7 @@ use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\Tokenizer;
 use Sigmie\Base\Exceptions\MissingMapping;
 use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Base\Analysis\Analysis;
 use function Sigmie\Helpers\index_name;
 
 use Sigmie\Support\Shared\Mappings;
@@ -150,7 +151,7 @@ class Builder
 
         $index = new AliasedIndex($indexName, $this->alias, [], $settings, $mappings);
 
-        $index = $this->createIndex($index);
+    $index = $this->createIndex($index);
 
         $this->createAlias($index->name(), $this->alias);
     }

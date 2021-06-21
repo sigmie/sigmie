@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base;
+namespace Sigmie\Base\Shared;
 
 trait Priority
 {

@@ -9,10 +9,13 @@ use Sigmie\Base\Contracts\Analyzer as AnalyzerInterface;
 use Sigmie\Base\Contracts\CharFilter;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\Priority;
+use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
-use Sigmie\Base\Name;
+use Sigmie\Base\Shared\Name;
 use function Sigmie\Helpers\ensure_collection;
+use function Sigmie\Helpers\name_configs;
+
 use Sigmie\Support\Collection;
 
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
@@ -39,6 +42,15 @@ class Analyzer implements AnalyzerInterface
 
         $this->filters = ensure_collection($filters);
         $this->charFilters = ensure_collection($charFilters);
+    }
+
+    public static function fromRaw(array $raw): static
+    {
+        [$name, $values] = name_configs($raw);
+
+        //TODO implement
+
+        return new static($name);
     }
 
     public function removeFilter(string $name): void

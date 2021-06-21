@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Sigmie\Base\Contracts\Raw;
+use Sigmie\Base\Analysis\Analysis;
 
 class Settings implements Raw
 {

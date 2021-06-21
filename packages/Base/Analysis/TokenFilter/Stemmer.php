@@ -13,7 +13,7 @@ class Stemmer extends TokenFilter
         return 'stemmer_override';
     }
 
-    public static function fromRaw(array $raw)
+    public static function fromRaw(array $raw): static
     {
         [$name, $configs] = name_configs($raw);
         $settings = [];

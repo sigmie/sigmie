@@ -20,7 +20,7 @@ class Lowercase extends TokenFilter
         return 'lowercase';
     }
 
-    public static function fromRaw(array $raw)
+    public static function fromRaw(array $raw): static
     {
         [$name, $config] = name_configs($raw);
 

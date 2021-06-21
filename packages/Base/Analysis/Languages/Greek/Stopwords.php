@@ -15,7 +15,7 @@ class Stopwords extends TokenFilter
         parent::__construct('greek_stopwords', [], $priority);
     }
 
-    public static function fromRaw(array $raw)
+    public static function fromRaw(array $raw): static
     {
         [$name, $config] = name_configs($raw);
 

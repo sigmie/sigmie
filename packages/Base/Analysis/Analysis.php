@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Index;
+namespace Sigmie\Base\Analysis;
 
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
+use Sigmie\Base\Analysis\TokenFilter\TokenFilter as TokenFilterTokenFilter;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Contracts\Analyzers;
@@ -16,6 +17,7 @@ use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\ConfigurableTokenizer;
 use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\Name;
+use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
 use function Sigmie\Helpers\ensure_collection;
@@ -23,7 +25,7 @@ use Sigmie\Support\Collection;
 
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
-class Analysis implements Analyzers
+class Analysis implements Analyzers, Raw
 {
     protected CollectionInterface $analyzers;
 
@@ -143,24 +145,6 @@ class Analysis implements Analyzers
         return $this->allAnalyzers();
     }
 
-    public function createAnalyzer(string $name, Tokenizer $tokenizer,): Analyzer
-    {
-        $charFilters = new Collection($this->charFilters);
-
-        $charFilterNames = $charFilters->map(function (ContractsCharFilter $filter) {
-            return $filter->name();
-        })->toArray();
-
-        $this->analyzerName = $name;
-        $this->tokenizers = $tokenizer;
-        $analyzer = new Analyzer($name, $this->tokenizers, [
-            ...$this->filters
-        ], $charFilterNames);
-
-        $this->analyzers[$name] = $analyzer;
-
-        return $analyzer;
-    }
 
     public function setAnalyzer(Analyzer $analyzer)
     {
@@ -209,20 +193,7 @@ class Analysis implements Analyzers
 
         foreach ($rawFilters as $name => $filter) {
 
-            if (isset($filter['class']) === false) {
-                //TODO create new raw filter
-                continue;
-            }
-
-            $class = $filter['class'];
-
-            if (class_exists($class)) {
-                $class = $filter['class'];
-
-                $filterInstance = $class::fromRaw([$name => $filter]);
-
-                $filters[$name] = $filterInstance;
-            }
+            $filters[$name] = TokenFilterTokenFilter::fromRaw([$name => $filter]);
         }
 
         foreach ($rawChar as $name => $filter) {

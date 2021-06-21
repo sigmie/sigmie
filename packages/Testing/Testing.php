@@ -16,10 +16,6 @@ trait Testing
             $this->setupTestConnection();
         }
 
-        if (isset($uses[ClearIndices::class])) {
-            $this->clearIndices();
-        }
-
         if (isset($uses[TestIndex::class])) {
             $this->createTestIndex();
         }
@@ -27,8 +23,5 @@ trait Testing
 
     protected function tearDownSigmieTesting(array $uses)
     {
-        if (isset($uses[ClearIndices::class])) {
-            $this->clearIndices();
-        }
     }
 }

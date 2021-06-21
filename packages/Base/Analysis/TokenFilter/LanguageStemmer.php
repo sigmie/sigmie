@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Analysis\TokenFilter;
 
 use Sigmie\Base\Contracts\TokenFilter;
-use Sigmie\Base\Priority;
+use Sigmie\Base\Shared\Priority;
 
 abstract class LanguageStemmer implements TokenFilter
 {

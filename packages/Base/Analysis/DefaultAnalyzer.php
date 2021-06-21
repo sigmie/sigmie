@@ -28,9 +28,4 @@ class DefaultAnalyzer extends Analyzer
             $charFilters
         );
     }
-
-    public static function fromRaw(Tokenizer $tokenizer, $analyzerFilters, $charFilters)
-    {
-        return new static($tokenizer, $analyzerFilters, $charFilters);
-    }
 }
