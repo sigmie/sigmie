@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index\Update;
 
-use Sigmie\Base\Index\AliasActions;
+use Sigmie\Support\Alias\Actions;
 use Sigmie\Base\Index\Index;
 
 class Plan
 {
-    use AliasActions;
+    use Actions;
 
     protected string $prefix;
 

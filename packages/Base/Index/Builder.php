@@ -15,7 +15,7 @@ use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\Tokenizer;
 use Sigmie\Base\Exceptions\MissingMapping;
-use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Base\Analysis\Analysis;
 use function Sigmie\Helpers\index_name;
 
@@ -23,7 +23,7 @@ use Sigmie\Support\Shared\Mappings;
 
 class Builder
 {
-    use IndexActions, AliasActions, DefaultFilters, Mappings;
+    use IndexActions, Actions, DefaultFilters, Mappings;
 
     protected int $replicas = 2;
 

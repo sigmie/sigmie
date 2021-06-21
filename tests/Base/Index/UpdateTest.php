@@ -13,7 +13,7 @@ use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentsCollection;
-use Sigmie\Base\Index\AliasActions;
+use Sigmie\Support\Alias\Actions;
 use Sigmie\Base\Index\Blueprint;
 use function Sigmie\Helpers\name_configs;
 use Sigmie\Support\Update\Update as Update;
@@ -22,7 +22,7 @@ use Sigmie\Testing\TestCase;
 
 class UpdateTest extends TestCase
 {
-    use Index, AliasActions;
+    use Index, Actions;
 
     /**
      * @test

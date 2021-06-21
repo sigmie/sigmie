@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Index;
+namespace Sigmie\Support\Alias;
 
 use Sigmie\Base\APIs\Alias as AliasAPI;
 use Sigmie\Base\Exceptions\ElasticsearchException;
 
-trait AliasActions
+trait Actions
 {
     use AliasAPI;
 

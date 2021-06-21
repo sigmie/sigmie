@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
-use Sigmie\Base\Index\AliasActions;
 use Sigmie\Sigmie;
+use Sigmie\Base\Index\Actions;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    use Testing, AliasActions, Assertions;
+    use Testing, Actions, Assertions;
 
     protected Sigmie $sigmie;
 

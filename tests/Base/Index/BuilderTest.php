@@ -29,13 +29,13 @@ use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Exceptions\MissingMapping;
-use Sigmie\Base\Index\AliasActions;
+use Sigmie\Support\Alias\Actions;
 use Sigmie\Base\Index\Blueprint;
 use Sigmie\Testing\TestCase;
 
 class BuilderTest extends TestCase
 {
-    use Index, AliasActions;
+    use Index, Actions;
 
     /**
      * @test

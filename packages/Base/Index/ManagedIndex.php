@@ -14,7 +14,7 @@ use Sigmie\Base\Contracts\ManagedIndex as ManagedIndexInterface;
 
 class ManagedIndex implements ManagedIndexInterface
 {
-    use DefaultFilters, Actions, AliasActions;
+    use DefaultFilters, Actions, Actions;
 
     protected array $filters = [];
 

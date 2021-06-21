@@ -11,7 +11,7 @@ use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Contracts\ConfigurableTokenizer;
-use Sigmie\Base\Index\AliasActions;
+use Sigmie\Support\Alias\Actions;
 use Sigmie\Base\Index\Blueprint;
 use Sigmie\Base\Index\DynamicMappings;
 use Sigmie\Base\Index\Mappings;
@@ -24,7 +24,7 @@ use Sigmie\Testing\TestCase;
 
 class ArrayablesTest extends TestCase
 {
-    use Index, AliasActions;
+    use Index, Actions;
 
     /**
      * @test

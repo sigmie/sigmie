@@ -3,7 +3,7 @@
 namespace Sigmie\Cli\Commands\Documents;
 
 use Sigmie\Base\APIs\Mget;
-use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Base\Index\Index;
 use Sigmie\Cli\BaseCommand;
 use Sigmie\Cli\Outputs\DocumentTable;

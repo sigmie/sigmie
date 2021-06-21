@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Tests;
 
-use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Base\Index\Index;
 use Sigmie\Support\Contracts\Collection;
 use Sigmie\Testing\TestCase;

@@ -14,13 +14,13 @@ use Sigmie\Base\Contracts\Name;
 use Sigmie\Base\Documents\Actions as DocumentsActions;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentsCollection;
-use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Base\Search\Searchable;
 use Sigmie\Support\Collection;
 
 class Index implements DocumentCollectionInterface, Name
 {
-    use CountAPI, DocumentsActions, IndexActions, Searchable, API, AliasActions;
+    use CountAPI, DocumentsActions, IndexActions, Searchable, API, Actions;
 
     protected ?int $count;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
-use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Support\Alias\Actions as IndexActions;
 
 trait Testing
 {

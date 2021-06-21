@@ -36,7 +36,7 @@ abstract class TokenFilter implements TokenFilterInterface, Raw
             'stop' => Stopwords::fromRaw($raw),
             'synonym' => Synonyms::fromRaw($raw),
             'stemmer_override' => Stemmer::fromRaw($raw),
-            default => throw new Exception('Filter type not matched')
+            default => Generic::fromRaw($raw) 
         };
     }
 
