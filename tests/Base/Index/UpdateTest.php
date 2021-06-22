@@ -31,7 +31,7 @@ class UpdateTest extends TestCase
     {
         $this->sigmie->newIndex('foo')
             ->withoutMappings()
-            ->stopwords('foo_stopwords', ['foo', 'bar'])
+            ->stopwords(['foo', 'bar'], 'foo_stopwords')
             ->create();
 
         $this->assertAnalyzerHasFilter('foo', 'default', 'foo_stopwords');
@@ -53,7 +53,7 @@ class UpdateTest extends TestCase
     {
         $this->sigmie->newIndex('foo')
             ->withoutMappings()
-            ->stopwords('demo', ['foo', 'bar'])
+            ->stopwords(['foo', 'bar'], 'demo')
             ->stripHTML()
             ->create();
 
@@ -265,9 +265,9 @@ class UpdateTest extends TestCase
     {
         $this->sigmie->newIndex('foo')
             ->withoutMappings()
-            ->oneWaySynonyms('bar_name', [
+            ->synonyms([
                 'ipod' => ['i-pod', 'i pod']
-            ])
+            ], 'bar_name',)
             ->create();
 
         $this->assertFilterExists('foo', 'bar_name');
@@ -277,9 +277,9 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->oneWaySynonyms('bar_name', [
+            $update->synonyms([
                 'mickey' => ['mouse', 'goofy'],
-            ]);
+            ], 'bar_name',);
 
             return $update;
         });
@@ -297,11 +297,11 @@ class UpdateTest extends TestCase
     {
         $this->sigmie->newIndex('foo')
             ->withoutMappings()
-            ->stemming('bar_name', [
+            ->stemming([
                 'am' => ['be', 'are'],
                 'mouse' => ['mice'],
                 'feet' => ['foot'],
-            ],)
+            ], 'bar_name')
             ->create();
 
         $this->assertFilterExists('foo', 'bar_name');
@@ -313,9 +313,9 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->stemming('bar_name', [
+            $update->stemming([
                 'mickey' => ['mouse', 'goofy'],
-            ],);
+            ], 'bar_name');
 
             return $update;
         });
@@ -333,10 +333,10 @@ class UpdateTest extends TestCase
     {
         $this->sigmie->newIndex('foo')
             ->withoutMappings()
-            ->twoWaySynonyms('foo_two_way_synonyms', [
+            ->synonyms([
                 ['treasure', 'gem', 'gold', 'price'],
                 ['friend', 'buddy', 'partner']
-            ])
+            ], 'foo_two_way_synonyms',)
             ->create();
 
         $this->assertFilterExists('foo', 'foo_two_way_synonyms');
@@ -347,7 +347,7 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->twoWaySynonyms('foo_two_way_synonyms', [['john', 'doe']]);
+            $update->synonyms([['john', 'doe']], 'foo_two_way_synonyms',);
 
             return $update;
         });
@@ -364,13 +364,13 @@ class UpdateTest extends TestCase
     {
         $this->sigmie->newIndex('foo')
             ->withoutMappings()
-            ->stopwords('foo_stopwords', ['foo', 'bar', 'baz'])
+            ->stopwords(['foo', 'bar', 'baz'], 'foo_stopwords',)
             ->create();
 
         $this->assertFilterExists('foo', 'foo_stopwords');
 
         $this->sigmie->index('foo')->update(function (Update $update) {
-            $update->stopwords('foo_stopwords', ['john', 'doe']);
+            $update->stopwords(['john', 'doe'], 'foo_stopwords',);
 
             return $update;
         });
@@ -388,10 +388,10 @@ class UpdateTest extends TestCase
 
         $this->sigmie->newIndex('foo')
             ->withoutMappings()
-            ->stopwords('foo_stopwords', ['foo', 'bar', 'baz'])
+            ->stopwords(['foo', 'bar', 'baz'], 'foo_stopwords',)
             ->create();
 
-        $updatedIndex = $this->sigmie->index('foo')->update(function (Update $update) {
+        $this->sigmie->index('foo')->update(function (Update $update) {
         });
     }
 

@@ -10,49 +10,70 @@ use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\TokenFilter\Synonyms;
 use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
 use Sigmie\Base\Contracts\Language;
+use Sigmie\Base\Contracts\TokenFilter;
+use Sigmie\Support\Collection as SupportCollection;
+use Sigmie\Support\Contracts\Collection;
+
+use function Sigmie\Helpers\random_letters;
 
 trait DefaultFilters
 {
-    protected ?Stopwords $stopwords = null;
+    protected Collection $defaultFilters;
 
-    protected ?Synonyms $twoWaySynonyms = null;
+    private int $priority = 1;
 
-    protected ?Synonyms $oneWaySynonyms = null;
-
-    protected ?Synonyms $synonyms = null;
-
-    protected ?Stemmer $stemming = null;
-
-    public function stemming(string $name, array $stemming,): self
+    private function randomSuffix(string $name): string
     {
-        $this->stemming = new Stemmer($name, $stemming);
+        return $name . '_' . random_letters();
+    }
+
+    private function initFilters(): void
+    {
+        $this->defaultFilters  = $this->defaultFilters ?? new SupportCollection();
+    }
+
+    public function stemming(array $stemming, null|string $name = null,): self
+    {
+        $name = $name ?? $this->randomSuffix('stemming');
+
+        $this->addFilter(new Stemmer($name, $stemming));
 
         return $this;
     }
 
-    public function stopwords(string $name, array $stopwords,): self
+    public function stopwords(array $stopwords, null|string $name = null,): self
     {
-        $this->stopwords = new Stopwords($name, $stopwords);
+        $name = $name ?? $this->randomSuffix('stopwords');
+
+        $this->addFilter(new Stopwords($name, $stopwords));
 
         return $this;
     }
 
-    public function twoWaySynonyms(string $name, array $synonyms,): self
+    private function addFilter(TokenFilter $tokenFilter)
     {
-        $this->twoWaySynonyms = new Synonyms($name, $synonyms);
+        $this->initFilters();
 
-        return $this;
+        $tokenFilter->setPriority($this->priority);
+
+        $this->defaultFilters->set($tokenFilter->name(), $tokenFilter);
+
+        $this->priority++;
     }
 
-    public function oneWaySynonyms(string $name, array $synonyms): self
+    public function synonyms(array $synonyms, null|string $name = null,): self
     {
-        $this->oneWaySynonyms = new Synonyms($name, $synonyms);
+        $name = $name ?? $this->randomSuffix('synonyms');
+
+        $this->addFilter(new Synonyms($name, $synonyms));
 
         return $this;
     }
 
     public function language(Language $language): self
     {
+        $this->initFilters();
+
         $this->language = $language;
 
         return $this;
@@ -60,28 +81,8 @@ trait DefaultFilters
 
     public function defaultFilters(): array
     {
-        $results = [];
+        $this->initFilters();
 
-        if ($this->stopwords instanceof Stopwords) {
-            $this->stopwords->setPriority(1);
-            $results[$this->stopwords->name()] = $this->stopwords;
-        }
-
-        if ($this->twoWaySynonyms instanceof Synonyms) {
-            $this->twoWaySynonyms->setPriority(2);
-            $results[$this->twoWaySynonyms->name()] = $this->twoWaySynonyms;
-        }
-
-        if ($this->oneWaySynonyms instanceof Synonyms) {
-            $this->oneWaySynonyms->setPriority(3);
-            $results[$this->oneWaySynonyms->name()] = $this->oneWaySynonyms;
-        }
-
-        if ($this->stemming instanceof Stemmer) {
-            $this->stemming->setPriority(4);
-            $results[$this->stemming->name()] = $this->stemming;
-        }
-
-        return $results;
+        return $this->defaultFilters->toArray();
     }
 }

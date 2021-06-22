@@ -17,6 +17,17 @@ namespace Sigmie\Helpers {
         return "{$prefix}_{$timestamp}";
     }
 
+    function random_letters(int $count = 3): string
+    {
+        $result = [];
+
+        for ($x = 1; $x <= $count; $x++) {
+            $result[] = chr(mt_rand(97, 122));
+        }
+
+        return implode('', $result);
+    }
+
     function name_configs(array $values): array
     {
         if (count($values) > 1) {

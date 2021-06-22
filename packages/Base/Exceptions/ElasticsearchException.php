@@ -15,9 +15,6 @@ class ElasticsearchException extends Exception
         protected ElasticsearchResponse $response,
         ?string $message = null,
     ) {
-
-        $message = $message ?? ucfirst($response->json()['error']['reason']) . '.';
-
         parent::__construct($message, $response->code());
     }
 }

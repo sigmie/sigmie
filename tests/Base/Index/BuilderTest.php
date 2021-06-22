@@ -255,10 +255,10 @@ class BuilderTest extends TestCase
     public function two_way_synonyms()
     {
         $this->sigmie->newIndex('sigmie')
-            ->twoWaySynonyms('sigmie_two_way_synonyms', [
+            ->synonyms([
                 ['treasure', 'gem', 'gold', 'price'],
                 ['friend', 'buddy', 'partner']
-            ])
+            ], 'sigmie_two_way_synonyms',)
             ->withoutMappings()
             ->create();
 
@@ -269,7 +269,7 @@ class BuilderTest extends TestCase
         ]);
         $this->assertFilterEquals('sigmie', 'sigmie_two_way_synonyms', [
             'type' => 'synonym',
-            'priority' => '2',
+            'priority' => '1',
             'synonyms' => [
                 'treasure, gem, gold, price',
                 'friend, buddy, partner'
@@ -280,12 +280,30 @@ class BuilderTest extends TestCase
     /**
      * @test
      */
+    public function token_filter_random_suffix()
+    {
+        $this->sigmie->newIndex('sigmie')
+            ->synonyms([
+                'ipod' => ['i-pod', 'i pod']
+            ])
+            ->withoutMappings()
+            ->create();
+
+        $data = $this->indexData('sigmie');
+        [$name] = array_keys($data['settings']['index']['analysis']['filter']);
+
+        $this->assertMatchesRegularExpression('/synonyms_[a-z]{3}$/', $name);
+    }
+
+    /**
+     * @test
+     */
     public function one_way_synonyms()
     {
         $this->sigmie->newIndex('sigmie')
-            ->oneWaySynonyms('sigmie_one_way_synonyms', [
+            ->synonyms([
                 'ipod' => ['i-pod', 'i pod']
-            ])
+            ], 'sigmie_one_way_synonyms',)
             ->withoutMappings()
             ->create();
 
@@ -295,7 +313,7 @@ class BuilderTest extends TestCase
         ]);
         $this->assertFilterEquals('sigmie', 'sigmie_one_way_synonyms', [
             'type' => 'synonym',
-            'priority' => '3',
+            'priority' => '1',
             'synonyms' => [
                 'i-pod, i pod => ipod',
             ],
@@ -308,7 +326,7 @@ class BuilderTest extends TestCase
     public function stopwords()
     {
         $this->sigmie->newIndex('sigmie')
-            ->stopwords('sigmie_stopwords', ['about', 'after', 'again'])
+            ->stopwords(['about', 'after', 'again'], 'sigmie_stopwords')
             ->withoutMappings()
             ->create();
 
@@ -329,11 +347,11 @@ class BuilderTest extends TestCase
     public function stemming()
     {
         $this->sigmie->newIndex('sigmie')
-            ->stemming('sigmie_stemmer_overrides', [
+            ->stemming([
                 'am' => ['be', 'are'],
                 'mouse' => ['mice'],
                 'feet' => ['foot'],
-            ],)
+            ], 'sigmie_stemmer_overrides')
             ->withoutMappings()->create();
 
         $this->assertFilterExists('sigmie', 'sigmie_stemmer_overrides');
@@ -349,7 +367,7 @@ class BuilderTest extends TestCase
 
         $this->assertFilterEquals('sigmie', 'sigmie_stemmer_overrides', [
             'type' => 'stemmer_override',
-            'priority' => '4',
+            'priority' => '1',
             'rules' => [
                 'be, are => am',
                 'mice => mouse',

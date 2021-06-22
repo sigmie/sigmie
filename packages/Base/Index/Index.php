@@ -17,6 +17,7 @@ use Sigmie\Base\Documents\DocumentsCollection;
 use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Base\Search\Searchable;
 use Sigmie\Support\Collection;
+use Sigmie\Support\Index\AliasedIndex;
 
 class Index implements DocumentCollectionInterface, Name
 {

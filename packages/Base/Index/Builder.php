@@ -17,6 +17,8 @@ use Sigmie\Base\Contracts\Tokenizer;
 use Sigmie\Support\Exceptions\MissingMapping;
 use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Base\Analysis\Analysis;
+use Sigmie\Support\Index\AliasedIndex;
+
 use function Sigmie\Helpers\index_name;
 
 use Sigmie\Support\Shared\Mappings;

@@ -25,7 +25,9 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
 
     public function exception(ElasticsearchRequest $request): Exception
     {
-        return  new ElasticsearchException($request, $this);
+        $message = is_null($this->json()) ? "Request failed with code {$this->code()}." : ucfirst($this->json()['error']['reason']);
+
+        return  new ElasticsearchException($request, $this, $message);
     }
 
     private function hasErrorKey()

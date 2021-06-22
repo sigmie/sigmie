@@ -10,7 +10,7 @@ use Sigmie\Base\Http\Connection as Connection;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Base\Index;
 use Sigmie\Base\Index\Actions as IndexActions;
-use Sigmie\Base\Index\AliasedIndex;
+use Sigmie\Support\Index\AliasedIndex;
 use Sigmie\Base\Index\Builder;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\Contracts\JSONRequest as JSONRequestInterface;

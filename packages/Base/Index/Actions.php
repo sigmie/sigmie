@@ -9,6 +9,7 @@ use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\Exceptions\ElasticsearchException;
 use Sigmie\Support\Collection;
 use Sigmie\Support\Exception\MultipleIndices;
+use Sigmie\Support\Index\AliasedIndex;
 
 trait Actions
 {

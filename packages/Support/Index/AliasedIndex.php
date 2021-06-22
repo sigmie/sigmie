@@ -2,16 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Index;
+namespace Sigmie\Support\Index;
 
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\APIs\Reindex;
+use Sigmie\Base\Index\Index;
 use Sigmie\Base\Mappings\Properties;
 use function Sigmie\Helpers\index_name;
 use Sigmie\Support\Update\Update;
+use Sigmie\Base\Index\Settings;
+use Sigmie\Base\Index\Mappings;
 
 class AliasedIndex extends Index
 {
@@ -27,7 +30,7 @@ class AliasedIndex extends Index
         parent::__construct($identifier, $aliases, $settings, $mappings);
     }
 
-    public function update(callable $update): Index
+    public function update(callable $update): AliasedIndex
     {
         /** @var  Update $update */
         $update = $update(new Update($this->settings->analysis->analyzers()));
@@ -77,11 +80,10 @@ class AliasedIndex extends Index
         $this->settings->replicaShards = 0;
         $this->settings->config('refresh_interval', '-1');
 
+        $this->disableWrite($oldName);
 
         $this->identifier = $newName;
         $this->createIndex($this);
-
-        $this->disableWrite($oldName);
 
         $this->reindexAPICall($oldName, $newName);
 
