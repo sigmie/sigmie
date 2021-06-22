@@ -14,7 +14,7 @@ use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
 use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\Tokenizer;
-use Sigmie\Base\Exceptions\MissingMapping;
+use Sigmie\Support\Exceptions\MissingMapping;
 use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Base\Analysis\Analysis;
 use function Sigmie\Helpers\index_name;
@@ -151,7 +151,7 @@ class Builder
 
         $index = new AliasedIndex($indexName, $this->alias, [], $settings, $mappings);
 
-    $index = $this->createIndex($index);
+        $index = $this->createIndex($index);
 
         $this->createAlias($index->name(), $this->alias);
     }
@@ -159,7 +159,7 @@ class Builder
     protected function throwUnlessMappingsDefined(): void
     {
         if ($this->dynamicMappings === false && isset($this->blueprintCallback) === false) {
-            throw new MissingMapping();
+            throw MissingMapping::forAlias($this->alias);
         }
     }
 

@@ -77,10 +77,11 @@ class AliasedIndex extends Index
         $this->settings->replicaShards = 0;
         $this->settings->config('refresh_interval', '-1');
 
-        $this->disableWrite($oldName);
 
         $this->identifier = $newName;
         $this->createIndex($this);
+
+        $this->disableWrite($oldName);
 
         $this->reindexAPICall($oldName, $newName);
 

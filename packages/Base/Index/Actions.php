@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use Exception;
 use Sigmie\Base\APIs\Cat as CatAPI;
 use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\Exceptions\ElasticsearchException;
 use Sigmie\Support\Collection;
+use Sigmie\Support\Exception\MultipleIndices;
 
 trait Actions
 {
@@ -42,7 +42,8 @@ trait Actions
             $res = $this->indexAPICall("/{$alias}", 'GET', ['require_alias' => true]);
 
             if (count($res->json()) > 1) {
-                throw new Exception("Multiple indices found for alias {$alias}.");
+                //TODO this depends on support
+                throw MultipleIndices::forAlias($alias);
             }
 
             $data = array_values($res->json())[0];

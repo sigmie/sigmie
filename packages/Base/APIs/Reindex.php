@@ -8,6 +8,7 @@ use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\ElasticsearchRequest;
+use Sigmie\Base\Http\Requests\Reindex as RequestsReindex;
 
 trait Reindex
 {
@@ -23,7 +24,7 @@ trait Reindex
         $uri = new Uri("/_reindex");
         $uri = Uri::withQueryValue($uri, 'refresh', 'true');
 
-        $esRequest = new ElasticsearchRequest('POST', $uri, $body);
+        $esRequest = new RequestsReindex('POST', $uri, $body);
 
         return $this->httpCall($esRequest);
     }

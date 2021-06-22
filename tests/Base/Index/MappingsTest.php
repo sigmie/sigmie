@@ -7,9 +7,9 @@ namespace Sigmie\Tests\Base\Index;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Index;
-use Sigmie\Support\Alias\Actions;
 use Sigmie\Base\Index\Blueprint;
 use Sigmie\Base\Index\Mappings;
+use Sigmie\Support\Alias\Actions;
 use Sigmie\Testing\TestCase;
 
 class MappingsTest extends TestCase
