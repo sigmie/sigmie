@@ -95,7 +95,7 @@ trait Collection
 
     public function forAll(Closure $p): self
     {
-        $this->collection->forAll($p);
+        $this->collection->each($p);
 
         return $this;
     }

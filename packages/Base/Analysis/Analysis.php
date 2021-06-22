@@ -87,7 +87,7 @@ class Analysis implements Analyzers, Raw
     {
         $analyzers = ensure_collection($analyzers);
 
-        $analyzers->forAll(function (Analyzer $analyzer) {
+        $analyzers->each(function (Analyzer $analyzer) {
             $this->setAnalyzer($analyzer);
         });
 
