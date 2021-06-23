@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Support\Contracts;
 
+use ArrayAccess;
 use Closure;
+use Countable;
 use Doctrine\Common\Collections\Collection as DoctrineCollection;
+use IteratorAggregate;
 
-interface Collection
+interface Collection extends Countable, IteratorAggregate, ArrayAccess
 {
     public function flatten(int $depth = INF): self;
 

@@ -15,7 +15,6 @@
     ],
     "require": {
         "php": "^8.0",
-        "doctrine/collections": "^1.6",
         "guzzlehttp/guzzle": "^7.2",
         "symfony/console": "^5.2",
         "symfony/event-dispatcher": "^5.2",

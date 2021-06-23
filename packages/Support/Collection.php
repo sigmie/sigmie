@@ -138,12 +138,12 @@ class Collection implements CollectionInterface
 
     public function first(): mixed
     {
-        return reset($this->elements);
+        return (reset($this->elements)) ?: null;
     }
 
     public function last(): mixed
     {
-        return end($this->elements);
+        return (end($this->elements)) ?: null;
     }
 
     public function key(): mixed
@@ -185,17 +185,17 @@ class Collection implements CollectionInterface
         return new static($this->elements);
     }
 
-    public function offsetExists($offset)
+    public function offsetExists(mixed $offset): bool
     {
         return $this->containsKey($offset);
     }
 
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset): mixed
     {
         return $this->get($offset);
     }
 
-    public function offsetSet($offset, $value)
+    public function offsetSet(mixed $offset, mixed $value): void
     {
         if (!isset($offset)) {
             $this->add($value);
@@ -206,7 +206,7 @@ class Collection implements CollectionInterface
         $this->set($offset, $value);
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset(mixed $offset): void
     {
         $this->remove($offset);
     }
