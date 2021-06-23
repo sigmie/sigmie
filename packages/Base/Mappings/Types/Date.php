@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Mappings\Types;
 
+use Sigmie\Base\Mappings\Type;
 
-class Date extends BaseType
+class Date extends Type
 {
     protected array $formats = [];
 

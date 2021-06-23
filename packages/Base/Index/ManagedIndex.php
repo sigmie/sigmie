@@ -16,7 +16,7 @@ class ManagedIndex implements ManagedIndexInterface
 {
     use DefaultFilters, Actions, Actions;
 
-    protected array $defaultFilters = [];
+    protected array $charFilters = [];
 
     public function __construct(protected Index $index)
     {
@@ -25,13 +25,13 @@ class ManagedIndex implements ManagedIndexInterface
         $filters = $this->index->getSettings()->analysis->defaultAnalyzer()->filters();
 
         foreach ($filters as $filter) {
-            $this->defaultFilters[$filter::class] = $filter;
+            $this->charFilters[$filter::class] = $filter;
         }
 
-        $this->stopwords = $this->defaultFilters[Stopwords::class];
-        $this->oneWaySynonyms = $this->defaultFilters[OneWaySynonyms::class];
-        $this->twoWaySynonyms = $this->defaultFilters[TwoWaySynonyms::class];
-        $this->stemming = $this->defaultFilters[Stemmer::class];
+        $this->stopwords = $this->charFilters[Stopwords::class];
+        $this->oneWaySynonyms = $this->charFilters[OneWaySynonyms::class];
+        $this->twoWaySynonyms = $this->charFilters[TwoWaySynonyms::class];
+        $this->stemming = $this->charFilters[Stemmer::class];
     }
 
     public function getPrefix(): string

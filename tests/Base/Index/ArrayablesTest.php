@@ -49,7 +49,7 @@ class ArrayablesTest extends TestCase
     public function whitespace_tokenizer()
     {
         $this->sigmie->newIndex('foo')
-            ->tokenizeOn(new Whitespaces)
+            ->tokenizer(new Whitespaces)
             ->withoutMappings()
             ->create();
 
@@ -66,7 +66,7 @@ class ArrayablesTest extends TestCase
     public function pattern_tokenizer()
     {
         $this->sigmie->newIndex('foo')
-            ->tokenizeOn(new Pattern('foo_tokenizer', '/bar/'))
+            ->tokenizer(new Pattern('foo_tokenizer', '/bar/'))
             ->withoutMappings()
             ->create();
 
@@ -208,7 +208,7 @@ class ArrayablesTest extends TestCase
     {
         $tokenizer = new WordBoundaries();
         $this->sigmie->newIndex('foo')
-            ->tokenizeOn($tokenizer)
+            ->tokenizer($tokenizer)
             ->withoutMappings()
             ->create();
 
@@ -253,7 +253,7 @@ class ArrayablesTest extends TestCase
         $this->sigmie->newIndex('foo')
             ->replicas(2)
             ->shards(1)
-            ->tokenizeOn(new Pattern('foo_pattern_name', '/[ ]/'))
+            ->tokenizer(new Pattern('foo_pattern_name', '/[ ]/'))
             ->withoutMappings()
             ->create();
 

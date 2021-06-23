@@ -83,6 +83,21 @@ class Analysis implements Analyzers, Raw
         return $this->analyzers['default'];
     }
 
+    public function hasTokenizer(string $tokenizerName): bool
+    {
+        return $this->tokenizers->hasKey($tokenizerName);
+    }
+
+    public function hasFilter(string $filterName): bool
+    {
+        return $this->filter->hasKey($filterName);
+    }
+
+    public function hasCharFilter(string $charFilterName): bool
+    {
+        return $this->charFilter->hasKey($charFilterName);
+    }
+
     public function addAnalyzers(array|Collection $analyzers): void
     {
         $analyzers = ensure_collection($analyzers);

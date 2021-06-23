@@ -6,7 +6,6 @@ namespace Sigmie\Support;
 
 use ArrayIterator;
 use Closure;
-use Doctrine\Common\Collections\ArrayCollection as DoctrineCollection;
 use function Sigmie\Helpers\ensure_collection;
 
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
@@ -28,7 +27,7 @@ class Collection implements CollectionInterface
         return new static($result);
     }
 
-    public function toArray()
+    public function toArray(): array
     {
         return $this->elements;
     }
@@ -198,7 +197,7 @@ class Collection implements CollectionInterface
 
     public function offsetExists(mixed $offset): bool
     {
-        return $this->containsKey($offset);
+        return $this->hasKey($offset);
     }
 
     public function offsetGet(mixed $offset): mixed
@@ -222,7 +221,7 @@ class Collection implements CollectionInterface
         $this->remove($offset);
     }
 
-    public function containsKey(string|int $key): bool
+    public function hasKey(string|int $key): bool
     {
         return isset($this->elements[$key]) || array_key_exists($key, $this->elements);
     }

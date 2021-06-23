@@ -29,10 +29,24 @@ class BuilderTest extends TestCase
     /**
      * @test
      */
+    public function tokenizer_on_method()
+    {
+        $builder = $this->sigmie->newIndex('sigmie');
+
+        $builder->tokenizeOn()->whiteSpaces();
+
+        $builder->withoutMappings()->create();
+
+        $this->assertAnalyzerHasTokenizer('sigmie', 'default', 'whitespace');
+    }
+
+    /**
+     * @test
+     */
     public function pattern_tokenizer()
     {
         $this->sigmie->newIndex('sigmie')
-            ->tokenizeOn(new Pattern('sigmie_tokenizer', '/[ ]/'))
+            ->tokenizer(new Pattern('sigmie_tokenizer', '/[ ]/'))
             ->withoutMappings()
             ->create();
 
@@ -50,7 +64,7 @@ class BuilderTest extends TestCase
     public function non_letter_tokenizer()
     {
         $this->sigmie->newIndex('sigmie')
-            ->tokenizeOn(new NonLetter())
+            ->tokenizer(new NonLetter())
             ->withoutMappings()
             ->create();
 
@@ -63,7 +77,7 @@ class BuilderTest extends TestCase
     public function mapping_char_filters()
     {
         $this->sigmie->newIndex('sigmie')
-            ->normalizer(new MappingFilter('sigmie_mapping_char_filter', ['a' => 'bar', 'f' => 'foo']))
+            ->charFilter(new MappingFilter('sigmie_mapping_char_filter', ['a' => 'bar', 'f' => 'foo']))
             ->withoutMappings()
             ->create();
 
@@ -81,7 +95,7 @@ class BuilderTest extends TestCase
     public function pattern_char_filters()
     {
         $this->sigmie->newIndex('sigmie')
-            ->normalizer(new PatternFilter('pattern_char_filter', '/foo/', '$1'))
+            ->charFilter(new PatternFilter('pattern_char_filter', '/foo/', '$1'))
             ->withoutMappings()
             ->create();
 
@@ -100,7 +114,7 @@ class BuilderTest extends TestCase
     public function html_char_filters()
     {
         $this->sigmie->newIndex('sigmie')
-            ->normalizer(new HTMLFilter)
+            ->charFilter(new HTMLFilter)
             ->withoutMappings()
             ->create();
 
@@ -115,7 +129,7 @@ class BuilderTest extends TestCase
     public function word_boundaries_tokenizer()
     {
         $this->sigmie->newIndex('sigmie')
-            ->tokenizeOn(new WordBoundaries('some_name', 40))
+            ->tokenizer(new WordBoundaries('some_name', 40))
             ->withoutMappings()
             ->create();
 
@@ -134,7 +148,7 @@ class BuilderTest extends TestCase
     public function whitespace_tokenizer()
     {
         $this->sigmie->newIndex('sigmie')
-            ->tokenizeOn(new Whitespaces)
+            ->tokenizer(new Whitespaces)
             ->withoutMappings()
             ->create();
 

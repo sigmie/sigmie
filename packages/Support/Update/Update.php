@@ -10,7 +10,9 @@ use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\MappingFilter;
 use Sigmie\Base\Analysis\CharFilter\PatternFilter;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
+use Sigmie\Base\Analysis\DefaultCharFilters;
 use Sigmie\Base\Analysis\DefaultFilters;
+use Sigmie\Base\Analysis\TokenizeOn;
 use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Base\Contracts\Mappings as ContractsMappings;
 use Sigmie\Base\Contracts\Tokenizer;
@@ -24,7 +26,7 @@ use Sigmie\Support\Shared\Mappings;
 
 class Update
 {
-    use Mappings, DefaultFilters;
+    use Mappings, DefaultFilters, TokenizeOn, DefaultCharFilters;
 
     protected int $replicas = 2;
 
@@ -71,38 +73,14 @@ class Update
         return $this->analyzers;
     }
 
-    public function stripHTML()
+    public function charFilters(): array
     {
-        $this->charFilter[] = new HTMLFilter;
+        return $this->defaultCharFilters();
     }
 
-    public function mapChars(array $mappings, string|null $name = null)
+    private function getAnalyzer(): Analyzer
     {
-        $name = $name ?: $this->analyzers['default']->name() . '_mappings_filter';
-
-        $this->charFilter[] = new MappingFilter($name, $mappings);
-    }
-
-    public function patternReplace(
-        string $pattern,
-        string $replace,
-        string|null $name = null
-    ) {
-        $name = $name ?: $this->analyzers['default']->name() . '_pattern_replace_filter';
-
-        $this->charFilter[] = new PatternFilter($name, $pattern, $replace);
-    }
-
-    public function charFilters(): Collection
-    {
-        $charFilters = ensure_collection($this->charFilter);
-
-        return named_collection($charFilters);
-    }
-
-    public function tokenizeOn()
-    {
-        return new TokenizerBuilder($this->analyzers['default'], $this);
+        return $this->analyzers['default'];
     }
 
     public function tokenizer(Tokenizer $tokenizer)

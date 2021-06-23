@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Mappings\Types;
 
+use Sigmie\Base\Mappings\Type;
 
-class Number extends BaseType
+class Number extends Type
 {
     protected string $type;
 

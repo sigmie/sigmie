@@ -197,8 +197,8 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->patternReplace('/foo/', 'bar');
-            $update->mapChars(['foo' => 'bar']);
+            $update->patternReplace('/foo/', 'bar', 'default_pattern_replace_filter');
+            $update->mapChars(['foo' => 'bar'], 'default_mappings_filter');
             $update->stripHTML();
 
             return $update;
@@ -223,7 +223,7 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->tokenizeOn()->pattern('/foo/');
+            $update->tokenizeOn()->pattern('/foo/', 'default_analyzer_pattern_tokenizer');
 
             return $update;
         });
@@ -243,7 +243,7 @@ class UpdateTest extends TestCase
     {
         $this->sigmie->newIndex('foo')
             ->withoutMappings()
-            ->tokenizeOn(new Whitespaces)
+            ->tokenizer(new Whitespaces)
             ->create();
 
         $this->assertAnalyzerTokenizerIsWhitespaces('foo', 'default');

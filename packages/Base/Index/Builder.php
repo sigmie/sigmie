@@ -17,6 +17,9 @@ use Sigmie\Base\Contracts\Tokenizer;
 use Sigmie\Support\Exceptions\MissingMapping;
 use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Base\Analysis\Analysis;
+use Sigmie\Base\Analysis\DefaultCharFilters;
+use Sigmie\Base\Analysis\TokenizeOn;
+use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Support\Index\AliasedIndex;
 
 use function Sigmie\Helpers\index_name;
@@ -25,7 +28,7 @@ use Sigmie\Support\Shared\Mappings;
 
 class Builder
 {
-    use IndexActions, Actions, DefaultFilters, Mappings;
+    use IndexActions, Actions, DefaultFilters, Mappings, TokenizeOn, DefaultCharFilters;
 
     protected int $replicas = 2;
 
@@ -37,7 +40,7 @@ class Builder
 
     protected Tokenizer $tokenizer;
 
-    protected array $charFilter = [];
+    private DefaultAnalyzer $defaultAnalyzer;
 
     public function __construct(HttpConnection $connection)
     {
@@ -65,44 +68,16 @@ class Builder
         return $this;
     }
 
-    public function tokenizeOn(Tokenizer $tokenizer)
+    public function tokenizer(Tokenizer $tokenizer)
     {
-        $this->tokenizer = $tokenizer;
+        $this->getAnalyzer()->updateTokenizer($tokenizer);
 
         return $this;
     }
 
-    public function stripHTML()
+    public function charFilter(ContractsCharFilter $charFilter)
     {
-        $this->charFilter[] = new HTMLFilter;
-
-        return $this;
-    }
-
-    public function patternReplace(
-        string $pattern,
-        string $replace,
-        string|null $name = null
-    ) {
-        $name = $name ?: 'default' . '_pattern_replace_filter';
-
-        $this->charFilter[] = new PatternFilter($name, $pattern, $replace);
-
-        return $this;
-    }
-
-    public function mapChars(array $mappings, string|null $name = null)
-    {
-        $name = $name ?: 'default' . '_mappings_filter';
-
-        $this->charFilter[] = new MappingFilter($name, $mappings);
-
-        return $this;
-    }
-
-    public function normalizer(ContractsCharFilter $charFilter)
-    {
-        $this->charFilter[] = $charFilter;
+        $this->addCharFilter($charFilter);
 
         return $this;
     }
@@ -122,13 +97,27 @@ class Builder
         return $this;
     }
 
+    public function getAnalyzer(): Analyzer
+    {
+        $analyzer = $this->defaultAnalyzer ?? new DefaultAnalyzer();
+
+        if (!isset($this->defaultAnalyzer)) {
+            $this->defaultAnalyzer = $analyzer;
+        }
+
+        return $analyzer;
+    }
+
     public function create()
     {
         $this->throwUnlessMappingsDefined();
 
         $defaultFilters = $this->defaultFilters();
+        $defaultCharFilters = $this->defaultCharFilters();
 
-        $defaultAnalyzer = new DefaultAnalyzer($this->tokenizer, $defaultFilters, $this->charFilter);
+        $defaultAnalyzer = $this->getAnalyzer();
+        $defaultAnalyzer->addCharFilters($defaultCharFilters);
+        $defaultAnalyzer->addFilters($defaultFilters);
 
         $mappings = $this->createMappings($defaultAnalyzer);
 

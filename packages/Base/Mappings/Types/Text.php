@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Base\Mappings\Types;
 
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Mappings\Type;
 
-class Text extends BaseType
+class Text extends Type
 {
     protected ?Analyzer $analyzer;
 

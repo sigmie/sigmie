@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Sigmie\Base\Mappings\Properties;
-use Sigmie\Base\Mappings\Types\BaseType;
+use Sigmie\Base\Mappings\Type;
 use Sigmie\Base\Mappings\Types\Boolean;
 use Sigmie\Base\Mappings\Types\Date;
 use Sigmie\Base\Mappings\Types\Number;
@@ -24,7 +24,7 @@ class Blueprint
 
     public function __invoke()
     {
-        $fields = $this->fields->mapToDictionary(function (BaseType $type) {
+        $fields = $this->fields->mapToDictionary(function (Type $type) {
             return [$type->name() => $type];
         })->toArray();
 

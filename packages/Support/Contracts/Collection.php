@@ -22,6 +22,8 @@ interface Collection extends Countable, IteratorAggregate, ArrayAccess
 
     public function mapToDictionary(callable $callback): static;
 
+    public function toArray(): array;
+
     public function sortByKeys(): static;
 
     public function merge(Collection|array $values): static;
@@ -56,7 +58,7 @@ interface Collection extends Countable, IteratorAggregate, ArrayAccess
 
     public function contains(mixed $element): bool;
 
-    public function containsKey(string|int $key): bool;
+    public function hasKey(string|int $key): bool;
 
     public function removeElement(mixed $element): static;
 

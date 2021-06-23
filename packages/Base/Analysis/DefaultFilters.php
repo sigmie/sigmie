@@ -18,7 +18,7 @@ use function Sigmie\Helpers\random_letters;
 
 trait DefaultFilters
 {
-    protected Collection $defaultFilters;
+    private Collection $defaultFilters;
 
     private int $priority = 1;
 

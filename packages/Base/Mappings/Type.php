@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Mappings\Types;
+namespace Sigmie\Base\Mappings;
 
-use Sigmie\Base\Contracts\Name;
-use Sigmie\Base\Contracts\Type;
+use Sigmie\Base\Contracts\Name as NameInterface;
+use Sigmie\Base\Contracts\Type as TypeInterface;
 
-abstract class BaseType implements Type
+abstract class Type implements TypeInterface, NameInterface
 {
     protected string $type;
 

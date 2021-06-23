@@ -91,7 +91,7 @@ class Analyzer implements AnalyzerInterface
     public function toRaw(): array
     {
         $filters = $this->sortedFilters();
-        $charFilters = $this->charFilters;
+        $charFilters = $this->charFilters();
 
         $result = [
             'tokenizer' => $this->tokenizer()->type(),

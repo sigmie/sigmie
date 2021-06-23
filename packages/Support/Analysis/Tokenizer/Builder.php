@@ -9,6 +9,8 @@ use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\Analyzer;
 
+use function Sigmie\Helpers\random_letters;
+
 class Builder
 {
     public function __construct(
@@ -23,7 +25,7 @@ class Builder
 
     public function pattern(string $pattern, string|null $name = null): void
     {
-        $name = $name ?: $this->analyzer->name() . '_analyzer_pattern_tokenizer';
+        $name = $name ?? 'pattern_tokenizer_' . random_letters();
 
         $this->analyzer->updateTokenizer(new Pattern($name, $pattern));
     }
