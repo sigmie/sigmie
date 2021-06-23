@@ -9,11 +9,6 @@ use Sigmie\Support\Collection;
 
 class CollectionTest extends TestCase
 {
-    public function setUp(): void
-    {
-        parent::setUp();
-    }
-
     /**
      * @test
      */
@@ -28,6 +23,24 @@ class CollectionTest extends TestCase
 
             return [$index, $value];
         });
+    }
+
+    /**
+     * @test
+     */
+    public function deepen(): void
+    {
+        $collection = new Collection([
+            'foo' => ['bar', 'baz'],
+            'bar' => ['foo', 'baz']
+        ]);
+
+        $flat = $collection->deepen()->toArray();
+
+        $this->assertEquals([
+            ['foo' => ['bar', 'baz']],
+            ['bar' => ['foo', 'baz']]
+        ], $flat);
     }
 
     /**

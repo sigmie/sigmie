@@ -12,17 +12,19 @@ use IteratorAggregate;
 
 interface Collection extends Countable, IteratorAggregate, ArrayAccess
 {
-    public function flatten(int $depth = INF): self;
+    public function deepen(int $depth = INF): static;
 
-    public function flattenWithKeys(int $depth = 1): self;
+    public function flatten(int $depth = INF): static;
 
-    public function mapWithKeys(callable $callback): self;
+    public function flattenWithKeys(int $depth = 1): static;
 
-    public function mapToDictionary(callable $callback): self;
+    public function mapWithKeys(callable $callback): static;
 
-    public function sortByKeys(): self;
+    public function mapToDictionary(callable $callback): static;
 
-    public function merge(Collection|array $values): self;
+    public function sortByKeys(): static;
+
+    public function merge(Collection|array $values): static;
 
     public function slice(int $offset, int|null $length = null): static;
 

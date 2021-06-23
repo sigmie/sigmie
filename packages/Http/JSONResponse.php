@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Sigmie\Http;
 
 use ArrayAccess;
+use GuzzleHttp\Psr7\Response;
 use LogicException;
 use Psr\Http\Message\ResponseInterface;
+use Sigmie\Http\Contracts\JSONResponse as JSONResponseInterface;
 
-class JSONResponse implements ArrayAccess
+class JSONResponse implements ArrayAccess, JSONResponseInterface
 {
     /**
      * PSR response.
@@ -59,7 +61,7 @@ class JSONResponse implements ArrayAccess
         return null;
     }
 
-    public function psr()
+    public function psr(): Response
     {
         return $this->response;
     }

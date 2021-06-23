@@ -18,9 +18,9 @@ class JSONClient implements JSONClientInterface
         $this->http = $http;
     }
 
-    public function request(JSONRequest $jsonRequest): JSONResponse
+    public function request(JSONRequest $jsonRequest, $options = []): JSONResponse
     {
-        $psrResponse = $this->http->send($jsonRequest);
+        $psrResponse = $this->http->send($jsonRequest, $options);
 
         return new JSONResponse($psrResponse);
     }
@@ -31,6 +31,7 @@ class JSONClient implements JSONClientInterface
             'base_uri' => $url,
             'allow_redirects' => false,
             'http_errors' => false,
+            'connect_timeout' => 1
         ];
 
         if (is_null($auth) === false) {

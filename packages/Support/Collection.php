@@ -17,12 +17,23 @@ class Collection implements CollectionInterface
     {
     }
 
+    public function deepen($depth = INF): static
+    {
+        $result = [];
+
+        foreach ($this->elements as $key => $item) {
+            $result[] = [$key => $item];
+        }
+
+        return new static($result);
+    }
+
     public function toArray()
     {
         return $this->elements;
     }
 
-    public function merge(CollectionInterface|array $values): CollectionInterface
+    public function merge(CollectionInterface|array $values): static
     {
         $values = ensure_collection($values);
         $result = array_merge($this->toArray(), $values->toArray());
@@ -33,7 +44,7 @@ class Collection implements CollectionInterface
     /**
      * Flatten a multi-dimensional array into a single level.
      */
-    public function flatten($depth = INF): self
+    public function flatten($depth = INF): static
     {
         $result = [];
 
@@ -56,7 +67,7 @@ class Collection implements CollectionInterface
         return new static($result);
     }
 
-    public function sortByKeys(): self
+    public function sortByKeys(): static
     {
         $result = [];
 
@@ -74,7 +85,7 @@ class Collection implements CollectionInterface
      *
      * @return Collection
      */
-    public function flattenWithKeys($depth = 1): self
+    public function flattenWithKeys($depth = 1): static
     {
         $result = [];
 
@@ -104,7 +115,7 @@ class Collection implements CollectionInterface
      *
      * The callback should return an associative array with a single key/value pair.
      */
-    public function mapWithKeys(callable $callback): self
+    public function mapWithKeys(callable $callback): static
     {
         $result = [];
 
@@ -119,7 +130,7 @@ class Collection implements CollectionInterface
         return new static($result);
     }
 
-    public function mapToDictionary(callable $callback): self
+    public function mapToDictionary(callable $callback): static
     {
         $dictionary = [];
 

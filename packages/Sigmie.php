@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Sigmie;
 
 use Exception;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Http\Connection as Connection;
+use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Base\Index;
 use Sigmie\Base\Index\Actions as IndexActions;
@@ -17,6 +19,7 @@ use Sigmie\Http\Contracts\JSONRequest as JSONRequestInterface;
 use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Support\Contracts\Collection;
+use Throwable;
 
 class Sigmie
 {
@@ -52,10 +55,12 @@ class Sigmie
     public function isConnected(): bool
     {
         try {
-            $res = ($this->httpConnection)(new JSONRequest('GET', new Uri()));
+            $request = new ElasticsearchRequest('GET', new Uri());
+
+            $res = ($this->httpConnection)($request, ['connect_timeout' => 0.2]);
 
             return !$res->failed();
-        } catch (Exception $e) {
+        } catch (ConnectException) {
             return false;
         }
     }
