@@ -4,86 +4,76 @@ declare(strict_types=1);
 
 namespace Sigmie\Support\Analysis;
 
-use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
-use Sigmie\Base\Analysis\CharFilter\MappingFilter;
-use Sigmie\Base\Analysis\CharFilter\PatternFilter;
+use Sigmie\Base\Contracts\Analysis;
 use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Base\Contracts\CharFilter;
 use Sigmie\Base\Contracts\TokenFilter;
-use Sigmie\Base\Contracts\Tokenizer;
-use Sigmie\Support\Analysis\Tokenizer\TokenizerBuilder as TokenizerBuilder;
+use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
+use Sigmie\Support\Analyzer\TokenizerBuilder as AnalyzerTokenizerBuilder;
+use Sigmie\Support\Contracts\TokenizerBuilder;
+use Sigmie\Support\Shared\CharFilters;
+use Sigmie\Support\Shared\Filters;
+use Sigmie\Support\Shared\Tokenizer;
 
 class AnalyzerUpdate
 {
-    protected array $charFilter = [];
-    public function __construct(
-        protected Analyzer $analyzer,
-        protected string $name
-    ) {
+    use CharFilters, Filters, Tokenizer;
+
+    public function __construct(protected Analysis $analysis, protected Analyzer $analyzer)
+    {
     }
 
-    public function addFilter(TokenFilter $tokenFilter)
+    public function analysis(): Analysis
     {
-        $this->analyzer->addFilters([$tokenFilter]);
-    }
-
-    public function addCharFilter(CharFilter $charFilter)
-    {
-        $this->analyzer->addCharFilters([$charFilter]);
-    }
-
-    public function removeCharFilter(CharFilter|string $charFilter)
-    {
-        if ($charFilter instanceof CharFilter) {
-            $this->analyzer->removeCharFilter($charFilter->name());
-            return;
-        }
-
-        $this->analyzer->removeCharFilter($charFilter);
-    }
-
-    public function removeFilter(TokenFilter|string $tokenFilter)
-    {
-        if ($tokenFilter instanceof CharFilter) {
-            $this->analyzer->removeFilter($tokenFilter->name());
-            return;
-        }
-
-        $this->analyzer->removeFilter($tokenFilter);
-    }
-
-    public function setTokenizer(Tokenizer $tokenizer)
-    {
-        $this->analyzer->setTokenizer($tokenizer);
+        return $this->analysis;
     }
 
     public function tokenizeOn(): TokenizerBuilder
     {
-        return new TokenizerBuilder($this->analyzer);
+        return new AnalyzerTokenizerBuilder($this);
     }
 
-    public function patternReplace(
-        string $pattern,
-        string $replace,
-        string|null $name = null,
-    ) {
-        $name = $name ?: $this->analyzer->name() . '_pattern_replace_filter';
-
-        $this->analyzer->addCharFilters([new PatternFilter($name, $pattern, $replace)]);
-    }
-
-    public function stripHTML()
+    public function filter(TokenFilter $tokenFilter): static
     {
-        $this->analyzer->addCharFilters([new HTMLFilter]);
+        $this->addFilter($tokenFilter);
+        $this->analyzer->addFilters([$tokenFilter->name() => $tokenFilter]);
+
+        return $this;
     }
 
-    public function mapChars(
-        array $mappings,
-        string|null $name = null,
-    ) {
-        $name = $name ?: $this->analyzer->name() . '_mappings_filter';
+    public function charFilter(CharFilter $charFilter): static
+    {
+        $this->addCharFilter($charFilter);
+        $this->analyzer->addCharFilters([$charFilter->name() => $charFilter]);
 
-        $this->analyzer->addCharFilters([new MappingFilter($name, $mappings)]);
+        return $this;
+    }
+
+    public function removeFilter(TokenFilter|string $filter): static
+    {
+        $name = $filter instanceof TokenFilter ? $filter->name() : $filter;
+
+        $this->analyzer->removeFilter($name);
+
+        return $this;
+    }
+
+    public function removeCharFilter(CharFilter|string $charFilter): static
+    {
+        $name = $charFilter instanceof CharFilter ? $charFilter->name() : $charFilter;
+
+        $this->analyzer->removeCharFilter($name);
+
+        return $this;
+    }
+
+    public function tokenizer(TokenizerInterface $tokenizer): static
+    {
+        $this->setTokenizer($tokenizer);
+
+        $this->analyzer->updateTokenizer($tokenizer);
+
+        return $this;
     }
 
     public function analyzer(): Analyzer

@@ -49,7 +49,7 @@ class ArrayablesTest extends TestCase
     public function whitespace_tokenizer()
     {
         $this->sigmie->newIndex('foo')
-            ->tokenizer(new Whitespaces)
+            ->setTokenizer(new Whitespaces)
             ->withoutMappings()
             ->create();
 
@@ -66,7 +66,7 @@ class ArrayablesTest extends TestCase
     public function pattern_tokenizer()
     {
         $this->sigmie->newIndex('foo')
-            ->tokenizer(new Pattern('foo_tokenizer', '/bar/'))
+            ->setTokenizer(new Pattern('foo_tokenizer', '/bar/'))
             ->withoutMappings()
             ->create();
 
@@ -87,7 +87,7 @@ class ArrayablesTest extends TestCase
         $customFieldAnalyzer = new Analyzer('custom', new Whitespaces);
 
         $this->sigmie->newIndex('foo')
-            ->mappings(function (Blueprint $blueprint) use ($customFieldAnalyzer) {
+            ->mapping(function (Blueprint $blueprint) use ($customFieldAnalyzer) {
 
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText($customFieldAnalyzer);
@@ -117,7 +117,7 @@ class ArrayablesTest extends TestCase
     public function mapping_properties()
     {
         $this->sigmie->newIndex('foo')
-            ->mappings(function (Blueprint $blueprint) {
+            ->mapping(function (Blueprint $blueprint) {
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText();
                 $blueprint->number('adults')->integer();
@@ -182,7 +182,7 @@ class ArrayablesTest extends TestCase
     public function mappings()
     {
         $this->sigmie->newIndex('foo')
-            ->mappings(function (Blueprint $blueprint) {
+            ->mapping(function (Blueprint $blueprint) {
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText();
                 $blueprint->number('adults')->integer();
@@ -208,7 +208,7 @@ class ArrayablesTest extends TestCase
     {
         $tokenizer = new WordBoundaries();
         $this->sigmie->newIndex('foo')
-            ->tokenizer($tokenizer)
+            ->setTokenizer($tokenizer)
             ->withoutMappings()
             ->create();
 
@@ -253,7 +253,7 @@ class ArrayablesTest extends TestCase
         $this->sigmie->newIndex('foo')
             ->replicas(2)
             ->shards(1)
-            ->tokenizer(new Pattern('foo_pattern_name', '/[ ]/'))
+            ->setTokenizer(new Pattern('foo_pattern_name', '/[ ]/'))
             ->withoutMappings()
             ->create();
 

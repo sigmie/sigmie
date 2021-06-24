@@ -126,7 +126,7 @@ class BuilderTest extends TestCase
     public function pattern_tokenizer()
     {
         $this->sigmie->newIndex('sigmie')
-            ->tokenizer(new Pattern('sigmie_tokenizer', '/[ ]/'))
+            ->setTokenizer(new Pattern('sigmie_tokenizer', '/[ ]/'))
             ->withoutMappings()
             ->create();
 
@@ -144,7 +144,7 @@ class BuilderTest extends TestCase
     public function non_letter_tokenizer()
     {
         $this->sigmie->newIndex('sigmie')
-            ->tokenizer(new NonLetter())
+            ->setTokenizer(new NonLetter())
             ->withoutMappings()
             ->create();
 
@@ -209,7 +209,7 @@ class BuilderTest extends TestCase
     public function word_boundaries_tokenizer()
     {
         $this->sigmie->newIndex('sigmie')
-            ->tokenizer(new WordBoundaries('some_name', 40))
+            ->setTokenizer(new WordBoundaries('some_name', 40))
             ->withoutMappings()
             ->create();
 
@@ -228,7 +228,7 @@ class BuilderTest extends TestCase
     public function whitespace_tokenizer()
     {
         $this->sigmie->newIndex('sigmie')
-            ->tokenizer(new Whitespaces)
+            ->setTokenizer(new Whitespaces)
             ->withoutMappings()
             ->create();
 
@@ -490,7 +490,7 @@ class BuilderTest extends TestCase
     public function field_mappings()
     {
         $this->sigmie->newIndex('sigmie')
-            ->mappings(function (Blueprint $blueprint) {
+            ->mapping(function (Blueprint $blueprint) {
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText();
                 $blueprint->number('adults')->integer();

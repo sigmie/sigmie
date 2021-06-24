@@ -15,6 +15,7 @@ use function Sigmie\Helpers\index_name;
 use Sigmie\Support\Update\Update;
 use Sigmie\Base\Index\Settings;
 use Sigmie\Base\Index\Mappings;
+use Sigmie\Support\Update\UpdateProxy;
 
 class AliasedIndex extends Index
 {
@@ -32,20 +33,15 @@ class AliasedIndex extends Index
 
     public function update(callable $update): AliasedIndex
     {
-        /** @var  Update $update */
-        $update = $update(new Update($this->settings->analysis->analyzers()));
-
-        if (is_null($update)) {
-            throw new Exception('Did you forget to return ?');
-        }
+        $update = (new UpdateProxy($this->settings->analysis))($update);
 
         $this->settings->analysis->addAnalyzers($update->analyzers());
-
-        $oldDocsCount = count($this);
 
         $charFilters = $update->charFilters();
 
         $this->defaultAnalyzer()->addCharFilters($charFilters);
+
+        // $this->defaultAnalyzer()->tokenizer();
 
         // $oldTokenizers = $this->settings->analysis->tokenizers()->toArray();
         // $newTokenizer = $update->tokenizerValue();
@@ -53,10 +49,12 @@ class AliasedIndex extends Index
 
         // $this->settings->analysis->updateTokenizers($tokenizers);
 
+        $this->defaultAnalyzer()->updateTokenizer($update->tokenizerValue());
+
         $defaultAnalyzer =  $this->settings->analysis->defaultAnalyzer();
         $this->settings->analysis->setDefaultAnalyzer($defaultAnalyzer);
 
-        $newProps = $update->mappingsValue()->properties()->toArray();
+        $newProps = $update->mappings()->properties()->toArray();
         $oldProps = $this->getMappings()->properties()->toArray();
 
         $props = array_merge($oldProps, $newProps);
@@ -73,9 +71,7 @@ class AliasedIndex extends Index
         $newName = index_name($this->alias) . 'new';
         $oldName = $this->identifier;
 
-        $updateArray = $update->toRaw();
-
-        $this->settings->primaryShards = $updateArray['settings']['number_of_shards'];
+        $this->settings->primaryShards = $update->numberOfShards();
 
         $this->settings->replicaShards = 0;
         $this->settings->config('refresh_interval', '-1');
@@ -88,12 +84,11 @@ class AliasedIndex extends Index
         $this->reindexAPICall($oldName, $newName);
 
         $this->indexAPICall("/{$newName}/_settings", 'PUT', [
-            'number_of_replicas' => $updateArray['settings']['number_of_replicas'],
+            'number_of_replicas' => $update->numberOfReplicas(),
             'refresh_interval' => null
         ]);
 
         $this->switchAlias($this->alias, $oldName, $newName);
-        $this->settings->replicaShards = $updateArray['settings']['number_of_replicas'];
 
         $this->deleteIndex($oldName);
 

@@ -130,7 +130,7 @@ trait Actions
 
         // The bulk api response order is guaranteed see:
         // https://discuss.elastic.co/t/ordering-of-responses-in-the-bulk-api/13264
-        $tempCollection->forAll(function ($index, Document $doc) use ($ids, &$documentCollection) {
+        $tempCollection->forAll(function (Document $doc, $index) use ($ids, &$documentCollection) {
             $id = $ids[$index];
             $doc->setId($id);
             $documentCollection[$id] = $doc;

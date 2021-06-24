@@ -27,20 +27,16 @@ use Sigmie\Support\Index\TokenizerBuilder;
 use function Sigmie\Helpers\index_name;
 
 use Sigmie\Support\Shared\Mappings;
+use Sigmie\Support\Shared\Replicas;
+use Sigmie\Support\Shared\Shards;
 
 class Builder
 {
-    use IndexActions, Actions, Filters, Mappings, CharFilters;
-
-    protected int $replicas = 2;
-
-    protected int $shards = 1;
+    use IndexActions, Actions, Filters, Mappings, CharFilters, Shards, Replicas, Tokenizer;
 
     protected string $alias;
 
     protected Language $language;
-
-    protected TokenizerInterface $tokenizer;
 
     private DefaultAnalyzer $defaultAnalyzer;
 
@@ -67,13 +63,6 @@ class Builder
         return new TokenizerBuilder($this);
     }
 
-    public function tokenizer(TokenizerInterface $tokenizer): static
-    {
-        $this->tokenizer = $tokenizer;
-
-        return $this;
-    }
-
     public function getPrefix(): string
     {
         return $this->alias;
@@ -93,19 +82,6 @@ class Builder
         return $this;
     }
 
-    public function shards(int $shards): static
-    {
-        $this->shards = $shards;
-
-        return $this;
-    }
-
-    public function replicas(int $replicas): static
-    {
-        $this->replicas = $replicas;
-
-        return $this;
-    }
 
     public function getAnalyzer(): Analyzer
     {

@@ -7,6 +7,7 @@ namespace Sigmie\Tests\Base\Index;
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
+use Sigmie\Base\Analysis\CharFilter\PatternFilter;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
@@ -19,6 +20,7 @@ use Sigmie\Support\Alias\Actions;
 use Sigmie\Support\Update\Update as Update;
 
 use Sigmie\Testing\TestCase;
+use TypeError;
 
 class UpdateTest extends TestCase
 {
@@ -77,7 +79,7 @@ class UpdateTest extends TestCase
     public function analyzer_update_char_filter()
     {
         $this->sigmie->newIndex('foo')
-            ->mappings(function (Blueprint $blueprint) {
+            ->mapping(function (Blueprint $blueprint) {
 
                 $blueprint->text('bar')->unstructuredText()->withAnalyzer(new Analyzer('bar'));
 
@@ -109,7 +111,7 @@ class UpdateTest extends TestCase
     public function analyzer_update_tokenizer_using_tokenize_on()
     {
         $this->sigmie->newIndex('foo')
-            ->mappings(function (Blueprint $blueprint) {
+            ->mapping(function (Blueprint $blueprint) {
 
                 $blueprint->text('bar')->unstructuredText()->withAnalyzer(new Analyzer('bar'));
 
@@ -122,7 +124,7 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->analyzer('bar')->tokenizeOn()->tokenizeOnWhiteSpaces();
+            $update->analyzer('bar')->tokenizeOn()->whiteSpaces();
 
             return $update;
         });
@@ -137,7 +139,7 @@ class UpdateTest extends TestCase
     public function analyzer_update_tokenizer()
     {
         $this->sigmie->newIndex('foo')
-            ->mappings(function (Blueprint $blueprint) {
+            ->mapping(function (Blueprint $blueprint) {
 
                 $blueprint->text('bar')->unstructuredText()->withAnalyzer(new Analyzer('bar'));
 
@@ -150,7 +152,7 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->analyzer('bar')->setTokenizer(new Whitespaces);
+            $update->analyzer('bar')->tokenizer(new Whitespaces);
 
             return $update;
         });
@@ -162,7 +164,7 @@ class UpdateTest extends TestCase
     /**
      * @test
      */
-    public function analyzer_update()
+    public function analyzer_add_char_filter()
     {
         $this->sigmie->newIndex('foo')
             ->withoutMappings()
@@ -172,7 +174,29 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->analyzer('bear')->addFilter(new Stopwords(
+            $update->analyzer('bear')->charFilter(new PatternFilter('foo_pattern_filter', '//', 'bar'));
+
+            return $update;
+        });
+
+        $this->assertAnalyzerHasCharFilter('foo', 'bear', 'foo_pattern_filter');
+        $this->assertCharFilterExists('foo', 'foo_pattern_filter', ['who', 'he']);
+    }
+
+    /**
+     * @test
+     */
+    public function analyzer_update_method()
+    {
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->create();
+
+        $this->assertAnalyzerFilterIsEmpty('foo', 'default');
+
+        $this->sigmie->index('foo')->update(function (Update $update) {
+
+            $update->analyzer('bear')->filter(new Stopwords(
                 'new_stopwords',
                 ['who', 'he']
             ));
@@ -223,7 +247,7 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->tokenizeOn()->tokenizeOnPattern('/foo/', 'default_analyzer_pattern_tokenizer');
+            $update->tokenizeOn()->pattern('/foo/', 'default_analyzer_pattern_tokenizer');
 
             return $update;
         });
@@ -243,19 +267,19 @@ class UpdateTest extends TestCase
     {
         $this->sigmie->newIndex('foo')
             ->withoutMappings()
-            ->tokenizer(new Whitespaces)
+            ->setTokenizer(new Whitespaces)
             ->create();
 
         $this->assertAnalyzerTokenizerIsWhitespaces('foo', 'default');
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->tokenizeOn()->tokenizeOnWordBoundaries();
+            $update->tokenizeOn()->wordBoundaries('foo_tokenizer');
 
             return $update;
         });
 
-        $this->assertAnalyzerTokenizerIsWordBoundaries('foo', 'default');
+        $this->assertAnalyzerHasTokenizer('foo', 'default', 'foo_tokenizer');
     }
 
     /**
@@ -277,9 +301,9 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->synonyms([
+            $update->filter('bar_name', [
                 'mickey' => ['mouse', 'goofy'],
-            ], 'bar_name',);
+            ]);
 
             return $update;
         });
@@ -313,9 +337,9 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->stemming([
+            $update->filter('bar_name', [
                 'mickey' => ['mouse', 'goofy'],
-            ], 'bar_name');
+            ]);
 
             return $update;
         });
@@ -347,7 +371,7 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->synonyms([['john', 'doe']], 'foo_two_way_synonyms',);
+            $update->filter('foo_two_way_synonyms', [['john', 'doe']]);
 
             return $update;
         });
@@ -370,7 +394,8 @@ class UpdateTest extends TestCase
         $this->assertFilterExists('foo', 'foo_stopwords');
 
         $this->sigmie->index('foo')->update(function (Update $update) {
-            $update->stopwords(['john', 'doe'], 'foo_stopwords',);
+
+            $update->filter('foo_stopwords', ['john', 'doe']);
 
             return $update;
         });
@@ -384,7 +409,7 @@ class UpdateTest extends TestCase
      */
     public function exception_when_not_returned()
     {
-        $this->expectException(Exception::class);
+        $this->expectException(TypeError::class);
 
         $this->sigmie->newIndex('foo')
             ->withoutMappings()
@@ -401,7 +426,7 @@ class UpdateTest extends TestCase
     public function mappings()
     {
         $this->sigmie->newIndex('foo')
-            ->mappings(function (Blueprint $blueprint) {
+            ->mapping(function (Blueprint $blueprint) {
 
                 $blueprint->text('bar')->searchAsYouType();
                 $blueprint->text('created_at')->unstructuredText();
@@ -416,7 +441,7 @@ class UpdateTest extends TestCase
 
         $index->update(function (Update $update) {
 
-            $update->mappings(function (Blueprint $blueprint) {
+            $update->mapping(function (Blueprint $blueprint) {
                 $blueprint->date('created_at');
                 $blueprint->number('count')->float();
 

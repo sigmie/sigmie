@@ -47,7 +47,7 @@ class AnalysisTest extends TestCase
     public function analysis_tokenizer_method()
     {
         $this->sigmie->newIndex('foo')
-            ->tokenizer(new Pattern('foo_tokenizer', '//'))
+            ->setTokenizer(new Pattern('foo_tokenizer', '//'))
             ->withoutMappings()
             ->stripHTML()
             ->create();

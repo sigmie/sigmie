@@ -28,6 +28,11 @@ abstract class TokenFilter implements TokenFilterInterface, Raw
         return $this->name;
     }
 
+    public function settings(array $settings): void
+    {
+        $this->settings = $settings;
+    }
+
     public static function fromRaw(array $raw): static
     {
         [$name, $config] = name_configs($raw);
@@ -36,7 +41,7 @@ abstract class TokenFilter implements TokenFilterInterface, Raw
             'stop' => Stopwords::fromRaw($raw),
             'synonym' => Synonyms::fromRaw($raw),
             'stemmer_override' => Stemmer::fromRaw($raw),
-            default => Generic::fromRaw($raw) 
+            default => Generic::fromRaw($raw)
         };
     }
 

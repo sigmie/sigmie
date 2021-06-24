@@ -5,7 +5,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Support\Update;
 
-use Sigmie\Base\Analysis\Analyzer as AnalysisAnalyzer;
+use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\MappingFilter;
 use Sigmie\Base\Analysis\CharFilter\PatternFilter;
@@ -14,122 +14,88 @@ use Sigmie\Base\Contracts\Analysis;
 use Sigmie\Support\Shared\CharFilters;
 use Sigmie\Support\Shared\Filters;
 use Sigmie\Support\Shared\Tokenizer;
-use Sigmie\Base\Contracts\Analyzer;
-use Sigmie\Base\Contracts\Mappings as ContractsMappings;
+use Sigmie\Base\Contracts\Analyzer as AnalyzerInterface;
+use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
 use function Sigmie\Helpers\ensure_collection;
 use function Sigmie\Helpers\named_collection;
 use Sigmie\Support\Analysis\AnalyzerUpdate;
 use Sigmie\Support\Analysis\Tokenizer\TokenizerBuilder as TokenizerBuilder;
-
-use Sigmie\Support\Contracts\Collection;
+use Sigmie\Support\Collection;
+use Sigmie\Support\Contracts\Collection as CollectionInterface;
 use Sigmie\Support\Shared\Mappings;
+use Sigmie\Support\Shared\Replicas;
+use Sigmie\Support\Shared\Shards;
+use Sigmie\Support\Update\TokenizerBuilder as UpdateTokenizerBuilder;
 
 class Update
 {
-    use Mappings, Filters, Tokenizer, CharFilters;
+    use Mappings, Filters, Tokenizer, CharFilters, Shards, Replicas;
 
-    protected int $replicas = 2;
+    protected CollectionInterface $analyzerUpdateBuilders;
 
-    protected int $shards = 1;
-
-    protected ?TokenizerInterface $tokenizer = null;
-
-    protected array $charFilter = [];
-
-    protected array $settingsConf = [];
-
-    protected Collection $analyzers;
-
-    protected array $analyzerUpdates = [];
-
-    protected DefaultAnalyzer $defaultAnalyzer;
-
-    public function __construct(Collection|array $analyzers)
+    public function __construct(protected Analysis $analysis)
     {
-        $this->analyzers = ensure_collection($analyzers);
+        $this->analyzerUpdateBuilders = new Collection();
+        $this->filters = new Collection();
+        $this->charFilters = new Collection();
+        $this->tokenizer = $analysis->defaultAnalyzer()->tokenizer();
+    }
+
+    public function analysis(): Analysis
+    {
+        return $this->analysis;
     }
 
     public function analyzer(string $name): AnalyzerUpdate
     {
-        if (!isset($this->analyzers[$name])) {
-            $this->analyzers[$name] = new AnalysisAnalyzer($name);
-        }
+        $analyzer = $this->analysis->analyzers()[$name] ?? new Analyzer($name);
 
-        $analyzer = $this->analyzers[$name];
+        $builder = new AnalyzerUpdate($this->analysis, $analyzer);
 
-        $this->analyzersUpdates[$name] = new AnalyzerUpdate($analyzer, $name);
+        $this->analyzerUpdateBuilders[$name] = $builder;
 
-        return  $this->analyzersUpdates[$name];
+        return $builder;
     }
 
-    public function analyzers(): Collection
-    {
-        return ensure_collection($this->analyzerUpdates)->map(function (AnalyzerUpdate $analyzerUpdate) {
-            return $analyzerUpdate->analyzer();
-        })->mapToDictionary(function (Analyzer $analyzer) {
-            return [$analyzer->name() => $analyzer];
-        });
-
-        return $this->analyzers;
-    }
-
-    public function charFilters(): array
-    {
-        return $this->charFilters();
-    }
-
-    private function getAnalyzer(): Analyzer
-    {
-        return $this->analyzers['default'];
-    }
-
-    public function tokenizer(TokenizerInterface $tokenizer)
-    {
-        $this->tokenizer = $tokenizer;
-
-        return $this;
-    }
-
-    public function shards(int $shards)
-    {
-        $this->shards = $shards;
-
-        return $this;
-    }
-
-    public function replicas(int $replicas)
-    {
-        $this->replicas = $replicas;
-
-        return $this;
-    }
-
-    public function defaultAnalyzer(): Analyzer
-    {
-        return $this->defaultAnalyzer;
-    }
-
-    public function tokenizerValue(): ?TokenizerInterface
+    public function tokenizerValue()
     {
         return $this->tokenizer;
     }
 
-    public function mappingsValue(): ContractsMappings
+    public function analyzers(): CollectionInterface
     {
-        return $this->createMappings($this->analyzers['default']);
+        return $this->analyzerUpdateBuilders->map(function (AnalyzerUpdate $analyzerUpdate) {
+            return $analyzerUpdate->analyzer();
+        });
     }
 
-    public function toRaw()
+    public function tokenizeOn(): UpdateTokenizerBuilder
     {
-        $mappings = $this->mappingsValue();
+        return new UpdateTokenizerBuilder($this);
+    }
 
-        return [
-            'settings' => [
-                'number_of_shards' => $this->shards,
-                'number_of_replicas' => $this->replicas,
-            ],
-            'mappings' => $mappings->toRaw()
-        ];
+    public function numberOfShards(): int
+    {
+        return $this->shards;
+    }
+
+    public function numberOfReplicas(): int
+    {
+        return $this->replicas;
+    }
+
+    public function mappings(): MappingsInterface
+    {
+        return $this->createMappings($this->analysis->analyzers()['default']);
+    }
+
+    public function filter(string $name, array $values): void
+    {
+        $filter = $this->analysis->filters()[$name];
+
+        $filter->settings($values);
+
+        $this->filters[$name] = $filter;
     }
 }

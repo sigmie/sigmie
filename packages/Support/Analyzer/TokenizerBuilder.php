@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Support\Index;
+namespace Sigmie\Support\Analyzer;
 
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
@@ -20,48 +20,49 @@ use Sigmie\Support\Collection as SupportCollection;
 use Sigmie\Support\Contracts\Collection;
 use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
 use Sigmie\Base\Index\Builder as IndexBuilder;
+use Sigmie\Support\Analysis\AnalyzerUpdate;
 use Sigmie\Support\Analysis\Tokenizer\TokenizerBuilder as TokenizerTokenizerBuilder;
-use Sigmie\Support\Contracts\TokenizerBuilder as TokenizerBuilderInterface;
+use Sigmie\Support\Contracts\TokenizerBuilder as ContractsTokenizerBuilder;
 
 use function Sigmie\Helpers\random_letters;
 
-class TokenizerBuilder implements TokenizerBuilderInterface
+class TokenizerBuilder implements ContractsTokenizerBuilder
 {
     use TokenizerTokenizerBuilder;
 
-    public function __construct(protected IndexBuilder $indexBuilder)
+    public function __construct(protected AnalyzerUpdate $analyzerUpdate)
     {
     }
 
     protected function analysis(): Analysis
     {
-        return $this->indexBuilder->analysis();
+        return $this->analyzerUpdate->analysis();
     }
 
-    public function whiteSpaces(): IndexBuilder
+    public function whiteSpaces(): AnalyzerUpdate
     {
         $this->tokenizeOnWhiteSpaces();
 
-        $this->indexBuilder->setTokenizer($this->tokenizer());
+        $this->analyzerUpdate->setTokenizer($this->tokenizer());
 
-        return $this->indexBuilder;
+        return $this->analyzerUpdate;
     }
 
-    public function pattern(string $pattern, string|null $name = null): IndexBuilder
+    public function pattern(string $pattern, string|null $name = null): AnalyzerUpdate
     {
         $this->tokenizeOnPattern($pattern, $name);
 
-        $this->indexBuilder->setTokenizer($this->tokenizer());
+        $this->analyzerUpdate->setTokenizer($this->tokenizer());
 
-        return $this->indexBuilder;
+        return $this->analyzerUpdate;
     }
 
-    public function wordBoundaries(string|null $name = null): IndexBuilder
+    public function wordBoundaries(string|null $name = null): AnalyzerUpdate
     {
         $this->tokenizeOnWordBoundaries($name);
 
-        $this->indexBuilder->setTokenizer($this->tokenizer());
+        $this->analyzerUpdate->setTokenizer($this->tokenizer());
 
-        return $this->indexBuilder;
+        return $this->analyzerUpdate;
     }
 }

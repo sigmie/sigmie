@@ -18,7 +18,7 @@ trait Mappings
 
     protected Closure $blueprintCallback;
 
-    public function mappings(callable $callable)
+    public function mapping(callable $callable)
     {
         $this->blueprintCallback = $callable;
 

@@ -54,10 +54,20 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
         return $this->tokenizers;
     }
 
+    public function updateAnalyzers(array|CollectionInterface $analyzers): void
+    {
+        // $this->analyzers = ensure_collection($analyzers);
+
+        $oldAnalyzers = ensure_collection($analyzers);
+
+        $oldAnalyzers = $this->tokenizers->toArray();
+        $newAnalyzers = $analyzers->toArray();
+
+        $this->analyzers = new Collection(array_merge($oldAnalyzers, $newAnalyzers));
+    }
+
     public function updateTokenizers(array|CollectionInterface $tokenizers): void
     {
-        $this->tokenizers = ensure_collection($tokenizers);
-
         $tokenizers = ensure_collection($tokenizers);
 
         $oldTokenizers = $this->tokenizers->toArray();
