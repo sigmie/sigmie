@@ -8,17 +8,18 @@ use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\MappingFilter;
 use Sigmie\Base\Analysis\CharFilter\PatternFilter;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
-use Sigmie\Base\Analysis\DefaultFilters;
+use Sigmie\Support\Shared\Filters;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
+use Sigmie\Base\Contracts\CharFilter;
 use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Language;
-use Sigmie\Base\Contracts\Tokenizer;
+use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
 use Sigmie\Support\Exceptions\MissingMapping;
 use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Base\Analysis\Analysis;
-use Sigmie\Base\Analysis\DefaultCharFilters;
-use Sigmie\Base\Analysis\TokenizeOn;
+use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
+use Sigmie\Support\Shared\CharFilters;
+use Sigmie\Support\Shared\Tokenizer;
 use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Support\Index\AliasedIndex;
 
@@ -28,7 +29,7 @@ use Sigmie\Support\Shared\Mappings;
 
 class Builder
 {
-    use IndexActions, Actions, DefaultFilters, Mappings, TokenizeOn, DefaultCharFilters;
+    use IndexActions, Actions, Filters, Mappings, Tokenizer, CharFilters;
 
     protected int $replicas = 2;
 
@@ -38,15 +39,26 @@ class Builder
 
     protected Language $language;
 
-    protected Tokenizer $tokenizer;
+    protected TokenizerInterface $tokenizer;
 
     private DefaultAnalyzer $defaultAnalyzer;
+
+    private AnalysisInterface $analysis;
 
     public function __construct(HttpConnection $connection)
     {
         $this->tokenizer = new WordBoundaries();
 
         $this->setHttpConnection($connection);
+
+        $this->analysis = new Analysis(
+            defaultAnalyzer: $this->getAnalyzer(),
+        );
+    }
+
+    protected function analysis(): AnalysisInterface
+    {
+        return $this->analysis;
     }
 
     public function getPrefix(): string
@@ -67,21 +79,6 @@ class Builder
 
         return $this;
     }
-
-    public function tokenizer(Tokenizer $tokenizer)
-    {
-        $this->getAnalyzer()->updateTokenizer($tokenizer);
-
-        return $this;
-    }
-
-    public function charFilter(ContractsCharFilter $charFilter)
-    {
-        $this->addCharFilter($charFilter);
-
-        return $this;
-    }
-
 
     public function shards(int $shards)
     {
@@ -112,30 +109,24 @@ class Builder
     {
         $this->throwUnlessMappingsDefined();
 
-        $defaultFilters = $this->defaultFilters();
-        $defaultCharFilters = $this->defaultCharFilters();
-
         $defaultAnalyzer = $this->getAnalyzer();
-        $defaultAnalyzer->addCharFilters($defaultCharFilters);
-        $defaultAnalyzer->addFilters($defaultFilters);
+        $defaultAnalyzer->addCharFilters($this->charFilters());
+        $defaultAnalyzer->addFilters($this->filters());
 
         $mappings = $this->createMappings($defaultAnalyzer);
 
         $analyzers = $mappings->analyzers();
 
-        $analysis = new Analysis(
-            defaultAnalyzer: $defaultAnalyzer,
-            analyzers: $analyzers,
-        );
+        $this->analysis->addAnalyzers($analyzers);
 
         if ($this->languageIsDefined()) {
-            $analysis->addLanguageFilters($this->language);
+            $this->analysis->addLanguageFilters($this->language);
         }
 
         $settings = new Settings(
             primaryShards: $this->shards,
             replicaShards: $this->replicas,
-            analysis: $analysis
+            analysis: $this->analysis
         );
 
         $indexName = index_name($this->alias);

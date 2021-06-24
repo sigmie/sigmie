@@ -304,7 +304,7 @@ class Collection implements CollectionInterface
     public function each(Closure $p): static
     {
         foreach ($this->elements as $key => $element) {
-            $p($key, $element);
+            $p($element, $key);
         }
 
         return new static($this->elements);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\Index;
 
+use Exception;
 use RachidLaasri\Travel\Travel;
 use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\MappingFilter;
@@ -25,6 +26,34 @@ use Sigmie\Testing\TestCase;
 class BuilderTest extends TestCase
 {
     use Index, Actions;
+
+    /**
+     * @test
+     */
+    public function exception_on_char_filter_name_collision()
+    {
+        $this->expectException(Exception::class);
+
+        $this->sigmie->newIndex('sigmie')
+            ->mapChars(['f' => 'b'], 'bar')
+            ->mapChars(['a' => 'c'], 'bar')
+            ->withoutMappings()
+            ->create();
+    }
+
+    /**
+     * @test
+     */
+    public function exception_on_filter_name_collision()
+    {
+        $this->expectException(Exception::class);
+
+        $this->sigmie->newIndex('sigmie')
+            ->stopwords(['foo'], 'foo')
+            ->stopwords(['bar'], 'foo')
+            ->withoutMappings()
+            ->create();
+    }
 
     /**
      * @test

@@ -10,12 +10,13 @@ use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\MappingFilter;
 use Sigmie\Base\Analysis\CharFilter\PatternFilter;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
-use Sigmie\Base\Analysis\DefaultCharFilters;
-use Sigmie\Base\Analysis\DefaultFilters;
-use Sigmie\Base\Analysis\TokenizeOn;
+use Sigmie\Base\Contracts\Analysis;
+use Sigmie\Support\Shared\CharFilters;
+use Sigmie\Support\Shared\Filters;
+use Sigmie\Support\Shared\Tokenizer;
 use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Base\Contracts\Mappings as ContractsMappings;
-use Sigmie\Base\Contracts\Tokenizer;
+use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
 use function Sigmie\Helpers\ensure_collection;
 use function Sigmie\Helpers\named_collection;
 use Sigmie\Support\Analysis\AnalyzerUpdate;
@@ -26,13 +27,13 @@ use Sigmie\Support\Shared\Mappings;
 
 class Update
 {
-    use Mappings, DefaultFilters, TokenizeOn, DefaultCharFilters;
+    use Mappings, Filters, Tokenizer, CharFilters;
 
     protected int $replicas = 2;
 
     protected int $shards = 1;
 
-    protected ?Tokenizer $tokenizer = null;
+    protected ?TokenizerInterface $tokenizer = null;
 
     protected array $charFilter = [];
 
@@ -75,7 +76,7 @@ class Update
 
     public function charFilters(): array
     {
-        return $this->defaultCharFilters();
+        return $this->charFilters();
     }
 
     private function getAnalyzer(): Analyzer
@@ -83,7 +84,7 @@ class Update
         return $this->analyzers['default'];
     }
 
-    public function tokenizer(Tokenizer $tokenizer)
+    public function tokenizer(TokenizerInterface $tokenizer)
     {
         $this->tokenizer = $tokenizer;
 
@@ -109,7 +110,7 @@ class Update
         return $this->defaultAnalyzer;
     }
 
-    public function tokenizerValue(): ?Tokenizer
+    public function tokenizerValue(): ?TokenizerInterface
     {
         return $this->tokenizer;
     }

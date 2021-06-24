@@ -11,6 +11,7 @@ use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\TokenFilter\TokenFilter as TokenFilterTokenFilter;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
+use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Base\Contracts\Analyzers;
 use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
 use Sigmie\Base\Contracts\Configurable;
@@ -25,7 +26,7 @@ use Sigmie\Support\Collection;
 
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
-class Analysis implements Analyzers, Raw
+class Analysis implements Analyzers, Raw, AnalysisInterface
 {
     protected CollectionInterface $analyzers;
 
@@ -58,7 +59,7 @@ class Analysis implements Analyzers, Raw
         $this->tokenizers = ensure_collection($tokenizers);
     }
 
-    public function updateFilters(array|CollectionInterface $filters)
+    public function updateFilters(array|CollectionInterface $filters): void
     {
         $filters = ensure_collection($filters);
 
@@ -66,6 +67,16 @@ class Analysis implements Analyzers, Raw
         $newFilters = $filters->toArray();
 
         $this->filter = new Collection(array_merge($oldFilters, $newFilters));
+    }
+
+    public function updateCharFilters(array|CollectionInterface $charFilter): void
+    {
+        $charFilter = ensure_collection($charFilter);
+
+        $oldFilters = $this->charFilter->toArray();
+        $newFilters = $charFilter->toArray();
+
+        $this->charFilter = new Collection(array_merge($oldFilters, $newFilters));
     }
 
     public function filters(): CollectionInterface
@@ -93,12 +104,17 @@ class Analysis implements Analyzers, Raw
         return $this->filter->hasKey($filterName);
     }
 
+    public function hasAnalyzer(string $analyzerName): bool
+    {
+        return $this->analyzers->hasKey($analyzerName);
+    }
+
     public function hasCharFilter(string $charFilterName): bool
     {
         return $this->charFilter->hasKey($charFilterName);
     }
 
-    public function addAnalyzers(array|Collection $analyzers): void
+    public function addAnalyzers(array|CollectionInterface $analyzers): void
     {
         $analyzers = ensure_collection($analyzers);
 
@@ -160,13 +176,13 @@ class Analysis implements Analyzers, Raw
         return $this->allAnalyzers();
     }
 
-
     public function setAnalyzer(Analyzer $analyzer)
     {
         $this->analyzers[$analyzer->name()] = $analyzer;
     }
 
-    public function addLanguageFilters(Language $language)
+
+    public function addLanguageFilters(Language $language): static
     {
         $filters = $language->filters()
             ->mapToDictionary(fn (TokenFilter $filter) => [$filter->name() => $filter]);

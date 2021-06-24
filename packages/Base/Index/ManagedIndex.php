@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Carbon\Carbon;
-use Sigmie\Base\Analysis\DefaultFilters;
+use Sigmie\Support\Shared\Filters;
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
@@ -14,7 +14,7 @@ use Sigmie\Base\Contracts\ManagedIndex as ManagedIndexInterface;
 
 class ManagedIndex implements ManagedIndexInterface
 {
-    use DefaultFilters, Actions, Actions;
+    use Filters, Actions, Actions;
 
     protected array $charFilters = [];
 
@@ -41,7 +41,7 @@ class ManagedIndex implements ManagedIndexInterface
 
     public function update()
     {
-        $filters = $this->defaultFilters();
+        $filters = $this->filters();
 
         $timestamp = Carbon::now()->format('YmdHisu');
 

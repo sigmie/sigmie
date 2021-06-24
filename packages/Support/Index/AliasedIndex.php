@@ -61,7 +61,7 @@ class AliasedIndex extends Index
 
         $props = array_merge($oldProps, $newProps);
 
-        $newFilters = $update->defaultFilters();
+        $newFilters = $update->filters();
 
         $this->settings->analysis->updateFilters($newFilters);
 
