@@ -20,6 +20,8 @@ interface Analysis
 
     public function updateFilters(array|Collection $filters): void;
 
+    public function updateTokenizers(array|Collection $tokenizers): void;
+
     public function updateCharFilters(array|Collection $charFilter): void;
 
     public function addLanguageFilters(Language $language): static;

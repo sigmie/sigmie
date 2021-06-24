@@ -30,6 +30,57 @@ class BuilderTest extends TestCase
     /**
      * @test
      */
+    public function tokenize_on_word_pattern()
+    {
+        $this->sigmie->newIndex('sigmie')
+            ->withoutMappings()
+            ->tokenizeOn()->pattern('/something/', 'some_pattern')
+            ->create();
+
+        $this->assertAnalyzerHasTokenizer('sigmie', 'default', 'some_pattern');
+        $this->assertTokenizerExists('sigmie', 'some_pattern');
+        $this->assertTokenizerEquals('sigmie', 'some_pattern', [
+            'type' => 'pattern',
+            'class' => Pattern::class,
+            'pattern' => '/something/'
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function tokenize_on_word_boundaries()
+    {
+        $this->sigmie->newIndex('sigmie')
+            ->withoutMappings()
+            ->tokenizeOn()->wordBoundaries('able')
+            ->create();
+
+        $this->assertAnalyzerHasTokenizer('sigmie', 'default', 'able');
+        $this->assertTokenizerExists('sigmie', 'able');
+        $this->assertTokenizerEquals('sigmie', 'able', [
+            'type' => 'standard',
+            'class' => WordBoundaries::class,
+            'max_token_length' => '255'
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function tokenize_on_whitespaces()
+    {
+        $this->sigmie->newIndex('sigmie')
+            ->withoutMappings()
+            ->tokenizeOn()->whiteSpaces()
+            ->create();
+
+        $this->assertAnalyzerHasTokenizer('sigmie', 'default', 'whitespace');
+    }
+
+    /**
+     * @test
+     */
     public function exception_on_char_filter_name_collision()
     {
         $this->expectException(Exception::class);

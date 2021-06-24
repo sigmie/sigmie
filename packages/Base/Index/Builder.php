@@ -22,6 +22,7 @@ use Sigmie\Support\Shared\CharFilters;
 use Sigmie\Support\Shared\Tokenizer;
 use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Support\Index\AliasedIndex;
+use Sigmie\Support\Index\TokenizerBuilder;
 
 use function Sigmie\Helpers\index_name;
 
@@ -29,7 +30,7 @@ use Sigmie\Support\Shared\Mappings;
 
 class Builder
 {
-    use IndexActions, Actions, Filters, Mappings, Tokenizer, CharFilters;
+    use IndexActions, Actions, Filters, Mappings, CharFilters;
 
     protected int $replicas = 2;
 
@@ -56,9 +57,21 @@ class Builder
         );
     }
 
-    protected function analysis(): AnalysisInterface
+    public function analysis(): AnalysisInterface
     {
         return $this->analysis;
+    }
+
+    public function tokenizeOn(): TokenizerBuilder
+    {
+        return new TokenizerBuilder($this);
+    }
+
+    public function tokenizer(TokenizerInterface $tokenizer): static
+    {
+        $this->tokenizer = $tokenizer;
+
+        return $this;
     }
 
     public function getPrefix(): string
@@ -66,28 +79,28 @@ class Builder
         return $this->alias;
     }
 
-    public function alias(string $alias)
+    public function alias(string $alias): static
     {
         $this->alias = $alias;
 
         return $this;
     }
 
-    public function withoutMappings()
+    public function withoutMappings(): static
     {
         $this->dynamicMappings = true;
 
         return $this;
     }
 
-    public function shards(int $shards)
+    public function shards(int $shards): static
     {
         $this->shards = $shards;
 
         return $this;
     }
 
-    public function replicas(int $replicas)
+    public function replicas(int $replicas): static
     {
         $this->replicas = $replicas;
 
@@ -112,6 +125,7 @@ class Builder
         $defaultAnalyzer = $this->getAnalyzer();
         $defaultAnalyzer->addCharFilters($this->charFilters());
         $defaultAnalyzer->addFilters($this->filters());
+        $defaultAnalyzer->updateTokenizer($this->tokenizer);
 
         $mappings = $this->createMappings($defaultAnalyzer);
 

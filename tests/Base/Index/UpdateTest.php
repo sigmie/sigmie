@@ -122,7 +122,7 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->analyzer('bar')->tokenizeOn()->whiteSpaces();
+            $update->analyzer('bar')->tokenizeOn()->tokenizeOnWhiteSpaces();
 
             return $update;
         });
@@ -223,7 +223,7 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->tokenizeOn()->pattern('/foo/', 'default_analyzer_pattern_tokenizer');
+            $update->tokenizeOn()->tokenizeOnPattern('/foo/', 'default_analyzer_pattern_tokenizer');
 
             return $update;
         });
@@ -250,7 +250,7 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->tokenizeOn()->wordBoundaries();
+            $update->tokenizeOn()->tokenizeOnWordBoundaries();
 
             return $update;
         });

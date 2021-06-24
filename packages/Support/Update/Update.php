@@ -20,7 +20,7 @@ use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
 use function Sigmie\Helpers\ensure_collection;
 use function Sigmie\Helpers\named_collection;
 use Sigmie\Support\Analysis\AnalyzerUpdate;
-use Sigmie\Support\Analysis\Tokenizer\Builder as TokenizerBuilder;
+use Sigmie\Support\Analysis\Tokenizer\TokenizerBuilder as TokenizerBuilder;
 
 use Sigmie\Support\Contracts\Collection;
 use Sigmie\Support\Shared\Mappings;

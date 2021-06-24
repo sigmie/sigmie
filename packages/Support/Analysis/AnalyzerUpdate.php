@@ -11,7 +11,7 @@ use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Base\Contracts\CharFilter;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
-use Sigmie\Support\Analysis\Tokenizer\Builder as TokenizerBuilder;
+use Sigmie\Support\Analysis\Tokenizer\TokenizerBuilder as TokenizerBuilder;
 
 class AnalyzerUpdate
 {
@@ -54,7 +54,7 @@ class AnalyzerUpdate
 
     public function setTokenizer(Tokenizer $tokenizer)
     {
-        $this->analyzer->updateTokenizer($tokenizer);
+        $this->analyzer->setTokenizer($tokenizer);
     }
 
     public function tokenizeOn(): TokenizerBuilder
