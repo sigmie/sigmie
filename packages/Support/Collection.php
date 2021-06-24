@@ -174,7 +174,7 @@ class Collection implements CollectionInterface
     public function remove(string|int $key): static
     {
         if (!isset($this->elements[$key]) && !array_key_exists($key, $this->elements)) {
-            return null;
+            return new static($this->elements);
         }
 
         unset($this->elements[$key]);

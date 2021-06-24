@@ -62,6 +62,8 @@ interface Collection extends Countable, IteratorAggregate, ArrayAccess
 
     public function removeElement(mixed $element): static;
 
+    public function remove(string|int $key): static;
+
     public function current(): mixed;
 
     public function next(): mixed;

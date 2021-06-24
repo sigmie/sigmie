@@ -56,21 +56,50 @@ class UpdateTest extends TestCase
         $this->sigmie->newIndex('foo')
             ->withoutMappings()
             ->stopwords(['foo', 'bar'], 'demo')
+            ->mapChars(['foo' => 'bar'], 'some_char_filter_name')
             ->stripHTML()
             ->create();
 
         $this->assertAnalyzerHasFilter('foo', 'default', 'demo');
         $this->assertFilterHasStopwords('foo', 'demo', ['foo', 'bar']);
         $this->assertAnalyzerHasCharFilter('foo', 'default', 'html_strip');
+        $this->assertAnalyzerHasCharFilter('foo', 'default', 'some_char_filter_name');
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->analyzer('default')->removeCharFilter(new HTMLFilter);
+            $update->analyzer('default')->removeCharFilter(new HTMLFilter)
+                ->removeCharFilter('some_char_filter_name');
 
             return $update;
         });
 
         $this->assertAnalyzerHasNotCharFilter('foo', 'default', 'html_strip');
+        $this->assertAnalyzerHasNotCharFilter('foo', 'default', 'some_char_filter_name');
+    }
+
+    /**
+     * @test
+     */
+    public function update_char_filter()
+    {
+        $this->markTestSkipped();
+
+        $this->sigmie->newIndex('foo')
+            ->withoutMappings()
+            ->mapChars(['bar' => 'baz'], 'map_chars_char_filter')
+            ->create();
+
+        $this->assertAnalyzerHasCharFilter('foo', 'default', 'map_chars_char_filter');
+
+        throw new Exception('Need to be able to update chars filter');
+
+        $this->sigmie->index('foo')->update(function (Update $update) {
+
+            //TODO handle char filter update
+            // $update->charFilter('map_chars_char_filter', ['baz' => 'foo']);
+
+            return $update;
+        });
     }
 
     /**
@@ -92,9 +121,9 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->analyzer('bar')->stripHTML();
-            $update->analyzer('bar')->patternReplace('/foo/', 'bar');
-            $update->analyzer('bar')->mapChars(['bar' => 'baz']);
+            $update->analyzer('bar')->stripHTML()
+                ->patternReplace('/foo/', 'something', 'bar_pattern_replace_filter')
+                ->mapChars(['bar' => 'baz'], 'bar_mappings_filter');
 
             return $update;
         });
@@ -129,6 +158,7 @@ class UpdateTest extends TestCase
             return $update;
         });
 
+
         $this->assertAnalyzerHasTokenizer('foo', 'bar', 'whitespace');
         $this->assertAnalyzerExists('foo', 'bar');
     }
@@ -136,7 +166,7 @@ class UpdateTest extends TestCase
     /**
      * @test
      */
-    public function analyzer_update_tokenizer()
+    public function analyzer_update_tokenizer_value()
     {
         $this->sigmie->newIndex('foo')
             ->mapping(function (Blueprint $blueprint) {
@@ -146,6 +176,7 @@ class UpdateTest extends TestCase
                 return $blueprint;
             })
             ->create();
+
 
         $this->assertAnalyzerHasTokenizer('foo', 'bar', 'standard');
         $this->assertAnalyzerExists('foo', 'bar');

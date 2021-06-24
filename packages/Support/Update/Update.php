@@ -51,6 +51,8 @@ class Update
     {
         $analyzer = $this->analysis->analyzers()[$name] ?? new Analyzer($name);
 
+        $this->analysis->addAnalyzers([$name => $analyzer]);
+
         $builder = new AnalyzerUpdate($this->analysis, $analyzer);
 
         $this->analyzerUpdateBuilders[$name] = $builder;

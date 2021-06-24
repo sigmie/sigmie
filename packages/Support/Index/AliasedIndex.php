@@ -35,7 +35,7 @@ class AliasedIndex extends Index
     {
         $update = (new UpdateProxy($this->settings->analysis))($update);
 
-        $this->settings->analysis->addAnalyzers($update->analyzers());
+        $this->settings->analysis->updateAnalyzers($update->analyzers());
 
         $charFilters = $update->charFilters();
 

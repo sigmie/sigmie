@@ -10,6 +10,7 @@ use Sigmie\Base\Contracts\CharFilter;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
 use Sigmie\Support\Analyzer\TokenizerBuilder as AnalyzerTokenizerBuilder;
+use Sigmie\Support\Collection;
 use Sigmie\Support\Contracts\TokenizerBuilder;
 use Sigmie\Support\Shared\CharFilters;
 use Sigmie\Support\Shared\Filters;
@@ -19,8 +20,13 @@ class AnalyzerUpdate
 {
     use CharFilters, Filters, Tokenizer;
 
-    public function __construct(protected Analysis $analysis, protected Analyzer $analyzer)
-    {
+    public function __construct(
+        protected Analysis $analysis,
+        protected Analyzer $analyzer
+    ) {
+        $this->filters = $analyzer->filters();
+        $this->charFilters = $analyzer->charFilters();
+        $this->tokenizer = $analyzer->tokenizer();
     }
 
     public function analysis(): Analysis
@@ -54,6 +60,7 @@ class AnalyzerUpdate
         $name = $filter instanceof TokenFilter ? $filter->name() : $filter;
 
         $this->analyzer->removeFilter($name);
+        $this->filters->remove($name);
 
         return $this;
     }
@@ -63,6 +70,7 @@ class AnalyzerUpdate
         $name = $charFilter instanceof CharFilter ? $charFilter->name() : $charFilter;
 
         $this->analyzer->removeCharFilter($name);
+        $this->charFilters->remove($name);
 
         return $this;
     }
@@ -78,6 +86,10 @@ class AnalyzerUpdate
 
     public function analyzer(): Analyzer
     {
+        $this->analyzer->addCharFilters($this->charFilters);
+        $this->analyzer->addFilters($this->filters);
+        $this->analyzer->updateTokenizer($this->tokenizer);
+
         return $this->analyzer;
     }
 }

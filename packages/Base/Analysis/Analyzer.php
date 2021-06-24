@@ -136,6 +136,6 @@ class Analyzer implements AnalyzerInterface
 
         usort($filters, fn (Priority $a, Priority $b) => ($a->getPriority() < $b->getPriority()) ? -1 : 1);
 
-        return new Collection($filters);
+        return (new Collection($filters))->mapToDictionary(fn (TokenFilter $tokenFilter) => [$tokenFilter->name() => $tokenFilter]);
     }
 }
