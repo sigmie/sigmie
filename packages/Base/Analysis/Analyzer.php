@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis;
 
+use Sigmie\Base\Analysis\CharFilter\ConfigurableCharFilter;
 use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Whitespace;
@@ -11,6 +12,7 @@ use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\Analyzer as AnalyzerInterface;
 use Sigmie\Base\Contracts\CharFilter;
 use Sigmie\Base\Contracts\Configurable;
+use Sigmie\Base\Contracts\ConfigurableTokenizer;
 use Sigmie\Base\Contracts\Priority;
 use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Contracts\TokenFilter;
@@ -120,20 +122,21 @@ class Analyzer implements AnalyzerInterface
 
     public function toRaw(): array
     {
-        $filters = $this->sortedFilters();
-        $charFilters = $this->charFilters();
+        $filters = $this->sortedFilters()
+            ->map(fn (TokenFilter $filter) => $filter->name())
+            ->toArray();
 
-        $result = [
-            'tokenizer' => $this->tokenizer()->type(),
-            'char_filter' => $charFilters->map(fn (CharFilter $filter) => $filter->name())->flatten()->toArray(),
-            'filter' => $filters->map(fn (TokenFilter $filter) => $filter->name())->toArray()
+        $charFilters = $this->charFilters()
+            ->map(fn (CharFilter $charFilter) => $charFilter->name())
+            ->toArray();
+
+        return  [
+            $this->name => [
+                'tokenizer' => $this->tokenizer()->name(),
+                'char_filter' => $charFilters,
+                'filter' => $filters
+            ]
         ];
-
-        if ($this->tokenizer instanceof Configurable) {
-            $result['tokenizer'] = $this->tokenizer->name();
-        }
-
-        return $result;
     }
 
     public function filters(): Collection

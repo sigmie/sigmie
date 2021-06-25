@@ -37,9 +37,11 @@ class WordBoundaries extends Tokenizer
     public function toRaw(): array
     {
         return [
-            'class' => static::class,
-            "type" => $this->type(),
-            "max_token_length" => $this->maxTokenLength
+            $this->name => [
+                'class' => static::class,
+                "type" => $this->type(),
+                "max_token_length" => $this->maxTokenLength
+            ]
         ];
     }
 }

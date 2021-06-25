@@ -8,11 +8,6 @@ use Sigmie\Base\Contracts\Tokenizer;
 
 class Whitespace implements Tokenizer
 {
-    public function type(): string
-    {
-        return 'whitespace';
-    }
-
     public function name(): string
     {
         return 'whitespace';

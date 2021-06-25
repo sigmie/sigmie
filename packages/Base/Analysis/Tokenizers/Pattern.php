@@ -12,7 +12,7 @@ use function Sigmie\Helpers\name_configs;
 class Pattern extends Tokenizer
 {
     use Name;
-    
+
     public function __construct(
         protected string $name,
         protected string $pattern
@@ -34,9 +34,11 @@ class Pattern extends Tokenizer
     public function toRaw(): array
     {
         return [
-            'class' => static::class,
-            "type" => "pattern",
-            "pattern" => $this->pattern
+            $this->name => [
+                'class' => static::class,
+                "type" => "pattern",
+                "pattern" => $this->pattern
+            ]
         ];
     }
 }

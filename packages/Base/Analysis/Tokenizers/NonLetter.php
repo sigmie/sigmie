@@ -12,9 +12,4 @@ class NonLetter implements Tokenizer
     {
         return 'letter';
     }
-
-    public function type(): string
-    {
-        return 'letter';
-    }
 }

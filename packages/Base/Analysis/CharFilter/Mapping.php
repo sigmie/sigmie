@@ -48,9 +48,11 @@ class Mapping extends ConfigurableCharFilter
         }
 
         return [
-            'type' => 'mapping',
-            'mappings' => $mappings,
-            'class' => static::class //TODO inerhit also from token filter
+            $this->name => [
+                'type' => 'mapping',
+                'mappings' => $mappings,
+                'class' => static::class
+            ]
         ];
     }
 }

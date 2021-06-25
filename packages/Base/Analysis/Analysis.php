@@ -137,21 +137,21 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
         });
 
         $this->filter = $this->filter->merge(
-            $this->allAnalyzers()
+            $this->analyzers()
                 ->map(fn (Analyzer $analyzer) => $analyzer->filters())
                 ->flatten()
                 ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter])
         );
 
         $this->charFilter = $this->charFilter->merge(
-            $this->allAnalyzers()
+            $this->analyzers()
                 ->map(fn (Analyzer $analyzer) => $analyzer->charFilters())
                 ->flatten()
                 ->mapToDictionary(fn (ContractsCharFilter $filter) => [$filter->name() => $filter])
         );
 
         $this->tokenizers = $this->tokenizers->merge(
-            $this->allAnalyzers()
+            $this->analyzers()
                 ->map(fn (Analyzer $analyzer) => $analyzer->tokenizer())
                 ->mapToDictionary(fn (Name $analyzer) => [$analyzer->name() => $analyzer])
         );
@@ -163,21 +163,21 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
         $this->analyzers['default'] = $analyzer;
 
         $this->filter = $this->filter->merge(
-            $this->allAnalyzers()
+            $this->analyzers()
                 ->map(fn (Analyzer $analyzer) => $analyzer->filters())
                 ->flatten()
                 ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter])
         );
 
         $this->charFilter = $this->charFilter->merge(
-            $this->allAnalyzers()
+            $this->analyzers()
                 ->map(fn (Analyzer $analyzer) => $analyzer->charFilters())
                 ->flatten()
                 ->mapToDictionary(fn (ContractsCharFilter $filter) => [$filter->name() => $filter])
         );
 
         $this->tokenizers = $this->tokenizers->merge(
-            $this->allAnalyzers()
+            $this->analyzers()
                 ->map(fn (Analyzer $analyzer) => $analyzer->tokenizer())
                 ->mapToDictionary(fn (Name $analyzer) => [$analyzer->name() => $analyzer])
         );
@@ -187,7 +187,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
 
     public function analyzers(): CollectionInterface
     {
-        return $this->allAnalyzers();
+        return $this->analyzers;
     }
 
     public function setAnalyzer(Analyzer $analyzer)
@@ -215,7 +215,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
         foreach ($raw['tokenizer'] as $name => $tokenizer) {
             $tokenizers[$name] = Tokenizer::fromRaw([$name => $tokenizer]);
         }
-        
+
         $filters = [];
 
         foreach ($raw['filter'] as $name => $filter) {
@@ -244,41 +244,24 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
 
     public function toRaw(): array
     {
-        $filter = $this->filters();
+        $filter = $this->filters()
+            ->mapToDictionary(
+                fn (TokenFilterInterface $tokenFilter) => $tokenFilter->toRaw()
+            )->toArray();
 
-        $filter = $filter->mapToDictionary(function (TokenFilterInterface $filter) {
-
-            $value = $filter->value();
-            $value['type'] = $filter->type();
-
-            return [
-                $filter->name() => $value
-            ];
-        })->toArray();
-
-        $charFilters = $this->charFilters();
-
-        $charFilters = $charFilters
+        $charFilters = $this->charFilters()
             ->filter(fn ($filter) => $filter instanceof Configurable)
-            ->mapToDictionary(function (Configurable $filter) {
-                return [$filter->name() => $filter->toRaw()];
-            })->toArray();
+            ->mapToDictionary(fn (Configurable $filter) => $filter->toRaw())
+            ->toArray();
 
-
-        $tokenizer = $this->tokenizers();
-
-        $tokenizer = $tokenizer
+        $tokenizer = $this->tokenizers()
             ->filter(fn (TokenizerInterface $tokenizer) => $tokenizer instanceof Configurable)
-            ->mapToDictionary(function (ConfigurableTokenizer $tokenizer) {
-                return [$tokenizer->name() => $tokenizer->toRaw()];
-            })->toArray();
-
-        $analyzers = $this->allAnalyzers();
-
-        $analyzers = $this->analyzers
-            ->mapToDictionary(function (Analyzer $analyzer) {
-                return [$analyzer->name() => $analyzer->toRaw()];
-            })->toArray();
+            ->mapToDictionary(fn (ConfigurableTokenizer $tokenizer) => $tokenizer->toRaw())
+            ->toArray();
+        
+        $analyzers = $this->analyzers()
+            ->mapToDictionary(fn (Analyzer $analyzer) => $analyzer->toRaw())
+            ->toArray();
 
         return [
             'analyzer' => $analyzers,
@@ -288,16 +271,11 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
         ];
     }
 
-    private function allAnalyzers(): CollectionInterface
-    {
-        return $this->analyzers;
-    }
-
     private function initProps()
     {
         if (!isset($this->filter)) {
             $this->filter = (new Collection())->merge(
-                $this->allAnalyzers()
+                $this->analyzers()
                     ->map(fn (Analyzer $analyzer) => $analyzer->filters())
                     ->flatten()
                     ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter])
@@ -306,7 +284,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
 
         if (!isset($this->charFilter)) {
             $this->charFilter = (new Collection())->merge(
-                $this->allAnalyzers()
+                $this->analyzers()
                     ->map(fn (Analyzer $analyzer) => $analyzer->charFilters())
                     ->flatten()
                     ->mapToDictionary(fn (ContractsCharFilter $filter) => [$filter->name() => $filter])
@@ -315,7 +293,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
 
         if (!isset($this->tokenizers)) {
             $this->tokenizers = (new Collection())->merge(
-                $this->allAnalyzers()
+                $this->analyzers()
                     ->map(fn (Analyzer $analyzer) => $analyzer->tokenizer())
                     ->mapToDictionary(fn (Name $analyzer) => [$analyzer->name() => $analyzer])
             );

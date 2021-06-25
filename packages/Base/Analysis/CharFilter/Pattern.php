@@ -41,10 +41,12 @@ class Pattern extends ConfigurableCharFilter
     public function toRaw(): array
     {
         return [
-            'type' => 'pattern_replace',
-            'pattern' => $this->pattern,
-            'replacement' => $this->replacement,
-            'class' => static::class
+            $this->name => [
+                'type' => 'pattern_replace',
+                'pattern' => $this->pattern,
+                'replacement' => $this->replacement,
+                'class' => static::class
+            ]
         ];
     }
 }
