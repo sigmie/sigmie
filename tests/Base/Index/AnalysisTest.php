@@ -29,14 +29,16 @@ class AnalysisTest extends TestCase
      */
     public function analysis_has_filter_method()
     {
-        $this->sigmie->newIndex('foo')
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
             ->withoutMappings()
             ->stopwords(['foo', 'bar'], 'foo_stopwords')
             ->create();
 
-        $this->assertFilterExists('foo', 'foo_stopwords');
+        $this->assertFilterExists($alias, 'foo_stopwords');
 
-        $analysis = $this->sigmie->index('foo')->getSettings()->analysis;
+        $analysis = $this->sigmie->index($alias)->getSettings()->analysis;
 
         $this->assertTrue($analysis->hasFilter('foo_stopwords'));
     }
@@ -46,15 +48,17 @@ class AnalysisTest extends TestCase
      */
     public function analysis_tokenizer_method()
     {
-        $this->sigmie->newIndex('foo')
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
             ->setTokenizer(new Pattern('foo_tokenizer', '//'))
             ->withoutMappings()
             ->stripHTML()
             ->create();
 
-        $this->assertAnalyzerHasTokenizer('foo', 'default', 'foo_tokenizer');
+        $this->assertAnalyzerHasTokenizer($alias, 'default', 'foo_tokenizer');
 
-        $analysis = $this->sigmie->index('foo')->getSettings()->analysis;
+        $analysis = $this->sigmie->index($alias)->getSettings()->analysis;
 
         $this->assertTrue($analysis->hasTokenizer('foo_tokenizer'));
     }
@@ -64,14 +68,16 @@ class AnalysisTest extends TestCase
      */
     public function analysis_has_char_filter_method()
     {
-        $this->sigmie->newIndex('foo')
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
             ->withoutMappings()
             ->stripHTML()
             ->create();
 
-        $this->assertAnalyzerHasCharFilter('foo', 'default', 'html_strip');
+        $this->assertAnalyzerHasCharFilter($alias, 'default', 'html_strip');
 
-        $analysis = $this->sigmie->index('foo')->getSettings()->analysis;
+        $analysis = $this->sigmie->index($alias)->getSettings()->analysis;
 
         $this->assertTrue($analysis->hasCharFilter('html_strip'));
     }

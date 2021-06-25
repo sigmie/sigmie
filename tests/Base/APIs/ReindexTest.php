@@ -23,9 +23,12 @@ class ReindexTest extends TestCase
      */
     public function reindex_api_call(): void
     {
-        $oldIndex = $this->getIndex($this->testIndexName);
+        $newName = uniqid();
+        $oldName= uniqid();
 
-        $newIndex = $this->createIndex(new Index('foo'));
+        $oldIndex = $this->createIndex(new Index($oldName));
+
+        $newIndex = $this->createIndex(new Index($newName));
 
         $body = [
             ['create' => ['_id' => 1]],
@@ -47,9 +50,11 @@ class ReindexTest extends TestCase
      */
     public function reindex_exception(): void
     {
+        $name = uniqid();
+
         $oldIndex = $this->getIndex($this->testIndexName);
 
-        $newIndex = $this->createIndex(new Index('foo'));
+        $newIndex = $this->createIndex(new Index($name));
 
         $body = [
             ['create' => ['_id' => 1]],

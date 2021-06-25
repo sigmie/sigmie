@@ -29,7 +29,7 @@
         "phpstan/phpstan": "^0.12.60",
         "squizlabs/php_codesniffer": "^3.5",
         "spatie/ray": "^1.1",
-        "brianium/paratest": "^6.2",
+        "brianium/paratest": "^6.3",
         "nunomaduro/collision": "^5.3",
         "rachidlaasri/travel": "^1.06"
     },

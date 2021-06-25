@@ -14,7 +14,7 @@ class TestCaseTest extends TestCase
      */
     public function index_exists()
     {
-        $indexName = 'foo';
+        $indexName = uniqid();
 
         $this->createIndex(new Index($indexName));
 

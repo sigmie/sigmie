@@ -65,7 +65,7 @@ class AliasedIndex extends Index
             new Properties($props)
         );
 
-        $newName = index_name($this->alias) . 'new';
+        $newName = index_name($this->alias);
         $oldName = $this->identifier;
 
         $this->settings->primaryShards = $update->numberOfShards();

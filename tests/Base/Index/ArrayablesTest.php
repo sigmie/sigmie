@@ -31,12 +31,14 @@ class ArrayablesTest extends TestCase
      */
     public function char_filters()
     {
-        $this->sigmie->newIndex('foo')
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
             ->stripHTML()
             ->withoutMappings()
             ->create();
 
-        $index = $this->getIndex('foo');
+        $index = $this->getIndex($alias);
 
         $analyzer = $index->getSettings()->analysis->analyzers()['default'];
 
@@ -49,12 +51,14 @@ class ArrayablesTest extends TestCase
      */
     public function whitespace_tokenizer()
     {
-        $this->sigmie->newIndex('foo')
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
             ->setTokenizer(new Whitespace)
             ->withoutMappings()
             ->create();
 
-        $index = $this->getIndex('foo');
+        $index = $this->getIndex($alias);
 
         $tokenizer = $index->getSettings()->analysis->defaultAnalyzer()->tokenizer();
 
@@ -66,13 +70,15 @@ class ArrayablesTest extends TestCase
      */
     public function analysis_from_raw()
     {
-        $this->sigmie->newIndex('foo')
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
             ->mapChars(['a' => 'b'], 'map')
             ->stripHTML()
             ->withoutMappings()
             ->create();
 
-        $index = $this->getIndex('foo');
+        $index = $this->getIndex($alias);
 
         $this->assertArrayHasKey('map', $index->getSettings()->analysis->charFilters());
     }
@@ -82,12 +88,14 @@ class ArrayablesTest extends TestCase
      */
     public function pattern_tokenizer()
     {
-        $this->sigmie->newIndex('foo')
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
             ->setTokenizer(new Pattern('foo_tokenizer', '/bar/'))
             ->withoutMappings()
             ->create();
 
-        $index = $this->getIndex('foo');
+        $index = $this->getIndex($alias);
 
         $tokenizer = $index->getSettings()->analysis->defaultAnalyzer()->tokenizer();
 
@@ -101,9 +109,11 @@ class ArrayablesTest extends TestCase
      */
     public function text_properties_analyzers()
     {
+        $alias = uniqid();
+
         $customFieldAnalyzer = new Analyzer('custom', new Whitespace);
 
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex($alias)
             ->mapping(function (Blueprint $blueprint) use ($customFieldAnalyzer) {
 
                 $blueprint->text('title')->searchAsYouType();
@@ -113,7 +123,7 @@ class ArrayablesTest extends TestCase
             })
             ->create();
 
-        $index = $this->getIndex('foo');
+        $index = $this->getIndex($alias);
 
         $defaultAnalyzer = $index->getSettings()->analysis->defaultAnalyzer();
         $mappings = $index->getMappings();
@@ -133,7 +143,9 @@ class ArrayablesTest extends TestCase
      */
     public function mapping_properties()
     {
-        $this->sigmie->newIndex('foo')
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
             ->mapping(function (Blueprint $blueprint) {
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText();
@@ -146,7 +158,7 @@ class ArrayablesTest extends TestCase
             })
             ->create();
 
-        $index = $this->getIndex('foo');
+        $index = $this->getIndex($alias);
 
         $defaultAnalyzer = $index->getSettings()->analysis->defaultAnalyzer();
         $mappings = $index->getMappings();
@@ -182,11 +194,13 @@ class ArrayablesTest extends TestCase
      */
     public function dynamic_mappings()
     {
-        $this->sigmie->newIndex('foo')
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
             ->withoutMappings()
             ->create();
 
-        $index = $this->getIndex('foo');
+        $index = $this->getIndex($alias);
 
         $mappings = $index->getMappings();
 
@@ -198,7 +212,9 @@ class ArrayablesTest extends TestCase
      */
     public function mappings()
     {
-        $this->sigmie->newIndex('foo')
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
             ->mapping(function (Blueprint $blueprint) {
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText();
@@ -211,7 +227,7 @@ class ArrayablesTest extends TestCase
             })
             ->create();
 
-        $index = $this->getIndex('foo');
+        $index = $this->getIndex($alias);
 
         $mappings = $index->getMappings();
 
@@ -223,14 +239,16 @@ class ArrayablesTest extends TestCase
      */
     public function analysis_tokenizer()
     {
+        $alias = uniqid();
+
         $tokenizer = new WordBoundaries('foo_word_boundaries');
 
-        $this->sigmie->newIndex('foo')
+        $this->sigmie->newIndex($alias)
             ->setTokenizer($tokenizer)
             ->withoutMappings()
             ->create();
 
-        $index = $this->getIndex('foo');
+        $index = $this->getIndex($alias);
 
         $analysis = $index->getSettings()->analysis;
 
@@ -248,11 +266,13 @@ class ArrayablesTest extends TestCase
      */
     public function analysis_default_analyzer()
     {
-        $this->sigmie->newIndex('foo')
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
             ->withoutMappings()
             ->create();
 
-        $index = $this->getIndex('foo');
+        $index = $this->getIndex($alias);
 
         $analysis = $index->getSettings()->analysis;
 
@@ -268,14 +288,16 @@ class ArrayablesTest extends TestCase
      */
     public function settings()
     {
-        $this->sigmie->newIndex('foo')
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
             ->replicas(2)
             ->shards(1)
             ->setTokenizer(new Pattern('foo_pattern_name', '/[ ]/'))
             ->withoutMappings()
             ->create();
 
-        $index = $this->getIndex('foo');
+        $index = $this->getIndex($alias);
 
         $settings = $index->getSettings();
 
