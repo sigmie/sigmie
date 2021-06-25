@@ -6,12 +6,12 @@ namespace Sigmie\Tests\Base\Index;
 
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
-use Sigmie\Base\Analysis\CharFilter\MappingFilter;
+use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
+use Sigmie\Base\Analysis\CharFilter\Mapping;
 use Sigmie\Base\Analysis\CharFilter\Pattern as PatternCharFilter;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\Tokenizers\Pattern as PatternTokenizer;
-use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
+use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentsCollection;
@@ -68,7 +68,7 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->analyzer('default')->removeCharFilter(new HTMLFilter)
+            $update->analyzer('default')->removeCharFilter(new HTMLStrip)
                 ->removeCharFilter('some_char_filter_name');
 
             return $update;
@@ -92,7 +92,7 @@ class UpdateTest extends TestCase
         $this->assertAnalyzerHasCharFilter('foo', 'default', 'map_chars_char_filter');
         $this->assertCharFilterEquals('foo', 'map_chars_char_filter', [
             'type' => 'mapping',
-            'class' => MappingFilter::class,
+            'class' => Mapping::class,
             'mappings' => ['bar => baz']
         ]);
 
@@ -118,7 +118,7 @@ class UpdateTest extends TestCase
         $this->assertAnalyzerHasCharFilter('foo', 'default', 'map_chars_char_filter');
         $this->assertCharFilterEquals('foo', 'map_chars_char_filter', [
             'type' => 'mapping',
-            'class' => MappingFilter::class,
+            'class' => Mapping::class,
             'mappings' => ['baz => foo']
         ]);
 
@@ -212,7 +212,7 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->analyzer('bar')->tokenizer(new Whitespaces);
+            $update->analyzer('bar')->tokenizer(new Whitespace);
 
             return $update;
         });
@@ -316,7 +316,7 @@ class UpdateTest extends TestCase
         $this->assertTokenizerEquals('foo', 'default_analyzer_pattern_tokenizer', [
             'pattern' => '/foo/',
             'type' => 'pattern',
-            'class' => Pattern::class,
+            'class' => PatternTokenizer::class,
         ]);
     }
 
@@ -327,7 +327,7 @@ class UpdateTest extends TestCase
     {
         $this->sigmie->newIndex('foo')
             ->withoutMappings()
-            ->setTokenizer(new Whitespaces)
+            ->setTokenizer(new Whitespace)
             ->create();
 
         $this->assertAnalyzerTokenizerIsWhitespaces('foo', 'default');

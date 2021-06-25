@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Support\Shared;
 
 use Exception;
-use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
-use Sigmie\Base\Analysis\CharFilter\MappingFilter;
+use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
+use Sigmie\Base\Analysis\CharFilter\Mapping;
 use Sigmie\Base\Analysis\CharFilter\Pattern;
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
@@ -73,7 +73,7 @@ trait CharFilters
 
     public function stripHTML()
     {
-        $this->addCharFilter(new HTMLFilter);
+        $this->addCharFilter(new HTMLStrip);
 
         return $this;
     }
@@ -105,7 +105,7 @@ trait CharFilters
     {
         $name = $name ?? $this->createCharFilterName('mapping_filter');
 
-        $this->addCharFilter(new MappingFilter($name, $mappings));
+        $this->addCharFilter(new Mapping($name, $mappings));
 
         return $this;
     }

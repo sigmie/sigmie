@@ -6,8 +6,8 @@ declare(strict_types=1);
 namespace Sigmie\Support\Update;
 
 use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
-use Sigmie\Base\Analysis\CharFilter\MappingFilter;
+use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
+use Sigmie\Base\Analysis\CharFilter\Mapping;
 use Sigmie\Base\Analysis\CharFilter\Pattern;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Contracts\Analysis;

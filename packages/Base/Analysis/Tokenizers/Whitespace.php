@@ -6,7 +6,7 @@ namespace Sigmie\Base\Analysis\Tokenizers;
 
 use Sigmie\Base\Contracts\Tokenizer;
 
-class Whitespaces implements Tokenizer
+class Whitespace implements Tokenizer
 {
     public function type(): string
     {

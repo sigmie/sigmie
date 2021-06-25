@@ -6,11 +6,12 @@ namespace Sigmie\Base\Analysis;
 
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
+use Sigmie\Base\Analysis\CharFilter\CharFilter;
+use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
-use Sigmie\Base\Analysis\TokenFilter\TokenFilter as TokenFilterTokenFilter;
+use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
-use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
+use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Base\Contracts\Analyzers;
 use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
@@ -19,7 +20,7 @@ use Sigmie\Base\Contracts\ConfigurableTokenizer;
 use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\Name;
 use Sigmie\Base\Contracts\Raw;
-use Sigmie\Base\Contracts\TokenFilter;
+use Sigmie\Base\Contracts\TokenFilter as TokenFilterInterface;
 use Sigmie\Base\Contracts\Tokenizer;
 use function Sigmie\Helpers\ensure_collection;
 use Sigmie\Support\Collection;
@@ -141,7 +142,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
             $this->allAnalyzers()
                 ->map(fn (Analyzer $analyzer) => $analyzer->filters())
                 ->flatten()
-                ->mapToDictionary(fn (TokenFilter $filter) => [$filter->name() => $filter])
+                ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter])
         );
 
         $this->charFilter = $this->charFilter->merge(
@@ -167,7 +168,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
             $this->allAnalyzers()
                 ->map(fn (Analyzer $analyzer) => $analyzer->filters())
                 ->flatten()
-                ->mapToDictionary(fn (TokenFilter $filter) => [$filter->name() => $filter])
+                ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter])
         );
 
         $this->charFilter = $this->charFilter->merge(
@@ -200,7 +201,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
     public function addLanguageFilters(Language $language): static
     {
         $filters = $language->filters()
-            ->mapToDictionary(fn (TokenFilter $filter) => [$filter->name() => $filter]);
+            ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter]);
 
         $this->analyzers['default']->addFilters($filters);
 
@@ -213,7 +214,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
     {
         $defaultAnalyzerName = 'default';
         $rawFilters = $raw['filter'];
-        $rawChar = $raw['char_filter'];
+        $rawCharFilters = $raw['char_filter'];
         $rawTokenizer = $raw['tokenizer'];
         $filters = [];
         $charFilters = [];
@@ -238,26 +239,11 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
         }
 
         foreach ($rawFilters as $name => $filter) {
-
-            $filters[$name] = TokenFilterTokenFilter::fromRaw([$name => $filter]);
+            $filters[$name] = TokenFilter::fromRaw([$name => $filter]);
         }
 
-        foreach ($rawChar as $name => $filter) {
-
-            if (isset($filter['class']) === false) {
-                //TODO create new raw filter
-                continue;
-            }
-
-            $class = $filter['class'];
-
-            if (class_exists($class)) {
-                $class = $filter['class'];
-
-                $filterInstance = $class::fromRaw([$name => $filter]);
-
-                $charFilters[$name] = $filterInstance;
-            }
+        foreach ($rawCharFilters as $name => $filter) {
+            $charFilters[$name] = CharFilter::fromRaw([$name => $filter]);
         }
 
         $analyzers = [];
@@ -271,7 +257,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
             $analyzerCharFilters = [];
             foreach ($analyzer['char_filter'] as $filterName) {
                 $analyzerCharFilters[$filterName] = match ($filterName) {
-                    'html_strip' => new HTMLFilter,
+                    'html_strip' => new HTMLStrip,
                     default => $charFilters[$filterName]
                 };
             }
@@ -280,7 +266,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
                 $tokenizer = $tokenizers[$analyzer['tokenizer']];
             } else {
                 $tokenizer = match ($analyzer['tokenizer']) {
-                    'whitespace' => new Whitespaces,
+                    'whitespace' => new Whitespace,
                     'letter' => new NonLetter,
                     default => throw new Exception("Tokenizer {$analyzer['tokenizer']} wasn't found")
                 };
@@ -305,7 +291,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
     {
         $filter = $this->filters();
 
-        $filter = $filter->mapToDictionary(function (TokenFilter $filter) {
+        $filter = $filter->mapToDictionary(function (TokenFilterInterface $filter) {
 
             $value = $filter->value();
             $value['type'] = $filter->type();
@@ -320,7 +306,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
         $charFilters = $charFilters
             ->filter(fn ($filter) => $filter instanceof Configurable)
             ->mapToDictionary(function (Configurable $filter) {
-                return [$filter->name() => $filter->config()];
+                return [$filter->name() => $filter->toRaw()];
             })->toArray();
 
 
@@ -329,7 +315,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
         $tokenizer = $tokenizer
             ->filter(fn (Tokenizer $tokenizer) => $tokenizer instanceof Configurable)
             ->mapToDictionary(function (ConfigurableTokenizer $tokenizer) {
-                return [$tokenizer->name() => $tokenizer->config()];
+                return [$tokenizer->name() => $tokenizer->toRaw()];
             })->toArray();
 
         $analyzers = $this->allAnalyzers();
@@ -359,7 +345,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
                 $this->allAnalyzers()
                     ->map(fn (Analyzer $analyzer) => $analyzer->filters())
                     ->flatten()
-                    ->mapToDictionary(fn (TokenFilter $filter) => [$filter->name() => $filter])
+                    ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter])
             );
         }
 

@@ -8,7 +8,7 @@ use Sigmie\Base\Shared\Priority;
 
 use function Sigmie\Helpers\name_configs;
 
-class MappingFilter extends ConfigurableCharFilter
+class Mapping extends ConfigurableCharFilter
 {
     use Priority;
 
@@ -24,7 +24,7 @@ class MappingFilter extends ConfigurableCharFilter
         $this->mappings = $settings;
     }
 
-    public static function fromRaw(array $raw)
+    public static function fromRaw(array $raw): static
     {
         [$name, $config] = name_configs($raw);
         $mappings = [];
@@ -39,7 +39,7 @@ class MappingFilter extends ConfigurableCharFilter
         return new static($name, $mappings);
     }
 
-    public function config(): array
+    public function toRaw(): array
     {
         $mappings = [];
 

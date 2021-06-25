@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Sigmie\Base\Analysis\Tokenizers;
 
 use Sigmie\Base\Contracts\ConfigurableTokenizer;
+use Sigmie\Base\Shared\Name;
 
 use function Sigmie\Helpers\name_configs;
 
 class Pattern implements ConfigurableTokenizer
 {
+    use Name;
+    
     public function __construct(
         protected string $name,
         protected string $pattern
@@ -21,19 +24,14 @@ class Pattern implements ConfigurableTokenizer
         return 'sigmie_pattern_tokenizer';
     }
 
-    public function name(): string
-    {
-        return $this->name;
-    }
-
-    public static function fromRaw(array $raw)
+    public static function fromRaw(array $raw): static
     {
         [$name, $config] = name_configs($raw);
 
         return new static($name, $config['pattern']);
     }
 
-    public function config(): array
+    public function toRaw(): array
     {
         return [
             'class' => static::class,

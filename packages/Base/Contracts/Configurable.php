@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Contracts;
 
-interface Configurable
+interface Configurable extends Raw, Name
 {
-    public function config(): array;
-
-    public function name(): string;
 }

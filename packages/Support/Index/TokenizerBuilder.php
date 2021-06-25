@@ -10,7 +10,7 @@ use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\TokenFilter\Synonyms;
 use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
-use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
+use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\Analysis;
 use Sigmie\Base\Contracts\Analyzer;

@@ -6,10 +6,10 @@ namespace Sigmie\Tests\Base\Index;
 
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
+use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
-use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
+use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentsCollection;

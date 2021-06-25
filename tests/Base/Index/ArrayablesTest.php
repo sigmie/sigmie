@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Tests\Base\Index;
 
 use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
-use Sigmie\Base\Analysis\Tokenizers\Pattern; use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
+use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
+use Sigmie\Base\Analysis\Tokenizers\Pattern;
+use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Contracts\ConfigurableTokenizer;
@@ -40,7 +41,7 @@ class ArrayablesTest extends TestCase
         $analyzer = $index->getSettings()->analysis->analyzers()['default'];
 
         $this->assertNotEmpty($analyzer->charFilters());
-        $this->assertInstanceOf(HTMLFilter::class,$analyzer->charFilters()->first());
+        $this->assertInstanceOf(HTMLStrip::class, $analyzer->charFilters()->first());
     }
 
     /**
@@ -49,7 +50,7 @@ class ArrayablesTest extends TestCase
     public function whitespace_tokenizer()
     {
         $this->sigmie->newIndex('foo')
-            ->setTokenizer(new Whitespaces)
+            ->setTokenizer(new Whitespace)
             ->withoutMappings()
             ->create();
 
@@ -57,7 +58,23 @@ class ArrayablesTest extends TestCase
 
         $tokenizer = $index->getSettings()->analysis->defaultAnalyzer()->tokenizer();
 
-        $this->assertInstanceOf(Whitespaces::class, $tokenizer);
+        $this->assertInstanceOf(Whitespace::class, $tokenizer);
+    }
+
+    /**
+     * @test
+     */
+    public function analysis_from_raw()
+    {
+        $this->sigmie->newIndex('foo')
+            ->mapChars(['a' => 'b'], 'map')
+            ->stripHTML()
+            ->withoutMappings()
+            ->create();
+
+        $index = $this->getIndex('foo');
+
+        $this->assertArrayHasKey('map', $index->getSettings()->analysis->charFilters());
     }
 
     /**
@@ -84,7 +101,7 @@ class ArrayablesTest extends TestCase
      */
     public function text_properties_analyzers()
     {
-        $customFieldAnalyzer = new Analyzer('custom', new Whitespaces);
+        $customFieldAnalyzer = new Analyzer('custom', new Whitespace);
 
         $this->sigmie->newIndex('foo')
             ->mapping(function (Blueprint $blueprint) use ($customFieldAnalyzer) {

@@ -2,6 +2,6 @@
 
 namespace Sigmie\Base\Contracts;
 
-interface ConfigurableTokenizer extends Configurable, Name, Tokenizer
+interface ConfigurableTokenizer extends Configurable, Tokenizer
 {
 }

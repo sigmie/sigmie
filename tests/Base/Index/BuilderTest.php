@@ -6,16 +6,16 @@ namespace Sigmie\Tests\Base\Index;
 
 use Exception;
 use RachidLaasri\Travel\Travel;
-use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
-use Sigmie\Base\Analysis\CharFilter\MappingFilter;
-use Sigmie\Base\Analysis\CharFilter\Pattern;
+use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
+use Sigmie\Base\Analysis\CharFilter\Mapping;
+use Sigmie\Base\Analysis\CharFilter\Pattern as PatternCharFilter;
 use Sigmie\Base\Analysis\Languages\English;
 use Sigmie\Base\Analysis\Languages\German;
 use Sigmie\Base\Analysis\Languages\Greek;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
-use Sigmie\Base\Analysis\Tokenizers\Pattern;
-use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
+use Sigmie\Base\Analysis\Tokenizers\Pattern as PatternTokenizer;
+use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Support\Exceptions\MissingMapping;
@@ -41,7 +41,7 @@ class BuilderTest extends TestCase
         $this->assertTokenizerExists('sigmie', 'some_pattern');
         $this->assertTokenizerEquals('sigmie', 'some_pattern', [
             'type' => 'pattern',
-            'class' => Pattern::class,
+            'class' => PatternTokenizer::class,
             'pattern' => '/something/'
         ]);
     }
@@ -126,7 +126,7 @@ class BuilderTest extends TestCase
     public function pattern_tokenizer()
     {
         $this->sigmie->newIndex('sigmie')
-            ->setTokenizer(new Pattern('sigmie_tokenizer', '/[ ]/'))
+            ->setTokenizer(new PatternTokenizer('sigmie_tokenizer', '/[ ]/'))
             ->withoutMappings()
             ->create();
 
@@ -134,7 +134,7 @@ class BuilderTest extends TestCase
         $this->assertTokenizerEquals('sigmie', 'sigmie_tokenizer', [
             'type' => 'pattern',
             'pattern' => '/[ ]/',
-            'class' => Pattern::class
+            'class' => PatternTokenizer::class
         ]);
     }
 
@@ -157,7 +157,7 @@ class BuilderTest extends TestCase
     public function mapping_char_filters()
     {
         $this->sigmie->newIndex('sigmie')
-            ->charFilter(new MappingFilter('sigmie_mapping_char_filter', ['a' => 'bar', 'f' => 'foo']))
+            ->charFilter(new Mapping('sigmie_mapping_char_filter', ['a' => 'bar', 'f' => 'foo']))
             ->withoutMappings()
             ->create();
 
@@ -165,7 +165,7 @@ class BuilderTest extends TestCase
         $this->assertCharFilterEquals('sigmie', 'sigmie_mapping_char_filter', [
             'type' => 'mapping',
             'mappings' => ['a => bar', 'f => foo'],
-            'class' => MappingFilter::class
+            'class' => Mapping::class
         ]);
     }
 
@@ -175,7 +175,7 @@ class BuilderTest extends TestCase
     public function pattern_char_filters()
     {
         $this->sigmie->newIndex('sigmie')
-            ->charFilter(new Pattern('pattern_char_filter', '/foo/', '$1'))
+            ->charFilter(new PatternCharFilter('pattern_char_filter', '/foo/', '$1'))
             ->withoutMappings()
             ->create();
 
@@ -184,7 +184,7 @@ class BuilderTest extends TestCase
             'pattern' => '/foo/',
             'type' => 'pattern_replace',
             'replacement' => '$1',
-            'class' => Pattern::class
+            'class' => PatternCharFilter::class
         ]);
     }
 
@@ -194,7 +194,7 @@ class BuilderTest extends TestCase
     public function html_char_filters()
     {
         $this->sigmie->newIndex('sigmie')
-            ->charFilter(new HTMLFilter)
+            ->charFilter(new HTMLStrip)
             ->withoutMappings()
             ->create();
 
@@ -228,7 +228,7 @@ class BuilderTest extends TestCase
     public function whitespace_tokenizer()
     {
         $this->sigmie->newIndex('sigmie')
-            ->setTokenizer(new Whitespaces)
+            ->setTokenizer(new Whitespace)
             ->withoutMappings()
             ->create();
 

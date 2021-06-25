@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\CharFilter;
 
+use Sigmie\Base\Shared\Name;
 use Sigmie\Base\Shared\Priority;
 
 use function Sigmie\Helpers\name_configs;
@@ -20,7 +21,7 @@ class Pattern extends ConfigurableCharFilter
         parent::__construct($name);
     }
 
-    public static function fromRaw(array $raw)
+    public static function fromRaw(array $raw): static
     {
         [$name, $configs] = name_configs($raw);
 
@@ -37,7 +38,7 @@ class Pattern extends ConfigurableCharFilter
         $this->replacement = $settings['replacement'];
     }
 
-    public function config(): array
+    public function toRaw(): array
     {
         return [
             'type' => 'pattern_replace',
@@ -45,10 +46,5 @@ class Pattern extends ConfigurableCharFilter
             'replacement' => $this->replacement,
             'class' => static::class
         ];
-    }
-
-    public function name(): string
-    {
-        return $this->name;
     }
 }

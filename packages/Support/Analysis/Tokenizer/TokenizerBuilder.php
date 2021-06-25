@@ -6,7 +6,7 @@ namespace Sigmie\Support\Analysis\Tokenizer;
 
 use Exception;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
-use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
+use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\Analysis;
 use Sigmie\Base\Contracts\Analyzer;
@@ -27,7 +27,7 @@ trait TokenizerBuilder
 
     protected function tokenizeOnWhiteSpaces(): void
     {
-        $this->setTokenizer(new Whitespaces);
+        $this->setTokenizer(new Whitespace);
     }
 
     protected function tokenizeOnPattern(string $pattern, string|null $name = null): void
