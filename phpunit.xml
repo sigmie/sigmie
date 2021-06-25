@@ -16,13 +16,15 @@
       <env name="ES_HOST" value="elasticsearch:9200"/>
     </php>
 
-    <extensions>
-        <!-- <extension class="Sigmie\Testing\SigmieTestHooks"/> -->
-    </extensions>
+    <!-- <extensions>
+        <extension class="Sigmie\Testing\SigmieTestHooks"/>
+    </extensions> -->
 
     <testsuites>
         <testsuite name="Sigmie Test Suite">
+
             <directory suffix="Test.php">./tests</directory>
+
         </testsuite>
     </testsuites>
 

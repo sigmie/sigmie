@@ -1,13 +1,17 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
+use PHPUnit\Runner\AfterLastTestHook;
 use PHPUnit\Runner\AfterTestHook;
+use PHPUnit\Runner\BeforeFirstTestHook;
 use PHPUnit\Runner\BeforeTestHook;
 use Sigmie\Base\APIs\Cat;
 use Sigmie\Base\APIs\Index;
 
-class SigmieTestHooks implements AfterTestHook, BeforeTestHook
+class SigmieTestHooks implements AfterLastTestHook, BeforeFirstTestHook
 {
     use TestConnection, Cat, Index;
 
@@ -16,15 +20,13 @@ class SigmieTestHooks implements AfterTestHook, BeforeTestHook
         $this->setupTestConnection();
     }
 
-
-    public function executeBeforeTest(string $test): void
-    {
+    public function executeBeforeFirstTest(): void { 
         $this->clearIndices();
     }
 
-    public function executeAfterTest(string $test, float $time): void
+    public function executeAfterLastTest(): void
     {
-        $this->clearIndices();
+        // $this->clearIndices();
     }
 
     protected function clearIndices()
@@ -33,8 +35,10 @@ class SigmieTestHooks implements AfterTestHook, BeforeTestHook
 
         $names = array_map(fn ($data) => $data['index'], $response->json());
 
-        if (count($names) > 0) {
-            $this->indexAPICall(implode(',', $names), 'DELETE');
+        $nameChunks = array_chunk($names, 50);
+
+        foreach ($nameChunks as $chunk) {
+            $this->indexAPICall(implode(',', $chunk), 'DELETE');
         }
     }
 }

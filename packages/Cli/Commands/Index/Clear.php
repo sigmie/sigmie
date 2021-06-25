@@ -45,8 +45,10 @@ class Clear extends BaseCommand
 
         $names = array_map(fn ($data) => $data['index'], $response->json());
 
-        if (count($names) > 0) {
-            $this->indexAPICall(implode(',', $names), 'DELETE');
+        $nameChunks = array_chunk($names, 50);
+
+        foreach ($nameChunks as $chunk) {
+            $this->indexAPICall(implode(',', $chunk), 'DELETE');
         }
     }
 

@@ -340,7 +340,7 @@ class BuilderTest extends TestCase
     {
         $alias = uniqid();
 
-        $this->sigmie->newIndex('sigmie')
+        $this->sigmie->newIndex($alias)
             ->language(new English)
             ->withoutMappings()
             ->create();
@@ -486,7 +486,7 @@ class BuilderTest extends TestCase
 
         $this->assertFilterExists($alias, 'sigmie_stemmer_overrides');
         $this->assertFilterHasStemming(
-            'sigmie',
+            $alias,
             'sigmie_stemmer_overrides',
             [
                 'be, are => am',
