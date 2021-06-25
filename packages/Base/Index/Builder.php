@@ -48,9 +48,7 @@ class Builder
 
         $this->setHttpConnection($connection);
 
-        $this->analysis = new Analysis(
-            defaultAnalyzer: $this->getAnalyzer(),
-        );
+        $this->analysis = new Analysis([$this->getAnalyzer()]);
     }
 
     public function analysis(): AnalysisInterface

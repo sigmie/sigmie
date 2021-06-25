@@ -39,14 +39,11 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
     protected CollectionInterface $tokenizers;
 
     public function __construct(
-        ?DefaultAnalyzer $defaultAnalyzer = null,
         array|CollectionInterface $analyzers = [],
     ) {
         $this->analyzers = ensure_collection($analyzers);
 
-        if (!is_null($defaultAnalyzer)) {
-            $this->analyzers->set('default', $defaultAnalyzer);
-        }
+        $this->analyzers['default'] ?? $this->analyzers['default'] = new DefaultAnalyzer();
 
         $this->initProps();
     }
@@ -213,65 +210,36 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
 
     public static function fromRaw(array $raw): static
     {
-        $defaultAnalyzerName = 'default';
-        $rawFilters = $raw['filter'];
-        $rawCharFilters = $raw['char_filter'];
-        $rawTokenizer = $raw['tokenizer'];
-        $filters = [];
-        $charFilters = [];
         $tokenizers = [];
 
-        foreach ($rawTokenizer as $name => $tokenizer) {
+        foreach ($raw['tokenizer'] as $name => $tokenizer) {
             $tokenizers[$name] = Tokenizer::fromRaw([$name => $tokenizer]);
         }
+        
+        $filters = [];
 
-        foreach ($rawFilters as $name => $filter) {
+        foreach ($raw['filter'] as $name => $filter) {
             $filters[$name] = TokenFilter::fromRaw([$name => $filter]);
         }
 
-        foreach ($rawCharFilters as $name => $filter) {
+        $charFilters = [];
+
+        foreach ($raw['char_filter'] as $name => $filter) {
             $charFilters[$name] = CharFilter::fromRaw([$name => $filter]);
         }
 
         $analyzers = [];
 
         foreach ($raw['analyzer'] as $name => $analyzer) {
-            $analyzerFilters = [];
-            foreach ($analyzer['filter'] as $filterName) {
-                $analyzerFilters[$filterName] = $filters[$filterName];
-            }
-
-            $analyzerCharFilters = [];
-            foreach ($analyzer['char_filter'] as $filterName) {
-                $analyzerCharFilters[$filterName] = match ($filterName) {
-                    'html_strip' => new HTMLStrip,
-                    default => $charFilters[$filterName]
-                };
-            }
-
-            if (isset($tokenizers[$analyzer['tokenizer']])) {
-                $tokenizer = $tokenizers[$analyzer['tokenizer']];
-            } else {
-                $tokenizer = match ($analyzer['tokenizer']) {
-                    'whitespace' => new Whitespace,
-                    'letter' => new NonLetter,
-                    default => throw new Exception("Tokenizer {$analyzer['tokenizer']} wasn't found")
-                };
-            }
-
-            $analyzers[$name] = match ($name) {
-                'default' => new DefaultAnalyzer($tokenizer, $analyzerFilters, $analyzerCharFilters),
-                default => new Analyzer($name, $tokenizer, $analyzerFilters, $analyzerCharFilters)
-            };
+            $analyzers[$name] = Analyzer::create(
+                [$name => $analyzer],
+                $charFilters,
+                $filters,
+                $tokenizers
+            );
         }
 
-        if (isset($analyzers[$defaultAnalyzerName])) {
-            $defaultAnalyzer = $analyzers[$defaultAnalyzerName];
-        } else {
-            $defaultAnalyzer = new DefaultAnalyzer();
-        }
-
-        return new Analysis($defaultAnalyzer, $analyzers,);
+        return new Analysis($analyzers);
     }
 
     public function toRaw(): array

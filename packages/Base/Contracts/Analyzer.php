@@ -1,11 +1,20 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Sigmie\Base\Contracts;
 
 use Sigmie\Support\Contracts\Collection;
 
-interface Analyzer extends Name
+interface Analyzer extends Name, ToRaw
 {
+    public static function create(
+        array $raw,
+        array $charFilters,
+        array $filters,
+        array $tokenizers
+    ): static;
+
     public function tokenizer(): Tokenizer;
 
     public function filters(): Collection;

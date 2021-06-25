@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis;
 
+use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
+use Sigmie\Base\Analysis\Tokenizers\NonLetter;
+use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\Analyzer as AnalyzerInterface;
 use Sigmie\Base\Contracts\CharFilter;
@@ -39,18 +42,45 @@ class Analyzer implements AnalyzerInterface
         // 'standard' is the default Elasticsearch
         // tokenizer when no other is specified
         $this->tokenizer = $tokenizer ?: new WordBoundaries();
-
         $this->filters = ensure_collection($filters);
         $this->charFilters = ensure_collection($charFilters);
     }
 
-    public static function fromRaw(array $raw): static
-    {
-        [$name, $values] = name_configs($raw);
+    public static function create(
+        array $raw,
+        array $charFilters,
+        array $filters,
+        array $tokenizers
+    ): static {
 
-        //TODO implement
+        $analyzerFilters = [];
+        $analyzerCharFilters = [];
 
-        return new static($name);
+        [$name, $config] = name_configs($raw);
+
+        foreach ($config['filter'] as $filterName) {
+            $analyzerFilters[$filterName] = $filters[$filterName];
+        }
+
+        foreach ($config['char_filter'] as $filterName) {
+            $analyzerCharFilters[$filterName] = match ($filterName) {
+                'html_strip' => new HTMLStrip,
+                default => $charFilters[$filterName]
+            };
+        }
+
+        $tokenizerName = $config['tokenizer'];
+
+        $analyzerTokenizer = match ($tokenizerName) {
+            'whitespace' => new Whitespace,
+            'letter' => new NonLetter,
+            default => $tokenizers[$tokenizerName]
+        };
+
+        return match ($name) {
+            'default' => new DefaultAnalyzer($analyzerTokenizer, $analyzerFilters, $analyzerCharFilters),
+            default => new Analyzer($name, $analyzerTokenizer, $analyzerFilters, $analyzerCharFilters)
+        };
     }
 
     public function removeFilter(string $name): void
