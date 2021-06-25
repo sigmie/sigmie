@@ -32,7 +32,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
 {
     protected CollectionInterface $analyzers;
 
-    protected CollectionInterface $filter;
+    protected CollectionInterface $filters;
 
     protected CollectionInterface $charFilter;
 
@@ -45,7 +45,19 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
 
         $this->analyzers['default'] ?? $this->analyzers['default'] = new DefaultAnalyzer();
 
-        $this->initProps();
+        $this->filters =             $this->analyzers()
+            ->map(fn (Analyzer $analyzer) => $analyzer->filters())
+            ->flatten()
+            ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter]);
+
+        $this->charFilter = $this->analyzers()
+            ->map(fn (Analyzer $analyzer) => $analyzer->charFilters())
+            ->flatten()
+            ->mapToDictionary(fn (ContractsCharFilter $filter) => [$filter->name() => $filter]);
+
+        $this->tokenizers = $this->analyzers()
+            ->map(fn (Analyzer $analyzer) => $analyzer->tokenizer())
+            ->mapToDictionary(fn (Name $analyzer) => [$analyzer->name() => $analyzer]);
     }
 
     public function tokenizers(): CollectionInterface
@@ -57,45 +69,33 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
     {
         $analyzers = ensure_collection($analyzers);
 
-        $oldAnalyzers = $this->analyzers->toArray();
-        $newAnalyzers = $analyzers->toArray();
-
-        $this->analyzers = new Collection(array_merge($oldAnalyzers, $newAnalyzers));
+        $this->analyzers = $this->analyzers->merge($analyzers);
     }
 
     public function updateTokenizers(array|CollectionInterface $tokenizers): void
     {
         $tokenizers = ensure_collection($tokenizers);
 
-        $oldTokenizers = $this->tokenizers->toArray();
-        $newTokenizers = $tokenizers->toArray();
-
-        $this->tokenizers = new Collection(array_merge($oldTokenizers, $newTokenizers));
+        $this->tokenizers = $this->tokenizers->merge($tokenizers);
     }
 
     public function updateFilters(array|CollectionInterface $filters): void
     {
         $filters = ensure_collection($filters);
 
-        $oldFilters = $this->filter->toArray();
-        $newFilters = $filters->toArray();
-
-        $this->filter = new Collection(array_merge($oldFilters, $newFilters));
+        $this->filters = $this->filters->merge($filters);
     }
 
-    public function updateCharFilters(array|CollectionInterface $charFilter): void
+    public function updateCharFilters(array|CollectionInterface $charFilters): void
     {
-        $charFilter = ensure_collection($charFilter);
+        $charFilters = ensure_collection($charFilters);
 
-        $oldFilters = $this->charFilter->toArray();
-        $newFilters = $charFilter->toArray();
-
-        $this->charFilter = new Collection(array_merge($oldFilters, $newFilters));
+        $this->charFilter = $this->charFilter->merge($charFilters);
     }
 
     public function filters(): CollectionInterface
     {
-        return $this->filter;
+        return $this->filters;
     }
 
     public function charFilters(): CollectionInterface
@@ -115,7 +115,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
 
     public function hasFilter(string $filterName): bool
     {
-        return $this->filter->hasKey($filterName);
+        return $this->filters->hasKey($filterName);
     }
 
     public function hasAnalyzer(string $analyzerName): bool
@@ -133,56 +133,13 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
         $analyzers = ensure_collection($analyzers);
 
         $analyzers->each(function (Analyzer $analyzer) {
+
             $this->setAnalyzer($analyzer);
+
+            $this->filters = $this->filters->merge($analyzer->filters());
+            $this->charFilter = $this->charFilter->merge($analyzer->charFilters());
+            $this->tokenizers = $this->tokenizers->set($analyzer->tokenizer()->name(), $analyzer->tokenizer());
         });
-
-        $this->filter = $this->filter->merge(
-            $this->analyzers()
-                ->map(fn (Analyzer $analyzer) => $analyzer->filters())
-                ->flatten()
-                ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter])
-        );
-
-        $this->charFilter = $this->charFilter->merge(
-            $this->analyzers()
-                ->map(fn (Analyzer $analyzer) => $analyzer->charFilters())
-                ->flatten()
-                ->mapToDictionary(fn (ContractsCharFilter $filter) => [$filter->name() => $filter])
-        );
-
-        $this->tokenizers = $this->tokenizers->merge(
-            $this->analyzers()
-                ->map(fn (Analyzer $analyzer) => $analyzer->tokenizer())
-                ->mapToDictionary(fn (Name $analyzer) => [$analyzer->name() => $analyzer])
-        );
-    }
-
-    //TODO hmm don't like the naming
-    public function setDefaultAnalyzer(Analyzer $analyzer): self
-    {
-        $this->analyzers['default'] = $analyzer;
-
-        $this->filter = $this->filter->merge(
-            $this->analyzers()
-                ->map(fn (Analyzer $analyzer) => $analyzer->filters())
-                ->flatten()
-                ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter])
-        );
-
-        $this->charFilter = $this->charFilter->merge(
-            $this->analyzers()
-                ->map(fn (Analyzer $analyzer) => $analyzer->charFilters())
-                ->flatten()
-                ->mapToDictionary(fn (ContractsCharFilter $filter) => [$filter->name() => $filter])
-        );
-
-        $this->tokenizers = $this->tokenizers->merge(
-            $this->analyzers()
-                ->map(fn (Analyzer $analyzer) => $analyzer->tokenizer())
-                ->mapToDictionary(fn (Name $analyzer) => [$analyzer->name() => $analyzer])
-        );
-
-        return $this;
     }
 
     public function analyzers(): CollectionInterface
@@ -194,7 +151,6 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
     {
         $this->analyzers[$analyzer->name()] = $analyzer;
     }
-
 
     public function addLanguageFilters(Language $language): static
     {
@@ -258,7 +214,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
             ->filter(fn (TokenizerInterface $tokenizer) => $tokenizer instanceof Configurable)
             ->mapToDictionary(fn (ConfigurableTokenizer $tokenizer) => $tokenizer->toRaw())
             ->toArray();
-        
+
         $analyzers = $this->analyzers()
             ->mapToDictionary(fn (Analyzer $analyzer) => $analyzer->toRaw())
             ->toArray();
@@ -269,34 +225,5 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
             'char_filter' => $charFilters,
             'tokenizer' => $tokenizer
         ];
-    }
-
-    private function initProps()
-    {
-        if (!isset($this->filter)) {
-            $this->filter = (new Collection())->merge(
-                $this->analyzers()
-                    ->map(fn (Analyzer $analyzer) => $analyzer->filters())
-                    ->flatten()
-                    ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter])
-            );
-        }
-
-        if (!isset($this->charFilter)) {
-            $this->charFilter = (new Collection())->merge(
-                $this->analyzers()
-                    ->map(fn (Analyzer $analyzer) => $analyzer->charFilters())
-                    ->flatten()
-                    ->mapToDictionary(fn (ContractsCharFilter $filter) => [$filter->name() => $filter])
-            );
-        }
-
-        if (!isset($this->tokenizers)) {
-            $this->tokenizers = (new Collection())->merge(
-                $this->analyzers()
-                    ->map(fn (Analyzer $analyzer) => $analyzer->tokenizer())
-                    ->mapToDictionary(fn (Name $analyzer) => [$analyzer->name() => $analyzer])
-            );
-        }
     }
 }

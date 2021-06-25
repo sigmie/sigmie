@@ -35,7 +35,7 @@ interface Analysis
 
     public function updateTokenizers(array|Collection $tokenizers): void;
 
-    public function updateCharFilters(array|Collection $charFilter): void;
+    public function updateCharFilters(array|Collection $charFilters): void;
 
     public function addLanguageFilters(Language $language): static;
 }

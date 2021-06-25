@@ -124,10 +124,12 @@ class Analyzer implements AnalyzerInterface
     {
         $filters = $this->sortedFilters()
             ->map(fn (TokenFilter $filter) => $filter->name())
+            ->flatten()
             ->toArray();
 
         $charFilters = $this->charFilters()
             ->map(fn (CharFilter $charFilter) => $charFilter->name())
+            ->flatten()
             ->toArray();
 
         return  [

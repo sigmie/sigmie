@@ -223,7 +223,8 @@ class ArrayablesTest extends TestCase
      */
     public function analysis_tokenizer()
     {
-        $tokenizer = new WordBoundaries();
+        $tokenizer = new WordBoundaries('foo_word_boundaries');
+
         $this->sigmie->newIndex('foo')
             ->setTokenizer($tokenizer)
             ->withoutMappings()
@@ -238,8 +239,8 @@ class ArrayablesTest extends TestCase
         $rawAnalysis = $analysis->toRaw();
 
         $this->assertArrayHasKey('tokenizer', $rawAnalysis);
-        $this->assertArrayHasKey($tokenizer->name(), $rawAnalysis['tokenizer']);
-        $this->assertEquals($tokenizer->toRaw(), $rawAnalysis['tokenizer'][$tokenizer->name()]);
+        $this->assertArrayHasKey('foo_word_boundaries', $rawAnalysis['tokenizer']);
+        $this->assertEquals($tokenizer->toRaw()[$tokenizer->name()], $rawAnalysis['tokenizer'][$tokenizer->name()]);
     }
 
     /**

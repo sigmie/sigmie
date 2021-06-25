@@ -55,7 +55,8 @@ abstract class TokenFilter implements TokenFilterInterface, Raw
         return array_merge(
             $this->getValues(),
             [
-                'priority' => $this->getPriority()
+                'priority' => $this->getPriority(),
+                'type' => $this->type()
             ]
         );
     }

@@ -51,9 +51,6 @@ class AliasedIndex extends Index
 
         $this->defaultAnalyzer()->updateTokenizer($update->tokenizerValue());
 
-        $defaultAnalyzer =  $this->settings->analysis->defaultAnalyzer();
-        $this->settings->analysis->setDefaultAnalyzer($defaultAnalyzer);
-
         $newProps = $update->mappings()->properties()->toArray();
         $oldProps = $this->getMappings()->properties()->toArray();
 
