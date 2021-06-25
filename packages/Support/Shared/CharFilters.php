@@ -7,7 +7,7 @@ namespace Sigmie\Support\Shared;
 use Exception;
 use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\MappingFilter;
-use Sigmie\Base\Analysis\CharFilter\PatternFilter;
+use Sigmie\Base\Analysis\CharFilter\Pattern;
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
@@ -96,7 +96,7 @@ trait CharFilters
     ) {
         $name = $name ?? $this->createCharFilterName('pattern_replace_filter');
 
-        $this->addCharFilter(new PatternFilter($name, $pattern, $replace));
+        $this->addCharFilter(new Pattern($name, $pattern, $replace));
 
         return $this;
     }

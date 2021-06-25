@@ -7,9 +7,10 @@ namespace Sigmie\Tests\Base\Index;
 use Exception;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
-use Sigmie\Base\Analysis\CharFilter\PatternFilter;
+use Sigmie\Base\Analysis\CharFilter\MappingFilter;
+use Sigmie\Base\Analysis\CharFilter\Pattern as PatternCharFilter;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
-use Sigmie\Base\Analysis\Tokenizers\Pattern;
+use Sigmie\Base\Analysis\Tokenizers\Pattern as PatternTokenizer;
 use Sigmie\Base\Analysis\Tokenizers\Whitespaces;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Documents\Document;
@@ -82,24 +83,52 @@ class UpdateTest extends TestCase
      */
     public function update_char_filter()
     {
-        $this->markTestSkipped();
-
         $this->sigmie->newIndex('foo')
             ->withoutMappings()
             ->mapChars(['bar' => 'baz'], 'map_chars_char_filter')
+            ->patternReplace('/bar/', 'foo', 'pattern_replace_char_filter')
             ->create();
 
         $this->assertAnalyzerHasCharFilter('foo', 'default', 'map_chars_char_filter');
+        $this->assertCharFilterEquals('foo', 'map_chars_char_filter', [
+            'type' => 'mapping',
+            'class' => MappingFilter::class,
+            'mappings' => ['bar => baz']
+        ]);
 
-        throw new Exception('Need to be able to update chars filter');
+        $this->assertAnalyzerHasCharFilter('foo', 'default', 'pattern_replace_char_filter');
+        $this->assertCharFilterEquals('foo', 'pattern_replace_char_filter', [
+            'type' => 'pattern_replace',
+            'class' => PatternCharFilter::class,
+            'pattern' => '/bar/',
+            'replacement' => 'foo'
+        ]);
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            //TODO handle char filter update
-            // $update->charFilter('map_chars_char_filter', ['baz' => 'foo']);
+            $update->charFilter('map_chars_char_filter', ['baz' => 'foo']);
+            $update->charFilter('pattern_replace_char_filter', [
+                'pattern' => '/doe/',
+                'replacement' => 'john'
+            ]);
 
             return $update;
         });
+
+        $this->assertAnalyzerHasCharFilter('foo', 'default', 'map_chars_char_filter');
+        $this->assertCharFilterEquals('foo', 'map_chars_char_filter', [
+            'type' => 'mapping',
+            'class' => MappingFilter::class,
+            'mappings' => ['baz => foo']
+        ]);
+
+        $this->assertAnalyzerHasCharFilter('foo', 'default', 'pattern_replace_char_filter');
+        $this->assertCharFilterEquals('foo', 'pattern_replace_char_filter', [
+            'type' => 'pattern_replace',
+            'class' => PatternCharFilter::class,
+            'pattern' => '/doe/',
+            'replacement' => 'john'
+        ]);
     }
 
     /**
@@ -205,7 +234,7 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index('foo')->update(function (Update $update) {
 
-            $update->analyzer('bear')->charFilter(new PatternFilter('foo_pattern_filter', '//', 'bar'));
+            $update->analyzer('bear')->charFilter(new PatternCharFilter('foo_pattern_filter', '//', 'bar'));
 
             return $update;
         });

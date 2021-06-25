@@ -14,6 +14,8 @@ abstract class ConfigurableCharFilter implements CharFilterInterface, Configurab
     ) {
     }
 
+    abstract public function settings(array $settings): void;
+
     public function name(): string
     {
         return $this->name;

@@ -19,6 +19,11 @@ class MappingFilter extends ConfigurableCharFilter
         parent::__construct($name);
     }
 
+    public function settings(array $settings): void
+    {
+        $this->mappings = $settings;
+    }
+
     public static function fromRaw(array $raw)
     {
         [$name, $config] = name_configs($raw);

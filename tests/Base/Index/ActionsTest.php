@@ -84,6 +84,6 @@ class ActionsTest extends TestCase
 
         $this->assertInstanceOf(Collection::class, $list);
 
-        $list->each(fn ($key, $index) => $this->assertInstanceOf(Index::class, $index));
+        $list->each(fn ($index, $key) => $this->assertInstanceOf(Index::class, $index));
     }
 }

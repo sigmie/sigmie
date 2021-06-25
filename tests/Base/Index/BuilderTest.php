@@ -8,7 +8,7 @@ use Exception;
 use RachidLaasri\Travel\Travel;
 use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\MappingFilter;
-use Sigmie\Base\Analysis\CharFilter\PatternFilter;
+use Sigmie\Base\Analysis\CharFilter\Pattern;
 use Sigmie\Base\Analysis\Languages\English;
 use Sigmie\Base\Analysis\Languages\German;
 use Sigmie\Base\Analysis\Languages\Greek;
@@ -175,7 +175,7 @@ class BuilderTest extends TestCase
     public function pattern_char_filters()
     {
         $this->sigmie->newIndex('sigmie')
-            ->charFilter(new PatternFilter('pattern_char_filter', '/foo/', '$1'))
+            ->charFilter(new Pattern('pattern_char_filter', '/foo/', '$1'))
             ->withoutMappings()
             ->create();
 
@@ -184,7 +184,7 @@ class BuilderTest extends TestCase
             'pattern' => '/foo/',
             'type' => 'pattern_replace',
             'replacement' => '$1',
-            'class' => PatternFilter::class
+            'class' => Pattern::class
         ]);
     }
 

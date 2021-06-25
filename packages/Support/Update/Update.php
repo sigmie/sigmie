@@ -8,7 +8,7 @@ namespace Sigmie\Support\Update;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\MappingFilter;
-use Sigmie\Base\Analysis\CharFilter\PatternFilter;
+use Sigmie\Base\Analysis\CharFilter\Pattern;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Contracts\Analysis;
 use Sigmie\Support\Shared\CharFilters;
@@ -90,6 +90,15 @@ class Update
     public function mappings(): MappingsInterface
     {
         return $this->createMappings($this->analysis->analyzers()['default']);
+    }
+
+    public function charFilter(string $name, array $values): void
+    {
+        $charFilter = $this->analysis->charFilters()[$name];
+
+        $charFilter->settings($values);
+
+        $this->charFilters[$name] = $charFilter;
     }
 
     public function filter(string $name, array $values): void

@@ -6,7 +6,7 @@ namespace Sigmie\Base\Index;
 
 use Sigmie\Base\Analysis\CharFilter\HTMLFilter;
 use Sigmie\Base\Analysis\CharFilter\MappingFilter;
-use Sigmie\Base\Analysis\CharFilter\PatternFilter;
+use Sigmie\Base\Analysis\CharFilter\Pattern;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Support\Shared\Filters;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;

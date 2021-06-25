@@ -8,7 +8,7 @@ use Sigmie\Base\Shared\Priority;
 
 use function Sigmie\Helpers\name_configs;
 
-class PatternFilter extends ConfigurableCharFilter
+class Pattern extends ConfigurableCharFilter
 {
     use Priority;
 
@@ -29,6 +29,12 @@ class PatternFilter extends ConfigurableCharFilter
             $configs['pattern'],
             $configs['replacement']
         );
+    }
+
+    public function settings(array $settings): void
+    {
+        $this->pattern = $settings['pattern'];
+        $this->replacement = $settings['replacement'];
     }
 
     public function config(): array
