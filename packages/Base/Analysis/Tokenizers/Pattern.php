@@ -9,7 +9,7 @@ use Sigmie\Base\Shared\Name;
 
 use function Sigmie\Helpers\name_configs;
 
-class Pattern implements ConfigurableTokenizer
+class Pattern extends Tokenizer
 {
     use Name;
     

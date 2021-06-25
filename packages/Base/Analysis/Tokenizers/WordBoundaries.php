@@ -9,7 +9,7 @@ use Sigmie\Base\Contracts\Raw;
 
 use function Sigmie\Helpers\name_configs;
 
-class WordBoundaries implements ConfigurableTokenizer, Raw
+class WordBoundaries extends Tokenizer
 {
     public function __construct(
         protected string $name = 'standard',
@@ -35,11 +35,6 @@ class WordBoundaries implements ConfigurableTokenizer, Raw
     }
 
     public function toRaw(): array
-    {
-        return $this->config();
-    }
-
-    public function config(): array
     {
         return [
             'class' => static::class,

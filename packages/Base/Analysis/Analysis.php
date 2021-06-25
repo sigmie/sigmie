@@ -11,6 +11,7 @@ use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
+use Sigmie\Base\Analysis\Tokenizers\Tokenizer;
 use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Base\Contracts\Analyzers;
@@ -21,7 +22,7 @@ use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\Name;
 use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Contracts\TokenFilter as TokenFilterInterface;
-use Sigmie\Base\Contracts\Tokenizer;
+use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
 use function Sigmie\Helpers\ensure_collection;
 use Sigmie\Support\Collection;
 
@@ -221,21 +222,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
         $tokenizers = [];
 
         foreach ($rawTokenizer as $name => $tokenizer) {
-
-            if (isset($tokenizer['class']) === false) {
-                //TODO create new raw filter
-                continue;
-            }
-
-            $class = $tokenizer['class'];
-
-            if (class_exists($class)) {
-                $class = $tokenizer['class'];
-
-                $tokenizerInstance = $class::fromRaw([$name => $tokenizer]);
-
-                $tokenizers[$name] = $tokenizerInstance;
-            }
+            $tokenizers[$name] = Tokenizer::fromRaw([$name => $tokenizer]);
         }
 
         foreach ($rawFilters as $name => $filter) {
@@ -313,7 +300,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
         $tokenizer = $this->tokenizers();
 
         $tokenizer = $tokenizer
-            ->filter(fn (Tokenizer $tokenizer) => $tokenizer instanceof Configurable)
+            ->filter(fn (TokenizerInterface $tokenizer) => $tokenizer instanceof Configurable)
             ->mapToDictionary(function (ConfigurableTokenizer $tokenizer) {
                 return [$tokenizer->name() => $tokenizer->toRaw()];
             })->toArray();
