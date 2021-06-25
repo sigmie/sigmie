@@ -44,8 +44,7 @@ class Pattern extends ConfigurableCharFilter
             $this->name => [
                 'type' => 'pattern_replace',
                 'pattern' => $this->pattern,
-                'replacement' => $this->replacement,
-                'class' => static::class
+                'replacement' => $this->replacement
             ]
         ];
     }

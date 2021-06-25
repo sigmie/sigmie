@@ -50,8 +50,7 @@ class Mapping extends ConfigurableCharFilter
         return [
             $this->name => [
                 'type' => 'mapping',
-                'mappings' => $mappings,
-                'class' => static::class
+                'mappings' => $mappings
             ]
         ];
     }

@@ -35,7 +35,6 @@ class Pattern extends Tokenizer
     {
         return [
             $this->name => [
-                'class' => static::class,
                 "type" => "pattern",
                 "pattern" => $this->pattern
             ]

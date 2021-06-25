@@ -41,7 +41,6 @@ class BuilderTest extends TestCase
         $this->assertTokenizerExists('sigmie', 'some_pattern');
         $this->assertTokenizerEquals('sigmie', 'some_pattern', [
             'type' => 'pattern',
-            'class' => PatternTokenizer::class,
             'pattern' => '/something/'
         ]);
     }
@@ -60,7 +59,6 @@ class BuilderTest extends TestCase
         $this->assertTokenizerExists('sigmie', 'able');
         $this->assertTokenizerEquals('sigmie', 'able', [
             'type' => 'standard',
-            'class' => WordBoundaries::class,
             'max_token_length' => '255'
         ]);
     }
@@ -134,7 +132,6 @@ class BuilderTest extends TestCase
         $this->assertTokenizerEquals('sigmie', 'sigmie_tokenizer', [
             'type' => 'pattern',
             'pattern' => '/[ ]/',
-            'class' => PatternTokenizer::class
         ]);
     }
 
@@ -165,7 +162,6 @@ class BuilderTest extends TestCase
         $this->assertCharFilterEquals('sigmie', 'sigmie_mapping_char_filter', [
             'type' => 'mapping',
             'mappings' => ['a => bar', 'f => foo'],
-            'class' => Mapping::class
         ]);
     }
 
@@ -184,7 +180,6 @@ class BuilderTest extends TestCase
             'pattern' => '/foo/',
             'type' => 'pattern_replace',
             'replacement' => '$1',
-            'class' => PatternCharFilter::class
         ]);
     }
 
@@ -218,7 +213,6 @@ class BuilderTest extends TestCase
         $this->assertTokenizerEquals('sigmie', 'some_name', [
             'type' => 'standard',
             'max_token_length' => 40,
-            'class' => WordBoundaries::class
         ]);
     }
 

@@ -92,14 +92,12 @@ class UpdateTest extends TestCase
         $this->assertAnalyzerHasCharFilter('foo', 'default', 'map_chars_char_filter');
         $this->assertCharFilterEquals('foo', 'map_chars_char_filter', [
             'type' => 'mapping',
-            'class' => Mapping::class,
             'mappings' => ['bar => baz']
         ]);
 
         $this->assertAnalyzerHasCharFilter('foo', 'default', 'pattern_replace_char_filter');
         $this->assertCharFilterEquals('foo', 'pattern_replace_char_filter', [
             'type' => 'pattern_replace',
-            'class' => PatternCharFilter::class,
             'pattern' => '/bar/',
             'replacement' => 'foo'
         ]);
@@ -118,14 +116,12 @@ class UpdateTest extends TestCase
         $this->assertAnalyzerHasCharFilter('foo', 'default', 'map_chars_char_filter');
         $this->assertCharFilterEquals('foo', 'map_chars_char_filter', [
             'type' => 'mapping',
-            'class' => Mapping::class,
             'mappings' => ['baz => foo']
         ]);
 
         $this->assertAnalyzerHasCharFilter('foo', 'default', 'pattern_replace_char_filter');
         $this->assertCharFilterEquals('foo', 'pattern_replace_char_filter', [
             'type' => 'pattern_replace',
-            'class' => PatternCharFilter::class,
             'pattern' => '/doe/',
             'replacement' => 'john'
         ]);
@@ -316,7 +312,6 @@ class UpdateTest extends TestCase
         $this->assertTokenizerEquals('foo', 'default_analyzer_pattern_tokenizer', [
             'pattern' => '/foo/',
             'type' => 'pattern',
-            'class' => PatternTokenizer::class,
         ]);
     }
 

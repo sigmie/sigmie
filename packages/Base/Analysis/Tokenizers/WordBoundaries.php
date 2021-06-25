@@ -38,7 +38,6 @@ class WordBoundaries extends Tokenizer
     {
         return [
             $this->name => [
-                'class' => static::class,
                 "type" => $this->type(),
                 "max_token_length" => $this->maxTokenLength
             ]

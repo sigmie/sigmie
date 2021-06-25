@@ -27,8 +27,7 @@ abstract class LanguageStemmer implements TokenFilter
     public function value(): array
     {
         return [
-            'language' => $this->language(),
-            'class' => static::class
+            'language' => $this->language()
         ];
     }
 }

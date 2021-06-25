@@ -56,7 +56,7 @@ abstract class TokenFilter implements TokenFilterInterface, Raw
             $this->getValues(),
             [
                 'priority' => $this->getPriority(),
-                'type' => $this->type()
+                'type'=> $this->type()
             ]
         );
     }
