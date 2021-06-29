@@ -168,7 +168,9 @@ trait Actions
 
     protected function deleteDocument(string $identifier): bool
     {
-        $response = $this->deleteAPICall($identifier);
+        $response = $this->deleteAPICall(
+            identifier: $identifier,
+        );
 
         return $response->json('result') === 'deleted';
     }

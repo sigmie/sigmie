@@ -1,10 +1,9 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Sigmie\Base\Contracts;
 
-interface Raw extends ToRaw
+interface Raw extends ToRaw, FromRaw
 {
-    public function toRaw(): array;
-
-    public static function fromRaw(array $raw): static;
 }

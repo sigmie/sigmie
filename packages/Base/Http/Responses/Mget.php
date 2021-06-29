@@ -52,9 +52,9 @@ class Mget extends ElasticsearchResponse implements DocumentCollectionInterface
                 continue;
             }
 
-            $this->collection->add(
-                new Document($documentData['_source'], $documentData['_id'])
-            );
+            $document = Document::fromRaw($documentData);
+
+            $this->collection->add($document);
         }
     }
 }

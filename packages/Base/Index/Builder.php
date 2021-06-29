@@ -92,7 +92,7 @@ class Builder
         return $analyzer;
     }
 
-    public function create()
+    public function create(): Index
     {
         $this->throwUnlessMappingsDefined();
 
@@ -124,6 +124,8 @@ class Builder
         $index = $this->createIndex($index);
 
         $this->createAlias($index->name(), $this->alias);
+
+        return $index;
     }
 
     protected function throwUnlessMappingsDefined(): void

@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Sigmie\Base\Documents;
 
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
+use Sigmie\Base\Contracts\FromRaw;
+use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Index\Index;
 
-class Document
+use function Sigmie\Helpers\name_configs;
+
+class Document implements FromRaw
 {
     use Actions;
 
@@ -15,12 +19,29 @@ class Document
 
     protected ?string $id = null;
 
+    protected int $version;
+
     protected ?Index $index = null;
 
-    public function __construct($attributes = [], string|int|null $id = null)
-    {
+
+    public function __construct(
+        $attributes = [],
+        string|int|null $id = null,
+        int $version = 0
+    ) {
         $this->attributes = $attributes;
         $this->id = $id;
+        $this->version = $version;
+    }
+
+    public static function fromRaw(array $raw): static
+    {
+        return new static($raw['_source'], $raw['_id'], $raw['_version']);
+    }
+
+    public function version(): int
+    {
+        return $this->version;
     }
 
     public function __set($name, $value)

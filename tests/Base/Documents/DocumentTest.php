@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\Documents;
 
-use PHPUnit\Framework\TestCase;
 use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Documents\Document;
+use Sigmie\Testing\TestCase;
 
 class DocumentTest extends TestCase
 {
