@@ -2,22 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Analysis\Languages\German;
+namespace Sigmie\German\Filter;
 
-use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
+use Sigmie\Base\Analysis\TokenFilter\Stopwords as TokenFilterStopwords;
 
 use function Sigmie\Helpers\name_configs;
 
-class Stemmer extends TokenFilter
+class Stopwords extends TokenFilterStopwords
 {
     public function __construct($priority = 0)
     {
-        parent::__construct('german_stemmer', [], $priority);
-    }
-
-    public function type(): string
-    {
-        return 'stemmer';
+        parent::__construct('german_stopwords', [], $priority);
     }
 
     public static function fromRaw(array $raw): static
@@ -27,10 +22,15 @@ class Stemmer extends TokenFilter
         return new static($config['priority']);
     }
 
+    public function type(): string
+    {
+        return 'stop';
+    }
+
     protected function getValues(): array
     {
         return [
-            'language' => 'light_german',
+            'stopwords' => '_german_',
         ];
     }
 }

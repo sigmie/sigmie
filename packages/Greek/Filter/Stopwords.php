@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Analysis\Languages\Greek;
+namespace Sigmie\Greek\Filter;
 
 use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
 

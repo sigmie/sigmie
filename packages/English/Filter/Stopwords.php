@@ -2,22 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Analysis\Languages\Greek;
+namespace Sigmie\English\Filter;
 
-use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
+use Sigmie\Base\Analysis\TokenFilter\Stopwords as TokenFilterStopwords;
 
 use function Sigmie\Helpers\name_configs;
 
-class Lowercase extends TokenFilter
+class Stopwords extends TokenFilterStopwords
 {
     public function __construct($priority = 0)
     {
-        parent::__construct('greek_lowercase', [], $priority);
-    }
-
-    public function type(): string
-    {
-        return 'lowercase';
+        parent::__construct('english_stopwords', [], $priority);
     }
 
     public static function fromRaw(array $raw): static
@@ -27,10 +22,15 @@ class Lowercase extends TokenFilter
         return new static($config['priority']);
     }
 
+    public function type(): string
+    {
+        return 'stop';
+    }
+
     protected function getValues(): array
     {
         return [
-            'language' => 'greek',
+            'stopwords' => '_english_',
         ];
     }
 }

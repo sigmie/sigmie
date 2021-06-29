@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Analysis\Languages\English;
+namespace Sigmie\Greek\Filter;
 
 use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
 
 use function Sigmie\Helpers\name_configs;
 
-class Stemmer extends TokenFilter
+class Lowercase extends TokenFilter
 {
     public function __construct($priority = 0)
     {
-        parent::__construct('english_stemmer', [], $priority);
+        parent::__construct('greek_lowercase', [], $priority);
     }
 
     public function type(): string
     {
-        return 'stemmer';
+        return 'lowercase';
     }
 
     public static function fromRaw(array $raw): static
@@ -30,7 +30,7 @@ class Stemmer extends TokenFilter
     protected function getValues(): array
     {
         return [
-            'language' => 'english',
+            'language' => 'greek',
         ];
     }
 }

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Analysis\Languages;
+namespace Sigmie\Greek;
 
-use Sigmie\Base\Analysis\Languages\Greek\Lowercase as GreekLowercase;
-use Sigmie\Base\Analysis\Languages\Greek\Stemmer as GreekStemmer;
-use Sigmie\Base\Analysis\Languages\Greek\Stopwords as GreekStopwords;
+use Sigmie\Greek\Filter\Lowercase as GreekLowercase;
+use Sigmie\Greek\Filter\Stemmer as GreekStemmer;
+use Sigmie\Greek\Filter\Stopwords as GreekStopwords;
 use Sigmie\Base\Contracts\Language;
 use Sigmie\Support\Collection as SupportCollection;
 use Sigmie\Support\Contracts\Collection;

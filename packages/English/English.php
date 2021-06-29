@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Analysis\Languages;
+namespace Sigmie\English;
 
-use Sigmie\Base\Analysis\Languages\English\PossessiveStemmer as EnglishPossessiveStemmer;
-use Sigmie\Base\Analysis\Languages\English\Stemmer as EnglishStemmer;
-use Sigmie\Base\Analysis\Languages\English\Stopwords as EnglishStopwords;
+use Sigmie\English\Filter\PossessiveStemmer as EnglishPossessiveStemmer;
+use Sigmie\English\Filter\Stemmer as EnglishStemmer;
+use Sigmie\English\Filter\Stopwords as EnglishStopwords;
 use Sigmie\Base\Contracts\Language;
 use Sigmie\Support\Collection as SupportCollection;
 use Sigmie\Support\Contracts\Collection;
