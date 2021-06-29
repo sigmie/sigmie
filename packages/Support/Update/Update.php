@@ -49,9 +49,9 @@ class Update
 
     public function analyzer(string $name): AnalyzerUpdate
     {
-        $analyzer = $this->analysis->analyzers()[$name] ?? new Analyzer($name);
+        $analyzer = $this->analysis()->analyzers()[$name] ?? new Analyzer($name);
 
-        $this->analysis->addAnalyzers([$name => $analyzer]);
+        $this->analysis()->addAnalyzers([$name => $analyzer]);
 
         $builder = new AnalyzerUpdate($this->analysis, $analyzer);
 
@@ -89,12 +89,12 @@ class Update
 
     public function mappings(): MappingsInterface
     {
-        return $this->createMappings($this->analysis->analyzers()['default']);
+        return $this->createMappings($this->analysis()->analyzers()['default']);
     }
 
     public function charFilter(string $name, array $values): void
     {
-        $charFilter = $this->analysis->charFilters()[$name];
+        $charFilter = $this->analysis()->charFilters()[$name];
 
         $charFilter->settings($values);
 
@@ -103,7 +103,7 @@ class Update
 
     public function filter(string $name, array $values): void
     {
-        $filter = $this->analysis->filters()[$name];
+        $filter = $this->analysis()->filters()[$name];
 
         $filter->settings($values);
 

@@ -40,7 +40,7 @@ class ArrayablesTest extends TestCase
 
         $index = $this->getIndex($alias);
 
-        $analyzer = $index->getSettings()->analysis->analyzers()['default'];
+        $analyzer = $index->getSettings()->analysis()->analyzers()['default'];
 
         $this->assertNotEmpty($analyzer->charFilters());
         $this->assertInstanceOf(HTMLStrip::class, $analyzer->charFilters()->first());
@@ -60,7 +60,7 @@ class ArrayablesTest extends TestCase
 
         $index = $this->getIndex($alias);
 
-        $tokenizer = $index->getSettings()->analysis->defaultAnalyzer()->tokenizer();
+        $tokenizer = $index->getSettings()->analysis()->defaultAnalyzer()->tokenizer();
 
         $this->assertInstanceOf(Whitespace::class, $tokenizer);
     }
@@ -80,7 +80,7 @@ class ArrayablesTest extends TestCase
 
         $index = $this->getIndex($alias);
 
-        $this->assertArrayHasKey('map', $index->getSettings()->analysis->charFilters());
+        $this->assertArrayHasKey('map', $index->getSettings()->analysis()->charFilters());
     }
 
     /**
@@ -97,7 +97,7 @@ class ArrayablesTest extends TestCase
 
         $index = $this->getIndex($alias);
 
-        $tokenizer = $index->getSettings()->analysis->defaultAnalyzer()->tokenizer();
+        $tokenizer = $index->getSettings()->analysis()->defaultAnalyzer()->tokenizer();
 
         $this->assertInstanceOf(ConfigurableTokenizer::class, $tokenizer);
         $this->assertEquals($tokenizer->name(), 'foo_tokenizer');
@@ -125,7 +125,7 @@ class ArrayablesTest extends TestCase
 
         $index = $this->getIndex($alias);
 
-        $defaultAnalyzer = $index->getSettings()->analysis->defaultAnalyzer();
+        $defaultAnalyzer = $index->getSettings()->analysis()->defaultAnalyzer();
         $mappings = $index->getMappings();
         $properties = $mappings->properties();
 
@@ -160,7 +160,7 @@ class ArrayablesTest extends TestCase
 
         $index = $this->getIndex($alias);
 
-        $defaultAnalyzer = $index->getSettings()->analysis->defaultAnalyzer();
+        $defaultAnalyzer = $index->getSettings()->analysis()->defaultAnalyzer();
         $mappings = $index->getMappings();
         $properties = $mappings->properties();
 
@@ -250,7 +250,7 @@ class ArrayablesTest extends TestCase
 
         $index = $this->getIndex($alias);
 
-        $analysis = $index->getSettings()->analysis;
+        $analysis = $index->getSettings()->analysis();
 
         $this->assertContainsOnlyInstancesOf(WordBoundaries::class, $analysis->tokenizers());
 
@@ -274,7 +274,7 @@ class ArrayablesTest extends TestCase
 
         $index = $this->getIndex($alias);
 
-        $analysis = $index->getSettings()->analysis;
+        $analysis = $index->getSettings()->analysis();
 
         $this->assertInstanceOf(Analyzer::class, $analysis->defaultAnalyzer());
 
@@ -304,7 +304,7 @@ class ArrayablesTest extends TestCase
         $this->assertEquals([
             'number_of_shards' => 1,
             'number_of_replicas' => 2,
-            'analysis' => $settings->analysis->toRaw()
+            'analysis' => $settings->analysis()->toRaw()
         ], $settings->toRaw());
     }
 }

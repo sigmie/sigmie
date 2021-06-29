@@ -7,7 +7,7 @@ namespace Sigmie\Base\Contracts;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Support\Contracts\Collection;
 
-interface Analysis
+interface Analysis extends Raw
 {
     public function hasTokenizer(string $tokenizerName): bool;
 

@@ -105,10 +105,10 @@ class Builder
 
         $analyzers = $mappings->analyzers();
 
-        $this->analysis->addAnalyzers($analyzers);
+        $this->analysis()->addAnalyzers($analyzers);
 
         if ($this->languageIsDefined()) {
-            $this->analysis->addLanguageFilters($this->language);
+            $this->analysis()->addLanguageFilters($this->language);
         }
 
         $settings = new Settings(

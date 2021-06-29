@@ -33,9 +33,9 @@ class AliasedIndex extends Index
 
     public function update(callable $update): AliasedIndex
     {
-        $update = (new UpdateProxy($this->settings->analysis))($update);
+        $update = (new UpdateProxy($this->settings->analysis()))($update);
 
-        $this->settings->analysis->updateAnalyzers($update->analyzers());
+        $this->settings->analysis()->updateAnalyzers($update->analyzers());
 
         $charFilters = $update->charFilters();
 
@@ -43,11 +43,11 @@ class AliasedIndex extends Index
 
         // $this->defaultAnalyzer()->tokenizer();
 
-        // $oldTokenizers = $this->settings->analysis->tokenizers()->toArray();
+        // $oldTokenizers = $this->settings->analysis()->tokenizers()->toArray();
         // $newTokenizer = $update->tokenizerValue();
         // $tokenizers = array_merge($oldTokenizers, [$newTokenizer->name() => $newTokenizer]);
 
-        // $this->settings->analysis->updateTokenizers($tokenizers);
+        // $this->settings->analysis()->updateTokenizers($tokenizers);
 
         $this->defaultAnalyzer()->updateTokenizer($update->tokenizerValue());
 
@@ -58,10 +58,10 @@ class AliasedIndex extends Index
 
         $newFilters = $update->filters();
 
-        $this->settings->analysis->updateFilters($newFilters);
+        $this->settings->analysis()->updateFilters($newFilters);
 
         $this->mappings = new Mappings(
-            $this->settings->analysis->defaultAnalyzer(),
+            $this->settings->analysis()->defaultAnalyzer(),
             new Properties($props)
         );
 
@@ -108,6 +108,6 @@ class AliasedIndex extends Index
 
     protected function defaultAnalyzer(): Analyzer
     {
-        return $this->settings->analysis->defaultAnalyzer();
+        return $this->settings->analysis()->defaultAnalyzer();
     }
 }

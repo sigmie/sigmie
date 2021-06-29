@@ -72,7 +72,7 @@ class Index implements DocumentCollectionInterface, Name
     public static function fromRaw(string $name, array $raw): static
     {
         $settings = Settings::fromRaw($raw);
-        $analyzers = $settings->analysis->analyzers();
+        $analyzers = $settings->analysis()->analyzers();
         $mappings = Mappings::fromRaw($raw['mappings'], $analyzers);
         $aliases = array_keys($raw['aliases']);
 

@@ -24,7 +24,7 @@ class Plan
 
         $settings = $this->index->getSettings();
 
-        // $filters = new Collection($settings->analysis->filters());
+        // $filters = new Collection($settings->analysis()->filters());
 
         // $filters = $filters->filter(fn (TokenFilter $tokenFilter) => $tokenFilter instanceof Stopwords === false);
     }

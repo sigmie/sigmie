@@ -6,6 +6,7 @@ namespace Sigmie\Base\Index;
 
 use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Analysis\Analysis;
+use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
 
 class Settings implements Raw
 {
@@ -13,7 +14,7 @@ class Settings implements Raw
 
     public int $replicaShards;
 
-    public ?Analysis $analysis;
+    protected Analysis $analysis;
 
     protected array $configs = [];
 
@@ -25,6 +26,11 @@ class Settings implements Raw
         $this->analysis = $analysis ?: new Analysis();
         $this->primaryShards = $primaryShards;
         $this->replicaShards = $replicaShards;
+    }
+
+    public function analysis(): AnalysisInterface
+    {
+        return $this->analysis;
     }
 
     public function config(string $name, string $value)
@@ -70,7 +76,7 @@ class Settings implements Raw
         return array_merge([
             'number_of_shards' => $this->primaryShards,
             'number_of_replicas' => $this->replicaShards,
-            'analysis' => $this->analysis->toRaw()
+            'analysis' => $this->analysis()->toRaw()
         ], $this->configs);
     }
 }
