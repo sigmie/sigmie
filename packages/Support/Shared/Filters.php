@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace Sigmie\Support\Shared;
 
 use Exception;
+use Sigmie\Base\Analysis\TokenFilter\Lowercase;
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\TokenFilter\Synonyms;
+use Sigmie\Base\Analysis\TokenFilter\Trim;
+use Sigmie\Base\Analysis\TokenFilter\Truncate;
 use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
+use Sigmie\Base\Analysis\TokenFilter\Unique;
+use Sigmie\Base\Analysis\TokenFilter\Uppercase;
 use Sigmie\Base\Contracts\Analysis;
 use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\TokenFilter;
@@ -63,6 +68,51 @@ trait Filters
         $name = $name ?? $this->createFilterName('stopwords');
 
         $this->addFilter(new Stopwords($name, $stopwords));
+
+        return $this;
+    }
+
+    public function lowercase(null|string $language = null, null|string $name = null,): static
+    {
+        $name = $name ?? $this->createFilterName('lowercase');
+
+        $this->addFilter(new Lowercase($name, ['language' => $language]));
+
+        return $this;
+    }
+
+    public function trim(null|string $name = null,): static
+    {
+        $name = $name ?? $this->createFilterName('trim');
+
+        $this->addFilter(new Trim($name));
+
+        return $this;
+    }
+
+    public function truncate(int $length = 10, null|string $name = null,): static
+    {
+        $name = $name ?? $this->createFilterName('truncate');
+
+        $this->addFilter(new Truncate($name, $length));
+
+        return $this;
+    }
+
+    public function unique(bool $onlyOnSamePosition = false, null|string $name = null,): static
+    {
+        $name = $name ?? $this->createFilterName('unique');
+
+        $this->addFilter(new Unique($name, $onlyOnSamePosition));
+
+        return $this;
+    }
+
+    public function uppercase(null|string $name = null,): static
+    {
+        $name = $name ?? $this->createFilterName('uppercase');
+
+        $this->addFilter(new Uppercase($name));
 
         return $this;
     }

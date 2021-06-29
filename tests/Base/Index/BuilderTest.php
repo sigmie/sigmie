@@ -30,6 +30,87 @@ class BuilderTest extends TestCase
     /**
      * @test
      */
+    public function unique_filter()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->withoutMappings()
+            ->unique(name: 'unique_filter', onlyOnSamePosition: true)
+            ->create();
+
+        $this->assertAnalyzerHasFilter($alias, 'default', 'unique_filter');
+        $this->assertFilterExists($alias, 'unique_filter');
+        $this->assertFilterEquals($alias, 'unique_filter', [
+            'priority' => 1,
+            'type' => 'unique',
+            'only_on_same_position' => 'true',
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function trim_filter()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->withoutMappings()
+            ->trim(name: 'trim_filter_name')
+            ->create();
+
+        $this->assertAnalyzerHasFilter($alias, 'default', 'trim_filter_name');
+        $this->assertFilterExists($alias, 'trim_filter_name');
+        $this->assertFilterEquals($alias, 'trim_filter_name', [
+            'priority' => 1,
+            'type' => 'trim'
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function uppercase_filter()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->withoutMappings()
+            ->uppercase(name: 'uppercase_filter_name')
+            ->create();
+
+        $this->assertAnalyzerHasFilter($alias, 'default', 'uppercase_filter_name');
+        $this->assertFilterExists($alias, 'uppercase_filter_name');
+        $this->assertFilterEquals($alias, 'uppercase_filter_name', [
+            'priority' => 1,
+            'type' => 'uppercase'
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function lowercase_filter()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->withoutMappings()
+            ->lowercase(name: 'lowercase_filter_name')
+            ->create();
+
+        $this->assertAnalyzerHasFilter($alias, 'default', 'lowercase_filter_name');
+        $this->assertFilterExists($alias, 'lowercase_filter_name');
+        $this->assertFilterEquals($alias, 'lowercase_filter_name', [
+            'priority' => 1,
+            'type' => 'lowercase'
+        ]);
+    }
+
+    /**
+     * @test
+     */
     public function tokenize_on_word_pattern()
     {
         $alias = uniqid();

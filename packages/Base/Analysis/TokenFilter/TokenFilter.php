@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Sigmie\Base\Analysis\TokenFilter;
 
 use Exception;
+use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Contracts\TokenFilter as TokenFilterInterface;
 use Sigmie\Base\Shared\Priority;
 
 use function Sigmie\Helpers\name_configs;
 
-abstract class TokenFilter implements TokenFilterInterface, Raw
+abstract class TokenFilter implements TokenFilterInterface, Raw, Configurable
 {
     use Priority;
 
@@ -56,7 +57,7 @@ abstract class TokenFilter implements TokenFilterInterface, Raw
             $this->getValues(),
             [
                 'priority' => $this->getPriority(),
-                'type'=> $this->type()
+                'type' => $this->type()
             ]
         );
     }
