@@ -11,6 +11,7 @@ use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Index\Blueprint;
 use Sigmie\Base\Index\DynamicMappings;
 use Sigmie\Base\Index\Mappings as IndexMappings;
+use Sigmie\Support\Callables\Properties as BlueprintProxy;
 
 trait Mappings
 {
@@ -30,13 +31,8 @@ trait Mappings
         $mappings = new DynamicMappings($defaultAnalyzer);
 
         if ($this->dynamicMappings === false && isset($this->blueprintCallback)) {
-            $blueprint = ($this->blueprintCallback)(new Blueprint);
 
-            if (is_null($blueprint)) {
-                throw new Exception('Did you forget to return the blueprint ?');
-            }
-
-            $properties = $blueprint();
+            $properties = (new BlueprintProxy)($this->blueprintCallback);
 
             $mappings = new IndexMappings(
                 defaultAnalyzer: $defaultAnalyzer,
