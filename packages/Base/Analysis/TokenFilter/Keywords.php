@@ -4,21 +4,20 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\TokenFilter;
 
-
 use function Sigmie\Helpers\name_configs;
 
-class Stopwords extends TokenFilter
+class Keywords extends TokenFilter
 {
     public function type(): string
     {
-        return 'stop';
+        return 'keyword_marker';
     }
 
     public static function fromRaw(array $raw): static
     {
         [$name, $configs] = name_configs($raw);
 
-        $instance = new static($name, $configs['stopwords']);
+        $instance = new static($name, $configs['keywords']);
 
         return $instance;
     }
@@ -26,7 +25,7 @@ class Stopwords extends TokenFilter
     protected function getValues(): array
     {
         return [
-            'stopwords' => $this->settings,
+            'keywords' => $this->settings,
         ];
     }
 }

@@ -10,9 +10,9 @@ use function Sigmie\Helpers\name_configs;
 
 class Stemmer extends TokenFilter
 {
-    public function __construct($priority = 0)
+    public function __construct()
     {
-        parent::__construct('german_stemmer', [], $priority);
+        parent::__construct('german_stemmer', []);
     }
 
     public function type(): string
@@ -24,7 +24,7 @@ class Stemmer extends TokenFilter
     {
         [$name, $config] = name_configs($raw);
 
-        return new static($config['priority']);
+        return new static();
     }
 
     protected function getValues(): array

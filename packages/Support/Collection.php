@@ -66,19 +66,6 @@ class Collection implements CollectionInterface
         return new static($result);
     }
 
-    public function sortByKeys(): static
-    {
-        $result = [];
-
-        foreach ($this->toArray() as $item) {
-            $result[$item->getPriority()] = $item;
-        }
-
-        ksort($result);
-
-        return new static(array_values($result));
-    }
-
     /**
      * Flatten a multi-dimensional array by keeping the keys.
      *

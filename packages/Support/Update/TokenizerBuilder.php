@@ -47,9 +47,12 @@ class TokenizerBuilder implements ContractsTokenizerBuilder
         return $this->updateBuilder;
     }
 
-    public function pattern(string $pattern, string|null $name = null): Update
-    {
-        $this->tokenizeOnPattern($pattern, $name);
+    public function pattern(
+        string $pattern,
+        null|string $flags = null,
+        string|null $name = null
+    ): Update {
+        $this->tokenizeOnPattern($pattern, $flags, $name);
 
         $this->updateBuilder->setTokenizer($this->tokenizer());
 

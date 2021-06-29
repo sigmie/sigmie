@@ -26,8 +26,6 @@ trait CharFilters
 {
     private Collection $charFilters;
 
-    private int $charFilterPriority = 1;
-
     public function charFilter(CharFilter $charFilter)
     {
         $this->addCharFilter($charFilter);
@@ -52,11 +50,7 @@ trait CharFilters
 
         $this->analysis()->updateCharFilters([$charFilter->name() => $charFilter]);
 
-        $charFilter->setPriority($this->charFilterPriority);
-
         $this->charFilters->set($charFilter->name(), $charFilter);
-
-        $this->charFilterPriority++;
     }
 
     private function initCharFilters(): void

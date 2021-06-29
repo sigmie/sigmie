@@ -30,6 +30,26 @@ class FilterTest extends TestCase
     /**
      * @test
      */
+    public function keywords()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->withoutMappings()
+            ->keywords(['foo', 'bar'], 'keywords_marker')
+            ->create();
+
+        $this->assertAnalyzerHasFilter($alias, 'default', 'keywords_marker');
+        $this->assertFilterExists($alias, 'keywords_marker');
+        $this->assertFilterEquals($alias, 'keywords_marker', [
+            'type' => 'keyword_marker',
+            'keywords' => ['foo', 'bar']
+        ]);
+    }
+
+    /**
+     * @test
+     */
     public function length_filter()
     {
         $alias = uniqid();
@@ -42,7 +62,6 @@ class FilterTest extends TestCase
         $this->assertAnalyzerHasFilter($alias, 'default', '20_char_truncate');
         $this->assertFilterExists($alias, '20_char_truncate');
         $this->assertFilterEquals($alias, '20_char_truncate', [
-            'priority' => 1,
             'type' => 'truncate',
             'length' => 20
         ]);
@@ -63,7 +82,6 @@ class FilterTest extends TestCase
         $this->assertAnalyzerHasFilter($alias, 'default', 'unique_filter');
         $this->assertFilterExists($alias, 'unique_filter');
         $this->assertFilterEquals($alias, 'unique_filter', [
-            'priority' => 1,
             'type' => 'unique',
             'only_on_same_position' => 'true',
         ]);
@@ -84,7 +102,6 @@ class FilterTest extends TestCase
         $this->assertAnalyzerHasFilter($alias, 'default', 'trim_filter_name');
         $this->assertFilterExists($alias, 'trim_filter_name');
         $this->assertFilterEquals($alias, 'trim_filter_name', [
-            'priority' => 1,
             'type' => 'trim'
         ]);
     }
@@ -104,7 +121,6 @@ class FilterTest extends TestCase
         $this->assertAnalyzerHasFilter($alias, 'default', 'uppercase_filter_name');
         $this->assertFilterExists($alias, 'uppercase_filter_name');
         $this->assertFilterEquals($alias, 'uppercase_filter_name', [
-            'priority' => 1,
             'type' => 'uppercase'
         ]);
     }
@@ -124,7 +140,6 @@ class FilterTest extends TestCase
         $this->assertAnalyzerHasFilter($alias, 'default', 'lowercase_filter_name');
         $this->assertFilterExists($alias, 'lowercase_filter_name');
         $this->assertFilterEquals($alias, 'lowercase_filter_name', [
-            'priority' => 1,
             'type' => 'lowercase'
         ]);
     }

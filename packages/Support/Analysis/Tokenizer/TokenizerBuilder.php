@@ -30,11 +30,14 @@ trait TokenizerBuilder
         $this->setTokenizer(new Whitespace);
     }
 
-    protected function tokenizeOnPattern(string $pattern, string|null $name = null): void
-    {
+    protected function tokenizeOnPattern(
+        string $pattern,
+        null|string $flags = null,
+        string|null $name = null
+    ): void {
         $name = $name ?? $this->createTokenizerName('pattern_tokenizer');
 
-        $this->setTokenizer(new Pattern($name, $pattern));
+        $this->setTokenizer(new Pattern($name, $pattern, $flags));
     }
 
     protected function tokenizeOnWordBoundaries(string $name): void

@@ -42,7 +42,6 @@ class BuilderTest extends TestCase
         $this->assertAnalyzerHasFilter($alias, 'default', 'unique_filter');
         $this->assertFilterExists($alias, 'unique_filter');
         $this->assertFilterEquals($alias, 'unique_filter', [
-            'priority' => 1,
             'type' => 'unique',
             'only_on_same_position' => 'true',
         ]);
@@ -63,7 +62,6 @@ class BuilderTest extends TestCase
         $this->assertAnalyzerHasFilter($alias, 'default', 'trim_filter_name');
         $this->assertFilterExists($alias, 'trim_filter_name');
         $this->assertFilterEquals($alias, 'trim_filter_name', [
-            'priority' => 1,
             'type' => 'trim'
         ]);
     }
@@ -83,7 +81,6 @@ class BuilderTest extends TestCase
         $this->assertAnalyzerHasFilter($alias, 'default', 'uppercase_filter_name');
         $this->assertFilterExists($alias, 'uppercase_filter_name');
         $this->assertFilterEquals($alias, 'uppercase_filter_name', [
-            'priority' => 1,
             'type' => 'uppercase'
         ]);
     }
@@ -103,8 +100,28 @@ class BuilderTest extends TestCase
         $this->assertAnalyzerHasFilter($alias, 'default', 'lowercase_filter_name');
         $this->assertFilterExists($alias, 'lowercase_filter_name');
         $this->assertFilterEquals($alias, 'lowercase_filter_name', [
-            'priority' => 1,
             'type' => 'lowercase'
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function tokenize_on_word_pattern_flags()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->withoutMappings()
+            ->tokenizeOn()->pattern('/something/', 'CASE_INSENSITIVE', name: 'some_pattern')
+            ->create();
+
+        $this->assertAnalyzerHasTokenizer($alias, 'default', 'some_pattern');
+        $this->assertTokenizerExists($alias, 'some_pattern');
+        $this->assertTokenizerEquals($alias, 'some_pattern', [
+            'type' => 'pattern',
+            'pattern' => '/something/',
+            'flags' => 'CASE_INSENSITIVE'
         ]);
     }
 
@@ -117,7 +134,7 @@ class BuilderTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->withoutMappings()
-            ->tokenizeOn()->pattern('/something/', 'some_pattern')
+            ->tokenizeOn()->pattern('/something/', name: 'some_pattern')
             ->create();
 
         $this->assertAnalyzerHasTokenizer($alias, 'default', 'some_pattern');
@@ -367,13 +384,11 @@ class BuilderTest extends TestCase
         $this->assertFilterEquals($alias, 'german_stopwords', [
             'type' => 'stop',
             'stopwords' => '_german_',
-            'priority' => '0'
         ]);
 
         $this->assertFilterEquals($alias, 'german_stemmer', [
             'type' => 'stemmer',
             'language' => 'light_german',
-            'priority' => '0'
         ]);
     }
 
@@ -398,19 +413,16 @@ class BuilderTest extends TestCase
         $this->assertFilterEquals($alias, 'greek_stemmer', [
             'type' => 'stemmer',
             'language' => 'greek',
-            'priority' => '0'
         ]);
 
         $this->assertFilterEquals($alias, 'greek_lowercase', [
             'type' => 'lowercase',
             'language' => 'greek',
-            'priority' => '0'
         ]);
 
         $this->assertFilterEquals($alias, 'greek_stopwords', [
             'type' => 'stop',
             'stopwords' => '_greek_',
-            'priority' => '0'
         ]);
     }
 
@@ -434,19 +446,16 @@ class BuilderTest extends TestCase
         $this->assertFilterEquals($alias, 'english_stopwords', [
             'type' => 'stop',
             'stopwords' => '_english_',
-            'priority' => '0'
         ]);
 
         $this->assertFilterEquals($alias, 'english_stemmer', [
             'type' => 'stemmer',
             'language' => 'english',
-            'priority' => '0'
         ]);
 
         $this->assertFilterEquals($alias, 'english_possessive_stemmer', [
             'type' => 'stemmer',
             'language' => 'possessive_english',
-            'priority' => '0'
         ]);
     }
 
@@ -472,7 +481,6 @@ class BuilderTest extends TestCase
         ]);
         $this->assertFilterEquals($alias, 'sigmie_two_way_synonyms', [
             'type' => 'synonym',
-            'priority' => '1',
             'synonyms' => [
                 'treasure, gem, gold, price',
                 'friend, buddy, partner'
@@ -520,7 +528,6 @@ class BuilderTest extends TestCase
         ]);
         $this->assertFilterEquals($alias, 'sigmie_one_way_synonyms', [
             'type' => 'synonym',
-            'priority' => '1',
             'synonyms' => [
                 'i-pod, i pod => ipod',
             ],
@@ -543,7 +550,6 @@ class BuilderTest extends TestCase
         $this->assertFilterHasStopwords($alias, 'sigmie_stopwords', ['about', 'after', 'again']);
         $this->assertFilterEquals($alias, 'sigmie_stopwords', [
             'type' => 'stop',
-            'priority' => '1',
             'stopwords' => [
                 'about', 'after', 'again'
             ]
@@ -578,7 +584,6 @@ class BuilderTest extends TestCase
 
         $this->assertFilterEquals($alias, 'sigmie_stemmer_overrides', [
             'type' => 'stemmer_override',
-            'priority' => '1',
             'rules' => [
                 'be, are => am',
                 'mice => mouse',

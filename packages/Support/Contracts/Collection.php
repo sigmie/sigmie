@@ -24,8 +24,6 @@ interface Collection extends Countable, IteratorAggregate, ArrayAccess
 
     public function toArray(): array;
 
-    public function sortByKeys(): static;
-
     public function merge(Collection|array $values): static;
 
     public function slice(int $offset, int|null $length = null): static;

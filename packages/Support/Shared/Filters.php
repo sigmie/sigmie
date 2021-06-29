@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Support\Shared;
 
 use Exception;
+use Sigmie\Base\Analysis\TokenFilter\Keywords;
 use Sigmie\Base\Analysis\TokenFilter\Lowercase;
 use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
@@ -26,8 +27,6 @@ use function Sigmie\Helpers\random_letters;
 trait Filters
 {
     private Collection $filters;
-
-    private int $filterPriority = 1;
 
     private function initFilters(): void
     {
@@ -125,11 +124,16 @@ trait Filters
 
         $this->analysis()->updateFilters([$tokenFilter->name() => $tokenFilter]);
 
-        $tokenFilter->setPriority($this->filterPriority);
-
         $this->filters->set($tokenFilter->name(), $tokenFilter);
+    }
 
-        $this->filterPriority++;
+    public function keywords(array $keywords, null|string $name = null,): static
+    {
+        $name = $name ?? $this->createFilterName('keywords');
+
+        $this->addFilter(new Keywords($name, $keywords));
+
+        return $this;
     }
 
     public function synonyms(array $synonyms, null|string $name = null,): static

@@ -15,7 +15,8 @@ class Pattern extends Tokenizer
 
     public function __construct(
         protected string $name,
-        protected string $pattern
+        protected string $pattern,
+        protected null|string $flags = null
     ) {
     }
 
@@ -28,16 +29,26 @@ class Pattern extends Tokenizer
     {
         [$name, $config] = name_configs($raw);
 
-        return new static($name, $config['pattern']);
+        $flags = $config['flags'] ?? null;
+
+        return new static($name, $config['pattern'], $flags);
     }
 
     public function toRaw(): array
     {
-        return [
+        $res = [
             $this->name => [
                 "type" => "pattern",
                 "pattern" => $this->pattern
             ]
         ];
+
+        if (is_null($this->flags)) {
+            return $res;
+        }
+
+        $res[$this->name]['flags'] = $this->flags;
+
+        return $res;
     }
 }

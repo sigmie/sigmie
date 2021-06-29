@@ -13,7 +13,6 @@ use Sigmie\Base\Contracts\Analyzer as AnalyzerInterface;
 use Sigmie\Base\Contracts\CharFilter;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\ConfigurableTokenizer;
-use Sigmie\Base\Contracts\Priority;
 use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
@@ -122,7 +121,7 @@ class Analyzer implements AnalyzerInterface
 
     public function toRaw(): array
     {
-        $filters = $this->sortedFilters()
+        $filters = $this->filters()
             ->map(fn (TokenFilter $filter) => $filter->name())
             ->flatten()
             ->toArray();
@@ -143,7 +142,7 @@ class Analyzer implements AnalyzerInterface
 
     public function filters(): Collection
     {
-        return $this->sortedFilters();
+        return $this->filters;
     }
 
     public function charFilters(): Collection
@@ -154,23 +153,5 @@ class Analyzer implements AnalyzerInterface
     public function tokenizer(): Tokenizer
     {
         return $this->tokenizer;
-    }
-
-    protected function sortedCharFilters(): Collection
-    {
-        return $this->charFilters
-            ->mapToDictionary(
-                fn (CharFilter $filter) => [$filter->getPriority() => $filter]
-            )
-            ->sortByKeys();
-    }
-
-    protected function sortedFilters(): Collection
-    {
-        $filters = $this->filters->toArray();
-
-        usort($filters, fn (Priority $a, Priority $b) => ($a->getPriority() < $b->getPriority()) ? -1 : 1);
-
-        return (new Collection($filters))->mapToDictionary(fn (TokenFilter $tokenFilter) => [$tokenFilter->name() => $tokenFilter]);
     }
 }

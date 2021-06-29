@@ -322,7 +322,7 @@ class UpdateTest extends TestCase
 
         $this->sigmie->index($alias)->update(function (Update $update) {
 
-            $update->tokenizeOn()->pattern('/foo/', 'default_analyzer_pattern_tokenizer');
+            $update->tokenizeOn()->pattern('/foo/', name: 'default_analyzer_pattern_tokenizer');
 
             return $update;
         });

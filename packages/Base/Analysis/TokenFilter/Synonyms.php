@@ -40,7 +40,7 @@ class Synonyms extends TokenFilter
             $settings[] = $value;
         }
 
-        $instance = new static($name, $settings, $configs['priority']);
+        $instance = new static($name, $settings);
 
         return $instance;
     }

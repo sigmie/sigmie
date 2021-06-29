@@ -8,20 +8,15 @@ use Exception;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Contracts\TokenFilter as TokenFilterInterface;
-use Sigmie\Base\Shared\Priority;
 
 use function Sigmie\Helpers\name_configs;
 
 abstract class TokenFilter implements TokenFilterInterface, Raw, Configurable
 {
-    use Priority;
-
     public function __construct(
         protected string $name,
         protected array $settings,
-        string|int $priority = 0
     ) {
-        $this->priority = (int) $priority;
     }
 
     public function name(): string
@@ -56,7 +51,6 @@ abstract class TokenFilter implements TokenFilterInterface, Raw, Configurable
         return array_merge(
             $this->getValues(),
             [
-                'priority' => $this->getPriority(),
                 'type' => $this->type()
             ]
         );

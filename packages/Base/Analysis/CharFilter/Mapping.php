@@ -4,14 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\CharFilter;
 
-use Sigmie\Base\Shared\Priority;
-
 use function Sigmie\Helpers\name_configs;
 
 class Mapping extends ConfigurableCharFilter
 {
-    use Priority;
-
     public function __construct(
         protected string $name,
         protected array $mappings = []

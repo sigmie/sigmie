@@ -47,9 +47,16 @@ class TokenizerBuilder implements TokenizerBuilderInterface
         return $this->indexBuilder;
     }
 
-    public function pattern(string $pattern, string|null $name = null): IndexBuilder
-    {
-        $this->tokenizeOnPattern($pattern, $name);
+    public function pattern(
+        string $pattern,
+        null|string $flags = null,
+        string|null $name = null
+    ): IndexBuilder {
+        $this->tokenizeOnPattern(
+            pattern: $pattern,
+            flags: $flags,
+            name: $name
+        );
 
         $this->indexBuilder->setTokenizer($this->tokenizer());
 

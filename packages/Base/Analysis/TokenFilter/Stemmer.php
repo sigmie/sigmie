@@ -27,7 +27,7 @@ class Stemmer extends TokenFilter
             $settings[$from] = $to;
         }
 
-        $instance = new static($name, $settings, $configs['priority']);
+        $instance = new static($name, $settings);
 
         return $instance;
     }
