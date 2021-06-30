@@ -10,7 +10,7 @@ use Sigmie\Http\Contracts\JSONRequest as JSONRequestInterface;
 
 class JSONRequest extends Request implements JSONRequestInterface
 {
-    protected $headers = [
+    protected array $headers = [
         'Content-type' => 'application/json',
     ];
 

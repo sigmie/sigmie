@@ -61,7 +61,7 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
         return null;
     }
 
-    public function psr(): Response
+    public function psr(): ResponseInterface
     {
         return $this->response;
     }
@@ -82,7 +82,7 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
         return $this->serverError() || $this->clientError();
     }
 
-    public function clientError()
+    public function clientError(): bool
     {
         return $this->code() >= 400 && $this->code() < 500;
     }
@@ -92,7 +92,7 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
         return (int) $this->response->getStatusCode();
     }
 
-    public function serverError()
+    public function serverError(): bool
     {
         return $this->code() >= 500;
     }

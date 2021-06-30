@@ -7,6 +7,7 @@ namespace Sigmie;
 use Exception;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
+use Sigmie\Base\Contracts\ElasticsearchRequest as ElasticsearchRequestInterface;
 use Sigmie\Base\Http\Connection as Connection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
@@ -47,7 +48,7 @@ class Sigmie
         return $this->listIndices();
     }
 
-    public function delete(Index\Index $index)
+    public function delete(Index\Index $index): void
     {
         $this->deleteIndex($index->name());
     }
@@ -57,7 +58,7 @@ class Sigmie
         try {
             $request = new ElasticsearchRequest('GET', new Uri());
 
-            $res = ($this->httpConnection)($request, ['connect_timeout' => 0.2]);
+            $res = ($this->httpConnection)($request);
 
             return !$res->failed();
         } catch (ConnectException) {
@@ -65,14 +66,14 @@ class Sigmie
         }
     }
 
-    public static function create(string $host, ?Auth $auth = null)
+    public static function create(string $host, ?Auth $auth = null): static
     {
         $client = JSONClient::create($host, $auth);
 
         return new Sigmie(new Connection($client));
     }
 
-    protected function httpCall(JSONRequestInterface $request): ElasticsearchResponse
+    protected function httpCall(ElasticsearchRequestInterface $request): ElasticsearchResponse
     {
         return ($this->httpConnection)($request);
     }

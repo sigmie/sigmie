@@ -10,7 +10,7 @@ trait Searchable
 {
     use API;
 
-    public function search()
+    public function search(): QueryBuilder
     {
         return new QueryBuilder($this);
     }

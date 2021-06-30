@@ -8,7 +8,7 @@ use Sigmie\Http\Contracts\Auth;
 
 final class Token implements Auth
 {
-    private $token;
+    private string $token;
 
     public function __construct(string $token)
     {

@@ -14,14 +14,14 @@ class Settings implements Raw
 
     public int $replicaShards;
 
-    protected Analysis $analysis;
+    protected AnalysisInterface $analysis;
 
     protected array $configs = [];
 
     public function __construct(
         int $primaryShards = 1,
         int $replicaShards = 2,
-        Analysis $analysis = null
+        AnalysisInterface $analysis = null
     ) {
         $this->analysis = $analysis ?: new Analysis();
         $this->primaryShards = $primaryShards;
@@ -33,19 +33,19 @@ class Settings implements Raw
         return $this->analysis;
     }
 
-    public function config(string $name, string $value)
+    public function config(string $name, string $value): self
     {
         $this->configs[$name] = $value;
 
         return $this;
     }
 
-    public function getPrimaryShards()
+    public function getPrimaryShards(): int
     {
         return $this->primaryShards;
     }
 
-    public function getReplicaShards()
+    public function getReplicaShards(): int
     {
         return $this->replicaShards;
     }
@@ -60,9 +60,7 @@ class Settings implements Raw
             $settings = $response['settings']['index'];
         }
 
-        $defaultAnalyzerName = 'default';
-
-        $analysis = Analysis::fromRaw($settings['analysis'], $defaultAnalyzerName);
+        $analysis = Analysis::fromRaw($settings['analysis']);
 
         return new Settings(
             (int)$settings['number_of_shards'],

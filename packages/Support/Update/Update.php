@@ -60,7 +60,7 @@ class Update
         return $builder;
     }
 
-    public function tokenizerValue()
+    public function tokenizerValue(): TokenizerInterface
     {
         return $this->tokenizer;
     }

@@ -7,6 +7,7 @@ namespace Sigmie\Support\Shared;
 use Closure;
 use Exception;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
+use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Index\Blueprint;
 use Sigmie\Base\Index\DynamicMappings;
@@ -19,14 +20,14 @@ trait Mappings
 
     protected Closure $blueprintCallback;
 
-    public function mapping(callable $callable)
+    public function mapping(callable $callable): static
     {
         $this->blueprintCallback = $callable;
 
         return $this;
     }
 
-    protected function createMappings(DefaultAnalyzer $defaultAnalyzer): MappingsInterface
+    protected function createMappings(Analyzer $defaultAnalyzer): MappingsInterface
     {
         $mappings = new DynamicMappings($defaultAnalyzer);
 

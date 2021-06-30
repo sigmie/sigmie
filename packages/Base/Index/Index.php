@@ -93,7 +93,7 @@ class Index implements DocumentCollectionInterface, Name
         return $this;
     }
 
-    public function delete()
+    public function delete(): bool
     {
         return $this->deleteIndex($this->identifier);
     }
@@ -222,7 +222,7 @@ class Index implements DocumentCollectionInterface, Name
         }
     }
 
-    public function set(string $identifier, Document &$document)
+    public function set(string $identifier, Document &$document): self
     {
         $document->setId($identifier);
 
@@ -249,7 +249,7 @@ class Index implements DocumentCollectionInterface, Name
         return $last->first();
     }
 
-    public function forAll(Closure $p)
+    public function forAll(Closure $p): self
     {
         foreach ($this->all() as $docsCollection) {
             $docsCollection->map(fn (Document $doc) => $p($doc));
@@ -289,7 +289,7 @@ class Index implements DocumentCollectionInterface, Name
         return $this->getIterator();
     }
 
-    public function offsetExists($offset)
+    public function offsetExists(mixed $offset): bool
     {
         return $this->contains((string) $offset);
     }

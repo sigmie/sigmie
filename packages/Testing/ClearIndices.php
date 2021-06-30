@@ -12,7 +12,7 @@ trait ClearIndices
 {
     use TestConnection, Cat, Index, API;
 
-    protected function clearIndices()
+    protected function clearIndices(): void
     {
         $this->setupTestConnection();
 

@@ -33,7 +33,7 @@ trait CharFilters
         return $this;
     }
 
-    private function ensureCharFilterNameIsAvailable(string $name)
+    private function ensureCharFilterNameIsAvailable(string $name): void
     {
         if ($this->analysis()->hasCharFilter($name)) {
             throw new Exception('Char filter name already exists.');
@@ -42,7 +42,7 @@ trait CharFilters
 
     abstract function analysis(): Analysis;
 
-    private function addCharFilter(CharFilter $charFilter)
+    private function addCharFilter(CharFilter $charFilter): void
     {
         $this->initCharFilters();
 
@@ -65,7 +65,7 @@ trait CharFilters
         return $this->charFilters->toArray();
     }
 
-    public function stripHTML()
+    public function stripHTML(): static
     {
         $this->addCharFilter(new HTMLStrip);
 
@@ -87,7 +87,7 @@ trait CharFilters
         string $pattern,
         string $replace,
         string|null $name = null
-    ) {
+    ): static {
         $name = $name ?? $this->createCharFilterName('pattern_replace_filter');
 
         $this->addCharFilter(new Pattern($name, $pattern, $replace));
@@ -95,7 +95,7 @@ trait CharFilters
         return $this;
     }
 
-    public function mapChars(array $mappings, string|null $name = null)
+    public function mapChars(array $mappings, string|null $name = null): static
     {
         $name = $name ?? $this->createCharFilterName('mapping_filter');
 

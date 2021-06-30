@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Mappings;
 
-use Sigmie\Base\Contracts\Name as NameInterface;
-use Sigmie\Base\Contracts\Type as TypeInterface;
+use Sigmie\Base\Contracts\Name;
+use Sigmie\Base\Contracts\ToRaw;
+use Sigmie\Base\Contracts\Type;
 
-abstract class Type implements TypeInterface, NameInterface
+abstract class PropertyType implements Type, Name, ToRaw
 {
     protected string $type;
 
@@ -15,9 +16,9 @@ abstract class Type implements TypeInterface, NameInterface
     {
     }
 
-    public function __invoke()
+    public function __invoke(): array
     {
-        return $this->raw();
+        return $this->toRaw();
     }
 
     public function type(): string
@@ -30,5 +31,5 @@ abstract class Type implements TypeInterface, NameInterface
         return $this->name;
     }
 
-    abstract protected function raw();
+    abstract public function toRaw(): array;
 }

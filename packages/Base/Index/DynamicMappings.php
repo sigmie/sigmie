@@ -30,7 +30,7 @@ class DynamicMappings extends Mappings
         return new Collection([$this->defaultAnalyzer]);
     }
 
-    public function dynamicTemplate()
+    public function dynamicTemplate(): array
     {
         if ($this->defaultAnalyzer instanceof DefaultAnalyzer) {
             return [];

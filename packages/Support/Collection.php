@@ -234,7 +234,7 @@ class Collection implements CollectionInterface
         return array_search($element, $this->elements, true);
     }
 
-    public function get($key): mixed
+    public function get(string|int $key): mixed
     {
         return $this->elements[$key] ?? null;
     }
@@ -254,7 +254,7 @@ class Collection implements CollectionInterface
         return count($this->elements);
     }
 
-    public function set($key, $value): static
+    public function set(string|int $key, mixed $value): static
     {
         $this->elements[$key] = $value;
 

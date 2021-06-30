@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Sigmie\Base\Mappings\Types;
 
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Contracts\Analyzer as AnalyzerInterface;
 use Sigmie\Base\Mappings\Type;
 
 class Text extends Type
 {
     protected ?Analyzer $analyzer;
 
-    public function searchAsYouType(Analyzer $analyzer = null)
+    public function searchAsYouType(Analyzer $analyzer = null): self
     {
         $this->analyzer = $analyzer;
         $this->type = 'search_as_you_type';
@@ -19,7 +20,7 @@ class Text extends Type
         return $this;
     }
 
-    public function unstructuredText(Analyzer $analyzer = null)
+    public function unstructuredText(Analyzer $analyzer = null): self
     {
         $this->analyzer = $analyzer;
         $this->type = 'text';
@@ -27,7 +28,7 @@ class Text extends Type
         return $this;
     }
 
-    public function completion(Analyzer $analyzer = null)
+    public function completion(Analyzer $analyzer = null): self
     {
         $this->analyzer = $analyzer;
         $this->type = 'completion';
@@ -35,27 +36,29 @@ class Text extends Type
         return $this;
     }
 
-    public function withAnalyzer(Analyzer $analyzer)
+    public function withAnalyzer(Analyzer $analyzer): void
     {
         $this->analyzer = $analyzer;
     }
 
-    public function analyzer()
+    public function analyzer(): AnalyzerInterface
     {
         return $this->analyzer;
     }
 
-    public function raw()
+    public function raw(): array
     {
         $raw = [
-            'type' => $this->type,
+            $this->name => [
+                'type' => $this->type,
+            ]
         ];
 
         if (is_null($this->analyzer)) {
             return $raw;
         }
 
-        $raw['analyzer'] = $this->analyzer->name();
+        $raw[$this->name]['analyzer'] = $this->analyzer->name();
 
         return $raw;
     }

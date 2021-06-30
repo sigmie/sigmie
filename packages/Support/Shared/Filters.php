@@ -28,12 +28,14 @@ trait Filters
 {
     private Collection $filters;
 
+    private Language $language;
+
     private function initFilters(): void
     {
         $this->filters  = $this->filters ?? new SupportCollection();
     }
 
-    private function ensureFilterNameIsAvailable(string $name)
+    private function ensureFilterNameIsAvailable(string $name): void
     {
         if ($this->analysis()->hasFilter($name)) {
             throw new Exception('Char filter name already exists.');
@@ -75,7 +77,7 @@ trait Filters
     {
         $name = $name ?? $this->createFilterName('lowercase');
 
-        $this->addFilter(new Lowercase($name, ['language' => $language]));
+        $this->addFilter(new Lowercase($name));
 
         return $this;
     }
@@ -116,7 +118,7 @@ trait Filters
         return $this;
     }
 
-    private function addFilter(TokenFilter $tokenFilter)
+    private function addFilter(TokenFilter $tokenFilter): void
     {
         $this->initFilters();
 

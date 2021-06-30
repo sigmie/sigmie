@@ -15,7 +15,7 @@ class Document implements FromRaw
 {
     use Actions;
 
-    protected $attributes;
+    protected array $attributes;
 
     protected ?string $id = null;
 
@@ -25,7 +25,7 @@ class Document implements FromRaw
 
 
     public function __construct(
-        $attributes = [],
+        array $attributes = [],
         string|int|null $id = null,
         int $version = 0
     ) {

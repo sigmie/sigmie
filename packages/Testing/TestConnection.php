@@ -12,7 +12,7 @@ trait TestConnection
 {
     use API;
 
-    public function setupTestConnection()
+    public function setupTestConnection(): void
     {
         $client = JSONClient::create(getenv('ES_HOST'));
 

@@ -48,53 +48,34 @@ class Query
         ];
     }
 
-    public function toJson($options = 0)
+    public function toJson($options = 0): string
     {
         return json_encode($this->toArray());
     }
 
-    /**
-     * Get the value of indexName
-     */
-    public function getIndexName()
+    public function getIndexName(): string
     {
         return $this->indexName;
     }
 
-    /**
-     * Get the value of to
-     */
     public function getTo()
     {
         return $this->size;
     }
 
-    /**
-     * Set the value of to
-     *
-     * @return  self
-     */
-    public function setSize($size)
+    public function setSize($size): self
     {
         $this->size = $size;
 
         return $this;
     }
 
-    /**
-     * Get the value of from
-     */
-    public function getFrom()
+    public function getFrom(): int
     {
         return $this->from;
     }
 
-    /**
-     * Set the value of from
-     *
-     * @return  self
-     */
-    public function setFrom($from)
+    public function setFrom($from): self
     {
         $this->from = $from;
 

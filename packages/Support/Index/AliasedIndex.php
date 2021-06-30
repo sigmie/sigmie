@@ -9,6 +9,7 @@ use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\APIs\Reindex;
+use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Index\Index;
 use Sigmie\Base\Mappings\Properties;
 use function Sigmie\Helpers\index_name;
@@ -26,7 +27,7 @@ class AliasedIndex extends Index
         protected string $alias,
         array $aliases,
         ?Settings $settings = null,
-        ?Mappings $mappings = null,
+        ?MappingsInterface $mappings = null,
     ) {
         parent::__construct($identifier, $aliases, $settings, $mappings);
     }
@@ -73,7 +74,7 @@ class AliasedIndex extends Index
         $this->settings->replicaShards = 0;
         $this->settings->config('refresh_interval', '-1');
 
-        $this->disableWrite($oldName);
+        $this->disableWrite();
 
         $this->identifier = $newName;
         $this->createIndex($this);

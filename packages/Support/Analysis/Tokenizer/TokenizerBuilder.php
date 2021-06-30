@@ -47,14 +47,14 @@ trait TokenizerBuilder
         $this->setTokenizer(new WordBoundaries($name));
     }
 
-    private function ensureTokenizerNameIsAvailable(string $name)
+    private function ensureTokenizerNameIsAvailable(string $name): void
     {
         if ($this->analysis()->hasTokenizer($name)) {
             throw new Exception('Tokenizer already exists.');
         }
     }
 
-    private function setTokenizer(Tokenizer $tokenizer)
+    private function setTokenizer(Tokenizer $tokenizer): void
     {
         $this->ensureTokenizerNameIsAvailable($tokenizer->name());
 

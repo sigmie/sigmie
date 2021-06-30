@@ -38,12 +38,12 @@ class Properties implements Arrayable, ArrayAccess
         return $this->fields[$offset];
     }
 
-    public function offsetSet($offset, $value)
+    public function offsetSet(mixed $offset, mixed $value): void
     {
         $this->fields[$offset] = $value;
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset(mixed $offset)
     {
         unset($this->fields[$offset]);
     }

@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Sigmie\Support\Alias;
 
 use Sigmie\Base\APIs\Alias as AliasAPI;
+use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Exceptions\ElasticsearchException;
 
 trait Actions
 {
-    use AliasAPI;
+    use AliasAPI, Index;
 
     public function switchAlias(string $alias, string $from, string $to): bool
     {
@@ -23,13 +24,11 @@ trait Actions
         return $res->json('acknowledged');
     }
 
-    protected function createAlias(string $index, string $alias)
+    protected function createAlias(string $index, string $alias): void
     {
         $path = "/{$index}/_alias/{$alias}";
 
         $this->indexAPICall($path, 'PUT');
-
-        return $index;
     }
 
     protected function aliasExists(string $alias): bool

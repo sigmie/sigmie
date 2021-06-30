@@ -28,12 +28,12 @@ class QueryBuilder
         $this->index = $index;
     }
 
-    public function filtered()
+    public function filtered(): Filtered
     {
         return new Filtered($this);
     }
 
-    public function query()
+    public function query(): QueryClause
     {
         $query = new QueryClause($this);
 
@@ -42,7 +42,7 @@ class QueryBuilder
         return $query;
     }
 
-    public function bool()
+    public function bool(): Boolean
     {
         $query = new Boolean($this);
 
@@ -51,7 +51,7 @@ class QueryBuilder
         return $query;
     }
 
-    public function get()
+    public function get(): mixed
     {
         $q = [];
         foreach ($this->values as $value) {

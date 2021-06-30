@@ -42,15 +42,15 @@ interface Collection extends Countable, IteratorAggregate, ArrayAccess
 
     public function count(): int;
 
-    public function set($key, $value): static;
+    public function set(string|int $key, mixed $value): static;
 
     public function values(): array;
 
     public function keys(): array;
 
-    public function get($key): mixed;
+    public function get(string|int $key): mixed;
 
-    public function indexOf($element): int|string;
+    public function indexOf(mixed $element): int|string;
 
     public function exists(Closure $p): bool;
 

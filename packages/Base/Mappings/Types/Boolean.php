@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Mappings\Types;
 
-use Sigmie\Base\Mappings\Type;
+use Sigmie\Base\Mappings\PropertyType;
 
-class Boolean extends Type
+class Boolean extends PropertyType
 {
-    public function raw()
+    public function toRaw(): array
     {
-        return [
+        return [$this->name => [
             'type' => 'boolean',
-        ];
+        ]];
     }
 }

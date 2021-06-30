@@ -10,7 +10,7 @@ use Sigmie\Http\Contracts\JSONRequest as JSONRequestInterface;
 
 class NdJSONRequest extends Request implements JSONRequestInterface
 {
-    protected $headers = [
+    protected array $headers = [
         'Content-type' => 'application/x-ndjson',
     ];
 
@@ -21,7 +21,7 @@ class NdJSONRequest extends Request implements JSONRequestInterface
         parent::__construct($method, $uri, $this->headers, $body);
     }
 
-    private function ndJsonEncode($values)
+    private function ndJsonEncode(array $values): string
     {
         $result = '';
         foreach ($values as $value) {
@@ -32,4 +32,3 @@ class NdJSONRequest extends Request implements JSONRequestInterface
         return $result;
     }
 }
-
