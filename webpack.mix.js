@@ -5,10 +5,12 @@ mix.alias({
   ziggy: path.resolve('vendor/tightenco/ziggy/dist')
 })
 
-// browser sync
-mix.browserSync({
-  proxy: 'localhost:8080',
-  open: false
+// hot reload
+mix.options({
+  hmrOptions: {
+    host: '0.0.0.0',
+    port: 8081
+  }
 })
 
 // vue
