@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0df93c3b1f7187e6800df122474e4778",
+    "content-hash": "38207970e9e408e715015f6a864d883d",
     "packages": [
         {
             "name": "amphp/amp",
@@ -3944,16 +3944,16 @@
         },
         {
             "name": "laravel/octane",
-            "version": "v0.3.2",
+            "version": "v1.0.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/octane.git",
-                "reference": "83f7687145fac1fba49a0221cf0c99ef93f092ab"
+                "reference": "15b8c2ece2561a9e79ec93d1e2a48647599babdf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/octane/zipball/83f7687145fac1fba49a0221cf0c99ef93f092ab",
-                "reference": "83f7687145fac1fba49a0221cf0c99ef93f092ab",
+                "url": "https://api.github.com/repos/laravel/octane/zipball/15b8c2ece2561a9e79ec93d1e2a48647599babdf",
+                "reference": "15b8c2ece2561a9e79ec93d1e2a48647599babdf",
                 "shasum": ""
             },
             "require": {
@@ -3978,12 +3978,15 @@
             ],
             "type": "library",
             "extra": {
+                "branch-alias": {
+                    "dev-master": "1.x-dev"
+                },
                 "laravel": {
                     "providers": [
                         "Laravel\\Octane\\OctaneServiceProvider"
                     ],
                     "aliases": {
-                        "Octane": "Laravel\\Octane\\OctaneFacade"
+                        "Octane": "Laravel\\Octane\\Facades\\Octane"
                     }
                 }
             },
@@ -4013,7 +4016,7 @@
                 "issues": "https://github.com/laravel/octane/issues",
                 "source": "https://github.com/laravel/octane"
             },
-            "time": "2021-04-20T15:10:09+00:00"
+            "time": "2021-07-06T16:53:04+00:00"
         },
         {
             "name": "laravel/sanctum",

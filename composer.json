@@ -38,7 +38,7 @@
         "laravel/framework": "^8.0",
         "laravel/horizon": "^5.0",
         "laravel/nova": "^3.0",
-        "laravel/octane": "^0.3.1",
+        "laravel/octane": "^1.0",
         "laravel/sanctum": "^2.4",
         "laravel/scout": "^8.0",
         "laravel/slack-notification-channel": "^2.0",
