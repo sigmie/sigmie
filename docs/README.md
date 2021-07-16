@@ -31,6 +31,8 @@ Running this on the **host** will speed up the reloading process.
 
 The Hot reload server is running on **0.0.0.0:8081**.
 
+**Use the `8080` port while developing, and NOT the `8081`**
+
 ## Dev Server 
 To start the **Octane** dev server run:
 ```sh

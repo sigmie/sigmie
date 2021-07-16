@@ -2,7 +2,14 @@
  * @license MIT */
 
 /*!
- * Pusher JavaScript Library v6.0.3
+ * Chart.js v3.1.1
+ * https://www.chartjs.org
+ * (c) 2021 Chart.js Contributors
+ * Released under the MIT License
+ */
+
+/*!
+ * Pusher JavaScript Library v7.0.3
  * https://pusher.com/
  *
  * Copyright 2020, Pusher
