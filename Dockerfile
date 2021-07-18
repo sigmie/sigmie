@@ -73,4 +73,3 @@ CMD composer validate && \
     rm .env                         && \
     rm auth.json                    && \
     sudo /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
-

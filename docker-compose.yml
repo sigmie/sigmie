@@ -24,8 +24,12 @@ services:
     depends_on:
       - redis
       - db
-    command: /usr/bin/php -d variables_order=EGPCS /var/www/app/artisan octane:start --server=swoole --host=0.0.0.0 --port=8080 --watch --workers=4
-    #command: sleep infinity
+    command: > 
+        sh -c "composer install &&
+               php artisan cache:clear &&
+               php artisan clear-compiled &&
+               php artisan migrate --force &&
+               php -d variables_order=EGPCS /var/www/app/artisan octane:start --server=swoole --host=0.0.0.0 --port=8080 --watch --workers=4"
 
   db:
     container_name: db
@@ -56,7 +60,6 @@ services:
     environment:
           - node.name=sigmie-es
           - cluster.name=docker-cluster # used in CI/CD elasticsearch instance
-          #- discovery.seed_hosts=es02,es03
           - cluster.initial_master_nodes=sigmie-es
           - bootstrap.memory_lock=true
           - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
