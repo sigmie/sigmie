@@ -1,0 +1,67 @@
+name: Code style
+
+on: [push]
+
+jobs:
+
+  style_check:
+
+    runs-on: ubuntu-18.04
+
+    if: github.ref != 'refs/heads/master'
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Slack notification
+      run: |
+           curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "Code style workflow has started."}' ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    - name: Cache node modules
+      uses: actions/cache@v1
+      with:
+       path: ~/.npm
+       key: npm-${{ hashFiles('**/package-lock.json') }}
+
+    - name: Cache PHP dependencies
+      uses: actions/cache@v1
+      with:
+       path: ~/.composer
+       key: composer-${{ hashFiles('**/composer.lock') }}
+
+    - name: Install curl zip
+      run: sudo apt-get update && sudo apt-get install -y curl zip
+
+    - name: Install composer
+      run: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+
+    - name: Authorize private repositories
+      run: |
+        composer config github-oauth.github.com ${{ secrets.COMPOSER_GITHUB_TOKEN }}
+        composer config http-basic.nova.laravel.com "nico@sigmie.com" ${{ secrets.SATIS_NOVA_PASSWORD }}
+        composer config http-basic.packages.sigmie.com "nico@sigmie.com" "${{ secrets.SATIS_SIGMIE_PASSWORD }}"
+
+    - name: Validate composer.json and composer.lock
+      run: composer validate
+
+    - name: Install php dependencies
+      run: composer install
+
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '15'
+    - run: npm install
+    - run: npm run prod
+
+    - name: PHPStan
+      run: vendor/bin/phpstan analyse --memory-limit=-1
+
+    - name: PHPCS app dir
+      run: vendor/bin/phpcs --exclude=Generic.Files.LineLength --standard=PSR2 {app,database/factories,database/seeders}
+
+    - name: JS Standard
+      run: node_modules/standard/bin/cmd.js resources | node_modules/snazzy/bin/cmd.js
+
+    - name: Slack finish notification
+      run: |
+           curl -X POST --data-urlencode 'payload={"channel": "#cicd", "text": "Code style checks have passed."}' ${{ secrets.SLACK_WEBHOOK_URL }}
