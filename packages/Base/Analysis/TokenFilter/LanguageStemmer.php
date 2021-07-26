@@ -15,8 +15,7 @@ abstract class LanguageStemmer implements TokenFilter
 
     public function name(): string
     {
-        //TODO fix this class
-        return $this->name;
+        return 'language';
     }
 
     abstract function language(): string;

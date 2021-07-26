@@ -12,9 +12,9 @@ use IteratorAggregate;
 
 interface Collection extends Countable, IteratorAggregate, ArrayAccess
 {
-    public function deepen(int $depth = INF): static;
+    public function deepen(int|float $depth = INF): static;
 
-    public function flatten(int $depth = INF): static;
+    public function flatten(int|float $depth = INF): static;
 
     public function flattenWithKeys(int $depth = 1): static;
 

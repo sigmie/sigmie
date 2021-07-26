@@ -18,6 +18,7 @@ use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Base\Search\Searchable;
 use Sigmie\Support\Collection;
 use Sigmie\Support\Index\AliasedIndex;
+use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 
 class Index implements DocumentCollectionInterface, Name
 {
@@ -41,13 +42,13 @@ class Index implements DocumentCollectionInterface, Name
 
     protected Settings $settings;
 
-    protected Mappings $mappings;
+    protected MappingsInterface $mappings;
 
     public function __construct(
         protected string $identifier,
         protected array $aliases = [],
         Settings $settings = null,
-        Mappings $mappings = null
+        MappingsInterface $mappings = null
     ) {
         $this->settings = $settings ?: new Settings();
         $this->mappings = $mappings ?: new Mappings();
@@ -119,7 +120,7 @@ class Index implements DocumentCollectionInterface, Name
         return $this->settings;
     }
 
-    public function getMappings(): Mappings
+    public function getMappings(): MappingsInterface
     {
         return $this->mappings;
     }
@@ -194,13 +195,14 @@ class Index implements DocumentCollectionInterface, Name
         return (int) $this->count() > 0;
     }
 
-    public function remove(string|array $ids): bool
+    public function remove(string|array $ids): void
     {
         if (is_array($ids)) {
-            return $this->deleteDocuments($ids);
+            $this->deleteDocuments($ids);
+            return;
         }
 
-        return $this->deleteDocument($ids);
+        $this->deleteDocument($ids);
     }
 
     public function contains(string $identifier): bool
@@ -294,24 +296,12 @@ class Index implements DocumentCollectionInterface, Name
         return $this->contains((string) $offset);
     }
 
-    /**
-     * @param string $offset
-     *
-     * @return Document
-     */
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset): Document
     {
         return $this->getDocument((string) $offset);
     }
 
-    /**
-     * @param string $identifier
-     * @param Document $doc
-     *
-     * @return void
-     * @throws Exception
-     */
-    public function offsetSet($identifier, $doc)
+    public function offsetSet(mixed $identifier, mixed $doc): void
     {
         if (is_null($identifier)) {
             $this->addDocument($doc);
@@ -321,7 +311,7 @@ class Index implements DocumentCollectionInterface, Name
         throw new Exception('You can\'t add a documents with an offset.');
     }
 
-    public function offsetUnset($identifier)
+    public function offsetUnset(mixed $identifier): void
     {
         $this->deleteDocument($identifier);
     }

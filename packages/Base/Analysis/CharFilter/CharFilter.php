@@ -13,7 +13,7 @@ use function Sigmie\Helpers\name_configs;
 
 abstract class CharFilter implements CharFilterInterface, Configurable, Raw
 {
-    public static function fromRaw(array $raw): static
+    public static function fromRaw(array $raw): CharFilterInterface
     {
         [$name, $config] = name_configs($raw);
 

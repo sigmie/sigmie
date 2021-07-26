@@ -12,12 +12,9 @@ use Sigmie\Http\Contracts\JSONResponse as JSONResponseInterface;
 
 class JSONResponse implements ArrayAccess, JSONResponseInterface
 {
-    /**
-     * PSR response.
-     */
     protected ResponseInterface $response;
 
-    protected $decoded;
+    protected array $decoded;
 
     public function __construct(ResponseInterface $psrResponse)
     {
@@ -44,7 +41,7 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
         return (string) $this->response->getBody();
     }
 
-    public function json($key = null): int|bool|string|array|null
+    public function json(mixed $key = null): int|bool|string|array|null
     {
         if (!$this->decoded) {
             $this->decoded = json_decode($this->body(), true);

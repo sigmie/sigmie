@@ -8,7 +8,7 @@ use function Sigmie\Helpers\name_configs;
 
 class Stemmer extends TokenFilter
 {
-    public function type(): string
+    final public function type(): string
     {
         return 'stemmer_override';
     }

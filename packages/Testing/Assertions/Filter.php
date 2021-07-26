@@ -8,7 +8,7 @@ trait Filter
 {
     use Contracts;
 
-    protected function assertFilterEquals(string $index, string $filter, array $value)
+    protected function assertFilterEquals(string $index, string $filter, array $value): void
     {
         $data = $this->indexData($index);
 
@@ -19,7 +19,7 @@ trait Filter
         );
     }
 
-    protected function assertFilterExists(string $index, string $filter)
+    protected function assertFilterExists(string $index, string $filter): void
     {
         $data = $this->indexData($index);
 
@@ -30,7 +30,7 @@ trait Filter
         );
     }
 
-    protected function assertFilterNotExists(string $index, string $filter)
+    protected function assertFilterNotExists(string $index, string $filter): void
     {
         $data = $this->indexData($index);
 
@@ -41,7 +41,7 @@ trait Filter
         );
     }
 
-    protected function assertFilterHasStemming(string $index, string $filter, array $rules)
+    protected function assertFilterHasStemming(string $index, string $filter, array $rules): void
     {
         $data = $this->indexData($index);
 
@@ -52,7 +52,7 @@ trait Filter
         );
     }
 
-    protected function assertFilterHasStopwords(string $index, string $filter, array $stopwords)
+    protected function assertFilterHasStopwords(string $index, string $filter, array $stopwords): void
     {
         $data = $this->indexData($index);
 
@@ -63,7 +63,7 @@ trait Filter
         );
     }
 
-    protected function assertFilterHasSynonyms(string $index, string $filter, array $synonyms)
+    protected function assertFilterHasSynonyms(string $index, string $filter, array $synonyms): void
     {
         $data = $this->indexData($index);
 

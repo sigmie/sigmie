@@ -9,7 +9,7 @@ trait Mapping
 {
     use Contracts;
 
-    protected function assertPropertyExists(string $index, string $property)
+    protected function assertPropertyExists(string $index, string $property): void
     {
         $data = $this->indexData($index);
 
@@ -20,7 +20,7 @@ trait Mapping
         );
     }
 
-    protected function assertPropertyIsDate(string $index, string $property)
+    protected function assertPropertyIsDate(string $index, string $property): void
     {
         $data = $this->indexData($index);
 
@@ -31,7 +31,7 @@ trait Mapping
         );
     }
 
-    protected function assertPropertyIsSearchAsYouType(string $index, string $property)
+    protected function assertPropertyIsSearchAsYouType(string $index, string $property): void
     {
         $data = $this->indexData($index);
 
@@ -42,7 +42,7 @@ trait Mapping
         );
     }
 
-    protected function assertPropertyIsUnstructuredText(string $index, string $property)
+    protected function assertPropertyIsUnstructuredText(string $index, string $property): void
     {
         $data = $this->indexData($index);
 
@@ -53,7 +53,7 @@ trait Mapping
         );
     }
 
-    protected function assertPropertyIsInteger(string $index, string $property)
+    protected function assertPropertyIsInteger(string $index, string $property): void
     {
         $data = $this->indexData($index);
 
@@ -64,7 +64,7 @@ trait Mapping
         );
     }
 
-    protected function assertPropertyIsFloat(string $index, string $property)
+    protected function assertPropertyIsFloat(string $index, string $property): void
     {
         $data = $this->indexData($index);
 
@@ -75,7 +75,7 @@ trait Mapping
         );
     }
 
-    protected function assertPropertyIsBoolean(string $index, string $property)
+    protected function assertPropertyIsBoolean(string $index, string $property): void
     {
         $data = $this->indexData($index);
 

@@ -8,7 +8,7 @@ trait CharFilter
 {
     use Contracts;
 
-    protected function assertCharFilterEquals(string $index, string $charFilter, array $value)
+    protected function assertCharFilterEquals(string $index, string $charFilter, array $value): void
     {
         $data = $this->indexData($index);
 
@@ -19,7 +19,7 @@ trait CharFilter
         );
     }
 
-    protected function assertCharFilterExists(string $index, string $charFilter)
+    protected function assertCharFilterExists(string $index, string $charFilter): void
     {
         $data = $this->indexData($index);
 
@@ -30,7 +30,7 @@ trait CharFilter
         );
     }
 
-    protected function assertCharFilterNotExists(string $index, string $charFilter)
+    protected function assertCharFilterNotExists(string $index, string $charFilter): void
     {
         $data = $this->indexData($index);
 

@@ -24,7 +24,7 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
         return  new ElasticsearchException($request, $this, $message);
     }
 
-    private function hasErrorKey()
+    private function hasErrorKey(): bool
     {
         return !is_null($this->json('error'));
     }

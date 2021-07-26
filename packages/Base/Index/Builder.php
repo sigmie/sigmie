@@ -36,8 +36,6 @@ class Builder
 
     protected string $alias;
 
-    protected Language $language;
-
     private DefaultAnalyzer $defaultAnalyzer;
 
     private AnalysisInterface $analysis;
@@ -81,7 +79,7 @@ class Builder
     }
 
 
-    public function getAnalyzer(): Analyzer
+    public function getAnalyzer(): DefaultAnalyzer
     {
         $analyzer = $this->defaultAnalyzer ?? new DefaultAnalyzer();
 

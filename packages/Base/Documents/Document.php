@@ -44,17 +44,17 @@ class Document implements FromRaw
         return $this->version;
     }
 
-    public function __set($name, $value)
+    public function __set(string $name, mixed $value): void
     {
-        return $this->setAttribute($name, $value);
+        $this->setAttribute($name, $value);
     }
 
-    public function __get($attribute)
+    public function __get(string $attribute): mixed
     {
         return $this->getAttribute($attribute);
     }
 
-    public function save()
+    public function save(): void
     {
         $this->index->updateDocument($this);
     }
@@ -92,12 +92,12 @@ class Document implements FromRaw
         return $this;
     }
 
-    public function attributes()
+    public function attributes(): array
     {
         return $this->attributes;
     }
 
-    public function setId($identifier)
+    public function setId(string $identifier): self
     {
         $this->id = $identifier;
 

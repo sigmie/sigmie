@@ -26,7 +26,7 @@ trait CharFilters
 {
     private Collection $charFilters;
 
-    public function charFilter(CharFilter $charFilter)
+    public function charFilter(CharFilter $charFilter): self
     {
         $this->addCharFilter($charFilter);
 

@@ -12,7 +12,7 @@ trait Index
     use IndexAPICall;
     use Contracts;
 
-    public function assertIndexExists(string $name)
+    public function assertIndexExists(string $name): void
     {
         try {
             $res = $this->indexAPICall("/{$name}", 'HEAD');
@@ -24,7 +24,7 @@ trait Index
         $this->assertEquals(200, $code, "Failed to assert that index {$name} exists.");
     }
 
-    public function assertIndexNotExists(string $name)
+    public function assertIndexNotExists(string $name): void
     {
         try {
             $res = $this->indexAPICall("/{$name}", 'HEAD');
@@ -36,14 +36,14 @@ trait Index
         $this->assertEquals(404, $code, "Failed to assert that index {$name} not exists.");
     }
 
-    protected function assertIndexHasMappings(string $index)
+    protected function assertIndexHasMappings(string $index): void
     {
         $data = $this->indexData($index);
 
         $this->assertArrayHasKey('mappings', $data, "Failed to assert that index {$index} has mappings.");
     }
 
-    protected function assertAnalyzerExists(string $index, string $analyzer)
+    protected function assertAnalyzerExists(string $index, string $analyzer): void
     {
         $data = $this->indexData($index);
 
@@ -54,7 +54,7 @@ trait Index
         );
     }
 
-    protected function assertAnalyzerNotExists(string $index, string $analyzer)
+    protected function assertAnalyzerNotExists(string $index, string $analyzer): void
     {
         $data = $this->indexData($index);
 

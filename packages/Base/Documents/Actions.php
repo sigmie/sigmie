@@ -30,7 +30,7 @@ trait Actions
             ['doc' => $document->attributes()],
         ];
 
-        $response = $this->bulkAPICall($document->getIndex()->identifier, $body);
+        $response = $this->bulkAPICall($document->getIndex()->name(), $body);
 
         if ($response->failed()) {
             throw new Exception('Document update failed.');
@@ -93,7 +93,7 @@ trait Actions
 
         $res = $this->bulkAPICall($indexName, $data, $async);
 
-        [[, $data]] = $res->getAll();
+        [[$rest, $data]] = $res->getAll();
 
         $doc->setId($data['_id']);
 
@@ -146,7 +146,7 @@ trait Actions
         return $response->first();
     }
 
-    protected function listDocuments($offset = 0, $limit = 100): DocumentCollection
+    protected function listDocuments(int $offset = 0, int $limit = 100): DocumentCollection
     {
         $query = new Query(['match_all' => (object) []]);
         $query->index($this->index());

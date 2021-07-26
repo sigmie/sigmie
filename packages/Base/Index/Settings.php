@@ -62,7 +62,7 @@ class Settings implements Raw
 
         $analysis = Analysis::fromRaw($settings['analysis']);
 
-        return new Settings(
+        return new static(
             (int)$settings['number_of_shards'],
             (int)$settings['number_of_replicas'],
             $analysis

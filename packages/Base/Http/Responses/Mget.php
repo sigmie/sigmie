@@ -6,6 +6,7 @@ namespace Sigmie\Base\Http\Responses;
 
 use LogicException;
 use Psr\Http\Message\ResponseInterface;
+use Ramsey\Collection\CollectionInterface;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Documents\Collection as DocumentCollection;
 use Sigmie\Base\Documents\Document;
@@ -41,7 +42,7 @@ class Mget extends ElasticsearchResponse implements DocumentCollectionInterface
         throw new LogicException('Mget response data may not be mutated');
     }
 
-    private function createCollection(array $docsData)
+    private function createCollection(array $docsData): void
     {
         foreach ($docsData as $documentData) {
             if ($documentData['found'] === false) {

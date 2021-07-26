@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Sigmie\Base\Mappings;
 
 use ArrayAccess;
-use Sigmie\Base\Contracts\Type;
 use Sigmie\Base\Mappings\Types\Text;
 use Sigmie\Support\Collection;
 use Sigmie\Support\Contracts\Arrayable;
+use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
 class Properties implements Arrayable, ArrayAccess
 {
@@ -16,11 +16,11 @@ class Properties implements Arrayable, ArrayAccess
     {
     }
 
-    public function textFields()
+    public function textFields(): CollectionInterface
     {
         $collection = new Collection($this->fields);
 
-        return $collection->filter(fn (Type $type) => $type instanceof Text);
+        return $collection->filter(fn (PropertyType $type) => $type instanceof Text);
     }
 
     public function toArray(): array

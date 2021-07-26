@@ -8,9 +8,10 @@ use Exception;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\ElasticsearchRequest as ElasticsearchRequestInterface;
-use Sigmie\Base\Http\Connection as Connection;
+use Sigmie\Base\Contracts\HttpConnection as Connection;
+use Sigmie\Base\Http\Connection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
-use Sigmie\Base\Http\ElasticsearchResponse;
+use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Index;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Support\Index\AliasedIndex;
@@ -70,7 +71,7 @@ class Sigmie
     {
         $client = JSONClient::create($host, $auth);
 
-        return new Sigmie(new Connection($client));
+        return new static(new HttpConnection($client));
     }
 
     protected function httpCall(ElasticsearchRequestInterface $request): ElasticsearchResponse

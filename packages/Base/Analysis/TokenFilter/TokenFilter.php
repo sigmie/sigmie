@@ -29,7 +29,7 @@ abstract class TokenFilter implements TokenFilterInterface, Raw, Configurable
         $this->settings = $settings;
     }
 
-    public static function fromRaw(array $raw): static
+    public static function fromRaw(array $raw): TokenFilterInterface
     {
         [$name, $config] = name_configs($raw);
 

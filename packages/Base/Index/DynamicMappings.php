@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Support\Collection;
 
 class DynamicMappings extends Mappings
 {
     public function __construct(
-        ?Analyzer $defaultAnalyzer = null
+        ?DefaultAnalyzer $defaultAnalyzer = null
     ) {
         $this->defaultAnalyzer = $defaultAnalyzer ?: new DefaultAnalyzer();
 

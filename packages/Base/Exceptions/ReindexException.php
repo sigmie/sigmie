@@ -13,7 +13,7 @@ class ReindexException extends ElasticsearchException
     public static function firstReason(
         ElasticsearchRequest $request,
         ElasticsearchResponse $response
-    ) {
+    ): static {
         $message = $response->json()['failures'][0]['cause']['reason'];
 
         return new static($request, $response, ucfirst($message));

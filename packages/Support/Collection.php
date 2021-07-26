@@ -16,7 +16,7 @@ class Collection implements CollectionInterface
     {
     }
 
-    public function deepen($depth = INF): static
+    public function deepen(int|float $depth = INF): static
     {
         $result = [];
 
@@ -43,7 +43,7 @@ class Collection implements CollectionInterface
     /**
      * Flatten a multi-dimensional array into a single level.
      */
-    public function flatten($depth = INF): static
+    public function flatten(int|float $depth = INF): static
     {
         $result = [];
 
@@ -68,10 +68,8 @@ class Collection implements CollectionInterface
 
     /**
      * Flatten a multi-dimensional array by keeping the keys.
-     *
-     * @return Collection
      */
-    public function flattenWithKeys($depth = 1): static
+    public function flattenWithKeys(int $depth = 1): static
     {
         $result = [];
 

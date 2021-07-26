@@ -10,4 +10,6 @@ use Sigmie\Http\Contracts\JSONResponse;
 interface ElasticsearchResponse extends JSONResponse
 {
     public function exception(ElasticsearchRequest $request): Exception;
+
+    public function code(): int;
 }

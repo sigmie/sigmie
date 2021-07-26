@@ -52,7 +52,7 @@ class Analyzer implements AnalyzerInterface
         array $charFilters,
         array $filters,
         array $tokenizers
-    ): static {
+    ): AnalyzerInterface {
 
         $analyzerFilters = [];
         $analyzerCharFilters = [];
@@ -140,12 +140,12 @@ class Analyzer implements AnalyzerInterface
         ];
     }
 
-    public function filters(): Collection
+    public function filters(): CollectionInterface
     {
         return $this->filters;
     }
 
-    public function charFilters(): Collection
+    public function charFilters(): CollectionInterface
     {
         return $this->charFilters;
     }

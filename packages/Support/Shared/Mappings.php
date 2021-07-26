@@ -27,7 +27,7 @@ trait Mappings
         return $this;
     }
 
-    protected function createMappings(Analyzer $defaultAnalyzer): MappingsInterface
+    protected function createMappings(DefaultAnalyzer $defaultAnalyzer): MappingsInterface
     {
         $mappings = new DynamicMappings($defaultAnalyzer);
 

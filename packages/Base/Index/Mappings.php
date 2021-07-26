@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Base\Index;
 
 use Exception;
-use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
-use Sigmie\Base\Contracts\Analyzer as ContractsAnalyzer;
+use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Contracts\Type;
 use Sigmie\Base\Mappings\Properties;
@@ -25,7 +24,7 @@ class Mappings implements MappingsInterface
     protected Analyzer $defaultAnalyzer;
 
     public function __construct(
-        ?Analyzer $defaultAnalyzer = null,
+        ?DefaultAnalyzer $defaultAnalyzer = null,
         ?Properties $properties = null,
     ) {
         $this->defaultAnalyzer = $defaultAnalyzer ?: new DefaultAnalyzer();
@@ -42,7 +41,7 @@ class Mappings implements MappingsInterface
         $collection = new Collection($this->properties->toArray());
 
         return $collection->filter(fn (Type $field) => $field instanceof Text)
-            ->map(fn (Text $field) => $field->analyzer() ?: $this->defaultAnalyzer);
+            ->map(fn (Text $field) => $field->analyzer());
     }
 
     public function toRaw(): array
@@ -56,7 +55,7 @@ class Mappings implements MappingsInterface
     public static function fromRaw(array $data, ContractsCollection $analyzers): Mappings
     {
         $analyzers = $analyzers->mapToDictionary(
-            fn (ContractsAnalyzer $analyzer) => [$analyzer->name() => $analyzer]
+            fn (Analyzer $analyzer) => [$analyzer->name() => $analyzer]
         )->toArray();
 
         $fields = [];

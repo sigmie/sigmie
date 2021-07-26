@@ -8,6 +8,11 @@ use Exception;
 
 class MissingMapping extends Exception
 {
+    public function __construct(string $message)
+    {
+        parent::__construct($message);
+    }
+
     public static function forIndex(string $index): static
     {
         return new static("Index mapping is missing for index name {$index}.");

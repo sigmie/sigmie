@@ -8,6 +8,7 @@ use EventSauce\BackOff\BackOffStrategy;
 use EventSauce\BackOff\FibonacciBackOffStrategy;
 use GuzzleHttp\Exception\GuzzleException;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
+use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Contracts\HttpConnection as ConnectionInterface;
 use Sigmie\Http\Contracts\JSONClient as JSONClientInterface;
 use Sigmie\Http\Contracts\JSONResponse;
@@ -31,13 +32,13 @@ class Connection implements ConnectionInterface
         );
     }
 
-    public function __invoke(ElasticsearchRequest $request, $options = []): ElasticsearchResponse
+    public function __invoke(ElasticsearchRequest $request, array $options = []): ElasticsearchResponse
     {
         $uri = $request->getUri();
 
         $request = $request->withUri($uri);
 
-        $jsonResponse = $this->call(fn () => $this->http->request($request, $options));
+        $jsonResponse = $this->call(fn () => $this->http->request($request));
 
         $response = $request->response($jsonResponse->psr());
 

@@ -6,6 +6,7 @@ namespace Sigmie\Base\Documents;
 
 use Closure;
 use Sigmie\Base\Contracts\DocumentCollection;
+use Sigmie\Support\Collection as SupportCollection;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
 trait Collection
@@ -21,8 +22,7 @@ trait Collection
 
     public function addDocuments(array|DocumentCollection $documents): self
     {
-        if (is_array($documents))
-        {
+        if (is_array($documents)) {
             $documents = new DocumentsCollection($documents);
         }
 
@@ -53,9 +53,9 @@ trait Collection
         return !$this->isEmpty();
     }
 
-    public function remove(string $identifier): bool
+    public function remove(string $identifier): void
     {
-        return $this->collection->remove($identifier);
+        $this->collection->remove($identifier);
     }
 
     public function contains(string $id): bool
@@ -110,23 +110,23 @@ trait Collection
         return $this->collection->getIterator();
     }
 
-    public function offsetExists($offset)
+    public function offsetExists(mixed $offset): bool
     {
         return $this->collection->offsetExists($offset);
     }
 
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset): mixed
     {
         return $this->collection->offsetGet($offset);
     }
 
-    public function offsetSet($offset, $value)
+    public function offsetSet(mixed $offset, mixed $value): void
     {
-        return $this->collection->offsetSet($offset, $value);
+        $this->collection->offsetSet($offset, $value);
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset(mixed $offset): void
     {
-        return $this->collection->offsetUnset($offset);
+        $this->collection->offsetUnset($offset);
     }
 }

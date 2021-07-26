@@ -6,6 +6,7 @@ namespace Sigmie\Base\Http\Responses;
 
 use Exception;
 use Psr\Http\Message\ResponseInterface;
+use Ramsey\Collection\Exception\CollectionMismatchException;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Exceptions\BulkException;
 use Sigmie\Base\Http\ElasticsearchResponse;
@@ -35,17 +36,17 @@ class Bulk extends ElasticsearchResponse
         return new BulkException($this->failCollection);
     }
 
-    public function getAll()
+    public function getAll(): CollectionInterface
     {
         return new Collection([...$this->successCollection, ...$this->failCollection]);
     }
 
-    public function getFailed(): Collection
+    public function getFailed(): CollectionInterface
     {
         return $this->failCollection;
     }
 
-    public function getSuccessful(): Collection
+    public function getSuccessful(): CollectionInterface
     {
         return $this->successCollection;
     }
@@ -55,7 +56,7 @@ class Bulk extends ElasticsearchResponse
         return parent::failed() || $this->json('errors');
     }
 
-    private function createCollections(array $items)
+    private function createCollections(array $items): void
     {
         foreach ($items as $data) {
             [$action] = array_keys($data);

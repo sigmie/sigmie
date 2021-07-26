@@ -22,11 +22,11 @@ use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
 use Sigmie\Base\Index\Builder as IndexBuilder;
 use Sigmie\Support\Analysis\AnalyzerUpdate;
 use Sigmie\Support\Analysis\Tokenizer\TokenizerBuilder as TokenizerTokenizerBuilder;
-use Sigmie\Support\Contracts\TokenizerBuilder as ContractsTokenizerBuilder;
+use Sigmie\Support\Contracts\TokenizerBuilder as TokenizerBuilderInterface;
 
 use function Sigmie\Helpers\random_letters;
 
-class TokenizerBuilder implements ContractsTokenizerBuilder
+class TokenizerBuilder implements TokenizerBuilderInterface
 {
     use TokenizerTokenizerBuilder;
 

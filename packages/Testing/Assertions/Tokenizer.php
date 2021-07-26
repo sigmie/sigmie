@@ -8,7 +8,7 @@ trait Tokenizer
 {
     use Contracts;
 
-    protected function assertTokenizerEquals(string $index, string $tokenizer, array $value)
+    protected function assertTokenizerEquals(string $index, string $tokenizer, array $value): void
     {
         $data = $this->indexData($index);
 
@@ -19,7 +19,7 @@ trait Tokenizer
         );
     }
 
-    protected function assertTokenizerExists(string $index, string $tokenizer)
+    protected function assertTokenizerExists(string $index, string $tokenizer): void
     {
         $data = $this->indexData($index);
 
@@ -30,7 +30,7 @@ trait Tokenizer
         );
     }
 
-    protected function assertTokenizerNotExists(string $index, string $tokenizer)
+    protected function assertTokenizerNotExists(string $index, string $tokenizer): void
     {
         $data = $this->indexData($index);
 

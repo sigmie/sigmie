@@ -13,7 +13,7 @@ interface Analyzer extends Name, ToRaw
         array $charFilters,
         array $filters,
         array $tokenizers
-    ): static;
+    ): Analyzer;
 
     public function tokenizer(): Tokenizer;
 

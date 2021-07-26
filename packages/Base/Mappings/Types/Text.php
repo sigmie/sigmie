@@ -6,9 +6,10 @@ namespace Sigmie\Base\Mappings\Types;
 
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Contracts\Analyzer as AnalyzerInterface;
+use Sigmie\Base\Mappings\PropertyType;
 use Sigmie\Base\Mappings\Type;
 
-class Text extends Type
+class Text extends PropertyType
 {
     protected ?Analyzer $analyzer;
 
@@ -46,7 +47,7 @@ class Text extends Type
         return $this->analyzer;
     }
 
-    public function raw(): array
+    public function toRaw(): array
     {
         $raw = [
             $this->name => [

@@ -10,18 +10,14 @@ trait Testing
 {
     use IndexActions, TestConnection;
 
-    protected function setUpSigmieTesting(array $uses)
+    protected function setUpSigmieTesting(array $uses): void
     {
         if (isset($uses[TestConnection::class])) {
             $this->setupTestConnection();
         }
-
-        if (isset($uses[TestIndex::class])) {
-            $this->createTestIndex();
-        }
     }
 
-    protected function tearDownSigmieTesting(array $uses)
+    protected function tearDownSigmieTesting(array $uses): void
     {
     }
 }

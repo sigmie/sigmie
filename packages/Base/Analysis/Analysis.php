@@ -147,7 +147,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
         return $this->analyzers;
     }
 
-    public function setAnalyzer(Analyzer $analyzer)
+    public function setAnalyzer(Analyzer $analyzer): void
     {
         $this->analyzers[$analyzer->name()] = $analyzer;
     }
@@ -195,7 +195,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
             );
         }
 
-        return new Analysis($analyzers);
+        return new static($analyzers);
     }
 
     public function toRaw(): array

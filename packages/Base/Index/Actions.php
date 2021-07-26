@@ -8,6 +8,7 @@ use Sigmie\Base\APIs\Cat as CatAPI;
 use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\Exceptions\ElasticsearchException;
 use Sigmie\Support\Collection;
+use Sigmie\Support\Contracts\Collection as CollectionInterface;
 use Sigmie\Support\Exception\MultipleIndices;
 use Sigmie\Support\Index\AliasedIndex;
 
@@ -62,7 +63,7 @@ trait Actions
         }
     }
 
-    protected function getIndices(string $identifier)
+    protected function getIndices(string $identifier): CollectionInterface
     {
         try {
             $res = $this->indexAPICall("/{$identifier}", 'GET',);
@@ -83,12 +84,12 @@ trait Actions
         }
     }
 
-    protected function listIndices($offset = 0, $limit = 100): Collection
+    protected function listIndices(int $offset = 0, int $limit = 100): Collection
     {
         $catResponse = $this->catAPICall('/indices', 'GET',);
 
         return (new Collection($catResponse->json()))
-            ->map(function ($values) use ($catResponse) {
+            ->map(function ($values) {
                 $index = new Index($values['index']);
                 $index->setHttpConnection($this->getHttpConnection());
                 $index->setSize($values['store.size']);

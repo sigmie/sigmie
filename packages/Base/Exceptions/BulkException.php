@@ -22,10 +22,10 @@ class BulkException extends Exception
 
     public function getFailedActions(): Collection
     {
-        $this->failedActions;
+        return $this->failedActions;
     }
 
-    private function createText()
+    private function createText(): string
     {
         return implode(',', $this->failedActions->map(function ($vals) {
             [$action, $values] = $vals;
