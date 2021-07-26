@@ -1,0 +1,37 @@
+runtime: custom
+env: flex
+
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 1
+  cool_down_period_sec: 180
+  cpu_utilization:
+    target_utilization: 0.6
+  target_concurrent_requests: 100
+
+resources:
+  cpu: 1
+  memory_gb: 4
+  disk_size_gb: 10
+
+readiness_check:
+  check_interval_sec: 120
+  timeout_sec: 40
+  failure_threshold: 5
+  success_threshold: 5
+  app_start_timeout_sec: 1500
+
+network:
+  instance_tag: app-engine
+  name: default
+  subnetwork_name: default
+  session_affinity: true
+
+vpc_access_connector:
+  name: "projects/sigmie/locations/europe-west2/connectors/app-engine"
+
+beta_settings:
+    cloud_sql_instances: "sigmie:europe-west1:sigmie-application"
+
+runtime_config:
+  enable_stackdriver_integration: true

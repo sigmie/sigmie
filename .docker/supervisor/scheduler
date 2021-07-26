@@ -1,0 +1,7 @@
+#!/bin/bash
+
+while [ true ]
+   do
+     php /var/www/app/artisan schedule:run --verbose --no-interaction >> /dev/null 2>&1 &
+     sleep 60
+done

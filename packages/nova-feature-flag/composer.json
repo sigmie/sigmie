@@ -1,0 +1,30 @@
+{
+    "name": "sigmie/nova-feature-flags",
+    "description": "A Laravel Nova tool for Managing Feature flags.",
+    "keywords": [
+        "laravel",
+        "nova"
+    ],
+    "license": "MIT",
+    "require": {
+        "php": ">=7.1.0|^8.0",
+        "ylsideas/feature-flags": "dev-master#24296be1c29a9c0d937741687156286906fb7448"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sigmie\\NovaFeatureFlags\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Sigmie\\NovaFeatureFlags\\ToolServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

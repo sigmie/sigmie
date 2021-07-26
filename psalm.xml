@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<psalm
+    errorLevel="1"
+   cacheDirectory="psalm-cache"
+   resolveFromConfigFile="true"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://getpsalm.org/schema/config"
+    xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+
+>
+
+<fileExtensions>
+    <extension name=".php" />
+</fileExtensions>
+    <projectFiles>
+        <directory name="app" />
+        <directory name="tests" />
+        <directory name="config" />
+        <directory name="database" />
+        <directory name="routes" />
+        <ignoreFiles>
+            <directory name="packages" />
+            <directory name=".devcontainer" />
+            <directory name="vendor" />
+            <directory name="node_modules" />
+            <directory name="cov-html" />
+            <directory name=".vscode" />
+            <directory name=".github" />
+            <directory name=".docker" />
+            <directory name=".devcontainer" />
+            <directory name="stubs" />
+            <directory name="storage" />
+            <directory name="resources" />
+            <directory name="public" />
+            <directory name="v8-compile-cache-0" />
+        </ignoreFiles>
+    </projectFiles>
+</psalm>
