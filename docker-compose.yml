@@ -1,76 +1,31 @@
-version: '3.4'
+version: '3'
+
 services:
 
-  app:
-    container_name: app
-    build:
-      context: '.'
-    dns:
-     - 1.1.1.1 # Cloudflare
-     - 8.8.8.8 # Google
-     # Docker DNS required to resolve
-     # host.docker.internal address
-     - 192.168.65.1
-    extra_hosts:
-     - "proxy.localhost:127.0.0.1"
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.0
+    ports:
+      - '9200:9200'
     environment:
-        XDEBUG_MODE: 'coverage'
-    ports:
-        - '8080:8080'
-        - '3000:3000'
-    volumes:
-        - ./:/var/www/app:delegated
-        # - ~/.composer:/home/sigmie/.config/composer
-    depends_on:
-      - redis
-      - db
-    command: > 
-        sh -c "composer install &&
-               php artisan cache:clear &&
-               php artisan clear-compiled &&
-               php artisan migrate --force &&
-               php -d variables_order=EGPCS /var/www/app/artisan octane:start --server=swoole --host=0.0.0.0 --port=8080 --watch --workers=4"
-
-  db:
-    container_name: db
-    image: mysql:5.7
-    environment:
-      MYSQL_DATABASE: 'db'
-      MYSQL_USER: 'user'
-      MYSQL_PASSWORD: 'password'
-      MYSQL_ROOT_PASSWORD: 'password'
-    ports:
-      - '3306:3306'
-    volumes:
-      - db:/var/lib/mysql
-
-  redis:
-    container_name: redis
-    image: redis:5.0
-    ports:
-        - '6379:6379'
-    volumes:
-      - redis:/data
-
-  es:
-    container_name: es
-    image: docker.elastic.co/elasticsearch/elasticsearch-oss:7.6.1
-    ports:
-        - '9200:9200'
-    environment:
-          - node.name=sigmie-es
-          - cluster.name=docker-cluster # used in CI/CD elasticsearch instance
-          - cluster.initial_master_nodes=sigmie-es
-          - bootstrap.memory_lock=true
-          - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - node.name=sigmie-es
+      - cluster.name=sigmie-dev
+      - cluster.initial_master_nodes=sigmie-es
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
       memlock:
         soft: -1
         hard: -1
     volumes:
-      - es:/usr/share/elasticsearch/data
+      - elasticsearch:/usr/share/elasticsearch/data
+
+  php:
+    build: '.'
+    volumes:
+        - ./:/var/www/sigmie:delegated
+        - ~/.composer:/root/.composer
+    environment:
+      - ES_HOST=elasticsearch:9200
 
 volumes:
-  db:
-  redis:
-  es:
+  elasticsearch:

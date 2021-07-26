@@ -1,34 +1,19 @@
-/node_modules
-/public/hot
-/public/storage
-/storage/*.key
-/vendor
 
-resources/js/routes.js
+.history
+.idea
+.vscode
+.devcontainer
 
-.env
-.env.backup
-.env.testing
-.env.prod
+composer.phar
+composer.lock
+
+/vendor/
 
 .phpunit.result.cache
-
-cov-html
-
-google.json
-
-Homestead.json
-Homestead.yaml
-npm-debug.log
-yarn-error.log
-
-*.tmp
+coverage-html
 
 .DS_Store
 
-v8-compile-cache-0
-psalm-cache
-.php_cs.cache
-graph.png
-rr
-.rr.yaml
+tmp/*
+!tmp/.gitkeep
+ray.php

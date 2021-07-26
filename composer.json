@@ -1,123 +1,58 @@
 {
-    "name": "sigmie/app",
-    "type": "project",
-    "description": "Sigmie application",
+    "name": "sigmie/sigmie",
+    "description": "Sigmie Elasticsearch utils",
     "keywords": [
-        "framework",
+        "elasticsearch",
         "sigmie"
     ],
+    "type": "library",
     "license": "MIT",
-    "repositories": [
+    "authors": [
         {
-            "type": "composer",
-            "url": "https://nova.laravel.com"
-        },
-        {
-            "type": "composer",
-            "url": "https://packages.sigmie.com"
-        },
-        {
-            "type": "path",
-            "url": "./packages/*",
-            "options": {
-                "symlink": true
-            }
+            "name": "nicoorfi",
+            "email": "nico@sigmie.com"
         }
     ],
     "require": {
         "php": "^8.0",
-        "composer-runtime-api": "^2.0",
-        "bugsnag/bugsnag-laravel": "^2.0",
-        "calebporzio/sushi": "^2.1",
-        "fideloper/proxy": "^4.0",
-        "fruitcake/laravel-cors": "^1.0",
-        "guzzlehttp/guzzle": "^7.0.1",
-        "inertiajs/inertia-laravel": "^0.3.6",
-        "kabbouchi/nova-impersonate": "^1.5",
-        "laravel/cashier-paddle": "^1.0",
-        "laravel/framework": "^8.0",
-        "laravel/horizon": "^5.0",
-        "laravel/nova": "^3.0",
-        "laravel/octane": "^1.0",
-        "laravel/sanctum": "^2.4",
-        "laravel/scout": "^8.0",
-        "laravel/slack-notification-channel": "^2.0",
-        "laravel/socialite": "^5.0",
-        "laravel/telescope": "^4.4",
-        "laravel/tinker": "^2.0",
-        "laravel/ui": "^3.0",
-        "myclabs/php-enum": "^1.7",
-        "nunomaduro/collision": "^5.0",
-        "nunomaduro/larastan": "^0.7.3",
-        "nyholm/psr7": "^1.3",
-        "pusher/pusher-php-server": "^6.1",
-        "sigmie/app-core": "^0.12",
-        "sigmie/nova-feature-flags": "@dev",
-        "sigmie/sigmie": "@dev",
-        "spatie/nova-backup-tool": "^4.1",
-        "superbalist/laravel-google-cloud-storage": "^2.2",
-        "symfony/psr-http-message-bridge": "^2.1",
-        "tightenco/ziggy": "^1.1"
+        "guzzlehttp/guzzle": "^7.2",
+        "symfony/console": "^5.2",
+        "symfony/event-dispatcher": "^5.2",
+        "symfony/event-dispatcher-contracts": "^2.2",
+        "nesbot/carbon": "^2.48",
+        "amphp/parallel": "^1.4",
+        "eventsauce/backoff": "^1.1"
     },
     "require-dev": {
-        "brianium/paratest": "^6.1",
-        "claudiodekker/inertia-laravel-testing": "^1.2",
-        "fakerphp/faker": "^1.13",
-        "filp/whoops": "^2.0",
-        "mockery/mockery": "^1.0",
-        "phpstan/phpstan": "^0.12.6",
-        "phpunit/phpunit": "^9.0",
-        "sigmie/sigmie-laravel-testing": "@dev",
-        "spatie/laravel-ray": "^1.9",
+        "symfony/var-dumper": "^5.2",
+        "phpunit/phpunit": "^9.5",
+        "phpstan/phpstan": "^0.12.90",
         "squizlabs/php_codesniffer": "^3.5",
-        "symfony/var-dumper": "^5"
-    },
-    "config": {
-        "optimize-autoloader": true,
-        "preferred-install": "dist",
-        "sort-packages": true,
-        "github-protocols": [
-            "https"
-        ]
-    },
-    "extra": {
-        "laravel": {
-            "dont-discover": []
-        }
+        "spatie/ray": "^1.1",
+        "brianium/paratest": "^6.3",
+        "nunomaduro/collision": "^5.3",
+        "rachidlaasri/travel": "^1.06"
     },
     "autoload": {
         "psr-4": {
-            "App\\": "app/",
-            "Tests\\": "tests/",
-            "Database\\Factories\\": "database/factories/",
-            "Database\\Seeders\\": "database/seeders/"
+            "Sigmie\\Tests\\": "tests/",
+            "Sigmie\\": "packages/"
         },
-        "classmap": [],
         "files": [
-            "app/Helpers/functions.php"
+            "packages/Support/functions.php"
         ]
     },
-    "autoload-dev": {
-        "psr-4": {
-            "Tests\\": "tests/"
-        }
+    "autoload-dev": {},
+    "replace": {
+        "sigmie/base": "self.version",
+        "sigmie/cli": "self.version",
+        "sigmie/http": "self.version",
+        "sigmie/support": "self.version",
+        "sigmie/testing": "self.version"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "scripts": {
-        "post-autoload-dump": [
-            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
-        ],
-        "post-root-package-install": [
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
-        ],
-        "post-create-project-cmd": [
-            "@php artisan key:generate --ansi"
-        ],
-        "post-install-cmd": [
-            "chmod -R 755 bootstrap/cache",
-            "php artisan cache:clear"
-        ]
-    }
+    "bin": [
+        "packages/Cli/bin/sigmie"
+    ]
 }
