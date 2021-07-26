@@ -25,7 +25,7 @@ class Blueprint
     public function __invoke(): Properties
     {
         $fields = $this->fields->mapToDictionary(function (PropertyType $type) {
-            return $type->toRaw();
+            return [$type->name() => $type];
         })->toArray();
 
         return new Properties($fields);

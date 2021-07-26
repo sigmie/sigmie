@@ -11,9 +11,9 @@ trait TestIndex
 {
     use TestConnection, IndexActions;
 
-    private $testIndexName;
+    private string $testIndexName;
 
-    public function createTestIndex()
+    public function createTestIndex(): void
     {
         $this->testIndexName = bin2hex(openssl_random_pseudo_bytes(10));
 

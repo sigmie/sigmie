@@ -9,13 +9,17 @@ use Sigmie\Base\Index\Actions;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    use Testing, Actions, Assertions;
+    use Testing, Actions, Assertions, TestIndex;
 
     protected Sigmie $sigmie;
 
     public function setUp(): void
     {
         parent::setUp();
+
+        $this->setupTestConnection();
+
+        $this->createTestIndex();
 
         $this->sigmie = new Sigmie($this->httpConnection);
     }

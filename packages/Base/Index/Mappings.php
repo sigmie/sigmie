@@ -41,7 +41,7 @@ class Mappings implements MappingsInterface
         $collection = new Collection($this->properties->toArray());
 
         return $collection->filter(fn (Type $field) => $field instanceof Text)
-            ->map(fn (Text $field) => $field->analyzer());
+            ->map(fn (Text $field) => $field->analyzer() ?: $this->defaultAnalyzer);
     }
 
     public function toRaw(): array
@@ -57,17 +57,13 @@ class Mappings implements MappingsInterface
         $analyzers = $analyzers->mapToDictionary(
             fn (Analyzer $analyzer) => [$analyzer->name() => $analyzer]
         )->toArray();
+        $defaultAnalyzer = $analyzers['default'];
 
         $fields = [];
 
-        $analyzer = $analyzers[array_key_first($analyzers)];
-
         if (isset($data['properties']) === false) {
-            return new DynamicMappings($analyzer);
+            return new DynamicMappings($defaultAnalyzer);
         }
-
-        $defaultAnalyzerName = 'default';
-        $defaultAnalyzer = $analyzers[$defaultAnalyzerName];
 
         foreach ($data['properties'] as $fieldName => $value) {
 

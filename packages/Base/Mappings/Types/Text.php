@@ -42,7 +42,7 @@ class Text extends PropertyType
         $this->analyzer = $analyzer;
     }
 
-    public function analyzer(): AnalyzerInterface
+    public function analyzer(): ?AnalyzerInterface
     {
         return $this->analyzer;
     }

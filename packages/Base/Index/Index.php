@@ -296,7 +296,7 @@ class Index implements DocumentCollectionInterface, Name
         return $this->contains((string) $offset);
     }
 
-    public function offsetGet(mixed $offset): Document
+    public function offsetGet(mixed $offset): null|Document
     {
         return $this->getDocument((string) $offset);
     }

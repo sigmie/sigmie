@@ -51,39 +51,39 @@ class UpdateTest extends TestCase
         $this->assertAnalyzerHasNotFilter('foo', 'default', 'foo_stopwords');
     }
 
-    /**
-     * @test
-     */
-    public function foo()
-    {
-        $this->sigmie->index('foo')->update(function (Update $update) {
+    // /**
+    //  * @test
+    //  */
+    // public function foo()
+    // {
+    //     $this->sigmie->index('foo')->update(function (Update $update) {
 
-            // Revert HTML filter
-            $update->keepHTML();
+    //         // Revert HTML filter
+    //         $update->keepHTML();
 
-            //Add filters
-            $update->synonyms([
-                'ipod' => ['i-pod', 'i pod']
-            ]);
-            $update->trim();
-            $update->truncate();
+    //         //Add filters
+    //         $update->synonyms([
+    //             'ipod' => ['i-pod', 'i pod']
+    //         ]);
+    //         $update->trim();
+    //         $update->truncate();
 
-            //Shards
-            $update->shards(2);
-            $update->replicas(5);
+    //         //Shards
+    //         $update->shards(2);
+    //         $update->replicas(5);
             
-            //Update default tokenizer
-            $update->tokenizeOn()->whiteSpaces();
+    //         //Update default tokenizer
+    //         $update->tokenizeOn()->whiteSpaces();
 
-            $update->mapping(function (Blueprint $blueprint) {
-                $blueprint->text('title')->searchAsYouType();
-            });
+    //         $update->mapping(function (Blueprint $blueprint) {
+    //             $blueprint->text('title')->searchAsYouType();
+    //         });
 
-            // Remove and add filters and char filters
-            $update->add(new Stopwords('new_stopwords'));
-            $update->remove('upercase_filter_name');
-        });
-    }
+    //         // Remove and add filters and char filters
+    //         $update->add(new Stopwords('new_stopwords'));
+    //         $update->remove('upercase_filter_name');
+    //     });
+    // }
 
     /**
      * @test

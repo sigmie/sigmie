@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Tests\Base\Index;
 
 use Sigmie\Base\Analysis\Analyzer;
+use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Index\Blueprint;
@@ -22,7 +23,7 @@ class MappingsTest extends TestCase
     public function analyzers_collection()
     {
         $blueprint = new Blueprint;
-        $defaultAnalyzer = new Analyzer('foo', new WordBoundaries());
+        $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
         $analyzer = new Analyzer('bar', new WordBoundaries());
 
         $blueprint->text('title')->searchAsYouType();

@@ -32,8 +32,7 @@ class Properties implements Arrayable, ArrayAccess
     {
         return isset($this->fields[$offset]);
     }
-
-    public function offsetGet($offset)
+public function offsetGet($offset)
     {
         return $this->fields[$offset];
     }
@@ -52,8 +51,8 @@ class Properties implements Arrayable, ArrayAccess
     public function toRaw(): array
     {
         $fields = new Collection($this->fields);
-        $fields = $fields->mapToDictionary(function ($value) {
-            return [$value->name() => $value->raw()];
+        $fields = $fields->mapToDictionary(function (PropertyType $value) {
+            return $value->toRaw();
         })->toArray();
 
         return $fields;

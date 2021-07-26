@@ -14,7 +14,7 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
 {
     protected ResponseInterface $response;
 
-    protected array $decoded;
+    protected null|array $decoded;
 
     public function __construct(ResponseInterface $psrResponse)
     {
@@ -43,7 +43,7 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
 
     public function json(mixed $key = null): int|bool|string|array|null
     {
-        if (!$this->decoded) {
+        if (!isset($this->decoded)) {
             $this->decoded = json_decode($this->body(), true);
         }
 
