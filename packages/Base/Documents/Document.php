@@ -4,35 +4,63 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Documents;
 
-use PHPUnit\Framework\MockObject\Api;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
+use Sigmie\Base\Contracts\FromRaw;
+use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Index\Index;
 
-class Document
+use function Sigmie\Helpers\name_configs;
+
+class Document implements FromRaw
 {
     use Actions;
 
-    protected $attributes;
+    protected array $attributes;
 
     protected ?string $id = null;
 
+    protected int $version;
+
     protected ?Index $index = null;
 
-    public function __construct($attributes = [], ?string $id = null)
-    {
+
+    public function __construct(
+        array $attributes = [],
+        string|int|null $id = null,
+        int $version = 0
+    ) {
         $this->attributes = $attributes;
         $this->id = $id;
+        $this->version = $version;
     }
 
-    protected function index(): Index
+    public static function fromRaw(array $raw): static
     {
-        return $this->index;
+        return new static($raw['_source'], $raw['_id'], $raw['_version']);
+    }
+
+    public function version(): int
+    {
+        return $this->version;
+    }
+
+    public function __set(string $name, mixed $value): void
+    {
+        $this->setAttribute($name, $value);
+    }
+
+    public function __get(string $attribute): mixed
+    {
+        return $this->getAttribute($attribute);
+    }
+
+    public function save(): void
+    {
+        $this->index->updateDocument($this);
     }
 
     public function setIndex(Index $index): self
     {
-        self::$httpConnection = $index::$httpConnection;
-
         $this->index = $index;
 
         return $this;
@@ -64,12 +92,12 @@ class Document
         return $this;
     }
 
-    public function attributes()
+    public function attributes(): array
     {
         return $this->attributes;
     }
 
-    public function setId($identifier)
+    public function setId(string $identifier): self
     {
         $this->id = $identifier;
 
@@ -87,5 +115,10 @@ class Document
     public function getId(): ?string
     {
         return $this->id;
+    }
+
+    protected function index(): Index
+    {
+        return $this->index;
     }
 }

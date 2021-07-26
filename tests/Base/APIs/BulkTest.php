@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\APIs;
 
-use Sigmie\Base\APIs\Calls\Bulk;
-use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Base\APIs\Bulk;
+use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestConnection;
 use Sigmie\Testing\TestIndex;
@@ -28,7 +28,7 @@ class BulkTest extends TestCase
             ['field_foo' => 'value_baz'],
         ];
 
-        $res = $this->bulkAPICall($index->getName(), $body);
+        $res = $this->bulkAPICall($index->name(), $body);
 
         $this->assertCount(2, $res->json('items'));
     }

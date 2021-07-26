@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Cli\Outputs;
 
 use Sigmie\Cli\Contracts\OutputFormat;
-use Sigmie\Support\Collection;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Output\OutputInterface;
 

@@ -27,6 +27,24 @@ class Config
         $this->config = $this->getConfig();
     }
 
+    public function getActiveCluster()
+    {
+        $key = $this->config['active'];
+
+        return $this->config['clusters'][$key];
+    }
+
+    public function getCluster(string $key): array
+    {
+        return $this->config['clusters'][$key];
+    }
+
+    public function getConfig(): array
+    {
+        $content = file_get_contents($this->filePath);
+        return json_decode($content, true);
+    }
+
     protected function createConfigFileIfNotExists()
     {
         $home = getenv('HOME');
@@ -44,28 +62,8 @@ class Config
         };
     }
 
-    public function getActiveCluster()
-    {
-        $key = $this->config['active'];
-
-        return $this->config['clusters'][$key];
-    }
-
-    public function getCluster(string $key): array
-    {
-        return $this->config['clusters'][$key];
-    }
-
     private function initDefaultConfig(): void
     {
         file_put_contents($this->filePath, json_encode($this->defaultConf, JSON_PRETTY_PRINT));
-    }
-
-    public function getConfig(): array
-    {
-        $content = file_get_contents($this->filePath);
-        $json  = json_decode($content, true);
-
-        return $json;
     }
 }

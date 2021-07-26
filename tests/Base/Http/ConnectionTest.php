@@ -11,22 +11,18 @@ use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Base\Index\Index;
 use Sigmie\Http\JSONClient;
-use Sigmie\Http\JSONRequest;
-use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
 
 class ConnectionTest extends TestCase
 {
-    use ClearIndices;
-
     /**
     * @test
     */
     public function throws_elasticsearch_exception()
     {
-        $indexName = $this->testId() . '_foo';
+        $indexName = 'foo';
+
         $this->expectException(ElasticsearchException::class);
-        $this->expectExceptionMessage('Resource already exists exception.');
 
         $this->createIndex(new Index($indexName));
         $this->createIndex(new Index($indexName));

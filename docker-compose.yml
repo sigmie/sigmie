@@ -5,13 +5,13 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.8.0
     ports:
-        - '9200:9200'
+      - '9200:9200'
     environment:
-          - node.name=sigmie-es
-          - cluster.name=sigmie-dev
-          - cluster.initial_master_nodes=sigmie-es
-          - bootstrap.memory_lock=true
-          - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - node.name=sigmie-es
+      - cluster.name=sigmie-dev
+      - cluster.initial_master_nodes=sigmie-es
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
       memlock:
         soft: -1
@@ -24,6 +24,8 @@ services:
     volumes:
         - ./:/var/www/sigmie:delegated
         - ~/.composer:/root/.composer
+    environment:
+      - ES_HOST=elasticsearch:9200
 
 volumes:
   elasticsearch:

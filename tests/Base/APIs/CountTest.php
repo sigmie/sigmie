@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\APIs;
 
-use Sigmie\Base\APIs\Calls\Count as CountAPI;
+use Sigmie\Base\APIs\Count as CountAPI;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestConnection;
@@ -29,7 +29,7 @@ class CountTest extends TestCase
         $index->addDocument($doc2);
         $index->addDocument($doc3);
 
-        $res = $this->countAPICall($index->getName());
+        $res = $this->countAPICall($index->name());
 
         $this->assertEquals(3, $res->json('count'));
     }

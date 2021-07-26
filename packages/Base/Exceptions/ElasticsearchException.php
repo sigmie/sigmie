@@ -10,15 +10,11 @@ use Sigmie\Base\Http\ElasticsearchResponse;
 
 class ElasticsearchException extends Exception
 {
-    protected ElasticsearchRequest $request;
-
-    protected ElasticsearchResponse $response;
-
-    public function __construct(ElasticsearchRequest $request, ElasticsearchResponse $response)
-    {
-        parent::__construct(ucfirst($response->json()['error']['reason']) . '.', 1);
-
-        $this->request = $request;
-        $this->response = $response;
+    public function __construct(
+        protected ElasticsearchRequest $request,
+        protected ElasticsearchResponse $response,
+        ?string $message = null,
+    ) {
+        parent::__construct($message, $response->code());
     }
 }

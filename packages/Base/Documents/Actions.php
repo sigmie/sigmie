@@ -4,22 +4,44 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Documents;
 
-use Sigmie\Base\APIs\Calls\Bulk as BulkAPI;
-use Sigmie\Base\APIs\Calls\Delete as DeleteAPI;
-use Sigmie\Base\APIs\Calls\Mget as MgetAPI;
-use Sigmie\Base\APIs\Calls\Search as SearchAPI;
-use Sigmie\Base\APIs\Calls\Update as UpdateAPI;
+use function Amp\Parallel\Worker\enqueue;
+use function Amp\Promise\all;
+use function Amp\Promise\wait;
+use Exception;
+use Sigmie\Base\APIs\Bulk as BulkAPI;
+use Sigmie\Base\APIs\Delete as DeleteAPI;
+use Sigmie\Base\APIs\Mget as MgetAPI;
+use Sigmie\Base\APIs\Search as SearchAPI;
+use Sigmie\Base\APIs\Update as UpdateAPI;
 use Sigmie\Base\Contracts\API;
+
 use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Search\Query;
+use Sigmie\Support\BulkBody;
 
 trait Actions
 {
     use SearchAPI, DeleteAPI, MgetAPI, BulkAPI, UpdateAPI, API;
 
+    public function updateDocument(Document $document): Document
+    {
+        $body = [
+            ['update' => ['_id' => $document->getId()]],
+            ['doc' => $document->attributes()],
+        ];
+
+        $response = $this->bulkAPICall($document->getIndex()->name(), $body);
+
+        if ($response->failed()) {
+            throw new Exception('Document update failed.');
+        }
+
+        return $document;
+    }
+
     protected function upsertDocuments(DocumentCollection &$documentCollection): DocumentCollection
     {
-        $indexName = $this->index()->getName();
+        $indexName = $this->index()->name();
         $body = [];
         $documentCollection->forAll(function ($index, Document $document) use (&$body) {
             $body = [
@@ -57,7 +79,7 @@ trait Actions
      */
     protected function createDocument(Document &$doc, bool $async): Document
     {
-        $indexName = $this->index()->getName();
+        $indexName = $this->index()->name();
         $array = [];
 
         if ($doc->getId() !== null) {
@@ -71,7 +93,7 @@ trait Actions
 
         $res = $this->bulkAPICall($indexName, $data, $async);
 
-        [[, $data]] = $res->getAll();
+        [[$rest, $data]] = $res->getAll();
 
         $doc->setId($data['_id']);
 
@@ -80,15 +102,20 @@ trait Actions
 
     protected function createDocuments(DocumentCollection &$documentCollection, bool $async): DocumentCollection
     {
-        $indexName = $this->index()->getName();
+        $indexName = $this->index()->name();
         $body = [];
-        $documentCollection->forAll(function ($index, Document $document) use (&$body) {
-            $body = [
-                ...$body,
-                ['create' => ($document->getId() !== null) ? ['_id' => $document->getId()] : (object) []],
-                $document->attributes(),
-            ];
-        });
+        $docs = $documentCollection->toArray();
+
+        $docsChunk = array_chunk($docs, 2);
+
+        $promises = [];
+        foreach ($docsChunk as $docs) {
+            $promises[] = enqueue(new BulkBody($docs));
+        }
+
+        $all = wait(all($promises));
+
+        $body = array_merge(...$all);
 
         $response = $this->bulkAPICall($indexName, $body, $async);
 
@@ -103,7 +130,7 @@ trait Actions
 
         // The bulk api response order is guaranteed see:
         // https://discuss.elastic.co/t/ordering-of-responses-in-the-bulk-api/13264
-        $tempCollection->forAll(function ($index, Document $doc) use ($ids, &$documentCollection) {
+        $tempCollection->forAll(function (Document $doc, $index) use ($ids, &$documentCollection) {
             $id = $ids[$index];
             $doc->setId($id);
             $documentCollection[$id] = $doc;
@@ -119,7 +146,7 @@ trait Actions
         return $response->first();
     }
 
-    protected function listDocuments($offset = 0, $limit = 100): DocumentCollection
+    protected function listDocuments(int $offset = 0, int $limit = 100): DocumentCollection
     {
         $query = new Query(['match_all' => (object) []]);
         $query->index($this->index());
@@ -141,14 +168,16 @@ trait Actions
 
     protected function deleteDocument(string $identifier): bool
     {
-        $response = $this->deleteAPICall($identifier);
+        $response = $this->deleteAPICall(
+            identifier: $identifier,
+        );
 
         return $response->json('result') === 'deleted';
     }
 
     protected function deleteDocuments(array $ids): bool
     {
-        $indexName = $this->index()->getName();
+        $indexName = $this->index()->name();
 
         $body = [];
         foreach ($ids as $id) {

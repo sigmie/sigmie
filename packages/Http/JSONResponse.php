@@ -5,17 +5,16 @@ declare(strict_types=1);
 namespace Sigmie\Http;
 
 use ArrayAccess;
+use GuzzleHttp\Psr7\Response;
 use LogicException;
 use Psr\Http\Message\ResponseInterface;
+use Sigmie\Http\Contracts\JSONResponse as JSONResponseInterface;
 
-class JSONResponse implements ArrayAccess
+class JSONResponse implements ArrayAccess, JSONResponseInterface
 {
-    /**
-     * PSR response.
-     */
     protected ResponseInterface $response;
 
-    protected $decoded;
+    protected null|array $decoded;
 
     public function __construct(ResponseInterface $psrResponse)
     {
@@ -42,9 +41,9 @@ class JSONResponse implements ArrayAccess
         return (string) $this->response->getBody();
     }
 
-    public function json($key = null)
+    public function json(mixed $key = null): int|bool|string|array|null
     {
-        if (!$this->decoded) {
+        if (!isset($this->decoded)) {
             $this->decoded = json_decode($this->body(), true);
         }
 
@@ -59,7 +58,7 @@ class JSONResponse implements ArrayAccess
         return null;
     }
 
-    public function psr()
+    public function psr(): ResponseInterface
     {
         return $this->response;
     }
@@ -80,7 +79,7 @@ class JSONResponse implements ArrayAccess
         return $this->serverError() || $this->clientError();
     }
 
-    public function clientError()
+    public function clientError(): bool
     {
         return $this->code() >= 400 && $this->code() < 500;
     }
@@ -90,7 +89,7 @@ class JSONResponse implements ArrayAccess
         return (int) $this->response->getStatusCode();
     }
 
-    public function serverError()
+    public function serverError(): bool
     {
         return $this->code() >= 500;
     }

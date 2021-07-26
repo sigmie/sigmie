@@ -5,20 +5,13 @@ declare(strict_types=1);
 namespace Sigmie\Base\Http;
 
 use Exception;
-use Psr\Http\Message\ResponseInterface;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse as ElasticsearchResponseInterface;
 use Sigmie\Base\Exceptions\ElasticsearchException;
-use Sigmie\Base\Exceptions\NotFound;
 use Sigmie\Http\JSONResponse;
 
 class ElasticsearchResponse extends JSONResponse implements ElasticsearchResponseInterface
 {
-    public function __construct(ResponseInterface $psr)
-    {
-        parent::__construct($psr);
-    }
-
     public function failed(): bool
     {
         return $this->serverError() || $this->clientError() || $this->hasErrorKey();
@@ -26,10 +19,12 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
 
     public function exception(ElasticsearchRequest $request): Exception
     {
-        return  new ElasticsearchException($request, $this);
+        $message = is_null($this->json()) ? "Request failed with code {$this->code()}." : ucfirst($this->json()['error']['reason']);
+
+        return  new ElasticsearchException($request, $this, $message);
     }
 
-    private function hasErrorKey()
+    private function hasErrorKey(): bool
     {
         return !is_null($this->json('error'));
     }

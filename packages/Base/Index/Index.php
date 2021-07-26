@@ -7,31 +7,28 @@ namespace Sigmie\Base\Index;
 use Closure;
 use Exception;
 use Generator;
-use Sigmie\Base\APIs\Calls\Count as CountAPI;
+use Sigmie\Base\APIs\Count as CountAPI;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
+use Sigmie\Base\Contracts\Name;
 use Sigmie\Base\Documents\Actions as DocumentsActions;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentsCollection;
-use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Base\Search\Searchable;
 use Sigmie\Support\Collection;
+use Sigmie\Support\Index\AliasedIndex;
+use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 
-class Index implements DocumentCollectionInterface
+class Index implements DocumentCollectionInterface, Name
 {
-    use CountAPI, DocumentsActions, IndexActions, Searchable, API, AliasActions;
-
-    protected string $name;
+    use CountAPI, DocumentsActions, IndexActions, Searchable, API, Actions;
 
     protected ?int $count;
 
     protected ?string $size;
 
-    protected array $aliases = [];
-
     protected int $docsCount;
-
-    protected Settings $settings;
 
     protected DocumentCollectionInterface $docs;
 
@@ -41,36 +38,67 @@ class Index implements DocumentCollectionInterface
 
     protected bool $withIds;
 
-    public function __construct(string $name, Settings $settings = null)
-    {
-        if ($settings === null) {
-            $settings = new Settings();
-        }
+    protected string $prefix;
 
-        $this->name = $name;
-        $this->settings = $settings;
+    protected Settings $settings;
+
+    protected MappingsInterface $mappings;
+
+    public function __construct(
+        protected string $identifier,
+        protected array $aliases = [],
+        Settings $settings = null,
+        MappingsInterface $mappings = null
+    ) {
+        $this->settings = $settings ?: new Settings();
+        $this->mappings = $mappings ?: new Mappings();
     }
 
-    public function setAlias(string $alias): self
+    public function alias(string $alias): AliasedIndex
     {
-        $this->aliases[] = $alias;
+        return new AliasedIndex(
+            $this->identifier,
+            $alias,
+            $this->aliases,
+            $this->settings,
+            $this->mappings
+        );
+    }
 
-        if (isset(self::$httpConnection)) {
-            $this->createAlias($this, $alias);
-        }
+    public function toRaw(): array
+    {
+        return $this->indexAPICall($this->identifier, 'GET')->json();
+    }
+
+    public static function fromRaw(string $name, array $raw): static
+    {
+        $settings = Settings::fromRaw($raw);
+        $analyzers = $settings->analysis()->analyzers();
+        $mappings = Mappings::fromRaw($raw['mappings'], $analyzers);
+        $aliases = array_keys($raw['aliases']);
+
+        $index = new static($name, $aliases, $settings, $mappings);
+
+        return $index;
+    }
+
+    public function getPrefix(): string
+    {
+        return $this->prefix;
+    }
+
+    public function setPrefix(string $prefix): self
+    {
+        $this->prefix = $prefix;
 
         return $this;
     }
 
-    public function getAliases(): array
+    public function delete(): bool
     {
-        return $this->aliases;
+        return $this->deleteIndex($this->identifier);
     }
 
-    public function removeAlias(string $alias)
-    {
-        return $this->deleteAlias($this, $alias);
-    }
 
     public function setSize(?string $size): self
     {
@@ -92,12 +120,14 @@ class Index implements DocumentCollectionInterface
         return $this->settings;
     }
 
-    /**
-     * Get the value of name
-     */
-    public function getName()
+    public function getMappings(): MappingsInterface
     {
-        return $this->name;
+        return $this->mappings;
+    }
+
+    public function name(): string
+    {
+        return $this->identifier;
     }
 
     public function addDocument(Document $element): self
@@ -151,7 +181,7 @@ class Index implements DocumentCollectionInterface
 
     public function clear(): void
     {
-        $this->deleteIndex($this->name);
+        $this->deleteIndex($this->identifier);
         $this->createIndex($this);
     }
 
@@ -165,13 +195,14 @@ class Index implements DocumentCollectionInterface
         return (int) $this->count() > 0;
     }
 
-    public function remove(string|array $ids): bool
+    public function remove(string|array $ids): void
     {
         if (is_array($ids)) {
-            return $this->deleteDocuments($ids);
+            $this->deleteDocuments($ids);
+            return;
         }
 
-        return $this->deleteDocument($ids);
+        $this->deleteDocument($ids);
     }
 
     public function contains(string $identifier): bool
@@ -193,7 +224,7 @@ class Index implements DocumentCollectionInterface
         }
     }
 
-    public function set(string $identifier, Document &$document)
+    public function set(string $identifier, Document &$document): self
     {
         $document->setId($identifier);
 
@@ -220,7 +251,7 @@ class Index implements DocumentCollectionInterface
         return $last->first();
     }
 
-    public function forAll(Closure $p)
+    public function forAll(Closure $p): self
     {
         foreach ($this->all() as $docsCollection) {
             $docsCollection->map(fn (Document $doc) => $p($doc));
@@ -231,7 +262,7 @@ class Index implements DocumentCollectionInterface
 
     public function count()
     {
-        $res = $this->countAPICall($this->name);
+        $res = $this->countAPICall($this->identifier);
 
         return $res->json('count');
     }
@@ -260,29 +291,17 @@ class Index implements DocumentCollectionInterface
         return $this->getIterator();
     }
 
-    public function offsetExists($offset)
+    public function offsetExists(mixed $offset): bool
     {
         return $this->contains((string) $offset);
     }
 
-    /**
-     * @param string $offset
-     *
-     * @return Document
-     */
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset): null|Document
     {
         return $this->getDocument((string) $offset);
     }
 
-    /**
-     * @param string $identifier
-     * @param Document $doc
-     *
-     * @return void
-     * @throws Exception
-     */
-    public function offsetSet($identifier, $doc)
+    public function offsetSet(mixed $identifier, mixed $doc): void
     {
         if (is_null($identifier)) {
             $this->addDocument($doc);
@@ -292,7 +311,7 @@ class Index implements DocumentCollectionInterface
         throw new Exception('You can\'t add a documents with an offset.');
     }
 
-    public function offsetUnset($identifier)
+    public function offsetUnset(mixed $identifier): void
     {
         $this->deleteDocument($identifier);
     }

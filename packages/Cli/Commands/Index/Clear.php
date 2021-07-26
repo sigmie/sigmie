@@ -4,23 +4,18 @@ declare(strict_types=1);
 
 namespace Sigmie\Cli\Commands\Index;
 
+use Sigmie\Base\APIs\Cat;
+use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Index\Actions as IndexActions;
-use Sigmie\Base\Index\Index;
 use Sigmie\Cli\BaseCommand;
-use Symfony\Component\Console\Helper\Helper;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 class Clear extends BaseCommand
 {
-    use IndexActions;
+    use Cat, Index;
 
     protected static $defaultName = 'index:clear';
-
-    protected function configure()
-    {
-        parent::configure();
-    }
 
     public function executeCommand(): int
     {
@@ -34,9 +29,7 @@ class Clear extends BaseCommand
         );
 
         if ($res) {
-            foreach ($this->listIndices() as $index) {
-                $this->deleteIndex($index->getName());
-            }
+            $this->clearIndices();
 
             $this->output->writeln('Indices cleared.');
         } else {
@@ -44,5 +37,23 @@ class Clear extends BaseCommand
         }
 
         return 1;
+    }
+
+    protected function clearIndices()
+    {
+        $response = $this->catAPICall('/indices', 'GET',);
+
+        $names = array_map(fn ($data) => $data['index'], $response->json());
+
+        $nameChunks = array_chunk($names, 50);
+
+        foreach ($nameChunks as $chunk) {
+            $this->indexAPICall(implode(',', $chunk), 'DELETE');
+        }
+    }
+
+    protected function configure()
+    {
+        parent::configure();
     }
 }

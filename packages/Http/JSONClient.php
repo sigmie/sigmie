@@ -18,19 +18,20 @@ class JSONClient implements JSONClientInterface
         $this->http = $http;
     }
 
-    public function request(JSONRequest $jsonRequest): JSONResponse
+    public function request(JSONRequest $jsonRequest, array $options = []): JSONResponse
     {
-        $psrResponse = $this->http->send($jsonRequest);
+        $psrResponse = $this->http->send($jsonRequest, $options);
 
         return new JSONResponse($psrResponse);
     }
 
-    public static function create($url, ?Auth $auth = null)
+    public static function create(string $url, ?Auth $auth = null): static
     {
         $config = [
             'base_uri' => $url,
             'allow_redirects' => false,
             'http_errors' => false,
+            'connect_timeout' => 1
         ];
 
         if (is_null($auth) === false) {

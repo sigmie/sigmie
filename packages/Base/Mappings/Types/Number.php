@@ -4,28 +4,30 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Mappings\Types;
 
-use Sigmie\Base\Contracts\Type;
+use Sigmie\Base\Mappings\PropertyType;
 
-class Number extends BaseType
+class Number extends PropertyType
 {
     protected string $type;
 
-    public function integer()
+    public function integer(): self
     {
         $this->type = 'integer';
+
+        return $this;
     }
 
-    public function float()
+    public function float(): self
     {
         $this->type = 'float';
+
+        return $this;
     }
 
-    protected function raw()
+    public function toRaw(): array
     {
-        return [
-            $this->name => [
-                'type' => $this->type,
-            ]
-        ];
+        return [$this->name => [
+            'type' => $this->type,
+        ]];
     }
 }

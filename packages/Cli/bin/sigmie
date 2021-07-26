@@ -38,6 +38,7 @@ use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleErrorEvent;
 use Symfony\Component\Console\Event\ConsoleEvent;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Sigmie\Cli\Commands\Analyze;
 
 $dispatcher = new EventDispatcher;
 $dispatcher->addListener(ConsoleEvents::ERROR, [new ErrorListener(), 'onConsoleError']);
@@ -54,6 +55,7 @@ $application->addCommands([
     new Index\Clear(),
     new Index\Alias(),
     new Alias\SwitchAlias(),
+    new Analyze\Text()
 ]);
 
 $application->run();

@@ -4,39 +4,77 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-class Settings
+use Sigmie\Base\Contracts\Raw;
+use Sigmie\Base\Analysis\Analysis;
+use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
+
+class Settings implements Raw
 {
     public int $primaryShards;
 
     public int $replicaShards;
 
-    public function __construct($primaryShards = 1, $replicaShards = 2)
-    {
+    protected AnalysisInterface $analysis;
+
+    protected array $configs = [];
+
+    public function __construct(
+        int $primaryShards = 1,
+        int $replicaShards = 2,
+        AnalysisInterface $analysis = null
+    ) {
+        $this->analysis = $analysis ?: new Analysis();
         $this->primaryShards = $primaryShards;
         $this->replicaShards = $replicaShards;
     }
 
-    public function setPrimaryShards(int $number): self
+    public function analysis(): AnalysisInterface
     {
-        $this->primaryShards = $number;
+        return $this->analysis;
+    }
+
+    public function config(string $name, string $value): self
+    {
+        $this->configs[$name] = $value;
 
         return $this;
     }
 
-    public function setReplicaShards(int $number): self
-    {
-        $this->replicaShards = $number;
-
-        return $this;
-    }
-
-    public function getPrimaryShards()
+    public function getPrimaryShards(): int
     {
         return $this->primaryShards;
     }
 
-    public function getReplicaShards()
+    public function getReplicaShards(): int
     {
         return $this->replicaShards;
+    }
+
+    public static function fromRaw(array $response): static
+    {
+        $indexIdentifier = array_key_first($response);
+
+        if (isset($response['settings']) === false) {
+            $settings = $response[$indexIdentifier]['settings']['index'];
+        } else {
+            $settings = $response['settings']['index'];
+        }
+
+        $analysis = Analysis::fromRaw($settings['analysis']);
+
+        return new static(
+            (int)$settings['number_of_shards'],
+            (int)$settings['number_of_replicas'],
+            $analysis
+        );
+    }
+
+    public function toRaw(): array
+    {
+        return array_merge([
+            'number_of_shards' => $this->primaryShards,
+            'number_of_replicas' => $this->replicaShards,
+            'analysis' => $this->analysis()->toRaw()
+        ], $this->configs);
     }
 }

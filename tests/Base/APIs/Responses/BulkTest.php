@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\APIs\Responses;
 
-use Sigmie\Base\APIs\Calls\Bulk as BulkAPI;
-use Sigmie\Base\APIs\Responses\Bulk;
+use Sigmie\Base\APIs\Bulk as BulkAPI;
+use Sigmie\Base\Http\Responses\Bulk;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestIndex;
 
@@ -27,7 +27,7 @@ class BulkTest extends TestCase
             ['field_foo' => 'value_baz'],
         ];
 
-        $bulkRes = $this->bulkAPICall($index->getName(), $body);
+        $bulkRes = $this->bulkAPICall($index->name(), $body);
 
         $this->assertInstanceOf(Bulk::class, $bulkRes, 'Bulk API should return a Bulk response');
         $this->assertCount(2, $bulkRes->getSuccessful(), 'Bulk response getSuccessful method should contains 1 element.');

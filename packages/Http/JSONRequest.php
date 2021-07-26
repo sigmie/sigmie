@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Sigmie\Http;
 
 use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\Psr7\Uri;
+use Psr\Http\Message\UriInterface as Uri;
 use Sigmie\Http\Contracts\JSONRequest as JSONRequestInterface;
 
 class JSONRequest extends Request implements JSONRequestInterface
 {
-    protected $headers = [
+    protected array $headers = [
         'Content-type' => 'application/json',
     ];
 

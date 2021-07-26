@@ -24,7 +24,7 @@ interface DocumentCollection extends ArrayAccess, Countable, IteratorAggregate
 
     public function toArray(): array;
 
-    public function remove(string $identifier);
+    public function remove(string $identifier): void;
 
     public function contains(string $identifier): bool;
 
@@ -34,5 +34,5 @@ interface DocumentCollection extends ArrayAccess, Countable, IteratorAggregate
 
     public function last(): ?Document;
 
-    public function forAll(Closure $p);
+    public function forAll(Closure $p): self;
 }

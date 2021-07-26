@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Tests;
 
-use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Index\Index;
+use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Support\Contracts\Collection;
-use Sigmie\Testing\ClearIndices;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestConnection;
 
 class ActionsTest extends TestCase
 {
-    use ClearIndices, IndexActions, TestConnection;
+    use IndexActions, TestConnection;
 
     public function setUp(): void
     {
@@ -25,7 +24,8 @@ class ActionsTest extends TestCase
      */
     public function index_exists()
     {
-        $indexName = $this->testId() . '_foo';
+        $indexName = uniqid();
+
         $index = new Index($indexName);
 
         $exists = $this->indexExists($index);
@@ -35,6 +35,7 @@ class ActionsTest extends TestCase
         $this->createIndex($index);
 
         $exists = $this->indexExists($index);
+
         $this->assertTrue($exists);
     }
 
@@ -43,7 +44,7 @@ class ActionsTest extends TestCase
      */
     public function create_index(): void
     {
-        $indexName = $this->testId() . '_bar';
+        $indexName = uniqid();
 
         $this->createIndex(new Index($indexName));
 
@@ -55,12 +56,13 @@ class ActionsTest extends TestCase
      */
     public function delete_index()
     {
-        $indexName = $this->testId() . '_bar';
+        $indexName = uniqid();
+
         $this->createIndex(new Index($indexName));
 
         $this->deleteIndex($indexName);
 
-        $array = $this->listIndices()->map(fn (Index $index) => $index->getName())->toArray();
+        $array = $this->listIndices()->map(fn (Index $index) => $index->name())->toArray();
 
         $this->assertNotContains($indexName, $array);
     }
@@ -70,20 +72,20 @@ class ActionsTest extends TestCase
      */
     public function list_indices()
     {
-        $fooIndexName = $this->testId() . '_foo';
-        $barIndexName = $this->testId() . '_bar';
+        $fooIndexName = uniqid();
+        $barIndexName = uniqid();
 
         $this->createIndex(new Index($fooIndexName));
         $this->createIndex(new Index($barIndexName));
 
         $list = $this->listIndices();
-        $array = $list->map(fn (Index $index) => $index->getName())->toArray();
+        $array = $list->map(fn (Index $index) => $index->name())->toArray();
 
         $this->assertContains($fooIndexName, $array);
         $this->assertContains($barIndexName, $array);
 
         $this->assertInstanceOf(Collection::class, $list);
 
-        $list->forAll(fn ($key, $index) => $this->assertInstanceOf(Index::class, $index));
+        $list->each(fn ($index, $key) => $this->assertInstanceOf(Index::class, $index));
     }
 }

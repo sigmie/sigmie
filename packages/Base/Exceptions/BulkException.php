@@ -17,18 +17,18 @@ class BulkException extends Exception
 
         $text = $this->createText();
 
-        parent::__construct($text,200);
+        parent::__construct($text, 200);
     }
 
     public function getFailedActions(): Collection
     {
-        $this->failedActions;
+        return $this->failedActions;
     }
 
-    private function createText()
+    private function createText(): string
     {
-        return implode(',',$this->failedActions->map(function($vals) {
-            [$action,$values] = $vals;
+        return implode(',', $this->failedActions->map(function ($vals) {
+            [$action, $values] = $vals;
             $id = $values['_id'];
             $reason = $values['error']['reason'];
 

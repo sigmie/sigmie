@@ -6,4 +6,5 @@ namespace Sigmie\Base\Contracts;
 
 interface Type
 {
+    public function type(): string;
 }

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use Sigmie\Base\APIs\Calls\Cat as CatAPI;
-use Sigmie\Base\APIs\Calls\Index as IndexAPI;
-use Sigmie\Base\Exceptions\NotFound;
+use Sigmie\Base\APIs\Cat as CatAPI;
+use Sigmie\Base\APIs\Index as IndexAPI;
+use Sigmie\Base\Exceptions\ElasticsearchException;
 use Sigmie\Support\Collection;
+use Sigmie\Support\Contracts\Collection as CollectionInterface;
+use Sigmie\Support\Exception\MultipleIndices;
+use Sigmie\Support\Index\AliasedIndex;
 
 trait Actions
 {
@@ -16,57 +19,77 @@ trait Actions
     protected function createIndex(Index $index): Index
     {
         $settings = $index->getSettings();
+        $mappings = $index->getMappings();
 
         $body = [
-            'settings' => [
-                'number_of_shards' => $settings->primaryShards,
-                'number_of_replicas' => $settings->replicaShards,
-            ],
+            'settings' => $settings->toRaw(),
+            'mappings' => $mappings->toRaw()
         ];
 
-        $this->indexAPICall("/{$index->getName()}", 'PUT', $body);
+        $this->indexAPICall("/{$index->name()}", 'PUT', $body);
 
-        $index->setHttpConnection(self::$httpConnection);
+        $index->setHttpConnection($this->httpConnection);
 
         return $index;
     }
 
     protected function indexExists(Index $index): bool
     {
-        return $this->getIndex($index->getName()) instanceof Index;
+        return $this->getIndex($index->name()) instanceof Index;
     }
 
-
-    protected function getIndex(string $identifier): ?Index
+    protected function getIndex(string $alias): ?AliasedIndex
     {
         try {
-            $res = $this->indexAPICall("/{$identifier}", 'GET',);
+            $res = $this->indexAPICall("/{$alias}", 'GET', ['require_alias' => true]);
+
+            if (count($res->json()) > 1) {
+                //TODO this depends on support
+                throw MultipleIndices::forAlias($alias);
+            }
 
             $data = array_values($res->json())[0];
             $name = $data['settings']['index']['provided_name'];
-            $aliases = $data['aliases'];
-            $index = new Index($name);
 
-            if (count($aliases) > 0) {
-                foreach ($aliases as $alias => $value) {
-                    $index->setAlias($alias);
-                }
-            }
-
+            $index = Index::fromRaw($name, $data);
             $index->setHttpConnection($this->getHttpConnection());
 
-            return $index;
-        } catch (NotFound) {
+            $aliased = $index->alias($alias);
+            $aliased->setHttpConnection($this->getHttpConnection());
+
+            return $aliased;
+        } catch (ElasticsearchException) {
             return null;
         }
     }
 
-    protected function listIndices($offset = 0, $limit = 100): Collection
+    protected function getIndices(string $identifier): CollectionInterface
+    {
+        try {
+            $res = $this->indexAPICall("/{$identifier}", 'GET',);
+
+            $collection = new Collection();
+
+            foreach ($res->json() as $indexName => $indexData) {
+
+                $index = Index::fromRaw($indexName, $indexData);
+                $index->setHttpConnection($this->getHttpConnection());
+
+                $collection->add($index);
+            }
+
+            return $collection;
+        } catch (ElasticsearchException) {
+            return new Collection();
+        }
+    }
+
+    protected function listIndices(int $offset = 0, int $limit = 100): Collection
     {
         $catResponse = $this->catAPICall('/indices', 'GET',);
 
         return (new Collection($catResponse->json()))
-            ->map(function ($values) use ($catResponse) {
+            ->map(function ($values) {
                 $index = new Index($values['index']);
                 $index->setHttpConnection($this->getHttpConnection());
                 $index->setSize($values['store.size']);

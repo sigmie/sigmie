@@ -9,17 +9,17 @@ use Sigmie\Base\Index\Index;
 
 trait TestIndex
 {
-    use TestConnection, IndexActions, ClearIndices;
+    use TestConnection, IndexActions;
 
-    private $testIndexName;
+    private string $testIndexName;
 
-    abstract protected function testId(): string;
-
-    public function createTestIndex()
+    public function createTestIndex(): void
     {
-        $this->testIndexName = $this->testId() . '_' . bin2hex(openssl_random_pseudo_bytes(10));
+        $this->testIndexName = bin2hex(openssl_random_pseudo_bytes(10));
 
-        $this->createIndex(new Index($this->testIndexName));
+        $index = new Index($this->testIndexName);
+
+        $this->createIndex($index);
     }
 
     public function getTestIndex(): Index

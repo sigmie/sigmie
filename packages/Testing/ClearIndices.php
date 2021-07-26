@@ -4,21 +4,26 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
-use Sigmie\Base\Index\Actions as IndexActions;
-use Sigmie\Base\Index\Index;
+use Sigmie\Base\APIs\Cat;
+use Sigmie\Base\APIs\Index;
+use Sigmie\Base\Contracts\API;
 
 trait ClearIndices
 {
-    use IndexActions;
+    use TestConnection, Cat, Index, API;
 
-    abstract protected function testId(): string;
-
-    public function clearIndices()
+    protected function clearIndices(): void
     {
-        foreach ($this->listIndices() as $index) {
-            if (str_starts_with($index->getName(), $this->testId())) {
-                $this->deleteIndex($index->getName());
-            }
+        $this->setupTestConnection();
+
+        $response = $this->catAPICall('/indices', 'GET',);
+
+        $names = array_map(fn ($data) => $data['index'], $response->json());
+
+        $nameChunks = array_chunk($names, 50);
+
+        foreach ($nameChunks as $chunk) {
+            $this->indexAPICall(implode(',', $chunk), 'DELETE');
         }
     }
 }

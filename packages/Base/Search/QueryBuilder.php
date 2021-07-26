@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Search;
 
 use Closure;
-use Sigmie\Base\APIs\Calls\Search as SearchAPI;
+use Sigmie\Base\APIs\Search as SearchAPI;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Base\Index\Index;
 use Sigmie\Base\Search\Clauses\Boolean;
@@ -28,12 +28,12 @@ class QueryBuilder
         $this->index = $index;
     }
 
-    public function filtered()
+    public function filtered(): Filtered
     {
         return new Filtered($this);
     }
 
-    public function query()
+    public function query(): QueryClause
     {
         $query = new QueryClause($this);
 
@@ -42,7 +42,7 @@ class QueryBuilder
         return $query;
     }
 
-    public function bool()
+    public function bool(): Boolean
     {
         $query = new Boolean($this);
 
@@ -51,7 +51,7 @@ class QueryBuilder
         return $query;
     }
 
-    public function get()
+    public function get(): mixed
     {
         $q = [];
         foreach ($this->values as $value) {

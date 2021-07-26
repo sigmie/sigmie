@@ -4,24 +4,22 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Mappings\Types;
 
-use Sigmie\Base\Contracts\Type;
+use Sigmie\Base\Mappings\PropertyType;
 
-class Date extends BaseType
+class Date extends PropertyType
 {
     protected array $formats = [];
 
-    public function format(string $format)
+    public function format(string $format): void
     {
         $this->formats[] = $format;
     }
 
-    protected function raw()
+    public function toRaw(): array
     {
-        return [
-            $this->name => [
-                'type' => 'date',
-                'format' => implode('|', $this->formats)
-            ]
-        ];
+        return [$this->name => [
+            'type' => 'date',
+            'format' => implode('|', $this->formats)
+        ]];
     }
 }

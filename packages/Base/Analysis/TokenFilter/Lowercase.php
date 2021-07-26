@@ -2,11 +2,34 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Analysis\Tokenizers;
+namespace Sigmie\Base\Analysis\TokenFilter;
 
-class Lowercase
+use function Sigmie\Helpers\name_configs;
+
+class Lowercase extends TokenFilter
 {
-    public function __construct(int $count)
+    public function __construct(
+        protected string $name,
+    ) {
+        parent::__construct($name, []);
+    }
+
+    public function type(): string
     {
+        return 'lowercase';
+    }
+
+    public static function fromRaw(array $raw): static
+    {
+        [$name, $configs] = name_configs($raw);
+
+        $instance = new static($name);
+
+        return $instance;
+    }
+
+    protected function getValues(): array
+    {
+        return [];
     }
 }

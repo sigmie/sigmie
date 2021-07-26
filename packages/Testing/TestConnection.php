@@ -12,8 +12,10 @@ trait TestConnection
 {
     use API;
 
-    public function setupTestConnection()
+    public function setupTestConnection(): void
     {
-        $this->setHttpConnection(new Connection(JSONClient::create(getenv('ES_HOST'))));
+        $client = JSONClient::create(getenv('ES_HOST'));
+
+        $this->setHttpConnection(new Connection($client));
     }
 }

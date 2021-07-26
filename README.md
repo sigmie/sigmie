@@ -1,9 +1,13 @@
 <p align="center"><a href="https://docs.sigmie.com" target="_blank"><img width="400" src="https://res.cloudinary.com/markos-nikolaos-orfanos/image/upload/v1585732959/dark_g4zitq.png"></a></p>
 
-<p align="center"><p align="center">
+<p align="center">
 
-<a href="https://github.com/sigmie/sigmie/actions?query=workflow%3ABuild">
-<img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/sigmie/sigmie/Build">
+<a href="https://github.com/sigmie/sigmie/actions">
+<img src="https://github.com/sigmie/sigmie/workflows/tests/badge.svg" alt="Build Status">
+</a>
+
+<a href="https://packagist.org/packages/sigmie/sigmie">
+  <img src="https://img.shields.io/packagist/v/sigmie/sigmie" alt="Latest Stable Version">
 </a>
 
 <a href="https://codecov.io/gh/sigmie/sigmie">

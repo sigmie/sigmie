@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Cli\Commands\Index;
 
-use Sigmie\Base\APIs\Calls\Cat;
-use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Base\APIs\Cat;
 use Sigmie\Cli\BaseCommand;
 use Sigmie\Cli\Outputs\IndexListTable;
 
