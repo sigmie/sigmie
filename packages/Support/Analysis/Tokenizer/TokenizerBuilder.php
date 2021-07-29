@@ -9,16 +9,15 @@ use Sigmie\Base\Analysis\Tokenizers\Pattern;
 use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\Analysis;
-use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Base\Contracts\Tokenizer;
-use Sigmie\Support\Collection as SupportCollection;
-use Sigmie\Support\Contracts\Collection;
 
 use function Sigmie\Helpers\random_letters;
 
 trait TokenizerBuilder
 {
     private Tokenizer $tokenizer;
+
+    abstract public function analysis(): Analysis;
 
     protected function tokenizer(): Tokenizer
     {
@@ -62,8 +61,6 @@ trait TokenizerBuilder
 
         $this->tokenizer = $tokenizer;
     }
-
-    abstract public function analysis(): Analysis;
 
     private function createTokenizerName(string $name): string
     {

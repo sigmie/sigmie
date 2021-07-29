@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\German;
 
+use Sigmie\Base\Contracts\Language;
 use Sigmie\German\Filter\Stemmer as GermanStemmer;
 use Sigmie\German\Filter\Stopwords as GermanStopwords;
-use Sigmie\Base\Contracts\Language;
 use Sigmie\Support\Collection as SupportCollection;
 use Sigmie\Support\Contracts\Collection;
 

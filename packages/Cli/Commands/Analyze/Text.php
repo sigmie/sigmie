@@ -6,10 +6,10 @@ namespace Sigmie\Cli\Commands\Analyze;
 
 use Sigmie\Base\APIs\Alias as AliasAPI;
 use Sigmie\Base\APIs\Analyze;
-use Sigmie\Support\Alias\Actions as IndexActions;
-use Sigmie\Support\Alias\Actions;
 use Sigmie\Cli\BaseCommand;
 use Sigmie\Cli\Outputs\AnalyzeTable;
+use Sigmie\Support\Alias\Actions;
+use Sigmie\Support\Alias\Actions as IndexActions;
 use Symfony\Component\Console\Input\InputOption;
 
 class Text extends BaseCommand

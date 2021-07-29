@@ -6,10 +6,8 @@ namespace Sigmie\Base\Documents;
 
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Contracts\FromRaw;
-use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Index\Index;
 
-use function Sigmie\Helpers\name_configs;
 
 class Document implements FromRaw
 {
@@ -34,16 +32,6 @@ class Document implements FromRaw
         $this->version = $version;
     }
 
-    public static function fromRaw(array $raw): static
-    {
-        return new static($raw['_source'], $raw['_id'], $raw['_version']);
-    }
-
-    public function version(): int
-    {
-        return $this->version;
-    }
-
     public function __set(string $name, mixed $value): void
     {
         $this->setAttribute($name, $value);
@@ -52,6 +40,16 @@ class Document implements FromRaw
     public function __get(string $attribute): mixed
     {
         return $this->getAttribute($attribute);
+    }
+
+    public static function fromRaw(array $raw): static
+    {
+        return new static($raw['_source'], $raw['_id'], $raw['_version']);
+    }
+
+    public function version(): int
+    {
+        return $this->version;
     }
 
     public function save(): void

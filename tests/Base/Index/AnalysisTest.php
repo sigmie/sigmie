@@ -4,19 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\Index;
 
-use Exception;
-use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
-use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
-use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\APIs\Index;
-use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Documents\DocumentsCollection;
-use Sigmie\Base\Index\Blueprint;
-use function Sigmie\Helpers\name_configs;
 use Sigmie\Support\Alias\Actions;
-use Sigmie\Support\Update\Update as Update;
 
 use Sigmie\Testing\TestCase;
 

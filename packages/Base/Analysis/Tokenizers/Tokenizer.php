@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\Analysis\Tokenizers;
 
 use Exception;
-use Prophecy\Argument\Token\TokenInterface;
 use Sigmie\Base\Contracts\ConfigurableTokenizer;
 use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
 

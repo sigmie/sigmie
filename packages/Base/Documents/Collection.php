@@ -6,7 +6,6 @@ namespace Sigmie\Base\Documents;
 
 use Closure;
 use Sigmie\Base\Contracts\DocumentCollection;
-use Sigmie\Support\Collection as SupportCollection;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
 trait Collection

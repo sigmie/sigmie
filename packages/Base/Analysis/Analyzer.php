@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis;
 
-use Sigmie\Base\Analysis\CharFilter\ConfigurableCharFilter;
 use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\Analyzer as AnalyzerInterface;
 use Sigmie\Base\Contracts\CharFilter;
-use Sigmie\Base\Contracts\Configurable;
-use Sigmie\Base\Contracts\ConfigurableTokenizer;
-use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
 use Sigmie\Base\Shared\Name;

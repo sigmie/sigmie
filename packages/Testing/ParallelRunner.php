@@ -6,11 +6,8 @@ namespace Sigmie\Testing;
 
 use InvalidArgumentException;
 use ParaTest\Runners\PHPUnit\BaseRunner;
-use ParaTest\Runners\PHPUnit\RunnerInterface;
 use ParaTest\Runners\PHPUnit\Worker\WrapperWorker;
 use PHPUnit\TextUI\TestRunner;
-use Sigmie\Base\APIs\Cat;
-use Sigmie\Base\APIs\Index;
 
 class ParallelRunner extends BaseRunner
 {

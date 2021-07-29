@@ -10,7 +10,6 @@ use Sigmie\Base\Contracts\CharFilter;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
 use Sigmie\Support\Analyzer\TokenizerBuilder as AnalyzerTokenizerBuilder;
-use Sigmie\Support\Collection;
 use Sigmie\Support\Contracts\TokenizerBuilder;
 use Sigmie\Support\Shared\CharFilters;
 use Sigmie\Support\Shared\Filters;

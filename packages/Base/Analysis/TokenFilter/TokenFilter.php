@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\TokenFilter;
 
-use Exception;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Contracts\TokenFilter as TokenFilterInterface;
 
 use function Sigmie\Helpers\name_configs;
 
-abstract class TokenFilter implements TokenFilterInterface, Raw, Configurable
+abstract class TokenFilter implements Configurable, Raw, TokenFilterInterface
 {
     public function __construct(
         protected string $name,

@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\Index;
 
-use Exception;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
-use Sigmie\Base\Analysis\CharFilter\Mapping;
 use Sigmie\Base\Analysis\CharFilter\Pattern as PatternCharFilter;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
-use Sigmie\Base\Analysis\Tokenizers\Pattern as PatternTokenizer;
 use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Documents\Document;
@@ -51,39 +48,39 @@ class UpdateTest extends TestCase
         $this->assertAnalyzerHasNotFilter('foo', 'default', 'foo_stopwords');
     }
 
-    // /**
-    //  * @test
-    //  */
-    // public function foo()
-    // {
-    //     $this->sigmie->index('foo')->update(function (Update $update) {
+    /**
+     * @test
+     */
+    public function foo()
+    {
+        $this->sigmie->index('foo')->update(function (Update $update) {
 
-    //         // Revert HTML filter
-    //         $update->keepHTML();
+            // Revert HTML filter
+            $update->keepHTML();
 
-    //         //Add filters
-    //         $update->synonyms([
-    //             'ipod' => ['i-pod', 'i pod']
-    //         ]);
-    //         $update->trim();
-    //         $update->truncate();
+            //Add filters
+            $update->synonyms([
+                'ipod' => ['i-pod', 'i pod']
+            ]);
+            $update->trim();
+            $update->truncate();
 
-    //         //Shards
-    //         $update->shards(2);
-    //         $update->replicas(5);
-            
-    //         //Update default tokenizer
-    //         $update->tokenizeOn()->whiteSpaces();
+            //Shards
+            $update->shards(2);
+            $update->replicas(5);
 
-    //         $update->mapping(function (Blueprint $blueprint) {
-    //             $blueprint->text('title')->searchAsYouType();
-    //         });
+            //Update default tokenizer
+            $update->tokenizeOn()->whiteSpaces();
 
-    //         // Remove and add filters and char filters
-    //         $update->add(new Stopwords('new_stopwords'));
-    //         $update->remove('upercase_filter_name');
-    //     });
-    // }
+            $update->mapping(function (Blueprint $blueprint) {
+                $blueprint->text('title')->searchAsYouType();
+            });
+
+            // Remove and add filters and char filters
+            $update->add(new Stopwords('new_stopwords'));
+            $update->remove('upercase_filter_name');
+        });
+    }
 
     /**
      * @test

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Contracts;
 
-use Sigmie\Base\Contracts\ElasticsearchResponse;
 
 trait API
 {

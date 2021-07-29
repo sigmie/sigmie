@@ -4,10 +4,10 @@ namespace Sigmie\Cli\Commands\Mapping;
 
 use Sigmie\Base\APIs\Mget;
 use Sigmie\Base\APIs\Search;
-use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Base\Index\Index;
 use Sigmie\Cli\BaseCommand;
 use Sigmie\Cli\Outputs\DocumentsTable;
+use Sigmie\Support\Alias\Actions as IndexActions;
 use Symfony\Component\Console\Input\InputArgument;
 
 class ListMapping extends BaseCommand

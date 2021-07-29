@@ -4,15 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis;
 
-use Exception;
-use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\CharFilter\CharFilter;
-use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
-use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
-use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Tokenizer;
-use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Base\Contracts\Analyzers;
 use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
@@ -24,11 +18,10 @@ use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Contracts\TokenFilter as TokenFilterInterface;
 use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
 use function Sigmie\Helpers\ensure_collection;
-use Sigmie\Support\Collection;
 
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
-class Analysis implements Analyzers, Raw, AnalysisInterface
+class Analysis implements AnalysisInterface, Analyzers, Raw
 {
     protected CollectionInterface $analyzers;
 

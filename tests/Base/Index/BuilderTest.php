@@ -9,18 +9,18 @@ use RachidLaasri\Travel\Travel;
 use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Base\Analysis\CharFilter\Mapping;
 use Sigmie\Base\Analysis\CharFilter\Pattern as PatternCharFilter;
-use Sigmie\English\English;
-use Sigmie\German\German;
-use Sigmie\Greek\Greek;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Pattern as PatternTokenizer;
 use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Index;
-use Sigmie\Support\Exceptions\MissingMapping;
 use Sigmie\Base\Index\Blueprint;
+use Sigmie\English\English;
+use Sigmie\German\German;
+use Sigmie\Greek\Greek;
 use Sigmie\Support\Alias\Actions;
+use Sigmie\Support\Exceptions\MissingMapping;
 use Sigmie\Testing\TestCase;
 
 class BuilderTest extends TestCase
