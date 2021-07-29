@@ -10,6 +10,18 @@ namespace Sigmie\Helpers {
     use Sigmie\Support\Collection;
     use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
+    function testing_host(): string
+    {
+        $host = getenv('ES_HOST');
+
+        if (function_exists('env')) {
+            $host = env('ES_HOST');
+        }
+
+        return $host;
+    }
+
+
     function index_name(string $prefix): string
     {
         $timestamp = Carbon::now()->format('YmdHisu');

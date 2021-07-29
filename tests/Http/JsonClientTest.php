@@ -9,6 +9,8 @@ use PHPUnit\Framework\TestCase;
 use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 
+use function Sigmie\Helpers\testing_host;
+
 class JsonClientTest extends TestCase
 {
     /**
@@ -20,7 +22,7 @@ class JsonClientTest extends TestCase
     {
         parent::setUp();
 
-        $this->client = JSONClient::create(getenv('ES_HOST'));
+        $this->client = JSONClient::create(testing_host());
     }
 
     /**
@@ -28,9 +30,9 @@ class JsonClientTest extends TestCase
      */
     public function request(): void
     {
-        $res = $this->client->request(new JSONRequest('GET',new Uri('/')));
+        $res = $this->client->request(new JSONRequest('GET', new Uri('/')));
 
-        $this->assertEquals('You Know, for Search',$res->json('tagline'));
+        $this->assertEquals('You Know, for Search', $res->json('tagline'));
     }
 
     /**
@@ -38,7 +40,7 @@ class JsonClientTest extends TestCase
      */
     public function doesnt_throw_on_http_errors()
     {
-        $res = $this->client->request(new JSONRequest('GET',new Uri('/unknown-index')));
+        $res = $this->client->request(new JSONRequest('GET', new Uri('/unknown-index')));
 
         $this->assertEquals(404, $res->code());
     }

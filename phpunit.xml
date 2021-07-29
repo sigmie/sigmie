@@ -19,5 +19,8 @@
 
         </testsuite>
     </testsuites>
+    <php>
+        <server name="ES_HOST" value="es_testing:9200"/>
+    </php>
 
 </phpunit>
