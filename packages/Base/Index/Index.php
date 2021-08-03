@@ -67,7 +67,10 @@ class Index implements DocumentCollectionInterface, Name
 
     public function toRaw(): array
     {
-        return $this->indexAPICall($this->identifier, 'GET')->json();
+        return [
+            'settings' => $this->settings->toRaw(),
+            'mappings' => $this->mappings->toRaw(),
+        ];
     }
 
     public static function fromRaw(string $name, array $raw): static

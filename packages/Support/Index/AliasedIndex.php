@@ -92,6 +92,15 @@ class AliasedIndex extends Index
         return $this->getIndex($this->alias);
     }
 
+    public function toRaw(): array
+    {
+        $res = parent::toRaw();
+
+        $res['alias'] = $this->alias;
+
+        return $res;
+    }
+
     public function disableWrite(): void
     {
         $this->indexAPICall("/{$this->name()}/_settings", 'PUT', [
