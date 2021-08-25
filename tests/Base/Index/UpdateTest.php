@@ -39,13 +39,12 @@ class UpdateTest extends TestCase
         $this->assertAnalyzerHasFilter($alias, 'default', 'foo_stopwords');
 
         $this->sigmie->index($alias)->update(function (Update $update) {
-
             $update->analyzer('default')->removeFilter('foo_stopwords');
 
             return $update;
         });
 
-        $this->assertAnalyzerHasNotFilter('foo', 'default', 'foo_stopwords');
+        $this->assertAnalyzerHasNotFilter($alias, 'default', 'foo_stopwords');
     }
 
     /**
@@ -569,9 +568,9 @@ class UpdateTest extends TestCase
             return $update;
         });
 
-        [$name, $config] = name_configs($updatedIndex->toRaw());
+        $config = $updatedIndex->toRaw();
 
-        $this->assertEquals(3, $config['settings']['index']['number_of_replicas']);
+        $this->assertEquals(3, $config['settings']['number_of_replicas']);
         $this->assertNotEquals($oldIndexName, $index->name());
         $this->assertCount(10, $index);
     }
@@ -639,10 +638,10 @@ class UpdateTest extends TestCase
 
         $index = $this->sigmie->index($alias);
 
-        [$name, $config] = name_configs($index->toRaw());
+        $config = $index->toRaw();
 
-        $this->assertEquals(1, $config['settings']['index']['number_of_shards']);
-        $this->assertEquals(1, $config['settings']['index']['number_of_replicas']);
+        $this->assertEquals(1, $config['settings']['number_of_shards']);
+        $this->assertEquals(1, $config['settings']['number_of_replicas']);
 
         $index->update(function (Update $update) {
 
@@ -651,9 +650,11 @@ class UpdateTest extends TestCase
             return $update;
         });
 
-        [$name, $config] = name_configs($index->toRaw());
+        $index = $this->sigmie->index($alias);
 
-        $this->assertEquals(2, $config['settings']['index']['number_of_shards']);
-        $this->assertEquals(2, $config['settings']['index']['number_of_replicas']);
+        $config = $index->toRaw();
+
+        $this->assertEquals(2, $config['settings']['number_of_shards']);
+        $this->assertEquals(2, $config['settings']['number_of_replicas']);
     }
 }

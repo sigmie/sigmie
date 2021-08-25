@@ -8,13 +8,35 @@ use InvalidArgumentException;
 use ParaTest\Runners\PHPUnit\BaseRunner;
 use ParaTest\Runners\PHPUnit\Worker\WrapperWorker;
 use PHPUnit\TextUI\TestRunner;
+use Sigmie\Base\APIs\Cat;
+use Sigmie\Base\APIs\Index;
+use Sigmie\Base\Contracts\API;
+use Sigmie\Base\Http\Connection;
+use Sigmie\Http\JSONClient;
 
 class ParallelRunner extends BaseRunner
 {
-    use ClearIndices;
+    use Cat, Index, API;
 
     /** @var WrapperWorker[] */
     private $workers = [];
+
+    public function clearIndices(string $host)
+    {
+        $client = JSONClient::create($host);
+
+        $this->setHttpConnection(new Connection($client));
+
+        $response = $this->catAPICall('/indices', 'GET',);
+
+        $names = array_map(fn ($data) => $data['index'], $response->json());
+
+        $nameChunks = array_chunk($names, 50);
+
+        foreach ($nameChunks as $chunk) {
+            $this->indexAPICall(implode(',', $chunk), 'DELETE');
+        }
+    }
 
     protected function beforeLoadChecks(): void
     {
@@ -28,19 +50,16 @@ class ParallelRunner extends BaseRunner
 
     protected function doRun(): void
     {
-        $this->clearIndices();
-
         $this->startWorkers();
         $this->assignAllPendingTests();
         $this->sendStopMessages();
         $this->waitForAllToFinish();
-
-        $this->clearIndices();
     }
 
     private function startWorkers(): void
     {
         for ($token = 1; $token <= $this->options->processes(); ++$token) {
+            $this->clearIndices("es_testing_{$token}:9200");
             $this->workers[$token] = new WrapperWorker($this->output, $this->options, $token);
             $this->workers[$token]->start();
         }

@@ -18,6 +18,11 @@ namespace Sigmie\Helpers {
             $host = env('ES_HOST');
         }
 
+        if (getenv('TEST_TOKEN') !== false) {  // Using paratest
+            [$host, $port] = explode(':', $host);
+            $host = $host . '_' . getenv('TEST_TOKEN') . ':' . $port;
+        }
+
         return $host;
     }
 
