@@ -7,14 +7,22 @@ namespace Sigmie\Testing;
 use Sigmie\Base\APIs\Cat;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Contracts\API;
+use Sigmie\Base\Http\Connection;
+use Sigmie\Http\JSONClient;
 
 trait ClearIndices
 {
     use TestConnection, Cat, Index, API;
 
-    protected function clearIndices(): void
+    protected function clearIndices(?string $url = null): void
     {
-        $this->setupTestConnection();
+        if (is_null($url)) {
+            $this->setupTestConnection();
+        } else {
+            $client = JSONClient::create($url);
+
+            $this->setHttpConnection(new Connection($client));
+        }
 
         $response = $this->catAPICall('/indices', 'GET',);
 

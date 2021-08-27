@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\Index;
 
+use Carbon\Carbon;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Base\Analysis\CharFilter\Pattern as PatternCharFilter;
@@ -30,6 +31,8 @@ class UpdateTest extends TestCase
     public function remove_filter()
     {
         $alias = uniqid();
+
+        Carbon::setTestNow(null);
 
         $this->sigmie->newIndex($alias)
             ->withoutMappings()

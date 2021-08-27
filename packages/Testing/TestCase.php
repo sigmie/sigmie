@@ -9,7 +9,7 @@ use Sigmie\Sigmie;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    use Testing, Actions, Assertions, TestIndex;
+    use Testing, Actions, Assertions, TestIndex, ClearIndices;
 
     protected Sigmie $sigmie;
 
@@ -18,6 +18,10 @@ class TestCase extends \PHPUnit\Framework\TestCase
         parent::setUp();
 
         $this->setupTestConnection();
+
+        if (is_null(getenv('PARATEST'))) {
+            $this->clearIndices();
+        }
 
         $this->createTestIndex();
 

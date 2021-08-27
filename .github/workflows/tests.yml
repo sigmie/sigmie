@@ -6,7 +6,7 @@ on:
   schedule:
     - cron: '0 0 * * *'
 
-jobs: 
+jobs:
   tests:
     runs-on: ubuntu-20.04
 
@@ -52,7 +52,8 @@ jobs:
         continue-on-error: ${{ matrix.php > 8 }}
         run: vendor/bin/paratest --runner "Sigmie\\Testing\\ParallelRunner"
         env:
-          ES_HOST: localhost:9200
+          ES_HOST: localhost
+          ES_PORT: 9200
 
       - name: PHPStan
         run: vendor/bin/phpstan analyse --memory-limit=-1

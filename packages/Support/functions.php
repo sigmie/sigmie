@@ -13,17 +13,20 @@ namespace Sigmie\Helpers {
     function testing_host(): string
     {
         $host = getenv('ES_HOST');
+        $port = getenv('ES_HOST');
 
         if (function_exists('env')) {
             $host = env('ES_HOST');
+            $port = env('ES_PORT');
         }
 
         if (getenv('TEST_TOKEN') !== false) {  // Using paratest
-            [$host, $port] = explode(':', $host);
-            $host = $host . '_' . getenv('TEST_TOKEN') . ':' . $port;
+            $token = getenv('TEST_TOKEN');
+
+            return "{$host}_{$token}:{$port}";
         }
 
-        return $host;
+        return "{$host}:{$port}";
     }
 
 
