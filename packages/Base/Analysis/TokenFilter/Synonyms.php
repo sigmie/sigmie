@@ -48,17 +48,21 @@ class Synonyms extends TokenFilter
     protected function getValues(): array
     {
         $res = [];
-        foreach ($this->settings as $key => $value) {
-            if (is_int($key)) {
-                $res[] = implode(', ', $value);
-            } else {
+
+        foreach ($this->settings as $values) {
+            [$first, $value] = $values;
+            if (is_array($value)) {
                 $from = implode(', ', $value);
-                $res[] = "{$from} => {$key}";
+                $res[] = "{$from} => {$first}";
+            } else {
+                $res[] = implode(', ', $values);
             }
         }
 
-        return [
+        $x = [
             'synonyms' => $res,
         ];
+
+        return $x;
     }
 }

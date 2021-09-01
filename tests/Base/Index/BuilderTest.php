@@ -565,9 +565,9 @@ class BuilderTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->stemming([
-                'am' => ['be', 'are'],
-                'mouse' => ['mice'],
-                'feet' => ['foot'],
+                ['am', ['be', 'are']],
+                ['mouse', ['mice']],
+                ['feet', ['foot']],
             ], 'sigmie_stemmer_overrides')
             ->withoutMappings()->create();
 

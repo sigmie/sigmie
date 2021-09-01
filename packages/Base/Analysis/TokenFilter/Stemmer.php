@@ -36,9 +36,10 @@ class Stemmer extends TokenFilter
     {
         $rules = [];
 
-        foreach ($this->settings as $to => $from) {
-            $from = implode(', ', $from);
-            $rules[] = "{$from} => {$to}";
+        foreach ($this->settings as $index => [$to, $from]) {
+            foreach ($from as $word) {
+                $rules[] = "{$word} => {$to}";
+            }
         }
 
         return [
