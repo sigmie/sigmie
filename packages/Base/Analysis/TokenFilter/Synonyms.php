@@ -9,7 +9,16 @@ use function Sigmie\Helpers\name_configs;
 
 class Synonyms extends TokenFilter
 {
-    protected bool $expand = true;
+    public function __construct(
+        protected string $name,
+        protected array $synonyms = [],
+        protected bool $expand = false
+    ) {
+        parent::__construct(
+            $name,
+            $this->synonyms
+        );
+    }
 
     public function type(): string
     {
@@ -59,10 +68,9 @@ class Synonyms extends TokenFilter
             }
         }
 
-        $x = [
+        return [
             'synonyms' => $res,
+            'expand' => $this->expand
         ];
-
-        return $x;
     }
 }
