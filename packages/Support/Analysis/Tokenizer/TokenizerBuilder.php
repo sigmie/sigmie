@@ -39,7 +39,7 @@ trait TokenizerBuilder
         $this->setTokenizer(new Pattern($name, $pattern, $flags));
     }
 
-    protected function tokenizeOnWordBoundaries(string $name): void
+    protected function tokenizeOnWordBoundaries(string|null $name = null): void
     {
         $name = $name ?? $this->createTokenizerName('standard');
 

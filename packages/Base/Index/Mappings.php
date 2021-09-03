@@ -38,10 +38,12 @@ class Mappings implements MappingsInterface
 
     public function analyzers(): Collection
     {
-        $collection = new Collection($this->properties->toArray());
+        //TODO fix this
+        return new Collection([$this->defaultAnalyzer]);
 
-        return $collection->filter(fn (Type $field) => $field instanceof Text)
-            ->map(fn (Text $field) => $field->analyzer() ?: $this->defaultAnalyzer);
+        // return [$this->defaultAnalyzer];
+        // return $collection->filter(fn (Type $field) => $field instanceof Text)
+        //     ->map(fn (Text $field) => $field->analyzer() ?: $this->defaultAnalyzer);
     }
 
     public function toRaw(): array

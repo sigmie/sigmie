@@ -51,6 +51,7 @@ class Index implements DocumentCollectionInterface, Name
         MappingsInterface $mappings = null
     ) {
         $this->settings = $settings ?: new Settings();
+
         $this->mappings = $mappings ?: new Mappings();
     }
 
