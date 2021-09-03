@@ -35,7 +35,7 @@ class Sigmie
         return $builder->alias($name);
     }
 
-    public function index(string $name): AliasedIndex
+    public function index(string $name): ?AliasedIndex
     {
         return $this->getIndex($name);
     }

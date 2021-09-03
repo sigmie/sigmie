@@ -33,63 +33,35 @@ class AliasedIndex extends Index
 
     public function update(callable $update): AliasedIndex
     {
-        $update = (new UpdateProxy($this->settings->analysis()))($update);
+        $oldAlias = $this->alias;
 
-        $this->settings->analysis()->updateAnalyzers($update->analyzers());
+        $update = (new UpdateProxy($this->httpConnection, $this->alias))($update);
 
-        $charFilters = $update->charFilters();
+        $requestedReplicas = $update->make()->getSettings()->getReplicaShards();
 
-        $this->defaultAnalyzer()->addCharFilters($charFilters);
+        $newAlias = $update->make()->alias;
+        $update->replicas(0);
 
-        // $this->defaultAnalyzer()->tokenizer();
-
-        // $oldTokenizers = $this->settings->analysis()->tokenizers()->toArray();
-        // $newTokenizer = $update->tokenizerValue();
-        // $tokenizers = array_merge($oldTokenizers, [$newTokenizer->name() => $newTokenizer]);
-
-        // $this->settings->analysis()->updateTokenizers($tokenizers);
-
-        $this->defaultAnalyzer()->updateTokenizer($update->tokenizerValue());
-
-        $newProps = $update->mappings()->properties()->toArray();
-        $oldProps = $this->getMappings()->properties()->toArray();
-
-        $props = array_merge($oldProps, $newProps);
-
-        $newFilters = $update->filters();
-
-        $this->settings->analysis()->updateFilters($newFilters);
-
-        $this->mappings = new Mappings(
-            $this->settings->analysis()->defaultAnalyzer(),
-            new Properties($props)
-        );
-
-        $newName = index_name($this->alias);
-        $oldName = $this->identifier;
-
-        $this->settings->primaryShards = $update->numberOfShards();
-
-        $this->settings->replicaShards = 0;
-        $this->settings->config('refresh_interval', '-1');
+        $newIndex = $update->create();
 
         $this->disableWrite();
 
-        $this->identifier = $newName;
-        $this->createIndex($this);
+        $this->reindexAPICall($this->name(), $newIndex->name());
 
-        $this->reindexAPICall($oldName, $newName);
-
-        $this->indexAPICall("/{$newName}/_settings", 'PUT', [
-            'number_of_replicas' => $update->numberOfReplicas(),
-            'refresh_interval' => null
+        $this->indexAPICall("/{$newIndex->name()}/_settings", 'PUT', [
+            'number_of_replicas' => $requestedReplicas,
+            'refresh_interval' => '1s'
         ]);
 
-        $this->switchAlias($this->alias, $oldName, $newName);
+        if ($oldAlias === $newAlias) {
+            $this->switchAlias($newAlias, $this->name(), $newIndex->name());
+        } else {
+            $this->createAlias($newIndex->name(), $newAlias);
+        }
 
-        $this->deleteIndex($oldName);
+        $this->deleteIndex($this->name());
 
-        return $this->getIndex($this->alias);
+        return $this->getIndex($newAlias);
     }
 
     public function toRaw(): array
@@ -113,10 +85,5 @@ class AliasedIndex extends Index
         $this->indexAPICall("/{$this->name()}/_settings", 'PUT', [
             'index' => ['blocks.write' => false]
         ]);
-    }
-
-    protected function defaultAnalyzer(): Analyzer
-    {
-        return $this->settings->analysis()->defaultAnalyzer();
     }
 }

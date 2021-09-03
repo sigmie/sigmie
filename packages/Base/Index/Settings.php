@@ -16,12 +16,11 @@ class Settings implements Raw
 
     protected AnalysisInterface $analysis;
 
-    protected array $configs = [];
-
     public function __construct(
         int $primaryShards = 1,
         int $replicaShards = 2,
-        AnalysisInterface $analysis = null
+        AnalysisInterface $analysis = null,
+        protected array $configs = []
     ) {
         $this->analysis = $analysis ?: new Analysis();
         $this->primaryShards = $primaryShards;

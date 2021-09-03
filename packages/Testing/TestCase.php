@@ -19,7 +19,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
         $this->setupTestConnection();
 
-        if (is_null(getenv('PARATEST'))) {
+        if (getenv('PARATEST') === false) {
             $this->clearIndices();
         }
 

@@ -54,26 +54,6 @@ class AnalyzerUpdate
         return $this;
     }
 
-    public function removeFilter(TokenFilter|string $filter): static
-    {
-        $name = $filter instanceof TokenFilter ? $filter->name() : $filter;
-
-        $this->analyzer->removeFilter($name);
-        $this->filters->remove($name);
-
-        return $this;
-    }
-
-    public function removeCharFilter(CharFilter|string $charFilter): static
-    {
-        $name = $charFilter instanceof CharFilter ? $charFilter->name() : $charFilter;
-
-        $this->analyzer->removeCharFilter($name);
-        $this->charFilters->remove($name);
-
-        return $this;
-    }
-
     public function tokenizer(TokenizerInterface $tokenizer): static
     {
         $this->setTokenizer($tokenizer);

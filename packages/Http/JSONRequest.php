@@ -20,8 +20,6 @@ class JSONRequest extends Request implements JSONRequestInterface
     {
         $this->body = is_null($body) ? $body : json_encode($body);
 
-        ray($body);
-
         parent::__construct($method, $uri, $this->headers, $this->body);
     }
 

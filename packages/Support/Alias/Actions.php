@@ -12,7 +12,7 @@ trait Actions
 {
     use AliasAPI, Index;
 
-    public function switchAlias(string $alias, string $from, string $to): bool
+    protected function switchAlias(string $alias, string $from, string $to): bool
     {
         $body = ['actions' => [
             ['remove' => ['index' => $from, 'alias' => $alias]],

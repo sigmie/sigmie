@@ -29,9 +29,11 @@ class Builder
 
     protected string $alias;
 
-    private DefaultAnalyzer $defaultAnalyzer;
+    protected DefaultAnalyzer $defaultAnalyzer;
 
-    private AnalysisInterface $analysis;
+    protected AnalysisInterface $analysis;
+
+    protected array $config = [];
 
     public function __construct(HttpConnection $connection)
     {
@@ -55,6 +57,13 @@ class Builder
     public function getPrefix(): string
     {
         return $this->alias;
+    }
+
+    public function config(string $name, string|array|bool|int $value): static
+    {
+        $this->config[$name] = $value;
+
+        return $this;
     }
 
     public function alias(string $alias): static
@@ -85,6 +94,17 @@ class Builder
 
     public function create(): Index
     {
+        $index = $this->make();
+
+        $index = $this->createIndex($index);
+
+        $this->createAlias($index->name(), $this->alias);
+
+        return $index;
+    }
+
+    public function make(): AliasedIndex
+    {
         $this->throwUnlessMappingsDefined();
 
         $defaultAnalyzer = $this->getAnalyzer();
@@ -105,18 +125,14 @@ class Builder
         $settings = new Settings(
             primaryShards: $this->shards,
             replicaShards: $this->replicas,
-            analysis: $this->analysis
+            analysis: $this->analysis,
+            configs: $this->config
         );
+
 
         $indexName = index_name($this->alias);
 
-        $index = new AliasedIndex($indexName, $this->alias, [], $settings, $mappings);
-
-        $index = $this->createIndex($index);
-
-        $this->createAlias($index->name(), $this->alias);
-
-        return $index;
+        return new AliasedIndex($indexName, $this->alias, [], $settings, $mappings);
     }
 
     protected function throwUnlessMappingsDefined(): void
