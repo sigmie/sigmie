@@ -10,16 +10,23 @@ use Sigmie\Http\Contracts\JSONRequest as JSONRequestInterface;
 
 class JSONRequest extends Request implements JSONRequestInterface
 {
+    protected string|null $body;
+
     protected array $headers = [
         'Content-type' => 'application/json',
     ];
 
     public function __construct(string $method, Uri $uri, ?array $body = null)
     {
-        $body = is_null($body) ? $body : json_encode($body);
+        $this->body = is_null($body) ? $body : json_encode($body);
 
         ray($body);
 
-        parent::__construct($method, $uri, $this->headers, $body);
+        parent::__construct($method, $uri, $this->headers, $this->body);
+    }
+
+    public function body(): ?array
+    {
+        return $this->body ? json_decode($this->body, true) : null;
     }
 }

@@ -8,6 +8,7 @@ use Exception;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse as ElasticsearchResponseInterface;
 use Sigmie\Base\Exceptions\ElasticsearchException;
+use Sigmie\Base\Exceptions\FailedToBuildSynonyms;
 use Sigmie\Http\JSONResponse;
 
 class ElasticsearchResponse extends JSONResponse implements ElasticsearchResponseInterface
@@ -21,7 +22,12 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
     {
         $message = is_null($this->json()) ? "Request failed with code {$this->code()}." : ucfirst($this->json()['error']['reason']);
 
-        return  new ElasticsearchException($request, $this, $message);
+        $exception = match ($message) {
+            'Failed to build synonyms' => new FailedToBuildSynonyms($request, $this, $message),
+            default => new ElasticsearchException($request, $this, $message)
+        };
+
+        return $exception;
     }
 
     private function hasErrorKey(): bool

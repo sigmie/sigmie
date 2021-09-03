@@ -102,6 +102,24 @@ trait Filters
         return $this;
     }
 
+    public function oneWaySynonyms(array $synonyms, null|string $name = null,): static
+    {
+        $name = $name ?? $this->createFilterName('synonyms');
+
+        $this->addFilter(new Synonyms($name, $synonyms, expand: false));
+
+        return $this;
+    }
+
+    public function twoWaySynonyms(array $synonyms, null|string $name = null,): static
+    {
+        $name = $name ?? $this->createFilterName('synonyms');
+
+        $this->addFilter(new Synonyms($name, $synonyms, expand: true));
+
+        return $this;
+    }
+
     public function synonyms(array $synonyms, bool $expand = true, null|string $name = null,): static
     {
         $name = $name ?? $this->createFilterName('synonyms');

@@ -467,10 +467,10 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->synonyms([
+            ->twoWaySynonyms([
                 ['treasure', 'gem', 'gold', 'price'],
                 ['friend', 'buddy', 'partner']
-            ], 'sigmie_two_way_synonyms',)
+            ],  name: 'sigmie_two_way_synonyms',)
             ->withoutMappings()
             ->create();
 
@@ -484,7 +484,8 @@ class BuilderTest extends TestCase
             'synonyms' => [
                 'treasure, gem, gold, price',
                 'friend, buddy, partner'
-            ]
+            ],
+            'expand' => 'true',
         ]);
     }
 
@@ -516,9 +517,9 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->synonyms([
-                'ipod' => ['i-pod', 'i pod']
-            ], 'sigmie_one_way_synonyms',)
+            ->oneWaySynonyms([
+                ['ipod', ['i-pod', 'i pod']],
+            ], name: 'sigmie_one_way_synonyms',)
             ->withoutMappings()
             ->create();
 
@@ -528,6 +529,7 @@ class BuilderTest extends TestCase
         ]);
         $this->assertFilterEquals($alias, 'sigmie_one_way_synonyms', [
             'type' => 'synonym',
+            'expand' => 'false',
             'synonyms' => [
                 'i-pod, i pod => ipod',
             ],
