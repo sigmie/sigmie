@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Sigmie\Support\Shared;
 
 use Exception;
+use Ramsey\Uuid\Type\Decimal;
+use Sigmie\Base\Analysis\TokenFilter\AsciiFolding;
+use Sigmie\Base\Analysis\TokenFilter\DecimalDigit;
 use Sigmie\Base\Analysis\TokenFilter\Keywords;
 use Sigmie\Base\Analysis\TokenFilter\Lowercase;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\TokenFilter\Synonyms;
+use Sigmie\Base\Analysis\TokenFilter\TokenLimit;
 use Sigmie\Base\Analysis\TokenFilter\Trim;
 use Sigmie\Base\Analysis\TokenFilter\Truncate;
 use Sigmie\Base\Analysis\TokenFilter\Unique;
@@ -39,6 +43,24 @@ trait Filters
         return $this;
     }
 
+    public function decimalDigit(null|string $name = null,): static
+    {
+        $name = $name ?? $this->createFilterName('decimal_digit');
+
+        $this->addFilter(new DecimalDigit($name));
+
+        return $this;
+    }
+
+    public function asciiFolding(null|string $name = null,): static
+    {
+        $name = $name ?? $this->createFilterName('ascii_folding');
+
+        $this->addFilter(new AsciiFolding($name));
+
+        return $this;
+    }
+
     public function stopwords(array $stopwords, null|string $name = null,): static
     {
         $name = $name ?? $this->createFilterName('stopwords');
@@ -53,6 +75,15 @@ trait Filters
         $name = $name ?? $this->createFilterName('lowercase');
 
         $this->addFilter(new Lowercase($name));
+
+        return $this;
+    }
+
+    public function tokenLimit(int $maxTokenCount, null|string $name = null,): static
+    {
+        $name = $name ?? $this->createFilterName('token_limit');
+
+        $this->addFilter(new TokenLimit($name, $maxTokenCount));
 
         return $this;
     }

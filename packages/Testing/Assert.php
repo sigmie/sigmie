@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Testing;
 
 use PHPUnit\Framework\Assert as PHPUnit;
+use Sigmie\Testing\Assertions\Assertions;
 
 class Assert
 {

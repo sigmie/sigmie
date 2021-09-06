@@ -64,7 +64,6 @@ class Mappings implements MappingsInterface
         }
 
         foreach ($data['properties'] as $fieldName => $value) {
-
             $field = match ($value['type']) {
                 'search_as_you_type' => (new Text($fieldName))->searchAsYouType(),
                 'text' => (new Text($fieldName))->unstructuredText(),
@@ -72,7 +71,9 @@ class Mappings implements MappingsInterface
                 'float' => (new Number($fieldName))->float(),
                 'boolean' => new Boolean($fieldName),
                 'date' => new Date($fieldName),
-                default => throw new Exception('Field couldn\'t be mapped')
+                //TODO test completion from raw
+                'completion' => (new Text($fieldName))->completion(),
+                default => throw new Exception('Field ' . $value['type'] . ' couldn\'t be mapped')
             };
 
             if ($field instanceof Text && !isset($value['analyzer'])) {

@@ -16,6 +16,70 @@ class FilterTest extends TestCase
     /**
      * @test
      */
+    public function decimal_digit()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->withoutMappings()
+            ->decimalDigit('decimal_digit_filter')
+            ->create();
+
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertFilterExists('decimal_digit_filter');
+            $index->assertAnalyzerHasFilter('default', 'decimal_digit_filter');
+            $index->assertFilterEquals('decimal_digit_filter', [
+                'type' => 'decimal_digit',
+            ]);
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function ascii_folding()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->withoutMappings()
+            ->asciiFolding('ascii_folding_filer')
+            ->create();
+
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertFilterExists('ascii_folding_filer');
+            $index->assertAnalyzerHasFilter('default', 'ascii_folding_filer');
+            $index->assertFilterEquals('ascii_folding_filer', [
+                'type' => 'asciifolding',
+            ]);
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function token_limit()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->withoutMappings()
+            ->tokenLimit(5, 'token_limit_name')
+            ->create();
+
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertFilterExists('token_limit_name');
+            $index->assertAnalyzerHasFilter('default', 'token_limit_name');
+            $index->assertFilterEquals('token_limit_name', [
+                'type' => 'limit',
+                "max_token_count" => "5"
+            ]);
+        });
+    }
+
+    /**
+     * @test
+     */
     public function keywords()
     {
         $alias = uniqid();

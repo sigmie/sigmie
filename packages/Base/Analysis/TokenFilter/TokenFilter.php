@@ -36,6 +36,9 @@ abstract class TokenFilter implements Configurable, Raw, TokenFilterInterface
             'stop' => Stopwords::fromRaw($raw),
             'synonym' => Synonyms::fromRaw($raw),
             'stemmer_override' => Stemmer::fromRaw($raw),
+            'decimal_digit' => DecimalDigit::fromRaw($raw),
+            'ascii_folding' => AsciiFolding::fromRaw($raw),
+            'limit' => TokenLimit::fromRaw($raw),
             default => Generic::fromRaw($raw)
         };
     }

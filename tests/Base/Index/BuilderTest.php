@@ -22,7 +22,7 @@ use Sigmie\Greek\Greek;
 use Sigmie\Support\Alias\Actions;
 use Sigmie\Support\Exceptions\MissingMapping;
 use Sigmie\Testing\Assert;
-use Sigmie\Testing\SigmieTesting;
+use Sigmie\Testing\Assertions;
 use Sigmie\Testing\TestCase;
 
 class BuilderTest extends TestCase
