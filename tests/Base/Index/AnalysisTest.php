@@ -7,6 +7,7 @@ namespace Sigmie\Tests\Base\Index;
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Support\Alias\Actions;
+use Sigmie\Testing\Assert;
 
 use Sigmie\Testing\TestCase;
 
@@ -26,7 +27,9 @@ class AnalysisTest extends TestCase
             ->stopwords(['foo', 'bar'], 'foo_stopwords')
             ->create();
 
-        $this->assertFilterExists($alias, 'foo_stopwords');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertFilterExists('foo_stopwords');
+        });
 
         $analysis = $this->sigmie->index($alias)->getSettings()->analysis();
 
@@ -46,7 +49,9 @@ class AnalysisTest extends TestCase
             ->stripHTML()
             ->create();
 
-        $this->assertAnalyzerHasTokenizer($alias, 'default', 'foo_tokenizer');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasTokenizer('default', 'foo_tokenizer');
+        });
 
         $analysis = $this->sigmie->index($alias)->getSettings()->analysis();
 
@@ -65,7 +70,9 @@ class AnalysisTest extends TestCase
             ->stripHTML()
             ->create();
 
-        $this->assertAnalyzerHasCharFilter($alias, 'default', 'html_strip');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasCharFilter('default', 'html_strip');
+        });
 
         $analysis = $this->sigmie->index($alias)->getSettings()->analysis();
 

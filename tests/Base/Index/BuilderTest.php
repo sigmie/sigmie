@@ -21,6 +21,8 @@ use Sigmie\German\German;
 use Sigmie\Greek\Greek;
 use Sigmie\Support\Alias\Actions;
 use Sigmie\Support\Exceptions\MissingMapping;
+use Sigmie\Testing\Assert;
+use Sigmie\Testing\SigmieTesting;
 use Sigmie\Testing\TestCase;
 
 class BuilderTest extends TestCase
@@ -39,12 +41,15 @@ class BuilderTest extends TestCase
             ->unique(name: 'unique_filter', onlyOnSamePosition: true)
             ->create();
 
-        $this->assertAnalyzerHasFilter($alias, 'default', 'unique_filter');
-        $this->assertFilterExists($alias, 'unique_filter');
-        $this->assertFilterEquals($alias, 'unique_filter', [
-            'type' => 'unique',
-            'only_on_same_position' => 'true',
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+
+            $index->assertAnalyzerHasFilter('default', 'unique_filter');
+            $index->assertFilterExists('unique_filter');
+            $index->assertFilterEquals('unique_filter', [
+                'type' => 'unique',
+                'only_on_same_position' => 'true',
+            ]);
+        });
     }
 
     /**
@@ -59,11 +64,14 @@ class BuilderTest extends TestCase
             ->trim(name: 'trim_filter_name')
             ->create();
 
-        $this->assertAnalyzerHasFilter($alias, 'default', 'trim_filter_name');
-        $this->assertFilterExists($alias, 'trim_filter_name');
-        $this->assertFilterEquals($alias, 'trim_filter_name', [
-            'type' => 'trim'
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+
+            $index->assertAnalyzerHasFilter('default', 'trim_filter_name');
+            $index->assertFilterExists('trim_filter_name');
+            $index->assertFilterEquals('trim_filter_name', [
+                'type' => 'trim'
+            ]);
+        });
     }
 
     /**
@@ -78,11 +86,14 @@ class BuilderTest extends TestCase
             ->uppercase(name: 'uppercase_filter_name')
             ->create();
 
-        $this->assertAnalyzerHasFilter($alias, 'default', 'uppercase_filter_name');
-        $this->assertFilterExists($alias, 'uppercase_filter_name');
-        $this->assertFilterEquals($alias, 'uppercase_filter_name', [
-            'type' => 'uppercase'
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+
+            $index->assertAnalyzerHasFilter('default', 'uppercase_filter_name');
+            $index->assertFilterExists('uppercase_filter_name');
+            $index->assertFilterEquals('uppercase_filter_name', [
+                'type' => 'uppercase'
+            ]);
+        });
     }
 
     /**
@@ -97,11 +108,14 @@ class BuilderTest extends TestCase
             ->lowercase(name: 'lowercase_filter_name')
             ->create();
 
-        $this->assertAnalyzerHasFilter($alias, 'default', 'lowercase_filter_name');
-        $this->assertFilterExists($alias, 'lowercase_filter_name');
-        $this->assertFilterEquals($alias, 'lowercase_filter_name', [
-            'type' => 'lowercase'
-        ]);
+
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasFilter('default', 'lowercase_filter_name');
+            $index->assertFilterExists('lowercase_filter_name');
+            $index->assertFilterEquals('lowercase_filter_name', [
+                'type' => 'lowercase'
+            ]);
+        });
     }
 
     /**
@@ -116,13 +130,15 @@ class BuilderTest extends TestCase
             ->tokenizeOn()->pattern('/something/', 'CASE_INSENSITIVE', name: 'some_pattern')
             ->create();
 
-        $this->assertAnalyzerHasTokenizer($alias, 'default', 'some_pattern');
-        $this->assertTokenizerExists($alias, 'some_pattern');
-        $this->assertTokenizerEquals($alias, 'some_pattern', [
-            'type' => 'pattern',
-            'pattern' => '/something/',
-            'flags' => 'CASE_INSENSITIVE'
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasTokenizer('default', 'some_pattern');
+            $index->assertTokenizerExists('some_pattern');
+            $index->assertTokenizerEquals('some_pattern', [
+                'type' => 'pattern',
+                'pattern' => '/something/',
+                'flags' => 'CASE_INSENSITIVE'
+            ]);
+        });
     }
 
     /**
@@ -137,12 +153,14 @@ class BuilderTest extends TestCase
             ->tokenizeOn()->pattern('/something/', name: 'some_pattern')
             ->create();
 
-        $this->assertAnalyzerHasTokenizer($alias, 'default', 'some_pattern');
-        $this->assertTokenizerExists($alias, 'some_pattern');
-        $this->assertTokenizerEquals($alias, 'some_pattern', [
-            'type' => 'pattern',
-            'pattern' => '/something/'
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasTokenizer('default', 'some_pattern');
+            $index->assertTokenizerExists('some_pattern');
+            $index->assertTokenizerEquals('some_pattern', [
+                'type' => 'pattern',
+                'pattern' => '/something/'
+            ]);
+        });
     }
 
     /**
@@ -157,12 +175,14 @@ class BuilderTest extends TestCase
             ->tokenizeOn()->wordBoundaries('able')
             ->create();
 
-        $this->assertAnalyzerHasTokenizer($alias, 'default', 'able');
-        $this->assertTokenizerExists($alias, 'able');
-        $this->assertTokenizerEquals($alias, 'able', [
-            'type' => 'standard',
-            'max_token_length' => '255'
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasTokenizer('default', 'able');
+            $index->assertTokenizerExists('able');
+            $index->assertTokenizerEquals('able', [
+                'type' => 'standard',
+                'max_token_length' => '255'
+            ]);
+        });
     }
 
     /**
@@ -177,7 +197,10 @@ class BuilderTest extends TestCase
             ->tokenizeOn()->whiteSpaces()
             ->create();
 
-        $this->assertAnalyzerHasTokenizer($alias, 'default', 'whitespace');
+        $this->assertIndex($alias, function (Assert $index) {
+
+            $index->assertAnalyzerHasTokenizer('default', 'whitespace');
+        });
     }
 
     /**
@@ -225,7 +248,9 @@ class BuilderTest extends TestCase
 
         $builder->withoutMappings()->create();
 
-        $this->assertAnalyzerHasTokenizer($alias, 'default', 'whitespace');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasTokenizer('default', 'whitespace');
+        });
     }
 
     /**
@@ -240,11 +265,13 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertAnalyzerHasTokenizer($alias, 'default', 'sigmie_tokenizer');
-        $this->assertTokenizerEquals($alias, 'sigmie_tokenizer', [
-            'type' => 'pattern',
-            'pattern' => '/[ ]/',
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasTokenizer('default', 'sigmie_tokenizer');
+            $index->assertTokenizerEquals('sigmie_tokenizer', [
+                'type' => 'pattern',
+                'pattern' => '/[ ]/',
+            ]);
+        });
     }
 
     /**
@@ -259,7 +286,9 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertAnalyzerHasTokenizer($alias, 'default', 'letter');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasTokenizer('default', 'letter');
+        });
     }
 
     /**
@@ -274,11 +303,13 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertCharFilterExists($alias, 'sigmie_mapping_char_filter');
-        $this->assertCharFilterEquals($alias, 'sigmie_mapping_char_filter', [
-            'type' => 'mapping',
-            'mappings' => ['a => bar', 'f => foo'],
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertCharFilterExists('sigmie_mapping_char_filter');
+            $index->assertCharFilterEquals('sigmie_mapping_char_filter', [
+                'type' => 'mapping',
+                'mappings' => ['a => bar', 'f => foo'],
+            ]);
+        });
     }
 
     /**
@@ -293,12 +324,14 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertCharFilterExists($alias, 'pattern_char_filter');
-        $this->assertCharFilterEquals($alias, 'pattern_char_filter', [
-            'pattern' => '/foo/',
-            'type' => 'pattern_replace',
-            'replacement' => '$1',
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertCharFilterExists('pattern_char_filter');
+            $index->assertCharFilterEquals('pattern_char_filter', [
+                'pattern' => '/foo/',
+                'type' => 'pattern_replace',
+                'replacement' => '$1',
+            ]);
+        });
     }
 
     /**
@@ -313,7 +346,9 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertAnalyzerHasCharFilter($alias, 'default', 'html_strip');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasCharFilter('default', 'html_strip');
+        });
     }
 
     /**
@@ -328,12 +363,14 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertTokenizerExists($alias, 'some_name');
-        $this->assertAnalyzerHasTokenizer($alias, 'default', 'some_name');
-        $this->assertTokenizerEquals($alias, 'some_name', [
-            'type' => 'standard',
-            'max_token_length' => 40,
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertTokenizerExists('some_name');
+            $index->assertAnalyzerHasTokenizer('default', 'some_name');
+            $index->assertTokenizerEquals('some_name', [
+                'type' => 'standard',
+                'max_token_length' => 40,
+            ]);
+        });
     }
 
     /**
@@ -348,7 +385,9 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertAnalyzerTokenizerIsWhitespaces($alias, 'default');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerTokenizerIsWhitespaces('default');
+        });
     }
 
     /**
@@ -376,20 +415,22 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertAnalyzerExists($alias, 'default');
+        $this->assertIndex($alias, function (Assert $index) {
 
-        $this->assertFilterExists($alias, 'german_stopwords');
-        $this->assertFilterExists($alias, 'german_stemmer');
+            $index->assertAnalyzerExists('default');
+            $index->assertFilterExists('german_stopwords');
+            $index->assertFilterExists('german_stemmer');
 
-        $this->assertFilterEquals($alias, 'german_stopwords', [
-            'type' => 'stop',
-            'stopwords' => '_german_',
-        ]);
+            $index->assertFilterEquals('german_stopwords', [
+                'type' => 'stop',
+                'stopwords' => '_german_',
+            ]);
 
-        $this->assertFilterEquals($alias, 'german_stemmer', [
-            'type' => 'stemmer',
-            'language' => 'light_german',
-        ]);
+            $index->assertFilterEquals('german_stemmer', [
+                'type' => 'stemmer',
+                'language' => 'light_german',
+            ]);
+        });
     }
 
     /**
@@ -404,26 +445,25 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertAnalyzerExists($alias, 'default');
+        $this->assertIndex($alias, function (Assert $index) {
 
-        $this->assertFilterExists($alias, 'greek_stopwords');
-        $this->assertFilterExists($alias, 'greek_lowercase');
-        $this->assertFilterExists($alias, 'greek_stemmer');
-
-        $this->assertFilterEquals($alias, 'greek_stemmer', [
-            'type' => 'stemmer',
-            'language' => 'greek',
-        ]);
-
-        $this->assertFilterEquals($alias, 'greek_lowercase', [
-            'type' => 'lowercase',
-            'language' => 'greek',
-        ]);
-
-        $this->assertFilterEquals($alias, 'greek_stopwords', [
-            'type' => 'stop',
-            'stopwords' => '_greek_',
-        ]);
+            $index->assertAnalyzerExists('default');
+            $index->assertFilterExists('greek_stopwords');
+            $index->assertFilterExists('greek_lowercase');
+            $index->assertFilterExists('greek_stemmer');
+            $index->assertFilterEquals('greek_stemmer', [
+                'type' => 'stemmer',
+                'language' => 'greek',
+            ]);
+            $index->assertFilterEquals('greek_lowercase', [
+                'type' => 'lowercase',
+                'language' => 'greek',
+            ]);
+            $index->assertFilterEquals('greek_stopwords', [
+                'type' => 'stop',
+                'stopwords' => '_greek_',
+            ]);
+        });
     }
 
     /**
@@ -438,25 +478,25 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertAnalyzerExists($alias, 'default');
-        $this->assertFilterExists($alias, 'english_stopwords');
-        $this->assertFilterExists($alias, 'english_stemmer');
-        $this->assertFilterExists($alias, 'english_possessive_stemmer');
+        $this->assertIndex($alias, function (Assert $index) {
 
-        $this->assertFilterEquals($alias, 'english_stopwords', [
-            'type' => 'stop',
-            'stopwords' => '_english_',
-        ]);
-
-        $this->assertFilterEquals($alias, 'english_stemmer', [
-            'type' => 'stemmer',
-            'language' => 'english',
-        ]);
-
-        $this->assertFilterEquals($alias, 'english_possessive_stemmer', [
-            'type' => 'stemmer',
-            'language' => 'possessive_english',
-        ]);
+            $index->assertAnalyzerExists('default');
+            $index->assertFilterExists('english_stopwords');
+            $index->assertFilterExists('english_stemmer');
+            $index->assertFilterExists('english_possessive_stemmer');
+            $index->assertFilterEquals('english_stopwords', [
+                'type' => 'stop',
+                'stopwords' => '_english_',
+            ]);
+            $index->assertFilterEquals('english_stemmer', [
+                'type' => 'stemmer',
+                'language' => 'english',
+            ]);
+            $index->assertFilterEquals('english_possessive_stemmer', [
+                'type' => 'stemmer',
+                'language' => 'possessive_english',
+            ]);
+        });
     }
 
     /**
@@ -474,19 +514,22 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertFilterExists($alias, 'sigmie_two_way_synonyms');
-        $this->assertFilterHasSynonyms($alias, 'sigmie_two_way_synonyms', [
-            'treasure, gem, gold, price',
-            'friend, buddy, partner'
-        ]);
-        $this->assertFilterEquals($alias, 'sigmie_two_way_synonyms', [
-            'type' => 'synonym',
-            'synonyms' => [
+        $this->assertIndex($alias, function (Assert $index) {
+
+            $index->assertFilterExists('sigmie_two_way_synonyms');
+            $index->assertFilterHasSynonyms('sigmie_two_way_synonyms', [
                 'treasure, gem, gold, price',
                 'friend, buddy, partner'
-            ],
-            'expand' => 'true',
-        ]);
+            ]);
+            $index->assertFilterEquals('sigmie_two_way_synonyms', [
+                'type' => 'synonym',
+                'synonyms' => [
+                    'treasure, gem, gold, price',
+                    'friend, buddy, partner'
+                ],
+                'expand' => 'true',
+            ]);
+        });
     }
 
     /**
@@ -503,10 +546,12 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $data = $this->indexData($alias);
-        [$name] = array_keys($data['settings']['index']['analysis']['filter']);
+        $this->assertIndex($alias, function (Assert $index) {
 
-        $this->assertMatchesRegularExpression('/synonyms_[a-z]{3}$/', $name);
+            [$name] = array_keys($index->data()['settings']['index']['analysis']['filter']);
+
+            $this->assertMatchesRegularExpression('/synonyms_[a-z]{3}$/', $name);
+        });
     }
 
     /**
@@ -523,17 +568,20 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertFilterExists($alias, 'sigmie_one_way_synonyms');
-        $this->assertFilterHasSynonyms($alias, 'sigmie_one_way_synonyms', [
-            'i-pod, i pod => ipod',
-        ]);
-        $this->assertFilterEquals($alias, 'sigmie_one_way_synonyms', [
-            'type' => 'synonym',
-            'expand' => 'false',
-            'synonyms' => [
+        $this->assertIndex($alias, function (Assert $index) {
+
+            $index->assertFilterExists('sigmie_one_way_synonyms');
+            $index->assertFilterHasSynonyms('sigmie_one_way_synonyms', [
                 'i-pod, i pod => ipod',
-            ],
-        ]);
+            ]);
+            $index->assertFilterEquals('sigmie_one_way_synonyms', [
+                'type' => 'synonym',
+                'expand' => 'false',
+                'synonyms' => [
+                    'i-pod, i pod => ipod',
+                ],
+            ]);
+        });
     }
 
     /**
@@ -548,14 +596,17 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertFilterExists($alias, 'sigmie_stopwords');
-        $this->assertFilterHasStopwords($alias, 'sigmie_stopwords', ['about', 'after', 'again']);
-        $this->assertFilterEquals($alias, 'sigmie_stopwords', [
-            'type' => 'stop',
-            'stopwords' => [
-                'about', 'after', 'again'
-            ]
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+
+            $index->assertFilterExists('sigmie_stopwords');
+            $index->assertFilterHasStopwords('sigmie_stopwords', ['about', 'after', 'again']);
+            $index->assertFilterEquals('sigmie_stopwords', [
+                'type' => 'stop',
+                'stopwords' => [
+                    'about', 'after', 'again'
+                ]
+            ]);
+        });
     }
 
     /**
@@ -573,25 +624,18 @@ class BuilderTest extends TestCase
             ], 'sigmie_stemmer_overrides')
             ->withoutMappings()->create();
 
-        $this->assertFilterExists($alias, 'sigmie_stemmer_overrides');
-        $this->assertFilterHasStemming(
-            $alias,
-            'sigmie_stemmer_overrides',
-            [
-                'be, are => am',
-                'mice => mouse',
-                'foot => feet',
-            ]
-        );
+        $this->assertIndex($alias, function (Assert $index) {
 
-        $this->assertFilterEquals($alias, 'sigmie_stemmer_overrides', [
-            'type' => 'stemmer_override',
-            'rules' => [
-                'be, are => am',
-                'mice => mouse',
-                'foot => feet',
-            ]
-        ]);
+            $index->assertFilterExists('sigmie_stemmer_overrides');
+            $index->assertFilterHasStemming(
+                'sigmie_stemmer_overrides',
+                [
+                    'be, are => am',
+                    'mice => mouse',
+                    'foot => feet',
+                ]
+            );
+        });
     }
 
     /**
@@ -605,9 +649,12 @@ class BuilderTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertAnalyzerExists($alias, 'default');
-        $this->assertAnalyzerFilterIsEmpty($alias, 'default');
-        $this->assertAnalyzerTokenizerIsWordBoundaries($alias, 'default');
+        $this->assertIndex($alias, function (Assert $index) {
+
+            $index->assertAnalyzerExists('default');
+            $index->assertAnalyzerFilterIsEmpty('default');
+            $index->assertAnalyzerTokenizerIsWordBoundaries('default');
+        });
     }
 
     /**
@@ -630,27 +677,23 @@ class BuilderTest extends TestCase
             ->stopwords(['amazing', 'wonderful'], 'custom_stopwords')
             ->create();
 
-        $this->assertIndexHasMappings($alias);
+        $this->assertIndex($alias, function (Assert $index) {
 
-        $this->assertPropertyExists($alias, 'title');
-        $this->assertPropertyIsSearchAsYouType($alias, 'title');
-
-        $this->assertPropertyExists($alias, 'content');
-        $this->assertPropertyIsUnstructuredText($alias, 'content');
-
-        $this->assertPropertyExists($alias, 'adults');
-        $this->assertPropertyIsInteger($alias, 'adults');
-
-        $this->assertPropertyExists($alias, 'price');
-        $this->assertPropertyIsFloat($alias, 'price');
-
-        $this->assertPropertyExists($alias, 'created_at');
-        $this->assertPropertyIsDate($alias, 'created_at');
-
-        $this->assertPropertyExists($alias, 'is_valid');
-        $this->assertPropertyIsBoolean($alias, 'is_valid');
-
-        $this->assertAnalyzerHasFilter($alias, 'default', 'custom_stopwords');
+            $index->assertIndexHasMappings();
+            $index->assertPropertyExists('title');
+            $index->assertPropertyIsSearchAsYouType('title');
+            $index->assertPropertyExists('content');
+            $index->assertPropertyIsUnstructuredText('content');
+            $index->assertPropertyExists('adults');
+            $index->assertPropertyIsInteger('adults');
+            $index->assertPropertyExists('price');
+            $index->assertPropertyIsFloat('price');
+            $index->assertPropertyExists('created_at');
+            $index->assertPropertyIsDate('created_at');
+            $index->assertPropertyExists('is_valid');
+            $index->assertPropertyIsBoolean('is_valid');
+            $index->assertAnalyzerHasFilter('default', 'custom_stopwords');
+        });
     }
 
     /**
@@ -683,7 +726,7 @@ class BuilderTest extends TestCase
     /**
      * @test
      */
-    public function index_name_prefix()
+    public function index_replicas_and_shards()
     {
         $alias = uniqid();
 
@@ -693,9 +736,9 @@ class BuilderTest extends TestCase
             ->replicas(3)
             ->create();
 
-        $index = $this->getIndex($alias);
-
-        $this->assertEquals(3, $index->getSettings()->getReplicaShards());
-        $this->assertEquals(4, $index->getSettings()->getPrimaryShards());
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertShards(4);
+            $index->assertReplicas(3);
+        });
     }
 }

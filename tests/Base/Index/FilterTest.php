@@ -6,6 +6,7 @@ namespace Sigmie\Tests\Base\Index;
 
 use Sigmie\Base\APIs\Index;
 use Sigmie\Support\Alias\Actions;
+use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
 
 class FilterTest extends TestCase
@@ -24,12 +25,14 @@ class FilterTest extends TestCase
             ->keywords(['foo', 'bar'], 'keywords_marker')
             ->create();
 
-        $this->assertAnalyzerHasFilter($alias, 'default', 'keywords_marker');
-        $this->assertFilterExists($alias, 'keywords_marker');
-        $this->assertFilterEquals($alias, 'keywords_marker', [
-            'type' => 'keyword_marker',
-            'keywords' => ['foo', 'bar']
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasFilter('default', 'keywords_marker');
+            $index->assertFilterExists('keywords_marker');
+            $index->assertFilterEquals('keywords_marker', [
+                'type' => 'keyword_marker',
+                'keywords' => ['foo', 'bar']
+            ]);
+        });
     }
 
     /**
@@ -44,12 +47,14 @@ class FilterTest extends TestCase
             ->truncate(20, name: '20_char_truncate')
             ->create();
 
-        $this->assertAnalyzerHasFilter($alias, 'default', '20_char_truncate');
-        $this->assertFilterExists($alias, '20_char_truncate');
-        $this->assertFilterEquals($alias, '20_char_truncate', [
-            'type' => 'truncate',
-            'length' => 20
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasFilter('default', '20_char_truncate');
+            $index->assertFilterExists('20_char_truncate');
+            $index->assertFilterEquals('20_char_truncate', [
+                'type' => 'truncate',
+                'length' => 20
+            ]);
+        });
     }
 
     /**
@@ -64,12 +69,14 @@ class FilterTest extends TestCase
             ->unique(name: 'unique_filter', onlyOnSamePosition: true)
             ->create();
 
-        $this->assertAnalyzerHasFilter($alias, 'default', 'unique_filter');
-        $this->assertFilterExists($alias, 'unique_filter');
-        $this->assertFilterEquals($alias, 'unique_filter', [
-            'type' => 'unique',
-            'only_on_same_position' => 'true',
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasFilter('default', 'unique_filter');
+            $index->assertFilterExists('unique_filter');
+            $index->assertFilterEquals('unique_filter', [
+                'type' => 'unique',
+                'only_on_same_position' => 'true',
+            ]);
+        });
     }
 
     /**
@@ -84,11 +91,13 @@ class FilterTest extends TestCase
             ->trim(name: 'trim_filter_name')
             ->create();
 
-        $this->assertAnalyzerHasFilter($alias, 'default', 'trim_filter_name');
-        $this->assertFilterExists($alias, 'trim_filter_name');
-        $this->assertFilterEquals($alias, 'trim_filter_name', [
-            'type' => 'trim'
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasFilter('default', 'trim_filter_name');
+            $index->assertFilterExists('trim_filter_name');
+            $index->assertFilterEquals('trim_filter_name', [
+                'type' => 'trim'
+            ]);
+        });
     }
 
     /**
@@ -103,11 +112,13 @@ class FilterTest extends TestCase
             ->uppercase(name: 'uppercase_filter_name')
             ->create();
 
-        $this->assertAnalyzerHasFilter($alias, 'default', 'uppercase_filter_name');
-        $this->assertFilterExists($alias, 'uppercase_filter_name');
-        $this->assertFilterEquals($alias, 'uppercase_filter_name', [
-            'type' => 'uppercase'
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasFilter('default', 'uppercase_filter_name');
+            $index->assertFilterExists('uppercase_filter_name');
+            $index->assertFilterEquals('uppercase_filter_name', [
+                'type' => 'uppercase'
+            ]);
+        });
     }
 
     /**
@@ -122,10 +133,12 @@ class FilterTest extends TestCase
             ->lowercase(name: 'lowercase_filter_name')
             ->create();
 
-        $this->assertAnalyzerHasFilter($alias, 'default', 'lowercase_filter_name');
-        $this->assertFilterExists($alias, 'lowercase_filter_name');
-        $this->assertFilterEquals($alias, 'lowercase_filter_name', [
-            'type' => 'lowercase'
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasFilter('default', 'lowercase_filter_name');
+            $index->assertFilterExists('lowercase_filter_name');
+            $index->assertFilterEquals('lowercase_filter_name', [
+                'type' => 'lowercase'
+            ]);
+        });
     }
 }

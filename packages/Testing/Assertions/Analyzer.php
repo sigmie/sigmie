@@ -9,88 +9,78 @@ trait Analyzer
 {
     use Contracts;
 
-    protected function assertAnalyzerHasCharFilter(string $index, string $analyzer, string $charFilter): void
-    {
-        $data = $this->indexData($index);
+    private string $name;
 
+    private array $data;
+
+    public function assertAnalyzerHasCharFilter(string $analyzer, string $charFilter): void
+    {
         $this->assertContains(
             $charFilter,
-            $data['settings']['index']['analysis']['analyzer'][$analyzer]['char_filter'],
-            "Failed to assert that analyzer '{$analyzer}' has the char_filter '{$charFilter}' in '{$index}' index."
+            $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['char_filter'],
+            "Failed to assert that analyzer '{$analyzer}' has the char_filter '{$charFilter}' in '{$this->name}' index."
         );
     }
 
-    protected function assertAnalyzerHasNotCharFilter(string $index, string $analyzer, string $charFilter): void
+    public function assertAnalyzerHasNotCharFilter(string $analyzer, string $charFilter): void
     {
-        $data = $this->indexData($index);
-
         $this->assertNotContains(
             $charFilter,
-            $data['settings']['index']['analysis']['analyzer'][$analyzer]['char_filter'],
-            "Failed to assert that analyzer '{$analyzer}' has not the char_filter '{$charFilter}' in '{$index}' index."
+            $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['char_filter'],
+            "Failed to assert that analyzer '{$analyzer}' has not the char_filter '{$charFilter}' in '{$this->name}' index."
         );
     }
 
-    protected function assertAnalyzerHasFilter(string $index, string $analyzer, string $filter): void
+    public function assertAnalyzerHasFilter(string $analyzer, string $filter): void
     {
-        $data = $this->indexData($index);
-
         $this->assertContains(
             $filter,
-            $data['settings']['index']['analysis']['analyzer'][$analyzer]['filter'],
-            "Failed to assert that analyzer '{$analyzer}' has the filter '{$filter}' in '{$index}' index."
+            $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['filter'],
+            "Failed to assert that analyzer '{$analyzer}' has the filter '{$filter}' in '{$this->name}' index."
         );
     }
 
-    protected function assertAnalyzerHasNotFilter(string $index, string $analyzer, string $filter): void
+    public function assertAnalyzerHasNotFilter(string $analyzer, string $filter): void
     {
-        $data = $this->indexData($index);
-
         $this->assertNotContains(
             $filter,
-            $data['settings']['index']['analysis']['analyzer'][$analyzer]['filter'],
-            "Failed to assert that analyzer '{$analyzer}' has not the filter '{$filter}' in '{$index}' index."
+            $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['filter'],
+            "Failed to assert that analyzer '{$analyzer}' has not the filter '{$filter}' in '{$this->name}' index."
         );
     }
 
-    protected function assertAnalyzerHasTokenizer(string $index, string $analyzer, string $tokenizer): void
+    public function assertAnalyzerHasTokenizer(string $analyzer, string $tokenizer): void
     {
-        $data = $this->indexData($index);
-
         $this->assertEquals(
             $tokenizer,
-            $data['settings']['index']['analysis']['analyzer'][$analyzer]['tokenizer'],
-            "Failed to assert that analyzer '{$analyzer}' has the tokenizer '{$tokenizer}' in '{$index}' index."
+            $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['tokenizer'],
+            "Failed to assert that analyzer '{$analyzer}' has the tokenizer '{$tokenizer}' in '{$this->name}' index."
         );
     }
 
-    protected function assertAnalyzerTokenizerIsWordBoundaries(string $index, string $analyzer): void
+    public function assertAnalyzerTokenizerIsWordBoundaries(string $analyzer): void
     {
-        $this->assertAnalyzerHasTokenizer($index, $analyzer, 'standard');
+        $this->assertAnalyzerHasTokenizer($analyzer, 'standard');
     }
 
-    protected function assertAnalyzerTokenizerIsWhitespaces(string $index, string $analyzer): void
+    public function assertAnalyzerTokenizerIsWhitespaces(string $analyzer): void
     {
-        $this->assertAnalyzerHasTokenizer($index, $analyzer, 'whitespace');
+        $this->assertAnalyzerHasTokenizer($analyzer, 'whitespace');
     }
 
-    protected function assertAnalyzerCharFilterIsEmpty(string $index, string $analyzer): void
+    public function assertAnalyzerCharFilterIsEmpty(string $analyzer): void
     {
-        $data = $this->indexData($index);
-
         $this->assertEmpty(
-            $data['settings']['index']['analysis']['analyzer'][$analyzer]['char_filter'],
-            "Failed to assert that analyzer '{$analyzer}' has not any char_filter in '{$index}' index."
+            $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['char_filter'],
+            "Failed to assert that analyzer '{$analyzer}' has not any char_filter in '{$this->name}' index."
         );
     }
 
-    protected function assertAnalyzerFilterIsEmpty(string $index, string $analyzer): void
+    public function assertAnalyzerFilterIsEmpty(string $analyzer): void
     {
-        $data = $this->indexData($index);
-
         $this->assertEmpty(
-            $data['settings']['index']['analysis']['analyzer'][$analyzer]['filter'],
-            "Failed to assert that analyzer '{$analyzer}' has not any filter in '{$index}' index."
+            $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['filter'],
+            "Failed to assert that analyzer '{$analyzer}' has not any filter in '{$this->name}' index."
         );
     }
 }
