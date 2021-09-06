@@ -627,6 +627,7 @@ class BuilderTest extends TestCase
                 $blueprint->bool('is_valid');
                 return $blueprint;
             })
+            ->stopwords(['amazing', 'wonderful'], 'custom_stopwords')
             ->create();
 
         $this->assertIndexHasMappings($alias);
@@ -648,6 +649,8 @@ class BuilderTest extends TestCase
 
         $this->assertPropertyExists($alias, 'is_valid');
         $this->assertPropertyIsBoolean($alias, 'is_valid');
+
+        $this->assertAnalyzerHasFilter($alias, 'default', 'custom_stopwords');
     }
 
     /**
