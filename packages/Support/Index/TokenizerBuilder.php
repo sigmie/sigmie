@@ -34,6 +34,7 @@ class TokenizerBuilder implements TokenizerBuilderInterface
         null|string $flags = null,
         string|null $name = null
     ): IndexBuilder {
+
         $this->tokenizeOnPattern(
             pattern: $pattern,
             flags: $flags,

@@ -8,7 +8,7 @@ use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Base\Contracts\Analyzer as AnalyzerInterface;
+use Sigmie\Base\Contracts\CustomAnalyzer as AnalyzerInterface;
 use Sigmie\Base\Contracts\CharFilter;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
@@ -48,7 +48,7 @@ class Analyzer implements AnalyzerInterface
         array $charFilters,
         array $filters,
         array $tokenizers
-    ): AnalyzerInterface {
+    ): static {
 
         $analyzerFilters = [];
         $analyzerCharFilters = [];

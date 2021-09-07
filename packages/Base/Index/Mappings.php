@@ -6,7 +6,8 @@ namespace Sigmie\Base\Index;
 
 use Exception;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
-use Sigmie\Base\Contracts\Analyzer;
+use Sigmie\Base\Analysis\SimpleAnalyzer;
+use Sigmie\Base\Contracts\CustomAnalyzer;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Contracts\Type;
 use Sigmie\Base\Mappings\Properties;
@@ -21,13 +22,13 @@ class Mappings implements MappingsInterface
 {
     protected Properties $properties;
 
-    protected Analyzer $defaultAnalyzer;
+    protected CustomAnalyzer $defaultAnalyzer;
 
     public function __construct(
-        ?DefaultAnalyzer $defaultAnalyzer = null,
+        ?CustomAnalyzer $defaultAnalyzer = null,
         ?Properties $properties = null,
     ) {
-        $this->defaultAnalyzer = $defaultAnalyzer ?: new DefaultAnalyzer();
+        $this->defaultAnalyzer = $defaultAnalyzer ?: new CustomAnalyzer();
         $this->properties = $properties ?: new Properties();
     }
 
@@ -53,7 +54,7 @@ class Mappings implements MappingsInterface
     public static function fromRaw(array $data, ContractsCollection $analyzers): Mappings
     {
         $analyzers = $analyzers->mapToDictionary(
-            fn (Analyzer $analyzer) => [$analyzer->name() => $analyzer]
+            fn (CustomAnalyzer $analyzer) => [$analyzer->name() => $analyzer]
         )->toArray();
         $defaultAnalyzer = $analyzers['default'];
 
@@ -82,7 +83,11 @@ class Mappings implements MappingsInterface
 
             if ($field instanceof Text && isset($value['analyzer'])) {
                 $analyzerName = $value['analyzer'];
-                $analyzer = $analyzers[$analyzerName];
+
+                $analyzer = match ($analyzerName) {
+                    'simple' => new SimpleAnalyzer,
+                    default => $analyzers[$analyzerName]
+                };
 
                 $field->withAnalyzer($analyzer);
             }

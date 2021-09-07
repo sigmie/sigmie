@@ -96,6 +96,7 @@ class Builder
     {
         $index = $this->make();
 
+        ray($index);
         $index = $this->createIndex($index);
 
         $this->createAlias($index->name(), $this->alias);
