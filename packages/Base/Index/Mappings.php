@@ -28,7 +28,7 @@ class Mappings implements MappingsInterface
         ?CustomAnalyzer $defaultAnalyzer = null,
         ?Properties $properties = null,
     ) {
-        $this->defaultAnalyzer = $defaultAnalyzer ?: new CustomAnalyzer();
+        $this->defaultAnalyzer = $defaultAnalyzer ?: new DefaultAnalyzer();
         $this->properties = $properties ?: new Properties();
     }
 
