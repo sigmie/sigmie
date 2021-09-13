@@ -10,7 +10,6 @@ use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Language;
-use Sigmie\Base\Contracts\LanguageBuilder;
 
 use function Sigmie\Helpers\index_name;
 use Sigmie\Support\Alias\Actions as IndexActions;
@@ -83,6 +82,15 @@ class Builder
         return $this;
     }
 
+    public function language(Language $language)
+    {
+        $builder = $language->builder($this->getHttpConnection());
+
+        $builder->alias($this->alias);
+
+        return  $builder;
+    }
+
 
     public function getAnalyzer(): DefaultAnalyzer
     {
@@ -93,15 +101,6 @@ class Builder
         }
 
         return $analyzer;
-    }
-
-    public function language(Language $language): LanguageBuilder
-    {
-        $this->initFilters();
-
-        $builder = $language->builder($this->getHttpConnection());
-
-        return $builder->alias($this->alias);
     }
 
     public function create(): Index
@@ -137,6 +136,7 @@ class Builder
             configs: $this->config
         );
 
+
         $indexName = index_name($this->alias);
 
         return new AliasedIndex($indexName, $this->alias, [], $settings, $mappings);
@@ -147,5 +147,10 @@ class Builder
         if ($this->dynamicMappings === false && isset($this->blueprintCallback) === false) {
             throw MissingMapping::forAlias($this->alias);
         }
+    }
+
+    protected function languageIsDefined(): bool
+    {
+        return isset($this->language);
     }
 }

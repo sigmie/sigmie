@@ -50,6 +50,7 @@ class Analysis implements AnalysisInterface, Analyzers, Raw
 
         $this->tokenizers = $this->analyzers()
             ->map(fn (Analyzer $analyzer) => $analyzer->tokenizer())
+            ->filter(fn ($tokenizer) => !is_null($tokenizer))
             ->mapToDictionary(fn (Name $analyzer) => [$analyzer->name() => $analyzer]);
     }
 

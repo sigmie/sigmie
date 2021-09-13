@@ -15,7 +15,7 @@ interface CustomAnalyzer extends Analyzer
         array $tokenizers
     ): static;
 
-    public function tokenizer(): Tokenizer;
+    public function tokenizer(): null|Tokenizer;
 
     public function filters(): Collection;
 

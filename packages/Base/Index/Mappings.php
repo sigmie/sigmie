@@ -40,7 +40,13 @@ class Mappings implements MappingsInterface
     public function analyzers(): Collection
     {
         return $this->properties->textFields()->filter(fn (Type $field) => $field instanceof Text)
-            ->map(fn (Text $field) => $field->analyzer() ? $field->analyzer() : $this->defaultAnalyzer);
+            ->map(function (Text $field) {
+                if (is_null($field->analyzer())) {
+                    return $this->defaultAnalyzer;
+                }
+
+                return $field->analyzer();
+            });
     }
 
     public function toRaw(): array

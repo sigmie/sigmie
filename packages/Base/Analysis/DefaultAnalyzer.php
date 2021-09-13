@@ -17,10 +17,6 @@ class DefaultAnalyzer extends Analyzer
         array $charFilters = [],
     ) {
 
-        // 'standard' is the default Elasticsearch
-        // tokenizer when no other is specified
-        $tokenizer = $tokenizer ?: new WordBoundaries();
-
         parent::__construct(
             self::name,
             $tokenizer,
