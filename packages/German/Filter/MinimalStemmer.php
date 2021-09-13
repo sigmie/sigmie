@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\English\Filter;
+namespace Sigmie\German\Filter;
 
 use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
 
 use function Sigmie\Helpers\name_configs;
 
 /**
- * @see https://snowballstem.org/algorithms/porter/stemmer.html
+ * @see http://members.unine.ch/jacques.savoy/clef/morpho.pdf
  */
-class Stemmer extends TokenFilter
+class MinimalStemmer extends TokenFilter
 {
-    public function __construct(string $name = 'english_stemmer')
+    public function __construct(string $name = 'german_stemmer_minimal')
     {
         parent::__construct($name);
     }
@@ -33,7 +33,7 @@ class Stemmer extends TokenFilter
     protected function getValues(): array
     {
         return [
-            'language' => 'english',
+            'language' => 'minimal_german',
         ];
     }
 }

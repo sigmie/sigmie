@@ -14,7 +14,7 @@ abstract class TokenFilter implements Configurable, Raw, TokenFilterInterface
 {
     public function __construct(
         protected string $name,
-        protected array $settings,
+        protected array $settings = [],
     ) {
     }
 

@@ -8,11 +8,14 @@ use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
 
 use function Sigmie\Helpers\name_configs;
 
+/**
+ * @see https://snowballstem.org/algorithms/german/stemmer.html
+ */
 class Stemmer extends TokenFilter
 {
-    public function __construct()
+    public function __construct(string $name = 'german_stemmer')
     {
-        parent::__construct('german_stemmer', []);
+        parent::__construct($name);
     }
 
     public function type(): string
@@ -24,13 +27,13 @@ class Stemmer extends TokenFilter
     {
         [$name, $config] = name_configs($raw);
 
-        return new static();
+        return new static($name);
     }
 
     protected function getValues(): array
     {
         return [
-            'language' => 'light_german',
+            'language' => 'german',
         ];
     }
 }

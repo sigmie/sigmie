@@ -10,16 +10,16 @@ use function Sigmie\Helpers\name_configs;
 
 class Stopwords extends TokenFilter
 {
-    public function __construct()
+    public function __construct(string $name = 'greek_stopwords')
     {
-        parent::__construct('greek_stopwords', []);
+        parent::__construct($name);
     }
 
     public static function fromRaw(array $raw): static
     {
         [$name, $config] = name_configs($raw);
 
-        return new static();
+        return new static($name);
     }
 
     public function type(): string

@@ -16,8 +16,11 @@ use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Index\Blueprint;
+use Sigmie\English\Builder as EnglishBuilder;
 use Sigmie\English\English;
+use Sigmie\German\Builder as GermanBuilder;
 use Sigmie\German\German;
+use Sigmie\Greek\Builder as GreekBuilder;
 use Sigmie\Greek\Greek;
 use Sigmie\Support\Alias\Actions;
 use Sigmie\Support\Exceptions\MissingMapping;
@@ -28,6 +31,196 @@ use Sigmie\Testing\TestCase;
 class BuilderTest extends TestCase
 {
     use Index, Actions;
+
+    /**
+     * @test
+     */
+    public function language_greek()
+    {
+        $alias = uniqid();
+
+        /** @var GreekBuilder */
+        $greekBuilder = $this->sigmie->newIndex($alias)->language(new Greek);
+
+        $greekBuilder
+            ->greekLowercase()
+            ->greekStemmer()
+            ->greekStopwords()
+            ->withoutMappings()
+            ->create();
+
+        $this->assertIndex($alias, function (Assert $index) {
+
+            $index->assertAnalyzerHasFilter('default', 'greek_stopwords');
+            $index->assertAnalyzerHasFilter('default', 'greek_stemmer');
+            $index->assertAnalyzerHasFilter('default', 'greek_lowercase');
+
+            $index->assertFilterEquals('greek_lowercase', ['type' => 'lowercase', 'language' => 'greek']);
+            $index->assertFilterEquals('greek_stopwords', ['type' => 'stop', 'stopwords' => '_greek_']);
+            $index->assertFilterEquals(
+                'greek_stemmer',
+                [
+                    'type' => 'stemmer',
+                    'language' => 'greek'
+                ]
+            );
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function language_german()
+    {
+        $alias = uniqid();
+
+        /** @var GermanBuilder */
+        $englishBuilder = $this->sigmie->newIndex($alias)->language(new German);
+
+        $englishBuilder
+            ->germanLightStemmer()
+            ->germanStemmer()
+            ->germanStemmer2()
+            ->germanMinimalStemmer()
+
+            ->germanNormalize()
+            ->germanStopwords()
+            ->germanLowercase()
+
+            ->withoutMappings()
+            ->create();
+
+        $this->assertIndex($alias, function (Assert $index) {
+
+            $index->assertAnalyzerHasFilter('default', 'german_lowercase');
+            $index->assertAnalyzerHasFilter('default', 'german_stemmer');
+            $index->assertAnalyzerHasFilter('default', 'german_stemmer_2');
+            $index->assertAnalyzerHasFilter('default', 'german_stemmer_minimal');
+            $index->assertAnalyzerHasFilter('default', 'german_stemmer_light');
+            $index->assertAnalyzerHasFilter('default', 'german_stopwords');
+            $index->assertAnalyzerHasFilter('default', 'german_normalization');
+
+            $index->assertFilterEquals('german_lowercase', ['type' => 'lowercase']);
+            $index->assertFilterEquals('german_normalization', ['type' => 'german_normalization']);
+
+            $index->assertFilterEquals('german_stopwords', ['type' => 'stop', 'stopwords' => '_german_']);
+            $index->assertFilterEquals(
+                'german_stemmer',
+                [
+                    'type' => 'stemmer',
+                    'language' => 'german'
+                ]
+            );
+            $index->assertFilterEquals(
+                'german_stemmer_2',
+                [
+                    'type' => 'stemmer',
+                    'language' => 'german2'
+                ]
+            );
+            $index->assertFilterEquals(
+                'german_stemmer_light',
+                [
+                    'type' => 'stemmer',
+                    'language' => 'light_german'
+                ]
+            );
+            $index->assertFilterEquals(
+                'german_stemmer_minimal',
+                [
+                    'type' => 'stemmer',
+                    'language' => 'minimal_german'
+                ]
+            );
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function language_english()
+    {
+        $alias = uniqid();
+
+        /** @var EnglishBuilder */
+        $englishBuilder = $this->sigmie->newIndex($alias)->language(new English);
+
+        $englishBuilder
+
+            ->englishStemmer()
+            ->englishPorter2Stemmer()
+            ->englishLovinsStemmer()
+            ->englishLightStemmer()
+            ->englishPossessiveStemming()
+            ->englishMinimalStemmer()
+
+            ->englishStopwords()
+            ->englishLowercase()
+            ->withoutMappings()
+            ->create();
+
+        $this->assertIndex($alias, function (Assert $index) {
+
+            $index->assertAnalyzerHasFilter('default', 'english_lowercase');
+            $index->assertAnalyzerHasFilter('default', 'english_stemmer');
+            $index->assertAnalyzerHasFilter('default', 'english_stemmer_porter_2');
+            $index->assertAnalyzerHasFilter('default', 'english_stemmer_minimal');
+            $index->assertAnalyzerHasFilter('default', 'english_stemmer_lovins');
+            $index->assertAnalyzerHasFilter('default', 'english_stemmer_light');
+            $index->assertAnalyzerHasFilter('default', 'english_stemmer_possessive');
+            $index->assertAnalyzerHasFilter('default', 'english_stopwords');
+
+            $index->assertFilterEquals('english_lowercase', ['type' => 'lowercase']);
+            $index->assertFilterEquals('english_stopwords', ['type' => 'stop', 'stopwords' => '_english_']);
+
+            $index->assertFilterEquals(
+                'english_stemmer_porter_2',
+                [
+                    'type' => 'stemmer',
+                    'language' => 'porter2'
+                ]
+            );
+
+            $index->assertFilterEquals(
+                'english_stemmer_minimal',
+                [
+                    'type' => 'stemmer',
+                    'language' => 'minimal_english'
+                ]
+            );
+
+            $index->assertFilterEquals(
+                'english_stemmer_lovins',
+                [
+                    'type' => 'stemmer',
+                    'language' => 'lovins'
+                ]
+            );
+
+            $index->assertFilterEquals(
+                'english_stemmer_light',
+                [
+                    'type' => 'stemmer',
+                    'language' => 'light_english'
+                ]
+            );
+
+            $index->assertFilterEquals(
+                'english_stemmer_possessive',
+                [
+                    'type' => 'stemmer',
+                    'language' => 'possessive_english'
+                ]
+            );
+            $index->assertFilterEquals(
+                'english_stemmer',
+                [
+                    'type' => 'stemmer',
+                    'language' => 'english'
+                ]
+            );
+        });
+    }
 
     /**
      * @test
@@ -92,28 +285,6 @@ class BuilderTest extends TestCase
             $index->assertFilterExists('uppercase_filter_name');
             $index->assertFilterEquals('uppercase_filter_name', [
                 'type' => 'uppercase'
-            ]);
-        });
-    }
-
-    /**
-     * @test
-     */
-    public function lowercase_filter()
-    {
-        $alias = uniqid();
-
-        $this->sigmie->newIndex($alias)
-            ->withoutMappings()
-            ->lowercase(name: 'lowercase_filter_name')
-            ->create();
-
-
-        $this->assertIndex($alias, function (Assert $index) {
-            $index->assertAnalyzerHasFilter('default', 'lowercase_filter_name');
-            $index->assertFilterExists('lowercase_filter_name');
-            $index->assertFilterEquals('lowercase_filter_name', [
-                'type' => 'lowercase'
             ]);
         });
     }
@@ -401,102 +572,6 @@ class BuilderTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->create();
-    }
-
-    /**
-     * @test
-     */
-    public function german_language()
-    {
-        $alias = uniqid();
-
-        $this->sigmie->newIndex($alias)
-            ->language(new German)
-            ->withoutMappings()
-            ->create();
-
-        $this->assertIndex($alias, function (Assert $index) {
-
-            $index->assertAnalyzerExists('default');
-            $index->assertFilterExists('german_stopwords');
-            $index->assertFilterExists('german_stemmer');
-
-            $index->assertFilterEquals('german_stopwords', [
-                'type' => 'stop',
-                'stopwords' => '_german_',
-            ]);
-
-            $index->assertFilterEquals('german_stemmer', [
-                'type' => 'stemmer',
-                'language' => 'light_german',
-            ]);
-        });
-    }
-
-    /**
-     * @test
-     */
-    public function greek_language()
-    {
-        $alias = uniqid();
-
-        $this->sigmie->newIndex($alias)
-            ->language(new Greek)
-            ->withoutMappings()
-            ->create();
-
-        $this->assertIndex($alias, function (Assert $index) {
-
-            $index->assertAnalyzerExists('default');
-            $index->assertFilterExists('greek_stopwords');
-            $index->assertFilterExists('greek_lowercase');
-            $index->assertFilterExists('greek_stemmer');
-            $index->assertFilterEquals('greek_stemmer', [
-                'type' => 'stemmer',
-                'language' => 'greek',
-            ]);
-            $index->assertFilterEquals('greek_lowercase', [
-                'type' => 'lowercase',
-                'language' => 'greek',
-            ]);
-            $index->assertFilterEquals('greek_stopwords', [
-                'type' => 'stop',
-                'stopwords' => '_greek_',
-            ]);
-        });
-    }
-
-    /**
-     * @test
-     */
-    public function english_language()
-    {
-        $alias = uniqid();
-
-        $this->sigmie->newIndex($alias)
-            ->language(new English)
-            ->withoutMappings()
-            ->create();
-
-        $this->assertIndex($alias, function (Assert $index) {
-
-            $index->assertAnalyzerExists('default');
-            $index->assertFilterExists('english_stopwords');
-            $index->assertFilterExists('english_stemmer');
-            $index->assertFilterExists('english_possessive_stemmer');
-            $index->assertFilterEquals('english_stopwords', [
-                'type' => 'stop',
-                'stopwords' => '_english_',
-            ]);
-            $index->assertFilterEquals('english_stemmer', [
-                'type' => 'stemmer',
-                'language' => 'english',
-            ]);
-            $index->assertFilterEquals('english_possessive_stemmer', [
-                'type' => 'stemmer',
-                'language' => 'possessive_english',
-            ]);
-        });
     }
 
     /**

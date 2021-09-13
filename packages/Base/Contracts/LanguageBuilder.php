@@ -6,7 +6,7 @@ namespace Sigmie\Base\Contracts;
 
 use Sigmie\Support\Contracts\Collection;
 
-interface Language
+interface LanguageBuilder
 {
-    public function builder(HttpConnection $httpConnection): LanguageBuilder;
+    public function alias(string $alias);
 }

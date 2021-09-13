@@ -19,6 +19,7 @@ use Sigmie\Base\Analysis\TokenFilter\Truncate;
 use Sigmie\Base\Analysis\TokenFilter\Unique;
 use Sigmie\Base\Analysis\TokenFilter\Uppercase;
 use Sigmie\Base\Contracts\Analysis;
+use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\TokenFilter;
 use function Sigmie\Helpers\random_letters;
@@ -29,8 +30,6 @@ use Sigmie\Support\Contracts\Collection;
 trait Filters
 {
     private Collection $filters;
-
-    private Language $language;
 
     abstract function analysis(): Analysis;
 
@@ -66,15 +65,6 @@ trait Filters
         $name = $name ?? $this->createFilterName('stopwords');
 
         $this->addFilter(new Stopwords($name, $stopwords));
-
-        return $this;
-    }
-
-    public function lowercase(null|string $language = null, null|string $name = null,): static
-    {
-        $name = $name ?? $this->createFilterName('lowercase');
-
-        $this->addFilter(new Lowercase($name));
 
         return $this;
     }
@@ -160,15 +150,6 @@ trait Filters
         return $this;
     }
 
-    public function language(Language $language): static
-    {
-        $this->initFilters();
-
-        $this->language = $language;
-
-        return $this;
-    }
-
     public function filters(): array
     {
         $this->initFilters();
@@ -184,7 +165,7 @@ trait Filters
     private function ensureFilterNameIsAvailable(string $name): void
     {
         if ($this->analysis()->hasFilter($name)) {
-            throw new Exception('Char filter name already exists.');
+            throw new Exception("Token filter `{$name}` already exists.");
         }
     }
 
@@ -199,7 +180,7 @@ trait Filters
         return $suffixed;
     }
 
-    private function addFilter(TokenFilter $tokenFilter): void
+    protected function addFilter(TokenFilter $tokenFilter): void
     {
         $this->initFilters();
 

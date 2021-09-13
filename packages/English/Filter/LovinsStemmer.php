@@ -9,11 +9,11 @@ use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
 use function Sigmie\Helpers\name_configs;
 
 /**
- * @see https://snowballstem.org/algorithms/porter/stemmer.html
+ * @see https://snowballstem.org/algorithms/lovins/stemmer.html
  */
-class Stemmer extends TokenFilter
+class LovinsStemmer extends TokenFilter
 {
-    public function __construct(string $name = 'english_stemmer')
+    public function __construct(string $name = 'english_stemmer_lovins')
     {
         parent::__construct($name);
     }
@@ -33,7 +33,7 @@ class Stemmer extends TokenFilter
     protected function getValues(): array
     {
         return [
-            'language' => 'english',
+            'language' => 'lovins',
         ];
     }
 }

@@ -8,11 +8,14 @@ use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
 
 use function Sigmie\Helpers\name_configs;
 
+/**
+ * @see https://lucene.apache.org/core/8_9_0/analyzers-common/org/apache/lucene/analysis/en/EnglishPossessiveFilter.html
+ */
 class PossessiveStemmer extends TokenFilter
 {
-    public function __construct()
+    public function __construct(string $name = 'english_stemmer_possessive')
     {
-        parent::__construct('english_possessive_stemmer', []);
+        parent::__construct($name);
     }
 
     public function type(): string
@@ -24,7 +27,7 @@ class PossessiveStemmer extends TokenFilter
     {
         [$name, $config] = name_configs($raw);
 
-        return new static();
+        return new static($name);
     }
 
     protected function getValues(): array

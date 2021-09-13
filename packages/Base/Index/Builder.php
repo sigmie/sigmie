@@ -9,6 +9,9 @@ use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Base\Contracts\HttpConnection;
+use Sigmie\Base\Contracts\Language;
+use Sigmie\Base\Contracts\LanguageBuilder;
+
 use function Sigmie\Helpers\index_name;
 use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Support\Exceptions\MissingMapping;
@@ -92,11 +95,19 @@ class Builder
         return $analyzer;
     }
 
+    public function language(Language $language): LanguageBuilder
+    {
+        $this->initFilters();
+
+        $builder = $language->builder($this->getHttpConnection());
+
+        return $builder->alias($this->alias);
+    }
+
     public function create(): Index
     {
         $index = $this->make();
 
-        ray($index);
         $index = $this->createIndex($index);
 
         $this->createAlias($index->name(), $this->alias);
@@ -119,17 +130,12 @@ class Builder
 
         $this->analysis()->addAnalyzers($analyzers);
 
-        if ($this->languageIsDefined()) {
-            $this->analysis()->addLanguageFilters($this->language);
-        }
-
         $settings = new Settings(
             primaryShards: $this->shards,
             replicaShards: $this->replicas,
             analysis: $this->analysis,
             configs: $this->config
         );
-
 
         $indexName = index_name($this->alias);
 
@@ -141,10 +147,5 @@ class Builder
         if ($this->dynamicMappings === false && isset($this->blueprintCallback) === false) {
             throw MissingMapping::forAlias($this->alias);
         }
-    }
-
-    protected function languageIsDefined(): bool
-    {
-        return isset($this->language);
     }
 }

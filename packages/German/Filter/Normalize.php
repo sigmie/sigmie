@@ -2,25 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\English\Filter;
+namespace Sigmie\German\Filter;
 
 use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
 
 use function Sigmie\Helpers\name_configs;
 
-/**
- * @see https://snowballstem.org/algorithms/porter/stemmer.html
- */
-class Stemmer extends TokenFilter
+class Normalize extends TokenFilter
 {
-    public function __construct(string $name = 'english_stemmer')
+    public function __construct(string $name = 'german_normalization')
     {
         parent::__construct($name);
     }
 
     public function type(): string
     {
-        return 'stemmer';
+        return 'german_normalization';
     }
 
     public static function fromRaw(array $raw): static
@@ -32,8 +29,6 @@ class Stemmer extends TokenFilter
 
     protected function getValues(): array
     {
-        return [
-            'language' => 'english',
-        ];
+        return [];
     }
 }

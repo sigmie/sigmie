@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Contracts;
 
-
 trait API
 {
     protected HttpConnection $httpConnection;
