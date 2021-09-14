@@ -12,10 +12,26 @@ use function Sigmie\Helpers\name_configs;
 
 abstract class TokenFilter implements Configurable, Raw, TokenFilterInterface
 {
+    public static $map = [
+        'stop' => Stopwords::class,
+        'synonym' => Synonyms::class,
+        'stemmer_override' => Stemmer::class,
+        'decimal_digit' => DecimalDigit::class,
+        'ascii_folding' => AsciiFolding::class,
+        'limit' => TokenLimit::class,
+    ];
+
     public function __construct(
         protected string $name,
         protected array $settings = [],
     ) {
+    }
+
+    public static function filterMap(array $map)
+    {
+        static::$map = array_merge(static::$map, $map);
+
+        return static::$map;
     }
 
     public function name(): string
@@ -32,15 +48,13 @@ abstract class TokenFilter implements Configurable, Raw, TokenFilterInterface
     {
         [$name, $config] = name_configs($raw);
 
-        return match ($config['type']) {
-            'stop' => Stopwords::fromRaw($raw),
-            'synonym' => Synonyms::fromRaw($raw),
-            'stemmer_override' => Stemmer::fromRaw($raw),
-            'decimal_digit' => DecimalDigit::fromRaw($raw),
-            'ascii_folding' => AsciiFolding::fromRaw($raw),
-            'limit' => TokenLimit::fromRaw($raw),
-            default => Generic::fromRaw($raw)
-        };
+        if (isset(static::$map[$config['type']])) {
+            $class = static::$map[$config['type']];
+
+            return $class::fromRaw($raw);
+        }
+
+        return Generic::fromRaw($raw);
     }
 
     public function toRaw(): array
