@@ -46,7 +46,7 @@ class MapTest extends TestCase
     {
         $this->assertArrayNotHasKey('foo', TokenFilter::$map);
 
-        TokenFilter::filterMap([
+        TokenFilter::map([
             'stop' => Generic::class,
             'foo' => Stopwords::class,
         ]);
