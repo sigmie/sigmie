@@ -6,6 +6,7 @@ declare(strict_types=1);
 namespace Sigmie\Support\Update;
 
 use Sigmie\Base\Contracts\HttpConnection;
+use Sigmie\Base\Index\Builder;
 
 /**
  * This class is just a proxy to allow the editor
@@ -18,7 +19,7 @@ final class UpdateProxy
     {
     }
 
-    public function __invoke(callable $callable): Update
+    public function __invoke(callable $callable): Builder
     {
         $update = new Update($this->http);
         $update->alias($this->alias);
