@@ -36,9 +36,7 @@ class Analysis implements AnalysisInterface, Analyzers, Raw
     ) {
         $this->analyzers = ensure_collection($analyzers);
 
-        $this->analyzers['default'] ?? $this->analyzers['default'] = new DefaultAnalyzer();
-
-        $this->filters =             $this->analyzers()
+        $this->filters = $this->analyzers()
             ->map(fn (Analyzer $analyzer) => $analyzer->filters())
             ->flatten()
             ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter]);
@@ -99,6 +97,8 @@ class Analysis implements AnalysisInterface, Analyzers, Raw
 
     public function defaultAnalyzer(): DefaultAnalyzer
     {
+        $this->analyzers['default'] ?? $this->analyzers['default'] = new DefaultAnalyzer();
+
         return $this->analyzers['default'];
     }
 
@@ -144,18 +144,6 @@ class Analysis implements AnalysisInterface, Analyzers, Raw
     public function setAnalyzer(Analyzer $analyzer): void
     {
         $this->analyzers[$analyzer->name()] = $analyzer;
-    }
-
-    public function addLanguageFilters(Language $language): static
-    {
-        $filters = $language->filters()
-            ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter]);
-
-        $this->analyzers['default']->addFilters($filters);
-
-        $this->updateFilters($filters);
-
-        return $this;
     }
 
     public static function fromRaw(array $raw): static

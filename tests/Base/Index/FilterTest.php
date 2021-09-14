@@ -184,25 +184,4 @@ class FilterTest extends TestCase
             ]);
         });
     }
-
-    /**
-     * @test
-     */
-    public function lowercase_filter()
-    {
-        $alias = uniqid();
-
-        $this->sigmie->newIndex($alias)
-            ->withoutMappings()
-            ->lowercase(name: 'lowercase_filter_name')
-            ->create();
-
-        $this->assertIndex($alias, function (Assert $index) {
-            $index->assertAnalyzerHasFilter('default', 'lowercase_filter_name');
-            $index->assertFilterExists('lowercase_filter_name');
-            $index->assertFilterEquals('lowercase_filter_name', [
-                'type' => 'lowercase'
-            ]);
-        });
-    }
 }

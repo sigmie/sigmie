@@ -62,9 +62,11 @@ class Mappings implements MappingsInterface
         $analyzers = $analyzers->mapToDictionary(
             fn (CustomAnalyzer $analyzer) => [$analyzer->name() => $analyzer]
         )->toArray();
-        $defaultAnalyzer = $analyzers['default'];
+
 
         $fields = [];
+
+        $defaultAnalyzer = $analyzers['default'] ?? new DefaultAnalyzer();
 
         if (isset($data['properties']) === false) {
             return new DynamicMappings($defaultAnalyzer);
@@ -92,6 +94,7 @@ class Mappings implements MappingsInterface
 
                 $analyzer = match ($analyzerName) {
                     'simple' => new SimpleAnalyzer,
+                    'default' => $defaultAnalyzer,
                     default => $analyzers[$analyzerName]
                 };
 

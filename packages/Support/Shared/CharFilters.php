@@ -70,7 +70,7 @@ trait CharFilters
         }
     }
 
-    protected function addCharFilter(CharFilter $charFilter): void
+    private function addCharFilter(CharFilter $charFilter): void
     {
         $this->initCharFilters();
 

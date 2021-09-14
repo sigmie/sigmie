@@ -8,11 +8,11 @@ use Sigmie\Base\Analysis\Analysis;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
+use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Language;
 
 use function Sigmie\Helpers\index_name;
-use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Support\Exceptions\MissingMapping;
 use Sigmie\Support\Index\AliasedIndex;
 use Sigmie\Support\Index\TokenizerBuilder;
@@ -27,23 +27,21 @@ use Sigmie\Support\Shared\Tokenizer;
 
 class Builder
 {
-    use IndexActions, Actions, Filters, Mappings, CharFilters, Shards, Replicas, Tokenizer;
+    use Actions, Filters, Mappings, CharFilters, Shards, Replicas, Tokenizer;
 
     protected string $alias;
 
     protected DefaultAnalyzer $defaultAnalyzer;
 
-    protected AnalysisInterface $analysis;
-
     protected array $config = [];
 
     public function __construct(HttpConnection $connection)
     {
-        $this->tokenizer = new WordBoundaries();
-
         $this->setHttpConnection($connection);
 
-        $this->analysis = new Analysis([$this->getAnalyzer()]);
+        $this->tokenizer = new WordBoundaries();
+
+        $this->analysis = new Analysis();
     }
 
     public function analysis(): AnalysisInterface
@@ -92,15 +90,11 @@ class Builder
     }
 
 
-    public function getAnalyzer(): DefaultAnalyzer
+    public function defaultAnalyzer(): DefaultAnalyzer
     {
-        $analyzer = $this->defaultAnalyzer ?? new DefaultAnalyzer();
+        $this->defaultAnalyzer ?? $this->defaultAnalyzer = new DefaultAnalyzer();
 
-        if (!isset($this->defaultAnalyzer)) {
-            $this->defaultAnalyzer = $analyzer;
-        }
-
-        return $analyzer;
+        return $this->defaultAnalyzer;
     }
 
     public function create(): Index
@@ -118,7 +112,7 @@ class Builder
     {
         $this->throwUnlessMappingsDefined();
 
-        $defaultAnalyzer = $this->getAnalyzer();
+        $defaultAnalyzer = $this->defaultAnalyzer();
         $defaultAnalyzer->addCharFilters($this->charFilters());
         $defaultAnalyzer->addFilters($this->filters());
         $defaultAnalyzer->updateTokenizer($this->tokenizer);
@@ -126,6 +120,8 @@ class Builder
         $mappings = $this->createMappings($defaultAnalyzer);
 
         $analyzers = $mappings->analyzers();
+
+        ray($this->analysis());
 
         $this->analysis()->addAnalyzers($analyzers);
 
@@ -135,7 +131,6 @@ class Builder
             analysis: $this->analysis,
             configs: $this->config
         );
-
 
         $indexName = index_name($this->alias);
 
@@ -147,10 +142,5 @@ class Builder
         if ($this->dynamicMappings === false && isset($this->blueprintCallback) === false) {
             throw MissingMapping::forAlias($this->alias);
         }
-    }
-
-    protected function languageIsDefined(): bool
-    {
-        return isset($this->language);
     }
 }
