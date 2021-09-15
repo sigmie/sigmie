@@ -23,6 +23,14 @@ class Stopwords extends TokenFilter
             return new FilterStopwords($name);
         }
 
+        if ($configs['stopwords'] === '_german_') {
+            return new FilterStopwords($name);
+        }
+
+        if ($configs['stopwords'] === '_english_') {
+            return new FilterStopwords($name);
+        }
+
         $instance = new static($name, $configs['stopwords']);
 
         return $instance;
