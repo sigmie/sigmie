@@ -17,7 +17,7 @@ class HTMLStrip implements CharFilter
     {
         return [
             $this->name => [
-                'type' => 'pattern_replace',
+                'type' => 'html_strip',
             ]
         ];
     }

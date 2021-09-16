@@ -16,6 +16,7 @@ abstract class CharFilter implements CharFilterInterface, Configurable, Raw
     public static $map = [
         'mapping' => Mapping::class,
         'pattern_replace' => Pattern::class,
+        'html_strip' => HTMLStrip::class,
     ];
 
     public static function filterMap(array $map)

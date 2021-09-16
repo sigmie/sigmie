@@ -46,7 +46,7 @@ class MapTest extends TestCase
     {
         $this->assertArrayNotHasKey('foo', TokenFilter::$map);
 
-        TokenFilter::map([
+        TokenFilter::filterMap([
             'stop' => Generic::class,
             'foo' => Stopwords::class,
         ]);
@@ -72,7 +72,6 @@ class MapTest extends TestCase
         $this->assertArrayNotHasKey('foo', CharFilter::$map);
 
         CharFilter::filterMap([
-            'mapping' => Generic::class,
             'foo' => Stopwords::class,
         ]);
 
@@ -89,7 +88,6 @@ class MapTest extends TestCase
     {
         CharFilter::filterMap([
             'bar' => PatternCharFilter::class,
-            'foo' => Stopwords::class,
         ]);
 
         $this->assertInstanceOf(PatternCharFilter::class, CharFilter::fromRaw(
