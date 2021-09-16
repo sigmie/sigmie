@@ -8,7 +8,7 @@ use Sigmie\Base\Contracts\Name;
 use Sigmie\Base\Contracts\ToRaw;
 use Sigmie\Base\Contracts\Type;
 
-abstract class PropertyType implements Type, Name, ToRaw
+abstract class PropertyType implements Name, ToRaw, Type
 {
     protected string $type;
 

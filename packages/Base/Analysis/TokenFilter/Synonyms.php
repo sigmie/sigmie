@@ -9,7 +9,16 @@ use function Sigmie\Helpers\name_configs;
 
 class Synonyms extends TokenFilter
 {
-    protected bool $expand = true;
+    public function __construct(
+        protected string $name,
+        protected array $synonyms = [],
+        protected bool $expand = false
+    ) {
+        parent::__construct(
+            $name,
+            $this->synonyms
+        );
+    }
 
     public function type(): string
     {
@@ -48,17 +57,20 @@ class Synonyms extends TokenFilter
     protected function getValues(): array
     {
         $res = [];
-        foreach ($this->settings as $key => $value) {
-            if (is_int($key)) {
-                $res[] = implode(', ', $value);
-            } else {
+
+        foreach ($this->settings as $values) {
+            [$first, $value] = $values;
+            if (is_array($value)) {
                 $from = implode(', ', $value);
-                $res[] = "{$from} => {$key}";
+                $res[] = "{$from} => {$first}";
+            } else {
+                $res[] = implode(', ', $values);
             }
         }
 
         return [
             'synonyms' => $res,
+            'expand' => $this->expand
         ];
     }
 }

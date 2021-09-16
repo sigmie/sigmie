@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Support\Shared;
 
 use Closure;
-use Exception;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
-use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
-use Sigmie\Base\Index\Blueprint;
 use Sigmie\Base\Index\DynamicMappings;
 use Sigmie\Base\Index\Mappings as IndexMappings;
 use Sigmie\Support\Callables\Properties as BlueprintProxy;

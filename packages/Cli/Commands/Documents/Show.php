@@ -3,10 +3,10 @@
 namespace Sigmie\Cli\Commands\Documents;
 
 use Sigmie\Base\APIs\Mget;
-use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Base\Index\Index;
 use Sigmie\Cli\BaseCommand;
 use Sigmie\Cli\Outputs\DocumentTable;
+use Sigmie\Support\Alias\Actions as IndexActions;
 use Symfony\Component\Console\Input\InputArgument;
 
 class Show extends BaseCommand

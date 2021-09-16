@@ -4,21 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\English;
 
-use Sigmie\English\Filter\PossessiveStemmer as EnglishPossessiveStemmer;
-use Sigmie\English\Filter\Stemmer as EnglishStemmer;
-use Sigmie\English\Filter\Stopwords as EnglishStopwords;
+use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Language;
-use Sigmie\Support\Collection as SupportCollection;
-use Sigmie\Support\Contracts\Collection;
+use Sigmie\Base\Contracts\LanguageBuilder;
 
 class English implements Language
 {
-    public function filters(): Collection
+    public function builder(HttpConnection $httpConnection): LanguageBuilder
     {
-        return new SupportCollection([
-            new EnglishStopwords(),
-            new EnglishPossessiveStemmer,
-            new EnglishStemmer
-        ]);
+        return new Builder($httpConnection);
     }
 }

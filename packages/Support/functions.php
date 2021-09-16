@@ -10,6 +10,26 @@ namespace Sigmie\Helpers {
     use Sigmie\Support\Collection;
     use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
+    function testing_host(): string
+    {
+        $host = getenv('ES_HOST');
+        $port = getenv('ES_HOST');
+
+        if (function_exists('env')) {
+            $host = env('ES_HOST');
+            $port = env('ES_PORT');
+        }
+
+        if (getenv('TEST_TOKEN') !== false) {  // Using paratest
+            $token = getenv('TEST_TOKEN');
+
+            return "{$host}_{$token}:{$port}";
+        }
+
+        return "{$host}:{$port}";
+    }
+
+
     function index_name(string $prefix): string
     {
         $timestamp = Carbon::now()->format('YmdHisu');

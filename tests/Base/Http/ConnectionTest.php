@@ -13,11 +13,13 @@ use Sigmie\Base\Index\Index;
 use Sigmie\Http\JSONClient;
 use Sigmie\Testing\TestCase;
 
+use function Sigmie\Helpers\testing_host;
+
 class ConnectionTest extends TestCase
 {
     /**
-    * @test
-    */
+     * @test
+     */
     public function throws_elasticsearch_exception()
     {
         $indexName = 'foo';
@@ -33,7 +35,7 @@ class ConnectionTest extends TestCase
      */
     public function es_request_class(): void
     {
-        $request = new Connection(JSONClient::create(getenv('ES_HOST')));
+        $request = new Connection(JSONClient::create(testing_host()));
 
         $res = $request(new ElasticsearchRequest('GET', new Uri('/')));
 

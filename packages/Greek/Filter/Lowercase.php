@@ -10,9 +10,9 @@ use function Sigmie\Helpers\name_configs;
 
 class Lowercase extends TokenFilter
 {
-    public function __construct()
+    public function __construct(string $name = 'greek_lowercase')
     {
-        parent::__construct('greek_lowercase', []);
+        parent::__construct($name);
     }
 
     public function type(): string
@@ -24,7 +24,7 @@ class Lowercase extends TokenFilter
     {
         [$name, $config] = name_configs($raw);
 
-        return new static();
+        return new static($name);
     }
 
     protected function getValues(): array

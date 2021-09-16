@@ -1,6 +1,6 @@
 {
-    "name": "sigmie/greek",
-    "description": "The Sigmie package for the Greek language.",
+    "name": "sigmie/german",
+    "description": "The Sigmie package for the German language.",
     "license": "MIT",
     "homepage": "https://docs.sigmie.com",
     "support": {
@@ -14,11 +14,12 @@
         }
     ],
     "require": {
-        "php": "^8.0"
+        "php": "^8.0",
+        "sigmie/base": "^0.6.4"
     },
     "autoload": {
         "psr-4": {
-            "Sigmie\\Greek\\": ""
+            "Sigmie\\German\\": ""
         }
     },
     "suggest": {},

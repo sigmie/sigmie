@@ -7,7 +7,6 @@ namespace Sigmie\Support\Tests;
 use Sigmie\Base\Http\Connection;
 use Sigmie\Http\JSONClient;
 use Sigmie\Sigmie;
-use Sigmie\Support\Collection;
 use Sigmie\Testing\TestCase;
 
 class SigmieTest extends TestCase

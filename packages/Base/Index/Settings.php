@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Analysis\Analysis;
 use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
+use Sigmie\Base\Contracts\Raw;
 
 class Settings implements Raw
 {
@@ -16,12 +16,11 @@ class Settings implements Raw
 
     protected AnalysisInterface $analysis;
 
-    protected array $configs = [];
-
     public function __construct(
         int $primaryShards = 1,
         int $replicaShards = 2,
-        AnalysisInterface $analysis = null
+        AnalysisInterface $analysis = null,
+        protected array $configs = []
     ) {
         $this->analysis = $analysis ?: new Analysis();
         $this->primaryShards = $primaryShards;

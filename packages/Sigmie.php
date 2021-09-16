@@ -4,24 +4,20 @@ declare(strict_types=1);
 
 namespace Sigmie;
 
-use Exception;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\ElasticsearchRequest as ElasticsearchRequestInterface;
+use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Contracts\HttpConnection as Connection;
 use Sigmie\Base\Http\Connection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
-use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Index;
 use Sigmie\Base\Index\Actions as IndexActions;
-use Sigmie\Support\Index\AliasedIndex;
 use Sigmie\Base\Index\Builder;
 use Sigmie\Http\Contracts\Auth;
-use Sigmie\Http\Contracts\JSONRequest as JSONRequestInterface;
 use Sigmie\Http\JSONClient;
-use Sigmie\Http\JSONRequest;
 use Sigmie\Support\Contracts\Collection;
-use Throwable;
+use Sigmie\Support\Index\AliasedIndex;
 
 class Sigmie
 {
@@ -39,7 +35,7 @@ class Sigmie
         return $builder->alias($name);
     }
 
-    public function index(string $name): AliasedIndex
+    public function index(string $name): ?AliasedIndex
     {
         return $this->getIndex($name);
     }

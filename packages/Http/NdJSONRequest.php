@@ -10,25 +10,44 @@ use Sigmie\Http\Contracts\JSONRequest as JSONRequestInterface;
 
 class NdJSONRequest extends Request implements JSONRequestInterface
 {
+    public const SEPARATOR = PHP_EOL;
+
+    protected string|null $body;
+
     protected array $headers = [
         'Content-type' => 'application/x-ndjson',
     ];
 
     public function __construct(string $method, Uri $uri, ?array $body)
     {
-        $body = is_null($body) ? $body : $this->ndJsonEncode($body);
+        $this->body = is_null($body) ? $body : $this->encode($body);
 
-        parent::__construct($method, $uri, $this->headers, $body);
+        parent::__construct($method, $uri, $this->headers, $this->body);
     }
 
-    private function ndJsonEncode(array $values): string
+    public function body(): ?array
     {
-        $result = '';
-        foreach ($values as $value) {
-            $json = json_encode($value, 0);
-            $result .= "{$json}\n";
-        }
+        return $this->body ? $this->decode($this->body) : null;
+    }
 
-        return $result;
+    public static function decode(string $ndjson): array
+    {
+        return array_map(function ($json) {
+            return json_decode($json, true);
+        }, self::split($ndjson));
+    }
+
+    public static function encode(array $data): string
+    {
+        $ndjson = '';
+        array_walk($data, function ($item) use (&$ndjson) {
+            $ndjson .= json_encode($item) . self::SEPARATOR;
+        });
+        return $ndjson;
+    }
+
+    private static function split(string $ndjson)
+    {
+        return explode(self::SEPARATOR, $ndjson);
     }
 }

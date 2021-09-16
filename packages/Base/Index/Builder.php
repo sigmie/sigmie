@@ -4,49 +4,44 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
-use Sigmie\Base\Analysis\CharFilter\Mapping;
-use Sigmie\Base\Analysis\CharFilter\Pattern;
+use Sigmie\Base\Analysis\Analysis;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
-use Sigmie\Support\Shared\Filters;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Base\Contracts\CharFilter;
+use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
+use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Language;
-use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
-use Sigmie\Support\Exceptions\MissingMapping;
-use Sigmie\Support\Alias\Actions as IndexActions;
-use Sigmie\Base\Analysis\Analysis;
-use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
-use Sigmie\Support\Shared\CharFilters;
-use Sigmie\Support\Shared\Tokenizer;
-use Sigmie\Base\Contracts\Analyzer;
-use Sigmie\Support\Index\AliasedIndex;
-use Sigmie\Support\Index\TokenizerBuilder;
 
 use function Sigmie\Helpers\index_name;
+use Sigmie\Support\Exceptions\MissingMapping;
+use Sigmie\Support\Index\AliasedIndex;
+use Sigmie\Support\Index\TokenizerBuilder;
+use Sigmie\Support\Shared\CharFilters;
+use Sigmie\Support\Shared\Filters;
 
 use Sigmie\Support\Shared\Mappings;
+
 use Sigmie\Support\Shared\Replicas;
 use Sigmie\Support\Shared\Shards;
+use Sigmie\Support\Shared\Tokenizer;
 
 class Builder
 {
-    use IndexActions, Actions, Filters, Mappings, CharFilters, Shards, Replicas, Tokenizer;
+    use Actions, Filters, Mappings, CharFilters, Shards, Replicas, Tokenizer;
 
     protected string $alias;
 
-    private DefaultAnalyzer $defaultAnalyzer;
+    protected DefaultAnalyzer $defaultAnalyzer;
 
-    private AnalysisInterface $analysis;
+    protected array $config = [];
 
     public function __construct(HttpConnection $connection)
     {
-        $this->tokenizer = new WordBoundaries();
-
         $this->setHttpConnection($connection);
 
-        $this->analysis = new Analysis([$this->getAnalyzer()]);
+        $this->tokenizer = new WordBoundaries();
+
+        $this->analysis = new Analysis();
     }
 
     public function analysis(): AnalysisInterface
@@ -64,6 +59,13 @@ class Builder
         return $this->alias;
     }
 
+    public function config(string $name, string|array|bool|int $value): static
+    {
+        $this->config[$name] = $value;
+
+        return $this;
+    }
+
     public function alias(string $alias): static
     {
         $this->alias = $alias;
@@ -78,46 +80,26 @@ class Builder
         return $this;
     }
 
-
-    public function getAnalyzer(): DefaultAnalyzer
+    public function language(Language $language)
     {
-        $analyzer = $this->defaultAnalyzer ?? new DefaultAnalyzer();
+        $builder = $language->builder($this->getHttpConnection());
 
-        if (!isset($this->defaultAnalyzer)) {
-            $this->defaultAnalyzer = $analyzer;
-        }
+        $builder->alias($this->alias);
 
-        return $analyzer;
+        return  $builder;
+    }
+
+
+    public function defaultAnalyzer(): DefaultAnalyzer
+    {
+        $this->defaultAnalyzer ?? $this->defaultAnalyzer = new DefaultAnalyzer();
+
+        return $this->defaultAnalyzer;
     }
 
     public function create(): Index
     {
-        $this->throwUnlessMappingsDefined();
-
-        $defaultAnalyzer = $this->getAnalyzer();
-        $defaultAnalyzer->addCharFilters($this->charFilters());
-        $defaultAnalyzer->addFilters($this->filters());
-        $defaultAnalyzer->updateTokenizer($this->tokenizer);
-
-        $mappings = $this->createMappings($defaultAnalyzer);
-
-        $analyzers = $mappings->analyzers();
-
-        $this->analysis()->addAnalyzers($analyzers);
-
-        if ($this->languageIsDefined()) {
-            $this->analysis()->addLanguageFilters($this->language);
-        }
-
-        $settings = new Settings(
-            primaryShards: $this->shards,
-            replicaShards: $this->replicas,
-            analysis: $this->analysis
-        );
-
-        $indexName = index_name($this->alias);
-
-        $index = new AliasedIndex($indexName, $this->alias, [], $settings, $mappings);
+        $index = $this->make();
 
         $index = $this->createIndex($index);
 
@@ -126,15 +108,39 @@ class Builder
         return $index;
     }
 
+    public function make(): AliasedIndex
+    {
+        $this->throwUnlessMappingsDefined();
+
+        $defaultAnalyzer = $this->defaultAnalyzer();
+        $defaultAnalyzer->addCharFilters($this->charFilters());
+        $defaultAnalyzer->addFilters($this->filters());
+        $defaultAnalyzer->updateTokenizer($this->tokenizer);
+
+        $mappings = $this->createMappings($defaultAnalyzer);
+
+        $analyzers = $mappings->analyzers();
+
+        ray($this->analysis());
+
+        $this->analysis()->addAnalyzers($analyzers);
+
+        $settings = new Settings(
+            primaryShards: $this->shards,
+            replicaShards: $this->replicas,
+            analysis: $this->analysis,
+            configs: $this->config
+        );
+
+        $indexName = index_name($this->alias);
+
+        return new AliasedIndex($indexName, $this->alias, [], $settings, $mappings);
+    }
+
     protected function throwUnlessMappingsDefined(): void
     {
         if ($this->dynamicMappings === false && isset($this->blueprintCallback) === false) {
             throw MissingMapping::forAlias($this->alias);
         }
-    }
-
-    protected function languageIsDefined(): bool
-    {
-        return isset($this->language);
     }
 }

@@ -8,69 +8,61 @@ trait Filter
 {
     use Contracts;
 
-    protected function assertFilterEquals(string $index, string $filter, array $value): void
-    {
-        $data = $this->indexData($index);
+    private string $name;
 
+    private array $data;
+
+    public function assertFilterEquals(string $filter, array $value): void
+    {
         $this->assertEquals(
             $value,
-            $data['settings']['index']['analysis']['filter'][$filter],
-            "Failed to assert that the filter is equal to given array in index {$index}."
+            $this->data['settings']['index']['analysis']['filter'][$filter],
+            "Failed to assert that the filter is equal to given array in index {$this->name}."
         );
     }
 
-    protected function assertFilterExists(string $index, string $filter): void
+    public function assertFilterExists(string $filter): void
     {
-        $data = $this->indexData($index);
-
         $this->assertArrayHasKey(
             $filter,
-            $data['settings']['index']['analysis']['filter'],
-            "Failed to assert that the filter exists in index {$index}."
+            $this->data['settings']['index']['analysis']['filter'],
+            "Failed to assert that the filter exists in index {$this->name}."
         );
     }
 
-    protected function assertFilterNotExists(string $index, string $filter): void
+    public function assertFilterNotExists(string $filter): void
     {
-        $data = $this->indexData($index);
-
         $this->assertArrayNotHasKey(
             $filter,
-            $data['settings']['index']['analysis']['filter'],
-            "Failed to assert that the filter not exists in index {$index}."
+            $this->data['settings']['index']['analysis']['filter'],
+            "Failed to assert that the filter not exists in index {$this->name}."
         );
     }
 
-    protected function assertFilterHasStemming(string $index, string $filter, array $rules): void
+    public function assertFilterHasStemming(string $filter, array $rules): void
     {
-        $data = $this->indexData($index);
-
         $this->assertEquals(
             $rules,
-            $data['settings']['index']['analysis']['filter'][$filter]['rules'],
-            "Failed to assert that the filter {$filter} has the given rules in index {$index}."
+            $this->data['settings']['index']['analysis']['filter'][$filter]['rules'],
+            "Failed to assert that the filter {$filter} has the given rules in index {$this->name}."
         );
     }
 
-    protected function assertFilterHasStopwords(string $index, string $filter, array $stopwords): void
+    public function assertFilterHasStopwords(string $filter, array $stopwords): void
     {
-        $data = $this->indexData($index);
-
         $this->assertEquals(
             $stopwords,
-            $data['settings']['index']['analysis']['filter'][$filter]['stopwords'],
-            "Failed to assert that the filter {$filter} has the given stopwords in index {$index}."
+            $this->data['settings']['index']['analysis']['filter'][$filter]['stopwords'],
+            "Failed to assert that the filter {$filter} has the given stopwords in index {$this->name}."
         );
     }
 
-    protected function assertFilterHasSynonyms(string $index, string $filter, array $synonyms): void
+    public function assertFilterHasSynonyms(string $filter, array $synonyms): void
     {
-        $data = $this->indexData($index);
-
         $this->assertEquals(
             $synonyms,
-            $data['settings']['index']['analysis']['filter'][$filter]['synonyms'],
-            "Failed to assert that the filter {$filter} has the given synonyms in index {$index}."
+            $this->data['settings']['index']['analysis']['filter'][$filter]['synonyms'],
+            "Failed to assert that the filter {$filter} has the given synonyms in index {$this->name}."
         );
     }
 }

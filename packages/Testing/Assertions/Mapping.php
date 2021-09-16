@@ -4,85 +4,74 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing\Assertions;
 
-
 trait Mapping
 {
     use Contracts;
 
-    protected function assertPropertyExists(string $index, string $property): void
-    {
-        $data = $this->indexData($index);
+    private string $name;
 
+    private array $data;
+
+    public function assertPropertyExists(string $property): void
+    {
         $this->assertArrayHasKey(
             $property,
-            $data['mappings']['properties'],
-            "Failed to assert that mapping property '{$property}' exists in index {$index}."
+            $this->data['mappings']['properties'],
+            "Failed to assert that mapping property '{$property}' exists in index {$this->name}."
         );
     }
 
-    protected function assertPropertyIsDate(string $index, string $property): void
+    public function assertPropertyIsDate(string $property): void
     {
-        $data = $this->indexData($index);
-
         $this->assertEquals(
-            $data['mappings']['properties'][$property]['type'],
+            $this->data['mappings']['properties'][$property]['type'],
             'date',
-            "Failed to assert that mapping property '{$property}' is 'date' in index {$index}."
+            "Failed to assert that mapping property '{$property}' is 'date' in index {$this->name}."
         );
     }
 
-    protected function assertPropertyIsSearchAsYouType(string $index, string $property): void
+    public function assertPropertyIsSearchAsYouType(string $property): void
     {
-        $data = $this->indexData($index);
-
         $this->assertEquals(
-            $data['mappings']['properties'][$property]['type'],
+            $this->data['mappings']['properties'][$property]['type'],
             'search_as_you_type',
-            "Failed to assert that mapping property '{$property}' is 'search_as_you_type' in index {$index}."
+            "Failed to assert that mapping property '{$property}' is 'search_as_you_type' in index {$this->name}."
         );
     }
 
-    protected function assertPropertyIsUnstructuredText(string $index, string $property): void
+    public function assertPropertyIsUnstructuredText(string $property): void
     {
-        $data = $this->indexData($index);
-
         $this->assertEquals(
-            $data['mappings']['properties'][$property]['type'],
+            $this->data['mappings']['properties'][$property]['type'],
             'text',
-            "Failed to assert that mapping property '{$property}' is 'text' in index {$index}."
+            "Failed to assert that mapping property '{$property}' is 'text' in index {$this->name}."
         );
     }
 
-    protected function assertPropertyIsInteger(string $index, string $property): void
+    public function assertPropertyIsInteger(string $property): void
     {
-        $data = $this->indexData($index);
-
         $this->assertEquals(
-            $data['mappings']['properties'][$property]['type'],
+            $this->data['mappings']['properties'][$property]['type'],
             'integer',
-            "Failed to assert that mapping property '{$property}' is 'integer' in index {$index}."
+            "Failed to assert that mapping property '{$property}' is 'integer' in index {$this->name}."
         );
     }
 
-    protected function assertPropertyIsFloat(string $index, string $property): void
+    public function assertPropertyIsFloat(string $property): void
     {
-        $data = $this->indexData($index);
-
         $this->assertEquals(
-            $data['mappings']['properties'][$property]['type'],
+            $this->data['mappings']['properties'][$property]['type'],
             'float',
-            "Failed to assert that mapping property '{$property}' is 'float' in index {$index}."
+            "Failed to assert that mapping property '{$property}' is 'float' in index {$this->name}."
         );
     }
 
-    protected function assertPropertyIsBoolean(string $index, string $property): void
+    public function assertPropertyIsBoolean(string $property): void
     {
-        $data = $this->indexData($index);
-
         $this->assertEquals(
-            $data['mappings']['properties'][$property]['type'],
+            $this->data['mappings']['properties'][$property]['type'],
             'boolean',
-            "Failed to assert that mapping property '{$property}' is 'boolean' in index {$index}."
+            "Failed to assert that mapping property '{$property}' is 'boolean' in index {$this->name}."
         );
     }
 }

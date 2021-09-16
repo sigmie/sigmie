@@ -6,7 +6,6 @@ namespace Sigmie\Base\Http\Responses;
 
 use LogicException;
 use Psr\Http\Message\ResponseInterface;
-use Ramsey\Collection\CollectionInterface;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Documents\Collection as DocumentCollection;
 use Sigmie\Base\Documents\Document;

@@ -5,14 +5,29 @@ declare(strict_types=1);
 namespace Sigmie\Base\Tests\Http;
 
 use GuzzleHttp\Psr7\Response;
-use PHPUnit\Framework\TestCase;
+use Sigmie\Base\Exceptions\FailedToBuildSynonyms;
 use Sigmie\Base\Http\ElasticsearchResponse;
+use Sigmie\Testing\TestCase;
 
 class ElasticsearchResponseTest extends TestCase
 {
-    public function setUp(): void
+    /**
+     * @test
+     */
+    public function failed_to_build_synonyms_exception_is_thrown()
     {
-        parent::setUp();
+        $this->expectException(FailedToBuildSynonyms::class);
+
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->withoutMappings()
+            ->stopwords(['foo'])
+            ->twoWaySynonyms([
+                ['foo', 'bar'],
+                ['friend', 'buddy', 'partner']
+            ])
+            ->create();
     }
 
     /**
