@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\CharFilter;
 
-use Sigmie\Base\Shared\Name;
 
 use function Sigmie\Helpers\name_configs;
 

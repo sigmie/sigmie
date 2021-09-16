@@ -21,8 +21,6 @@ trait Mget
         $esRequest = new MgetRequest('POST', $uri, $body);
 
         /** @var  MgetResponse */
-        $mgetResponse = $this->httpCall($esRequest);
-
-        return $mgetResponse;
+        return $this->httpCall($esRequest);
     }
 }

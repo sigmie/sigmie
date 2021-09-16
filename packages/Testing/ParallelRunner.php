@@ -6,15 +6,17 @@ namespace Sigmie\Testing;
 
 use InvalidArgumentException;
 use ParaTest\Runners\PHPUnit\BaseRunner;
-use ParaTest\Runners\PHPUnit\RunnerInterface;
 use ParaTest\Runners\PHPUnit\Worker\WrapperWorker;
 use PHPUnit\TextUI\TestRunner;
 use Sigmie\Base\APIs\Cat;
 use Sigmie\Base\APIs\Index;
+use Sigmie\Base\Contracts\API;
+use Sigmie\Base\Http\Connection;
+use Sigmie\Http\JSONClient;
 
 class ParallelRunner extends BaseRunner
 {
-    use ClearIndices;
+    use Cat, Index, API, ClearIndices;
 
     /** @var WrapperWorker[] */
     private $workers = [];
@@ -31,22 +33,34 @@ class ParallelRunner extends BaseRunner
 
     protected function doRun(): void
     {
-        $this->clearIndices();
-
         $this->startWorkers();
         $this->assignAllPendingTests();
         $this->sendStopMessages();
         $this->waitForAllToFinish();
-
-        $this->clearIndices();
     }
 
     private function startWorkers(): void
     {
         for ($token = 1; $token <= $this->options->processes(); ++$token) {
+
+            $this->clearProcessIndices($token);
+
             $this->workers[$token] = new WrapperWorker($this->output, $this->options, $token);
             $this->workers[$token]->start();
         }
+    }
+
+    public function clearProcessIndices(int $token)
+    {
+        $host = getenv('ES_HOST');
+        $port = getenv('ES_HOST');
+
+        if (function_exists('env')) {
+            $host = env('ES_HOST');
+            $port = env('ES_PORT');
+        };
+
+        $this->clearIndices("{$host}_{$token}:{$port}");
     }
 
     private function assignAllPendingTests(): void
@@ -114,7 +128,7 @@ class ParallelRunner extends BaseRunner
     private function waitForAllToFinish(): void
     {
         while (count($this->workers) > 0) {
-            foreach ($this->workers as $index => $worker) {
+            foreach ($this->workers as $token => $worker) {
                 if ($worker->isRunning()) {
                     continue;
                 }
@@ -124,7 +138,8 @@ class ParallelRunner extends BaseRunner
                 }
 
                 $this->flushWorker($worker);
-                unset($this->workers[$index]);
+                $this->clearProcessIndices($token);
+                unset($this->workers[$token]);
             }
 
             usleep(self::CYCLE_SLEEP);

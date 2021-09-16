@@ -6,8 +6,8 @@ namespace Sigmie\Base\APIs;
 
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
-use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
+use Sigmie\Base\Http\ElasticsearchRequest;
 
 trait Count
 {

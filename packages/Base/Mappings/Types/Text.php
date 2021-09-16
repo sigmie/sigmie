@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Mappings\Types;
 
-use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Contracts\Analyzer as AnalyzerInterface;
+use Sigmie\Base\Contracts\Analyzer;
+use Sigmie\Base\Contracts\CustomAnalyzer as AnalyzerInterface;
 use Sigmie\Base\Mappings\PropertyType;
-use Sigmie\Base\Mappings\Type;
 
 class Text extends PropertyType
 {

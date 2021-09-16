@@ -17,9 +17,9 @@ interface Analysis extends Raw
 
     public function hasAnalyzer(string $analyzerName): bool;
 
-    public function analyzers(): Collection;
-
     public function defaultAnalyzer(): DefaultAnalyzer;
+
+    public function analyzers(): Collection;
 
     public function filters(): Collection;
 
@@ -36,6 +36,4 @@ interface Analysis extends Raw
     public function updateTokenizers(array|Collection $tokenizers): void;
 
     public function updateCharFilters(array|Collection $charFilters): void;
-
-    public function addLanguageFilters(Language $language): static;
 }

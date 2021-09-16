@@ -5,42 +5,31 @@ declare(strict_types=1);
 namespace Sigmie\Support\Shared;
 
 use Exception;
+use Ramsey\Uuid\Type\Decimal;
+use Sigmie\Base\Analysis\TokenFilter\AsciiFolding;
+use Sigmie\Base\Analysis\TokenFilter\DecimalDigit;
 use Sigmie\Base\Analysis\TokenFilter\Keywords;
 use Sigmie\Base\Analysis\TokenFilter\Lowercase;
-use Sigmie\Base\Analysis\TokenFilter\OneWaySynonyms;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\TokenFilter\Synonyms;
+use Sigmie\Base\Analysis\TokenFilter\TokenLimit;
 use Sigmie\Base\Analysis\TokenFilter\Trim;
 use Sigmie\Base\Analysis\TokenFilter\Truncate;
-use Sigmie\Base\Analysis\TokenFilter\TwoWaySynonyms;
 use Sigmie\Base\Analysis\TokenFilter\Unique;
 use Sigmie\Base\Analysis\TokenFilter\Uppercase;
 use Sigmie\Base\Contracts\Analysis;
+use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\TokenFilter;
-use Sigmie\Support\Collection as SupportCollection;
-use Sigmie\Support\Contracts\Collection;
-
 use function Sigmie\Helpers\random_letters;
+use Sigmie\Support\Collection as SupportCollection;
+
+use Sigmie\Support\Contracts\Collection;
 
 trait Filters
 {
     private Collection $filters;
-
-    private Language $language;
-
-    private function initFilters(): void
-    {
-        $this->filters  = $this->filters ?? new SupportCollection();
-    }
-
-    private function ensureFilterNameIsAvailable(string $name): void
-    {
-        if ($this->analysis()->hasFilter($name)) {
-            throw new Exception('Char filter name already exists.');
-        }
-    }
 
     abstract function analysis(): Analysis;
 
@@ -53,15 +42,22 @@ trait Filters
         return $this;
     }
 
-    private function createFilterName(string $name): string
+    public function decimalDigit(null|string $name = null,): static
     {
-        $suffixed = $name . '_' . random_letters();
+        $name = $name ?? $this->createFilterName('decimal_digit');
 
-        while ($this->analysis()->hasFilter($suffixed)) {
-            $suffixed = $name . '_' . random_letters();
-        }
+        $this->addFilter(new DecimalDigit($name));
 
-        return $suffixed;
+        return $this;
+    }
+
+    public function asciiFolding(null|string $name = null,): static
+    {
+        $name = $name ?? $this->createFilterName('ascii_folding');
+
+        $this->addFilter(new AsciiFolding($name));
+
+        return $this;
     }
 
     public function stopwords(array $stopwords, null|string $name = null,): static
@@ -73,11 +69,11 @@ trait Filters
         return $this;
     }
 
-    public function lowercase(null|string $language = null, null|string $name = null,): static
+    public function tokenLimit(int $maxTokenCount, null|string $name = null,): static
     {
-        $name = $name ?? $this->createFilterName('lowercase');
+        $name = $name ?? $this->createFilterName('token_limit');
 
-        $this->addFilter(new Lowercase($name));
+        $this->addFilter(new TokenLimit($name, $maxTokenCount));
 
         return $this;
     }
@@ -118,17 +114,6 @@ trait Filters
         return $this;
     }
 
-    private function addFilter(TokenFilter $tokenFilter): void
-    {
-        $this->initFilters();
-
-        $this->ensureFilterNameIsAvailable($tokenFilter->name());
-
-        $this->analysis()->updateFilters([$tokenFilter->name() => $tokenFilter]);
-
-        $this->filters->set($tokenFilter->name(), $tokenFilter);
-    }
-
     public function keywords(array $keywords, null|string $name = null,): static
     {
         $name = $name ?? $this->createFilterName('keywords');
@@ -138,20 +123,29 @@ trait Filters
         return $this;
     }
 
-    public function synonyms(array $synonyms, null|string $name = null,): static
+    public function oneWaySynonyms(array $synonyms, null|string $name = null,): static
     {
         $name = $name ?? $this->createFilterName('synonyms');
 
-        $this->addFilter(new Synonyms($name, $synonyms));
+        $this->addFilter(new Synonyms($name, $synonyms, expand: false));
 
         return $this;
     }
 
-    public function language(Language $language): static
+    public function twoWaySynonyms(array $synonyms, null|string $name = null,): static
     {
-        $this->initFilters();
+        $name = $name ?? $this->createFilterName('synonyms');
 
-        $this->language = $language;
+        $this->addFilter(new Synonyms($name, $synonyms, expand: true));
+
+        return $this;
+    }
+
+    public function synonyms(array $synonyms, bool $expand = true, null|string $name = null,): static
+    {
+        $name = $name ?? $this->createFilterName('synonyms');
+
+        $this->addFilter(new Synonyms($name, $synonyms, $expand));
 
         return $this;
     }
@@ -161,5 +155,39 @@ trait Filters
         $this->initFilters();
 
         return $this->filters->toArray();
+    }
+
+    private function initFilters(): void
+    {
+        $this->filters  = $this->filters ?? new SupportCollection();
+    }
+
+    private function ensureFilterNameIsAvailable(string $name): void
+    {
+        if ($this->analysis()->hasFilter($name)) {
+            throw new Exception("Token filter `{$name}` already exists.");
+        }
+    }
+
+    private function createFilterName(string $name): string
+    {
+        $suffixed = $name . '_' . random_letters();
+
+        while ($this->analysis()->hasFilter($suffixed)) {
+            $suffixed = $name . '_' . random_letters();
+        }
+
+        return $suffixed;
+    }
+
+    protected function addFilter(TokenFilter $tokenFilter): void
+    {
+        $this->initFilters();
+
+        $this->ensureFilterNameIsAvailable($tokenFilter->name());
+
+        $this->analysis()->updateFilters([$tokenFilter->name() => $tokenFilter]);
+
+        $this->filters->set($tokenFilter->name(), $tokenFilter);
     }
 }

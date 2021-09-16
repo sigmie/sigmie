@@ -6,7 +6,6 @@ namespace Sigmie\Base\Http\Responses;
 
 use Exception;
 use Psr\Http\Message\ResponseInterface;
-use Ramsey\Collection\Exception\CollectionMismatchException;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Exceptions\BulkException;
 use Sigmie\Base\Http\ElasticsearchResponse;

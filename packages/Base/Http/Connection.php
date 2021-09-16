@@ -12,7 +12,6 @@ use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Contracts\HttpConnection as ConnectionInterface;
 use Sigmie\Http\Contracts\JSONClient as JSONClientInterface;
 use Sigmie\Http\Contracts\JSONResponse;
-use Throwable;
 
 class Connection implements ConnectionInterface
 {

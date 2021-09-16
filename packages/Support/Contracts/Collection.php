@@ -7,10 +7,9 @@ namespace Sigmie\Support\Contracts;
 use ArrayAccess;
 use Closure;
 use Countable;
-use Doctrine\Common\Collections\Collection as DoctrineCollection;
 use IteratorAggregate;
 
-interface Collection extends Countable, IteratorAggregate, ArrayAccess
+interface Collection extends ArrayAccess, Countable, IteratorAggregate
 {
     public function deepen(int|float $depth = INF): static;
 

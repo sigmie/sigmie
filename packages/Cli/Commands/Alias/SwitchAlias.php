@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Sigmie\Cli\Commands\Alias;
 
 use Sigmie\Base\APIs\Alias as AliasAPI;
-use Sigmie\Support\Alias\Actions as IndexActions;
-use Sigmie\Support\Alias\Actions;
 use Sigmie\Base\Index\Index;
 use Sigmie\Cli\BaseCommand;
+use Sigmie\Support\Alias\Actions;
+use Sigmie\Support\Alias\Actions as IndexActions;
 use Symfony\Component\Console\Input\InputOption;
 
 class SwitchAlias extends BaseCommand

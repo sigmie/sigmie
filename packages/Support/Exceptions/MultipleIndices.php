@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Support\Exception;
+namespace Sigmie\Support\Exceptions;
 
 use Exception;
 

@@ -4,15 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis;
 
-use Exception;
-use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\CharFilter\CharFilter;
-use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
-use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
-use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Tokenizer;
-use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Base\Contracts\Analyzers;
 use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
@@ -24,11 +18,10 @@ use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Contracts\TokenFilter as TokenFilterInterface;
 use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
 use function Sigmie\Helpers\ensure_collection;
-use Sigmie\Support\Collection;
 
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
-class Analysis implements Analyzers, Raw, AnalysisInterface
+class Analysis implements AnalysisInterface, Analyzers, Raw
 {
     protected CollectionInterface $analyzers;
 
@@ -43,9 +36,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
     ) {
         $this->analyzers = ensure_collection($analyzers);
 
-        $this->analyzers['default'] ?? $this->analyzers['default'] = new DefaultAnalyzer();
-
-        $this->filters =             $this->analyzers()
+        $this->filters = $this->analyzers()
             ->map(fn (Analyzer $analyzer) => $analyzer->filters())
             ->flatten()
             ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter]);
@@ -57,6 +48,7 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
 
         $this->tokenizers = $this->analyzers()
             ->map(fn (Analyzer $analyzer) => $analyzer->tokenizer())
+            ->filter(fn ($tokenizer) => !is_null($tokenizer))
             ->mapToDictionary(fn (Name $analyzer) => [$analyzer->name() => $analyzer]);
     }
 
@@ -105,6 +97,8 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
 
     public function defaultAnalyzer(): DefaultAnalyzer
     {
+        $this->analyzers['default'] ?? $this->analyzers['default'] = new DefaultAnalyzer();
+
         return $this->analyzers['default'];
     }
 
@@ -150,18 +144,6 @@ class Analysis implements Analyzers, Raw, AnalysisInterface
     public function setAnalyzer(Analyzer $analyzer): void
     {
         $this->analyzers[$analyzer->name()] = $analyzer;
-    }
-
-    public function addLanguageFilters(Language $language): static
-    {
-        $filters = $language->filters()
-            ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter]);
-
-        $this->analyzers['default']->addFilters($filters);
-
-        $this->updateFilters($filters);
-
-        return $this;
     }
 
     public static function fromRaw(array $raw): static

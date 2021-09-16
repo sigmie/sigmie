@@ -7,6 +7,7 @@ namespace Sigmie\Base\Index;
 use Sigmie\Base\APIs\Cat as CatAPI;
 use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\Exceptions\ElasticsearchException;
+use Sigmie\Support\Alias\Actions as AliasActions;
 use Sigmie\Support\Collection;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 use Sigmie\Support\Exception\MultipleIndices;
@@ -14,7 +15,7 @@ use Sigmie\Support\Index\AliasedIndex;
 
 trait Actions
 {
-    use CatAPI, IndexAPI;
+    use CatAPI, IndexAPI, AliasActions;
 
     protected function createIndex(Index $index): Index
     {

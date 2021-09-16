@@ -25,7 +25,8 @@ services:
         - ./:/var/www/sigmie:delegated
         - ~/.composer:/root/.composer
     environment:
-      - ES_HOST=elasticsearch:9200
+      - ES_HOST=elasticsearch
+      - ES_PORT=elasticsearch
 
 volumes:
   elasticsearch:

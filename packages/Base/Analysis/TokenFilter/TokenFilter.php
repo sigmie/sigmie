@@ -4,19 +4,34 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\TokenFilter;
 
-use Exception;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Contracts\TokenFilter as TokenFilterInterface;
 
 use function Sigmie\Helpers\name_configs;
 
-abstract class TokenFilter implements TokenFilterInterface, Raw, Configurable
+abstract class TokenFilter implements Configurable, Raw, TokenFilterInterface
 {
+    public static $map = [
+        'stop' => Stopwords::class,
+        'synonym' => Synonyms::class,
+        'stemmer_override' => Stemmer::class,
+        'decimal_digit' => DecimalDigit::class,
+        'ascii_folding' => AsciiFolding::class,
+        'limit' => TokenLimit::class,
+    ];
+
     public function __construct(
         protected string $name,
-        protected array $settings,
+        protected array $settings = [],
     ) {
+    }
+
+    public static function filterMap(array $map)
+    {
+        static::$map = array_merge(static::$map, $map);
+
+        return static::$map;
     }
 
     public function name(): string
@@ -33,12 +48,13 @@ abstract class TokenFilter implements TokenFilterInterface, Raw, Configurable
     {
         [$name, $config] = name_configs($raw);
 
-        return match ($config['type']) {
-            'stop' => Stopwords::fromRaw($raw),
-            'synonym' => Synonyms::fromRaw($raw),
-            'stemmer_override' => Stemmer::fromRaw($raw),
-            default => Generic::fromRaw($raw)
-        };
+        if (isset(static::$map[$config['type']])) {
+            $class = static::$map[$config['type']];
+
+            return $class::fromRaw($raw);
+        }
+
+        return Generic::fromRaw($raw);
     }
 
     public function toRaw(): array

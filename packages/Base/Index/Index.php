@@ -10,19 +10,20 @@ use Generator;
 use Sigmie\Base\APIs\Count as CountAPI;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
+use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Contracts\Name;
 use Sigmie\Base\Documents\Actions as DocumentsActions;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentsCollection;
-use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Base\Search\Searchable;
+use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Support\Collection;
 use Sigmie\Support\Index\AliasedIndex;
-use Sigmie\Base\Contracts\Mappings as MappingsInterface;
+use Sigmie\Base\APIs\Analyze;
 
 class Index implements DocumentCollectionInterface, Name
 {
-    use CountAPI, DocumentsActions, IndexActions, Searchable, API, Actions;
+    use CountAPI, DocumentsActions, IndexActions, Searchable, API, Actions, Analyze;
 
     protected ?int $count;
 
@@ -51,6 +52,7 @@ class Index implements DocumentCollectionInterface, Name
         MappingsInterface $mappings = null
     ) {
         $this->settings = $settings ?: new Settings();
+
         $this->mappings = $mappings ?: new Mappings();
     }
 
@@ -67,7 +69,10 @@ class Index implements DocumentCollectionInterface, Name
 
     public function toRaw(): array
     {
-        return $this->indexAPICall($this->identifier, 'GET')->json();
+        return [
+            'settings' => $this->settings->toRaw(),
+            'mappings' => $this->mappings->toRaw(),
+        ];
     }
 
     public static function fromRaw(string $name, array $raw): static

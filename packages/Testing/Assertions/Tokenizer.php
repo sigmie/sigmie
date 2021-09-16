@@ -8,36 +8,34 @@ trait Tokenizer
 {
     use Contracts;
 
-    protected function assertTokenizerEquals(string $index, string $tokenizer, array $value): void
-    {
-        $data = $this->indexData($index);
+    private string $name;
 
+    private array $data;
+
+    public function assertTokenizerEquals(string $tokenizer, array $value): void
+    {
         $this->assertEquals(
             $value,
-            $data['settings']['index']['analysis']['tokenizer'][$tokenizer],
-            "Failed to assert that the tokenizer '{$tokenizer}' equals to the given array in index {$index}."
+            $this->data['settings']['index']['analysis']['tokenizer'][$tokenizer],
+            "Failed to assert that the tokenizer '{$tokenizer}' equals to the given array in index {$this->name}."
         );
     }
 
-    protected function assertTokenizerExists(string $index, string $tokenizer): void
+    public function assertTokenizerExists(string $tokenizer): void
     {
-        $data = $this->indexData($index);
-
         $this->assertArrayHasKey(
             $tokenizer,
-            $data['settings']['index']['analysis']['tokenizer'],
-            "Failed to assert that the tokenizer '{$tokenizer}' exists in index {$index}."
+            $this->data['settings']['index']['analysis']['tokenizer'],
+            "Failed to assert that the tokenizer '{$tokenizer}' exists in index {$this->name}."
         );
     }
 
-    protected function assertTokenizerNotExists(string $index, string $tokenizer): void
+    public function assertTokenizerNotExists(string $tokenizer): void
     {
-        $data = $this->indexData($index);
-
         $this->assertArrayNotHasKey(
             $tokenizer,
-            $data['settings']['index']['analysis']['tokenizer'],
-            "Failed to assert that the tokenizer '{$tokenizer}' not exists in index {$index}."
+            $this->data['settings']['index']['analysis']['tokenizer'],
+            "Failed to assert that the tokenizer '{$tokenizer}' not exists in index {$this->name}."
         );
     }
 }

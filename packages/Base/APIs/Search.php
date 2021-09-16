@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Base\APIs;
 
 use Sigmie\Base\Contracts\API;
-use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
+use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Search\Query;
 
 trait Search

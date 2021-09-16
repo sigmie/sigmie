@@ -6,7 +6,6 @@ namespace Sigmie\Cli\Commands\Index;
 
 use Sigmie\Base\APIs\Cat;
 use Sigmie\Base\APIs\Index;
-use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Cli\BaseCommand;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Question\ConfirmationQuestion;

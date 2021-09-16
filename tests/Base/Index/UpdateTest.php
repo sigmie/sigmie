@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\Index;
 
-use Exception;
+use Carbon\Carbon;
 use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
-use Sigmie\Base\Analysis\CharFilter\Mapping;
 use Sigmie\Base\Analysis\CharFilter\Pattern as PatternCharFilter;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
-use Sigmie\Base\Analysis\Tokenizers\Pattern as PatternTokenizer;
 use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Documents\Document;
@@ -18,72 +16,15 @@ use Sigmie\Base\Documents\DocumentsCollection;
 use Sigmie\Base\Index\Blueprint;
 use function Sigmie\Helpers\name_configs;
 use Sigmie\Support\Alias\Actions;
+use Sigmie\Support\Index\AliasedIndex;
 use Sigmie\Support\Update\Update as Update;
-
+use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
 use TypeError;
 
 class UpdateTest extends TestCase
 {
     use Index, Actions;
-
-    /**
-     * @test
-     */
-    public function remove_filter()
-    {
-        $alias = uniqid();
-
-        $this->sigmie->newIndex($alias)
-            ->withoutMappings()
-            ->stopwords(['foo', 'bar'], 'foo_stopwords')
-            ->create();
-
-        $this->assertAnalyzerHasFilter($alias, 'default', 'foo_stopwords');
-
-        $this->sigmie->index($alias)->update(function (Update $update) {
-
-            $update->analyzer('default')->removeFilter('foo_stopwords');
-
-            return $update;
-        });
-
-        $this->assertAnalyzerHasNotFilter('foo', 'default', 'foo_stopwords');
-    }
-
-    // /**
-    //  * @test
-    //  */
-    // public function foo()
-    // {
-    //     $this->sigmie->index('foo')->update(function (Update $update) {
-
-    //         // Revert HTML filter
-    //         $update->keepHTML();
-
-    //         //Add filters
-    //         $update->synonyms([
-    //             'ipod' => ['i-pod', 'i pod']
-    //         ]);
-    //         $update->trim();
-    //         $update->truncate();
-
-    //         //Shards
-    //         $update->shards(2);
-    //         $update->replicas(5);
-            
-    //         //Update default tokenizer
-    //         $update->tokenizeOn()->whiteSpaces();
-
-    //         $update->mapping(function (Blueprint $blueprint) {
-    //             $blueprint->text('title')->searchAsYouType();
-    //         });
-
-    //         // Remove and add filters and char filters
-    //         $update->add(new Stopwords('new_stopwords'));
-    //         $update->remove('upercase_filter_name');
-    //     });
-    // }
 
     /**
      * @test
@@ -99,21 +40,26 @@ class UpdateTest extends TestCase
             ->stripHTML()
             ->create();
 
-        $this->assertAnalyzerHasFilter($alias, 'default', 'demo');
-        $this->assertFilterHasStopwords($alias, 'demo', ['foo', 'bar']);
-        $this->assertAnalyzerHasCharFilter($alias, 'default', 'html_strip');
-        $this->assertAnalyzerHasCharFilter($alias, 'default', 'some_char_filter_name');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasFilter('default', 'demo');
+            $index->assertFilterHasStopwords('demo', ['foo', 'bar']);
+            $index->assertAnalyzerHasCharFilter('default', 'html_strip');
+            $index->assertAnalyzerHasCharFilter('default', 'some_char_filter_name');
+        });
+
 
         $this->sigmie->index($alias)->update(function (Update $update) {
 
-            $update->analyzer('default')->removeCharFilter(new HTMLStrip)
-                ->removeCharFilter('some_char_filter_name');
+            $update->withoutMappings()
+                ->stopwords(['foo', 'bar'], 'demo');
 
             return $update;
         });
 
-        $this->assertAnalyzerHasNotCharFilter($alias, 'default', 'html_strip');
-        $this->assertAnalyzerHasNotCharFilter($alias, 'default', 'some_char_filter_name');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasNotCharFilter('default', 'html_strip');
+            $index->assertAnalyzerHasNotCharFilter('default', 'some_char_filter_name');
+        });
     }
 
     /**
@@ -129,188 +75,45 @@ class UpdateTest extends TestCase
             ->patternReplace('/bar/', 'foo', 'pattern_replace_char_filter')
             ->create();
 
-        $this->assertAnalyzerHasCharFilter($alias, 'default', 'map_chars_char_filter');
-        $this->assertCharFilterEquals($alias, 'map_chars_char_filter', [
-            'type' => 'mapping',
-            'mappings' => ['bar => baz']
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasCharFilter('default', 'map_chars_char_filter');
+            $index->assertCharFilterEquals('map_chars_char_filter', [
+                'type' => 'mapping',
+                'mappings' => ['bar => baz']
+            ]);
 
-        $this->assertAnalyzerHasCharFilter($alias, 'default', 'pattern_replace_char_filter');
-        $this->assertCharFilterEquals($alias, 'pattern_replace_char_filter', [
-            'type' => 'pattern_replace',
-            'pattern' => '/bar/',
-            'replacement' => 'foo'
-        ]);
+            $index->assertAnalyzerHasCharFilter('default', 'pattern_replace_char_filter');
+            $index->assertCharFilterEquals('pattern_replace_char_filter', [
+                'type' => 'pattern_replace',
+                'pattern' => '/bar/',
+                'replacement' => 'foo'
+            ]);
+        });
+
 
         $this->sigmie->index($alias)->update(function (Update $update) {
 
-            $update->charFilter('map_chars_char_filter', ['baz' => 'foo']);
-            $update->charFilter('pattern_replace_char_filter', [
+            $update->withoutMappings();
+            $update->mapChars(['baz' => 'foo'], 'map_chars_char_filter');
+            $update->patternReplace('/doe/', 'john', 'pattern_replace_char_filter');
+
+            return $update;
+        });
+
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasCharFilter('default', 'map_chars_char_filter');
+            $index->assertCharFilterEquals('map_chars_char_filter', [
+                'type' => 'mapping',
+                'mappings' => ['baz => foo']
+            ]);
+
+            $index->assertAnalyzerHasCharFilter('default', 'pattern_replace_char_filter');
+            $index->assertCharFilterEquals('pattern_replace_char_filter', [
+                'type' => 'pattern_replace',
                 'pattern' => '/doe/',
                 'replacement' => 'john'
             ]);
-
-            return $update;
         });
-
-        $this->assertAnalyzerHasCharFilter($alias, 'default', 'map_chars_char_filter');
-        $this->assertCharFilterEquals($alias, 'map_chars_char_filter', [
-            'type' => 'mapping',
-            'mappings' => ['baz => foo']
-        ]);
-
-        $this->assertAnalyzerHasCharFilter($alias, 'default', 'pattern_replace_char_filter');
-        $this->assertCharFilterEquals($alias, 'pattern_replace_char_filter', [
-            'type' => 'pattern_replace',
-            'pattern' => '/doe/',
-            'replacement' => 'john'
-        ]);
-    }
-
-    /**
-     * @test
-     */
-    public function analyzer_update_char_filter()
-    {
-        $alias = uniqid();
-
-        $this->sigmie->newIndex($alias)
-            ->mapping(function (Blueprint $blueprint) {
-
-                $blueprint->text('bar')->unstructuredText()->withAnalyzer(new Analyzer('bar'));
-
-                return $blueprint;
-            })
-            ->create();
-
-        $this->assertAnalyzerHasTokenizer($alias, 'bar', 'standard');
-        $this->assertAnalyzerExists($alias, 'bar');
-
-        $this->sigmie->index($alias)->update(function (Update $update) {
-
-            $update->analyzer('bar')->stripHTML()
-                ->patternReplace('/foo/', 'something', 'bar_pattern_replace_filter')
-                ->mapChars(['bar' => 'baz'], 'bar_mappings_filter');
-
-            return $update;
-        });
-
-        $this->assertAnalyzerExists($alias, 'bar');
-        $this->assertAnalyzerHasCharFilter($alias, 'bar', 'html_strip');
-        $this->assertAnalyzerHasCharFilter($alias, 'bar', 'bar_pattern_replace_filter');
-        $this->assertAnalyzerHasCharFilter($alias, 'bar', 'bar_mappings_filter');
-    }
-
-    /**
-     * @test
-     */
-    public function analyzer_update_tokenizer_using_tokenize_on()
-    {
-        $alias = uniqid();
-
-        $this->sigmie->newIndex($alias)
-            ->mapping(function (Blueprint $blueprint) {
-
-                $blueprint->text('bar')->unstructuredText()->withAnalyzer(new Analyzer('bar'));
-
-                return $blueprint;
-            })
-            ->create();
-
-        $this->assertAnalyzerHasTokenizer($alias, 'bar', 'standard');
-        $this->assertAnalyzerExists($alias, 'bar');
-
-        $this->sigmie->index($alias)->update(function (Update $update) {
-
-            $update->analyzer('bar')->tokenizeOn()->whiteSpaces();
-
-            return $update;
-        });
-
-        $this->assertAnalyzerHasTokenizer($alias, 'bar', 'whitespace');
-        $this->assertAnalyzerExists($alias, 'bar');
-    }
-
-    /**
-     * @test
-     */
-    public function analyzer_update_tokenizer_value()
-    {
-        $alias = uniqid();
-
-        $this->sigmie->newIndex($alias)
-            ->mapping(function (Blueprint $blueprint) {
-
-                $blueprint->text('bar')->unstructuredText()->withAnalyzer(new Analyzer('bar'));
-
-                return $blueprint;
-            })
-            ->create();
-
-
-        $this->assertAnalyzerHasTokenizer($alias, 'bar', 'standard');
-        $this->assertAnalyzerExists($alias, 'bar');
-
-        $this->sigmie->index($alias)->update(function (Update $update) {
-
-            $update->analyzer('bar')->tokenizer(new Whitespace);
-
-            return $update;
-        });
-
-        $this->assertAnalyzerHasTokenizer($alias, 'bar', 'whitespace');
-        $this->assertAnalyzerExists($alias, 'bar');
-    }
-
-    /**
-     * @test
-     */
-    public function analyzer_add_char_filter()
-    {
-        $alias = uniqid();
-
-        $this->sigmie->newIndex($alias)
-            ->withoutMappings()
-            ->create();
-
-        $this->assertAnalyzerFilterIsEmpty($alias, 'default');
-
-        $this->sigmie->index($alias)->update(function (Update $update) {
-
-            $update->analyzer('bear')->charFilter(new PatternCharFilter('foo_pattern_filter', '//', 'bar'));
-
-            return $update;
-        });
-
-        $this->assertAnalyzerHasCharFilter($alias, 'bear', 'foo_pattern_filter');
-        $this->assertCharFilterExists($alias, 'foo_pattern_filter', ['who', 'he']);
-    }
-
-    /**
-     * @test
-     */
-    public function analyzer_update_method()
-    {
-        $alias = uniqid();
-
-        $this->sigmie->newIndex($alias)
-            ->withoutMappings()
-            ->create();
-
-        $this->assertAnalyzerFilterIsEmpty($alias, 'default');
-
-        $this->sigmie->index($alias)->update(function (Update $update) {
-
-            $update->analyzer('bear')->filter(new Stopwords(
-                'new_stopwords',
-                ['who', 'he']
-            ));
-
-            return $update;
-        });
-
-        $this->assertAnalyzerHasFilter($alias, 'bear', 'new_stopwords');
-        $this->assertFilterHasStopwords($alias, 'new_stopwords', ['who', 'he']);
     }
 
     /**
@@ -324,10 +127,13 @@ class UpdateTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertAnalyzerCharFilterIsEmpty($alias, 'default');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerCharFilterIsEmpty('default');
+        });
 
         $this->sigmie->index($alias)->update(function (Update $update) {
 
+            $update->withoutMappings();
             $update->patternReplace('/foo/', 'bar', 'default_pattern_replace_filter');
             $update->mapChars(['foo' => 'bar'], 'default_mappings_filter');
             $update->stripHTML();
@@ -335,9 +141,11 @@ class UpdateTest extends TestCase
             return $update;
         });
 
-        $this->assertAnalyzerHasCharFilter($alias, 'default', 'default_pattern_replace_filter');
-        $this->assertAnalyzerHasCharFilter($alias, 'default', 'default_mappings_filter');
-        $this->assertAnalyzerHasCharFilter($alias, 'default', 'html_strip');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasCharFilter('default', 'default_pattern_replace_filter');
+            $index->assertAnalyzerHasCharFilter('default', 'default_mappings_filter');
+            $index->assertAnalyzerHasCharFilter('default', 'html_strip');
+        });
     }
 
     /**
@@ -351,21 +159,26 @@ class UpdateTest extends TestCase
             ->withoutMappings()
             ->create();
 
-        $this->assertAnalyzerCharFilterIsEmpty($alias, 'default');
-        $this->assertAnalyzerHasTokenizer($alias, 'default', 'standard');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerCharFilterIsEmpty('default');
+            $index->assertAnalyzerHasTokenizer('default', 'standard');
+        });
 
         $this->sigmie->index($alias)->update(function (Update $update) {
 
+            $update->withoutMappings();
             $update->tokenizeOn()->pattern('/foo/', name: 'default_analyzer_pattern_tokenizer');
 
             return $update;
         });
 
-        $this->assertAnalyzerHasTokenizer($alias, 'default', 'default_analyzer_pattern_tokenizer');
-        $this->assertTokenizerEquals($alias, 'default_analyzer_pattern_tokenizer', [
-            'pattern' => '/foo/',
-            'type' => 'pattern',
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasTokenizer('default', 'default_analyzer_pattern_tokenizer');
+            $index->assertTokenizerEquals('default_analyzer_pattern_tokenizer', [
+                'pattern' => '/foo/',
+                'type' => 'pattern',
+            ]);
+        });
     }
 
     /**
@@ -380,16 +193,21 @@ class UpdateTest extends TestCase
             ->setTokenizer(new Whitespace)
             ->create();
 
-        $this->assertAnalyzerTokenizerIsWhitespaces($alias, 'default');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerTokenizerIsWhitespaces('default');
+        });
 
         $this->sigmie->index($alias)->update(function (Update $update) {
+            $update->withoutMappings();
 
             $update->tokenizeOn()->wordBoundaries('foo_tokenizer');
 
             return $update;
         });
 
-        $this->assertAnalyzerHasTokenizer($alias, 'default', 'foo_tokenizer');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasTokenizer('default', 'foo_tokenizer');
+        });
     }
 
     /**
@@ -401,29 +219,34 @@ class UpdateTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->withoutMappings()
-            ->synonyms([
-                'ipod' => ['i-pod', 'i pod']
-            ], 'bar_name',)
+            ->oneWaySynonyms([
+                ['ipod', ['i-pod', 'i pod']]
+            ], 'bar_name')
             ->create();
 
-        $this->assertFilterExists($alias, 'bar_name');
-        $this->assertFilterHasSynonyms($alias, 'bar_name', [
-            'i-pod, i pod => ipod',
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertFilterExists('bar_name');
+            $index->assertFilterHasSynonyms('bar_name', [
+                'i-pod, i pod => ipod',
+            ]);
+        });
 
         $this->sigmie->index($alias)->update(function (Update $update) {
+            $update->withoutMappings();
 
-            $update->filter('bar_name', [
-                'mickey' => ['mouse', 'goofy'],
-            ]);
+            $update->oneWaySynonyms([
+                ['mickey', ['mouse', 'goofy']]
+            ], 'bar_name');
 
             return $update;
         });
 
-        $this->assertFilterExists($alias, 'bar_name');
-        $this->assertFilterHasSynonyms($alias, 'bar_name', [
-            'mouse, goofy => mickey',
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertFilterExists('bar_name');
+            $index->assertFilterHasSynonyms('bar_name', [
+                'mouse, goofy => mickey',
+            ]);
+        });
     }
 
     /**
@@ -436,32 +259,39 @@ class UpdateTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->withoutMappings()
             ->stemming([
-                'am' => ['be', 'are'],
-                'mouse' => ['mice'],
-                'feet' => ['foot'],
+                ['am', ['be', 'are']],
+                ['mouse', ['mice']],
+                ['feet', ['foot']],
             ], 'bar_name')
             ->create();
 
-        $this->assertFilterExists($alias, 'bar_name');
-        $this->assertFilterHasStemming($alias, 'bar_name', [
-            'be, are => am',
-            'mice => mouse',
-            'foot => feet',
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertFilterExists('bar_name');
+            $index->assertFilterHasStemming('bar_name', [
+                'be, are => am',
+                'mice => mouse',
+                'foot => feet',
+            ]);
+        });
+
 
         $this->sigmie->index($alias)->update(function (Update $update) {
 
-            $update->filter('bar_name', [
-                'mickey' => ['mouse', 'goofy'],
-            ]);
+            $update->withoutMappings();
+
+            $update->stemming([[
+                'mickey', ['mouse', 'goofy'],
+            ]], 'bar_name');
 
             return $update;
         });
 
-        $this->assertFilterExists($alias, 'bar_name');
-        $this->assertFilterHasStemming($alias, 'bar_name', [
-            'mouse, goofy => mickey',
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertFilterExists('bar_name');
+            $index->assertFilterHasStemming('bar_name', [
+                'mouse, goofy => mickey',
+            ]);
+        });
     }
 
     /**
@@ -473,28 +303,35 @@ class UpdateTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->withoutMappings()
-            ->synonyms([
+            ->twoWaySynonyms([
                 ['treasure', 'gem', 'gold', 'price'],
                 ['friend', 'buddy', 'partner']
             ], 'foo_two_way_synonyms',)
             ->create();
 
-        $this->assertFilterExists($alias, 'foo_two_way_synonyms');
-        $this->assertFilterHasSynonyms($alias, 'foo_two_way_synonyms', [
-            'treasure, gem, gold, price',
-            'friend, buddy, partner'
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertFilterExists('foo_two_way_synonyms');
+            $index->assertFilterHasSynonyms('foo_two_way_synonyms', [
+                'treasure, gem, gold, price',
+                'friend, buddy, partner'
+            ]);
+        });
+
 
         $this->sigmie->index($alias)->update(function (Update $update) {
 
-            $update->filter('foo_two_way_synonyms', [['john', 'doe']]);
+            $update->withoutMappings();
+
+            $update->twoWaySynonyms([['john', 'doe']], 'foo_two_way_synonyms');
 
             return $update;
         });
 
-        $this->assertFilterHasSynonyms($alias, 'foo_two_way_synonyms', [
-            'john, doe',
-        ]);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertFilterHasSynonyms('foo_two_way_synonyms', [
+                'john, doe',
+            ]);
+        });
     }
 
     /**
@@ -509,17 +346,23 @@ class UpdateTest extends TestCase
             ->stopwords(['foo', 'bar', 'baz'], 'foo_stopwords',)
             ->create();
 
-        $this->assertFilterExists($alias, 'foo_stopwords');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertFilterExists('foo_stopwords');
+            $index->assertFilterHasStopwords('foo_stopwords', ['foo', 'bar', 'baz']);
+        });
 
         $this->sigmie->index($alias)->update(function (Update $update) {
+            $update->withoutMappings();
 
-            $update->filter('foo_stopwords', ['john', 'doe']);
+            $update->stopwords(['john', 'doe'], 'foo_stopwords');
 
             return $update;
         });
 
-        $this->assertFilterExists($alias, 'foo_stopwords');
-        $this->assertFilterHasStopwords($alias, 'foo_stopwords', ['john', 'doe']);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertFilterExists('foo_stopwords');
+            $index->assertFilterHasStopwords('foo_stopwords', ['john', 'doe']);
+        });
     }
 
     /**
@@ -559,11 +402,14 @@ class UpdateTest extends TestCase
 
         $index = $this->sigmie->index($alias);
 
-        $this->assertPropertyIsUnstructuredText($alias, 'created_at');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertPropertyIsUnstructuredText('created_at');
+        });
 
         $index->update(function (Update $update) {
 
             $update->mapping(function (Blueprint $blueprint) {
+
                 $blueprint->date('created_at');
                 $blueprint->number('count')->float();
 
@@ -573,9 +419,11 @@ class UpdateTest extends TestCase
             return $update;
         });
 
-        $this->assertPropertyExists($alias, 'count');
-        $this->assertPropertyExists($alias, 'created_at');
-        $this->assertPropertyIsDate($alias, 'created_at');
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertPropertyExists('count');
+            $index->assertPropertyExists('created_at');
+            $index->assertPropertyIsDate('created_at');
+        });
     }
 
     /**
@@ -602,15 +450,16 @@ class UpdateTest extends TestCase
         $this->assertCount(10, $index);
 
         $updatedIndex = $index->update(function (Update $update) {
+            $update->withoutMappings();
             $update->replicas(3);
             return $update;
         });
 
-        [$name, $config] = name_configs($updatedIndex->toRaw());
+        $config = $updatedIndex->toRaw();
 
-        $this->assertEquals(3, $config['settings']['index']['number_of_replicas']);
-        $this->assertNotEquals($oldIndexName, $index->name());
-        $this->assertCount(10, $index);
+        $this->assertEquals(3, $config['settings']['number_of_replicas']);
+        $this->assertNotEquals($oldIndexName, $updatedIndex->name());
+        $this->assertCount(10, $updatedIndex);
     }
 
     /**
@@ -628,7 +477,9 @@ class UpdateTest extends TestCase
 
         $oldIndexName = $index->name();
 
-        $index->update(function (Update $update) {
+        $index = $index->update(function (Update $update) {
+            $update->withoutMappings();
+
             return $update;
         });
 
@@ -651,7 +502,9 @@ class UpdateTest extends TestCase
 
         $oldIndexName = $index->name();
 
-        $index->update(function (Update $update) {
+        $index = $index->update(function (Update $update) {
+
+            $update->withoutMappings();
 
             return $update;
         });
@@ -659,6 +512,38 @@ class UpdateTest extends TestCase
         $this->assertIndexExists($index->name());
         $this->assertIndexNotExists($oldIndexName);
         $this->assertNotEquals($oldIndexName, $index->name());
+    }
+
+    /**
+     * @test
+     */
+    public function change_index_alias()
+    {
+        $oldAlias = uniqid();
+        $newAlias = uniqid();
+
+        $this->sigmie->newIndex($oldAlias)
+            ->withoutMappings()
+            ->create();
+
+        $index = $this->sigmie->index($oldAlias);
+
+        $this->assertInstanceOf(AliasedIndex::class, $index);
+
+        $index->update(function (Update $update) use ($newAlias) {
+
+            $update->withoutMappings();
+
+            $update->alias($newAlias);
+
+            return $update;
+        });
+
+        $index = $this->sigmie->index($newAlias);
+
+        $oldIndex = $this->sigmie->index($oldAlias);
+
+        $this->assertNull($oldIndex);
     }
 
     /**
@@ -676,21 +561,25 @@ class UpdateTest extends TestCase
 
         $index = $this->sigmie->index($alias);
 
-        [$name, $config] = name_configs($index->toRaw());
-
-        $this->assertEquals(1, $config['settings']['index']['number_of_shards']);
-        $this->assertEquals(1, $config['settings']['index']['number_of_replicas']);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertShards(1);
+            $index->assertReplicas(1);
+        });
 
         $index->update(function (Update $update) {
+
+            $update->withoutMappings();
 
             $update->replicas(2)->shards(2);
 
             return $update;
         });
 
-        [$name, $config] = name_configs($index->toRaw());
+        $index = $this->sigmie->index($alias);
 
-        $this->assertEquals(2, $config['settings']['index']['number_of_shards']);
-        $this->assertEquals(2, $config['settings']['index']['number_of_replicas']);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertShards(2);
+            $index->assertReplicas(2);
+        });
     }
 }
