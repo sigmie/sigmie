@@ -3,7 +3,7 @@
 set -e
 set -x
 
-TAG="0.8.1"
+TAG="0.8.2"
 
 function split()
 {
