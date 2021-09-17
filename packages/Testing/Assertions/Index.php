@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Testing\Assertions;
 
 use Sigmie\Base\APIs\Index as IndexAPICall;
-use Sigmie\Base\Exceptions\ElasticsearchException;
 
 trait Index
 {

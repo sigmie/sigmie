@@ -6,9 +6,9 @@ namespace Sigmie\Testing;
 
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\Connection;
-use Sigmie\Http\JSONClient;
-
 use function Sigmie\Helpers\testing_host;
+
+use Sigmie\Http\JSONClient;
 
 trait TestConnection
 {

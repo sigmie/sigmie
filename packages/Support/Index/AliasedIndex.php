@@ -4,16 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Support\Index;
 
-use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\APIs\Reindex;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Index\Index;
-use Sigmie\Base\Index\Mappings;
 use Sigmie\Base\Index\Settings;
-use Sigmie\Base\Mappings\Properties;
-use function Sigmie\Helpers\index_name;
 use Sigmie\Support\Update\Update;
 use Sigmie\Support\Update\UpdateProxy;
 

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Support\Analysis;
 
 use Sigmie\Base\Contracts\Analysis;
-use Sigmie\Base\Contracts\CustomAnalyzer;
 use Sigmie\Base\Contracts\CharFilter;
+use Sigmie\Base\Contracts\CustomAnalyzer;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
 use Sigmie\Support\Analyzer\TokenizerBuilder as AnalyzerTokenizerBuilder;

@@ -8,7 +8,6 @@ use Sigmie\Base\Analysis\Analysis;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
-use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Language;
 

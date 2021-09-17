@@ -7,6 +7,7 @@ namespace Sigmie\Base\Index;
 use Closure;
 use Exception;
 use Generator;
+use Sigmie\Base\APIs\Analyze;
 use Sigmie\Base\APIs\Count as CountAPI;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
@@ -19,7 +20,6 @@ use Sigmie\Base\Search\Searchable;
 use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Support\Collection;
 use Sigmie\Support\Index\AliasedIndex;
-use Sigmie\Base\APIs\Analyze;
 
 class Index implements DocumentCollectionInterface, Name
 {
