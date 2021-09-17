@@ -10,7 +10,7 @@ then
     exit 1
 fi
 
-RELEASE_BRANCH="0.x"
+RELEASE_BRANCH="master"
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 VERSION=$1
 
@@ -52,7 +52,7 @@ git tag $VERSION
 git push origin --tags
 
 # Tag Components
-for REMOTE in auth cli contracts exceptions http mappings search support testing
+for REMOTE in base http cli greek english german support 
 do
     echo ""
     echo ""
@@ -68,10 +68,14 @@ do
         cd $TMP_DIR;
 
         git clone $REMOTE_URL .
+	echo '3'
         git checkout "$RELEASE_BRANCH";
+	echo '4'
         git push "$RELEASE_BRANCH";
 
+	echo '1'
         git tag $VERSION
+	echo '2'
         git push origin --tags
     )
 done
