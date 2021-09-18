@@ -35,6 +35,27 @@ class BuilderTest extends TestCase
     /**
      * @test
      */
+    public function default_analyzer_even_if_no_text_field_mapping()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->mapping(function (Blueprint $blueprint) {
+                $blueprint->bool('active');
+
+                return $blueprint;
+            })
+            ->create();
+
+        $this->assertIndex($alias, function (Assert $index) {
+
+            $index->assertAnalyzerExists('default');
+        });
+    }
+
+    /**
+     * @test
+     */
     public function language_greek()
     {
         $alias = uniqid();
