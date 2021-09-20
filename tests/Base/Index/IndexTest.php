@@ -19,6 +19,15 @@ class IndexTest extends TestCase
     use TestIndex;
 
     /**
+    * @test
+    */
+    public function foo()
+    {
+        ray($this->httpConnection);
+        $this->assertTrue(false);
+    }
+
+    /**
      * @test
      */
     public function mass_delete_docs()

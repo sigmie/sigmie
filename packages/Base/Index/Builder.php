@@ -122,8 +122,6 @@ class Builder
         $analyzers = $mappings->analyzers();
 
         $this->analysis()->addAnalyzers($analyzers);
-        //TODO test if default analyze is present even
-        // if mappings has no text field
 
         $settings = new Settings(
             primaryShards: $this->shards,

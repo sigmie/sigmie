@@ -39,12 +39,12 @@ class Settings implements Raw
         return $this;
     }
 
-    public function getPrimaryShards(): int
+    public function primaryShards(): int
     {
         return $this->primaryShards;
     }
 
-    public function getReplicaShards(): int
+    public function replicaShards(): int
     {
         return $this->replicaShards;
     }
