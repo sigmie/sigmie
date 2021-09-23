@@ -10,10 +10,12 @@ use Sigmie\Testing\Assertions\Index;
 use Sigmie\Testing\Assertions\Mapping;
 use Sigmie\Testing\Assertions\Tokenizer;
 use Sigmie\Testing\Assertions\Analyzer;
-
+use Sigmie\Testing\Assertions\Document;
 
 trait Assertions
 {
+    use Document;
+
     public function assertIndex(string $index, callable $callable)
     {
         $json = $this->indexAPICall($index, 'GET')->json();

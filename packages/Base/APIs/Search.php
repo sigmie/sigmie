@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\APIs;
 
+use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\ElasticsearchRequest;
@@ -13,11 +14,11 @@ trait Search
 {
     use API;
 
-    protected function searchAPICall(Query $query): ElasticsearchResponse
+    protected function searchAPICall(string $index, array $query): ElasticsearchResponse
     {
-        $uri = $query->uri();
+        $uri = new Uri("/{$index}/_search");
 
-        $esRequest = new ElasticsearchRequest('POST', $uri, $query->toArray());
+        $esRequest = new ElasticsearchRequest('POST', $uri, $query);
 
         return $this->httpCall($esRequest);
     }

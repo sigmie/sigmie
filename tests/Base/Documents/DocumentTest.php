@@ -13,6 +13,20 @@ class DocumentTest extends TestCase
     /**
      * @test
      */
+    public function foo()
+    {
+        $name = uniqid();
+        $index = $this->sigmie->newIndex($name)->withoutMappings()->create();
+
+        $index->addDocument(new Document(['bear' => 'went', 'foo' => 'bar', 'x' => true]));
+
+        $this->assertIndexHas($name, ['bear' => 'went', 'foo' => 'bar', 'x' => true]);
+        $this->assertIndexCount($name, 1);
+    }
+
+    /**
+     * @test
+     */
     public function get_attribute(): void
     {
         $doc = new Document(['foo' => 'bar', 'john' => 'doe']);
