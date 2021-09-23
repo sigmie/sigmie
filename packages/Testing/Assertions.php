@@ -14,7 +14,7 @@ use Sigmie\Testing\Assertions\Document;
 
 trait Assertions
 {
-    use Document;
+    // use Document;
 
     public function assertIndex(string $index, callable $callable)
     {
