@@ -4,15 +4,23 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Tests\Index;
 
+use Amp\Parallel\Worker\TaskFailureThrowable;
 use ArrayAccess;
 use Countable;
+use Error;
 use Exception;
+use InvalidArgumentException;
 use IteratorAggregate;
+use SebastianBergmann\RecursionContext\InvalidArgumentException as RecursionContextInvalidArgumentException;
+use PHPUnit\Framework\ExpectationFailedException;
+use PHPUnit\Framework\Exception as FrameworkException;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentsCollection;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestIndex;
+use TypeError;
+use Throwable;
 
 class IndexTest extends TestCase
 {
@@ -186,24 +194,6 @@ class IndexTest extends TestCase
 
         $this->assertEquals('4', $index->first()->getId());
         $this->assertEquals('2', $index->last()->getId());
-    }
-
-    public function index_to_array()
-    {
-        $index = $this->getTestIndex();
-
-        $docs = [
-            new Document(['foo' => 'bar']),
-            new Document(['baz' => 'john'], '2'),
-            new Document(['baz' => 'john'], '3'),
-        ];
-
-        $index->addAsyncDocuments($docs);
-
-        $array = $index->toArray();
-
-        $this->assertIsArray($array);
-        $this->assertCount(3, $array);
     }
 
     /**

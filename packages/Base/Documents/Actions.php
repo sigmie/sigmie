@@ -148,11 +148,10 @@ trait Actions
 
     protected function listDocuments(int $offset = 0, int $limit = 100): DocumentCollection
     {
-        $query = new Query(['match_all' => (object) []]);
-        $query->index($this->index());
-        $query->setFrom($offset)->setSize($limit);
-
-        $response = $this->searchAPICall($query);
+        $response = $this->searchAPICall($this->index()->name(), [
+            'from' => $offset, 'size' => $limit,
+            'query' => ['match_all' => (object) []]
+        ]);
 
         $collection = new DocumentsCollection();
 

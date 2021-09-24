@@ -15,7 +15,7 @@ trait TestIndex
 
     public function createTestIndex(): void
     {
-        $this->testIndexName = bin2hex(openssl_random_pseudo_bytes(10));
+        $this->testIndexName = uniqid();
 
         $index = new Index($this->testIndexName);
 

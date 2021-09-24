@@ -240,7 +240,7 @@ class Index implements DocumentCollectionInterface, Name
 
     public function toArray(): array
     {
-        return iterator_to_array($this->all());
+        throw new \Exception("To array is not wise for index.", 1);
     }
 
     public function first(): Document
@@ -274,7 +274,7 @@ class Index implements DocumentCollectionInterface, Name
 
     public function getIterator()
     {
-        $perPage = 2;
+        $perPage = 100;
         $offset = 0;
         $page = 1;
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
+use Carbon\Carbon;
 use Sigmie\Base\Index\Actions;
 use Sigmie\Sigmie;
 
@@ -22,6 +23,10 @@ class TestCase extends \PHPUnit\Framework\TestCase
         if (getenv('PARATEST') === false) {
             $this->clearIndices();
         }
+
+        // Always reset test now time
+        // before running a new test
+        Carbon::setTestNow();
 
         $this->createTestIndex();
 
