@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Support\Shared;
 
 use Exception;
-use Ramsey\Uuid\Type\Decimal;
 use Sigmie\Base\Analysis\TokenFilter\AsciiFolding;
 use Sigmie\Base\Analysis\TokenFilter\DecimalDigit;
 use Sigmie\Base\Analysis\TokenFilter\Keywords;
-use Sigmie\Base\Analysis\TokenFilter\Lowercase;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\TokenFilter\Synonyms;
@@ -19,8 +17,6 @@ use Sigmie\Base\Analysis\TokenFilter\Truncate;
 use Sigmie\Base\Analysis\TokenFilter\Unique;
 use Sigmie\Base\Analysis\TokenFilter\Uppercase;
 use Sigmie\Base\Contracts\Analysis;
-use Sigmie\Base\Contracts\HttpConnection;
-use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\TokenFilter;
 use function Sigmie\Helpers\random_letters;
 use Sigmie\Support\Collection as SupportCollection;
@@ -157,6 +153,17 @@ trait Filters
         return $this->filters->toArray();
     }
 
+    protected function addFilter(TokenFilter $tokenFilter): void
+    {
+        $this->initFilters();
+
+        $this->ensureFilterNameIsAvailable($tokenFilter->name());
+
+        $this->analysis()->updateFilters([$tokenFilter->name() => $tokenFilter]);
+
+        $this->filters->set($tokenFilter->name(), $tokenFilter);
+    }
+
     private function initFilters(): void
     {
         $this->filters  = $this->filters ?? new SupportCollection();
@@ -178,16 +185,5 @@ trait Filters
         }
 
         return $suffixed;
-    }
-
-    protected function addFilter(TokenFilter $tokenFilter): void
-    {
-        $this->initFilters();
-
-        $this->ensureFilterNameIsAvailable($tokenFilter->name());
-
-        $this->analysis()->updateFilters([$tokenFilter->name() => $tokenFilter]);
-
-        $this->filters->set($tokenFilter->name(), $tokenFilter);
     }
 }

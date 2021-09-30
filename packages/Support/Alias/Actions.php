@@ -6,7 +6,6 @@ namespace Sigmie\Support\Alias;
 
 use Sigmie\Base\APIs\Alias as AliasAPI;
 use Sigmie\Base\APIs\Index;
-use Sigmie\Base\Exceptions\ElasticsearchException;
 
 trait Actions
 {

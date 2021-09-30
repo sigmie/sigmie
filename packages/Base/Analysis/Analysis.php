@@ -12,7 +12,6 @@ use Sigmie\Base\Contracts\Analyzers;
 use Sigmie\Base\Contracts\CharFilter as ContractsCharFilter;
 use Sigmie\Base\Contracts\Configurable;
 use Sigmie\Base\Contracts\ConfigurableTokenizer;
-use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\Name;
 use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Contracts\TokenFilter as TokenFilterInterface;

@@ -1,15 +1,7 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
-use Sigmie\Base\APIs\Index as IndexAPI;
-use Sigmie\Base\Exceptions\ElasticsearchException;
-use Sigmie\Testing\Assertions\CharFilter;
-use Sigmie\Testing\Assertions\Filter;
-use Sigmie\Testing\Assertions\Index;
-use Sigmie\Testing\Assertions\Mapping;
-use Sigmie\Testing\Assertions\Tokenizer;
-use Sigmie\Testing\Assertions\Analyzer;
 use Sigmie\Testing\Assertions\Document;
 
 trait Assertions

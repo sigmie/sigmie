@@ -8,7 +8,6 @@ namespace Sigmie\Helpers {
     use Exception;
     use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
     use Sigmie\Base\Contracts\Name;
-    use Sigmie\Base\Documents\Document;
     use Sigmie\Base\Documents\DocumentCollection;
     use Sigmie\Support\Collection;
     use Sigmie\Support\Contracts\Collection as CollectionInterface;

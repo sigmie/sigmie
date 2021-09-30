@@ -4,26 +4,22 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use Closure;
 use Exception;
 use Generator;
+use Sigmie\Base\APIs\Analyze;
 use Sigmie\Base\APIs\Count as CountAPI;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
-use Sigmie\Base\Contracts\Name;
 use Sigmie\Base\Documents\Actions as DocumentsActions;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Documents\DocumentCollection;
 use Sigmie\Base\Search\Searchable;
+use Sigmie\Base\Shared\LazyEach;
+use function Sigmie\Helpers\ensure_doc_collection;
 use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Support\Collection;
-use Sigmie\Support\Index\AliasedIndex;
-use Sigmie\Base\APIs\Analyze;
-use Sigmie\Base\Shared\LazyEach;
 
-use function Sigmie\Helpers\ensure_collection;
-use function Sigmie\Helpers\ensure_doc_collection;
+use Sigmie\Support\Index\AliasedIndex;
 
 class Index implements DocumentCollectionInterface
 {
@@ -41,11 +37,6 @@ class Index implements DocumentCollectionInterface
     ) {
         $this->settings = $settings ?: new Settings();
         $this->mappings = $mappings ?: new Mappings();
-    }
-
-    private function index(): Index
-    {
-        return $this;
     }
 
     public function __set(string $name, mixed $value): void
@@ -266,5 +257,10 @@ class Index implements DocumentCollectionInterface
     public function offsetUnset(mixed $identifier): void
     {
         $this->deleteDocument($identifier);
+    }
+
+    private function index(): Index
+    {
+        return $this;
     }
 }

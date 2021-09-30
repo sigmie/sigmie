@@ -8,7 +8,6 @@ use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\ElasticsearchRequest;
-use Sigmie\Base\Search\Query;
 
 trait Search
 {

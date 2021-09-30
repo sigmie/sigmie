@@ -4,25 +4,16 @@ declare(strict_types=1);
 
 namespace Sigmie\German;
 
-use Sigmie\Base\Contracts\HttpConnection;
-use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\LanguageBuilder;
 use Sigmie\Base\Index\Builder as IndexBuilder;
-use Sigmie\English\Filter\PossessiveStemmer as EnglishPossessiveStemmer;
-use Sigmie\English\Filter\Stemmer as EnglishStemmer;
-use Sigmie\English\Filter\Stopwords as EnglishStopwords;
-use Sigmie\English\Filter\Lowercase as EnglishLowercase;
-use Sigmie\Support\Collection as SupportCollection;
-use Sigmie\Support\Contracts\Collection;
 
-use Sigmie\Base\Contracts\TokenFilter;
-use Sigmie\German\Filter\Normalize as GermanNormalize;
 use Sigmie\German\Filter\LightStemmer as GermanLightStemmer;
-use Sigmie\German\Filter\Stopwords as GermanStopwords;
 use Sigmie\German\Filter\Lowercase as GermanLowercase;
 use Sigmie\German\Filter\MinimalStemmer as GermanMinimalStemmer;
+use Sigmie\German\Filter\Normalize as GermanNormalize;
 use Sigmie\German\Filter\Stemmer as GermanStemmer;
 use Sigmie\German\Filter\Stemmer2 as GermanStemmer2;
+use Sigmie\German\Filter\Stopwords as GermanStopwords;
 
 class Builder extends IndexBuilder implements LanguageBuilder
 {

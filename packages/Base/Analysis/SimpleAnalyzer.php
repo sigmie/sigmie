@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\Analysis;
 
 use Sigmie\Base\Contracts\Analyzer;
-use Sigmie\Base\Contracts\CustomAnalyzer;
-use Sigmie\Base\Contracts\Tokenizer;
-use Sigmie\Support\Contracts\Collection;
 
 class SimpleAnalyzer implements Analyzer
 {

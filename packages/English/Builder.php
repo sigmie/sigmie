@@ -4,23 +4,18 @@ declare(strict_types=1);
 
 namespace Sigmie\English;
 
-use Sigmie\Base\Contracts\HttpConnection;
-use Sigmie\Base\Contracts\Language;
 use Sigmie\Base\Contracts\LanguageBuilder;
-use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Index\Builder as IndexBuilder;
 
-use Sigmie\English\Filter\PossessiveStemmer as EnglishPossessiveStemmer;
-use Sigmie\English\Filter\Stemmer as EnglishStemmer;
-use Sigmie\English\Filter\Porter2Stemmer as EnglishPorter2Stemmer;
-use Sigmie\English\Filter\MinimalStemmer as EnglishMinimalStemmer;
 use Sigmie\English\Filter\LightStemmer  as EnglishLightStemmer;
 use Sigmie\English\Filter\LovinsStemmer as EnglishLovinsStemmer;
-
-use Sigmie\English\Filter\Stopwords as EnglishStopwords;
 use Sigmie\English\Filter\Lowercase as EnglishLowercase;
-use Sigmie\Support\Collection as SupportCollection;
-use Sigmie\Support\Contracts\Collection;
+use Sigmie\English\Filter\MinimalStemmer as EnglishMinimalStemmer;
+use Sigmie\English\Filter\Porter2Stemmer as EnglishPorter2Stemmer;
+use Sigmie\English\Filter\PossessiveStemmer as EnglishPossessiveStemmer;
+
+use Sigmie\English\Filter\Stemmer as EnglishStemmer;
+use Sigmie\English\Filter\Stopwords as EnglishStopwords;
 
 class Builder extends IndexBuilder implements LanguageBuilder
 {

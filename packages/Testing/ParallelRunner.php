@@ -11,8 +11,6 @@ use PHPUnit\TextUI\TestRunner;
 use Sigmie\Base\APIs\Cat;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Contracts\API;
-use Sigmie\Base\Http\Connection;
-use Sigmie\Http\JSONClient;
 
 class ParallelRunner extends BaseRunner
 {
@@ -20,6 +18,19 @@ class ParallelRunner extends BaseRunner
 
     /** @var WrapperWorker[] */
     private $workers = [];
+
+    public function clearProcessIndices(int $token)
+    {
+        $host = getenv('ES_HOST');
+        $port = getenv('ES_HOST');
+
+        if (function_exists('env')) {
+            $host = env('ES_HOST');
+            $port = env('ES_PORT');
+        };
+
+        $this->clearIndices("{$host}_{$token}:{$port}");
+    }
 
     protected function beforeLoadChecks(): void
     {
@@ -48,19 +59,6 @@ class ParallelRunner extends BaseRunner
             $this->workers[$token] = new WrapperWorker($this->output, $this->options, $token);
             $this->workers[$token]->start();
         }
-    }
-
-    public function clearProcessIndices(int $token)
-    {
-        $host = getenv('ES_HOST');
-        $port = getenv('ES_HOST');
-
-        if (function_exists('env')) {
-            $host = env('ES_HOST');
-            $port = env('ES_PORT');
-        };
-
-        $this->clearIndices("{$host}_{$token}:{$port}");
     }
 
     private function assignAllPendingTests(): void

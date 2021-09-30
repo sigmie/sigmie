@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Documents;
 
-use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Contracts\FromRaw;
 use Sigmie\Base\Index\Index;
 
@@ -29,11 +28,6 @@ class Document implements FromRaw
         $this->_source = $_source;
 
         if ($_id !== null) $this->_id = $_id;
-    }
-
-    private function index(): Index
-    {
-        return $this->_index;
     }
 
     public function __set(string $name, mixed $value): void
@@ -106,5 +100,10 @@ class Document implements FromRaw
         $this->_source[$name] = $value;
 
         return $this;
+    }
+
+    private function index(): Index
+    {
+        return $this->_index;
     }
 }

@@ -9,7 +9,6 @@ use Exception;
 use Generator;
 use Iterator;
 use Sigmie\Base\APIs\Count;
-use Sigmie\Base\Documents\Actions;
 use Sigmie\Base\Documents\Document;
 
 trait DocumentCollection
