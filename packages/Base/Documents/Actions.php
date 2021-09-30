@@ -16,6 +16,7 @@ use Sigmie\Base\APIs\Update as UpdateAPI;
 use Sigmie\Base\Contracts\API;
 
 use Sigmie\Base\Contracts\DocumentCollection;
+use Sigmie\Base\Index\Index;
 use Sigmie\Base\Search\Query;
 use Sigmie\Support\BulkBody;
 
@@ -23,14 +24,16 @@ trait Actions
 {
     use SearchAPI, DeleteAPI, MgetAPI, BulkAPI, UpdateAPI, API;
 
+    abstract private function index(): Index;
+
     public function updateDocument(Document $document): Document
     {
         $body = [
-            ['update' => ['_id' => $document->getId()]],
-            ['doc' => $document->attributes()],
+            ['update' => ['_id' => $document->_id]],
+            ['doc' => $document->_source],
         ];
 
-        $response = $this->bulkAPICall($document->getIndex()->name(), $body);
+        $response = $this->bulkAPICall($this->index()->name, $body);
 
         if ($response->failed()) {
             throw new Exception('Document update failed.');
@@ -41,13 +44,13 @@ trait Actions
 
     protected function upsertDocuments(DocumentCollection &$documentCollection): DocumentCollection
     {
-        $indexName = $this->index()->name();
+        $indexName = $this->index()->name;
         $body = [];
         $documentCollection->forAll(function ($index, Document $document) use (&$body) {
             $body = [
                 ...$body,
-                ['update' => ($document->getId() !== null) ? ['_id' => $document->getId()] : (object) []],
-                ['doc' => $document->attributes(), 'doc_as_upsert' => true],
+                ['update' => ($document->_id !== null) ? ['_id' => $document->_id] : (object) []],
+                ['doc' => $document->source(), 'doc_as_upsert' => true],
             ];
         });
 
@@ -66,7 +69,7 @@ trait Actions
         // https://discuss.elastic.co/t/ordering-of-responses-in-the-bulk-api/13264
         $tempCollection->forAll(function ($index, Document $doc) use ($ids, &$documentCollection) {
             $id = $ids[$index];
-            $doc->setId($id);
+            $doc->_id = $id;
             $documentCollection[$id] = $doc;
         });
 
@@ -77,30 +80,32 @@ trait Actions
      * @param bool $async Should we wait for the
      * document to become available
      */
-    protected function createDocument(Document &$doc, bool $async): Document
+    protected function createDocument(Document $doc, bool $async): Document
     {
-        $indexName = $this->index()->name();
+        $indexName = $this->index()->name;
         $array = [];
 
-        if ($doc->getId() !== null) {
-            $array = ['_id' => $doc->getId()];
+        if ($doc->_id !== null) {
+            $array = ['_id' => $doc->_id];
         }
 
         $data = [
             ['create' => (object) $array],
-            $doc->attributes(),
+            $doc->_source,
         ];
 
         $res = $this->bulkAPICall($indexName, $data, $async);
 
         [[$rest, $data]] = $res->getAll();
 
-        $doc->setId($data['_id']);
+        if (is_null($doc->_id)) {
+            $doc->_id = $data['_id'];
+        }
 
         return $doc;
     }
 
-    protected function createDocuments(DocumentCollection &$documentCollection, bool $async): DocumentCollection
+    protected function createDocuments(DocumentCollection $documentCollection, bool $async): DocumentCollection
     {
         $indexName = $this->index()->name();
         $body = [];
@@ -132,7 +137,9 @@ trait Actions
         // https://discuss.elastic.co/t/ordering-of-responses-in-the-bulk-api/13264
         $tempCollection->forAll(function (Document $doc, $index) use ($ids, &$documentCollection) {
             $id = $ids[$index];
-            $doc->setId($id);
+            if (is_null($doc->_id)) {
+                $doc->_id = $id;
+            }
             $documentCollection[$id] = $doc;
         });
 
@@ -141,7 +148,7 @@ trait Actions
 
     protected function getDocument(string $identifier): ?Document
     {
-        $response = $this->mgetAPICall(['docs' => [['_id' => $identifier]]]);
+        $response = $this->mgetAPICall($this->name(), ['docs' => [['_id' => $identifier]]]);
 
         return $response->first();
     }

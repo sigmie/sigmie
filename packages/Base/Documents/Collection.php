@@ -61,7 +61,7 @@ trait Collection
     {
         $isEmpty = $this->collection
             ->filter(
-                fn (Document $document) => $document->getId() === $id
+                fn (Document $document) => $document->_id === $id
             )
             ->isEmpty();
 
@@ -72,7 +72,7 @@ trait Collection
     {
         $doc = $this->collection
             ->filter(
-                fn (Document $document) => $document->getId() === $id
+                fn (Document $document) => $document->_id === $id
             )->first();
 
         if ($doc instanceof Document) {

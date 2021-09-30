@@ -55,13 +55,13 @@ class IndexTest extends TestCase
 
         $index->addDocument($document);
 
-        $document->setAttribute('foo', 'john');
+        $document->foo = 'john';
 
         $document->save();
 
         $doc = $index['id'];
 
-        $this->assertEquals($doc->getAttribute('foo'), 'john');
+        $this->assertEquals($doc->foo, 'john');
     }
 
     /**
@@ -147,8 +147,8 @@ class IndexTest extends TestCase
 
         $doc = $index->offsetGet('4');
 
-        $this->assertEquals('bar', $doc->getAttribute('foo'));
-        $this->assertEquals('4', $doc->getId());
+        $this->assertEquals('bar', $doc->foo);
+        $this->assertEquals('4', $doc->_id);
     }
 
     /**
@@ -192,8 +192,8 @@ class IndexTest extends TestCase
 
         $index->addDocuments($docs);
 
-        $this->assertEquals('4', $index->first()->getId());
-        $this->assertEquals('2', $index->last()->getId());
+        $this->assertEquals('4', $index->first()->_id);
+        $this->assertEquals('2', $index->last()->_id);
     }
 
     /**
@@ -250,11 +250,11 @@ class IndexTest extends TestCase
 
         $doc = new Document(['foo' => 'bar']);
 
-        $this->assertNull($doc->getId());
+        $this->assertNull($doc->_id);
 
         $index->addAsyncDocument($doc);
 
-        $this->assertNotNull($doc->getId());
+        $this->assertNotNull($doc->_id);
     }
 
     /**
@@ -269,12 +269,12 @@ class IndexTest extends TestCase
             new Document(['baz' => 'john'], '2'),
         ]);
 
-        $this->assertNull($docs->first()->getId());
+        $this->assertNull($docs->first()->_id);
 
         $index->addAsyncDocuments($docs->toArray());
 
-        $this->assertNotNull($docs->first()->getId());
-        $this->assertEquals(2, $docs->last()->getId());
+        $this->assertNotNull($docs->first()->_id);
+        $this->assertEquals(2, $docs->last()->_id);
     }
 
     /**
@@ -290,11 +290,11 @@ class IndexTest extends TestCase
             new Document(['baz' => 'john']),
         ]);
 
-        $this->assertNull($docs->first()->getId());
+        $this->assertNull($docs->first()->_id);
 
         $index->addAsyncDocuments($docs->toArray());
 
-        $this->assertNotNull($docs->first()->getId());
+        $this->assertNotNull($docs->first()->_id);
     }
 
     /**

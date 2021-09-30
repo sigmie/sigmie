@@ -21,45 +21,66 @@ use Sigmie\Support\Collection;
 use Sigmie\Support\Index\AliasedIndex;
 use Sigmie\Base\APIs\Analyze;
 
+use function Sigmie\Helpers\ensure_collection;
+use function Sigmie\Helpers\ensure_doc_collection;
+
 class Index implements DocumentCollectionInterface, Name
 {
     use CountAPI, DocumentsActions, IndexActions, Searchable, API, Actions, Analyze;
 
-    protected ?int $count;
-
-    protected ?string $size;
-
-    protected int $docsCount;
-
-    protected DocumentCollectionInterface $docs;
-
-    protected array $metadata = [];
-
-    protected bool $prepared;
-
-    protected bool $withIds;
-
-    protected string $prefix;
+    protected int $chunk = 5000;
 
     protected Settings $settings;
 
     protected MappingsInterface $mappings;
 
     public function __construct(
-        protected string $identifier,
+        protected string $name,
         protected array $aliases = [],
         Settings $settings = null,
         MappingsInterface $mappings = null
     ) {
         $this->settings = $settings ?: new Settings();
-
         $this->mappings = $mappings ?: new Mappings();
+    }
+
+    public function name(): string
+    {
+        return $this->name;
+    }
+
+    public function index(): Index
+    {
+        return $this;
+    }
+
+    public function __set(string $name, mixed $value): void
+    {
+        if ($name === 'settings' && isset($this->settings)) {
+            $class = $this::class;
+            user_error("Error: Cannot modify readonly property {$class}::{$name}");
+        }
+
+        if ($name === 'mappings' && isset($this->mappings)) {
+            $class = $this::class;
+            user_error("Error: Cannot modify readonly property {$class}::{$name}");
+        }
+
+        if ($name === 'name' && isset($this->name)) {
+            $class = $this::class;
+            user_error("Error: Cannot modify readonly property {$class}::{$name}");
+        }
+    }
+
+    public function __get(string $attribute): mixed
+    {
+        return $this->$attribute;
     }
 
     public function alias(string $alias): AliasedIndex
     {
         return new AliasedIndex(
-            $this->identifier,
+            $this->name,
             $alias,
             $this->aliases,
             $this->settings,
@@ -87,68 +108,23 @@ class Index implements DocumentCollectionInterface, Name
         return $index;
     }
 
-    public function getPrefix(): string
-    {
-        return $this->prefix;
-    }
-
-    public function setPrefix(string $prefix): self
-    {
-        $this->prefix = $prefix;
-
-        return $this;
-    }
-
     public function delete(): bool
     {
-        return $this->deleteIndex($this->identifier);
-    }
-
-
-    public function setSize(?string $size): self
-    {
-        $this->size = $size;
-
-        return $this;
-    }
-
-    public function getSize(): string
-    {
-        return $this->size;
-    }
-
-    /**
-     * Get the value of settings
-     */
-    public function getSettings(): Settings
-    {
-        return $this->settings;
-    }
-
-    public function getMappings(): MappingsInterface
-    {
-        return $this->mappings;
-    }
-
-    public function name(): string
-    {
-        return $this->identifier;
+        return $this->deleteIndex($this->name);
     }
 
     public function addDocument(Document $element): self
     {
         $this->createDocument($element, async: false);
 
-        $element->setIndex($this);
+        $element->_index = $this;
 
         return $this;
     }
 
     public function addDocuments(array|DocumentCollectionInterface $docs): self
     {
-        if (is_array($docs)) {
-            $docs = new DocumentsCollection($docs);
-        }
+        $docs = ensure_doc_collection($docs);
 
         $this->createDocuments($docs, async: false);
 
@@ -157,9 +133,7 @@ class Index implements DocumentCollectionInterface, Name
 
     public function addOrUpdateDocuments(array|DocumentCollectionInterface $docs): self
     {
-        if (is_array($docs)) {
-            $docs = new DocumentsCollection($docs);
-        }
+        $docs = ensure_doc_collection($docs);
 
         $this->upsertDocuments($docs);
 
@@ -175,9 +149,7 @@ class Index implements DocumentCollectionInterface, Name
 
     public function addAsyncDocuments(array|DocumentCollectionInterface $docs): self
     {
-        if (is_array($docs)) {
-            $docs = new DocumentsCollection($docs);
-        }
+        $docs = ensure_doc_collection($docs);
 
         $this->createDocuments($docs, false);
 
@@ -186,7 +158,7 @@ class Index implements DocumentCollectionInterface, Name
 
     public function clear(): void
     {
-        $this->deleteIndex($this->identifier);
+        $this->deleteIndex($this->name);
         $this->createIndex($this);
     }
 
@@ -224,12 +196,12 @@ class Index implements DocumentCollectionInterface, Name
     {
         foreach ($this->all() as $collection) {
             foreach ($collection as $doc) {
-                yield $doc->getId();
+                yield $doc->_id;
             }
         }
     }
 
-    public function set(string $identifier, Document &$document): self
+    public function set(string $identifier, Document $document): self
     {
         $document->setId($identifier);
 
@@ -240,7 +212,7 @@ class Index implements DocumentCollectionInterface, Name
 
     public function toArray(): array
     {
-        throw new \Exception("To array is not wise for index.", 1);
+        return iterator_to_array($this->getIterator(), false);
     }
 
     public function first(): Document
@@ -265,9 +237,14 @@ class Index implements DocumentCollectionInterface, Name
         return $this;
     }
 
+    public function chunk(int $size): self
+    {
+        return $this;
+    }
+
     public function count()
     {
-        $res = $this->countAPICall($this->identifier);
+        $res = $this->countAPICall($this->name);
 
         return $res->json('count');
     }
@@ -319,10 +296,5 @@ class Index implements DocumentCollectionInterface, Name
     public function offsetUnset(mixed $identifier): void
     {
         $this->deleteDocument($identifier);
-    }
-
-    protected function index(): Index
-    {
-        return $this;
     }
 }

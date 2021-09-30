@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Sigmie\Testing\Assertions;
 
 use Sigmie\Base\APIs\Count;
+use Sigmie\Base\APIs\Doc;
+use Sigmie\Base\APIs\Index;
+use Sigmie\Base\APIs\Mget;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Base\Documents\Document as ElasticsearchDocument;
 
 trait Document
 {
-    use Search, Count;
+    use Search, Count, Mget, Index, Doc;
 
     private string $name;
 
@@ -94,21 +97,24 @@ trait Document
 
         $total = $res->json()['hits']['total']['value'];
 
-        $this->assertTrue($total > 0);
-    }
-
-    public function assertDeleted(ElasticsearchDocument $document): void
-    {
-        return;
+        $this->assertTrue($total === 0);
     }
 
     public function assertDocumentExists(ElasticsearchDocument $document): void
     {
-        return;
+        $index = (string) $document->_index->name;
+
+        $res = $this->docAPICall($index, $document->_id, 'HEAD');
+
+        $this->assertTrue($res->code() === 200);
     }
 
     public function assertDocumentIsMissing(ElasticsearchDocument $document): void
     {
-        return;
+        $index = (string) $document->_index?->name;
+
+        $res = $this->docAPICall($index, $document->_id, 'HEAD');
+
+        $this->assertTrue($res->code() !== 200);
     }
 }

@@ -37,7 +37,7 @@ class AliasedIndex extends Index
 
         $update = (new UpdateProxy($this->httpConnection, $this->alias))($update);
 
-        $requestedReplicas = $update->make()->getSettings()->replicaShards();
+        $requestedReplicas = $update->make()->settings->replicaShards();
 
         $newAlias = $update->make()->alias;
         $update->replicas(0);

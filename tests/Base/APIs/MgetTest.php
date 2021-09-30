@@ -24,17 +24,17 @@ class MgetTest extends TestCase
         $index = $this->getTestIndex();
 
         $docs = new DocumentsDocumentCollection([
-            new Document(id: '1', attributes:['foo' => 'bar']),
-            new Document(id: '2', attributes:['foo' => 'baz']),
+            new Document(_id: '1', _source: ['foo' => 'bar']),
+            new Document(_id: '2', _source: ['foo' => 'baz']),
         ]);
 
         $index->addDocuments($docs);
 
         $body = ['docs' => [['_id' => '1'], ['_id' => '2']]];
 
-        $mgetRes = $this->mgetAPICall($body);
+        $mgetRes = $this->mgetAPICall($index->name(), $body);
 
-        $this->assertInstanceOf(DocumentCollection::class, $mgetRes,'Mget API response should implement DocumentCollection');
+        $this->assertInstanceOf(DocumentCollection::class, $mgetRes, 'Mget API response should implement DocumentCollection');
         $this->assertCount(2, $mgetRes, 'Mget response should implement be Countable interface');
         $this->assertTrue($mgetRes->contains('1'));
         $this->assertTrue($mgetRes->contains('2'));

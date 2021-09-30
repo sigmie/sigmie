@@ -10,7 +10,11 @@ use Sigmie\Sigmie;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    use Testing, Actions, TestIndex, ClearIndices, Assertions;
+    use Testing,
+        Actions,
+        TestIndex,
+        ClearIndices,
+        Assertions;
 
     protected Sigmie $sigmie;
 

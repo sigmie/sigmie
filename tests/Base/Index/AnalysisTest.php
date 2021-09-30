@@ -31,7 +31,7 @@ class AnalysisTest extends TestCase
             $index->assertFilterExists('foo_stopwords');
         });
 
-        $analysis = $this->sigmie->index($alias)->getSettings()->analysis();
+        $analysis = $this->sigmie->index($alias)->settings->analysis();
 
         $this->assertTrue($analysis->hasFilter('foo_stopwords'));
     }
@@ -53,7 +53,7 @@ class AnalysisTest extends TestCase
             $index->assertAnalyzerHasTokenizer('default', 'foo_tokenizer');
         });
 
-        $analysis = $this->sigmie->index($alias)->getSettings()->analysis();
+        $analysis = $this->sigmie->index($alias)->settings->analysis();
 
         $this->assertTrue($analysis->hasTokenizer('foo_tokenizer'));
     }
@@ -74,7 +74,7 @@ class AnalysisTest extends TestCase
             $index->assertAnalyzerHasCharFilter('default', 'html_strip');
         });
 
-        $analysis = $this->sigmie->index($alias)->getSettings()->analysis();
+        $analysis = $this->sigmie->index($alias)->settings->analysis();
 
         $this->assertTrue($analysis->hasCharFilter('html_strip'));
     }

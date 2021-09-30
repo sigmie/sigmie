@@ -19,8 +19,8 @@ trait Actions
 
     protected function createIndex(Index $index): Index
     {
-        $settings = $index->getSettings();
-        $mappings = $index->getMappings();
+        $settings = $index->settings;
+        $mappings = $index->mappings;
 
         $body = [
             'settings' => $settings->toRaw(),
@@ -93,7 +93,6 @@ trait Actions
             ->map(function ($values) {
                 $index = new Index($values['index']);
                 $index->setHttpConnection($this->getHttpConnection());
-                $index->setSize($values['store.size']);
 
                 return $index;
             });

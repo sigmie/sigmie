@@ -41,6 +41,10 @@ class Connection implements ConnectionInterface
 
         $response = $request->response($jsonResponse->psr());
 
+        if ($request->getMethod() === 'HEAD' && $response->failed()) {
+            return $response;
+        }
+
         if ($response->failed()) {
             throw $response->exception($request);
         }

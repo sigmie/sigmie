@@ -8,115 +8,103 @@ use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Contracts\FromRaw;
 use Sigmie\Base\Index\Index;
 
-
+/**
+ * @property string $_id read property
+ * @property Index $_index read property
+ */
 class Document implements FromRaw
 {
     use Actions;
 
-    protected array $attributes;
+    public array $_source;
 
-    protected ?string $id = null;
+    protected Index $_index;
 
-    protected int $version;
-
-    protected ?Index $index = null;
-
+    protected string $_id;
 
     public function __construct(
-        array $attributes = [],
-        string|int|null $id = null,
-        int $version = 0
+        array $_source = [],
+        string|null $_id = null,
     ) {
-        $this->attributes = $attributes;
-        $this->id = $id;
-        $this->version = $version;
+        $this->_source = $_source;
+
+        if ($_id !== null) $this->_id = $_id;
+    }
+
+    private function index(): Index
+    {
+        return $this->_index;
     }
 
     public function __set(string $name, mixed $value): void
     {
-        $this->setAttribute($name, $value);
+        if ($name === '_id' && isset($this->_id)) {
+            $class = $this::class;
+            user_error("Error: Cannot modify readonly property {$class}::{$name}");
+        }
+
+        if ($name === '_index' && isset($this->_index)) {
+            $class = $this::class;
+            user_error("Error: Cannot modify readonly property {$class}::{$name}");
+        }
+
+        if ($name === '_id') {
+            $this->_id = $value;
+            return;
+        }
+
+        if ($name === '_index') {
+            $this->_index = $value;
+            return;
+        }
+
+        $this->setSource($name, $value);
     }
 
     public function __get(string $attribute): mixed
     {
-        return $this->getAttribute($attribute);
+        if ($attribute === '_id' && isset($this->_id)) {
+            return $this->_id;
+        }
+
+        if ($attribute === '_index' && isset($this->_index)) {
+            return $this->_index;
+        }
+
+        if ($attribute === '_id') {
+            return null;
+        }
+
+        if ($attribute === '_index') {
+            return null;
+        }
+
+        return $this->getSource($attribute);
     }
 
     public static function fromRaw(array $raw): static
     {
-        return new static($raw['_source'], $raw['_id'], $raw['_version']);
-    }
-
-    public function version(): int
-    {
-        return $this->version;
+        return new static($raw['_source'], $raw['_id']);
     }
 
     public function save(): void
     {
-        $this->index->updateDocument($this);
+        $this->_index->updateDocument($this);
     }
 
-    public function setIndex(Index $index): self
+    protected function getSource(string $source): mixed
     {
-        $this->index = $index;
-
-        return $this;
-    }
-
-    public function getIndex(): Index
-    {
-        return $this->index;
-    }
-
-    public function getAttribute(string $attribute): mixed
-    {
-        if (isset($this->attributes[$attribute])) {
-            return $this->attributes[$attribute];
+        if (isset($this->_source[$source])) {
+            return $this->_source[$source];
         }
 
         return null;
     }
 
-    public function setAttribute(string $attribute, mixed $value): self
+    protected function setSource(string $name, mixed $value): self
     {
-        $this->attributes[$attribute] = $value;
-
-        if (isset(self::$httpConnection) && is_null($this->index) === false) {
-            $docs = $this->newCollection()->addDocument($this);
-            $this->upsertDocuments($docs);
-        }
+        $this->_source[$name] = $value;
 
         return $this;
-    }
-
-    public function attributes(): array
-    {
-        return $this->attributes;
-    }
-
-    public function setId(string $identifier): self
-    {
-        $this->id = $identifier;
-
-        return $this;
-    }
-
-    public function newCollection(): DocumentCollectionInterface
-    {
-        return new DocumentsCollection();
-    }
-
-    /**
-     * Get the value of id
-     */
-    public function getId(): ?string
-    {
-        return $this->id;
-    }
-
-    protected function index(): Index
-    {
-        return $this->index;
     }
 }

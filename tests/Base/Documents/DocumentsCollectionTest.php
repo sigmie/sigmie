@@ -70,8 +70,8 @@ class DocumentsCollectionTest extends TestCase
         $doc = $docs->get('99');
 
         $this->assertInstanceOf(Document::class, $doc);
-        $this->assertEquals('john', $doc->getAttribute('baz'));
-        $this->assertEquals('99', $doc->getId());
+        $this->assertEquals('john', $doc->baz);
+        $this->assertEquals('99', $doc->_id);
 
         $doc = $docs->get('100');
         $this->assertNull($doc);
@@ -104,10 +104,10 @@ class DocumentsCollectionTest extends TestCase
         ]);
 
         $first = $docs->first();
-        $this->assertEquals($first->getAttribute('baz'), 'first baz value');
+        $this->assertEquals($first->baz, 'first baz value');
 
         $last = $docs->last();
-        $this->assertEquals($last->getAttribute('baz'), 'last baz value');
+        $this->assertEquals($last->baz, 'last baz value');
     }
 
     /**

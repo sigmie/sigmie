@@ -20,8 +20,8 @@ final class BulkBody implements Task
         array_walk($this->docs, function ($document) use (&$body) {
             $body = [
                 ...$body,
-                ['create' => ($document->getId() !== null) ? ['_id' => $document->getId()] : (object) []],
-                $document->attributes(),
+                ['create' => ($document->_id !== null) ? ['_id' => $document->_id] : (object) []],
+                $document->_source,
             ];
         });
 

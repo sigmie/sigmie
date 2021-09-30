@@ -13,14 +13,13 @@ trait Mget
 {
     use API;
 
-    public function mgetAPICall(array $body = []): MgetResponse
+    public function mgetAPICall(string $index, array $body = []): MgetResponse
     {
-        $indexName = $this->index()->name();
-        $uri = new Uri("/{$indexName}/_mget");
+        $uri = new Uri("{$index}/_mget");
 
         $esRequest = new MgetRequest('POST', $uri, $body);
 
-        /** @var  MgetResponse */
+        /** @var MgetResponse */
         return $this->httpCall($esRequest);
     }
 }

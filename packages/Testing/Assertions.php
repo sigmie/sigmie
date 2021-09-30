@@ -14,7 +14,7 @@ use Sigmie\Testing\Assertions\Document;
 
 trait Assertions
 {
-    // use Document;
+    use Document;
 
     public function assertIndex(string $index, callable $callable)
     {
@@ -28,25 +28,15 @@ trait Assertions
 
     public function assertIndexExists(string $index): void
     {
-        try {
-            $res = $this->indexAPICall("/{$index}", 'HEAD');
-            $code = $res->code();
-        } catch (ElasticsearchException $e) {
-            $code = $e->getCode();
-        }
+        $res = $this->indexAPICall("/{$index}", 'HEAD');
 
-        $this->assertEquals(200, $code, "Failed to assert that index {$index} exists.");
+        $this->assertEquals(200, $res->code(), "Failed to assert that index {$index} exists.");
     }
 
     public function assertIndexNotExists(string $index): void
     {
-        try {
-            $res = $this->indexAPICall("/{$index}", 'HEAD');
-            $code = $res->code();
-        } catch (ElasticsearchException $e) {
-            $code = $e->getCode();
-        }
+        $res = $this->indexAPICall("/{$index}", 'HEAD');
 
-        $this->assertEquals(404, $code, "Failed to assert that index {$index} not exists.");
+        $this->assertEquals(404, $res->code(), "Failed to assert that index {$index} not exists.");
     }
 }

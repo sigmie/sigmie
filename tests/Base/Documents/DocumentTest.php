@@ -13,19 +13,67 @@ class DocumentTest extends TestCase
     /**
      * @test
      */
+    public function immutable_id()
+    {
+        $this->expectError();
+
+        $doc = new Document(_id: 'bar');
+
+        $doc->_id = 'demo';
+    }
+
+    /**
+     * @test
+     */
+    public function set_id_after_init()
+    {
+        $doc = new Document();
+
+        $doc->_id = 'demo';
+
+        $this->assertTrue($doc->_id === 'demo');
+
+        $this->expectError();
+
+        $doc->_id = 'bar';
+    }
+
+    /**
+     * @test
+     */
+    public function assertions()
+    {
+        $name = uniqid();
+        $index = $this->sigmie->newIndex($name)
+            ->withoutMappings()
+            ->create();
+
+        $doc = new Document(['foo' => 'bar', 'john' => 'doe'], 'bar');
+
+        $this->assertDocumentIsMissing($doc);
+
+        $index->addDocument($doc);
+
+        $this->assertDocumentExists($doc);
+
+        $this->assertIndexHas($name, ['foo' => 'bar']);
+        $this->assertIndexMissing($name, ['demo' => 'bar']);
+    }
+    /**
+     * @test
+     */
     public function get_attribute(): void
     {
         $doc = new Document(['foo' => 'bar', 'john' => 'doe']);
 
-        $this->assertEquals('bar', $doc->getAttribute('foo'));
-        $this->assertEquals('doe', $doc->getAttribute('john'));
-        $this->assertNull($doc->getAttribute('baz'));
-        $this->assertInstanceOf(DocumentCollection::class, $doc->newCollection());
-        $this->assertNull($doc->getId());
+        $this->assertEquals('bar', $doc->foo);
+        $this->assertEquals('doe', $doc->john);
+        $this->assertNull($doc->baz);
+        $this->assertNull($doc->_id);
 
         $docWithId = new Document([], '1');
 
-        $this->assertEquals(1, $docWithId->getId());
+        $this->assertEquals(1, $docWithId->_id);
     }
 
     /**
@@ -35,10 +83,10 @@ class DocumentTest extends TestCase
     {
         $doc = new Document(['foo' => 'bar', 'john' => 'doe']);
 
-        $this->assertEquals('bar', $doc->getAttribute('foo'));
+        $this->assertEquals('bar', $doc->foo);
 
-        $doc->setAttribute('foo', 'baz');
+        $doc->foo =  'baz';
 
-        $this->assertEquals('baz', $doc->getAttribute('foo'));
+        $this->assertEquals('baz', $doc->foo);
     }
 }
