@@ -10,7 +10,7 @@ use Sigmie\Base\Exceptions\ElasticsearchException;
 use Sigmie\Support\Alias\Actions as AliasActions;
 use Sigmie\Support\Collection;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
-use Sigmie\Support\Exception\MultipleIndices;
+use Sigmie\Support\Exceptions\MultipleIndices;
 use Sigmie\Support\Index\AliasedIndex;
 
 trait Actions
@@ -27,7 +27,7 @@ trait Actions
             'mappings' => $mappings->toRaw()
         ];
 
-        $this->indexAPICall("/{$index->name()}", 'PUT', $body);
+        $this->indexAPICall("/{$index->name}", 'PUT', $body);
 
         $index->setHttpConnection($this->httpConnection);
 
@@ -36,7 +36,7 @@ trait Actions
 
     protected function indexExists(Index $index): bool
     {
-        return $this->getIndex($index->name()) instanceof Index;
+        return $this->getIndex($index->name) instanceof Index;
     }
 
     protected function getIndex(string $alias): ?AliasedIndex

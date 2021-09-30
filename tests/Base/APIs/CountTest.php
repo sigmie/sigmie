@@ -29,7 +29,7 @@ class CountTest extends TestCase
         $index->addDocument($doc2);
         $index->addDocument($doc3);
 
-        $res = $this->countAPICall($index->name());
+        $res = $this->countAPICall($index->name);
 
         $this->assertEquals(3, $res->json('count'));
     }

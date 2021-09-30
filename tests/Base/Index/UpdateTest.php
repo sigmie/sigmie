@@ -12,7 +12,7 @@ use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Documents\DocumentsCollection;
+use Sigmie\Base\Documents\DocumentCollection;
 use Sigmie\Base\Index\Blueprint;
 use function Sigmie\Helpers\name_configs;
 use Sigmie\Support\Alias\Actions;
@@ -438,9 +438,9 @@ class UpdateTest extends TestCase
             ->create();
 
         $index = $this->sigmie->index($alias);
-        $oldIndexName = $index->name();
+        $oldIndexName = $index->name;
 
-        $docs = new DocumentsCollection();
+        $docs = new DocumentCollection();
         for ($i = 0; $i < 10; $i++) {
             $docs->addDocument(new Document(['foo' => 'bar']));
         }
@@ -458,7 +458,7 @@ class UpdateTest extends TestCase
         $config = $updatedIndex->toRaw();
 
         $this->assertEquals(3, $config['settings']['number_of_replicas']);
-        $this->assertNotEquals($oldIndexName, $updatedIndex->name());
+        $this->assertNotEquals($oldIndexName, $updatedIndex->name);
         $this->assertCount(10, $updatedIndex);
     }
 
@@ -475,7 +475,7 @@ class UpdateTest extends TestCase
 
         $index = $this->sigmie->index($alias);
 
-        $oldIndexName = $index->name();
+        $oldIndexName = $index->name;
 
         $index = $index->update(function (Update $update) {
             $update->withoutMappings();
@@ -484,7 +484,7 @@ class UpdateTest extends TestCase
         });
 
         $this->assertIndexNotExists($oldIndexName);
-        $this->assertNotEquals($oldIndexName, $index->name());
+        $this->assertNotEquals($oldIndexName, $index->name);
     }
 
     /**
@@ -500,7 +500,7 @@ class UpdateTest extends TestCase
 
         $index = $this->sigmie->index($alias);
 
-        $oldIndexName = $index->name();
+        $oldIndexName = $index->name;
 
         $index = $index->update(function (Update $update) {
 
@@ -509,9 +509,9 @@ class UpdateTest extends TestCase
             return $update;
         });
 
-        $this->assertIndexExists($index->name());
+        $this->assertIndexExists($index->name);
         $this->assertIndexNotExists($oldIndexName);
-        $this->assertNotEquals($oldIndexName, $index->name());
+        $this->assertNotEquals($oldIndexName, $index->name);
     }
 
     /**

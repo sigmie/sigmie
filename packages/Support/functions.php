@@ -6,10 +6,10 @@ namespace Sigmie\Helpers {
 
     use Carbon\Carbon;
     use Exception;
-    use Sigmie\Base\Contracts\DocumentCollection;
+    use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
     use Sigmie\Base\Contracts\Name;
     use Sigmie\Base\Documents\Document;
-    use Sigmie\Base\Documents\DocumentsCollection;
+    use Sigmie\Base\Documents\DocumentCollection;
     use Sigmie\Support\Collection;
     use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
@@ -79,17 +79,17 @@ namespace Sigmie\Helpers {
         return new Collection($values);
     }
 
-    function ensure_doc_collection(array|CollectionInterface|DocumentsCollection $values): DocumentCollection
+    function ensure_doc_collection(array|CollectionInterface|DocumentCollectionInterface $values): DocumentCollection
     {
         if ($values instanceof DocumentCollection) {
             return $values;
         }
 
         if ($values instanceof CollectionInterface) {
-            return new DocumentsCollection($values->toArray());
+            return new DocumentCollection($values->toArray());
         }
 
-        return new DocumentsCollection($values);
+        return new DocumentCollection($values);
     }
 
     function is_text_field(string $string): bool

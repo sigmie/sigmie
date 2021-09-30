@@ -16,10 +16,11 @@ use Sigmie\Base\Mappings\Properties;
 use function Sigmie\Helpers\index_name;
 use Sigmie\Support\Update\Update;
 use Sigmie\Support\Update\UpdateProxy;
+use Sigmie\Support\Alias\Actions as AliasActions;
 
 class AliasedIndex extends Index
 {
-    use Reindex, IndexAPI;
+    use Reindex, IndexAPI, AliasActions;
 
     public function __construct(
         string $identifier,
@@ -46,20 +47,20 @@ class AliasedIndex extends Index
 
         $this->disableWrite();
 
-        $this->reindexAPICall($this->name(), $newIndex->name());
+        $this->reindexAPICall($this->name, $newIndex->name);
 
-        $this->indexAPICall("/{$newIndex->name()}/_settings", 'PUT', [
+        $this->indexAPICall("/{$newIndex->name}/_settings", 'PUT', [
             'number_of_replicas' => $requestedReplicas,
             'refresh_interval' => '1s'
         ]);
 
         if ($oldAlias === $newAlias) {
-            $this->switchAlias($newAlias, $this->name(), $newIndex->name());
+            $this->switchAlias($newAlias, $this->name, $newIndex->name);
         } else {
-            $this->createAlias($newIndex->name(), $newAlias);
+            $this->createAlias($newIndex->name, $newAlias);
         }
 
-        $this->deleteIndex($this->name());
+        $this->deleteIndex($this->name);
 
         return $this->getIndex($newAlias);
     }
@@ -75,14 +76,14 @@ class AliasedIndex extends Index
 
     public function disableWrite(): void
     {
-        $this->indexAPICall("/{$this->name()}/_settings", 'PUT', [
+        $this->indexAPICall("/{$this->name}/_settings", 'PUT', [
             'index' => ['blocks.write' => true]
         ]);
     }
 
     public function enableWrite(): void
     {
-        $this->indexAPICall("/{$this->name()}/_settings", 'PUT', [
+        $this->indexAPICall("/{$this->name}/_settings", 'PUT', [
             'index' => ['blocks.write' => false]
         ]);
     }

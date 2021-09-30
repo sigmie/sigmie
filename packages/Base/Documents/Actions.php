@@ -14,8 +14,8 @@ use Sigmie\Base\APIs\Mget as MgetAPI;
 use Sigmie\Base\APIs\Search as SearchAPI;
 use Sigmie\Base\APIs\Update as UpdateAPI;
 use Sigmie\Base\Contracts\API;
-
-use Sigmie\Base\Contracts\DocumentCollection;
+use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
+use Sigmie\Base\Documents\DocumentCollection;
 use Sigmie\Base\Index\Index;
 use Sigmie\Base\Search\Query;
 use Sigmie\Support\BulkBody;
@@ -42,38 +42,21 @@ trait Actions
         return $document;
     }
 
-    protected function upsertDocuments(DocumentCollection &$documentCollection): DocumentCollection
+    protected function upsertDocuments(DocumentCollectionInterface $collection): DocumentCollectionInterface
     {
         $indexName = $this->index()->name;
         $body = [];
-        $documentCollection->forAll(function ($index, Document $document) use (&$body) {
+        $collection->each(function (Document $document, $index) use (&$body) {
             $body = [
                 ...$body,
                 ['update' => ($document->_id !== null) ? ['_id' => $document->_id] : (object) []],
-                ['doc' => $document->source(), 'doc_as_upsert' => true],
+                ['doc' => $document->_source, 'doc_as_upsert' => true],
             ];
         });
 
-        $response = $this->bulkAPICall($indexName, $body);
+        $this->bulkAPICall($indexName, $body);
 
-        $ids = [];
-
-        foreach ($response->getAll() as [$action, $item]) {
-            $ids[] = $item['_id'];
-        }
-
-        $tempCollection = $documentCollection;
-        $documentCollection = new DocumentsCollection();
-
-        // The bulk api response order is guaranteed see:
-        // https://discuss.elastic.co/t/ordering-of-responses-in-the-bulk-api/13264
-        $tempCollection->forAll(function ($index, Document $doc) use ($ids, &$documentCollection) {
-            $id = $ids[$index];
-            $doc->_id = $id;
-            $documentCollection[$id] = $doc;
-        });
-
-        return $documentCollection;
+        return $collection;
     }
 
     /**
@@ -96,7 +79,7 @@ trait Actions
 
         $res = $this->bulkAPICall($indexName, $data, $async);
 
-        [[$rest, $data]] = $res->getAll();
+        $data = $res->getAll()->first()['create'];
 
         if (is_null($doc->_id)) {
             $doc->_id = $data['_id'];
@@ -107,7 +90,7 @@ trait Actions
 
     protected function createDocuments(DocumentCollection $documentCollection, bool $async): DocumentCollection
     {
-        $indexName = $this->index()->name();
+        $indexName = $this->index()->name;
         $body = [];
         $docs = $documentCollection->toArray();
 
@@ -124,23 +107,14 @@ trait Actions
 
         $response = $this->bulkAPICall($indexName, $body, $async);
 
-        $ids = [];
+        $ids = $response->getAll()->map(fn ($value) => $value['create']['_id']);
 
-        foreach ($response->getAll() as [$action, $item]) {
-            $ids[] = $item['_id'];
-        }
-
-        $tempCollection = $documentCollection;
-        $documentCollection = new DocumentsCollection();
-
-        // The bulk api response order is guaranteed see:
-        // https://discuss.elastic.co/t/ordering-of-responses-in-the-bulk-api/13264
-        $tempCollection->forAll(function (Document $doc, $index) use ($ids, &$documentCollection) {
-            $id = $ids[$index];
+        $index = 0;
+        return $documentCollection->each(function (Document $doc) use ($ids, &$index) {
             if (is_null($doc->_id)) {
-                $doc->_id = $id;
+                $doc->_id = $ids[$index];
             }
-            $documentCollection[$id] = $doc;
+            $index++;
         });
 
         return $documentCollection;
@@ -148,19 +122,19 @@ trait Actions
 
     protected function getDocument(string $identifier): ?Document
     {
-        $response = $this->mgetAPICall($this->name(), ['docs' => [['_id' => $identifier]]]);
+        $response = $this->mgetAPICall($this->name, ['docs' => [['_id' => $identifier]]]);
 
         return $response->first();
     }
 
     protected function listDocuments(int $offset = 0, int $limit = 100): DocumentCollection
     {
-        $response = $this->searchAPICall($this->index()->name(), [
+        $response = $this->searchAPICall($this->index()->name, [
             'from' => $offset, 'size' => $limit,
             'query' => ['match_all' => (object) []]
         ]);
 
-        $collection = new DocumentsCollection();
+        $collection = new DocumentCollection();
 
         $values = $response->json('hits')['hits'];
 
@@ -183,7 +157,7 @@ trait Actions
 
     protected function deleteDocuments(array $ids): bool
     {
-        $indexName = $this->index()->name();
+        $indexName = $this->index()->name;
 
         $body = [];
         foreach ($ids as $id) {

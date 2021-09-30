@@ -14,21 +14,20 @@ use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Contracts\Name;
 use Sigmie\Base\Documents\Actions as DocumentsActions;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Documents\DocumentsCollection;
+use Sigmie\Base\Documents\DocumentCollection;
 use Sigmie\Base\Search\Searchable;
 use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Support\Collection;
 use Sigmie\Support\Index\AliasedIndex;
 use Sigmie\Base\APIs\Analyze;
+use Sigmie\Base\Shared\LazyEach;
 
 use function Sigmie\Helpers\ensure_collection;
 use function Sigmie\Helpers\ensure_doc_collection;
 
-class Index implements DocumentCollectionInterface, Name
+class Index implements DocumentCollectionInterface
 {
-    use CountAPI, DocumentsActions, IndexActions, Searchable, API, Actions, Analyze;
-
-    protected int $chunk = 5000;
+    use CountAPI, DocumentsActions, IndexActions, Searchable, API, Actions, Analyze, LazyEach;
 
     protected Settings $settings;
 
@@ -44,12 +43,7 @@ class Index implements DocumentCollectionInterface, Name
         $this->mappings = $mappings ?: new Mappings();
     }
 
-    public function name(): string
-    {
-        return $this->name;
-    }
-
-    public function index(): Index
+    private function index(): Index
     {
         return $this;
     }
@@ -113,11 +107,11 @@ class Index implements DocumentCollectionInterface, Name
         return $this->deleteIndex($this->name);
     }
 
-    public function addDocument(Document $element): self
+    public function addDocument(Document $document): self
     {
-        $this->createDocument($element, async: false);
+        $this->createDocument($document, async: false);
 
-        $element->_index = $this;
+        $document->_index = $this;
 
         return $this;
     }
@@ -182,9 +176,9 @@ class Index implements DocumentCollectionInterface, Name
         $this->deleteDocument($ids);
     }
 
-    public function contains(string $identifier): bool
+    public function contains(string $_id): bool
     {
-        return $this->get($identifier) instanceof Document;
+        return $this->get($_id) instanceof Document;
     }
 
     public function get(string $identifier): ?Document
@@ -192,18 +186,9 @@ class Index implements DocumentCollectionInterface, Name
         return $this->getDocument($identifier);
     }
 
-    public function getIds(): Generator
+    public function set(string $_id, Document $document): self
     {
-        foreach ($this->all() as $collection) {
-            foreach ($collection as $doc) {
-                yield $doc->_id;
-            }
-        }
-    }
-
-    public function set(string $identifier, Document $document): self
-    {
-        $document->setId($identifier);
+        $document->_id = $_id;
 
         $this->addDocument($document);
 
@@ -228,20 +213,6 @@ class Index implements DocumentCollectionInterface, Name
         return $last->first();
     }
 
-    public function forAll(Closure $p): self
-    {
-        foreach ($this->all() as $docsCollection) {
-            $docsCollection->map(fn (Document $doc) => $p($doc));
-        }
-
-        return $this;
-    }
-
-    public function chunk(int $size): self
-    {
-        return $this;
-    }
-
     public function count()
     {
         $res = $this->countAPICall($this->name);
@@ -251,18 +222,17 @@ class Index implements DocumentCollectionInterface, Name
 
     public function getIterator()
     {
-        $perPage = 100;
         $offset = 0;
         $page = 1;
 
-        while ((int) $this->count() > $page * $perPage) {
-            yield $this->listDocuments($offset, $perPage);
+        while ((int) $this->count() > $page * $this->chunk) {
+            yield $this->listDocuments($offset, $this->chunk);
 
-            $offset = $page * $perPage;
+            $offset = $page * $this->chunk;
             $page++;
         }
 
-        yield $this->listDocuments($offset, $perPage);
+        yield $this->listDocuments($offset, $this->chunk);
     }
 
     /**

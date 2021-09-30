@@ -37,10 +37,10 @@ class ReindexTest extends TestCase
             ['field_foo' => 'value_baz'],
         ];
 
-        $this->bulkAPICall($oldIndex->name(), $body);
+        $this->bulkAPICall($oldIndex->name, $body);
 
         $this->assertCount(0, $newIndex);
-        $this->reindexAPICall($oldIndex->name(), $newIndex->name());
+        $this->reindexAPICall($oldIndex->name, $newIndex->name);
 
         $this->assertCount(2, $newIndex);
     }
@@ -62,15 +62,15 @@ class ReindexTest extends TestCase
         ];
 
         //Add data to be reindexed to cause an error
-        $this->bulkAPICall($oldIndex->name(), $body);
+        $this->bulkAPICall($oldIndex->name, $body);
 
         //Disable write
-        $this->indexAPICall("/{$newIndex->name()}/_settings", 'PUT', [
+        $this->indexAPICall("/{$newIndex->name}/_settings", 'PUT', [
             'index' => ['blocks.write' => true]
         ]);
 
         $this->expectException(ReindexException::class);
 
-        $this->reindexAPICall($oldIndex->name(), $newIndex->name());
+        $this->reindexAPICall($oldIndex->name, $newIndex->name);
     }
 }

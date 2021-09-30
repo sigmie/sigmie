@@ -12,9 +12,9 @@ use Sigmie\Base\Documents\Document;
 
 interface DocumentCollection extends ArrayAccess, Countable, IteratorAggregate
 {
-    public function addDocument(Document $element): self;
+    public function addDocument(Document $document): self;
 
-    public function addDocuments(array|DocumentCollection $documentCollection): self;
+    public function addDocuments(array|DocumentCollection $documents): self;
 
     public function clear(): void;
 
@@ -24,15 +24,16 @@ interface DocumentCollection extends ArrayAccess, Countable, IteratorAggregate
 
     public function toArray(): array;
 
-    public function remove(string $identifier): void;
+    public function remove(string $_id): void;
 
-    public function contains(string $identifier): bool;
+    public function contains(string $_id): bool;
 
-    public function get(string $identifier): ?Document;
+    public function get(string $_id): ?Document;
 
     public function first(): ?Document;
 
     public function last(): ?Document;
 
-    public function forAll(Closure $p): self;
+    public function each(Closure $fn): self;
+
 }

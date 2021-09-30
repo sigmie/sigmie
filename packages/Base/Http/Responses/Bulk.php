@@ -37,7 +37,7 @@ class Bulk extends ElasticsearchResponse
 
     public function getAll(): CollectionInterface
     {
-        return new Collection([...$this->successCollection, ...$this->failCollection]);
+        return new Collection($this->json('items'));
     }
 
     public function getFailed(): CollectionInterface

@@ -16,7 +16,7 @@ use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\Exception as FrameworkException;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Documents\DocumentsCollection;
+use Sigmie\Base\Documents\DocumentCollection;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestIndex;
 use TypeError;
@@ -25,6 +25,51 @@ use Throwable;
 class IndexTest extends TestCase
 {
     use TestIndex;
+
+    /**
+     * @test
+     */
+    public function lazy_each()
+    {
+        $index = $this->getTestIndex();
+
+        $docs = [
+            new Document(['foo' => 'bar'], '4'),
+            new Document(['foo' => 'baz'], '89'),
+            new Document(['baz' => 'john'], '2'),
+        ];
+
+        $index->addDocuments($docs);
+        $index = $index->chunk(1);
+
+        $count = 0;
+
+        $index->each(function (Document $document, string $_index) use (&$count) {
+            $count++;
+        });
+
+        $this->assertEquals(3, $count);
+
+        $index = $index->chunk(2);
+
+        $count = 0;
+
+        $index->each(function (Document $document, string $_index) use (&$count) {
+            $count++;
+        });
+
+        $this->assertEquals(3, $count);
+
+        $index = $index->chunk(3);
+
+        $count = 0;
+
+        $index->each(function (Document $document, string $_index) use (&$count) {
+            $count++;
+        });
+
+        $this->assertEquals(3, $count);
+    }
 
     /**
      * @test
@@ -264,7 +309,7 @@ class IndexTest extends TestCase
     {
         $index = $this->getTestIndex();
 
-        $docs = new DocumentsCollection([
+        $docs = new DocumentCollection([
             new Document(['foo' => 'bar']),
             new Document(['baz' => 'john'], '2'),
         ]);
@@ -284,7 +329,7 @@ class IndexTest extends TestCase
     {
         $index = $this->getTestIndex();
 
-        $docs = new DocumentsCollection([
+        $docs = new DocumentCollection([
             new Document(['foo' => 'bar']),
             new Document(['baz' => 'john']),
             new Document(['baz' => 'john']),

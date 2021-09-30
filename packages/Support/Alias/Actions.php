@@ -35,13 +35,9 @@ trait Actions
     {
         $path = "/_alias/{$alias}";
 
-        try {
-            $this->indexAPICall($path, 'HEAD');
+        $res = $this->indexAPICall($path, 'HEAD');
 
-            return true;
-        } catch (ElasticsearchException) {
-            return false;
-        }
+        return $res->code() === 200;
     }
 
     protected function deleteAlias(string $index, string $alias): bool

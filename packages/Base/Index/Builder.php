@@ -103,7 +103,7 @@ class Builder
 
         $index = $this->createIndex($index);
 
-        $this->createAlias($index->name(), $this->alias);
+        $this->createAlias($index->name, $this->alias);
 
         return $index;
     }

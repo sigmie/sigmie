@@ -62,7 +62,7 @@ class ActionsTest extends TestCase
 
         $this->deleteIndex($indexName);
 
-        $array = $this->listIndices()->map(fn (Index $index) => $index->name())->toArray();
+        $array = $this->listIndices()->map(fn (Index $index) => $index->name)->toArray();
 
         $this->assertNotContains($indexName, $array);
     }
@@ -79,7 +79,7 @@ class ActionsTest extends TestCase
         $this->createIndex(new Index($barIndexName));
 
         $list = $this->listIndices();
-        $array = $list->map(fn (Index $index) => $index->name())->toArray();
+        $array = $list->map(fn (Index $index) => $index->name)->toArray();
 
         $this->assertContains($fooIndexName, $array);
         $this->assertContains($barIndexName, $array);

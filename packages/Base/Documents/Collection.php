@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Documents;
 
 use Closure;
-use Sigmie\Base\Contracts\DocumentCollection;
+use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
 trait Collection
@@ -19,10 +19,10 @@ trait Collection
         return $this;
     }
 
-    public function addDocuments(array|DocumentCollection $documents): self
+    public function addDocuments(array|DocumentCollectionInterface $documents): self
     {
         if (is_array($documents)) {
-            $documents = new DocumentsCollection($documents);
+            $documents = new DocumentCollection($documents);
         }
 
         foreach ($documents as $document) {
@@ -52,27 +52,27 @@ trait Collection
         return !$this->isEmpty();
     }
 
-    public function remove(string $identifier): void
+    public function remove(string $_id): void
     {
-        $this->collection->remove($identifier);
+        $this->collection->remove($_id);
     }
 
-    public function contains(string $id): bool
+    public function contains(string $_id): bool
     {
         $isEmpty = $this->collection
             ->filter(
-                fn (Document $document) => $document->_id === $id
+                fn (Document $document) => $document->_id === $_id
             )
             ->isEmpty();
 
         return !$isEmpty;
     }
 
-    public function get(string $id): ?Document
+    public function get(string $_id): ?Document
     {
         $doc = $this->collection
             ->filter(
-                fn (Document $document) => $document->_id === $id
+                fn (Document $document) => $document->_id === $_id
             )->first();
 
         if ($doc instanceof Document) {
@@ -92,7 +92,7 @@ trait Collection
         return $this->collection->last();
     }
 
-    public function forAll(Closure $p): self
+    public function each(Closure $p): self
     {
         $this->collection->each($p);
 

@@ -7,15 +7,15 @@ namespace Sigmie\Base\Http\Responses;
 use LogicException;
 use Psr\Http\Message\ResponseInterface;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
-use Sigmie\Base\Documents\Collection as DocumentCollection;
+use Sigmie\Base\Documents\Collection as DocumentCollectionActions;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Documents\DocumentsCollection;
+use Sigmie\Base\Documents\DocumentCollection;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Support\Collection;
 
 class Mget extends ElasticsearchResponse implements DocumentCollectionInterface
 {
-    use DocumentCollection;
+    use DocumentCollectionActions;
 
     public function __construct(ResponseInterface $psr)
     {
@@ -28,10 +28,10 @@ class Mget extends ElasticsearchResponse implements DocumentCollectionInterface
 
     public function toDocumentCollection(): DocumentCollectionInterface
     {
-        return new DocumentsCollection($this->collection->toArray());
+        return new DocumentCollection($this->collection->toArray());
     }
 
-    public function addDocument(Document $element): DocumentCollectionInterface
+    public function addDocument(Document $document): DocumentCollectionInterface
     {
         throw new LogicException('Mget response data may not be mutated');
     }

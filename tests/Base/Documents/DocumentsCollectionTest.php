@@ -6,7 +6,7 @@ namespace Sigmie\Tests\Base\Documents;
 
 use PHPUnit\Framework\TestCase;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Documents\DocumentsCollection;
+use Sigmie\Base\Documents\DocumentCollection;
 use TypeError;
 
 class DocumentsCollectionTest extends TestCase
@@ -16,7 +16,7 @@ class DocumentsCollectionTest extends TestCase
      */
     public function add_documents_array()
     {
-        $docs = new DocumentsCollection();
+        $docs = new DocumentCollection();
 
         $docs2 = [
             new Document(['baz' => 'first baz value'], '00'),
@@ -33,9 +33,9 @@ class DocumentsCollectionTest extends TestCase
      */
     public function add_documents_collection()
     {
-        $docs = new DocumentsCollection();
+        $docs = new DocumentCollection();
 
-        $docs2 = new DocumentsCollection([
+        $docs2 = new DocumentCollection([
             new Document(['baz' => 'first baz value'], '00'),
             new Document(['baz' => 'john'], '99'),
             new Document(['baz' => 'last baz value'], '88'),
@@ -50,7 +50,7 @@ class DocumentsCollectionTest extends TestCase
      */
     public function empty_methods()
     {
-        $docs = new DocumentsCollection();
+        $docs = new DocumentCollection();
 
         $this->assertTrue($docs->isEmpty());
         $this->assertFalse($docs->isNotEmpty());
@@ -61,7 +61,7 @@ class DocumentsCollectionTest extends TestCase
      */
     public function get()
     {
-        $docs = new DocumentsCollection([
+        $docs = new DocumentCollection([
             new Document(['baz' => 'first baz value'], '00'),
             new Document(['baz' => 'john'], '99'),
             new Document(['baz' => 'last baz value'], '88'),
@@ -82,7 +82,7 @@ class DocumentsCollectionTest extends TestCase
      */
     public function contains_id()
     {
-        $docs = new DocumentsCollection([
+        $docs = new DocumentCollection([
             new Document(['baz' => 'first baz value'], '00'),
             new Document(['baz' => 'john'], '99'),
             new Document(['baz' => 'last baz value'], '88'),
@@ -97,7 +97,7 @@ class DocumentsCollectionTest extends TestCase
      */
     public function last_and_first_docs()
     {
-        $docs = new DocumentsCollection([
+        $docs = new DocumentCollection([
             new Document(['baz' => 'first baz value']),
             new Document(['baz' => 'john']),
             new Document(['baz' => 'last baz value']),
@@ -115,7 +115,7 @@ class DocumentsCollectionTest extends TestCase
      */
     public function add_single_document()
     {
-        $docs = new DocumentsCollection();
+        $docs = new DocumentCollection();
         $doc =  new Document(['foo' => 'bar']);
         $docs->addDocument($doc);
 
@@ -127,7 +127,7 @@ class DocumentsCollectionTest extends TestCase
      */
     public function collection_clear(): void
     {
-        $docs = new DocumentsCollection([
+        $docs = new DocumentCollection([
             new Document(['baz' => 'john']),
             new Document(['baz' => 'john']),
             new Document(['baz' => 'boyaah']),
@@ -145,7 +145,7 @@ class DocumentsCollectionTest extends TestCase
     {
         $this->expectException(TypeError::class);
 
-        new DocumentsCollection([
+        new DocumentCollection([
             new Document(['foo' => 'bar'], '1'),
             '',
             new Document(['baz' => 'john'], '4'),
@@ -157,7 +157,7 @@ class DocumentsCollectionTest extends TestCase
      */
     public function documents_count(): void
     {
-        $docs = new DocumentsCollection([
+        $docs = new DocumentCollection([
             new Document(['foo' => 'bar']),
             new Document(['baz' => 'john']),
             new Document(['baz' => 'john']),
@@ -165,7 +165,7 @@ class DocumentsCollectionTest extends TestCase
 
         $this->assertCount(3, $docs);
 
-        $docsWithIds = new DocumentsCollection([
+        $docsWithIds = new DocumentCollection([
             new Document(['foo' => 'bar'], '1'),
             new Document(['baz' => 'john'], '2'),
             new Document(['baz' => 'john'], '3'),
