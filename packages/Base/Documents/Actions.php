@@ -24,16 +24,14 @@ trait Actions
 {
     use SearchAPI, DeleteAPI, MgetAPI, BulkAPI, UpdateAPI, API;
 
-    abstract private function index(): Index;
-
-    public function updateDocument(Document $document): Document
+    public function updateDocument(string $indexName, Document $document): Document
     {
         $body = [
             ['update' => ['_id' => $document->_id]],
             ['doc' => $document->_source],
         ];
 
-        $response = $this->bulkAPICall($this->index()->name, $body);
+        $response = $this->bulkAPICall($indexName, $body);
 
         if ($response->failed()) {
             throw new Exception('Document update failed.');
@@ -42,9 +40,8 @@ trait Actions
         return $document;
     }
 
-    protected function upsertDocuments(DocumentCollectionInterface $collection): DocumentCollectionInterface
+    protected function upsertDocuments(string $indexName, DocumentCollectionInterface $collection): DocumentCollectionInterface
     {
-        $indexName = $this->index()->name;
         $body = [];
         $collection->each(function (Document $document, $index) use (&$body) {
             $body = [
@@ -63,9 +60,8 @@ trait Actions
      * @param bool $async Should we wait for the
      * document to become available
      */
-    protected function createDocument(Document $doc, bool $async): Document
+    protected function createDocument(string $indexName, Document $doc, bool $async): Document
     {
-        $indexName = $this->index()->name;
         $array = [];
 
         if ($doc->_id !== null) {
@@ -88,7 +84,7 @@ trait Actions
         return $doc;
     }
 
-    protected function createDocuments(DocumentCollection $documentCollection, bool $async): DocumentCollection
+    protected function createDocuments(string $indexName, DocumentCollection $documentCollection, bool $async): DocumentCollection
     {
         $indexName = $this->index()->name;
         $body = [];
@@ -120,16 +116,16 @@ trait Actions
         return $documentCollection;
     }
 
-    protected function getDocument(string $identifier): ?Document
+    protected function getDocument(string $indexName, string $identifier): ?Document
     {
-        $response = $this->mgetAPICall($this->name, ['docs' => [['_id' => $identifier]]]);
+        $response = $this->mgetAPICall($indexName, ['docs' => [['_id' => $identifier]]]);
 
         return $response->first();
     }
 
-    protected function listDocuments(int $offset = 0, int $limit = 100): DocumentCollection
+    protected function listDocuments(string $indexName, int $offset = 0, int $limit = 100): DocumentCollection
     {
-        $response = $this->searchAPICall($this->index()->name, [
+        $response = $this->searchAPICall($indexName, [
             'from' => $offset, 'size' => $limit,
             'query' => ['match_all' => (object) []]
         ]);
@@ -146,19 +142,18 @@ trait Actions
         return $collection;
     }
 
-    protected function deleteDocument(string $identifier): bool
+    protected function deleteDocument(string $indexName, string $identifier): bool
     {
         $response = $this->deleteAPICall(
+            $indexName,
             identifier: $identifier,
         );
 
         return $response->json('result') === 'deleted';
     }
 
-    protected function deleteDocuments(array $ids): bool
+    protected function deleteDocuments(string $indexName, array $ids): bool
     {
-        $indexName = $this->index()->name;
-
         $body = [];
         foreach ($ids as $id) {
             $body = [

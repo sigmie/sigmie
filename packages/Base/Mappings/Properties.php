@@ -32,7 +32,8 @@ class Properties implements Arrayable, ArrayAccess
     {
         return isset($this->fields[$offset]);
     }
-public function offsetGet($offset)
+
+    public function offsetGet($offset)
     {
         return $this->fields[$offset];
     }

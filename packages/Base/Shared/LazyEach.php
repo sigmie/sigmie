@@ -33,7 +33,7 @@ trait LazyEach
         return $this;
     }
 
-    private function indexGenerator(): Iterator
+    protected function indexGenerator(): Iterator
     {
         $page = 1;
         $total = $this->countAPICall($this->name)->json('count');
@@ -49,7 +49,7 @@ trait LazyEach
         }
     }
 
-    private function pageGenerator(int $page): Iterator
+    protected function pageGenerator(int $page): Iterator
     {
         $body = [
             'from' => ($page - 1) * $this->chunk,

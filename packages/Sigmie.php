@@ -14,6 +14,9 @@ use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Index;
 use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Index\Builder;
+use Sigmie\Base\Index\CollectedIndex;
+use Sigmie\Base\Index\Index as IndexIndex;
+use Sigmie\Base\Index\PaginatedIndex;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\JSONClient;
 use Sigmie\Support\Contracts\Collection;
@@ -35,9 +38,19 @@ class Sigmie
         return $builder->alias($name);
     }
 
-    public function index(string $name): ?AliasedIndex
+    public function aliased(string $name): ?AliasedIndex
     {
         return $this->getIndex($name);
+    }
+
+    public function paginated(string $name): ?PaginatedIndex
+    {
+        //TODO
+    }
+
+    public function collected(string $name): ?CollectedIndex
+    {
+        //TODO
     }
 
     public function indices(): Collection

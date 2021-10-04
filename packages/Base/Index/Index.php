@@ -12,18 +12,22 @@ use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Documents\Actions as DocumentsActions;
+use Sigmie\Base\Index\Actions as IndexActions;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Search\Searchable;
 use Sigmie\Base\Shared\LazyEach;
 use function Sigmie\Helpers\ensure_doc_collection;
-use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Support\Collection;
 
 use Sigmie\Support\Index\AliasedIndex;
 
-class Index implements DocumentCollectionInterface
+/**
+ * @property-read Mappings $mappings;
+ * @property-write Settings $settings;
+ */
+abstract class Index
 {
-    use CountAPI, DocumentsActions, IndexActions, Searchable, API, Actions, Analyze, LazyEach;
+    use API, IndexActions, DocumentsActions;
 
     protected Settings $settings;
 
@@ -62,11 +66,29 @@ class Index implements DocumentCollectionInterface
         return $this->$attribute;
     }
 
+    public function paginate(int $perPage, int $currentPage = 1): PaginatedIndex
+    {
+        return new PaginatedIndex(
+            $this->name,
+            $this->aliases,
+        );
+    }
+
     public function alias(string $alias): AliasedIndex
     {
         return new AliasedIndex(
             $this->name,
             $alias,
+            $this->aliases,
+            $this->settings,
+            $this->mappings
+        );
+    }
+
+    public function collect(): CollectedIndex
+    {
+        return new CollectedIndex(
+            $this->name,
             $this->aliases,
             $this->settings,
             $this->mappings
@@ -100,7 +122,7 @@ class Index implements DocumentCollectionInterface
 
     public function addDocument(Document $document): self
     {
-        $this->createDocument($document, async: false);
+        $this->createDocument($this->name, $document, async: false);
 
         $document->_index = $this;
 
@@ -111,7 +133,7 @@ class Index implements DocumentCollectionInterface
     {
         $docs = ensure_doc_collection($docs);
 
-        $this->createDocuments($docs, async: false);
+        $this->createDocuments($this->name, $docs, async: false);
 
         return $this;
     }
@@ -120,14 +142,14 @@ class Index implements DocumentCollectionInterface
     {
         $docs = ensure_doc_collection($docs);
 
-        $this->upsertDocuments($docs);
+        $this->upsertDocuments($this->name, $docs);
 
         return $this;
     }
 
     public function addAsyncDocument(Document $element): self
     {
-        $this->createDocument($element, async: true);
+        $this->createDocument($this->name, $element, async: true);
 
         return $this;
     }
@@ -136,131 +158,8 @@ class Index implements DocumentCollectionInterface
     {
         $docs = ensure_doc_collection($docs);
 
-        $this->createDocuments($docs, false);
+        $this->createDocuments($this->name, $docs, false);
 
-        return $this;
-    }
-
-    public function clear(): void
-    {
-        $this->deleteIndex($this->name);
-        $this->createIndex($this);
-    }
-
-    public function isEmpty(): bool
-    {
-        return (int) $this->count() === 0;
-    }
-
-    public function isNotEmpty(): bool
-    {
-        return (int) $this->count() > 0;
-    }
-
-    public function remove(string|array $ids): void
-    {
-        if (is_array($ids)) {
-            $this->deleteDocuments($ids);
-            return;
-        }
-
-        $this->deleteDocument($ids);
-    }
-
-    public function contains(string $_id): bool
-    {
-        return $this->get($_id) instanceof Document;
-    }
-
-    public function get(string $identifier): ?Document
-    {
-        return $this->getDocument($identifier);
-    }
-
-    public function set(string $_id, Document $document): self
-    {
-        $document->_id = $_id;
-
-        $this->addDocument($document);
-
-        return $this;
-    }
-
-    public function toArray(): array
-    {
-        return iterator_to_array($this->getIterator(), false);
-    }
-
-    public function first(): Document
-    {
-        return $this->listDocuments(0, 1)->first();
-    }
-
-    public function last(): Document
-    {
-        $all = $this->count();
-        $last = $this->listDocuments($all - 1, 1);
-
-        return $last->first();
-    }
-
-    public function count()
-    {
-        $res = $this->countAPICall($this->name);
-
-        return $res->json('count');
-    }
-
-    public function getIterator()
-    {
-        $offset = 0;
-        $page = 1;
-
-        while ((int) $this->count() > $page * $this->chunk) {
-            yield $this->listDocuments($offset, $this->chunk);
-
-            $offset = $page * $this->chunk;
-            $page++;
-        }
-
-        yield $this->listDocuments($offset, $this->chunk);
-    }
-
-    /**
-     * @return Generator<Collection>
-     */
-    public function all()
-    {
-        return $this->getIterator();
-    }
-
-    public function offsetExists(mixed $offset): bool
-    {
-        return $this->contains((string) $offset);
-    }
-
-    public function offsetGet(mixed $offset): null|Document
-    {
-        return $this->getDocument((string) $offset);
-    }
-
-    public function offsetSet(mixed $identifier, mixed $doc): void
-    {
-        if (is_null($identifier)) {
-            $this->addDocument($doc);
-            return;
-        }
-
-        throw new Exception('You can\'t add a documents with an offset.');
-    }
-
-    public function offsetUnset(mixed $identifier): void
-    {
-        $this->deleteDocument($identifier);
-    }
-
-    private function index(): Index
-    {
         return $this;
     }
 }
