@@ -7,18 +7,18 @@ namespace Sigmie\Tests\Base\APIs\Responses;
 use Sigmie\Base\APIs\Bulk as BulkAPI;
 use Sigmie\Base\Http\Responses\Bulk;
 use Sigmie\Testing\TestCase;
-use Sigmie\Testing\TestIndex;
 
 class BulkTest extends TestCase
 {
-    use BulkAPI, TestIndex;
+    use BulkAPI;
 
     /**
      * @test
      */
     public function bulk_response(): void
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
         $body = [
             ['create' => ['_id' => 1]],

@@ -8,11 +8,10 @@ use Sigmie\Base\APIs\Cluster as ClusterAPI;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestConnection;
-use Sigmie\Testing\TestIndex;
 
 class ClusterTest extends TestCase
 {
-    use TestConnection, ClusterAPI, TestIndex;
+    use ClusterAPI;
 
     /**
      * @test

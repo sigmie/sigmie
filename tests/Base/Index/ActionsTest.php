@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Tests;
 
+use Sigmie\Base\Index\ActiveIndex;
+use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Index\Index;
+use Sigmie\Base\Index\IndexBlueprint;
 use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Support\Contracts\Collection;
 use Sigmie\Testing\TestCase;
@@ -26,13 +29,13 @@ class ActionsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $index = new Index($indexName);
+        $index = new AliasedIndex($indexName);
 
         $exists = $this->indexExists($index);
 
         $this->assertFalse($exists);
 
-        $this->createIndex($index);
+        $this->createIndex($indexName, new IndexBlueprint());
 
         $exists = $this->indexExists($index);
 
@@ -46,7 +49,7 @@ class ActionsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $this->createIndex(new Index($indexName));
+        $this->createIndex($indexName, new IndexBlueprint());
 
         $this->assertIndexExists($indexName);
     }
@@ -58,11 +61,11 @@ class ActionsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $this->createIndex(new Index($indexName));
+        $this->createIndex($indexName, new IndexBlueprint());
 
         $this->deleteIndex($indexName);
 
-        $array = $this->listIndices()->map(fn (Index $index) => $index->name)->toArray();
+        $array = $this->listIndices()->map(fn (ActiveIndex $index) => $index->name)->toArray();
 
         $this->assertNotContains($indexName, $array);
     }
@@ -75,17 +78,17 @@ class ActionsTest extends TestCase
         $fooIndexName = uniqid();
         $barIndexName = uniqid();
 
-        $this->createIndex(new Index($fooIndexName));
-        $this->createIndex(new Index($barIndexName));
+        $this->createIndex($fooIndexName, new IndexBlueprint());
+        $this->createIndex($barIndexName, new IndexBlueprint());
 
         $list = $this->listIndices();
-        $array = $list->map(fn (Index $index) => $index->name)->toArray();
+        $array = $list->map(fn (ActiveIndex $index) => $index->name)->toArray();
 
         $this->assertContains($fooIndexName, $array);
         $this->assertContains($barIndexName, $array);
 
         $this->assertInstanceOf(Collection::class, $list);
 
-        $list->each(fn ($index, $key) => $this->assertInstanceOf(Index::class, $index));
+        $list->each(fn ($index, $key) => $this->assertInstanceOf(ActiveIndex::class, $index));
     }
 }

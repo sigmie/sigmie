@@ -23,6 +23,6 @@ use Sigmie\Support\Collection;
 
 use Sigmie\Base\Index\AliasedIndex;
 
-class PaginatedIndex extends AbstractPaginatedIndex
+class InTimeIndex extends AbstractPaginatedIndex
 {
 }

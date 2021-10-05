@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Cli\Commands\Alias;
 
 use Sigmie\Base\APIs\Alias as AliasAPI;
-use Sigmie\Base\Index\Index;
+use Sigmie\Base\Index\AbstractIndex;
 use Sigmie\Cli\BaseCommand;
 use Sigmie\Support\Alias\Actions;
 use Sigmie\Support\Alias\Actions as IndexActions;
@@ -23,7 +23,7 @@ class SwitchAlias extends BaseCommand
         $fromIndex = $this->input->getOption('from');
         $toIndex = $this->input->getOption('to');
 
-        $this->switchAlias($alias, new Index($fromIndex), new Index($toIndex));
+        $this->switchAlias($alias, new AbstractIndex($fromIndex), new AbstractIndex($toIndex));
 
         $from = '<fg=green>' . $fromIndex . '</>';
         $to = '<fg=green>' . $toIndex . '</>';

@@ -6,9 +6,9 @@ namespace Sigmie\Base\Index;
 
 use Sigmie\Base\Analysis\Analysis;
 use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
-use Sigmie\Base\Contracts\Raw;
+use Sigmie\Base\Contracts\Settings as SettingsInterface;
 
-class Settings implements Raw
+class Settings implements SettingsInterface
 {
     public int $primaryShards;
 

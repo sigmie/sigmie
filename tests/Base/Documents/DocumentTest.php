@@ -46,13 +46,13 @@ class DocumentTest extends TestCase
         $name = uniqid();
         $index = $this->sigmie->newIndex($name)
             ->withoutMappings()
-            ->create();
+            ->create()->collect();
 
         $doc = new Document(['foo' => 'bar', 'john' => 'doe'], 'bar');
 
         $this->assertDocumentIsMissing($doc);
 
-        $index->addDocument($doc);
+        $index->add($doc);
 
         $this->assertDocumentExists($doc);
 

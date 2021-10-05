@@ -48,13 +48,10 @@ trait IndexActions
             $data = array_values($res->json())[0];
             $name = $data['settings']['index']['provided_name'];
 
-            $index = AbstractIndex::fromRaw($name, $data);
+            $index = new AliasedIndex($name, $alias);
             $index->setHttpConnection($this->getHttpConnection());
 
-            $aliased = $index->alias($alias);
-            $aliased->setHttpConnection($this->getHttpConnection());
-
-            return $aliased;
+            return $index;
         } catch (ElasticsearchException) {
             return null;
         }
@@ -81,7 +78,7 @@ trait IndexActions
         }
     }
 
-    protected function listIndices(): Collection
+    protected function listIndices(int $offset = 0, int $limit = 100): Collection
     {
         $catResponse = $this->catAPICall('/indices', 'GET',);
 

@@ -10,6 +10,7 @@ use Sigmie\Base\Http\Connection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Base\Index\Index;
+use Sigmie\Base\Index\IndexBlueprint;
 use Sigmie\Http\JSONClient;
 use Sigmie\Testing\TestCase;
 
@@ -22,12 +23,12 @@ class ConnectionTest extends TestCase
      */
     public function throws_elasticsearch_exception()
     {
-        $indexName = 'foo';
+        $indexName = uniqid();
 
         $this->expectException(ElasticsearchException::class);
 
-        $this->createIndex(new Index($indexName));
-        $this->createIndex(new Index($indexName));
+        $this->createIndex($indexName, new IndexBlueprint());
+        $this->createIndex($indexName, new IndexBlueprint());
     }
 
     /**

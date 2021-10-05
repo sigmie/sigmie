@@ -31,6 +31,16 @@ namespace Sigmie\Helpers {
         return "{$host}:{$port}";
     }
 
+    function refresh_value(): string
+    {
+        $value = getenv('ES_REFRESH');
+
+        if (function_exists('env')) {
+            $value = env('ES_REFRESH');
+        }
+
+        return $value;
+    }
 
     function index_name(string $prefix): string
     {

@@ -10,11 +10,10 @@ use Sigmie\Base\APIs\Analyze;
 use Sigmie\Base\APIs\Count as CountAPI;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
-use Sigmie\Base\Contracts\MappingsInterface as MappingsInterface;
-use Sigmie\Base\Contracts\Paginator as PaginatorInterface;
+use Sigmie\Base\Contracts\Mappings as MappingsInterface;
+use Sigmie\Base\Contracts\Paginator;
 use Sigmie\Base\Documents\Actions as DocumentsActions;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Documents\DocumentCollection;
 use Sigmie\Base\Search\Searchable;
 use Sigmie\Base\Shared\LazyEach;
 use function Sigmie\Helpers\ensure_doc_collection;
@@ -23,6 +22,6 @@ use Sigmie\Support\Collection;
 
 use Sigmie\Base\Index\AliasedIndex;
 
-class PaginatedIndex extends AbstractPaginatedIndex
+abstract class MultiIndex extends AbstractIndex
 {
 }

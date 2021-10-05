@@ -8,18 +8,18 @@ use Sigmie\Base\APIs\Bulk;
 use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestConnection;
-use Sigmie\Testing\TestIndex;
 
 class BulkTest extends TestCase
 {
-    use TestConnection, IndexActions, Bulk, TestIndex;
+    use Bulk;
 
     /**
      * @test
      */
     public function bulk_api_call(): void
     {
-        $index = $this->getIndex($this->testIndexName);
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
         $body = [
             ['create' => ['_id' => 1]],

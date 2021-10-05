@@ -15,8 +15,7 @@ use Sigmie\Base\Mappings\Types\Boolean;
 use Sigmie\Base\Mappings\Types\Date;
 use Sigmie\Base\Mappings\Types\Number;
 use Sigmie\Base\Mappings\Types\Text;
-use Sigmie\Support\Collection;
-use Sigmie\Support\Contracts\Collection as ContractsCollection;
+use Sigmie\Support\Contracts\Collection;
 
 class Mappings implements MappingsInterface
 {
@@ -51,11 +50,10 @@ class Mappings implements MappingsInterface
     {
         return [
             'properties' => $this->properties->toRaw(),
-            // 'dynamic_templates' => $this->dynamicTemplate()
         ];
     }
 
-    public static function fromRaw(array $data, ContractsCollection $analyzers): Mappings
+    public static function fromRaw(array $data, Collection $analyzers): static
     {
         $analyzers = $analyzers->mapToDictionary(
             fn (CustomAnalyzer $analyzer) => [$analyzer->name() => $analyzer]

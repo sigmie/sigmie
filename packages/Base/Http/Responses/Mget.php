@@ -31,12 +31,12 @@ class Mget extends ElasticsearchResponse implements DocumentCollectionInterface
         return new DocumentCollection($this->collection->toArray());
     }
 
-    public function addDocument(Document $document): DocumentCollectionInterface
+    public function add(Document $document): DocumentCollectionInterface
     {
         throw new LogicException('Mget response data may not be mutated');
     }
 
-    public function addDocuments(array|DocumentCollectionInterface $documents): DocumentCollectionInterface
+    public function merge(array|DocumentCollectionInterface $documents): DocumentCollectionInterface
     {
         throw new LogicException('Mget response data may not be mutated');
     }

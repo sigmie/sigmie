@@ -6,7 +6,7 @@ namespace Sigmie\Base\Search;
 
 use GuzzleHttp\Psr7\Uri;
 use Psr\Http\Message\UriInterface;
-use Sigmie\Base\Index\Index;
+use Sigmie\Base\Index\AbstractIndex;
 
 class Query
 {
@@ -25,7 +25,7 @@ class Query
         $this->queryClause = $query;
     }
 
-    public function index(Index $index)
+    public function index(AbstractIndex $index)
     {
         $this->indexName = $index->name();
 

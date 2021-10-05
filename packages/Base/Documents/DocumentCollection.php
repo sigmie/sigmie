@@ -20,7 +20,7 @@ class DocumentCollection implements DocumentCollectionInterface
         $this->collection = new Collection();
 
         foreach ($documents as $doc) {
-            $this->addDocument($doc);
+            $this->add($doc);
         }
     }
 }

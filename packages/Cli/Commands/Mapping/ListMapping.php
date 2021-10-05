@@ -4,7 +4,7 @@ namespace Sigmie\Cli\Commands\Mapping;
 
 use Sigmie\Base\APIs\Mget;
 use Sigmie\Base\APIs\Search;
-use Sigmie\Base\Index\Index;
+use Sigmie\Base\Index\AbstractIndex;
 use Sigmie\Cli\BaseCommand;
 use Sigmie\Cli\Outputs\DocumentsTable;
 use Sigmie\Support\Alias\Actions as IndexActions;
@@ -16,7 +16,7 @@ class ListMapping extends BaseCommand
 
     protected static $defaultName = 'map:list';
 
-    protected Index $index;
+    protected AbstractIndex $index;
 
     public function executeCommand(): int
     {
@@ -36,7 +36,7 @@ class ListMapping extends BaseCommand
         $this->addArgument('index', InputArgument::REQUIRED, 'Index name');
     }
 
-    protected function index(): Index
+    protected function index(): AbstractIndex
     {
         return $this->index;
     }

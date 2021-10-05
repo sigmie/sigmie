@@ -9,17 +9,17 @@ use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\ElasticsearchRequest;
 
+use function Sigmie\Helpers\refresh_value;
+
 trait Delete
 {
     use API;
 
-    protected function deleteAPICall(string $index, string $identifier, bool $async = false): ElasticsearchResponse
+    protected function deleteAPICall(string $index, string $identifier, string $refresh = 'false'): ElasticsearchResponse
     {
         $uri = new Uri("/{$index}/_doc/{$identifier}");
 
-        if (!$async) {
-            $uri = Uri::withQueryValue($uri, 'refresh', 'wait_for');
-        }
+        $uri = Uri::withQueryValue($uri, 'refresh', $refresh);
 
         $esRequest = new ElasticsearchRequest('DELETE', $uri);
 

@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace Sigmie\Testing;
 
 use Carbon\Carbon;
-use Sigmie\Base\Index\Actions;
+use Sigmie\Base\Index\IndexActions;
 use Sigmie\Sigmie;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
     use Testing,
-        Actions,
-        TestIndex,
+        IndexActions,
         ClearIndices,
         Assertions;
 
@@ -31,8 +30,6 @@ class TestCase extends \PHPUnit\Framework\TestCase
         // Always reset test now time
         // before running a new test
         Carbon::setTestNow();
-
-        $this->createTestIndex();
 
         $this->sigmie = new Sigmie($this->httpConnection);
     }

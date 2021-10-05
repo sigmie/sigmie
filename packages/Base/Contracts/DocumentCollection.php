@@ -7,14 +7,15 @@ namespace Sigmie\Base\Contracts;
 use ArrayAccess;
 use Closure;
 use Countable;
+use Generator;
 use IteratorAggregate;
 use Sigmie\Base\Documents\Document;
 
 interface DocumentCollection extends ArrayAccess, Countable, IteratorAggregate
 {
-    public function addDocument(Document $document): self;
+    public function add(Document $document): self;
 
-    public function addDocuments(array|DocumentCollection $documents): self;
+    public function merge(array|DocumentCollection $documents): self;
 
     public function clear(): void;
 
@@ -24,16 +25,13 @@ interface DocumentCollection extends ArrayAccess, Countable, IteratorAggregate
 
     public function toArray(): array;
 
-    public function remove(string $_id): void;
+    public function remove(string $_id): bool;
 
-    public function contains(string $_id): bool;
+    public function all(): Generator;
+
+    public function has(string $_id): bool;
 
     public function get(string $_id): ?Document;
 
-    public function first(): ?Document;
-
-    public function last(): ?Document;
-
     public function each(Closure $fn): self;
-
 }

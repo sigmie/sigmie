@@ -3,7 +3,7 @@
 namespace Sigmie\Cli\Commands\Documents;
 
 use Sigmie\Base\APIs\Mget;
-use Sigmie\Base\Index\Index;
+use Sigmie\Base\Index\AbstractIndex;
 use Sigmie\Cli\BaseCommand;
 use Sigmie\Cli\Outputs\DocumentTable;
 use Sigmie\Support\Alias\Actions as IndexActions;
@@ -15,7 +15,7 @@ class Show extends BaseCommand
 
     protected static $defaultName = 'doc:show';
 
-    protected Index $index;
+    protected AbstractIndex $index;
 
     public function executeCommand(): int
     {
@@ -41,7 +41,7 @@ class Show extends BaseCommand
         $this->addArgument('document', InputArgument::REQUIRED, 'Document id');
     }
 
-    protected function index(): Index
+    protected function index(): AbstractIndex
     {
         return $this->index;
     }

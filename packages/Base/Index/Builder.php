@@ -13,7 +13,7 @@ use Sigmie\Base\Contracts\Language;
 
 use function Sigmie\Helpers\index_name;
 use Sigmie\Support\Exceptions\MissingMapping;
-use Sigmie\Support\Index\AliasedIndex;
+use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Support\Index\TokenizerBuilder;
 use Sigmie\Support\Shared\CharFilters;
 use Sigmie\Support\Shared\Filters;
@@ -26,7 +26,7 @@ use Sigmie\Support\Shared\Tokenizer;
 
 class Builder
 {
-    use Actions, Filters, Mappings, CharFilters, Shards, Replicas, Tokenizer;
+    use IndexActions, Filters, Mappings, CharFilters, Shards, Replicas, Tokenizer;
 
     protected string $alias;
 
@@ -96,18 +96,28 @@ class Builder
         return $this->defaultAnalyzer;
     }
 
-    public function create(): Index
+    public function create(): AbstractIndex
     {
         $index = $this->make();
 
-        $index = $this->createIndex($index);
+        $indexName = index_name($this->alias);
 
-        $this->createAlias($index->name, $this->alias);
+        $this->createIndex($indexName, $index);
+
+        $this->createAlias($indexName, $this->alias);
+
+        $index = new AliasedIndex($indexName, $this->alias);
+        $index->setHttpConnection($this->httpConnection);
 
         return $index;
     }
 
-    public function make(): AliasedIndex
+    public function getAlias(): string
+    {
+        return $this->alias;
+    }
+
+    public function make(): IndexBlueprint
     {
         $this->throwUnlessMappingsDefined();
 
@@ -129,9 +139,8 @@ class Builder
             configs: $this->config
         );
 
-        $indexName = index_name($this->alias);
 
-        return new AliasedIndex($indexName, $this->alias, [], $settings, $mappings);
+        return new IndexBlueprint($settings, $mappings);
     }
 
     protected function throwUnlessMappingsDefined(): void

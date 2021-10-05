@@ -2,40 +2,37 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Support\Index;
+namespace Sigmie\Base\Index;
 
 use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\APIs\Reindex;
-use Sigmie\Base\Contracts\Mappings as MappingsInterface;
-use Sigmie\Base\Index\Index;
+use Sigmie\Base\Contracts\MappingsInterface as MappingsInterface;
+use Sigmie\Base\Index\AbstractIndex;
 use Sigmie\Base\Index\Settings;
 use Sigmie\Support\Alias\Actions as AliasActions;
 use Sigmie\Support\Update\Update;
 use Sigmie\Support\Update\UpdateProxy;
 
-class AliasedIndex extends Index
+class AliasedIndex extends ActiveIndex
 {
-    use Reindex, IndexAPI, AliasActions;
+    use Reindex, IndexAPI, AliasActions, IndexActions;
 
     public function __construct(
-        string $identifier,
+        protected string $name,
         protected string $alias,
-        array $aliases,
-        ?Settings $settings = null,
-        ?MappingsInterface $mappings = null,
     ) {
-        parent::__construct($identifier, $aliases, $settings, $mappings);
     }
 
     public function update(callable $update): AliasedIndex
     {
-        $oldAlias = $this->alias;
+        $oldAlias = $this->name;
 
         $update = (new UpdateProxy($this->httpConnection, $this->alias))($update);
 
-        $requestedReplicas = $update->make()->settings->replicaShards();
+        $blueprint = $update->make();
+        $requestedReplicas = $blueprint->settings->replicaShards();
 
-        $newAlias = $update->make()->alias;
+        $newAlias = $update->getAlias();
         $update->replicas(0);
 
         $newIndex = $update->create();
@@ -58,15 +55,6 @@ class AliasedIndex extends Index
         $this->deleteIndex($this->name);
 
         return $this->getIndex($newAlias);
-    }
-
-    public function toRaw(): array
-    {
-        $res = parent::toRaw();
-
-        $res['alias'] = $this->alias;
-
-        return $res;
     }
 
     public function disableWrite(): void

@@ -13,13 +13,11 @@ trait Bulk
 {
     use API;
 
-    protected function bulkAPICall(string $indexName, array $data, bool $async = false): BulkResponse
+    protected function bulkAPICall(string $indexName, array $data, string $refresh = 'false'): BulkResponse
     {
         $uri = new Uri("/{$indexName}/_bulk");
 
-        if (!$async) {
-            $uri = Uri::withQueryValue($uri, 'refresh', 'wait_for');
-        }
+        $uri = Uri::withQueryValue($uri, 'refresh', $refresh);
 
         $request = new BulkRequest('POST', $uri, $data);
 

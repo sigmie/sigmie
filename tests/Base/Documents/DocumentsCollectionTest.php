@@ -24,7 +24,7 @@ class DocumentsCollectionTest extends TestCase
             new Document(['baz' => 'last baz value'], '88'),
         ];
 
-        $docs->addDocuments($docs2);
+        $docs->merge($docs2);
 
         $this->assertCount(3, $docs);
     }
@@ -41,7 +41,7 @@ class DocumentsCollectionTest extends TestCase
             new Document(['baz' => 'last baz value'], '88'),
         ]);
 
-        $docs->addDocuments($docs2);
+        $docs->merge($docs2);
 
         $this->assertCount(3, $docs);
     }
@@ -103,10 +103,10 @@ class DocumentsCollectionTest extends TestCase
             new Document(['baz' => 'last baz value']),
         ]);
 
-        $first = $docs->first();
+        $first = $docs[0];
         $this->assertEquals($first->baz, 'first baz value');
 
-        $last = $docs->last();
+        $last = $docs[2];
         $this->assertEquals($last->baz, 'last baz value');
     }
 
@@ -117,7 +117,7 @@ class DocumentsCollectionTest extends TestCase
     {
         $docs = new DocumentCollection();
         $doc =  new Document(['foo' => 'bar']);
-        $docs->addDocument($doc);
+        $docs->add($doc);
 
         $this->assertCount(1, $docs);
     }

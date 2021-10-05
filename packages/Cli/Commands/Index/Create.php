@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Cli\Commands\Index;
 
-use Sigmie\Base\Index\Index;
+use Sigmie\Base\Index\AbstractIndex;
 use Sigmie\Cli\BaseCommand;
 use Sigmie\Support\Alias\Actions as IndexActions;
 use Symfony\Component\Console\Input\InputArgument;
@@ -21,7 +21,7 @@ class Create extends BaseCommand
         $name = $this->input->getArgument('name');
         $alias = $this->input->getOption('alias');
 
-        $index = new Index($name);
+        $index = new AbstractIndex($name);
 
         $this->createIndex($index);
 

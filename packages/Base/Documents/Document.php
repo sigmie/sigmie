@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Sigmie\Base\Documents;
 
 use Sigmie\Base\Contracts\FromRaw;
-use Sigmie\Base\Index\Index;
+use Sigmie\Base\Index\AbstractIndex;
 
 /**
  * @property string $_id read property
- * @property Index $_index read property
+ * @property AbstractIndex $_index read property
  */
 class Document implements FromRaw
 {
@@ -17,7 +17,7 @@ class Document implements FromRaw
 
     public array $_source;
 
-    protected Index $_index;
+    protected AbstractIndex $_index;
 
     protected string $_id;
 
@@ -32,16 +32,6 @@ class Document implements FromRaw
 
     public function __set(string $name, mixed $value): void
     {
-        if ($name === '_id' && isset($this->_id)) {
-            $class = $this::class;
-            user_error("Error: Cannot modify readonly property {$class}::{$name}");
-        }
-
-        if ($name === '_index' && isset($this->_index)) {
-            $class = $this::class;
-            user_error("Error: Cannot modify readonly property {$class}::{$name}");
-        }
-
         if ($name === '_id') {
             $this->_id = $value;
             return;
@@ -83,7 +73,7 @@ class Document implements FromRaw
 
     public function save(): void
     {
-        $this->_index->updateDocument($this);
+        // $this->_index->updateDocument($this);
     }
 
     protected function getSource(string $source): mixed
@@ -102,7 +92,7 @@ class Document implements FromRaw
         return $this;
     }
 
-    private function index(): Index
+    private function index(): AbstractIndex
     {
         return $this->_index;
     }

@@ -52,7 +52,7 @@ class Bulk extends ElasticsearchResponse
 
     public function failed(): bool
     {
-        return parent::failed() || $this->json('errors');
+        return parent::failed() || $this->json('errors') || $this->code() === 400;
     }
 
     private function createCollections(array $items): void

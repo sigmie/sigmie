@@ -10,25 +10,25 @@ use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentCollection as DocumentsDocumentCollection;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestConnection;
-use Sigmie\Testing\TestIndex;
 
 class MgetTest extends TestCase
 {
-    use TestConnection, MgetAPI, TestIndex;
+    use MgetAPI;
 
     /**
      * @test
      */
     public function mget_api_call(): void
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
         $docs = new DocumentsDocumentCollection([
             new Document(_id: '1', _source: ['foo' => 'bar']),
             new Document(_id: '2', _source: ['foo' => 'baz']),
         ]);
 
-        $index->addDocuments($docs);
+        $index->merge($docs);
 
         $body = ['docs' => [['_id' => '1'], ['_id' => '2']]];
 

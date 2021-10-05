@@ -17,21 +17,22 @@ use PHPUnit\Framework\Exception as FrameworkException;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentCollection;
+use Sigmie\Base\Index\IndexBlueprint;
 use Sigmie\Testing\TestCase;
-use Sigmie\Testing\TestIndex;
 use TypeError;
 use Throwable;
 
 class IndexTest extends TestCase
 {
-    use TestIndex;
-
     /**
      * @test
      */
     public function lazy_each()
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create();
+
+        $index = $index->collect();
 
         $docs = [
             new Document(['foo' => 'bar'], '4'),
@@ -39,7 +40,7 @@ class IndexTest extends TestCase
             new Document(['baz' => 'john'], '2'),
         ];
 
-        $index->addDocuments($docs);
+        $index->merge($docs, 'true');
         $index = $index->chunk(1);
 
         $count = 0;
@@ -76,15 +77,17 @@ class IndexTest extends TestCase
      */
     public function mass_delete_docs()
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
         $docs = [new Document(['bar' => 'foo'], '1'), new Document(['foo' => 'bar'], '2')];
 
-        $index->addDocuments($docs);
+        $index->merge($docs, 'true');
 
         $this->assertCount(2, $index);
 
-        $index->remove(['1', '2']);
+        $index->remove('1', 'true');
+        $index->remove('2', 'true');
 
         $this->assertCount(0, $index);
     }
@@ -94,15 +97,18 @@ class IndexTest extends TestCase
      */
     public function add_or_update()
     {
-        $index = $this->getTestIndex();
+        $this->markTestSkipped();
+
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
         $document = new Document(['foo' => 'bar'], 'id');
 
-        $index->addDocument($document);
+        $index->add($document, 'true');
 
         $document->foo = 'john';
 
-        $document->save();
+        $document->save('true');
 
         $doc = $index['id'];
 
@@ -114,13 +120,14 @@ class IndexTest extends TestCase
      */
     public function offset_unset()
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
-        $index->addAsyncDocuments([new Document(['foo' => 'bar'], '4'),]);
+        $index->add(new Document(['foo' => 'bar'], '4'), 'true');
 
         $this->assertCount(1, $index);
 
-        unset($index['4']);
+        $index->remove('4', 'true');
 
         $this->assertCount(0, $index);
     }
@@ -130,9 +137,10 @@ class IndexTest extends TestCase
      */
     public function offset_exists()
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
-        $index->addAsyncDocuments([new Document(['foo' => 'bar'], '4'),]);
+        $index->add(new Document(['foo' => 'bar'], '4'),);
 
         $this->assertTrue($index->offsetExists('4'));
         $this->assertFalse($index->offsetExists('6'));
@@ -141,34 +149,17 @@ class IndexTest extends TestCase
     /**
      * @test
      */
-    public function offset_set_with_offset()
-    {
-        $index = $this->getTestIndex();
-
-        $docs = [
-            new Document(['foo' => 'bar'], '4'),
-        ];
-        $index->addAsyncDocuments($docs);
-
-        $doc = new Document(['foo' => 'baz'], '89');
-
-        $this->expectException(Exception::class);
-
-        $index->offsetSet('34', $doc);
-    }
-
-    /**
-     * @test
-     */
     public function offset_set()
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
-        $index->addAsyncDocuments([new Document(['foo' => 'bar'], '4'),]);
+
+        $index->add(new Document(['foo' => 'bar'], '4'),);
 
         $doc = new Document(['foo' => 'baz'], '89');
 
-        $index->offsetSet(null, $doc);
+        $index->add($doc, 'true');
 
         $this->assertCount(2, $index);
         $this->assertNotNull($index['89']);
@@ -180,7 +171,8 @@ class IndexTest extends TestCase
      */
     public function offset_get()
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
         $docs = [
             new Document(['foo' => 'bar'], '4'),
@@ -188,7 +180,7 @@ class IndexTest extends TestCase
             new Document(['baz' => 'john'], '2'),
         ];
 
-        $index->addDocuments($docs);
+        $index->merge($docs);
 
         $doc = $index->offsetGet('4');
 
@@ -201,7 +193,8 @@ class IndexTest extends TestCase
      */
     public function remove_document()
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
         $docs = [
             new Document(['foo' => 'bar'], '4'),
@@ -209,11 +202,11 @@ class IndexTest extends TestCase
             new Document(['baz' => 'john'], '2'),
         ];
 
-        $index->addDocuments($docs);
+        $index->merge($docs, 'true');
 
         $this->assertCount(3, $index);
 
-        $index->remove('89');
+        $index->remove('89', 'true');
 
         $this->assertCount(2, $index);
     }
@@ -221,43 +214,21 @@ class IndexTest extends TestCase
     /**
      * @test
      */
-    public function last_and_first()
-    {
-        $index = $this->getTestIndex();
-
-        $docs = [
-            new Document(['foo' => 'bar'], '4'),
-            new Document(['foo' => 'bar'], '5'),
-            new Document(['foo' => 'bar'], '8'),
-            new Document(['foo' => 'bar'], '9'),
-            new Document(['foo' => 'bar'], '0'),
-            new Document(['foo' => 'bar'], '89'),
-            new Document(['baz' => 'john'], '2'),
-        ];
-
-        $index->addDocuments($docs);
-
-        $this->assertEquals('4', $index->first()->_id);
-        $this->assertEquals('2', $index->last()->_id);
-    }
-
-    /**
-     * @test
-     */
     public function index_clear_and_is_empty()
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
         $docs = [
             new Document(['foo' => 'bar']),
             new Document(['baz' => 'john'], '2'),
         ];
 
-        $index->addAsyncDocuments($docs);
+        $index->merge($docs);
 
-        $index->clear();
+        $index->clear('true');
 
-        $this->assertCount(0, $index);
+        $this->assertTrue(count($index) === 0);
         $this->assertTrue($index->isEmpty());
         $this->assertFalse($index->isNotEmpty());
     }
@@ -267,21 +238,22 @@ class IndexTest extends TestCase
      */
     public function add_documents_accepts_collection_or_array()
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
         $docs = [
             new Document(['foo' => 'bar']),
             new Document(['baz' => 'john'], '2'),
         ];
 
-        $index->addAsyncDocuments($docs);
+        $index->merge($docs);
 
         $docs = [
             new Document(['foo' => 'bar']),
             new Document(['baz' => 'john'], '3'),
         ];
 
-        $index->addDocuments($docs);
+        $index->merge($docs, 'true');
 
         $this->assertCount(4, $index);
     }
@@ -291,13 +263,14 @@ class IndexTest extends TestCase
      */
     public function add_document_assigns_id()
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
         $doc = new Document(['foo' => 'bar']);
 
         $this->assertNull($doc->_id);
 
-        $index->addAsyncDocument($doc);
+        $index->add($doc);
 
         $this->assertNotNull($doc->_id);
     }
@@ -307,19 +280,20 @@ class IndexTest extends TestCase
      */
     public function index_collection_keys()
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
         $docs = new DocumentCollection([
             new Document(['foo' => 'bar']),
             new Document(['baz' => 'john'], '2'),
         ]);
 
-        $this->assertNull($docs->first()->_id);
+        $this->assertNull($docs[0]->_id);
 
-        $index->addAsyncDocuments($docs->toArray());
+        $index->merge($docs->toArray());
 
-        $this->assertNotNull($docs->first()->_id);
-        $this->assertEquals(2, $docs->last()->_id);
+        $this->assertNotNull($docs[0]->_id);
+        $this->assertEquals(2, $docs[1]->_id);
     }
 
     /**
@@ -327,7 +301,8 @@ class IndexTest extends TestCase
      */
     public function index_collection_methods()
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
         $docs = new DocumentCollection([
             new Document(['foo' => 'bar']),
@@ -335,11 +310,11 @@ class IndexTest extends TestCase
             new Document(['baz' => 'john']),
         ]);
 
-        $this->assertNull($docs->first()->_id);
+        $this->assertNull($docs[0]->_id);
 
-        $index->addAsyncDocuments($docs->toArray());
+        $index->merge($docs->toArray());
 
-        $this->assertNotNull($docs->first()->_id);
+        $this->assertNotNull($docs[0]->_id);
     }
 
     /**
@@ -347,9 +322,9 @@ class IndexTest extends TestCase
      */
     public function index_interfaces()
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
-        $this->assertInstanceOf(DocumentCollectionInterface::class, $index);
         $this->assertInstanceOf(Countable::class, $index);
         $this->assertInstanceOf(ArrayAccess::class, $index);
         $this->assertInstanceOf(IteratorAggregate::class, $index);

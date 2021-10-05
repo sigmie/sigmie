@@ -7,6 +7,7 @@ namespace Sigmie\Base\Http;
 use EventSauce\BackOff\BackOffStrategy;
 use EventSauce\BackOff\FibonacciBackOffStrategy;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Contracts\HttpConnection as ConnectionInterface;

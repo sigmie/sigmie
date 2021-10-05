@@ -7,7 +7,7 @@ namespace Sigmie\Base\Search;
 use Closure;
 use Sigmie\Base\APIs\Search as SearchAPI;
 use Sigmie\Base\Http\ElasticsearchResponse;
-use Sigmie\Base\Index\Index;
+use Sigmie\Base\Index\AbstractIndex;
 use Sigmie\Base\Search\Clauses\Boolean;
 use Sigmie\Base\Search\Clauses\Filtered;
 use Sigmie\Base\Search\Clauses\Query as QueryClause;
@@ -21,9 +21,9 @@ class QueryBuilder
 
     private Closure $call;
 
-    private Index $index;
+    private AbstractIndex $index;
 
-    public function __construct(Index $index)
+    public function __construct(AbstractIndex $index)
     {
         $this->index = $index;
     }

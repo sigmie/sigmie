@@ -12,20 +12,19 @@ use Sigmie\Base\Contracts\HttpConnection as Connection;
 use Sigmie\Base\Http\Connection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Index;
-use Sigmie\Base\Index\Actions as IndexActions;
+use Sigmie\Base\Index\IndexActions as IndexActions;
 use Sigmie\Base\Index\Builder;
 use Sigmie\Base\Index\CollectedIndex;
-use Sigmie\Base\Index\Index as IndexIndex;
+use Sigmie\Base\Index\AbstractIndex as IndexIndex;
+use Sigmie\Base\Index\ActiveIndex;
 use Sigmie\Base\Index\PaginatedIndex;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\JSONClient;
 use Sigmie\Support\Contracts\Collection;
-use Sigmie\Support\Index\AliasedIndex;
+use Sigmie\Base\Index\AliasedIndex;
 
 class Sigmie
 {
-    use IndexActions;
-
     public function __construct(Connection $httpConnection)
     {
         $this->httpConnection = $httpConnection;
@@ -38,29 +37,42 @@ class Sigmie
         return $builder->alias($name);
     }
 
-    public function aliased(string $name): ?AliasedIndex
+    public function paginate(string $name): PaginatedIndex
     {
-        return $this->getIndex($name);
+        $index = new PaginatedIndex($name);
+
+        $index->setHttpConnection(
+            $this->httpConnection
+        );
+
+        return $index;
     }
 
-    public function paginated(string $name): ?PaginatedIndex
+    public function index(string $name): ActiveIndex
     {
-        //TODO
+        $index = new ActiveIndex($name);
+
+        $index->setHttpConnection(
+            $this->httpConnection
+        );
+
+        return $index;
     }
 
-    public function collected(string $name): ?CollectedIndex
+    public function collect(string $name): CollectedIndex
     {
-        //TODO
+        $index = new CollectedIndex($name);
+
+        $index->setHttpConnection(
+            $this->httpConnection
+        );
+
+        return $index;
     }
 
     public function indices(): Collection
     {
         return $this->listIndices();
-    }
-
-    public function delete(Index\Index $index): void
-    {
-        $this->deleteIndex($index->name());
     }
 
     public function isConnected(): bool

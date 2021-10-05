@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Documents;
 
 use Closure;
+use Generator;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
@@ -12,24 +13,32 @@ trait Collection
 {
     protected CollectionInterface $collection;
 
-    public function addDocument(Document $element): self
+    public function add(Document $element): self
     {
         $this->collection->add($element);
 
         return $this;
     }
 
-    public function addDocuments(array|DocumentCollectionInterface $documents): self
+    public function merge(array|DocumentCollectionInterface $documents): self
     {
         if (is_array($documents)) {
             $documents = new DocumentCollection($documents);
         }
 
-        foreach ($documents as $document) {
-            $this->addDocument($document);
-        }
+        $this->collection = $this->collection->merge($documents->toArray());
 
         return $this;
+    }
+
+    public function has(string $_id): bool
+    {
+        return $this->collection->hasKey($_id);
+    }
+
+    public function all(): Generator
+    {
+        return $this->collection->toArray();
     }
 
     public function toArray(): array
@@ -52,9 +61,11 @@ trait Collection
         return !$this->isEmpty();
     }
 
-    public function remove(string $_id): void
+    public function remove(string $_id): bool
     {
         $this->collection->remove($_id);
+
+        return true;
     }
 
     public function contains(string $_id): bool
@@ -80,16 +91,6 @@ trait Collection
         }
 
         return null;
-    }
-
-    public function first(): ?Document
-    {
-        return $this->collection->first();
-    }
-
-    public function last(): ?Document
-    {
-        return $this->collection->last();
     }
 
     public function each(Closure $p): self

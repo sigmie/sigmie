@@ -8,26 +8,26 @@ use Sigmie\Base\APIs\Count as CountAPI;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestConnection;
-use Sigmie\Testing\TestIndex;
 
 class CountTest extends TestCase
 {
-    use TestConnection, CountAPI, TestIndex;
+    use CountAPI;
 
     /**
      * @test
      */
     public function count_api_call(): void
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
         $doc1 = new Document(['foo' => 'bar'], '0');
         $doc2 = new Document(['foo' => 'bar'], '1');
         $doc3 = new Document(['foo' => 'bar'], '2');
 
-        $index->addDocument($doc1);
-        $index->addDocument($doc2);
-        $index->addDocument($doc3);
+        $index->add($doc1);
+        $index->add($doc2);
+        $index->add($doc3,'refresh');
 
         $res = $this->countAPICall($index->name);
 

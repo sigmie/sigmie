@@ -12,5 +12,5 @@ interface Paginator
 
     public function hasPages(): bool;
 
-    public function items(): array;
+    public function docs(): array;
 }

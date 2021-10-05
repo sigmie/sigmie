@@ -9,32 +9,27 @@ use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Index\Index;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestConnection;
-use Sigmie\Testing\TestIndex;
 
 class DeleteTest extends TestCase
 {
-    use TestConnection, DeleteAPI, TestIndex;
+    use DeleteAPI;
 
     /**
      * @test
      */
     public function delete_api_call(): void
     {
-        $index = $this->getTestIndex();
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
 
         $doc = new Document(['foo' => 'bar'], '0');
 
-        $index->addDocument($doc);
+        $index->add($doc, 'true');
 
         $this->assertCount(1, $index);
 
-        $this->deleteAPICall('0');
+        $this->deleteAPICall($indexName, '0', 'true');
 
         $this->assertCount(0, $index);
-    }
-
-    protected function index(): Index
-    {
-        return $this->getTestIndex();
     }
 }
