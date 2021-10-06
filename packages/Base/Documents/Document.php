@@ -4,20 +4,22 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Documents;
 
+use Sigmie\Base\Actions\Document as DocumentActions;
 use Sigmie\Base\Contracts\FromRaw;
 use Sigmie\Base\Index\AbstractIndex;
+use Sigmie\Base\Index\Index;
 
 /**
  * @property string $_id read property
- * @property AbstractIndex $_index read property
+ * @property Index $_index read property
  */
 class Document implements FromRaw
 {
-    use Actions;
+    use DocumentActions;
 
     public array $_source;
 
-    protected AbstractIndex $_index;
+    protected Index $_index;
 
     protected string $_id;
 

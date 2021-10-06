@@ -8,7 +8,7 @@ use Sigmie\Base\Index\AbstractIndex;
 use Sigmie\Base\Search\Query;
 use Sigmie\Cli\BaseCommand;
 use Sigmie\Cli\Outputs\DocumentsTable;
-use Sigmie\Support\Alias\Actions as IndexActions;
+use Sigmie\Base\Actions\Alias as IndexActions;
 use Symfony\Component\Console\Input\InputArgument;
 
 class ListDocs extends BaseCommand

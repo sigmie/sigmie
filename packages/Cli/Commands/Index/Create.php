@@ -6,14 +6,11 @@ namespace Sigmie\Cli\Commands\Index;
 
 use Sigmie\Base\Index\AbstractIndex;
 use Sigmie\Cli\BaseCommand;
-use Sigmie\Support\Alias\Actions as IndexActions;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
 class Create extends BaseCommand
 {
-    use IndexActions;
-
     protected static $defaultName = 'index:create';
 
     public function executeCommand(): int

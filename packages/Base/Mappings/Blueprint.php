@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Index;
+namespace Sigmie\Base\Mappings;
 
 use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Mappings\PropertyType;

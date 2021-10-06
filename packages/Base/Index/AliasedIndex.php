@@ -6,21 +6,27 @@ namespace Sigmie\Base\Index;
 
 use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\APIs\Reindex;
-use Sigmie\Base\Contracts\MappingsInterface as MappingsInterface;
 use Sigmie\Base\Index\AbstractIndex;
 use Sigmie\Base\Index\Settings;
-use Sigmie\Support\Alias\Actions as AliasActions;
+use Sigmie\Base\Actions\Alias as AliasActions;
 use Sigmie\Support\Update\Update;
 use Sigmie\Support\Update\UpdateProxy;
+use Sigmie\Base\Contracts\API;
+use Sigmie\Base\Contracts\Mappings as MappingsInterface;
+use Sigmie\Base\Contracts\Settings as SettingsInterface;
 
-class AliasedIndex extends ActiveIndex
+class AliasedIndex extends Index
 {
-    use Reindex, IndexAPI, AliasActions, IndexActions;
+    use Reindex, IndexAPI, AliasActions;
 
     public function __construct(
         protected string $name,
         protected string $alias,
+        SettingsInterface $settings = null,
+        MappingsInterface $mappings = null
     ) {
+        $this->settings = $settings ?: new Settings();
+        $this->mappings = $mappings ?: new Mappings();
     }
 
     public function update(callable $update): AliasedIndex

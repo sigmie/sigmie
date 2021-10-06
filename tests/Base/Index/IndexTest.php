@@ -32,7 +32,7 @@ class IndexTest extends TestCase
         $indexName = uniqid();
         $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create();
 
-        $index = $index->collect();
+        $index = $this->sigmie->collect($indexName,'true');
 
         $docs = [
             new Document(['foo' => 'bar'], '4'),
@@ -40,7 +40,7 @@ class IndexTest extends TestCase
             new Document(['baz' => 'john'], '2'),
         ];
 
-        $index->merge($docs, 'true');
+        $index->merge($docs);
         $index = $index->chunk(1);
 
         $count = 0;
@@ -78,16 +78,18 @@ class IndexTest extends TestCase
     public function mass_delete_docs()
     {
         $indexName = uniqid();
-        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create();
+
+        $index = $this->sigmie->collect($indexName,'true');
 
         $docs = [new Document(['bar' => 'foo'], '1'), new Document(['foo' => 'bar'], '2')];
 
-        $index->merge($docs, 'true');
+        $index->merge($docs,);
 
         $this->assertCount(2, $index);
 
-        $index->remove('1', 'true');
-        $index->remove('2', 'true');
+        $index->remove('1');
+        $index->remove('2');
 
         $this->assertCount(0, $index);
     }
@@ -100,7 +102,10 @@ class IndexTest extends TestCase
         $this->markTestSkipped();
 
         $indexName = uniqid();
-        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
+
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create();
+
+        $index = $this->sigmie->collect($indexName,'true');
 
         $document = new Document(['foo' => 'bar'], 'id');
 
@@ -121,13 +126,15 @@ class IndexTest extends TestCase
     public function offset_unset()
     {
         $indexName = uniqid();
-        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create();
+
+        $index = $this->sigmie->collect($indexName,'true');
 
         $index->add(new Document(['foo' => 'bar'], '4'), 'true');
 
         $this->assertCount(1, $index);
 
-        $index->remove('4', 'true');
+        $index->remove('4');
 
         $this->assertCount(0, $index);
     }

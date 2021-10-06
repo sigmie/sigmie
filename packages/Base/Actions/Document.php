@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Documents;
+namespace Sigmie\Base\Actions;
 
 use function Amp\Parallel\Worker\enqueue;
 use function Amp\Promise\all;
@@ -20,12 +20,13 @@ use Sigmie\Base\Documents\DocumentCollection;
 use Sigmie\Base\Index\AbstractIndex;
 use Sigmie\Base\Search\Query;
 use Sigmie\Support\BulkBody;
+use Sigmie\Base\Documents\Document as Doc;
 
-trait Actions
+trait Document
 {
     use SearchAPI, DeleteAPI, MgetAPI, BulkAPI, UpdateAPI, API, DocAPI;
 
-    public function updateDocument(string $indexName, Document $document, string $refresh): Document
+    public function updateDocument(string $indexName, Doc $document, string $refresh): Doc
     {
         $body = [
             ['update' => ['_id' => $document->_id]],
@@ -44,7 +45,7 @@ trait Actions
     protected function upsertDocuments(string $indexName, DocumentCollectionInterface $collection, string $refresh): DocumentCollectionInterface
     {
         $body = [];
-        $collection->each(function (Document $document, $index) use (&$body) {
+        $collection->each(function (Doc $document, $index) use (&$body) {
             if (!is_null($document->_id)) {
                 $body = [
                     ...$body,
@@ -76,7 +77,7 @@ trait Actions
      * @param bool $async Should we wait for the
      * document to become available
      */
-    protected function createDocument(string $indexName, Document $doc, string $refresh): Document
+    protected function createDocument(string $indexName, Doc $doc, string $refresh): Doc
     {
         $array = [];
 
@@ -128,7 +129,7 @@ trait Actions
         $ids = $response->getAll()->map(fn ($value) => $value['create']['_id']);
 
         $index = 0;
-        return $documentCollection->each(function (Document $doc) use ($ids, &$index) {
+        return $documentCollection->each(function (Doc $doc) use ($ids, &$index) {
             if (is_null($doc->_id)) {
                 $doc->_id = $ids[$index];
             }
@@ -138,7 +139,7 @@ trait Actions
         return $documentCollection;
     }
 
-    protected function getDocument(string $indexName, string $identifier): ?Document
+    protected function getDocument(string $indexName, string $identifier): ?Doc
     {
         $response = $this->mgetAPICall($indexName, ['docs' => [['_id' => $identifier]]]);
 
@@ -157,7 +158,7 @@ trait Actions
         $values = $response->json('hits')['hits'];
 
         foreach ($values as $data) {
-            $doc = new Document($data['_source'], $data['_id']);
+            $doc = new Doc($data['_source'], $data['_id']);
             $collection->add($doc);
         }
 

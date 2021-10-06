@@ -6,25 +6,24 @@ namespace Sigmie;
 
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
+use Sigmie\Base\Actions\Index as IndexActions;
 use Sigmie\Base\Contracts\ElasticsearchRequest as ElasticsearchRequestInterface;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Contracts\HttpConnection as Connection;
+use Sigmie\Base\Documents\AliveCollection;
 use Sigmie\Base\Http\Connection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
-use Sigmie\Base\Index;
-use Sigmie\Base\Index\IndexActions as IndexActions;
 use Sigmie\Base\Index\Builder;
-use Sigmie\Base\Index\CollectedIndex;
-use Sigmie\Base\Index\AbstractIndex as IndexIndex;
-use Sigmie\Base\Index\ActiveIndex;
-use Sigmie\Base\Index\PaginatedIndex;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\JSONClient;
 use Sigmie\Support\Contracts\Collection;
 use Sigmie\Base\Index\AliasedIndex;
+use Sigmie\Base\Actions\Alias;
 
 class Sigmie
 {
+    use IndexActions;
+
     public function __construct(Connection $httpConnection)
     {
         $this->httpConnection = $httpConnection;
@@ -32,40 +31,21 @@ class Sigmie
 
     public function newIndex(string $name): Builder
     {
-        $builder = new Index\Builder($this->httpConnection);
+        $builder = new Builder($this->httpConnection);
 
         return $builder->alias($name);
     }
 
-    public function paginate(string $name): PaginatedIndex
+    public function index(string $name): AliasedIndex
     {
-        $index = new PaginatedIndex($name);
-
-        $index->setHttpConnection(
-            $this->httpConnection
-        );
-
-        return $index;
+        return $this->getIndex($name);
     }
 
-    public function index(string $name): ActiveIndex
+    public function collect(string $name, string $refresh = 'false'): AliveCollection
     {
-        $index = new ActiveIndex($name);
+        $index = new AliveCollection($name, $refresh);
 
-        $index->setHttpConnection(
-            $this->httpConnection
-        );
-
-        return $index;
-    }
-
-    public function collect(string $name): CollectedIndex
-    {
-        $index = new CollectedIndex($name);
-
-        $index->setHttpConnection(
-            $this->httpConnection
-        );
+        $index->setHttpConnection($this->httpConnection);
 
         return $index;
     }

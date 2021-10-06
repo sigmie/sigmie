@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Sigmie\Testing;
 
 use Carbon\Carbon;
-use Sigmie\Base\Index\IndexActions;
+use Sigmie\Base\Actions\Index;
 use Sigmie\Sigmie;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
     use Testing,
-        IndexActions,
+        Index,
         ClearIndices,
         Assertions;
 

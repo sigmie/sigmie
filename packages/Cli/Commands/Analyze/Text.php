@@ -8,13 +8,13 @@ use Sigmie\Base\APIs\Alias as AliasAPI;
 use Sigmie\Base\APIs\Analyze;
 use Sigmie\Cli\BaseCommand;
 use Sigmie\Cli\Outputs\AnalyzeTable;
-use Sigmie\Support\Alias\Actions;
-use Sigmie\Support\Alias\Actions as IndexActions;
+use Sigmie\Base\Actions\Alias;
+use Sigmie\Base\Actions\Alias as IndexActions;
 use Symfony\Component\Console\Input\InputOption;
 
 class Text extends BaseCommand
 {
-    use IndexActions, Actions, AliasAPI, Analyze;
+    use IndexActions, Alias, AliasAPI, Analyze;
 
     protected static $defaultName = 'analyze:text';
 

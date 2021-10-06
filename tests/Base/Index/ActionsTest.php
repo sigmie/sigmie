@@ -8,19 +8,15 @@ use Sigmie\Base\Index\ActiveIndex;
 use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Index\Index;
 use Sigmie\Base\Index\IndexBlueprint;
-use Sigmie\Support\Alias\Actions as IndexActions;
 use Sigmie\Support\Contracts\Collection;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestConnection;
+use Sigmie\Base\Index\Settings;
+use Sigmie\Base\Index\Mappings;
 
 class ActionsTest extends TestCase
 {
-    use IndexActions, TestConnection;
-
-    public function setUp(): void
-    {
-        parent::setUp();
-    }
+    use TestConnection;
 
     /**
      * @test
@@ -29,15 +25,15 @@ class ActionsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $index = new AliasedIndex($indexName);
+        $index = new AliasedIndex($indexName, uniqid());
 
-        $exists = $this->indexExists($index);
+        $exists = $this->indexExists($indexName);
 
         $this->assertFalse($exists);
 
-        $this->createIndex($indexName, new IndexBlueprint());
+        $this->createIndex($indexName, $index->settings, $index->mappings);
 
-        $exists = $this->indexExists($index);
+        $exists = $this->indexExists($indexName);
 
         $this->assertTrue($exists);
     }
@@ -49,7 +45,9 @@ class ActionsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $this->createIndex($indexName, new IndexBlueprint());
+        $index = new Index($indexName);
+
+        $this->createIndex($indexName, $index->settings, $index->mappings);
 
         $this->assertIndexExists($indexName);
     }
@@ -61,7 +59,9 @@ class ActionsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $this->createIndex($indexName, new IndexBlueprint());
+        $index = new Index($indexName);
+
+        $this->createIndex($indexName, $index->settings, $index->mappings);
 
         $this->deleteIndex($indexName);
 
@@ -78,17 +78,17 @@ class ActionsTest extends TestCase
         $fooIndexName = uniqid();
         $barIndexName = uniqid();
 
-        $this->createIndex($fooIndexName, new IndexBlueprint());
-        $this->createIndex($barIndexName, new IndexBlueprint());
+        $this->createIndex($fooIndexName, new Settings, new Mappings);
+        $this->createIndex($barIndexName, new Settings, new Mappings);
 
         $list = $this->listIndices();
-        $array = $list->map(fn (ActiveIndex $index) => $index->name)->toArray();
+        $array = $list->map(fn (Index $index) => $index->name)->toArray();
 
         $this->assertContains($fooIndexName, $array);
         $this->assertContains($barIndexName, $array);
 
         $this->assertInstanceOf(Collection::class, $list);
 
-        $list->each(fn ($index, $key) => $this->assertInstanceOf(ActiveIndex::class, $index));
+        $list->each(fn ($index, $key) => $this->assertInstanceOf(Index::class, $index));
     }
 }

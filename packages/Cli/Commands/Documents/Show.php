@@ -6,7 +6,7 @@ use Sigmie\Base\APIs\Mget;
 use Sigmie\Base\Index\AbstractIndex;
 use Sigmie\Cli\BaseCommand;
 use Sigmie\Cli\Outputs\DocumentTable;
-use Sigmie\Support\Alias\Actions as IndexActions;
+use Sigmie\Base\Actions\Alias as IndexActions;
 use Symfony\Component\Console\Input\InputArgument;
 
 class Show extends BaseCommand

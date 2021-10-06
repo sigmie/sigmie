@@ -23,6 +23,7 @@ use Sigmie\Support\Shared\Mappings;
 use Sigmie\Support\Shared\Replicas;
 use Sigmie\Support\Shared\Shards;
 use Sigmie\Support\Shared\Tokenizer;
+use Sigmie\Base\Actions\Index as IndexActions;
 
 class Builder
 {
@@ -96,17 +97,15 @@ class Builder
         return $this->defaultAnalyzer;
     }
 
-    public function create(): AbstractIndex
+    public function create(): AliasedIndex
     {
         $index = $this->make();
 
-        $indexName = index_name($this->alias);
+        $this->createIndex($index->name, $index->settings, $index->mappings);
 
-        $this->createIndex($indexName, $index);
+        $this->createAlias($index->name, $this->alias);
 
-        $this->createAlias($indexName, $this->alias);
-
-        $index = new AliasedIndex($indexName, $this->alias);
+        $index = new AliasedIndex($index->name, $this->alias);
         $index->setHttpConnection($this->httpConnection);
 
         return $index;
@@ -117,7 +116,7 @@ class Builder
         return $this->alias;
     }
 
-    public function make(): IndexBlueprint
+    public function make(): Index
     {
         $this->throwUnlessMappingsDefined();
 
@@ -139,8 +138,9 @@ class Builder
             configs: $this->config
         );
 
+        $name = index_name($this->alias);
 
-        return new IndexBlueprint($settings, $mappings);
+        return new Index($name, $settings, $mappings);
     }
 
     protected function throwUnlessMappingsDefined(): void

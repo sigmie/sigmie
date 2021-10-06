@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Index;
+namespace Sigmie\Base\Documents;
 
 use ArrayAccess;
 use Countable;
@@ -15,9 +15,10 @@ use Sigmie\Base\APIs\Search;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Contracts\MappingsInterface as MappingsInterface;
-use Sigmie\Base\Documents\Actions as DocumentsActions;
+use Sigmie\Base\Actions\Document as DocumentsActions;
 use Sigmie\Base\Documents\Collection as DocumentsCollection;
 use Sigmie\Base\Documents\Document;
+use Sigmie\Base\Actions\Index;
 use Sigmie\Base\Search\Searchable;
 use Sigmie\Base\Shared\LazyEach;
 use function Sigmie\Helpers\ensure_doc_collection;
@@ -25,9 +26,15 @@ use Sigmie\Support\Collection;
 
 use Sigmie\Support\Index\AliasedIndex;
 
-class CollectedIndex extends AbstractIndex implements ArrayAccess, Countable, IteratorAggregate
+class AliveCollection implements DocumentCollectionInterface, ArrayAccess, Countable, IteratorAggregate
 {
-    use DocumentsActions, IndexActions, LazyEach, Search;
+    use DocumentsActions, Index, LazyEach, Search;
+
+    public function __construct(
+        protected string $name,
+        protected string $refresh
+    ) {
+    }
 
     public function all(): Generator
     {
@@ -39,20 +46,20 @@ class CollectedIndex extends AbstractIndex implements ArrayAccess, Countable, It
         return $this->documentExists($this->name, $_id);
     }
 
-    public function add(Document $document, string $refresh = 'false'): self
+    public function add(Document $document): self
     {
-        $this->createDocument($this->name, $document, $refresh);
+        $this->createDocument($this->name, $document, $this->refresh);
 
         $document->_index = $this;
 
         return $this;
     }
 
-    public function merge(array|DocumentCollectionInterface $docs, string $refresh = 'false'): self
+    public function merge(array|DocumentCollectionInterface $docs,): self
     {
         $docs = ensure_doc_collection($docs);
 
-        $this->upsertDocuments($this->name, $docs, $refresh);
+        $this->upsertDocuments($this->name, $docs, $this->refresh);
 
         return $this;
     }
@@ -62,9 +69,9 @@ class CollectedIndex extends AbstractIndex implements ArrayAccess, Countable, It
         return iterator_to_array($this->getIterator());
     }
 
-    public function clear(string $refresh): void
+    public function clear(): void
     {
-        $this->indexAPICall("/{$this->name}/_delete_by_query?refresh={$refresh}", 'POST', [
+        $this->indexAPICall("/{$this->name}/_delete_by_query?refresh={$this->refresh}", 'POST', [
             'query' => ['match_all' => (object)[]]
         ]);
     }
@@ -79,9 +86,9 @@ class CollectedIndex extends AbstractIndex implements ArrayAccess, Countable, It
         return !$this->isEmpty();
     }
 
-    public function remove(string $_id, string $refresh = 'false'): bool
+    public function remove(string $_id): bool
     {
-        return $this->deleteDocument($this->name, $_id, $refresh);
+        return $this->deleteDocument($this->name, $_id, $this->refresh);
     }
 
     public function get(string $_id): ?Document

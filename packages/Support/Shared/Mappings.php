@@ -7,7 +7,7 @@ namespace Sigmie\Support\Shared;
 use Closure;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
-use Sigmie\Base\Index\DynamicMappings;
+use Sigmie\Base\Mappings\DynamicMappings;
 use Sigmie\Base\Index\Mappings as IndexMappings;
 use Sigmie\Support\Callables\Properties as BlueprintProxy;
 

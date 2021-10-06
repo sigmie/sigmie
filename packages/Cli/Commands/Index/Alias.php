@@ -6,14 +6,14 @@ namespace Sigmie\Cli\Commands\Index;
 
 use Sigmie\Base\APIs\Alias as AliasAPI;
 use Sigmie\Cli\BaseCommand;
-use Sigmie\Support\Alias\Actions;
-use Sigmie\Support\Alias\Actions as IndexActions;
+use Sigmie\Base\Actions\Alias;
+use Sigmie\Base\Actions\Alias as IndexActions;
 use Symfony\Component\Console\Input\InputOption;
 
 class Alias extends BaseCommand
 {
 
-    use IndexActions, Actions, AliasAPI;
+    use IndexActions, Alias, AliasAPI;
 
     protected static $defaultName = 'index:alias';
 

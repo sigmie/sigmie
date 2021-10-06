@@ -10,6 +10,7 @@ use Sigmie\Base\Analysis\SimpleAnalyzer;
 use Sigmie\Base\Contracts\CustomAnalyzer;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Contracts\Type;
+use Sigmie\Base\Mappings\DynamicMappings;
 use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Mappings\Types\Boolean;
 use Sigmie\Base\Mappings\Types\Date;
@@ -40,7 +41,7 @@ class Mappings implements MappingsInterface
     {
         $result = $this->properties->textFields()
             ->filter(fn (Type $field) => $field instanceof Text)
-            ->filter(fn (Type $field) => !is_null($field->analyzer()))
+            ->filter(fn (Text $field) => !is_null($field->analyzer()))
             ->mapToDictionary(fn (Text $field) => [$field->analyzer()->name() => $field->analyzer()]);
 
         return $result->add($this->defaultAnalyzer);

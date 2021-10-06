@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Support\Alias;
+namespace Sigmie\Base\Actions;
 
 use Sigmie\Base\APIs\Alias as AliasAPI;
 use Sigmie\Base\APIs\Index;
 
-trait Actions
+trait Alias
 {
     use AliasAPI, Index;
 

@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
-use Sigmie\Support\Alias\Actions as IndexActions;
-
 trait Testing
 {
-    use IndexActions, TestConnection;
+    use TestConnection;
 
     protected function setUpSigmieTesting(array $uses): void
     {

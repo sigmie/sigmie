@@ -8,12 +8,12 @@ namespace Sigmie\Base\Shared;
 use Closure;
 use Iterator;
 use Sigmie\Base\APIs\Count;
-use Sigmie\Base\Documents\Actions;
 use Sigmie\Base\Documents\Document;
+use Sigmie\Base\Actions\Document as DocumentActions;
 
 trait LazyEach
 {
-    use Actions, Count;
+    use DocumentActions, Count;
 
     protected int $chunk = 500;
 
@@ -24,7 +24,7 @@ trait LazyEach
         return $this;
     }
 
-    public function each(Closure $fn):self
+    public function each(Closure $fn): self
     {
         foreach ($this->indexGenerator() as $key => $value) {
             $fn($value, $key);
