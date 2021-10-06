@@ -29,7 +29,7 @@ use Sigmie\German\Builder as GermanBuilder;
 use Sigmie\German\German;
 use Sigmie\Greek\Builder as GreekBuilder;
 use Sigmie\Greek\Greek;
-use Sigmie\Support\Alias\Actions;
+use Sigmie\Sigmie\Base\Actions\Alias;
 use Sigmie\Support\Exceptions\MissingMapping;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\Assertions;
@@ -37,7 +37,7 @@ use Sigmie\Testing\TestCase;
 
 class MapTest extends TestCase
 {
-    use Index, Actions;
+    use Index;
 
     /**
      * @test

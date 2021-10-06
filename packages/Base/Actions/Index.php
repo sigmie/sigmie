@@ -38,7 +38,7 @@ trait Index
         return $res->code() === 200;
     }
 
-    protected function getIndex(string $alias): ?AliasedIndex
+    protected function getIndex(string $alias): ?BaseIndex
     {
         try {
             $res = $this->indexAPICall("/{$alias}", 'GET', ['require_alias' => true]);
@@ -51,7 +51,11 @@ trait Index
             $data = array_values($res->json())[0];
             $name = $data['settings']['index']['provided_name'];
 
-            $index = new AliasedIndex($name, $alias);
+            // if (isset($data['aliases']) && in_array($alias, array_keys($data['aliases']))) {
+            //     $index = AliasedIndex::fromRaw($name, $data);
+            // } else {
+            $index = BaseIndex::fromRaw($name, $data);
+            // }
             $index->setHttpConnection($this->getHttpConnection());
 
             return $index;

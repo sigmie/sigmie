@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Sigmie\Tests\Base\Index;
 
 use Sigmie\Base\APIs\Index;
-use Sigmie\Support\Alias\Actions;
+use Sigmie\Sigmie\Base\Actions\Alias;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
 
 class FilterTest extends TestCase
 {
-    use Index, Actions;
+    use Index;
 
     /**
      * @test

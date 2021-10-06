@@ -18,6 +18,7 @@ use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\JSONClient;
 use Sigmie\Support\Contracts\Collection;
 use Sigmie\Base\Index\AliasedIndex;
+use Sigmie\Base\Index\Index;
 use Sigmie\Base\Actions\Alias;
 
 class Sigmie
@@ -36,7 +37,8 @@ class Sigmie
         return $builder->alias($name);
     }
 
-    public function index(string $name): null|AliasedIndex
+    //TODO fix return type
+    public function index(string $name): null|AliasedIndex|Index
     {
         return $this->getIndex($name);
     }

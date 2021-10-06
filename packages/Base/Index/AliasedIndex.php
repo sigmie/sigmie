@@ -6,8 +6,7 @@ namespace Sigmie\Base\Index;
 
 use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\APIs\Reindex;
-use Sigmie\Base\Index\AbstractIndex;
-use Sigmie\Base\Index\Settings;
+use Sigmie\Base\Index\AbstractIndex; use Sigmie\Base\Index\Settings;
 use Sigmie\Base\Actions\Alias as AliasActions;
 use Sigmie\Base\Actions\Index as IndexActions;
 use Sigmie\Support\Update\Update;
@@ -29,6 +28,7 @@ class AliasedIndex extends Index
         $this->settings = $settings ?: new Settings();
         $this->mappings = $mappings ?: new Mappings();
     }
+
 
     public function update(callable $update): AliasedIndex
     {

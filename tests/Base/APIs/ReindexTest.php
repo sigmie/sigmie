@@ -9,13 +9,13 @@ use Sigmie\Base\APIs\Index as APIsIndex;
 use Sigmie\Base\APIs\Reindex;
 use Sigmie\Base\Exceptions\ReindexException;
 use Sigmie\Base\Index\Index;
-use Sigmie\Support\Alias\Actions as IndexActions;
+use Sigmie\Base\Actions\Alias as AliasActions;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestConnection;
 
 class ReindexTest extends TestCase
 {
-    use IndexActions, Bulk, Reindex, APIsIndex;
+    use AliasActions, Bulk, Reindex, APIsIndex;
 
     /**
      * @test
@@ -25,8 +25,8 @@ class ReindexTest extends TestCase
         $newName = uniqid();
         $oldName = uniqid();
 
-        $oldIndex = $this->sigmie->newIndex($oldName)->withoutMappings()->create()->collect();
-        $newIndex = $this->sigmie->newIndex($newName)->withoutMappings()->create()->collect();
+        $oldIndex = $this->sigmie->newIndex($oldName)->withoutMappings()->create();
+        $newIndex = $this->sigmie->newIndex($newName)->withoutMappings()->create();
 
         $body = [
             ['create' => ['_id' => 1]],
@@ -37,10 +37,12 @@ class ReindexTest extends TestCase
 
         $this->bulkAPICall($oldIndex->name, $body, 'true');
 
-        $this->assertCount(0, $newIndex);
+        $collection = $this->sigmie->collect($newName);
+        $this->assertCount(0, $collection);
         $this->reindexAPICall($oldIndex->name, $newIndex->name);
 
-        $this->assertCount(2, $newIndex);
+        $collection = $this->sigmie->collect($newName);
+        $this->assertCount(2, $collection);
     }
 
     /**
@@ -51,8 +53,8 @@ class ReindexTest extends TestCase
         $newName = uniqid();
         $oldName = uniqid();
 
-        $oldIndex = $this->sigmie->newIndex($oldName)->withoutMappings()->create()->collect();
-        $newIndex = $this->sigmie->newIndex($newName)->withoutMappings()->create()->collect();
+        $oldIndex = $this->sigmie->newIndex($oldName)->withoutMappings()->create();
+        $newIndex = $this->sigmie->newIndex($newName)->withoutMappings()->create();
 
         $body = [
             ['create' => ['_id' => 1]],

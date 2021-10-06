@@ -51,13 +51,7 @@ class Settings implements SettingsInterface
 
     public static function fromRaw(array $response): static
     {
-        $indexIdentifier = array_key_first($response);
-
-        if (isset($response['settings']) === false) {
-            $settings = $response[$indexIdentifier]['settings']['index'];
-        } else {
-            $settings = $response['settings']['index'];
-        }
+        $settings = $response['settings']['index'];
 
         $analysis = Analysis::fromRaw($settings['analysis']);
 

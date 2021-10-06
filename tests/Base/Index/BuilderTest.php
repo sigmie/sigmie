@@ -15,14 +15,14 @@ use Sigmie\Base\Analysis\Tokenizers\Pattern as PatternTokenizer;
 use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Index;
-use Sigmie\Base\Index\Blueprint;
+use Sigmie\Base\Mappings\Blueprint;
 use Sigmie\English\Builder as EnglishBuilder;
 use Sigmie\English\English;
 use Sigmie\German\Builder as GermanBuilder;
 use Sigmie\German\German;
 use Sigmie\Greek\Builder as GreekBuilder;
 use Sigmie\Greek\Greek;
-use Sigmie\Support\Alias\Actions;
+use Sigmie\Sigmie\Base\Actions\Alias;
 use Sigmie\Support\Exceptions\MissingMapping;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\Assertions;
@@ -30,7 +30,7 @@ use Sigmie\Testing\TestCase;
 
 class BuilderTest extends TestCase
 {
-    use Index, Actions;
+    use Index;
 
     /**
      * @test
