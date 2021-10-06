@@ -14,9 +14,8 @@ use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentCollection;
 use Sigmie\Base\Index\AliasedIndex;
-use Sigmie\Base\Index\Blueprint;
+use Sigmie\Base\Mappings\Blueprint;
 use function Sigmie\Helpers\name_configs;
-use Sigmie\Support\Alias\Actions;
 use Sigmie\Support\Update\Update as Update;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
@@ -24,7 +23,7 @@ use TypeError;
 
 class UpdateTest extends TestCase
 {
-    use Index, Actions;
+    use Index;
 
     /**
      * @test
@@ -442,9 +441,10 @@ class UpdateTest extends TestCase
             $docs->add(new Document(['foo' => 'bar']));
         }
 
-        $index->collect()->merge($docs, 'true');
+        $collection = $this->sigmie->collect($alias,'true');
+        $collection->merge($docs);
 
-        $this->assertCount(10, $index->collect());
+        $this->assertCount(10, $collection);
 
         $updatedIndex = $index->update(function (Update $update) {
             $update->withoutMappings();
@@ -452,8 +452,10 @@ class UpdateTest extends TestCase
             return $update;
         });
 
+        $collection = $this->sigmie->collect($alias,'true');
+
         $this->assertNotEquals($oldIndexName, $updatedIndex->name);
-        $this->assertCount(10, $updatedIndex->collect());
+        $this->assertCount(10, $collection);
     }
 
     /**

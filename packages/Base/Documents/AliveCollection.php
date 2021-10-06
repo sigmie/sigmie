@@ -50,8 +50,6 @@ class AliveCollection implements DocumentCollectionInterface, ArrayAccess, Count
     {
         $this->createDocument($this->name, $document, $this->refresh);
 
-        $document->_index = $this;
-
         return $this;
     }
 

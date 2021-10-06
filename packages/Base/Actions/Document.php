@@ -64,7 +64,8 @@ trait Document
 
         //TODO fix mapping wrong ids when some of the
         //documents have failed
-        $successful = $this->bulkAPICall($indexName, $body, $refresh)->getSuccessful();
+        $res = $this->bulkAPICall($indexName, $body, $refresh);
+        $successful = $res->getSuccessful();
 
         foreach ($successful as $index => [$action, $values]) {
             $collection[$index]->_id = $values['_id'];
