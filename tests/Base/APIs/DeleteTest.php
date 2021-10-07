@@ -20,7 +20,7 @@ class DeleteTest extends TestCase
     public function delete_api_call(): void
     {
         $indexName = uniqid();
-        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
+        $index = $this->sigmie->collect($indexName,'true');
 
         $doc = new Document(['foo' => 'bar'], '0');
 

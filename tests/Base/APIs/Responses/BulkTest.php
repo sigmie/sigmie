@@ -18,7 +18,7 @@ class BulkTest extends TestCase
     public function bulk_response(): void
     {
         $indexName = uniqid();
-        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
+        $index = $this->sigmie->collect($indexName,'true');
 
         $body = [
             ['create' => ['_id' => 1]],
@@ -27,7 +27,7 @@ class BulkTest extends TestCase
             ['field_foo' => 'value_baz'],
         ];
 
-        $bulkRes = $this->bulkAPICall($index->name, $body);
+        $bulkRes = $this->bulkAPICall($indexName, $body);
 
         $this->assertInstanceOf(Bulk::class, $bulkRes, 'Bulk API should return a Bulk response');
         $this->assertCount(2, $bulkRes->getSuccessful(), 'Bulk response getSuccessful method should contains 1 element.');

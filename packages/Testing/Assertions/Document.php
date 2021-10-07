@@ -100,19 +100,15 @@ trait Document
         $this->assertTrue($total === 0);
     }
 
-    public function assertDocumentExists(ElasticsearchDocument $document): void
+    public function assertDocumentExists(string $index, ElasticsearchDocument $document): void
     {
-        $index = (string) $document->_index->name;
-
         $res = $this->docAPICall($index, $document->_id, 'HEAD');
 
         $this->assertTrue($res->code() === 200);
     }
 
-    public function assertDocumentIsMissing(ElasticsearchDocument $document): void
+    public function assertDocumentIsMissing(string $index, ElasticsearchDocument $document): void
     {
-        $index = (string) $document->_index?->name;
-
         $res = $this->docAPICall($index, $document->_id, 'HEAD');
 
         $this->assertTrue($res->code() !== 200);

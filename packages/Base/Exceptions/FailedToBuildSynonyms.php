@@ -7,7 +7,7 @@ namespace Sigmie\Base\Exceptions;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
 
-final class FailedToBuildSynonyms extends ElasticsearchException
+class FailedToBuildSynonyms extends ElasticsearchException
 {
     private string $reason;
 

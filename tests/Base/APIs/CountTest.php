@@ -19,7 +19,7 @@ class CountTest extends TestCase
     public function count_api_call(): void
     {
         $indexName = uniqid();
-        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
+        $index = $this->sigmie->collect($indexName,'true');
 
         $doc1 = new Document(['foo' => 'bar'], '0');
         $doc2 = new Document(['foo' => 'bar'], '1');
@@ -29,7 +29,7 @@ class CountTest extends TestCase
         $index->add($doc2);
         $index->add($doc3,'refresh');
 
-        $res = $this->countAPICall($index->name);
+        $res = $this->countAPICall($indexName);
 
         $this->assertEquals(3, $res->json('count'));
     }

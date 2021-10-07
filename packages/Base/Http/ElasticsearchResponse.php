@@ -9,6 +9,7 @@ use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse as ElasticsearchResponseInterface;
 use Sigmie\Base\Exceptions\ElasticsearchException;
 use Sigmie\Base\Exceptions\FailedToBuildSynonyms;
+use Sigmie\Base\Exceptions\IndexNotFound;
 use Sigmie\Http\JSONResponse;
 
 class ElasticsearchResponse extends JSONResponse implements ElasticsearchResponseInterface
@@ -20,10 +21,27 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
 
     public function exception(ElasticsearchRequest $request): Exception
     {
-        $message = is_null($this->json()) ? "Request failed with code {$this->code()}." : ucfirst($this->json()['error']['reason']);
+        $json = $this->json();
+        $message = json_encode($json);
 
-        $exception = match ($message) {
-            'Failed to build synonyms' => new FailedToBuildSynonyms($request, $this, $message),
+        if (is_null($json))
+        {
+        $message = "Request failed with code {$this->code()}.";
+        }
+
+        if (isset($json['error']) && is_string($json['error']))
+        {
+            $message =$json['error'];
+        }
+
+        if (isset($json['error']) && is_array($json['error']))
+        {
+            $message = ucfirst($json['error']['reason']);
+        }
+
+        $exception = match (true) {
+            $message === 'Failed to build synonyms' => new FailedToBuildSynonyms($request, $this, $message),
+            str_starts_with($message,'No such index') => new IndexNotFound($request, $this, $message),
             default => new ElasticsearchException($request, $this, $message)
         };
 

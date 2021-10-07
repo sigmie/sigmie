@@ -21,7 +21,7 @@ class MgetTest extends TestCase
     public function mget_api_call(): void
     {
         $indexName = uniqid();
-        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create()->collect();
+        $index = $this->sigmie->collect($indexName,'true');
 
         $docs = new DocumentsDocumentCollection([
             new Document(_id: '1', _source: ['foo' => 'bar']),
@@ -32,7 +32,7 @@ class MgetTest extends TestCase
 
         $body = ['docs' => [['_id' => '1'], ['_id' => '2']]];
 
-        $mgetRes = $this->mgetAPICall($index->name, $body);
+        $mgetRes = $this->mgetAPICall($indexName, $body);
 
         $this->assertInstanceOf(DocumentCollection::class, $mgetRes, 'Mget API response should implement DocumentCollection');
         $this->assertCount(2, $mgetRes, 'Mget response should implement be Countable interface');

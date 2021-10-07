@@ -13,51 +13,25 @@ class DocumentTest extends TestCase
     /**
      * @test
      */
-    public function immutable_id()
-    {
-        $this->expectError();
-
-        $doc = new Document(_id: 'bar');
-
-        $doc->_id = 'demo';
-    }
-
-    /**
-     * @test
-     */
-    public function set_id_after_init()
-    {
-        $doc = new Document();
-
-        $doc->_id = 'demo';
-
-        $this->assertTrue($doc->_id === 'demo');
-
-        $this->expectError();
-
-        $doc->_id = 'bar';
-    }
-
-    /**
-     * @test
-     */
     public function assertions()
     {
-        $name = uniqid();
-        $index = $this->sigmie->newIndex($name)
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)
             ->withoutMappings()
-            ->create()->collect();
+            ->create();
+
+        $collection = $this->sigmie->collect($indexName, 'true');
 
         $doc = new Document(['foo' => 'bar', 'john' => 'doe'], 'bar');
 
-        $this->assertDocumentIsMissing($doc);
+        $this->assertDocumentIsMissing($indexName, $doc);
 
-        $index->add($doc);
+        $collection->add($doc);
 
-        $this->assertDocumentExists($doc);
+        $this->assertDocumentExists($indexName, $doc);
 
-        $this->assertIndexHas($name, ['foo' => 'bar']);
-        $this->assertIndexMissing($name, ['demo' => 'bar']);
+        $this->assertIndexHas($indexName, ['foo' => 'bar']);
+        $this->assertIndexMissing($indexName, ['demo' => 'bar']);
     }
     /**
      * @test

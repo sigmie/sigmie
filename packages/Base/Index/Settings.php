@@ -49,9 +49,9 @@ class Settings implements SettingsInterface
         return $this->replicaShards;
     }
 
-    public static function fromRaw(array $response): static
+    public static function fromRaw(array $raw): static
     {
-        $settings = $response['settings']['index'];
+        $settings = $raw['index'];
 
         $analysis = Analysis::fromRaw($settings['analysis']);
 

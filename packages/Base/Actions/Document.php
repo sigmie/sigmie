@@ -46,6 +46,7 @@ trait Document
     {
         $body = [];
         $collection->each(function (Doc $document, $index) use (&$body) {
+            //Upsert docs with id
             if (!is_null($document->_id)) {
                 $body = [
                     ...$body,
@@ -54,7 +55,9 @@ trait Document
                 ];
                 return;
             }
+            //or
 
+            //create docs without id
             $body = [
                 ...$body,
                 ['create' => (object) []],
@@ -68,8 +71,11 @@ trait Document
         $successful = $res->getSuccessful();
 
         foreach ($successful as $index => [$action, $values]) {
-            $collection[$index]->_id = $values['_id'];
+            if (is_null($collection[$index]->_id)) {
+                $collection[$index]->_id = $values['_id'];
+            }
         }
+
 
         return $collection;
     }

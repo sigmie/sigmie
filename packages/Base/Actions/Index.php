@@ -5,14 +5,18 @@ declare(strict_types=1);
 namespace Sigmie\Base\Actions;
 
 use App\Models\Mapping;
+use Google\Service\Calendar\Setting;
 use Sigmie\Base\APIs\Cat as CatAPI;
 use Sigmie\Base\APIs\Index as IndexAPI;
-use Sigmie\Base\Contracts\Mappings;
-use Sigmie\Base\Contracts\Settings;
+use Sigmie\Base\Contracts\Mappings as MappingsInterface;
+use Sigmie\Base\Contracts\Settings as SettingsInterface;
 use Sigmie\Base\Exceptions\ElasticsearchException;
 use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Index\Index as BaseIndex;
 use Sigmie\Base\Actions\Alias as AliasActions;
+use Sigmie\Base\Exceptions\IndexNotFound;
+use Sigmie\Base\Index\Mappings;
+use Sigmie\Base\Index\Settings;
 use Sigmie\Support\Collection;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 use Sigmie\Support\Exceptions\MultipleIndices;
@@ -21,7 +25,7 @@ trait Index
 {
     use CatAPI, IndexAPI, AliasActions;
 
-    protected function createIndex(string $indexName, Settings $settings, Mappings $mappings)
+    protected function createIndex(string $indexName, SettingsInterface $settings, MappingsInterface $mappings)
     {
         $body = [
             'settings' => $settings->toRaw(),
@@ -38,30 +42,34 @@ trait Index
         return $res->code() === 200;
     }
 
-    protected function getIndex(string $alias): ?BaseIndex
+    protected function getIndex(string $alias): BaseIndex|AliasedIndex|null
     {
         try {
-            $res = $this->indexAPICall("/{$alias}", 'GET', ['require_alias' => true]);
-
-            if (count($res->json()) > 1) {
-                //TODO this depends on support
-                throw MultipleIndices::forAlias($alias);
-            }
-
-            $data = array_values($res->json())[0];
-            $name = $data['settings']['index']['provided_name'];
-
-            // if (isset($data['aliases']) && in_array($alias, array_keys($data['aliases']))) {
-            //     $index = AliasedIndex::fromRaw($name, $data);
-            // } else {
-            $index = BaseIndex::fromRaw($name, $data);
-            // }
-            $index->setHttpConnection($this->getHttpConnection());
-
-            return $index;
-        } catch (ElasticsearchException) {
+            $res = $this->indexAPICall("/{$alias}", 'GET');
+        } catch (IndexNotFound) {
             return null;
         }
+
+        if (count($res->json()) > 1) {
+            throw MultipleIndices::forAlias($alias);
+        }
+
+        $data = array_values($res->json())[0];
+        $name = $data['settings']['index']['provided_name'];
+
+        $settings = Settings::fromRaw($data['settings']);
+        $analyzers = $settings->analysis()->analyzers();
+        $mappings = Mappings::fromRaw($data['mappings'], $analyzers);
+
+        if (isset($data['aliases']) && in_array($alias, array_keys($data['aliases']))) {
+            $index = new AliasedIndex($name, $alias, $settings, $mappings);
+        } else {
+            $index = new BaseIndex($name, $settings, $mappings);
+        }
+
+        $index->setHttpConnection($this->getHttpConnection());
+
+        return $index;
     }
 
     protected function getIndices(string $identifier): CollectionInterface

@@ -13,10 +13,33 @@ use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestConnection;
 use Sigmie\Base\Index\Settings;
 use Sigmie\Base\Index\Mappings;
+use Sigmie\Base\Actions\Index as IndexActions;
 
 class ActionsTest extends TestCase
 {
-    use TestConnection;
+    use TestConnection, IndexActions;
+
+    /**
+     * @test
+     */
+    public function get_index()
+    {
+        $indexName = uniqid();
+
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create();
+
+        $exists = $this->indexExists($indexName);
+
+        $this->assertTrue($exists);
+
+        $aliasedIndex = $this->getIndex($indexName);
+
+        $this->assertEquals(AliasedIndex::class,$aliasedIndex::class);
+
+        $baseIndex = $this->getIndex($index->name);
+
+        $this->assertEquals(Index::class,$baseIndex::class);
+    }
 
     /**
      * @test
@@ -65,7 +88,7 @@ class ActionsTest extends TestCase
 
         $this->deleteIndex($indexName);
 
-        $array = $this->listIndices()->map(fn (ActiveIndex $index) => $index->name)->toArray();
+        $array = $this->listIndices()->map(fn (Index $index) => $index->name)->toArray();
 
         $this->assertNotContains($indexName, $array);
     }

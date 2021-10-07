@@ -30,7 +30,7 @@ class AliasedIndex extends Index
     }
 
 
-    public function update(callable $update): AliasedIndex
+    public function update(callable $update): AliasedIndex|Index
     {
         $oldAlias = $this->name;
 

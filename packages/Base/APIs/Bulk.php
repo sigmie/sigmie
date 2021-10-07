@@ -9,6 +9,8 @@ use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\Requests\Bulk as BulkRequest;
 use Sigmie\Base\Http\Responses\Bulk as BulkResponse;
 
+use function Sigmie\Helpers\refresh_value;
+
 trait Bulk
 {
     use API;
@@ -17,7 +19,11 @@ trait Bulk
     {
         $uri = new Uri("/{$indexName}/_bulk");
 
-        $uri = Uri::withQueryValue($uri, 'refresh', $refresh);
+        if (is_null(refresh_value())) {
+            $uri = Uri::withQueryValue($uri, 'refresh', $refresh);
+        } else {
+            $uri = Uri::withQueryValue($uri, 'refresh', refresh_value());
+        }
 
         $request = new BulkRequest('POST', $uri, $data);
 

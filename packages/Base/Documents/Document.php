@@ -34,6 +34,16 @@ class Document implements FromRaw
 
     public function __set(string $name, mixed $value): void
     {
+        if ($name === '_id' && isset($this->_id)) {
+            $class = $this::class;
+            user_error("Error: Cannot modify readonly property {$class}::{$name}");
+        }
+
+        if ($name === '_index' && isset($this->_index)) {
+            $class = $this::class;
+            user_error("Error: Cannot modify readonly property {$class}::{$name}");
+        }
+
         if ($name === '_id') {
             $this->_id = $value;
             return;

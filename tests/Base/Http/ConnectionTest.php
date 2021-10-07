@@ -13,6 +13,8 @@ use Sigmie\Base\Index\Index;
 use Sigmie\Base\Index\IndexBlueprint;
 use Sigmie\Http\JSONClient;
 use Sigmie\Testing\TestCase;
+use Sigmie\Base\Index\Settings;
+use Sigmie\Base\Index\Mappings;
 
 use function Sigmie\Helpers\testing_host;
 
@@ -27,8 +29,8 @@ class ConnectionTest extends TestCase
 
         $this->expectException(ElasticsearchException::class);
 
-        $this->createIndex($indexName, new IndexBlueprint());
-        $this->createIndex($indexName, new IndexBlueprint());
+        $this->createIndex($indexName, new Settings, new Mappings);
+        $this->createIndex($indexName, new Settings, new Mappings);
     }
 
     /**

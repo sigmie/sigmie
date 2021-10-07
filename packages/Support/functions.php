@@ -31,7 +31,7 @@ namespace Sigmie\Helpers {
         return "{$host}:{$port}";
     }
 
-    function refresh_value(): string
+    function refresh_value(): string|null
     {
         $value = getenv('ES_REFRESH');
 

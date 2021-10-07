@@ -52,14 +52,6 @@ class Index
         return $this->$attribute;
     }
 
-    public function toRaw(): array
-    {
-        return [
-            'settings' => $this->settings->toRaw(),
-            'mappings' => $this->mappings->toRaw(),
-        ];
-    }
-
     public static function fromRaw(string $name, array $raw): static
     {
         $settings = Settings::fromRaw($raw);
