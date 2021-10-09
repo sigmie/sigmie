@@ -9,8 +9,8 @@ use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Contracts\Settings as SettingsInterface;
 
 /**
- * @property-read Mappings $mappings;
- * @property-read Settings $settings;
+ * @property-read Mappings $mappings
+ * @property-read Settings $settings
  */
 class Index
 {

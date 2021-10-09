@@ -20,6 +20,8 @@ use Sigmie\Support\Contracts\Collection;
 use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Index\Index;
 use Sigmie\Base\Actions\Alias;
+use Sigmie\Base\Search\QueryBuilder;
+use Sigmie\Base\Search\SearchBuilder;
 
 class Sigmie
 {
@@ -49,6 +51,12 @@ class Sigmie
         $index->setHttpConnection($this->httpConnection);
 
         return $index;
+    }
+
+    public function search(string $name)
+    {
+
+        return (new SearchBuilder())->queryBuilder();
     }
 
     public function indices(): Collection

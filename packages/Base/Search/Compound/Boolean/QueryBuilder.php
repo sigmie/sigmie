@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Search;
+namespace Sigmie\Base\Search\Compound\Boolean;
 
 use Closure;
 use Sigmie\Base\APIs\Search as SearchAPI;
@@ -12,18 +12,13 @@ use Sigmie\Base\Search\Clauses\Boolean;
 use Sigmie\Base\Search\Clauses\Filtered;
 use Sigmie\Base\Search\Clauses\Match_;
 use Sigmie\Base\Search\Clauses\Query as QueryClause;
-use Sigmie\Base\Search\Compound\Boolean as CompoundBoolean;
 use Sigmie\Base\Search\Queries\Term as QueriesTerm;
 use Sigmie\Base\Search\Term\Term;
 use Sigmie\Http\Contracts\JSONRequest;
 
 class QueryBuilder
 {
-    private $queries;
-
-    public function __construct(protected SearchBuilder $searchBuilder)
-    {
-    }
+    private array $clauses = [];
 
     public function matchAll()
     {
@@ -44,9 +39,9 @@ class QueryBuilder
 
     public function term($field, $value)
     {
-        $this->query = new QueriesTerm($this);
+        $this->clauses[] = (new Term())->term($field, $value);
 
-        return $this->query->term($field, $value);
+        return $this;
     }
 
     public function range()
@@ -56,15 +51,17 @@ class QueryBuilder
 
     public function bool(callable $callable)
     {
-        $this->query = new CompoundBoolean;
+        $this->query = new Boolean;
 
-        $callable($this->query);
-
-        return $this->searchBuilder;
+        return $callable($this->query);
     }
 
     public function toRaw()
     {
-        return $this->query->toRaw();
+        $res = [];
+        foreach ($this->clauses as $claus) {
+            $res[] = $claus->toRaw();
+        }
+        return $res;
     }
 }
