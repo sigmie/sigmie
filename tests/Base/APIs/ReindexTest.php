@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\APIs;
 
+use Sigmie\Base\Actions\Alias as AliasActions;
 use Sigmie\Base\APIs\Bulk;
 use Sigmie\Base\APIs\Index as APIsIndex;
 use Sigmie\Base\APIs\Reindex;
 use Sigmie\Base\Exceptions\ReindexException;
-use Sigmie\Base\Index\Index;
-use Sigmie\Base\Actions\Alias as AliasActions;
 use Sigmie\Testing\TestCase;
-use Sigmie\Testing\TestConnection;
 
 class ReindexTest extends TestCase
 {

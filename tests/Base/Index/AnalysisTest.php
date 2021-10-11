@@ -6,7 +6,6 @@ namespace Sigmie\Tests\Base\Index;
 
 use Sigmie\Base\Analysis\Tokenizers\Pattern;
 use Sigmie\Base\APIs\Index;
-use Sigmie\Sigmie\Base\Actions\Alias;
 use Sigmie\Testing\Assert;
 
 use Sigmie\Testing\TestCase;

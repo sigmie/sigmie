@@ -53,6 +53,7 @@ class Properties implements Arrayable, ArrayAccess
     {
         $fields = new Collection($this->fields);
         $fields = $fields->mapToDictionary(function (PropertyType $value) {
+            dump($value::class);
             return $value->toRaw();
         })->toArray();
 

@@ -7,7 +7,6 @@ namespace Sigmie\Tests\Base\APIs;
 use Sigmie\Base\APIs\Cluster as ClusterAPI;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Testing\TestCase;
-use Sigmie\Testing\TestConnection;
 
 class ClusterTest extends TestCase
 {

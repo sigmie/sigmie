@@ -4,23 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Tests\Index;
 
-use Amp\Parallel\Worker\TaskFailureThrowable;
 use ArrayAccess;
 use Countable;
-use Error;
-use Exception;
-use InvalidArgumentException;
 use IteratorAggregate;
-use SebastianBergmann\RecursionContext\InvalidArgumentException as RecursionContextInvalidArgumentException;
-use PHPUnit\Framework\ExpectationFailedException;
-use PHPUnit\Framework\Exception as FrameworkException;
-use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentCollection;
-use Sigmie\Base\Index\IndexBlueprint;
 use Sigmie\Testing\TestCase;
-use TypeError;
-use Throwable;
 
 class IndexTest extends TestCase
 {

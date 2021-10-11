@@ -12,6 +12,12 @@ class Text extends PropertyType
 {
     protected ?Analyzer $analyzer;
 
+    public function __construct(
+        protected string $name,
+        protected bool $keyword = false
+    ) {
+    }
+
     public function searchAsYouType(Analyzer $analyzer = null): self
     {
         $this->analyzer = $analyzer;
@@ -54,11 +60,14 @@ class Text extends PropertyType
             ]
         ];
 
-        if (is_null($this->analyzer)) {
-            return $raw;
+
+        if ($this->keyword) {
+            $raw[$this->name]['fields'] = ['keyword' => ['type' => 'keyword']];
         }
 
-        $raw[$this->name]['analyzer'] = $this->analyzer->name();
+        if (!is_null($this->analyzer)) {
+            $raw[$this->name]['analyzer'] = $this->analyzer->name();
+        }
 
         return $raw;
     }

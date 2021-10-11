@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Tests;
 
-use Sigmie\Base\Index\ActiveIndex;
+use Sigmie\Base\Actions\Index as IndexActions;
 use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Index\Index;
-use Sigmie\Base\Index\IndexBlueprint;
+use Sigmie\Base\Index\Mappings;
+use Sigmie\Base\Index\Settings;
 use Sigmie\Support\Contracts\Collection;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\TestConnection;
-use Sigmie\Base\Index\Settings;
-use Sigmie\Base\Index\Mappings;
-use Sigmie\Base\Actions\Index as IndexActions;
 
 class ActionsTest extends TestCase
 {

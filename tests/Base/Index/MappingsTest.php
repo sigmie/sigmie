@@ -8,9 +8,8 @@ use Sigmie\Base\Analysis\Analyzer;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Index;
-use Sigmie\Base\Mappings\Blueprint;
 use Sigmie\Base\Index\Mappings;
-use Sigmie\Sigmie\Base\Actions\Alias;
+use Sigmie\Base\Mappings\Blueprint;
 use Sigmie\Testing\TestCase;
 
 class MappingsTest extends TestCase

@@ -9,14 +9,12 @@ use Sigmie\Base\Exceptions\ElasticsearchException;
 use Sigmie\Base\Http\Connection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
-use Sigmie\Base\Index\Index;
-use Sigmie\Base\Index\IndexBlueprint;
-use Sigmie\Http\JSONClient;
-use Sigmie\Testing\TestCase;
-use Sigmie\Base\Index\Settings;
 use Sigmie\Base\Index\Mappings;
-
+use Sigmie\Base\Index\Settings;
 use function Sigmie\Helpers\testing_host;
+use Sigmie\Http\JSONClient;
+
+use Sigmie\Testing\TestCase;
 
 class ConnectionTest extends TestCase
 {

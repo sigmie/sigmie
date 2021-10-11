@@ -9,17 +9,21 @@ use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Mappings\DynamicMappings;
 use Sigmie\Base\Index\Mappings as IndexMappings;
+use Sigmie\Base\Mappings\Blueprint;
+use Sigmie\Base\Mappings\Properties;
 use Sigmie\Support\Callables\Properties as BlueprintProxy;
 
 trait Mappings
 {
     protected bool $dynamicMappings = false;
 
-    protected Closure $blueprintCallback;
+    protected Blueprint $blueprint;
 
     public function mapping(callable $callable): static
     {
-        $this->blueprintCallback = $callable;
+        $this->blueprint = new Blueprint;
+
+        $callable($this->blueprint);
 
         return $this;
     }
@@ -28,9 +32,9 @@ trait Mappings
     {
         $mappings = new DynamicMappings($defaultAnalyzer);
 
-        if ($this->dynamicMappings === false && isset($this->blueprintCallback)) {
+        if ($this->dynamicMappings === false && isset($this->blueprint)) {
 
-            $properties = (new BlueprintProxy)($this->blueprintCallback);
+            $properties = ($this->blueprint)();
 
             $mappings = new IndexMappings(
                 defaultAnalyzer: $defaultAnalyzer,

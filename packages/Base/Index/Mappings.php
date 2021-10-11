@@ -17,7 +17,6 @@ use Sigmie\Base\Mappings\Types\Date;
 use Sigmie\Base\Mappings\Types\Number;
 use Sigmie\Base\Mappings\Types\Text;
 use Sigmie\Support\Contracts\Collection;
-
 class Mappings implements MappingsInterface
 {
     protected Properties $properties;

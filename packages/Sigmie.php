@@ -55,8 +55,7 @@ class Sigmie
 
     public function search(string $name)
     {
-
-        return (new SearchBuilder())->queryBuilder();
+        return new SearchBuilder;
     }
 
     public function indices(): Collection

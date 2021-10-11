@@ -4,35 +4,15 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests\Base\Index;
 
-use App\Models\Stopword;
 use Exception;
-use Mockery\Mock;
-use RachidLaasri\Travel\Travel;
 use Sigmie\Base\Analysis\CharFilter\CharFilter;
-use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
-use Sigmie\Base\Analysis\CharFilter\Mapping;
 use Sigmie\Base\Analysis\CharFilter\Pattern as PatternCharFilter;
 use Sigmie\Base\Analysis\TokenFilter\Generic;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
-use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Pattern as PatternTokenizer;
 use Sigmie\Base\Analysis\Tokenizers\Tokenizer;
-use Sigmie\Base\Analysis\Tokenizers\Whitespace;
-use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Index;
-use Sigmie\Base\Contracts\CharFilter as CharFilterInterface;
-use Sigmie\Base\Index\Blueprint;
-use Sigmie\English\Builder as EnglishBuilder;
-use Sigmie\English\English;
-use Sigmie\German\Builder as GermanBuilder;
-use Sigmie\German\German;
-use Sigmie\Greek\Builder as GreekBuilder;
-use Sigmie\Greek\Greek;
-use Sigmie\Sigmie\Base\Actions\Alias;
-use Sigmie\Support\Exceptions\MissingMapping;
-use Sigmie\Testing\Assert;
-use Sigmie\Testing\Assertions;
 use Sigmie\Testing\TestCase;
 
 class MapTest extends TestCase

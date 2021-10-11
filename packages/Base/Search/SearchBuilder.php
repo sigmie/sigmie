@@ -4,40 +4,18 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Search;
 
-use Closure;
-use Sigmie\Base\APIs\Search as SearchAPI;
-use Sigmie\Base\Http\ElasticsearchResponse;
-use Sigmie\Base\Index\AbstractIndex;
-use Sigmie\Base\Search\Clauses\Boolean;
-use Sigmie\Base\Search\Clauses\Filtered;
-use Sigmie\Base\Search\Clauses\Query as QueryClause;
-use Sigmie\Http\Contracts\JSONRequest;
+use Sigmie\Base\Search\Builders\Boolean;
+use Sigmie\Base\Search\Builders\Term;
 
 class SearchBuilder
 {
-    public string $index;
-
-    public int $from;
-
-    public int $size;
-
-    public array $sort;
-
-    public array $fields;
-
-    public $query;
-
-    public function queryBuilder(): QueryBuilder
+    public function term($field, $value)
     {
-        $this->query = new QueryBuilder($this);
-
-        return $this->query;
+        return new Term($field, $value);
     }
 
-    public function toRaw()
+    public function bool(callable $callable)
     {
-        return [
-            'query' => $this->query->toRaw(),
-        ];
+        return new Boolean($callable);
     }
 }

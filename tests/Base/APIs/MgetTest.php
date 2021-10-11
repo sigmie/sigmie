@@ -9,7 +9,6 @@ use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\DocumentCollection as DocumentsDocumentCollection;
 use Sigmie\Testing\TestCase;
-use Sigmie\Testing\TestConnection;
 
 class MgetTest extends TestCase
 {

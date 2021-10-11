@@ -6,9 +6,7 @@ namespace Sigmie\Tests\Base\APIs;
 
 use Sigmie\Base\APIs\Delete as DeleteAPI;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Index\Index;
 use Sigmie\Testing\TestCase;
-use Sigmie\Testing\TestConnection;
 
 class DeleteTest extends TestCase
 {

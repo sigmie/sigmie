@@ -31,36 +31,36 @@ class Blueprint
         return new Properties($fields);
     }
 
-    public function text(...$args): Text
+    public function text(string $name, bool $keyword = false): Text
     {
-        $field = new Text(...$args);
+        $field = new Text($name, $keyword);
 
         $this->fields->add($field);
 
         return $field;
     }
 
-    public function number(...$args): Number
+    public function number(string $name): Number
     {
-        $field = new Number(...$args);
+        $field = new Number($name);
 
         $this->fields->add($field);
 
         return $field;
     }
 
-    public function date(...$args): Date
+    public function date(string $name): Date
     {
-        $field = new Date(...$args);
+        $field = new Date($name);
 
         $this->fields->add($field);
 
         return $field;
     }
 
-    public function bool(...$args): Boolean
+    public function bool(string $name): Boolean
     {
-        $field = new Boolean(...$args);
+        $field = new Boolean($name);
 
         $this->fields->add($field);
 

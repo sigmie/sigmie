@@ -145,7 +145,7 @@ class Builder
 
     protected function throwUnlessMappingsDefined(): void
     {
-        if ($this->dynamicMappings === false && isset($this->blueprintCallback) === false) {
+        if ($this->dynamicMappings === false && isset($this->blueprint) === false) {
             throw MissingMapping::forAlias($this->alias);
         }
     }
