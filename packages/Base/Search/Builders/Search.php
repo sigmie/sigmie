@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Search\Builders;
 
+use Sigmie\Base\APIs\Search as APIsSearch;
+use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Base\Search\Queries\QueryClause;
 
 abstract class Search
 {
+    use APIsSearch;
+
     protected string $index;
 
     protected int $from = 0;
@@ -41,6 +45,13 @@ abstract class Search
         return $this;
     }
 
+    public function index(string $index): self
+    {
+        $this->index = $index;
+
+        return $this;
+    }
+
     public function sortAsc(string $field): self
     {
         $this->sort[] = [$field => 'asc'];
@@ -53,6 +64,11 @@ abstract class Search
         $this->sort[] = [$field => 'desc'];
 
         return $this;
+    }
+
+    public function get(): SearchResponse
+    {
+        return $this->searchAPICall($this->index, $this->toRaw());
     }
 
     public function toRaw(): array

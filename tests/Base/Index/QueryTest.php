@@ -61,15 +61,19 @@ class QueryTest extends TestCase
         $collection->merge($docs);
 
         $query = $this->sigmie->search($alias)->bool(function (QueriesCompoundBoolean $boolean) {
-            $boolean->filter->match('title', 'Peter Pan and Captain Hook');
+
+            // $boolean->filter->match('title', 'Peter Pan and Captain Hook');
+            $boolean->filter->matchAll();
+
         })->sortAsc('title.keyword')
-            ->fields(['*'])
-            ->from(0)
-            ->size(1)
-            ->toRaw();
+          ->fields(['title'])
+          ->from(0)
+          ->size(2)
+          ->get();
 
-        $res = $this->searchAPICall($alias, $query);
+          dd($query);
 
+        dd($res::class);
         dd($res->json());
     }
 }

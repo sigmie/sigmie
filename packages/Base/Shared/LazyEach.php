@@ -40,7 +40,6 @@ trait LazyEach
 
         yield from $this->pageGenerator($page);
 
-
         while ($this->chunk * $page < $total) {
 
             $page++;
