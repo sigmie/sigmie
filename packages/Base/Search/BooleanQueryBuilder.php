@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Base\Search;
 
 use Sigmie\Base\Search\Queries\Compound\Boolean;
-use Sigmie\Base\Search\Queries\MatchAll; use Sigmie\Base\Search\Queries\MatchNone;
+use Sigmie\Base\Search\Queries\MatchAll;
+use Sigmie\Base\Search\Queries\MatchNone;
+use Sigmie\Base\Search\Queries\QueryClause;
 use Sigmie\Base\Search\Queries\Term\Exists;
 use Sigmie\Base\Search\Queries\Term\Fuzzy;
 use Sigmie\Base\Search\Queries\Term\IDs;
@@ -35,23 +37,28 @@ class BooleanQueryBuilder
         return $this;
     }
 
-    public function match(string $field, string $query)
+    public function match(string $field, string $query): self
     {
         $this->clauses[] = new Match_($field, $query);
 
         return $this;
     }
 
-    public function multiMatch(array $fields, string $query)
+    public function query(QueryClause $queryClause): self
+    {
+        return $this->search->query($queryClause);
+    }
+
+    public function multiMatch(array $fields, string $query): self
     {
         $this->clauses[] = new MultiMatch($fields, $query);
 
         return $this;
     }
 
-    public function exists(string $field, string $value): self
+    public function exists(string $field): self
     {
-        $this->clauses[] = new Exists($field, $value);
+        $this->clauses[] = new Exists($field);
 
         return $this;
     }
@@ -100,10 +107,10 @@ class BooleanQueryBuilder
 
     public function range(
         string $field,
-        string $operator,
-        string $value,
-    ) {
-        $this->clauses[] = new Range($field, $operator, $value);
+        null|float|int|string $min = null,
+        null|float|int|string $max = null,
+    ): self {
+        $this->clauses[] = new Range($field, $min, $max);
 
         return $this;
     }

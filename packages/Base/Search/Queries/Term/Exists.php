@@ -17,7 +17,7 @@ class Exists extends QueryClause
     {
         return [
             'exists' => [
-                'filed' => $this->field
+                'field' => $this->field
             ]
         ];
     }

@@ -17,7 +17,7 @@ class IDs extends QueryClause
     {
         return [
             'ids' => [
-                'value' => $this->ids
+                'values' => $this->ids
             ]
         ];
     }

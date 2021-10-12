@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Search\Builders;
+namespace Sigmie\Base\Search;
 
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Base\Search\Queries\QueryClause;
 
-abstract class Search
+class Search
 {
     use APIsSearch;
 
@@ -69,6 +69,18 @@ abstract class Search
     public function get(): SearchResponse
     {
         return $this->searchAPICall($this->index, $this->toRaw());
+    }
+
+    public function getDSL(): array
+    {
+        return $this->toRaw();
+    }
+
+    public function query(QueryClause $query)
+    {
+        $this->query = $query;
+
+        return $this;
     }
 
     public function toRaw(): array

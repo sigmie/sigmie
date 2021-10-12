@@ -60,9 +60,8 @@ class Text extends PropertyType
             ]
         ];
 
-
         if ($this->keyword) {
-            $raw[$this->name]['fields'] = ['keyword' => ['type' => 'keyword']];
+            $raw[$this->name]['fields'] = ['raw' => ['type' => 'keyword']];
         }
 
         if (!is_null($this->analyzer)) {

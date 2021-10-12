@@ -10,27 +10,39 @@ class Range extends QueryClause
 {
     public function __construct(
         protected string $field,
-        protected string $operator,
-        protected string $value,
+        protected null|float|int|string $min = null,
+        protected null|float|int|string $max = null,
     ) {
     }
-
-    public function toRaw(): array
+    private function esOperator(string $operator): string
     {
-        $operator = match ($this->operator) {
+        return match ($operator) {
             '>' => 'gt',
             '>=' => 'gte',
             '<' => 'lt',
             '<=' => 'lte',
             default => throw new \Exception('Range operator not supported.')
         };
+    }
 
-        return [
+    public function toRaw(): array
+    {
+        $res = [
             'range' => [
-                $this->field => [
-                    $operator => $this->value
-                ]
+                $this->field => []
             ]
         ];
+
+        if (!is_null($this->min)) {
+            $operator = $this->esOperator('>=');
+            $res['range'][$this->field][$operator] = $this->min;
+        }
+
+        if (!is_null($this->max)) {
+            $operator = $this->esOperator('<=');
+            $res['range'][$this->field][$operator] = $this->max;
+        }
+
+        return $res;
     }
 }

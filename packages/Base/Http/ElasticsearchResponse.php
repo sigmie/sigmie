@@ -39,7 +39,16 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
         if (isset($json['error']) && isset(($json['error']['caused_by']))) {
             $message = $json['error']['caused_by']['reason'];
         }
-        dd($json);
+
+        if (
+            isset($json['error']) &&
+            isset($json['error']['root_cause']) &&
+            isset($json['error']['root_cause'][0]) &&
+            isset($json['error']['root_cause'][0]['reason'])
+        ) {
+            $message = $json['error']['root_cause'][0]['reason'];
+        }
+
 
         $exception = match (true) {
             $message === 'Failed to build synonyms' => new FailedToBuildSynonyms($request, $this, $message),
