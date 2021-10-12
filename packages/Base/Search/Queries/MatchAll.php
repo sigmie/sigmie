@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Search\Queries;
 
-class MatchAll extends QueryClause
+class MatchAll extends Query
 {
     public function toRaw(): array
     {

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Search\Queries\Term;
 
-use Sigmie\Base\Search\Queries\QueryClause;
+use Sigmie\Base\Search\Queries\Query;
 
-class Wildcard extends QueryClause
+class Wildcard extends Query
 {
     public function __construct(
         protected string $field,

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Search\Queries\Text;
 
-use Sigmie\Base\Search\Queries\QueryClause;
+use Sigmie\Base\Search\Queries\Query;
 
-class Match_ extends QueryClause
+class Match_ extends Query
 {
     public function __construct(
         protected string $field,

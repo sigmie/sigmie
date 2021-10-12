@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Search;
 
+use Sigmie\Base\Contracts\Queries;
+use Sigmie\Base\Contracts\QueryClause as Query;
 use Sigmie\Base\Search\Queries\Compound\Boolean;
 use Sigmie\Base\Search\Queries\MatchAll;
 use Sigmie\Base\Search\Queries\MatchNone;
-use Sigmie\Base\Search\Queries\QueryClause;
 use Sigmie\Base\Search\Queries\Term\Exists;
 use Sigmie\Base\Search\Queries\Term\Fuzzy;
 use Sigmie\Base\Search\Queries\Term\IDs;
@@ -19,7 +20,7 @@ use Sigmie\Base\Search\Queries\Term\Wildcard;
 use Sigmie\Base\Search\Queries\Text\Match_;
 use Sigmie\Base\Search\Queries\Text\MultiMatch;
 
-class BooleanQueryBuilder
+class BooleanQueryBuilder implements Queries
 {
     protected array $clauses = [];
 
@@ -44,9 +45,9 @@ class BooleanQueryBuilder
         return $this;
     }
 
-    public function query(QueryClause $queryClause): self
+    public function query(Query $query): self
     {
-        return $this->search->query($queryClause);
+        return $this->search->query($query);
     }
 
     public function multiMatch(array $fields, string $query): self
@@ -129,6 +130,7 @@ class BooleanQueryBuilder
     public function toRaw()
     {
         $res = [];
+
         foreach ($this->clauses as $claus) {
             $res[] = $claus->toRaw();
         }

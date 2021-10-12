@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Search\Queries;
 
-use Sigmie\Base\Contracts\ToRaw;
-use Sigmie\Base\Search\QueryBuilder;
+use Sigmie\Base\Contracts\QueryClause as QueryClause;
 
-abstract class QueryClause implements ToRaw
+abstract class Query implements QueryClause
 {
     abstract public function toRaw(): array;
 }

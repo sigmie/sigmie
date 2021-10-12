@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Search\Queries\Text;
 
-use Sigmie\Base\Search\Queries\QueryClause;
+use Sigmie\Base\Search\Queries\Query;
 
-class MultiMatch extends QueryClause
+class MultiMatch extends Query
 {
     public function __construct(
         protected array $fields,

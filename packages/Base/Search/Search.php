@@ -6,7 +6,7 @@ namespace Sigmie\Base\Search;
 
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
-use Sigmie\Base\Search\Queries\QueryClause;
+use Sigmie\Base\Search\Queries\Query;
 
 class Search
 {
@@ -20,7 +20,7 @@ class Search
 
     protected array $fields = ['*'];
 
-    protected QueryClause $query;
+    protected Query $query;
 
     protected array $sort = [];
 
@@ -76,7 +76,7 @@ class Search
         return $this->toRaw();
     }
 
-    public function query(QueryClause $query)
+    public function query(Query $query)
     {
         $this->query = $query;
 

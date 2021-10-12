@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Sigmie\Base\Search;
 
 use Sigmie\Base\Contracts\HttpConnection;
+use Sigmie\Base\Contracts\Queries;
+use Sigmie\Base\Contracts\QueryClause as Query;
 use Sigmie\Base\Search\Search;
 use Sigmie\Base\Search\Queries\Compound\Boolean;
 use Sigmie\Base\Search\Queries\MatchAll;
 use Sigmie\Base\Search\Queries\MatchNone;
-use Sigmie\Base\Search\Queries\QueryClause;
 use Sigmie\Base\Search\Queries\Term\Exists;
 use Sigmie\Base\Search\Queries\Term\Fuzzy;
 use Sigmie\Base\Search\Queries\Term\IDs;
@@ -21,7 +22,7 @@ use Sigmie\Base\Search\Queries\Term\Wildcard;
 use Sigmie\Base\Search\Queries\Text\Match_;
 use Sigmie\Base\Search\Queries\Text\MultiMatch;
 
-class SearchBuilder
+class SearchBuilder implements Queries
 {
     protected Search $search;
 
@@ -60,9 +61,9 @@ class SearchBuilder
         return $this->search->query(new MatchAll);
     }
 
-    public function query(QueryClause $queryClause): Search
+    public function query(Query $query): Search
     {
-        return $this->search->query($queryClause);
+        return $this->search->query($query);
     }
 
     public function matchNone(): Search

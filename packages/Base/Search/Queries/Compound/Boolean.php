@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Base\Search\Queries\Compound;
 
 use Sigmie\Base\Search\BooleanQueryBuilder;
-use Sigmie\Base\Search\Queries\QueryClause;
+use Sigmie\Base\Search\Queries\Query;
 
-class Boolean extends QueryClause
+class Boolean extends Query
 {
     public BooleanQueryBuilder $must;
 
