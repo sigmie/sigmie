@@ -6,7 +6,6 @@ namespace Sigmie\Base\Mappings;
 
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Index\Mappings;
-use Sigmie\Support\Collection;
 
 class DynamicMappings extends Mappings
 {

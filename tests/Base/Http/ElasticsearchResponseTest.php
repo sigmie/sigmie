@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Tests\Http;
 
 use GuzzleHttp\Psr7\Response;
-use Sigmie\Base\Exceptions\FailedToBuildSynonyms;
+use Sigmie\Base\Exceptions\IllegalArgumentException;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Testing\TestCase;
 
@@ -16,7 +16,7 @@ class ElasticsearchResponseTest extends TestCase
      */
     public function failed_to_build_synonyms_exception_is_thrown()
     {
-        $this->expectException(FailedToBuildSynonyms::class);
+        $this->expectException(IllegalArgumentException::class);
 
         $alias = uniqid();
 

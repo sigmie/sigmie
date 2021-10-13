@@ -6,6 +6,7 @@ namespace Sigmie\Base\Search;
 
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
+use Sigmie\Base\Pagination\Paginator;
 use Sigmie\Base\Search\Queries\Query;
 
 class Search
@@ -64,6 +65,11 @@ class Search
         $this->sort[] = [$field => 'desc'];
 
         return $this;
+    }
+
+    public function paginate(int $pePage, int $currentPage,)
+    {
+        return new Paginator($pePage, $currentPage, $this);
     }
 
     public function get(): SearchResponse

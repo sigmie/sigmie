@@ -7,9 +7,9 @@ namespace Sigmie\Base\Shared;
 
 use Closure;
 use Iterator;
+use Sigmie\Base\Actions\Document as DocumentActions;
 use Sigmie\Base\APIs\Count;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Actions\Document as DocumentActions;
 
 trait LazyEach
 {

@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Actions;
 
-use App\Models\Mapping;
-use Google\Service\Calendar\Setting;
+use Sigmie\Base\Actions\Alias as AliasActions;
 use Sigmie\Base\APIs\Cat as CatAPI;
 use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Contracts\Settings as SettingsInterface;
 use Sigmie\Base\Exceptions\ElasticsearchException;
+use Sigmie\Base\Exceptions\IndexNotFoundException;
 use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Index\Index as BaseIndex;
-use Sigmie\Base\Actions\Alias as AliasActions;
-use Sigmie\Base\Exceptions\IndexNotFound;
 use Sigmie\Base\Index\Mappings;
 use Sigmie\Base\Index\Settings;
 use Sigmie\Support\Collection;
@@ -46,7 +44,7 @@ trait Index
     {
         try {
             $res = $this->indexAPICall("/{$alias}", 'GET');
-        } catch (IndexNotFound) {
+        } catch (IndexNotFoundException) {
             return null;
         }
 

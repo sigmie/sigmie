@@ -4,26 +4,25 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
+use Sigmie\Base\Actions\Index as IndexActions;
 use Sigmie\Base\Analysis\Analysis;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Base\Contracts\HttpConnection;
-use Sigmie\Base\Contracts\Language;
 
+use Sigmie\Base\Contracts\Language;
 use function Sigmie\Helpers\index_name;
 use Sigmie\Support\Exceptions\MissingMapping;
-use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Support\Index\TokenizerBuilder;
 use Sigmie\Support\Shared\CharFilters;
+
 use Sigmie\Support\Shared\Filters;
 
 use Sigmie\Support\Shared\Mappings;
-
 use Sigmie\Support\Shared\Replicas;
 use Sigmie\Support\Shared\Shards;
 use Sigmie\Support\Shared\Tokenizer;
-use Sigmie\Base\Actions\Index as IndexActions;
 
 class Builder
 {

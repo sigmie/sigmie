@@ -6,27 +6,17 @@ namespace Sigmie\Base\Documents;
 
 use ArrayAccess;
 use Countable;
-use Exception;
 use Generator;
 use IteratorAggregate;
-use Sigmie\Base\APIs\Analyze;
-use Sigmie\Base\APIs\Count as CountAPI;
-use Sigmie\Base\APIs\Search;
-use Sigmie\Base\Contracts\API;
-use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
-use Sigmie\Base\Contracts\MappingsInterface as MappingsInterface;
 use Sigmie\Base\Actions\Document as DocumentsActions;
-use Sigmie\Base\Documents\Collection as DocumentsCollection;
-use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Actions\Index;
-use Sigmie\Base\Search\Searchable;
+use Sigmie\Base\APIs\Search;
+use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Shared\LazyEach;
 use function Sigmie\Helpers\ensure_doc_collection;
-use Sigmie\Support\Collection;
 
-use Sigmie\Support\Index\AliasedIndex;
 
-class AliveCollection implements DocumentCollectionInterface, ArrayAccess, Countable, IteratorAggregate
+class AliveCollection implements ArrayAccess, Countable, DocumentCollectionInterface, IteratorAggregate
 {
     use DocumentsActions, Index, LazyEach, Search;
 
@@ -41,9 +31,9 @@ class AliveCollection implements DocumentCollectionInterface, ArrayAccess, Count
         return $this->getIterator();
     }
 
-    public function has(string $_id): bool
+    public function has(string $index): bool
     {
-        return $this->documentExists($this->name, $_id);
+        return $this->documentExists($this->name, $index);
     }
 
     public function add(Document $document): self
@@ -84,14 +74,14 @@ class AliveCollection implements DocumentCollectionInterface, ArrayAccess, Count
         return !$this->isEmpty();
     }
 
-    public function remove(string $_id): bool
+    public function remove(string $index): bool
     {
-        return $this->deleteDocument($this->name, $_id, $this->refresh);
+        return $this->deleteDocument($this->name, $index, $this->refresh);
     }
 
-    public function get(string $_id): ?Document
+    public function get(string $index): ?Document
     {
-        return $this->getDocument($this->name, $_id);
+        return $this->getDocument($this->name, $index);
     }
 
     public function count(): int

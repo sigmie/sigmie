@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Test\Base\APIs;
 
 use Sigmie\Base\APIs\Mget as MgetAPI;
-use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Documents\DocumentCollection as DocumentsDocumentCollection;
+use Sigmie\Base\Documents\Collection as DocumentCollection;
 use Sigmie\Testing\TestCase;
 
 class MgetTest extends TestCase
@@ -22,7 +21,7 @@ class MgetTest extends TestCase
         $indexName = uniqid();
         $index = $this->sigmie->collect($indexName,'true');
 
-        $docs = new DocumentsDocumentCollection([
+        $docs = new DocumentCollection([
             new Document(_id: '1', _source: ['foo' => 'bar']),
             new Document(_id: '2', _source: ['foo' => 'baz']),
         ]);
@@ -33,9 +32,7 @@ class MgetTest extends TestCase
 
         $mgetRes = $this->mgetAPICall($indexName, $body);
 
-        $this->assertInstanceOf(DocumentCollection::class, $mgetRes, 'Mget API response should implement DocumentCollection');
-        $this->assertCount(2, $mgetRes, 'Mget response should implement be Countable interface');
-        $this->assertTrue($mgetRes->contains('1'));
-        $this->assertTrue($mgetRes->contains('2'));
+        $this->assertInstanceOf(DocumentCollection::class, $mgetRes->docs(), 'Mget API response should implement DocumentCollection');
+        $this->assertCount(2, $mgetRes->docs(), 'Mget response should implement be Countable interface');
     }
 }

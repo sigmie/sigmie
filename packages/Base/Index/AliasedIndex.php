@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
-use Sigmie\Base\APIs\Index as IndexAPI;
-use Sigmie\Base\APIs\Reindex;
-use Sigmie\Base\Index\AbstractIndex; use Sigmie\Base\Index\Settings;
 use Sigmie\Base\Actions\Alias as AliasActions;
 use Sigmie\Base\Actions\Index as IndexActions;
-use Sigmie\Support\Update\Update;
-use Sigmie\Support\Update\UpdateProxy;
-use Sigmie\Base\Contracts\API;
+use Sigmie\Base\APIs\Index as IndexAPI;
+use Sigmie\Base\APIs\Reindex;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Contracts\Settings as SettingsInterface;
+use Sigmie\Support\Update\Update;
+use Sigmie\Support\Update\UpdateProxy;
 
 class AliasedIndex extends Index
 {

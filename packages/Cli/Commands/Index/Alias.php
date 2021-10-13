@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Cli\Commands\Index;
 
-use Sigmie\Base\APIs\Alias as AliasAPI;
-use Sigmie\Cli\BaseCommand;
 use Sigmie\Base\Actions\Alias;
 use Sigmie\Base\Actions\Alias as IndexActions;
+use Sigmie\Base\APIs\Alias as AliasAPI;
+use Sigmie\Cli\BaseCommand;
 use Symfony\Component\Console\Input\InputOption;
 
 class Alias extends BaseCommand

@@ -21,7 +21,8 @@
         "symfony/event-dispatcher-contracts": "^2.2",
         "nesbot/carbon": "^2.48",
         "amphp/parallel": "^1.4",
-        "eventsauce/backoff": "^1.1"
+        "eventsauce/backoff": "^1.1",
+        "adbario/php-dot-notation": "^2.2"
     },
     "require-dev": {
         "symfony/var-dumper": "^5.2",

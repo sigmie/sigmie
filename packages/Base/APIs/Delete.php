@@ -9,7 +9,6 @@ use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\ElasticsearchRequest;
 
-use function Sigmie\Helpers\refresh_value;
 
 trait Delete
 {

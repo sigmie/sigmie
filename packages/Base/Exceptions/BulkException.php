@@ -5,34 +5,35 @@ declare(strict_types=1);
 namespace Sigmie\Base\Exceptions;
 
 use Exception;
-use Sigmie\Support\Contracts\Collection;
+use function Sigmie\Helpers\collection;
+use Sigmie\Support\Collection;
+
+use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
 class BulkException extends Exception
 {
-    protected Collection $failedActions;
-
-    public function __construct(Collection $collection)
-    {
-        $this->failedActions = $collection;
-
-        $text = $this->createText();
-
-        parent::__construct($text, 200);
+    public function __construct(
+        public CollectionInterface $failed
+    ) {
+        parent::__construct('Bulk request concluded with errors');
     }
 
-    public function getFailedActions(): Collection
+    public static function fromItems(array $items)
     {
-        return $this->failedActions;
-    }
+        $failed = collection($items)->filter(function ($value) {
 
-    private function createText(): string
-    {
-        return implode(',', $this->failedActions->map(function ($vals) {
-            [$action, $values] = $vals;
-            $id = $values['_id'];
-            $reason = $values['error']['reason'];
+            $action = array_key_first($value);
+            $response = $value[$action];
 
-            return "Action {$action} for Document with id {$id} failed. Reason: {$reason}";
-        })->toArray());
+            return isset($response['error']);
+        })->map(function ($value) {
+
+            $action = array_key_first($value);
+            $response = $value[$action];
+
+            return ElasticsearchException::fromType($action, $response);
+        });
+
+        return new static($failed);
     }
 }

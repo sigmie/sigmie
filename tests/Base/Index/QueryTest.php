@@ -20,48 +20,6 @@ class QueryTest extends TestCase
 {
     use Index, Search, Explain;
 
-    private string $alias;
-
-    public function foo(): void
-    {
-        $this->alias = uniqid();
-
-        $this->sigmie->newIndex($this->alias)
-            ->mapping(function (Blueprint $blueprint) {
-
-                $blueprint->text('title', keyword: true)->unstructuredText();
-                $blueprint->text('description')->unstructuredText();
-                $blueprint->date('created_at')->format('yyyy-MM-dd');
-                $blueprint->bool('is_valid');
-                $blueprint->number('count')->integer();
-                $blueprint->number('avg')->float();
-            })
-            ->create();
-
-        $collection = $this->sigmie->collect($this->alias);
-
-        $docs = [
-            new Document([
-                'title' => 'The story of Nemo',
-                'description' => 'The father of Nemo began his journey of finding his son.',
-                'created_at' => '1994-05-09',
-                'is_valid' => true,
-                'count' => 5,
-                'avg' => 73.3,
-            ], '1'),
-            new Document([
-                'title' => 'Peter Pan and Captain Hook',
-                'description' => 'And after this Peter pan woke up in his room.',
-                'created_at' => '1995-07-26',
-                'is_valid' => false,
-                'count' => 233,
-                'avg' => 120.3,
-            ], '2'),
-        ];
-
-        $collection->merge($docs);
-    }
-
     /**
      * @test
      */

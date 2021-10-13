@@ -5,13 +5,67 @@ declare(strict_types=1);
 namespace Sigmie\Base\Documents;
 
 use Closure;
-use Generator;
+use Iterator;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
+use Sigmie\Base\Contracts\FromRaw;
+use Sigmie\Support\Collection as SigmieCollection;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
-trait Collection
+class Collection implements DocumentCollectionInterface, FromRaw
 {
     protected CollectionInterface $collection;
+
+    public function __construct(array $documents = [])
+    {
+        $this->collection = new SigmieCollection($documents);
+    }
+
+    public function all(): Iterator
+    {
+        return $this->collection->getIterator();
+    }
+
+    public function get(string $index): ?Document
+    {
+        return $this->collection->get($index);
+    }
+
+    public function each(Closure $fn): DocumentCollectionInterface
+    {
+        $this->collection->each($fn);
+
+        return $this;
+    }
+
+    public function offsetExists($offset)
+    {
+        $this->collection->offsetExists($offset);
+    }
+
+    public function offsetGet($offset)
+    {
+        return $this->collection->offsetGet($offset);
+    }
+
+    public function offsetSet($offset, $value)
+    {
+        $this->collection->offsetSet($offset, $value);
+    }
+
+    public function offsetUnset($offset)
+    {
+        $this->collection->offsetUnset($offset);
+    }
+
+    public function count()
+    {
+        return $this->collection->count();
+    }
+
+    public function getIterator()
+    {
+        return $this->collection->getIterator();
+    }
 
     public function add(Document $element): self
     {
@@ -23,7 +77,7 @@ trait Collection
     public function merge(array|DocumentCollectionInterface $documents): self
     {
         if (is_array($documents)) {
-            $documents = new DocumentCollection($documents);
+            $documents = new Collection($documents);
         }
 
         $this->collection = $this->collection->merge($documents->toArray());
@@ -31,14 +85,9 @@ trait Collection
         return $this;
     }
 
-    public function has(string $_id): bool
+    public function has(string $index): bool
     {
-        return $this->collection->hasKey($_id);
-    }
-
-    public function all(): Generator
-    {
-        return $this->collection->toArray();
+        return $this->collection->hasKey($index);
     }
 
     public function toArray(): array
@@ -61,72 +110,17 @@ trait Collection
         return !$this->isEmpty();
     }
 
-    public function remove(string $_id): bool
+    public function remove(string $index): bool
     {
-        $this->collection->remove($_id);
+        $this->collection->remove($index);
 
         return true;
     }
 
-    public function contains(string $_id): bool
+    public static function fromRaw(array $raw)
     {
-        $isEmpty = $this->collection
-            ->filter(
-                fn (Document $document) => $document->_id === $_id
-            )
-            ->isEmpty();
+        $docs = array_map(fn ($values) => new Document($values['_source'], $values['_id']), $raw);
 
-        return !$isEmpty;
-    }
-
-    public function get(string $_id): ?Document
-    {
-        $doc = $this->collection
-            ->filter(
-                fn (Document $document) => $document->_id === $_id
-            )->first();
-
-        if ($doc instanceof Document) {
-            return $doc;
-        }
-
-        return null;
-    }
-
-    public function each(Closure $p): self
-    {
-        $this->collection->each($p);
-
-        return $this;
-    }
-
-    public function count(): int
-    {
-        return $this->collection->count();
-    }
-
-    public function getIterator()
-    {
-        return $this->collection->getIterator();
-    }
-
-    public function offsetExists(mixed $offset): bool
-    {
-        return $this->collection->offsetExists($offset);
-    }
-
-    public function offsetGet(mixed $offset): mixed
-    {
-        return $this->collection->offsetGet($offset);
-    }
-
-    public function offsetSet(mixed $offset, mixed $value): void
-    {
-        $this->collection->offsetSet($offset, $value);
-    }
-
-    public function offsetUnset(mixed $offset): void
-    {
-        $this->collection->offsetUnset($offset);
+        return new static($docs);
     }
 }

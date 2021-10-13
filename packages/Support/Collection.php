@@ -187,23 +187,17 @@ class Collection implements CollectionInterface
 
     public function offsetGet(mixed $offset): mixed
     {
-        return $this->get($offset);
+        return $this->elements[$offset];
     }
 
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        if (!isset($offset)) {
-            $this->add($value);
-
-            return;
-        }
-
-        $this->set($offset, $value);
+        $this->elements[$offset] = $value;
     }
 
     public function offsetUnset(mixed $offset): void
     {
-        $this->remove($offset);
+        unset($this->elements[$offset]);
     }
 
     public function hasKey(string|int $key): bool

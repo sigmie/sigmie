@@ -6,7 +6,7 @@ namespace Sigmie\Tests\Base\Documents;
 
 use PHPUnit\Framework\TestCase;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Documents\DocumentCollection;
+use Sigmie\Base\Documents\Collection as DocumentCollection;
 use TypeError;
 
 class DocumentsCollectionTest extends TestCase
@@ -67,9 +67,8 @@ class DocumentsCollectionTest extends TestCase
             new Document(['baz' => 'last baz value'], '88'),
         ]);
 
-        $doc = $docs->get('99');
+        $doc = $docs->get('1');
 
-        $this->assertInstanceOf(Document::class, $doc);
         $this->assertEquals('john', $doc->baz);
         $this->assertEquals('99', $doc->_id);
 
@@ -77,20 +76,6 @@ class DocumentsCollectionTest extends TestCase
         $this->assertNull($doc);
     }
 
-    /**
-     * @test
-     */
-    public function contains_id()
-    {
-        $docs = new DocumentCollection([
-            new Document(['baz' => 'first baz value'], '00'),
-            new Document(['baz' => 'john'], '99'),
-            new Document(['baz' => 'last baz value'], '88'),
-        ]);
-
-        $this->assertTrue($docs->contains('88'));
-        $this->assertFalse($docs->contains('100'));
-    }
 
     /**
      * @test
@@ -136,20 +121,6 @@ class DocumentsCollectionTest extends TestCase
         $this->assertCount(3, $docs);
         $docs->clear();
         $this->assertCount(0, $docs);
-    }
-
-    /**
-     * @test
-     */
-    public function docs_collection_accepts_only_docs()
-    {
-        $this->expectException(TypeError::class);
-
-        new DocumentCollection([
-            new Document(['foo' => 'bar'], '1'),
-            '',
-            new Document(['baz' => 'john'], '4'),
-        ]);
     }
 
     /**

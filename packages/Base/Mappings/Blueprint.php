@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Mappings;
 
-use Sigmie\Base\Mappings\Properties;
-use Sigmie\Base\Mappings\PropertyType;
 use Sigmie\Base\Mappings\Types\Boolean;
 use Sigmie\Base\Mappings\Types\Date;
 use Sigmie\Base\Mappings\Types\Number;

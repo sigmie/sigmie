@@ -8,8 +8,6 @@ use Exception;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse as ElasticsearchResponseInterface;
 use Sigmie\Base\Exceptions\ElasticsearchException;
-use Sigmie\Base\Exceptions\FailedToBuildSynonyms;
-use Sigmie\Base\Exceptions\IndexNotFound;
 use Sigmie\Http\JSONResponse;
 
 class ElasticsearchResponse extends JSONResponse implements ElasticsearchResponseInterface
@@ -21,42 +19,38 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
 
     public function exception(ElasticsearchRequest $request): Exception
     {
-        $json = $this->json();
-        $message = json_encode($json);
+        $type = null;
 
-        if (is_null($json)) {
-            $message = "Request failed with code {$this->code()}.";
+        if (is_null($this->json())) {
+            $type = "Request failed with code {$this->code()}.";
         }
 
-        if (isset($json['error']) && is_string($json['error'])) {
-            $message = $json['error'];
+        if (is_string($this->json('error'))) {
+            $type = $this->json('error');
         }
 
-        if (isset($json['error']) && is_array($json['error'])) {
-            $message = ucfirst($json['error']['reason']);
+        if (is_string($this->json('error.type'))) {
+            $type = $this->json('error.type');
         }
 
-        if (isset($json['error']) && isset(($json['error']['caused_by']))) {
-            $message = $json['error']['caused_by']['reason'];
+        if (is_string($this->json('error.caused_by.type'))) {
+            $type = $this->json('error.caused_by.type');
         }
 
-        if (
-            isset($json['error']) &&
-            isset($json['error']['root_cause']) &&
-            isset($json['error']['root_cause'][0]) &&
-            isset($json['error']['root_cause'][0]['reason'])
-        ) {
-            $message = $json['error']['root_cause'][0]['reason'];
+        if (is_string($this->json('error.root_cause.0.type'))) {
+            $type = $this->json('error.root_cause.0.type');
         }
 
+        if (is_string($this->json('failures.0.cause.type'))) {
+            $type = $this->json('failures.0.cause.type');
+        }
 
-        $exception = match (true) {
-            $message === 'Failed to build synonyms' => new FailedToBuildSynonyms($request, $this, $message),
-            str_starts_with($message, 'No such index') => new IndexNotFound($request, $this, $message),
-            default => new ElasticsearchException($request, $this, $message)
-        };
+        return ElasticsearchException::fromType($type, $this->json());
+    }
 
-        return $exception;
+    private function hasErrorsKey(): bool
+    {
+        return !is_null($this->json('errors'));
     }
 
     private function hasErrorKey(): bool

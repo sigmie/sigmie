@@ -8,7 +8,7 @@ use ArrayAccess;
 use Countable;
 use IteratorAggregate;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Documents\DocumentCollection;
+use Sigmie\Base\Documents\Collection as DocumentCollection ;
 use Sigmie\Testing\TestCase;
 
 class IndexTest extends TestCase
@@ -34,8 +34,7 @@ class IndexTest extends TestCase
 
         $count = 0;
 
-        $index->each(function (Document $document, string $_index) use (&$count) {
-            $count++;
+        $index->each(function (Document $document, string $_index) use (&$count) { $count++;
         });
 
         $this->assertEquals(3, $count);
@@ -154,7 +153,7 @@ class IndexTest extends TestCase
 
         $doc = new Document(['foo' => 'baz'], '89');
 
-        $index->add($doc, 'true');
+        $index->add($doc);
 
         $this->assertCount(2, $index);
         $this->assertNotNull($index['89']);
@@ -302,15 +301,15 @@ class IndexTest extends TestCase
         $indexName = uniqid();
         $index = $this->sigmie->collect($indexName, 'true');
 
-        $docs = new DocumentCollection([
+        $docs = [
             new Document(['foo' => 'bar']),
             new Document(['baz' => 'john']),
             new Document(['baz' => 'john']),
-        ]);
+        ];
 
         $this->assertNull($docs[0]->_id);
 
-        $index->merge($docs->toArray());
+        $index->merge($docs);
 
         $this->assertNotNull($docs[0]->_id);
     }

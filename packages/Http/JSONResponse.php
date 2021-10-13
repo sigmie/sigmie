@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Http;
 
+use Adbar\Dot;
 use ArrayAccess;
 use GuzzleHttp\Psr7\Response;
 use LogicException;
@@ -14,7 +15,7 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
 {
     protected ResponseInterface $response;
 
-    protected null|array $decoded;
+    protected null|Dot $decoded;
 
     public function __construct(ResponseInterface $psrResponse)
     {
@@ -41,21 +42,13 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
         return (string) $this->response->getBody();
     }
 
-    public function json(mixed $key = null): int|bool|string|array|null
+    public function json(null|int|string $key = null): int|bool|string|array|null
     {
         if (!isset($this->decoded)) {
-            $this->decoded = json_decode($this->body(), true);
+            $this->decoded = dot(json_decode($this->body(), true));
         }
 
-        if (is_null($key)) {
-            return $this->decoded;
-        }
-
-        if (isset($this->decoded[$key])) {
-            return $this->decoded[$key];
-        }
-
-        return null;
+        return $this->decoded->get($key);
     }
 
     public function psr(): ResponseInterface

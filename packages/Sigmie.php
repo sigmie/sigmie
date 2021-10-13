@@ -13,15 +13,13 @@ use Sigmie\Base\Contracts\HttpConnection as Connection;
 use Sigmie\Base\Documents\AliveCollection;
 use Sigmie\Base\Http\Connection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
+use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Index\Builder;
+use Sigmie\Base\Index\Index;
+use Sigmie\Base\Search\SearchBuilder;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\JSONClient;
 use Sigmie\Support\Contracts\Collection;
-use Sigmie\Base\Index\AliasedIndex;
-use Sigmie\Base\Index\Index;
-use Sigmie\Base\Actions\Alias;
-use Sigmie\Base\Search\QueryBuilder;
-use Sigmie\Base\Search\SearchBuilder;
 
 class Sigmie
 {
@@ -55,9 +53,7 @@ class Sigmie
 
     public function search(string $index): SearchBuilder
     {
-        $builder = new SearchBuilder($index, $this->httpConnection);
-
-        return $builder;
+        return new SearchBuilder($index, $this->httpConnection);
     }
 
     public function indices(): Collection

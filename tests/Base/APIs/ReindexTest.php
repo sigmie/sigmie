@@ -8,7 +8,7 @@ use Sigmie\Base\Actions\Alias as AliasActions;
 use Sigmie\Base\APIs\Bulk;
 use Sigmie\Base\APIs\Index as APIsIndex;
 use Sigmie\Base\APIs\Reindex;
-use Sigmie\Base\Exceptions\ReindexException;
+use Sigmie\Base\Exceptions\ClusterBlockException;
 use Sigmie\Testing\TestCase;
 
 class ReindexTest extends TestCase
@@ -67,7 +67,7 @@ class ReindexTest extends TestCase
             'index' => ['blocks.write' => true]
         ]);
 
-        $this->expectException(ReindexException::class);
+        $this->expectException(ClusterBlockException::class);
 
         $this->reindexAPICall($oldIndex->name, $newIndex->name);
     }

@@ -16,11 +16,9 @@ use Sigmie\Base\APIs\Search as SearchAPI;
 use Sigmie\Base\APIs\Update as UpdateAPI;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
-use Sigmie\Base\Documents\DocumentCollection;
-use Sigmie\Base\Index\AbstractIndex;
-use Sigmie\Base\Search\Query;
-use Sigmie\Support\BulkBody;
+use Sigmie\Base\Documents\Collection;
 use Sigmie\Base\Documents\Document as Doc;
+use Sigmie\Support\BulkBody;
 
 trait Document
 {
@@ -65,17 +63,17 @@ trait Document
             ];
         });
 
-        //TODO fix mapping wrong ids when some of the
-        //documents have failed
         $res = $this->bulkAPICall($indexName, $body, $refresh);
-        $successful = $res->getSuccessful();
 
-        foreach ($successful as $index => [$action, $values]) {
-            if (is_null($collection[$index]->_id)) {
-                $collection[$index]->_id = $values['_id'];
+        foreach ($res->json('items') as $index => $value) {
+            $action = array_key_first($value);
+            $response = $value[$action];
+
+            $doc = $collection[$index];
+            if (is_null($doc->_id)) {
+                $doc->_id = $response['_id'];
             }
         }
-
 
         return $collection;
     }
@@ -99,10 +97,8 @@ trait Document
 
         $res = $this->bulkAPICall($indexName, $data, $refresh);
 
-        $data = $res->getAll()->first()['create'];
-
         if (is_null($doc->_id)) {
-            $doc->_id = $data['_id'];
+            $doc->_id = $res->json('items.0.create._id');
         }
 
         return $doc;
@@ -115,7 +111,7 @@ trait Document
         return $res->code() === 200;
     }
 
-    protected function createDocuments(string $indexName, DocumentCollection $documentCollection, string $refresh): DocumentCollection
+    protected function createDocuments(string $indexName, Collection $documentCollection, string $refresh): Collection
     {
         $body = [];
         $docs = $documentCollection->toArray();
@@ -150,17 +146,17 @@ trait Document
     {
         $response = $this->mgetAPICall($indexName, ['docs' => [['_id' => $identifier]]]);
 
-        return $response[0];
+        return $response->docs()->get('0');
     }
 
-    protected function listDocuments(string $indexName, int $offset = 0, int $limit = 100): DocumentCollection
+    protected function listDocuments(string $indexName, int $offset = 0, int $limit = 100): Collection
     {
         $response = $this->searchAPICall($indexName, [
             'from' => $offset, 'size' => $limit,
             'query' => ['match_all' => (object) []]
         ]);
 
-        $collection = new DocumentCollection();
+        $collection = new Collection();
 
         $values = $response->json('hits')['hits'];
 

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Cli\Commands\Analyze;
 
+use Sigmie\Base\Actions\Alias;
+use Sigmie\Base\Actions\Alias as IndexActions;
 use Sigmie\Base\APIs\Alias as AliasAPI;
 use Sigmie\Base\APIs\Analyze;
 use Sigmie\Cli\BaseCommand;
 use Sigmie\Cli\Outputs\AnalyzeTable;
-use Sigmie\Base\Actions\Alias;
-use Sigmie\Base\Actions\Alias as IndexActions;
 use Symfony\Component\Console\Input\InputOption;
 
 class Text extends BaseCommand

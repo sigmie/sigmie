@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Search\Queries\Term;
 
+use Exception;
 use Sigmie\Base\Search\Queries\Query;
 
 class Range extends Query
@@ -13,16 +14,6 @@ class Range extends Query
         protected null|float|int|string $min = null,
         protected null|float|int|string $max = null,
     ) {
-    }
-    private function esOperator(string $operator): string
-    {
-        return match ($operator) {
-            '>' => 'gt',
-            '>=' => 'gte',
-            '<' => 'lt',
-            '<=' => 'lte',
-            default => throw new \Exception('Range operator not supported.')
-        };
     }
 
     public function toRaw(): array
@@ -44,5 +35,15 @@ class Range extends Query
         }
 
         return $res;
+    }
+    private function esOperator(string $operator): string
+    {
+        return match ($operator) {
+            '>' => 'gt',
+            '>=' => 'gte',
+            '<' => 'lt',
+            '<=' => 'lte',
+            default => throw new Exception('Range operator not supported.')
+        };
     }
 }

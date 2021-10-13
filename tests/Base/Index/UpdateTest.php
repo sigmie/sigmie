@@ -7,7 +7,7 @@ namespace Sigmie\Tests\Base\Index;
 use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Documents\DocumentCollection;
+use Sigmie\Base\Documents\Collection as DocumentCollection;
 use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Mappings\Blueprint;
 use Sigmie\Support\Update\Update as Update;

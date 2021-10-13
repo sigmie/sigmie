@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Support\Shared;
 
-use Closure;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
-use Sigmie\Base\Mappings\DynamicMappings;
 use Sigmie\Base\Index\Mappings as IndexMappings;
 use Sigmie\Base\Mappings\Blueprint;
-use Sigmie\Base\Mappings\Properties;
-use Sigmie\Support\Callables\Properties as BlueprintProxy;
+use Sigmie\Base\Mappings\DynamicMappings;
 
 trait Mappings
 {
