@@ -67,13 +67,14 @@ class Search
         return $this;
     }
 
-    public function paginate(int $pePage, int $currentPage,)
+    public function paginate(int $perPage, int $currentPage,)
     {
-        return new Paginator($pePage, $currentPage, $this);
+        return new Paginator($perPage, $currentPage, $this);
     }
 
     public function get(): SearchResponse
     {
+        ray($this->toRaw());
         return $this->searchAPICall($this->index, $this->toRaw());
     }
 

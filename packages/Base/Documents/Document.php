@@ -78,14 +78,17 @@ class Document implements FromRaw
         return $this->getSource($attribute);
     }
 
+    public function toArray(): array
+    {
+        return [
+            '_id' => $this->_id,
+            '_source' => $this->_source
+        ];
+    }
+
     public static function fromRaw(array $raw): static
     {
         return new static($raw['_source'], $raw['_id']);
-    }
-
-    public function save(): void
-    {
-        // $this->_index->updateDocument($this);
     }
 
     protected function getSource(string $source): mixed
@@ -102,10 +105,5 @@ class Document implements FromRaw
         $this->_source[$name] = $value;
 
         return $this;
-    }
-
-    private function index(): AbstractIndex
-    {
-        return $this->_index;
     }
 }

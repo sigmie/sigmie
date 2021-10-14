@@ -92,7 +92,7 @@ class Collection implements DocumentCollectionInterface, FromRaw
 
     public function toArray(): array
     {
-        return $this->collection->toArray();
+        return $this->collection->map(fn (Document $doc) => $doc->toArray())->toArray();
     }
 
     public function clear(): void
