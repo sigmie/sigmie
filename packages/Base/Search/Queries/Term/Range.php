@@ -11,8 +11,10 @@ class Range extends Query
 {
     public function __construct(
         protected string $field,
-        protected null|float|int|string $min = null,
-        protected null|float|int|string $max = null,
+        protected  $min = null,
+        protected  $minOperator = null,
+        protected  $max = null,
+        protected  $maxOperator = null,
     ) {
     }
 
@@ -36,6 +38,7 @@ class Range extends Query
 
         return $res;
     }
+
     private function esOperator(string $operator): string
     {
         return match ($operator) {
@@ -43,7 +46,7 @@ class Range extends Query
             '>=' => 'gte',
             '<' => 'lt',
             '<=' => 'lte',
-            default => throw new Exception('Range operator not supported.')
+            default => throw new Exception('Range operator is required')
         };
     }
 }
