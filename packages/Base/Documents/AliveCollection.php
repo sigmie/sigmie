@@ -13,6 +13,8 @@ use Sigmie\Base\Actions\Index;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Shared\LazyEach;
+use Traversable;
+
 use function Sigmie\Helpers\ensure_doc_collection;
 
 
@@ -91,7 +93,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollectionInter
         return $res->json('count');
     }
 
-    public function getIterator()
+    public function getIterator(): Traversable
     {
         return $this->indexGenerator();
     }

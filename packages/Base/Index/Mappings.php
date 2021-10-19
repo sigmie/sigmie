@@ -17,6 +17,7 @@ use Sigmie\Base\Mappings\Types\Date;
 use Sigmie\Base\Mappings\Types\Number;
 use Sigmie\Base\Mappings\Types\Text;
 use Sigmie\Support\Contracts\Collection;
+
 class Mappings implements MappingsInterface
 {
     protected Properties $properties;
@@ -73,6 +74,7 @@ class Mappings implements MappingsInterface
                 'search_as_you_type' => (new Text($fieldName))->searchAsYouType(),
                 'text' => (new Text($fieldName))->unstructuredText(),
                 'integer' => (new Number($fieldName))->integer(),
+                'long' => (new Number($fieldName))->long(),
                 'float' => (new Number($fieldName))->float(),
                 'boolean' => new Boolean($fieldName),
                 'date' => new Date($fieldName),

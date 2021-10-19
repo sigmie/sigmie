@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Sigmie\Base\Documents;
 
 use Closure;
+use Countable;
 use Iterator;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Contracts\FromRaw;
 use Sigmie\Support\Collection as SigmieCollection;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
+use Traversable;
 
-class Collection implements DocumentCollectionInterface, FromRaw
+class Collection implements DocumentCollectionInterface, FromRaw, Countable
 {
     protected CollectionInterface $collection;
 
@@ -37,32 +39,32 @@ class Collection implements DocumentCollectionInterface, FromRaw
         return $this;
     }
 
-    public function offsetExists($offset)
+    public function offsetExists(mixed $offset): bool
     {
-        $this->collection->offsetExists($offset);
+        return $this->collection->offsetExists($offset);
     }
 
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset): mixed
     {
         return $this->collection->offsetGet($offset);
     }
 
-    public function offsetSet($offset, $value)
+    public function offsetSet(mixed $offset, mixed $value): void
     {
         $this->collection->offsetSet($offset, $value);
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset(mixed $offset): void
     {
         $this->collection->offsetUnset($offset);
     }
 
-    public function count()
+    public function count(): int
     {
         return $this->collection->count();
     }
 
-    public function getIterator()
+    public function getIterator(): Traversable
     {
         return $this->collection->getIterator();
     }

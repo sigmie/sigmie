@@ -25,6 +25,7 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
     /**
      * Get the body of the response.
      *
+     *
      * @return string
      */
     public function __toString()
@@ -90,12 +91,10 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
     /**
      * Determine if the given offset exists.
      *
-     * @param  string  $offset
-     * @return bool
      */
-    public function offsetExists($offset)
+    public function offsetExists(mixed $offset):bool
     {
-        return isset($this->json()[$offset]);
+        return !is_null($this->json($offset));
     }
 
     /**
@@ -104,21 +103,17 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
      * @param  string  $offset
      * @return mixed
      */
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset):mixed
     {
-        return $this->json()[$offset];
+        return $this->json($offset);
     }
 
     /**
      * Set the value at the given offset.
      *
-     * @param  string  $offset
-     * @param  mixed  $value
-     * @return void
-     *
      * @throws LogicException
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet(mixed $offset, mixed $value):void
     {
         throw new LogicException('Response data may not be mutated using array access.');
     }
@@ -126,12 +121,9 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
     /**
      * Unset the value at the given offset.
      *
-     * @param  string  $offset
-     * @return void
-     *
      * @throws LogicException
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($offset):void
     {
         throw new LogicException('Response data may not be mutated using array access.');
     }

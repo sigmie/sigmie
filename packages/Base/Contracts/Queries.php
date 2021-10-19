@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Sigmie\Base\Contracts;
 
@@ -6,7 +8,7 @@ use Sigmie\Base\Contracts\QueryClause as Query;
 
 interface Queries
 {
-    public function term(string $field, string $value);
+    public function term(string $field, string|bool $value);
 
     public function bool(callable $callable);
 
@@ -20,7 +22,7 @@ interface Queries
 
     public function match(string $field, string $query);
 
-    public function multiMatch(array $fields, string $query);
+    public function multiMatch(string $query, array $fields = []);
 
     public function exists(string $field);
 

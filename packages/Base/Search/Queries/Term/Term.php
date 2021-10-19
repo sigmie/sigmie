@@ -10,7 +10,7 @@ class Term extends Query
 {
     public function __construct(
         protected string $field,
-        protected string $value
+        protected string|bool $value
     ) {
     }
 

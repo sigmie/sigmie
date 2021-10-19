@@ -32,7 +32,7 @@ class SearchBuilder implements Queries
         $this->search->index($index)->setHttpConnection($httpConnection);
     }
 
-    public function term(string $field, string $value): Search
+    public function term(string $field, string|bool $value): Search
     {
         return $this->search->query(new Term($field, $value));
     }
@@ -75,9 +75,9 @@ class SearchBuilder implements Queries
         return $this->search->query(new Match_($field, $query));
     }
 
-    public function multiMatch(array $fields, string $query): Search
+    public function multiMatch(string $query, array $fields = []): Search
     {
-        return $this->search->query(new MultiMatch($fields, $query));
+        return $this->search->query(new MultiMatch($query, $fields));
     }
 
     public function exists(string $field): Search

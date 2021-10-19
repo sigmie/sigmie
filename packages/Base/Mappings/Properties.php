@@ -10,7 +10,7 @@ use Sigmie\Support\Collection;
 use Sigmie\Support\Contracts\Arrayable;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
-class Properties implements Arrayable, ArrayAccess
+class Properties
 {
     public function __construct(protected array $fields = [])
     {
@@ -27,27 +27,6 @@ class Properties implements Arrayable, ArrayAccess
     {
         return $this->fields;
     }
-
-    public function offsetExists($offset)
-    {
-        return isset($this->fields[$offset]);
-    }
-
-    public function offsetGet($offset)
-    {
-        return $this->fields[$offset];
-    }
-
-    public function offsetSet(mixed $offset, mixed $value): void
-    {
-        $this->fields[$offset] = $value;
-    }
-
-    public function offsetUnset(mixed $offset)
-    {
-        unset($this->fields[$offset]);
-    }
-
 
     public function toRaw(): array
     {

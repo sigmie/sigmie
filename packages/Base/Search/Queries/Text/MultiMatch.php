@@ -9,17 +9,23 @@ use Sigmie\Base\Search\Queries\Query;
 class MultiMatch extends Query
 {
     public function __construct(
-        protected array $fields,
         protected string $query,
+        protected array $fields = [],
     ) {
     }
     public function toRaw(): array
     {
-        return [
+        $res = [
             'multi_match' => [
                 'query' => $this->query,
-                'fields' => $this->fields
             ]
         ];
+
+        ray($this->fields)->red();
+        if (count($this->fields) > 0) {
+            $res['multi_match']['fields'] = $this->fields;
+        }
+
+        return $res;
     }
 }

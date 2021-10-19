@@ -50,9 +50,9 @@ class BooleanQueryBuilder implements Queries
         return $this->search->query($query);
     }
 
-    public function multiMatch(array $fields, string $query): self
+    public function multiMatch(string $query, array $fields = []): self
     {
-        $this->clauses[] = new MultiMatch($fields, $query);
+        $this->clauses[] = new MultiMatch($query, $fields);
 
         return $this;
     }
@@ -78,7 +78,7 @@ class BooleanQueryBuilder implements Queries
         return $this;
     }
 
-    public function term(string $field, string $value): self
+    public function term(string $field, string|bool $value): self
     {
         $this->clauses[] = new Term($field, $value);
 

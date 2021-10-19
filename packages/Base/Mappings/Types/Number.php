@@ -24,6 +24,13 @@ class Number extends PropertyType
         return $this;
     }
 
+    public function long(): self
+    {
+        $this->type = 'long';
+
+        return $this;
+    }
+
     public function toRaw(): array
     {
         return [$this->name => [

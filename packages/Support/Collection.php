@@ -9,6 +9,7 @@ use Closure;
 use function Sigmie\Helpers\ensure_collection;
 
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
+use Traversable;
 
 class Collection implements CollectionInterface
 {
@@ -265,7 +266,7 @@ class Collection implements CollectionInterface
         return empty($this->elements);
     }
 
-    public function getIterator()
+    public function getIterator(): Traversable
     {
         return new ArrayIterator($this->elements);
     }

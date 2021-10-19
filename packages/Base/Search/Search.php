@@ -92,6 +92,14 @@ class Search
 
     public function toRaw(): array
     {
+        ray([
+            '_source' => $this->fields,
+            'query' => $this->query->toRaw(),
+            'from' => $this->from,
+            'size' => $this->size,
+            'sort' => [...$this->sort, '_score']
+        ]);
+
         return [
             '_source' => $this->fields,
             'query' => $this->query->toRaw(),
