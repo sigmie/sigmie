@@ -48,11 +48,10 @@ class SearchBuilder implements Queries
 
     public function range(
         string $field,
-        null|float|int|string $min = null,
-        null|float|int|string $max = null,
+        array $values = []
     ): Search {
 
-        return $this->search->query(new Range($field, $min, $max));
+        return $this->search->query(new Range($field, $values));
     }
 
     public function matchAll(): Search

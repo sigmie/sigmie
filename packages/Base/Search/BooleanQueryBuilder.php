@@ -13,6 +13,7 @@ use Sigmie\Base\Search\Queries\Term\Exists;
 use Sigmie\Base\Search\Queries\Term\Fuzzy;
 use Sigmie\Base\Search\Queries\Term\IDs;
 use Sigmie\Base\Search\Queries\Term\Range;
+use Sigmie\Base\Search\Queries\Term\RangeBuilder;
 use Sigmie\Base\Search\Queries\Term\Regex;
 use Sigmie\Base\Search\Queries\Term\Term;
 use Sigmie\Base\Search\Queries\Term\Terms;
@@ -108,10 +109,9 @@ class BooleanQueryBuilder implements Queries
 
     public function range(
         string $field,
-        null|float|int|string $min = null,
-        null|float|int|string $max = null,
+        array $values = []
     ): self {
-        $this->clauses[] = new Range($field, $min, $max);
+        $this->clauses[] = new Range($field, $values);
 
         return $this;
     }

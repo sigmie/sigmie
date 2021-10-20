@@ -9,12 +9,12 @@ use Sigmie\Base\Search\Queries\Query;
 
 class Range extends Query
 {
+    /**
+     * values example: [['>=', '2'],['<=','200']]
+     */
     public function __construct(
         protected string $field,
-        protected  $min = null,
-        protected  $minOperator = null,
-        protected  $max = null,
-        protected  $maxOperator = null,
+        protected array $values = [],
     ) {
     }
 
@@ -26,27 +26,17 @@ class Range extends Query
             ]
         ];
 
-        if (!is_null($this->min)) {
-            $operator = $this->esOperator('>=');
-            $res['range'][$this->field][$operator] = $this->min;
-        }
-
-        if (!is_null($this->max)) {
-            $operator = $this->esOperator('<=');
-            $res['range'][$this->field][$operator] = $this->max;
+        foreach ($this->values as $operator => $value) {
+            $operator = match ($operator) {
+                '>' => 'gt',
+                '>=' => 'gte',
+                '<' => 'lt',
+                '<=' => 'lte',
+                default => throw new Exception('Range operator is required')
+            };
+            $res['range'][$this->field][$operator] = $value;
         }
 
         return $res;
-    }
-
-    private function esOperator(string $operator): string
-    {
-        return match ($operator) {
-            '>' => 'gt',
-            '>=' => 'gte',
-            '<' => 'lt',
-            '<=' => 'lte',
-            default => throw new Exception('Range operator is required')
-        };
     }
 }

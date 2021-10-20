@@ -12,7 +12,7 @@ interface Queries
 
     public function bool(callable $callable);
 
-    public function range(string $field, null|float|int|string $min = null, null|float|int|string $max = null,);
+    public function range(string $field, array $values);
 
     public function matchAll();
 
