@@ -45,12 +45,12 @@ class QueryTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->search($name)->range('count', 233)
+        $res = $this->sigmie->search($name)->range('count', ['>='=> 233])
             ->get();
 
         $this->assertEquals(1, $res->json()['hits']['total']['value']);
 
-        $res = $this->sigmie->search($name)->range('count', max: 15)
+        $res = $this->sigmie->search($name)->range('count', ['<='=> 15])
             ->get();
 
         $this->assertEquals(2, $res->json()['hits']['total']['value']);
@@ -69,7 +69,7 @@ class QueryTest extends TestCase
             $boolean->filter->matchAll();
             $boolean->filter->matchNone();
             $boolean->filter->fuzzy('bar', 'baz');
-            $boolean->filter()->multiMatch(['foo', 'bar'], 'baz');
+            $boolean->filter()->multiMatch('baz',['foo', 'bar']);
 
             $boolean->must->term('foo', 'bar');
             $boolean->must->exists('bar', 'baz');
@@ -97,7 +97,7 @@ class QueryTest extends TestCase
             $boolean->filter->matchAll();
             $boolean->filter->matchNone();
             $boolean->filter->fuzzy('bar', 'baz');
-            $boolean->filter()->multiMatch(['foo', 'bar'], 'baz');
+            $boolean->filter()->multiMatch('baz',['foo', 'bar']);
 
             $boolean->must->term('foo', 'bar');
             $boolean->must->exists('bar', 'baz');
@@ -107,7 +107,7 @@ class QueryTest extends TestCase
             $boolean->mustNot->ids(['unqie']);
 
             $boolean->should->bool(fn (QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
-        })->sortAsc('title.raw')
+        })->sort('title.raw','asc')
             ->fields(['title'])
             ->from(0)
             ->size(2)

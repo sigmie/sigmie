@@ -70,17 +70,17 @@ class Mappings implements MappingsInterface
         }
 
         foreach ($data['properties'] as $fieldName => $value) {
-            $field = match ($value['type']) {
-                'search_as_you_type' => (new Text($fieldName))->searchAsYouType(),
-                'text' => Text::fromRaw([$fieldName => $value]),
-                'keyword' => (new Keyword($fieldName)),
-                'integer' => (new Number($fieldName))->integer(),
-                'long' => (new Number($fieldName))->long(),
-                'float' => (new Number($fieldName))->float(),
-                'boolean' => new Boolean($fieldName),
-                'date' => new Date($fieldName),
-                //TODO test completion from raw
-                'completion' => (new Text($fieldName))->completion(),
+            $field = match (true) {
+                in_array(
+                    $value['type'],
+                    ['search_as_you_type', 'text', 'completion']
+                ) => Text::fromRaw([$fieldName => $value]),
+                $value['type'] === 'keyword' => (new Keyword($fieldName)),
+                $value['type'] === 'integer' => (new Number($fieldName))->integer(),
+                $value['type'] === 'long' => (new Number($fieldName))->long(),
+                $value['type'] === 'float' => (new Number($fieldName))->float(),
+                $value['type'] === 'boolean' => new Boolean($fieldName),
+                $value['type'] === 'date' => new Date($fieldName),
                 default => throw new Exception('Field ' . $value['type'] . ' couldn\'t be mapped')
             };
 

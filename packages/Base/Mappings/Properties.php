@@ -10,10 +10,30 @@ use Sigmie\Support\Collection;
 use Sigmie\Support\Contracts\Arrayable;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
-class Properties
+class Properties implements ArrayAccess
 {
     public function __construct(protected array $fields = [])
     {
+    }
+
+    public function offsetExists(mixed $offset): bool
+    {
+        return isset($this->fields[$offset]);
+    }
+
+    public function offsetGet(mixed $offset): mixed
+    {
+        return $this->fields[$offset];
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        $this->fields[$offset] = $value;
+    }
+
+    public function offsetUnset(mixed $offset): void
+    {
+        unset($this->fields[$offset]);
     }
 
     public function textFields(): CollectionInterface

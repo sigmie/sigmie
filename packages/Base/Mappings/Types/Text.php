@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Mappings\Types;
 
+use Exception;
 use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Base\Contracts\CustomAnalyzer as AnalyzerInterface;
 use Sigmie\Base\Contracts\FromRaw;
@@ -26,14 +27,21 @@ class Text extends PropertyType implements FromRaw
         [$name, $configs] = name_configs($raw);
 
         $raw = null;
-        foreach ($configs['fields'] as $fieldName => $values) {
+        foreach ($configs['fields'] ?? [] as $fieldName => $values) {
             if ($values['type'] === 'keyword') {
                 $raw = $fieldName;
                 break;
             }
         }
 
-        return new static($name, $raw);
+        $instance = new static($name, $raw);
+
+        return match ($configs['type']) {
+            'text' => $instance->unstructuredText(),
+            'search_as_you_type' => $instance->searchAsYouType(),
+            'completion' => $instance->completion(),
+            default => throw new Exception('Field ' . $configs['type'] . ' couldn\'t be mapped')
+        };
     }
 
     public function isSortable(): bool
@@ -88,8 +96,8 @@ class Text extends PropertyType implements FromRaw
             ]
         ];
 
-        if ($this->keyword) {
-            $raw[$this->name]['fields'] = ['raw' => ['type' => 'keyword']];
+        if (!is_null($this->raw)) {
+            $raw[$this->name]['fields'] = [$this->raw => ['type' => 'keyword']];
         }
 
         if (!is_null($this->analyzer)) {

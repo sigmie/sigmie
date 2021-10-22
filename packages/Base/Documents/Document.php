@@ -81,7 +81,7 @@ class Document implements FromRaw
     public function toArray(): array
     {
         return [
-            '_id' => $this->_id,
+            '_id' => $this->_id ?? null,
             '_source' => $this->_source
         ];
     }
