@@ -9,19 +9,15 @@ use Sigmie\Base\Contracts\FromRaw;
 use Sigmie\Base\Index\AbstractIndex;
 use Sigmie\Base\Index\Index;
 
-/**
- * @property string $_id read property
- * @property Index $_index read property
- */
 class Document implements FromRaw
 {
     use DocumentActions;
 
     public array $_source;
 
-    protected Index $_index;
+    public readonly string $_index;
 
-    protected string $_id;
+    public readonly string $_id;
 
     public function __construct(
         array $_source = [],
@@ -34,47 +30,21 @@ class Document implements FromRaw
 
     public function __set(string $name, mixed $value): void
     {
-        if ($name === '_id' && isset($this->_id)) {
-            $class = $this::class;
-            user_error("Error: Cannot modify readonly property {$class}::{$name}");
-        }
-
-        if ($name === '_index' && isset($this->_index)) {
-            $class = $this::class;
-            user_error("Error: Cannot modify readonly property {$class}::{$name}");
-        }
-
-        if ($name === '_id') {
-            $this->_id = $value;
-            return;
-        }
-
-        if ($name === '_index') {
-            $this->_index = $value;
-            return;
-        }
-
         $this->setSource($name, $value);
+    }
+
+    public function id(string $_id):void
+    {
+        $this->_id = $_id;
+    }
+
+    public function index(string $_index):void
+    {
+        $this->_index = $_index;
     }
 
     public function __get(string $attribute): mixed
     {
-        if ($attribute === '_id' && isset($this->_id)) {
-            return $this->_id;
-        }
-
-        if ($attribute === '_index' && isset($this->_index)) {
-            return $this->_index;
-        }
-
-        if ($attribute === '_id') {
-            return null;
-        }
-
-        if ($attribute === '_index') {
-            return null;
-        }
-
         return $this->getSource($attribute);
     }
 
@@ -88,7 +58,8 @@ class Document implements FromRaw
 
     public static function fromRaw(array $raw): static
     {
-        return new static($raw['_source'], $raw['_id']);
+        $instance = new static($raw['_source'], $raw['_id']);
+        $instance->index($raw['_index']);
     }
 
     protected function getSource(string $source): mixed

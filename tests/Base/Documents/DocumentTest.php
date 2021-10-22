@@ -41,8 +41,6 @@ class DocumentTest extends TestCase
 
         $this->assertEquals('bar', $doc->foo);
         $this->assertEquals('doe', $doc->john);
-        $this->assertNull($doc->baz);
-        $this->assertNull($doc->_id);
 
         $docWithId = new Document([], '1');
 

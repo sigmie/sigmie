@@ -265,11 +265,11 @@ class IndexTest extends TestCase
 
         $doc = new Document(['foo' => 'bar']);
 
-        $this->assertNull($doc->_id);
+        $this->assertFalse(isset($docs->_id));
 
         $index->add($doc);
 
-        $this->assertNotNull($doc->_id);
+        $this->assertTrue(isset($doc->_id));
     }
 
     /**
@@ -285,11 +285,11 @@ class IndexTest extends TestCase
             new Document(['baz' => 'john'], '2'),
         ]);
 
-        $this->assertNull($docs[0]->_id);
+        $this->assertFalse(isset($docs[0]->_id));
 
         $index->merge($docs);
 
-        $this->assertNotNull($docs[0]->_id);
+        $this->assertTrue(isset($docs[0]->_id));
         $this->assertEquals(2, $docs[1]->_id);
     }
 
@@ -307,11 +307,11 @@ class IndexTest extends TestCase
             new Document(['baz' => 'john']),
         ];
 
-        $this->assertNull($docs[0]->_id);
+        $this->assertFalse(isset($docs[0]->_id));
 
         $index->merge($docs);
 
-        $this->assertNotNull($docs[0]->_id);
+        $this->assertTrue(isset($docs[0]->_id));
     }
 
     /**

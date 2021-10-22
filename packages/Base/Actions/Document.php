@@ -45,7 +45,7 @@ trait Document
         $body = [];
         $collection->each(function (Doc $document, $index) use (&$body) {
             //Upsert docs with id
-            if (!is_null($document->_id)) {
+            if (isset($document->_id)) {
                 $body = [
                     ...$body,
                     ['update' => ['_id' => $document->_id]],
@@ -70,8 +70,12 @@ trait Document
             $response = $value[$action];
 
             $doc = $collection[$index];
-            if (is_null($doc->_id)) {
-                $doc->_id = $response['_id'];
+            if (!isset($doc->_id)) {
+                $doc->id($response['_id']);
+            }
+
+            if (!isset($doc->_index)) {
+                $doc->index($response['_index']);
             }
         }
 
@@ -86,7 +90,7 @@ trait Document
     {
         $array = [];
 
-        if ($doc->_id !== null) {
+        if (isset($doc->_id)) {
             $array = ['_id' => $doc->_id];
         }
 
@@ -97,8 +101,12 @@ trait Document
 
         $res = $this->bulkAPICall($indexName, $data, $refresh);
 
-        if (is_null($doc->_id)) {
-            $doc->_id = $res->json('items.0.create._id');
+        if (!isset($doc->_id)) {
+            $doc->id($res->json('items.0.create._id'));
+        }
+
+        if (!isset($doc->_index)) {
+            $doc->index($res->json('items.0.create._index'));
         }
 
         return $doc;
@@ -109,37 +117,6 @@ trait Document
         $res = $this->docAPICall($indexName, $_id, 'HEAD');
 
         return $res->code() === 200;
-    }
-
-    protected function createDocuments(string $indexName, Collection $documentCollection, string $refresh): Collection
-    {
-        $body = [];
-        $docs = $documentCollection->toArray();
-
-        $docsChunk = array_chunk($docs, 2);
-
-        $promises = [];
-        foreach ($docsChunk as $docs) {
-            $promises[] = enqueue(new BulkBody($docs));
-        }
-
-        $all = wait(all($promises));
-
-        $body = array_merge(...$all);
-
-        $response = $this->bulkAPICall($indexName, $body, $refresh);
-
-        $ids = $response->getAll()->map(fn ($value) => $value['create']['_id']);
-
-        $index = 0;
-        return $documentCollection->each(function (Doc $doc) use ($ids, &$index) {
-            if (is_null($doc->_id)) {
-                $doc->_id = $ids[$index];
-            }
-            $index++;
-        });
-
-        return $documentCollection;
     }
 
     protected function getDocument(string $indexName, string $identifier): ?Doc
