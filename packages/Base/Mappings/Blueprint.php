@@ -31,7 +31,7 @@ class Blueprint
 
     public function text(string $name, bool $keyword = false): Text
     {
-        $field = new Text($name, $keyword);
+        $field = new Text($name, ($keyword) ? 'keyword' : null);
 
         $this->fields->add($field);
 

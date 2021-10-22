@@ -6,16 +6,44 @@ namespace Sigmie\Base\Mappings\Types;
 
 use Sigmie\Base\Contracts\Analyzer;
 use Sigmie\Base\Contracts\CustomAnalyzer as AnalyzerInterface;
+use Sigmie\Base\Contracts\FromRaw;
 use Sigmie\Base\Mappings\PropertyType;
 
-class Text extends PropertyType
+use function Sigmie\Helpers\name_configs;
+
+class Text extends PropertyType implements FromRaw
 {
     protected ?Analyzer $analyzer;
 
     public function __construct(
         protected string $name,
-        protected bool $keyword = false
+        protected null|string $raw = null,
     ) {
+    }
+
+    public static function fromRaw(array $raw): static
+    {
+        [$name, $configs] = name_configs($raw);
+
+        $raw = null;
+        foreach ($configs['fields'] as $fieldName => $values) {
+            if ($values['type'] === 'keyword') {
+                $raw = $fieldName;
+                break;
+            }
+        }
+
+        return new static($name, $raw);
+    }
+
+    public function isSortable(): bool
+    {
+        return !is_null($this->raw);
+    }
+
+    public function sortableName(): null|string
+    {
+        return (is_null($this->raw)) ? null : "{$this->name}.{$this->raw}";
     }
 
     public function searchAsYouType(Analyzer $analyzer = null): self

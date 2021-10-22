@@ -7,6 +7,7 @@ namespace Sigmie\Base\Search;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Base\Pagination\Paginator;
+use Sigmie\Base\Search\Queries\MatchAll;
 use Sigmie\Base\Search\Queries\Query;
 
 class Search
@@ -21,9 +22,11 @@ class Search
 
     protected array $fields = ['*'];
 
-    protected Query $query;
-
     protected array $sort = [];
+
+    public function __construct(protected Query $query = new MatchAll)
+    {
+    }
 
     public function fields(array $fields): self
     {
@@ -53,16 +56,9 @@ class Search
         return $this;
     }
 
-    public function sortAsc(string $field): self
+    public function sort(string $field, string $direction): self
     {
-        $this->sort[] = [$field => 'asc'];
-
-        return $this;
-    }
-
-    public function sortDesc(string $field): self
-    {
-        $this->sort[] = [$field => 'desc'];
+        $this->sort[] = [$field => $direction];
 
         return $this;
     }

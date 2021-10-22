@@ -14,6 +14,7 @@ use Sigmie\Base\Mappings\DynamicMappings;
 use Sigmie\Base\Mappings\Properties;
 use Sigmie\Base\Mappings\Types\Boolean;
 use Sigmie\Base\Mappings\Types\Date;
+use Sigmie\Base\Mappings\Types\Keyword;
 use Sigmie\Base\Mappings\Types\Number;
 use Sigmie\Base\Mappings\Types\Text;
 use Sigmie\Support\Contracts\Collection;
@@ -60,7 +61,6 @@ class Mappings implements MappingsInterface
             fn (CustomAnalyzer $analyzer) => [$analyzer->name() => $analyzer]
         )->toArray();
 
-
         $fields = [];
 
         $defaultAnalyzer = $analyzers['default'] ?? new DefaultAnalyzer();
@@ -72,7 +72,8 @@ class Mappings implements MappingsInterface
         foreach ($data['properties'] as $fieldName => $value) {
             $field = match ($value['type']) {
                 'search_as_you_type' => (new Text($fieldName))->searchAsYouType(),
-                'text' => (new Text($fieldName))->unstructuredText(),
+                'text' => Text::fromRaw([$fieldName => $value]),
+                'keyword' => (new Keyword($fieldName)),
                 'integer' => (new Number($fieldName))->integer(),
                 'long' => (new Number($fieldName))->long(),
                 'float' => (new Number($fieldName))->float(),
