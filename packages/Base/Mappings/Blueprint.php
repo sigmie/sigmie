@@ -6,6 +6,7 @@ namespace Sigmie\Base\Mappings;
 
 use Sigmie\Base\Mappings\Types\Boolean;
 use Sigmie\Base\Mappings\Types\Date;
+use Sigmie\Base\Mappings\Types\Keyword;
 use Sigmie\Base\Mappings\Types\Number;
 use Sigmie\Base\Mappings\Types\Text;
 use Sigmie\Support\Collection;
@@ -32,6 +33,15 @@ class Blueprint
     public function text(string $name, bool $keyword = false): Text
     {
         $field = new Text($name, ($keyword) ? 'keyword' : null);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function keyword(string $name): Keyword
+    {
+        $field = new Keyword($name);
 
         $this->fields->add($field);
 
