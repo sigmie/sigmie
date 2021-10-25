@@ -25,13 +25,13 @@ interface DocumentCollection extends ArrayAccess, Countable, IteratorAggregate
 
     public function toArray(): array;
 
-    public function remove(string $index): bool;
+    public function remove(string $_id): bool;
 
     public function all(): Iterator;
 
-    public function has(string $index): bool;
+    public function has(string $_id): bool;
 
-    public function get(string $index): ?Document;
+    public function get(string $_id): ?Document;
 
     public function each(Closure $fn): self;
 }

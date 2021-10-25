@@ -27,9 +27,9 @@ class Collection implements DocumentCollectionInterface, FromRaw, Countable
         return $this->collection->getIterator();
     }
 
-    public function get(string $index): ?Document
+    public function get(string $_id): ?Document
     {
-        return $this->collection->get($index);
+        return $this->collection->get($_id);
     }
 
     public function each(Closure $fn): DocumentCollectionInterface
@@ -87,9 +87,9 @@ class Collection implements DocumentCollectionInterface, FromRaw, Countable
         return $this;
     }
 
-    public function has(string $index): bool
+    public function has(string $_id): bool
     {
-        return $this->collection->hasKey($index);
+        return $this->collection->hasKey($_id);
     }
 
     public function toArray(): array
@@ -112,9 +112,9 @@ class Collection implements DocumentCollectionInterface, FromRaw, Countable
         return !$this->isEmpty();
     }
 
-    public function remove(string $index): bool
+    public function remove(string $_id): bool
     {
-        $this->collection->remove($index);
+        $this->collection->remove($_id);
 
         return true;
     }

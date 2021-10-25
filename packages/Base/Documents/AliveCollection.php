@@ -33,9 +33,9 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollectionInter
         return $this->getIterator();
     }
 
-    public function has(string $index): bool
+    public function has(string $_id): bool
     {
-        return $this->documentExists($this->name, $index);
+        return $this->documentExists($this->name, $_id);
     }
 
     public function add(Document $document): self
@@ -76,14 +76,14 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollectionInter
         return !$this->isEmpty();
     }
 
-    public function remove(string $index): bool
+    public function remove(string $_id): bool
     {
-        return $this->deleteDocument($this->name, $index, $this->refresh);
+        return $this->deleteDocument($this->name, $_id, $this->refresh);
     }
 
-    public function get(string $index): ?Document
+    public function get(string $_id): ?Document
     {
-        return $this->getDocument($this->name, $index);
+        return $this->getDocument($this->name, $_id);
     }
 
     public function count(): int
