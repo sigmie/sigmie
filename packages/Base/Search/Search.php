@@ -93,7 +93,7 @@ class Search
             'query' => $this->query->toRaw(),
             'from' => $this->from,
             'size' => $this->size,
-            'sort' => [...$this->sort, '_score']
+            'sort' => [...$this->sort]
         ]);
 
         return [
@@ -101,7 +101,7 @@ class Search
             'query' => $this->query->toRaw(),
             'from' => $this->from,
             'size' => $this->size,
-            'sort' => [...$this->sort, '_score']
+            'sort' => [...$this->sort, ]
         ];
     }
 }
