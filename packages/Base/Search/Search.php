@@ -70,8 +70,9 @@ class Search
 
     public function get(): SearchResponse
     {
-        ray($this->toRaw());
-        return $this->searchAPICall($this->index, $this->toRaw());
+        $raw = $this->toRaw() ;
+        ray($raw)->blue();
+        return $this->searchAPICall($this->index, $raw);
     }
 
     public function getDSL(): array
@@ -88,20 +89,12 @@ class Search
 
     public function toRaw(): array
     {
-        ray([
-            '_source' => $this->fields,
-            'query' => $this->query->toRaw(),
-            'from' => $this->from,
-            'size' => $this->size,
-            'sort' => [...$this->sort]
-        ]);
-
         return [
             '_source' => $this->fields,
             'query' => $this->query->toRaw(),
             'from' => $this->from,
             'size' => $this->size,
-            'sort' => [...$this->sort, ]
+            'sort' => [...$this->sort,]
         ];
     }
 }
