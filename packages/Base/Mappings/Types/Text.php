@@ -34,7 +34,7 @@ class Text extends PropertyType implements FromRaw
             }
         }
 
-        $instance = new static($name, $raw);
+        $instance = new static((string)$name, $raw);
 
         return match ($configs['type']) {
             'text' => $instance->unstructuredText(),
