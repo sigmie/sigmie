@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
+use App\Helpers\ProxyCert;
 use Sigmie\Base\APIs\Cat;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Contracts\API;
@@ -19,7 +20,7 @@ trait ClearIndices
         if (is_null($url)) {
             $this->setupTestConnection();
         } else {
-            $client = JSONClient::create($url);
+            $client = JSONClient::create($url, new ProxyCert);
 
             $this->setHttpConnection(new Connection($client));
         }

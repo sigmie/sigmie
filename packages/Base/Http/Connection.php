@@ -39,6 +39,7 @@ class Connection implements ConnectionInterface
 
         $jsonResponse = $this->call(fn () => $this->http->request($request));
 
+        ray($jsonResponse);
         $response = $request->response($jsonResponse->psr());
 
         if ($request->getMethod() === 'HEAD' && $response->failed()) {
