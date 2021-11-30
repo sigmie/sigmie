@@ -56,8 +56,8 @@ class AggregationTest extends TestCase
             })
             ->get();
 
-        $this->assertEquals(5, (int) $res->aggregations()->get('minCount.value'));
-        $this->assertEquals(['customer' => 'bar'], $res->aggregations()->get('minCount.meta'));
+        $this->assertEquals(5, (int) $res->aggregation('minCount.value'));
+        $this->assertEquals(['customer' => 'bar'], $res->aggregation('minCount.meta'));
     }
 
     /**
@@ -92,7 +92,7 @@ class AggregationTest extends TestCase
             })
             ->get();
 
-        $this->assertEquals(3, (int) $res->aggregations()->get('averageCount.value'));
+        $this->assertEquals(3, (int) $res->aggregation('averageCount.value'));
 
         $res = $this->sigmie->search($name)
             ->matchAll()
@@ -103,7 +103,7 @@ class AggregationTest extends TestCase
 
 
 
-        $this->assertEquals(4, (int) $res->aggregations()->get('averageCount.value'));
+        $this->assertEquals(4, (int) $res->aggregation('averageCount.value'));
     }
 
     /**
@@ -138,6 +138,6 @@ class AggregationTest extends TestCase
             })
             ->get();
 
-        $this->assertEquals(233, (int) $res->aggregations()->get('maxCount.value'));
+        $this->assertEquals(233, (int) $res->aggregation('maxCount.value'));
     }
 }

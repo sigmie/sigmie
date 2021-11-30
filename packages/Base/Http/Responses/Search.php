@@ -21,9 +21,9 @@ class Search extends ElasticsearchResponse
         return $this->json('hits.hits');
     }
 
-    public function aggregations(): Aggregations
+    public function aggregation(string $dot): mixed
     {
-        return Aggregations::fromRaw($this->json('aggregations'));
+        return $this->json("aggregations.{$dot}");
     }
 
     public function docs(): DocumentCollectionInterface

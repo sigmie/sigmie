@@ -43,7 +43,7 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
         return (string) $this->response->getBody();
     }
 
-    public function json(null|int|string $key = null): int|bool|string|array|null
+    public function json(null|int|string $key = null): int|bool|string|array|null|float
     {
         if (!isset($this->decoded)) {
             $this->decoded = dot(json_decode($this->body(), true));

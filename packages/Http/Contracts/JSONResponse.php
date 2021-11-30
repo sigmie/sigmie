@@ -10,7 +10,7 @@ interface JSONResponse
 {
     public function failed(): bool;
 
-    public function json(null|string|int $key = null): int|bool|string|array|null;
+    public function json(null|string|int $key = null): int|bool|string|array|null|float;
 
     public function psr(): ResponseInterface;
 }
