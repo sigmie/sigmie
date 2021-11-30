@@ -121,7 +121,7 @@ class Collection implements DocumentCollectionInterface, FromRaw, Countable
 
     public static function fromRaw(array $raw)
     {
-        $docs = array_map(fn ($values) => new Document($values['_source'], $values['_id']), $raw);
+        $docs = array_map(fn ($values) => Document::fromRaw($values), $raw);
 
         return new static($docs);
     }

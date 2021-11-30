@@ -2,6 +2,6 @@
 
 namespace Sigmie\Base\Contracts;
 
-interface QueryClause extends ToRaw
+interface Aggregation extends ToRaw
 {
 }

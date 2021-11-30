@@ -17,7 +17,7 @@ trait TestConnection
 
     public function setupTestConnection(): void
     {
-        $client = JSONClient::create(testing_host(), new ProxyCert);
+        $client = JSONClient::create(testing_host());
 
         $this->setHttpConnection(new Connection($client));
     }

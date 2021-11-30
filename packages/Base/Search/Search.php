@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Sigmie\Base\Search;
 
 use Sigmie\Base\APIs\Search as APIsSearch;
+use Sigmie\Base\Contracts\Aggs as AggsInterface;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Base\Pagination\Paginator;
+use Sigmie\Base\Search\Aggs;
 use Sigmie\Base\Search\Queries\MatchAll;
 use Sigmie\Base\Search\Queries\Query;
 
@@ -24,8 +26,17 @@ class Search
 
     protected array $sort = [];
 
-    public function __construct(protected Query $query = new MatchAll)
+    public function __construct(
+        protected Query $query = new MatchAll,
+        protected AggsInterface $aggs = new Aggs
+    ) {
+    }
+
+    public function aggregate(callable $callable)
     {
+        $callable($this->aggs);
+
+        return $this;
     }
 
     public function fields(array $fields): self
@@ -70,8 +81,8 @@ class Search
 
     public function get(): SearchResponse
     {
-        $raw = $this->toRaw() ;
-        ray($raw)->blue();
+        $raw = $this->toRaw();
+
         return $this->searchAPICall($this->index, $raw);
     }
 
@@ -92,6 +103,7 @@ class Search
         return [
             '_source' => $this->fields,
             'query' => $this->query->toRaw(),
+            'aggs' => $this->aggs->toRaw(),
             'from' => $this->from,
             'size' => $this->size,
             'sort' => [...$this->sort,]
