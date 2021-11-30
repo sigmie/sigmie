@@ -17,10 +17,69 @@ use Sigmie\Base\Search\Compound\Boolean as CompoundBoolean;
 use Sigmie\Base\Search\Queries\Compound\Boolean as QueriesCompoundBoolean;
 use Sigmie\Base\Search\QueryBuilder;
 use Sigmie\Testing\TestCase;
+use Sigmie\Base\Search\Aggregations\Enums\CalendarInterval;
 
 class AggregationTest extends TestCase
 {
     use Index, Search, Explain;
+
+    /**
+     * @test
+     */
+    public function date_histogram_aggregation()
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->withoutMappings()->create();
+
+        $collection = $this->sigmie->collect($name);
+
+        $docs = [
+            new Document([
+                'date' => '2020-01-01'
+            ]),
+            new Document([
+                'date' => '2019-01-01'
+            ]),
+            new Document([
+                'date' => '2018-01-01'
+            ]),
+            new Document([
+                'date' => '2018-01-01'
+            ]),
+            new Document([
+                'name' => 'nico'
+            ]),
+            new Document([
+                'date' => '2016-01-01'
+            ]),
+            new Document([
+                'date' => '1999-01-01'
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->search($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation) {
+
+                $aggregation->dateHistogram('histogram', 'date', CalendarInterval::Year)
+
+                    ->aggregate(function (SearchAggregation $aggregation) {
+
+                        $aggregation->dateHistogram('histogram_nested', 'date', CalendarInterval::Day)
+                            ->missing('2021-01-01');
+                    })
+                    ->missing('2021-01-01');
+            })
+            ->get();
+
+        $value = $res->aggregation('histogram');
+
+        $this->assertArrayHasKey('buckets', $value);
+        $this->assertArrayHasKey('histogram_nested', $res->aggregation('histogram.buckets.0'));
+    }
 
     /**
      * @test

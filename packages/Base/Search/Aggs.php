@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Search;
 
 use Sigmie\Base\Contracts\Aggs as AggsInterface;
+use Sigmie\Base\Search\Aggregations\Bucket\DateHistogram;
 use Sigmie\Base\Search\Aggregations\Metrics\Avg;
 use Sigmie\Base\Search\Aggregations\Metrics\Cardinality;
 use Sigmie\Base\Search\Aggregations\Metrics\Max;
@@ -14,11 +15,21 @@ use Sigmie\Base\Search\Aggregations\Metrics\Percentiles;
 use Sigmie\Base\Search\Aggregations\Metrics\Stats;
 use Sigmie\Base\Search\Aggregations\Metrics\Sum;
 use Sigmie\Base\Search\Aggregations\Metrics\ValueCount;
-use Sigmie\Base\Shared\Name;
+use Sigmie\Base\Search\Aggregations\Enums\CalendarInterval;
 
 class Aggs implements AggsInterface
 {
     protected array $aggs = [];
+
+    public function dateHistogram(string $name, string $field, CalendarInterval $interval): DateHistogram
+    {
+        $aggregation = new DateHistogram($name, $field, $interval);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
 
     public function min(string $name, string $field): Min
     {
