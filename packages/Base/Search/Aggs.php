@@ -29,7 +29,7 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
-    public function stats(string $name, string $field, array $values)
+    public function stats(string $name, string $field)
     {
         $aggregation = new Stats($name, $field);
 
@@ -38,7 +38,7 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
-    public function valueCount(string $name, string $field, array $values)
+    public function valueCount(string $name, string $field)
     {
         $aggregation = new ValueCount($name, $field);
 

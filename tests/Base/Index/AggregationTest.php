@@ -101,9 +101,255 @@ class AggregationTest extends TestCase
             })
             ->get();
 
-
-
         $this->assertEquals(4, (int) $res->aggregation('averageCount.value'));
+    }
+
+    /**
+     * @test
+     */
+    public function percentile_ranks_aggregation()
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->withoutMappings()->create();
+
+        $collection = $this->sigmie->collect($name);
+
+        $docs = [
+            new Document([
+                'type' => 1
+            ]),
+            new Document([
+                'type' => 2
+            ]),
+            new Document([
+                'type' => 3
+            ]),
+            new Document([
+                'type' => 3
+            ]),
+            new Document([
+                'type' => 3
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->search($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation) {
+                $aggregation->percentileRanks('percentile_rank', 'type', [3, 2]);
+            })
+            ->get();
+
+        $value = $res->aggregation('percentile_rank.values');
+
+        $this->assertArrayHasKey('3.0', $value);
+        $this->assertArrayHasKey('2.0', $value);
+        $this->assertArrayNotHasKey('5.0', $value);
+    }
+
+    /**
+     * @test
+     */
+    public function percentiles_aggregation()
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->withoutMappings()->create();
+
+        $collection = $this->sigmie->collect($name);
+
+        $docs = [
+            new Document([
+                'type' => 1
+            ]),
+            new Document([
+                'type' => 2
+            ]),
+            new Document([
+                'type' => 3
+            ]),
+            new Document([
+                'type' => 3
+            ]),
+            new Document([
+                'type' => 3
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->search($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation) {
+                $aggregation->percentiles('percentile', 'type', [1, 2]);
+            })
+            ->get();
+
+        $value = $res->aggregation('percentile.values');
+
+        $this->assertArrayHasKey('1.0', $value);
+        $this->assertArrayHasKey('2.0', $value);
+        $this->assertArrayNotHasKey('5.0', $value);
+    }
+
+    /**
+     * @test
+     */
+    public function cardinality_aggregation()
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->withoutMappings()->create();
+
+        $collection = $this->sigmie->collect($name);
+
+        $docs = [
+            new Document([
+                'type' => 1
+            ]),
+            new Document([
+                'type' => 2
+            ]),
+            new Document([
+                'type' => 3
+            ]),
+            new Document([
+                'type' => 3
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->search($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation) {
+                $aggregation->cardinality('type_count', 'type');
+            })
+            ->get();
+
+        $value = $res->aggregation('type_count.value');
+
+        $this->assertEquals(3, (int)$value);
+    }
+
+    /**
+     * @test
+     */
+    public function value_count_aggregation()
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->withoutMappings()->create();
+
+        $collection = $this->sigmie->collect($name);
+
+        $docs = [
+            new Document([
+                'type' => 1
+            ]),
+            new Document([
+                'type' => 2
+            ]),
+            new Document([
+                'type' => 3
+            ]),
+            new Document([
+                'type' => 3
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->search($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation) {
+                $aggregation->valueCount('type_count', 'type');
+            })
+            ->get();
+
+        $value = $res->aggregation('type_count.value');
+
+        $this->assertEquals(4, (int)$value);
+    }
+
+    /**
+     * @test
+     */
+    public function sum_aggregation()
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->withoutMappings()->create();
+
+        $collection = $this->sigmie->collect($name);
+
+        $docs = [
+            new Document([
+                'count' => 20,
+            ]),
+            new Document([
+                'count' => 20,
+            ]),
+            new Document([
+                'count' => 20,
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->search($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation) {
+                $aggregation->sum('count_sum', 'count');
+            })
+            ->get();
+
+        $value = $res->aggregation('count_sum.value');
+
+        $this->assertEquals(60, (int)$value);
+    }
+
+    /**
+     * @test
+     */
+    public function stats_aggregation()
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->withoutMappings()->create();
+
+        $collection = $this->sigmie->collect($name);
+
+        $docs = [
+            new Document([
+                'count' => 5,
+            ]),
+            new Document([
+                'count' => 15,
+            ]),
+            new Document([
+                'count' => 233,
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->search($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation) {
+                $aggregation->stats('stats', 'count');
+            })
+            ->get();
+
+        $stats = $res->aggregation('stats');
+
+        $this->assertArrayHasKey('count', $stats);
+        $this->assertArrayHasKey('min', $stats);
+        $this->assertArrayHasKey('max', $stats);
+        $this->assertArrayHasKey('avg', $stats);
+        $this->assertArrayHasKey('sum', $stats);
     }
 
     /**
