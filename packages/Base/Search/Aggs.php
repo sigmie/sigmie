@@ -16,6 +16,11 @@ use Sigmie\Base\Search\Aggregations\Metrics\Stats;
 use Sigmie\Base\Search\Aggregations\Metrics\Sum;
 use Sigmie\Base\Search\Aggregations\Metrics\ValueCount;
 use Sigmie\Base\Search\Aggregations\Enums\CalendarInterval;
+use Sigmie\Base\Search\Aggregations\Bucket\Missing;
+use Sigmie\Base\Search\Aggregations\Bucket\Terms;
+use Sigmie\Base\Search\Aggregations\Bucket\Range;
+use Sigmie\Base\Search\Aggregations\Bucket\SignificantText;
+
 
 class Aggs implements AggsInterface
 {
@@ -24,6 +29,43 @@ class Aggs implements AggsInterface
     public function dateHistogram(string $name, string $field, CalendarInterval $interval): DateHistogram
     {
         $aggregation = new DateHistogram($name, $field, $interval);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    public function range(string $name, string $field, array $ranges): Range
+    {
+        $aggregation = new Range($name, $field, $ranges);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    public function significantText(string $name, string $field): SignificantText
+    {
+        $aggregation = new SignificantText($name, $field);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+
+    public function terms(string $name, string $field): Terms
+    {
+        $aggregation = new Terms($name, $field);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    public function missing(string $name, string $field): Missing
+    {
+        $aggregation = new Missing($name, $field);
 
         $this->aggs[] = $aggregation;
 
@@ -40,7 +82,7 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
-    public function stats(string $name, string $field)
+    public function stats(string $name, string $field): Stats
     {
         $aggregation = new Stats($name, $field);
 
@@ -49,7 +91,7 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
-    public function valueCount(string $name, string $field)
+    public function valueCount(string $name, string $field): ValueCount
     {
         $aggregation = new ValueCount($name, $field);
 
@@ -58,7 +100,7 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
-    public function sum(string $name, string $field)
+    public function sum(string $name, string $field): Sum
     {
         $aggregation = new Sum($name, $field);
 
@@ -67,7 +109,7 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
-    public function percentiles(string $name, string $field, array $percents = [1, 5, 25, 50, 75, 95, 99])
+    public function percentiles(string $name, string $field, array $percents = [1, 5, 25, 50, 75, 95, 99]): Percentiles
     {
         $aggregation = new Percentiles($name, $field, $percents);
 
@@ -76,7 +118,7 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
-    public function percentileRanks(string $name, string $field, array $values)
+    public function percentileRanks(string $name, string $field, array $values): PercentileRanks
     {
         $aggregation = new PercentileRanks($name, $field, $values);
 
@@ -85,7 +127,7 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
-    public function cardinality(string $name, string $field)
+    public function cardinality(string $name, string $field): Cardinality
     {
         $aggregation = new Cardinality($name, $field);
 
@@ -94,7 +136,7 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
-    public function max(string $name, string $field)
+    public function max(string $name, string $field): Max
     {
         $aggregation = new Max($name, $field);
 
@@ -103,7 +145,7 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
-    public function avg(string $name, string $field)
+    public function avg(string $name, string $field): Avg
     {
         $aggregation = new Avg($name, $field);
 

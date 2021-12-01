@@ -14,7 +14,7 @@ use function Sigmie\Helpers\name_configs;
 
 class Text extends PropertyType implements FromRaw
 {
-    protected ?Analyzer $analyzer;
+    protected ?Analyzer $analyzer = null;
 
     public function __construct(
         protected string $name,

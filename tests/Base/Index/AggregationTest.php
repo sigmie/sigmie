@@ -26,6 +26,49 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
+    public function significant_text_aggregation()
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->mapping(function (Blueprint $blueprint) {
+            $blueprint->text('title')->unstructuredText();
+        })->create();
+
+        $collection = $this->sigmie->collect($name);
+
+        $docs = [
+            new Document([
+                'title' => 'Chocolate is very tasty.'
+            ]),
+            new Document([
+                'title' => 'Dory is looking for Nemo.'
+            ]),
+            new Document([
+                'title' => 'Buz is like Woody, very handsome.'
+            ]),
+            new Document([
+                'title' => 'Chocolate makes me fat. '
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->search($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation) {
+                $aggregation->significantText('significant', 'title');
+            })
+            ->get();
+
+        $value = $res->aggregation('significant.buckets');
+
+        dd($res->json());
+        $this->assertCount(3, $value);
+    }
+
+    /**
+     * @test
+     */
     public function date_histogram_aggregation()
     {
         $name = uniqid();
@@ -79,6 +122,100 @@ class AggregationTest extends TestCase
 
         $this->assertArrayHasKey('buckets', $value);
         $this->assertArrayHasKey('histogram_nested', $res->aggregation('histogram.buckets.0'));
+    }
+
+    /**
+     * @test
+     */
+    public function ranges_aggregation()
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->mapping(function (Blueprint $blueprint) {
+            $blueprint->keyword('type');
+        })->create();
+
+        $collection = $this->sigmie->collect($name);
+
+        $docs = [
+            new Document([
+                'price' => 200
+            ]),
+            new Document([
+                'price' => 100
+            ]),
+            new Document([
+                'price' => 150
+            ]),
+            new Document([
+                'price' => 300
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->search($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation) {
+                $aggregation->range('price_ranges', 'price', [
+                    ['to' => 100],
+                    ['from' => 200, 'to' => 400],
+                    ['from' => 300],
+                ]);
+            })
+            ->get();
+
+        $value = $res->aggregation('price_ranges.buckets');
+
+        $this->assertCount(3, $value);
+    }
+
+    /**
+     * @test
+     */
+    public function terms_aggregation()
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->mapping(function (Blueprint $blueprint) {
+            $blueprint->keyword('type');
+        })->create();
+
+        $collection = $this->sigmie->collect($name);
+
+        $docs = [
+            new Document([
+                'type' => 'woman'
+            ]),
+            new Document([
+                'type' => 'man'
+            ]),
+            new Document([
+                'type' => 'man'
+            ]),
+            new Document([
+                'type' => 'child'
+            ]),
+            new Document([
+                'type' => 'child'
+            ]),
+            new Document([
+                'name' => 'Nico'
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->search($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation) {
+                $aggregation->terms('genders', 'type')->missing('N/A');
+            })
+            ->get();
+
+        $value = $res->aggregation('genders.buckets');
+
+        $this->assertCount(4, $value);
     }
 
     /**
