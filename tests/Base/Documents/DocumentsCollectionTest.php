@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Tests\Base\Documents;
 
 use PHPUnit\Framework\TestCase;
-use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\Collection as DocumentCollection;
-use TypeError;
+use Sigmie\Base\Documents\Document;
 
 class DocumentsCollectionTest extends TestCase
 {

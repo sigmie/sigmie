@@ -8,12 +8,10 @@ class ValueCount extends Metric
 {
     protected function value(): array
     {
-        $value =  [
+        return [
             'value_count' => [
                 'field' => $this->field,
             ]
         ];
-
-        return $value;
     }
 }

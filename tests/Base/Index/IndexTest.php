@@ -7,8 +7,8 @@ namespace Sigmie\Base\Tests\Index;
 use ArrayAccess;
 use Countable;
 use IteratorAggregate;
-use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\Collection as DocumentCollection;
+use Sigmie\Base\Documents\Document;
 use Sigmie\Testing\TestCase;
 
 class IndexTest extends TestCase

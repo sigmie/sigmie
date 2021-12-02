@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Tests\Base\APIs\Responses;
 
 use Sigmie\Base\APIs\Bulk as BulkAPI;
+use Sigmie\Base\Exceptions\BulkException;
 use Sigmie\Base\Http\Responses\Bulk;
 use Sigmie\Testing\TestCase;
-use Sigmie\Base\Exceptions\BulkException;
 
 class BulkTest extends TestCase
 {

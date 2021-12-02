@@ -6,6 +6,11 @@ namespace Sigmie\Base\Search;
 
 use Sigmie\Base\Contracts\Aggs as AggsInterface;
 use Sigmie\Base\Search\Aggregations\Bucket\DateHistogram;
+use Sigmie\Base\Search\Aggregations\Bucket\Missing;
+use Sigmie\Base\Search\Aggregations\Bucket\Range;
+use Sigmie\Base\Search\Aggregations\Bucket\SignificantText;
+use Sigmie\Base\Search\Aggregations\Bucket\Terms;
+use Sigmie\Base\Search\Aggregations\Enums\CalendarInterval;
 use Sigmie\Base\Search\Aggregations\Metrics\Avg;
 use Sigmie\Base\Search\Aggregations\Metrics\Cardinality;
 use Sigmie\Base\Search\Aggregations\Metrics\Max;
@@ -15,11 +20,6 @@ use Sigmie\Base\Search\Aggregations\Metrics\Percentiles;
 use Sigmie\Base\Search\Aggregations\Metrics\Stats;
 use Sigmie\Base\Search\Aggregations\Metrics\Sum;
 use Sigmie\Base\Search\Aggregations\Metrics\ValueCount;
-use Sigmie\Base\Search\Aggregations\Enums\CalendarInterval;
-use Sigmie\Base\Search\Aggregations\Bucket\Missing;
-use Sigmie\Base\Search\Aggregations\Bucket\Terms;
-use Sigmie\Base\Search\Aggregations\Bucket\Range;
-use Sigmie\Base\Search\Aggregations\Bucket\SignificantText;
 
 
 class Aggs implements AggsInterface

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
-use App\Helpers\ProxyCert;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\Connection;
 use function Sigmie\Helpers\testing_host;

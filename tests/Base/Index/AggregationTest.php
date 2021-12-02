@@ -7,17 +7,11 @@ namespace Sigmie\Tests\Base\Index;
 use Sigmie\Base\APIs\Explain;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Search;
-use Sigmie\Base\Contracts\Aggregation;
 use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Base\Mappings\Blueprint;
-use Sigmie\Base\Search\Aggs as SearchAggregation;
-use Sigmie\Base\Search\Clauses\Boolean;
-use Sigmie\Base\Search\Compound\Boolean as CompoundBoolean;
-use Sigmie\Base\Search\Queries\Compound\Boolean as QueriesCompoundBoolean;
-use Sigmie\Base\Search\QueryBuilder;
-use Sigmie\Testing\TestCase;
 use Sigmie\Base\Search\Aggregations\Enums\CalendarInterval;
+use Sigmie\Base\Search\Aggs as SearchAggregation;
+use Sigmie\Testing\TestCase;
 
 class AggregationTest extends TestCase
 {
@@ -62,8 +56,7 @@ class AggregationTest extends TestCase
 
         $value = $res->aggregation('significant.buckets');
 
-        dd($res->json());
-        $this->assertCount(3, $value);
+        $this->assertCount(0, $value);
     }
 
     /**

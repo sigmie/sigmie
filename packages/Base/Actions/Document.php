@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Actions;
 
-use function Amp\Parallel\Worker\enqueue;
-use function Amp\Promise\all;
 use function Amp\Promise\wait;
 use Exception;
 use Sigmie\Base\APIs\Bulk as BulkAPI;
@@ -18,7 +16,6 @@ use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Documents\Collection;
 use Sigmie\Base\Documents\Document as Doc;
-use Sigmie\Support\BulkBody;
 
 trait Document
 {

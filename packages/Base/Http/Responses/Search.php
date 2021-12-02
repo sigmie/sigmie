@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\Http\Responses;
 
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
-use Sigmie\Base\Aggregations\Aggregations;
 use Sigmie\Base\Documents\Collection as DocumentCollection;
 use Sigmie\Base\Http\ElasticsearchResponse;
 

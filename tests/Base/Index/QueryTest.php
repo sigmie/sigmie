@@ -9,11 +9,7 @@ use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
-use Sigmie\Base\Mappings\Blueprint;
-use Sigmie\Base\Search\Clauses\Boolean;
-use Sigmie\Base\Search\Compound\Boolean as CompoundBoolean;
 use Sigmie\Base\Search\Queries\Compound\Boolean as QueriesCompoundBoolean;
-use Sigmie\Base\Search\QueryBuilder;
 use Sigmie\Testing\TestCase;
 
 class QueryTest extends TestCase
