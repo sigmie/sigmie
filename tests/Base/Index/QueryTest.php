@@ -62,6 +62,7 @@ class QueryTest extends TestCase
         $this->sigmie->newIndex($name)->withoutMappings()->create();
 
         $res = $this->sigmie->search($name)->bool(function (QueriesCompoundBoolean $boolean) {
+
             $boolean->filter->matchAll();
             $boolean->filter->matchNone();
             $boolean->filter->fuzzy('bar', 'baz');
