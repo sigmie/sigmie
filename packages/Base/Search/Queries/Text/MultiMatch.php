@@ -18,7 +18,7 @@ class MultiMatch extends Query
         $res = [
             'multi_match' => [
                 'query' => $this->query,
-            ]
+            ],
         ];
 
         ray($this->fields)->red();

@@ -12,7 +12,6 @@ use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Contracts\ConfigurableTokenizer;
 use Sigmie\Base\Index\Mappings;
-use Sigmie\Base\Index\Settings;
 use Sigmie\Base\Mappings\Blueprint;
 use Sigmie\Base\Mappings\DynamicMappings;
 use Sigmie\Base\Mappings\Types\Boolean;
@@ -53,7 +52,7 @@ class ArrayablesTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->setTokenizer(new Whitespace)
+            ->setTokenizer(new Whitespace())
             ->withoutMappings()
             ->create();
 
@@ -110,11 +109,10 @@ class ArrayablesTest extends TestCase
     {
         $alias = uniqid();
 
-        $customFieldAnalyzer = new Analyzer('custom', new Whitespace);
+        $customFieldAnalyzer = new Analyzer('custom', new Whitespace());
 
         $this->sigmie->newIndex($alias)
             ->mapping(function (Blueprint $blueprint) use ($customFieldAnalyzer) {
-
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText($customFieldAnalyzer);
 
@@ -303,7 +301,7 @@ class ArrayablesTest extends TestCase
         $this->assertEquals([
             'number_of_shards' => 1,
             'number_of_replicas' => 2,
-            'analysis' => $settings->analysis()->toRaw()
+            'analysis' => $settings->analysis()->toRaw(),
         ], $settings->toRaw());
     }
 }

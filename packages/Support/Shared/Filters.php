@@ -27,9 +27,9 @@ trait Filters
 {
     private Collection $filters;
 
-    abstract function analysis(): Analysis;
+    abstract public function analysis(): Analysis;
 
-    public function stemming(array $stemming, null|string $name = null,): static
+    public function stemming(array $stemming, null|string $name = null, ): static
     {
         $name = $name ?? $this->createFilterName('stemming');
 
@@ -38,7 +38,7 @@ trait Filters
         return $this;
     }
 
-    public function decimalDigit(null|string $name = null,): static
+    public function decimalDigit(null|string $name = null, ): static
     {
         $name = $name ?? $this->createFilterName('decimal_digit');
 
@@ -47,7 +47,7 @@ trait Filters
         return $this;
     }
 
-    public function asciiFolding(null|string $name = null,): static
+    public function asciiFolding(null|string $name = null, ): static
     {
         $name = $name ?? $this->createFilterName('ascii_folding');
 
@@ -56,7 +56,7 @@ trait Filters
         return $this;
     }
 
-    public function stopwords(array $stopwords, null|string $name = null,): static
+    public function stopwords(array $stopwords, null|string $name = null, ): static
     {
         $name = $name ?? $this->createFilterName('stopwords');
 
@@ -65,7 +65,7 @@ trait Filters
         return $this;
     }
 
-    public function tokenLimit(int $maxTokenCount, null|string $name = null,): static
+    public function tokenLimit(int $maxTokenCount, null|string $name = null, ): static
     {
         $name = $name ?? $this->createFilterName('token_limit');
 
@@ -74,7 +74,7 @@ trait Filters
         return $this;
     }
 
-    public function trim(null|string $name = null,): static
+    public function trim(null|string $name = null, ): static
     {
         $name = $name ?? $this->createFilterName('trim');
 
@@ -83,7 +83,7 @@ trait Filters
         return $this;
     }
 
-    public function truncate(int $length = 10, null|string $name = null,): static
+    public function truncate(int $length = 10, null|string $name = null, ): static
     {
         $name = $name ?? $this->createFilterName('truncate');
 
@@ -92,7 +92,7 @@ trait Filters
         return $this;
     }
 
-    public function unique(bool $onlyOnSamePosition = false, null|string $name = null,): static
+    public function unique(bool $onlyOnSamePosition = false, null|string $name = null, ): static
     {
         $name = $name ?? $this->createFilterName('unique');
 
@@ -101,7 +101,7 @@ trait Filters
         return $this;
     }
 
-    public function uppercase(null|string $name = null,): static
+    public function uppercase(null|string $name = null, ): static
     {
         $name = $name ?? $this->createFilterName('uppercase');
 
@@ -110,7 +110,7 @@ trait Filters
         return $this;
     }
 
-    public function keywords(array $keywords, null|string $name = null,): static
+    public function keywords(array $keywords, null|string $name = null, ): static
     {
         $name = $name ?? $this->createFilterName('keywords');
 
@@ -119,7 +119,7 @@ trait Filters
         return $this;
     }
 
-    public function oneWaySynonyms(array $synonyms, null|string $name = null,): static
+    public function oneWaySynonyms(array $synonyms, null|string $name = null, ): static
     {
         $name = $name ?? $this->createFilterName('synonyms');
 
@@ -128,7 +128,7 @@ trait Filters
         return $this;
     }
 
-    public function twoWaySynonyms(array $synonyms, null|string $name = null,): static
+    public function twoWaySynonyms(array $synonyms, null|string $name = null, ): static
     {
         $name = $name ?? $this->createFilterName('synonyms');
 
@@ -137,7 +137,7 @@ trait Filters
         return $this;
     }
 
-    public function synonyms(array $synonyms, bool $expand = true, null|string $name = null,): static
+    public function synonyms(array $synonyms, bool $expand = true, null|string $name = null, ): static
     {
         $name = $name ?? $this->createFilterName('synonyms');
 
@@ -178,10 +178,10 @@ trait Filters
 
     private function createFilterName(string $name): string
     {
-        $suffixed = $name . '_' . random_letters();
+        $suffixed = $name.'_'.random_letters();
 
         while ($this->analysis()->hasFilter($suffixed)) {
-            $suffixed = $name . '_' . random_letters();
+            $suffixed = $name.'_'.random_letters();
         }
 
         return $suffixed;

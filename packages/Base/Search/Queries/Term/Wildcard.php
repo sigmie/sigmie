@@ -19,9 +19,9 @@ class Wildcard extends Query
         return [
             'wildcard' => [
                 $this->field => [
-                    'value' => $this->value
-                ]
-            ]
+                    'value' => $this->value,
+                ],
+            ],
         ];
     }
 }

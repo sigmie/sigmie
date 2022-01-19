@@ -51,14 +51,14 @@ class DocumentsTable implements OutputFormat
                     // continue;
                 }
                 if (is_string($data) && strlen($data) > 50) {
-                    $docs[$docIndex][$dataIndex] = substr($data, 0, 47) . '...';
+                    $docs[$docIndex][$dataIndex] = substr($data, 0, 47).'...';
                 }
             }
         }
 
         $table->setHeaders([
             [new TableCell(
-                'Index name ' . $this->indexName,
+                'Index name '.$this->indexName,
                 [
                     'colspan' => count($headers),
                     'style' => new TableCellStyle([
@@ -67,10 +67,10 @@ class DocumentsTable implements OutputFormat
                         'bg' => 'green',
                         // or
                         'cellFormat' => '<info>%s</info>',
-                    ])
+                    ]),
                 ]
             )],
-            $headers
+            $headers,
         ]);
 
         foreach ($docs as $doc) {

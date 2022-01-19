@@ -17,8 +17,8 @@ class IDs extends Query
     {
         return [
             'ids' => [
-                'values' => $this->ids
-            ]
+                'values' => $this->ids,
+            ],
         ];
     }
 }

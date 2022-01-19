@@ -41,7 +41,7 @@ class NdJSONRequest extends Request implements JSONRequestInterface
     {
         $ndjson = '';
         array_walk($data, function ($item) use (&$ndjson) {
-            $ndjson .= json_encode($item) . self::SEPARATOR;
+            $ndjson .= json_encode($item).self::SEPARATOR;
         });
         return $ndjson;
     }

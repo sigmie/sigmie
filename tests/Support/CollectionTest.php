@@ -32,14 +32,14 @@ class CollectionTest extends TestCase
     {
         $collection = new Collection([
             'foo' => ['bar', 'baz'],
-            'bar' => ['foo', 'baz']
+            'bar' => ['foo', 'baz'],
         ]);
 
         $flat = $collection->deepen()->toArray();
 
         $this->assertEquals([
             ['foo' => ['bar', 'baz']],
-            ['bar' => ['foo', 'baz']]
+            ['bar' => ['foo', 'baz']],
         ], $flat);
     }
 

@@ -26,7 +26,7 @@ trait TokenizerBuilder
 
     protected function tokenizeOnWhiteSpaces(): void
     {
-        $this->setTokenizer(new Whitespace);
+        $this->setTokenizer(new Whitespace());
     }
 
     protected function tokenizeOnPattern(
@@ -64,10 +64,10 @@ trait TokenizerBuilder
 
     private function createTokenizerName(string $name): string
     {
-        $suffixed = $name . '_' . random_letters();
+        $suffixed = $name.'_'.random_letters();
 
         while ($this->analysis()->hasTokenizer($suffixed)) {
-            $suffixed = $name . '_' . random_letters();
+            $suffixed = $name.'_'.random_letters();
         }
 
         return $suffixed;

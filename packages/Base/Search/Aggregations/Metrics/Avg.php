@@ -15,7 +15,7 @@ class Avg extends Metric
         $value =  [
             'avg' => [
                 'field' => $this->field,
-            ]
+            ],
         ];
 
         if (isset($this->missing)) {

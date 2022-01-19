@@ -10,12 +10,14 @@ use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\APIs\Reindex;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Contracts\Settings as SettingsInterface;
-use Sigmie\Support\Update\Update;
 use Sigmie\Support\Update\UpdateProxy;
 
 class AliasedIndex extends Index
 {
-    use Reindex, IndexAPI, AliasActions, IndexActions;
+    use Reindex;
+    use IndexAPI;
+    use AliasActions;
+    use IndexActions;
 
     public function __construct(
         protected string $name,
@@ -48,7 +50,7 @@ class AliasedIndex extends Index
 
         $this->indexAPICall("/{$newIndex->name}/_settings", 'PUT', [
             'number_of_replicas' => $requestedReplicas,
-            'refresh_interval' => '1s'
+            'refresh_interval' => '1s',
         ]);
 
         if ($oldAlias === $newAlias) {
@@ -65,14 +67,14 @@ class AliasedIndex extends Index
     public function disableWrite(): void
     {
         $this->indexAPICall("/{$this->name}/_settings", 'PUT', [
-            'index' => ['blocks.write' => true]
+            'index' => ['blocks.write' => true],
         ]);
     }
 
     public function enableWrite(): void
     {
         $this->indexAPICall("/{$this->name}/_settings", 'PUT', [
-            'index' => ['blocks.write' => false]
+            'index' => ['blocks.write' => false],
         ]);
     }
 }

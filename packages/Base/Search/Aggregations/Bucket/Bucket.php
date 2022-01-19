@@ -6,8 +6,6 @@ namespace Sigmie\Base\Search\Aggregations\Bucket;
 
 use Sigmie\Base\Contracts\Aggregation;
 use Sigmie\Base\Contracts\Aggs as AggsInterface;
-use Sigmie\Base\Shared\Missing;
-use Sigmie\Base\Search\Aggregations\Enums\CalendarInterval;
 use Sigmie\Base\Search\Aggs;
 use Sigmie\Base\Shared\Meta;
 
@@ -23,13 +21,11 @@ abstract class Bucket implements Aggregation
     ) {
     }
 
-    abstract protected function value();
-
     public function toRaw(): array
     {
         $raw = [$this->name => [
             'meta' => (object) $this->meta,
-            ...$this->value()
+            ...$this->value(),
         ]];
 
         if (isset($this->aggs)) {
@@ -41,10 +37,12 @@ abstract class Bucket implements Aggregation
 
     public function aggregate(callable $callable)
     {
-        $this->aggs = new Aggs;
+        $this->aggs = new Aggs();
 
         $callable($this->aggs);
 
         return $this;
     }
+
+    abstract protected function value();
 }

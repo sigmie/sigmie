@@ -95,7 +95,7 @@ namespace Sigmie\Helpers {
 
     function ensure_doc_collection(array|CollectionInterface|DocumentCollectionInterface $values): DocumentCollectionInterface
     {
-        if ($values instanceof DocumentCollectionInterface ) {
+        if ($values instanceof DocumentCollectionInterface) {
             return $values;
         }
 

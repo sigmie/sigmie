@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Sigmie\Cli\Commands\Mapping;
 
@@ -12,7 +14,9 @@ use Symfony\Component\Console\Input\InputArgument;
 
 class ListMapping extends BaseCommand
 {
-    use Mget, IndexActions, Search;
+    use Mget;
+    use IndexActions;
+    use Search;
 
     protected static $defaultName = 'map:list';
 

@@ -19,9 +19,9 @@ class Term extends Query
         return [
             'term' => [
                 $this->field => [
-                    'value' => $this->value
-                ]
-            ]
+                    'value' => $this->value,
+                ],
+            ],
         ];
     }
 }

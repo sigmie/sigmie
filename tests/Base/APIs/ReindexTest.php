@@ -13,7 +13,10 @@ use Sigmie\Testing\TestCase;
 
 class ReindexTest extends TestCase
 {
-    use AliasActions, Bulk, Reindex, APIsIndex;
+    use AliasActions;
+    use Bulk;
+    use Reindex;
+    use APIsIndex;
 
     /**
      * @test
@@ -56,7 +59,7 @@ class ReindexTest extends TestCase
 
         $body = [
             ['create' => ['_id' => 1]],
-            ['field_foo' => 'value_bar']
+            ['field_foo' => 'value_bar'],
         ];
 
         //Add data to be reindexed to cause an error
@@ -64,7 +67,7 @@ class ReindexTest extends TestCase
 
         //Disable write
         $this->indexAPICall("/{$newIndex->name}/_settings", 'PUT', [
-            'index' => ['blocks.write' => true]
+            'index' => ['blocks.write' => true],
         ]);
 
         $this->expectException(ClusterBlockException::class);

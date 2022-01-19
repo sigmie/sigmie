@@ -15,7 +15,12 @@ use Sigmie\Support\Shared\Tokenizer;
 
 class Update extends IndexBuilder
 {
-    use Mappings, Filters, Tokenizer, CharFilters, Shards, Replicas;
+    use Mappings;
+    use Filters;
+    use Tokenizer;
+    use CharFilters;
+    use Shards;
+    use Replicas;
 
     public function alias(string $alias): static
     {

@@ -21,7 +21,7 @@ class MappingsTest extends TestCase
      */
     public function analyzers_collection()
     {
-        $blueprint = new Blueprint;
+        $blueprint = new Blueprint();
         $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
         $analyzer = new Analyzer('bar', new WordBoundaries());
 

@@ -14,7 +14,10 @@ use Symfony\Component\Console\Input\InputOption;
 
 class Text extends BaseCommand
 {
-    use IndexActions, Alias, AliasAPI, Analyze;
+    use IndexActions;
+    use Alias;
+    use AliasAPI;
+    use Analyze;
 
     protected static $defaultName = 'analyze:text';
 

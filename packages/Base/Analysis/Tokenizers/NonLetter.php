@@ -10,7 +10,7 @@ class NonLetter implements Tokenizer
 {
     public static function fromRaw(array $raw): static
     {
-        return new static;
+        return new static();
     }
 
     public function name(): string

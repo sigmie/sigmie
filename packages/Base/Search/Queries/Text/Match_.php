@@ -18,9 +18,9 @@ class Match_ extends Query
         return [
             'match' => [
                 $this->field => [
-                    'query' => $this->query
-                ]
-            ]
+                    'query' => $this->query,
+                ],
+            ],
         ];
     }
 }

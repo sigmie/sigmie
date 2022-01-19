@@ -8,7 +8,6 @@ use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\Aggs as AggsInterface;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Base\Pagination\Paginator;
-use Sigmie\Base\Search\Aggs;
 use Sigmie\Base\Search\Queries\MatchAll;
 use Sigmie\Base\Search\Queries\Query;
 
@@ -27,8 +26,8 @@ class Search
     protected array $sort = [];
 
     public function __construct(
-        protected Query $query = new MatchAll,
-        protected AggsInterface $aggs = new Aggs
+        protected Query $query = new MatchAll(),
+        protected AggsInterface $aggs = new Aggs()
     ) {
     }
 
@@ -74,7 +73,7 @@ class Search
         return $this;
     }
 
-    public function paginate(int $perPage, int $currentPage,)
+    public function paginate(int $perPage, int $currentPage, )
     {
         return new Paginator($perPage, $currentPage, $this);
     }
@@ -106,7 +105,7 @@ class Search
             'aggs' => $this->aggs->toRaw(),
             'from' => $this->from,
             'size' => $this->size,
-            'sort' => [...$this->sort,]
+            'sort' => [...$this->sort],
         ];
     }
 }

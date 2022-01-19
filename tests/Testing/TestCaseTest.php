@@ -17,7 +17,7 @@ class TestCaseTest extends TestCase
     {
         $indexName = uniqid();
 
-        $this->createIndex($indexName, new Settings, new Mappings);
+        $this->createIndex($indexName, new Settings(), new Mappings());
 
         $this->assertIndexExists($indexName);
     }

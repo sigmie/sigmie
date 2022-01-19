@@ -17,7 +17,7 @@ class BulkTest extends TestCase
     public function bulk_api_call(): void
     {
         $indexName = uniqid();
-        $index = $this->sigmie->collect($indexName,'true');
+        $index = $this->sigmie->collect($indexName, 'true');
 
         $body = [
             ['create' => ['_id' => 1]],
@@ -26,7 +26,7 @@ class BulkTest extends TestCase
             ['field_foo' => 'value_baz'],
         ];
 
-        $res = $this->bulkAPICall($indexName, $body,'true');
+        $res = $this->bulkAPICall($indexName, $body, 'true');
 
         $this->assertCount(2, $res->json('items'));
     }

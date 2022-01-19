@@ -49,7 +49,6 @@ class Analyzer implements AnalyzerInterface
         array $filters,
         array $tokenizers
     ): static {
-
         $analyzerFilters = [];
         $analyzerCharFilters = [];
 
@@ -61,7 +60,7 @@ class Analyzer implements AnalyzerInterface
 
         foreach ($config['char_filter'] as $filterName) {
             $analyzerCharFilters[$filterName] = match ($filterName) {
-                'html_strip' => new HTMLStrip,
+                'html_strip' => new HTMLStrip(),
                 default => $charFilters[$filterName]
             };
         }
@@ -69,8 +68,8 @@ class Analyzer implements AnalyzerInterface
         $tokenizerName = $config['tokenizer'];
 
         $analyzerTokenizer = match ($tokenizerName) {
-            'whitespace' => new Whitespace,
-            'letter' => new NonLetter,
+            'whitespace' => new Whitespace(),
+            'letter' => new NonLetter(),
             default => $tokenizers[$tokenizerName]
         };
 
@@ -131,8 +130,8 @@ class Analyzer implements AnalyzerInterface
             $this->name => [
                 'tokenizer' => $this->tokenizer()->name(),
                 'char_filter' => $charFilters,
-                'filter' => $filters
-            ]
+                'filter' => $filters,
+            ],
         ];
     }
 

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Test\Base\APIs;
 
 use Sigmie\Base\APIs\Mget as MgetAPI;
-use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\Collection as DocumentCollection;
+use Sigmie\Base\Documents\Document;
 use Sigmie\Testing\TestCase;
 
 class MgetTest extends TestCase
@@ -19,7 +19,7 @@ class MgetTest extends TestCase
     public function mget_api_call(): void
     {
         $indexName = uniqid();
-        $index = $this->sigmie->collect($indexName,'true');
+        $index = $this->sigmie->collect($indexName, 'true');
 
         $docs = new DocumentCollection([
             new Document(_id: '1', _source: ['foo' => 'bar']),

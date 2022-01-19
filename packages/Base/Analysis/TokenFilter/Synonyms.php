@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\TokenFilter;
 
-
 use function Sigmie\Helpers\name_configs;
 
 class Synonyms extends TokenFilter
@@ -31,7 +30,6 @@ class Synonyms extends TokenFilter
         $settings = [];
 
         foreach ($configs['synonyms'] as $value) {
-
             if (str_contains($value, '=>')) {
                 [$to, $from] = explode('=>', $value);
 
@@ -70,7 +68,7 @@ class Synonyms extends TokenFilter
 
         return [
             'synonyms' => $res,
-            'expand' => $this->expand
+            'expand' => $this->expand,
         ];
     }
 }

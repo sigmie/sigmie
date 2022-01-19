@@ -17,8 +17,8 @@ class SimpleAnalyzer implements Analyzer
     {
         return  [
             $this->name() => [
-                'type' => 'simple'
-            ]
+                'type' => 'simple',
+            ],
         ];
     }
 }

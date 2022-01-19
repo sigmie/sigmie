@@ -13,14 +13,16 @@ use Sigmie\Base\Actions\Index;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Shared\LazyEach;
-use Traversable;
-
 use function Sigmie\Helpers\ensure_doc_collection;
 
+use Traversable;
 
 class AliveCollection implements ArrayAccess, Countable, DocumentCollectionInterface, IteratorAggregate
 {
-    use DocumentsActions, Index, LazyEach, Search;
+    use DocumentsActions;
+    use Index;
+    use LazyEach;
+    use Search;
 
     public function __construct(
         protected string $name,
@@ -45,7 +47,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollectionInter
         return $this;
     }
 
-    public function merge(array|DocumentCollectionInterface $docs,): self
+    public function merge(array|DocumentCollectionInterface $docs, ): self
     {
         $docs = ensure_doc_collection($docs);
 
@@ -62,7 +64,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollectionInter
     public function clear(): void
     {
         $this->indexAPICall("/{$this->name}/_delete_by_query?refresh={$this->refresh}", 'POST', [
-            'query' => ['match_all' => (object)[]]
+            'query' => ['match_all' => (object)[]],
         ]);
     }
 

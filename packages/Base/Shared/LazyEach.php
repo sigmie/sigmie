@@ -13,7 +13,8 @@ use Sigmie\Base\Documents\Document;
 
 trait LazyEach
 {
-    use DocumentActions, Count;
+    use DocumentActions;
+    use Count;
 
     protected int $chunk = 500;
 
@@ -41,7 +42,6 @@ trait LazyEach
         yield from $this->pageGenerator($page);
 
         while ($this->chunk * $page < $total) {
-
             $page++;
 
             yield from $this->pageGenerator($page);
@@ -53,7 +53,7 @@ trait LazyEach
         $body = [
             'from' => ($page - 1) * $this->chunk,
             'size' => $this->chunk,
-            'query' => ['match_all' => (object) []]
+            'query' => ['match_all' => (object) []],
         ];
 
         $response = $this->searchAPICall($this->name, $body);

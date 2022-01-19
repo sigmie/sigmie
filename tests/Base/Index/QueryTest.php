@@ -14,7 +14,9 @@ use Sigmie\Testing\TestCase;
 
 class QueryTest extends TestCase
 {
-    use Index, Search, Explain;
+    use Index;
+    use Search;
+    use Explain;
 
     /**
      * @test
@@ -62,11 +64,10 @@ class QueryTest extends TestCase
         $this->sigmie->newIndex($name)->withoutMappings()->create();
 
         $res = $this->sigmie->search($name)->bool(function (QueriesCompoundBoolean $boolean) {
-
             $boolean->filter->matchAll();
             $boolean->filter->matchNone();
             $boolean->filter->fuzzy('bar', 'baz');
-            $boolean->filter()->multiMatch('baz',['foo', 'bar']);
+            $boolean->filter()->multiMatch('baz', ['foo', 'bar']);
 
             $boolean->must->term('foo', 'bar');
             $boolean->must->exists('bar', 'baz');
@@ -89,12 +90,11 @@ class QueryTest extends TestCase
      */
     public function query_clauses()
     {
-
         $query = $this->sigmie->search('')->bool(function (QueriesCompoundBoolean $boolean) {
             $boolean->filter->matchAll();
             $boolean->filter->matchNone();
             $boolean->filter->fuzzy('bar', 'baz');
-            $boolean->filter()->multiMatch('baz',['foo', 'bar']);
+            $boolean->filter()->multiMatch('baz', ['foo', 'bar']);
 
             $boolean->must->term('foo', 'bar');
             $boolean->must->exists('bar', 'baz');
@@ -104,7 +104,7 @@ class QueryTest extends TestCase
             $boolean->mustNot->ids(['unqie']);
 
             $boolean->should->bool(fn (QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
-        })->sort('title.raw','asc')
+        })->sort('title.raw', 'asc')
             ->fields(['title'])
             ->from(0)
             ->size(2)
@@ -122,8 +122,8 @@ class QueryTest extends TestCase
                 'filter' => [
                     ['match_all' => (object) []],
                     ['match_none' => (object) []],
-                    ["fuzzy" => ['bar' => ["value" => 'baz',]]],
-                    ["multi_match" => ['fields' => ["foo", 'bar',], 'query' => 'baz']]
+                    ['fuzzy' => ['bar' => ['value' => 'baz']]],
+                    ['multi_match' => ['fields' => ['foo', 'bar'], 'query' => 'baz']],
                 ],
                 'must' => [
                     ['term' => ['foo' => ['value' => 'bar']]],
@@ -138,10 +138,10 @@ class QueryTest extends TestCase
                     [
                         'bool' => [
                             'must' => [
-                                ['match' => ['foo' => ['query' => 'bar']]]
-                            ]
-                        ]
-                    ]
+                                ['match' => ['foo' => ['query' => 'bar']]],
+                            ],
+                        ],
+                    ],
                 ],
             ]]
         );

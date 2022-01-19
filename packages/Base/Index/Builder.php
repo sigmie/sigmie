@@ -26,7 +26,13 @@ use Sigmie\Support\Shared\Tokenizer;
 
 class Builder
 {
-    use IndexActions, Filters, Mappings, CharFilters, Shards, Replicas, Tokenizer;
+    use IndexActions;
+    use Filters;
+    use Mappings;
+    use CharFilters;
+    use Shards;
+    use Replicas;
+    use Tokenizer;
 
     protected string $alias;
 

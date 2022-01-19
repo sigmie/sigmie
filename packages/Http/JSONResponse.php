@@ -60,7 +60,6 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
     /**
      * Get a header from the response.
      *
-     * @param  string  $header
      * @return string
      */
     public function header(string $header)
@@ -92,7 +91,7 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
      * Determine if the given offset exists.
      *
      */
-    public function offsetExists(mixed $offset):bool
+    public function offsetExists(mixed $offset): bool
     {
         return !is_null($this->json($offset));
     }
@@ -100,10 +99,9 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
     /**
      * Get the value for a given offset.
      *
-     * @param  string  $offset
-     * @return mixed
+     * @param string $offset
      */
-    public function offsetGet(mixed $offset):mixed
+    public function offsetGet(mixed $offset): mixed
     {
         return $this->json($offset);
     }
@@ -113,7 +111,7 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
      *
      * @throws LogicException
      */
-    public function offsetSet(mixed $offset, mixed $value):void
+    public function offsetSet(mixed $offset, mixed $value): void
     {
         throw new LogicException('Response data may not be mutated using array access.');
     }
@@ -123,7 +121,7 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
      *
      * @throws LogicException
      */
-    public function offsetUnset($offset):void
+    public function offsetUnset($offset): void
     {
         throw new LogicException('Response data may not be mutated using array access.');
     }

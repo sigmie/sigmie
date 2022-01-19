@@ -15,7 +15,7 @@ class Cardinality extends Metric
         $value =  [
             'cardinality' => [
                 'field' => $this->field,
-            ]
+            ],
         ];
 
         if (isset($this->missing)) {

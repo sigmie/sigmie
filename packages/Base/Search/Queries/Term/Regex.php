@@ -19,9 +19,9 @@ class Regex extends Query
         return [
             'regexp' => [
                 $this->field => [
-                    'value' => $this->value
-                ]
-            ]
+                    'value' => $this->value,
+                ],
+            ],
         ];
     }
 }

@@ -71,7 +71,7 @@ class FilterTest extends TestCase
             $index->assertAnalyzerHasFilter('default', 'token_limit_name');
             $index->assertFilterEquals('token_limit_name', [
                 'type' => 'limit',
-                "max_token_count" => "5"
+                'max_token_count' => '5',
             ]);
         });
     }
@@ -93,7 +93,7 @@ class FilterTest extends TestCase
             $index->assertFilterExists('keywords_marker');
             $index->assertFilterEquals('keywords_marker', [
                 'type' => 'keyword_marker',
-                'keywords' => ['foo', 'bar']
+                'keywords' => ['foo', 'bar'],
             ]);
         });
     }
@@ -115,7 +115,7 @@ class FilterTest extends TestCase
             $index->assertFilterExists('20_char_truncate');
             $index->assertFilterEquals('20_char_truncate', [
                 'type' => 'truncate',
-                'length' => 20
+                'length' => 20,
             ]);
         });
     }
@@ -158,7 +158,7 @@ class FilterTest extends TestCase
             $index->assertAnalyzerHasFilter('default', 'trim_filter_name');
             $index->assertFilterExists('trim_filter_name');
             $index->assertFilterEquals('trim_filter_name', [
-                'type' => 'trim'
+                'type' => 'trim',
             ]);
         });
     }
@@ -179,7 +179,7 @@ class FilterTest extends TestCase
             $index->assertAnalyzerHasFilter('default', 'uppercase_filter_name');
             $index->assertFilterExists('uppercase_filter_name');
             $index->assertFilterEquals('uppercase_filter_name', [
-                'type' => 'uppercase'
+                'type' => 'uppercase',
             ]);
         });
     }

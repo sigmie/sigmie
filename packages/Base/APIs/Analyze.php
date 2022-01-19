@@ -19,7 +19,7 @@ trait Analyze
 
         $request = new ElasticsearchRequest('POST', $uri, [
             'analyzer' => $analyzer,
-            'text' => $text
+            'text' => $text,
         ]);
 
         return $this->httpCall($request);

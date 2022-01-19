@@ -26,7 +26,7 @@ trait CharFilters
         return $this;
     }
 
-    abstract function analysis(): Analysis;
+    abstract public function analysis(): Analysis;
 
     public function charFilters(): array
     {
@@ -37,7 +37,7 @@ trait CharFilters
 
     public function stripHTML(): static
     {
-        $this->addCharFilter(new HTMLStrip);
+        $this->addCharFilter(new HTMLStrip());
 
         return $this;
     }
@@ -88,10 +88,10 @@ trait CharFilters
 
     private function createCharFilterName(string $name): string
     {
-        $suffixed = $name . '_' . random_letters();
+        $suffixed = $name.'_'.random_letters();
 
         while ($this->analysis()->hasCharFilter($suffixed)) {
-            $suffixed = $name . '_' . random_letters();
+            $suffixed = $name.'_'.random_letters();
         }
 
         return $suffixed;

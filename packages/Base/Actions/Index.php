@@ -21,13 +21,15 @@ use Sigmie\Support\Exceptions\MultipleIndices;
 
 trait Index
 {
-    use CatAPI, IndexAPI, AliasActions;
+    use CatAPI;
+    use IndexAPI;
+    use AliasActions;
 
     protected function createIndex(string $indexName, SettingsInterface $settings, MappingsInterface $mappings)
     {
         $body = [
             'settings' => $settings->toRaw(),
-            'mappings' => $mappings->toRaw()
+            'mappings' => $mappings->toRaw(),
         ];
 
         $this->indexAPICall("/{$indexName}", 'PUT', $body);
@@ -73,12 +75,11 @@ trait Index
     protected function getIndices(string $identifier): CollectionInterface
     {
         try {
-            $res = $this->indexAPICall("/{$identifier}", 'GET',);
+            $res = $this->indexAPICall("/{$identifier}", 'GET', );
 
             $collection = new Collection();
 
             foreach ($res->json() as $indexName => $indexData) {
-
                 $index = AliasedIndex::fromRaw($indexName, $indexData);
                 $index->setHttpConnection($this->getHttpConnection());
 
@@ -93,7 +94,7 @@ trait Index
 
     protected function listIndices(int $offset = 0, int $limit = 100): Collection
     {
-        $catResponse = $this->catAPICall('/indices', 'GET',);
+        $catResponse = $this->catAPICall('/indices', 'GET', );
 
         return (new Collection($catResponse->json()))
             ->map(function ($values) {

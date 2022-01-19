@@ -7,7 +7,6 @@ namespace Sigmie\Support\Shared;
 use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
 use Sigmie\Support\Contracts\TokenizerBuilder as TokenizerBuilderInterface;
 
-
 trait Tokenizer
 {
     protected TokenizerInterface $tokenizer;

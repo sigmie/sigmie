@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\CharFilter;
 
-
 use function Sigmie\Helpers\name_configs;
 
 class Pattern extends ConfigurableCharFilter
@@ -40,8 +39,8 @@ class Pattern extends ConfigurableCharFilter
             $this->name => [
                 'type' => 'pattern_replace',
                 'pattern' => $this->pattern,
-                'replacement' => $this->replacement
-            ]
+                'replacement' => $this->replacement,
+            ],
         ];
     }
 }

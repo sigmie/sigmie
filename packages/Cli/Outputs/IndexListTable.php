@@ -22,7 +22,6 @@ class IndexListTable implements OutputFormat
 
     public function output(OutputInterface $output): void
     {
-
         $aliases = [];
         foreach ($this->aliasesJson as $data) {
             $index = $data['index'];
@@ -41,7 +40,7 @@ class IndexListTable implements OutputFormat
         $rows = array_map(fn ($result) => [
             $result['index'],
             (isset($aliases[$result['index']])) ? implode(',', $aliases[$result['index']]) : '',
-            '<fg=' . $result['health'] . '>' . $result['health'] . '</>',
+            '<fg='.$result['health'].'>'.$result['health'].'</>',
             $result['docs.count'],
             $result['pri'],
             $result['rep'],

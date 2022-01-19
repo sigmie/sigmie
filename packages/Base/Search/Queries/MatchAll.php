@@ -9,7 +9,7 @@ class MatchAll extends Query
     public function toRaw(): array
     {
         return [
-            'match_all' => (object) []
+            'match_all' => (object) [],
         ];
     }
 }

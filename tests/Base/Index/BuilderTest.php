@@ -9,7 +9,6 @@ use RachidLaasri\Travel\Travel;
 use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Base\Analysis\CharFilter\Mapping;
 use Sigmie\Base\Analysis\CharFilter\Pattern as PatternCharFilter;
-use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\Tokenizers\NonLetter;
 use Sigmie\Base\Analysis\Tokenizers\Pattern as PatternTokenizer;
 use Sigmie\Base\Analysis\Tokenizers\Whitespace;
@@ -46,7 +45,6 @@ class BuilderTest extends TestCase
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
             $index->assertAnalyzerExists('default');
         });
     }
@@ -59,7 +57,7 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         /** @var GreekBuilder */
-        $greekBuilder = $this->sigmie->newIndex($alias)->language(new Greek);
+        $greekBuilder = $this->sigmie->newIndex($alias)->language(new Greek());
 
         $greekBuilder
             ->greekLowercase()
@@ -69,7 +67,6 @@ class BuilderTest extends TestCase
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
             $index->assertAnalyzerHasFilter('default', 'greek_stopwords');
             $index->assertAnalyzerHasFilter('default', 'greek_stemmer');
             $index->assertAnalyzerHasFilter('default', 'greek_lowercase');
@@ -80,7 +77,7 @@ class BuilderTest extends TestCase
                 'greek_stemmer',
                 [
                     'type' => 'stemmer',
-                    'language' => 'greek'
+                    'language' => 'greek',
                 ]
             );
         });
@@ -94,7 +91,7 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         /** @var GermanBuilder */
-        $englishBuilder = $this->sigmie->newIndex($alias)->language(new German);
+        $englishBuilder = $this->sigmie->newIndex($alias)->language(new German());
 
         $englishBuilder
             ->germanLightStemmer()
@@ -110,7 +107,6 @@ class BuilderTest extends TestCase
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
             $index->assertAnalyzerHasFilter('default', 'german_lowercase');
             $index->assertAnalyzerHasFilter('default', 'german_stemmer');
             $index->assertAnalyzerHasFilter('default', 'german_stemmer_2');
@@ -127,28 +123,28 @@ class BuilderTest extends TestCase
                 'german_stemmer',
                 [
                     'type' => 'stemmer',
-                    'language' => 'german'
+                    'language' => 'german',
                 ]
             );
             $index->assertFilterEquals(
                 'german_stemmer_2',
                 [
                     'type' => 'stemmer',
-                    'language' => 'german2'
+                    'language' => 'german2',
                 ]
             );
             $index->assertFilterEquals(
                 'german_stemmer_light',
                 [
                     'type' => 'stemmer',
-                    'language' => 'light_german'
+                    'language' => 'light_german',
                 ]
             );
             $index->assertFilterEquals(
                 'german_stemmer_minimal',
                 [
                     'type' => 'stemmer',
-                    'language' => 'minimal_german'
+                    'language' => 'minimal_german',
                 ]
             );
         });
@@ -162,7 +158,7 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         /** @var EnglishBuilder */
-        $englishBuilder = $this->sigmie->newIndex($alias)->language(new English);
+        $englishBuilder = $this->sigmie->newIndex($alias)->language(new English());
 
         $englishBuilder
 
@@ -179,7 +175,6 @@ class BuilderTest extends TestCase
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
             $index->assertAnalyzerHasFilter('default', 'english_lowercase');
             $index->assertAnalyzerHasFilter('default', 'english_stemmer');
             $index->assertAnalyzerHasFilter('default', 'english_stemmer_porter_2');
@@ -196,7 +191,7 @@ class BuilderTest extends TestCase
                 'english_stemmer_porter_2',
                 [
                     'type' => 'stemmer',
-                    'language' => 'porter2'
+                    'language' => 'porter2',
                 ]
             );
 
@@ -204,7 +199,7 @@ class BuilderTest extends TestCase
                 'english_stemmer_minimal',
                 [
                     'type' => 'stemmer',
-                    'language' => 'minimal_english'
+                    'language' => 'minimal_english',
                 ]
             );
 
@@ -212,7 +207,7 @@ class BuilderTest extends TestCase
                 'english_stemmer_lovins',
                 [
                     'type' => 'stemmer',
-                    'language' => 'lovins'
+                    'language' => 'lovins',
                 ]
             );
 
@@ -220,7 +215,7 @@ class BuilderTest extends TestCase
                 'english_stemmer_light',
                 [
                     'type' => 'stemmer',
-                    'language' => 'light_english'
+                    'language' => 'light_english',
                 ]
             );
 
@@ -228,14 +223,14 @@ class BuilderTest extends TestCase
                 'english_stemmer_possessive',
                 [
                     'type' => 'stemmer',
-                    'language' => 'possessive_english'
+                    'language' => 'possessive_english',
                 ]
             );
             $index->assertFilterEquals(
                 'english_stemmer',
                 [
                     'type' => 'stemmer',
-                    'language' => 'english'
+                    'language' => 'english',
                 ]
             );
         });
@@ -254,7 +249,6 @@ class BuilderTest extends TestCase
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
             $index->assertAnalyzerHasFilter('default', 'unique_filter');
             $index->assertFilterExists('unique_filter');
             $index->assertFilterEquals('unique_filter', [
@@ -277,11 +271,10 @@ class BuilderTest extends TestCase
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
             $index->assertAnalyzerHasFilter('default', 'trim_filter_name');
             $index->assertFilterExists('trim_filter_name');
             $index->assertFilterEquals('trim_filter_name', [
-                'type' => 'trim'
+                'type' => 'trim',
             ]);
         });
     }
@@ -299,11 +292,10 @@ class BuilderTest extends TestCase
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
             $index->assertAnalyzerHasFilter('default', 'uppercase_filter_name');
             $index->assertFilterExists('uppercase_filter_name');
             $index->assertFilterEquals('uppercase_filter_name', [
-                'type' => 'uppercase'
+                'type' => 'uppercase',
             ]);
         });
     }
@@ -326,7 +318,7 @@ class BuilderTest extends TestCase
             $index->assertTokenizerEquals('some_pattern', [
                 'type' => 'pattern',
                 'pattern' => '/something/',
-                'flags' => 'CASE_INSENSITIVE'
+                'flags' => 'CASE_INSENSITIVE',
             ]);
         });
     }
@@ -348,7 +340,7 @@ class BuilderTest extends TestCase
             $index->assertTokenizerExists('some_pattern');
             $index->assertTokenizerEquals('some_pattern', [
                 'type' => 'pattern',
-                'pattern' => '/something/'
+                'pattern' => '/something/',
             ]);
         });
     }
@@ -370,7 +362,7 @@ class BuilderTest extends TestCase
             $index->assertTokenizerExists('able');
             $index->assertTokenizerEquals('able', [
                 'type' => 'standard',
-                'max_token_length' => '255'
+                'max_token_length' => '255',
             ]);
         });
     }
@@ -388,7 +380,6 @@ class BuilderTest extends TestCase
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
             $index->assertAnalyzerHasTokenizer('default', 'whitespace');
         });
     }
@@ -532,7 +523,7 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->charFilter(new HTMLStrip)
+            ->charFilter(new HTMLStrip())
             ->withoutMappings()
             ->create();
 
@@ -571,7 +562,7 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->setTokenizer(new Whitespace)
+            ->setTokenizer(new Whitespace())
             ->withoutMappings()
             ->create();
 
@@ -603,23 +594,22 @@ class BuilderTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->twoWaySynonyms([
                 ['treasure', 'gem', 'gold', 'price'],
-                ['friend', 'buddy', 'partner']
-            ],  name: 'sigmie_two_way_synonyms',)
+                ['friend', 'buddy', 'partner'],
+            ], name: 'sigmie_two_way_synonyms', )
             ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
             $index->assertFilterExists('sigmie_two_way_synonyms');
             $index->assertFilterHasSynonyms('sigmie_two_way_synonyms', [
                 'treasure, gem, gold, price',
-                'friend, buddy, partner'
+                'friend, buddy, partner',
             ]);
             $index->assertFilterEquals('sigmie_two_way_synonyms', [
                 'type' => 'synonym',
                 'synonyms' => [
                     'treasure, gem, gold, price',
-                    'friend, buddy, partner'
+                    'friend, buddy, partner',
                 ],
                 'expand' => 'true',
             ]);
@@ -635,13 +625,12 @@ class BuilderTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->synonyms([
-                'ipod' => ['i-pod', 'i pod']
+                'ipod' => ['i-pod', 'i pod'],
             ])
             ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
             [$name] = array_keys($index->data()['settings']['index']['analysis']['filter']);
 
             $this->assertMatchesRegularExpression('/synonyms_[a-z]{3}$/', $name);
@@ -658,12 +647,11 @@ class BuilderTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->oneWaySynonyms([
                 ['ipod', ['i-pod', 'i pod']],
-            ], name: 'sigmie_one_way_synonyms',)
+            ], name: 'sigmie_one_way_synonyms', )
             ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
             $index->assertFilterExists('sigmie_one_way_synonyms');
             $index->assertFilterHasSynonyms('sigmie_one_way_synonyms', [
                 'i-pod, i pod => ipod',
@@ -691,14 +679,13 @@ class BuilderTest extends TestCase
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
             $index->assertFilterExists('sigmie_stopwords');
             $index->assertFilterHasStopwords('sigmie_stopwords', ['about', 'after', 'again']);
             $index->assertFilterEquals('sigmie_stopwords', [
                 'type' => 'stop',
                 'stopwords' => [
-                    'about', 'after', 'again'
-                ]
+                    'about', 'after', 'again',
+                ],
             ]);
         });
     }
@@ -719,7 +706,6 @@ class BuilderTest extends TestCase
             ->withoutMappings()->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
             $index->assertFilterExists('sigmie_stemmer_overrides');
             $index->assertFilterHasStemming(
                 'sigmie_stemmer_overrides',
@@ -744,7 +730,6 @@ class BuilderTest extends TestCase
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
             $index->assertAnalyzerExists('default');
             $index->assertAnalyzerFilterIsEmpty('default');
             $index->assertAnalyzerTokenizerIsWordBoundaries('default');
@@ -772,7 +757,6 @@ class BuilderTest extends TestCase
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
             $index->assertIndexHasMappings();
             $index->assertPropertyExists('title');
             $index->assertPropertyIsSearchAsYouType('title');

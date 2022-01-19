@@ -17,7 +17,9 @@ use Sigmie\Support\Shared\Tokenizer;
 
 class AnalyzerUpdate
 {
-    use CharFilters, Filters, Tokenizer;
+    use CharFilters;
+    use Filters;
+    use Tokenizer;
 
     public function __construct(
         protected Analysis $analysis,

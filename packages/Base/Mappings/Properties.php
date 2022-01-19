@@ -7,7 +7,6 @@ namespace Sigmie\Base\Mappings;
 use ArrayAccess;
 use Sigmie\Base\Mappings\Types\Text;
 use Sigmie\Support\Collection;
-use Sigmie\Support\Contracts\Arrayable;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
 class Properties implements ArrayAccess

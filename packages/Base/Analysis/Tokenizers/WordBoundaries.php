@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Analysis\Tokenizers;
 
-
 use function Sigmie\Helpers\name_configs;
 
 class WordBoundaries extends Tokenizer
@@ -36,9 +35,9 @@ class WordBoundaries extends Tokenizer
     {
         return [
             $this->name => [
-                "type" => $this->type(),
-                "max_token_length" => $this->maxTokenLength
-            ]
+                'type' => $this->type(),
+                'max_token_length' => $this->maxTokenLength,
+            ],
         ];
     }
 }

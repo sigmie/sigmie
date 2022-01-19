@@ -26,7 +26,6 @@ class Mapping extends ConfigurableCharFilter
         $mappings = [];
 
         foreach ($config['mappings'] as $mapping) {
-
             [$key, $value] = explode('=>', $mapping);
 
             $mappings[$key] = $value;
@@ -46,8 +45,8 @@ class Mapping extends ConfigurableCharFilter
         return [
             $this->name => [
                 'type' => 'mapping',
-                'mappings' => $mappings
-            ]
+                'mappings' => $mappings,
+            ],
         ];
     }
 }

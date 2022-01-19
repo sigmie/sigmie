@@ -6,8 +6,8 @@ namespace Sigmie\Tests\Base\Index;
 
 use Sigmie\Base\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\APIs\Index;
-use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Documents\Collection as DocumentCollection;
+use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Mappings\Blueprint;
 use Sigmie\Support\Update\Update as Update;
@@ -42,7 +42,6 @@ class UpdateTest extends TestCase
 
 
         $index->update(function (Update $update) {
-
             $update->withoutMappings()
                 ->stopwords(['foo', 'bar'], 'demo');
 
@@ -72,20 +71,19 @@ class UpdateTest extends TestCase
             $index->assertAnalyzerHasCharFilter('default', 'map_chars_char_filter');
             $index->assertCharFilterEquals('map_chars_char_filter', [
                 'type' => 'mapping',
-                'mappings' => ['bar => baz']
+                'mappings' => ['bar => baz'],
             ]);
 
             $index->assertAnalyzerHasCharFilter('default', 'pattern_replace_char_filter');
             $index->assertCharFilterEquals('pattern_replace_char_filter', [
                 'type' => 'pattern_replace',
                 'pattern' => '/bar/',
-                'replacement' => 'foo'
+                'replacement' => 'foo',
             ]);
         });
 
 
         $index->update(function (Update $update) {
-
             $update->withoutMappings();
             $update->mapChars(['baz' => 'foo'], 'map_chars_char_filter');
             $update->patternReplace('/doe/', 'john', 'pattern_replace_char_filter');
@@ -97,14 +95,14 @@ class UpdateTest extends TestCase
             $index->assertAnalyzerHasCharFilter('default', 'map_chars_char_filter');
             $index->assertCharFilterEquals('map_chars_char_filter', [
                 'type' => 'mapping',
-                'mappings' => ['baz => foo']
+                'mappings' => ['baz => foo'],
             ]);
 
             $index->assertAnalyzerHasCharFilter('default', 'pattern_replace_char_filter');
             $index->assertCharFilterEquals('pattern_replace_char_filter', [
                 'type' => 'pattern_replace',
                 'pattern' => '/doe/',
-                'replacement' => 'john'
+                'replacement' => 'john',
             ]);
         });
     }
@@ -125,7 +123,6 @@ class UpdateTest extends TestCase
         });
 
         $index->update(function (Update $update) {
-
             $update->withoutMappings();
             $update->patternReplace('/foo/', 'bar', 'default_pattern_replace_filter');
             $update->mapChars(['foo' => 'bar'], 'default_mappings_filter');
@@ -158,7 +155,6 @@ class UpdateTest extends TestCase
         });
 
         $index->update(function (Update $update) {
-
             $update->withoutMappings();
             $update->tokenizeOn()->pattern('/foo/', name: 'default_analyzer_pattern_tokenizer');
 
@@ -183,7 +179,7 @@ class UpdateTest extends TestCase
 
         $index = $this->sigmie->newIndex($alias)
             ->withoutMappings()
-            ->setTokenizer(new Whitespace)
+            ->setTokenizer(new Whitespace())
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -213,7 +209,7 @@ class UpdateTest extends TestCase
         $index = $this->sigmie->newIndex($alias)
             ->withoutMappings()
             ->oneWaySynonyms([
-                ['ipod', ['i-pod', 'i pod']]
+                ['ipod', ['i-pod', 'i pod']],
             ], 'bar_name')
             ->create();
 
@@ -228,7 +224,7 @@ class UpdateTest extends TestCase
             $update->withoutMappings();
 
             $update->oneWaySynonyms([
-                ['mickey', ['mouse', 'goofy']]
+                ['mickey', ['mouse', 'goofy']],
             ], 'bar_name');
 
             return $update;
@@ -269,7 +265,6 @@ class UpdateTest extends TestCase
 
 
         $index->update(function (Update $update) {
-
             $update->withoutMappings();
 
             $update->stemming([[
@@ -298,21 +293,20 @@ class UpdateTest extends TestCase
             ->withoutMappings()
             ->twoWaySynonyms([
                 ['treasure', 'gem', 'gold', 'price'],
-                ['friend', 'buddy', 'partner']
-            ], 'foo_two_way_synonyms',)
+                ['friend', 'buddy', 'partner'],
+            ], 'foo_two_way_synonyms', )
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
             $index->assertFilterExists('foo_two_way_synonyms');
             $index->assertFilterHasSynonyms('foo_two_way_synonyms', [
                 'treasure, gem, gold, price',
-                'friend, buddy, partner'
+                'friend, buddy, partner',
             ]);
         });
 
 
         $index->update(function (Update $update) {
-
             $update->withoutMappings();
 
             $update->twoWaySynonyms([['john', 'doe']], 'foo_two_way_synonyms');
@@ -336,7 +330,7 @@ class UpdateTest extends TestCase
 
         $index = $this->sigmie->newIndex($alias)
             ->withoutMappings()
-            ->stopwords(['foo', 'bar', 'baz'], 'foo_stopwords',)
+            ->stopwords(['foo', 'bar', 'baz'], 'foo_stopwords', )
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -369,7 +363,7 @@ class UpdateTest extends TestCase
 
         $index = $this->sigmie->newIndex($alias)
             ->withoutMappings()
-            ->stopwords(['foo', 'bar', 'baz'], 'foo_stopwords',)
+            ->stopwords(['foo', 'bar', 'baz'], 'foo_stopwords', )
             ->create();
 
         $index->update(function (Update $update) {
@@ -385,7 +379,6 @@ class UpdateTest extends TestCase
 
         $index= $this->sigmie->newIndex($alias)
             ->mapping(function (Blueprint $blueprint) {
-
                 $blueprint->text('bar')->searchAsYouType();
                 $blueprint->text('created_at')->unstructuredText();
 
@@ -398,9 +391,7 @@ class UpdateTest extends TestCase
         });
 
         $index->update(function (Update $update) {
-
             $update->mapping(function (Blueprint $blueprint) {
-
                 $blueprint->date('created_at');
                 $blueprint->number('count')->float();
 
@@ -435,7 +426,7 @@ class UpdateTest extends TestCase
             $docs->add(new Document(['foo' => 'bar']));
         }
 
-        $collection = $this->sigmie->collect($alias,'true');
+        $collection = $this->sigmie->collect($alias, 'true');
         $collection->merge($docs);
 
         $this->assertCount(10, $collection);
@@ -446,7 +437,7 @@ class UpdateTest extends TestCase
             return $update;
         });
 
-        $collection = $this->sigmie->collect($alias,'true');
+        $collection = $this->sigmie->collect($alias, 'true');
 
         $this->assertNotEquals($oldIndexName, $updatedIndex->name);
         $this->assertCount(10, $collection);
@@ -489,7 +480,6 @@ class UpdateTest extends TestCase
         $oldIndexName = $index->name;
 
         $index = $index->update(function (Update $update) {
-
             $update->withoutMappings();
 
             return $update;
@@ -515,7 +505,6 @@ class UpdateTest extends TestCase
         $this->assertInstanceOf(AliasedIndex::class, $index);
 
         $index->update(function (Update $update) use ($newAlias) {
-
             $update->withoutMappings();
 
             $update->alias($newAlias);
@@ -549,7 +538,6 @@ class UpdateTest extends TestCase
         });
 
         $index->update(function (Update $update) {
-
             $update->withoutMappings();
 
             $update->replicas(2)->shards(2);

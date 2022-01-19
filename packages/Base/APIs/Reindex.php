@@ -20,7 +20,7 @@ trait Reindex
             'dest' => ['index' => $dest],
         ];
 
-        $uri = new Uri("/_reindex");
+        $uri = new Uri('/_reindex');
         $uri = Uri::withQueryValue($uri, 'refresh', 'true');
 
         $esRequest = new RequestsReindex('POST', $uri, $body);

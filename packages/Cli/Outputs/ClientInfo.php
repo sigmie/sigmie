@@ -15,7 +15,7 @@ class ClientInfo implements OutputFormat
     protected string $port;
 
     /**
-     * Elasticseach version
+     * Elasticseach version.
      */
     protected string $version;
 

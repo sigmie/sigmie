@@ -67,7 +67,7 @@ class Settings implements SettingsInterface
         return array_merge([
             'number_of_shards' => $this->primaryShards,
             'number_of_replicas' => $this->replicaShards,
-            'analysis' => $this->analysis()->toRaw()
+            'analysis' => $this->analysis()->toRaw(),
         ], $this->configs);
     }
 }

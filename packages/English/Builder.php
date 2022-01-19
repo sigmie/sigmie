@@ -57,7 +57,7 @@ class Builder extends IndexBuilder implements LanguageBuilder
 
     public function englishLightStemmer(null|string $name = null)
     {
-        $filter = is_null($name) ? new EnglishLightStemmer : new EnglishLightStemmer($name);
+        $filter = is_null($name) ? new EnglishLightStemmer() : new EnglishLightStemmer($name);
 
         $this->addFilter($filter);
 

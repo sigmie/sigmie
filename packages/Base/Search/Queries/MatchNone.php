@@ -9,7 +9,7 @@ class MatchNone extends Query
     public function toRaw(): array
     {
         return [
-            'match_none' => (object) []
+            'match_none' => (object) [],
         ];
     }
 }

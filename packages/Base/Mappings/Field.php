@@ -20,7 +20,7 @@ class Field
     public function values(): array
     {
         return [
-            'type' => $this->type
+            'type' => $this->type,
         ];
     }
 }

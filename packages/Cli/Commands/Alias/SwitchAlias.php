@@ -13,7 +13,9 @@ use Symfony\Component\Console\Input\InputOption;
 
 class SwitchAlias extends BaseCommand
 {
-    use IndexActions, Alias, AliasAPI;
+    use IndexActions;
+    use Alias;
+    use AliasAPI;
 
     protected static $defaultName = 'alias:switch';
 
@@ -25,9 +27,9 @@ class SwitchAlias extends BaseCommand
 
         $this->switchAlias($alias, new AbstractIndex($fromIndex), new AbstractIndex($toIndex));
 
-        $from = '<fg=green>' . $fromIndex . '</>';
-        $to = '<fg=green>' . $toIndex . '</>';
-        $alias = '<fg=green>' . $alias . '</>';
+        $from = '<fg=green>'.$fromIndex.'</>';
+        $to = '<fg=green>'.$toIndex.'</>';
+        $alias = '<fg=green>'.$alias.'</>';
 
         $this->output->writeln("Alias {$alias} moved from index {$from} to index {$to}.");
 

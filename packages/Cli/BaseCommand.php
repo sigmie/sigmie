@@ -40,7 +40,7 @@ abstract class BaseCommand extends Command
 
         $this->addOption('raw', 'w', InputOption::VALUE_NONE, 'Render the raw json response returned from Elasticsearch');
 
-        $this->config = new Config;
+        $this->config = new Config();
 
         $this->setHttpConnection($this->createHttpConnection());
     }
@@ -65,7 +65,7 @@ abstract class BaseCommand extends Command
     {
         $cluster = $this->config->getActiveCluster();
 
-        return new Connection(JSONClient::create($cluster['host'] . ':' . $cluster['port']));
+        return new Connection(JSONClient::create($cluster['host'].':'.$cluster['port']));
     }
 
     private function renderInfo()

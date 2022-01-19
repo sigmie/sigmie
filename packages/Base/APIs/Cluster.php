@@ -15,7 +15,7 @@ trait Cluster
 
     protected function clusterAPICall(string $path): ElasticsearchResponse
     {
-        $uri = new Uri('/_cluster' . $path);
+        $uri = new Uri('/_cluster'.$path);
 
         $esRequest = new ElasticsearchRequest('GET', $uri, []);
 

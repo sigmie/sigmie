@@ -15,7 +15,9 @@ use Sigmie\Testing\TestCase;
 
 class AggregationTest extends TestCase
 {
-    use Index, Search, Explain;
+    use Index;
+    use Search;
+    use Explain;
 
     /**
      * @test
@@ -32,16 +34,16 @@ class AggregationTest extends TestCase
 
         $docs = [
             new Document([
-                'title' => 'Chocolate is very tasty.'
+                'title' => 'Chocolate is very tasty.',
             ]),
             new Document([
-                'title' => 'Dory is looking for Nemo.'
+                'title' => 'Dory is looking for Nemo.',
             ]),
             new Document([
-                'title' => 'Buz is like Woody, very handsome.'
+                'title' => 'Buz is like Woody, very handsome.',
             ]),
             new Document([
-                'title' => 'Chocolate makes me fat. '
+                'title' => 'Chocolate makes me fat. ',
             ]),
         ];
 
@@ -72,25 +74,25 @@ class AggregationTest extends TestCase
 
         $docs = [
             new Document([
-                'date' => '2020-01-01'
+                'date' => '2020-01-01',
             ]),
             new Document([
-                'date' => '2019-01-01'
+                'date' => '2019-01-01',
             ]),
             new Document([
-                'date' => '2018-01-01'
+                'date' => '2018-01-01',
             ]),
             new Document([
-                'date' => '2018-01-01'
+                'date' => '2018-01-01',
             ]),
             new Document([
-                'name' => 'nico'
+                'name' => 'nico',
             ]),
             new Document([
-                'date' => '2016-01-01'
+                'date' => '2016-01-01',
             ]),
             new Document([
-                'date' => '1999-01-01'
+                'date' => '1999-01-01',
             ]),
         ];
 
@@ -99,11 +101,9 @@ class AggregationTest extends TestCase
         $res = $this->sigmie->search($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
-
                 $aggregation->dateHistogram('histogram', 'date', CalendarInterval::Year)
 
                     ->aggregate(function (SearchAggregation $aggregation) {
-
                         $aggregation->dateHistogram('histogram_nested', 'date', CalendarInterval::Day)
                             ->missing('2021-01-01');
                     })
@@ -132,16 +132,16 @@ class AggregationTest extends TestCase
 
         $docs = [
             new Document([
-                'price' => 200
+                'price' => 200,
             ]),
             new Document([
-                'price' => 100
+                'price' => 100,
             ]),
             new Document([
-                'price' => 150
+                'price' => 150,
             ]),
             new Document([
-                'price' => 300
+                'price' => 300,
             ]),
         ];
 
@@ -178,22 +178,22 @@ class AggregationTest extends TestCase
 
         $docs = [
             new Document([
-                'type' => 'woman'
+                'type' => 'woman',
             ]),
             new Document([
-                'type' => 'man'
+                'type' => 'man',
             ]),
             new Document([
-                'type' => 'man'
+                'type' => 'man',
             ]),
             new Document([
-                'type' => 'child'
+                'type' => 'child',
             ]),
             new Document([
-                'type' => 'child'
+                'type' => 'child',
             ]),
             new Document([
-                'name' => 'Nico'
+                'name' => 'Nico',
             ]),
         ];
 
@@ -239,7 +239,6 @@ class AggregationTest extends TestCase
         $res = $this->sigmie->search($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
-
                 $aggregation->min('minCount', 'count')
                     ->meta(['customer' => 'bar']);
             })
@@ -268,8 +267,8 @@ class AggregationTest extends TestCase
                 'count' => 4,
             ]),
             new Document([
-                'name' => 'john'
-            ])
+                'name' => 'john',
+            ]),
         ];
 
         $collection->merge($docs);
@@ -306,19 +305,19 @@ class AggregationTest extends TestCase
 
         $docs = [
             new Document([
-                'type' => 1
+                'type' => 1,
             ]),
             new Document([
-                'type' => 2
+                'type' => 2,
             ]),
             new Document([
-                'type' => 3
+                'type' => 3,
             ]),
             new Document([
-                'type' => 3
+                'type' => 3,
             ]),
             new Document([
-                'type' => 3
+                'type' => 3,
             ]),
         ];
 
@@ -351,19 +350,19 @@ class AggregationTest extends TestCase
 
         $docs = [
             new Document([
-                'type' => 1
+                'type' => 1,
             ]),
             new Document([
-                'type' => 2
+                'type' => 2,
             ]),
             new Document([
-                'type' => 3
+                'type' => 3,
             ]),
             new Document([
-                'type' => 3
+                'type' => 3,
             ]),
             new Document([
-                'type' => 3
+                'type' => 3,
             ]),
         ];
 
@@ -396,16 +395,16 @@ class AggregationTest extends TestCase
 
         $docs = [
             new Document([
-                'type' => 1
+                'type' => 1,
             ]),
             new Document([
-                'type' => 2
+                'type' => 2,
             ]),
             new Document([
-                'type' => 3
+                'type' => 3,
             ]),
             new Document([
-                'type' => 3
+                'type' => 3,
             ]),
         ];
 
@@ -436,16 +435,16 @@ class AggregationTest extends TestCase
 
         $docs = [
             new Document([
-                'type' => 1
+                'type' => 1,
             ]),
             new Document([
-                'type' => 2
+                'type' => 2,
             ]),
             new Document([
-                'type' => 3
+                'type' => 3,
             ]),
             new Document([
-                'type' => 3
+                'type' => 3,
             ]),
         ];
 

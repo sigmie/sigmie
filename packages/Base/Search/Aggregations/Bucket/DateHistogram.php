@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Search\Aggregations\Bucket;
 
-use Sigmie\Base\Contracts\Aggregation;
-use Sigmie\Base\Shared\Missing;
 use Sigmie\Base\Search\Aggregations\Enums\CalendarInterval;
+use Sigmie\Base\Shared\Missing;
 
 class DateHistogram extends Bucket
 {
@@ -22,10 +21,10 @@ class DateHistogram extends Bucket
     public function value(): array
     {
         $value = [
-            "date_histogram" => [
-                "field" => $this->field,
-                "calendar_interval" => $this->interval->value,
-            ]
+            'date_histogram' => [
+                'field' => $this->field,
+                'calendar_interval' => $this->interval->value,
+            ],
         ];
 
         if (isset($this->missing)) {

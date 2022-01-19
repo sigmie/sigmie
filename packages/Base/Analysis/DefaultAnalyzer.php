@@ -8,14 +8,13 @@ use Sigmie\Base\Contracts\Tokenizer;
 
 class DefaultAnalyzer extends Analyzer
 {
-    const name = 'default';
+    public const name = 'default';
 
     public function __construct(
         ?Tokenizer $tokenizer = null,
         array $filters = [],
         array $charFilters = [],
     ) {
-
         parent::__construct(
             self::name,
             $tokenizer,

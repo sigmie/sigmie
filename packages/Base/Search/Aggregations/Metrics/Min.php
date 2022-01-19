@@ -15,7 +15,7 @@ class Min extends Metric
         $value =  [
             'min' => [
                 'field' => $this->field,
-            ]
+            ],
         ];
 
         if (isset($this->missing)) {

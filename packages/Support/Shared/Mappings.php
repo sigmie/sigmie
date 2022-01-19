@@ -18,7 +18,7 @@ trait Mappings
 
     public function mapping(callable $callable): static
     {
-        $this->blueprint = new Blueprint;
+        $this->blueprint = new Blueprint();
 
         $callable($this->blueprint);
 
@@ -30,7 +30,6 @@ trait Mappings
         $mappings = new DynamicMappings($defaultAnalyzer);
 
         if ($this->dynamicMappings === false && isset($this->blueprint)) {
-
             $properties = ($this->blueprint)();
 
             $mappings = new IndexMappings(

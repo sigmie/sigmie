@@ -21,7 +21,6 @@ use Sigmie\Base\Search\Aggregations\Metrics\Stats;
 use Sigmie\Base\Search\Aggregations\Metrics\Sum;
 use Sigmie\Base\Search\Aggregations\Metrics\ValueCount;
 
-
 class Aggs implements AggsInterface
 {
     protected array $aggs = [];

@@ -19,7 +19,7 @@ class Date extends PropertyType
     {
         return [$this->name => [
             'type' => 'date',
-            'format' => implode('|', $this->formats)
+            'format' => implode('|', $this->formats),
         ]];
     }
 }

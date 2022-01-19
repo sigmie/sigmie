@@ -17,8 +17,8 @@ class Exists extends Query
     {
         return [
             'exists' => [
-                'field' => $this->field
-            ]
+                'field' => $this->field,
+            ],
         ];
     }
 }

@@ -25,7 +25,7 @@ class ElasticsearchResponseTest extends TestCase
             ->stopwords(['foo'])
             ->twoWaySynonyms([
                 ['foo', 'bar'],
-                ['friend', 'buddy', 'partner']
+                ['friend', 'buddy', 'partner'],
             ])
             ->create();
     }

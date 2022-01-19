@@ -34,7 +34,8 @@ class IndexTest extends TestCase
 
         $count = 0;
 
-        $index->each(function (Document $document, string $_index) use (&$count) { $count++;
+        $index->each(function (Document $document, string $_index) use (&$count) {
+            $count++;
         });
 
         $this->assertEquals(3, $count);
@@ -72,7 +73,7 @@ class IndexTest extends TestCase
 
         $docs = [new Document(['bar' => 'foo'], '1'), new Document(['foo' => 'bar'], '2')];
 
-        $index->merge($docs,);
+        $index->merge($docs, );
 
         $this->assertCount(2, $index);
 
@@ -133,7 +134,7 @@ class IndexTest extends TestCase
 
         $index = $this->sigmie->collect($indexName, 'true');
 
-        $index->add(new Document(['foo' => 'bar'], '4'),);
+        $index->add(new Document(['foo' => 'bar'], '4'), );
 
         $this->assertTrue($index->offsetExists('4'));
         $this->assertFalse($index->offsetExists('6'));
@@ -149,7 +150,7 @@ class IndexTest extends TestCase
 
         $index = $this->sigmie->collect($indexName, 'true');
 
-        $index->add(new Document(['foo' => 'bar'], '4'),);
+        $index->add(new Document(['foo' => 'bar'], '4'), );
 
         $doc = new Document(['foo' => 'baz'], '89');
 
@@ -168,7 +169,7 @@ class IndexTest extends TestCase
         $indexName = uniqid();
         $index = $this->sigmie->collect($indexName, 'true');
 
-        $index->add(new Document(['foo' => 'bar'], '4'),);
+        $index->add(new Document(['foo' => 'bar'], '4'), );
 
         $docs = [
             new Document(['foo' => 'bar'], '4'),

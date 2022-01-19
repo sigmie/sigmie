@@ -18,7 +18,7 @@ final class Token implements Auth
     public function keys(): array
     {
         return [
-            'headers' => ['Authorization' => "Bearer {$this->token}"]
+            'headers' => ['Authorization' => "Bearer {$this->token}"],
         ];
     }
 }

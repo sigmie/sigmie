@@ -25,7 +25,6 @@ final class ErrorListener
     /**
      * Creates an new instance of the Error Listener.
      *
-     * @param \NunoMaduro\Collision\Contracts\Writer|null $writer
      */
     public function __construct(WriterContract $writer = null)
     {
@@ -39,7 +38,6 @@ final class ErrorListener
      * current event output. It also sets the event ExitCode to `O` avoiding the
      * exception to be rendered by the default Symfony console application.
      *
-     * @param \Symfony\Component\Console\Event\ConsoleErrorEvent $event
      */
     public function onConsoleError(ConsoleErrorEvent $event): void
     {

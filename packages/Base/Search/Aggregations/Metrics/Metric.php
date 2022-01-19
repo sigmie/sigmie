@@ -17,13 +17,13 @@ abstract class Metric implements Aggregation
     ) {
     }
 
-    abstract protected function value();
-
     public function toRaw(): array
     {
         return [$this->name => [
             'meta' => (object) $this->meta,
-            ...$this->value()
+            ...$this->value(),
         ]];
     }
+
+    abstract protected function value();
 }

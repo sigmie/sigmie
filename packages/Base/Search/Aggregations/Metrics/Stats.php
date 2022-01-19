@@ -15,7 +15,7 @@ class Stats extends Metric
         $value =  [
             'stats' => [
                 'field' => $this->field,
-            ]
+            ],
         ];
 
         if (isset($this->missing)) {

@@ -15,7 +15,7 @@ class Sum extends Metric
         $value =  [
             'sum' => [
                 'field' => $this->field,
-            ]
+            ],
         ];
 
         if (isset($this->missing)) {

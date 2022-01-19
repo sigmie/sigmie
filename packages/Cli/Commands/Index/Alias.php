@@ -12,8 +12,9 @@ use Symfony\Component\Console\Input\InputOption;
 
 class Alias extends BaseCommand
 {
-
-    use IndexActions, Alias, AliasAPI;
+    use IndexActions;
+    use Alias;
+    use AliasAPI;
 
     protected static $defaultName = 'index:alias';
 
@@ -26,7 +27,6 @@ class Alias extends BaseCommand
         $index = $this->getIndex($index);
 
         if ($action === 'add') {
-
             $index->setAlias($alias);
 
             $this->output->writeln("Alias {$alias} added to index {$index->name()}.");
@@ -35,7 +35,6 @@ class Alias extends BaseCommand
         }
 
         if ($action === 'remove') {
-
             $index->removeAlias($alias);
 
             $this->output->writeln("Alias removed from index {$index->name()}.");

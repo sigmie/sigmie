@@ -10,7 +10,9 @@ use Sigmie\Base\Search\Queries\Query;
 class Range extends Query
 {
     /**
-     * values example: [['>=', '2'],['<=','200']]
+     * values example: [['>=', '2'],['<=','200']].
+     * @param protectedstring $field
+     * @param protectedarray  $values
      */
     public function __construct(
         protected string $field,
@@ -22,8 +24,8 @@ class Range extends Query
     {
         $res = [
             'range' => [
-                $this->field => []
-            ]
+                $this->field => [],
+            ],
         ];
 
         foreach ($this->values as $operator => $value) {

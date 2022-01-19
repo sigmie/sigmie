@@ -11,7 +11,7 @@ class ValueCount extends Metric
         return [
             'value_count' => [
                 'field' => $this->field,
-            ]
+            ],
         ];
     }
 }

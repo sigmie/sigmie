@@ -126,7 +126,6 @@ class Analysis implements AnalysisInterface, Analyzers, Raw
         $analyzers = ensure_collection($analyzers);
 
         $analyzers->each(function (Analyzer $analyzer) {
-
             $this->setAnalyzer($analyzer);
 
             $this->filters = $this->filters->merge($analyzer->filters());
@@ -204,7 +203,7 @@ class Analysis implements AnalysisInterface, Analyzers, Raw
             'analyzer' => $analyzers,
             'filter' => $filter,
             'char_filter' => $charFilters,
-            'tokenizer' => $tokenizer
+            'tokenizer' => $tokenizer,
         ];
     }
 }

@@ -15,7 +15,6 @@ use Sigmie\Base\Http\Connection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Index\Builder;
-use Sigmie\Base\Index\Index;
 use Sigmie\Base\Search\SearchBuilder;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\JSONClient;

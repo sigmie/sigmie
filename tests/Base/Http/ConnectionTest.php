@@ -27,8 +27,8 @@ class ConnectionTest extends TestCase
 
         $this->expectException(ElasticsearchException::class);
 
-        $this->createIndex($indexName, new Settings, new Mappings);
-        $this->createIndex($indexName, new Settings, new Mappings);
+        $this->createIndex($indexName, new Settings(), new Mappings());
+        $this->createIndex($indexName, new Settings(), new Mappings());
     }
 
     /**

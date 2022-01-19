@@ -27,7 +27,7 @@ trait Bulk
 
         $request = new BulkRequest('POST', $uri, $data);
 
-        /** @var  BulkResponse */
+        /* @var  BulkResponse */
         return $this->httpCall($request);
     }
 }

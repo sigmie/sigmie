@@ -18,7 +18,6 @@ class Authenticate extends BaseCommand
 
     protected function executeCommand(): int
     {
-
         return 0;
     }
 }

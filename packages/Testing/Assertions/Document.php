@@ -13,7 +13,11 @@ use Sigmie\Base\Documents\Document as ElasticsearchDocument;
 
 trait Document
 {
-    use Search, Count, Mget, Index, Doc;
+    use Search;
+    use Count;
+    use Mget;
+    use Index;
+    use Doc;
 
     private string $name;
 
@@ -37,9 +41,9 @@ trait Document
                         //     'zero_terms_query' => 'none'
                         // ]
                         // ]
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ];
 
         foreach ($values as $key => $value) {
@@ -49,9 +53,9 @@ trait Document
                         $key => [
                             'query' => $value,
                             'operator' => 'and',
-                            'zero_terms_query' => 'none'
-                        ]
-                    ]
+                            'zero_terms_query' => 'none',
+                        ],
+                    ],
                 ];
         }
 
@@ -75,9 +79,9 @@ trait Document
                         //     'zero_terms_query' => 'none'
                         // ]
                         // ]
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ];
 
         foreach ($values as $key => $value) {
@@ -87,9 +91,9 @@ trait Document
                         $key => [
                             'query' => $value,
                             'operator' => 'and',
-                            'zero_terms_query' => 'none'
-                        ]
-                    ]
+                            'zero_terms_query' => 'none',
+                        ],
+                    ],
                 ];
         }
 

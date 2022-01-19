@@ -10,7 +10,7 @@ class HTMLStrip implements CharFilter
 {
     public static function fromRaw(array $raw)
     {
-        return new static;
+        return new static();
     }
 
     public function toRaw(): array
@@ -18,7 +18,7 @@ class HTMLStrip implements CharFilter
         return [
             $this->name => [
                 'type' => 'html_strip',
-            ]
+            ],
         ];
     }
     public function name(): string

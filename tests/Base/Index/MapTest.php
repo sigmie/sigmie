@@ -36,8 +36,8 @@ class MapTest extends TestCase
             ['some_name' => [
                 'type' => 'foo',
                 'stopwords' => [
-                    'about', 'after', 'again'
-                ]
+                    'about', 'after', 'again',
+                ],
             ]]
         ));
 

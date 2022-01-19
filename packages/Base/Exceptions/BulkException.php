@@ -6,7 +6,6 @@ namespace Sigmie\Base\Exceptions;
 
 use Exception;
 use function Sigmie\Helpers\collection;
-use Sigmie\Support\Collection;
 
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
@@ -21,13 +20,11 @@ class BulkException extends Exception
     public static function fromItems(array $items)
     {
         $failed = collection($items)->filter(function ($value) {
-
             $action = array_key_first($value);
             $response = $value[$action];
 
             return isset($response['error']);
         })->map(function ($value) {
-
             $action = array_key_first($value);
             $response = $value[$action];
 

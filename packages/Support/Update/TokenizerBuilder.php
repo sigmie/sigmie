@@ -8,7 +8,6 @@ use Sigmie\Base\Contracts\Analysis;
 use Sigmie\Support\Analysis\Tokenizer\TokenizerBuilder as TokenizerTokenizerBuilder;
 use Sigmie\Support\Contracts\TokenizerBuilder as ContractsTokenizerBuilder;
 
-
 class TokenizerBuilder implements ContractsTokenizerBuilder
 {
     use TokenizerTokenizerBuilder;

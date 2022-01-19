@@ -6,8 +6,6 @@ namespace Sigmie\Base\Documents;
 
 use Sigmie\Base\Actions\Document as DocumentActions;
 use Sigmie\Base\Contracts\FromRaw;
-use Sigmie\Base\Index\AbstractIndex;
-use Sigmie\Base\Index\Index;
 
 class Document implements FromRaw
 {
@@ -25,7 +23,9 @@ class Document implements FromRaw
     ) {
         $this->_source = $_source;
 
-        if ($_id !== null) $this->_id = $_id;
+        if ($_id !== null) {
+            $this->_id = $_id;
+        }
     }
 
     public function __set(string $name, mixed $value): void
@@ -33,26 +33,26 @@ class Document implements FromRaw
         $this->setSource($name, $value);
     }
 
-    public function id(string $_id):void
+    public function __get(string $attribute): mixed
+    {
+        return $this->getSource($attribute);
+    }
+
+    public function id(string $_id): void
     {
         $this->_id = $_id;
     }
 
-    public function index(string $_index):void
+    public function index(string $_index): void
     {
         $this->_index = $_index;
-    }
-
-    public function __get(string $attribute): mixed
-    {
-        return $this->getSource($attribute);
     }
 
     public function toArray(): array
     {
         return [
             '_id' => $this->_id ?? null,
-            '_source' => $this->_source
+            '_source' => $this->_source,
         ];
     }
 

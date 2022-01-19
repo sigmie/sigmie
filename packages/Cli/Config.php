@@ -16,9 +16,9 @@ class Config
             'local' => [
                 'host' => '127.0.0.1',
                 'port' => '9200',
-                'auth' => null
-            ]
-        ]
+                'auth' => null,
+            ],
+        ],
     ];
 
     public function __construct()

@@ -13,7 +13,6 @@ use Sigmie\Base\Search\Queries\Term\Exists;
 use Sigmie\Base\Search\Queries\Term\Fuzzy;
 use Sigmie\Base\Search\Queries\Term\IDs;
 use Sigmie\Base\Search\Queries\Term\Range;
-use Sigmie\Base\Search\Queries\Term\RangeBuilder;
 use Sigmie\Base\Search\Queries\Term\Regex;
 use Sigmie\Base\Search\Queries\Term\Term;
 use Sigmie\Base\Search\Queries\Term\Terms;
@@ -27,14 +26,14 @@ class BooleanQueryBuilder implements Queries
 
     public function matchAll(): self
     {
-        $this->clauses[] = new MatchAll;
+        $this->clauses[] = new MatchAll();
 
         return $this;
     }
 
     public function matchNone(): self
     {
-        $this->clauses[] = new MatchNone;
+        $this->clauses[] = new MatchNone();
 
         return $this;
     }
@@ -118,7 +117,7 @@ class BooleanQueryBuilder implements Queries
 
     public function bool(callable $callable): self
     {
-        $query = new Boolean;
+        $query = new Boolean();
 
         $this->clauses[] = $query;
 

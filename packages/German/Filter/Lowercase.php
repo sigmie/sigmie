@@ -6,7 +6,6 @@ namespace Sigmie\German\Filter;
 
 use Sigmie\Base\Analysis\TokenFilter\Lowercase as BaseLowercase;
 
-
 class Lowercase extends BaseLowercase
 {
     public function __construct(string $name = 'german_lowercase')

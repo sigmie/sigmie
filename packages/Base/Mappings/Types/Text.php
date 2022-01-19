@@ -40,7 +40,7 @@ class Text extends PropertyType implements FromRaw
             'text' => $instance->unstructuredText(),
             'search_as_you_type' => $instance->searchAsYouType(),
             'completion' => $instance->completion(),
-            default => throw new Exception('Field ' . $configs['type'] . ' couldn\'t be mapped')
+            default => throw new Exception('Field '.$configs['type'].' couldn\'t be mapped')
         };
     }
 
@@ -93,7 +93,7 @@ class Text extends PropertyType implements FromRaw
         $raw = [
             $this->name => [
                 'type' => $this->type,
-            ]
+            ],
         ];
 
         if (!is_null($this->raw)) {

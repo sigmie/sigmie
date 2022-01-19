@@ -19,10 +19,10 @@ class Boolean extends Query
 
     public function __construct()
     {
-        $this->must = new BooleanQueryBuilder;
-        $this->mustNot = new BooleanQueryBuilder;
-        $this->filter = new BooleanQueryBuilder;
-        $this->should = new BooleanQueryBuilder;
+        $this->must = new BooleanQueryBuilder();
+        $this->mustNot = new BooleanQueryBuilder();
+        $this->filter = new BooleanQueryBuilder();
+        $this->should = new BooleanQueryBuilder();
     }
 
     public function must(): BooleanQueryBuilder

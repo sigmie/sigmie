@@ -14,7 +14,10 @@ use Sigmie\Base\Contracts\API;
 
 class ParallelRunner extends BaseRunner
 {
-    use Cat, Index, API, ClearIndices;
+    use Cat;
+    use Index;
+    use API;
+    use ClearIndices;
 
     /** @var WrapperWorker[] */
     private $workers = [];
@@ -36,7 +39,7 @@ class ParallelRunner extends BaseRunner
     {
         if ($this->options->functional()) {
             throw new InvalidArgumentException(
-                'The `functional` option is not supported yet in the WrapperRunner. Only full classes can be run due ' .
+                'The `functional` option is not supported yet in the WrapperRunner. Only full classes can be run due '.
                     'to the current PHPUnit commands causing classloading issues.'
             );
         }
@@ -53,7 +56,6 @@ class ParallelRunner extends BaseRunner
     private function startWorkers(): void
     {
         for ($token = 1; $token <= $this->options->processes(); ++$token) {
-
             $this->clearProcessIndices($token);
 
             $this->workers[$token] = new WrapperWorker($this->output, $this->options, $token);

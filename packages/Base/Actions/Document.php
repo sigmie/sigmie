@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Actions;
 
-use function Amp\Promise\wait;
 use Exception;
 use Sigmie\Base\APIs\Bulk as BulkAPI;
 use Sigmie\Base\APIs\Delete as DeleteAPI;
@@ -19,7 +18,13 @@ use Sigmie\Base\Documents\Document as Doc;
 
 trait Document
 {
-    use SearchAPI, DeleteAPI, MgetAPI, BulkAPI, UpdateAPI, API, DocAPI;
+    use SearchAPI;
+    use DeleteAPI;
+    use MgetAPI;
+    use BulkAPI;
+    use UpdateAPI;
+    use API;
+    use DocAPI;
 
     public function updateDocument(string $indexName, Doc $document, string $refresh): Doc
     {
@@ -56,7 +61,7 @@ trait Document
             $body = [
                 ...$body,
                 ['create' => (object) []],
-                $document->_source
+                $document->_source,
             ];
         });
 
@@ -79,10 +84,7 @@ trait Document
         return $collection;
     }
 
-    /**
-     * @param bool $async Should we wait for the
-     * document to become available
-     */
+
     protected function createDocument(string $indexName, Doc $doc, string $refresh): Doc
     {
         $array = [];
@@ -127,7 +129,7 @@ trait Document
     {
         $response = $this->searchAPICall($indexName, [
             'from' => $offset, 'size' => $limit,
-            'query' => ['match_all' => (object) []]
+            'query' => ['match_all' => (object) []],
         ]);
 
         $collection = new Collection();

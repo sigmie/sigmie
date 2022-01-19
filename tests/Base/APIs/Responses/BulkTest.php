@@ -19,7 +19,7 @@ class BulkTest extends TestCase
     public function bulk_response(): void
     {
         $indexName = uniqid();
-        $index = $this->sigmie->collect($indexName,'true');
+        $index = $this->sigmie->collect($indexName, 'true');
 
         $this->expectException(BulkException::class);
 

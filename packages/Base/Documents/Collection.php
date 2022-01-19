@@ -13,7 +13,7 @@ use Sigmie\Support\Collection as SigmieCollection;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 use Traversable;
 
-class Collection implements DocumentCollectionInterface, FromRaw, Countable
+class Collection implements Countable, DocumentCollectionInterface, FromRaw
 {
     protected CollectionInterface $collection;
 

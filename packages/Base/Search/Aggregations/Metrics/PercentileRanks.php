@@ -23,7 +23,7 @@ class PercentileRanks extends Metric
             'percentile_ranks' => [
                 'field' => $this->field,
                 'values' => $this->values,
-            ]
+            ],
         ];
 
         if (isset($this->missing)) {

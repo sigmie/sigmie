@@ -27,7 +27,7 @@ class DocumentTable implements OutputFormat
 
         $table->setHeaders([
             [new TableCell(
-                'Index name: ' . $this->json['_index'],
+                'Index name: '.$this->json['_index'],
                 [
                     'colspan' => count($data),
                     'style' => new TableCellStyle([
@@ -36,10 +36,10 @@ class DocumentTable implements OutputFormat
                         'bg' => 'green',
                         // or
                         'cellFormat' => '<info>%s</info>',
-                    ])
+                    ]),
                 ]
             )],
-            array_keys($data)
+            array_keys($data),
         ]);
 
         $table->addRow(array_values($data));

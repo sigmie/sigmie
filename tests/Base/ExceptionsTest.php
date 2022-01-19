@@ -4,20 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Tests\Index;
 
-use ArrayAccess;
-use Countable;
-use IteratorAggregate;
-use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Documents\DocumentCollection;
-use Sigmie\Testing\TestCase;
-use Sigmie\Base\APIs\Reindex;
+use Sigmie\Base\APIs\Bulk;
+use Sigmie\Base\APIs\Index as IndexAPI;
+use Sigmie\Base\Exceptions\BulkException ;
 use Sigmie\Base\Exceptions\IllegalArgumentException;
 use Sigmie\Base\Exceptions\IndexNotFoundException ;
-use Sigmie\Base\Exceptions\VersionConflictEngineException ;
-use Sigmie\Base\Exceptions\DocumentMissingException ;
-use Sigmie\Base\Exceptions\BulkException ;
-use Sigmie\Base\APIs\Index as IndexAPI;
-use Sigmie\Base\APIs\Bulk;
+use Sigmie\Testing\TestCase;
 
 class ExceptionsTest extends TestCase
 {
@@ -35,8 +27,8 @@ class ExceptionsTest extends TestCase
             ->stopwords(['about', 'after', 'again'], 'sigmie_stopwords')
             ->twoWaySynonyms([
                 ['about', 'again', 'after', 'price'],
-                ['friend', 'buddy', 'partner']
-            ],  name: 'sigmie_two_way_synonyms',)
+                ['friend', 'buddy', 'partner'],
+            ], name: 'sigmie_two_way_synonyms', )
             ->stemming([
                 ['about', ['again', 'after']],
             ], 'sigmie_stemmer_overrides')
@@ -62,7 +54,7 @@ class ExceptionsTest extends TestCase
     public function bulk()
     {
         $indexName = uniqid();
-        $index = $this->sigmie->collect($indexName,'true');
+        $index = $this->sigmie->collect($indexName, 'true');
 
         $this->expectException(BulkException::class);
 

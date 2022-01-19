@@ -37,9 +37,9 @@ class Pattern extends Tokenizer
     {
         $res = [
             $this->name => [
-                "type" => "pattern",
-                "pattern" => $this->pattern
-            ]
+                'type' => 'pattern',
+                'pattern' => $this->pattern,
+            ],
         ];
 
         if (is_null($this->flags)) {

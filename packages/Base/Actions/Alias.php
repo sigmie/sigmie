@@ -9,13 +9,14 @@ use Sigmie\Base\APIs\Index;
 
 trait Alias
 {
-    use AliasAPI, Index;
+    use AliasAPI;
+    use Index;
 
     protected function switchAlias(string $alias, string $from, string $to): bool
     {
         $body = ['actions' => [
             ['remove' => ['index' => $from, 'alias' => $alias]],
-            ['add' => ['index' => $to, 'alias' => $alias]]
+            ['add' => ['index' => $to, 'alias' => $alias]],
         ]];
 
         $res = $this->aliasAPICall('POST', $body);

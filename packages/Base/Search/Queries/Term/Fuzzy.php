@@ -17,16 +17,16 @@ class Fuzzy extends Query
     public function toRaw(): array
     {
         return [
-            "fuzzy" => [
+            'fuzzy' => [
                 $this->field => [
-                    "value" => $this->value,
+                    'value' => $this->value,
                     // "fuzziness" => "AUTO",
                     // "max_expansions" => 50,
                     // "prefix_length" => 0,
                     // "transpositions" => true,
                     // "rewrite" => "constant_score"
-                ]
-            ]
+                ],
+            ],
         ];
     }
 }

@@ -67,7 +67,7 @@ abstract class TokenFilter implements Configurable, Raw, TokenFilterInterface
         return array_merge(
             $this->getValues(),
             [
-                'type' => $this->type()
+                'type' => $this->type(),
             ]
         );
     }

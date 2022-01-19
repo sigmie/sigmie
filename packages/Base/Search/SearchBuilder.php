@@ -27,7 +27,7 @@ class SearchBuilder implements Queries
 
     public function __construct(string $index, HttpConnection $httpConnection)
     {
-        $this->search = new Search;
+        $this->search = new Search();
 
         $this->search->index($index)->setHttpConnection($httpConnection);
     }
@@ -50,13 +50,12 @@ class SearchBuilder implements Queries
         string $field,
         array $values = []
     ): Search {
-
         return $this->search->query(new Range($field, $values));
     }
 
     public function matchAll(): Search
     {
-        return $this->search->query(new MatchAll);
+        return $this->search->query(new MatchAll());
     }
 
     public function query(Query $query): Search
@@ -66,7 +65,7 @@ class SearchBuilder implements Queries
 
     public function matchNone(): Search
     {
-        return $this->search->query(new MatchNone);
+        return $this->search->query(new MatchNone());
     }
 
     public function match(string $field, string $query): Search

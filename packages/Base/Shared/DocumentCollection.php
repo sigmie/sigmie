@@ -8,7 +8,6 @@ namespace Sigmie\Base\Shared;
 use Exception;
 use Generator;
 use Iterator;
-use Sigmie\Base\APIs\Count;
 use Sigmie\Base\Documents\Document;
 
 trait DocumentCollection

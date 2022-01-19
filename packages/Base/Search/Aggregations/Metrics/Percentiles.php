@@ -23,7 +23,7 @@ class Percentiles extends Metric
             'percentiles' => [
                 'field' => $this->field,
                 'percents' => $this->percents,
-            ]
+            ],
         ];
 
         if (isset($this->missing)) {

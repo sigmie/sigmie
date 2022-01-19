@@ -15,7 +15,8 @@ use Sigmie\Testing\TestConnection;
 
 class ActionsTest extends TestCase
 {
-    use TestConnection, IndexActions;
+    use TestConnection;
+    use IndexActions;
 
     /**
      * @test
@@ -32,11 +33,11 @@ class ActionsTest extends TestCase
 
         $aliasedIndex = $this->getIndex($indexName);
 
-        $this->assertEquals(AliasedIndex::class,$aliasedIndex::class);
+        $this->assertEquals(AliasedIndex::class, $aliasedIndex::class);
 
         $baseIndex = $this->getIndex($index->name);
 
-        $this->assertEquals(Index::class,$baseIndex::class);
+        $this->assertEquals(Index::class, $baseIndex::class);
     }
 
     /**
@@ -99,8 +100,8 @@ class ActionsTest extends TestCase
         $fooIndexName = uniqid();
         $barIndexName = uniqid();
 
-        $this->createIndex($fooIndexName, new Settings, new Mappings);
-        $this->createIndex($barIndexName, new Settings, new Mappings);
+        $this->createIndex($fooIndexName, new Settings(), new Mappings());
+        $this->createIndex($barIndexName, new Settings(), new Mappings());
 
         $list = $this->listIndices();
         $array = $list->map(fn (Index $index) => $index->name)->toArray();

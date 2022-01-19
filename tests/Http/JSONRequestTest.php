@@ -32,9 +32,9 @@ class JSONRequestTest extends TestCase
     public function decode_ndjson()
     {
         $req = new NdJSONRequest('GET', new Uri('http://foo.com'), [['foo' => 'bar'],
-        ['foo' => 'baz']]);
+        ['foo' => 'baz'], ]);
 
-        $this->assertEquals([['foo'=>'bar'],['foo'=>'baz'],null],$req->body());
+        $this->assertEquals([['foo'=>'bar'], ['foo'=>'baz'], null], $req->body());
     }
 
     /**

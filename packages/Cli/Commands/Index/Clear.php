@@ -12,7 +12,8 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 class Clear extends BaseCommand
 {
-    use Cat, Index;
+    use Cat;
+    use Index;
 
     protected static $defaultName = 'index:clear';
 
@@ -40,7 +41,7 @@ class Clear extends BaseCommand
 
     protected function clearIndices()
     {
-        $response = $this->catAPICall('/indices', 'GET',);
+        $response = $this->catAPICall('/indices', 'GET', );
 
         $names = array_map(fn ($data) => $data['index'], $response->json());
 

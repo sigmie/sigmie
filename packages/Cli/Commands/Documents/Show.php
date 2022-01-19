@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Sigmie\Cli\Commands\Documents;
 
@@ -11,7 +13,8 @@ use Symfony\Component\Console\Input\InputArgument;
 
 class Show extends BaseCommand
 {
-    use Mget, IndexActions;
+    use Mget;
+    use IndexActions;
 
     protected static $defaultName = 'doc:show';
 

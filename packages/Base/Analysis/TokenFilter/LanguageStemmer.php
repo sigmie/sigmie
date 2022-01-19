@@ -18,12 +18,12 @@ abstract class LanguageStemmer implements TokenFilter
         return 'language';
     }
 
-    abstract function language(): string;
+    abstract public function language(): string;
 
     public function value(): array
     {
         return [
-            'language' => $this->language()
+            'language' => $this->language(),
         ];
     }
 }

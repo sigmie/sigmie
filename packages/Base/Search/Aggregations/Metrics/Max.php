@@ -15,7 +15,7 @@ class Max extends Metric
         $value =  [
             'max' => [
                 'field' => $this->field,
-            ]
+            ],
         ];
 
         if (isset($this->missing)) {

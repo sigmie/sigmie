@@ -25,7 +25,7 @@ class AnalyzeTable implements OutputFormat
 
         $headers = ['token', 'start_offset', 'end_offset', 'type', 'position'];
         $table->setHeaders([
-            $headers
+            $headers,
         ]);
 
         foreach ($data as $row) {
