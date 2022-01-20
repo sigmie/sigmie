@@ -29,9 +29,9 @@ class JSONClient implements JSONClientInterface
     {
         $config = [
             'base_uri' => $url,
-            //'allow_redirects' => false,
+            'allow_redirects' => false,
             'http_errors' => false,
-            //'connect_timeout' => 1
+            'connect_timeout' => 5
         ];
 
         if (is_null($auth) === false) {

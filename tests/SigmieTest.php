@@ -16,7 +16,7 @@ class SigmieTest extends TestCase
      */
     public function is_connected_returns_false_on_timeout()
     {
-        $client = JSONClient::create('foo.com:9200');
+        $client = JSONClient::create('http://demo:9200/');
         $connection = new Connection($client);
         $sigmie = new Sigmie($connection);
 
