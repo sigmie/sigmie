@@ -160,7 +160,6 @@ class Aggs implements AggsInterface
         foreach ($this->aggs as $agg) {
             $res = [...$res, ...$agg->toRaw()];
         }
-
         return $res;
     }
 }

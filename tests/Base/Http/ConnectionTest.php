@@ -36,9 +36,7 @@ class ConnectionTest extends TestCase
      */
     public function es_request_class(): void
     {
-        $request = new Connection(JSONClient::create(testing_host()));
-
-        $res = $request(new ElasticsearchRequest('GET', new Uri('/')));
+        $res = ($this->httpConnection)(new ElasticsearchRequest('GET', new Uri('/')));
 
         $this->assertInstanceOf(ElasticsearchResponse::class, $res);
         $this->assertFalse($res->failed());

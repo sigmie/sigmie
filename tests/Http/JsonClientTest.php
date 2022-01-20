@@ -22,7 +22,7 @@ class JsonClientTest extends TestCase
     {
         parent::setUp();
 
-        $this->client = JSONClient::create(testing_host());
+        $this->client = JSONClient::create('es_test_1:9200');
     }
 
     /**

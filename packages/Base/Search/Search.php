@@ -73,7 +73,7 @@ class Search
         return $this;
     }
 
-    public function paginate(int $perPage, int $currentPage, )
+    public function paginate(int $perPage, int $currentPage,)
     {
         return new Paginator($perPage, $currentPage, $this);
     }
@@ -99,13 +99,18 @@ class Search
 
     public function toRaw(): array
     {
-        return [
+        $result = [
             '_source' => $this->fields,
             'query' => $this->query->toRaw(),
-            'aggs' => $this->aggs->toRaw(),
             'from' => $this->from,
             'size' => $this->size,
             'sort' => [...$this->sort],
         ];
+
+        if (count($this->aggs->toRaw()) > 0) {
+            $result['aggs'] = $this->aggs->toRaw();
+        }
+
+        return $result;
     }
 }

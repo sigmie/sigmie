@@ -24,7 +24,14 @@ class TestCase extends \PHPUnit\Framework\TestCase
         $this->setupTestConnection();
 
         if (getenv('PARATEST') === false) {
-            $this->clearIndices();
+
+        $host = getenv('ES_HOST');
+
+        if (function_exists('env')) {
+            $host = env('ES_HOST');
+        };
+
+            $this->clearIndices("{$host}:9200");
         }
 
         // Always reset test now time

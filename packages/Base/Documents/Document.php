@@ -60,6 +60,8 @@ class Document implements FromRaw
     {
         $instance = new static($raw['_source'], $raw['_id']);
         $instance->index($raw['_index']);
+
+        return $instance;
     }
 
     protected function getSource(string $source): mixed
