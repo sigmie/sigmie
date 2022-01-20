@@ -20,7 +20,7 @@
         </testsuite>
     </testsuites>
     <php>
-        <server name="ES_HOST" value="es_test"/>
+        <server name="ES_HOST" value="es_test_1"/>
         <server name="ES_PORT" value="9200"/>
         <server name="ENVIRONMENT" value="test"/>
     </php>

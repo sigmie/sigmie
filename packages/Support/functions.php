@@ -12,23 +12,17 @@ namespace Sigmie\Helpers {
     use Sigmie\Support\Collection;
     use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
-    function testing_host(): string
+    function testing_host(string $token = '1'): string
     {
         $host = getenv('ES_HOST');
-        $port = getenv('ES_HOST');
 
         if (function_exists('env')) {
             $host = env('ES_HOST');
-            $port = env('ES_PORT');
-        }
+        };
 
-        if (getenv('TEST_TOKEN') !== false) {  // Using paratest
-            $token = getenv('TEST_TOKEN');
+        $host = str_replace('1', "{$token}", $host);
 
-            return "{$host}_{$token}:{$port}";
-        }
-
-        return "{$host}:{$port}";
+        return "https://{$host}";
     }
 
     function refresh_value(): string|null

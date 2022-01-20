@@ -13,22 +13,17 @@ use Sigmie\Http\JSONClient;
 
 trait ClearIndices
 {
-    use TestConnection;
     use Cat;
     use Index;
     use API;
 
-    protected function clearIndices(?string $url = null): void
+    protected function clearIndices(string $url): void
     {
-        if (is_null($url)) {
-            $this->setupTestConnection();
-        } else {
-            $client = JSONClient::create($url, new ProxyCert());
+        $client = JSONClient::create($url, new ProxyCert());
 
-            $this->setHttpConnection(new Connection($client));
-        }
+        $this->setHttpConnection(new Connection($client));
 
-        $response = $this->catAPICall('/indices', 'GET', );
+        $response = $this->catAPICall('/indices', 'GET',);
 
         $names = array_map(fn ($data) => $data['index'], $response->json());
 

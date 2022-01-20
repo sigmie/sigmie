@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
+use App\Helpers\ProxyCert;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\Connection;
 use function Sigmie\Helpers\testing_host;
@@ -16,7 +17,7 @@ trait TestConnection
 
     public function setupTestConnection(): void
     {
-        $client = JSONClient::create(testing_host());
+        $client = JSONClient::create(testing_host(), new ProxyCert);
 
         $this->setHttpConnection(new Connection($client));
     }

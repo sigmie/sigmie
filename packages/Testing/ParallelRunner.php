@@ -12,6 +12,8 @@ use Sigmie\Base\APIs\Cat;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Contracts\API;
 
+use function Sigmie\Helpers\testing_host;
+
 class ParallelRunner extends BaseRunner
 {
     use Cat;
@@ -24,22 +26,14 @@ class ParallelRunner extends BaseRunner
 
     public function clearProcessIndices(int $token)
     {
-        $host = getenv('ES_HOST');
-        $port = getenv('ES_HOST');
-
-        if (function_exists('env')) {
-            $host = env('ES_HOST');
-            $port = env('ES_PORT');
-        };
-
-        $this->clearIndices("{$host}_{$token}:{$port}");
+        $this->clearIndices(testing_host((string)$token));
     }
 
     protected function beforeLoadChecks(): void
     {
         if ($this->options->functional()) {
             throw new InvalidArgumentException(
-                'The `functional` option is not supported yet in the WrapperRunner. Only full classes can be run due '.
+                'The `functional` option is not supported yet in the WrapperRunner. Only full classes can be run due ' .
                     'to the current PHPUnit commands causing classloading issues.'
             );
         }
