@@ -29,27 +29,13 @@ class Clear extends BaseCommand
         );
 
         if ($res) {
-            $this->clearIndices();
-
+            //TODO clear indices
             $this->output->writeln('Indices cleared.');
         } else {
             $this->output->writeln('Abort.');
         }
 
         return 1;
-    }
-
-    protected function clearIndices()
-    {
-        $response = $this->catAPICall('/indices', 'GET', );
-
-        $names = array_map(fn ($data) => $data['index'], $response->json());
-
-        $nameChunks = array_chunk($names, 50);
-
-        foreach ($nameChunks as $chunk) {
-            $this->indexAPICall(implode(',', $chunk), 'DELETE');
-        }
     }
 
     protected function configure()

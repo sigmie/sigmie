@@ -121,6 +121,8 @@ class ParallelRunner extends BaseRunner
 
     private function waitForAllToFinish(): void
     {
+        $workersCount = count($this->workers);
+
         while (count($this->workers) > 0) {
             foreach ($this->workers as $token => $worker) {
                 if ($worker->isRunning()) {
@@ -132,11 +134,14 @@ class ParallelRunner extends BaseRunner
                 }
 
                 $this->flushWorker($worker);
-                $this->clearProcessIndices($token);
                 unset($this->workers[$token]);
             }
 
             usleep(self::CYCLE_SLEEP);
+        }
+
+        for ($token = 1; $token <= $workersCount; $token++) { 
+            $this->clearProcessIndices($token);
         }
     }
 }
