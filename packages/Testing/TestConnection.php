@@ -17,11 +17,15 @@ trait TestConnection
 
     public function setupTestConnection(): void
     {
-        if (getenv('TEST_TOKEN') !== false) {  // Using paratest
-            $client = JSONClient::create(testing_host(getenv('TEST_TOKEN')), new ProxyCert);
-        } else {
-            $client = JSONClient::create(testing_host(), new ProxyCert);
+        $token = '1';
+
+        if (getenv('PARATEST') !== false) {
+            $token = (string) getenv('TEST_TOKEN');
         }
+
+        $host = testing_host($token);
+
+        $client = JSONClient::create($host, new ProxyCert);
 
         $this->setHttpConnection(new Connection($client));
     }

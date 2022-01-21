@@ -22,26 +22,26 @@ class JsonClientTest extends TestCase
     {
         parent::setUp();
 
-        $this->client = JSONClient::create('es_test_1:9200');
+        // $this->client = JSONClient::create('es_test_1:9200');
     }
 
-    /**
-     * @test
-     */
-    public function request(): void
-    {
-        $res = $this->client->request(new JSONRequest('GET', new Uri('/')));
+    // /**
+    //  * @test
+    //  */
+    // public function request(): void
+    // {
+    //     $res = $this->client->request(new JSONRequest('GET', new Uri('/')));
 
-        $this->assertEquals('You Know, for Search', $res->json('tagline'));
-    }
+    //     $this->assertEquals('You Know, for Search', $res->json('tagline'));
+    // }
 
-    /**
-     * @test
-     */
-    public function doesnt_throw_on_http_errors()
-    {
-        $res = $this->client->request(new JSONRequest('GET', new Uri('/unknown-index')));
+    // /**
+    //  * @test
+    //  */
+    // public function doesnt_throw_on_http_errors()
+    // {
+    //     $res = $this->client->request(new JSONRequest('GET', new Uri('/unknown-index')));
 
-        $this->assertEquals(404, $res->code());
-    }
+    //     $this->assertEquals(404, $res->code());
+    // }
 }

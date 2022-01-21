@@ -23,7 +23,6 @@ use Sigmie\Support\Contracts\Collection;
 class Sigmie
 {
     use IndexActions;
-
     public function __construct(Connection $httpConnection)
     {
         $this->httpConnection = $httpConnection;

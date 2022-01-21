@@ -29,8 +29,6 @@ trait ClearIndices
 
         $nameChunks = array_chunk($names, 50);
 
-        // dump("cleared $url");
-
         foreach ($nameChunks as $chunk) {
             $this->indexAPICall(implode(',', $chunk), 'DELETE');
         }

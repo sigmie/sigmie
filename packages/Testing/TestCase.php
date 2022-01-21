@@ -10,7 +10,7 @@ use Sigmie\Sigmie;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    use Testing;
+    use TestConnection;
     use Index;
     use ClearIndices;
     use Assertions;
