@@ -2,8 +2,6 @@
 .vscode
 
 node_modules
-tests
-stubs
 
 v8-compile-cache-0
 
@@ -23,8 +21,6 @@ google.json
 package-lock.json
 yarn.lock
 package.json
-phpstan.neon
-phpunit.xml
 psalm.xml
 readme.md
 
