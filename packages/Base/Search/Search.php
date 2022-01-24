@@ -73,7 +73,7 @@ class Search
         return $this;
     }
 
-    public function paginate(int $perPage, int $currentPage,)
+    public function paginate(int $perPage, int $currentPage, )
     {
         return new Paginator($perPage, $currentPage, $this);
     }

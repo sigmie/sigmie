@@ -6,13 +6,10 @@ namespace Sigmie\Base\Tests\Http;
 
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Exceptions\ElasticsearchException;
-use Sigmie\Base\Http\Connection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Base\Index\Mappings;
 use Sigmie\Base\Index\Settings;
-use function Sigmie\Helpers\testing_host;
-use Sigmie\Http\JSONClient;
 
 use Sigmie\Testing\TestCase;
 

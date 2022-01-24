@@ -6,7 +6,6 @@ namespace Sigmie\Tests\Http;
 
 use GuzzleHttp\Psr7\Uri;
 use PHPUnit\Framework\TestCase;
-use function Sigmie\Helpers\testing_host;
 use Sigmie\Http\JSONClient;
 
 use Sigmie\Http\JSONRequest;

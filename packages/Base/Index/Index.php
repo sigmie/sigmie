@@ -10,12 +10,14 @@ use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Contracts\Settings as SettingsInterface;
 
 /**
+ * @property-read string $name
  * @property-read Mappings $mappings
  * @property-read Settings $settings
  */
 class Index
 {
-    use API, ActionsIndex;
+    use API;
+    use ActionsIndex;
 
     protected SettingsInterface $settings;
 
