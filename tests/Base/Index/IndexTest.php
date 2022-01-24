@@ -14,6 +14,21 @@ use Sigmie\Testing\TestCase;
 class IndexTest extends TestCase
 {
     /**
+    * @test
+    */
+    public function index_delete_method()
+    {
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create();
+
+        $this->assertIndexExists($indexName);
+
+        $index->delete();
+
+        $this->assertIndexNotExists($indexName);
+    }
+
+    /**
      * @test
      */
     public function lazy_each()

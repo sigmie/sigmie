@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Index;
 
+use Sigmie\Base\Actions\Index as ActionsIndex;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Contracts\Settings as SettingsInterface;
@@ -14,7 +15,7 @@ use Sigmie\Base\Contracts\Settings as SettingsInterface;
  */
 class Index
 {
-    use API;
+    use API, ActionsIndex;
 
     protected SettingsInterface $settings;
 
@@ -61,5 +62,10 @@ class Index
         $index = new static($name, $settings, $mappings);
 
         return $index;
+    }
+
+    public function delete(): bool
+    {
+        return $this->deleteIndex($this->name);
     }
 }

@@ -24,6 +24,21 @@ class SigmieTest extends TestCase
     }
 
     /**
+    * @test
+    */
+    public function index_delete()
+    {
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create();
+
+        $this->assertIndexExists($indexName);
+
+        $this->sigmie->delete($index->name);
+
+        $this->assertIndexNotExists($indexName);
+    }
+
+    /**
      * @test
      */
     public function is_connected_returns_true_when_connected()

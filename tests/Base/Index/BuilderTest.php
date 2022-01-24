@@ -43,6 +43,7 @@ class BuilderTest extends TestCase
                 return $blueprint;
             })
             ->create();
+        
 
         $this->assertIndex($alias, function (Assert $index) {
             $index->assertAnalyzerExists('default');

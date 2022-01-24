@@ -23,6 +23,7 @@ use Sigmie\Support\Contracts\Collection;
 class Sigmie
 {
     use IndexActions;
+
     public function __construct(Connection $httpConnection)
     {
         $this->httpConnection = $httpConnection;
@@ -77,6 +78,11 @@ class Sigmie
         $client = JSONClient::create($host, $auth);
 
         return new static(new HttpConnection($client));
+    }
+
+    public function delete(string $index): bool
+    {
+        return $this->deleteIndex($index);
     }
 
     protected function httpCall(ElasticsearchRequestInterface $request): ElasticsearchResponse
