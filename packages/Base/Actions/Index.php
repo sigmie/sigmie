@@ -17,7 +17,7 @@ use Sigmie\Base\Index\Mappings;
 use Sigmie\Base\Index\Settings;
 use Sigmie\Support\Collection;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
-use Sigmie\Support\Exceptions\MultipleIndices;
+use Sigmie\Support\Exceptions\MultipleIndicesForAlias;
 
 trait Index
 {
@@ -51,7 +51,7 @@ trait Index
         }
 
         if (count($res->json()) > 1) {
-            throw MultipleIndices::forAlias($alias);
+            throw MultipleIndicesForAlias::forAlias($alias);
         }
 
         $data = array_values($res->json())[0];

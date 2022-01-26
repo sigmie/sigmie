@@ -6,7 +6,7 @@ namespace Sigmie\Support\Exceptions;
 
 use Exception;
 
-class MultipleIndices extends Exception
+class MultipleIndicesForAlias extends Exception
 {
     public function __construct(string $message)
     {

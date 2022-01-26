@@ -624,13 +624,14 @@ class BuilderTest extends TestCase
     {
         $alias = uniqid();
 
-        $this->sigmie->newIndex($alias)
+        $index = $this->sigmie->newIndex($alias)
             ->synonyms([
                 'ipod' => ['i-pod', 'i pod'],
+                ['treasure', 'gem', 'gold', 'price'],
             ])
             ->withoutMappings()
             ->create();
-
+        
         $this->assertIndex($alias, function (Assert $index) {
             [$name] = array_keys($index->data()['settings']['index']['analysis']['filter']);
 
