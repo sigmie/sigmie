@@ -705,7 +705,8 @@ class BuilderTest extends TestCase
                 ['mouse', ['mice']],
                 ['feet', ['foot']],
             ], 'sigmie_stemmer_overrides')
-            ->withoutMappings()->create();
+            ->withoutMappings()
+            ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
             $index->assertFilterExists('sigmie_stemmer_overrides');
