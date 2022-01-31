@@ -92,9 +92,9 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         /** @var GermanBuilder */
-        $englishBuilder = $this->sigmie->newIndex($alias)->language(new German());
+        $germanBuilder = $this->sigmie->newIndex($alias)->language(new German());
 
-        $englishBuilder
+        $germanBuilder
             ->germanLightStemmer()
             ->germanStemmer()
             ->germanStemmer2()
