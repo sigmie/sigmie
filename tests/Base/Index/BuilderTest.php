@@ -631,7 +631,7 @@ class BuilderTest extends TestCase
             ])
             ->withoutMappings()
             ->create();
-        
+
         $this->assertIndex($alias, function (Assert $index) {
             [$name] = array_keys($index->data()['settings']['index']['analysis']['filter']);
 
