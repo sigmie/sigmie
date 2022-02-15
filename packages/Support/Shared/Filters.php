@@ -8,6 +8,7 @@ use Exception;
 use Sigmie\Base\Analysis\TokenFilter\AsciiFolding;
 use Sigmie\Base\Analysis\TokenFilter\DecimalDigit;
 use Sigmie\Base\Analysis\TokenFilter\Keywords;
+use Sigmie\Base\Analysis\TokenFilter\Lowercase;
 use Sigmie\Base\Analysis\TokenFilter\Stemmer;
 use Sigmie\Base\Analysis\TokenFilter\Stopwords;
 use Sigmie\Base\Analysis\TokenFilter\Synonyms;
@@ -106,6 +107,15 @@ trait Filters
         $name = $name ?? $this->createFilterName('uppercase');
 
         $this->addFilter(new Uppercase($name));
+
+        return $this;
+    }
+
+    public function lowercase(null|string $name = null, ): static
+    {
+        $name = $name ?? $this->createFilterName('lowercase');
+
+        $this->addFilter(new Lowercase($name));
 
         return $this;
     }

@@ -29,6 +29,8 @@ class BuilderTest extends TestCase
 {
     use Index;
 
+
+
     /**
      * @test
      */
@@ -148,8 +150,7 @@ class BuilderTest extends TestCase
                     'language' => 'minimal_german',
                 ]
             );
-        });
-    }
+        }); }
 
     /**
      * @test
@@ -636,6 +637,72 @@ class BuilderTest extends TestCase
             [$name] = array_keys($index->data()['settings']['index']['analysis']['filter']);
 
             $this->assertMatchesRegularExpression('/synonyms_[a-z]{3}$/', $name);
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function lowercase()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->upercase('custom_lowercase')
+            ->withoutMappings()
+            ->create();
+
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertFilterExists('custom_lowercase');
+            $index->assertAnalyzerHasFilter('default', 'custom_lowercase');
+            $index->assertFilterEquals(
+                'custom_lowercase',
+                [
+                    'type' => 'lowercase',
+                ]
+            );
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function uppercase()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->upercase('custom_uppercase')
+            ->withoutMappings()
+            ->create();
+
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertFilterExists('custom_uppercase');
+            $index->assertAnalyzerHasFilter('default', 'custom_uppercase');
+            $index->assertFilterEquals(
+                'custom_uppercase',
+                [
+                    'type' => 'uppercase',
+                ]
+            );
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function uppercase()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->upercase('custom_uppercase')
+            ->withoutMappings()
+            ->create();
+
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertFilterExists('custom_uppercase');
+            $index->assertAnalyzerHasFilter('default', 'custom_uppercase');
         });
     }
 
