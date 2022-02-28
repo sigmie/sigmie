@@ -44,12 +44,12 @@ class QueryTest extends TestCase
         $collection->merge($docs);
 
         $res = $this->sigmie->search($name)->range('count', ['>='=> 233])
-            ->get();
+            ->response();
 
         $this->assertEquals(1, $res->json()['hits']['total']['value']);
 
         $res = $this->sigmie->search($name)->range('count', ['<='=> 15])
-            ->get();
+            ->response();
 
         $this->assertEquals(2, $res->json()['hits']['total']['value']);
     }
@@ -80,7 +80,7 @@ class QueryTest extends TestCase
         })
             ->from(0)
             ->size(2)
-            ->get();
+            ->response();
 
         $this->assertInstanceOf(SearchResponse::class, $res);
     }

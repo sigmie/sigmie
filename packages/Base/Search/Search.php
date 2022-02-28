@@ -6,6 +6,7 @@ namespace Sigmie\Base\Search;
 
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\Aggs as AggsInterface;
+use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Base\Pagination\Paginator;
 use Sigmie\Base\Search\Queries\MatchAll;
@@ -73,16 +74,23 @@ class Search
         return $this;
     }
 
-    public function paginate(int $perPage, int $currentPage, )
+    public function paginate(int $perPage, int $currentPage,)
     {
         return new Paginator($perPage, $currentPage, $this);
     }
 
-    public function get(): SearchResponse
+    public function response()
     {
         $raw = $this->toRaw();
 
         return $this->searchAPICall($this->index, $raw);
+    }
+
+    public function get(): DocumentCollection
+    {
+        $raw = $this->toRaw();
+
+        return $this->searchAPICall($this->index, $raw)->docs();
     }
 
     public function getDSL(): array

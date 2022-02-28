@@ -8,12 +8,13 @@ use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\Requests\Search as SearchRequest;
+use Sigmie\Base\Http\Responses\Search as SearchResponse;
 
 trait Search
 {
     use API;
 
-    protected function searchAPICall(string $index, array $query): ElasticsearchResponse
+    protected function searchAPICall(string $index, array $query): SearchResponse
     {
         $uri = new Uri("/{$index}/_search");
 
