@@ -123,8 +123,6 @@ class Builder
 
     public function make(): Index
     {
-        $this->throwUnlessMappingsDefined();
-
         $defaultAnalyzer = $this->defaultAnalyzer();
         $defaultAnalyzer->addCharFilters($this->charFilters());
         $defaultAnalyzer->addFilters($this->filters());
@@ -146,12 +144,5 @@ class Builder
         $name = index_name($this->alias);
 
         return new Index($name, $settings, $mappings);
-    }
-
-    protected function throwUnlessMappingsDefined(): void
-    {
-        if ($this->dynamicMappings === false && isset($this->blueprint) === false) {
-            throw MissingMapping::forAlias($this->alias);
-        }
     }
 }

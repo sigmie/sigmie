@@ -686,13 +686,7 @@ class BuilderTest extends TestCase
                 ]
             );
         });
-    }
 
-    /**
-     * @test
-     */
-    public function uppercase()
-    {
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)

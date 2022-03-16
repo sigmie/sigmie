@@ -24,8 +24,8 @@ class SigmieTest extends TestCase
     }
 
     /**
-    * @test
-    */
+     * @test
+     */
     public function index_delete()
     {
         $indexName = uniqid();
