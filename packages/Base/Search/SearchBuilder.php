@@ -25,11 +25,16 @@ class SearchBuilder implements Queries
 {
     protected Search $search;
 
-    public function __construct(string $index, HttpConnection $httpConnection)
+    public function __construct(protected string $index, protected HttpConnection $httpConnection)
     {
         $this->search = new Search();
 
         $this->search->index($index)->setHttpConnection($httpConnection);
+    }
+
+    public function template(string $name): Template
+    {
+        return new Template($this->index, $name, $this->httpConnection);
     }
 
     public function term(string $field, string|bool $value): Search

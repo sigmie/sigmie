@@ -87,6 +87,15 @@ namespace Sigmie\Helpers {
         return new Collection($values);
     }
 
+    function mustache_var(string $variable, string $default = ''): string
+    {
+        if ($default !== '') {
+            return "{{ {$variable} }}{{ ^{$variable} }}{$default}{{ /{$variable} }}";
+        }
+
+        return "{{ {$variable} }}";
+    }
+
     function ensure_doc_collection(array|CollectionInterface|DocumentCollectionInterface $values): DocumentCollectionInterface
     {
         if ($values instanceof DocumentCollectionInterface) {

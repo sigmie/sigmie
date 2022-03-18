@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Search;
 
 use Sigmie\Base\APIs\Search as APIsSearch;
+use Sigmie\Base\APIs\Script as APIsScript;
 use Sigmie\Base\Contracts\Aggs as AggsInterface;
 use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
@@ -14,13 +15,13 @@ use Sigmie\Base\Search\Queries\Query;
 
 class Search
 {
-    use APIsSearch;
+    use APIsSearch, APIsScript;
 
     protected string $index;
 
-    protected int $from = 0;
+    protected int|string $from = 0;
 
-    protected int $size = 500;
+    protected int|string $size = 500;
 
     protected array $fields = ['*'];
 
@@ -46,14 +47,14 @@ class Search
         return $this;
     }
 
-    public function from(int $from): self
+    public function from(string|int $from): self
     {
         $this->from = $from;
 
         return $this;
     }
 
-    public function size(int $size): self
+    public function size(int|string $size): self
     {
         $this->size = $size;
 
@@ -103,6 +104,20 @@ class Search
         $this->query = $query;
 
         return $this;
+    }
+
+    public function save(string $name): bool
+    {
+        $script = [
+            'script' => [
+                'lang' => 'mustache',
+                'source' => $this->toRaw()
+            ]
+        ];
+
+        $res = $this->scriptAPICall('PUT', $name, $script);
+
+        return $res->json('acknowledged');
     }
 
     public function toRaw(): array
