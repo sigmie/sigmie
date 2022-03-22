@@ -15,6 +15,7 @@ use Sigmie\Base\Http\Connection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Index\Builder;
+use Sigmie\Base\Search\IndexQueryBuilder;
 use Sigmie\Base\Search\SearchBuilder;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\JSONClient;
@@ -48,6 +49,13 @@ class Sigmie
         $index->setHttpConnection($this->httpConnection);
 
         return $index;
+    }
+
+    public function query(string $index, string $query): IndexQueryBuilder
+    {
+        $builder = new IndexQueryBuilder($this->search($index));
+
+        return $builder->query($query);
     }
 
     public function search(string $index): SearchBuilder

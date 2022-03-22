@@ -18,6 +18,7 @@ class IDs extends Query
         return [
             'ids' => [
                 'values' => $this->ids,
+                'boost'=> $this->boost
             ],
         ];
     }

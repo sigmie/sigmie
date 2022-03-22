@@ -24,23 +24,29 @@ class BooleanQueryBuilder implements Queries
 {
     protected array $clauses = [];
 
-    public function matchAll(): self
+    public function matchAll(float|int $boost = 1): self
     {
-        $this->clauses[] = new MatchAll();
+        $clause =  new MatchAll();
+
+        $this->clauses[] = $clause->boost($boost);
 
         return $this;
     }
 
-    public function matchNone(): self
+    public function matchNone(float $boost = 1): self
     {
-        $this->clauses[] = new MatchNone();
+        $clause = new MatchNone();
+
+        $this->clauses[] = $clause->boost($boost);
 
         return $this;
     }
 
-    public function match(string $field, string $query): self
+    public function match(string $field, string $query, float $boost = 1): self
     {
-        $this->clauses[] = new Match_($field, $query);
+        $clause = new Match_($field, $query);
+
+        $this->clauses[] = $clause->boost($boost);
 
         return $this;
     }
@@ -50,76 +56,96 @@ class BooleanQueryBuilder implements Queries
         return $this->search->query($query);
     }
 
-    public function multiMatch(string $query, array $fields = []): self
+    public function multiMatch(string $query, array $fields = [], float $boost = 1): self
     {
-        $this->clauses[] = new MultiMatch($query, $fields);
+        $clause = new MultiMatch($query, $fields);
+
+        $this->clauses[] = $clause->boost($boost);
 
         return $this;
     }
 
-    public function exists(string $field): self
+    public function exists(string $field, float $boost = 1): self
     {
-        $this->clauses[] = new Exists($field);
+        $clause = new Exists($field);
+
+        $this->clauses[] = $clause->boost($boost);
 
         return $this;
     }
 
-    public function ids(array $ids): self
+    public function ids(array $ids, float $boost = 1): self
     {
-        $this->clauses[] = new IDs($ids);
+        $clause = new IDs($ids);
+
+        $this->clauses[] = $clause->boost($boost);
 
         return $this;
     }
 
-    public function fuzzy(string $field, string $value): self
+    public function fuzzy(string $field, string $value, float $boost = 1): self
     {
-        $this->clauses[] = new Fuzzy($field, $value);
+        $clause = new Fuzzy($field, $value);
+
+        $this->clauses[] = $clause->boost($boost);
 
         return $this;
     }
 
-    public function term(string $field, string|bool $value): self
+    public function term(string $field, string|bool $value, float $boost = 1): self
     {
-        $this->clauses[] = new Term($field, $value);
+        $clause =  new Term($field, $value);
+
+        $this->clauses[] = $clause->boost($boost);
 
         return $this;
     }
 
-    public function terms(string $field, array $values): self
+    public function terms(string $field, array $values, float $boost = 1): self
     {
-        $this->clauses[] = new Terms($field, $values);
+        $clause = new Terms($field, $values);
+
+        $this->clauses[] = $clause->boost($boost);
 
         return $this;
     }
 
-    public function regex(string $field, string $regex): self
+    public function regex(string $field, string $regex, float $boost = 1): self
     {
-        $this->clauses[] = new Regex($field, $regex);
+        $clause = new Regex($field, $regex);
+
+        $this->clauses[] = $clause->boost($boost);
 
         return $this;
     }
 
-    public function wildcard(string $field, string $value): self
+    public function wildcard(string $field, string $value, float $boost = 1): self
     {
-        $this->clauses[] = new Wildcard($field, $value);
+        $clause = new Wildcard($field, $value);
+
+        $this->clauses[] = $clause->boost($boost);
 
         return $this;
     }
 
     public function range(
         string $field,
-        array $values = []
+        array $values = [],
+        float $boost = 1
     ): self {
-        $this->clauses[] = new Range($field, $values);
+
+        $clause =  new Range($field, $values);
+
+        $this->clauses[] = $clause->boost($boost);
 
         return $this;
     }
 
-    public function bool(callable $callable): self
+    public function bool(callable $callable, float $boost = 1): self
     {
         $query = new Boolean();
 
-        $this->clauses[] = $query;
+        $this->clauses[] = $query->boost($boost);
 
         $callable($query);
 
@@ -133,6 +159,7 @@ class BooleanQueryBuilder implements Queries
         foreach ($this->clauses as $claus) {
             $res[] = $claus->toRaw();
         }
+
         return $res;
     }
 }

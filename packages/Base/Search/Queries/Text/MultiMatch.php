@@ -18,10 +18,10 @@ class MultiMatch extends Query
         $res = [
             'multi_match' => [
                 'query' => $this->query,
+                'boost' => $this->boost,
             ],
         ];
 
-        ray($this->fields)->red();
         if (count($this->fields) > 0) {
             $res['multi_match']['fields'] = $this->fields;
         }

@@ -20,6 +20,7 @@ class Term extends Query
             'term' => [
                 $this->field => [
                     'value' => $this->value,
+                    'boost' => $this->boost
                 ],
             ],
         ];

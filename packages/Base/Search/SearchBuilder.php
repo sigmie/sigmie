@@ -42,25 +42,29 @@ class SearchBuilder implements Queries
         return $this->search->query(new Term($field, $value));
     }
 
-    public function bool(callable $callable): Search
+    public function bool(callable $callable, float $boost = 1): Search
     {
         $query = new Boolean();
 
-        $callable($query);
+        $callable($query->boost($boost));
 
         return $this->search->query($query);
     }
 
     public function range(
         string $field,
-        array $values = []
+        array $values = [],
+        float $boost = 1
     ): Search {
-        return $this->search->query(new Range($field, $values));
+        $clause = new Range($field, $values);
+
+        return $this->search->query($clause->boost($boost));
     }
 
-    public function matchAll(): Search
+    public function matchAll(float $boost = 1): Search
     {
-        return $this->search->query(new MatchAll());
+        $clause = new MatchAll();
+        return $this->search->query($clause->boost($boost));
     }
 
     public function query(Query $query): Search
@@ -68,48 +72,66 @@ class SearchBuilder implements Queries
         return $this->search->query($query);
     }
 
-    public function matchNone(): Search
+    public function matchNone(float $boost = 1): Search
     {
-        return $this->search->query(new MatchNone());
+        $clause = new MatchNone();
+
+        return $this->search->query($clause->boost($boost));
     }
 
-    public function match(string $field, string $query): Search
+    public function match(string $field, string $query, float $boost = 1): Search
     {
-        return $this->search->query(new Match_($field, $query));
+        $cluase = new Match_($field, $query);
+
+        return $this->search->query($cluase->boost($boost));
     }
 
-    public function multiMatch(string $query, array $fields = []): Search
+    public function multiMatch(string $query, array $fields = [], float $boost = 1): Search
     {
-        return $this->search->query(new MultiMatch($query, $fields));
+        $clause = new MultiMatch($query, $fields);
+
+        return $this->search->query($clause->boost($boost));
     }
 
-    public function exists(string $field): Search
+    public function exists(string $field, float $boost = 1): Search
     {
-        return $this->search->query(new Exists($field));
+        $clause = new Exists($field);
+
+        return $this->search->query($clause->boost($boost));
     }
 
-    public function ids(array $ids): Search
+    public function ids(array $ids, float $boost = 1): Search
     {
-        return $this->search->query(new IDs($ids));
+        $clause = new IDs($ids);
+
+        return $this->search->query($clause->boost($boost));
     }
 
-    public function fuzzy(string $field, string $value): Search
+    public function fuzzy(string $field, string $value, float $boost = 1): Search
     {
-        return $this->search->query(new Fuzzy($field, $value));
+        $clause = new Fuzzy($field, $value);
+
+        return $this->search->query($clause->boost($boost));
     }
 
-    public function terms(string $field, array $values): Search
+    public function terms(string $field, array $values, float $boost = 1): Search
     {
-        return $this->search->query(new Terms($field, $values));
+        $clause = new Terms($field, $values);
+
+        return $this->search->query($clause->boost($boost));
     }
 
-    public function regex(string $field, string $regex): Search
+    public function regex(string $field, string $regex, float $boost = 1): Search
     {
-        return $this->search->query(new Regex($field, $regex));
+        $clause = new Regex($field, $regex);
+
+        return $this->search->query($clause->boost($boost));
     }
 
-    public function wildcard(string $field, string $value): Search
+    public function wildcard(string $field, string $value, float $boost = 1): Search
     {
-        return $this->search->query(new Wildcard($field, $value));
+        $clause = new Wildcard($field, $value);
+
+        return $this->search->query($clause->boost($boost));
     }
 }

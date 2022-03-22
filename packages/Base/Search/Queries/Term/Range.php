@@ -25,6 +25,7 @@ class Range extends Query
         $res = [
             'range' => [
                 $this->field => [],
+                'boost'=> $this->boost
             ],
         ];
 

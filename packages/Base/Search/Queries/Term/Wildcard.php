@@ -20,6 +20,7 @@ class Wildcard extends Query
             'wildcard' => [
                 $this->field => [
                     'value' => $this->value,
+                    'boost' => $this->boost
                 ],
             ],
         ];

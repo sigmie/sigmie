@@ -65,6 +65,8 @@ class Boolean extends Query
             $res['filter'] = $this->filter->toRaw();
         }
 
+        $res['boost'] = $this->boost;
+
         return ['bool' => $res];
     }
 }

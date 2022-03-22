@@ -10,6 +10,7 @@ class MatchNone extends Query
     {
         return [
             'match_none' => (object) [],
+            'boost' => $this->boost,
         ];
     }
 }

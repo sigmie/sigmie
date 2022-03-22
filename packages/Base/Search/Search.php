@@ -68,8 +68,14 @@ class Search
         return $this;
     }
 
-    public function sort(string $field, string $direction): self
+    public function sort(string $field, string $direction = null): self
     {
+        if ($field === '_score') {
+            $this->sort[] = $field;
+
+            return $this;
+        }
+
         $this->sort[] = [$field => $direction];
 
         return $this;

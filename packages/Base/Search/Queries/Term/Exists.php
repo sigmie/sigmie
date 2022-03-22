@@ -18,6 +18,7 @@ class Exists extends Query
         return [
             'exists' => [
                 'field' => $this->field,
+                'boost'=> $this->boost
             ],
         ];
     }

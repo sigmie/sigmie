@@ -13,12 +13,14 @@ class Match_ extends Query
         protected string $query,
     ) {
     }
+
     public function toRaw(): array
     {
         return [
             'match' => [
                 $this->field => [
                     'query' => $this->query,
+                    'boost'=> $this->boost,
                 ],
             ],
         ];
