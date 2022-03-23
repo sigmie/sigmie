@@ -11,18 +11,29 @@ class Match_ extends Query
     public function __construct(
         protected string $field,
         protected string $query,
+        protected string|null $fuzziness = null,
     ) {
     }
 
     public function toRaw(): array
     {
-        return [
+        $raw = [
             'match' => [
                 $this->field => [
                     'query' => $this->query,
-                    'boost'=> $this->boost,
+                    'boost' => $this->boost,
                 ],
             ],
         ];
+
+        if (is_null($this->fuzziness)) {
+            return $raw;
+        }
+
+        $raw['match'][$this->field]['fuzziness'] = $this->fuzziness;
+        $raw['match'][$this->field]['fuzzy_transpositions'] = true;
+        $raw['match'][$this->field]['prefix_length'] = 0;
+
+        return $raw;
     }
 }

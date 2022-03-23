@@ -8,6 +8,7 @@ use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Contracts\HttpConnection;
 use Sigmie\Base\Contracts\Queries;
 use Sigmie\Base\Contracts\QueryClause as Query;
+use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Search\Queries\Compound\Boolean;
 use Sigmie\Base\Search\Queries\MatchAll;
 use Sigmie\Base\Search\Queries\MatchNone;
@@ -22,19 +23,31 @@ use Sigmie\Base\Search\Queries\Term\Wildcard;
 use Sigmie\Base\Search\Queries\Text\Match_;
 use Sigmie\Base\Search\Queries\Text\MultiMatch;
 
+use function Sigmie\Helpers\auto_fuzziness;
+
 class IndexQueryBuilder
 {
     protected string $query;
 
+    protected string $suffix;
+
+    protected string $prefix;
+
     protected array $typoForbiddenWords;
 
     protected array $typoForbiddenAttributes;
+
+    protected bool $typoTolerance = false;
 
     protected array $sorts = ['_score'];
 
     protected array $filters = [];
 
     protected array $fields = [];
+
+    protected array $typoTolerantAttributes = [];
+
+    protected int $size = 20;
 
     protected int $minCharsForOneTypo;
 
@@ -43,6 +56,8 @@ class IndexQueryBuilder
     protected array $weight;
 
     protected array $highligh;
+
+    protected array $highlighAttributes;
 
     protected array $retrieve;
 
@@ -57,8 +72,19 @@ class IndexQueryBuilder
         return $this;
     }
 
-    public function typoForbiddenWords(array $words): self
+    public function typoTolerance(int $oneTypoChars = 3, int $twoTypoChars = 6)
     {
+        $this->typoTolerance = true;
+        $this->minCharsForOneTypo = $oneTypoChars;
+        $this->minCharsForTwoTypo = $twoTypoChars;
+
+        return $this;
+    }
+
+    public function size(int $size = 20): self
+    {
+        $this->size = $size;
+
         return $this;
     }
 
@@ -68,16 +94,6 @@ class IndexQueryBuilder
     }
 
     public function minCharsForTwoTypo(int $chars): self
-    {
-        return $this;
-    }
-
-    public function typoForbiddenAttributes(array $attributes): self
-    {
-        return $this;
-    }
-
-    public function allowTypoOnNumeric(bool $bool): self
     {
         return $this;
     }
@@ -101,14 +117,25 @@ class IndexQueryBuilder
         return $this;
     }
 
-    public function highlighting(string $prefix, string $suffix): self
+    public function highlighting(array $attributes, string $prefix, string $suffix): self
     {
+        $this->highlighAttributes = $attributes;
+        $this->prefix = $prefix;
+        $this->suffix = $suffix;
+
         return $this;
     }
 
     public function filter(array $filters): self
     {
         $this->filters = $filters;
+
+        return $this;
+    }
+
+    public function typoTolerantAttributes(array $attributes)
+    {
+        $this->typoTolerantAttributes = $attributes;
 
         return $this;
     }
@@ -120,9 +147,16 @@ class IndexQueryBuilder
         return $this;
     }
 
-    public function get(): DocumentCollection
+    public function mappings(): self
+    {
+        return $this;
+    }
+
+    public function getSearch(): Search
     {
         $query = $this->searchBuilder->bool(function (Boolean $boolean) {
+
+            //TODO handle query depending on mappings
 
             // foreach ($this->filters as [$field, $operator, $value]) {
             //     if ($operator === '=') {
@@ -136,8 +170,10 @@ class IndexQueryBuilder
 
             foreach ($this->fields as $field) {
                 $boost  = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
+                $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                $query = new Match_($field, $this->query, $fuzziness);
 
-                $boolean->should()->match($field, $this->query, $boost);
+                $boolean->should()->query($query->boost($boost));
             }
         })->fields($this->retrieve);
 
@@ -150,8 +186,22 @@ class IndexQueryBuilder
             $query->sort($field, $direction);
         }
 
-        ray($query->toRaw());
-        // dd($query->toRaw());
-        return $query->get();
+        foreach ($this->highlighAttributes as $field) {
+            $query->highlight($field, $this->prefix, $this->suffix);
+        }
+
+        $query->size($this->size);
+
+        return $query;
+    }
+
+    public function save(string $name): bool
+    {
+        return $this->getSearch()->save($name);
+    }
+
+    public function get(): DocumentCollection
+    {
+        return $this->getSearch()->get();
     }
 }

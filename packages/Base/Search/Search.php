@@ -27,6 +27,8 @@ class Search
 
     protected array $sort = [];
 
+    protected array $highlight = [];
+
     public function __construct(
         protected Query $query = new MatchAll(),
         protected AggsInterface $aggs = new Aggs()
@@ -79,6 +81,19 @@ class Search
         $this->sort[] = [$field => $direction];
 
         return $this;
+    }
+
+    public function highlight(string $field, string $preTag, string $postTag)
+    {
+        $this->highlight[$field] = [
+            "type" => 'plain',
+            'force_source' => true,
+            "pre_tags" => [$preTag],
+            "post_tags" => [$postTag],
+            "fragment_size" => 150,
+            "number_of_fragments" => 3,
+            "no_match_size" => 150
+        ];
     }
 
     public function paginate(int $perPage, int $currentPage,)
@@ -134,6 +149,14 @@ class Search
             'from' => $this->from,
             'size' => $this->size,
             'sort' => [...$this->sort],
+            'highlight' => [
+                // 'require_field_match' => false,
+                'force_source' => true,
+                'no_match_size' => 100,
+                'fields' => [
+                    ...$this->highlight
+                ]
+            ]
         ];
 
         if (count($this->aggs->toRaw()) > 0) {

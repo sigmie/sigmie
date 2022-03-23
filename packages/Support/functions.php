@@ -96,6 +96,11 @@ namespace Sigmie\Helpers {
         return "{{ {$variable} }}";
     }
 
+    function auto_fuzziness(int $oneTypoChars = 3, int $twoTypoChars = 6): string
+    {
+        return "AUTO:{$oneTypoChars},{$twoTypoChars}";
+    }
+
     function ensure_doc_collection(array|CollectionInterface|DocumentCollectionInterface $values): DocumentCollectionInterface
     {
         if ($values instanceof DocumentCollectionInterface) {

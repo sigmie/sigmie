@@ -13,6 +13,8 @@ class Document implements FromRaw
 
     public array $_source;
 
+    public array $highlight;
+
     public readonly string $_index;
 
     public readonly string $_id;
@@ -48,11 +50,17 @@ class Document implements FromRaw
         $this->_index = $_index;
     }
 
+    public function highlight(array $highlight): void
+    {
+        $this->highlight = $highlight;
+    }
+
     public function toArray(): array
     {
         return [
             '_id' => $this->_id ?? null,
             '_source' => $this->_source,
+            'highlight' => $this->highlight
         ];
     }
 
@@ -60,6 +68,7 @@ class Document implements FromRaw
     {
         $instance = new static($raw['_source'], $raw['_id']);
         $instance->index($raw['_index']);
+        $instance->highlight($raw['highlight']);
 
         return $instance;
     }
