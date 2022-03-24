@@ -68,7 +68,7 @@ class Document implements FromRaw
     {
         $instance = new static($raw['_source'], $raw['_id']);
         $instance->index($raw['_index']);
-        $instance->highlight($raw['highlight']);
+        $instance->highlight($raw['highlight'] ?? []);
 
         return $instance;
     }
