@@ -6,7 +6,9 @@ namespace Sigmie\Testing;
 
 use App\Helpers\ProxyCert;
 use Sigmie\Base\APIs\Cat;
+use Sigmie\Base\APIs\Cluster;
 use Sigmie\Base\APIs\Index;
+use Sigmie\Base\APIs\Script;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\Connection;
 use Sigmie\Http\JSONClient;
@@ -16,6 +18,8 @@ trait ClearIndices
     use Cat;
     use Index;
     use API;
+    use Script;
+    use Cluster;
 
     protected function clearIndices(string $url): void
     {
@@ -23,7 +27,7 @@ trait ClearIndices
 
         $this->setHttpConnection(new Connection($client));
 
-        $response = $this->catAPICall('/indices', 'GET', );
+        $response = $this->catAPICall('/indices', 'GET',);
 
         $names = array_map(fn ($data) => $data['index'], $response->json());
 
@@ -31,6 +35,14 @@ trait ClearIndices
 
         foreach ($nameChunks as $chunk) {
             $this->indexAPICall(implode(',', $chunk), 'DELETE');
+        }
+
+        $response = $this->clusterAPICall('/state/metadata?pretty&filter_path=metadata.stored_scripts');
+
+        $names = array_keys($response->json('metadata.stored_scripts'));
+
+        foreach ($names as $name) {
+            $this->scriptAPICall('DELETE', $name);
         }
     }
 }

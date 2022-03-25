@@ -90,10 +90,10 @@ namespace Sigmie\Helpers {
     function mustache_var(string $variable, string $default = ''): string
     {
         if ($default !== '') {
-            return "{{ {$variable} }}{{ ^{$variable} }}{$default}{{ /{$variable} }}";
+            return "{{{$variable}}}{{^{$variable}}}{$default}{{/{$variable}}}";
         }
 
-        return "{{ {$variable} }}";
+        return "{{{$variable}}}";
     }
 
     function auto_fuzziness(int $oneTypoChars = 3, int $twoTypoChars = 6): string

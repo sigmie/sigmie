@@ -24,6 +24,7 @@ use Sigmie\Base\Search\Queries\Text\Match_;
 use Sigmie\Base\Search\Queries\Text\MultiMatch;
 
 use function Sigmie\Helpers\auto_fuzziness;
+use function Sigmie\Helpers\mustache_var;
 
 class IndexQueryBuilder
 {
@@ -190,7 +191,7 @@ class IndexQueryBuilder
             $query->highlight($field, $this->prefix, $this->suffix);
         }
 
-        $query->size($this->size);
+        $query->size(mustache_var('size', '10'));
 
         return $query;
     }

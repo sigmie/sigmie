@@ -15,7 +15,7 @@ trait Script
 {
     use API;
 
-    protected function scriptAPICall(string $method, string $name, array $body): ElasticsearchResponse
+    protected function scriptAPICall(string $method, string $name, ?array $body = null): ElasticsearchResponse
     {
         $uri = new Uri("/_scripts/{$name}");
 
