@@ -22,6 +22,7 @@ trait Analyze
             'text' => $text,
         ]);
 
+
         return $this->httpCall($request);
     }
 }
