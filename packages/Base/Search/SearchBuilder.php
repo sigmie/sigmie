@@ -64,6 +64,7 @@ class SearchBuilder implements Queries
     public function matchAll(float $boost = 1): Search
     {
         $clause = new MatchAll();
+
         return $this->search->query($clause->boost($boost));
     }
 
