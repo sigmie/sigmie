@@ -141,11 +141,17 @@ class Search
         return $res->json('acknowledged');
     }
 
+    public function getQuery(): array
+    {
+        return $this->query->toRaw();
+    }
+
+
     public function toRaw(): array
     {
         $result = [
             '_source' => $this->fields,
-            'query' => $this->query->toRaw(),
+            'query' => $this->getQuery(),
             'from' => $this->from,
             'size' => $this->size,
             'sort' => [...$this->sort],

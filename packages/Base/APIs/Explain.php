@@ -17,7 +17,7 @@ trait Explain
     {
         $uri = new Uri("/{$index}/_explain/{$_id}");
 
-        $esRequest = new ElasticsearchRequest('POST', $uri, $query);
+        $esRequest = new ElasticsearchRequest('POST', $uri, ['query' => $query]);
 
         return $this->httpCall($esRequest);
     }
