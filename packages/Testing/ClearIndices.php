@@ -39,7 +39,9 @@ trait ClearIndices
 
         $response = $this->clusterAPICall('/state/metadata?pretty&filter_path=metadata.stored_scripts');
 
-        $names = array_keys($response->json('metadata.stored_scripts'));
+        $scripts = $response->json('metadata.stored_scripts');
+
+        $names = (is_null($scripts)) ? [] : array_keys($scripts);
 
         foreach ($names as $name) {
             $this->scriptAPICall('DELETE', $name);
