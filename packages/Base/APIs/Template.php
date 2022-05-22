@@ -16,6 +16,7 @@ trait Template
 
     protected function templateAPICall(string $index, string $name, array $params): SearchResponse
     {
+
         $uri = new Uri("/{$index}/_search/template");
 
         $params = [
