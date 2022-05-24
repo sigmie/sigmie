@@ -14,7 +14,9 @@ class BulkException extends Exception
     public function __construct(
         public CollectionInterface $failed
     ) {
-        parent::__construct('Bulk request concluded with errors');
+        $messages = $failed->map(fn (ElasticsearchException $e) => $e->getMessage())->toArray();
+
+        parent::__construct(implode('', $messages));
     }
 
     public static function fromItems(array $items)

@@ -13,7 +13,9 @@ class Bulk extends ElasticsearchResponse
 {
     public function exception(ElasticsearchRequest $request): Exception
     {
-        return BulkException::fromItems($this->json('items'));
+        $items = $this->json()['items'] ?? [];
+
+        return BulkException::fromItems($items);
     }
 
     public function failed(): bool

@@ -15,7 +15,6 @@ class ElasticsearchException extends Exception
 
     public static function fromType(string $type, array $json)
     {
-        ray($json);
         return match ($type) {
             'index_not_found_exception' => new IndexNotFoundException($json),
             'illegal_argument_exception' => new IllegalArgumentException($json),
