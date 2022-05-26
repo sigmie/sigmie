@@ -10,7 +10,7 @@ use Sigmie\Base\Search\Queries\Query;
 class Range extends Query
 {
     /**
-     * values example: [['>=', '2'],['<=','200']].
+     * values example: ['>=' => '2','<=' => '200']
      * @param protectedstring $field
      * @param protectedarray  $values
      */
@@ -25,7 +25,6 @@ class Range extends Query
         $res = [
             'range' => [
                 $this->field => [],
-                'boost'=> $this->boost
             ],
         ];
 

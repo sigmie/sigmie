@@ -7,6 +7,7 @@ namespace Sigmie;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Actions\Index as IndexActions;
+use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Contracts\ElasticsearchRequest as ElasticsearchRequestInterface;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Contracts\HttpConnection as Connection;
@@ -23,7 +24,7 @@ use Sigmie\Support\Contracts\Collection;
 
 class Sigmie
 {
-    use IndexActions;
+    use IndexActions, Index;
 
     public function __construct(Connection $httpConnection)
     {
@@ -49,6 +50,11 @@ class Sigmie
         $index->setHttpConnection($this->httpConnection);
 
         return $index;
+    }
+
+    public function refresh(string $name)
+    {
+        return $this->indexAPICall("{$name}/_refresh", 'GET');
     }
 
     public function query(string $index, string $query): IndexQueryBuilder

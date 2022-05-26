@@ -87,7 +87,7 @@ class SearchBuilder implements Queries
         return $this->search->query($cluase->boost($boost));
     }
 
-    public function multiMatch(string $query, array $fields = [], float $boost = 1): Search
+    public function multiMatch(string $query, array $fields, float $boost = 1): Search
     {
         $clause = new MultiMatch($query, $fields);
 
