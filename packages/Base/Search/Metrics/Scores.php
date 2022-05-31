@@ -1,0 +1,43 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Sigmie\Base\Search\Metrics;
+
+use Sigmie\Base\Contracts\ToRaw;
+
+class Scores implements ToRaw
+{
+    protected array $scores = [];
+
+    public function top(int $number, string $field, string $as): TopScore
+    {
+        $score = new TopScore($as, $field, $number);
+
+        $this->scores[$as] = $score;
+
+        return $score;
+    }
+
+    public function extract(array $aggregations)
+    {
+        $result = [];
+
+        foreach ($this->scores as $trend) {
+            $result = [...$result, ...$trend->extract($aggregations)];
+        }
+
+        return $result;
+    }
+
+    public function toRaw(): array
+    {
+        $res = [];
+
+        foreach ($this->scores as $trend) {
+            $res = [...$res, ...$trend->toRaw()];
+        }
+
+        return $res;
+    }
+}

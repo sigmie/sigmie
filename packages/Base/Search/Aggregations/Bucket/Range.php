@@ -17,7 +17,7 @@ class Range extends Bucket
     {
         return [
             'range' => [
-                'field' => $this->field,
+                'field' => $this->metricField,
                 'ranges'=> $this->ranges,
             ],
         ];

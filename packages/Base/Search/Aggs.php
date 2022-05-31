@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Search;
 
 use Sigmie\Base\Contracts\Aggs as AggsInterface;
+use Sigmie\Base\Contracts\ToRaw;
 use Sigmie\Base\Search\Aggregations\Bucket\DateHistogram;
 use Sigmie\Base\Search\Aggregations\Bucket\Missing;
 use Sigmie\Base\Search\Aggregations\Bucket\Range;
@@ -24,6 +25,14 @@ use Sigmie\Base\Search\Aggregations\Metrics\ValueCount;
 class Aggs implements AggsInterface
 {
     protected array $aggs = [];
+
+    public function add($aggs)
+    {
+        $this->aggs[] = $aggs;
+
+        return $this;
+    }
+
 
     public function dateHistogram(string $name, string $field, CalendarInterval $interval): DateHistogram
     {

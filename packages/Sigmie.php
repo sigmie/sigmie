@@ -17,6 +17,7 @@ use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Index\Builder;
 use Sigmie\Base\Search\IndexQueryBuilder;
+use Sigmie\Base\Search\MetricQueryBuilder;
 use Sigmie\Base\Search\SearchBuilder;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\JSONClient;
@@ -67,6 +68,11 @@ class Sigmie
     public function search(string $index): SearchBuilder
     {
         return new SearchBuilder($index, $this->httpConnection);
+    }
+
+    public function metrics(string $index, string $field)
+    {
+        return new MetricQueryBuilder($this->search($index), $field);
     }
 
     public function indices(): Collection

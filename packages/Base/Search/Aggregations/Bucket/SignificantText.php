@@ -16,7 +16,7 @@ class SignificantText extends Bucket
     {
         return [
             'significant_text' => [
-                'field' => $this->field,
+                'field' => $this->metricField,
             ],
         ];
     }
