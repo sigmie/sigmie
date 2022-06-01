@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Search\Metrics;
 
 use Illuminate\Support\Collection;
+use Sigmie\Base\Search\Aggregations\Bucket\RareTerms;
 use Sigmie\Base\Search\Aggregations\Bucket\Terms;
 use Sigmie\Base\Search\Aggregations\Metrics\Metric;
 use Sigmie\Base\Search\Aggregations\Pipeline\AvgBucket;
@@ -15,7 +16,7 @@ use Sigmie\Base\Search\Aggregations\Pipeline\SortBucket;
 use Sigmie\Base\Search\Aggregations\Pipeline\SumBucket;
 use Sigmie\Base\Search\Aggs;
 
-class TopScore extends Terms
+class MinorScore extends RareTerms
 {
     protected string $byField;
 
@@ -24,12 +25,12 @@ class TopScore extends Terms
         protected string $termsField,
         protected int $size
     ) {
-        parent::__construct("{$scoreName}_terms", $termsField);
+        parent::__construct("{$scoreName}_rare_terms", $termsField);
     }
 
     public function extract(array $aggregations): array
     {
-        $collection = new Collection($aggregations["{$this->scoreName}_terms"]['buckets'] ?? []);
+        $collection = new Collection($aggregations["{$this->scoreName}_rare_terms"]['buckets'] ?? []);
 
         $res = $collection->map(fn (array $bucket) =>
         [

@@ -9,7 +9,7 @@ use Sigmie\Base\Search\Aggregations\Pipeline\MaxBucket;
 use Sigmie\Base\Search\Aggregations\Pipeline\Pipeline;
 use Sigmie\Base\Search\Aggs;
 
-class MaxValue extends Value
+class MaxValue extends TrendValue
 {
     protected function bucketAggregation(string $trendPath): Pipeline
     {

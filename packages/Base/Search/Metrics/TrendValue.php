@@ -15,7 +15,7 @@ use Sigmie\Base\Search\Aggs;
 use Sigmie\Support\Collection;
 use Sigmie\Support\Contracts\Collection as ContractsCollection;
 
-abstract class Value
+abstract class TrendValue
 {
     protected string $alias;
 

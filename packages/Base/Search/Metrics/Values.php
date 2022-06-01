@@ -34,7 +34,7 @@ class Values implements ToRaw
         return $result;
     }
 
-    public function max(string $field, string $as): Value
+    public function max(string $field, string $as): TrendValue
     {
         $trend = new MaxValue($as, $field);
 
@@ -43,7 +43,7 @@ class Values implements ToRaw
         return $trend;
     }
 
-    public function min(string $field, string $as): Value
+    public function min(string $field, string $as): TrendValue
     {
         $trend = new MinValue($as, $field);
 
@@ -52,7 +52,16 @@ class Values implements ToRaw
         return $trend;
     }
 
-    public function sum(string $field, string $as): Value
+    public function percent(string $field, string $as): PercentileValue
+    {
+        $trend = new PercentileValue($as, $field);
+
+        $this->values[$as] = $trend;
+
+        return $trend;
+    }
+
+    public function sum(string $field, string $as): TrendValue
     {
         $trend = new SumValue($as, $field);
 
@@ -61,7 +70,7 @@ class Values implements ToRaw
         return $trend;
     }
 
-    public function avg(string $field, string $as): Value
+    public function avg(string $field, string $as): TrendValue
     {
         $trend = new AvgValue($as, $field);
 

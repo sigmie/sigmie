@@ -12,7 +12,7 @@ use Sigmie\Base\Search\Aggregations\Pipeline\Pipeline;
 use Sigmie\Base\Search\Aggregations\Pipeline\SumBucket;
 use Sigmie\Base\Search\Aggs;
 
-class SumValue extends Value
+class SumValue extends TrendValue
 {
     protected function bucketAggregation(string $trendPath): Pipeline
     {

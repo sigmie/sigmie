@@ -14,10 +14,12 @@ use Sigmie\Base\Search\Aggregations\Bucket\Terms;
 use Sigmie\Base\Search\Aggregations\Enums\CalendarInterval;
 use Sigmie\Base\Search\Aggregations\Metrics\Avg;
 use Sigmie\Base\Search\Aggregations\Metrics\Cardinality;
+use Sigmie\Base\Search\Aggregations\Metrics\Composite;
 use Sigmie\Base\Search\Aggregations\Metrics\Max;
 use Sigmie\Base\Search\Aggregations\Metrics\Min;
 use Sigmie\Base\Search\Aggregations\Metrics\PercentileRanks;
 use Sigmie\Base\Search\Aggregations\Metrics\Percentiles;
+use Sigmie\Base\Search\Aggregations\Metrics\Rate;
 use Sigmie\Base\Search\Aggregations\Metrics\Stats;
 use Sigmie\Base\Search\Aggregations\Metrics\Sum;
 use Sigmie\Base\Search\Aggregations\Metrics\ValueCount;
@@ -126,9 +128,27 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
+    public function rate(string $name, string $field): Rate
+    {
+        $aggregation = new Rate($name, $field);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
     public function percentileRanks(string $name, string $field, array $values): PercentileRanks
     {
         $aggregation = new PercentileRanks($name, $field, $values);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    public function composite(string $name, array $sources): Composite
+    {
+        $aggregation = new Composite($name, $sources);
 
         $this->aggs[] = $aggregation;
 

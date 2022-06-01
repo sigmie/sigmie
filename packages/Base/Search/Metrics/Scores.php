@@ -19,6 +19,15 @@ class Scores implements ToRaw
         return $score;
     }
 
+    public function minor(int $number, string $field, string $as): MinorScore
+    {
+        $score = new MinorScore($as, $field, $number);
+
+        $this->scores[$as] = $score;
+
+        return $score;
+    }
+
     public function extract(array $aggregations)
     {
         $result = [];

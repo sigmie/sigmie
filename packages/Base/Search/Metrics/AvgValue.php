@@ -11,7 +11,7 @@ use Sigmie\Base\Search\Aggregations\Pipeline\MinBucket;
 use Sigmie\Base\Search\Aggregations\Pipeline\Pipeline;
 use Sigmie\Base\Search\Aggs;
 
-class AvgValue extends Value
+class AvgValue extends TrendValue
 {
     protected function bucketAggregation(string $trendPath): Pipeline
     {
