@@ -12,10 +12,10 @@ use Sigmie\Base\Search\Aggregations\Metrics\Metric;
 use Sigmie\Base\Search\Aggregations\Metrics\Sum;
 use Sigmie\Base\Search\Aggs;
 
-class MinTrend extends Trend
+class AutoSumTrend extends AutoTrend
 {
     protected function aggregation(Aggs $aggs): Metric
     {
-        return $aggs->max($this->trendName, $this->metricField);
+        return $aggs->sum($this->trendName, $this->metricField);
     }
 }

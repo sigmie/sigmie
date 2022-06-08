@@ -12,7 +12,7 @@ use Sigmie\Base\Search\Aggregations\Metrics\Metric;
 use Sigmie\Base\Search\Aggregations\Metrics\Sum;
 use Sigmie\Base\Search\Aggs;
 
-class MinTrend extends Trend
+class AutoMinTrend extends AutoTrend
 {
     protected function aggregation(Aggs $aggs): Metric
     {

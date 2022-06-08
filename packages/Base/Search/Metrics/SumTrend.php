@@ -14,7 +14,7 @@ use Sigmie\Base\Search\Aggs;
 
 class SumTrend extends Trend
 {
-    function aggregation(Aggs $aggs): Metric
+    protected function aggregation(Aggs $aggs): Metric
     {
         return $aggs->sum($this->trendName, $this->metricField);
     }

@@ -26,6 +26,50 @@ class Trends implements ToRaw
         return $this->trends[$alias] ?? null;
     }
 
+    public function autoAvg(string $field, string $as, int $buckets): AutoTrend
+    {
+        $randomLetters = random_letters();
+
+        $trend = new AutoAvgTrend($as, $field, $this->field, "auto_avg_trend_{$randomLetters}", $buckets);
+
+        $this->trends[$as] = $trend;
+
+        return $trend;
+    }
+
+    public function autoSum(string $field, string $as, int $buckets): AutoTrend
+    {
+        $randomLetters = random_letters();
+
+        $trend = new AutoSumTrend($as, $field, $this->field, "auto_sum_trend_{$randomLetters}", $buckets);
+
+        $this->trends[$as] = $trend;
+
+        return $trend;
+    }
+
+    public function autoMin(string $field, string $as, int $buckets): AutoTrend
+    {
+        $randomLetters = random_letters();
+
+        $trend = new AutoMinTrend($as, $field, $this->field, "auto_min_trend_{$randomLetters}", $buckets);
+
+        $this->trends[$as] = $trend;
+
+        return $trend;
+    }
+
+    public function autoMax(string $field, string $as, int $buckets): AutoTrend
+    {
+        $randomLetters = random_letters();
+
+        $trend = new AutoMaxTrend($as, $field, $this->field, "auto_max_trend_{$randomLetters}", $buckets);
+
+        $this->trends[$as] = $trend;
+
+        return $trend;
+    }
+
     public function avg(string $field, string $as): Trend
     {
         $randomLetters = random_letters();

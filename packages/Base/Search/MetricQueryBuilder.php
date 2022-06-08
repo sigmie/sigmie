@@ -108,7 +108,6 @@ class MetricQueryBuilder
                 $aggs->add($this->scores);
             });
 
-
         $aggregations = $x->response()->json('aggregations');
 
         $result = [
