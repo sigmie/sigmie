@@ -13,6 +13,8 @@ use Sigmie\Base\Actions\Index;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Shared\LazyEach;
+
+use function Sigmie\Helpers\ensure_collection;
 use function Sigmie\Helpers\ensure_doc_collection;
 
 use Traversable;
@@ -47,7 +49,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollectionInter
         return $this;
     }
 
-    public function merge(array|DocumentCollectionInterface $docs, ): self
+    public function merge(array|DocumentCollectionInterface $docs,): self
     {
         $docs = ensure_doc_collection($docs);
 
@@ -78,8 +80,12 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollectionInter
         return !$this->isEmpty();
     }
 
-    public function remove(string $_id): bool
+    public function remove(array|string $_id): bool
     {
+        if (is_array($_id)) {
+            $this->deleteDocuments($this->name, $_id, $this->refresh);
+        }
+
         return $this->deleteDocument($this->name, $_id, $this->refresh);
     }
 
