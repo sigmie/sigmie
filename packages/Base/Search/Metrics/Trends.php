@@ -70,11 +70,33 @@ class Trends implements ToRaw
         return $trend;
     }
 
+    public function autoUnique(string $field, string $as, int $buckets): AutoTrend
+    {
+        $randomLetters = random_letters();
+
+        $trend = new AutoUniqueTrend($as, $field, $this->field, "auto_unique_trend_{$randomLetters}", $buckets);
+
+        $this->trends[$as] = $trend;
+
+        return $trend;
+    }
+
     public function avg(string $field, string $as): Trend
     {
         $randomLetters = random_letters();
 
         $trend = new AvgTrend($as, $field, $this->field, "avg_trend_{$randomLetters}");
+
+        $this->trends[$as] = $trend;
+
+        return $trend;
+    }
+
+    public function unique(string $field, string $as): Trend
+    {
+        $randomLetters = random_letters();
+
+        $trend = new UniqueTrend($as, $field, $this->field, "unique_trend_{$randomLetters}");
 
         $this->trends[$as] = $trend;
 
