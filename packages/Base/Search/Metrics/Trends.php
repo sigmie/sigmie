@@ -26,6 +26,17 @@ class Trends implements ToRaw
         return $this->trends[$alias] ?? null;
     }
 
+    public function autoValueCount(string $field, string $as, int $buckets): AutoTrend
+    {
+        $randomLetters = random_letters();
+
+        $trend = new AutoValueCountTrend($as, $field, $this->field, "auto_value_count_trend_{$randomLetters}", $buckets);
+
+        $this->trends[$as] = $trend;
+
+        return $trend;
+    }
+
     public function autoAvg(string $field, string $as, int $buckets): AutoTrend
     {
         $randomLetters = random_letters();
