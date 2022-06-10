@@ -22,6 +22,11 @@ class Collection implements Countable, DocumentCollectionInterface, FromRaw
         $this->collection = new SigmieCollection($documents);
     }
 
+    public function ids(): array
+    {
+        return $this->collection->map(fn (Document $document) => $document->_id)->toArray();
+    }
+
     public function all(): Iterator
     {
         return $this->collection->getIterator();
