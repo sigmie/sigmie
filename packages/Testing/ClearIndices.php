@@ -11,6 +11,7 @@ use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Script;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\Connection;
+use Sigmie\Http\Auth\BasicAuth;
 use Sigmie\Http\JSONClient;
 
 trait ClearIndices
@@ -23,7 +24,13 @@ trait ClearIndices
 
     protected function clearIndices(string $url): void
     {
-        $client = JSONClient::create($url, new ProxyCert());
+        $client = JSONClient::create(
+            "http://ivx63QiQf5JiJ47K5P.phonix:9200",
+            // new BasicAuth(
+            //     'sigmie',
+            //     'dhL9wtD0Cn4PFHKkR60J2JYQjO3rcICdwMf5XfUg'
+            // )
+        );
 
         $this->setHttpConnection(new Connection($client));
 
