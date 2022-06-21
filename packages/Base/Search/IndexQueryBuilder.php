@@ -127,8 +127,7 @@ class IndexQueryBuilder
         return $this;
     }
 
-    public function filter(array $filters): self
-    {
+    public function filter(array $filters): self {
         $this->filters = $filters;
 
         return $this;
