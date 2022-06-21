@@ -10,7 +10,7 @@ then
     exit 1
 fi
 
-RELEASE_BRANCH="0.x"
+RELEASE_BRANCH="master"
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 VERSION=$1
 
@@ -70,7 +70,7 @@ do
 
         git clone $REMOTE_URL .
         git checkout "$RELEASE_BRANCH";
-        git push "$RELEASE_BRANCH";
+        git push origin "$RELEASE_BRANCH";
 
         git tag $VERSION
         git push origin --tags

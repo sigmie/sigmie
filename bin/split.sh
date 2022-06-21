@@ -16,13 +16,16 @@ function remote()
     git remote add $1 $2 || true
 }
 
-git pull origin $CURRENT_BRANCH
+git pull origin master
 
 remote cli git@github.com:sigmie/cli.git
 remote http git@github.com:sigmie/http.git
 remote support git@github.com:sigmie/support.git
 remote testing git@github.com:sigmie/testing.git
 remote base git@github.com:sigmie/base.git
+remote english git@github.com:sigmie/english.git
+remote german git@github.com:sigmie/german.git
+remote greek git@github.com:sigmie/greek.git
 
 split 'packages/English' english
 split 'packages/German' german
