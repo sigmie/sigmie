@@ -51,8 +51,9 @@ fi
 git tag $VERSION
 git push origin --tags
 
+
 # Tag Components
-for REMOTE in auth cli contracts exceptions http mappings search support testing
+for REMOTE in english german greek base cli http support testing
 do
     echo ""
     echo ""
