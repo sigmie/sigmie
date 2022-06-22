@@ -8,6 +8,7 @@ use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\ElasticsearchRequest;
+use Sigmie\Base\Http\Requests\Delete as RequestsDelete;
 
 trait Delete
 {
@@ -19,7 +20,7 @@ trait Delete
 
         $uri = Uri::withQueryValue($uri, 'refresh', $refresh);
 
-        $esRequest = new ElasticsearchRequest('DELETE', $uri);
+        $esRequest = new RequestsDelete($uri);
 
         return $this->httpCall($esRequest);
     }

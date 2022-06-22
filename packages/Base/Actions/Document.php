@@ -26,7 +26,7 @@ trait Document
     use API;
     use DocAPI;
 
-    public function updateDocument(string $indexName, Doc $document, string $refresh): Doc
+    protected function updateDocument(string $indexName, Doc $document, string $refresh): Doc
     {
         $body = [
             ['update' => ['_id' => $document->_id]],
@@ -152,7 +152,7 @@ trait Document
             $refresh
         );
 
-        return $response->json('result') === 'deleted';
+        return $response->code() !== 404 && $response->json('result') === 'deleted';
     }
 
     protected function deleteDocuments(string $indexName, array $ids, string $refresh): bool

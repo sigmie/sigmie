@@ -13,7 +13,7 @@ class ElasticsearchException extends Exception
         parent::__construct(json_encode($json));
     }
 
-    public static function fromType(string $type, array $json)
+    public static function fromType(string|null $type, array $json)
     {
         return match ($type) {
             'index_not_found_exception' => new IndexNotFoundException($json),
