@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Base\Exceptions;
 
 use Exception;
-use function Sigmie\Helpers\collection;
-
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
+
+use function Sigmie\Helpers\collection;
 
 class BulkException extends Exception
 {

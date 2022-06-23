@@ -5,13 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\Search\Metrics;
 
 use Sigmie\Base\Contracts\ToRaw;
-use Sigmie\Base\Search\Aggregations\Bucket\DateHistogram;
-use Sigmie\Base\Search\Aggregations\Enums\CalendarInterval;
-use Sigmie\Base\Search\Aggregations\Metrics\Sum;
-use Sigmie\Base\Search\Aggs;
-use Sigmie\Base\Search\Metrics\SumTrend;
-
-use function Sigmie\Helpers\random_letters;
 
 class Values implements ToRaw
 {

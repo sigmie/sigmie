@@ -5,23 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Base\Search;
 
 use Sigmie\Base\Contracts\DocumentCollection;
-use Sigmie\Base\Contracts\HttpConnection;
-use Sigmie\Base\Contracts\Queries;
 use Sigmie\Base\Contracts\QueryClause as Query;
-use Sigmie\Base\Documents\Document;
 use Sigmie\Base\Search\Queries\Compound\Boolean;
-use Sigmie\Base\Search\Queries\MatchAll;
-use Sigmie\Base\Search\Queries\MatchNone;
-use Sigmie\Base\Search\Queries\Term\Exists;
-use Sigmie\Base\Search\Queries\Term\Fuzzy;
-use Sigmie\Base\Search\Queries\Term\IDs;
-use Sigmie\Base\Search\Queries\Term\Range;
-use Sigmie\Base\Search\Queries\Term\Regex;
-use Sigmie\Base\Search\Queries\Term\Term;
-use Sigmie\Base\Search\Queries\Term\Terms;
-use Sigmie\Base\Search\Queries\Term\Wildcard;
 use Sigmie\Base\Search\Queries\Text\Match_;
-use Sigmie\Base\Search\Queries\Text\MultiMatch;
 
 use function Sigmie\Helpers\auto_fuzziness;
 use function Sigmie\Helpers\mustache_var;
@@ -127,7 +113,8 @@ class IndexQueryBuilder
         return $this;
     }
 
-    public function filter(array $filters): self {
+    public function filter(array $filters): self
+    {
         $this->filters = $filters;
 
         return $this;

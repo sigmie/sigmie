@@ -8,14 +8,14 @@ use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\APIs\Script as APIsScript;
 use Sigmie\Base\Contracts\Aggs as AggsInterface;
 use Sigmie\Base\Contracts\DocumentCollection;
-use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Base\Pagination\Paginator;
 use Sigmie\Base\Search\Queries\MatchAll;
 use Sigmie\Base\Search\Queries\Query;
 
 class Search
 {
-    use APIsSearch, APIsScript;
+    use APIsSearch;
+    use APIsScript;
 
     protected string $index;
 
@@ -96,7 +96,7 @@ class Search
         ];
     }
 
-    public function paginate(int $perPage, int $currentPage,)
+    public function paginate(int $perPage, int $currentPage)
     {
         return new Paginator($perPage, $currentPage, $this);
     }

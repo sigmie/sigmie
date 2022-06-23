@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\Search;
 
 use Sigmie\Base\Contracts\Aggs as AggsInterface;
-use Sigmie\Base\Contracts\ToRaw;
 use Sigmie\Base\Search\Aggregations\Bucket\DateHistogram;
 use Sigmie\Base\Search\Aggregations\Bucket\Missing;
 use Sigmie\Base\Search\Aggregations\Bucket\Range;

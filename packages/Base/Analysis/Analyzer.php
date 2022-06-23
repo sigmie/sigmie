@@ -13,12 +13,12 @@ use Sigmie\Base\Contracts\CustomAnalyzer as AnalyzerInterface;
 use Sigmie\Base\Contracts\TokenFilter;
 use Sigmie\Base\Contracts\Tokenizer;
 use Sigmie\Base\Shared\Name;
-use function Sigmie\Helpers\ensure_collection;
-use function Sigmie\Helpers\name_configs;
-
 use Sigmie\Support\Collection;
-
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
+
+use function Sigmie\Helpers\ensure_collection;
+
+use function Sigmie\Helpers\name_configs;
 
 class Analyzer implements AnalyzerInterface
 {

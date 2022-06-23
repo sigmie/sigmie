@@ -14,10 +14,9 @@ use Sigmie\Base\APIs\Search;
 use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
 use Sigmie\Base\Shared\LazyEach;
 
-use function Sigmie\Helpers\ensure_collection;
-use function Sigmie\Helpers\ensure_doc_collection;
-
 use Traversable;
+
+use function Sigmie\Helpers\ensure_doc_collection;
 
 class AliveCollection implements ArrayAccess, Countable, DocumentCollectionInterface, IteratorAggregate
 {
@@ -56,7 +55,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollectionInter
         return $document;
     }
 
-    public function merge(array|DocumentCollectionInterface $docs,): DocumentCollectionInterface
+    public function merge(array|DocumentCollectionInterface $docs): DocumentCollectionInterface
     {
         $docs = ensure_doc_collection($docs);
 

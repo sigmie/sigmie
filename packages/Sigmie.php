@@ -14,12 +14,10 @@ use Sigmie\Base\Contracts\HttpConnection as Connection;
 use Sigmie\Base\Documents\AliveCollection;
 use Sigmie\Base\Http\Connection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
-use Sigmie\Base\Http\Requests\MSearch;
 use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Index\Builder;
 use Sigmie\Base\Search\IndexQueryBuilder;
 use Sigmie\Base\Search\MetricQueryBuilder;
-use Sigmie\Base\Search\MultiSearch;
 use Sigmie\Base\Search\SearchBuilder;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\JSONClient;
@@ -27,7 +25,8 @@ use Sigmie\Support\Contracts\Collection;
 
 class Sigmie
 {
-    use IndexActions, Index;
+    use IndexActions;
+    use Index;
 
     public function __construct(Connection $httpConnection)
     {

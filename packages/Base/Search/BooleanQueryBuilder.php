@@ -135,7 +135,6 @@ class BooleanQueryBuilder implements Queries
         array $values = [],
         float $boost = 1
     ): self {
-
         $clause =  new Range($field, $values);
 
         $this->clauses[] = $clause->boost($boost);

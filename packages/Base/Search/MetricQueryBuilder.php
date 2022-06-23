@@ -6,10 +6,6 @@ namespace Sigmie\Base\Search;
 
 use DateTime;
 use Sigmie\Base\APIs\Search;
-use Sigmie\Base\Contracts\Aggs as AggregationsInterface;
-use Sigmie\Base\Contracts\ToRaw;
-use Sigmie\Base\Search\Aggregations\Enums\CalendarInterval;
-use Sigmie\Base\Search\Aggs;
 use Sigmie\Base\Search\Metrics\Scores;
 use Sigmie\Base\Search\Metrics\Trends;
 use Sigmie\Base\Search\Metrics\Values;

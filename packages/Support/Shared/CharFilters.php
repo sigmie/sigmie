@@ -10,10 +10,10 @@ use Sigmie\Base\Analysis\CharFilter\Mapping;
 use Sigmie\Base\Analysis\CharFilter\Pattern;
 use Sigmie\Base\Contracts\Analysis;
 use Sigmie\Base\Contracts\CharFilter;
-use function Sigmie\Helpers\random_letters;
 use Sigmie\Support\Collection as SupportCollection;
-
 use Sigmie\Support\Contracts\Collection;
+
+use function Sigmie\Helpers\random_letters;
 
 trait CharFilters
 {

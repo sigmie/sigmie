@@ -16,9 +16,9 @@ use Sigmie\Base\Contracts\Name;
 use Sigmie\Base\Contracts\Raw;
 use Sigmie\Base\Contracts\TokenFilter as TokenFilterInterface;
 use Sigmie\Base\Contracts\Tokenizer as TokenizerInterface;
-use function Sigmie\Helpers\ensure_collection;
-
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
+
+use function Sigmie\Helpers\ensure_collection;
 
 class Analysis implements AnalysisInterface, Analyzers, Raw
 {

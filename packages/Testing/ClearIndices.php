@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
-use App\Helpers\ProxyCert;
 use Sigmie\Base\APIs\Cat;
 use Sigmie\Base\APIs\Cluster;
 use Sigmie\Base\APIs\Index;
@@ -34,7 +33,7 @@ trait ClearIndices
 
         $this->setHttpConnection(new Connection($client));
 
-        $response = $this->catAPICall('/indices', 'GET',);
+        $response = $this->catAPICall('/indices', 'GET', );
 
         $names = array_map(fn ($data) => $data['index'], $response->json());
 

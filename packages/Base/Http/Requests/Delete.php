@@ -11,7 +11,6 @@ use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\ElasticsearchRequest as HttpElasticsearchRequest;
 use Sigmie\Base\Http\Responses\Delete as DeleteResponse;
-use Sigmie\Base\Http\Responses\Mget as MgetResponse;
 
 class Delete extends HttpElasticsearchRequest implements ElasticsearchRequest
 {
