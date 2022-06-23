@@ -32,6 +32,13 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollectionInter
     ) {
     }
 
+    public function replace(Document $document): Document
+    {
+        $doc = $this->updateDocument($this->name, $document, $this->refresh);
+
+        return $doc;
+    }
+
     public function all(): Generator
     {
         return $this->getIterator();
@@ -42,20 +49,20 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollectionInter
         return $this->documentExists($this->name, $_id);
     }
 
-    public function add(Document $document): self
+    public function add(Document $document): Document
     {
-        $this->createDocument($this->name, $document, $this->refresh);
+        $document = $this->createDocument($this->name, $document, $this->refresh);
 
-        return $this;
+        return $document;
     }
 
-    public function merge(array|DocumentCollectionInterface $docs,): self
+    public function merge(array|DocumentCollectionInterface $docs,): DocumentCollectionInterface
     {
         $docs = ensure_doc_collection($docs);
 
-        $this->upsertDocuments($this->name, $docs, $this->refresh);
+        $collection = $this->upsertDocuments($this->name, $docs, $this->refresh);
 
-        return $this;
+        return $collection;
     }
 
     public function toArray(): array

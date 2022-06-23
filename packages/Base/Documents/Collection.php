@@ -22,6 +22,13 @@ class Collection implements Countable, DocumentCollectionInterface, FromRaw
         $this->collection = new SigmieCollection($documents);
     }
 
+    public function replace(Document $document): Document
+    {
+        $this->collection->set($document->_id, $document);
+
+        return $document;
+    }
+
     public function ids(): array
     {
         return $this->collection->map(fn (Document $document) => $document->_id)->toArray();
@@ -74,14 +81,14 @@ class Collection implements Countable, DocumentCollectionInterface, FromRaw
         return $this->collection->getIterator();
     }
 
-    public function add(Document $element): self
+    public function add(Document $element): Document
     {
         $this->collection->add($element);
 
         return $this;
     }
 
-    public function merge(array|DocumentCollectionInterface $documents): self
+    public function merge(array|DocumentCollectionInterface $documents): DocumentCollectionInterface
     {
         if (is_array($documents)) {
             $documents = new Collection($documents);

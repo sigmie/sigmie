@@ -28,12 +28,24 @@ trait Document
 
     protected function updateDocument(string $indexName, Doc $document, string $refresh): Doc
     {
-        $body = [
-            ['update' => ['_id' => $document->_id]],
-            ['doc' => $document->_source],
-        ];
+        if ($document->_id ?? false) {
+            $body = [
+                ['delete' => ['_id' => $document->_id]],
+                ['create' => ['_id' => $document->_id]],
+                $document->_source,
+            ];
+        } else {
+            $body = [
+                ['create' => (object) []],
+                $document->_source,
+            ];
+        }
 
         $response = $this->bulkAPICall($indexName, $body, $refresh);
+
+        if (!($document->_id ?? false)) {
+            $document->id($response->json('items.0.create._id'));
+        }
 
         if ($response->failed()) {
             throw new Exception('Document update failed.');

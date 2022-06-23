@@ -60,7 +60,6 @@ class Document implements FromRaw
         return [
             '_id' => $this->_id ?? null,
             '_source' => $this->_source,
-            'highlight' => $this->highlight
         ];
     }
 
@@ -68,7 +67,6 @@ class Document implements FromRaw
     {
         $instance = new static($raw['_source'], $raw['_id']);
         $instance->index($raw['_index']);
-        $instance->highlight($raw['highlight'] ?? []);
 
         return $instance;
     }

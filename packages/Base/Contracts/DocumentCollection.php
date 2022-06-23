@@ -13,9 +13,11 @@ use Sigmie\Base\Documents\Document;
 
 interface DocumentCollection extends ArrayAccess, Countable, IteratorAggregate
 {
-    public function add(Document $document): self;
+    public function add(Document $document): Document;
 
-    public function merge(array|DocumentCollection $documents): self;
+    public function replace(Document $document): Document;
+
+    public function merge(array|DocumentCollection $documents): DocumentCollection;
 
     public function clear(): void;
 
