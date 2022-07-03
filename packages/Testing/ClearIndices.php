@@ -24,7 +24,7 @@ trait ClearIndices
     protected function clearIndices(string $url): void
     {
         $client = JSONClient::create(
-            "http://ivx63QiQf5JiJ47K5P.phonix:9200",
+            "http://ivx63qiqf5jij47k5p.phonix:9200",
             // new BasicAuth(
             //     'sigmie',
             //     'dhL9wtD0Cn4PFHKkR60J2JYQjO3rcICdwMf5XfUg'
