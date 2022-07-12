@@ -21,7 +21,6 @@ class ElasticsearchException extends Exception
             'version_conflict_engine_exception' => new VersionConflictEngineException($json),
             'document_missing_exception' => new DocumentMissingException($json),
             'cluster_block_exception' => new ClusterBlockException($json),
-            // 'mapper_parsing_exception' => new ClusterBlockException($json),
             default => new ElasticsearchException($json)
         };
     }

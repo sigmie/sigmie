@@ -45,12 +45,15 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
             $type = $this->json('failures.0.cause.type');
         }
 
-        if (is_null($type)) {
-            ray($request);
-            ray($this);
+        if (!is_null($type)) {
+            return ElasticsearchException::fromType($type, $this->json());
         }
 
-        return ElasticsearchException::fromType($type, $this->json());
+        return new ElasticsearchException([
+            'code' => $this->code(),
+            'json' => $this->json(),
+            'bode' => $this->body(),
+        ]);
     }
 
     private function hasErrorKey(): bool
