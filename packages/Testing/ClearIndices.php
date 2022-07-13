@@ -33,7 +33,7 @@ trait ClearIndices
 
         $this->setHttpConnection(new Connection($client));
 
-        $response = $this->catAPICall('/indices', 'GET',);
+        $response = $this->catAPICall('/indices', 'GET', );
 
         $names = array_map(fn ($data) => $data['index'], $response->json());
 
