@@ -94,9 +94,11 @@ class Sigmie
         }
     }
 
-    public static function create(string $host, ?Auth $auth = null): static
+    public static function create(array|string $hosts, ?Auth $auth = null): static
     {
-        $client = JSONClient::create($host, $auth);
+        $hosts = (is_string($hosts)) ? explode(',', $hosts) : $hosts;
+
+        $client = JSONClient::create($hosts, $auth);
 
         return new static(new HttpConnection($client));
     }
