@@ -15,7 +15,7 @@ trait Doc
 
     public function docAPICall(string $index, string $id, string $method = 'GET'): ElasticsearchResponse
     {
-        $uri = new Uri("{$index}/_doc/{$id}");
+        $uri = new Uri("/{$index}/_doc/{$id}");
 
         $esRequest = new ElasticsearchRequest($method, $uri);
 
