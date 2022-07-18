@@ -32,12 +32,12 @@ trait Index
             'mappings' => $mappings->toRaw(),
         ];
 
-        $this->indexAPICall("/{$indexName}", 'PUT', $body);
+        $this->indexAPICall("{$indexName}", 'PUT', $body);
     }
 
     protected function indexExists(string $index): bool
     {
-        $res = $this->indexAPICall("/{$index}", 'HEAD');
+        $res = $this->indexAPICall("{$index}", 'HEAD');
 
         return $res->code() === 200;
     }
@@ -45,7 +45,7 @@ trait Index
     protected function getIndex(string $alias): BaseIndex|AliasedIndex|null
     {
         try {
-            $res = $this->indexAPICall("/{$alias}", 'GET');
+            $res = $this->indexAPICall("{$alias}", 'GET');
         } catch (IndexNotFoundException) {
             return null;
         }
@@ -75,7 +75,7 @@ trait Index
     protected function getIndices(string $identifier): CollectionInterface
     {
         try {
-            $res = $this->indexAPICall("/{$identifier}", 'GET', );
+            $res = $this->indexAPICall("{$identifier}", 'GET', );
 
             $collection = new Collection();
 
@@ -94,7 +94,7 @@ trait Index
 
     protected function listIndices(int $offset = 0, int $limit = 100): Collection
     {
-        $catResponse = $this->catAPICall('/indices', 'GET', );
+        $catResponse = $this->catAPICall('indices', 'GET', );
 
         return (new Collection($catResponse->json()))
             ->map(function ($values) {
@@ -107,7 +107,7 @@ trait Index
 
     protected function deleteIndex(string $name): bool
     {
-        $response = $this->indexAPICall("/{$name}", 'DELETE');
+        $response = $this->indexAPICall("{$name}", 'DELETE');
 
         return $response->json('acknowledged');
     }

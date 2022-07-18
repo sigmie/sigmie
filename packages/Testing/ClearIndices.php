@@ -33,7 +33,7 @@ trait ClearIndices
 
         $this->setHttpConnection(new Connection($client));
 
-        $response = $this->catAPICall('/indices', 'GET', );
+        $response = $this->catAPICall('indices', 'GET', );
 
         $names = array_map(fn ($data) => $data['index'], $response->json());
 
@@ -43,7 +43,7 @@ trait ClearIndices
             $this->indexAPICall(implode(',', $chunk), 'DELETE');
         }
 
-        $response = $this->clusterAPICall('/state/metadata?pretty&filter_path=metadata.stored_scripts');
+        $response = $this->clusterAPICall('state/metadata?pretty&filter_path=metadata.stored_scripts');
 
         $scripts = $response->json('metadata.stored_scripts');
 

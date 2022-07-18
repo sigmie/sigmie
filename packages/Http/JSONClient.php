@@ -28,6 +28,7 @@ class JSONClient implements JSONClientInterface
     {
         $hosts = (is_string($hosts)) ? explode(',', $hosts) : $hosts;
 
+        ray($hosts);
         $config = [
             'allow_redirects' => false,
             'http_errors' => false,
