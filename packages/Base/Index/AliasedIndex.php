@@ -48,7 +48,7 @@ class AliasedIndex extends Index
 
         $this->reindexAPICall($this->name, $newIndex->name);
 
-        $this->indexAPICall("/{$newIndex->name}/_settings", 'PUT', [
+        $this->indexAPICall("{$newIndex->name}/_settings", 'PUT', [
             'number_of_replicas' => $requestedReplicas,
             'refresh_interval' => '1s',
         ]);
@@ -66,14 +66,14 @@ class AliasedIndex extends Index
 
     public function disableWrite(): void
     {
-        $this->indexAPICall("/{$this->name}/_settings", 'PUT', [
+        $this->indexAPICall("{$this->name}/_settings", 'PUT', [
             'index' => ['blocks.write' => true],
         ]);
     }
 
     public function enableWrite(): void
     {
-        $this->indexAPICall("/{$this->name}/_settings", 'PUT', [
+        $this->indexAPICall("{$this->name}/_settings", 'PUT', [
             'index' => ['blocks.write' => false],
         ]);
     }
