@@ -15,7 +15,7 @@ use Sigmie\Testing\TestConnection;
 
 class ActionsTest extends TestCase
 {
-    use TestConnection;
+    use HasTestConnection;
     use IndexActions;
 
     /**

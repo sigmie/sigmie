@@ -12,19 +12,6 @@ namespace Sigmie\Helpers {
     use Sigmie\Support\Collection;
     use Sigmie\Support\Contracts\Collection as CollectionInterface;
 
-    function testing_host(string $token = '1'): string
-    {
-        $host = getenv('ES_HOST');
-
-        if (function_exists('env')) {
-            $host = env('ES_HOST');
-        };
-
-        $host = str_replace('1', "{$token}", $host);
-
-        return "https://{$host}";
-    }
-
     function refresh_value(): string|null
     {
         $value = getenv('ES_REFRESH');
