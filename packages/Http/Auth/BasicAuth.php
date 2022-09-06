@@ -21,6 +21,9 @@ final class BasicAuth implements Auth
 
     public function keys(): array
     {
-        return ['auth' => [$this->username, $this->password]];
+        return ['auth' => [
+            $this->username,
+            $this->password
+        ]];
     }
 }
