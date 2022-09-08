@@ -13,7 +13,7 @@ trait Stats
 {
     use API;
 
-    public function statsAPICall(string $index): ElasticsearchResponse
+    protected function statsAPICall(string $index): ElasticsearchResponse
     {
         $uri = new Uri("/{$index}/_stats");
 
