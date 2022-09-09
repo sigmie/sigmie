@@ -94,7 +94,7 @@ class BooleanQueryBuilder implements Queries
         return $this;
     }
 
-    public function term(string $field, string|bool $value, float $boost = 1): self
+    public function term(string $field, int|string|bool $value, float $boost = 1): self
     {
         $clause =  new Term($field, $value);
 
