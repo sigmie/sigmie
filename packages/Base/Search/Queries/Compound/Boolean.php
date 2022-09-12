@@ -17,6 +17,8 @@ class Boolean extends Query
 
     public BooleanQueryBuilder $filter;
 
+    public array $raw = [];
+
     public function __construct()
     {
         $this->must = new BooleanQueryBuilder();
@@ -33,6 +35,11 @@ class Boolean extends Query
     public function mustNot(): BooleanQueryBuilder
     {
         return $this->mustNot;
+    }
+
+    public function addRaw(string $key, mixed $value)
+    {
+        $this->raw[$key] = $value;
     }
 
     public function should(): BooleanQueryBuilder
@@ -67,6 +74,6 @@ class Boolean extends Query
 
         $res['boost'] = $this->boost;
 
-        return ['bool' => $res];
+        return ['bool' => [...$res, ...$this->raw]];
     }
 }

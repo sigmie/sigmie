@@ -9,6 +9,7 @@ use Sigmie\Base\Contracts\QueryClause as Query;
 use Sigmie\Base\Search\Queries\Compound\Boolean;
 use Sigmie\Base\Search\Queries\MatchAll;
 use Sigmie\Base\Search\Queries\MatchNone;
+use Sigmie\Base\Search\Queries\Raw;
 use Sigmie\Base\Search\Queries\Term\Exists;
 use Sigmie\Base\Search\Queries\Term\Fuzzy;
 use Sigmie\Base\Search\Queries\Term\IDs;
@@ -47,6 +48,15 @@ class BooleanQueryBuilder implements Queries
         $clause = new Match_($field, $query);
 
         $this->clauses[] = $clause->boost($boost);
+
+        return $this;
+    }
+
+    public function raw(string $raw): self
+    {
+        $clause = new Raw($raw);
+
+        $this->clauses[] = $clause;
 
         return $this;
     }
