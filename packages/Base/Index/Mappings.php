@@ -81,7 +81,7 @@ class Mappings implements MappingsInterface
                 $value['type'] === 'float' => (new Number($fieldName))->float(),
                 $value['type'] === 'boolean' => new Boolean($fieldName),
                 $value['type'] === 'date' => new Date($fieldName),
-                default => throw new Exception('Field '.$value['type'].' couldn\'t be mapped')
+                default => throw new Exception('Field ' . $value['type'] . ' couldn\'t be mapped')
             };
 
             if ($field instanceof Text && !isset($value['analyzer'])) {
