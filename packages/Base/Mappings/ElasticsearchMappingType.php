@@ -10,6 +10,7 @@ enum ElasticsearchMappingType: string
     case FLOAT = 'float';
     case BOOLEAN = 'boolean';
     case DATE = 'date';
+    case PROPERTIES = 'properties';
 
     public function isKeyword(string $type)
     {
