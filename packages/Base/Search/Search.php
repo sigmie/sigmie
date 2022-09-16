@@ -105,16 +105,12 @@ class Search
     {
         $raw = $this->toRaw();
 
-        ray($raw);
-
         return $this->searchAPICall($this->index, $raw);
     }
 
     public function get(): DocumentCollection
     {
         $raw = $this->toRaw();
-
-        ray($raw);
 
         return $this->searchAPICall($this->index, $raw)->docs();
     }
