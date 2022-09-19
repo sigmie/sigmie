@@ -104,6 +104,7 @@ class Search
     public function response()
     {
         $raw = $this->toRaw();
+        ray($raw);
 
         return $this->searchAPICall($this->index, $raw);
     }
