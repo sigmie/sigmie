@@ -15,7 +15,7 @@ trait Index
 
     public function indexAPICall(string $index, string $method, ?array $body = null): ElasticsearchResponse
     {
-        $uri = new Uri($index);
+        $uri = new Uri("/{$index}");
 
         $esRequest = new ElasticsearchRequest($method, $uri, $body);
 

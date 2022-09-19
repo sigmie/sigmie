@@ -4,29 +4,28 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Mappings\Types;
 
+use Sigmie\Base\Mappings\ElasticsearchMappingType;
 use Sigmie\Base\Mappings\PropertyType;
 
 class Number extends PropertyType
 {
-    protected string $type;
-
     public function integer(): self
     {
-        $this->type = 'integer';
+        $this->type = ElasticsearchMappingType::INTEGER->value;
 
         return $this;
     }
 
     public function float(): self
     {
-        $this->type = 'float';
+        $this->type = ElasticsearchMappingType::FLOAT->value;
 
         return $this;
     }
 
     public function long(): self
     {
-        $this->type = 'long';
+        $this->type = ElasticsearchMappingType::LONG->value;
 
         return $this;
     }

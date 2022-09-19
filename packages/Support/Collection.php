@@ -6,10 +6,10 @@ namespace Sigmie\Support;
 
 use ArrayIterator;
 use Closure;
-use function Sigmie\Helpers\ensure_collection;
-
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
+
 use Traversable;
+use function Sigmie\Helpers\ensure_collection;
 
 class Collection implements CollectionInterface
 {

@@ -8,14 +8,14 @@ use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\APIs\Script as APIsScript;
 use Sigmie\Base\Contracts\Aggs as AggsInterface;
 use Sigmie\Base\Contracts\DocumentCollection;
-use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Base\Pagination\Paginator;
 use Sigmie\Base\Search\Queries\MatchAll;
 use Sigmie\Base\Search\Queries\Query;
 
 class Search
 {
-    use APIsSearch, APIsScript;
+    use APIsSearch;
+    use APIsScript;
 
     protected string $index;
 
@@ -96,7 +96,7 @@ class Search
         ];
     }
 
-    public function paginate(int $perPage, int $currentPage,)
+    public function paginate(int $perPage, int $currentPage)
     {
         return new Paginator($perPage, $currentPage, $this);
     }
@@ -104,7 +104,6 @@ class Search
     public function response()
     {
         $raw = $this->toRaw();
-
         ray($raw);
 
         return $this->searchAPICall($this->index, $raw);
@@ -113,8 +112,6 @@ class Search
     public function get(): DocumentCollection
     {
         $raw = $this->toRaw();
-
-        ray($raw);
 
         return $this->searchAPICall($this->index, $raw)->docs();
     }
@@ -133,10 +130,14 @@ class Search
 
     public function save(string $name): bool
     {
+        $parsedSource = json_encode($this->toRaw());
+        $parsedSource = preg_replace('/"@json\(([a-z]+)\)"/', '{{#toJson}}$1{{/toJson}}', $parsedSource);
+        $parsedSource = preg_replace('/"@var\(([a-z]+),([a-z,0-9]+)\)"/', '{{$1}}{{^$1}}$2{{/$1}}', $parsedSource);
+
         $script = [
             'script' => [
                 'lang' => 'mustache',
-                'source' => $this->toRaw()
+                'source' => $parsedSource
             ]
         ];
 

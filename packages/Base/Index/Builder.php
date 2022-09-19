@@ -12,17 +12,16 @@ use Sigmie\Base\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Base\Contracts\HttpConnection;
 
 use Sigmie\Base\Contracts\Language;
-use function Sigmie\Helpers\index_name;
-use Sigmie\Support\Exceptions\MissingMapping;
 use Sigmie\Support\Index\TokenizerBuilder;
 use Sigmie\Support\Shared\CharFilters;
-
 use Sigmie\Support\Shared\Filters;
 
 use Sigmie\Support\Shared\Mappings;
+
 use Sigmie\Support\Shared\Replicas;
 use Sigmie\Support\Shared\Shards;
 use Sigmie\Support\Shared\Tokenizer;
+use function Sigmie\Helpers\index_name;
 
 class Builder
 {

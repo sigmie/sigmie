@@ -6,7 +6,6 @@ namespace Sigmie\Base\APIs;
 
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
-use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\Requests\Search as SearchRequest;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 

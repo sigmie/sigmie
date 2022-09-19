@@ -27,7 +27,7 @@ class Blueprint
             return [$type->name() => $type];
         })->toArray();
 
-        return new Properties($fields);
+        return new Properties('mappings', $fields);
     }
 
     public function text(string $name, bool $keyword = false): Text

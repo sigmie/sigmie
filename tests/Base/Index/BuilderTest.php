@@ -150,7 +150,8 @@ class BuilderTest extends TestCase
                     'language' => 'minimal_german',
                 ]
             );
-        }); }
+        });
+    }
 
     /**
      * @test

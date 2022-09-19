@@ -6,14 +6,7 @@ namespace Sigmie\Base\Search\Metrics;
 
 use Illuminate\Support\Collection;
 use Sigmie\Base\Search\Aggregations\Bucket\RareTerms;
-use Sigmie\Base\Search\Aggregations\Bucket\Terms;
-use Sigmie\Base\Search\Aggregations\Metrics\Metric;
-use Sigmie\Base\Search\Aggregations\Pipeline\AvgBucket;
-use Sigmie\Base\Search\Aggregations\Pipeline\MaxBucket;
-use Sigmie\Base\Search\Aggregations\Pipeline\MinBucket;
-use Sigmie\Base\Search\Aggregations\Pipeline\Pipeline;
 use Sigmie\Base\Search\Aggregations\Pipeline\SortBucket;
-use Sigmie\Base\Search\Aggregations\Pipeline\SumBucket;
 use Sigmie\Base\Search\Aggs;
 
 class MinorScore extends RareTerms

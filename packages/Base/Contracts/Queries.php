@@ -8,7 +8,7 @@ use Sigmie\Base\Contracts\QueryClause as Query;
 
 interface Queries
 {
-    public function term(string $field, string $value,);
+    public function term(string $field, string $value);
 
     public function bool(callable $callable, float $boost);
 

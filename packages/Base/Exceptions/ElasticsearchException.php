@@ -18,10 +18,9 @@ class ElasticsearchException extends Exception
         return match ($type) {
             'index_not_found_exception' => new IndexNotFoundException($json),
             'illegal_argument_exception' => new IllegalArgumentException($json),
-            'version_conflict_engine_exception' => new VersionConflictEngineException($json),
-            'document_missing_exception' => new DocumentMissingException($json),
+            'version_conflict_engine_exception' => new VersionConflictEngineException(json_encode($json)),
+            'document_missing_exception' => new DocumentMissingException(json_encode($json)),
             'cluster_block_exception' => new ClusterBlockException($json),
-            // 'mapper_parsing_exception' => new ClusterBlockException($json),
             default => new ElasticsearchException($json)
         };
     }

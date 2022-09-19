@@ -11,12 +11,12 @@ use Sigmie\Base\Index\Mappings;
 use Sigmie\Base\Index\Settings;
 use Sigmie\Support\Contracts\Collection;
 use Sigmie\Testing\TestCase;
-use Sigmie\Testing\TestConnection;
+use Sigmie\Testing\HasTestConnection;
 
 class ActionsTest extends TestCase
 {
-    use TestConnection;
     use IndexActions;
+    use HasTestConnection;
 
     /**
      * @test

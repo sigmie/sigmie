@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Http;
 
+use Elastic\Transport\Transport;
+use Elastic\Transport\TransportBuilder;
 use GuzzleHttp\Client as GuzzleHttpClient;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\Contracts\JSONClient as JSONClientInterface;
@@ -11,24 +13,22 @@ use Sigmie\Http\Contracts\JSONRequest;
 
 class JSONClient implements JSONClientInterface
 {
-    protected GuzzleHttpClient $http;
-
-    public function __construct(GuzzleHttpClient $http)
+    public function __construct(protected Transport $http)
     {
-        $this->http = $http;
     }
 
-    public function request(JSONRequest $jsonRequest, array $options = []): JSONResponse
+    public function request(JSONRequest $jsonRequest): JSONResponse
     {
-        $psrResponse = $this->http->send($jsonRequest, $options);
+        $psrResponse = $this->http->sendRequest($jsonRequest);
 
         return new JSONResponse($psrResponse);
     }
 
-    public static function create(string $url, ?Auth $auth = null): static
+    public static function create(array|string $hosts, ?Auth $auth = null): static
     {
+        $hosts = (is_string($hosts)) ? explode(',', $hosts) : $hosts;
+
         $config = [
-            'base_uri' => $url,
             'allow_redirects' => false,
             'http_errors' => false,
             'connect_timeout' => 5,
@@ -40,6 +40,11 @@ class JSONClient implements JSONClientInterface
 
         $client = new GuzzleHttpClient($config);
 
-        return new static($client);
+        $transport = TransportBuilder::create()
+            ->setHosts($hosts)
+            ->setClient($client)
+            ->build();
+
+        return new static($transport);
     }
 }
