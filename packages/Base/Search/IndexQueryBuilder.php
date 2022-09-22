@@ -28,13 +28,13 @@ class IndexQueryBuilder
 
     protected array $sorts = ['_score'];
 
-    protected array $filters = [];
-
     protected array $fields = [];
 
     protected array $typoTolerantAttributes = [];
 
     protected int $size = 20;
+
+    protected bool $filterable = false;
 
     protected int $minCharsForOneTypo;
 
@@ -113,13 +113,6 @@ class IndexQueryBuilder
         return $this;
     }
 
-    public function filter(array $filters): self
-    {
-        $this->filters = $filters;
-
-        return $this;
-    }
-
     public function typoTolerantAttributes(array $attributes)
     {
         $this->typoTolerantAttributes = $attributes;
@@ -134,6 +127,14 @@ class IndexQueryBuilder
         return $this;
     }
 
+
+    public function filterable(): self
+    {
+        $this->filterable = true;
+
+        return $this;
+    }
+
     public function mappings(): self
     {
         return $this;
@@ -143,25 +144,23 @@ class IndexQueryBuilder
     {
         $query = $this->searchBuilder->bool(function (Boolean $boolean) {
 
-            //TODO handle query depending on mappings
-
-            // foreach ($this->filters as [$field, $operator, $value]) {
-            //     if ($operator === '=') {
-            //         $boolean->must()->match($field, $value);
-            //     }
-
-            //     if ($operator === '!=') {
-            //         $boolean->mustNot()->match($field, $value);
-            //     }
-            // }
-
-            foreach ($this->fields as $field) {
-                $boost  = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
-                $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
-                $query = new Match_($field, $this->query, $fuzziness);
-
-                $boolean->should()->query($query->boost($boost));
+            if ($this->filterable) {
+                $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('filter', '@json(filters)'));
+                // $boolean->addRaw('filter', '@json(filters)');
             }
+
+            //TODO handle query depending on mappings
+            $boolean->must()->bool(function (Boolean $boolean) {
+
+                foreach ($this->fields as $field) {
+                    $boost  = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
+                    $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                    $query = new Match_($field, $this->query, $fuzziness);
+
+                    $boolean->should()->query($query->boost($boost));
+                }
+            });
+
         })->fields($this->retrieve);
 
         foreach ($this->sorts as $field => $direction) {
@@ -177,8 +176,9 @@ class IndexQueryBuilder
             $query->highlight($field, $this->prefix, $this->suffix);
         }
 
-        $query->size(mustache_var('size', '10'));
+        $query->size("@var(size,10)");
 
+        ray($query->toRaw());
         return $query;
     }
 

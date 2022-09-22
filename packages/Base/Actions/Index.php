@@ -7,12 +7,15 @@ namespace Sigmie\Base\Actions;
 use Sigmie\Base\Actions\Alias as AliasActions;
 use Sigmie\Base\APIs\Cat as CatAPI;
 use Sigmie\Base\APIs\Index as IndexAPI;
+use Sigmie\Base\APIs\SearchTemplate;
+use Sigmie\Base\APIs\Template;
 use Sigmie\Base\Contracts\Mappings as MappingsInterface;
 use Sigmie\Base\Contracts\Settings as SettingsInterface;
 use Sigmie\Base\Exceptions\ElasticsearchException;
 use Sigmie\Base\Exceptions\IndexNotFoundException;
 use Sigmie\Base\Index\AliasedIndex;
 use Sigmie\Base\Index\Index as BaseIndex;
+use Sigmie\Base\Index\IndexTemplate;
 use Sigmie\Base\Index\Mappings;
 use Sigmie\Base\Index\Settings;
 use Sigmie\Support\Collection;
@@ -24,6 +27,20 @@ trait Index
     use CatAPI;
     use IndexAPI;
     use AliasActions;
+    use Template;
+
+    protected function saveIndexTemplate(string $name, array $patterns, SettingsInterface $settings, MappingsInterface $mappings)
+    {
+        $body = [
+            'index_patterns' => $patterns,
+            'settings' => $settings->toRaw(),
+            'mappings' => $mappings->toRaw(),
+        ];
+
+        $this->templateAPICall($name, 'PUT', $body);
+
+        return new IndexTemplate($name, $patterns, $settings, $mappings);
+    }
 
     protected function createIndex(string $indexName, SettingsInterface $settings, MappingsInterface $mappings)
     {
@@ -75,7 +92,7 @@ trait Index
     protected function getIndices(string $identifier): CollectionInterface
     {
         try {
-            $res = $this->indexAPICall("{$identifier}", 'GET', );
+            $res = $this->indexAPICall("{$identifier}", 'GET',);
 
             $collection = new Collection();
 
@@ -94,7 +111,7 @@ trait Index
 
     protected function listIndices(int $offset = 0, int $limit = 100): Collection
     {
-        $catResponse = $this->catAPICall('indices', 'GET', );
+        $catResponse = $this->catAPICall('indices', 'GET',);
 
         return (new Collection($catResponse->json()))
             ->map(function ($values) {

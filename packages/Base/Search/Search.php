@@ -104,7 +104,6 @@ class Search
     public function response()
     {
         $raw = $this->toRaw();
-
         ray($raw);
 
         return $this->searchAPICall($this->index, $raw);
@@ -113,8 +112,6 @@ class Search
     public function get(): DocumentCollection
     {
         $raw = $this->toRaw();
-
-        ray($raw);
 
         return $this->searchAPICall($this->index, $raw)->docs();
     }
@@ -133,10 +130,14 @@ class Search
 
     public function save(string $name): bool
     {
+        $parsedSource = json_encode($this->toRaw());
+        $parsedSource = preg_replace('/"@json\(([a-z]+)\)"/', '{{#toJson}}$1{{/toJson}}', $parsedSource);
+        $parsedSource = preg_replace('/"@var\(([a-z]+),([a-z,0-9]+)\)"/', '{{$1}}{{^$1}}$2{{/$1}}', $parsedSource);
+
         $script = [
             'script' => [
                 'lang' => 'mustache',
-                'source' => $this->toRaw()
+                'source' => $parsedSource
             ]
         ];
 

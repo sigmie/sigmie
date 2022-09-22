@@ -30,7 +30,7 @@ class Mappings implements MappingsInterface
         ?Properties $properties = null,
     ) {
         $this->defaultAnalyzer = $defaultAnalyzer ?: new DefaultAnalyzer();
-        $this->properties = $properties ?: new Properties();
+        $this->properties = $properties ?: new Properties(name:'mappings');
     }
 
     public function properties(): Properties
@@ -55,55 +55,25 @@ class Mappings implements MappingsInterface
         ];
     }
 
+    private static function handleProperties($value)
+    {
+        return;
+    }
+
     public static function fromRaw(array $data, Collection $analyzers): static
     {
         $analyzers = $analyzers->mapToDictionary(
             fn (CustomAnalyzer $analyzer) => [$analyzer->name() => $analyzer]
         )->toArray();
 
-        $fields = [];
-
         $defaultAnalyzer = $analyzers['default'] ?? new DefaultAnalyzer();
 
-        if (isset($data['properties']) === false) {
-            return new DynamicMappings($defaultAnalyzer);
-        }
-
-        foreach ($data['properties'] as $fieldName => $value) {
-            $field = match (true) {
-                in_array(
-                    $value['type'],
-                    ['search_as_you_type', 'text', 'completion']
-                ) => Text::fromRaw([$fieldName => $value]),
-                $value['type'] === 'keyword' => (new Keyword($fieldName)),
-                $value['type'] === 'integer' => (new Number($fieldName))->integer(),
-                $value['type'] === 'long' => (new Number($fieldName))->long(),
-                $value['type'] === 'float' => (new Number($fieldName))->float(),
-                $value['type'] === 'boolean' => new Boolean($fieldName),
-                $value['type'] === 'date' => new Date($fieldName),
-                default => throw new Exception('Field '.$value['type'].' couldn\'t be mapped')
-            };
-
-            if ($field instanceof Text && !isset($value['analyzer'])) {
-                $value['analyzer'] = 'default';
-            }
-
-            if ($field instanceof Text && isset($value['analyzer'])) {
-                $analyzerName = $value['analyzer'];
-
-                $analyzer = match ($analyzerName) {
-                    'simple' => new SimpleAnalyzer(),
-                    'default' => $defaultAnalyzer,
-                    default => $analyzers[$analyzerName]
-                };
-
-                $field->withAnalyzer($analyzer);
-            }
-
-            $fields[$fieldName] = $field;
-        }
-
-        $properties = new Properties($fields);
+        $properties = Properties::create(
+            $data['properties'] ?? [],
+            $defaultAnalyzer,
+            $analyzers,
+            name: 'mappings'
+        );
 
         return new static(
             defaultAnalyzer: $defaultAnalyzer,

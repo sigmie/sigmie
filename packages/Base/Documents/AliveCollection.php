@@ -71,7 +71,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollectionInter
 
     public function clear(): void
     {
-        $this->indexAPICall("/{$this->name}/_delete_by_query?refresh={$this->refresh}", 'POST', [
+        $this->indexAPICall("{$this->name}/_delete_by_query?refresh={$this->refresh}", 'POST', [
             'query' => ['match_all' => (object)[]],
         ]);
     }

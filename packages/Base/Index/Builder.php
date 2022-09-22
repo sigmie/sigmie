@@ -115,6 +115,15 @@ class Builder
         return $index;
     }
 
+    public function save(string $name, array $patterns): IndexTemplate
+    {
+        $index = $this->make();
+
+        $template =$this->saveIndexTemplate($name, $patterns, $index->settings, $index->mappings);
+
+        return $template;
+    }
+
     public function getAlias(): string
     {
         return $this->alias;
