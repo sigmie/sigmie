@@ -5,17 +5,12 @@ declare(strict_types=1);
 namespace Sigmie\Base\Mappings;
 
 use ArrayAccess;
-use Sigmie\Base\Contracts\FromRaw;
 use Sigmie\Base\Mappings\Types\Text;
 use Sigmie\Support\Collection;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;
 use Exception;
 use Sigmie\Base\Analysis\DefaultAnalyzer;
 use Sigmie\Base\Analysis\SimpleAnalyzer;
-use Sigmie\Base\Contracts\CustomAnalyzer;
-use Sigmie\Base\Contracts\Mappings as MappingsInterface;
-use Sigmie\Base\Contracts\Type;
-use Sigmie\Base\Mappings\DynamicMappings;
 use Sigmie\Base\Mappings\Types\Boolean;
 use Sigmie\Base\Mappings\Types\Date;
 use Sigmie\Base\Mappings\Types\Keyword;
