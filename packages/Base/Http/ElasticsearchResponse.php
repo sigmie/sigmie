@@ -49,12 +49,6 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
             return ElasticsearchException::fromType($type, $this->json());
         }
 
-        ray([
-            'code' => $this->code(),
-            'json' => $this->json(),
-            'body' => $this->body(),
-            'request' => json_decode($request->getBody()->getContents(), true)
-        ]);
         return new ElasticsearchException([
             'code' => $this->code(),
             'json' => $this->json(),
