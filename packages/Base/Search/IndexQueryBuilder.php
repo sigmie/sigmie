@@ -174,7 +174,6 @@ class IndexQueryBuilder
 
         $query->size("@var(size,10)");
 
-        ray($query->toRaw());
         return $query;
     }
 
