@@ -6,23 +6,18 @@ namespace Sigmie\Base\APIs;
 
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\API;
-use Sigmie\Base\Http\Requests\Search as SearchRequest;
-use Sigmie\Base\Http\Responses\Search as SearchResponse;
+use Sigmie\Base\Contracts\ElasticsearchResponse;
+use Sigmie\Base\Http\ElasticsearchRequest;
 
 trait Template
 {
     use API;
 
-    protected function templateAPICall(string $index, string $name, array $params): SearchResponse
+    protected function templateAPICall(string $name, string $method, null|array $body = null): ElasticsearchResponse
     {
-        $uri = new Uri("/{$index}/_search/template");
+        $uri = new Uri("/_template/{$name}");
 
-        $params = [
-            'id' => $name,
-            'params' => $params
-        ];
-
-        $esRequest = new SearchRequest('POST', $uri, $params);
+        $esRequest = new ElasticsearchRequest($method, $uri, $body);
 
         return $this->httpCall($esRequest);
     }

@@ -38,7 +38,6 @@ class FilterParser
 
         // If it's a parenthetic expression
         if (preg_match_all("/\((((?>[^()]+)|(?R))*)\)/", $query, $matches)) {
-
             $matchWithParentheses = $matches[0][0];
 
             //Remove outer parenthesis
@@ -50,7 +49,7 @@ class FilterParser
             //Trim leading and trailing spaces
             $query = trim($query);
 
-            //Create filter from parentheses match 
+            //Create filter from parentheses match
             $filter = $this->parseQuery($matchWithoutParentheses);
         } else {
             [$filter] = preg_split('/(AND NOT|AND|OR)/', $query, limit: 2);
@@ -68,7 +67,6 @@ class FilterParser
         $res = ['filter' => $filter];
 
         if (preg_match('/^(?P<operator>AND NOT|AND|OR)/', $query, $matchWithoutParentheses)) {
-
             $operator = $matchWithoutParentheses['operator'];
             //Remove operator from the query string
             $query = preg_replace("/^{$operator}/", '', $query);
@@ -86,7 +84,7 @@ class FilterParser
 
     protected function apply(array $filters, string $operator = 'AND'): Boolean
     {
-        $boolean = new Boolean;
+        $boolean = new Boolean();
 
         $filter = $filters['filter'];
         $operator = $filters['operator'] ?? $operator;
@@ -107,7 +105,6 @@ class FilterParser
         };
 
         if ($filters['operator'] ?? false) {
-
             $query2 = $this->apply($values, $operator);
 
             match ($operator) {
@@ -141,7 +138,7 @@ class FilterParser
             'message' => "Filter {$string} couldn't be parsed.",
         ];
 
-        return new MatchNone;
+        return new MatchNone();
     }
 
     public function handleRange(string $range)
@@ -187,6 +184,10 @@ class FilterParser
     public function handleTerm(string $term)
     {
         [$field, $value] = explode(':', $term);
+
+        if ($this->isTextOrKeywordField($field)) {
+            $field = "{$field}.keyword";
+        }
 
         return new Term($field, $value);
     }

@@ -10,7 +10,6 @@ use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Script;
 use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\Connection;
-use Sigmie\Http\Auth\BasicAuth;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\JSONClient;
 
@@ -28,7 +27,7 @@ trait ClearIndices
 
         $this->setHttpConnection(new Connection($client));
 
-        $response = $this->catAPICall('indices', 'GET',);
+        $response = $this->catAPICall('indices', 'GET', );
 
         $names = array_map(fn ($data) => $data['index'], $response->json());
 

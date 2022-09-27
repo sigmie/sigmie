@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Search;
 
-use Sigmie\Base\APIs\Template as APIsTemplate;
+use Sigmie\Base\APIs\SearchTemplate as APIsTemplate;
 use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Contracts\HttpConnection;
 

@@ -12,7 +12,7 @@ class Mget extends ElasticsearchResponse
 {
     public function docs(): DocumentCollectionInterface
     {
-        $found = array_filter($this->json('docs'), fn ($value) => $value['found']);
+        $found = array_filter($this->json('docs'), fn ($value) => $value['found'] ?? false);
 
         return DocumentCollection::fromRaw($found);
     }

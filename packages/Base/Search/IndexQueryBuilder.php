@@ -10,7 +10,6 @@ use Sigmie\Base\Search\Queries\Compound\Boolean;
 use Sigmie\Base\Search\Queries\Text\Match_;
 
 use function Sigmie\Helpers\auto_fuzziness;
-use function Sigmie\Helpers\mustache_var;
 
 class IndexQueryBuilder
 {
@@ -143,19 +142,25 @@ class IndexQueryBuilder
     public function getSearch(): Search
     {
         $query = $this->searchBuilder->bool(function (Boolean $boolean) {
+            if ($this->filterable) {
+                $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('filter', '@json(filters)'));
+                // $boolean->addRaw('filter', '@json(filters)');
+            }
 
             if ($this->filterable) {
                 $boolean->addRaw('filter', '@json(filters)');
             }
 
             //TODO handle query depending on mappings
-            foreach ($this->fields as $field) {
-                $boost  = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
-                $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
-                $query = new Match_($field, $this->query, $fuzziness);
+            $boolean->must()->bool(function (Boolean $boolean) {
+                foreach ($this->fields as $field) {
+                    $boost  = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
+                    $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                    $query = new Match_($field, $this->query, $fuzziness);
 
-                $boolean->should()->query($query->boost($boost));
-            }
+                    $boolean->should()->query($query->boost($boost));
+                }
+            });
         })->fields($this->retrieve);
 
         foreach ($this->sorts as $field => $direction) {

@@ -29,6 +29,11 @@ class JSONClient implements JSONClientInterface
         $hosts = (is_string($hosts)) ? explode(',', $hosts) : $hosts;
 
         $config = [
+            'curl' => [
+                CURLOPT_RESOLVE => [
+                    'fakedomain.dev:80:127.0.0.1'
+                ]
+            ],
             'allow_redirects' => false,
             'http_errors' => false,
             'connect_timeout' => 5,
