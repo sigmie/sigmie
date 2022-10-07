@@ -184,6 +184,7 @@ class FilterParser
     public function handleTerm(string $term)
     {
         [$field, $value] = explode(':', $term);
+        $value = trim($value, '"');
 
         if ($this->isTextOrKeywordField($field)) {
             $field = "{$field}.keyword";
