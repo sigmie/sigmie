@@ -120,10 +120,10 @@ class FilterParser
     public function stringToQueryClause(string $string): QueryClause
     {
         $query = match (1) {
-            preg_match('/is:[a-z_A-Z0-9]+/', $string) => $this->handleIs($string),
-            preg_match('/is_not:[a-z_A-Z0-9]+/', $string) => $this->handleIsNot($string),
+            preg_match('/^is:[a-z_A-Z0-9]+/', $string) => $this->handleIs($string),
+            preg_match('/^is_not:[a-z_A-Z0-9]+/', $string) => $this->handleIsNot($string),
             preg_match('/(\w+)( +)?([<>]=?)+( +)?([a-z_A-Z0-9.@]+)/', $string) => $this->handleRange($string),
-            preg_match('/_id:[a-z_A-Z0-9]+/', $string) => $this->handleIDs($string),
+            preg_match('/^_id:[a-z_A-Z0-9]+/', $string) => $this->handleIDs($string),
             preg_match('/\w+:\[[a-z_A-Z,0-9.@*]+\]/', $string) => $this->handleIn($string),
             preg_match('/\w+:[a-z_A-Z0-9.@*]+/', $string) => $this->handleTerm($string),
             preg_match('/\w+:"[a-z_A-Z0-9 .@*]+"/', $string) => $this->handleWildcard($string),
@@ -184,6 +184,7 @@ class FilterParser
     public function handleTerm(string $term)
     {
         [$field, $value] = explode(':', $term);
+        $value = trim($value, '"');
 
         if ($this->isTextOrKeywordField($field)) {
             $field = "{$field}.keyword";
