@@ -63,7 +63,7 @@ class Properties extends PropertyType implements ArrayAccess
 
         foreach ($raw as $fieldName => $value) {
             $field = match (true) {
-                isset($value['properties']) && !isset($value['properties']['type']) => self::create($value['properties'], $defaultAnalyzer, $analyzers, $fieldName),
+                isset($value['properties']) && !isset($value['properties']['type']) => self::create($value['properties'], $defaultAnalyzer, $analyzers, (string) $fieldName),
                 in_array(
                     $value['type'],
                     ['search_as_you_type', 'text', 'completion']
