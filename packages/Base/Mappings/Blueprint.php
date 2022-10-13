@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Mappings;
 
+use Closure;
 use Sigmie\Base\Mappings\Types\Boolean;
 use Sigmie\Base\Mappings\Types\Date;
 use Sigmie\Base\Mappings\Types\Keyword;
+use Sigmie\Base\Mappings\Types\Nested;
 use Sigmie\Base\Mappings\Types\Number;
 use Sigmie\Base\Mappings\Types\Text;
 use Sigmie\Support\Collection;
@@ -71,6 +73,21 @@ class Blueprint
         $field = new Boolean($name);
 
         $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function nested(string $name, null|callable $callable = null): Nested
+    {
+        $field = new Nested($name);
+
+        $this->fields->add($field);
+
+        if (is_null($callable)) {
+            return $field;
+        }
+
+        $field->properties($callable);
 
         return $field;
     }
