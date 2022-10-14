@@ -133,6 +133,16 @@ class Search
         $parsedSource = preg_replace('/"@json\(([a-z]+)\)"/', '{{#toJson}}$1{{/toJson}}', $parsedSource);
         $parsedSource = preg_replace('/"@var\(([a-z]+),([a-z,0-9]+)\)"/', '{{$1}}{{^$1}}$2{{/$1}}', $parsedSource);
 
+        if (preg_match_all('/"@query\((.+)\)"/', $parsedSource, $matches)) {
+
+            $tobe = stripslashes($matches[1][0]);
+
+            $matchAll = '{"match_all": {}}';
+            $tobe = "{{#match_all}}{$matchAll}{{/match_all}} {{^match_all}}{$tobe}{{/match_all}}";
+
+            $parsedSource = preg_replace('/"@query\((.+)\)"/', $tobe, $parsedSource);
+        }
+
         $script = [
             'script' => [
                 'lang' => 'mustache',

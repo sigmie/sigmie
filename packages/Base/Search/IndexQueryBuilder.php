@@ -144,17 +144,27 @@ class IndexQueryBuilder
         $query = $this->searchBuilder->bool(function (Boolean $boolean) {
             if ($this->filterable) {
                 $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('filter', '@json(filters)'));
-                // $boolean->addRaw('filter', '@json(filters)');
             }
+
+            // $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('must', '@json(filters)'));
 
             //TODO handle query depending on mappings
             $boolean->must()->bool(function (Boolean $boolean) {
+
+                $queryBoolean = new Boolean;
                 foreach ($this->fields as $field) {
                     $boost  = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
                     $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
                     $query = new Match_($field, $this->query, $fuzziness);
 
-                    $boolean->should()->query($query->boost($boost));
+                    $queryBoolean->should()->query($query->boost($boost));
+                }
+
+                if ($queryBoolean->toRaw()['bool']['should'] ?? false) {
+                    $query = json_encode($queryBoolean->toRaw()['bool']['should']);
+                    $query = stripslashes($query);
+
+                    $boolean->addRaw('should', "@query($query)");
                 }
             });
         })->fields($this->retrieve);

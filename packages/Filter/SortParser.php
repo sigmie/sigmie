@@ -4,11 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Filter;
 
-use Sigmie\Base\Mappings\Properties;
-use Sigmie\Base\Mappings\Types\Date;
-use Sigmie\Base\Mappings\Types\Keyword;
-use Sigmie\Base\Mappings\Types\Number;
-use Sigmie\Base\Mappings\Types\Text;
+use Sigmie\Base\Mappings\ElasticsearchMappingType;
 use Sigmie\Base\Search\Search;
 
 class SortParser
@@ -17,9 +13,10 @@ class SortParser
 
     protected array $errors = [];
 
-    public function __construct(protected string $queryString, protected Properties $properties)
+    public function __construct(protected string $queryString, protected array $rawProperties)
     {
-        $sortPattern = '/sort:\w+(-(asc|desc))?/';
+        $this->queryString = preg_replace('/SORT/', '', $queryString);
+        $sortPattern = '/\w+:(asc|desc)/';
         preg_match_all($sortPattern, $queryString, $this->sortMatches);
         $queryString = preg_replace($sortPattern, '', $queryString);
     }
@@ -27,14 +24,8 @@ class SortParser
     public function __invoke(Search $search): void
     {
         foreach ($this->sortMatches[0] as $match) {
-            $direction = 'asc';
-            [, $field] = explode(':', $match);
 
-            $fieldWithDirection = explode('-', $field);
-
-            if (count($fieldWithDirection) > 1) {
-                [$field, $direction] = $fieldWithDirection;
-            }
+            [$field, $direction] = explode(':', $match);
 
             if (!$this->fieldExists($field)) {
                 $this->errors[] = [
@@ -81,21 +72,25 @@ class SortParser
 
     private function textFieldKeywordName(string $field): string
     {
-        $fields = $this->properties->toArray();
-        return $fields[$field]->sortableName();
+        $fields = $this->rawProperties;
+
+        $keywordName = array_key_first($fields[$field]['fields']);
+
+        return "{$field}.{$keywordName}";
     }
 
     private function isTextField(string $field): bool
     {
-        $fields = $this->properties->toArray();
+        $fields = $this->rawProperties;
+
         $field = $fields[$field];
 
-        return $field instanceof Text;
+        return $field['type'] === 'text';
     }
 
     private function isSortableField(string $field)
     {
-        $fields = $this->properties->toArray();
+        $fields = $this->rawProperties;
 
         //Field doesn't exist
         if (!in_array($field, array_keys($fields))) {
@@ -103,20 +98,20 @@ class SortParser
         }
 
         $field = $fields[$field];
+        $type = $field['type'];
 
-        if ($field instanceof Number) {
-            return true;
-        }
-
-        if ($field instanceof Text && $field->isSortable()) {
-            return true;
-        }
-
-        if ($field instanceof Keyword) {
-            return true;
-        }
-
-        if ($field instanceof Date) {
+        if (
+            $type === ElasticsearchMappingType::INTEGER->value ||
+            $type === ElasticsearchMappingType::FLOAT->value ||
+            $type === ElasticsearchMappingType::LONG->value ||
+            $type === ElasticsearchMappingType::DATE->value ||
+            $type === ElasticsearchMappingType::KEYWORD->value ||
+            (($type === ElasticsearchMappingType::TEXT->value ||
+                $type === ElasticsearchMappingType::SEARCH_AS_YOU_TYPE->value ||
+                $type === ElasticsearchMappingType::COMPLETION->value) &&
+                $field['fields']['keyword']['type'] ?? false === 'keyword'
+            )
+        ) {
             return true;
         }
 
@@ -125,7 +120,7 @@ class SortParser
 
     private function fieldExists(string $field): bool
     {
-        $fields = $this->properties->toArray();
+        $fields = $this->rawProperties;
 
         //Field doesn't exist
         if (!in_array($field, array_keys($fields))) {

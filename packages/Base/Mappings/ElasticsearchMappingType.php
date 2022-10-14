@@ -11,6 +11,9 @@ enum ElasticsearchMappingType: string
     case BOOLEAN = 'boolean';
     case DATE = 'date';
     case PROPERTIES = 'properties';
+    case TEXT =  'text';
+    case SEARCH_AS_YOU_TYPE =  'search_as_you_type';
+    case COMPLETION =  'completion';
 
     public function isKeyword(string $type)
     {

@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Filter;
 
 use Sigmie\Base\Contracts\QueryClause;
-use Sigmie\Base\Mappings\Properties;
-use Sigmie\Base\Mappings\Types\Keyword;
-use Sigmie\Base\Mappings\Types\Text;
 use Sigmie\Base\Search\Queries\Compound\Boolean;
 use Sigmie\Base\Search\Queries\MatchNone;
 use Sigmie\Base\Search\Queries\Term\IDs;
@@ -22,7 +19,7 @@ class FilterParser
 
     public array $structure;
 
-    public function __construct(protected string $queryString, protected Properties $properties)
+    public function __construct(protected string $queryString, protected array $rawProperties)
     {
         $this->structure = $this->parseQuery($queryString);
     }
@@ -38,6 +35,7 @@ class FilterParser
 
         // If it's a parenthetic expression
         if (preg_match_all("/\((((?>[^()]+)|(?R))*)\)/", $query, $matches)) {
+
             $matchWithParentheses = $matches[0][0];
 
             //Remove outer parenthesis
@@ -49,7 +47,7 @@ class FilterParser
             //Trim leading and trailing spaces
             $query = trim($query);
 
-            //Create filter from parentheses match
+            //Create filter from parentheses match 
             $filter = $this->parseQuery($matchWithoutParentheses);
         } else {
             [$filter] = preg_split('/(AND NOT|AND|OR)/', $query, limit: 2);
@@ -67,6 +65,7 @@ class FilterParser
         $res = ['filter' => $filter];
 
         if (preg_match('/^(?P<operator>AND NOT|AND|OR)/', $query, $matchWithoutParentheses)) {
+
             $operator = $matchWithoutParentheses['operator'];
             //Remove operator from the query string
             $query = preg_replace("/^{$operator}/", '', $query);
@@ -84,7 +83,7 @@ class FilterParser
 
     protected function apply(array $filters, string $operator = 'AND'): Boolean
     {
-        $boolean = new Boolean();
+        $boolean = new Boolean;
 
         $filter = $filters['filter'];
         $operator = $filters['operator'] ?? $operator;
@@ -105,6 +104,7 @@ class FilterParser
         };
 
         if ($filters['operator'] ?? false) {
+
             $query2 = $this->apply($values, $operator);
 
             match ($operator) {
@@ -120,10 +120,10 @@ class FilterParser
     public function stringToQueryClause(string $string): QueryClause
     {
         $query = match (1) {
-            preg_match('/^is:[a-z_A-Z0-9]+/', $string) => $this->handleIs($string),
-            preg_match('/^is_not:[a-z_A-Z0-9]+/', $string) => $this->handleIsNot($string),
+            preg_match('/is:[a-z_A-Z0-9]+/', $string) => $this->handleIs($string),
+            preg_match('/is_not:[a-z_A-Z0-9]+/', $string) => $this->handleIsNot($string),
             preg_match('/(\w+)( +)?([<>]=?)+( +)?([a-z_A-Z0-9.@]+)/', $string) => $this->handleRange($string),
-            preg_match('/^_id:[a-z_A-Z0-9]+/', $string) => $this->handleIDs($string),
+            preg_match('/_id:[a-z_A-Z0-9]+/', $string) => $this->handleIDs($string),
             preg_match('/\w+:\[[a-z_A-Z,0-9.@*]+\]/', $string) => $this->handleIn($string),
             preg_match('/\w+:[a-z_A-Z0-9.@*]+/', $string) => $this->handleTerm($string),
             preg_match('/\w+:"[a-z_A-Z0-9 .@*]+"/', $string) => $this->handleWildcard($string),
@@ -138,12 +138,13 @@ class FilterParser
             'message' => "Filter {$string} couldn't be parsed.",
         ];
 
-        return new MatchNone();
+        return new MatchNone;
     }
 
     public function handleRange(string $range)
     {
-        [$filed, $operator, $value] = preg_match('/(\w+)( +)?([<>]=?)+( +)?([a-z_A-Z0-9.@]+)/', $range, $matches);
+        preg_match('/(\w+)( +)?([<>]=?)+( +)?([a-z_A-Z0-9.@]+)/', $range, $matches);
+
         $field = $matches[1];
         $operator = $matches[3];
         $value = $matches[5];
@@ -184,11 +185,6 @@ class FilterParser
     public function handleTerm(string $term)
     {
         [$field, $value] = explode(':', $term);
-        $value = trim($value, '"');
-
-        if ($this->isTextOrKeywordField($field)) {
-            $field = "{$field}.keyword";
-        }
 
         return new Term($field, $value);
     }
@@ -225,10 +221,8 @@ class FilterParser
 
     private function fieldExists(string $field): bool
     {
-        $fields = $this->properties->toArray();
-
         //Field doesn't exist
-        if (!in_array($field, array_keys($fields))) {
+        if (!in_array($field, array_keys($this->rawProperties))) {
             return false;
         }
 
@@ -237,9 +231,9 @@ class FilterParser
 
     private function isTextOrKeywordField(string $field): bool
     {
-        $fields = $this->properties->toArray();
+        $fields = $this->rawProperties;
         $field = $fields[$field];
 
-        return $field instanceof Text || $field instanceof Keyword;
+        return $field['type'] === 'text' || $field['type'] === 'keyword';
     }
 }
