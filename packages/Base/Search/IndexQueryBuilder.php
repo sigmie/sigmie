@@ -146,7 +146,6 @@ class IndexQueryBuilder
                 $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('filter', '@json(filters)'));
             }
 
-            // $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('must', '@json(filters)'));
 
             //TODO handle query depending on mappings
             $boolean->must()->bool(function (Boolean $boolean) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Mappings;
 
 use ArrayAccess;
+use Sigmie\Base\Contracts\FromRaw;
 use Sigmie\Base\Mappings\Types\Text;
 use Sigmie\Support\Collection;
 use Sigmie\Support\Contracts\Collection as CollectionInterface;

@@ -18,6 +18,7 @@ function remote()
 
 git pull origin master
 
+remote filter git@github.com:sigmie/filter.git
 remote cli git@github.com:sigmie/cli.git
 remote http git@github.com:sigmie/http.git
 remote filter git@github.com:sigmie/filter.git
