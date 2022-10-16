@@ -138,7 +138,8 @@ class Search
             $tobe = stripslashes($matches[1][0]);
 
             $matchAll = '{"match_all": {}}';
-            $tobe = "{{#match_all}}{$matchAll}{{/match_all}} {{^match_all}}{$tobe}{{/match_all}}";
+            // $tobe = "{{#match_all}}{$matchAll}{{/match_all}} {{^match_all}}{$tobe}{{/match_all}}";
+            $tobe = "{{#query}}{$tobe}{{/query}} {{^query}}{$matchAll}{{/query}}";
 
             $parsedSource = preg_replace('/"@query\((.+)\)"/', $tobe, $parsedSource);
         }
