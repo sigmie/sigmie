@@ -35,6 +35,8 @@ class IndexQueryBuilder
 
     protected bool $filterable = false;
 
+    protected bool $sortable = false;
+
     protected int $minCharsForOneTypo;
 
     protected int $minCharsForTwoTypo;
@@ -146,12 +148,6 @@ class IndexQueryBuilder
                 $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('filter', '@json(filters)'));
             }
 
-            // if ($this->sortable) {
-            //     $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('sort', '@json(sorts)'));
-            // }
-
-            // $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('must', '@json(filters)'));
-
             //TODO handle query depending on mappings
             $boolean->must()->bool(function (Boolean $boolean) {
 
@@ -166,21 +162,24 @@ class IndexQueryBuilder
 
                 if ($queryBoolean->toRaw()['bool']['should'] ?? false) {
                     $query = json_encode($queryBoolean->toRaw()['bool']['should']);
-                    $query = stripslashes($query);
 
                     $boolean->addRaw('should', "@query($query)");
                 }
             });
         })->fields($this->retrieve);
 
-        foreach ($this->sorts as $field => $direction) {
-            if (is_int($field)) {
-                $query->sort($direction);
-                continue;
-            }
+        // if ($this->sortable) {
+        $query->addRaw('sort', '@json(sort)');
+        // } else {
+        //     foreach ($this->sorts as $field => $direction) {
+        //         if (is_int($field)) {
+        //             $query->sort($direction);
+        //             continue;
+        //         }
 
-            $query->sort($field, $direction);
-        }
+        //         $query->sort($field, $direction);
+        //     }
+        // }
 
         foreach ($this->highlighAttributes as $field) {
             $query->highlight($field, $this->prefix, $this->suffix);

@@ -25,6 +25,8 @@ class Search
 
     protected array $fields = ['*'];
 
+    protected array $raw = [];
+
     protected array $sort = [];
 
     protected array $highlight = [];
@@ -79,6 +81,13 @@ class Search
         }
 
         $this->sort[] = [$field => $direction];
+
+        return $this;
+    }
+
+    public function addRaw(string $key, mixed $value)
+    {
+        $this->raw[$key] = $value;
 
         return $this;
     }
@@ -177,7 +186,8 @@ class Search
                 'fields' => [
                     ...$this->highlight
                 ]
-            ]
+            ],
+            ...$this->raw
         ];
 
         if (count($this->aggs->toRaw()) > 0) {

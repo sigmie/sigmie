@@ -15,17 +15,25 @@ class SortParser
 
     public function __construct(protected string $queryString, protected array $rawProperties)
     {
-        $this->queryString = preg_replace('/SORT/', '', $queryString);
-        $sortPattern = '/\w+:(asc|desc)/';
-        preg_match_all($sortPattern, $queryString, $this->sortMatches);
-        $queryString = preg_replace($sortPattern, '', $queryString);
+        $this->sortMatches = explode(' ', $this->queryString);
     }
 
-    public function __invoke(Search $search): void
+    public function __invoke(): array
     {
-        foreach ($this->sortMatches[0] as $match) {
+        $sort = [];
+        foreach ($this->sortMatches as $match) {
 
-            [$field, $direction] = explode(':', $match);
+            if (in_array($match, ['_score', '_doc'])) {
+                $sort[] = $match;
+                continue;
+            }
+
+            if (str_contains($match, ':')) {
+                [$field, $direction] = explode(':', $match);
+            } else {
+                $field = $match;
+                $direction = 'asc';
+            }
 
             if (!$this->fieldExists($field)) {
                 $this->errors[] = [
@@ -45,24 +53,17 @@ class SortParser
                 continue;
             }
 
-            if (!in_array($direction, ['asc', 'desc'])) {
-                $this->errors[] = [
-                    'match' => $match,
-                    'message' => "{$direction} is not a valid sort direction.",
-                    'field' => $field,
-                ];
-                continue;
-            }
-
             if ($this->isTextField($field)) {
                 $field = $this->textFieldKeywordName($field);
 
-                $search->sort($field, $direction);
+                $sort[] = [$field => $direction];
                 continue;
             }
 
-            $search->sort($field, $direction);
+            $sort[] = [$field => $direction];
         }
+
+        return $sort;
     }
 
     public function errors(): array
