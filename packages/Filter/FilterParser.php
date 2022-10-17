@@ -185,7 +185,6 @@ class FilterParser
     public function handleTerm(string $term)
     {
         [$field, $value] = explode(':', $term);
-        $value = trim($value, '"');
 
         return new Term($field, $value);
     }

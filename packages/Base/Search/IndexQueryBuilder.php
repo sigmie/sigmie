@@ -35,6 +35,8 @@ class IndexQueryBuilder
 
     protected bool $filterable = false;
 
+    protected bool $sortable = false;
+
     protected int $minCharsForOneTypo;
 
     protected int $minCharsForTwoTypo;
@@ -93,6 +95,8 @@ class IndexQueryBuilder
 
     public function sort(array $sorts): self
     {
+        $this->sorts = $sorts;
+
         return $this;
     }
 
@@ -161,21 +165,23 @@ class IndexQueryBuilder
 
                 if ($queryBoolean->toRaw()['bool']['should'] ?? false) {
                     $query = json_encode($queryBoolean->toRaw()['bool']['should']);
-                    $query = stripslashes($query);
 
-                    $boolean->addRaw('should', "@query($query)");
+                    $boolean->addRaw('should', "@query($query)@endquery");
                 }
             });
         })->fields($this->retrieve);
 
+        $defaultSorts = [];
         foreach ($this->sorts as $field => $direction) {
-            if (is_int($field)) {
-                $query->sort($direction);
+            if ($field === '_score') {
+                $defaultSorts[] = $field;
                 continue;
             }
-
-            $query->sort($field, $direction);
+            $defaultSorts[] = [$field => $direction];
         }
+
+        $defaultSorts = json_encode($defaultSorts);
+        $query->addRaw('sort', "@sorting($defaultSorts)@endsorting");
 
         foreach ($this->highlighAttributes as $field) {
             $query->highlight($field, $this->prefix, $this->suffix);
