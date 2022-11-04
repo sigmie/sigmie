@@ -7,15 +7,14 @@ namespace Sigmie\Base\Http;
 use Exception;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse as ElasticsearchResponseInterface;
-use Sigmie\Base\Exceptions\ElasticsearchException;
+use Sigmie\Base\ElasticsearchException;
 use Sigmie\Http\JSONResponse;
 
 class ElasticsearchResponse extends JSONResponse implements ElasticsearchResponseInterface
 {
     public function failed(): bool
     {
-        return $this->serverError() || $this->clientError() || $this->hasErrorKey();
-    }
+        return $this->serverError() || $this->clientError() || $this->hasErrorKey(); }
 
     public function exception(ElasticsearchRequest $request): Exception
     {
@@ -45,11 +44,8 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
             $type = $this->json('failures.0.cause.type');
         }
 
-        if (!is_null($type)) {
-            return ElasticsearchException::fromType($type, $this->json());
-        }
-
         return new ElasticsearchException([
+            'type' => $type,
             'code' => $this->code(),
             'json' => $this->json(),
             'body' => $this->body(),

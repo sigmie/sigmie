@@ -6,10 +6,11 @@ namespace Sigmie\Base\Http;
 
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
-use Sigmie\Base\Contracts\HttpConnection as ConnectionInterface;
+use Sigmie\Base\Contracts\ElasticsearchConnection as ElasticsearchConnectionInterface;
 use Sigmie\Http\Contracts\JSONClient as JSONClientInterface;
+use Sigmie\Http\JSONClient;
 
-class Connection implements ConnectionInterface
+class ElasticsearchConnection implements ElasticsearchConnectionInterface
 {
     protected JSONClientInterface $http;
 
@@ -18,7 +19,7 @@ class Connection implements ConnectionInterface
         $this->http = $http;
     }
 
-    public function __invoke(ElasticsearchRequest $request, array $options = []): ElasticsearchResponse
+    public function __invoke(ElasticsearchRequest $request,): ElasticsearchResponse
     {
         $uri = $request->getUri();
 
@@ -28,11 +29,12 @@ class Connection implements ConnectionInterface
 
         $response = $request->response($jsonResponse->psr());
 
-        if ($request->getMethod() === 'HEAD' && $response->failed()) {
+        if ($request->getMethod() === 'HEAD') {
             return $response;
         }
 
         if ($response->failed()) {
+            ray($request);
             throw $response->exception($request);
         }
 

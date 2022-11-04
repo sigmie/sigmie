@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\APIs;
 
 use GuzzleHttp\Psr7\Uri;
-use Sigmie\Base\Contracts\API;
 use Sigmie\Base\Http\Requests\MSearch as RequestsMSearch;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 
@@ -19,6 +18,6 @@ trait MSearch
 
         $esRequest = new RequestsMSearch('POST', $uri, $body);
 
-        return $this->httpCall($esRequest);
+        return $this->elasticsearchCall($esRequest);
     }
 }
