@@ -24,19 +24,46 @@ class JSONClient implements JSONClientInterface
         return new JSONResponse($psrResponse);
     }
 
-    public static function create(array|string $hosts, ?Auth $auth = null): static
-    {
-        $hosts = (is_string($hosts)) ? explode(',', $hosts) : $hosts;
+    public static function createWithToken(
+        array $hosts,
+        string $token,
+        array $config = []
+    ): static
+    {     return self::create($hosts, [
+            'headers' => ['Authorization' => "Bearer {$token}"],
+        ]);
+    }
 
+    public static function createWithBasic(
+        array $hosts,
+        string $username,
+        string $password,
+        array $config = []
+    ): static {
+        return self::create($hosts, [
+            'auth' => [$username, $password],
+        ]);
+    }
+
+    public static function createWithHeaders(
+        array $hosts,
+        array $headers,
+        array $config = []
+    ): static {
+        return self::create($hosts, [
+            'auth' => $headers,
+        ]);
+    }
+
+
+    public static function create(array $hosts, array $config = []): static
+    {
         $config = [
             'allow_redirects' => false,
             'http_errors' => false,
             'connect_timeout' => 15,
+            ...$config
         ];
-
-        if (is_null($auth) === false) {
-            $config = array_merge($config, $auth->keys());
-        }
 
         $client = new GuzzleHttpClient($config);
 
