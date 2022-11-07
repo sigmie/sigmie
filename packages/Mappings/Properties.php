@@ -11,13 +11,13 @@ use Sigmie\Shared\Collection;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\SimpleAnalyzer;
 use Sigmie\Mappings\ElasticsearchMappingType;
-use Sigmie\Mappings\PropertyType;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Date;
+use Sigmie\Mappings\Types\Type;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Number;
 
-class Properties extends PropertyType implements ArrayAccess
+class Properties extends Type implements ArrayAccess
 {
     public function __construct(string $name = 'mappings', protected array $fields = [])
     {
@@ -50,7 +50,7 @@ class Properties extends PropertyType implements ArrayAccess
     {
         $collection = new Collection($this->fields);
 
-        return $collection->filter(fn (PropertyType $type) => $type instanceof Text);
+        return $collection->filter(fn (Type $type) => $type instanceof Text);
     }
 
     public function toArray(): array
@@ -103,7 +103,7 @@ class Properties extends PropertyType implements ArrayAccess
     public function toRaw(): array
     {
         $fields = (new Collection($this->fields))
-            ->mapToDictionary(fn (PropertyType $value) => $value->toRaw())
+            ->mapToDictionary(fn (Type $value) => $value->toRaw())
             ->toArray();
 
         if ($this->name === 'mappings') {

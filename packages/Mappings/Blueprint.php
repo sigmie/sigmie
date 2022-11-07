@@ -12,6 +12,7 @@ use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Shared\Collection;
+use Sigmie\Mappings\Types\Type;
 
 class Blueprint
 {
@@ -24,7 +25,7 @@ class Blueprint
 
     public function __invoke(string $name = 'mappings'): Properties
     {
-        $fields = $this->fields->mapToDictionary(function (PropertyType $type) {
+        $fields = $this->fields->mapToDictionary(function (Type $type) {
             return [$type->name() => $type];
         })->toArray();
 

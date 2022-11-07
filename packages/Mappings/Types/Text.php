@@ -8,18 +8,18 @@ use Exception;
 use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Index\Contracts\CustomAnalyzer as AnalyzerInterface;
 use Sigmie\Shared\Contracts\FromRaw;
-use Sigmie\Mappings\PropertyType;
 
 use function Sigmie\Functions\name_configs;
 
-class Text extends PropertyType implements FromRaw
+class Text extends Type implements FromRaw
 {
     protected ?Analyzer $analyzer = null;
 
     public function __construct(
-        protected string $name,
+        string $name,
         protected null|string $raw = null,
     ) {
+        parent::__construct($name);
     }
 
     public static function fromRaw(array $raw): static
@@ -40,7 +40,7 @@ class Text extends PropertyType implements FromRaw
             'text' => $instance->unstructuredText(),
             'search_as_you_type' => $instance->searchAsYouType(),
             'completion' => $instance->completion(),
-            default => throw new Exception('Field '.$configs['type'].' couldn\'t be mapped')
+            default => throw new Exception('Field ' . $configs['type'] . ' couldn\'t be mapped')
         };
     }
 

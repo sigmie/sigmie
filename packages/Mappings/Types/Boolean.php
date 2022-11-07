@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use Sigmie\Mappings\Type;
+use Sigmie\Mappings\Types\Type;
 
 class Boolean extends Type
 {

@@ -2,18 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Mapping\Types;
+namespace Sigmie\Mappings\Types;
 
+use Sigmie\Mappings\Contracts\Type as TypeInterface;
+use Sigmie\Shared\Contracts\ToRaw;
 use Sigmie\Shared\Contracts\Name;
-use Sigmie\Contracts\ToRaw;
-use Sigmie\Mappings\Contracts\Type;
 
-abstract class Type implements Name, ToRaw, Type
+abstract class Type implements Name, ToRaw, TypeInterface
 {
     protected string $type;
 
-    public function __construct(protected string $name)
-    {
+    public function __construct(
+        public readonly string $name
+    ) {
     }
 
     public function __invoke(): array

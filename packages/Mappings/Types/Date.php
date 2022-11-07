@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use Sigmie\Mappings\Type;
+use Sigmie\Mappings\Types\Type;
 
 class Date extends Type
 {
-    protected array $formats = [];
+    public function __construct(
+        string $name,
+        protected array $formats = ['yyyy-MM-dd HH:mm:ss.SSSSSS']
+    ) {
+        parent::__construct($name);
+    }
 
     public function format(string $format): void
     {
