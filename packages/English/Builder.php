@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\English;
 
-use Sigmie\Base\Contracts\LanguageBuilder;
-use Sigmie\Base\Index\Builder as IndexBuilder;
+use Sigmie\Index\Contracts\LanguageBuilder;
+use Sigmie\Index\Builder as IndexBuilder;
 
 use Sigmie\English\Filter\LightStemmer  as EnglishLightStemmer;
 use Sigmie\English\Filter\LovinsStemmer as EnglishLovinsStemmer;

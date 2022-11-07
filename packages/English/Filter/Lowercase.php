@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\English\Filter;
 
-use Sigmie\Base\Analysis\TokenFilter\Lowercase as BaseLowercase;
+use Sigmie\Index\Analysis\TokenFilter\Lowercase as BaseLowercase;
 
 class Lowercase extends BaseLowercase
 {
-    public function __construct(string $name = 'english_lowercase')
+    public function __construct(
+        string $name = 'english_lowercase')
     {
         parent::__construct($name);
     }
