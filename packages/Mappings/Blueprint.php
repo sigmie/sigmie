@@ -32,13 +32,13 @@ class Blueprint
         return new Properties($name, $fields);
     }
 
-    public function text(string $name, bool $keyword = false): Text
+    public function text(string $name): Text
     {
-        $field = new Text($name, ($keyword) ? 'keyword' : null);
+        $field = new Text($name);
 
         $this->fields->add($field);
 
-        return $field;
+        return $field->unstructuredText();
     }
 
     public function keyword(string $name): Keyword

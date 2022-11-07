@@ -49,7 +49,17 @@ class Text extends Type implements FromRaw
         return !is_null($this->raw);
     }
 
+    public function isFilterable(): bool
+    {
+        return !is_null($this->raw);
+    }
+
     public function sortableName(): null|string
+    {
+        return (is_null($this->raw)) ? null : "{$this->name}.{$this->raw}";
+    }
+
+    public function filterableName(): null|string
     {
         return (is_null($this->raw)) ? null : "{$this->name}.{$this->raw}";
     }
@@ -69,6 +79,18 @@ class Text extends Type implements FromRaw
 
         return $this;
     }
+
+    public function keyword()
+    {
+        if ($this->type !== 'text') {
+            throw new Exception('Only unstructured text can be used as keyword');
+        }
+
+        $this->raw = 'keyword';
+
+        return $this;
+    }
+
 
     public function completion(Analyzer $analyzer = null): self
     {
