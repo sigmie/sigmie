@@ -7,7 +7,7 @@ namespace Sigmie\Analytics\Metrics;
 use Sigmie\Query\Aggregations\Bucket\DateHistogram;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Aggregations\Metrics\Metric;
-use Sigmie\Search\Aggs;
+use Sigmie\Query\Aggs;
 use Sigmie\Support\Collection;
 
 abstract class Trend extends DateHistogram

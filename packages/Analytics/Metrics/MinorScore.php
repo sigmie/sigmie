@@ -7,7 +7,7 @@ namespace Sigmie\Analytics\Metrics;
 use Illuminate\Support\Collection;
 use Sigmie\Query\Aggregations\Bucket\RareTerms;
 use Sigmie\Query\Aggregations\Pipeline\SortBucket;
-use Sigmie\Search\Aggs;
+use Sigmie\Query\Aggs;
 
 class MinorScore extends RareTerms
 {

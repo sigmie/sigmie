@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Analytics;
+namespace Sigmie\Analytics;
 
 use DateTime;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Query\Queries\Compound\Boolean;
-use Sigmie\Search\Metrics\Scores;
-use Sigmie\Search\Metrics\Trends;
-use Sigmie\Search\Metrics\Values;
+use Sigmie\Analytics\Metrics\Scores;
+use Sigmie\Analytics\Metrics\Trends;
+use Sigmie\Analytics\Metrics\Values;
 use Sigmie\Search\SearchBuilder;
 
 class MetricQueryBuilder
