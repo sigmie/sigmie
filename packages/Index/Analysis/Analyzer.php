@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis;
 
+use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Index\Analysis\Tokenizers\NonLetter;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
@@ -12,11 +13,8 @@ use Sigmie\Index\Contracts\CharFilter;
 use Sigmie\Index\Contracts\CustomAnalyzer as AnalyzerInterface;
 use Sigmie\Index\Contracts\TokenFilter;
 use Sigmie\Index\Contracts\Tokenizer;
-use Sigmie\Shared\Name;
 use Sigmie\Shared\Collection;
-
-use function Sigmie\Functions\ensure_collection;
-use function Sigmie\Functions\name_configs;
+use Sigmie\Shared\Name;
 
 class Analyzer implements AnalyzerInterface
 {

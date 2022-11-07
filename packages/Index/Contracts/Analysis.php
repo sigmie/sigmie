@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Contracts;
 
+use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Shared\Contracts\FromRaw;
 use Sigmie\Shared\Contracts\ToRaw;
-use Sigmie\Index\Analysis\DefaultAnalyzer;
-use Sigmie\Support\Contracts\Collection;
 
 interface Analysis extends FromRaw, ToRaw
 {

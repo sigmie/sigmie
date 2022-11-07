@@ -28,7 +28,7 @@ class WordBoundaries extends Tokenizer
     {
         [$name, $config] = name_configs($raw);
 
-        return new static($name, (int)$config['max_token_length']);
+        return new static($name, (int) $config['max_token_length']);
     }
 
     public function toRaw(): array

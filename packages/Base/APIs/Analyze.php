@@ -21,7 +21,6 @@ trait Analyze
             'text' => $text,
         ]);
 
-
         return $this->elasticsearchCall($request);
     }
 }

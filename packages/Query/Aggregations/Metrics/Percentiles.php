@@ -19,7 +19,7 @@ class Percentiles extends Metric
 
     protected function value(): array
     {
-        $value =  [
+        $value = [
             'percentiles' => [
                 'field' => $this->field,
                 'percents' => $this->percents,

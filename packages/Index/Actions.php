@@ -4,22 +4,16 @@ declare(strict_types=1);
 
 namespace Sigmie\Index;
 
-use Sigmie\Index\AliasedIndex;
 use Sigmie\Base\APIs\Cat as CatAPI;
 use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\APIs\Template;
+use Sigmie\Base\ElasticsearchException;
+use Sigmie\Base\Index\IndexTemplate;
+use Sigmie\Index\Alias\Actions as AliasActions;
+use Sigmie\Index\Alias\MultipleIndicesForAlias;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Contracts\Settings as SettingsInterface;
-use Sigmie\Base\ElasticsearchException;
-use Sigmie\Base\Exceptions\IndexNotFoundException;
 use Sigmie\Index\Index as BaseIndex;
-use Sigmie\Base\Index\IndexTemplate;
-use Sigmie\Index\Mappings;
-use Sigmie\Index\Settings;
-use Sigmie\Index\Alias\Actions as AliasActions;
-use Sigmie\Support\Collection;
-use Sigmie\Support\Contracts\Collection as CollectionInterface;
-use Sigmie\Index\Alias\MultipleIndicesForAlias;
 
 trait Actions
 {
@@ -76,7 +70,6 @@ trait Actions
             throw $e;
         }
 
-
         if (count($res->json()) > 1) {
             throw MultipleIndicesForAlias::forAlias($alias);
         }
@@ -87,7 +80,6 @@ trait Actions
         $settings = Settings::fromRaw($data['settings']);
         $analyzers = $settings->analysis()->analyzers();
         $mappings = Mappings::create($data['mappings'], $analyzers);
-
 
         if (isset($data['aliases']) && in_array($alias, array_keys($data['aliases']))) {
             $index = new AliasedIndex($name, $alias, $settings, $mappings);

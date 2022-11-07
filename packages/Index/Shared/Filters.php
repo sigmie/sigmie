@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Index\Shared;
 
 use Exception;
+use function Sigmie\Functions\random_letters;
 use Sigmie\Index\Analysis\TokenFilter\AsciiFolding;
 use Sigmie\Index\Analysis\TokenFilter\DecimalDigit;
 use Sigmie\Index\Analysis\TokenFilter\Keywords;
@@ -20,8 +21,6 @@ use Sigmie\Index\Analysis\TokenFilter\Uppercase;
 use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\TokenFilter;
 use Sigmie\Shared\Collection;
-
-use function Sigmie\Functions\random_letters;
 
 trait Filters
 {
@@ -175,7 +174,7 @@ trait Filters
 
     private function initFilters(): void
     {
-        $this->filters  = $this->filters ?? new Collection();
+        $this->filters = $this->filters ?? new Collection();
     }
 
     private function ensureFilterNameIsAvailable(string $name): void

@@ -19,7 +19,6 @@ class ElasticsearchException extends Exception implements ToRaw
         return dot($this->json)->get($key);
     }
 
-
     public function toRaw(): array
     {
         return json_decode($this->message, true);

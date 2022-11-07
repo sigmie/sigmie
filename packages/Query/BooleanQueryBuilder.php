@@ -27,7 +27,7 @@ class BooleanQueryBuilder implements Queries
 
     public function matchAll(float|int $boost = 1): self
     {
-        $clause =  new MatchAll();
+        $clause = new MatchAll();
 
         $this->clauses[] = $clause->boost($boost);
 
@@ -106,7 +106,7 @@ class BooleanQueryBuilder implements Queries
 
     public function term(string $field, int|string|bool $value, float $boost = 1): self
     {
-        $clause =  new Term($field, $value);
+        $clause = new Term($field, $value);
 
         $this->clauses[] = $clause->boost($boost);
 
@@ -145,7 +145,7 @@ class BooleanQueryBuilder implements Queries
         array $values = [],
         float $boost = 1
     ): self {
-        $clause =  new Range($field, $values);
+        $clause = new Range($field, $values);
 
         $this->clauses[] = $clause->boost($boost);
 

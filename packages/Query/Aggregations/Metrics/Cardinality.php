@@ -12,7 +12,7 @@ class Cardinality extends Metric
 
     protected function value(): array
     {
-        $value =  [
+        $value = [
             'cardinality' => [
                 'field' => $this->field,
             ],

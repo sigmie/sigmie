@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Sigmie\Index\Analysis\Tokenizer;
 
 use Exception;
+use function Sigmie\Helpers\random_letters;
 use Sigmie\Index\Analysis\Tokenizers\Pattern;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\Tokenizer;
-
-use function Sigmie\Helpers\random_letters;
 
 trait TokenizerBuilder
 {
@@ -64,10 +63,10 @@ trait TokenizerBuilder
 
     private function createTokenizerName(string $name): string
     {
-        $suffixed = $name . '_' . random_letters();
+        $suffixed = $name.'_'.random_letters();
 
         while ($this->analysis()->hasTokenizer($suffixed)) {
-            $suffixed = $name . '_' . random_letters();
+            $suffixed = $name.'_'.random_letters();
         }
 
         return $suffixed;

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Contracts;
 
-use Sigmie\Shared\Contracts\Raw;
-use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Shared\Contracts\FromRaw;
 use Sigmie\Shared\Contracts\ToRaw;
 

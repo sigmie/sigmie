@@ -13,6 +13,7 @@ class MultiMatch extends Query
         protected array $fields = [],
     ) {
     }
+
     public function toRaw(): array
     {
         $res = [

@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\APIs\Script as APIsScript;
+use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
-use Sigmie\Query\Contracts\Aggs as AggsInterface;
-use Sigmie\Document\Contracts\DocumentCollection;
 use Sigmie\Base\Pagination\Paginator;
+use Sigmie\Query\Aggs;
+use Sigmie\Query\Contracts\Aggs as AggsInterface;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Query;
-use Sigmie\Query\Aggs;
 
 class Search
 {
@@ -97,19 +96,14 @@ class Search
     public function highlight(string $field, string $preTag, string $postTag)
     {
         $this->highlight[$field] = [
-            "type" => 'plain',
+            'type' => 'plain',
             'force_source' => true,
-            "pre_tags" => [$preTag],
-            "post_tags" => [$postTag],
-            "fragment_size" => 150,
-            "number_of_fragments" => 3,
-            "no_match_size" => 150
+            'pre_tags' => [$preTag],
+            'post_tags' => [$postTag],
+            'fragment_size' => 150,
+            'number_of_fragments' => 3,
+            'no_match_size' => 150,
         ];
-    }
-
-    public function paginate(int $perPage, int $currentPage)
-    {
-        return new Paginator($perPage, $currentPage, $this);
     }
 
     public function response()
@@ -145,7 +139,6 @@ class Search
         $parsedSource = preg_replace('/"@var\(([a-z]+),([a-z,0-9]+)\)"/', '{{$1}}{{^$1}}$2{{/$1}}', $parsedSource);
 
         if (preg_match_all('/"@query\((.+)\)@endquery"/', $parsedSource, $matches)) {
-
             $tobe = stripslashes($matches[1][0]);
 
             $matchAll = '{"match_all": {}}';
@@ -155,7 +148,6 @@ class Search
         }
 
         if (preg_match('/"@sorting\((.+)\)@endsorting"/', $parsedSource, $sortMatches)) {
-
             $tobeSort = stripslashes($sortMatches[1]);
 
             $tobeSort = "{{^sort.isEmpty}}{{#toJson}}sort{{/toJson}}{{/sort.isEmpty}} {{^sort}}${tobeSort}{{/sort}}";
@@ -163,12 +155,11 @@ class Search
             $parsedSource = preg_replace('/"@sorting\((.+)\)@endsorting"/', $tobeSort, $parsedSource);
         }
 
-
         $script = [
             'script' => [
                 'lang' => 'mustache',
-                'source' => $parsedSource
-            ]
+                'source' => $parsedSource,
+            ],
         ];
 
         $res = $this->scriptAPICall('PUT', $name, $script);
@@ -180,7 +171,6 @@ class Search
     {
         return $this->query->toRaw();
     }
-
 
     public function toRaw(): array
     {
@@ -195,10 +185,10 @@ class Search
                 'force_source' => true,
                 'no_match_size' => 100,
                 'fields' => [
-                    ...$this->highlight
-                ]
+                    ...$this->highlight,
+                ],
             ],
-            ...$this->raw
+            ...$this->raw,
         ];
 
         if (count($this->aggs->toRaw()) > 0) {

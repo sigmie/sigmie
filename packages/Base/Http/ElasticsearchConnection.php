@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Http;
 
+use Sigmie\Base\Contracts\ElasticsearchConnection as ElasticsearchConnectionInterface;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
-use Sigmie\Base\Contracts\ElasticsearchConnection as ElasticsearchConnectionInterface;
 use Sigmie\Http\Contracts\JSONClient as JSONClientInterface;
-use Sigmie\Http\JSONClient;
 
 class ElasticsearchConnection implements ElasticsearchConnectionInterface
 {
@@ -19,7 +18,7 @@ class ElasticsearchConnection implements ElasticsearchConnectionInterface
         $this->http = $http;
     }
 
-    public function __invoke(ElasticsearchRequest $request,): ElasticsearchResponse
+    public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse
     {
         $uri = $request->getUri();
 

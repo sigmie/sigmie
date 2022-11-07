@@ -8,11 +8,9 @@ use InvalidArgumentException;
 use ParaTest\Runners\PHPUnit\BaseRunner;
 use ParaTest\Runners\PHPUnit\Worker\WrapperWorker;
 use PHPUnit\TextUI\TestRunner;
+use Sigmie\Base\APIs\API;
 use Sigmie\Base\APIs\Cat;
 use Sigmie\Base\APIs\Index;
-use Sigmie\Base\APIs\API;
-
-use function Sigmie\Helpers\testing_host;
 
 class ParallelRunner extends BaseRunner
 {
@@ -50,7 +48,7 @@ class ParallelRunner extends BaseRunner
 
     private function startWorkers(): void
     {
-        for ($token = 1; $token <= $this->options->processes(); ++$token) {
+        for ($token = 1; $token <= $this->options->processes(); $token++) {
             $this->clearProcessIndices($token);
 
             $this->workers[$token] = new WrapperWorker($this->output, $this->options, $token);
@@ -60,16 +58,16 @@ class ParallelRunner extends BaseRunner
 
     private function assignAllPendingTests(): void
     {
-        $phpunit        = $this->options->phpunit();
+        $phpunit = $this->options->phpunit();
         $phpunitOptions = $this->options->filtered();
 
         while (count($this->pending) > 0 && count($this->workers) > 0) {
             foreach ($this->workers as $worker) {
-                if (!$worker->isRunning()) {
+                if (! $worker->isRunning()) {
                     throw $worker->getWorkerCrashedException();
                 }
 
-                if (!$worker->isFree()) {
+                if (! $worker->isFree()) {
                     continue;
                 }
 
@@ -130,7 +128,7 @@ class ParallelRunner extends BaseRunner
                     continue;
                 }
 
-                if (!$worker->isFree()) {
+                if (! $worker->isFree()) {
                     throw $worker->getWorkerCrashedException();
                 }
 

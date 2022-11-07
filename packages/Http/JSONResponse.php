@@ -23,7 +23,6 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
     }
 
     /**
-     *
      * @return string
      */
     public function __toString()
@@ -41,7 +40,7 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
 
     public function json(null|int|string $key = null): int|bool|string|array|null|float
     {
-        if (!isset($this->decoded)) {
+        if (! isset($this->decoded)) {
             $this->decoded = dot(json_decode($this->body(), true));
         }
 
@@ -85,17 +84,16 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
 
     /**
      * Determine if the given offset exists.
-     *
      */
     public function offsetExists(mixed $offset): bool
     {
-        return !is_null($this->json($offset));
+        return ! is_null($this->json($offset));
     }
 
     /**
      * Get the value for a given offset.
      *
-     * @param string $offset
+     * @param  string  $offset
      */
     public function offsetGet(mixed $offset): mixed
     {

@@ -8,14 +8,6 @@ use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\Contracts\Parser as ParserInterface;
-use Sigmie\Query\Contracts\QueryClause;
-use Sigmie\Query\Queries\Compound\Boolean;
-use Sigmie\Query\Queries\MatchNone;
-use Sigmie\Query\Queries\Term\IDs;
-use Sigmie\Query\Queries\Term\Range;
-use Sigmie\Query\Queries\Term\Term;
-use Sigmie\Query\Queries\Term\Terms;
-use Sigmie\Query\Queries\Term\Wildcard;
 
 abstract class Parser implements ParserInterface
 {
@@ -36,24 +28,22 @@ abstract class Parser implements ParserInterface
         } else {
             $this->errors[] = [
                 'message' => $message,
-                ...$context
+                ...$context,
             ];
         }
     }
 
-
     protected function handleFieldName(string $field): null|string
     {
-        if (!$this->fieldExists($field)) {
-
+        if (! $this->fieldExists($field)) {
             $this->handleError("Field {$field} is does not exist.", [
-                'field' => $field
+                'field' => $field,
             ]);
 
             return null;
         }
 
-        if (!$this->isTextOrKeywordField($field)) {
+        if (! $this->isTextOrKeywordField($field)) {
             return $field;
         }
 
@@ -63,10 +53,11 @@ abstract class Parser implements ParserInterface
             return $field->name;
         }
 
-        if (!$field->isFilterable()) {
+        if (! $field->isFilterable()) {
             $this->handleError("Field {$field->name} is not filterable.", [
-                'field' => $field
+                'field' => $field,
             ]);
+
             return null;
         }
 

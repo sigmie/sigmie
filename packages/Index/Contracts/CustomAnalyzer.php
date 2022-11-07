@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Contracts;
 
-use Sigmie\Index\Contracts\Analyzer;
-use Sigmie\Shared\Collection;
-
 interface CustomAnalyzer extends Analyzer
 {
     public static function create(

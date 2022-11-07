@@ -38,6 +38,7 @@ class Synonyms extends TokenFilter
                 $to = array_map(fn ($value) => trim($value), $to);
 
                 $settings[] = [$from => $to];
+
                 continue;
             }
 

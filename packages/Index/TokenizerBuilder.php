@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Index;
 
-use Sigmie\Index\Contracts\Analysis;
-use Sigmie\Index\NewIndex as IndexBuilder;
 use Sigmie\Index\Analysis\Tokenizer\TokenizerBuilder as TokenizerTokenizerBuilder;
+use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\TokenizerBuilder as TokenizerBuilderInterface;
+use Sigmie\Index\NewIndex as IndexBuilder;
 
 class TokenizerBuilder implements TokenizerBuilderInterface
 {

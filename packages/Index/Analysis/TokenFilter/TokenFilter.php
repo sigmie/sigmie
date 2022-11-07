@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\TokenFilter;
 
-use Sigmie\Index\Contracts\TokenFilter as TokenFilterInterface;
-
 use function Sigmie\Functions\name_configs;
+use Sigmie\Index\Contracts\TokenFilter as TokenFilterInterface;
 
 abstract class TokenFilter implements TokenFilterInterface
 {

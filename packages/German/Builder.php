@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\German;
 
-use Sigmie\Index\Contracts\LanguageBuilder;
-use Sigmie\Index\NewIndex as IndexBuilder;
-
 use Sigmie\German\Filter\LightStemmer as GermanLightStemmer;
 use Sigmie\German\Filter\Lowercase as GermanLowercase;
 use Sigmie\German\Filter\MinimalStemmer as GermanMinimalStemmer;
@@ -14,6 +11,8 @@ use Sigmie\German\Filter\Normalize as GermanNormalize;
 use Sigmie\German\Filter\Stemmer as GermanStemmer;
 use Sigmie\German\Filter\Stemmer2 as GermanStemmer2;
 use Sigmie\German\Filter\Stopwords as GermanStopwords;
+use Sigmie\Index\Contracts\LanguageBuilder;
+use Sigmie\Index\NewIndex as IndexBuilder;
 
 class Builder extends IndexBuilder implements LanguageBuilder
 {

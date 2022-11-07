@@ -25,7 +25,7 @@ class AutoDateHistogram extends Bucket
             'auto_date_histogram' => [
                 'field' => $this->field,
                 'buckets' => $this->buckets,
-                'minimum_interval' => $this->minimumInterval->value
+                'minimum_interval' => $this->minimumInterval->value,
             ],
         ];
 

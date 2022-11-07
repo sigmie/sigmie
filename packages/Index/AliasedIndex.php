@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Index;
 
-use Sigmie\Index\Alias\Actions as AliasActions;
-use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\APIs\Reindex;
+use Sigmie\Index\Actions as IndexActions;
+use Sigmie\Index\Alias\Actions as AliasActions;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Contracts\Settings as SettingsInterface;
-use Sigmie\Index\UpdateProxy;
 
 class AliasedIndex extends Index
 {
@@ -28,7 +27,6 @@ class AliasedIndex extends Index
         $this->settings = $settings ?: new Settings();
         $this->mappings = $mappings ?: new Mappings();
     }
-
 
     public function update(callable $newUpdate): AliasedIndex|Actions
     {

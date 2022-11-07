@@ -1,6 +1,5 @@
 <?php
 
-
 declare(strict_types=1);
 
 namespace Sigmie\Document;
@@ -9,7 +8,6 @@ use Closure;
 use Iterator;
 use Sigmie\Base\APIs\Count;
 use Sigmie\Document\Actions as DocumentActions;
-use Sigmie\Document\Document;
 
 trait LazyEach
 {
@@ -29,7 +27,7 @@ trait LazyEach
     {
         foreach ($this->indexGenerator() as $key => $value) {
             $fn($value, $key);
-        };
+        }
 
         return $this;
     }

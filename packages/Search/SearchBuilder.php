@@ -20,7 +20,6 @@ use Sigmie\Query\Queries\Term\Terms;
 use Sigmie\Query\Queries\Term\Wildcard;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
-use Sigmie\Search\Search;
 
 class SearchBuilder implements Queries
 {

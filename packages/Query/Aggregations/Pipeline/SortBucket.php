@@ -19,9 +19,9 @@ class SortBucket extends Pipeline
         $raw = [$this->name => [
             $this->type => [
                 'sort' => [
-                    $this->path => ['order' => $this->order]
-                ]
-            ]
+                    $this->path => ['order' => $this->order],
+                ],
+            ],
         ]];
 
         return $raw;

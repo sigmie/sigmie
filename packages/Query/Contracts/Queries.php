@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Contracts;
 
-use Sigmie\Query\Contracts\QueryClause as Query;
-
 interface Queries
 {
     public function term(string $field, string $value);

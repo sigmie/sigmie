@@ -4,25 +4,21 @@ declare(strict_types=1);
 
 namespace Sigmie\Index;
 
+use Sigmie\Base\Contracts\ElasticsearchConnection;
+use function Sigmie\Functions\index_name;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
-use Sigmie\Base\Contracts\ElasticsearchConnection;
-use Sigmie\Index\Contracts\TokenizerBuilder as TokenizerBuilderInterface;
-
 use Sigmie\Index\Contracts\Language;
-use Sigmie\Index\TokenizerBuilder;
+use Sigmie\Index\Contracts\TokenizerBuilder as TokenizerBuilderInterface;
 use Sigmie\Index\Shared\CharFilters;
 use Sigmie\Index\Shared\Filters;
-
 use Sigmie\Index\Shared\Mappings;
 use Sigmie\Index\Shared\Replicas;
 use Sigmie\Index\Shared\Shards;
 use Sigmie\Index\Shared\Tokenizer;
-
-use function Sigmie\Functions\index_name;
 
 class NewIndex
 {
@@ -87,7 +83,6 @@ class NewIndex
         return  $builder;
     }
 
-
     public function defaultAnalyzer(): DefaultAnalyzer
     {
         $this->defaultAnalyzer ?? $this->defaultAnalyzer = new DefaultAnalyzer();
@@ -129,7 +124,6 @@ class NewIndex
         $defaultAnalyzer->addCharFilters($this->charFilters());
         $defaultAnalyzer->addFilters($this->filters());
         $defaultAnalyzer->setTokenizer($this->tokenizer);
-
 
         $mappings = $this->createMappings($defaultAnalyzer);
 

@@ -34,17 +34,17 @@ class Index
     {
         if ($name === 'name' && isset($this->name)) {
             $class = $this::class;
-            user_error("Error: Cannot modify readonly property {$class}::{$name}");
+            trigger_error("Error: Cannot modify readonly property {$class}::{$name}");
         }
 
         if ($name === 'settings' && isset($this->settings)) {
             $class = $this::class;
-            user_error("Error: Cannot modify readonly property {$class}::{$name}");
+            trigger_error("Error: Cannot modify readonly property {$class}::{$name}");
         }
 
         if ($name === 'mappings' && isset($this->mappings)) {
             $class = $this::class;
-            user_error("Error: Cannot modify readonly property {$class}::{$name}");
+            trigger_error("Error: Cannot modify readonly property {$class}::{$name}");
         }
     }
 

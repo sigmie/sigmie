@@ -57,8 +57,8 @@ class Settings implements SettingsInterface
             ? Analysis::fromRaw($settings['analysis']) : new Analysis();
 
         return new static(
-            (int)$settings['number_of_shards'],
-            (int)$settings['number_of_replicas'],
+            (int) $settings['number_of_shards'],
+            (int) $settings['number_of_replicas'],
             $analysis
         );
     }

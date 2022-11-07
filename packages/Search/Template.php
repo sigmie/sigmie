@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use Sigmie\Base\APIs\SearchTemplate as APIsTemplate;
-use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 
 class Template

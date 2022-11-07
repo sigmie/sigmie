@@ -4,18 +4,16 @@ declare(strict_types=1);
 
 namespace Sigmie\English;
 
-use Sigmie\Index\Contracts\LanguageBuilder;
-use Sigmie\Index\NewIndex as IndexBuilder;
-
 use Sigmie\English\Filter\LightStemmer  as EnglishLightStemmer;
 use Sigmie\English\Filter\LovinsStemmer as EnglishLovinsStemmer;
 use Sigmie\English\Filter\Lowercase as EnglishLowercase;
 use Sigmie\English\Filter\MinimalStemmer as EnglishMinimalStemmer;
 use Sigmie\English\Filter\Porter2Stemmer as EnglishPorter2Stemmer;
 use Sigmie\English\Filter\PossessiveStemmer as EnglishPossessiveStemmer;
-
 use Sigmie\English\Filter\Stemmer as EnglishStemmer;
 use Sigmie\English\Filter\Stopwords as EnglishStopwords;
+use Sigmie\Index\Contracts\LanguageBuilder;
+use Sigmie\Index\NewIndex as IndexBuilder;
 
 class Builder extends IndexBuilder implements LanguageBuilder
 {

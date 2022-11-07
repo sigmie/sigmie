@@ -35,7 +35,7 @@ class Mappings implements MappingsInterface
     {
         $result = $this->properties->textFields()
             ->filter(fn (Type $field) => $field instanceof Text)
-            ->filter(fn (Text $field) => !is_null($field->analyzer()))
+            ->filter(fn (Text $field) => ! is_null($field->analyzer()))
             ->mapToDictionary(fn (Text $field) => [$field->analyzer()->name() => $field->analyzer()]);
 
         return $result->add($this->defaultAnalyzer);
@@ -50,7 +50,7 @@ class Mappings implements MappingsInterface
 
     private static function handleProperties($value)
     {
-        return;
+
     }
 
     public static function create(array $data, array $analyzers): static

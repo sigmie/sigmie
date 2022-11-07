@@ -12,7 +12,7 @@ class Stats extends Metric
 
     protected function value(): array
     {
-        $value =  [
+        $value = [
             'stats' => [
                 'field' => $this->field,
             ],

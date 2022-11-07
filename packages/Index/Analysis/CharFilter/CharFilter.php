@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Index\Analysis\CharFilter;
 
 use Exception;
-use Sigmie\Index\Contracts\CharFilter as CharFilterInterface;
-
 use function Sigmie\Functions\name_configs;
+use Sigmie\Index\Contracts\CharFilter as CharFilterInterface;
 
 abstract class CharFilter implements CharFilterInterface
 {

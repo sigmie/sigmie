@@ -20,7 +20,7 @@ class Regex extends Query
             'regexp' => [
                 $this->field => [
                     'value' => $this->value,
-                    'boost' => $this->boost
+                    'boost' => $this->boost,
                 ],
             ],
         ];

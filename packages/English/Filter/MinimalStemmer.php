@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\English\Filter;
 
-use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
-
 use function Sigmie\Functions\name_configs;
+use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
 
 /**
  * @see https://www.researchgate.net/publication/220433848_How_effective_is_suffixing

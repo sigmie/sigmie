@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Greek\Filter;
 
-use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
-
 use function Sigmie\Functions\name_configs;
+use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
 
 class Stemmer extends TokenFilter
 {

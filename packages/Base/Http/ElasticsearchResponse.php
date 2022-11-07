@@ -17,7 +17,6 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
         return $this->serverError() || $this->clientError() || $this->hasErrorKey();
     }
 
-
     public function exception(ElasticsearchRequest $request): Exception
     {
         $type = null;
@@ -51,12 +50,12 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
             'code' => $this->code(),
             'json' => $this->json(),
             'body' => $this->body(),
-            'request' => json_decode($request->getBody()->getContents(), true)
+            'request' => json_decode($request->getBody()->getContents(), true),
         ]);
     }
 
     private function hasErrorKey(): bool
     {
-        return !is_null($this->json('error'));
+        return ! is_null($this->json('error'));
     }
 }

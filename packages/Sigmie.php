@@ -6,29 +6,25 @@ namespace Sigmie;
 
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
-use Sigmie\Index\Actions as IndexActions;
+use Sigmie\Base\Analytics\MetricQueryBuilder;
 use Sigmie\Base\APIs\Index;
+use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
 use Sigmie\Base\Contracts\ElasticsearchRequest as ElasticsearchRequestInterface;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
-use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
-use Sigmie\Document\AliveCollection;
 use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
-use Sigmie\Index\AliasedIndex;
-use Sigmie\Index\NewIndex;
-use Sigmie\Base\Search\IndexQueryBuilder;
-use Sigmie\Base\Analytics\MetricQueryBuilder;
-use Sigmie\Search\SearchBuilder;
+use Sigmie\Document\AliveCollection;
 use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\JSONClient;
-use Sigmie\Parse\FilterParser;
+use Sigmie\Index\Actions as IndexActions;
+use Sigmie\Index\AliasedIndex;
+use Sigmie\Index\NewIndex;
 use Sigmie\Query\Aggs;
-use Sigmie\Query\Contracts\QueryClause;
-use Sigmie\Support\Contracts\Collection;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Query;
 use Sigmie\Search\Search;
+use Sigmie\Search\SearchBuilder;
 
 class Sigmie
 {
@@ -73,7 +69,7 @@ class Sigmie
         Query $query = new MatchAll(),
         AggsInterface $aggs = new Aggs()
     ) {
-        $search = new Search($query,$aggs);
+        $search = new Search($query, $aggs);
 
         $search->setElasticsearchConnection($this->elasticsearchConnection);
 
@@ -102,7 +98,7 @@ class Sigmie
 
             $res = ($this->elasticsearchConnection)($request);
 
-            return !$res->failed();
+            return ! $res->failed();
         } catch (ConnectException) {
             return false;
         }

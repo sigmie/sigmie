@@ -14,7 +14,7 @@ trait MSearch
 
     protected function msearchAPICall(array $body): SearchResponse
     {
-        $uri = new Uri("/_msearch");
+        $uri = new Uri('/_msearch');
 
         $esRequest = new RequestsMSearch('POST', $uri, $body);
 

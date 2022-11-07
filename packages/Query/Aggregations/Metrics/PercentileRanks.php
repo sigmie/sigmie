@@ -19,7 +19,7 @@ class PercentileRanks extends Metric
 
     protected function value(): array
     {
-        $value =  [
+        $value = [
             'percentile_ranks' => [
                 'field' => $this->field,
                 'values' => $this->values,

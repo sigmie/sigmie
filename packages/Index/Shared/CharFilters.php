@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace Sigmie\Index\Shared;
 
 use Exception;
+use function Sigmie\Functions\random_letters;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Analysis\CharFilter\Pattern;
 use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\CharFilter;
 use Sigmie\Shared\Collection;
-
-use function Sigmie\Functions\random_letters;
 
 trait CharFilters
 {
@@ -82,7 +81,7 @@ trait CharFilters
 
     private function initCharFilters(): void
     {
-        $this->charFilters  = $this->charFilters ?? new Collection();
+        $this->charFilters = $this->charFilters ?? new Collection();
     }
 
     private function createCharFilterName(string $name): string

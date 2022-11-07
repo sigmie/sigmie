@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use Sigmie\Mappings\Types\Type;
-
 class Date extends Type
 {
     public function __construct(

@@ -23,6 +23,7 @@ class HTMLStrip implements CharFilter
             ],
         ];
     }
+
     public function name(): string
     {
         return 'html_strip';

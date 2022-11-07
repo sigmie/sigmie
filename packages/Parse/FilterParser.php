@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Parse;
 
-use Sigmie\Mappings\Properties;
-use Sigmie\Mappings\Types\Keyword;
-use Sigmie\Mappings\Types\Text;
 use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchNone;
@@ -14,7 +11,6 @@ use Sigmie\Query\Queries\Term\IDs;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Term\Terms;
-use Sigmie\Query\Queries\Term\Wildcard;
 
 class FilterParser extends Parser
 {
@@ -29,7 +25,6 @@ class FilterParser extends Parser
 
         // If it's a parenthetic expression
         if (preg_match_all("/\((((?>[^()]+)|(?R))*)\)/", $query, $matches)) {
-
             $matchWithParentheses = $matches[0][0];
 
             //Remove outer parenthesis
@@ -41,7 +36,7 @@ class FilterParser extends Parser
             //Trim leading and trailing spaces
             $query = trim($query);
 
-            //Create filter from parentheses match 
+            //Create filter from parentheses match
             $filter = $this->parseString($matchWithoutParentheses);
         } else {
             [$filter] = preg_split('/(AND NOT|AND|OR)/', $query, limit: 2);
@@ -58,7 +53,6 @@ class FilterParser extends Parser
         $res = ['filter' => $filter];
 
         if (preg_match('/^(?P<operator>AND NOT|AND|OR)/', $query, $matchWithoutParentheses)) {
-
             $operator = $matchWithoutParentheses['operator'];
             //Remove operator from the query string
             $query = preg_replace("/^{$operator}/", '', $query);
@@ -101,7 +95,6 @@ class FilterParser extends Parser
         };
 
         if ($filters['operator'] ?? false) {
-
             $query2 = $this->apply($values, $operator);
 
             match ($operator) {

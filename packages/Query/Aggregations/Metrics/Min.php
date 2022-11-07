@@ -13,7 +13,7 @@ class Min extends Metric
 
     protected function value(): array
     {
-        $value =  [
+        $value = [
             'min' => [
                 'field' => $this->field,
             ],

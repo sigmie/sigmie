@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\English\Filter;
 
-use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
-
 use function Sigmie\Functions\name_configs;
+use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
 
 /**
  * @see https://lucene.apache.org/core/8_9_0/analyzers-common/org/apache/lucene/analysis/en/EnglishPossessiveFilter.html

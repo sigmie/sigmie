@@ -19,7 +19,7 @@ class Terms extends Query
         return [
             'terms' => [
                 $this->field => $this->values,
-                'boost' => $this->boost
+                'boost' => $this->boost,
             ],
         ];
     }

@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Greek;
 
-use Sigmie\Index\Contracts\LanguageBuilder;
-use Sigmie\Index\NewIndex as IndexBuilder;
-
 use Sigmie\Greek\Filter\Lowercase as GreekLowercase;
 use Sigmie\Greek\Filter\Stemmer as GreekStemmer;
 use Sigmie\Greek\Filter\Stopwords as GreekStopwords;
+use Sigmie\Index\Contracts\LanguageBuilder;
+use Sigmie\Index\NewIndex as IndexBuilder;
 
 class Builder extends IndexBuilder implements LanguageBuilder
 {

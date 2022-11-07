@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Aggregations\Bucket;
 
+use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\Aggregation;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
-use Sigmie\Query\Aggs;
-use Sigmie\Query\Shared\Meta;
 
 abstract class Bucket implements Aggregation
 {

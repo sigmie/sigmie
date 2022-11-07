@@ -51,7 +51,7 @@ class Collection implements ArrayAccess, Countable
         foreach ($this->elements as $item) {
             $item = $item instanceof Collection ? $item->toArray() : $item;
 
-            if (!is_array($item)) {
+            if (! is_array($item)) {
                 $result[] = $item;
             } else {
                 $values = $depth === 1
@@ -77,7 +77,7 @@ class Collection implements ArrayAccess, Countable
         foreach ($this->toArray() as $key => $item) {
             $item = $item instanceof Collection ? $item->toArray() : $item;
 
-            if (!is_array($item)) {
+            if (! is_array($item)) {
                 $result[$key] = $item;
             } else {
                 if ($depth === 0) {
@@ -159,7 +159,7 @@ class Collection implements ArrayAccess, Countable
 
     public function remove(string|int $key): static
     {
-        if (!isset($this->elements[$key]) && !array_key_exists($key, $this->elements)) {
+        if (! isset($this->elements[$key]) && ! array_key_exists($key, $this->elements)) {
             return new static($this->elements);
         }
 

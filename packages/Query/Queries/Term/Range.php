@@ -11,8 +11,9 @@ class Range extends Query
 {
     /**
      * values example: ['>=' => '2','<=' => '200']
-     * @param protectedstring $field
-     * @param protectedarray  $values
+     *
+     * @param  protectedstring  $field
+     * @param  protectedarray  $values
      */
     public function __construct(
         protected string $field,

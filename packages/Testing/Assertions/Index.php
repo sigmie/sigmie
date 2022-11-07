@@ -15,7 +15,6 @@ trait Index
 
     private array $data;
 
-
     public function assertIndexHasMappings(): void
     {
         $this->assertArrayHasKey('mappings', $this->data, "Failed to assert that index {$this->name} has mappings.");

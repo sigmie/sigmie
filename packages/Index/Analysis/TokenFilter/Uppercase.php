@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\TokenFilter;
 
-use Exception;
-
 use function Sigmie\Functions\name_configs;
 
 class Uppercase extends TokenFilter

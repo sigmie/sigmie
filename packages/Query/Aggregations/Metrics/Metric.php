@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Query\Aggregations\Metrics;
 
 use Sigmie\Query\Contracts\Aggregation;
-use Sigmie\Query\Shared\Meta;
 
 abstract class Metric implements Aggregation
 {

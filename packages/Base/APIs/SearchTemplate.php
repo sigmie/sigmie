@@ -18,7 +18,7 @@ trait SearchTemplate
 
         $params = [
             'id' => $name,
-            'params' => $params
+            'params' => $params,
         ];
 
         $esRequest = new SearchRequest('POST', $uri, $params);

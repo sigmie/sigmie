@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use Sigmie\Mappings\Blueprint;
-use Sigmie\Mappings\Types\Type;
 
 class Nested extends Type
 {
@@ -20,7 +19,7 @@ class Nested extends Type
     {
         return [$this->name => [
             'type' => 'nested',
-            'properties' => ($this->blueprint)()->toRaw()
+            'properties' => ($this->blueprint)()->toRaw(),
         ]];
     }
 

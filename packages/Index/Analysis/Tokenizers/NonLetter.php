@@ -22,7 +22,7 @@ class NonLetter implements Tokenizer
     {
         $res = [
             $this->name() => [
-                'type' => $this->name()
+                'type' => $this->name(),
             ],
         ];
 

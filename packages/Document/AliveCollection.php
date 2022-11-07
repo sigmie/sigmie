@@ -7,13 +7,10 @@ namespace Sigmie\Document;
 use ArrayAccess;
 use Countable;
 use Generator;
-use IteratorAggregate;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Document\Actions as DocumentActions;
 use Sigmie\Document\Contracts\DocumentCollection;
-
-use function Sigmie\Helpers\ensure_doc_collection;
 use Sigmie\Index\Actions as IndexActions;
 use Traversable;
 
@@ -39,7 +36,6 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
         return $this;
     }
-
 
     public function replace(Document $document): Document
     {
@@ -91,7 +87,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function isNotEmpty(): bool
     {
-        return !$this->isEmpty();
+        return ! $this->isEmpty();
     }
 
     public function remove(array|string $_id): bool

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Query;
 
-use Sigmie\Query\Contracts\Aggs as AggsInterface;
 use Sigmie\Query\Aggregations\Bucket\DateHistogram;
 use Sigmie\Query\Aggregations\Bucket\Missing;
 use Sigmie\Query\Aggregations\Bucket\Range;
@@ -22,6 +21,7 @@ use Sigmie\Query\Aggregations\Metrics\Rate;
 use Sigmie\Query\Aggregations\Metrics\Stats;
 use Sigmie\Query\Aggregations\Metrics\Sum;
 use Sigmie\Query\Aggregations\Metrics\ValueCount;
+use Sigmie\Query\Contracts\Aggs as AggsInterface;
 
 class Aggs implements AggsInterface
 {
@@ -33,7 +33,6 @@ class Aggs implements AggsInterface
 
         return $this;
     }
-
 
     public function dateHistogram(string $name, string $field, CalendarInterval $interval): DateHistogram
     {
@@ -62,7 +61,6 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
-
     public function terms(string $name, string $field): Terms
     {
         $aggregation = new Terms($name, $field);
@@ -80,7 +78,6 @@ class Aggs implements AggsInterface
 
         return $aggregation;
     }
-
 
     public function min(string $name, string $field): Min
     {
@@ -188,6 +185,7 @@ class Aggs implements AggsInterface
         foreach ($this->aggs as $agg) {
             $res = [...$res, ...$agg->toRaw()];
         }
+
         return $res;
     }
 }

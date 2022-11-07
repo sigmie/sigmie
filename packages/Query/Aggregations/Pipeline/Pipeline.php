@@ -19,8 +19,8 @@ abstract class Pipeline implements Aggregation
     {
         $raw = [$this->name => [
             $this->type => [
-                'buckets_path' => $this->path
-            ]
+                'buckets_path' => $this->path,
+            ],
         ]];
 
         return $raw;

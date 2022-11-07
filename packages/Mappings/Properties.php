@@ -5,17 +5,16 @@ declare(strict_types=1);
 namespace Sigmie\Mappings;
 
 use ArrayAccess;
-use Sigmie\Mappings\Types\Text;
 use Exception;
-use Sigmie\Shared\Collection;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\SimpleAnalyzer;
-use Sigmie\Mappings\ElasticsearchMappingType;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Date;
-use Sigmie\Mappings\Types\Type;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Number;
+use Sigmie\Mappings\Types\Text;
+use Sigmie\Mappings\Types\Type;
+use Sigmie\Shared\Collection;
 
 class Properties extends Type implements ArrayAccess
 {
@@ -64,7 +63,7 @@ class Properties extends Type implements ArrayAccess
 
         foreach ($raw as $fieldName => $value) {
             $field = match (true) {
-                isset($value['properties']) && !isset($value['properties']['type']) => self::create($value['properties'], $defaultAnalyzer, $analyzers, (string) $fieldName),
+                isset($value['properties']) && ! isset($value['properties']['type']) => self::create($value['properties'], $defaultAnalyzer, $analyzers, (string) $fieldName),
                 in_array(
                     $value['type'],
                     ['search_as_you_type', 'text', 'completion']
@@ -75,10 +74,10 @@ class Properties extends Type implements ArrayAccess
                 $value['type'] === 'float' => (new Number($fieldName))->float(),
                 $value['type'] === 'boolean' => new Boolean($fieldName),
                 $value['type'] === 'date' => new Date($fieldName),
-                default => throw new Exception('Field ' . $value['type'] . ' couldn\'t be mapped')
+                default => throw new Exception('Field '.$value['type'].' couldn\'t be mapped')
             };
 
-            if ($field instanceof Text && !isset($value['analyzer'])) {
+            if ($field instanceof Text && ! isset($value['analyzer'])) {
                 $value['analyzer'] = 'default';
             }
 

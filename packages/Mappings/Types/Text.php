@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use Exception;
+use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Index\Contracts\CustomAnalyzer as AnalyzerInterface;
 use Sigmie\Shared\Contracts\FromRaw;
-
-use function Sigmie\Functions\name_configs;
 
 class Text extends Type implements FromRaw
 {
@@ -34,24 +33,24 @@ class Text extends Type implements FromRaw
             }
         }
 
-        $instance = new static((string)$name, $raw);
+        $instance = new static((string) $name, $raw);
 
         return match ($configs['type']) {
             'text' => $instance->unstructuredText(),
             'search_as_you_type' => $instance->searchAsYouType(),
             'completion' => $instance->completion(),
-            default => throw new Exception('Field ' . $configs['type'] . ' couldn\'t be mapped')
+            default => throw new Exception('Field '.$configs['type'].' couldn\'t be mapped')
         };
     }
 
     public function isSortable(): bool
     {
-        return !is_null($this->raw);
+        return ! is_null($this->raw);
     }
 
     public function isFilterable(): bool
     {
-        return !is_null($this->raw);
+        return ! is_null($this->raw);
     }
 
     public function sortableName(): null|string
@@ -91,7 +90,6 @@ class Text extends Type implements FromRaw
         return $this;
     }
 
-
     public function completion(Analyzer $analyzer = null): self
     {
         $this->analyzer = $analyzer;
@@ -118,11 +116,11 @@ class Text extends Type implements FromRaw
             ],
         ];
 
-        if (!is_null($this->raw)) {
+        if (! is_null($this->raw)) {
             $raw[$this->name]['fields'] = [$this->raw => ['type' => 'keyword']];
         }
 
-        if (!is_null($this->analyzer)) {
+        if (! is_null($this->analyzer)) {
             $raw[$this->name]['analyzer'] = $this->analyzer->name();
         }
 

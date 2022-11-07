@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use Sigmie\Mappings\Contracts\Type as TypeInterface;
-use Sigmie\Shared\Contracts\ToRaw;
 use Sigmie\Shared\Contracts\Name;
+use Sigmie\Shared\Contracts\ToRaw;
 
 abstract class Type implements Name, ToRaw, TypeInterface
 {

@@ -6,10 +6,9 @@ namespace Sigmie\Base\Search;
 
 use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Contracts\QueryClause as Query;
+use function Sigmie\Helpers\auto_fuzziness;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\Text\Match_;
-
-use function Sigmie\Helpers\auto_fuzziness;
 
 class IndexQueryBuilder
 {
@@ -130,7 +129,6 @@ class IndexQueryBuilder
         return $this;
     }
 
-
     public function filterable(): self
     {
         $this->filterable = true;
@@ -150,14 +148,12 @@ class IndexQueryBuilder
                 $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('filter', '@json(filters)'));
             }
 
-
             //TODO handle query depending on mappings
             $boolean->must()->bool(function (Boolean $boolean) {
-
                 $queryBoolean = new Boolean;
                 foreach ($this->fields as $field) {
-                    $boost  = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
-                    $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                    $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
+                    $fuzziness = ! in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
                     $query = new Match_($field, $this->query, $fuzziness);
 
                     $queryBoolean->should()->query($query->boost($boost));
@@ -175,6 +171,7 @@ class IndexQueryBuilder
         foreach ($this->sorts as $field => $direction) {
             if ($field === '_score') {
                 $defaultSorts[] = $field;
+
                 continue;
             }
             $defaultSorts[] = [$field => $direction];
@@ -187,7 +184,7 @@ class IndexQueryBuilder
             $query->highlight($field, $this->prefix, $this->suffix);
         }
 
-        $query->size("@var(size,10)");
+        $query->size('@var(size,10)');
 
         return $query;
     }

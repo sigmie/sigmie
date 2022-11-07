@@ -12,7 +12,7 @@ class Max extends Metric
 
     protected function value(): array
     {
-        $value =  [
+        $value = [
             'max' => [
                 'field' => $this->field,
             ],

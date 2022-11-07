@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\English\Filter;
 
-use Sigmie\Index\Analysis\TokenFilter\Stopwords as TokenFilterStopwords;
-
 use function Sigmie\Functions\name_configs;
+use Sigmie\Index\Analysis\TokenFilter\Stopwords as TokenFilterStopwords;
 
 class Stopwords extends TokenFilterStopwords
 {

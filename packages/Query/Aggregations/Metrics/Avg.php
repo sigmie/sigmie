@@ -12,7 +12,7 @@ class Avg extends Metric
 
     protected function value(): array
     {
-        $value =  [
+        $value = [
             'avg' => [
                 'field' => $this->field,
             ],

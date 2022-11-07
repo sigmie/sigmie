@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\Tokenizers;
 
-use Sigmie\Shared\Name;
-
 use function Sigmie\Functions\name_configs;
+use Sigmie\Shared\Name;
 
 class Pattern extends Tokenizer
 {

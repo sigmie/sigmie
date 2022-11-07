@@ -19,7 +19,7 @@ class Composite extends Bucket
 
     protected function value(): array
     {
-        $value =  [
+        $value = [
             'composite' => [
                 'sources' => $this->sources,
             ],

@@ -8,8 +8,8 @@ use Carbon\Carbon;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Document\Actions as DocumentActions;
 use Sigmie\Http\JSONClient;
-use Sigmie\Sigmie;
 use Sigmie\Index\Actions as IndexAction;
+use Sigmie\Sigmie;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {

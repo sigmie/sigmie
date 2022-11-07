@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Http\Responses;
 
-use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
-use Sigmie\Base\Documents\Collection as DocumentCollection;
 use Sigmie\Base\Http\ElasticsearchResponse;
 
 class Search extends ElasticsearchResponse
@@ -20,13 +18,13 @@ class Search extends ElasticsearchResponse
         return $this->json("aggregations.{$dot}");
     }
 
-    public function get():array
+    public function get(): array
     {
         return $this->json();
     }
 
     public function hits(): array
     {
-        return $this->json("hits.hits");
+        return $this->json('hits.hits');
     }
 }

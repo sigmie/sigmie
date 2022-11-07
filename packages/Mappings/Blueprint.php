@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings;
 
-use Closure;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Text;
-use Sigmie\Shared\Collection;
 use Sigmie\Mappings\Types\Type;
+use Sigmie\Shared\Collection;
 
 class Blueprint
 {

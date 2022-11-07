@@ -7,7 +7,6 @@ namespace Sigmie\Http;
 use Elastic\Transport\Transport;
 use Elastic\Transport\TransportBuilder;
 use GuzzleHttp\Client as GuzzleHttpClient;
-use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\Contracts\JSONClient as JSONClientInterface;
 use Sigmie\Http\Contracts\JSONRequest;
 
@@ -28,8 +27,8 @@ class JSONClient implements JSONClientInterface
         array $hosts,
         string $token,
         array $config = []
-    ): static
-    {     return self::create($hosts, [
+    ): static {
+        return self::create($hosts, [
             'headers' => ['Authorization' => "Bearer {$token}"],
         ]);
     }
@@ -55,14 +54,13 @@ class JSONClient implements JSONClientInterface
         ]);
     }
 
-
     public static function create(array $hosts, array $config = []): static
     {
         $config = [
             'allow_redirects' => false,
             'http_errors' => false,
             'connect_timeout' => 15,
-            ...$config
+            ...$config,
         ];
 
         $client = new GuzzleHttpClient($config);

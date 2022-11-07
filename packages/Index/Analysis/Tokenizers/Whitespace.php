@@ -17,13 +17,12 @@ class Whitespace implements Tokenizer
     {
         $res = [
             $this->name() => [
-                'type' => $this->name()
+                'type' => $this->name(),
             ],
         ];
 
         return $res;
     }
-
 
     public function name(): string
     {

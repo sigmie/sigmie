@@ -21,7 +21,6 @@ trait Mappings
         return $this;
     }
 
-
     public function mapping(callable $callable): static
     {
         $this->blueprint = new Blueprint();
