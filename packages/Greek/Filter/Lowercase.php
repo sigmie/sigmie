@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Greek\Filter;
 
-use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
+use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
 
-use function Sigmie\Helpers\name_configs;
+use function Sigmie\Functions\name_configs;
 
 class Lowercase extends TokenFilter
 {
