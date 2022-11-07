@@ -33,6 +33,14 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         $this->setElasticsearchConnection($connection);
     }
 
+    public function refresh()
+    {
+        $this->refresh = 'true';
+
+        return $this;
+    }
+
+
     public function replace(Document $document): Document
     {
         $doc = $this->updateDocument($this->name, $document, $this->refresh);

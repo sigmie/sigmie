@@ -11,9 +11,8 @@ use Sigmie\Base\APIs\Doc as DocAPI;
 use Sigmie\Base\APIs\Mget as MgetAPI;
 use Sigmie\Base\APIs\Search as SearchAPI;
 use Sigmie\Base\APIs\Update as UpdateAPI;
-use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
-use Sigmie\Base\Documents\Collection;
 use Sigmie\Document\Document as Doc;
+use Sigmie\Shared\Collection;
 
 trait Actions
 {
@@ -52,10 +51,11 @@ trait Actions
         return $document;
     }
 
-    protected function upsertDocuments(string $indexName, DocumentCollectionInterface $collection, string $refresh): DocumentCollectionInterface
+    protected function upsertDocuments(string $indexName, array $documents, string $refresh): Collection
     {
         $body = [];
-        $collection->each(function (Doc $document, $index) use (&$body) {
+        $documents = new Collection($documents);
+        $documents->each(function (Doc $document, $index) use (&$body) {
             //Upsert docs with id
             if (isset($document->_id)) {
                 $body = [
@@ -81,7 +81,7 @@ trait Actions
             $action = array_key_first($value);
             $response = $value[$action];
 
-            $doc = $collection[$index];
+            $doc = $documents[$index];
             if (!isset($doc->_id)) {
                 $doc->id($response['_id']);
             }
@@ -91,7 +91,7 @@ trait Actions
             }
         }
 
-        return $collection;
+        return $documents;
     }
 
 
@@ -132,7 +132,7 @@ trait Actions
     {
         $response = $this->mgetAPICall($indexName, ['docs' => [['_id' => $identifier]]]);
 
-        return $response->docs()->get('0');
+        return $response->first();
     }
 
     protected function listDocuments(string $indexName, int $offset = 0, int $limit = 100): Collection
