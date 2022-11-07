@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
+use Sigmie\Base\APIs\API;
 use Sigmie\Base\APIs\Cat;
 use Sigmie\Base\APIs\Cluster;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Script;
-use Sigmie\Base\Contracts\API;
-use Sigmie\Base\Http\Connection;
-use Sigmie\Http\Contracts\Auth;
-use Sigmie\Http\JSONClient;
+use Sigmie\Base\Contracts\ElasticsearchConnection;
 
-trait ClearIndices
+trait ClearElasticsearch
 {
     use Cat;
     use Index;
@@ -21,13 +19,11 @@ trait ClearIndices
     use Script;
     use Cluster;
 
-    protected function clearIndices(string $url, Auth $auth = null): void
+    protected function clearElasticsearch(ElasticsearchConnection $connection): void
     {
-        $client = JSONClient::create($url, $auth);
+        $this->setElasticsearchConnection($connection);
 
-        $this->setHttpConnection(new Connection($client));
-
-        $response = $this->catAPICall('indices', 'GET', );
+        $response = $this->catAPICall('indices', 'GET');
 
         $names = array_map(fn ($data) => $data['index'], $response->json());
 
@@ -44,7 +40,7 @@ trait ClearIndices
         $names = (is_null($scripts)) ? [] : array_keys($scripts);
 
         foreach ($names as $name) {
-            $this->scriptAPICall('DELETE', (string)$name);
+            $this->scriptAPICall('DELETE', (string) $name);
         }
     }
 }

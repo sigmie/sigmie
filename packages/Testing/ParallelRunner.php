@@ -10,7 +10,7 @@ use ParaTest\Runners\PHPUnit\Worker\WrapperWorker;
 use PHPUnit\TextUI\TestRunner;
 use Sigmie\Base\APIs\Cat;
 use Sigmie\Base\APIs\Index;
-use Sigmie\Base\Contracts\API;
+use Sigmie\Base\APIs\API;
 
 use function Sigmie\Helpers\testing_host;
 
@@ -19,14 +19,15 @@ class ParallelRunner extends BaseRunner
     use Cat;
     use Index;
     use API;
-    use ClearIndices;
+    use ClearElasticsearch;
 
     /** @var WrapperWorker[] */
     private $workers = [];
 
     public function clearProcessIndices(int $token)
     {
-        $this->clearIndices(testing_host((string)$token));
+        // TODO clear elasticsearch with prefix
+        // $this->clearElasticsearch();
     }
 
     protected function beforeLoadChecks(): void

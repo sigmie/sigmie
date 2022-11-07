@@ -9,7 +9,7 @@ use Sigmie\Base\APIs\Doc;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Mget;
 use Sigmie\Base\APIs\Search;
-use Sigmie\Base\Documents\Document as ElasticsearchDocument;
+use Sigmie\Document\Document as ElasticsearchDocument;
 
 trait Document
 {
