@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Shared;
 
+use ArrayAccess;
 use ArrayIterator;
 use Closure;
-
+use Countable;
 use Traversable;
 
-class Collection
+class Collection implements ArrayAccess, Countable
 {
     public function __construct(protected array $elements = [])
     {
