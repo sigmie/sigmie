@@ -8,7 +8,7 @@ use RachidLaasri\Travel\Travel;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\Blueprint;
-use Sigmie\Index\Builder;
+use Sigmie\Index\NewIndex;
 use Sigmie\Testing\TestCase;
 use Exception;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;

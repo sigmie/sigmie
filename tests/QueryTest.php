@@ -50,12 +50,12 @@ class QueryTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->search($name)->range('count', ['>=' => 233])
+        $res = $this->sigmie->newSearch($name)->range('count', ['>=' => 233])
             ->response();
 
         $this->assertEquals(1, $res->json()['hits']['total']['value']);
 
-        $res = $this->sigmie->search($name)->range('count', ['<=' => 15])
+        $res = $this->sigmie->newSearch($name)->range('count', ['<=' => 15])
             ->response();
 
         $this->assertEquals(2, $res->json()['hits']['total']['value']);
@@ -70,7 +70,7 @@ class QueryTest extends TestCase
 
         $this->sigmie->newIndex($name)->create();
 
-        $res = $this->sigmie->search($name)->bool(function (QueriesCompoundBoolean $boolean) {
+        $res = $this->sigmie->newSearch($name)->bool(function (QueriesCompoundBoolean $boolean) {
             $boolean->filter->matchAll();
             $boolean->filter->matchNone();
             $boolean->filter->fuzzy('bar', 'baz');
@@ -97,7 +97,7 @@ class QueryTest extends TestCase
      */
     public function query_clauses()
     {
-        $query = $this->sigmie->search('')->bool(function (QueriesCompoundBoolean $boolean) {
+        $query = $this->sigmie->newSearch('')->bool(function (QueriesCompoundBoolean $boolean) {
             $boolean->filter->matchAll();
             $boolean->filter->matchNone();
             $boolean->filter->fuzzy('bar', 'baz');

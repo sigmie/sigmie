@@ -10,7 +10,7 @@ use Sigmie\Shared\Collection;
 use Sigmie\Document\Document;
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Mappings\Blueprint;
-use Sigmie\Index\IndexUpdateBuilder as Update;
+use Sigmie\Index\UpdateIndex as Update;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
 use TypeError;
