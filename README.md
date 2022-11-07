@@ -1,4 +1,4 @@
-<p align="center"><a href="https://docs.sigmie.com" target="_blank"><img width="400" src="https://res.cloudinary.com/markos-nikolaos-orfanos/image/upload/v1585732959/dark_g4zitq.png"></a></p>
+<p align="center"><a href="https://sigmie.com" target="_blank"><img width="400" src="https://raw.githubusercontent.com/sigmie/art/main/logo.png"></a></p>
 
 <p align="center">
 
