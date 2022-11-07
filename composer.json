@@ -16,11 +16,10 @@
     "require": {
         "php": "^8.0",
         "guzzlehttp/guzzle": "^7.2",
-        "symfony/console": "^6",
         "nesbot/carbon": "^2.48",
         "adbario/php-dot-notation": "^2.2",
         "elastic/transport": "^8.5",
-        "illuminate/collections": "^9.38"
+        "guzzlehttp/psr7": "^2.4"
     },
     "require-dev": {
         "symfony/var-dumper": "^5.2",
