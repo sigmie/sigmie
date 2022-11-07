@@ -2,23 +2,26 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Tests\Base\Index;
+namespace Sigmie\Tests;
 
+use ArrayAccess;
+use Countable;
+use IteratorAggregate;
 use Exception;
-use Sigmie\Base\Analysis\CharFilter\CharFilter;
-use Sigmie\Base\Analysis\CharFilter\Pattern as PatternCharFilter;
-use Sigmie\Base\Analysis\TokenFilter\Generic;
-use Sigmie\Base\Analysis\TokenFilter\Stopwords;
-use Sigmie\Base\Analysis\TokenFilter\TokenFilter;
-use Sigmie\Base\Analysis\Tokenizers\Pattern as PatternTokenizer;
-use Sigmie\Base\Analysis\Tokenizers\Tokenizer;
+use Sigmie\Index\Analysis\CharFilter\CharFilter;
+use Sigmie\Index\Analysis\CharFilter\Pattern as PatternCharFilter;
+use Sigmie\Index\Analysis\TokenFilter\Generic;
+use Sigmie\Index\Analysis\TokenFilter\Stopwords;
+use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
+use Sigmie\Index\Analysis\Tokenizers\Pattern as PatternTokenizer;
+use Sigmie\Index\Analysis\Tokenizers\Tokenizer;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Testing\TestCase;
 
+use function Sigmie\Functions\random_letters;
+
 class MapTest extends TestCase
 {
-    use Index;
-
     /**
      * @test
      */

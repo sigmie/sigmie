@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Tests\Base\Index;
+namespace Sigmie\Tests;
 
 use Sigmie\Base\APIs\Explain;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Search;
-use Sigmie\Base\Documents\Document;
-use Sigmie\Base\Mappings\Blueprint;
-use Sigmie\Base\Search\Aggregations\Enums\CalendarInterval;
-use Sigmie\Base\Search\Aggs as SearchAggregation;
+use Sigmie\Document\Document;
+use Sigmie\Mappings\Blueprint;
+use Sigmie\Query\Aggregations\Enums\CalendarInterval;
+use Sigmie\Query\Aggs as SearchAggregation;
 use Sigmie\Testing\TestCase;
 
 class AggregationTest extends TestCase
@@ -30,7 +30,7 @@ class AggregationTest extends TestCase
             $blueprint->text('title')->unstructuredText();
         })->create();
 
-        $collection = $this->sigmie->collect($name);
+        $collection = $this->sigmie->collect($name,);
 
         $docs = [
             new Document([
@@ -68,9 +68,9 @@ class AggregationTest extends TestCase
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->withoutMappings()->create();
+        $this->sigmie->newIndex($name)->create();
 
-        $collection = $this->sigmie->collect($name);
+        $collection = $this->sigmie->collect($name, refresh: true);
 
         $docs = [
             new Document([
@@ -174,7 +174,7 @@ class AggregationTest extends TestCase
             $blueprint->keyword('type');
         })->create();
 
-        $collection = $this->sigmie->collect($name);
+        $collection = $this->sigmie->collect($name, refresh: true);
 
         $docs = [
             new Document([
@@ -218,9 +218,9 @@ class AggregationTest extends TestCase
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->withoutMappings()->create();
+        $this->sigmie->newIndex($name)->create();
 
-        $collection = $this->sigmie->collect($name);
+        $collection = $this->sigmie->collect($name, refresh: true);
 
         $docs = [
             new Document([
@@ -239,13 +239,11 @@ class AggregationTest extends TestCase
         $res = $this->sigmie->search($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
-                $aggregation->min('minCount', 'count')
-                    ->meta(['customer' => 'bar']);
+                $aggregation->min('minCount', 'count');
             })
             ->get();
 
         $this->assertEquals(5, (int) $res->aggregation('minCount.value'));
-        $this->assertEquals(['customer' => 'bar'], $res->aggregation('minCount.meta'));
     }
 
     /**
@@ -255,9 +253,9 @@ class AggregationTest extends TestCase
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->withoutMappings()->create();
+        $this->sigmie->newIndex($name)->create();
 
-        $collection = $this->sigmie->collect($name);
+        $collection = $this->sigmie->collect($name, refresh: true);
 
         $docs = [
             new Document([
@@ -299,9 +297,9 @@ class AggregationTest extends TestCase
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->withoutMappings()->create();
+        $this->sigmie->newIndex($name)->create();
 
-        $collection = $this->sigmie->collect($name);
+        $collection = $this->sigmie->collect($name, refresh: true);
 
         $docs = [
             new Document([
@@ -344,9 +342,9 @@ class AggregationTest extends TestCase
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->withoutMappings()->create();
+        $this->sigmie->newIndex($name)->create();
 
-        $collection = $this->sigmie->collect($name);
+        $collection = $this->sigmie->collect($name, refresh: true);
 
         $docs = [
             new Document([
@@ -389,9 +387,9 @@ class AggregationTest extends TestCase
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->withoutMappings()->create();
+        $this->sigmie->newIndex($name)->create();
 
-        $collection = $this->sigmie->collect($name);
+        $collection = $this->sigmie->collect($name, refresh: true);
 
         $docs = [
             new Document([
@@ -429,9 +427,9 @@ class AggregationTest extends TestCase
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->withoutMappings()->create();
+        $this->sigmie->newIndex($name)->create();
 
-        $collection = $this->sigmie->collect($name);
+        $collection = $this->sigmie->collect($name, refresh: true);
 
         $docs = [
             new Document([
@@ -469,9 +467,9 @@ class AggregationTest extends TestCase
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->withoutMappings()->create();
+        $this->sigmie->newIndex($name)->create();
 
-        $collection = $this->sigmie->collect($name);
+        $collection = $this->sigmie->collect($name, refresh: true);
 
         $docs = [
             new Document([
@@ -506,9 +504,9 @@ class AggregationTest extends TestCase
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->withoutMappings()->create();
+        $this->sigmie->newIndex($name)->create();
 
-        $collection = $this->sigmie->collect($name);
+        $collection = $this->sigmie->collect($name, refresh: true);
 
         $docs = [
             new Document([
@@ -547,9 +545,9 @@ class AggregationTest extends TestCase
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->withoutMappings()->create();
+        $this->sigmie->newIndex($name)->create();
 
-        $collection = $this->sigmie->collect($name);
+        $collection = $this->sigmie->collect($name, refresh: true);
 
         $docs = [
             new Document([

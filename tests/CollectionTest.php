@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Support\Tests;
+namespace Sigmie\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Sigmie\Support\Collection;
+use Sigmie\Shared\Collection;
 
 class CollectionTest extends TestCase
 {

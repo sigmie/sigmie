@@ -2,35 +2,33 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Tests\Base\Index;
+namespace Sigmie\Tests;
 
-use Exception;
 use RachidLaasri\Travel\Travel;
-use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
-use Sigmie\Base\Analysis\CharFilter\Mapping;
-use Sigmie\Base\Analysis\CharFilter\Pattern as PatternCharFilter;
-use Sigmie\Base\Analysis\Tokenizers\NonLetter;
-use Sigmie\Base\Analysis\Tokenizers\Pattern as PatternTokenizer;
-use Sigmie\Base\Analysis\Tokenizers\Whitespace;
-use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Document\AliveCollection;
+use Sigmie\Document\Document;
+use Sigmie\Mappings\Blueprint;
+use Sigmie\Index\Builder;
+use Sigmie\Testing\TestCase;
+use Exception;
+use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
+use Sigmie\Index\Analysis\CharFilter\Mapping;
+use Sigmie\Index\Analysis\CharFilter\Pattern as PatternCharFilter;
+use Sigmie\Index\Analysis\Tokenizers\NonLetter;
+use Sigmie\Index\Analysis\Tokenizers\Pattern as PatternTokenizer;
+use Sigmie\Index\Analysis\Tokenizers\Whitespace;
+use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Index;
-use Sigmie\Base\Mappings\Blueprint;
 use Sigmie\English\Builder as EnglishBuilder;
 use Sigmie\English\English;
 use Sigmie\German\Builder as GermanBuilder;
 use Sigmie\German\German;
 use Sigmie\Greek\Builder as GreekBuilder;
 use Sigmie\Greek\Greek;
-use Sigmie\Support\Exceptions\MissingMapping;
 use Sigmie\Testing\Assert;
-use Sigmie\Testing\TestCase;
 
-class BuilderTest extends TestCase
+class IndexBuilderTest extends TestCase
 {
-    use Index;
-
-
-
     /**
      * @test
      */
@@ -66,7 +64,6 @@ class BuilderTest extends TestCase
             ->greekLowercase()
             ->greekStemmer()
             ->greekStopwords()
-            ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -106,7 +103,6 @@ class BuilderTest extends TestCase
             ->germanStopwords()
             ->germanLowercase()
 
-            ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -174,7 +170,6 @@ class BuilderTest extends TestCase
 
             ->englishStopwords()
             ->englishLowercase()
-            ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -247,7 +242,6 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->unique(name: 'unique_filter', onlyOnSamePosition: true)
             ->create();
 
@@ -269,7 +263,6 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->trim(name: 'trim_filter_name')
             ->create();
 
@@ -290,7 +283,6 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->uppercase(name: 'uppercase_filter_name')
             ->create();
 
@@ -311,7 +303,6 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->tokenizeOn()->pattern('/something/', 'CASE_INSENSITIVE', name: 'some_pattern')
             ->create();
 
@@ -334,7 +325,6 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->tokenizeOn()->pattern('/something/', name: 'some_pattern')
             ->create();
 
@@ -356,7 +346,6 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->tokenizeOn()->wordBoundaries('able')
             ->create();
 
@@ -378,7 +367,6 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->tokenizeOn()->whiteSpaces()
             ->create();
 
@@ -399,7 +387,6 @@ class BuilderTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->mapChars(['f' => 'b'], 'bar')
             ->mapChars(['a' => 'c'], 'bar')
-            ->withoutMappings()
             ->create();
     }
 
@@ -415,7 +402,6 @@ class BuilderTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->stopwords(['foo'], 'foo')
             ->stopwords(['bar'], 'foo')
-            ->withoutMappings()
             ->create();
     }
 
@@ -430,7 +416,7 @@ class BuilderTest extends TestCase
 
         $builder->tokenizeOn()->whiteSpaces();
 
-        $builder->withoutMappings()->create();
+        $builder->create();
 
         $this->assertIndex($alias, function (Assert $index) {
             $index->assertAnalyzerHasTokenizer('default', 'whitespace');
@@ -446,7 +432,6 @@ class BuilderTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->setTokenizer(new PatternTokenizer('sigmie_tokenizer', '/[ ]/'))
-            ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -467,7 +452,6 @@ class BuilderTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->setTokenizer(new NonLetter())
-            ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -484,7 +468,6 @@ class BuilderTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->charFilter(new Mapping('sigmie_mapping_char_filter', ['a' => 'bar', 'f' => 'foo']))
-            ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -505,7 +488,6 @@ class BuilderTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->charFilter(new PatternCharFilter('pattern_char_filter', '/foo/', '$1'))
-            ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -527,7 +509,6 @@ class BuilderTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->charFilter(new HTMLStrip())
-            ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -544,7 +525,6 @@ class BuilderTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->setTokenizer(new WordBoundaries('some_name', 40))
-            ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -566,25 +546,11 @@ class BuilderTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->setTokenizer(new Whitespace())
-            ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
             $index->assertAnalyzerTokenizerIsWhitespaces('default');
         });
-    }
-
-    /**
-     * @test
-     */
-    public function mapping_exception()
-    {
-        $alias = uniqid();
-
-        $this->expectException(MissingMapping::class);
-
-        $this->sigmie->newIndex($alias)
-            ->create();
     }
 
     /**
@@ -598,8 +564,7 @@ class BuilderTest extends TestCase
             ->twoWaySynonyms([
                 ['treasure', 'gem', 'gold', 'price'],
                 ['friend', 'buddy', 'partner'],
-            ], name: 'sigmie_two_way_synonyms', )
-            ->withoutMappings()
+            ], name: 'sigmie_two_way_synonyms',)
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -631,7 +596,6 @@ class BuilderTest extends TestCase
                 'ipod' => ['i-pod', 'i pod'],
                 ['treasure', 'gem', 'gold', 'price'],
             ])
-            ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -649,8 +613,7 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->upercase('custom_lowercase')
-            ->withoutMappings()
+            ->lowercase('custom_lowercase')
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -673,8 +636,7 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->upercase('custom_uppercase')
-            ->withoutMappings()
+            ->uppercase('custom_uppercase')
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -691,8 +653,7 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->upercase('custom_uppercase')
-            ->withoutMappings()
+            ->uppercase('custom_uppercase')
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -711,8 +672,7 @@ class BuilderTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->oneWaySynonyms([
                 ['ipod', ['i-pod', 'i pod']],
-            ], name: 'sigmie_one_way_synonyms', )
-            ->withoutMappings()
+            ], name: 'sigmie_one_way_synonyms',)
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -739,7 +699,6 @@ class BuilderTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->stopwords(['about', 'after', 'again'], 'sigmie_stopwords')
-            ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -767,7 +726,6 @@ class BuilderTest extends TestCase
                 ['mouse', ['mice']],
                 ['feet', ['foot']],
             ], 'sigmie_stemmer_overrides')
-            ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -791,7 +749,6 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -846,8 +803,9 @@ class BuilderTest extends TestCase
     {
         $alias = uniqid();
 
-        $this->sigmie->newIndex($alias)
-            ->withoutMappings()->create();
+        $this->sigmie
+            ->newIndex($alias)
+            ->create();
 
         $this->assertIndexExists($alias);
     }
@@ -861,7 +819,7 @@ class BuilderTest extends TestCase
 
         Travel::to('2020-01-01 23:59:59');
 
-        $this->sigmie->newIndex($alias)->withoutMappings()->create();
+        $this->sigmie->newIndex($alias)->create();
 
         $this->assertIndexExists("{$alias}_20200101235959000000");
     }
@@ -874,7 +832,6 @@ class BuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->shards(4)
             ->replicas(3)
             ->create();

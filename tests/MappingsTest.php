@@ -2,20 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Tests\Base\Index;
+namespace Sigmie\Tests;
 
-use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\DefaultAnalyzer;
-use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Base\APIs\Index;
-use Sigmie\Base\Index\Mappings;
-use Sigmie\Base\Mappings\Blueprint;
+use ArrayAccess;
+use Countable;
+use IteratorAggregate;
+use Exception;
+use Sigmie\Index\Analysis\Analyzer;
+use Sigmie\Index\Analysis\DefaultAnalyzer;
+use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Index\APIs\Index;
+use Sigmie\Index\Mappings;
 use Sigmie\Testing\TestCase;
+use Sigmie\Mappings\Blueprint;
+
+use function Sigmie\Functions\random_letters;
 
 class MappingsTest extends TestCase
 {
-    use Index;
-
     /**
      * @test
      */
@@ -32,7 +36,7 @@ class MappingsTest extends TestCase
         $blueprint->date('created_at');
         $blueprint->bool('is_valid');
 
-        $properties = $blueprint($defaultAnalyzer);
+        $properties = $blueprint();
         $mappings = new Mappings($defaultAnalyzer, $properties);
 
         $analyzers = $mappings->analyzers()->toArray();

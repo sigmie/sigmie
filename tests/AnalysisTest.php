@@ -2,18 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Tests\Base\Index;
+namespace Sigmie\Tests;
 
-use Sigmie\Base\Analysis\Tokenizers\Pattern;
-use Sigmie\Base\APIs\Index;
-use Sigmie\Testing\Assert;
-
+use Sigmie\Index\Analysis\Tokenizers\Pattern;
 use Sigmie\Testing\TestCase;
+use Sigmie\Testing\Assert;
+use Sigmie\Index\AliasedIndex;
 
 class AnalysisTest extends TestCase
 {
-    use Index;
-
     /**
      * @test
      */
@@ -22,7 +19,6 @@ class AnalysisTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->stopwords(['foo', 'bar'], 'foo_stopwords')
             ->create();
 
@@ -44,7 +40,6 @@ class AnalysisTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->setTokenizer(new Pattern('foo_tokenizer', '//'))
-            ->withoutMappings()
             ->stripHTML()
             ->create();
 
@@ -65,7 +60,6 @@ class AnalysisTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->stripHTML()
             ->create();
 

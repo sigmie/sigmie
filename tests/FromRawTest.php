@@ -2,27 +2,28 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Tests\Base\Index;
+namespace Sigmie\Tests;
 
-use Sigmie\Base\Analysis\Analyzer;
-use Sigmie\Base\Analysis\CharFilter\HTMLStrip;
-use Sigmie\Base\Analysis\Tokenizers\Pattern;
-use Sigmie\Base\Analysis\Tokenizers\Whitespace;
-use Sigmie\Base\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Base\APIs\Index;
-use Sigmie\Base\Contracts\ConfigurableTokenizer;
-use Sigmie\Base\Index\Mappings;
-use Sigmie\Base\Mappings\Blueprint;
-use Sigmie\Base\Mappings\DynamicMappings;
-use Sigmie\Base\Mappings\Types\Boolean;
-use Sigmie\Base\Mappings\Types\Date;
-use Sigmie\Base\Mappings\Types\Number;
-use Sigmie\Base\Mappings\Types\Text;
 use Sigmie\Testing\TestCase;
+use Sigmie\Testing\Assert;
+use Sigmie\Index\AliasedIndex;
+use Sigmie\Index\Analysis\Analyzer;
+use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
+use Sigmie\Index\Analysis\Tokenizers\Pattern;
+use Sigmie\Index\Analysis\Tokenizers\Whitespace;
+use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Index\APIs\Index;
+use Sigmie\Index\Mappings;
+use Sigmie\Mappings\Blueprint;
+use Sigmie\Mappings\DynamicMappings;
+use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\Boolean;
+use Sigmie\Mappings\Types\Date;
+use Sigmie\Mappings\Types\Number;
+use Sigmie\Mappings\Types\Text;
 
-class ArrayablesTest extends TestCase
+class FromRawTest extends TestCase
 {
-    use Index;
 
     /**
      * @test
@@ -33,7 +34,6 @@ class ArrayablesTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->stripHTML()
-            ->withoutMappings()
             ->create();
 
         $index = $this->getIndex($alias);
@@ -41,7 +41,11 @@ class ArrayablesTest extends TestCase
         $analyzer = $index->settings->analysis()->analyzers()['default'];
 
         $this->assertNotEmpty($analyzer->charFilters());
-        $this->assertInstanceOf(HTMLStrip::class, $analyzer->charFilters()->first());
+
+        $charFilters = $analyzer->charFilters();
+        $filterName = array_key_first($charFilters);
+
+        $this->assertInstanceOf(HTMLStrip::class, $charFilters[$filterName]);
     }
 
     /**
@@ -53,7 +57,6 @@ class ArrayablesTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->setTokenizer(new Whitespace())
-            ->withoutMappings()
             ->create();
 
         $index = $this->getIndex($alias);
@@ -73,7 +76,6 @@ class ArrayablesTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->mapChars(['a' => 'b'], 'map')
             ->stripHTML()
-            ->withoutMappings()
             ->create();
 
         $index = $this->getIndex($alias);
@@ -90,14 +92,12 @@ class ArrayablesTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->setTokenizer(new Pattern('foo_tokenizer', '/bar/'))
-            ->withoutMappings()
             ->create();
 
         $index = $this->getIndex($alias);
 
         $tokenizer = $index->settings->analysis()->defaultAnalyzer()->tokenizer();
 
-        $this->assertInstanceOf(ConfigurableTokenizer::class, $tokenizer);
         $this->assertEquals($tokenizer->name(), 'foo_tokenizer');
         $this->assertInstanceOf(Pattern::class, $tokenizer);
     }
@@ -151,6 +151,10 @@ class ArrayablesTest extends TestCase
                 $blueprint->date('created_at');
                 $blueprint->bool('is_valid');
 
+                $blueprint->properties('user', function (Blueprint $blueprint) {
+                    $blueprint->text('name')->searchAsYouType();
+                });
+
                 return $blueprint;
             })
             ->create();
@@ -160,6 +164,9 @@ class ArrayablesTest extends TestCase
         $defaultAnalyzer = $index->settings->analysis()->defaultAnalyzer();
         $mappings = $index->mappings;
         $properties = $mappings->properties();
+
+        $this->assertArrayHasKey('user', $properties);
+        $this->assertInstanceOf(Properties::class, $properties['user']);
 
         $this->assertArrayHasKey('title', $properties);
         $this->assertInstanceOf(Text::class, $properties['title']);
@@ -184,24 +191,6 @@ class ArrayablesTest extends TestCase
         $this->assertArrayHasKey('is_valid', $properties);
         $this->assertInstanceOf(Boolean::class, $properties['is_valid']);
         $this->assertEquals((new Boolean('is_valid')), $properties['is_valid']);
-    }
-
-    /**
-     * @test
-     */
-    public function dynamic_mappings()
-    {
-        $alias = uniqid();
-
-        $this->sigmie->newIndex($alias)
-            ->withoutMappings()
-            ->create();
-
-        $index = $this->getIndex($alias);
-
-        $mappings = $index->mappings;
-
-        $this->assertInstanceOf(DynamicMappings::class, $mappings);
     }
 
     /**
@@ -242,7 +231,6 @@ class ArrayablesTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->setTokenizer($tokenizer)
-            ->withoutMappings()
             ->create();
 
         $index = $this->getIndex($alias);
@@ -266,7 +254,6 @@ class ArrayablesTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->create();
 
         $index = $this->getIndex($alias);
@@ -291,7 +278,6 @@ class ArrayablesTest extends TestCase
             ->replicas(2)
             ->shards(1)
             ->setTokenizer(new Pattern('foo_pattern_name', '/[ ]/'))
-            ->withoutMappings()
             ->create();
 
         $index = $this->getIndex($alias);

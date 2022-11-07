@@ -2,16 +2,28 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Tests\Base\Index;
+namespace Sigmie\Tests;
 
-use Sigmie\Base\APIs\Index;
-use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
+use Sigmie\Testing\Assert;
+use Sigmie\Index\AliasedIndex;
+use Sigmie\Index\Analysis\Analyzer;
+use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
+use Sigmie\Index\Analysis\Tokenizers\Pattern;
+use Sigmie\Index\Analysis\Tokenizers\Whitespace;
+use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Index\APIs\Index;
+use Sigmie\Index\Mappings;
+use Sigmie\Mappings\Blueprint;
+use Sigmie\Mappings\DynamicMappings;
+use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\Boolean;
+use Sigmie\Mappings\Types\Date;
+use Sigmie\Mappings\Types\Number;
+use Sigmie\Mappings\Types\Text;
 
-class FilterTest extends TestCase
+class TokenFilterTest extends TestCase
 {
-    use Index;
-
     /**
      * @test
      */
@@ -20,7 +32,6 @@ class FilterTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->decimalDigit('decimal_digit_filter')
             ->create();
 
@@ -41,7 +52,6 @@ class FilterTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->asciiFolding('ascii_folding_filer')
             ->create();
 
@@ -62,7 +72,6 @@ class FilterTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->tokenLimit(5, 'token_limit_name')
             ->create();
 
@@ -84,7 +93,6 @@ class FilterTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->keywords(['foo', 'bar'], 'keywords_marker')
             ->create();
 
@@ -106,7 +114,6 @@ class FilterTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->truncate(20, name: '20_char_truncate')
             ->create();
 
@@ -128,7 +135,6 @@ class FilterTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->unique(name: 'unique_filter', onlyOnSamePosition: true)
             ->create();
 
@@ -150,7 +156,6 @@ class FilterTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->trim(name: 'trim_filter_name')
             ->create();
 
@@ -171,7 +176,6 @@ class FilterTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->withoutMappings()
             ->uppercase(name: 'uppercase_filter_name')
             ->create();
 
@@ -183,4 +187,5 @@ class FilterTest extends TestCase
             ]);
         });
     }
+
 }

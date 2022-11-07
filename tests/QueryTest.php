@@ -2,22 +2,29 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Tests\Base\Index;
+namespace Sigmie\Tests;
 
+use ArrayAccess;
+use Countable;
+use IteratorAggregate;
+use Exception;
+use Sigmie\Index\Analysis\Analyzer;
+use Sigmie\Index\Analysis\DefaultAnalyzer;
+use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Index\Mappings;
+use Sigmie\Mappings\Blueprint;
 use Sigmie\Base\APIs\Explain;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Search;
-use Sigmie\Base\Documents\Document;
+use Sigmie\Document\Document;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
-use Sigmie\Base\Search\Queries\Compound\Boolean as QueriesCompoundBoolean;
+use Sigmie\Query\Queries\Compound\Boolean as QueriesCompoundBoolean;
 use Sigmie\Testing\TestCase;
+
+use function Sigmie\Functions\random_letters;
 
 class QueryTest extends TestCase
 {
-    use Index;
-    use Search;
-    use Explain;
-
     /**
      * @test
      */
@@ -25,9 +32,9 @@ class QueryTest extends TestCase
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->withoutMappings()->create();
+        $this->sigmie->newIndex($name)->create();
 
-        $collection = $this->sigmie->collect($name);
+        $collection = $this->sigmie->collect($name, refresh: true);
 
         $docs = [
             new Document([
@@ -43,12 +50,12 @@ class QueryTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->search($name)->range('count', ['>='=> 233])
+        $res = $this->sigmie->search($name)->range('count', ['>=' => 233])
             ->response();
 
         $this->assertEquals(1, $res->json()['hits']['total']['value']);
 
-        $res = $this->sigmie->search($name)->range('count', ['<='=> 15])
+        $res = $this->sigmie->search($name)->range('count', ['<=' => 15])
             ->response();
 
         $this->assertEquals(2, $res->json()['hits']['total']['value']);
@@ -61,7 +68,7 @@ class QueryTest extends TestCase
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->withoutMappings()->create();
+        $this->sigmie->newIndex($name)->create();
 
         $res = $this->sigmie->search($name)->bool(function (QueriesCompoundBoolean $boolean) {
             $boolean->filter->matchAll();
@@ -70,7 +77,7 @@ class QueryTest extends TestCase
             $boolean->filter()->multiMatch('baz', ['foo', 'bar']);
 
             $boolean->must->term('foo', 'bar');
-            $boolean->must->exists('bar', 'baz');
+            $boolean->must->exists('bar');
             $boolean->must->terms('foo', ['bar', 'baz']);
 
             $boolean->mustNot->wildcard('foo', '**/*');
@@ -97,7 +104,7 @@ class QueryTest extends TestCase
             $boolean->filter()->multiMatch('baz', ['foo', 'bar']);
 
             $boolean->must->term('foo', 'bar');
-            $boolean->must->exists('bar', 'baz');
+            $boolean->must->exists('bar');
             $boolean->must->terms('foo', ['bar', 'baz']);
 
             $boolean->mustNot->wildcard('foo', '**/*');
@@ -119,27 +126,73 @@ class QueryTest extends TestCase
         $this->assertEquals(
             $query['query'],
             ['bool' => [
+                'boost' => 1.0,
                 'filter' => [
-                    ['match_all' => (object) []],
-                    ['match_none' => (object) []],
+                    ['match_all' => (object) [
+                        'boost' => 1.0,
+                    ]],
+                    ['match_none' => (object) [
+                        'boost' => 1.0,
+                    ]],
                     ['fuzzy' => ['bar' => ['value' => 'baz']]],
-                    ['multi_match' => ['fields' => ['foo', 'bar'], 'query' => 'baz']],
+                    ['multi_match' => [
+                        'fields' => ['foo', 'bar'],
+                        'boost' => 1.0,
+                        'query' => 'baz'
+                    ]],
                 ],
                 'must' => [
-                    ['term' => ['foo' => ['value' => 'bar']]],
-                    ['exists' => ['field' => 'bar']],
-                    ['terms' => ['foo' => ['bar', 'baz']]],
+                    [
+                        'term' => [
+                            'foo' => [
+                                'value' => 'bar',
+                                'boost' => 1.0,
+                            ],
+                        ],
+                    ],
+                    [
+                        'exists' => [
+                            'field' => 'bar',
+                            'boost' => 1.0,
+                        ],
+                    ],
+                    [
+                        'terms' => [
+                            'foo' => ['bar', 'baz'],
+                            'boost' => 1.0,
+                        ],
+                    ],
                 ],
                 'must_not' => [
-                    ['wildcard' => ['foo' => ['value' => '**/*']]],
-                    ['ids' => ['values' => ['unqie']]],
+                    [
+                        'wildcard' => [
+                            'foo' => [
+                                'value' => '**/*',
+                                'boost' => '1.0',
+                            ],
+                        ],
+                    ],
+                    [
+                        'ids' => [
+                            'values' => [
+                                'unqie',
+                            ],
+                            'boost' => 1.0,
+                        ]
+                    ],
                 ],
                 'should' => [
                     [
                         'bool' => [
                             'must' => [
-                                ['match' => ['foo' => ['query' => 'bar']]],
+                                ['match' => [
+                                    'foo' => [
+                                        'query' => 'bar',
+                                        'boost' => 1.0,
+                                    ],
+                                ]],
                             ],
+                            'boost' => 1.0,
                         ],
                     ],
                 ],

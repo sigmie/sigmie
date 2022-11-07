@@ -2,22 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Base\Tests;
+namespace Sigmie\Tests;
 
-use Sigmie\Base\Actions\Index as IndexActions;
-use Sigmie\Base\Index\AliasedIndex;
-use Sigmie\Base\Index\Index;
-use Sigmie\Base\Index\Mappings;
-use Sigmie\Base\Index\Settings;
-use Sigmie\Support\Contracts\Collection;
+use PhpParser\ErrorHandler\Collecting;
+use Sigmie\Index\Actions\Index as IndexActions;
+use Sigmie\Index\AliasedIndex;
+use Sigmie\Index\Index;
+use Sigmie\Index\Mappings;
+use Sigmie\Index\Settings;
+use Sigmie\Shared\Collection;
 use Sigmie\Testing\TestCase;
 use Sigmie\Testing\HasTestConnection;
+use Sigmie\Tests\CollectionTest;
 
-class ActionsTest extends TestCase
+class IndexActionsTest extends TestCase
 {
-    use IndexActions;
-    use HasTestConnection;
-
     /**
      * @test
      */
@@ -25,7 +24,7 @@ class ActionsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $index = $this->sigmie->newIndex($indexName)->withoutMappings()->create();
+        $index = $this->sigmie->newIndex($indexName)->create();
 
         $exists = $this->indexExists($indexName);
 
@@ -87,7 +86,11 @@ class ActionsTest extends TestCase
 
         $this->deleteIndex($indexName);
 
-        $array = $this->listIndices()->map(fn (Index $index) => $index->name)->toArray();
+        $indices = $this->listIndices();
+
+        $collection = new Collection($indices);
+
+        $array = $collection->map(fn (Index $index) => $index->name)->toArray();
 
         $this->assertNotContains($indexName, $array);
     }
@@ -103,7 +106,7 @@ class ActionsTest extends TestCase
         $this->createIndex($fooIndexName, new Settings(), new Mappings());
         $this->createIndex($barIndexName, new Settings(), new Mappings());
 
-        $list = $this->listIndices();
+        $list = new Collection($this->listIndices());
         $array = $list->map(fn (Index $index) => $index->name)->toArray();
 
         $this->assertContains($fooIndexName, $array);
