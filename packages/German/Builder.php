@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\German;
 
-use Sigmie\Base\Contracts\LanguageBuilder;
-use Sigmie\Base\Index\Builder as IndexBuilder;
+use Sigmie\Index\Contracts\LanguageBuilder;
+use Sigmie\Index\Builder as IndexBuilder;
 
 use Sigmie\German\Filter\LightStemmer as GermanLightStemmer;
 use Sigmie\German\Filter\Lowercase as GermanLowercase;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\German\Filter;
 
-use Sigmie\Base\Analysis\TokenFilter\Lowercase as BaseLowercase;
+use Sigmie\Index\Analysis\TokenFilter\Lowercase as BaseLowercase;
 
 class Lowercase extends BaseLowercase
 {
