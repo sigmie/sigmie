@@ -3,7 +3,7 @@
 <p align="center">
 
 <a href="https://github.com/sigmie/sigmie/actions">
-<img src="https://github.com/sigmie/sigmie/workflows/tests/badge.svg" alt="Build Status">
+<img src="https://github.com/sigmie/sigmie/actions/workflows/tests.yml/badge.svg" alt="Build Status">
 </a>
 
 <a href="https://packagist.org/packages/sigmie/sigmie">
@@ -11,7 +11,7 @@
 </a>
 
 <a href="https://codecov.io/gh/sigmie/sigmie">
-  <img alt="Codecov" src="https://img.shields.io/codecov/c/github/sigmie/sigmie">
+  <img alt="Codecov" src="https://codecov.io/gh/sigmie/sigmie/branch/master/graph/badge.svg?token=Dx6x8vPVN8">
 </a>
 
 <a href="https://packagist.org/packages/sigmie/sigmie">
