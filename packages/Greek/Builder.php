@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Greek;
 
 use Sigmie\Index\Contracts\LanguageBuilder;
-use Sigmie\Index\Builder as IndexBuilder;
+use Sigmie\Index\NewIndex as IndexBuilder;
 
 use Sigmie\Greek\Filter\Lowercase as GreekLowercase;
 use Sigmie\Greek\Filter\Stemmer as GreekStemmer;

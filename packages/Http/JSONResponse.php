@@ -23,8 +23,6 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
     }
 
     /**
-     * Get the body of the response.
-     *
      *
      * @return string
      */
@@ -34,8 +32,6 @@ class JSONResponse implements ArrayAccess, JSONResponseInterface
     }
 
     /**
-     * Get the body of the response.
-     *
      * @return string
      */
     public function body()
