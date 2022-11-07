@@ -22,26 +22,9 @@
 </p>
 
 ## Sigmie
-Sigmie is a high-level open source  PHP library for Elasticsearch. Primarily focused on making the developer experience as straightforward as possible with it 's simple syntax.
+Sigmie library is the hearth of the [Sigmie Application](https://sigmie.com).
 
-## Installation
-
-Make sure you have Composer installed on your machine and execute:
-
-```
- composer require sigmie/sigmie
-```
-Afterwards you must require the vendor/autoload.php file in your code.
-
-Here is a first example to get an idea.
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-```
-
-You can find the documentation on the [website](https://docs.sigmie.com/sigmie).
+You can find the documentation on the [website](https://sigmie.com).
 
 ## Contributing
  Thank you for considering contributing to the Sigmie. The main purpose of this repository is to make Elasticsearch easier to use with PHP. We would be grateful to the community for contributing bugfixes and improvements. So feel free to open a pull request.
