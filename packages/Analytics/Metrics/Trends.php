@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Analytics\Metrics;
 
-use function Sigmie\Helpers\random_letters;
+use function Sigmie\Functions\random_letters;
 use Sigmie\Shared\Contracts\ToRaw;
 
 class Trends implements ToRaw

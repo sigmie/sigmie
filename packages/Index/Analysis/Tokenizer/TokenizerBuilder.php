@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Index\Analysis\Tokenizer;
 
 use Exception;
-use function Sigmie\Helpers\random_letters;
+use function Sigmie\Functions\random_letters;
 use Sigmie\Index\Analysis\Tokenizers\Pattern;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;

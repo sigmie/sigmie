@@ -9,6 +9,7 @@ use Sigmie\Base\Contracts\QueryClause as Query;
 use function Sigmie\Helpers\auto_fuzziness;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\Text\Match_;
+use Sigmie\Search\SearchBuilder;
 
 class IndexQueryBuilder
 {

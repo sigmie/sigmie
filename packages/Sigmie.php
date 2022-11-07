@@ -6,7 +6,7 @@ namespace Sigmie;
 
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
-use Sigmie\Base\Analytics\MetricQueryBuilder;
+use Sigmie\Analytics\Analytics;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
 use Sigmie\Base\Contracts\ElasticsearchRequest as ElasticsearchRequestInterface;
@@ -81,9 +81,9 @@ class Sigmie
         return new SearchBuilder($index, $this->elasticsearchConnection);
     }
 
-    public function metrics(string $index, string $field)
+    public function analytics(string $index, string $field)
     {
-        return new MetricQueryBuilder($this->newSearch($index), $field);
+        return new Analytics($this->newSearch($index), $field);
     }
 
     public function indices(): array

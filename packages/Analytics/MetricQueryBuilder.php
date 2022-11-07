@@ -12,7 +12,7 @@ use Sigmie\Analytics\Metrics\Trends;
 use Sigmie\Analytics\Metrics\Values;
 use Sigmie\Search\SearchBuilder;
 
-class MetricQueryBuilder
+class Analytics
 {
     use Search;
 
