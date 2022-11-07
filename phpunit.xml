@@ -1,28 +1,14 @@
 <?xml version="1.0"?>
-<phpunit bootstrap="vendor/autoload.php"
-         colors="true"
-         failOnRisky="true"
-         failOnWarning="true"
-         backupGlobals="false"
-         backupStaticAttributes="false"
-         convertErrorsToExceptions="true"
-         convertNoticesToExceptions="true"
-         convertWarningsToExceptions="true"
-         processIsolation="true"
-         verbose="true"
-         >
-
+<phpunit backupGlobals="false" backupStaticAttributes="false" bootstrap="vendor/autoload.php" colors="true" convertErrorsToExceptions="true" convertNoticesToExceptions="true" convertWarningsToExceptions="true" failOnRisky="true" failOnWarning="true" processIsolation="false" verbose="true">
     <testsuites>
         <testsuite name="Sigmie Test Suite">
-
             <directory suffix="Test.php">./tests</directory>
-
         </testsuite>
     </testsuites>
-    <php>
-        <server name="ES_HOST" value="es_test_1"/>
-        <server name="ES_PORT" value="9200"/>
-        <server name="ENVIRONMENT" value="test"/>
-    </php>
-
+<!--     <coverage>
+        <include>
+            <directory suffix=".php">./packages</directory>
+        </include>
+    </coverage>
+ -->    <php/>
 </phpunit>

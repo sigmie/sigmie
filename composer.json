@@ -17,21 +17,17 @@
         "php": "^8.0",
         "guzzlehttp/guzzle": "^7.2",
         "symfony/console": "^6",
-        "symfony/event-dispatcher": "^5.2",
-        "symfony/event-dispatcher-contracts": "^2.2",
         "nesbot/carbon": "^2.48",
-        "amphp/parallel": "^1.4",
-        "eventsauce/backoff": "^1.1",
-        "adbario/php-dot-notation": "^2.2"
+        "adbario/php-dot-notation": "^2.2",
+        "elastic/transport": "^8.5",
+        "illuminate/collections": "^9.38"
     },
     "require-dev": {
         "symfony/var-dumper": "^5.2",
         "phpunit/phpunit": "^9.5",
         "phpstan/phpstan": "^0.12.90",
-        "squizlabs/php_codesniffer": "^3.5",
         "spatie/ray": "^1.1",
         "brianium/paratest": "^6.3",
-        "nunomaduro/collision": "^5.3",
         "rachidlaasri/travel": "^1.06"
     },
     "autoload": {
@@ -40,7 +36,7 @@
             "Sigmie\\": "packages/"
         },
         "files": [
-            "packages/Support/functions.php"
+            "packages/Shared/helpers.php"
         ]
     },
     "autoload-dev": {},
