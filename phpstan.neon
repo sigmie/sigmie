@@ -1,24 +1,6 @@
 parameters:
-    level: 6
+    level: 4
     checkMissingIterableValueType: false
     checkGenericClassInNonGenericObjectType: false
     paths:
         - packages
-    excludePaths:
-        analyse:
-            - packages/Cli
-            - packages/Base/Search
-    ignoreErrors:
-    - '#Unsafe usage of new static\(\).#'
-    - '#Method Sigmie\\Support\\Contracts\\TokenizerBuilder::.*\(\) has no return typehint specified.#'
-    - '#Method Sigmie\\Base\\Contracts\\FromRaw::fromRaw\(\) has no return typehint specified.#'
-    - '#Method Sigmie\\Base\\Http\\Connection::call\(\) should return Sigmie\\Http\\Contracts\\JSONResponse but return statement is missing.#'
-    - '#Method .*::offsetExists\(\) has parameter \$.* with no typehint specified.#'
-    - '#Method .*::offsetGet\(\) has no return typehint specified.#'
-    - '#Method .*::offsetGet\(\) has parameter \$.* with no typehint specified.#'
-    - '#Method .*::offsetSet\(\) has parameter \$.* with no typehint specified.#'
-    - '#Method .*::offsetUnset\(\) has parameter \$.* with no typehint specified.#'
-    - '#Method .*::indexOf\(\) has parameter \$.* with no typehint specified.#'
-    -  
-       message: '#Method Sigmie\\Base\\Index\\Blueprint::.*\(\) has parameter \$args with no typehint specified.#'
-       path: packages/Base/Index/Blueprint.php

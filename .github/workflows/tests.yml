@@ -46,7 +46,12 @@ jobs:
 
       - name: Execute tests
         continue-on-error: ${{ matrix.php > 8 }}
-        run: vendor/bin/phpunit -c phpunit.xml
+        run: vendor/bin/phpunit -c phpunit.xml --coverage-clover coverage.xml
+
+      - uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          files: coverage.xml
 
       - name: PHPStan
         run: vendor/bin/phpstan analyse --memory-limit=-1
