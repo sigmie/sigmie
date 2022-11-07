@@ -13,7 +13,7 @@ class Pattern extends Tokenizer
     use Name;
 
     public function __construct(
-        protected string $name,
+        public readonly string $name,
         protected string $pattern,
         protected null|string $flags = null
     ) {

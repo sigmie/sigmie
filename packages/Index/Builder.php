@@ -104,7 +104,7 @@ class Builder
         $this->createAlias($index->name, $this->alias);
 
         $index = new AliasedIndex($index->name, $this->alias);
-        $index->setElasticsearchConnection($this->httpConnection);
+        $index->setElasticsearchConnection($this->elasticsearchConnection);
 
         return $index;
     }

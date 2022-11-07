@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\TokenFilter;
 
-use function Sigmie\Helpers\name_configs;
+use function Sigmie\Functions\name_configs;
 
 class Keywords extends TokenFilter
 {

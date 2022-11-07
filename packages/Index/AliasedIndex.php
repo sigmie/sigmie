@@ -10,7 +10,7 @@ use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\APIs\Reindex;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Contracts\Settings as SettingsInterface;
-use Sigmie\Support\Update\UpdateProxy;
+use Sigmie\Index\UpdateProxy;
 
 class AliasedIndex extends Index
 {
@@ -30,11 +30,16 @@ class AliasedIndex extends Index
     }
 
 
-    public function update(callable $update): AliasedIndex|Actions
+    public function update(callable $newUpdate): AliasedIndex|Actions
     {
         $oldAlias = $this->name;
 
-        $update = (new UpdateProxy($this->httpConnection, $this->alias))($update);
+        $update = new IndexUpdateBuilder($this->elasticsearchConnection);
+
+        $update->alias($this->alias);
+        $update->config('refresh_interval', '-1');
+
+        $newUpdate($update);
 
         $blueprint = $update->make();
         $requestedReplicas = $blueprint->settings->replicaShards();

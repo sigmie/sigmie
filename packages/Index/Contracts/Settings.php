@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Contracts;
 
-use Sigmie\Base\Contracts\Raw;
+use Sigmie\Shared\Contracts\Raw;
 use Sigmie\Index\Contracts\Analysis;
+use Sigmie\Shared\Contracts\FromRaw;
+use Sigmie\Shared\Contracts\ToRaw;
 
-interface Settings extends Raw
+interface Settings extends ToRaw, FromRaw
 {
     public function toRaw(): array;
 

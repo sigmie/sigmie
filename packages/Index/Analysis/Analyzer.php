@@ -73,7 +73,7 @@ class Analyzer implements AnalyzerInterface
 
         return match ($name) {
             'default' => new DefaultAnalyzer($analyzerTokenizer, $analyzerFilters, $analyzerCharFilters),
-            default => new AnalyzerInterface($name, $analyzerTokenizer, $analyzerFilters, $analyzerCharFilters)
+            default => new Analyzer($name, $analyzerTokenizer, $analyzerFilters, $analyzerCharFilters)
         };
     }
 

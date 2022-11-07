@@ -6,7 +6,7 @@ namespace Sigmie\Index\Analysis\TokenFilter;
 
 use Sigmie\Greek\Filter\Stopwords as FilterStopwords;
 
-use function Sigmie\Helpers\name_configs;
+use function Sigmie\Functions\name_configs;
 
 class Stopwords extends TokenFilter
 {

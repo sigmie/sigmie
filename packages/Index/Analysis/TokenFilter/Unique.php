@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\TokenFilter;
 
-use function Sigmie\Helpers\name_configs;
+use function Sigmie\Functions\name_configs;
 
 class Unique extends TokenFilter
 {
     public function __construct(
-        protected string $name,
+        string $name,
         bool $onlyOnSamePosition = false
     ) {
         parent::__construct($name, ['only_on_same_position' => $onlyOnSamePosition]);

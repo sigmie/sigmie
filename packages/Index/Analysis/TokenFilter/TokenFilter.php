@@ -20,7 +20,7 @@ abstract class TokenFilter implements TokenFilterInterface
     ];
 
     public function __construct(
-        protected string $name,
+        public readonly string $name,
         protected array $settings = [],
     ) {
     }

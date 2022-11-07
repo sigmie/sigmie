@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\Tokenizers;
 
-use Sigmie\Base\Contracts\Tokenizer;
+use Sigmie\Index\Contracts\Tokenizer;
 
 class NonLetter implements Tokenizer
 {
@@ -16,5 +16,16 @@ class NonLetter implements Tokenizer
     public function name(): string
     {
         return 'letter';
+    }
+
+    public function toRaw(): array
+    {
+        $res = [
+            $this->name() => [
+                'type' => $this->name()
+            ],
+        ];
+
+        return $res;
     }
 }

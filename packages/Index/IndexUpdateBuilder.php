@@ -3,17 +3,17 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Support\Update;
+namespace Sigmie\Index;
 
 use Sigmie\Index\Builder as IndexBuilder;
-use Sigmie\Support\Shared\CharFilters;
-use Sigmie\Support\Shared\Filters;
-use Sigmie\Support\Shared\Mappings;
-use Sigmie\Support\Shared\Replicas;
-use Sigmie\Support\Shared\Shards;
-use Sigmie\Support\Shared\Tokenizer;
+use Sigmie\Index\Shared\CharFilters;
+use Sigmie\Index\Shared\Filters;
+use Sigmie\Index\Shared\Mappings;
+use Sigmie\Index\Shared\Replicas;
+use Sigmie\Index\Shared\Shards;
+use Sigmie\Index\Shared\Tokenizer;
 
-class Update extends IndexBuilder
+class IndexUpdateBuilder extends IndexBuilder
 {
     use Mappings;
     use Filters;

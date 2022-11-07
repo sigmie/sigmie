@@ -9,7 +9,7 @@ use function Sigmie\Functions\name_configs;
 class Mapping extends ConfigurableCharFilter
 {
     public function __construct(
-        protected string $name,
+        string $name,
         protected array $mappings = []
     ) {
         parent::__construct($name);

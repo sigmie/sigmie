@@ -64,7 +64,18 @@ trait Actions
 
     protected function getIndex(string $alias): BaseIndex|AliasedIndex|null
     {
-        $res = $this->indexAPICall("{$alias}", 'GET');
+        try {
+            $res = $this->indexAPICall("{$alias}", 'GET');
+        } catch (ElasticsearchException $e) {
+            $type = $e->json('type');
+
+            if ($type === 'index_not_found_exception') {
+                return null;
+            }
+
+            throw $e;
+        }
+
 
         if (count($res->json()) > 1) {
             throw MultipleIndicesForAlias::forAlias($alias);

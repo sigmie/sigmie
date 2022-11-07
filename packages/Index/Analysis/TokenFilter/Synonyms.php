@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\TokenFilter;
 
-use function Sigmie\Helpers\name_configs;
+use function Sigmie\Functions\name_configs;
 
 class Synonyms extends TokenFilter
 {
     public function __construct(
-        protected string $name,
+        string $name,
         protected array $synonyms = [],
         protected bool $expand = false
     ) {
