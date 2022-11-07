@@ -14,6 +14,14 @@ trait Mappings
 {
     protected Blueprint $blueprint;
 
+    public function blueprint(Blueprint $blueprint)
+    {
+        $this->blueprint = $blueprint;
+
+        return $this;
+    }
+
+
     public function mapping(callable $callable): static
     {
         $this->blueprint = new Blueprint();

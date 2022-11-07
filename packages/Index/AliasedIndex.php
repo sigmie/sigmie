@@ -34,7 +34,7 @@ class AliasedIndex extends Index
     {
         $oldAlias = $this->name;
 
-        $update = new IndexUpdateBuilder($this->elasticsearchConnection);
+        $update = new UpdateIndex($this->elasticsearchConnection);
 
         $update->alias($this->alias);
         $update->config('refresh_interval', '-1');

@@ -24,7 +24,7 @@ use Sigmie\Index\Shared\Tokenizer;
 
 use function Sigmie\Functions\index_name;
 
-class Builder
+class NewIndex
 {
     use IndexActions;
     use Filters;
