@@ -4,16 +4,33 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Http\Responses;
 
-use Sigmie\Base\Contracts\DocumentCollection as DocumentCollectionInterface;
-use Sigmie\Base\Documents\Collection as  DocumentCollection;
+use Psr\Http\Message\ResponseInterface;
 use Sigmie\Base\Http\ElasticsearchResponse;
+use Sigmie\Document\Document;
+use Sigmie\Shared\Collection;
 
 class Mget extends ElasticsearchResponse
 {
-    public function docs(): DocumentCollectionInterface
-    {
-        $found = array_filter($this->json('docs'), fn ($value) => $value['found'] ?? false);
+    protected Collection $collection;
 
-        return DocumentCollection::fromRaw($found);
+    public function __construct(ResponseInterface $psrResponse)
+    {
+        $this->response = $psrResponse;
+
+        $collection = new Collection($this->json('docs'));
+
+        $this->collection = $collection
+            ->filter(fn ($value) => $value['found'] ?? false)
+            ->map(fn ($values) => Document::fromRaw($values));
+    }
+
+    public function docs(): array
+    {
+        return $this->collection->toArray();
+    }
+
+    public function first(): null|Document
+    {
+        return $this->collection->first();
     }
 }

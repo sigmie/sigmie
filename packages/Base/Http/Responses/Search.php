@@ -15,18 +15,18 @@ class Search extends ElasticsearchResponse
         return $this->json('hits.total.value');
     }
 
-    public function hits(): int
-    {
-        return $this->json('hits.hits');
-    }
-
     public function aggregation(string $dot): mixed
     {
         return $this->json("aggregations.{$dot}");
     }
 
-    public function docs(): DocumentCollectionInterface
+    public function get():array
     {
-        return DocumentCollection::fromRaw($this->json('hits.hits'));
+        return $this->json();
+    }
+
+    public function hits(): array
+    {
+        return $this->json("hits.hits");
     }
 }

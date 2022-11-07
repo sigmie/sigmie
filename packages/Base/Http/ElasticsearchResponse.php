@@ -14,7 +14,9 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
 {
     public function failed(): bool
     {
-        return $this->serverError() || $this->clientError() || $this->hasErrorKey(); }
+        return $this->serverError() || $this->clientError() || $this->hasErrorKey();
+    }
+
 
     public function exception(ElasticsearchRequest $request): Exception
     {

@@ -10,20 +10,20 @@ use Sigmie\Base\Contracts\ElasticsearchConnection;
 
 trait API
 {
-    protected ElasticsearchConnection $httpConnection;
+    protected ElasticsearchConnection $elasticsearchConnection;
 
     public function setElasticsearchConnection(ElasticsearchConnection $connection): void
     {
-        $this->httpConnection = $connection;
+        $this->elasticsearchConnection = $connection;
     }
 
     public function getElasticsearchConnection(): ElasticsearchConnection
     {
-        return $this->httpConnection;
+        return $this->elasticsearchConnection;
     }
 
     protected function elasticsearchCall(ElasticsearchRequest $request): ElasticsearchResponse
     {
-        return ($this->httpConnection)($request);
+        return ($this->elasticsearchConnection)($request);
     }
 }
