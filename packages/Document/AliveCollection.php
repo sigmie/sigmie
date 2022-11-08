@@ -8,7 +8,7 @@ use ArrayAccess;
 use Countable;
 use Generator;
 use Sigmie\Base\APIs\Search;
-use Sigmie\Base\Http\ElasticsearchConnection;
+use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Document\Actions as DocumentActions;
 use Sigmie\Document\Contracts\DocumentCollection;
 use Sigmie\Index\Actions as IndexActions;

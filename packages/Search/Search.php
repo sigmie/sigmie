@@ -11,7 +11,7 @@ use Sigmie\Base\Pagination\Paginator;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
 use Sigmie\Query\Queries\MatchAll;
-use Sigmie\Query\Queries\Query;
+use Sigmie\Query\Contracts\QueryClause as Query;
 
 class Search
 {
