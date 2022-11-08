@@ -22,7 +22,7 @@
 </p>
 
 ## Sigmie
-Sigmie library is the hearth of the [Sigmie Application](https://sigmie.com).
+Sigmie library is the hearth of the [Sigmie Application](https://app.sigmie.com).
 
 You can find the documentation on the [website](https://sigmie.com).
 
