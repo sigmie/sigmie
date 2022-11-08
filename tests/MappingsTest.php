@@ -39,7 +39,7 @@ class MappingsTest extends TestCase
         $properties = $blueprint();
         $mappings = new Mappings($defaultAnalyzer, $properties);
 
-        $analyzers = $mappings->analyzers()->toArray();
+        $analyzers = $mappings->analyzers();
 
         $this->assertContains($defaultAnalyzer, $analyzers);
         $this->assertContains($analyzer, $analyzers);

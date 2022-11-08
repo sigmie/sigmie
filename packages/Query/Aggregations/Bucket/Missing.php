@@ -16,7 +16,7 @@ class Missing extends Bucket
     {
         return [
             'missing' => [
-                'field' => $this->metricField,
+                'field' => $this->field,
             ],
         ];
     }

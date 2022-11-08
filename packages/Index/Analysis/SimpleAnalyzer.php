@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis;
 
-use Sigmie\Base\Contracts\Analyzer;
+use Sigmie\Index\Contracts\Analyzer;
 
 class SimpleAnalyzer implements Analyzer
 {

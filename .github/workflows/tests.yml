@@ -44,7 +44,7 @@ jobs:
           max_attempts: 5
           command: composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress ${{ matrix.flags }}
 
-      - name: Execute tests
+      - name: Tests
         continue-on-error: ${{ matrix.php > 8 }}
         run: vendor/bin/phpunit -c phpunit.xml
 
@@ -52,5 +52,5 @@ jobs:
         with:
           files: coverage.xml
 
-      # - name: PHPStan
-      #   run: vendor/bin/phpstan analyse --memory-limit=-1
+      - name: Static analysis
+        run: vendor/bin/phpstan analyse --memory-limit=-1

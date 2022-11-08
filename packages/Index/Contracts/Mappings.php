@@ -9,4 +9,6 @@ use Sigmie\Shared\Contracts\ToRaw;
 interface Mappings extends ToRaw
 {
     public static function create(array $raw, array $analyzers): static;
+
+    public function analyzers(): array;
 }

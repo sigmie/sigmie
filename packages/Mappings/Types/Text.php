@@ -7,7 +7,7 @@ namespace Sigmie\Mappings\Types;
 use Exception;
 use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\Analyzer;
-use Sigmie\Index\Contracts\CustomAnalyzer as AnalyzerInterface;
+use Sigmie\Index\Contracts\CustomAnalyzer as CustomAnalyzer;
 use Sigmie\Shared\Contracts\FromRaw;
 
 class Text extends Type implements FromRaw
@@ -35,12 +35,14 @@ class Text extends Type implements FromRaw
 
         $instance = new static((string) $name, $raw);
 
-        return match ($configs['type']) {
+        match ($configs['type']) {
             'text' => $instance->unstructuredText(),
             'search_as_you_type' => $instance->searchAsYouType(),
             'completion' => $instance->completion(),
             default => throw new Exception('Field '.$configs['type'].' couldn\'t be mapped')
         };
+
+        return $instance;
     }
 
     public function isSortable(): bool
@@ -103,7 +105,7 @@ class Text extends Type implements FromRaw
         $this->analyzer = $analyzer;
     }
 
-    public function analyzer(): ?AnalyzerInterface
+    public function analyzer(): null|Analyzer
     {
         return $this->analyzer;
     }

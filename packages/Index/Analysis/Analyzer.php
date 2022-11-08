@@ -10,13 +10,13 @@ use Sigmie\Index\Analysis\Tokenizers\NonLetter;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\CharFilter;
-use Sigmie\Index\Contracts\CustomAnalyzer as AnalyzerInterface;
+use Sigmie\Index\Contracts\CustomAnalyzer as CustomAnalyzerInterface;
 use Sigmie\Index\Contracts\TokenFilter;
 use Sigmie\Index\Contracts\Tokenizer;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\Name;
 
-class Analyzer implements AnalyzerInterface
+class Analyzer implements CustomAnalyzerInterface
 {
     use Name;
 
@@ -44,7 +44,7 @@ class Analyzer implements AnalyzerInterface
         array $charFilters,
         array $filters,
         array $tokenizers
-    ): static {
+    ): CustomAnalyzerInterface {
         $analyzerFilters = [];
         $analyzerCharFilters = [];
 

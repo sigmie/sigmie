@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Analytics\Metrics;
 
-use Illuminate\Support\Collection;
 use Sigmie\Query\Aggregations\Bucket\Terms;
 use Sigmie\Query\Aggregations\Pipeline\SortBucket;
 use Sigmie\Query\Aggs;
+use Sigmie\Shared\Collection;
 
 class TopScore extends Terms
 {

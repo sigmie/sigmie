@@ -32,11 +32,6 @@ class SearchBuilder implements Queries
         $this->search->index($index)->setElasticsearchConnection($httpConnection);
     }
 
-    public function template(string $name): Template
-    {
-        return new Template($this->index, $name, $this->httpConnection);
-    }
-
     public function term(string $field, string|bool $value): Search
     {
         return $this->search->query(new Term($field, $value));

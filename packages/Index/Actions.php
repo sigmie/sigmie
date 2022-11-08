@@ -8,12 +8,12 @@ use Sigmie\Base\APIs\Cat as CatAPI;
 use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\APIs\Template;
 use Sigmie\Base\ElasticsearchException;
-use Sigmie\Base\Index\IndexTemplate;
 use Sigmie\Index\Alias\Actions as AliasActions;
 use Sigmie\Index\Alias\MultipleIndicesForAlias;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Contracts\Settings as SettingsInterface;
 use Sigmie\Index\Index as BaseIndex;
+use Sigmie\Index\IndexTemplate;
 
 trait Actions
 {
@@ -83,11 +83,12 @@ trait Actions
 
         if (isset($data['aliases']) && in_array($alias, array_keys($data['aliases']))) {
             $index = new AliasedIndex($name, $alias, $settings, $mappings);
-        } else {
-            $index = new BaseIndex($name, $settings, $mappings);
+            $index->setElasticsearchConnection($this->getElasticsearchConnection());
+
+            return $index;
         }
 
-        $index->setElasticsearchConnection($this->getElasticsearchConnection());
+        $index = new BaseIndex($name, $settings, $mappings);
 
         return $index;
     }
@@ -98,7 +99,6 @@ trait Actions
 
         return array_map(function ($values) {
             $index = new BaseIndex($values['index']);
-            $index->setElasticsearchConnection($this->getElasticsearchConnection());
 
             return $index;
         }, $catResponse->json());

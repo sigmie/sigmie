@@ -15,7 +15,7 @@ class Delete extends HttpElasticsearchRequest implements ElasticsearchRequest
 {
     public function __construct(Uri $uri)
     {
-        parent::__construct('DELETE', $uri, $this->headers, null);
+        parent::__construct('DELETE', $uri, body: null);
     }
 
     public function response(ResponseInterface $psr): ElasticsearchResponse

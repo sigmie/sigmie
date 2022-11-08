@@ -9,7 +9,7 @@ use Sigmie\Mappings\Blueprint;
 class Nested extends Type
 {
     public function __construct(
-        protected string $name,
+        string $name,
         protected Blueprint $blueprint = new Blueprint
     ) {
         parent::__construct($name);

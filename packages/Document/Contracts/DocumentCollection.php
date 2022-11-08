@@ -11,6 +11,7 @@ use Iterator;
 use IteratorAggregate;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Document;
+use Traversable;
 
 interface DocumentCollection extends ArrayAccess, Countable, IteratorAggregate
 {
@@ -30,7 +31,7 @@ interface DocumentCollection extends ArrayAccess, Countable, IteratorAggregate
 
     public function remove(string $_id): bool;
 
-    public function all(): Iterator;
+    public function all(): Traversable;
 
     public function has(string $_id): bool;
 

@@ -35,7 +35,7 @@ trait LazyEach
     protected function indexGenerator(): Iterator
     {
         $page = 1;
-        $total = $this->countAPICall($this->name)->json('count');
+        $total = (int) $this->countAPICall($this->name)->json('count');
 
         yield from $this->pageGenerator($page);
 

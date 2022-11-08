@@ -56,7 +56,7 @@ class FromRawTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->setTokenizer(new Whitespace())
+            ->tokenizer(new Whitespace())
             ->create();
 
         $index = $this->getIndex($alias);
@@ -91,7 +91,7 @@ class FromRawTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->setTokenizer(new Pattern('foo_tokenizer', '/bar/'))
+            ->tokenizer(new Pattern('foo_tokenizer', '/bar/'))
             ->create();
 
         $index = $this->getIndex($alias);
@@ -230,7 +230,7 @@ class FromRawTest extends TestCase
         $tokenizer = new WordBoundaries('foo_word_boundaries');
 
         $this->sigmie->newIndex($alias)
-            ->setTokenizer($tokenizer)
+            ->tokenizer($tokenizer)
             ->create();
 
         $index = $this->getIndex($alias);
@@ -277,7 +277,7 @@ class FromRawTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->replicas(2)
             ->shards(1)
-            ->setTokenizer(new Pattern('foo_pattern_name', '/[ ]/'))
+            ->tokenizer(new Pattern('foo_pattern_name', '/[ ]/'))
             ->create();
 
         $index = $this->getIndex($alias);

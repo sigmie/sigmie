@@ -39,7 +39,7 @@ class AnalysisTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->setTokenizer(new Pattern('foo_tokenizer', '//'))
+            ->tokenizer(new Pattern('foo_tokenizer', '//'))
             ->stripHTML()
             ->create();
 

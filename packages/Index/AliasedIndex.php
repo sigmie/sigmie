@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Index;
 
+use RuntimeException;
 use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\APIs\Reindex;
 use Sigmie\Index\Actions as IndexActions;
@@ -19,16 +20,15 @@ class AliasedIndex extends Index
     use IndexActions;
 
     public function __construct(
-        protected string $name,
+        string $name,
         protected string $alias,
         SettingsInterface $settings = null,
         MappingsInterface $mappings = null
     ) {
-        $this->settings = $settings ?: new Settings();
-        $this->mappings = $mappings ?: new Mappings();
+        parent::__construct($name,  $settings, $mappings);
     }
 
-    public function update(callable $newUpdate): AliasedIndex|Actions
+    public function update(callable $newUpdate): AliasedIndex
     {
         $oldAlias = $this->name;
 
@@ -64,7 +64,13 @@ class AliasedIndex extends Index
 
         $this->deleteIndex($this->name);
 
-        return $this->getIndex($newAlias);
+        $index = $this->getIndex($newAlias);
+
+        if ($index instanceof AliasedIndex) {
+            return $index;
+        }
+
+        throw new RuntimeException("Something went wrong while updating index.");
     }
 
     public function disableWrite(): void
@@ -79,5 +85,10 @@ class AliasedIndex extends Index
         $this->indexAPICall("{$this->name}/_settings", 'PUT', [
             'index' => ['blocks.write' => false],
         ]);
+    }
+
+    public function delete(): bool
+    {
+        return $this->deleteIndex($this->name);
     }
 }

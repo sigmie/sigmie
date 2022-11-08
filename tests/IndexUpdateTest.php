@@ -148,7 +148,7 @@ class IndexUpdateTest extends TestCase
         });
 
         $index->update(function (Update $update) {
-            $update->tokenizeOn()->pattern('/foo/', name: 'default_analyzer_pattern_tokenizer');
+            $update->tokenizeOnPattern('/foo/', name: 'default_analyzer_pattern_tokenizer');
 
             return $update;
         });
@@ -170,7 +170,7 @@ class IndexUpdateTest extends TestCase
         $alias = uniqid();
 
         $index = $this->sigmie->newIndex($alias)
-            ->setTokenizer(new Whitespace())
+            ->tokenizer(new Whitespace())
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -179,7 +179,7 @@ class IndexUpdateTest extends TestCase
 
         $index->update(function (Update $update) {
 
-            $update->tokenizeOn()->wordBoundaries('foo_tokenizer');
+            $update->tokenizeOnWordBoundaries('foo_tokenizer');
 
             return $update;
         });

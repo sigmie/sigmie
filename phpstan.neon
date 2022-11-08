@@ -4,3 +4,8 @@ parameters:
     checkGenericClassInNonGenericObjectType: false
     paths:
         - packages
+    excludePaths:
+        - packages/Testing
+    ignoreErrors:
+        - '#Unsafe usage of new static\(\)\.#'
+        - '#Method .* should return .* but returns Sigmie\\Base\\Contracts\\ElasticsearchResponse.#'

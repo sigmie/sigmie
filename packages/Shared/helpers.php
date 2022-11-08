@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 namespace Sigmie\Functions {
+
     use Carbon\Carbon;
     use Exception;
 
@@ -11,6 +12,11 @@ namespace Sigmie\Functions {
         $timestamp = Carbon::now()->format('YmdHisu');
 
         return "{$prefix}_{$timestamp}";
+    }
+
+    function auto_fuzziness(int $oneTypoChars = 3, int $twoTypoChars = 6): string
+    {
+        return "AUTO:{$oneTypoChars},{$twoTypoChars}";
     }
 
     function name_configs(array $values): array

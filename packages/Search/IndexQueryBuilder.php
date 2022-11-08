@@ -6,10 +6,12 @@ namespace Sigmie\Base\Search;
 
 use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Contracts\QueryClause as Query;
-use function Sigmie\Helpers\auto_fuzziness;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Search\SearchBuilder;
+use Sigmie\Search\Search;
+
+use function Sigmie\Functions\auto_fuzziness;
 
 class IndexQueryBuilder
 {
@@ -142,7 +144,7 @@ class IndexQueryBuilder
         return $this;
     }
 
-    public function getSearch(): Search
+    public function get(): Search
     {
         $query = $this->searchBuilder->bool(function (Boolean $boolean) {
             if ($this->filterable) {
@@ -154,7 +156,9 @@ class IndexQueryBuilder
                 $queryBoolean = new Boolean;
                 foreach ($this->fields as $field) {
                     $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
-                    $fuzziness = ! in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+
+                    $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+
                     $query = new Match_($field, $this->query, $fuzziness);
 
                     $queryBoolean->should()->query($query->boost($boost));
@@ -192,11 +196,6 @@ class IndexQueryBuilder
 
     public function save(string $name): bool
     {
-        return $this->getSearch()->save($name);
-    }
-
-    public function get(): DocumentCollection
-    {
-        return $this->getSearch()->get();
+        return $this->get()->save($name);
     }
 }

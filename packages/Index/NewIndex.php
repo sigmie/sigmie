@@ -12,7 +12,6 @@ use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Language;
-use Sigmie\Index\Contracts\TokenizerBuilder as TokenizerBuilderInterface;
 use Sigmie\Index\Shared\CharFilters;
 use Sigmie\Index\Shared\Filters;
 use Sigmie\Index\Shared\Mappings;
@@ -34,6 +33,8 @@ class NewIndex
 
     protected DefaultAnalyzer $defaultAnalyzer;
 
+    protected AnalysisInterface $analysis;
+
     protected array $config = [];
 
     public function __construct(ElasticsearchConnection $connection)
@@ -48,11 +49,6 @@ class NewIndex
     public function analysis(): AnalysisInterface
     {
         return $this->analysis;
-    }
-
-    public function tokenizeOn(): TokenizerBuilderInterface
-    {
-        return new TokenizerBuilder($this);
     }
 
     public function getPrefix(): string
@@ -108,7 +104,12 @@ class NewIndex
     {
         $index = $this->make();
 
-        $template = $this->saveIndexTemplate($name, $patterns, $index->settings, $index->mappings);
+        $template = $this->saveIndexTemplate(
+            $name,
+            $patterns,
+            $index->settings,
+            $index->mappings
+        );
 
         return $template;
     }
@@ -127,7 +128,7 @@ class NewIndex
 
         $mappings = $this->createMappings($defaultAnalyzer);
 
-        $analyzers = $mappings->analyzers()->toArray();
+        $analyzers = $mappings->analyzers();
 
         $this->analysis()->addAnalyzers($analyzers);
 

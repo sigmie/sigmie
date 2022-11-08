@@ -12,17 +12,6 @@ use Sigmie\Base\Http\ElasticsearchResponse;
 
 class Bulk extends ElasticsearchResponse
 {
-    public function exception(ElasticsearchRequest $request): Exception
-    {
-        if ($this->json('error')) {
-            return ElasticsearchException::fromType($this->json('error.root_cause.type'), $this->json());
-        }
-
-        $items = $this->json()['items'] ?? [];
-
-        return BulkException::fromItems($items);
-    }
-
     public function failed(): bool
     {
         return parent::failed() || $this->code() === 400;

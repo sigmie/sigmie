@@ -303,7 +303,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->tokenizeOn()->pattern('/something/', 'CASE_INSENSITIVE', name: 'some_pattern')
+            ->tokenizeOnPattern('/something/', 'CASE_INSENSITIVE', name: 'some_pattern')
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -325,7 +325,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->tokenizeOn()->pattern('/something/', name: 'some_pattern')
+            ->tokenizeOnPattern('/something/', name: 'some_pattern')
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -346,7 +346,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->tokenizeOn()->wordBoundaries('able')
+            ->tokenizeOnWordBoundaries('able')
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -367,7 +367,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->tokenizeOn()->whiteSpaces()
+            ->tokenizeOnWhiteSpaces()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -414,7 +414,7 @@ class IndexBuilderTest extends TestCase
 
         $builder = $this->sigmie->newIndex($alias);
 
-        $builder->tokenizeOn()->whiteSpaces();
+        $builder->tokenizeOnWhiteSpaces();
 
         $builder->create();
 
@@ -431,7 +431,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->setTokenizer(new PatternTokenizer('sigmie_tokenizer', '/[ ]/'))
+            ->tokenizer(new PatternTokenizer('sigmie_tokenizer', '/[ ]/'))
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -451,7 +451,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->setTokenizer(new NonLetter())
+            ->tokenizer(new NonLetter())
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -524,7 +524,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->setTokenizer(new WordBoundaries('some_name', 40))
+            ->tokenizer(new WordBoundaries('some_name', 40))
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -545,7 +545,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->setTokenizer(new Whitespace())
+            ->tokenizer(new Whitespace())
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {

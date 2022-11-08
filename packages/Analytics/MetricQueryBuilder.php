@@ -11,6 +11,7 @@ use Sigmie\Analytics\Metrics\Scores;
 use Sigmie\Analytics\Metrics\Trends;
 use Sigmie\Analytics\Metrics\Values;
 use Sigmie\Search\SearchBuilder;
+use Sigmie\Query\Aggs;
 
 class Analytics
 {

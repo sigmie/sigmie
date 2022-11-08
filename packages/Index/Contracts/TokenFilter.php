@@ -11,4 +11,6 @@ use Sigmie\Shared\Contracts\ToRaw;
 interface TokenFilter extends ToRaw, FromRaw, Name
 {
     public function value(): array;
+
+    public function type(): string;
 }

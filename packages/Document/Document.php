@@ -10,7 +10,7 @@ class Document implements FromRaw
 {
     public array $_source;
 
-    public readonly string $_index;
+    public readonly string $_index; // @phpstan-ignore-line
 
     public readonly string $_id;
 
@@ -37,19 +37,18 @@ class Document implements FromRaw
 
     public function id(string $_id): void
     {
-        $this->_id = $_id;
+        $this->_id = $_id; // @phpstan-ignore-line
     }
 
     public function index(string $_index): void
     {
-        $this->_index = $_index;
+        $this->_index = $_index; // @phpstan-ignore-line
     }
 
     public function toArray(): array
     {
         return [
             '_id' => $this->_id ?? null,
-            // '_index'=> $this->_index,
             '_source' => $this->_source,
         ];
     }

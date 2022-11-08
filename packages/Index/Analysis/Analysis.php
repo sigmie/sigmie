@@ -9,6 +9,8 @@ use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
 use Sigmie\Index\Analysis\Tokenizers\Tokenizer;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Analyzer as AnalyzerInterface;
+use Sigmie\Index\Contracts\CustomAnalyzer as CustomAnalyzerInterface;
+
 use Sigmie\Index\Contracts\CharFilter as CharFIlterInterface;
 use Sigmie\Index\Contracts\TokenFilter as TokenFilterInterface;
 use Sigmie\Index\Contracts\Tokenizer as TokenizerInterface;
@@ -29,18 +31,21 @@ class Analysis implements AnalysisInterface
         $this->analyzers = new Collection($analyzers);
 
         $this->filters = $this->analyzers
-            ->map(fn (AnalyzerInterface $analyzer) => $analyzer->filters())
+            ->filter(fn (AnalyzerInterface $analyzer) => $analyzer instanceof CustomAnalyzerInterface)
+            ->map(fn (CustomAnalyzerInterface $analyzer) => $analyzer->filters())
             ->flatten()
             ->mapToDictionary(fn (TokenFilterInterface $filter) => [$filter->name() => $filter]);
 
         $this->charFilters = $this->analyzers
-            ->map(fn (AnalyzerInterface $analyzer) => $analyzer->charFilters())
+            ->filter(fn (AnalyzerInterface $analyzer) => $analyzer instanceof CustomAnalyzerInterface)
+            ->map(fn (CustomAnalyzerInterface $analyzer) => $analyzer->charFilters())
             ->flatten()
             ->mapToDictionary(fn (CharFIlterInterface $filter) => [$filter->name() => $filter]);
 
         $this->tokenizers = $this->analyzers
-            ->map(fn (AnalyzerInterface $analyzer) => $analyzer->tokenizer())
-            ->filter(fn ($tokenizer) => ! is_null($tokenizer))
+            ->filter(fn (AnalyzerInterface $analyzer) => $analyzer instanceof CustomAnalyzerInterface)
+            ->map(fn (CustomAnalyzerInterface $analyzer) => $analyzer->tokenizer())
+            ->filter(fn ($tokenizer) => !is_null($tokenizer))
             ->mapToDictionary(fn (TokenizerInterface $tokenizer) => [$tokenizer->name() => $tokenizer]);
     }
 
@@ -122,10 +127,13 @@ class Analysis implements AnalysisInterface
 
     public function addAnalyzer(AnalyzerInterface $analyzer): void
     {
-        $this->analyzers->set($analyzer->name, $analyzer);
-        $this->addCharFilters($analyzer->charFilters());
-        $this->addFilters($analyzer->filters());
-        $this->addTokenizer($analyzer->tokenizer());
+        $this->analyzers->set($analyzer->name(), $analyzer);
+
+        if ($analyzer instanceof CustomAnalyzerInterface) {
+            $this->addCharFilters($analyzer->charFilters());
+            $this->addFilters($analyzer->filters());
+            $this->addTokenizer($analyzer->tokenizer());
+        }
     }
 
     public static function fromRaw(array $raw): static

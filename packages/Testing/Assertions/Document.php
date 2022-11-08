@@ -25,7 +25,7 @@ trait Document
     {
         $res = $this->countAPICall($index)->json();
 
-        $this->assertEquals($count, $res['count']);
+        $this->assertEquals($count, $res['count'], "Failed to assert that the {$index} index has {$count} documents.");
     }
 
     public function assertIndexHas(string $index, array $values): void

@@ -44,7 +44,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         return $doc;
     }
 
-    public function all(): Generator
+    public function all(): Traversable
     {
         return $this->getIterator();
     }

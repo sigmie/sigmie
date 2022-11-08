@@ -9,7 +9,7 @@ use Sigmie\Shared\Contracts\ToRaw;
 
 class PercentileValue implements ToRaw
 {
-    protected int|float $number;
+    protected int|float $value;
 
     public function __construct(
         protected string $name,
