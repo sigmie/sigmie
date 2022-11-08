@@ -4,25 +4,17 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use function Sigmie\Functions\auto_fuzziness;
 use Sigmie\Mappings\Properties;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\Text\Match_;
-use Sigmie\Search\NewSearch;
-use Sigmie\Search\Search;
-use Sigmie\Search\QueryBuilder;
-use Sigmie\Search\Contracts\IndexQueryTemplate;
 use Sigmie\Search\Contracts\SearchTemplateBuilder as SearchTemplateBuilderInterface;
-use Sigmie\Search\AbstractSearchBuilder;
 
-use function Sigmie\Functions\auto_fuzziness;
-
-class SearchTemplateBuilder extends AbstractSearchBuilder implements
-    SearchTemplateBuilderInterface
+class SearchTemplateBuilder extends AbstractSearchBuilder implements SearchTemplateBuilderInterface
 {
     protected bool $filterable = false;
 
@@ -70,7 +62,6 @@ class SearchTemplateBuilder extends AbstractSearchBuilder implements
         return $this;
     }
 
-
     public function filterable(bool $filterable = true): static
     {
         $this->filterable = $filterable;
@@ -88,7 +79,6 @@ class SearchTemplateBuilder extends AbstractSearchBuilder implements
     public function get(): SearchTemplate
     {
         $query = $this->newSearch->bool(function (Boolean $boolean) {
-
             if ($this->filterable) {
                 $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('filter', '@json(filters)'));
             }
@@ -99,7 +89,7 @@ class SearchTemplateBuilder extends AbstractSearchBuilder implements
                 foreach ($this->fields as $field) {
                     $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
 
-                    $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                    $fuzziness = ! in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
                     $query = new Match_($field, $this->query, $fuzziness);
 

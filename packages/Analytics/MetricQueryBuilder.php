@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Sigmie\Analytics;
 
 use DateTime;
-use Sigmie\Base\APIs\Search;
-use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Analytics\Metrics\Scores;
 use Sigmie\Analytics\Metrics\Trends;
 use Sigmie\Analytics\Metrics\Values;
-use Sigmie\Search\NewSearch;
+use Sigmie\Base\APIs\Search;
 use Sigmie\Query\Aggs;
+use Sigmie\Query\Queries\Compound\Boolean;
+use Sigmie\Search\NewSearch;
 
 class Analytics
 {

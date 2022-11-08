@@ -8,12 +8,9 @@ use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Analytics\Analytics;
 use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
-use Sigmie\Base\Contracts\ElasticsearchRequest as ElasticsearchRequestInterface;
-use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Document\AliveCollection;
-use Sigmie\Http\Contracts\Auth;
 use Sigmie\Http\JSONClient;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\AliasedIndex;
@@ -25,8 +22,8 @@ use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Query;
 use Sigmie\Search\Contracts\SearchQueryBuilder as ContractsSearchQueryBuilder;
 use Sigmie\Search\Contracts\SearchTemplateBuilder as ContractsSearchTemplateBuilder;
-use Sigmie\Search\Search;
 use Sigmie\Search\NewSearch;
+use Sigmie\Search\Search;
 use Sigmie\Search\SearchQueryBuilder;
 use Sigmie\Search\SearchTemplateBuilder;
 
@@ -86,7 +83,7 @@ class Sigmie
 
     public function template(string $index): ContractsSearchTemplateBuilder
     {
-        return new SearchTemplateBuilder($this->newSearch($index),$this->elasticsearchConnection);
+        return new SearchTemplateBuilder($this->newSearch($index), $this->elasticsearchConnection);
     }
 
     public function analytics(string $index, string $field)
@@ -106,7 +103,7 @@ class Sigmie
 
             $res = ($this->elasticsearchConnection)($request);
 
-            return !$res->failed();
+            return ! $res->failed();
         } catch (ConnectException) {
             return false;
         }

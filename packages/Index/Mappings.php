@@ -10,7 +10,6 @@ use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Text;
-use Sigmie\Shared\Collection;
 
 class Mappings implements MappingsInterface
 {
@@ -31,11 +30,11 @@ class Mappings implements MappingsInterface
         return $this->properties;
     }
 
-    public function analyzers():array
+    public function analyzers(): array
     {
         $result = $this->properties->textFields()
             ->filter(fn (Type $field) => $field instanceof Text)
-            ->filter(fn (Text $field) => !is_null($field->analyzer()))
+            ->filter(fn (Text $field) => ! is_null($field->analyzer()))
             ->mapToDictionary(fn (Text $field) => [$field->analyzer()->name() => $field->analyzer()]);
 
         return $result->add($this->defaultAnalyzer)->toArray();

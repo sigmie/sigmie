@@ -9,9 +9,8 @@ use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
 use Sigmie\Index\Analysis\Tokenizers\Tokenizer;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Analyzer as AnalyzerInterface;
-use Sigmie\Index\Contracts\CustomAnalyzer as CustomAnalyzerInterface;
-
 use Sigmie\Index\Contracts\CharFilter as CharFIlterInterface;
+use Sigmie\Index\Contracts\CustomAnalyzer as CustomAnalyzerInterface;
 use Sigmie\Index\Contracts\TokenFilter as TokenFilterInterface;
 use Sigmie\Index\Contracts\Tokenizer as TokenizerInterface;
 use Sigmie\Shared\Collection;
@@ -45,7 +44,7 @@ class Analysis implements AnalysisInterface
         $this->tokenizers = $this->analyzers
             ->filter(fn (AnalyzerInterface $analyzer) => $analyzer instanceof CustomAnalyzerInterface)
             ->map(fn (CustomAnalyzerInterface $analyzer) => $analyzer->tokenizer())
-            ->filter(fn ($tokenizer) => !is_null($tokenizer))
+            ->filter(fn ($tokenizer) => ! is_null($tokenizer))
             ->mapToDictionary(fn (TokenizerInterface $tokenizer) => [$tokenizer->name() => $tokenizer]);
     }
 

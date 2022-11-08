@@ -6,7 +6,6 @@ namespace Sigmie\Document;
 
 use ArrayAccess;
 use Countable;
-use Generator;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Document\Actions as DocumentActions;

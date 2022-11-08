@@ -7,7 +7,6 @@ namespace Sigmie\Document\Contracts;
 use ArrayAccess;
 use Closure;
 use Countable;
-use Iterator;
 use IteratorAggregate;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Document;

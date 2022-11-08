@@ -25,7 +25,7 @@ class AliasedIndex extends Index
         SettingsInterface $settings = null,
         MappingsInterface $mappings = null
     ) {
-        parent::__construct($name,  $settings, $mappings);
+        parent::__construct($name, $settings, $mappings);
     }
 
     public function update(callable $newUpdate): AliasedIndex
@@ -70,7 +70,7 @@ class AliasedIndex extends Index
             return $index;
         }
 
-        throw new RuntimeException("Something went wrong while updating index.");
+        throw new RuntimeException('Something went wrong while updating index.');
     }
 
     public function disableWrite(): void

@@ -7,7 +7,6 @@ namespace Sigmie\Mappings\Types;
 use Exception;
 use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\Analyzer;
-use Sigmie\Index\Contracts\CustomAnalyzer as CustomAnalyzer;
 use Sigmie\Shared\Contracts\FromRaw;
 
 class Text extends Type implements FromRaw

@@ -4,15 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Search\Contracts\SearchBuilder;
-use Sigmie\Search\Contracts\QueryClause as Query;
-use Sigmie\Query\Queries\Compound\Boolean;
-use Sigmie\Query\Queries\Text\Match_;
-use Sigmie\Search\NewSearch;
-use Sigmie\Search\Search;
-
-use function Sigmie\Functions\auto_fuzziness;
 
 abstract class AbstractSearchBuilder implements SearchBuilder
 {

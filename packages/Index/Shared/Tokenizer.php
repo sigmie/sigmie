@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Shared;
 
+use function Sigmie\Functions\random_letters;
 use Sigmie\Index\Analysis\Tokenizers\Pattern;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\Tokenizer as TokenizerInterface;
-use Sigmie\Index\Contracts\TokenizerBuilder as TokenizerBuilderInterface;
-
-use function Sigmie\Functions\random_letters;
 
 trait Tokenizer
 {
@@ -49,7 +47,6 @@ trait Tokenizer
         null|string $flags = null,
         string|null $name = null
     ): static {
-
         $name = $name ?? $this->createTokenizerName('pattern_tokenizer');
 
         $this->tokenizer(new Pattern($name, $pattern, $flags));

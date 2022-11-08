@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Index;
 
-use Sigmie\Index\Actions as ActionsIndex;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Contracts\Settings as SettingsInterface;
 

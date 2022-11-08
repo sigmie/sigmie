@@ -13,7 +13,6 @@ use Sigmie\Index\Alias\MultipleIndicesForAlias;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Contracts\Settings as SettingsInterface;
 use Sigmie\Index\Index as BaseIndex;
-use Sigmie\Index\IndexTemplate;
 
 trait Actions
 {

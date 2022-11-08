@@ -4,20 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Sigmie\Base\Contracts\DocumentCollection;
 use Sigmie\Base\Contracts\QueryClause as Query;
+use function Sigmie\Functions\auto_fuzziness;
 use Sigmie\Mappings\Properties;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\Text\Match_;
-use Sigmie\Search\Contracts\SearchBuilder as QueryBuilderInterface;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
-use Sigmie\Search\NewSearch;
-use Sigmie\Search\Search;
-use Sigmie\Search\Search\QueryBuilder;
-
-use function Sigmie\Functions\auto_fuzziness;
 
 class SearchQueryBuilder extends AbstractSearchBuilder implements SearchQueryBuilderInterface
 {
@@ -64,18 +58,16 @@ class SearchQueryBuilder extends AbstractSearchBuilder implements SearchQueryBui
     public function get(): Search
     {
         $query = $this->newSearch->bool(function (Boolean $boolean) {
-
             $boolean->must()->query($this->filters);
 
             //TODO handle query depending on mappings
             $boolean->must()->bool(function (Boolean $boolean) {
-
                 $queryBoolean = new Boolean;
 
                 foreach ($this->fields as $field) {
                     $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
 
-                    $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                    $fuzziness = ! in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
                     $query = new Match_($field, $this->query, $fuzziness);
 
