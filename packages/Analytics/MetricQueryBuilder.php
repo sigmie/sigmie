@@ -10,7 +10,7 @@ use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Analytics\Metrics\Scores;
 use Sigmie\Analytics\Metrics\Trends;
 use Sigmie\Analytics\Metrics\Values;
-use Sigmie\Search\SearchBuilder;
+use Sigmie\Search\NewSearch;
 use Sigmie\Query\Aggs;
 
 class Analytics
@@ -28,7 +28,7 @@ class Analytics
     protected string $format = 'Y-m-d\TH:i:s.Z';
 
     public function __construct(
-        protected SearchBuilder $searchBuilder,
+        protected NewSearch $searchBuilder,
         protected string $timestampField,
         protected DateTime $from = new DateTime('-30 days'),
         protected DateTime $to = new DateTime(),

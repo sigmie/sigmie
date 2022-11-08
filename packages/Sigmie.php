@@ -23,8 +23,12 @@ use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Query;
+use Sigmie\Search\Contracts\SearchQueryBuilder as ContractsSearchQueryBuilder;
+use Sigmie\Search\Contracts\SearchTemplateBuilder as ContractsSearchTemplateBuilder;
 use Sigmie\Search\Search;
-use Sigmie\Search\SearchBuilder;
+use Sigmie\Search\NewSearch;
+use Sigmie\Search\SearchQueryBuilder;
+use Sigmie\Search\SearchTemplateBuilder;
 
 class Sigmie
 {
@@ -58,7 +62,7 @@ class Sigmie
         return $aliveIndex;
     }
 
-    public function search(
+    public function query(
         string $index,
         Query $query = new MatchAll(),
         AggsInterface $aggs = new Aggs()
@@ -70,9 +74,19 @@ class Sigmie
         return $search->index($index);
     }
 
-    public function newSearch(string $index): SearchBuilder
+    public function newSearch(string $index): NewSearch
     {
-        return new SearchBuilder($index, $this->elasticsearchConnection);
+        return new NewSearch($index, $this->elasticsearchConnection);
+    }
+
+    public function search(string $index): ContractsSearchQueryBuilder
+    {
+        return new SearchQueryBuilder($this->newSearch($index));
+    }
+
+    public function template(string $index): ContractsSearchTemplateBuilder
+    {
+        return new SearchTemplateBuilder($this->newSearch($index),$this->elasticsearchConnection);
     }
 
     public function analytics(string $index, string $field)
@@ -110,10 +124,5 @@ class Sigmie
     public function delete(string $index): bool
     {
         return $this->deleteIndex($index);
-    }
-
-    protected function elasticsearchCall(ElasticsearchRequestInterface $request): ElasticsearchResponse
-    {
-        return ($this->elasticsearchConnection)($request);
     }
 }

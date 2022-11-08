@@ -21,11 +21,13 @@ use Sigmie\Query\Queries\Term\Wildcard;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
 
-class SearchBuilder implements Queries
+class NewSearch implements Queries
 {
     protected Search $search;
 
-    public function __construct(protected string $index, protected ElasticsearchConnection $httpConnection)
+    public function __construct(
+        protected string $index,
+         protected ElasticsearchConnection $httpConnection)
     {
         $this->search = new Search();
 
