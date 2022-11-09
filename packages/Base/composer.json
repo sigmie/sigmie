@@ -15,10 +15,9 @@
     ],
     "require": {
         "php": "^8.0",
-        "adbario/php-dot-notation": "^2.2",
         "nesbot/carbon": "^2.48",
-        "sigmie/http": "^0.6",
-        "sigmie/support": "^0.6"
+        "sigmie/http": "^0.14",
+        "sigmie/shared": "^0.14"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.5"

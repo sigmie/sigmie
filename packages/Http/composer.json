@@ -16,7 +16,9 @@
     "require": {
         "php": "^8.0",
         "adbario/php-dot-notation": "^2.2",
-        "guzzlehttp/guzzle": "^7.2"
+        "guzzlehttp/guzzle": "^7.2",
+        "elastic/transport": "^8.5",
+        "guzzlehttp/psr7": "^2.4"
     },
     "autoload": {
         "psr-4": {

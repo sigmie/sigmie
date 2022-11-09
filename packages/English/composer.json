@@ -15,7 +15,8 @@
     ],
     "require": {
         "php": "^8.0",
-        "sigmie/base": "^0.6.4"
+        "sigmie/index": "^0.14",
+        "sigmie/shared": "^0.14"
     },
     "autoload": {
         "psr-4": {
