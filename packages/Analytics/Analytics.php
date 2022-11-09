@@ -11,7 +11,8 @@ use Sigmie\Analytics\Metrics\Values;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Compound\Boolean;
-use Query\NewQuery;
+use Sigmie\Query\NewQuery;
+use Sigmie\Search\NewSearch;
 
 class Analytics
 {

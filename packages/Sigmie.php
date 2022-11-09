@@ -98,11 +98,6 @@ class Sigmie
         return new ExistingScript($id, $this->elasticsearchConnection);
     }
 
-    public function analytics(string $index, string $field)
-    {
-        return new Analytics($this->newSearch($index), $field);
-    }
-
     public function indices(): array
     {
         return $this->listIndices();
