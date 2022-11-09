@@ -1,6 +1,6 @@
 {
-    "name": "sigmie/base",
-    "description": "The Sigmie Base package.",
+    "name": "sigmie/mappings",
+    "description": "The Sigmie Mappings package.",
     "license": "MIT",
     "homepage": "https://sigmie.com",
     "support": {
@@ -21,7 +21,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Sigmie\\Base\\": ""
+            "Sigmie\\Mappings\\": ""
         }
     },
     "extra": {},
