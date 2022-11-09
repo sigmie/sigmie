@@ -18,8 +18,9 @@ use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Search\Contracts\SearchTemplateBuilder as SearchTemplateBuilderInterface;
 use Sigmie\Shared\Collection;
+use Sigmie\Query\Search;
 
-class SearchTemplateBuilder extends AbstractSearchBuilder implements SearchTemplateBuilderInterface
+class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilderInterface
 {
     protected Boolean $filters;
 

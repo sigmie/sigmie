@@ -5,137 +5,164 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use Sigmie\Base\Contracts\ElasticsearchConnection;
-use Sigmie\Query\Contracts\Queries;
-use Sigmie\Query\Contracts\QueryClause as Query;
+use Sigmie\Base\Contracts\QueryClause as Query;
+use function Sigmie\Functions\auto_fuzziness;
+use Sigmie\Mappings\Properties;
+use Sigmie\Parse\FilterParser;
+use Sigmie\Parse\SortParser;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
-use Sigmie\Query\Queries\MatchNone;
-use Sigmie\Query\Queries\Term\Exists;
-use Sigmie\Query\Queries\Term\Fuzzy;
-use Sigmie\Query\Queries\Term\IDs;
-use Sigmie\Query\Queries\Term\Range;
-use Sigmie\Query\Queries\Term\Regex;
-use Sigmie\Query\Queries\Term\Term;
-use Sigmie\Query\Queries\Term\Terms;
-use Sigmie\Query\Queries\Term\Wildcard;
 use Sigmie\Query\Queries\Text\Match_;
-use Sigmie\Query\Queries\Text\MultiMatch;
+use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
+use Sigmie\Shared\Collection;
+use Sigmie\Query\Search;
 
-class NewSearch implements Queries
+class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInterface
 {
-    protected Search $search;
+    protected Boolean $filters;
+
+    protected array $sort = ['_score'];
+
+    protected null|Properties $properties = null;
+
+    protected string $queryString = '';
+
+    protected string $index;
+
+    public function queryString(string $query): static
+    {
+        $this->queryString = $query;
+
+        return $this;
+    }
 
     public function __construct(
-         protected ElasticsearchConnection $httpConnection,
-        protected null|string $index = null,
-     )
-    {
-        $this->search = new Search();
+        protected ElasticsearchConnection $elasticsearchConnection,
+    ) {
+        $this->filters = new Boolean;
 
-        $this->search->setElasticsearchConnection($httpConnection);
-
-        if (!is_null($index))
-        {
-            $this->search->index($index);
-        }
+        $this->filters->must()->matchAll();
     }
 
-    public function term(string $field, string|bool $value): Search
+    public function index(string $index): static
     {
-        return $this->search->query(new Term($field, $value));
+        $this->index = $index;
+
+        return $this;
     }
 
-    public function bool(callable $callable, float $boost = 1): Search
+    public function properties(Properties $properties): static
     {
-        $query = new Boolean();
+        $this->properties = $properties;
 
-        $callable($query->boost($boost));
-
-        return $this->search->query($query);
+        return $this;
     }
 
-    public function range(
-        string $field,
-        array $values = [],
-        float $boost = 1
-    ): Search {
-        $clause = new Range($field, $values);
+    public function filter(string $filter): static
+    {
+        $parser = new FilterParser($this->properties);
 
-        return $this->search->query($clause->boost($boost));
+        $this->filters = $parser->parse($filter);
+
+        return $this;
     }
 
-    public function matchAll(float $boost = 1): Search
+    public function sort(string $sort = '_score'): static
     {
-        $clause = new MatchAll();
+        $parser = new SortParser($this->properties);
 
-        return $this->search->query($clause->boost($boost));
+        $this->sort = $parser->parse($sort);
+
+        return $this;
     }
 
-    public function query(Query $query): Search
+    public function get(): Search
     {
-        return $this->search->query($query);
-    }
+        $boolean = new Boolean;
 
-    public function matchNone(float $boost = 1): Search
-    {
-        $clause = new MatchNone();
+        $search = new Search($boolean);
 
-        return $this->search->query($clause->boost($boost));
-    }
+        $search->index($this->index);
 
-    public function match(string $field, string $query, float $boost = 1): Search
-    {
-        $cluase = new Match_($field, $query);
+        $search->setElasticsearchConnection($this->elasticsearchConnection);
 
-        return $this->search->query($cluase->boost($boost));
-    }
+        $highlight = new Collection($this->highlight);
 
-    public function multiMatch(string $query, array $fields, float $boost = 1): Search
-    {
-        $clause = new MultiMatch($query, $fields);
+        $highlight->each(fn (string $field) =>  $search->highlight($field, $this->highlightPrefix, $this->highlightSuffix));
 
-        return $this->search->query($clause->boost($boost));
-    }
+        $search->fields($this->retrieve);
 
-    public function exists(string $field, float $boost = 1): Search
-    {
-        $clause = new Exists($field);
+        $defaultFilters = json_encode($this->filters->toRaw());
 
-        return $this->search->query($clause->boost($boost));
-    }
+        $boolean->must()->bool(fn (Boolean $boolean) => $boolean->filter()->query($this->filters));
 
-    public function ids(array $ids, float $boost = 1): Search
-    {
-        $clause = new IDs($ids);
+        $search->addRaw('sort', $this->sort);
 
-        return $this->search->query($clause->boost($boost));
-    }
+        $search->size($this->size);
 
-    public function fuzzy(string $field, string $value, float $boost = 1): Search
-    {
-        $clause = new Fuzzy($field, $value);
+        $boolean->must()->bool(function (Boolean $boolean) {
 
-        return $this->search->query($clause->boost($boost));
-    }
+            $queryBoolean = new Boolean;
 
-    public function terms(string $field, array $values, float $boost = 1): Search
-    {
-        $clause = new Terms($field, $values);
+            $fields = new Collection($this->fields);
 
-        return $this->search->query($clause->boost($boost));
-    }
+            $fields->each(function ($field) use ($queryBoolean) {
 
-    public function regex(string $field, string $regex, float $boost = 1): Search
-    {
-        $clause = new Regex($field, $regex);
+                if ($this->queryString ==='')
+                {
+                    $queryBoolean->should()->query(new MatchAll);
+                    return;
+                }
 
-        return $this->search->query($clause->boost($boost));
-    }
+                $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
 
-    public function wildcard(string $field, string $value, float $boost = 1): Search
-    {
-        $clause = new Wildcard($field, $value);
+                if (is_null($this->properties)) {
 
-        return $this->search->query($clause->boost($boost));
+                    $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+
+                    $query = new Match_($field, $this->queryString, $fuzziness);
+
+                    $queryBoolean->should()->query($query->boost($boost));
+                } else {
+
+                    $field = $this->properties[$field];
+
+                    if ($field instanceof Text) {
+                        $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+
+                        $query = new Match_($field->name, $this->queryString, $fuzziness);
+
+                        $queryBoolean->should()->query($query->boost($boost));
+
+                        if ($field->isKeyword()) {
+
+                            $query = new Term(
+                                $field->keywordName(),
+                                $this->queryString,
+                            );
+
+                            $queryBoolean->should()->query(
+                                $query->boost($boost)
+                            );
+                        }
+
+                        return;
+                    }
+
+                    $query = new Term(
+                        $field->name,
+                        $this->queryString,
+                    );
+
+                    $queryBoolean->should()->query(
+                        $query->boost($boost)
+                    );
+                }
+            });
+
+            $boolean->should()->query($queryBoolean);
+        });
+
+        return $search;
     }
 }

@@ -81,7 +81,7 @@ class FilterParserTest extends TestCase
 
         $index->merge($docs,);
 
-        $res = $this->sigmie->search($indexName, $boolean)->get();
+        $res = $this->sigmie->query($indexName, $boolean)->get();
 
         foreach ($res->json('hits.hits') as $index => $data) {
             $source = $data['_source'];
@@ -135,7 +135,7 @@ class FilterParserTest extends TestCase
 
         $index->merge($docs,);
 
-        $res = $this->sigmie->search($indexName, $boolean)->get();
+        $res = $this->sigmie->query($indexName, $boolean)->get();
 
         $hits = $res->json('hits.hits');
 
@@ -187,7 +187,7 @@ class FilterParserTest extends TestCase
 
         $index->merge($docs,);
 
-        $res = $this->sigmie->search($indexName, $boolean)->get();
+        $res = $this->sigmie->query($indexName, $boolean)->get();
 
         $hits = $res->json('hits.hits');
 

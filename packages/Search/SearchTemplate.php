@@ -11,14 +11,11 @@ class SearchTemplate
 {
     use APIsScript;
 
-    protected string $raw;
-
     public function __construct(
         ElasticsearchConnection $connection,
-        array $raw,
+        protected array $raw,
         protected string $id
     ) {
-        $this->raw = json_encode($raw);
         $this->elasticsearchConnection = $connection;
     }
 
@@ -38,32 +35,21 @@ class SearchTemplate
 
     public function source(): string
     {
-        $parsedSource = $this->raw;
-        // $parsedSource = preg_replace('/"@json\(([a-z]+)\)"/', '{{#toJson}}$1{{/toJson}}', $parsedSource);
-        # $parsedSource = preg_replace('/"@var\(([a-z]+),([a-z,0-9]+)\)"/', '{{$1}}{{^$1}}$2{{/$1}}', $parsedSource);
+        $parsedSource = json_encode($this->raw);
 
-        // if (preg_match_all('/"@query\((.+)\)@endquery"/', $parsedSource, $matches)) {
-        //     $tobe = stripslashes($matches[1][0]);
-
-        //     $matchAll = '{"match_all": {}}';
-        //     $tobe = "{{#query}}{$tobe}{{/query}} {{^query}}{$matchAll}{{/query}}";
-
-        //     $parsedSource = preg_replace('/"@query\((.+)\)@endquery"/', $tobe, $parsedSource);
-        // }
-
-        $parsedSource = $this->fooQuery(
+        $parsedSource = $this->handleQueryParameter(
             'query_string',
             '{"match_all": {}}',
             $parsedSource
         );
-        $parsedSource = $this->foo('size', $parsedSource);
-        $parsedSource = $this->foo('filter', $parsedSource);
-        $parsedSource = $this->foo('sort', $parsedSource);
+        $parsedSource = $this->handleParameter('size', $parsedSource);
+        $parsedSource = $this->handleParameter('filter', $parsedSource);
+        $parsedSource = $this->handleParameter('sort', $parsedSource);
 
         return $parsedSource;
     }
 
-    private function fooQuery(string $tag, string $fallback, string $parsedSource,)
+    private function handleQueryParameter(string $tag, string $fallback, string $parsedSource,)
     {
         if (preg_match('/"@' . $tag . '\((.+)\)@end' . $tag . '"/', $parsedSource, $sortMatches)) {
 
@@ -83,7 +69,7 @@ class SearchTemplate
 
 
 
-    private function foo(string $tag,  string $parsedSource,): string
+    private function handleParameter(string $tag,  string $parsedSource,): string
     {
         if (preg_match('/"@' . $tag . '\((.+)\)@end' . $tag . '"/', $parsedSource, $sortMatches)) {
 

@@ -22,10 +22,10 @@ use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Query;
 use Sigmie\Search\Contracts\SearchQueryBuilder as ContractsSearchQueryBuilder;
 use Sigmie\Search\Contracts\SearchTemplateBuilder as ContractsSearchTemplateBuilder;
+use Sigmie\Query\NewQuery;
+use Sigmie\Query\Search;
 use Sigmie\Search\NewSearch;
-use Sigmie\Search\Search;
-use Sigmie\Search\SearchQueryBuilder;
-use Sigmie\Search\SearchTemplateBuilder;
+use Sigmie\Search\NewTemplate;
 use Sigmie\Search\ExistingScript;
 
 class Sigmie
@@ -72,19 +72,21 @@ class Sigmie
         return $search->index($index);
     }
 
+    public function newQuery(string $index): NewQuery
+    {
+        return new NewQuery($this->elasticsearchConnection, $index);
+    }
+
     public function newSearch(string $index): NewSearch
     {
-        return new NewSearch($this->elasticsearchConnection, $index);
+        $search = new NewSearch($this->elasticsearchConnection);
+
+        return $search->index($index);
     }
 
-    public function search(string $index): ContractsSearchQueryBuilder
+    public function newTemplate(string $id): NewTemplate
     {
-        return new SearchQueryBuilder($this->newSearch($index));
-    }
-
-    public function newTemplate(string $id): ContractsSearchTemplateBuilder
-    {
-        $builder = new SearchTemplateBuilder(
+        $builder = new NewTemplate(
             $this->elasticsearchConnection,
         );
 

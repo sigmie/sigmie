@@ -49,7 +49,7 @@ class AggregationTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->newSearch($name)
+        $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
                 $aggregation->significantText('significant', 'title');
@@ -98,7 +98,7 @@ class AggregationTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->newSearch($name)
+        $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
                 $aggregation->dateHistogram('histogram', 'date', CalendarInterval::Year)
@@ -147,7 +147,7 @@ class AggregationTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->newSearch($name)
+        $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
                 $aggregation->range('price_ranges', 'price', [
@@ -199,7 +199,7 @@ class AggregationTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->newSearch($name)
+        $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
                 $aggregation->terms('genders', 'type')->missing('N/A');
@@ -236,7 +236,7 @@ class AggregationTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->newSearch($name)
+        $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
                 $aggregation->min('minCount', 'count');
@@ -271,7 +271,7 @@ class AggregationTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->newSearch($name)
+        $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
                 $aggregation->avg('averageCount', 'count');
@@ -280,7 +280,7 @@ class AggregationTest extends TestCase
 
         $this->assertEquals(3, (int) $res->aggregation('averageCount.value'));
 
-        $res = $this->sigmie->newSearch($name)
+        $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
                 $aggregation->avg('averageCount', 'count')->missing(6);
@@ -321,7 +321,7 @@ class AggregationTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->newSearch($name)
+        $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
                 $aggregation->percentileRanks('percentile_rank', 'type', [3, 2]);
@@ -366,7 +366,7 @@ class AggregationTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->newSearch($name)
+        $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
                 $aggregation->percentiles('percentile', 'type', [1, 2]);
@@ -408,7 +408,7 @@ class AggregationTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->newSearch($name)
+        $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
                 $aggregation->cardinality('type_count', 'type');
@@ -448,7 +448,7 @@ class AggregationTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->newSearch($name)
+        $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
                 $aggregation->valueCount('type_count', 'type');
@@ -485,7 +485,7 @@ class AggregationTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->newSearch($name)
+        $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
                 $aggregation->sum('count_sum', 'count');
@@ -522,7 +522,7 @@ class AggregationTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->newSearch($name)
+        $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
                 $aggregation->stats('stats', 'count');
@@ -563,7 +563,7 @@ class AggregationTest extends TestCase
 
         $collection->merge($docs);
 
-        $res = $this->sigmie->newSearch($name)
+        $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
                 $aggregation->max('maxCount', 'count');

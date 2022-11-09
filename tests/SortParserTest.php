@@ -91,7 +91,7 @@ class SortParserTest extends TestCase
 
         $index->merge($docs,);
 
-        $res = $this->sigmie->search($indexName)
+        $res = $this->sigmie->query($indexName)
         ->addRaw('sort',$sorts)
         ->get();
 
@@ -150,7 +150,7 @@ class SortParserTest extends TestCase
 
         $index->merge($docs,);
 
-        $res = $this->sigmie->search($indexName)
+        $res = $this->sigmie->query($indexName)
         ->addRaw('sort',$sorts)
         ->get();
 
