@@ -8,3 +8,4 @@
 /phpstan.neon        export-ignore
 /Dockerfile          export-ignore
 /docker-compose.yml  export-ignore
+/packages/Analytics  export-ignore
