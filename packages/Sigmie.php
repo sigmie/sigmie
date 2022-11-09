@@ -6,7 +6,6 @@ namespace Sigmie;
 
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
-use Sigmie\Analytics\Analytics;
 use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
 use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
@@ -18,15 +17,13 @@ use Sigmie\Index\Index;
 use Sigmie\Index\NewIndex;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
+use Sigmie\Query\NewQuery;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Query;
-use Sigmie\Search\Contracts\SearchQueryBuilder as ContractsSearchQueryBuilder;
-use Sigmie\Search\Contracts\SearchTemplateBuilder as ContractsSearchTemplateBuilder;
-use Sigmie\Query\NewQuery;
 use Sigmie\Query\Search;
+use Sigmie\Search\ExistingScript;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewTemplate;
-use Sigmie\Search\ExistingScript;
 
 class Sigmie
 {
@@ -110,7 +107,7 @@ class Sigmie
 
             $res = ($this->elasticsearchConnection)($request);
 
-            return !$res->failed();
+            return ! $res->failed();
         } catch (ConnectException) {
             return false;
         }

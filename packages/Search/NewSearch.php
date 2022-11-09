@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use Sigmie\Base\Contracts\ElasticsearchConnection;
-use Sigmie\Base\Contracts\QueryClause as Query;
 use function Sigmie\Functions\auto_fuzziness;
 use Sigmie\Mappings\Properties;
-use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
@@ -16,9 +14,9 @@ use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
+use Sigmie\Query\Search;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
 use Sigmie\Shared\Collection;
-use Sigmie\Query\Search;
 
 class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInterface
 {
@@ -91,7 +89,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $highlight = new Collection($this->highlight);
 
-        $highlight->each(fn (string $field) =>  $search->highlight($field, $this->highlightPrefix, $this->highlightSuffix));
+        $highlight->each(fn (string $field) => $search->highlight($field, $this->highlightPrefix, $this->highlightSuffix));
 
         $search->fields($this->retrieve);
 
@@ -104,41 +102,36 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $search->size($this->size);
 
         $boolean->must()->bool(function (Boolean $boolean) {
-
             $queryBoolean = new Boolean;
 
             $fields = new Collection($this->fields);
 
             $fields->each(function ($field) use ($queryBoolean) {
-
-                if ($this->queryString ==='')
-                {
+                if ($this->queryString === '') {
                     $queryBoolean->should()->query(new MatchAll);
+
                     return;
                 }
 
                 $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
 
                 if (is_null($this->properties)) {
-
-                    $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                    $fuzziness = ! in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
                     $query = new Match_($field, $this->queryString, $fuzziness);
 
                     $queryBoolean->should()->query($query->boost($boost));
                 } else {
-
                     $field = $this->properties[$field];
 
                     if ($field instanceof Text) {
-                        $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                        $fuzziness = ! in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
                         $query = new Match_($field->name, $this->queryString, $fuzziness);
 
                         $queryBoolean->should()->query($query->boost($boost));
 
                         if ($field->isKeyword()) {
-
                             $query = new Term(
                                 $field->keywordName(),
                                 $this->queryString,

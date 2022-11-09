@@ -25,8 +25,8 @@ class ExistingScript
     public function run(string $index, string $id, array $params = [])
     {
         $body = [
-            "id" => $id,
-            "params" => (object) $params
+            'id' => $id,
+            'params' => (object) $params,
         ];
 
         return $this->indexAPICall("{$index}/_search/template", 'POST', $body);
@@ -39,7 +39,6 @@ class ExistingScript
 
             return $res->json('template_output');
         } catch (ElasticsearchException $e) {
-
             $type = $e->json('type');
 
             if ($type === 'resource_not_found_exception') {
@@ -57,7 +56,6 @@ class ExistingScript
 
             return $res->json('script.source');
         } catch (ElasticsearchException $e) {
-
             if ($e->json('json.found') === false) {
                 return null;
             }
@@ -73,7 +71,6 @@ class ExistingScript
 
             return $res->json('acknowledged');
         } catch (ElasticsearchException $e) {
-
             $type = $e->json('type');
 
             if ($type === 'resource_not_found_exception') {

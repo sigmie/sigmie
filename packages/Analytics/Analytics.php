@@ -10,9 +10,8 @@ use Sigmie\Analytics\Metrics\Trends;
 use Sigmie\Analytics\Metrics\Values;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Query\Aggs;
-use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\NewQuery;
-use Sigmie\Search\NewSearch;
+use Sigmie\Query\Queries\Compound\Boolean;
 
 class Analytics
 {

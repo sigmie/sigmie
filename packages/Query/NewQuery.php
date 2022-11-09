@@ -28,14 +28,12 @@ class NewQuery implements Queries
     public function __construct(
          protected ElasticsearchConnection $httpConnection,
         protected null|string $index = null,
-     )
-    {
+     ) {
         $this->search = new Search();
 
         $this->search->setElasticsearchConnection($httpConnection);
 
-        if (!is_null($index))
-        {
+        if (! is_null($index)) {
             $this->search->index($index);
         }
     }

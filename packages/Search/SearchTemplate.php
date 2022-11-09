@@ -49,16 +49,15 @@ class SearchTemplate
         return $parsedSource;
     }
 
-    private function handleQueryParameter(string $tag, string $fallback, string $parsedSource,)
+    private function handleQueryParameter(string $tag, string $fallback, string $parsedSource)
     {
-        if (preg_match('/"@' . $tag . '\((.+)\)@end' . $tag . '"/', $parsedSource, $sortMatches)) {
-
+        if (preg_match('/"@'.$tag.'\((.+)\)@end'.$tag.'"/', $parsedSource, $sortMatches)) {
             $default = stripslashes($sortMatches[1]);
 
             $rawDefault = "{{#{$tag}}}{$default}{{/{$tag}}} {{^{$tag}}}${fallback}{{/{$tag}}}";
 
             $parsedSource = preg_replace(
-                '/"@' . $tag . '\((.+)\)@end' . $tag . '"/',
+                '/"@'.$tag.'\((.+)\)@end'.$tag.'"/',
                 $rawDefault,
                 $parsedSource
             );
@@ -67,18 +66,15 @@ class SearchTemplate
         return $parsedSource;
     }
 
-
-
-    private function handleParameter(string $tag,  string $parsedSource,): string
+    private function handleParameter(string $tag, string $parsedSource): string
     {
-        if (preg_match('/"@' . $tag . '\((.+)\)@end' . $tag . '"/', $parsedSource, $sortMatches)) {
-
+        if (preg_match('/"@'.$tag.'\((.+)\)@end'.$tag.'"/', $parsedSource, $sortMatches)) {
             $default = stripslashes($sortMatches[1]);
 
             $rawDefault = "{{^{$tag}.isEmpty}}{{#toJson}}{$tag}{{/toJson}}{{/{$tag}.isEmpty}} {{^{$tag}}}${default}{{/{$tag}}}";
 
             $parsedSource = preg_replace(
-                '/"@' . $tag . '\((.+)\)@end' . $tag . '"/',
+                '/"@'.$tag.'\((.+)\)@end'.$tag.'"/',
                 $rawDefault,
                 $parsedSource
             );

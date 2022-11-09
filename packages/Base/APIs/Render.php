@@ -14,11 +14,11 @@ trait Render
 
     protected function renderAPICall(string $name, array $params = []): ElasticsearchResponse
     {
-        $uri = new Uri("/_render/template");
+        $uri = new Uri('/_render/template');
 
         $body = [
-            "id" => $name,
-            "params" => (object) $params
+            'id' => $name,
+            'params' => (object) $params,
         ];
 
         $esRequest = new ElasticsearchRequest('POST', $uri, $body);
