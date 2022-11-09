@@ -53,7 +53,7 @@ git push origin --tags
 
 
 # Tag Components
-for REMOTE in english german greek base cli http support testing filter
+for REMOTE in english german greek base http testing parse index mappings query search
 do
     echo ""
     echo ""
