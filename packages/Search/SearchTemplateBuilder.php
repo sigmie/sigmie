@@ -7,35 +7,43 @@ namespace Sigmie\Search;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use function Sigmie\Functions\auto_fuzziness;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\Compound\Boolean;
+use Sigmie\Query\Queries\MatchAll;
+use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Search\Contracts\SearchTemplateBuilder as SearchTemplateBuilderInterface;
+use Sigmie\Shared\Collection;
 
 class SearchTemplateBuilder extends AbstractSearchBuilder implements SearchTemplateBuilderInterface
 {
-    protected bool $filterable = false;
-
-    protected bool $sortable = false;
-
     protected Boolean $filters;
 
     protected array $sort = ['_score'];
 
     protected null|Properties $properties = null;
 
-    public function __construct(
-        NewSearch $newSearch,
-        protected ElasticsearchConnection $elasticsearchConnection
-    ) {
-        parent::__construct($newSearch);
+    protected string $id;
 
+    public function __construct(
+        protected ElasticsearchConnection $elasticsearchConnection,
+    ) {
         $this->filters = new Boolean;
 
         $this->filters->must()->matchAll();
     }
+
+    public function id(string $id)
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
 
     public function properties(Properties $properties): static
     {
@@ -78,53 +86,83 @@ class SearchTemplateBuilder extends AbstractSearchBuilder implements SearchTempl
 
     public function get(): SearchTemplate
     {
-        $query = $this->newSearch->bool(function (Boolean $boolean) {
-            if ($this->filterable) {
-                $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('filter', '@json(filters)'));
-            }
+        $boolean = new Boolean;
+        $search = new Search($boolean);
+        $highlight = new Collection($this->highlight);
 
-            //TODO handle query depending on mappings
-            $boolean->must()->bool(function (Boolean $boolean) {
-                $queryBoolean = new Boolean;
-                foreach ($this->fields as $field) {
-                    $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
+        $highlight->each(fn (string $field) =>  $search->highlight($field, $this->highlightPrefix, $this->highlightSuffix));
 
-                    $fuzziness = ! in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+        $search->fields($this->retrieve);
 
-                    $query = new Match_($field, $this->query, $fuzziness);
+        $defaultFilters = json_encode($this->filters->toRaw());
+
+        $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('filter', "@filter($defaultFilters)@endfilter"));
+
+        $defaultSorts = json_encode($this->sort);
+
+        $search->addRaw('sort', "@sort($defaultSorts)@endsort");
+
+        $search->size("@size({$this->size})@endsize");
+
+        $boolean->must()->bool(function (Boolean $boolean) {
+
+            $queryBoolean = new Boolean;
+
+            $fields = new Collection($this->fields);
+
+            $fields->each(function ($field) use ($queryBoolean) {
+
+                $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
+
+                if (is_null($this->properties)) {
+
+                    $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+
+                    $query = new Match_($field, '{{query_string}}', $fuzziness);
 
                     $queryBoolean->should()->query($query->boost($boost));
-                }
+                } else {
 
-                if ($queryBoolean->toRaw()['bool']['should'] ?? false) {
-                    $query = json_encode($queryBoolean->toRaw()['bool']['should']);
+                    $field = $this->properties[$field];
 
-                    $boolean->addRaw('should', "@query($query)@endquery");
+                    if ($field instanceof Text) {
+                        $fuzziness = !in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+
+                        $query = new Match_($field->name, '{{query_string}}', $fuzziness);
+
+                        $queryBoolean->should()->query($query->boost($boost));
+
+                        if ($field->isKeyword()) {
+
+                            $query = new Term(
+                                $field->keywordName(),
+                                '{{query_string}}',
+                            );
+
+                            $queryBoolean->should()->query(
+                                $query->boost($boost)
+                            );
+                        }
+
+                        return;
+                    }
+
+                    $query = new Term(
+                        $field->name,
+                        '{{query_string}}',
+                    );
+
+                    $queryBoolean->should()->query(
+                        $query->boost($boost)
+                    );
                 }
             });
-        })->fields($this->retrieve);
 
-        $defaultSorts = [];
-        foreach ($this->sorts as $field => $direction) {
-            if ($field === '_score') {
-                $defaultSorts[] = $field;
+            $query = json_encode($queryBoolean->toRaw()['bool']['should'] ?? (new MatchAll)->toRaw());
 
-                continue;
-            }
-            $defaultSorts[] = [$field => $direction];
-        }
+            $boolean->addRaw('should', "@query_string($query)@endquery_string");
+        });
 
-        $defaultSorts = json_encode($defaultSorts);
-        $query->addRaw('sort', "@sorting($defaultSorts)@endsorting");
-
-        foreach ($this->highligh as $field) {
-            $query->highlight($field, $this->prefix, $this->suffix);
-        }
-
-        $query->size('@var(size,10)');
-
-        $raw = $query->toRaw();
-
-        return new SearchTemplate($this->elasticsearchConnection, $raw);
+        return new SearchTemplate($this->elasticsearchConnection, $search->toRaw(), $this->id);
     }
 }

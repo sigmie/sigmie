@@ -21,6 +21,15 @@ class SearchQueryBuilder extends AbstractSearchBuilder implements SearchQueryBui
 
     protected null|Properties $properties = null;
 
+    protected string $query;
+
+    public function query(string $query): static
+    {
+        $this->query = $query;
+
+        return $this;
+    }
+
     public function __construct(NewSearch $newSearch)
     {
         parent::__construct($newSearch);
@@ -77,7 +86,7 @@ class SearchQueryBuilder extends AbstractSearchBuilder implements SearchQueryBui
         })
             ->fields($this->retrieve);
 
-        foreach ($this->highligh as $field) {
+        foreach ($this->highlight as $field) {
             $query->highlight($field, $this->highlightPrefix, $this->highlightSuffix);
         }
 

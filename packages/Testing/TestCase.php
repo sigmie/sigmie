@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Testing;
 
 use Carbon\Carbon;
+use Sigmie\Base\APIs\Analyze;
+use Sigmie\Base\APIs\Explain;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Document\Actions as DocumentActions;
 use Sigmie\Http\JSONClient;
@@ -17,6 +19,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
     use Assertions;
     use IndexAction;
     use DocumentActions;
+    use Explain, Analyze;
 
     protected Sigmie $sigmie;
 

@@ -44,6 +44,11 @@ class Text extends Type implements FromRaw
         return $instance;
     }
 
+    public function isKeyword(): bool
+    {
+        return ! is_null($this->raw);
+    }
+
     public function isSortable(): bool
     {
         return ! is_null($this->raw);
@@ -52,6 +57,11 @@ class Text extends Type implements FromRaw
     public function isFilterable(): bool
     {
         return ! is_null($this->raw);
+    }
+
+    public function keywordName(): null|string
+    {
+        return (is_null($this->raw)) ? null : "{$this->name}.{$this->raw}";
     }
 
     public function sortableName(): null|string

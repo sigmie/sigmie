@@ -33,7 +33,6 @@ class ElasticsearchConnection implements ElasticsearchConnectionInterface
         }
 
         if ($response->failed()) {
-            ray($request);
             throw $response->exception($request);
         }
 

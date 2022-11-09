@@ -26,12 +26,18 @@ class NewSearch implements Queries
     protected Search $search;
 
     public function __construct(
-        protected string $index,
-         protected ElasticsearchConnection $httpConnection)
+         protected ElasticsearchConnection $httpConnection,
+        protected null|string $index = null,
+     )
     {
         $this->search = new Search();
 
-        $this->search->index($index)->setElasticsearchConnection($httpConnection);
+        $this->search->setElasticsearchConnection($httpConnection);
+
+        if (!is_null($index))
+        {
+            $this->search->index($index);
+        }
     }
 
     public function term(string $field, string|bool $value): Search

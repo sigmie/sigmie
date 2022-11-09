@@ -26,6 +26,7 @@ use Sigmie\Search\NewSearch;
 use Sigmie\Search\Search;
 use Sigmie\Search\SearchQueryBuilder;
 use Sigmie\Search\SearchTemplateBuilder;
+use Sigmie\Search\ExistingScript;
 
 class Sigmie
 {
@@ -73,7 +74,7 @@ class Sigmie
 
     public function newSearch(string $index): NewSearch
     {
-        return new NewSearch($index, $this->elasticsearchConnection);
+        return new NewSearch($this->elasticsearchConnection, $index);
     }
 
     public function search(string $index): ContractsSearchQueryBuilder
@@ -81,9 +82,18 @@ class Sigmie
         return new SearchQueryBuilder($this->newSearch($index));
     }
 
-    public function template(string $index): ContractsSearchTemplateBuilder
+    public function newTemplate(string $id): ContractsSearchTemplateBuilder
     {
-        return new SearchTemplateBuilder($this->newSearch($index), $this->elasticsearchConnection);
+        $builder = new SearchTemplateBuilder(
+            $this->elasticsearchConnection,
+        );
+
+        return $builder->id($id);
+    }
+
+    public function template(string $id): ExistingScript
+    {
+        return new ExistingScript($id, $this->elasticsearchConnection);
     }
 
     public function analytics(string $index, string $field)
@@ -103,7 +113,7 @@ class Sigmie
 
             $res = ($this->elasticsearchConnection)($request);
 
-            return ! $res->failed();
+            return !$res->failed();
         } catch (ConnectException) {
             return false;
         }

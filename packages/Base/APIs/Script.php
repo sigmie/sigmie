@@ -12,9 +12,9 @@ trait Script
 {
     use API;
 
-    protected function scriptAPICall(string $method, string $name, ?array $body = null): ElasticsearchResponse
+    protected function scriptAPICall(string $method, string $id, ?array $body = null): ElasticsearchResponse
     {
-        $uri = new Uri("/_scripts/{$name}");
+        $uri = new Uri("/_scripts/{$id}");
 
         $esRequest = new ElasticsearchRequest($method, $uri, $body);
 

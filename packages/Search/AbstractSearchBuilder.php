@@ -8,7 +8,6 @@ use Sigmie\Search\Contracts\SearchBuilder;
 
 abstract class AbstractSearchBuilder implements SearchBuilder
 {
-    protected string $query;
 
     protected string $highlightSuffix;
 
@@ -30,23 +29,16 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected bool $sortable = false;
 
-    protected int $minCharsForOneTypo;
+    protected int $minCharsForOneTypo = 3;
 
-    protected int $minCharsForTwoTypo;
+    protected int $minCharsForTwoTypo = 6;
 
     protected array $weight = [];
 
-    protected array $highligh = [];
+    protected array $highlight = [];
 
-    public function __construct(protected NewSearch $newSearch)
+    public function __construct()
     {
-    }
-
-    public function query(string $query): static
-    {
-        $this->query = $query;
-
-        return $this;
     }
 
     public function typoTolerance(int $oneTypoChars = 3, int $twoTypoChars = 6): static
@@ -97,7 +89,7 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     public function highlighting(array $attributes, string $prefix, string $suffix): static
     {
-        $this->highligh = $attributes;
+        $this->highlight = $attributes;
         $this->highlightPrefix = $prefix;
         $this->highlightSuffix = $suffix;
 

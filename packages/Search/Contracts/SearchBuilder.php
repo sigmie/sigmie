@@ -6,8 +6,6 @@ namespace Sigmie\Search\Contracts;
 
 interface SearchBuilder
 {
-    public function query(string $query): static;
-
     public function typoTolerance(int $oneTypoChars = 3, int $twoTypoChars = 6): static;
 
     public function size(int $size = 20): static;
