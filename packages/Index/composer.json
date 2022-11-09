@@ -1,6 +1,6 @@
 {
-    "name": "sigmie/http",
-    "description": "The Sigmie HTTP package.",
+    "name": "sigmie/index",
+    "description": "The Sigmie Index package.",
     "license": "MIT",
     "homepage": "https://sigmie.com",
     "support": {
@@ -15,12 +15,11 @@
     ],
     "require": {
         "php": "^8.0",
-        "adbario/php-dot-notation": "^2.2",
-        "guzzlehttp/guzzle": "^7.2"
+        "sigmie/base": "^0.6.4"
     },
     "autoload": {
         "psr-4": {
-            "Sigmie\\Http\\": ""
+            "Sigmie\\Index\\": ""
         }
     },
     "suggest": {},

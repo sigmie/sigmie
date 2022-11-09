@@ -1,8 +1,8 @@
 {
-    "name": "sigmie/turkish",
-    "description": "The Sigmie package for the Turkish language.",
+    "name": "sigmie/shared",
+    "description": "The Sigmie Shared package.",
     "license": "MIT",
-    "homepage": "https://docs.sigmie.com",
+    "homepage": "https://sigmie.com",
     "support": {
         "issues": "https://github.com/sigmie/sigmie/issues",
         "source": "https://github.com/sigmie/sigmie"
@@ -16,11 +16,15 @@
     "require": {
         "php": "^8.0"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5"
+    },
     "autoload": {
         "psr-4": {
-            "Sigmie\\Turkish\\": ""
+            "Sigmie\\Shared\\": ""
         }
     },
+    "extra": {},
     "suggest": {},
     "config": {
         "sort-packages": true

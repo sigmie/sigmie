@@ -1,6 +1,6 @@
 {
-    "name": "sigmie/http",
-    "description": "The Sigmie HTTP package.",
+    "name": "sigmie/document",
+    "description": "The Sigmie Document package.",
     "license": "MIT",
     "homepage": "https://sigmie.com",
     "support": {
@@ -16,13 +16,19 @@
     "require": {
         "php": "^8.0",
         "adbario/php-dot-notation": "^2.2",
-        "guzzlehttp/guzzle": "^7.2"
+        "nesbot/carbon": "^2.48",
+        "sigmie/http": "^0.6",
+        "sigmie/support": "^0.6"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5"
     },
     "autoload": {
         "psr-4": {
-            "Sigmie\\Http\\": ""
+            "Sigmie\\Document\\": ""
         }
     },
+    "extra": {},
     "suggest": {},
     "config": {
         "sort-packages": true

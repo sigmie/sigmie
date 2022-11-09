@@ -1,1 +1,0 @@
-# Sigmie Filter 

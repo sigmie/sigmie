@@ -1,8 +1,8 @@
 {
-    "name": "sigmie/german",
+    "name": "sigmie/english",
     "description": "The Sigmie package for the English language.",
     "license": "MIT",
-    "homepage": "https://docs.sigmie.com",
+    "homepage": "https://sigmie.com",
     "support": {
         "issues": "https://github.com/sigmie/sigmie/issues",
         "source": "https://github.com/sigmie/sigmie"
