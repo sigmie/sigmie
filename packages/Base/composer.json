@@ -16,8 +16,8 @@
     "require": {
         "php": "^8.1",
         "nesbot/carbon": "^2.48",
-        "sigmie/http": "^0.18",
-        "sigmie/shared": "^0.18"
+        "sigmie/http": "^0.20",
+        "sigmie/shared": "^0.20"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.5"
