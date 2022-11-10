@@ -15,11 +15,11 @@
     ],
     "require": {
         "php": "^8.1",
-        "sigmie/mappings": "^0.17"
+        "sigmie/mappings": "^0.18"
     },
     "autoload": {
         "psr-4": {
-            "Sigmie\\Filter\\": ""
+            "Sigmie\\Parse\\": ""
         }
     },
     "suggest": {},
