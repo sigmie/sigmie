@@ -191,7 +191,7 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName, $templateId, [
+        $hits = $template->run($indexName, [
             'query_string' => 'Mickey'
         ])->json('hits.hits');
 

@@ -50,7 +50,7 @@ class JSONClient implements JSONClientInterface
         array $config = []
     ): static {
         return self::create($hosts, [
-            'auth' => $headers,
+            'headers' => $headers,
         ]);
     }
 

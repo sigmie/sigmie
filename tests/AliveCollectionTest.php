@@ -148,7 +148,7 @@ class AliveCollectionTest extends TestCase
 
         $index = $this->sigmie->collect($indexName, true);
 
-        $index->add(new Document(['foo' => 'bar'], '4'), true);
+        $index->add(new Document(['foo' => 'bar'], '4'));
 
         $this->assertCount(1, $index);
 

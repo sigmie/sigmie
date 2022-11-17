@@ -16,6 +16,7 @@
     "require": {
         "php": "^8.1",
         "sigmie/mappings": "^0.20",
+        "sigmie/shared": "^0.20",
         "sigmie/query": "^0.20"
     },
     "autoload": {

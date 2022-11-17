@@ -63,7 +63,7 @@ class SearchTest extends TestCase
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
-        ->queryString('Mickey')
+            ->queryString('Mickey')
             ->fields(['name', 'description'])
             ->sort('_score')
             ->get();
@@ -74,7 +74,7 @@ class SearchTest extends TestCase
         $this->assertCount(2, $hits);
 
         $search = $this->sigmie->newSearch($indexName)
-        ->queryString('Mickey')
+            ->queryString('Mickey')
             ->fields(['name', 'description'])
             ->sort('_score')
             ->weight([
@@ -111,7 +111,7 @@ class SearchTest extends TestCase
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
-        ->queryString('Mockey')
+            ->queryString('Mockey')
             ->fields(['name'])
             ->typoTolerance()
             ->typoTolerantAttributes([
@@ -146,7 +146,7 @@ class SearchTest extends TestCase
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
-        ->queryString('Mockey')
+            ->queryString('Mockey')
             ->fields(['name'])
             ->get();
 

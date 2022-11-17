@@ -38,7 +38,7 @@ class NewQuery implements Queries
         }
     }
 
-    public function term(string $field, string|bool $value): Search
+    public function term(string $field, string|bool|int|float $value): Search
     {
         return $this->search->query(new Term($field, $value));
     }

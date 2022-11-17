@@ -23,6 +23,7 @@ class FilterParser extends Parser
         //Trim leading and trailing spaces
         $query = trim($query);
 
+        $operator = null;
         // If it's a parenthetic expression
         if (preg_match_all("/\((((?>[^()]+)|(?R))*)\)/", $query, $matches)) {
             $matchWithParentheses = $matches[0][0];
@@ -31,16 +32,19 @@ class FilterParser extends Parser
             $matchWithoutParentheses = preg_replace('/^\((.+)\)$/', '$1', $matchWithParentheses);
 
             //Remove the parenthetic expresion from the query
-            $query = str_replace($matchWithParentheses, '', $query);
+            $query = preg_replace("/((AND NOT|AND|OR) )?\({$matchWithoutParentheses}\)/", '', $query);
+            // $query = str_replace($matchWithParentheses, '', $query);
 
             //Trim leading and trailing spaces
-            $query = trim($query);
 
             //Create filter from parentheses match
             $filter = $this->parseString($matchWithoutParentheses);
         } else {
-            [$filter] = preg_split('/(AND NOT|AND|OR)/', $query, limit: 2);
+            preg_match('/(?P<operator>AND NOT|AND|OR)/', $query, $match);
+            $operator = $match['operator'];
+            [$filter, $query] = preg_split('/( )?(AND NOT|AND|OR)( )?/', $query, limit: 2);
         }
+
 
         //If it's a string filter like inStock = 1 and not
         //a subquery like (inStock = 1 AND active = true)
@@ -52,10 +56,38 @@ class FilterParser extends Parser
 
         $res = ['filter' => $filter];
 
+        if (preg_match('/(AND NOT|AND|OR)/', $query, $matches) === 0 && $query !== '') {
+            $res['operator'] = $operator;
+            $res['values'] = $query;
+        }
+
         if (preg_match('/^(?P<operator>AND NOT|AND|OR)/', $query, $matchWithoutParentheses)) {
             $operator = $matchWithoutParentheses['operator'];
             //Remove operator from the query string
             $query = preg_replace("/^{$operator}/", '', $query);
+            $query = trim($query);
+
+            $res['operator'] = $operator;
+            $res['values'] = $this->parseString($query);
+        } elseif (preg_match('/(?P<operator>AND NOT|AND|OR)$/', $query, $matchWithoutParentheses)) {
+
+            $operator = $matchWithoutParentheses['operator'];
+            //Remove operator from the query string
+            $query = preg_replace("/{$operator}$/", '', $query);
+            $query = trim($query);
+
+            $res['operator'] = $operator;
+            $res['values'] = $this->parseString($query);
+        } elseif (preg_match('/(?P<operator>AND NOT|AND|OR)/', $query, $matchWithoutParentheses)) {
+            $operator = $matchWithoutParentheses['operator'];
+            //Remove operator from the query string
+            if ((count(preg_split('/( )?(AND NOT|AND|OR)( )?/', $query)) % 2 === 0) === false) {
+                $query = preg_replace("/{$operator}/", '', $query, 1);
+            }
+
+            $query = trim($query);
+            $query = preg_replace('/\s+/', ' ', $query);
+
             $res['operator'] = $operator;
             $res['values'] = $this->parseString($query);
         }
@@ -72,11 +104,11 @@ class FilterParser extends Parser
         return $bool;
     }
 
-    protected function apply(array $filters, string $operator = 'AND'): Boolean
+    protected function apply(string|array $filters, string $operator = 'AND'): Boolean
     {
         $boolean = new Boolean;
 
-        $filter = $filters['filter'];
+        $filter = is_string($filters) ? $filters : $filters['filter'];
         $operator = $filters['operator'] ?? $operator;
         $values = $filters['values'] ?? null;
 

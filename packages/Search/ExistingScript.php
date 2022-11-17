@@ -22,10 +22,10 @@ class ExistingScript
         $this->elasticsearchConnection = $connection;
     }
 
-    public function run(string $index, string $id, array $params = [])
+    public function run(string $index, array $params = [])
     {
         $body = [
-            'id' => $id,
+            'id' => $this->id,
             'params' => (object) $params,
         ];
 

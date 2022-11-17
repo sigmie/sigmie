@@ -8,7 +8,7 @@ use Sigmie\Shared\Contracts\FromRaw;
 
 class Document implements FromRaw
 {
-    public array $_source;
+    public readonly array $_source;
 
     public readonly string $_index; // @phpstan-ignore-line
 
