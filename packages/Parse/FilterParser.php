@@ -23,7 +23,6 @@ class FilterParser extends Parser
         //Trim leading and trailing spaces
         $query = trim($query);
 
-        $operator = null;
         // If first filter is a parenthetic expression
         if (preg_match_all("/^\((((?>[^()]+)|(?R))*)\)/", $query, $matches)) {
             $matchWithParentheses = $matches[0][0];
