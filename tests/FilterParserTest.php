@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 namespace Sigmie\Tests;
-
 use RuntimeException;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Base\APIs\Index;
@@ -39,6 +38,83 @@ class FilterParserTest extends TestCase
         $parser = new FilterParser($props);
 
         $boolean = $parser->parse('category:sports AND is:active OR name:foo');
+    }
+
+    /**
+     * @test
+     */
+    public function foo()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new Blueprint;
+        $blueprint->keyword('category');
+        $blueprint->bool('active');
+        $blueprint->number('stock')->integer();
+
+        $index = $this->sigmie->newIndex($indexName)
+        ->blueprint($blueprint)
+        ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document(['category' => 'comendy', 'stock'=> 10, 'active'=> false]),
+            new Document(['category' => 'action', 'stock'=> 58, 'active'=> true]),
+            new Document(['category' => 'horror', 'stock'=> 0, 'active'=> true]),
+            new Document(['category' => 'horror', 'stock'=> 10, 'active'=> false]),
+            new Document(['category' => 'romance', 'stock'=> 10, 'active'=> false]),
+            new Document(['category' => 'drama', 'stock'=> 10, 'active'=> true]),
+            new Document(['category' => 'sports', 'stock'=> 10, 'active'=> true]),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse('is:active AND NOT (category:drama OR category:horror)');
+
+        $res = $this->sigmie->query($indexName,$query)->get();
+
+        $this->assertCount(2,$res->json('hits.hits'));
+
+        $query = $parser->parse('is:active AND NOT category:drama');
+
+        $res = $this->sigmie->query($indexName,$query)->get();
+
+        $this->assertCount(3,$res->json('hits.hits'));
+
+        $query = $parser->parse('is:active AND stock>0');
+
+        $res = $this->sigmie->query($indexName,$query)->get();
+
+        $this->assertCount(3,$res->json('hits.hits'));
+
+        $query = $parser->parse('is:active');
+
+        $res = $this->sigmie->query($indexName,$query)->get();
+
+        $this->assertCount(4,$res->json('hits.hits'));
+
+        $query = $parser->parse('is:active AND stock>0 AND (category:action OR category:horror)');
+
+        $res = $this->sigmie->query($indexName,$query)->get();
+
+        $this->assertCount(1,$res->json('hits.hits'));
+
+        $query = $parser->parse('(category:action OR category:horror) AND is:active AND stock>0');
+
+        $res = $this->sigmie->query($indexName,$query)->get();
+
+        $this->assertCount(1,$res->json('hits.hits'));
+
+        $query = $parser->parse('is:active AND (category:action OR category:horror) AND stock>0');
+
+        $res = $this->sigmie->query($indexName,$query)->get();
+
+        $this->assertCount(1,$res->json('hits.hits'));
     }
 
     /**
