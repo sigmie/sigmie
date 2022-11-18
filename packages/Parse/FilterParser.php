@@ -39,7 +39,7 @@ class FilterParser extends Parser
             //Create filter from parentheses match
             $filter = $this->parseString($matchWithoutParentheses);
         } else {
-                [$filter] = preg_split('/(AND NOT|AND|OR)/', $query, limit: 2);
+            [$filter] = preg_split('/(AND NOT|AND|OR)/', $query, limit: 2);
         }
 
         //If it's a string filter like inStock = 1 and not

@@ -213,7 +213,7 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName, $templateId, [
+        $hits = $template->run($indexName, [
             'query_string' => 'Mickey'
         ])->json('hits.hits');
 
@@ -255,7 +255,7 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName, $templateId, [
+        $hits = $template->run($indexName, [
             'query_string' => 'Mockey'
         ])->json('hits.hits');
 
@@ -292,7 +292,7 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName, $templateId, [
+        $hits = $template->run($indexName, [
             'query_string' => 'Mockey'
         ])->json('hits.hits');
 
@@ -330,7 +330,7 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName, $templateId, [
+        $hits = $template->run($indexName,  [
             'query_string' => 'a'
         ])->json('hits.hits');
 
@@ -346,7 +346,7 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName, $templateId, [
+        $hits = $template->run($indexName, [
             'query_string' => 'a'
         ])->json('hits.hits');
 
@@ -385,7 +385,7 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName, $templateId, [
+        $hits = $template->run($indexName, [
             'query_string' => 'a'
         ])->json('hits.hits');
 
@@ -422,13 +422,13 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName, $templateId)->json('hits.hits');
+        $hits = $template->run($indexName)->json('hits.hits');
 
         $this->assertEquals('c', $hits[0]['_source']['category']);
         $this->assertEquals('b', $hits[1]['_source']['category']);
         $this->assertEquals('a', $hits[2]['_source']['category']);
 
-        $hits = $template->run($indexName, $templateId, [
+        $hits = $template->run($indexName, [
             'sort' => (new SortParser())->parse('category.keyword:asc')
         ])->json('hits.hits');
 
@@ -467,11 +467,11 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName, $templateId)->json('hits.hits');
+        $hits = $template->run($indexName)->json('hits.hits');
 
         $this->assertCount(2, $hits);
 
-        $hits = $template->run($indexName, $templateId, [
+        $hits = $template->run($indexName, [
             'filter' => (new FilterParser())->parse('is_not:active')->toRaw()
         ])->json('hits.hits');
 
@@ -508,11 +508,11 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName, $templateId)->json('hits.hits');
+        $hits = $template->run($indexName,)->json('hits.hits');
 
         $this->assertCount(2, $hits);
 
-        $hits = $template->run($indexName, $templateId, [
+        $hits = $template->run($indexName, [
             'size' => 3
         ])->json('hits.hits');
 
@@ -559,11 +559,11 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName, $templateId)->json('hits.hits');
+        $hits = $template->run($indexName,)->json('hits.hits');
 
         $this->assertCount(3, $hits);
 
-        $hits = $template->run($indexName, $templateId, [
+        $hits = $template->run($indexName, [
             'query_string' => 'Good'
         ])->json('hits.hits');
 
@@ -610,7 +610,7 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName, $templateId, [
+        $hits = $template->run($indexName, [
             'query_string' => ''
         ])->json('hits.hits');
 
