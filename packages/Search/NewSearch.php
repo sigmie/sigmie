@@ -77,7 +77,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this;
     }
 
-    public function get(): Search
+    public function get()
     {
         $boolean = new Boolean;
 
@@ -159,6 +159,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $boolean->should()->query($queryBoolean);
         });
 
-        return $search;
+        return $search->get();
     }
 }

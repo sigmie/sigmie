@@ -405,4 +405,47 @@ class SearchTest extends TestCase
 
         $this->assertCount(3, $hits);
     }
+
+    /**
+     * @test
+     */
+    public function search_test()
+    {
+        $indexName = uniqid();
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->mapping(function (Blueprint $blueprint) {
+                $blueprint->text('name');
+                $blueprint->text('description');
+            })
+            ->lowercase()
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+$index->merge([
+    new Document([
+        'name' => 'Mickey',
+        'description' => 'Adventure in the woods'
+    ]),
+    new Document([
+        'name' => 'Goofy',
+        'description' => 'Mickey and his friends'
+    ]),
+    new Document([
+        'name' => 'Donald',
+        'description' => 'Chasing Goofy'
+    ]),
+]);
+
+$hits = $this->sigmie->newSearch($indexName)
+    ->queryString('mickey')
+    ->fields(['name'])
+    ->retrieve(['name','description'])
+    ->get()
+    ->json('hits');
+
+ray(var_export($hits));
+    ray($hits);
+    }
 }
