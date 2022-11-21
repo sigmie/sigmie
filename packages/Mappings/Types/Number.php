@@ -43,7 +43,6 @@ class Number extends Type
         $queries = [];
 
         $queries[] = new Term($this->name, $queryString);
-        $queries[] = new Prefix($this->name, $queryString);
 
         return $queries;
     }

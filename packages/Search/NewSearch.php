@@ -21,6 +21,7 @@ use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Search;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
 use Sigmie\Shared\Collection;
+use Exception;
 
 class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInterface
 {
@@ -121,12 +122,18 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
 
+                if (is_null($this->properties))
+                {
+                    throw new Exception('Missing search properties');
+                }
+
                 $field = $this->properties[$field];
 
                 $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
-                collect($field->queries($this->queryString))
-                    ->map(function (Query $queryClause) use ($boost, $fuzziness) {
+                $queries = new Collection($field->queries($this->queryString));
+
+                $queries->map(function (Query $queryClause) use ($boost, $fuzziness) {
 
                         if ($queryClause instanceof FuzzyQuery) {
                             $queryClause->fuzziness($fuzziness);

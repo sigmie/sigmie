@@ -143,10 +143,6 @@ class Text extends Type implements FromRaw
         $raw = [
             $this->name => [
                 'type' => $this->type,
-                'index_prefixes' => [
-                    'min_chars' => 1,
-                    'max_chars' => 10
-                ]
             ],
         ];
 

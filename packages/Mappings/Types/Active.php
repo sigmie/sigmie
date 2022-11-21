@@ -24,12 +24,14 @@ class Active extends Boolean
     {
         $queries = [];
 
-        if (str_contains(trim(strtolower($queryString)), 'active')) {
-            $queries[] = new Term($this->name, true);
-        }
-
         if (str_contains(trim(strtolower($queryString)), 'inactive')) {
             $queries[] = new Term($this->name, false);
+
+            return $queries;
+        }
+
+        if (str_contains(trim(strtolower($queryString)), 'active')) {
+            $queries[] = new Term($this->name, true);
         }
 
         return $queries;

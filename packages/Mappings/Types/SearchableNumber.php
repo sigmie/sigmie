@@ -26,10 +26,7 @@ class SearchableNumber extends Text
         $queries = [];
 
         $queries[] = new Match_($this->name, $queryString);
-
-        if (strlen($queryString) <= 2) {
-            $queries[] = new Prefix($this->name, $queryString);
-        }
+        $queries[] = new Prefix($this->name, $queryString);
 
         return $queries;
     }

@@ -15,11 +15,233 @@ use Sigmie\Index\APIs\Index;
 use Sigmie\Index\Mappings;
 use Sigmie\Testing\TestCase;
 use Sigmie\Mappings\Blueprint;
+use Sigmie\Document\Document;
 
 use function Sigmie\Functions\random_letters;
 
 class MappingsTest extends TestCase
 {
+    /**
+     * @test
+     */
+    public function year()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new Blueprint;
+        $blueprint->year();
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->blueprint($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['year'=> '2027']),
+            new Document(['year'=> '1821']),
+            new Document(['year'=> '1947']),
+            new Document(['year'=> '1821']),
+        ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('1821')
+            ->fields(['year'])
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertCount(2,$hits);
+    }
+
+    /**
+     * @test
+     */
+    public function category()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new Blueprint;
+        $blueprint->keyword('category');
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->blueprint($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['category'=> 'horror']),
+            new Document(['category'=> 'sport']),
+            new Document(['category'=> 'action']),
+            new Document(['category'=> 'drama']),
+            new Document(['category'=> 'drama']),
+        ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('dra')
+            ->fields(['category'])
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertCount(2,$hits);
+    }
+
+    /**
+     * @test
+     */
+    public function active()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new Blueprint;
+        $blueprint->active();
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->blueprint($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['active'=>true]),
+            new Document(['active'=>true]),
+            new Document(['active'=>false]),
+            new Document(['active'=>true]),
+            new Document(['active'=>true]),
+        ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('active')
+            ->fields(['active'])
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertCount(4,$hits);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('inactive')
+            ->fields(['active'])
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertCount(1,$hits);
+    }
+
+    /**
+     * @test
+     */
+    public function searchable_number()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new Blueprint;
+        $blueprint->searchableNumber('number');
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->blueprint($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['number' => '0020020202']),
+            new Document(['number' => '2353051500']),
+            new Document(['number' => '9999999']),
+        ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('999')
+            ->fields(['number'])
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertEquals('9999999', $hits[0]['_source']['number']);
+        $this->assertCount(1,$hits);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('2353151500')
+            ->typoTolerance()
+            ->typoTolerantAttributes(['number'])
+            ->fields(['number'])
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertEquals('2353051500', $hits[0]['_source']['number']);
+        $this->assertCount(1,$hits);
+    }
+
+    /**
+     * @test
+     */
+    public function email()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new Blueprint;
+        $blueprint->email('email');
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->blueprint($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['email' => 'john.doe@gmail.com']),
+            new Document(['email' => 'marc@hotmail.com']),
+            new Document(['email' => 'phill.braun@outlook.com']),
+        ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('doe')
+            ->fields(['email'])
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertEquals('john.doe@gmail.com', $hits[0]['_source']['email']);
+        $this->assertCount(1,$hits);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('.com')
+            ->fields(['email'])
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertCount(3,$hits);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('bra')
+            ->fields(['email'])
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertEquals('phill.braun@outlook.com', $hits[0]['_source']['email']);
+
+    }
+
     /**
      * @test
      */
