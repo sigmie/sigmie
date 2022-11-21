@@ -17,7 +17,7 @@ class Text extends Type implements FromRaw
 
     protected null|array $indexPrefixes = null;
 
-    public readonly Closure $newAnalyzer;
+    public readonly Closure $newAnalyzer; // @phpstan-ignore-line
 
     public function __construct(
         string $name,
@@ -125,7 +125,7 @@ class Text extends Type implements FromRaw
 
     public function withNewAnalyzer(Closure $callable)
     {
-        $this->newAnalyzer = $callable;
+        $this->newAnalyzer = $callable; // @phpstan-ignore-line
     }
 
     public function withAnalyzer(Analyzer $analyzer): void

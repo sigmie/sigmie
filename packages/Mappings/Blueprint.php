@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Mappings;
 
 use Sigmie\Index\Analysis\Analysis;
+use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\Types\Active;
 use Sigmie\Mappings\Types\Boolean;
@@ -26,7 +27,7 @@ class Blueprint
 {
     protected Collection $fields;
 
-    public function __construct(protected Analysis $analysis = new Analysis())
+    public function __construct(protected AnalysisInterface $analysis = new Analysis())
     {
         $this->fields = new Collection();
     }

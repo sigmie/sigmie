@@ -30,13 +30,11 @@ class NewAnalyzer
     use Tokenizer;
     use Name;
 
-    public function __construct(Analysis $analysis, string $name)
+    public function __construct(protected AnalysisInterface $analysis, string $name)
     {
         $this->name = $name;
 
         $this->tokenizer = new WordBoundaries();
-
-        $this->analysis = new Analysis();
     }
 
     public function analysis(): AnalysisInterface
