@@ -10,6 +10,8 @@ interface SearchBuilder
 
     public function size(int $size = 20): static;
 
+    public function from(int $from = 0): static;
+
     public function minCharsForOneTypo(int $chars): static;
 
     public function minCharsForTwoTypo(int $chars): static;

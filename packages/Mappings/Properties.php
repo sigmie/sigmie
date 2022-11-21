@@ -21,8 +21,12 @@ class Properties extends Type implements ArrayAccess
     public function __construct(string $name = 'mappings', protected array $fields = [])
     {
         $this->type = ElasticsearchMappingType::PROPERTIES->value;
-
         parent::__construct($name);
+    }
+
+    public function queries(string $queryString): array
+    {
+        return [];
     }
 
     public function offsetExists(mixed $offset): bool
@@ -63,7 +67,7 @@ class Properties extends Type implements ArrayAccess
 
         foreach ($raw as $fieldName => $value) {
             $field = match (true) {
-                isset($value['properties']) && ! isset($value['properties']['type']) => self::create($value['properties'], $defaultAnalyzer, $analyzers, (string) $fieldName),
+                isset($value['properties']) && !isset($value['properties']['type']) => self::create($value['properties'], $defaultAnalyzer, $analyzers, (string) $fieldName),
                 in_array(
                     $value['type'],
                     ['search_as_you_type', 'text', 'completion']
@@ -74,10 +78,10 @@ class Properties extends Type implements ArrayAccess
                 $value['type'] === 'float' => (new Number($fieldName))->float(),
                 $value['type'] === 'boolean' => new Boolean($fieldName),
                 $value['type'] === 'date' => new Date($fieldName),
-                default => throw new Exception('Field '.$value['type'].' couldn\'t be mapped')
+                default => throw new Exception('Field ' . $value['type'] . ' couldn\'t be mapped')
             };
 
-            if ($field instanceof Text && ! isset($value['analyzer'])) {
+            if ($field instanceof Text && !isset($value['analyzer'])) {
                 $value['analyzer'] = 'default';
             }
 

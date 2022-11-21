@@ -33,4 +33,6 @@ abstract class Type implements Name, ToRaw, TypeInterface
     }
 
     abstract public function toRaw(): array;
+
+    abstract public function queries(string $queryString): array;
 }

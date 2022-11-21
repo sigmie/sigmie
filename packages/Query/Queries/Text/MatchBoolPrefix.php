@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Queries\Text;
 
-use Sigmie\Query\Contracts\FuzzyQuery;
 use Sigmie\Query\Queries\Query;
 
-class Match_ extends Query implements FuzzyQuery
+class MatchBoolPrefix extends Query
 {
     public function __construct(
         protected string $field,
@@ -16,18 +15,10 @@ class Match_ extends Query implements FuzzyQuery
     ) {
     }
 
-    public function fuzziness(null|string $fuzziness): static
-    {
-        $this->fuzziness = $fuzziness;
-
-        return $this;
-    }
-
-
     public function toRaw(): array
     {
         $raw = [
-            'match' => [
+            'match_bool_prefix' => [
                 $this->field => [
                     'query' => $this->query,
                     'boost' => $this->boost,

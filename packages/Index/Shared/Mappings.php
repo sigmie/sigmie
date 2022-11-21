@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Index\Shared;
 
 use Sigmie\Index\Analysis\DefaultAnalyzer;
+use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Mappings as IndexMappings;
 use Sigmie\Mappings\Blueprint;
@@ -21,9 +22,11 @@ trait Mappings
         return $this;
     }
 
+    abstract public function analysis(): Analysis;
+
     public function mapping(callable $callable): static
     {
-        $this->blueprint = new Blueprint();
+        $this->blueprint = new Blueprint($this->analysis());
 
         $callable($this->blueprint);
 

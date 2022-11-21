@@ -8,6 +8,12 @@ class SortParser extends Parser
 {
     public function parse(string $string): array
     {
+        $string = trim($string);
+
+        if ($string === '') {
+            return ['_score'];
+        }
+
         $sorts = explode(' ', $string);
         $sort = [];
 

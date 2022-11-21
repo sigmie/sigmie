@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use Sigmie\Mappings\ElasticsearchMappingType;
+use Sigmie\Query\Queries\Term\Prefix;
+use Sigmie\Query\Queries\Term\Term;
 
 class Number extends Type
 {
@@ -35,4 +37,15 @@ class Number extends Type
             'type' => $this->type,
         ]];
     }
+
+    public function queries(string $queryString): array
+    {
+        $queries = [];
+
+        $queries[] = new Term($this->name, $queryString);
+        $queries[] = new Prefix($this->name, $queryString);
+
+        return $queries;
+    }
+
 }

@@ -31,4 +31,11 @@ class Nested extends Type
 
         return $this;
     }
+
+    public function queries(string $queryString): array
+    {
+        $queries = [];
+
+        return $queries;
+    }
 }

@@ -6,6 +6,7 @@ namespace Sigmie\Parse;
 
 use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\Queries\Compound\Boolean;
+use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\MatchNone;
 use Sigmie\Query\Queries\Term\IDs;
 use Sigmie\Query\Queries\Term\Range;
@@ -67,6 +68,12 @@ class FilterParser extends Parser
 
     public function parse(string $filterString): Boolean
     {
+        if (trim($filterString) === '') {
+            $bool = new Boolean;
+            $bool->must->matchAll();
+            return $bool;
+        }
+
         $filters = $this->parseString($filterString);
 
         $bool = $this->apply($filters);

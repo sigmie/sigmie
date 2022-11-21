@@ -24,6 +24,8 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected int $size = 20;
 
+    protected int $from = 0;
+
     protected bool $filterable = false;
 
     protected bool $sortable = false;
@@ -52,6 +54,13 @@ abstract class AbstractSearchBuilder implements SearchBuilder
     public function size(int $size = 20): static
     {
         $this->size = $size;
+
+        return $this;
+    }
+
+    public function from(int $from = 0): static
+    {
+        $this->from = $from;
 
         return $this;
     }

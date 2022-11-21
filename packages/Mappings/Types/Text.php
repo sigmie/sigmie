@@ -4,14 +4,20 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Closure;
 use Exception;
 use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\Analyzer;
+use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Shared\Contracts\FromRaw;
 
 class Text extends Type implements FromRaw
 {
-    protected ?Analyzer $analyzer = null;
+    protected null|Analyzer $analyzer = null;
+
+    protected null|array $indexPrefixes = null;
+
+    public readonly Closure $newAnalyzer;
 
     public function __construct(
         string $name,
@@ -38,25 +44,33 @@ class Text extends Type implements FromRaw
             'text' => $instance->unstructuredText(),
             'search_as_you_type' => $instance->searchAsYouType(),
             'completion' => $instance->completion(),
-            default => throw new Exception('Field '.$configs['type'].' couldn\'t be mapped')
+            default => throw new Exception('Field ' . $configs['type'] . ' couldn\'t be mapped')
         };
 
         return $instance;
     }
 
+    public function indexPrefixes(int $minChars = 1, int $maxChars = 10): static
+    {
+        $this->indexPrefixes['min_chars'] = $minChars;
+        $this->indexPrefixes['max_chars'] = $maxChars;
+
+        return $this;
+    }
+
     public function isKeyword(): bool
     {
-        return ! is_null($this->raw);
+        return !is_null($this->raw);
     }
 
     public function isSortable(): bool
     {
-        return ! is_null($this->raw);
+        return !is_null($this->raw);
     }
 
     public function isFilterable(): bool
     {
-        return ! is_null($this->raw);
+        return !is_null($this->raw);
     }
 
     public function keywordName(): null|string
@@ -109,6 +123,11 @@ class Text extends Type implements FromRaw
         return $this;
     }
 
+    public function withNewAnalyzer(Closure $callable)
+    {
+        $this->newAnalyzer = $callable;
+    }
+
     public function withAnalyzer(Analyzer $analyzer): void
     {
         $this->analyzer = $analyzer;
@@ -124,17 +143,34 @@ class Text extends Type implements FromRaw
         $raw = [
             $this->name => [
                 'type' => $this->type,
+                'index_prefixes' => [
+                    'min_chars' => 1,
+                    'max_chars' => 10
+                ]
             ],
         ];
 
-        if (! is_null($this->raw)) {
+        if (!is_null($this->indexPrefixes)) {
+            $raw[$this->name]['index_prefixes'] = $this->indexPrefixes;
+        }
+
+        if (!is_null($this->raw)) {
             $raw[$this->name]['fields'] = [$this->raw => ['type' => 'keyword']];
         }
 
-        if (! is_null($this->analyzer)) {
+        if (!is_null($this->analyzer)) {
             $raw[$this->name]['analyzer'] = $this->analyzer->name();
         }
 
         return $raw;
+    }
+
+    public function queries(string $queryString): array
+    {
+        $queries = [];
+
+        $queries[] = new Match_($this->name, $queryString);
+
+        return $queries;
     }
 }
