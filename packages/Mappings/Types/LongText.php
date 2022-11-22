@@ -8,6 +8,7 @@ use Exception;
 use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Query\Queries\Term\Term;
+use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Shared\Contracts\FromRaw;
 
 class LongText extends Text
@@ -24,7 +25,7 @@ class LongText extends Text
     {
         $queries = [];
 
-        $queries[] = new Term($this->name, $queryString);
+        $queries[] = new Match_($this->name, $queryString);
 
         return $queries;
     }

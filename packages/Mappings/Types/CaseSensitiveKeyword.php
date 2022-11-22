@@ -7,13 +7,12 @@ namespace Sigmie\Mappings\Types;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Term\Prefix;
 
-class Keyword extends Type
+class CaseSensitiveKeyword extends Type
 {
     public function toRaw(): array
     {
         return [$this->name => [
-            'type' => 'keyword',
-            'normalizer' => 'lowercase'
+            'type' => 'keyword'
         ]];
     }
 

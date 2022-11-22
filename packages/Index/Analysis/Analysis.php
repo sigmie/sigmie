@@ -23,6 +23,8 @@ class Analysis implements AnalysisInterface
 
     protected Collection $tokenizers;
 
+    protected Collection $normalizers;
+
     protected Collection $analyzers;
 
     public function __construct(array $analyzers = [])
@@ -46,6 +48,8 @@ class Analysis implements AnalysisInterface
             ->map(fn (CustomAnalyzerInterface $analyzer) => $analyzer->tokenizer())
             ->filter(fn ($tokenizer) => ! is_null($tokenizer))
             ->mapToDictionary(fn (TokenizerInterface $tokenizer) => [$tokenizer->name() => $tokenizer]);
+
+        $this->normalizers = new Collection;
     }
 
     public function tokenizers(): array
@@ -188,11 +192,16 @@ class Analysis implements AnalysisInterface
             ->mapToDictionary(fn (AnalyzerInterface $analyzer) => $analyzer->toRaw())
             ->toArray();
 
+        $normalizers = $this->normalizers
+            ->mapToDictionary(fn (NormalizerInterface $normalizer) => $normalizer->toRaw())
+            ->toArray();
+
         return [
             'analyzer' => $analyzers,
             'filter' => $filter,
             'char_filter' => $charFilters,
             'tokenizer' => $tokenizer,
+            'normalizer' => $normalizers,
         ];
     }
 }

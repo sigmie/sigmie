@@ -14,6 +14,7 @@ abstract class Tokenizer implements TokenizerInterface
         'pattern' => Pattern::class,
         'standard' => WordBoundaries::class,
         'whitespace' => Whitespace::class,
+        'letter' => NonLetter::class,
     ];
 
     public static function filterMap(array $map)

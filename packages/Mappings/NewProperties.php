@@ -8,10 +8,15 @@ use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\Types\Active;
+use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\Boolean;
+use Sigmie\Mappings\Types\CaseSensitiveKeyword;
+use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\Email;
+use Sigmie\Mappings\Types\Id;
 use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Mappings\Types\LongText;
 use Sigmie\Mappings\Types\Name;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
@@ -87,6 +92,15 @@ class NewProperties
         return $field;
     }
 
+    public function address(string $name = 'address'): Address
+    {
+        $field = new Address($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
     public function name(string $name = 'name'): Text
     {
         $field = new Name($name);
@@ -141,6 +155,33 @@ class NewProperties
         return $field;
     }
 
+    public function category(string $name = 'category'): Keyword
+    {
+        $field = new Category($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function longText(string $name): Keyword
+    {
+        $field = new LongText($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function caseSensitiveKeyword(string $name): Keyword
+    {
+        $field = new CaseSensitiveKeyword($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
     public function number(string $name): Number
     {
         $field = new Number($name);
@@ -164,6 +205,15 @@ class NewProperties
     public function date(string $name): Date
     {
         $field = new Date($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function id(string $name): Date
+    {
+        $field = new Id($name);
 
         $this->fields->add($field);
 

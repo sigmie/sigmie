@@ -9,7 +9,7 @@ use function Sigmie\Functions\name_configs;
 class WordBoundaries extends Tokenizer
 {
     public function __construct(
-        protected string $name = 'standard',
+        protected readonly string $name = 'standard',
         protected int $maxTokenLength = 255
     ) {
     }

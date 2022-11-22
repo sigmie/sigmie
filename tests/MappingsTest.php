@@ -24,6 +24,30 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
+    public function address_analyze()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->address();
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $res = $this->analyzeAPICall($indexName, 'Hohn Doe 28, 58511', 'address_field_analyzer');
+
+        $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
+
+        $this->assertEquals(['hohn doe 28', '58511'], $tokens);
+    }
+
+    /**
+     * @test
+     */
     public function year()
     {
         $indexName = uniqid();
@@ -39,10 +63,10 @@ class MappingsTest extends TestCase
         $index = $this->sigmie->collect($indexName, refresh: true);
 
         $index->merge([
-            new Document(['year'=> '2027']),
-            new Document(['year'=> '1821']),
-            new Document(['year'=> '1947']),
-            new Document(['year'=> '1821']),
+            new Document(['year' => '2027']),
+            new Document(['year' => '1821']),
+            new Document(['year' => '1947']),
+            new Document(['year' => '1821']),
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
@@ -53,7 +77,7 @@ class MappingsTest extends TestCase
 
         $hits = $search->json('hits.hits');
 
-        $this->assertCount(2,$hits);
+        $this->assertCount(2, $hits);
     }
 
     /**
@@ -74,11 +98,11 @@ class MappingsTest extends TestCase
         $index = $this->sigmie->collect($indexName, refresh: true);
 
         $index->merge([
-            new Document(['category'=> 'horror']),
-            new Document(['category'=> 'sport']),
-            new Document(['category'=> 'action']),
-            new Document(['category'=> 'drama']),
-            new Document(['category'=> 'drama']),
+            new Document(['category' => 'horror']),
+            new Document(['category' => 'sport']),
+            new Document(['category' => 'action']),
+            new Document(['category' => 'drama']),
+            new Document(['category' => 'drama']),
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
@@ -89,7 +113,7 @@ class MappingsTest extends TestCase
 
         $hits = $search->json('hits.hits');
 
-        $this->assertCount(2,$hits);
+        $this->assertCount(2, $hits);
     }
 
     /**
@@ -110,11 +134,11 @@ class MappingsTest extends TestCase
         $index = $this->sigmie->collect($indexName, refresh: true);
 
         $index->merge([
-            new Document(['active'=>true]),
-            new Document(['active'=>true]),
-            new Document(['active'=>false]),
-            new Document(['active'=>true]),
-            new Document(['active'=>true]),
+            new Document(['active' => true]),
+            new Document(['active' => true]),
+            new Document(['active' => false]),
+            new Document(['active' => true]),
+            new Document(['active' => true]),
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
@@ -125,7 +149,7 @@ class MappingsTest extends TestCase
 
         $hits = $search->json('hits.hits');
 
-        $this->assertCount(4,$hits);
+        $this->assertCount(4, $hits);
 
         $search = $this->sigmie->newSearch($indexName)
             ->properties($blueprint())
@@ -135,7 +159,7 @@ class MappingsTest extends TestCase
 
         $hits = $search->json('hits.hits');
 
-        $this->assertCount(1,$hits);
+        $this->assertCount(1, $hits);
     }
 
     /**
@@ -170,7 +194,7 @@ class MappingsTest extends TestCase
         $hits = $search->json('hits.hits');
 
         $this->assertEquals('9999999', $hits[0]['_source']['number']);
-        $this->assertCount(1,$hits);
+        $this->assertCount(1, $hits);
 
         $search = $this->sigmie->newSearch($indexName)
             ->properties($blueprint())
@@ -183,7 +207,7 @@ class MappingsTest extends TestCase
         $hits = $search->json('hits.hits');
 
         $this->assertEquals('2353051500', $hits[0]['_source']['number']);
-        $this->assertCount(1,$hits);
+        $this->assertCount(1, $hits);
     }
 
     /**
@@ -218,7 +242,7 @@ class MappingsTest extends TestCase
         $hits = $search->json('hits.hits');
 
         $this->assertEquals('john.doe@gmail.com', $hits[0]['_source']['email']);
-        $this->assertCount(1,$hits);
+        $this->assertCount(1, $hits);
 
         $search = $this->sigmie->newSearch($indexName)
             ->properties($blueprint())
@@ -228,7 +252,7 @@ class MappingsTest extends TestCase
 
         $hits = $search->json('hits.hits');
 
-        $this->assertCount(3,$hits);
+        $this->assertCount(3, $hits);
 
         $search = $this->sigmie->newSearch($indexName)
             ->properties($blueprint())
@@ -239,7 +263,6 @@ class MappingsTest extends TestCase
         $hits = $search->json('hits.hits');
 
         $this->assertEquals('phill.braun@outlook.com', $hits[0]['_source']['email']);
-
     }
 
     /**
