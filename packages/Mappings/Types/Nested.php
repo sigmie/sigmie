@@ -4,32 +4,28 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use Sigmie\Mappings\Blueprint;
+use Sigmie\Mappings\NewProperties;
+use Sigmie\Shared\Properties;
 
 class Nested extends Type
 {
+    use Properties;
+
     public function __construct(
         string $name,
-        protected Blueprint $blueprint = new Blueprint
+        NewProperties $properties = new NewProperties
     ) {
         parent::__construct($name);
+
+        $this->properties($properties);
     }
 
     public function toRaw(): array
     {
         return [$this->name => [
             'type' => 'nested',
-            'properties' => ($this->blueprint)()->toRaw(),
+            'properties' => $this->properties->toRaw(),
         ]];
-    }
-
-    public function properties(callable $callable): static
-    {
-        $this->blueprint = new Blueprint();
-
-        $callable($this->blueprint);
-
-        return $this;
     }
 
     public function queries(string $queryString): array

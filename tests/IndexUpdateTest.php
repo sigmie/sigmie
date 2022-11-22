@@ -9,7 +9,7 @@ use Sigmie\Base\APIs\Index;
 use Sigmie\Shared\Collection;
 use Sigmie\Document\Document;
 use Sigmie\Index\AliasedIndex;
-use Sigmie\Mappings\Blueprint;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Index\UpdateIndex as Update;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
@@ -342,7 +342,7 @@ class IndexUpdateTest extends TestCase
         $alias = uniqid();
 
         $index= $this->sigmie->newIndex($alias)
-            ->mapping(function (Blueprint $blueprint) {
+            ->mapping(function (NewProperties $blueprint) {
                 $blueprint->text('bar')->searchAsYouType();
                 $blueprint->text('created_at')->unstructuredText();
 
@@ -355,7 +355,7 @@ class IndexUpdateTest extends TestCase
         });
 
         $index->update(function (Update $update) {
-            $update->mapping(function (Blueprint $blueprint) {
+            $update->mapping(function (NewProperties $blueprint) {
                 $blueprint->date('created_at');
                 $blueprint->number('count')->float();
 

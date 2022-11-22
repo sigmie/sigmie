@@ -4,10 +4,16 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Search\Contracts\SearchBuilder;
+use Sigmie\Shared\Properties;
+use Sigmie\Mappings\Properties as MappingsProperties;
+use Sigmie\Query\Queries\Compound\Boolean;
 
 abstract class AbstractSearchBuilder implements SearchBuilder
 {
+    use Properties;
+
     protected string $highlightSuffix;
 
     protected string $highlightPrefix;
@@ -38,8 +44,17 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected array $highlight = [];
 
-    public function __construct()
+    protected Boolean $filters;
+
+    public function __construct(
+        protected ElasticsearchConnection $elasticsearchConnection,
+    )
     {
+        $this->properties = new MappingsProperties();
+
+        $this->filters = new Boolean;
+
+        $this->filters->must()->matchAll();
     }
 
     public function typoTolerance(int $oneTypoChars = 3, int $twoTypoChars = 6): static

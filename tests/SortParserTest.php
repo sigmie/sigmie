@@ -10,7 +10,7 @@ use Sigmie\Base\APIs\Index;
 use Sigmie\Shared\Collection;
 use Sigmie\Document\Document;
 use Sigmie\Index\AliasedIndex;
-use Sigmie\Mappings\Blueprint;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Index\UpdateIndex as Update;
 use Sigmie\Index\Mappings;
 use Sigmie\Mappings\Properties;
@@ -31,7 +31,7 @@ class SortParserTest extends TestCase
     {
         $mappings = new Properties();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
 
         $this->expectException(RuntimeException::class);
 
@@ -49,7 +49,7 @@ class SortParserTest extends TestCase
     {
         $mappings = new Properties();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->bool('active');
         $blueprint->text('name')->keyword();
         $blueprint->text('category');
@@ -61,7 +61,7 @@ class SortParserTest extends TestCase
         $indexName = uniqid();
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, true);
@@ -108,7 +108,7 @@ class SortParserTest extends TestCase
     {
         $mappings = new Properties();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->bool('active');
         $blueprint->text('name')->keyword();
         $blueprint->text('category');
@@ -120,7 +120,7 @@ class SortParserTest extends TestCase
         $indexName = uniqid();
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, true);

@@ -14,7 +14,7 @@ use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\APIs\Index;
 use Sigmie\Index\Mappings;
 use Sigmie\Testing\TestCase;
-use Sigmie\Mappings\Blueprint;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Document\Document;
 
 use function Sigmie\Functions\random_letters;
@@ -28,12 +28,12 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->year();
 
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -63,12 +63,12 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->keyword('category');
 
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -99,12 +99,12 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->active();
 
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -145,12 +145,12 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->searchableNumber('number');
 
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -193,12 +193,12 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->email('email');
 
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -247,7 +247,7 @@ class MappingsTest extends TestCase
      */
     public function analyzers_collection()
     {
-        $blueprint = new Blueprint();
+        $blueprint = new NewProperties();
         $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
         $analyzer = new Analyzer('bar', new WordBoundaries());
 

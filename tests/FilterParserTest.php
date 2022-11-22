@@ -9,7 +9,7 @@ use Sigmie\Base\APIs\Index;
 use Sigmie\Shared\Collection;
 use Sigmie\Document\Document;
 use Sigmie\Index\AliasedIndex;
-use Sigmie\Mappings\Blueprint;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Index\UpdateIndex as Update;
 use Sigmie\Index\Mappings;
 use Sigmie\Mappings\Properties;
@@ -29,7 +29,7 @@ class FilterParserTest extends TestCase
     {
         $mappings = new Properties();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
 
         $props = $blueprint();
 
@@ -47,13 +47,13 @@ class FilterParserTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->keyword('category');
         $blueprint->bool('active');
         $blueprint->number('stock')->integer();
 
         $index = $this->sigmie->newIndex($indexName)
-        ->blueprint($blueprint)
+        ->properties($blueprint)
         ->create();
 
         $index = $this->sigmie->collect($indexName, true);
@@ -124,7 +124,7 @@ class FilterParserTest extends TestCase
     {
         $mappings = new Properties();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->text('name')->unstructuredText()->keyword();
         $blueprint->keyword('category');
 
@@ -135,7 +135,7 @@ class FilterParserTest extends TestCase
         $indexName = uniqid();
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, true);
@@ -174,7 +174,7 @@ class FilterParserTest extends TestCase
     {
         $mappings = new Properties();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->bool('active');
         $blueprint->text('name')->unstructuredText();
         $blueprint->text('category');
@@ -186,7 +186,7 @@ class FilterParserTest extends TestCase
         $indexName = uniqid();
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, true);
@@ -226,7 +226,7 @@ class FilterParserTest extends TestCase
     {
         $mappings = new Properties();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->bool('active');
         $blueprint->text('name')->unstructuredText();
         $blueprint->text('category');
@@ -238,7 +238,7 @@ class FilterParserTest extends TestCase
         $indexName = uniqid();
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, true);

@@ -8,7 +8,7 @@ use Sigmie\Base\APIs\Explain;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Document\Document;
-use Sigmie\Mappings\Blueprint;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Aggs as SearchAggregation;
 use Sigmie\Testing\TestCase;
@@ -26,7 +26,7 @@ class AggregationTest extends TestCase
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->mapping(function (Blueprint $blueprint) {
+        $this->sigmie->newIndex($name)->mapping(function (NewProperties $blueprint) {
             $blueprint->text('title')->unstructuredText();
         })->create();
 
@@ -124,7 +124,7 @@ class AggregationTest extends TestCase
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->mapping(function (Blueprint $blueprint) {
+        $this->sigmie->newIndex($name)->mapping(function (NewProperties $blueprint) {
             $blueprint->keyword('type');
         })->create();
 
@@ -170,7 +170,7 @@ class AggregationTest extends TestCase
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->mapping(function (Blueprint $blueprint) {
+        $this->sigmie->newIndex($name)->mapping(function (NewProperties $blueprint) {
             $blueprint->keyword('type');
         })->create();
 

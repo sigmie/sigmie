@@ -25,11 +25,7 @@ use Exception;
 
 class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInterface
 {
-    protected Boolean $filters;
-
     protected array $sort = ['_score'];
-
-    protected null|Properties $properties = null;
 
     protected string $queryString = '';
 
@@ -42,24 +38,9 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this;
     }
 
-    public function __construct(
-        protected ElasticsearchConnection $elasticsearchConnection,
-    ) {
-        $this->filters = new Boolean;
-
-        $this->filters->must()->matchAll();
-    }
-
     public function index(string $index): static
     {
         $this->index = $index;
-
-        return $this;
-    }
-
-    public function properties(Properties $properties): static
-    {
-        $this->properties = $properties;
 
         return $this;
     }
@@ -121,11 +102,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 }
 
                 $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
-
-                if (is_null($this->properties))
-                {
-                    throw new Exception('Missing search properties');
-                }
 
                 $field = $this->properties[$field];
 

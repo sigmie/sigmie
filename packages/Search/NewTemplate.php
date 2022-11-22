@@ -20,32 +20,13 @@ use Sigmie\Shared\Collection;
 
 class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilderInterface
 {
-    protected Boolean $filters;
-
     protected array $sort = ['_score'];
 
-    protected null|Properties $properties = null;
-
     protected string $id;
-
-    public function __construct(
-        protected ElasticsearchConnection $elasticsearchConnection,
-    ) {
-        $this->filters = new Boolean;
-
-        $this->filters->must()->matchAll();
-    }
 
     public function id(string $id)
     {
         $this->id = $id;
-
-        return $this;
-    }
-
-    public function properties(Properties $properties): static
-    {
-        $this->properties = $properties;
 
         return $this;
     }
@@ -110,45 +91,38 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             $fields->each(function ($field) use ($queryBoolean) {
                 $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
 
-                if (is_null($this->properties)) {
-                    $fuzziness = ! in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                $field = $this->properties[$field];
 
-                    $query = new Match_($field, '{{query_string}}', $fuzziness);
+                if ($field instanceof Text) {
+                    $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+
+                    $query = new Match_($field->name, '{{query_string}}');
+                    $query->fuzziness($fuzziness);
 
                     $queryBoolean->should()->query($query->boost($boost));
-                } else {
-                    $field = $this->properties[$field];
 
-                    if ($field instanceof Text) {
-                        $fuzziness = ! in_array($field, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                    if ($field->isKeyword()) {
+                        $query = new Term(
+                            $field->keywordName(),
+                            '{{query_string}}',
+                        );
 
-                        $query = new Match_($field->name, '{{query_string}}', $fuzziness);
-
-                        $queryBoolean->should()->query($query->boost($boost));
-
-                        if ($field->isKeyword()) {
-                            $query = new Term(
-                                $field->keywordName(),
-                                '{{query_string}}',
-                            );
-
-                            $queryBoolean->should()->query(
-                                $query->boost($boost)
-                            );
-                        }
-
-                        return;
+                        $queryBoolean->should()->query(
+                            $query->boost($boost)
+                        );
                     }
 
-                    $query = new Term(
-                        $field->name,
-                        '{{query_string}}',
-                    );
-
-                    $queryBoolean->should()->query(
-                        $query->boost($boost)
-                    );
+                    return;
                 }
+
+                $query = new Term(
+                    $field->name,
+                    '{{query_string}}',
+                );
+
+                $queryBoolean->should()->query(
+                    $query->boost($boost)
+                );
             });
 
             $query = json_encode($queryBoolean->toRaw()['bool']['should'] ?? (new MatchAll)->toRaw());

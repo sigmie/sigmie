@@ -7,7 +7,7 @@ namespace Sigmie\Tests;
 use RachidLaasri\Travel\Travel;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Document;
-use Sigmie\Mappings\Blueprint;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Index\NewIndex;
 use Sigmie\Testing\TestCase;
 use Exception;
@@ -39,13 +39,13 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->text('name');
         $blueprint->text('description')->searchAsYouType();
 
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -66,7 +66,7 @@ class SearchTest extends TestCase
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
-        ->properties($blueprint())
+            ->properties($blueprint())
             ->queryString('Mickey')
             ->fields(['name', 'description'])
             ->sort('_score')
@@ -78,7 +78,7 @@ class SearchTest extends TestCase
         $this->assertCount(2, $hits);
 
         $search = $this->sigmie->newSearch($indexName)
-        ->properties($blueprint())
+            ->properties($blueprint())
             ->queryString('Mickey')
             ->fields(['name', 'description'])
             ->sort('_score')
@@ -101,11 +101,11 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->text('name');
 
         $index = $this->sigmie->newIndex($indexName)
-        ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -117,7 +117,7 @@ class SearchTest extends TestCase
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
-        ->properties($blueprint())
+            ->properties($blueprint())
             ->queryString('Mockey')
             ->fields(['name'])
             ->typoTolerance()
@@ -138,11 +138,11 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->text('name');
 
         $index = $this->sigmie->newIndex($indexName)
-        ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -154,7 +154,7 @@ class SearchTest extends TestCase
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
-        ->properties($blueprint())
+            ->properties($blueprint())
             ->queryString('Mockey')
             ->fields(['name'])
             ->get();
@@ -171,13 +171,13 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->text('name');
         $blueprint->text('category')->keyword();
 
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -189,7 +189,7 @@ class SearchTest extends TestCase
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
-        ->properties($blueprint())
+            ->properties($blueprint())
             ->queryString('a')
             ->retrieve(['name'])
             ->fields(['category'])
@@ -201,7 +201,7 @@ class SearchTest extends TestCase
         $this->assertArrayNotHasKey('category', $hits[0]['_source'],);
 
         $search = $this->sigmie->newSearch($indexName)
-        ->properties($blueprint())
+            ->properties($blueprint())
             ->queryString('a')
             ->fields(['category'])
             ->get();
@@ -219,12 +219,12 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->text('category')->keyword();
 
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -236,7 +236,7 @@ class SearchTest extends TestCase
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
-        ->properties($blueprint())
+            ->properties($blueprint())
             ->queryString('a')
             ->highlighting(['category',], '<span class="font-bold">', '</span>')
             ->fields(['category'])
@@ -254,12 +254,12 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->text('category')->keyword();
 
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -271,7 +271,8 @@ class SearchTest extends TestCase
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
-            ->sort('category.keyword:desc')
+            ->properties($blueprint)
+            ->sort('category:desc')
             ->fields(['name', 'description'])
             ->get();
 
@@ -289,12 +290,12 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
         $blueprint->bool('active');
 
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -306,7 +307,7 @@ class SearchTest extends TestCase
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
-        ->properties($blueprint())
+            ->properties($blueprint())
             ->filter('is:active')
             ->fields(['name', 'description'])
             ->get();
@@ -323,12 +324,12 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
-                $blueprint->bool('active');
+        $blueprint = new NewProperties;
+        $blueprint->bool('active');
 
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -340,7 +341,7 @@ class SearchTest extends TestCase
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
-        ->properties($blueprint())
+            ->properties($blueprint())
             ->size(2)
             ->fields(['name', 'description'])
             ->get();
@@ -357,13 +358,13 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
-                $blueprint->text('name');
-                $blueprint->text('description');
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+        $blueprint->text('description');
 
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -384,7 +385,7 @@ class SearchTest extends TestCase
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
-        ->properties($blueprint())
+            ->properties($blueprint())
             ->queryString('Good')
             ->fields(['name', 'description'])
             ->get();
@@ -401,13 +402,13 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new Blueprint;
-                $blueprint->text('name');
-                $blueprint->text('description');
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+        $blueprint->text('description');
 
         $index = $this->sigmie
             ->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -428,7 +429,7 @@ class SearchTest extends TestCase
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
-        ->properties($blueprint())
+            ->properties($blueprint())
             ->fields(['name', 'description'])
             ->get();
 
@@ -443,14 +444,14 @@ class SearchTest extends TestCase
     public function search_test()
     {
         $indexName = uniqid();
-        $blueprint = new Blueprint;
-                $blueprint->text('name');
-                $blueprint->text('description');
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+        $blueprint->text('description');
 
         $props = ($blueprint)();
 
         $index = $this->sigmie->newIndex($indexName)
-            ->blueprint($blueprint)
+            ->properties($blueprint)
             ->lowercase()
             ->create();
 
@@ -471,15 +472,14 @@ class SearchTest extends TestCase
             ]),
         ]);
 
-$hits = $this->sigmie->newSearch($indexName)
-    ->properties($props)
-    ->queryString('mickey')
-    ->fields(['name'])
-    ->retrieve(['name','description'])
-    ->get()
-    ->json('hits');
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->queryString('mickey')
+            ->fields(['name'])
+            ->retrieve(['name', 'description'])
+            ->get()
+            ->json('hits');
 
-    $this->assertNotEmpty($hits);
-
+        $this->assertNotEmpty($hits);
     }
 }

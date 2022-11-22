@@ -23,7 +23,7 @@ use Sigmie\Mappings\Types\Type;
 use Sigmie\Mappings\Types\Year;
 use Sigmie\Shared\Collection;
 
-class Blueprint
+class NewProperties
 {
     protected Collection $fields;
 
@@ -33,6 +33,11 @@ class Blueprint
     }
 
     public function __invoke(string $name = 'mappings'): Properties
+    {
+        return $this->get($name);
+    }
+
+    public function get(string $name = 'mappings'): Properties
     {
         $fields = $this->fields->mapToDictionary(function (Type $type) {
 
@@ -48,6 +53,7 @@ class Blueprint
             }
 
             return [$type->name() => $type];
+
         })->toArray();
 
         return new Properties($name, $fields);
@@ -146,7 +152,7 @@ class Blueprint
 
     public function properties(string $name, callable $callable)
     {
-        $blueprint = new Blueprint;
+        $blueprint = new NewProperties;
 
         $callable($blueprint);
 

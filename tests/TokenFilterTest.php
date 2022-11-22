@@ -14,7 +14,7 @@ use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\APIs\Index;
 use Sigmie\Index\Mappings;
-use Sigmie\Mappings\Blueprint;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\DynamicMappings;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Boolean;

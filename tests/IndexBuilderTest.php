@@ -7,7 +7,7 @@ namespace Sigmie\Tests;
 use RachidLaasri\Travel\Travel;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Document;
-use Sigmie\Mappings\Blueprint;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Index\NewIndex;
 use Sigmie\Testing\TestCase;
 use Exception;
@@ -37,7 +37,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->mapping(function (Blueprint $blueprint) {
+            ->mapping(function (NewProperties $blueprint) {
                 $blueprint->bool('active');
 
                 return $blueprint;
@@ -766,7 +766,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->mapping(function (Blueprint $blueprint) {
+            ->mapping(function (NewProperties $blueprint) {
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText();
                 $blueprint->number('adults')->integer();

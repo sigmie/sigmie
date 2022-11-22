@@ -14,7 +14,7 @@ use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\APIs\Index;
 use Sigmie\Index\Mappings;
-use Sigmie\Mappings\Blueprint;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\DynamicMappings;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Boolean;
@@ -112,7 +112,7 @@ class FromRawTest extends TestCase
         $customFieldAnalyzer = new Analyzer('custom', new Whitespace());
 
         $this->sigmie->newIndex($alias)
-            ->mapping(function (Blueprint $blueprint) use ($customFieldAnalyzer) {
+            ->mapping(function (NewProperties $blueprint) use ($customFieldAnalyzer) {
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText($customFieldAnalyzer);
 
@@ -143,7 +143,7 @@ class FromRawTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->mapping(function (Blueprint $blueprint) {
+            ->mapping(function (NewProperties $blueprint) {
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText();
                 $blueprint->number('adults')->integer();
@@ -151,7 +151,7 @@ class FromRawTest extends TestCase
                 $blueprint->date('created_at');
                 $blueprint->bool('is_valid');
 
-                $blueprint->properties('user', function (Blueprint $blueprint) {
+                $blueprint->properties('user', function (NewProperties $blueprint) {
                     $blueprint->text('name')->searchAsYouType();
                 });
 
@@ -201,7 +201,7 @@ class FromRawTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->mapping(function (Blueprint $blueprint) {
+            ->mapping(function (NewProperties $blueprint) {
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText();
                 $blueprint->number('adults')->integer();

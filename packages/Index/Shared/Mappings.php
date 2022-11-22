@@ -8,38 +8,32 @@ use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Mappings as IndexMappings;
-use Sigmie\Mappings\Blueprint;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
+use Sigmie\Shared\Properties as SharedProperties;
 
 trait Mappings
 {
-    protected Blueprint $blueprint;
-
-    public function blueprint(Blueprint $blueprint)
-    {
-        $this->blueprint = $blueprint;
-
-        return $this;
-    }
+    use SharedProperties;
 
     abstract public function analysis(): Analysis;
 
     public function mapping(callable $callable): static
     {
-        $this->blueprint = new Blueprint($this->analysis());
+        $newProperties = new NewProperties($this->analysis());
 
-        $callable($this->blueprint);
+        $callable($newProperties);
+
+        $this->properties($newProperties);
 
         return $this;
     }
 
     protected function createMappings(DefaultAnalyzer $defaultAnalyzer): MappingsInterface
     {
-        $properties = ($this->blueprint ?? false) ? ($this->blueprint)() : new Properties;
-
         return new IndexMappings(
             defaultAnalyzer: $defaultAnalyzer,
-            properties: $properties
+            properties: $this->properties
         );
     }
 }
