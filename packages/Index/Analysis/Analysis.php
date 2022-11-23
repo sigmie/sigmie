@@ -10,6 +10,7 @@ use Sigmie\Index\Analysis\Tokenizers\Tokenizer;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Analyzer as AnalyzerInterface;
 use Sigmie\Index\Contracts\CharFilter as CharFIlterInterface;
+use Sigmie\Index\Contracts\Normalizer as NormalizerInterface;
 use Sigmie\Index\Contracts\CustomAnalyzer as CustomAnalyzerInterface;
 use Sigmie\Index\Contracts\TokenFilter as TokenFilterInterface;
 use Sigmie\Index\Contracts\Tokenizer as TokenizerInterface;

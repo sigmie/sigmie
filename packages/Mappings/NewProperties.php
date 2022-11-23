@@ -164,7 +164,7 @@ class NewProperties
         return $field;
     }
 
-    public function longText(string $name): Keyword
+    public function longText(string $name): LongText
     {
         $field = new LongText($name);
 
@@ -173,7 +173,7 @@ class NewProperties
         return $field;
     }
 
-    public function caseSensitiveKeyword(string $name): Keyword
+    public function caseSensitiveKeyword(string $name): CaseSensitiveKeyword
     {
         $field = new CaseSensitiveKeyword($name);
 
@@ -211,7 +211,7 @@ class NewProperties
         return $field;
     }
 
-    public function id(string $name): Date
+    public function id(string $name): Id
     {
         $field = new Id($name);
 
