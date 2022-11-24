@@ -40,9 +40,9 @@ class IndexBuilderTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->mapping(function (NewProperties $blueprint) {
                 $blueprint->bool('active');
-                $blueprint->text('description')
-                    ->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
-                        $newAnalyzer->tokenizer()
+                $blueprint->text('description')->withNewAnalyzer(function(NewAnalyzer $newAnalyzer){
+
+
                 });
 
                 return $blueprint;
@@ -372,7 +372,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->tokenizeOnWhiteSpaces()
+            ->tokenizeOnWhiteSpaces('whitespace')
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -419,7 +419,7 @@ class IndexBuilderTest extends TestCase
 
         $builder = $this->sigmie->newIndex($alias);
 
-        $builder->tokenizeOnWhiteSpaces();
+        $builder->tokenizeOnWhiteSpaces('whitespace');
 
         $builder->create();
 
