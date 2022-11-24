@@ -8,6 +8,11 @@ use Sigmie\Index\Contracts\Tokenizer;
 
 class Whitespace implements Tokenizer
 {
+    public function __construct(
+        protected readonly string $name = 'whitespace',
+    ) {
+
+    }
     public static function fromRaw(array $raw): static
     {
         return new static();
@@ -17,7 +22,7 @@ class Whitespace implements Tokenizer
     {
         $res = [
             $this->name() => [
-                'type' => $this->name(),
+                'type' => 'whitespace',
             ],
         ];
 
@@ -26,6 +31,6 @@ class Whitespace implements Tokenizer
 
     public function name(): string
     {
-        return 'whitespace';
+        return $this->name;
     }
 }

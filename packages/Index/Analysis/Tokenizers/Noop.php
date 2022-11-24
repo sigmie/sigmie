@@ -8,6 +8,11 @@ use Sigmie\Index\Contracts\Tokenizer;
 
 class Noop implements Tokenizer
 {
+    public function __construct(
+        protected readonly string $name = 'keyword',
+    ) {
+    }
+
     public static function fromRaw(array $raw): static
     {
         return new static();
@@ -15,14 +20,14 @@ class Noop implements Tokenizer
 
     public function name(): string
     {
-        return 'keyword';
+        return $this->name;
     }
 
     public function toRaw(): array
     {
         $res = [
-            $this->name() => [
-                'type' => $this->name(),
+            $this->name => [
+                'type' => 'keyword',
             ],
         ];
 

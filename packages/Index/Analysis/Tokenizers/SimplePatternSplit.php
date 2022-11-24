@@ -7,14 +7,13 @@ namespace Sigmie\Index\Analysis\Tokenizers;
 use function Sigmie\Functions\name_configs;
 use Sigmie\Shared\Name;
 
-class SimplePattern extends Tokenizer
+class SimplePatternSplit extends Tokenizer
 {
     use Name;
 
     public function __construct(
         public readonly string $name,
-        protected string $pattern,
-        protected null|string $flags = null
+        protected string $pattern
     ) {
     }
 
@@ -22,25 +21,17 @@ class SimplePattern extends Tokenizer
     {
         [$name, $config] = name_configs($raw);
 
-        $flags = $config['flags'] ?? null;
-
-        return new static($name, $config['pattern'], $flags);
+        return new static($name, $config['pattern']);
     }
 
     public function toRaw(): array
     {
         $res = [
             $this->name => [
-                'type' => 'simple_pattern',
+                'type' => 'simple_pattern_split',
                 'pattern' => $this->pattern,
             ],
         ];
-
-        if (is_null($this->flags)) {
-            return $res;
-        }
-
-        $res[$this->name]['flags'] = $this->flags;
 
         return $res;
     }

@@ -7,7 +7,7 @@ namespace Sigmie\Mappings\Types;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Term\Prefix;
 
-class Id extends Keyword
+class Id extends CaseSensitiveKeyword
 {
     public function queries(string $queryString): array
     {

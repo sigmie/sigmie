@@ -24,6 +24,37 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
+    public function noop_tokenizer()
+    {
+        $indexName = uniqid();
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            // ->patternReplace(":D|:\)", 'happy')
+            // ->mapChars([':)'=> 'happy'])
+            ->stripHTML()
+            // ->dontTokenize()
+            ->tokenizeOnWordBoundaries()
+            // ->tokenizeOnPattern(',')
+            // ->tokenizeOnPatternMatch("'.*'")
+            // ->dontTokenize()
+            // ->tokenizeOnWhiteSpaces()
+            // ->dontTokenize()
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $res = $this->analyzeAPICall($indexName, "<span>Some people are worth melting for.</span>", 'default');
+
+        $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
+
+        dd($tokens);
+        $props = new NewProperties();
+    }
+
+    /**
+     * @test
+     */
     public function address_analyze()
     {
         $indexName = uniqid();

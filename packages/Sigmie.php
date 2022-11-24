@@ -48,11 +48,7 @@ class Sigmie
 
     public function collect(string $name, bool $refresh = false): AliveCollection
     {
-        $aliveIndex = new AliveCollection($name, $this->elasticsearchConnection);
-
-        if ($refresh) {
-            return $aliveIndex->refresh();
-        }
+        $aliveIndex = new AliveCollection($name, $this->elasticsearchConnection, $refresh ? 'true' : 'false');
 
         return $aliveIndex;
     }
@@ -107,7 +103,7 @@ class Sigmie
 
             $res = ($this->elasticsearchConnection)($request);
 
-            return ! $res->failed();
+            return !$res->failed();
         } catch (ConnectException) {
             return false;
         }

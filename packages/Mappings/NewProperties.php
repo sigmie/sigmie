@@ -20,10 +20,13 @@ use Sigmie\Mappings\Types\LongText;
 use Sigmie\Mappings\Types\Name;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
+use Sigmie\Mappings\Types\Price;
 use Sigmie\Mappings\Types\SearchableBoolean;
 use Sigmie\Mappings\Types\SearchableBooleanNumber;
 use Sigmie\Mappings\Types\SearchableNumber;
+use Sigmie\Mappings\Types\Tags;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\Mappings\Types\Title;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Mappings\Types\Year;
 use Sigmie\Shared\Collection;
@@ -101,6 +104,15 @@ class NewProperties
         return $field;
     }
 
+    public function title(string $name = 'title'): Text
+    {
+        $field = new Title($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
     public function name(string $name = 'name'): Text
     {
         $field = new Name($name);
@@ -137,14 +149,6 @@ class NewProperties
         return $field;
     }
 
-    public function year(string $name = 'year'): Year
-    {
-        $field = new Year($name);
-
-        $this->fields->add($field);
-
-        return $field;
-    }
 
     public function keyword(string $name): Keyword
     {
@@ -220,10 +224,35 @@ class NewProperties
         return $field;
     }
 
+    public function tags(string $name = 'tags'): Tags
+    {
+        $field = new Tags($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function price(string $name = 'price'): Price
+    {
+        $field = new Price($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
     public function bool(string $name): Boolean
     {
         $field = new Boolean($name);
 
+        $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function type(Type $field): Boolean
+    {
         $this->fields->add($field);
 
         return $field;

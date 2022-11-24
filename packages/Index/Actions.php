@@ -58,8 +58,7 @@ trait Actions
     protected function getIndex(string $alias): BaseIndex|AliasedIndex|null
     {
         try {
-            $res = $this->indexAPICall("{$alias}", 'GET');
-        } catch (ElasticsearchException $e) {
+            $res = $this->indexAPICall("{$alias}", 'GET'); } catch (ElasticsearchException $e) {
             $type = $e->json('type');
 
             if ($type === 'index_not_found_exception') {
@@ -108,5 +107,11 @@ trait Actions
         $response = $this->indexAPICall("{$name}", 'DELETE');
 
         return $response->json('acknowledged');
+    }
+
+    protected function refreshIndex(string $name): void
+    {
+        // {"_shards":{"total":3,"successful":1,"failed":0}}
+        $this->indexAPICall("{$name}/_refresh", 'POST');
     }
 }

@@ -25,6 +25,7 @@ use Sigmie\German\Builder as GermanBuilder;
 use Sigmie\German\German;
 use Sigmie\Greek\Builder as GreekBuilder;
 use Sigmie\Greek\Greek;
+use Sigmie\Index\NewAnalyzer;
 use Sigmie\Testing\Assert;
 
 class IndexBuilderTest extends TestCase
@@ -39,6 +40,10 @@ class IndexBuilderTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->mapping(function (NewProperties $blueprint) {
                 $blueprint->bool('active');
+                $blueprint->text('description')
+                    ->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
+                        $newAnalyzer->tokenizer()
+                });
 
                 return $blueprint;
             })

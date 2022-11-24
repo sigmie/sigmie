@@ -10,6 +10,7 @@ use Sigmie\Index\Analysis\Tokenizers\Noop;
 use Sigmie\Index\Analysis\Tokenizers\PathHierarchy;
 use Sigmie\Index\Analysis\Tokenizers\Pattern;
 use Sigmie\Index\Analysis\Tokenizers\SimplePattern;
+use Sigmie\Index\Analysis\Tokenizers\SimplePatternSplit;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\Analysis;
@@ -28,9 +29,11 @@ trait Tokenizer
         return $this;
     }
 
-    public function dontTokenize(): static
+    public function dontTokenize(string|null $name = null): static
     {
-        $this->tokenizer = new Noop();
+        $name = $name ?? $this->createTokenizerName('whitespace');
+
+        $this->tokenizer = new Noop($name);
 
         return $this;
     }
@@ -44,9 +47,11 @@ trait Tokenizer
         return $this;
     }
 
-    public function tokenizeOnWhiteSpaces(): static
+    public function tokenizeOnWhiteSpaces(string|null $name = null): static
     {
-        $this->tokenizer = new Whitespace();
+        $name = $name ?? $this->createTokenizerName('whitespace');
+
+        $this->tokenizer = new Whitespace($name);
 
         return $this;
     }
@@ -70,6 +75,17 @@ trait Tokenizer
         $name = $name ?? $this->createTokenizerName('pattern_tokenizer');
 
         $this->tokenizer(new Pattern($name, $pattern, $flags));
+
+        return $this;
+    }
+
+    public function tokenizeOnSimplePattern(
+        string $pattern,
+        string|null $name = null
+    ): static {
+        $name = $name ?? $this->createTokenizerName('simple_pattern_split_tokenizer');
+
+        $this->tokenizer(new SimplePatternSplit($name, $pattern));
 
         return $this;
     }
