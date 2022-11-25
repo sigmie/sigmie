@@ -4,24 +4,16 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Sigmie\Base\Contracts\ElasticsearchConnection;
 use function Sigmie\Functions\auto_fuzziness;
-use Sigmie\Mappings\Properties;
-use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
 use Sigmie\Query\Contracts\FuzzyQuery;
-use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Query;
-use Sigmie\Query\Queries\Term\Prefix;
-use Sigmie\Query\Queries\Term\Term;
-use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Search;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
 use Sigmie\Shared\Collection;
-use Exception;
 
 class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInterface
 {
@@ -105,18 +97,17 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $field = $this->properties[$field];
 
-                $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                $fuzziness = ! in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
                 $queries = new Collection($field->queries($this->queryString));
 
                 $queries->map(function (Query $queryClause) use ($boost, $fuzziness) {
+                    if ($queryClause instanceof FuzzyQuery) {
+                        $queryClause->fuzziness($fuzziness);
+                    }
 
-                        if ($queryClause instanceof FuzzyQuery) {
-                            $queryClause->fuzziness($fuzziness);
-                        }
-
-                        return $queryClause->boost($boost);
-                    })
+                    return $queryClause->boost($boost);
+                })
                     ->each(fn (Query $queryClase) => $queryBoolean->should()->query($queryClase));
             });
 

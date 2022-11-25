@@ -20,7 +20,6 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     use LazyEach;
     use Search;
 
-
     public function __construct(
         protected string $name,
         ElasticsearchConnection $connection,
@@ -86,7 +85,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function isNotEmpty(): bool
     {
-        return !$this->isEmpty();
+        return ! $this->isEmpty();
     }
 
     public function remove(array|string $_id): bool

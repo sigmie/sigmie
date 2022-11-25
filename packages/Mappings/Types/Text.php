@@ -17,7 +17,7 @@ class Text extends Type implements FromRaw
 
     protected null|array $indexPrefixes = null;
 
-    public readonly Closure $newAnalyzer; // @phpstan-ignore-line
+    public readonly Closure $newAnalyzerClosure; // @phpstan-ignore-line
 
     public function __construct(
         string $name,
@@ -44,7 +44,7 @@ class Text extends Type implements FromRaw
             'text' => $instance->unstructuredText(),
             'search_as_you_type' => $instance->searchAsYouType(),
             'completion' => $instance->completion(),
-            default => throw new Exception('Field ' . $configs['type'] . ' couldn\'t be mapped')
+            default => throw new Exception('Field '.$configs['type'].' couldn\'t be mapped')
         };
 
         return $instance;
@@ -60,17 +60,17 @@ class Text extends Type implements FromRaw
 
     public function isKeyword(): bool
     {
-        return !is_null($this->raw);
+        return ! is_null($this->raw);
     }
 
     public function isSortable(): bool
     {
-        return !is_null($this->raw);
+        return ! is_null($this->raw);
     }
 
     public function isFilterable(): bool
     {
-        return !is_null($this->raw);
+        return ! is_null($this->raw);
     }
 
     public function keywordName(): null|string
@@ -125,7 +125,7 @@ class Text extends Type implements FromRaw
 
     public function withNewAnalyzer(Closure $callable)
     {
-        $this->newAnalyzer = $callable; // @phpstan-ignore-line
+        $this->newAnalyzerClosure = $callable; // @phpstan-ignore-line
     }
 
     public function withAnalyzer(Analyzer $analyzer): void
@@ -146,15 +146,15 @@ class Text extends Type implements FromRaw
             ],
         ];
 
-        if (!is_null($this->indexPrefixes)) {
+        if (! is_null($this->indexPrefixes)) {
             $raw[$this->name]['index_prefixes'] = $this->indexPrefixes;
         }
 
-        if (!is_null($this->raw)) {
+        if (! is_null($this->raw)) {
             $raw[$this->name]['fields'] = [$this->raw => ['type' => 'keyword']];
         }
 
-        if (!is_null($this->analyzer)) {
+        if (! is_null($this->analyzer)) {
             $raw[$this->name]['analyzer'] = $this->analyzer->name();
         }
 

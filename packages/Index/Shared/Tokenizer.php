@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Index\Shared;
 
 use function Sigmie\Functions\random_letters;
-
 use Sigmie\Index\Analysis\Tokenizers\Noop;
 use Sigmie\Index\Analysis\Tokenizers\PathHierarchy;
 use Sigmie\Index\Analysis\Tokenizers\Pattern;
@@ -58,10 +57,10 @@ trait Tokenizer
 
     private function createTokenizerName(string $name): string
     {
-        $suffixed = $name . '_' . random_letters();
+        $suffixed = $name.'_'.random_letters();
 
         while ($this->analysis()->hasTokenizer($suffixed)) {
-            $suffixed = $name . '_' . random_letters();
+            $suffixed = $name.'_'.random_letters();
         }
 
         return $suffixed;

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use Sigmie\Base\Contracts\ElasticsearchConnection;
-use Sigmie\Search\Contracts\SearchBuilder;
-use Sigmie\Shared\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
 use Sigmie\Query\Queries\Compound\Boolean;
+use Sigmie\Search\Contracts\SearchBuilder;
+use Sigmie\Shared\Properties;
 
 abstract class AbstractSearchBuilder implements SearchBuilder
 {
@@ -48,8 +48,7 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     public function __construct(
         protected ElasticsearchConnection $elasticsearchConnection,
-    )
-    {
+    ) {
         $this->properties = new MappingsProperties();
 
         $this->filters = new Boolean;

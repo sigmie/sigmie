@@ -8,7 +8,6 @@ use Sigmie\Query\Queries\Term\Term;
 
 class Boolean extends Type
 {
-
     public function queries(string $queryString): array
     {
         $queries = [];

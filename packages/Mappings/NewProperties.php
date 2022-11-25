@@ -14,8 +14,8 @@ use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\Email;
-use Sigmie\Mappings\Types\Id;
 use Sigmie\Mappings\Types\HTML;
+use Sigmie\Mappings\Types\Id;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\LongText;
 use Sigmie\Mappings\Types\Name;
@@ -29,7 +29,6 @@ use Sigmie\Mappings\Types\Tags;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Title;
 use Sigmie\Mappings\Types\Type;
-use Sigmie\Mappings\Types\Year;
 use Sigmie\Shared\Collection;
 
 class NewProperties
@@ -49,15 +48,12 @@ class NewProperties
     public function get(
         AnalysisInterface $analysis = new Analysis(),
         string $name = 'mappings'
-    ): Properties
-    {
+    ): Properties {
         $fields = $this->fields->mapToDictionary(function (Type $type) use ($analysis) {
-
-            if ($type instanceof Text && ($type->newAnalyzer ?? false)) {
-
+            if ($type instanceof Text && ($type->newAnalyzerClosure ?? false)) {
                 $newAnalyzer = new NewAnalyzer($analysis, "{$type->name}_field_analyzer");
 
-                ($type->newAnalyzer)($newAnalyzer);
+                ($type->newAnalyzerClosure)($newAnalyzer);
 
                 $analyzer = $newAnalyzer->create();
 
@@ -65,7 +61,6 @@ class NewProperties
             }
 
             return [$type->name() => $type];
-
         })->toArray();
 
         return new Properties($name, $fields);
@@ -88,7 +83,6 @@ class NewProperties
 
         return $field;
     }
-
 
     public function email(string $name = 'email'): Email
     {
@@ -152,7 +146,6 @@ class NewProperties
 
         return $field;
     }
-
 
     public function keyword(string $name): Keyword
     {

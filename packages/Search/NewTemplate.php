@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Sigmie\Base\Contracts\ElasticsearchConnection;
 use function Sigmie\Functions\auto_fuzziness;
-use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
@@ -94,7 +92,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
                 $field = $this->properties[$field];
 
                 if ($field instanceof Text) {
-                    $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                    $fuzziness = ! in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
                     $query = new Match_($field->name, '{{query_string}}');
                     $query->fuzziness($fuzziness);

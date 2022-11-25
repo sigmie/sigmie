@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Index\Analysis\Normalizer;
 
 use Exception;
-use Sigmie\Index\Contracts\Normalizer as NormalizerInterface;
-
 use function Sigmie\Functions\name_configs;
-use Sigmie\Index\Contracts\Tokenizer as TokenizerInterface;
+use Sigmie\Index\Contracts\Normalizer as NormalizerInterface;
 
 abstract class Normalizer implements NormalizerInterface
 {

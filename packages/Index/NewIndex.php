@@ -12,7 +12,6 @@ use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Language;
-use Sigmie\Mappings\Properties as MappingsProperties;
 use Sigmie\Index\Shared\CharFilters;
 use Sigmie\Index\Shared\Filters;
 use Sigmie\Index\Shared\Mappings;
@@ -20,6 +19,7 @@ use Sigmie\Index\Shared\Replicas;
 use Sigmie\Index\Shared\Shards;
 use Sigmie\Index\Shared\Tokenizer;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Properties as MappingsProperties;
 
 class NewIndex
 {
@@ -52,12 +52,10 @@ class NewIndex
         $this->properties = new MappingsProperties;
     }
 
-    public function getAlias():string
+    public function getAlias(): string
     {
         return $this->alias;
     }
-
-
 
     public function analysis(): AnalysisInterface
     {

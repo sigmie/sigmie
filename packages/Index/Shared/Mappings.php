@@ -9,7 +9,6 @@ use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Mappings as IndexMappings;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Mappings\Properties;
 
 trait Mappings
 {
@@ -28,7 +27,7 @@ trait Mappings
 
     public function properties(NewProperties $props): static
     {
-        $this->properties =  $props->get(analysis: $this->analysis());
+        $this->properties = $props->get(analysis: $this->analysis());
 
         return $this;
     }

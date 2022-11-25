@@ -4,15 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Parse;
 
-use Sigmie\Query\Contracts\QueryClause;
-use Sigmie\Query\Queries\Compound\Boolean;
-use Sigmie\Query\Queries\MatchAll;
-use Sigmie\Query\Queries\MatchNone;
-use Sigmie\Query\Queries\Term\IDs;
-use Sigmie\Query\Queries\Term\Range;
-use Sigmie\Query\Queries\Term\Term;
-use Sigmie\Query\Queries\Term\Terms;
-
 class InputParser extends Parser
 {
     public function parse(string $string): array
@@ -37,7 +28,7 @@ class InputParser extends Parser
         $res = [
             'query_string' => $string,
             'filter_string' => $filterString,
-            'sort_string' => $sortString
+            'sort_string' => $sortString,
         ];
 
         return $res;

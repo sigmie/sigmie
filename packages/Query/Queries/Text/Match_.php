@@ -23,7 +23,6 @@ class Match_ extends Query implements FuzzyQuery
         return $this;
     }
 
-
     public function toRaw(): array
     {
         $raw = [

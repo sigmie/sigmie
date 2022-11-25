@@ -21,7 +21,6 @@ abstract class Parser implements ParserInterface
         Properties|NewProperties $properties = new Properties(),
         protected bool $throwOnError = true
     ) {
-
         $this->properties($properties);
     }
 
@@ -41,7 +40,7 @@ abstract class Parser implements ParserInterface
 
     protected function handleFieldName(string $field): null|string
     {
-        if (!$this->fieldExists($field)) {
+        if (! $this->fieldExists($field)) {
             $this->handleError("Field {$field} is does not exist.", [
                 'field' => $field,
             ]);
@@ -49,7 +48,7 @@ abstract class Parser implements ParserInterface
             return null;
         }
 
-        if (!$this->isTextOrKeywordField($field)) {
+        if (! $this->isTextOrKeywordField($field)) {
             return $field;
         }
 
@@ -59,7 +58,7 @@ abstract class Parser implements ParserInterface
             return $field->name;
         }
 
-        if (!$field->isFilterable()) {
+        if (! $field->isFilterable()) {
             $this->handleError("Field {$field->name} is not filterable.", [
                 'field' => $field,
             ]);

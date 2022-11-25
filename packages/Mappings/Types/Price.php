@@ -4,20 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use Exception;
-use function Sigmie\Functions\name_configs;
-use Sigmie\Index\Contracts\Analyzer;
-use Sigmie\Query\Queries\Term\Prefix;
-use Sigmie\Query\Queries\Text\Match_;
-use Sigmie\Shared\Contracts\FromRaw;
-
 class Price extends Type
 {
     public function toRaw(): array
     {
         return [$this->name => [
             'type' => 'scaled_float',
-            'scaling_factor' => 100
+            'scaling_factor' => 100,
         ]];
     }
 

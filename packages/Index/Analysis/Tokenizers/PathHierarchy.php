@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\Tokenizers;
 
-use Sigmie\Index\Contracts\Tokenizer;
-
 use function Sigmie\Functions\name_configs;
+use Sigmie\Index\Contracts\Tokenizer;
 
 class PathHierarchy implements Tokenizer
 {
@@ -15,6 +14,7 @@ class PathHierarchy implements Tokenizer
         protected string $delimiter = '/'
     ) {
     }
+
     public static function fromRaw(array $raw): static
     {
         [$name, $config] = name_configs($raw);
@@ -32,7 +32,7 @@ class PathHierarchy implements Tokenizer
         $res = [
             $this->name() => [
                 'type' => 'path_hierarchy',
-                'delimiter' => $this->delimiter
+                'delimiter' => $this->delimiter,
             ],
         ];
 

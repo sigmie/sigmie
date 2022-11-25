@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Term\Prefix;
+use Sigmie\Query\Queries\Term\Term;
 
 class Keyword extends Type
 {
@@ -13,7 +13,7 @@ class Keyword extends Type
     {
         return [$this->name => [
             'type' => 'keyword',
-            'normalizer' => 'lowercase'
+            'normalizer' => 'lowercase',
         ]];
     }
 
