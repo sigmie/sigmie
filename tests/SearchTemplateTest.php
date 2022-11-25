@@ -505,7 +505,7 @@ class SearchTemplateTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->active();
+        $blueprint->bool('active');
 
         $index = $this->sigmie->newIndex($indexName)
             ->properties($blueprint)

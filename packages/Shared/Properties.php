@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Shared;
 
+use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties as MappingsProperties;
 

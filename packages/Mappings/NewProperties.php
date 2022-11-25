@@ -36,23 +36,26 @@ class NewProperties
 {
     protected Collection $fields;
 
-    public function __construct(protected AnalysisInterface $analysis = new Analysis())
+    public function __construct()
     {
         $this->fields = new Collection();
     }
 
     public function __invoke(string $name = 'mappings'): Properties
     {
-        return $this->get($name);
+        return $this->get(name:$name);
     }
 
-    public function get(string $name = 'mappings'): Properties
+    public function get(
+        AnalysisInterface $analysis = new Analysis(),
+        string $name = 'mappings'
+    ): Properties
     {
-        $fields = $this->fields->mapToDictionary(function (Type $type) {
+        $fields = $this->fields->mapToDictionary(function (Type $type) use ($analysis) {
 
             if ($type instanceof Text && ($type->newAnalyzer ?? false)) {
 
-                $newAnalyzer = new NewAnalyzer($this->analysis, "{$type->name}_field_analyzer");
+                $newAnalyzer = new NewAnalyzer($analysis, "{$type->name}_field_analyzer");
 
                 ($type->newAnalyzer)($newAnalyzer);
 
@@ -243,7 +246,7 @@ class NewProperties
         return $field;
     }
 
-    public function price(string $name): HTML
+    public function html(string $name): HTML
     {
         $field = new HTML($name);
 

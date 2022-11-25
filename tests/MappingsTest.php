@@ -73,7 +73,7 @@ class MappingsTest extends TestCase
 
         $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
 
-        $this->assertEquals(['hohn doe 28', '58511'], $tokens);
+        $this->assertEquals(['hohn', 'doe', '28', '58511'], $tokens);
     }
 
     /**
@@ -145,52 +145,6 @@ class MappingsTest extends TestCase
         $hits = $search->json('hits.hits');
 
         $this->assertCount(2, $hits);
-    }
-
-    /**
-     * @test
-     */
-    public function active()
-    {
-        $indexName = uniqid();
-
-        $blueprint = new NewProperties;
-        $blueprint->active();
-
-        $index = $this->sigmie
-            ->newIndex($indexName)
-            ->properties($blueprint)
-            ->create();
-
-        $index = $this->sigmie->collect($indexName, refresh: true);
-
-        $index->merge([
-            new Document(['active' => true]),
-            new Document(['active' => true]),
-            new Document(['active' => false]),
-            new Document(['active' => true]),
-            new Document(['active' => true]),
-        ]);
-
-        $search = $this->sigmie->newSearch($indexName)
-            ->properties($blueprint())
-            ->queryString('active')
-            ->fields(['active'])
-            ->get();
-
-        $hits = $search->json('hits.hits');
-
-        $this->assertCount(4, $hits);
-
-        $search = $this->sigmie->newSearch($indexName)
-            ->properties($blueprint())
-            ->queryString('inactive')
-            ->fields(['active'])
-            ->get();
-
-        $hits = $search->json('hits.hits');
-
-        $this->assertCount(1, $hits);
     }
 
     /**

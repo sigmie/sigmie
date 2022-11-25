@@ -19,7 +19,7 @@ use Sigmie\Index\Shared\Mappings;
 use Sigmie\Index\Shared\Replicas;
 use Sigmie\Index\Shared\Shards;
 use Sigmie\Index\Shared\Tokenizer;
-use Sigmie\Shared\Properties;
+use Sigmie\Mappings\Properties;
 
 class NewIndex
 {
@@ -30,7 +30,6 @@ class NewIndex
     use Shards;
     use Replicas;
     use Tokenizer;
-    use Properties;
 
     protected string $alias;
 
@@ -39,6 +38,8 @@ class NewIndex
     protected AnalysisInterface $analysis;
 
     protected array $config = [];
+
+    protected Properties $properties;
 
     public function __construct(ElasticsearchConnection $connection)
     {
@@ -51,14 +52,16 @@ class NewIndex
         $this->properties = new MappingsProperties;
     }
 
+    public function getAlias():string
+    {
+        return $this->alias;
+    }
+
+
+
     public function analysis(): AnalysisInterface
     {
         return $this->analysis;
-    }
-
-    public function getPrefix(): string
-    {
-        return $this->alias;
     }
 
     public function config(string $name, string|array|bool|int $value): static
@@ -117,11 +120,6 @@ class NewIndex
         );
 
         return $template;
-    }
-
-    public function getAlias(): string
-    {
-        return $this->alias;
     }
 
     public function make(): Index

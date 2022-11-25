@@ -10,21 +10,25 @@ use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Mappings as IndexMappings;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
-use Sigmie\Shared\Properties as SharedProperties;
 
 trait Mappings
 {
-    use SharedProperties;
-
     abstract public function analysis(): Analysis;
 
     public function mapping(callable $callable): static
     {
-        $newProperties = new NewProperties($this->analysis());
+        $newProperties = new NewProperties();
 
         $callable($newProperties);
 
         $this->properties($newProperties);
+
+        return $this;
+    }
+
+    public function properties(NewProperties $props): static
+    {
+        $this->properties =  $props->get(analysis: $this->analysis());
 
         return $this;
     }
