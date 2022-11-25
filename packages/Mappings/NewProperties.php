@@ -15,6 +15,7 @@ use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\Email;
 use Sigmie\Mappings\Types\Id;
+use Sigmie\Mappings\Types\HTML;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\LongText;
 use Sigmie\Mappings\Types\Name;
@@ -236,6 +237,15 @@ class NewProperties
     public function price(string $name = 'price'): Price
     {
         $field = new Price($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function price(string $name): HTML
+    {
+        $field = new HTML($name);
 
         $this->fields->add($field);
 

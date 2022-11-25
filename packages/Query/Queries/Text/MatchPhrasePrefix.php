@@ -7,7 +7,7 @@ namespace Sigmie\Query\Queries\Text;
 use Sigmie\Query\Contracts\FuzzyQuery;
 use Sigmie\Query\Queries\Query;
 
-class MatchBoolPrefix extends Query implements FuzzyQuery
+class MatchPhrasePrefix extends Query implements FuzzyQuery
 {
     public function __construct(
         protected string $field,
@@ -26,7 +26,7 @@ class MatchBoolPrefix extends Query implements FuzzyQuery
     public function toRaw(): array
     {
         $raw = [
-            'match_bool_prefix' => [
+            'match_phrase_prefix' => [
                 $this->field => [
                     'query' => $this->query,
                     'boost' => $this->boost,
@@ -38,9 +38,9 @@ class MatchBoolPrefix extends Query implements FuzzyQuery
             return $raw;
         }
 
-        $raw['match_bool_prefix'][$this->field]['fuzziness'] = $this->fuzziness;
-        $raw['match_bool_prefix'][$this->field]['fuzzy_transpositions'] = true;
-        $raw['match_bool_prefix'][$this->field]['prefix_length'] = 0;
+        $raw['match_phrase_prefix'][$this->field]['fuzziness'] = $this->fuzziness;
+        $raw['match_phrase_prefix'][$this->field]['fuzzy_transpositions'] = true;
+        $raw['match_phrase_prefix'][$this->field]['prefix_length'] = 0;
 
         return $raw;
     }

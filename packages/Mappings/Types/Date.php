@@ -11,6 +11,7 @@ class Date extends Type
     public function __construct(
         string $name,
         protected array $formats = ['yyyy-MM-dd HH:mm:ss.SSSSSS']
+        // Y-m-d H:i:s.u
     ) {
         parent::__construct($name);
     }

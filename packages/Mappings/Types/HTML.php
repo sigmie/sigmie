@@ -8,24 +8,25 @@ use Exception;
 use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Index\NewAnalyzer;
-use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
-use Sigmie\Query\Queries\Text\MatchBoolPrefix;
 use Sigmie\Shared\Contracts\FromRaw;
 
-class Address extends Text
+class HTML extends Text
 {
     public function __construct(
         string $name,
     ) {
-        parent::__construct($name, raw: 'keyword');
+        parent::__construct($name, raw: null);
 
-        $this->unstructuredText()->indexPrefixes();
+        $this->unstructuredText();
 
         $this->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
             $newAnalyzer->tokenizeOnWordBoundaries();
+            $newAnalyzer->stripHTML();
+            $newAnalyzer->trim();
             $newAnalyzer->lowercase();
+            $newAnalyzer->unique();
         });
     }
 
@@ -33,7 +34,7 @@ class Address extends Text
     {
         $queries = [];
 
-        $queries[] = new MatchBoolPrefix($this->name, $queryString);
+        $queries[] = new Match_($this->name, $queryString);
 
         return $queries;
     }
