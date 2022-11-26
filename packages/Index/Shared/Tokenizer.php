@@ -46,7 +46,7 @@ trait Tokenizer
         return $this;
     }
 
-    public function tokenizeOnWhiteSpaces(string|null $name = null): static
+    public function tokenizeOnWhitespaces(string|null $name = null): static
     {
         $name = $name ?? $this->createTokenizerName('whitespace');
 

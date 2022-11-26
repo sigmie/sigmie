@@ -17,7 +17,7 @@ abstract class Type implements Name, ToRaw, TypeInterface
 
     public Closure $queriesClosure;
 
-    public function __construct(public readonly string $name)
+    public function __construct(public string $name)
     {
     }
 
