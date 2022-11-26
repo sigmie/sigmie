@@ -42,6 +42,8 @@ class Text extends Type implements FromRaw
     {
         $this->hasAnalyzerCallback = true;
         $this->newAnalyzerClosure = $closure;
+
+        return $this;
     }
 
     public static function fromRaw(array $raw): static
@@ -143,7 +145,7 @@ class Text extends Type implements FromRaw
 
     public function newAnalyzer(Closure $callable)
     {
-        $this->newAnalyzerClosure = $callable; // @phpstan-ignore-line
+        $this->newAnalyzerClosure = $callable;
     }
 
     public function withAnalyzer(Analyzer $analyzer): void

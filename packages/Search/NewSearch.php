@@ -87,6 +87,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $fields = new Collection($this->fields);
 
             $fields->each(function ($field) use ($queryBoolean) {
+
                 if ($this->queryString === '') {
                     $queryBoolean->should()->query(new MatchAll);
 
@@ -97,9 +98,11 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $field = $this->properties[$field];
 
-                $fuzziness = ! in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
-                $queries = new Collection($field->queries($this->queryString));
+                $queries = $field->hasQueriesCallback ? $field->queriesFromCallback($this->queryString) : $field->queries($this->queryString);
+
+                $queries = new Collection($queries);
 
                 $queries->map(function (Query $queryClause) use ($boost, $fuzziness) {
                     if ($queryClause instanceof FuzzyQuery) {

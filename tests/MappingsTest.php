@@ -17,6 +17,9 @@ use Sigmie\Testing\TestCase;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Document\Document;
 use Sigmie\Index\NewAnalyzer;
+use Sigmie\Query\Queries\Term\Prefix;
+use Sigmie\Query\Queries\Term\Term;
+use Sigmie\Query\Queries\Text\Match_;
 
 use function Sigmie\Functions\random_letters;
 
@@ -194,6 +197,80 @@ class MappingsTest extends TestCase
 
         $this->assertEquals('2353051500', $hits[0]['_source']['number']);
         $this->assertCount(1, $hits);
+    }
+
+    /**
+     * @test
+     */
+    public function email_with_callback_queries()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('email')
+            ->unstructuredText()
+            ->indexPrefixes()
+            ->keyword()
+            ->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
+                $newAnalyzer->tokenizeOnPattern('(@|\.)');
+                $newAnalyzer->lowercase();
+            })->withQueries(function (string $queryString) {
+
+                $queries = [];
+
+                $queries[] = new Match_('email', $queryString);
+
+                $queries[] = new Prefix('email', $queryString);
+
+                $queries[] = new Term("email.keyword", $queryString);
+
+                return $queries;
+            });
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['email' => 'john.doe@gmail.com']),
+            new Document(['email' => 'marc@hotmail.com']),
+            new Document(['email' => 'phill.braun@outlook.com']),
+        ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('doe')
+            ->fields(['email'])
+            ->get();
+
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertEquals('john.doe@gmail.com', $hits[0]['_source']['email']);
+        $this->assertCount(1, $hits);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('com')
+            ->fields(['email'])
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertCount(3, $hits);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('bra')
+            ->fields(['email'])
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertEquals('phill.braun@outlook.com', $hits[0]['_source']['email']);
     }
 
     /**
