@@ -6,7 +6,10 @@ namespace Sigmie\Mappings;
 
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
+use Sigmie\Index\Contracts\CustomAnalyzer;
 use Sigmie\Index\NewAnalyzer;
+use Sigmie\Mappings\Contracts\Analyze;
+use Sigmie\Mappings\Contracts\Configure;
 use Sigmie\Mappings\Types\Active;
 use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\Boolean;
@@ -42,7 +45,7 @@ class NewProperties
 
     public function __invoke(string $name = 'mappings'): Properties
     {
-        return $this->get(name:$name);
+        return $this->get(name: $name);
     }
 
     public function get(
@@ -50,10 +53,23 @@ class NewProperties
         string $name = 'mappings'
     ): Properties {
         $fields = $this->fields->mapToDictionary(function (Type $type) use ($analysis) {
-            if ($type instanceof Text && ($type->newAnalyzerClosure ?? false)) {
-                $newAnalyzer = new NewAnalyzer($analysis, "{$type->name}_field_analyzer");
 
-                ($type->newAnalyzerClosure)($newAnalyzer);
+            $newAnalyzer = new NewAnalyzer(
+                $analysis,
+                "{$type->name}_field_analyzer"
+            );
+
+            if ($type instanceof Configure) {
+                $type->configure();
+            }
+
+            if ($type instanceof Analyze) {
+                $type->analyze($newAnalyzer);
+            }
+
+            if ($type instanceof Text && ($type->hasAnalyzerCallback || $type instanceof Analyze)) {
+
+                $type->analysisFromCallback($newAnalyzer);
 
                 $analyzer = $newAnalyzer->create();
 

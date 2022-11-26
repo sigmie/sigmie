@@ -16,6 +16,7 @@ use Sigmie\Index\Mappings;
 use Sigmie\Testing\TestCase;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Document\Document;
+use Sigmie\Index\NewAnalyzer;
 
 use function Sigmie\Functions\random_letters;
 
@@ -198,6 +199,72 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
+    public function email_with_callback()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('email')
+            ->unstructuredText()
+            ->indexPrefixes()
+            ->keyword()
+            ->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
+                $newAnalyzer->tokenizeOnPattern('(@|\.)');
+                $newAnalyzer->lowercase();
+            });
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['email' => 'john.doe@gmail.com']),
+            new Document(['email' => 'marc@hotmail.com']),
+            new Document(['email' => 'phill.braun@outlook.com']),
+        ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('doe')
+            ->fields(['email'])
+            ->get();
+
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertEquals('john.doe@gmail.com', $hits[0]['_source']['email']);
+        $this->assertCount(1, $hits);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('com')
+            ->fields(['email'])
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertCount(3, $hits);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('bra')
+            ->fields(['email'])
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        // Using the 'withNewAnalyzer' method does
+        // not include the prefix query
+        $this->assertEmpty($hits);
+    }
+
+
+    /**
+     * @test
+     */
     public function email()
     {
         $indexName = uniqid();
@@ -223,6 +290,12 @@ class MappingsTest extends TestCase
             ->queryString('doe')
             ->fields(['email'])
             ->get();
+
+        $res = $this->analyzeAPICall($indexName, 'john.doe@gmail.com', 'default');
+
+        $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
+
+        $res = $this->indexAPICall($indexName, 'GET');
 
         $hits = $search->json('hits.hits');
 

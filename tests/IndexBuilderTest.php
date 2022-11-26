@@ -40,7 +40,7 @@ class IndexBuilderTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->mapping(function (NewProperties $blueprint) {
                 $blueprint->bool('active');
-                $blueprint->text('description')->withNewAnalyzer(function(NewAnalyzer $newAnalyzer){
+                $blueprint->text('description')->newAnalyzer(function(NewAnalyzer $newAnalyzer){
 
 
                 });

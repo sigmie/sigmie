@@ -5,21 +5,21 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use Sigmie\Index\NewAnalyzer;
+use Sigmie\Mappings\Contracts\Analyze;
+use Sigmie\Mappings\Contracts\Configure;
 use Sigmie\Query\Queries\Text\MatchBoolPrefix;
 
-class Address extends Text
+class Address extends Text implements Analyze, Configure
 {
-    public function __construct(
-        string $name,
-    ) {
-        parent::__construct($name, raw: 'keyword');
+    public function configure(): void
+    {
+        $this->unstructuredText()->indexPrefixes()->keyword();
+    }
 
-        $this->unstructuredText()->indexPrefixes();
-
-        $this->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
-            $newAnalyzer->tokenizeOnWordBoundaries();
-            $newAnalyzer->lowercase();
-        });
+    public function analyze(NewAnalyzer $newAnalyzer): void
+    {
+        $newAnalyzer->tokenizeOnWordBoundaries();
+        $newAnalyzer->lowercase();
     }
 
     public function queries(string $queryString): array
