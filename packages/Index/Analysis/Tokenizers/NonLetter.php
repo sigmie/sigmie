@@ -6,23 +6,32 @@ namespace Sigmie\Index\Analysis\Tokenizers;
 
 use Sigmie\Index\Contracts\Tokenizer;
 
+use function Sigmie\Functions\name_configs;
+
 class NonLetter implements Tokenizer
 {
+    public function __construct(
+        protected readonly string $name,
+    ) {
+    }
+
     public static function fromRaw(array $raw): static
     {
-        return new static();
+        [$name, $config] = name_configs($raw);
+
+        return new static($name);
     }
 
     public function name(): string
     {
-        return 'letter';
+        return $this->name;
     }
 
     public function toRaw(): array
     {
         $res = [
             $this->name() => [
-                'type' => $this->name(),
+                'type' => 'letter',
             ],
         ];
 

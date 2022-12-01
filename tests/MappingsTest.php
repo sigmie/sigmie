@@ -25,36 +25,67 @@ use function Sigmie\Functions\random_letters;
 
 class MappingsTest extends TestCase
 {
-    // /**
-    //  * @test
-    //  */
-    // public function noop_tokenizer()
-    // {
-    //     $indexName = uniqid();
+    /**
+     * @test
+     */
+    public function noop_tokenizer()
+    {
+        $indexName = uniqid();
 
-    //     $index = $this->sigmie
-    //         ->newIndex($indexName)
-    //         // ->patternReplace(":D|:\)", 'happy')
-    //         // ->mapChars([':)'=> 'happy'])
-    //         ->stripHTML()
-    //         // ->dontTokenize()
-    //         ->tokenizeOnWordBoundaries()
-    //         // ->tokenizeOnPattern(',')
-    //         // ->tokenizeOnPatternMatch("'.*'")
-    //         // ->dontTokenize()
-    //         // ->tokenizeOnWhiteSpaces()
-    //         // ->dontTokenize()
-    //         ->create();
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            // ->patternReplace(":D|:\)", 'happy')
+            // ->mapChars([':)'=> 'happy'])
+            // ->stripHTML()
+            // ->dontTokenize()
+            // ->tokenizeOnNonLetter()
+            ->tokenizeOnWhitespaces()
+            ->tokenizeOnWordBoundaries()
+            // ->asciiFolding()
+            // ->stopwords(['but', 'not'])
+            // ->keywords(['going'])
+            // ->stemming([
+            // ['go', ['going']],
+            // ])
+            ->synonyms([
+                ['joy', 'fun']
+            ])
+            // ->truncate(10)
+            // ->decimalDigit()
+            // ->tokenLimit(5)
+            // ->tokenizePathHierarchy()
+            // ->tokenizeOnPattern(',')
+            // ->tokenizeOnPatternMatch("'.*'")
+            // ->dontTokenize()
+            // ->tokenizeOnWhiteSpaces()
+            // ->dontTokenize()
+            ->create();
 
-    //     $index = $this->sigmie->collect($indexName, refresh: true);
+        $newAnalyer->charFilter(new Pattern(
+            name: 'pattern_replace_char_filter',
+            pattern: ':D|:\)',
+            replace: 'happy'
+        ));
 
-    //     $res = $this->analyzeAPICall($indexName, "<span>Some people are worth melting for.</span>", 'default');
+        $newAnalyer->charFilter(new Mapping(
+            name: 'mapping_char_filter',
+            mappings: [
+                ':)' => 'happy',
+                ':(' => 'sad',
+            ]
+        ));
 
-    //     $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
+        $index = $this->sigmie->collect($indexName, refresh: true);
 
-    //     dd($tokens);
-    //     $props = new NewProperties();
-    // }
+        ray($this->sigmie->index($indexName));
+
+        $res = $this->analyzeAPICall($indexName, "It’s kind of fun to do the impossible.", 'default');
+
+        $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
+
+        ray($tokens);
+        $props = new NewProperties();
+    }
 
     /**
      * @test

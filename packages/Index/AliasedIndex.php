@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Sigmie\Index;
 
 use RuntimeException;
+use Sigmie\Base\APIs\Analyze;
 use Sigmie\Base\APIs\Index as IndexAPI;
 use Sigmie\Base\APIs\Reindex;
+use Sigmie\Document\AliveCollection;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Alias\Actions as AliasActions;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
@@ -16,6 +18,7 @@ class AliasedIndex extends Index
 {
     use Reindex;
     use IndexAPI;
+    use Analyze;
     use AliasActions;
     use IndexActions;
 
@@ -27,6 +30,25 @@ class AliasedIndex extends Index
     ) {
         parent::__construct($name, $settings, $mappings);
     }
+
+    public function collect(bool $refresh = false): AliveCollection
+    {
+        return new AliveCollection(
+            $this->name,
+            $this->elasticsearchConnection,
+            $refresh ? 'true' : 'false'
+        );
+    }
+
+    public function analyze(string $text, string $analyzer = 'default')
+    {
+        $res = $this->analyzeAPICall($this->name, $text, $analyzer);
+
+        $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
+
+        return $tokens;
+    }
+
 
     public function update(callable $newUpdate): AliasedIndex
     {

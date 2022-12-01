@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Index\Shared;
 
 use function Sigmie\Functions\random_letters;
+
+use Sigmie\Index\Analysis\Tokenizers\NonLetter;
 use Sigmie\Index\Analysis\Tokenizers\Noop;
 use Sigmie\Index\Analysis\Tokenizers\PathHierarchy;
 use Sigmie\Index\Analysis\Tokenizers\Pattern;
@@ -33,6 +35,15 @@ trait Tokenizer
         $name = $name ?? $this->createTokenizerName('whitespace');
 
         $this->tokenizer = new Noop($name);
+
+        return $this;
+    }
+
+    public function tokenizeOnNonLetter(string|null $name = null): static
+    {
+        $name = $name ?? $this->createTokenizerName('non_letter');
+
+        $this->tokenizer = new NonLetter($name);
 
         return $this;
     }

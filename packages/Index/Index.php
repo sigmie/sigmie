@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Index;
 
+use Sigmie\Document\AliveCollection;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Contracts\Settings as SettingsInterface;
 
