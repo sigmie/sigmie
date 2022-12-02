@@ -14,6 +14,7 @@ class Ngram implements Tokenizer
         protected readonly string $name,
         protected string|int $minGram = 3,
         protected string|int $maxGram = 3,
+        protected array $tokenChars = ['letter'],
     ) {
     }
 
@@ -29,8 +30,9 @@ class Ngram implements Tokenizer
         $res = [
             $this->name() => [
                 'type' => 'ngram',
-                'min_gram'=> $this->minGram,
-                'max_gram'=> $this->maxGram,
+                'min_gram' => $this->minGram,
+                'max_gram' => $this->maxGram,
+                "token_chars" => $this->tokenChars
             ],
         ];
 

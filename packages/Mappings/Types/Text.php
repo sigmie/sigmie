@@ -12,6 +12,7 @@ use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Query\Queries\Text\Match_;
+use Sigmie\Query\Queries\Text\MultiMatch;
 use Sigmie\Shared\Contracts\FromRaw;
 
 class Text extends Type implements FromRaw
@@ -186,6 +187,14 @@ class Text extends Type implements FromRaw
         $queries = [];
 
         $queries[] = new Match_($this->name, $queryString);
+
+        if ($this->type === 'search_as_you_type') {
+            $queries[] = new MultiMatch($queryString, [
+                $this->name,
+                "{$this->name}._2gram",
+                "{$this->name}._3gram",
+            ]);
+        }
 
         return $queries;
     }

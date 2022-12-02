@@ -115,6 +115,8 @@ class Search
     {
         $raw = $this->getDSL();
 
+        ray($raw);
+
         return $this->searchAPICall($this->index, $raw);
     }
 
