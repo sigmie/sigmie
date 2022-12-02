@@ -12,6 +12,7 @@ abstract class Tokenizer implements TokenizerInterface
 {
     public static $map = [
         'pattern' => Pattern::class,
+        'ngram' => Ngram::class,
         'standard' => WordBoundaries::class,
         'whitespace' => Whitespace::class,
         'letter' => NonLetter::class,

@@ -67,7 +67,18 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $highlight = new Collection($this->highlight);
 
-        $highlight->each(fn (string $field) => $search->highlight($field, $this->highlightPrefix, $this->highlightSuffix));
+        // $field = $this->properties[$field];
+        // $highlight->each(fn (string $field) => $search->highlight($field, $this->highlightPrefix, $this->highlightSuffix));
+        $highlight->each(function (string $field) use ($search) {
+
+            $properties = $this->properties;
+
+            $field = $properties[$field];
+
+            foreach ($field->names() as $name) {
+                $search->highlight($name, $this->highlightPrefix, $this->highlightSuffix);
+            }
+        });
 
         $search->fields($this->retrieve);
 

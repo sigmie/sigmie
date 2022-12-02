@@ -28,6 +28,13 @@ trait Filters
 
     abstract public function analysis(): Analysis;
 
+    public function tokenFilter(TokenFilter $tokenfilter): static
+    {
+        $this->addFilter($tokenfilter);
+
+        return $this;
+    }
+
     public function stemming(array $stemming, null|string $name = null): static
     {
         $name = $name ?? $this->createFilterName('stemming');
