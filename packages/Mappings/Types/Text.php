@@ -8,12 +8,17 @@ use Closure;
 use Exception;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 
+use Sigmie\Index\Analysis\Analysis;
+
 use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
+use Sigmie\Shared\Collection;
 use Sigmie\Shared\Contracts\FromRaw;
+use Sigmie\Mappings\Contracts\Configure;
+use Sigmie\Mappings\Contracts\Analyze;
 
 class Text extends Type implements FromRaw
 {
@@ -25,14 +30,65 @@ class Text extends Type implements FromRaw
 
     public Closure $newAnalyzerClosure;
 
+    protected Collection $fields;
+
     public function __construct(
         string $name,
         protected null|string $raw = null,
     ) {
         parent::__construct($name);
 
+        $this->fields = new Collection();
         $this->newAnalyzerClosure = fn () => null;
     }
+
+    public function handleCustomAnalyzer(Analysis $analysis)
+    {
+        $newAnalyzer = new NewAnalyzer(
+            $analysis,
+            "{$this->name}_field_analyzer"
+        );
+
+        if ($this instanceof Configure) {
+            $this->configure();
+        }
+
+        if ($this instanceof Analyze) {
+            $this->analyze($newAnalyzer);
+        }
+
+        if (($this->hasAnalyzerCallback || $this instanceof Analyze)) {
+
+            $this->analysisFromCallback($newAnalyzer);
+
+            $analyzer = $newAnalyzer->create();
+
+            $this->withAnalyzer($analyzer);
+        }
+
+        $this->fields = $this->fields
+            ->filter(fn ($type) => $type instanceof Text)
+            ->map(function (Text $text) use ($analysis) {
+
+                $text->handleCustomAnalyzer($analysis);
+
+                return $text;
+            });
+    }
+
+
+    public function field(Type $type)
+    {
+        $this->fields = $this->fields->add($type);
+
+        return $this;
+    }
+
+    public function hasFields()
+    {
+        return !$this->fields->isEmpty();
+    }
+
 
     public function analysisFromCallback(NewAnalyzer $newAnalyzer): void
     {
@@ -178,6 +234,15 @@ class Text extends Type implements FromRaw
         if (!is_null($this->analyzer)) {
             $raw[$this->name]['analyzer'] = $this->analyzer->name();
         }
+
+        if (!$this->fields->isEmpty()) {
+
+            $this->fields->each(function (Type $field) use (&$raw) {
+
+                $raw[$this->name]['fields'] = $field->toRaw();
+            });
+        }
+
 
         return $raw;
     }

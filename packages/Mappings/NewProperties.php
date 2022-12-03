@@ -54,26 +54,8 @@ class NewProperties
     ): Properties {
         $fields = $this->fields->mapToDictionary(function (Type $type) use ($analysis) {
 
-            $newAnalyzer = new NewAnalyzer(
-                $analysis,
-                "{$type->name}_field_analyzer"
-            );
-
-            if ($type instanceof Configure) {
-                $type->configure();
-            }
-
-            if ($type instanceof Analyze) {
-                $type->analyze($newAnalyzer);
-            }
-
-            if ($type instanceof Text && ($type->hasAnalyzerCallback || $type instanceof Analyze)) {
-
-                $type->analysisFromCallback($newAnalyzer);
-
-                $analyzer = $newAnalyzer->create();
-
-                $type->withAnalyzer($analyzer);
+            if ($type instanceof Text) {
+                $type->handleCustomAnalyzer($analysis);
             }
 
             return [$type->name() => $type];

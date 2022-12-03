@@ -20,10 +20,20 @@ class Name extends Text implements Analyze, Configure
 
     public function analyze(NewAnalyzer $newAnalyzer): void
     {
-        $maxGramms = 5;
+        $maxGramms = 4;
+
+        $prefixField = (new Text("{$this->name}_text"))->unstructuredText()->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
+
+            $newAnalyzer->tokenizeOnWordBoundaries()
+                ->lowercase()
+                ->trim();
+        });
+
+        $this->field($prefixField);
+
         $newAnalyzer
             ->tokenizeOnWordBoundaries()
-            ->tokenFilter(new Ngram("{$this->name}_ngram_3_4", 4, $maxGramms))
+            ->tokenFilter(new Ngram("{$this->name}_ngram_3_4", 3, $maxGramms))
             ->truncate($maxGramms)
             ->lowercase();
     }
@@ -34,6 +44,9 @@ class Name extends Text implements Analyze, Configure
 
         $queries[] = new Prefix($this->name, $queryString);
         $queries[] = new Match_($this->name, $queryString);
+
+        $queries[] = new Match_("{$this->name}_text", $queryString);
+        $queries[] = new Prefix("{$this->name}_text", $queryString);
 
         return $queries;
     }
