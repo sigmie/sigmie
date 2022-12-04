@@ -10,7 +10,8 @@ class Prefix extends Query
 {
     public function __construct(
         protected string $field,
-        protected int|string|bool|float $value
+        protected int|string|bool|float $value,
+        protected bool $caseInsensitive = true
     ) {
     }
 
@@ -20,7 +21,7 @@ class Prefix extends Query
             'prefix' => [
                 $this->field => [
                     'value' => $this->value,
-                    'case_insensitive' => true,
+                    'case_insensitive' => $this->caseInsensitive,
                     'boost' => $this->boost,
                 ],
             ],
