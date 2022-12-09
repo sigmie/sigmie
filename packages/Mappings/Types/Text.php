@@ -43,6 +43,16 @@ class Text extends Type implements FromRaw
         $this->newAnalyzerClosure = fn () => null;
     }
 
+    public function configure(): void
+    {
+        //
+    }
+
+    public function analyze(NewAnalyzer $newAnalyzer): void
+    {
+        //
+    }
+
     public function handleCustomAnalyzer(AnalysisInterface $analysis)
     {
         $newAnalyzer = new NewAnalyzer(
@@ -50,17 +60,19 @@ class Text extends Type implements FromRaw
             "{$this->name}_field_analyzer"
         );
 
-        if ($this instanceof Configure) {
-            $this->configure();
-        }
+        $this->configure();
 
-        if ($this instanceof Analyze) {
-            $this->analyze($newAnalyzer);
-        }
-
-        if (($this->hasAnalyzerCallback || $this instanceof Analyze)) {
+        if (($this->hasAnalyzerCallback)) {
 
             $this->analysisFromCallback($newAnalyzer);
+
+            $analyzer = $newAnalyzer->create();
+
+            $this->withAnalyzer($analyzer);
+
+        } elseif ($this instanceof Analyze) {
+
+            $this->analyze($newAnalyzer);
 
             $analyzer = $newAnalyzer->create();
 

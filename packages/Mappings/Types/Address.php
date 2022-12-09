@@ -6,10 +6,9 @@ namespace Sigmie\Mappings\Types;
 
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\Contracts\Analyze;
-use Sigmie\Mappings\Contracts\Configure;
 use Sigmie\Query\Queries\Text\MatchBoolPrefix;
 
-class Address extends Text implements Analyze, Configure
+class Address extends Text implements Analyze
 {
     public function configure(): void
     {

@@ -6,12 +6,10 @@ namespace Sigmie\Mappings\Types;
 
 use Sigmie\Index\Analysis\TokenFilter\Ngram;
 use Sigmie\Index\NewAnalyzer;
-use Sigmie\Mappings\Contracts\Analyze;
-use Sigmie\Mappings\Contracts\Configure;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Text\Match_;
 
-class Name extends Text implements Analyze, Configure
+class Name extends Text
 {
     public function __construct(
         string $name,

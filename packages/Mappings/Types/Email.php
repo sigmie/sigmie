@@ -15,7 +15,7 @@ use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Shared\Contracts\FromRaw;
 
-class Email extends Text implements Configure, Analyze
+class Email extends Text implements Analyze
 {
     public function configure(): void
     {
