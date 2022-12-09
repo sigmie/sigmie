@@ -68,6 +68,10 @@ class SearchTest extends TestCase
         $search = $this->sigmie->newSearch($indexName)
             ->properties($blueprint())
             ->queryString('Mickey')
+            ->weight([
+                'name' => 5,
+                'description' => 1
+            ])
             ->fields(['name', 'description'])
             ->sort('_score')
             ->get();

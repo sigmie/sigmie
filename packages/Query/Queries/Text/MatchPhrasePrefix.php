@@ -11,7 +11,8 @@ class MatchPhrasePrefix extends Query
 {
     public function __construct(
         protected string $field,
-        protected string $query
+        protected string $query,
+        protected string|null $fuzziness = null,
     ) {
     }
 

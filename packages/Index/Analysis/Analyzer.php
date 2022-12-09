@@ -65,7 +65,7 @@ class Analyzer implements CustomAnalyzerInterface
 
         $analyzerTokenizer = match ($tokenizerName) {
             'whitespace' => new Whitespace(),
-            'letter' => new NonLetter(),
+            // 'letter' => new NonLetter(),
             default => $tokenizers[$tokenizerName]
         };
 

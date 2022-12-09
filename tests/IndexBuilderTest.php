@@ -456,11 +456,11 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->tokenizer(new NonLetter())
+            ->tokenizer(new NonLetter('letter-tokenizer'))
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-            $index->assertAnalyzerHasTokenizer('default', 'letter');
+            $index->assertAnalyzerHasTokenizer('default', 'letter-tokenizer');
         });
     }
 

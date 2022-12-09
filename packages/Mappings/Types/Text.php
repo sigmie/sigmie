@@ -9,6 +9,7 @@ use Exception;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 
 use Sigmie\Index\Analysis\Analysis;
+use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 
 use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\Analyzer;
@@ -42,7 +43,7 @@ class Text extends Type implements FromRaw
         $this->newAnalyzerClosure = fn () => null;
     }
 
-    public function handleCustomAnalyzer(Analysis $analysis)
+    public function handleCustomAnalyzer(AnalysisInterface $analysis)
     {
         $newAnalyzer = new NewAnalyzer(
             $analysis,

@@ -118,33 +118,6 @@ class NewProperties
         return $field;
     }
 
-    public function searchableBoolean(string $true, string $false): SearchableBoolean
-    {
-        $field = new SearchableBoolean($true, $false);
-
-        $this->fields->add($field);
-
-        return $field;
-    }
-
-    public function searchableBooleanNumber(string $name): SearchableBooleanNumber
-    {
-        $field = new SearchableBooleanNumber($name);
-
-        $this->fields->add($field);
-
-        return $field;
-    }
-
-    public function active(): Active
-    {
-        $field = new Active();
-
-        $this->fields->add($field);
-
-        return $field;
-    }
-
     public function keyword(string $name): Keyword
     {
         $field = new Keyword($name);
@@ -255,11 +228,11 @@ class NewProperties
         return $field;
     }
 
-    public function type(Type $field): Boolean
+    public function type(Type $field): self
     {
         $this->fields->add($field);
 
-        return $field;
+        return $this;
     }
 
     public function nested(string $name, null|callable $callable = null): Nested
