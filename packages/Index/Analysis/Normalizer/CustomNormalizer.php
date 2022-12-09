@@ -8,7 +8,7 @@ use Exception;
 use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\Normalizer as NormalizerInterface;
 
-abstract class Normalizer implements NormalizerInterface
+abstract class CustomNormalizer implements NormalizerInterface
 {
     public static function fromRaw(array $raw): NormalizerInterface
     {
