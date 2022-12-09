@@ -28,68 +28,6 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function noop_tokenizer()
-    {
-        $indexName = uniqid();
-
-        $index = $this->sigmie
-            ->newIndex($indexName)
-            // ->patternReplace(":D|:\)", 'happy')
-            // ->mapChars([':)'=> 'happy'])
-            // ->stripHTML()
-            // ->dontTokenize()
-            // ->tokenizeOnNonLetter()
-            ->tokenizeOnWhitespaces()
-            ->tokenizeOnWordBoundaries()
-            // ->asciiFolding()
-            // ->stopwords(['but', 'not'])
-            // ->keywords(['going'])
-            // ->stemming([
-            // ['go', ['going']],
-            // ])
-            ->synonyms([
-                ['joy', 'fun']
-            ])
-            // ->truncate(10)
-            // ->decimalDigit()
-            // ->tokenLimit(5)
-            // ->tokenizePathHierarchy()
-            // ->tokenizeOnPattern(',')
-            // ->tokenizeOnPatternMatch("'.*'")
-            // ->dontTokenize()
-            // ->tokenizeOnWhiteSpaces()
-            // ->dontTokenize()
-            ->create();
-
-        $newAnalyer->charFilter(new Pattern(
-            name: 'pattern_replace_char_filter',
-            pattern: ':D|:\)',
-            replace: 'happy'
-        ));
-
-        $newAnalyer->charFilter(new Mapping(
-            name: 'mapping_char_filter',
-            mappings: [
-                ':)' => 'happy',
-                ':(' => 'sad',
-            ]
-        ));
-
-        $index = $this->sigmie->collect($indexName, refresh: true);
-
-        ray($this->sigmie->index($indexName));
-
-        $res = $this->analyzeAPICall($indexName, "It’s kind of fun to do the impossible.", 'default');
-
-        $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
-
-        ray($tokens);
-        $props = new NewProperties();
-    }
-
-    /**
-     * @test
-     */
     public function address_analyze()
     {
         $indexName = uniqid();
