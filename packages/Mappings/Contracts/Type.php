@@ -7,4 +7,6 @@ namespace Sigmie\Mappings\Contracts;
 interface Type
 {
     public function type(): string;
+
+    public function name(): string;
 }
