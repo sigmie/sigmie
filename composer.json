@@ -48,7 +48,5 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "bin": [
-        "packages/Cli/bin/sigmie"
-    ]
+    "bin": []
 }
