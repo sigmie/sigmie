@@ -10,4 +10,15 @@ use Sigmie\Shared\Contracts\ToRaw;
 
 interface Normalizer extends FromRaw, ToRaw, Name
 {
+    public function filters(): array;
+
+    public function charFilters(): array;
+
+    public function addFilters(array $filters): void;
+
+    public function addCharFilters(array $charFilters): void;
+
+    public function removeCharFilter(string $name): void;
+
+    public function removeFilter(string $type): void;
 }

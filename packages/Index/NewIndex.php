@@ -9,6 +9,8 @@ use function Sigmie\Functions\index_name;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
+use Sigmie\Index\Analysis\Normalizer\Normalizer;
+use Sigmie\Index\Analysis\NormalizerFilter\Lowercase;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Language;

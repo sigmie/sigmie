@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Index\Analysis;
 
 use Sigmie\Index\Analysis\CharFilter\CharFilter;
+use Sigmie\Index\Analysis\Normalizer\Normalizer;
 use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
 use Sigmie\Index\Analysis\Tokenizers\Tokenizer;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
@@ -28,9 +29,12 @@ class Analysis implements AnalysisInterface
 
     protected Collection $analyzers;
 
-    public function __construct(array $analyzers = [])
-    {
+    public function __construct(
+        array $analyzers = [],
+        array $normalizers = []
+    ) {
         $this->analyzers = new Collection($analyzers);
+        $this->normalizers = new Collection($normalizers);
 
         $this->filters = $this->analyzers
             ->filter(fn (AnalyzerInterface $analyzer) => $analyzer instanceof CustomAnalyzerInterface)
@@ -44,13 +48,17 @@ class Analysis implements AnalysisInterface
             ->flatten()
             ->mapToDictionary(fn (CharFIlterInterface $filter) => [$filter->name() => $filter]);
 
+        $this->charFilters = $this->normalizers
+            ->map(fn (Normalizer $analyzer) => $analyzer->charFilters())
+            ->flatten()
+            ->mapToDictionary(fn (CharFIlterInterface $filter) => [$filter->name() => $filter])
+            ->merge($this->charFilters);
+
         $this->tokenizers = $this->analyzers
             ->filter(fn (AnalyzerInterface $analyzer) => $analyzer instanceof CustomAnalyzerInterface)
             ->map(fn (CustomAnalyzerInterface $analyzer) => $analyzer->tokenizer())
-            ->filter(fn ($tokenizer) => ! is_null($tokenizer))
+            ->filter(fn ($tokenizer) => !is_null($tokenizer))
             ->mapToDictionary(fn (TokenizerInterface $tokenizer) => [$tokenizer->name() => $tokenizer]);
-
-        $this->normalizers = new Collection;
     }
 
     public function tokenizers(): array
@@ -140,6 +148,14 @@ class Analysis implements AnalysisInterface
         }
     }
 
+    public function addNormalizer(NormalizerInterface $normalizer): void
+    {
+        $this->normalizers->set($normalizer->name(), $normalizer);
+
+        $this->addCharFilters($normalizer->charFilters());
+        // $this->addFilters($analyzer->filters());
+    }
+
     public static function fromRaw(array $raw): static
     {
         $tokenizers = [];
@@ -197,12 +213,14 @@ class Analysis implements AnalysisInterface
             ->mapToDictionary(fn (NormalizerInterface $normalizer) => $normalizer->toRaw())
             ->toArray();
 
-        return [
+        $res = [
             'analyzer' => $analyzers,
             'filter' => $filter,
             'char_filter' => $charFilters,
             'tokenizer' => $tokenizer,
             'normalizer' => $normalizers,
         ];
+
+        return $res;
     }
 }

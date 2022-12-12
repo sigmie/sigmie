@@ -29,6 +29,15 @@ trait Index
         );
     }
 
+    public function assertNormalizerExists(string $normalizer): void
+    {
+        $this->assertArrayHasKey(
+            $normalizer,
+            $this->data['settings']['index']['analysis']['normalizer'],
+            "Failed to assert that the {$normalizer} normalizer exists in index {$this->name}."
+        );
+    }
+
     public function assertAnalyzerNotExists(string $analyzer): void
     {
         $this->assertArrayNotHasKey(

@@ -9,6 +9,7 @@ use Sigmie\Base\APIs\Cat;
 use Sigmie\Base\APIs\Cluster;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Script;
+use Sigmie\Base\APIs\Template;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 
 trait ClearElasticsearch
@@ -18,6 +19,7 @@ trait ClearElasticsearch
     use API;
     use Script;
     use Cluster;
+    use Template;
 
     protected function clearElasticsearch(ElasticsearchConnection $connection): void
     {
@@ -29,10 +31,12 @@ trait ClearElasticsearch
 
         $nameChunks = array_chunk($names, 50);
 
+        //Delete indices
         foreach ($nameChunks as $chunk) {
             $this->indexAPICall(implode(',', $chunk), 'DELETE');
         }
 
+        // Delete searches
         $response = $this->clusterAPICall('state/metadata?pretty&filter_path=metadata.stored_scripts');
 
         $scripts = $response->json('metadata.stored_scripts');
@@ -42,5 +46,8 @@ trait ClearElasticsearch
         foreach ($names as $name) {
             $this->scriptAPICall('DELETE', (string) $name);
         }
+
+        //Delete index templates
+        $this->templateAPICall('*', 'DELETE');
     }
 }

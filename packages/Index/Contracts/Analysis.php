@@ -20,6 +20,10 @@ interface Analysis extends FromRaw, ToRaw
 
     public function defaultAnalyzer(): DefaultAnalyzer;
 
+    public function addAnalyzer(Analyzer $analyzer): void;
+
+    public function addNormalizer(Normalizer $normalizer): void;
+
     public function analyzers(): array;
 
     public function filters(): array;

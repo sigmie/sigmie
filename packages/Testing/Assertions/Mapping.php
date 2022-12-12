@@ -48,6 +48,17 @@ trait Mapping
         );
     }
 
+    public function assertPropertyHasNormalizer(string $property, string $normalizer): void
+    {
+        $this->assertArrayHasKey($property, $this->data['mappings']['properties'], "Failed to assert that property '{$property}' exists.");
+        $this->assertArrayHasKey('normalizer', $this->data['mappings']['properties'][$property], "Failed to assert that property '{$property}' has any normalizer.");
+        $this->assertEquals(
+            $normalizer,
+            $this->data['mappings']['properties'][$property]['normalizer'],
+            "Failed to assert that mapping property '{$property}' has normalizer '{$normalizer}'."
+        );
+    }
+
     public function assertPropertyIsInteger(string $property): void
     {
         $this->assertEquals(

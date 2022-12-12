@@ -58,6 +58,11 @@ class NewProperties
                 $type->handleCustomAnalyzer($analysis);
             }
 
+            if ($type instanceof Keyword)
+            {
+                $type->handleNormalizer($analysis);
+            }
+
             return [$type->name() => $type];
         })->toArray();
 

@@ -20,11 +20,33 @@ use Sigmie\Index\NewAnalyzer;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
+use Sigmie\Testing\Assert;
 
 use function Sigmie\Functions\random_letters;
 
 class MappingsTest extends TestCase
 {
+    /**
+     * @test
+     */
+    public function normalizer()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('category');
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->assertIndex($indexName, function (Assert $index) {
+            $index->assertNormalizerExists('category_field_normalizer');
+            $index->assertPropertyHasNormalizer('category', 'category_field_normalizer');
+        });
+    }
+
     /**
      * @test
      */

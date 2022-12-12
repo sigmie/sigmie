@@ -4,18 +4,47 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
+use Sigmie\Index\Contracts\Normalizer as NormalizerInterface;
+use Sigmie\Index\Analysis\Normalizer\Normalizer;
+use Sigmie\Index\Analysis\NormalizerFilter\Lowercase;
 
 class Keyword extends Type
 {
     public function toRaw(): array
     {
-        return [$this->name => [
+        $normalizer = $this->normalizer();
+
+        $raw = [$this->name => [
             'type' => 'keyword',
-            'normalizer' => 'lowercase',
         ]];
+
+        if (!is_null($normalizer)) {
+            $raw[$this->name]['normalizer'] = $normalizer->name();
+        }
+
+        return $raw;
     }
+
+    public function normalizer(): null|NormalizerInterface
+    {
+        return new Normalizer(
+            "{$this->name}_field_normalizer",
+            filters: [new Lowercase]
+        );
+    }
+
+    public function handleNormalizer(Analysis $analysis)
+    {
+        $normalizer = $this->normalizer();
+
+        if ($normalizer instanceof NormalizerInterface) {
+            $analysis->addNormalizer($normalizer);
+        }
+    }
+
 
     public function queries(string $queryString): array
     {
