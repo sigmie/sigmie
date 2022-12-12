@@ -16,7 +16,7 @@ trait Cluster
     {
         $uri = new Uri("/_cluster/{$path}");
 
-        $esRequest = new ElasticsearchRequest('GET', $uri, []);
+        $esRequest = new ElasticsearchRequest('GET', $uri, null);
 
         return $this->elasticsearchCall($esRequest);
     }
