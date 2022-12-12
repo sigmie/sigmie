@@ -10,11 +10,10 @@ use Sigmie\Index\NewAnalyzer;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Mappings\Contracts\Analyze;
-use Sigmie\Mappings\Contracts\Configure;
 use Sigmie\Query\Queries\Text\MatchBoolPrefix;
 use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
 
-class Title extends Text implements Configure, Analyze
+class Title extends Text implements Analyze
 {
     public function analyze(NewAnalyzer $newAnalyzer): void
     {
