@@ -9,4 +9,6 @@ interface Type
     public function type(): string;
 
     public function name(): string;
+
+    public function queries(string $queryString): array;
 }
