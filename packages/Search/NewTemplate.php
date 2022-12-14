@@ -8,6 +8,8 @@ use function Sigmie\Functions\auto_fuzziness;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
+use Sigmie\Query\Contracts\FuzzyQuery;
+use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Term\Term;
@@ -87,40 +89,26 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             $fields = new Collection($this->fields);
 
             $fields->each(function ($field) use ($queryBoolean) {
+
                 $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
 
                 $field = $this->properties[$field];
 
-                if ($field instanceof Text) {
-                    $fuzziness = ! in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
-                    $query = new Match_($field->name, '{{query_string}}');
-                    $query->fuzziness($fuzziness);
+                $queries = $field->hasQueriesCallback ? $field->queriesFromCallback('{{query_string}}') : $field->queries('{{query_string}}');
 
-                    $queryBoolean->should()->query($query->boost($boost));
+                $queries = new Collection($queries);
 
-                    if ($field->isKeyword()) {
-                        $query = new Term(
-                            $field->keywordName(),
-                            '{{query_string}}',
-                        );
+                $queries->map(function (QueryClause $queryClause) use ($boost, $fuzziness) {
 
-                        $queryBoolean->should()->query(
-                            $query->boost($boost)
-                        );
+                    if ($queryClause instanceof FuzzyQuery) {
+                        $queryClause->fuzziness($fuzziness);
                     }
 
-                    return;
-                }
-
-                $query = new Term(
-                    $field->name,
-                    '{{query_string}}',
-                );
-
-                $queryBoolean->should()->query(
-                    $query->boost($boost)
-                );
+                    return $queryClause->boost($boost);
+                })
+                    ->each(fn (QueryClause $queryClase) => $queryBoolean->should()->query($queryClase));
             });
 
             $query = json_encode($queryBoolean->toRaw()['bool']['should'] ?? (new MatchAll)->toRaw());
