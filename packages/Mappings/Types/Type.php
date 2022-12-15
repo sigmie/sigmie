@@ -13,12 +13,19 @@ abstract class Type implements Name, ToRaw, TypeInterface
 {
     protected string $type;
 
+    protected array $meta = [];
+
+    public function __construct(public string $name)
+    {
+    }
+
     public bool $hasQueriesCallback = false;
 
     public Closure $queriesClosure;
 
-    public function __construct(public string $name)
+    public function meta(array $meta): void
     {
+        $this->meta = [...$this->meta, ...$meta];
     }
 
     public function queriesFromCallback(string $queryString): array
@@ -56,7 +63,22 @@ abstract class Type implements Name, ToRaw, TypeInterface
         ];
     }
 
-    abstract public function toRaw(): array;
+    public function toRaw(): array
+    {
+        $this->meta = [
+            ...$this->meta,
+            'class' => static::class
+        ];
+
+        $raw = [
+            $this->name => [
+                'type' => $this->type(),
+                'meta' => $this->meta,
+            ],
+        ];
+
+        return $raw;
+    }
 
     abstract public function queries(string $queryString): array;
 }

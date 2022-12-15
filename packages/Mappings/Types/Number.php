@@ -9,6 +9,13 @@ use Sigmie\Query\Queries\Term\Term;
 
 class Number extends Type
 {
+    public function __construct(string $name)
+    {
+        parent::__construct($name);
+
+        $this->type = ElasticsearchMappingType::INTEGER->value;
+    }
+
     public function integer(): self
     {
         $this->type = ElasticsearchMappingType::INTEGER->value;
@@ -28,13 +35,6 @@ class Number extends Type
         $this->type = ElasticsearchMappingType::LONG->value;
 
         return $this;
-    }
-
-    public function toRaw(): array
-    {
-        return [$this->name => [
-            'type' => $this->type,
-        ]];
     }
 
     public function queries(string $queryString): array

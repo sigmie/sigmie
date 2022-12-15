@@ -11,4 +11,6 @@ interface Type
     public function name(): string;
 
     public function queries(string $queryString): array;
+
+    public function meta(array $meta): void;
 }

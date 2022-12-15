@@ -17,6 +17,8 @@ use Sigmie\Testing\TestCase;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Document\Document;
 use Sigmie\Index\NewAnalyzer;
+use Sigmie\Mappings\Types\Category;
+use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
@@ -26,6 +28,26 @@ use function Sigmie\Functions\random_letters;
 
 class MappingsTest extends TestCase
 {
+    /**
+     * @test
+     */
+    public function class_meta()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('category');
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->assertIndex($indexName, function (Assert $index) {
+            $index->assertPropertyHasMeta('category', 'class', Keyword::class);
+        });
+    }
+
     /**
      * @test
      */

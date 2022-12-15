@@ -13,13 +13,13 @@ use Sigmie\Index\Analysis\NormalizerFilter\Lowercase;
 
 class Keyword extends Type
 {
+    protected string $type = 'keyword';
+
     public function toRaw(): array
     {
         $normalizer = $this->normalizer();
 
-        $raw = [$this->name => [
-            'type' => 'keyword',
-        ]];
+        $raw = parent::toRaw();
 
         if (!is_null($normalizer)) {
             $raw[$this->name]['normalizer'] = $normalizer->name();

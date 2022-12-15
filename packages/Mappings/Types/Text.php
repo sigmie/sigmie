@@ -230,11 +230,7 @@ class Text extends Type implements FromRaw
 
     public function toRaw(): array
     {
-        $raw = [
-            $this->name => [
-                'type' => $this->type,
-            ],
-        ];
+        $raw = parent::toRaw();
 
         if (!is_null($this->indexPrefixes)) {
             $raw[$this->name]['index_prefixes'] = $this->indexPrefixes;

@@ -30,6 +30,17 @@ trait Mapping
         );
     }
 
+    public function assertPropertyHasMeta(
+        string $property,
+        string $key,
+        string $value
+    ): void {
+
+        $this->assertArrayHasKey($key, $this->data['mappings']['properties'][$property]['meta'], "Failed to assert that mapping property '{$property}' has meta key '{$key}' in index {$this->name}.");
+
+        $this->assertEquals($this->data['mappings']['properties'][$property]['meta'][$key], $value, "Failed to assert that mapping property '{$property}' meta '{$key}' has value '{$value}' in index {$this->name}.");
+    }
+
     public function assertPropertyIsSearchAsYouType(string $property): void
     {
         $this->assertEquals(

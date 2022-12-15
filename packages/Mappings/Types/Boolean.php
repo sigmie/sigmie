@@ -8,6 +8,8 @@ use Sigmie\Query\Queries\Term\Term;
 
 class Boolean extends Type
 {
+    protected string $type = 'boolean';
+
     public function queries(string $queryString): array
     {
         $queries = [];
@@ -17,12 +19,5 @@ class Boolean extends Type
         }
 
         return $queries;
-    }
-
-    public function toRaw(): array
-    {
-        return [$this->name => [
-            'type' => 'boolean',
-        ]];
     }
 }

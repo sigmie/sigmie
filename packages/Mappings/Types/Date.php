@@ -8,6 +8,8 @@ use Sigmie\Query\Queries\Term\Term;
 
 class Date extends Type
 {
+    protected string $type = 'date';
+
     public function __construct(
         string $name,
         protected array $formats = ['yyyy-MM-dd HH:mm:ss.SSSSSS']
@@ -32,9 +34,10 @@ class Date extends Type
 
     public function toRaw(): array
     {
-        return [$this->name => [
-            'type' => 'date',
-            'format' => implode('|', $this->formats),
-        ]];
+        $raw = parent::toRaw();
+
+        $raw[$this->name]['format'] = implode('|', $this->formats);
+
+        return $raw;
     }
 }

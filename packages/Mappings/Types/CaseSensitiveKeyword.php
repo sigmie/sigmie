@@ -9,12 +9,7 @@ use Sigmie\Query\Queries\Term\Term;
 
 class CaseSensitiveKeyword extends Type
 {
-    public function toRaw(): array
-    {
-        return [$this->name => [
-            'type' => 'keyword',
-        ]];
-    }
+    protected string $type = 'keyword';
 
     public function queries(string $queryString): array
     {

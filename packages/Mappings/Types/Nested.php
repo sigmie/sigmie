@@ -9,6 +9,8 @@ use Sigmie\Shared\Properties;
 
 class Nested extends Type
 {
+    protected string $type = 'nested';
+
     use Properties;
 
     public function __construct(
@@ -22,10 +24,11 @@ class Nested extends Type
 
     public function toRaw(): array
     {
-        return [$this->name => [
-            'type' => 'nested',
-            'properties' => $this->properties->toRaw(),
-        ]];
+        $raw = parent::toRaw();
+
+        $raw[$this->name]['properties'] = $this->properties->toRaw();
+
+        return $raw;
     }
 
     public function queries(string $queryString): array
