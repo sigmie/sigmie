@@ -134,7 +134,7 @@ class FilterParser extends Parser
             return $query;
         }
 
-        $this->handleError("Filter {$string} couldn't be parsed.");
+        $this->handleError("Filter string '{$string}' couldn't be parsed.");
 
         return new MatchNone;
     }
