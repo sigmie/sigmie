@@ -41,6 +41,8 @@ class Text extends Type implements FromRaw
 
         $this->fields = new Collection();
         $this->newAnalyzerClosure = fn () => null;
+
+        $this->configure();
     }
 
     public function configure(): void
@@ -59,8 +61,6 @@ class Text extends Type implements FromRaw
             $analysis,
             "{$this->name}_field_analyzer"
         );
-
-        $this->configure();
 
         if (($this->hasAnalyzerCallback)) {
 
