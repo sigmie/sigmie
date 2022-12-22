@@ -132,7 +132,7 @@ class NewProperties
         return $field;
     }
 
-    public function category(string $name = 'category'): Keyword
+    public function category(string $name = 'category'): Category
     {
         $field = new Category($name);
 
