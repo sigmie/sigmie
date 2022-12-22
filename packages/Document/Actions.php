@@ -40,7 +40,7 @@ trait Actions
 
         $response = $this->bulkAPICall($indexName, $body, $refresh);
 
-        if (! ($document->_id ?? false)) {
+        if (!($document->_id ?? false)) {
             $document->id($response->json('items.0.create._id'));
         }
 
@@ -76,6 +76,10 @@ trait Actions
             ];
         });
 
+        if (count($documents) <= 0) {
+            return $documents;
+        }
+
         $res = $this->bulkAPICall($indexName, $body, $refresh);
 
         foreach ($res->json('items') as $index => $value) {
@@ -83,11 +87,11 @@ trait Actions
             $response = $value[$action];
 
             $doc = $documents[$index];
-            if (! isset($doc->_id)) {
+            if (!isset($doc->_id)) {
                 $doc->id($response['_id']);
             }
 
-            if (! isset($doc->_index)) {
+            if (!isset($doc->_index)) {
                 $doc->index($response['_index']);
             }
         }
@@ -110,11 +114,11 @@ trait Actions
 
         $res = $this->bulkAPICall($indexName, $data, $refresh);
 
-        if (! isset($doc->_id)) {
+        if (!isset($doc->_id)) {
             $doc->id($res->json('items.0.create._id'));
         }
 
-        if (! isset($doc->_index)) {
+        if (!isset($doc->_index)) {
             $doc->index($res->json('items.0.create._index'));
         }
 
