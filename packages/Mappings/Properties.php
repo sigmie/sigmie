@@ -76,6 +76,7 @@ class Properties extends Type implements ArrayAccess
                 $value['type'] === 'integer' => (new Number($fieldName))->integer(),
                 $value['type'] === 'long' => (new Number($fieldName))->long(),
                 $value['type'] === 'float' => (new Number($fieldName))->float(),
+                $value['type'] === 'scaled_float' => (new Number($fieldName))->scaledFloat(),
                 $value['type'] === 'boolean' => new Boolean($fieldName),
                 $value['type'] === 'date' => new Date($fieldName),
                 default => throw new Exception('Field '.$value['type'].' couldn\'t be mapped')
