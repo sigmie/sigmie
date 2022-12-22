@@ -59,7 +59,7 @@ class AliasedIndex extends Index
         $update->alias($this->alias);
         $update->config('refresh_interval', '-1');
 
-        $newUpdate($update);
+        $update = $newUpdate($update);
 
         $blueprint = $update->make();
         $requestedReplicas = $blueprint->settings->replicaShards();

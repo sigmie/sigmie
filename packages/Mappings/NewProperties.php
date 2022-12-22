@@ -30,7 +30,7 @@ use Sigmie\Mappings\Types\SearchableBooleanNumber;
 use Sigmie\Mappings\Types\SearchableNumber;
 use Sigmie\Mappings\Types\Tags;
 use Sigmie\Mappings\Types\Text;
-use Sigmie\Mappings\Types\Title;
+use Sigmie\Mappings\Types\Sentence;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
 
@@ -107,7 +107,7 @@ class NewProperties
 
     public function title(string $name = 'title'): Text
     {
-        $field = new Title($name);
+        $field = new Sentence($name);
 
         $this->fields->add($field);
 

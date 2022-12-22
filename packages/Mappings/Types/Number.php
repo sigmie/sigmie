@@ -30,6 +30,13 @@ class Number extends Type
         return $this;
     }
 
+    public function scaledFloat(): self
+    {
+        $this->type = ElasticsearchMappingType::SCALED_FLOAT->value;
+
+        return $this;
+    }
+
     public function long(): self
     {
         $this->type = ElasticsearchMappingType::LONG->value;

@@ -12,9 +12,13 @@ class LongText extends Text
         string $name,
     ) {
         parent::__construct($name, raw: null);
+    }
 
+    public function configure(): void
+    {
         $this->unstructuredText();
     }
+
 
     public function queries(string $queryString): array
     {

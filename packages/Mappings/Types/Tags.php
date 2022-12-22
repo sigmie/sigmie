@@ -11,6 +11,11 @@ use Sigmie\Query\Queries\Text\Match_;
 
 class Tags extends Text implements Analyze
 {
+    public function configure(): void
+    {
+        $this->unstructuredText();
+    }
+
     public function analyze(NewAnalyzer $newAnalyzer): void
     {
         $newAnalyzer->mapChars(['#' => ''])

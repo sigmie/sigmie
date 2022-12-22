@@ -8,6 +8,7 @@ enum ElasticsearchMappingType: string
     case INTEGER = 'integer';
     case LONG = 'long';
     case FLOAT = 'float';
+    case SCALED_FLOAT = 'scaled_float';
     case BOOLEAN = 'boolean';
     case DATE = 'date';
     case PROPERTIES = 'properties';

@@ -21,7 +21,7 @@ class Name extends Text
 
     public function configure(): void
     {
-        $this->unstructuredText()->indexPrefixes();
+        $this->unstructuredText()->indexPrefixes()->keyword();
     }
 
     public function analyze(NewAnalyzer $newAnalyzer): void

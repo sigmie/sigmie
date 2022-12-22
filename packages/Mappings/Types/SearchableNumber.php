@@ -12,9 +12,12 @@ class SearchableNumber extends Text
     public function __construct(
         string $name,
     ) {
-        parent::__construct($name, raw: 'keyword');
+        parent::__construct($name);
+    }
 
-        $this->unstructuredText()->indexPrefixes();
+    public function configure(): void
+    {
+        $this->unstructuredText()->keyword()->indexPrefixes();
     }
 
     public function queries(string $queryString): array

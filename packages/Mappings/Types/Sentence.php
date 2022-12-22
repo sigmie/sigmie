@@ -13,7 +13,7 @@ use Sigmie\Mappings\Contracts\Analyze;
 use Sigmie\Query\Queries\Text\MatchBoolPrefix;
 use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
 
-class Title extends Text implements Analyze
+class Sentence extends Text implements Analyze
 {
     public function analyze(NewAnalyzer $newAnalyzer): void
     {
@@ -24,7 +24,7 @@ class Title extends Text implements Analyze
 
     public function configure(): void
     {
-        $this->unstructuredText()->indexPrefixes();
+        $this->unstructuredText()->indexPrefixes()->keyword();
     }
 
     public function queries(string $queryString): array
