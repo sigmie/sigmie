@@ -10,6 +10,9 @@ use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Mget;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Document\Document as ElasticsearchDocument;
+use Sigmie\Query\Queries\MatchAll;
+use Sigmie\Query\Queries\Term\Term;
+use Sigmie\Query\Queries\Text\Match_;
 
 trait Document
 {
@@ -33,31 +36,10 @@ trait Document
         $query = [
             'query' => [
                 'bool' => [
-                    'filter' => [
-                        // 'match' => [
-                        // 'bear' => [
-                        //     'query' => 'went',
-                        //     'operator' => 'and',
-                        //     'zero_terms_query' => 'none'
-                        // ]
-                        // ]
-                    ],
+                    'filter' => $values,
                 ],
             ],
         ];
-
-        foreach ($values as $key => $value) {
-            $query['query']['bool']['filter'][] =
-                [
-                    'match' => [
-                        $key => [
-                            'query' => $value,
-                            'operator' => 'and',
-                            'zero_terms_query' => 'none',
-                        ],
-                    ],
-                ];
-        }
 
         $res = $this->searchAPICall($index, $query);
 
@@ -71,31 +53,10 @@ trait Document
         $query = [
             'query' => [
                 'bool' => [
-                    'filter' => [
-                        // 'match' => [
-                        // 'bear' => [
-                        //     'query' => 'went',
-                        //     'operator' => 'and',
-                        //     'zero_terms_query' => 'none'
-                        // ]
-                        // ]
-                    ],
+                    'filter' => $values,
                 ],
             ],
         ];
-
-        foreach ($values as $key => $value) {
-            $query['query']['bool']['filter'][] =
-                [
-                    'match' => [
-                        $key => [
-                            'query' => $value,
-                            'operator' => 'and',
-                            'zero_terms_query' => 'none',
-                        ],
-                    ],
-                ];
-        }
 
         $res = $this->searchAPICall($index, $query);
 

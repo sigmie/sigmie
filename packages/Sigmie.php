@@ -86,6 +86,11 @@ class Sigmie
         return $builder->id($id);
     }
 
+    public function refresh(string $indexName)
+    {
+        $this->refreshIndex($indexName);
+    }
+
     public function template(string $id): ExistingScript
     {
         return new ExistingScript($id, $this->elasticsearchConnection);
