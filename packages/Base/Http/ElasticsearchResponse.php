@@ -51,7 +51,7 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
             'json' => $this->json(),
             'body' => $this->body(),
             'request' => json_decode($request->getBody()->getContents(), true),
-        ]);
+        ], $this->code());
     }
 
     private function hasErrorKey(): bool

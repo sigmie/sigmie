@@ -9,9 +9,9 @@ use Sigmie\Shared\Contracts\ToRaw;
 
 class ElasticsearchException extends Exception implements ToRaw
 {
-    public function __construct(public array $json)
+    public function __construct(public array $json, int $code)
     {
-        parent::__construct(json_encode($json, JSON_PRETTY_PRINT));
+        parent::__construct(json_encode($json, JSON_PRETTY_PRINT), $code);
     }
 
     public function json(null|int|string $key = null): int|bool|string|array|null|float
