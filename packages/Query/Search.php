@@ -18,6 +18,8 @@ class Search
 
     protected string $index;
 
+    protected int $trackTotalHits = 10000;
+
     protected int|string $from = 0;
 
     protected int|string $size = 500;
@@ -39,6 +41,13 @@ class Search
     public function aggregate(callable $callable)
     {
         $callable($this->aggs);
+
+        return $this;
+    }
+
+    public function trackTotalHits(int $trackTotalHits = -1)
+    {
+        $this->trackTotalHits = $trackTotalHits;
 
         return $this;
     }
@@ -133,6 +142,7 @@ class Search
     public function toRaw(): array
     {
         $result = [
+            'track_total_hits' => $this->trackTotalHits < 0 ? true : $this->trackTotalHits,
             '_source' => $this->fields,
             'query' => $this->query->toRaw(),
             'from' => $this->from,
