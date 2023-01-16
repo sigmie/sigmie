@@ -11,6 +11,7 @@ use Sigmie\Base\APIs\Doc as DocAPI;
 use Sigmie\Base\APIs\Mget as MgetAPI;
 use Sigmie\Base\APIs\Search as SearchAPI;
 use Sigmie\Base\APIs\Update as UpdateAPI;
+use Sigmie\Base\ElasticsearchException;
 use Sigmie\Document\Document as Doc;
 use Sigmie\Shared\Collection;
 
@@ -44,8 +45,8 @@ trait Actions
             $document->id($response->json('items.0.create._id'));
         }
 
-        if ($response->failed()) {
-            throw new Exception('Document update failed.');
+        if ($response->json('errors')) {
+            throw new ElasticsearchException($response->json('items.1.create.error'), $response->code());
         }
 
         return $document;
@@ -113,6 +114,10 @@ trait Actions
         ];
 
         $res = $this->bulkAPICall($indexName, $data, $refresh);
+
+        if ($res->json('errors')) {
+            throw new ElasticsearchException($res->json('items.0.create.error'), $res->code());
+        }
 
         if (!isset($doc->_id)) {
             $doc->id($res->json('items.0.create._id'));
