@@ -22,8 +22,6 @@ class Date extends Type
     {
         $queries = [];
 
-        $queries[] = new Term($this->name, $queryString);
-
         return $queries;
     }
 

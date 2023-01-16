@@ -92,9 +92,9 @@ trait Actions
         return $index;
     }
 
-    protected function listIndices(string $patter = '*'): array
+    protected function listIndices(string $pattern = '*'): array
     {
-        $catResponse = $this->catAPICall('indices', 'GET');
+        $catResponse = $this->catAPICall("indices/{$pattern}", 'GET');
 
         return array_map(function ($values) {
             $index = new BaseIndex($values['index']);

@@ -96,9 +96,9 @@ class Sigmie
         return new ExistingScript($id, $this->elasticsearchConnection);
     }
 
-    public function indices(): array
+    public function indices(string $pattern = '*'): array
     {
-        return $this->listIndices();
+        return $this->listIndices($pattern);
     }
 
     public function isConnected(): bool
@@ -108,7 +108,7 @@ class Sigmie
 
             $res = ($this->elasticsearchConnection)($request);
 
-            return ! $res->failed();
+            return !$res->failed();
         } catch (ConnectException) {
             return false;
         }
