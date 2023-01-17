@@ -49,7 +49,6 @@ class AliasedIndex extends Index
         return $tokens;
     }
 
-
     public function update(callable $newUpdate): AliasedIndex
     {
         $oldAlias = $this->name;

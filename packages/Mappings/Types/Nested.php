@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Shared\Properties;
+use Sigmie\Mappings\Properties;
 
 class Nested extends Type
 {
     protected string $type = 'nested';
 
-    use Properties;
+    public Properties $properties;
 
     public function __construct(
         string $name,
@@ -20,6 +20,13 @@ class Nested extends Type
         parent::__construct($name);
 
         $this->properties($properties);
+    }
+
+    public function properties(Properties|NewProperties $props): static
+    {
+        $this->properties = $props instanceof NewProperties ? $props->get() : $props;
+
+        return $this;
     }
 
     public function toRaw(): array

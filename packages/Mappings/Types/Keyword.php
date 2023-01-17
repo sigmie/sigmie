@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use Sigmie\Index\Contracts\Analysis;
-use Sigmie\Query\Queries\Term\Prefix;
-use Sigmie\Query\Queries\Term\Term;
-use Sigmie\Index\Contracts\Normalizer as NormalizerInterface;
 use Sigmie\Index\Analysis\Normalizer\Normalizer;
 use Sigmie\Index\Analysis\NormalizerFilter\Lowercase;
+use Sigmie\Index\Contracts\Analysis;
+use Sigmie\Index\Contracts\Normalizer as NormalizerInterface;
+use Sigmie\Query\Queries\Term\Prefix;
+use Sigmie\Query\Queries\Term\Term;
 
 class Keyword extends Type
 {
@@ -21,7 +21,7 @@ class Keyword extends Type
 
         $raw = parent::toRaw();
 
-        if (!is_null($normalizer)) {
+        if (! is_null($normalizer)) {
             $raw[$this->name]['normalizer'] = $normalizer->name();
         }
 
@@ -44,7 +44,6 @@ class Keyword extends Type
             $analysis->addNormalizer($normalizer);
         }
     }
-
 
     public function queries(string $queryString): array
     {

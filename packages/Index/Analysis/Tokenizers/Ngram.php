@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\Tokenizers;
 
-use Sigmie\Index\Contracts\Tokenizer;
-
 use function Sigmie\Functions\name_configs;
+use Sigmie\Index\Contracts\Tokenizer;
 
 class Ngram implements Tokenizer
 {
@@ -32,7 +31,7 @@ class Ngram implements Tokenizer
                 'type' => 'ngram',
                 'min_gram' => $this->minGram,
                 'max_gram' => $this->maxGram,
-                "token_chars" => $this->tokenChars
+                'token_chars' => $this->tokenChars,
             ],
         ];
 

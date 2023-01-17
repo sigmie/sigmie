@@ -70,7 +70,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         // $field = $this->properties[$field];
         // $highlight->each(fn (string $field) => $search->highlight($field, $this->highlightPrefix, $this->highlightSuffix));
         $highlight->each(function (string $field) use ($search) {
-
             $properties = $this->properties;
 
             $field = $properties[$field];
@@ -98,7 +97,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $fields = new Collection($this->fields);
 
             $fields->each(function ($field) use ($queryBoolean) {
-
                 if ($this->queryString === '') {
                     $queryBoolean->should()->query(new MatchAll);
 
@@ -109,7 +107,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $field = $this->properties[$field];
 
-                $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                $fuzziness = ! in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
                 $queries = $field->hasQueriesCallback ? $field->queriesFromCallback($this->queryString) : $field->queries($this->queryString);
 

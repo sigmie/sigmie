@@ -57,7 +57,7 @@ class Analysis implements AnalysisInterface
         $this->tokenizers = $this->analyzers
             ->filter(fn (AnalyzerInterface $analyzer) => $analyzer instanceof CustomAnalyzerInterface)
             ->map(fn (CustomAnalyzerInterface $analyzer) => $analyzer->tokenizer())
-            ->filter(fn ($tokenizer) => !is_null($tokenizer))
+            ->filter(fn ($tokenizer) => ! is_null($tokenizer))
             ->mapToDictionary(fn (TokenizerInterface $tokenizer) => [$tokenizer->name() => $tokenizer]);
     }
 

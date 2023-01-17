@@ -27,7 +27,6 @@ class Name extends Text
     public function analyze(NewAnalyzer $newAnalyzer): void
     {
         $prefixField = (new Text("{$this->name}_text"))->unstructuredText()->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
-
             $newAnalyzer->tokenizeOnWordBoundaries()
                 ->truncate($this->minGrams - 1)
                 ->lowercase()
@@ -47,10 +46,9 @@ class Name extends Text
     {
         return [
             $this->name,
-            "{$this->name}.{$this->name}_text"
+            "{$this->name}.{$this->name}_text",
         ];
     }
-
 
     public function queries(string $queryString): array
     {

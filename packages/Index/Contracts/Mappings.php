@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Contracts;
 
-use Sigmie\Shared\Contracts\ToRaw;
 use Sigmie\Mappings\Properties;
+use Sigmie\Shared\Contracts\ToRaw;
 
 interface Mappings extends ToRaw
 {

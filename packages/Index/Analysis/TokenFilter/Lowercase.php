@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\TokenFilter;
 
-use Sigmie\Index\Contracts\NormalizerFilter;
-
 use function Sigmie\Functions\name_configs;
 
 class Lowercase extends TokenFilter
 {
-    public function __construct(string $name,)
+    public function __construct(string $name)
     {
         parent::__construct($name, []);
     }

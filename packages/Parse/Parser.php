@@ -9,12 +9,9 @@ use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\Contracts\Parser as ParserInterface;
-use Sigmie\Shared\Properties as SharedProperties;
 
 abstract class Parser implements ParserInterface
 {
-    use SharedProperties;
-
     protected array $errors = [];
 
     public function __construct(
@@ -22,6 +19,13 @@ abstract class Parser implements ParserInterface
         protected bool $throwOnError = true
     ) {
         $this->properties($properties);
+    }
+
+    public function properties(Properties|NewProperties $props): static
+    {
+        $this->properties = $props instanceof NewProperties ? $props->get() : $props;
+
+        return $this;
     }
 
     abstract public function parse(string $string);
@@ -40,7 +44,7 @@ abstract class Parser implements ParserInterface
 
     protected function handleFieldName(string $field): null|string
     {
-        if (!$this->fieldExists($field)) {
+        if (! $this->fieldExists($field)) {
             $this->handleError("Field {$field} is does not exist.", [
                 'field' => $field,
             ]);
@@ -48,7 +52,7 @@ abstract class Parser implements ParserInterface
             return null;
         }
 
-        if (!$this->isTextOrKeywordField($field)) {
+        if (! $this->isTextOrKeywordField($field)) {
             return $field;
         }
 
@@ -58,7 +62,7 @@ abstract class Parser implements ParserInterface
             return $field->name;
         }
 
-        if (!$field->isFilterable()) {
+        if (! $field->isFilterable()) {
             $this->handleError("Field {$field->name} is not filterable.", [
                 'field' => $field->name,
             ]);

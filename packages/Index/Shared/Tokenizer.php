@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Index\Shared;
 
 use function Sigmie\Functions\random_letters;
-
 use Sigmie\Index\Analysis\Tokenizers\NonLetter;
 use Sigmie\Index\Analysis\Tokenizers\Noop;
 use Sigmie\Index\Analysis\Tokenizers\PathHierarchy;

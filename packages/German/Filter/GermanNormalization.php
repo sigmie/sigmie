@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\German\Filter;
 
-use Sigmie\Index\Analysis\TokenFilter\Lowercase as BaseLowercase;
 use Sigmie\Index\Contracts\NormalizerFilter;
 
 class GermanNormalization implements NormalizerFilter

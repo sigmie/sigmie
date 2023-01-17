@@ -17,7 +17,7 @@ class Ngram extends TokenFilter
         parent::__construct(name: $name, settings:[
             'min_gram' => $this->minGram,
             'max_gram' => $this->maxGram,
-            'preserve_original' => $this->preserveOriginal
+            'preserve_original' => $this->preserveOriginal,
         ]);
     }
 

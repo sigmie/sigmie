@@ -19,7 +19,7 @@ abstract class Tokenizer implements TokenizerInterface
         'keyword' => Noop::class,
         'path_hierarchy' => PathHierarchy::class,
         'simple_pattern_split' => SimplePatternSplit::class,
-        'simple_pattern' => SimplePattern::class
+        'simple_pattern' => SimplePattern::class,
     ];
 
     public static function filterMap(array $map)

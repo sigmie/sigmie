@@ -6,16 +6,9 @@ namespace Sigmie\Index\Analysis\Normalizer;
 
 use Exception;
 use function Sigmie\Functions\name_configs;
-use Sigmie\Index\Contracts\Normalizer as NormalizerInterface;
-use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
-use Sigmie\Index\Analysis\Tokenizers\NonLetter;
-use Sigmie\Index\Analysis\Tokenizers\Whitespace;
-use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\CharFilter;
-use Sigmie\Index\Contracts\CustomAnalyzer as CustomAnalyzerInterface;
+use Sigmie\Index\Contracts\Normalizer as NormalizerInterface;
 use Sigmie\Index\Contracts\NormalizerFilter;
-use Sigmie\Index\Contracts\TokenFilter;
-use Sigmie\Index\Contracts\Tokenizer;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\Name;
 
@@ -95,7 +88,7 @@ class Normalizer implements NormalizerInterface
 
         $raw = [
             $this->name => [
-                'type'=> 'custom',
+                'type' => 'custom',
                 'char_filter' => $charFilters,
                 'filter' => $filters,
             ],

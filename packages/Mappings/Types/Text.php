@@ -6,20 +6,15 @@ namespace Sigmie\Mappings\Types;
 
 use Closure;
 use Exception;
-use Sigmie\Index\Analysis\DefaultAnalyzer;
-
-use Sigmie\Index\Analysis\Analysis;
-use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
-
 use function Sigmie\Functions\name_configs;
+use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Index\NewAnalyzer;
+use Sigmie\Mappings\Contracts\Analyze;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\Contracts\FromRaw;
-use Sigmie\Mappings\Contracts\Configure;
-use Sigmie\Mappings\Contracts\Analyze;
 
 class Text extends Type implements FromRaw
 {
@@ -63,15 +58,12 @@ class Text extends Type implements FromRaw
         );
 
         if (($this->hasAnalyzerCallback)) {
-
             $this->analysisFromCallback($newAnalyzer);
 
             $analyzer = $newAnalyzer->create();
 
             $this->withAnalyzer($analyzer);
-
         } elseif ($this instanceof Analyze) {
-
             $this->analyze($newAnalyzer);
 
             $analyzer = $newAnalyzer->create();
@@ -82,13 +74,11 @@ class Text extends Type implements FromRaw
         $this->fields = $this->fields
             ->filter(fn ($type) => $type instanceof Text)
             ->map(function (Text $text) use ($analysis) {
-
                 $text->handleCustomAnalyzer($analysis);
 
                 return $text;
             });
     }
-
 
     public function field(Type $type)
     {
@@ -99,9 +89,8 @@ class Text extends Type implements FromRaw
 
     public function hasFields()
     {
-        return !$this->fields->isEmpty();
+        return ! $this->fields->isEmpty();
     }
-
 
     public function analysisFromCallback(NewAnalyzer $newAnalyzer): void
     {
@@ -134,7 +123,7 @@ class Text extends Type implements FromRaw
             'text' => $instance->unstructuredText(),
             'search_as_you_type' => $instance->searchAsYouType(),
             'completion' => $instance->completion(),
-            default => throw new Exception('Field ' . $configs['type'] . ' couldn\'t be mapped')
+            default => throw new Exception('Field '.$configs['type'].' couldn\'t be mapped')
         };
 
         return $instance;
@@ -150,17 +139,17 @@ class Text extends Type implements FromRaw
 
     public function isKeyword(): bool
     {
-        return !is_null($this->raw);
+        return ! is_null($this->raw);
     }
 
     public function isSortable(): bool
     {
-        return !is_null($this->raw);
+        return ! is_null($this->raw);
     }
 
     public function isFilterable(): bool
     {
-        return !is_null($this->raw);
+        return ! is_null($this->raw);
     }
 
     public function keywordName(): null|string
@@ -232,26 +221,23 @@ class Text extends Type implements FromRaw
     {
         $raw = parent::toRaw();
 
-        if (!is_null($this->indexPrefixes)) {
+        if (! is_null($this->indexPrefixes)) {
             $raw[$this->name]['index_prefixes'] = $this->indexPrefixes;
         }
 
-        if (!is_null($this->raw)) {
+        if (! is_null($this->raw)) {
             $raw[$this->name]['fields'] = [$this->raw => ['type' => 'keyword']];
         }
 
-        if (!is_null($this->analyzer)) {
+        if (! is_null($this->analyzer)) {
             $raw[$this->name]['analyzer'] = $this->analyzer->name();
         }
 
-        if (!$this->fields->isEmpty()) {
-
+        if (! $this->fields->isEmpty()) {
             $this->fields->each(function (Type $field) use (&$raw) {
-
                 $raw[$this->name]['fields'] = $field->toRaw();
             });
         }
-
 
         return $raw;
     }

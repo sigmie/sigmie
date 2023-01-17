@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Queries\Text;
 
-use Sigmie\Query\Contracts\FuzzyQuery;
 use Sigmie\Query\Queries\Query;
 
 class MatchPhrasePrefix extends Query

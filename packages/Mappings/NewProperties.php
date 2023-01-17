@@ -6,11 +6,6 @@ namespace Sigmie\Mappings;
 
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
-use Sigmie\Index\Contracts\CustomAnalyzer;
-use Sigmie\Index\NewAnalyzer;
-use Sigmie\Mappings\Contracts\Analyze;
-use Sigmie\Mappings\Contracts\Configure;
-use Sigmie\Mappings\Types\Active;
 use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
@@ -25,12 +20,10 @@ use Sigmie\Mappings\Types\Name;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Price;
-use Sigmie\Mappings\Types\SearchableBoolean;
-use Sigmie\Mappings\Types\SearchableBooleanNumber;
 use Sigmie\Mappings\Types\SearchableNumber;
+use Sigmie\Mappings\Types\Sentence;
 use Sigmie\Mappings\Types\Tags;
 use Sigmie\Mappings\Types\Text;
-use Sigmie\Mappings\Types\Sentence;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
 
@@ -53,13 +46,11 @@ class NewProperties
         string $name = 'mappings'
     ): Properties {
         $fields = $this->fields->mapToDictionary(function (Type $type) use ($analysis) {
-
             if ($type instanceof Text) {
                 $type->handleCustomAnalyzer($analysis);
             }
 
-            if ($type instanceof Keyword)
-            {
+            if ($type instanceof Keyword) {
                 $type->handleNormalizer($analysis);
             }
 

@@ -67,7 +67,7 @@ abstract class Type implements Name, ToRaw, TypeInterface
     {
         $this->meta = [
             ...$this->meta,
-            'class' => static::class
+            'class' => static::class,
         ];
 
         $raw = [

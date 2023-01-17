@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\Tokenizers;
 
-use Sigmie\Index\Contracts\Tokenizer;
-
 use function Sigmie\Functions\name_configs;
+use Sigmie\Index\Contracts\Tokenizer;
 
 class NonLetter implements Tokenizer
 {
