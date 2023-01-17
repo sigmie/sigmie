@@ -15,7 +15,7 @@ trait Properties
     {
         $this->properties = $props instanceof NewProperties ? $props->get() : $props;
 
-        if (count($this->fields) === 0) {
+        if (count($this->fields) === 0 && ($this->properties ?? false)) {
             $this->fields = array_keys($this->properties->toArray());
         }
 
