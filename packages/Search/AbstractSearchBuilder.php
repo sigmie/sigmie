@@ -13,6 +13,8 @@ use Sigmie\Search\Contracts\SearchBuilder;
 
 abstract class AbstractSearchBuilder implements SearchBuilder
 {
+    protected Properties $properties;
+
     protected string $highlightSuffix;
 
     protected string $highlightPrefix;

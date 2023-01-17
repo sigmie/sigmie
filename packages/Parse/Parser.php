@@ -14,6 +14,8 @@ abstract class Parser implements ParserInterface
 {
     protected array $errors = [];
 
+    protected Properties $properties;
+
     public function __construct(
         Properties|NewProperties $properties = new Properties(),
         protected bool $throwOnError = true
