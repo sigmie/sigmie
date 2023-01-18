@@ -9,8 +9,8 @@ use Sigmie\Query\Queries\Query;
 class MultiMatch extends Query
 {
     public function __construct(
+        protected array $fields,
         protected string $query,
-        protected array $fields = [],
     ) {
     }
 

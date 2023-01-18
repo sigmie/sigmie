@@ -18,7 +18,7 @@ interface Queries
 
     public function match(string $field, string $query, float $boost);
 
-    public function multiMatch(string $query, array $fields, float $boost);
+    public function multiMatch(array $fields, string $query, float $boost);
 
     public function exists(string $field, float $boost);
 

@@ -26,14 +26,14 @@ class NewQuery implements Queries
     protected Search $search;
 
     public function __construct(
-         protected ElasticsearchConnection $httpConnection,
+        protected ElasticsearchConnection $httpConnection,
         protected null|string $index = null,
-     ) {
+    ) {
         $this->search = new Search();
 
         $this->search->setElasticsearchConnection($httpConnection);
 
-        if (! is_null($index)) {
+        if (!is_null($index)) {
             $this->search->index($index);
         }
     }
@@ -88,9 +88,9 @@ class NewQuery implements Queries
         return $this->search->query($cluase->boost($boost));
     }
 
-    public function multiMatch(string $query, array $fields, float $boost = 1): Search
+    public function multiMatch(array $fields, string $query, float $boost = 1): Search
     {
-        $clause = new MultiMatch($query, $fields);
+        $clause = new MultiMatch($fields, $query);
 
         return $this->search->query($clause->boost($boost));
     }

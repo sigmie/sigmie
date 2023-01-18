@@ -68,9 +68,9 @@ class BooleanQueryBuilder implements Queries
         return $this;
     }
 
-    public function multiMatch(string $query, array $fields, float $boost = 1): self
+    public function multiMatch(array $fields, string $query, float $boost = 1): self
     {
-        $clause = new MultiMatch($query, $fields);
+        $clause = new MultiMatch($fields, $query);
 
         $this->clauses[] = $clause->boost($boost);
 

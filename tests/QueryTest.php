@@ -74,7 +74,7 @@ class QueryTest extends TestCase
             $boolean->filter->matchAll();
             $boolean->filter->matchNone();
             $boolean->filter->fuzzy('bar', 'baz');
-            $boolean->filter()->multiMatch('baz', ['foo', 'bar']);
+            $boolean->filter()->multiMatch(['foo', 'bar'], 'baz');
 
             $boolean->must->term('foo', 'bar');
             $boolean->must->exists('bar');
@@ -101,7 +101,7 @@ class QueryTest extends TestCase
             $boolean->filter->matchAll();
             $boolean->filter->matchNone();
             $boolean->filter->fuzzy('bar', 'baz');
-            $boolean->filter()->multiMatch('baz', ['foo', 'bar']);
+            $boolean->filter()->multiMatch(['foo', 'bar'], 'baz');
 
             $boolean->must->term('foo', 'bar');
             $boolean->must->exists('bar');
