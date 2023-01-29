@@ -11,6 +11,7 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Index\NewIndex;
 use Sigmie\Testing\TestCase;
 use Exception;
+use Http\Promise\Promise;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Analysis\CharFilter\Pattern as PatternCharFilter;
@@ -19,6 +20,7 @@ use Sigmie\Index\Analysis\Tokenizers\Pattern as PatternTokenizer;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Base\APIs\Index;
+use Sigmie\Base\Http\ElasticsearchPromiseBag;
 use Sigmie\English\Builder as EnglishBuilder;
 use Sigmie\English\English;
 use Sigmie\German\Builder as GermanBuilder;
@@ -32,6 +34,49 @@ use Sigmie\Testing\Assert;
 
 class SearchTest extends TestCase
 {
+    /**
+     * @test
+     */
+    public function search_promises_test()
+    {
+        $indexName = uniqid();
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+        $blueprint->text('description');
+
+        $props = ($blueprint)();
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->lowercase()
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+        //
+        $index->merge([
+            new Document([
+                'name' => 'Mickey',
+                'description' => 'Adventure in the woods'
+            ]),
+            new Document([
+                'name' => 'Goofy',
+                'description' => 'Mickey and his friends'
+            ]),
+            new Document([
+                'name' => 'Donald',
+                'description' => 'Chasing Goofy'
+            ]),
+        ]);
+
+        $promise = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->queryString('mickey')
+            ->fields(['name'])
+            ->retrieve(['name', 'description'])
+            ->promise();
+
+        $this->assertInstanceOf(Promise::class, $promise);
+    }
     /**
      * @test
      */
@@ -460,7 +505,7 @@ class SearchTest extends TestCase
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
-
+        //
         $index->merge([
             new Document([
                 'name' => 'Mickey',

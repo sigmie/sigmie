@@ -14,10 +14,15 @@ trait Search
 
     protected function searchAPICall(string $index, array $query): SearchResponse
     {
-        $uri = new Uri("/{$index}/_search");
-
-        $esRequest = new SearchRequest('POST', $uri, $query);
+        $esRequest = $this->searchRequest($index, $query);
 
         return $this->elasticsearchCall($esRequest);
+    }
+
+    protected function searchRequest(string $index, array $query): SearchRequest
+    {
+        $uri = new Uri("/{$index}/_search");
+
+        return new SearchRequest('POST', $uri, $query);
     }
 }

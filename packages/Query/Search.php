@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Query;
 
+use Http\Promise\Promise;
 use Sigmie\Base\APIs\Script as APIsScript;
 use Sigmie\Base\APIs\Search as APIsSearch;
+use Sigmie\Base\Contracts\ElasticsearchRequest;
+use Sigmie\Base\Http\Requests\Search as SearchRequest;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
 use Sigmie\Query\Contracts\QueryClause as Query;
@@ -125,6 +128,15 @@ class Search
         $raw = $this->getDSL();
 
         return $this->searchAPICall($this->index, $raw);
+    }
+
+    public function promise(): Promise
+    {
+        $raw = $this->getDSL();
+
+        $request = $this->searchRequest($this->index, $raw);
+
+        return $this->elasticsearchConnection->promise($request);
     }
 
     public function getDSL(): array

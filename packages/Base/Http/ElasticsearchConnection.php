@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Http;
 
+use Http\Promise\Promise;
 use Sigmie\Base\Contracts\ElasticsearchConnection as ElasticsearchConnectionInterface;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
@@ -16,6 +17,11 @@ class ElasticsearchConnection implements ElasticsearchConnectionInterface
     public function __construct(JsonClientInterface $http)
     {
         $this->http = $http;
+    }
+
+    public function promise(ElasticsearchRequest $request): Promise
+    {
+        return $this->http->promise($request);
     }
 
     public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse

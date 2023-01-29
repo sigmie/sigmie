@@ -9,11 +9,18 @@ use Elastic\Transport\TransportBuilder;
 use GuzzleHttp\Client as GuzzleHttpClient;
 use Sigmie\Http\Contracts\JSONClient as JSONClientInterface;
 use Sigmie\Http\Contracts\JSONRequest;
+use GuzzleHttp\Promise\Utils;
+use Http\Promise\Promise;
 
 class JSONClient implements JSONClientInterface
 {
     public function __construct(protected Transport $http)
     {
+    }
+
+    public function promise(JSONRequest $jsonRequest): Promise
+    {
+        return $this->http->sendAsyncRequest($jsonRequest);
     }
 
     public function request(JSONRequest $jsonRequest): JSONResponse

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use function Sigmie\Functions\auto_fuzziness;
+
+use Http\Promise\Promise;
+use Sigmie\Base\Http\Responses\Search as ResponsesSearch;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
 use Sigmie\Query\Contracts\FuzzyQuery;
@@ -37,25 +40,25 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this;
     }
 
-    public function filter(string $filter): static
+    public function filter(string $filter, bool $thorwOnError = true): static
     {
-        $parser = new FilterParser($this->properties);
+        $parser = new FilterParser($this->properties, $thorwOnError);
 
         $this->filters = $parser->parse($filter);
 
         return $this;
     }
 
-    public function sort(string $sort = '_score'): static
+    public function sort(string $sort = '_score', bool $thorwOnError = true): static
     {
-        $parser = new SortParser($this->properties);
+        $parser = new SortParser($this->properties, $thorwOnError);
 
         $this->sort = $parser->parse($sort);
 
         return $this;
     }
 
-    public function get()
+    public function make(): Search
     {
         $boolean = new Boolean;
 
@@ -107,7 +110,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $field = $this->properties[$field];
 
-                $fuzziness = ! in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
                 $queries = $field->hasQueriesCallback ? $field->queriesFromCallback($this->queryString) : $field->queries($this->queryString);
 
@@ -126,6 +129,16 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $boolean->should()->query($queryBoolean);
         });
 
-        return $search->get();
+        return $search;
+    }
+
+    public function get()
+    {
+        return $this->make()->get();
+    }
+
+    public function promise(): Promise
+    {
+        return $this->make()->promise();
     }
 }
