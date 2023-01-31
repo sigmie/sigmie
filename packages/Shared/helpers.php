@@ -3,8 +3,17 @@
 declare(strict_types=1);
 
 namespace Sigmie\Functions {
+
     use Carbon\Carbon;
     use Exception;
+    use GuzzleHttp\Promise\Utils;
+
+    function await(array $promises)
+    {
+        return Utils::settle(
+            Utils::unwrap($promises)
+        )->wait();
+    }
 
     function index_name(string $prefix): string
     {
