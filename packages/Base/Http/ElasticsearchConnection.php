@@ -9,6 +9,7 @@ use Sigmie\Base\Contracts\ElasticsearchConnection as ElasticsearchConnectionInte
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Http\Contracts\JSONClient as JSONClientInterface;
+use Sigmie\Http\Contracts\JSONResponse;
 
 class ElasticsearchConnection implements ElasticsearchConnectionInterface
 {
@@ -21,7 +22,10 @@ class ElasticsearchConnection implements ElasticsearchConnectionInterface
 
     public function promise(ElasticsearchRequest $request): Promise
     {
-        return $this->http->promise($request);
+        return $this->http->promise($request)
+            ->then(function (JSONResponse $res) use ($request) {
+                return $request->response($res->psr());
+            });
     }
 
     public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse

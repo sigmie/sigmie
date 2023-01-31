@@ -20,7 +20,9 @@ class JSONClient implements JSONClientInterface
 
     public function promise(JSONRequest $jsonRequest): Promise
     {
-        return $this->http->sendAsyncRequest($jsonRequest);
+        return $this->http->sendAsyncRequest($jsonRequest)->then(function ($response) {
+            return new JSONResponse($response);
+        });
     }
 
     public function request(JSONRequest $jsonRequest): JSONResponse
