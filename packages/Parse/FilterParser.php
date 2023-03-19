@@ -16,11 +16,13 @@ class FilterParser extends Parser
 {
     protected function parseString(string $query)
     {
-        //Replace breaks with spaces
+        // Replace breaks with spaces
         $query = str_replace(["\r", "\n"], ' ', $query);
-        //Remove extra spaces and keep only one
-        $query = preg_replace('/\s+/', ' ', $query);
-        //Trim leading and trailing spaces
+        // Remove extra spaces that aren't in quotes
+        // and replace them with only one. This regex handles
+        // also quotes that are escapted
+        $query = preg_replace('/\s+(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)/', ' ', $query);
+        // Trim leading and trailing spaces
         $query = trim($query);
 
         // If first filter is a parenthetic expression
@@ -31,7 +33,7 @@ class FilterParser extends Parser
             $matchWithoutParentheses = preg_replace('/^\((.+)\)$/', '$1', $matchWithParentheses);
 
             //Remove the parenthetic expresion from the query
-            $query = preg_replace("/((AND NOT|AND|OR) )?\({$matchWithoutParentheses}\)/", '', $query);
+            $query = preg_replace("/((\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^'\"]*['\"]){2})*[^'\"]*$)) )?\({$matchWithoutParentheses}\)/", '', $query);
 
             //Trim leading and trailing spaces
             $query = trim($query);
@@ -39,11 +41,14 @@ class FilterParser extends Parser
             //Create filter from parentheses match
             $filter = $this->parseString($matchWithoutParentheses);
         } else {
-            [$filter] = preg_split('/(AND NOT|AND|OR)/', $query, limit: 2);
+            // Split on the first AND NOT, AND or OR operator that is not in quotes
+            [$filter] = preg_split('/\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^\'"]*[\'"]){2})*[^\'"]*$)/', $query, limit: 2);
         }
 
+        // A nested filter like (inStock = 1 AND active = true) is
+        // returned as an array from the `parseString` method.
         //If it's a string filter like inStock = 1 and not
-        //a subquery like (inStock = 1 AND active = true)
+        //a subquery like (inStock = 1 AND active = true).
         if (is_string($filter)) {
             $query = str_replace($filter, '', $query);
             $query = trim($query);
@@ -125,8 +130,9 @@ class FilterParser extends Parser
             preg_match('/^is_not:[a-z_A-Z0-9]+/', $string) => $this->handleIsNot($string),
             preg_match('/(\w+)( +)?([<>]=?)+( +)?([a-z_A-Z0-9.@]+)/', $string) => $this->handleRange($string),
             preg_match('/^_id:[a-z_A-Z0-9]+/', $string) => $this->handleIDs($string),
-            preg_match('/\w+:\[[a-z_A-Z,0-9.@*]+\]/', $string) => $this->handleIn($string),
-            preg_match('/\w+:[a-z_A-Z0-9.@*]+/', $string) => $this->handleTerm($string),
+            preg_match('/\w+:\[.+\]/', $string) => $this->handleIn($string),
+            preg_match('/\w+:".+"/', $string) => $this->handleTerm($string),
+            preg_match('/\w+:\'.+\'/', $string) => $this->handleTerm($string),
             default => null
         };
 
@@ -192,8 +198,13 @@ class FilterParser extends Parser
         [$field, $value] = explode(':', $terms);
         $value = trim($value, '[]');
         $values = explode(',', $value);
+        // Remove doublue quotes from values
+        $values = array_map(fn ($value) => trim($value, '\''), $values);
+        // Remove single quotes from values
+        $values = array_map(fn ($value) => trim($value, '"'), $values);
 
         $field = $this->handleFieldName($field);
+
         if (is_null($field)) {
             return;
         }
@@ -204,6 +215,11 @@ class FilterParser extends Parser
     public function handleTerm(string $term)
     {
         [$field, $value] = explode(':', $term);
+
+        // Remove quotes from value 
+        $value = trim($value, '\'');
+        // Remove quotes from value 
+        $value = trim($value, '"');
 
         $field = $this->handleFieldName($field);
         if (is_null($field)) {

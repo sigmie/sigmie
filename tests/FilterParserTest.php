@@ -37,7 +37,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $boolean = $parser->parse('category:sports AND is:active OR name:foo');
+        $boolean = $parser->parse('category:"sports" AND is:active OR name:foo');
     }
 
     /**
@@ -74,13 +74,13 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('is:active AND NOT (category:drama OR category:horror)');
+        $query = $parser->parse('is:active AND NOT (category:"drama" OR category:"horror")');
 
         $res = $this->sigmie->query($indexName,$query)->get();
 
         $this->assertCount(2,$res->json('hits.hits'));
 
-        $query = $parser->parse('is:active AND NOT category:drama');
+        $query = $parser->parse("is:active AND NOT category:'drama'");
 
         $res = $this->sigmie->query($indexName,$query)->get();
 
@@ -98,23 +98,113 @@ class FilterParserTest extends TestCase
 
         $this->assertCount(4,$res->json('hits.hits'));
 
-        $query = $parser->parse('is:active AND stock>0 AND (category:action OR category:horror)');
+        $query = $parser->parse('is:active AND stock>0 AND (category:"action" OR category:"horror")');
 
         $res = $this->sigmie->query($indexName,$query)->get();
 
         $this->assertCount(1,$res->json('hits.hits'));
 
-        $query = $parser->parse('(category:action OR category:horror) AND is:active AND stock>0');
+        $query = $parser->parse('(category:"action" OR category:"horror") AND is:active AND stock>0');
 
         $res = $this->sigmie->query($indexName,$query)->get();
 
         $this->assertCount(1,$res->json('hits.hits'));
 
-        $query = $parser->parse('is:active AND (category:action OR category:horror) AND stock>0');
+        $query = $parser->parse('is:active AND (category:"action" OR category:"horror") AND stock>0');
 
         $res = $this->sigmie->query($indexName,$query)->get();
 
         $this->assertCount(1,$res->json('hits.hits'));
+    }
+
+    /**
+     * @test
+     */
+    public function term_long_string_filter_with_single_quotes()
+    {
+        $mappings = new Properties();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name')->unstructuredText()->keyword();
+        $blueprint->keyword('category');
+
+        $props = $blueprint();
+        $parser = new FilterParser($props);
+        $boolean = $parser->parse('category:\'crime & drama\' OR category:\'crime OR | AND | AND NOT sports\'');
+
+        $indexName = uniqid();
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'category' => 'sports',
+            ]),
+            new Document([
+                'category' => 'sports',
+            ]),
+            new Document([
+                'category' => 'crime & drama',
+            ]),
+        ];
+
+        $index->merge($docs,);
+
+        $res = $this->sigmie->query($indexName, $boolean)->get();
+
+        foreach ($res->json('hits.hits') as $index => $data) {
+            $source = $data['_source'];
+            $this->assertTrue($source['category'] === 'crime & drama');
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function term_long_string_filter()
+    {
+        $mappings = new Properties();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name')->unstructuredText()->keyword();
+        $blueprint->keyword('category');
+
+        $props = $blueprint();
+        $parser = new FilterParser($props);
+        $boolean = $parser->parse('category:"crime & drama" OR category:"crime OR | AND | AND NOT sports"');
+
+        $indexName = uniqid();
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'category' => 'sports',
+            ]),
+            new Document([
+                'category' => 'sports',
+            ]),
+            new Document([
+                'category' => 'crime & drama',
+            ]),
+        ];
+
+        $index->merge($docs,);
+
+        $res = $this->sigmie->query($indexName, $boolean)->get();
+
+        foreach ($res->json('hits.hits') as $index => $data) {
+            $source = $data['_source'];
+            $this->assertTrue($source['category'] === 'crime & drama');
+        }
     }
 
     /**
@@ -130,7 +220,7 @@ class FilterParserTest extends TestCase
 
         $props = $blueprint();
         $parser = new FilterParser($props);
-        $boolean = $parser->parse('category:sports AND NOT name:Adidas');
+        $boolean = $parser->parse('category:"sports" AND NOT name:"Adidas"');
 
         $indexName = uniqid();
         $index = $this->sigmie
