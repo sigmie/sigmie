@@ -37,7 +37,7 @@ abstract class Parser implements ParserInterface
     protected function handleError(string $message, array $context = [])
     {
         if ($this->throwOnError) {
-            throw new FilterParseException($message);
+            throw new ParseException($message);
         } else {
             $this->errors[] = [
                 'message' => $message,
