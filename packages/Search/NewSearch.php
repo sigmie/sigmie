@@ -8,6 +8,7 @@ use function Sigmie\Functions\auto_fuzziness;
 
 use Http\Promise\Promise;
 use Sigmie\Base\Http\Responses\Search as ResponsesSearch;
+use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
 use Sigmie\Query\Contracts\FuzzyQuery;
@@ -45,6 +46,15 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $parser = new FilterParser($this->properties, $thorwOnError);
 
         $this->filters = $parser->parse($filter);
+
+        return $this;
+    }
+
+    public function facets(string $facets, bool $thorwOnError = true): static
+    {
+        $parser = new FacetParser($this->properties, $thorwOnError);
+
+        $this->facets = $parser->parse($facets);
 
         return $this;
     }
@@ -90,9 +100,12 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $search->addRaw('sort', $this->sort);
 
+        $search->addRaw('aggs', $this->facets->toRaw());
+
         $search->size($this->size);
 
         $search->from($this->from);
+
 
         $boolean->must()->bool(function (Boolean $boolean) {
             $queryBoolean = new Boolean;

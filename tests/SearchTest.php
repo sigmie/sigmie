@@ -152,6 +152,7 @@ class SearchTest extends TestCase
 
         $blueprint = new NewProperties;
         $blueprint->text('name');
+        $blueprint->category('category');
 
         $index = $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -160,14 +161,15 @@ class SearchTest extends TestCase
         $index = $this->sigmie->collect($indexName, refresh: true);
 
         $index->merge([
-            new Document(['name' => 'Mickey']),
-            new Document(['name' => 'Goofy']),
-            new Document(['name' => 'Donald']),
+            new Document(['name' => 'Mickey', 'category' => 'cartoon']),
+            new Document(['name' => 'Goofy', 'category' => 'cartoon']),
+            new Document(['name' => 'Donald', 'category' => 'cartoon']),
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
             ->properties($blueprint())
             ->queryString('Mockey')
+            ->facets('category')
             ->fields(['name'])
             ->typoTolerance()
             ->typoTolerantAttributes([

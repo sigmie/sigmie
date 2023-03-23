@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use function Sigmie\Functions\auto_fuzziness;
+
+use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
 use Sigmie\Query\Contracts\FuzzyQuery;
@@ -33,6 +35,15 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
         $parser = new FilterParser($this->properties);
 
         $this->filters = $parser->parse($filter);
+
+        return $this;
+    }
+
+    public function facets(string $facets): static
+    {
+        $parser = new FacetParser($this->properties);
+
+        $this->facets = $parser->parse($facets);
 
         return $this;
     }
@@ -77,6 +88,10 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
         $defaultSorts = json_encode($this->sort);
 
         $search->addRaw('sort', "@sort($defaultSorts)@endsort");
+
+        $defaultAggs = json_encode($this->facets->toRaw());
+
+        $search->addRaw('aggs', "@aggs($defaultAggs)@endaggs");
 
         $search->size("@size({$this->size})@endsize");
 

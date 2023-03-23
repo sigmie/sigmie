@@ -8,6 +8,8 @@ use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
+use Sigmie\Query\Aggs as FacetAggs;
+use Sigmie\Query\Contracts\Aggs;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Search\Contracts\SearchBuilder;
 
@@ -47,10 +49,16 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected Boolean $filters;
 
+    protected Aggs $facets;
+
     public function __construct(
         protected ElasticsearchConnection $elasticsearchConnection,
     ) {
         $this->properties = new MappingsProperties();
+
+        $this->facets = new FacetAggs;
+
+        $this->facets->global('all');
 
         $this->filters = new Boolean;
 

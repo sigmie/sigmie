@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Query;
 
 use Sigmie\Query\Aggregations\Bucket\DateHistogram;
+use Sigmie\Query\Aggregations\Bucket\Global_;
 use Sigmie\Query\Aggregations\Bucket\Missing;
 use Sigmie\Query\Aggregations\Bucket\Range;
 use Sigmie\Query\Aggregations\Bucket\SignificantText;
@@ -64,6 +65,15 @@ class Aggs implements AggsInterface
     public function terms(string $name, string $field): Terms
     {
         $aggregation = new Terms($name, $field);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    public function global(string $name): Global_
+    {
+        $aggregation = new Global_($name);
 
         $this->aggs[] = $aggregation;
 

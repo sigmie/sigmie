@@ -45,6 +45,7 @@ class SearchTemplate
         $parsedSource = $this->handleParameter('size', $parsedSource);
         $parsedSource = $this->handleParameter('filter', $parsedSource);
         $parsedSource = $this->handleParameter('sort', $parsedSource);
+        $parsedSource = $this->handleParameter('aggs', $parsedSource);
 
         return $parsedSource;
     }
@@ -54,7 +55,7 @@ class SearchTemplate
         if (preg_match('/"@'.$tag.'\((.+)\)@end'.$tag.'"/', $parsedSource, $sortMatches)) {
             $default = stripslashes($sortMatches[1]);
 
-            $rawDefault = "{{#{$tag}}}{$default}{{/{$tag}}} {{^{$tag}}}${fallback}{{/{$tag}}}";
+            $rawDefault = "{{#{$tag}}}{$default}{{/{$tag}}} {{^{$tag}}}{$fallback}{{/{$tag}}}";
 
             $parsedSource = preg_replace(
                 '/"@'.$tag.'\((.+)\)@end'.$tag.'"/',
@@ -71,7 +72,7 @@ class SearchTemplate
         if (preg_match('/"@'.$tag.'\((.+)\)@end'.$tag.'"/', $parsedSource, $sortMatches)) {
             $default = stripslashes($sortMatches[1]);
 
-            $rawDefault = "{{^{$tag}.isEmpty}}{{#toJson}}{$tag}{{/toJson}}{{/{$tag}.isEmpty}} {{^{$tag}}}${default}{{/{$tag}}}";
+            $rawDefault = "{{^{$tag}.isEmpty}}{{#toJson}}{$tag}{{/toJson}}{{/{$tag}.isEmpty}} {{^{$tag}}}{$default}{{/{$tag}}}";
 
             $parsedSource = preg_replace(
                 '/"@'.$tag.'\((.+)\)@end'.$tag.'"/',
