@@ -41,11 +41,11 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this;
     }
 
-    public function filter(string $filter, bool $thorwOnError = true): static
+    public function filters(string $filters, bool $thorwOnError = true): static
     {
         $parser = new FilterParser($this->properties, $thorwOnError);
 
-        $this->filters = $parser->parse($filter);
+        $this->filters = $parser->parse($filters);
 
         return $this;
     }
@@ -93,8 +93,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         });
 
         $search->fields($this->retrieve);
-
-        $defaultFilters = json_encode($this->filters->toRaw());
 
         $boolean->must()->bool(fn (Boolean $boolean) => $boolean->filter()->query($this->filters));
 

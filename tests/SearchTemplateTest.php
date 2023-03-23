@@ -364,7 +364,7 @@ class SearchTemplateTest extends TestCase
 
         $saved = $this->sigmie->newTemplate($templateId)
             ->properties($blueprint)
-            ->filter('is:active')
+            ->filters('is:active')
             ->get()
             ->save();
 
@@ -375,7 +375,7 @@ class SearchTemplateTest extends TestCase
         $this->assertCount(2, $hits);
 
         $hits = $template->run($indexName, [
-            'filter' => (new FilterParser($blueprint))->parse('is_not:active')->toRaw()
+            'filters' => (new FilterParser($blueprint))->parse('is_not:active')->toRaw()
         ])->json('hits.hits');
 
         $this->assertCount(1, $hits);

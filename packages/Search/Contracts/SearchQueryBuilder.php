@@ -10,7 +10,7 @@ interface SearchQueryBuilder extends SearchBuilder
 {
     public function properties(Properties $properties): static;
 
-    public function filter(string $filter): static;
+    public function filters(string $filters): static;
 
     public function sort(string $sort): static;
 }

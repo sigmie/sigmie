@@ -30,11 +30,11 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
         return $this;
     }
 
-    public function filter(string $filter): static
+    public function filters(string $filters): static
     {
         $parser = new FilterParser($this->properties);
 
-        $this->filters = $parser->parse($filter);
+        $this->filters = $parser->parse($filters);
 
         return $this;
     }
@@ -83,7 +83,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
         $defaultFilters = json_encode($this->filters->toRaw());
 
-        $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('filter', "@filter($defaultFilters)@endfilter"));
+        $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('filter', "@filters($defaultFilters)@endfilters"));
 
         $defaultSorts = json_encode($this->sort);
 
@@ -91,7 +91,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
         $defaultAggs = json_encode($this->facets->toRaw());
 
-        $search->addRaw('aggs', "@aggs($defaultAggs)@endaggs");
+        $search->addRaw('aggs', "@facets($defaultAggs)@endfacets");
 
         $search->size("@size({$this->size})@endsize");
 

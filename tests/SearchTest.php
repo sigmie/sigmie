@@ -359,7 +359,7 @@ class SearchTest extends TestCase
 
         $search = $this->sigmie->newSearch($indexName)
             ->properties($blueprint())
-            ->filter('is:active')
+            ->filters('is:active')
             ->fields(['name', 'description'])
             ->get();
 
