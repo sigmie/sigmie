@@ -529,6 +529,64 @@ class SearchTemplateTest extends TestCase
     /**
      * @test
      */
+    public function renders_passed_from()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('name');
+        $blueprint->text('description');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'name' => 'Narnia',
+                'description' => 'Awesome',
+            ]),
+            new Document([
+                'name' => 'Disneyland',
+                'description' => 'Too Good',
+            ]),
+            new Document([
+                'name' => 'Neverland',
+                'description' => 'Good',
+            ]),
+        ]);
+
+        $templateId = uniqid();
+
+        $saved = $this->sigmie->newTemplate($templateId)
+            ->properties($blueprint)
+            ->fields(['name', 'description'])
+            ->get()
+            ->save();
+
+        $template = $this->sigmie->template($templateId);
+
+        $rendered = $template->render([
+            'query_string' => '',
+            'from' => 10
+        ]);
+
+        $this->assertEquals(10, $rendered['from']);
+
+        $rendered = $template->render([
+            'query_string' => '',
+            'from' => 20
+        ]);
+
+        $this->assertEquals(20, $rendered['from']);
+    }
+
+
+    /**
+     * @test
+     */
     public function match_all_renders_if_empty_string()
     {
         $indexName = uniqid();

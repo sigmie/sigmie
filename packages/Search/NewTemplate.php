@@ -95,6 +95,8 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
         $search->size("@size({$this->size})@endsize");
 
+        $search->from("@from({$this->from})@endfrom");
+
         $boolean->must()->bool(function (Boolean $boolean) {
             $queryBoolean = new Boolean;
 

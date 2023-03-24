@@ -43,6 +43,7 @@ class SearchTemplate
             $parsedSource
         );
         $parsedSource = $this->handleParameter('size', $parsedSource);
+        $parsedSource = $this->handleParameter('from', $parsedSource);
         $parsedSource = $this->handleParameter('filters', $parsedSource);
         $parsedSource = $this->handleParameter('sort', $parsedSource);
         $parsedSource = $this->handleParameter('facets', $parsedSource);
