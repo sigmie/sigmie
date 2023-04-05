@@ -33,6 +33,7 @@ class FacetParser extends Parser
                 $this->handleError("Field {$field} is does not exist.", [
                     'field' => $field,
                 ]);
+                continue;
             }
 
             /** @var  Field */
