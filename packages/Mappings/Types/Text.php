@@ -24,6 +24,8 @@ class Text extends Type implements FromRaw
 
     public bool $hasAnalyzerCallback = false;
 
+    protected bool $sortable = false;
+
     public Closure $newAnalyzerClosure;
 
     protected Collection $fields;
@@ -38,6 +40,13 @@ class Text extends Type implements FromRaw
         $this->newAnalyzerClosure = fn () => null;
 
         $this->configure();
+    }
+
+    public function makeSortable()
+    {
+        $this->sortable = true;
+
+        $this->field(new Keyword('sortable'));
     }
 
     public function configure(): void
@@ -71,25 +80,33 @@ class Text extends Type implements FromRaw
             $this->withAnalyzer($analyzer);
         }
 
-        $this->fields = $this->fields
+        $this->fields
             ->filter(fn ($type) => $type instanceof Text)
             ->map(function (Text $text) use ($analysis) {
                 $text->handleCustomAnalyzer($analysis);
 
                 return $text;
             });
+
+        $this->fields
+            ->filter(fn ($type) => $type instanceof Keyword)
+            ->map(function (Keyword $keyword) use ($analysis) {
+                $keyword->handleNormalizer($analysis);
+
+                return $keyword;
+            });
     }
 
     public function field(Type $type)
     {
-        $this->fields = $this->fields->add($type);
+        $this->fields->add($type);
 
         return $this;
     }
 
     public function hasFields()
     {
-        return ! $this->fields->isEmpty();
+        return !$this->fields->isEmpty();
     }
 
     public function analysisFromCallback(NewAnalyzer $newAnalyzer): void
@@ -123,7 +140,7 @@ class Text extends Type implements FromRaw
             'text' => $instance->unstructuredText(),
             'search_as_you_type' => $instance->searchAsYouType(),
             'completion' => $instance->completion(),
-            default => throw new Exception('Field '.$configs['type'].' couldn\'t be mapped')
+            default => throw new Exception('Field ' . $configs['type'] . ' couldn\'t be mapped')
         };
 
         return $instance;
@@ -139,17 +156,17 @@ class Text extends Type implements FromRaw
 
     public function isKeyword(): bool
     {
-        return ! is_null($this->raw);
+        return !is_null($this->raw);
     }
 
     public function isSortable(): bool
     {
-        return ! is_null($this->raw);
+        return $this->sortable;
     }
 
     public function isFilterable(): bool
     {
-        return ! is_null($this->raw);
+        return !is_null($this->raw);
     }
 
     public function keywordName(): null|string
@@ -159,7 +176,7 @@ class Text extends Type implements FromRaw
 
     public function sortableName(): null|string
     {
-        return (is_null($this->raw)) ? null : "{$this->name}.{$this->raw}";
+        return (!$this->sortable) ? null : "{$this->name}.sortable";
     }
 
     public function filterableName(): null|string
@@ -221,19 +238,19 @@ class Text extends Type implements FromRaw
     {
         $raw = parent::toRaw();
 
-        if (! is_null($this->indexPrefixes)) {
+        if (!is_null($this->indexPrefixes)) {
             $raw[$this->name]['index_prefixes'] = $this->indexPrefixes;
         }
 
-        if (! is_null($this->raw)) {
+        if (!is_null($this->raw)) {
             $raw[$this->name]['fields'] = [$this->raw => ['type' => 'keyword']];
         }
 
-        if (! is_null($this->analyzer)) {
+        if (!is_null($this->analyzer)) {
             $raw[$this->name]['analyzer'] = $this->analyzer->name();
         }
 
-        if (! $this->fields->isEmpty()) {
+        if (!$this->fields->isEmpty()) {
             $this->fields->each(function (Type $field) use (&$raw) {
                 $raw[$this->name]['fields'] = $field->toRaw();
             });
@@ -251,7 +268,7 @@ class Text extends Type implements FromRaw
                 $this->name,
                 "{$this->name}._2gram",
                 "{$this->name}._3gram",
-            ],$queryString);
+            ], $queryString);
         } else {
             $queries[] = new Match_($this->name, $queryString);
         }

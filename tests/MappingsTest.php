@@ -22,6 +22,7 @@ use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
+use Sigmie\Shared\Collection;
 use Sigmie\Testing\Assert;
 
 use function Sigmie\Functions\random_letters;
@@ -96,6 +97,44 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
+    public function sort_sentense()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->title();
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['title' => 'Where']),
+            new Document(['title' => 'there']),
+            new Document(['title' => 'Alpha']),
+            new Document(['title' => 'beta']),
+        ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->sort('title:asc')
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        $res = array_map(fn ($hit) => $hit['_source']['title'], $hits);
+
+        $this->assertEquals('Alpha', $res[0]);
+        $this->assertEquals('beta', $res[1]);
+    }
+
+    /**
+     * @test
+     */
     public function year()
     {
         $indexName = uniqid();
@@ -136,7 +175,7 @@ class MappingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->keyword('category');
+        $blueprint->category('category');
 
         $index = $this->sigmie
             ->newIndex($indexName)

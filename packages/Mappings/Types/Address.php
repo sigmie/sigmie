@@ -19,6 +19,8 @@ class Address extends Text implements Analyze
     {
         $newAnalyzer->tokenizeOnWordBoundaries();
         $newAnalyzer->lowercase();
+
+        $this->makeSortable();
     }
 
     public function queries(string $queryString): array

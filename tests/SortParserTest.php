@@ -51,7 +51,7 @@ class SortParserTest extends TestCase
 
         $blueprint = new NewProperties;
         $blueprint->bool('active');
-        $blueprint->text('name')->keyword();
+        $blueprint->text('name')->keyword()->makeSortable();
         $blueprint->text('category');
 
         $props = $blueprint();
@@ -92,8 +92,8 @@ class SortParserTest extends TestCase
         $index->merge($docs,);
 
         $res = $this->sigmie->query($indexName)
-        ->addRaw('sort',$sorts)
-        ->get();
+            ->addRaw('sort', $sorts)
+            ->get();
 
         $hits = $res->json('hits.hits');
 
@@ -110,7 +110,7 @@ class SortParserTest extends TestCase
 
         $blueprint = new NewProperties;
         $blueprint->bool('active');
-        $blueprint->text('name')->keyword();
+        $blueprint->text('name')->keyword()->makeSortable();
         $blueprint->text('category');
 
         $props = $blueprint();
@@ -151,8 +151,8 @@ class SortParserTest extends TestCase
         $index->merge($docs,);
 
         $res = $this->sigmie->query($indexName)
-        ->addRaw('sort',$sorts)
-        ->get();
+            ->addRaw('sort', $sorts)
+            ->get();
 
         $hits = $res->json('hits.hits');
 

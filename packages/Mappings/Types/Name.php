@@ -40,6 +40,8 @@ class Name extends Text
             ->tokenFilter(new Ngram("{$this->name}_ngram", $this->minGrams, $this->maxGrams))
             // ->truncate($this->maxGramms)
             ->lowercase();
+
+        $this->makeSortable();
     }
 
     public function names(): array

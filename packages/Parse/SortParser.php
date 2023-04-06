@@ -31,7 +31,7 @@ class SortParser extends Parser
                 $direction = 'asc';
             }
 
-            $field = $this->handleFieldName($field);
+            $field = $this->handleSortableFieldName($field);
 
             $sort[] = [$field => $direction];
         }

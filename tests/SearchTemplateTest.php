@@ -299,7 +299,7 @@ class SearchTemplateTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->text('category')->keyword();
+        $blueprint->text('category')->keyword()->makeSortable();
 
         $index = $this->sigmie->newIndex($indexName)
             ->properties($blueprint)

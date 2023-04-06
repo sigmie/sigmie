@@ -21,6 +21,8 @@ class Email extends Text implements Analyze
     {
         $newAnalyzer->tokenizeOnPattern('(@|\.)');
         $newAnalyzer->lowercase();
+
+        $this->makeSortable();
     }
 
     public function queries(string $queryString): array

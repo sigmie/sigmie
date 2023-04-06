@@ -46,9 +46,9 @@ abstract class Parser implements ParserInterface
         }
     }
 
-    protected function handleFieldName(string $field): null|string
+    protected function handleSortableFieldName(string $field): null|string
     {
-        if (! $this->fieldExists($field)) {
+        if (!$this->fieldExists($field)) {
             $this->handleError("Field {$field} is does not exist.", [
                 'field' => $field,
             ]);
@@ -56,7 +56,7 @@ abstract class Parser implements ParserInterface
             return null;
         }
 
-        if (! $this->isTextOrKeywordField($field)) {
+        if (!$this->isTextOrKeywordField($field)) {
             return $field;
         }
 
@@ -66,7 +66,38 @@ abstract class Parser implements ParserInterface
             return $field->name;
         }
 
-        if (! $field->isFilterable()) {
+        if (!$field->isSortable()) {
+            $this->handleError("Field {$field->name} is not sortable.", [
+                'field' => $field->name,
+            ]);
+
+            return null;
+        }
+
+        return $field->sortableName();
+    }
+
+    protected function handleFieldName(string $field): null|string
+    {
+        if (!$this->fieldExists($field)) {
+            $this->handleError("Field {$field} is does not exist.", [
+                'field' => $field,
+            ]);
+
+            return null;
+        }
+
+        if (!$this->isTextOrKeywordField($field)) {
+            return $field;
+        }
+
+        $field = $this->properties[$field];
+
+        if ($field instanceof Keyword) {
+            return $field->name;
+        }
+
+        if (!$field->isFilterable()) {
             $this->handleError("Field {$field->name} is not filterable.", [
                 'field' => $field->name,
             ]);

@@ -16,6 +16,8 @@ class Sentence extends Text implements Analyze
         $newAnalyzer
             ->tokenizeOnWordBoundaries()
             ->lowercase();
+
+        $this->makeSortable();
     }
 
     public function configure(): void
