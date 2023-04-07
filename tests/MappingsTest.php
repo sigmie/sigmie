@@ -6,6 +6,7 @@ namespace Sigmie\Tests;
 
 use ArrayAccess;
 use Countable;
+use DateTime;
 use IteratorAggregate;
 use Exception;
 use Sigmie\Index\Analysis\Analyzer;
@@ -92,6 +93,42 @@ class MappingsTest extends TestCase
         $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
 
         $this->assertEquals(['hohn', 'doe', '28', '58511'], $tokens);
+    }
+
+    /**
+     * @test
+     */
+    public function date_format()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->date('created_at');
+        // 
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(
+                ['created_at' => '2023-04-07T12:38:29.000000Z',],
+            ),
+            new Document(
+                ['created_at' => (new DateTime())->format('Y-m-d\TH:i:s.uP')],
+            ),
+        ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertCount(2, $hits);
     }
 
     /**

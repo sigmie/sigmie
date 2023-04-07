@@ -361,4 +361,96 @@ class FilterParserTest extends TestCase
         $this->assertTrue($hits[0]['_source']['active']);
         $this->assertTrue($hits[1]['_source']['active']);
     }
+
+    /**
+     * @test
+     */
+    public function date_single_quotes_range()
+    {
+        $mappings = new Properties();
+
+        $blueprint = new NewProperties;
+        $blueprint->date('created_at');
+
+        $props = $blueprint();
+        $parser = new FilterParser($props);
+        $boolean = $parser->parse("created_at>='2023-05-01' AND created_at<='2023-08-01'");
+
+        $indexName = uniqid();
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document(
+                ['created_at' => '2023-04-07T00:00:00.000000Z',],
+            ),
+            new Document(
+                ['created_at' => '2023-05-07T00:00:00.000000Z',],
+            ),
+            new Document(
+                ['created_at' => '2023-05-07T00:00:00.000000Z',],
+            ),
+            new Document(
+                ['created_at' => '2023-09-07T00:00:00.000000Z',],
+            ),
+        ];
+
+        $index->merge($docs,);
+
+        $res = $this->sigmie->query($indexName, $boolean)->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertCount(2, $hits);
+    }
+
+    /**
+     * @test
+     */
+    public function date_double_quotes_range()
+    {
+        $mappings = new Properties();
+
+        $blueprint = new NewProperties;
+        $blueprint->date('created_at');
+
+        $props = $blueprint();
+        $parser = new FilterParser($props);
+        $boolean = $parser->parse('created_at>="2023-05-01" AND created_at<="2023-08-01"');
+
+        $indexName = uniqid();
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document(
+                ['created_at' => '2023-04-07T00:00:00.000000Z',],
+            ),
+            new Document(
+                ['created_at' => '2023-05-07T00:00:00.000000Z',],
+            ),
+            new Document(
+                ['created_at' => '2023-05-07T00:00:00.000000Z',],
+            ),
+            new Document(
+                ['created_at' => '2023-09-07T00:00:00.000000Z',],
+            ),
+        ];
+
+        $index->merge($docs,);
+
+        $res = $this->sigmie->query($indexName, $boolean)->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertCount(2, $hits);
+    }
 }

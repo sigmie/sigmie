@@ -128,7 +128,9 @@ class FilterParser extends Parser
         $query = match (1) {
             preg_match('/^is:[a-z_A-Z0-9]+/', $string) => $this->handleIs($string),
             preg_match('/^is_not:[a-z_A-Z0-9]+/', $string) => $this->handleIsNot($string),
-            preg_match('/(\w+)( +)?([<>]=?)+( +)?([a-z_A-Z0-9.@]+)/', $string) => $this->handleRange($string),
+            preg_match('/^(\w+)([<>]=?)(.+)/', $string) => $this->handleRange($string),
+            preg_match('/^(\w+)([<>]=?)(\'.+\')/', $string) => $this->handleRange($string),
+            preg_match('/^(\w+)([<>]=?)(\".+\")/', $string) => $this->handleRange($string),
             preg_match('/^_id:[a-z_A-Z0-9]+/', $string) => $this->handleIDs($string),
             preg_match('/\w+:\[.+\]/', $string) => $this->handleIn($string),
             preg_match('/\w+:".+"/', $string) => $this->handleTerm($string),
@@ -147,11 +149,11 @@ class FilterParser extends Parser
 
     public function handleRange(string $range)
     {
-        preg_match('/(\w+)( +)?([<>]=?)+( +)?([a-z_A-Z0-9.@]+)/', $range, $matches);
+        preg_match('/^(\w+)([<>]=?)(("|\')?.+("|\')?)/', $range, $matches);
 
         $field = $matches[1];
-        $operator = $matches[3];
-        $value = $matches[5];
+        $operator = $matches[2];
+        $value = trim($matches[3], '"\'');
 
         $field = $this->handleFieldName($field);
         if (is_null($field)) {
