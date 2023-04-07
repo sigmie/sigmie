@@ -30,7 +30,7 @@ class FacetParser extends Parser
 
         foreach ($facets as $field) {
             if (!$this->fieldExists($field)) {
-                $this->handleError("Field {$field} is does not exist.", [
+                $this->handleError("Field {$field} does not exist.", [
                     'field' => $field,
                 ]);
                 continue;
