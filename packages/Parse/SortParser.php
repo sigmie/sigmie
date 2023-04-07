@@ -33,6 +33,11 @@ class SortParser extends Parser
 
             $field = $this->handleSortableFieldName($field);
 
+            // Field isn't sortable
+            if (is_null($field)) {
+                continue;
+            }
+
             $sort[] = [$field => $direction];
         }
 
