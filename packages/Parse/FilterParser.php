@@ -94,7 +94,12 @@ class FilterParser extends Parser
         $operator = $filters['operator'] ?? $operator;
         $values = $filters['values'] ?? null;
 
-        if (is_string($filter)) {
+        if (is_string($filter) && str_starts_with($filter, 'NOT')) {
+            $operator = 'NOT';
+            $filter = trim($filter, 'NOT');
+            $filter = trim($filter);
+            $query1 = $this->stringToQueryClause($filter);
+        } elseif (is_string($filter)) {
             $query1 = $this->stringToQueryClause($filter);
         } else {
             $query1 = $this->apply($filter, $operator);
@@ -102,6 +107,7 @@ class FilterParser extends Parser
 
         match ($operator) {
             'AND' => $boolean->must()->query($query1),
+            'NOT' => $boolean->mustNot()->query($query1),
             //Using must here is correct, trust me!
             //The `NOT` is handled in the second query
             'AND NOT' => $boolean->must()->query($query1),

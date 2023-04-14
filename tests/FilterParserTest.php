@@ -453,4 +453,49 @@ class FilterParserTest extends TestCase
 
         $this->assertCount(2, $hits);
     }
+
+    /**
+     * @test
+     */
+    public function not()
+    {
+        $mappings = new Properties();
+
+        $blueprint = new NewProperties;
+        $blueprint->category('category');
+
+        $props = $blueprint();
+        $parser = new FilterParser($props);
+        $boolean = $parser->parse('NOT category:"Sports"');
+
+        $indexName = uniqid();
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'category' => 'Drama',
+            ]),
+            new Document([
+                'category' => 'Sports',
+            ]),
+            new Document([
+                'category' => 'Action',
+            ]),
+        ];
+
+        $index->merge($docs,);
+
+        $res = $this->sigmie->query($indexName, $boolean)->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertCount(2, $hits);
+        $this->assertNotEquals('Sports',$hits[0]['_source']['category']);
+        $this->assertNotEquals('Sports',$hits[1]['_source']['category']);
+    }
 }
