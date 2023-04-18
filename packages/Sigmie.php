@@ -29,26 +29,44 @@ class Sigmie
 {
     use IndexActions;
 
+    protected string $application = '';
+
     public function __construct(Connection $httpConnection)
     {
         $this->elasticsearchConnection = $httpConnection;
+    }
+
+    private function withApplicationPrefix(string $name): string
+    {
+        if ($this->application === '') {
+            return $name;
+        }
+
+        return $this->application . '-' . $name;
+    }
+
+    public function application(string $application)
+    {
+        $this->application = $application;
+
+        return $this;
     }
 
     public function newIndex(string $name): NewIndex
     {
         $builder = new NewIndex($this->elasticsearchConnection);
 
-        return $builder->alias($name);
+        return $builder->alias($this->withApplicationPrefix($name));
     }
 
     public function index(string $name): null|AliasedIndex|Index
     {
-        return $this->getIndex($name);
+        return $this->getIndex($this->withApplicationPrefix($name));
     }
 
     public function collect(string $name, bool $refresh = false): AliveCollection
     {
-        $aliveIndex = new AliveCollection($name, $this->elasticsearchConnection, $refresh ? 'true' : 'false');
+        $aliveIndex = new AliveCollection($this->withApplicationPrefix($name), $this->elasticsearchConnection, $refresh ? 'true' : 'false');
 
         return $aliveIndex;
     }
@@ -62,16 +80,20 @@ class Sigmie
 
         $search->setElasticsearchConnection($this->elasticsearchConnection);
 
-        return $search->index($index);
+        return $search->index($this->withApplicationPrefix($index));
     }
 
     public function newQuery(string $index): NewQuery
     {
+        $index = $this->withApplicationPrefix($index);
+
         return new NewQuery($this->elasticsearchConnection, $index);
     }
 
     public function newSearch(string $index): NewSearch
     {
+        $index = $this->withApplicationPrefix($index);
+
         $search = new NewSearch($this->elasticsearchConnection);
 
         return $search->index($index);
@@ -79,6 +101,8 @@ class Sigmie
 
     public function newTemplate(string $id): NewTemplate
     {
+        $id = $this->withApplicationPrefix($id);
+
         $builder = new NewTemplate(
             $this->elasticsearchConnection,
         );
@@ -93,11 +117,15 @@ class Sigmie
 
     public function template(string $id): ExistingScript
     {
+        $id = $this->withApplicationPrefix($id);
+
         return new ExistingScript($id, $this->elasticsearchConnection);
     }
 
     public function indices(string $pattern = '*'): array
     {
+        $pattern = $this->withApplicationPrefix($pattern);
+
         return $this->listIndices($pattern);
     }
 
@@ -108,7 +136,7 @@ class Sigmie
 
             $res = ($this->elasticsearchConnection)($request);
 
-            return ! $res->failed();
+            return !$res->failed();
         } catch (ConnectException) {
             return false;
         }
@@ -125,6 +153,8 @@ class Sigmie
 
     public function delete(string $index): bool
     {
+        $index = $this->withApplicationPrefix($index);
+
         return $this->deleteIndex($index);
     }
 }
