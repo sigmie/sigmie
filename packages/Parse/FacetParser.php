@@ -61,7 +61,7 @@ class FacetParser extends Parser
 
 
             $this->handleError("Field {$field->name()} is not filterable.", [
-                'field' => $field,
+                'field' => $field->name(),
             ]);
         }
 
