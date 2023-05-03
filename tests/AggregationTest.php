@@ -30,7 +30,7 @@ class AggregationTest extends TestCase
             $blueprint->text('title')->unstructuredText();
         })->create();
 
-        $collection = $this->sigmie->collect($name,);
+        $collection = $this->sigmie->collect($name);
 
         $docs = [
             new Document([
@@ -417,7 +417,7 @@ class AggregationTest extends TestCase
 
         $value = $res->aggregation('type_count.value');
 
-        $this->assertEquals(3, (int)$value);
+        $this->assertEquals(3, (int) $value);
     }
 
     /**
@@ -457,7 +457,7 @@ class AggregationTest extends TestCase
 
         $value = $res->aggregation('type_count.value');
 
-        $this->assertEquals(4, (int)$value);
+        $this->assertEquals(4, (int) $value);
     }
 
     /**
@@ -494,7 +494,7 @@ class AggregationTest extends TestCase
 
         $value = $res->aggregation('count_sum.value');
 
-        $this->assertEquals(60, (int)$value);
+        $this->assertEquals(60, (int) $value);
     }
 
     /**

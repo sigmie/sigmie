@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Sigmie\Testing\TestCase;
-use Sigmie\Testing\Assert;
 
 class SigmieTest extends TestCase
 {

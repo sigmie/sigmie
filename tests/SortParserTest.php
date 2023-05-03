@@ -5,22 +5,11 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use RuntimeException;
-use Sigmie\Index\Analysis\Tokenizers\Whitespace;
-use Sigmie\Base\APIs\Index;
-use Sigmie\Shared\Collection;
 use Sigmie\Document\Document;
-use Sigmie\Index\AliasedIndex;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Index\UpdateIndex as Update;
-use Sigmie\Index\Mappings;
 use Sigmie\Mappings\Properties;
-use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
-use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
-use TypeError;
-
-use function Sigmie\Functions\random_letters;
 
 class SortParserTest extends TestCase
 {
@@ -70,26 +59,26 @@ class SortParserTest extends TestCase
             new Document([
                 'category' => 'Disney',
                 'name' => 'Pluto',
-                'active' => true
+                'active' => true,
             ]),
             new Document([
                 'category' => 'Disney',
                 'name' => 'Arthur',
-                'active' => true
+                'active' => true,
             ]),
             new Document([
                 'category' => 'Disney',
                 'name' => 'Dory',
-                'active' => false
+                'active' => false,
             ]),
             new Document([
                 'category' => 'Unknown',
                 'name' => 'Zoro',
-                'active' => false
+                'active' => false,
             ]),
         ];
 
-        $index->merge($docs,);
+        $index->merge($docs);
 
         $res = $this->sigmie->query($indexName)
             ->addRaw('sort', $sorts)
@@ -99,7 +88,6 @@ class SortParserTest extends TestCase
 
         $this->assertTrue($hits[0]['_source']['name'] === 'Arthur');
     }
-
 
     /**
      * @test
@@ -129,26 +117,26 @@ class SortParserTest extends TestCase
             new Document([
                 'category' => 'Disney',
                 'name' => 'Pluto',
-                'active' => true
+                'active' => true,
             ]),
             new Document([
                 'category' => 'Disney',
                 'name' => 'Arthur',
-                'active' => true
+                'active' => true,
             ]),
             new Document([
                 'category' => 'Disney',
                 'name' => 'Dory',
-                'active' => false
+                'active' => false,
             ]),
             new Document([
                 'category' => 'Unknown',
                 'name' => 'Zoro',
-                'active' => false
+                'active' => false,
             ]),
         ];
 
-        $index->merge($docs,);
+        $index->merge($docs);
 
         $res = $this->sigmie->query($indexName)
             ->addRaw('sort', $sorts)
@@ -182,17 +170,17 @@ class SortParserTest extends TestCase
 
         $docs = [
             new Document(
-                ['created_at' => '2023-04-07T12:38:29.000000Z',],
+                ['created_at' => '2023-04-07T12:38:29.000000Z'],
             ),
             new Document(
-                ['created_at' => '2023-06-07T12:38:29.000000Z',],
+                ['created_at' => '2023-06-07T12:38:29.000000Z'],
             ),
             new Document(
-                ['created_at' => '2023-05-07T12:38:29.000000Z',],
+                ['created_at' => '2023-05-07T12:38:29.000000Z'],
             ),
         ];
 
-        $index->merge($docs,);
+        $index->merge($docs);
 
         $sorts = $parser->parse('created_at:desc');
         $res = $this->sigmie->query($indexName)
@@ -229,17 +217,17 @@ class SortParserTest extends TestCase
 
         $docs = [
             new Document(
-                ['created_at' => '2023-04-07T12:38:29.000000Z',],
+                ['created_at' => '2023-04-07T12:38:29.000000Z'],
             ),
             new Document(
-                ['created_at' => '2023-06-07T12:38:29.000000Z',],
+                ['created_at' => '2023-06-07T12:38:29.000000Z'],
             ),
             new Document(
-                ['created_at' => '2023-05-07T12:38:29.000000Z',],
+                ['created_at' => '2023-05-07T12:38:29.000000Z'],
             ),
         ];
 
-        $index->merge($docs,);
+        $index->merge($docs);
 
         $sorts = $parser->parse('created_at:asc');
         $res = $this->sigmie->query($indexName)

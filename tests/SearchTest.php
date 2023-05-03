@@ -4,33 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use RachidLaasri\Travel\Travel;
-use Sigmie\Document\AliveCollection;
+use Http\Promise\Promise;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Index\NewIndex;
 use Sigmie\Testing\TestCase;
-use Exception;
-use Http\Promise\Promise;
-use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
-use Sigmie\Index\Analysis\CharFilter\Mapping;
-use Sigmie\Index\Analysis\CharFilter\Pattern as PatternCharFilter;
-use Sigmie\Index\Analysis\Tokenizers\NonLetter;
-use Sigmie\Index\Analysis\Tokenizers\Pattern as PatternTokenizer;
-use Sigmie\Index\Analysis\Tokenizers\Whitespace;
-use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Base\APIs\Index;
-use Sigmie\Base\Http\ElasticsearchPromiseBag;
-use Sigmie\English\Builder as EnglishBuilder;
-use Sigmie\English\English;
-use Sigmie\German\Builder as GermanBuilder;
-use Sigmie\German\German;
-use Sigmie\Greek\Builder as GreekBuilder;
-use Sigmie\Greek\Greek;
-use Sigmie\Index\Analysis\TokenFilter\Unique;
-use Sigmie\Parse\FilterParser;
-use Sigmie\Parse\SortParser;
-use Sigmie\Testing\Assert;
 
 class SearchTest extends TestCase
 {
@@ -56,15 +33,15 @@ class SearchTest extends TestCase
         $index->merge([
             new Document([
                 'name' => 'Mickey',
-                'description' => 'Adventure in the woods'
+                'description' => 'Adventure in the woods',
             ]),
             new Document([
                 'name' => 'Goofy',
-                'description' => 'Mickey and his friends'
+                'description' => 'Mickey and his friends',
             ]),
             new Document([
                 'name' => 'Donald',
-                'description' => 'Chasing Goofy'
+                'description' => 'Chasing Goofy',
             ]),
         ]);
 
@@ -77,6 +54,7 @@ class SearchTest extends TestCase
 
         $this->assertInstanceOf(Promise::class, $promise);
     }
+
     /**
      * @test
      */
@@ -98,15 +76,15 @@ class SearchTest extends TestCase
         $index->merge([
             new Document([
                 'name' => 'Mickey',
-                'description' => 'Adventure in the woods'
+                'description' => 'Adventure in the woods',
             ]),
             new Document([
                 'name' => 'Goofy',
-                'description' => 'Mickey and his friends'
+                'description' => 'Mickey and his friends',
             ]),
             new Document([
                 'name' => 'Donald',
-                'description' => 'Chasing Goofy'
+                'description' => 'Chasing Goofy',
             ]),
         ]);
 
@@ -115,7 +93,7 @@ class SearchTest extends TestCase
             ->queryString('Mickey')
             ->weight([
                 'name' => 5,
-                'description' => 1
+                'description' => 1,
             ])
             ->fields(['name', 'description'])
             ->sort('_score')
@@ -133,7 +111,7 @@ class SearchTest extends TestCase
             ->sort('_score')
             ->weight([
                 'name' => 1,
-                'description' => 5
+                'description' => 5,
             ])
             ->get();
 
@@ -173,7 +151,7 @@ class SearchTest extends TestCase
             ->fields(['name'])
             ->typoTolerance()
             ->typoTolerantAttributes([
-                'name'
+                'name',
             ])
             ->get();
 
@@ -248,8 +226,8 @@ class SearchTest extends TestCase
 
         $hits = $search->json('hits.hits');
 
-        $this->assertArrayHasKey('name', $hits[0]['_source'],);
-        $this->assertArrayNotHasKey('category', $hits[0]['_source'],);
+        $this->assertArrayHasKey('name', $hits[0]['_source']);
+        $this->assertArrayNotHasKey('category', $hits[0]['_source']);
 
         $search = $this->sigmie->newSearch($indexName)
             ->properties($blueprint())
@@ -259,8 +237,8 @@ class SearchTest extends TestCase
 
         $hits = $search->json('hits.hits');
 
-        $this->assertArrayHasKey('name', $hits[0]['_source'],);
-        $this->assertArrayHasKey('category', $hits[0]['_source'],);
+        $this->assertArrayHasKey('name', $hits[0]['_source']);
+        $this->assertArrayHasKey('category', $hits[0]['_source']);
     }
 
     /**
@@ -289,7 +267,7 @@ class SearchTest extends TestCase
         $search = $this->sigmie->newSearch($indexName)
             ->properties($blueprint())
             ->queryString('a')
-            ->highlighting(['category',], '<span class="font-bold">', '</span>')
+            ->highlighting(['category'], '<span class="font-bold">', '</span>')
             ->fields(['category'])
             ->get();
 
@@ -511,15 +489,15 @@ class SearchTest extends TestCase
         $index->merge([
             new Document([
                 'name' => 'Mickey',
-                'description' => 'Adventure in the woods'
+                'description' => 'Adventure in the woods',
             ]),
             new Document([
                 'name' => 'Goofy',
-                'description' => 'Mickey and his friends'
+                'description' => 'Mickey and his friends',
             ]),
             new Document([
                 'name' => 'Donald',
-                'description' => 'Chasing Goofy'
+                'description' => 'Chasing Goofy',
             ]),
         ]);
 

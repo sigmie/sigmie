@@ -10,8 +10,6 @@ use Sigmie\Base\APIs\Search;
 use Sigmie\Document\Document;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Query\Aggregations\Enums\CalendarInterval;
-use Sigmie\Query\Aggs as SearchAggregation;
 use Sigmie\Query\Suggest;
 use Sigmie\Testing\TestCase;
 
@@ -71,7 +69,7 @@ class SuggestTest extends TestCase
 
         $this->assertEquals([
             'star',
-            'starry'
+            'starry',
         ], $suggestions);
     }
 

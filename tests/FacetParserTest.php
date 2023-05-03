@@ -4,25 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use RuntimeException;
-use Sigmie\Index\Analysis\Tokenizers\Whitespace;
-use Sigmie\Base\APIs\Index;
-use Sigmie\Shared\Collection;
 use Sigmie\Document\Document;
-use Sigmie\Index\AliasedIndex;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Index\UpdateIndex as Update;
-use Sigmie\Index\Mappings;
-use Sigmie\Mappings\Properties;
 use Sigmie\Parse\FacetParser;
-use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\ParseException;
 use Sigmie\Query\Queries\MatchAll;
-use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
-use TypeError;
-
-use function Sigmie\Functions\random_letters;
 
 class FacetParserTest extends TestCase
 {

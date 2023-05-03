@@ -4,23 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Testing\TestCase;
 use Sigmie\Testing\Assert;
-use Sigmie\Index\AliasedIndex;
-use Sigmie\Index\Analysis\Analyzer;
-use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
-use Sigmie\Index\Analysis\Tokenizers\Pattern;
-use Sigmie\Index\Analysis\Tokenizers\Whitespace;
-use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Index\APIs\Index;
-use Sigmie\Index\Mappings;
-use Sigmie\Mappings\NewProperties;
-use Sigmie\Mappings\DynamicMappings;
-use Sigmie\Mappings\Properties;
-use Sigmie\Mappings\Types\Boolean;
-use Sigmie\Mappings\Types\Date;
-use Sigmie\Mappings\Types\Number;
-use Sigmie\Mappings\Types\Text;
+use Sigmie\Testing\TestCase;
 
 class TokenFilterTest extends TestCase
 {
@@ -187,5 +172,4 @@ class TokenFilterTest extends TestCase
             ]);
         });
     }
-
 }

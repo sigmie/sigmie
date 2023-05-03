@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use RachidLaasri\Travel\Travel;
-use Sigmie\Document\AliveCollection;
-use Sigmie\Document\Document;
-use Sigmie\Mappings\NewProperties;
-use Sigmie\Index\NewIndex;
-use Sigmie\Testing\TestCase;
 use Exception;
+use RachidLaasri\Travel\Travel;
+use Sigmie\English\Builder as EnglishBuilder;
+use Sigmie\English\English;
+use Sigmie\German\Builder as GermanBuilder;
+use Sigmie\German\German;
+use Sigmie\Greek\Builder as GreekBuilder;
+use Sigmie\Greek\Greek;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Analysis\CharFilter\Pattern as PatternCharFilter;
@@ -18,15 +19,10 @@ use Sigmie\Index\Analysis\Tokenizers\NonLetter;
 use Sigmie\Index\Analysis\Tokenizers\Pattern as PatternTokenizer;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Base\APIs\Index;
-use Sigmie\English\Builder as EnglishBuilder;
-use Sigmie\English\English;
-use Sigmie\German\Builder as GermanBuilder;
-use Sigmie\German\German;
-use Sigmie\Greek\Builder as GreekBuilder;
-use Sigmie\Greek\Greek;
 use Sigmie\Index\NewAnalyzer;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\Assert;
+use Sigmie\Testing\TestCase;
 
 class IndexBuilderTest extends TestCase
 {
@@ -40,15 +36,12 @@ class IndexBuilderTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->mapping(function (NewProperties $blueprint) {
                 $blueprint->bool('active');
-                $blueprint->text('description')->newAnalyzer(function(NewAnalyzer $newAnalyzer){
-
-
+                $blueprint->text('description')->newAnalyzer(function (NewAnalyzer $newAnalyzer) {
                 });
 
                 return $blueprint;
             })
             ->create();
-
 
         $this->assertIndex($alias, function (Assert $index) {
             $index->assertAnalyzerExists('default');
@@ -569,7 +562,7 @@ class IndexBuilderTest extends TestCase
             ->twoWaySynonyms([
                 ['treasure', 'gem', 'gold', 'price'],
                 ['friend', 'buddy', 'partner'],
-            ], name: 'sigmie_two_way_synonyms',)
+            ], name: 'sigmie_two_way_synonyms', )
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -677,7 +670,7 @@ class IndexBuilderTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->oneWaySynonyms([
                 ['ipod', ['i-pod', 'i pod']],
-            ], name: 'sigmie_one_way_synonyms',)
+            ], name: 'sigmie_one_way_synonyms', )
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -778,6 +771,7 @@ class IndexBuilderTest extends TestCase
                 $blueprint->number('price')->float();
                 $blueprint->date('created_at');
                 $blueprint->bool('is_valid');
+
                 return $blueprint;
             })
             ->stopwords(['amazing', 'wonderful'], 'custom_stopwords')

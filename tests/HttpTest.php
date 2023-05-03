@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Testing\TestCase;
-use Sigmie\Http\JSONResponse;
-use Sigmie\Http\JSONRequest;
-use Psr\Http\Message\ResponseInterface;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use GuzzleHttp\Psr7\Uri;
+use Psr\Http\Message\ResponseInterface;
+use Sigmie\Http\JSONRequest;
+use Sigmie\Http\JSONResponse;
 use Sigmie\Http\NdJSONRequest;
+use Sigmie\Testing\TestCase;
 
 class HttpTest extends TestCase
 {

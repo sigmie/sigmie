@@ -4,29 +4,20 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use ArrayAccess;
-use Countable;
 use DateTime;
-use IteratorAggregate;
-use Exception;
+use Sigmie\Document\Document;
 use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Index\APIs\Index;
 use Sigmie\Index\Mappings;
-use Sigmie\Testing\TestCase;
-use Sigmie\Mappings\NewProperties;
-use Sigmie\Document\Document;
 use Sigmie\Index\NewAnalyzer;
-use Sigmie\Mappings\Types\Category;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
-use Sigmie\Shared\Collection;
 use Sigmie\Testing\Assert;
-
-use function Sigmie\Functions\random_letters;
+use Sigmie\Testing\TestCase;
 
 class MappingsTest extends TestCase
 {
@@ -104,7 +95,7 @@ class MappingsTest extends TestCase
 
         $blueprint = new NewProperties;
         $blueprint->date('created_at');
-        // 
+        //
         $index = $this->sigmie
             ->newIndex($indexName)
             ->properties($blueprint)
@@ -114,7 +105,7 @@ class MappingsTest extends TestCase
 
         $index->merge([
             new Document(
-                ['created_at' => '2023-04-07T12:38:29.000000Z',],
+                ['created_at' => '2023-04-07T12:38:29.000000Z'],
             ),
             new Document(
                 ['created_at' => (new DateTime())->format('Y-m-d\TH:i:s.uP')],
@@ -304,14 +295,13 @@ class MappingsTest extends TestCase
                 $newAnalyzer->tokenizeOnPattern('(@|\.)');
                 $newAnalyzer->lowercase();
             })->withQueries(function (string $queryString) {
-
                 $queries = [];
 
                 $queries[] = new Match_('email', $queryString);
 
                 $queries[] = new Prefix('email', $queryString);
 
-                $queries[] = new Term("email.keyword", $queryString);
+                $queries[] = new Term('email.keyword', $queryString);
 
                 return $queries;
             });
@@ -334,7 +324,6 @@ class MappingsTest extends TestCase
             ->queryString('doe')
             ->fields(['email'])
             ->get();
-
 
         $hits = $search->json('hits.hits');
 
@@ -398,7 +387,6 @@ class MappingsTest extends TestCase
             ->fields(['email'])
             ->get();
 
-
         $hits = $search->json('hits.hits');
 
         $this->assertEquals('john.doe@gmail.com', $hits[0]['_source']['email']);
@@ -426,7 +414,6 @@ class MappingsTest extends TestCase
         // not include the prefix query
         $this->assertEmpty($hits);
     }
-
 
     /**
      * @test

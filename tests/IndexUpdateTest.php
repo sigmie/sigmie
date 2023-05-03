@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Index\Analysis\Tokenizers\Whitespace;
-use Sigmie\Base\APIs\Index;
-use Sigmie\Shared\Collection;
 use Sigmie\Document\Document;
 use Sigmie\Index\AliasedIndex;
-use Sigmie\Mappings\NewProperties;
+use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\UpdateIndex as Update;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
-use TypeError;
-
-use function Sigmie\Functions\random_letters;
 
 class IndexUpdateTest extends TestCase
 {
@@ -39,9 +34,8 @@ class IndexUpdateTest extends TestCase
             $index->assertAnalyzerHasCharFilter('default', 'some_char_filter_name');
         });
 
-
         $index->update(function (Update $update) {
-                $update->stopwords(['foo', 'bar'], 'demo');
+            $update->stopwords(['foo', 'bar'], 'demo');
 
             return $update;
         });
@@ -78,7 +72,6 @@ class IndexUpdateTest extends TestCase
                 'replacement' => 'foo',
             ]);
         });
-
 
         $index->update(function (Update $update) {
             $update->mapChars(['baz' => 'foo'], 'map_chars_char_filter');
@@ -178,7 +171,6 @@ class IndexUpdateTest extends TestCase
         });
 
         $index->update(function (Update $update) {
-
             $update->tokenizeOnWordBoundaries('foo_tokenizer');
 
             return $update;
@@ -210,7 +202,6 @@ class IndexUpdateTest extends TestCase
         });
 
         $index->update(function (Update $update) {
-
             $update->oneWaySynonyms([
                 ['mickey', ['mouse', 'goofy']],
             ], 'bar_name');
@@ -250,9 +241,7 @@ class IndexUpdateTest extends TestCase
             ]);
         });
 
-
         $index->update(function (Update $update) {
-
             $update->stemming([[
                 'mickey', ['mouse', 'goofy'],
             ]], 'bar_name');
@@ -290,9 +279,7 @@ class IndexUpdateTest extends TestCase
             ]);
         });
 
-
         $index->update(function (Update $update) {
-
             $update->twoWaySynonyms([['john', 'doe']], 'foo_two_way_synonyms');
 
             return $update;
@@ -313,7 +300,7 @@ class IndexUpdateTest extends TestCase
         $alias = uniqid();
 
         $index = $this->sigmie->newIndex($alias)
-            ->stopwords(['foo', 'bar', 'baz'], 'foo_stopwords', )
+            ->stopwords(['foo', 'bar', 'baz'], 'foo_stopwords')
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -322,7 +309,6 @@ class IndexUpdateTest extends TestCase
         });
 
         $index->update(function (Update $update) {
-
             $update->stopwords(['john', 'doe'], 'foo_stopwords');
 
             return $update;
@@ -341,7 +327,7 @@ class IndexUpdateTest extends TestCase
     {
         $alias = uniqid();
 
-        $index= $this->sigmie->newIndex($alias)
+        $index = $this->sigmie->newIndex($alias)
             ->mapping(function (NewProperties $blueprint) {
                 $blueprint->text('bar')->searchAsYouType();
                 $blueprint->text('created_at')->unstructuredText();
@@ -396,6 +382,7 @@ class IndexUpdateTest extends TestCase
 
         $updatedIndex = $index->update(function (Update $update) {
             $update->replicas(3);
+
             return $update;
         });
 
@@ -418,7 +405,6 @@ class IndexUpdateTest extends TestCase
         $oldIndexName = $index->name;
 
         $index = $index->update(function (Update $update) {
-
             return $update;
         });
 
@@ -439,7 +425,6 @@ class IndexUpdateTest extends TestCase
         $oldIndexName = $index->name;
 
         $index = $index->update(function (Update $update) {
-
             return $update;
         });
 
@@ -462,7 +447,6 @@ class IndexUpdateTest extends TestCase
         $this->assertInstanceOf(AliasedIndex::class, $index);
 
         $index->update(function (Update $update) use ($newAlias) {
-
             $update->alias($newAlias);
 
             return $update;
@@ -493,7 +477,6 @@ class IndexUpdateTest extends TestCase
         });
 
         $index->update(function (Update $update) {
-
             $update->replicas(2)->shards(2);
 
             return $update;

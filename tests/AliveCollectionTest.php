@@ -7,27 +7,8 @@ namespace Sigmie\Tests;
 use ArrayAccess;
 use Countable;
 use IteratorAggregate;
-use Sigmie\Testing\TestCase;
-use Sigmie\Testing\Assert;
-use Sigmie\Index\AliasedIndex;
-use Sigmie\Index\Analysis\Analyzer;
-use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
-use Sigmie\Index\Analysis\Tokenizers\Pattern;
-use Sigmie\Index\Analysis\Tokenizers\Whitespace;
-use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Index\APIs\Index;
-use Sigmie\Index\Mappings;
-use Sigmie\Mappings\NewProperties;
-use Sigmie\Mappings\DynamicMappings;
-use Sigmie\Mappings\Properties;
-use Sigmie\Mappings\Types\Boolean;
-use Sigmie\Mappings\Types\Date;
-use Sigmie\Mappings\Types\Number;
-use Sigmie\Mappings\Types\Text;
 use Sigmie\Document\Document;
-use Sigmie\Document\Contracts\DocumentCollection;
-
-use function Sigmie\Functions\random_letters;
+use Sigmie\Testing\TestCase;
 
 class AliveCollectionTest extends TestCase
 {
@@ -106,7 +87,7 @@ class AliveCollectionTest extends TestCase
 
         $docs = [new Document(['bar' => 'foo'], '1'), new Document(['foo' => 'bar'], '2')];
 
-        $index->merge($docs,);
+        $index->merge($docs);
 
         $this->assertCount(2, $index);
 
@@ -167,7 +148,7 @@ class AliveCollectionTest extends TestCase
 
         $index = $this->sigmie->collect($indexName, true);
 
-        $index->add(new Document(['foo' => 'bar'], '4'),);
+        $index->add(new Document(['foo' => 'bar'], '4'));
 
         $this->assertTrue($index->offsetExists('4'));
         $this->assertFalse($index->offsetExists('6'));
@@ -183,7 +164,7 @@ class AliveCollectionTest extends TestCase
 
         $index = $this->sigmie->collect($indexName, true);
 
-        $index->add(new Document(['foo' => 'bar'], '4'),);
+        $index->add(new Document(['foo' => 'bar'], '4'));
 
         $doc = new Document(['foo' => 'baz'], '89');
 
@@ -202,7 +183,7 @@ class AliveCollectionTest extends TestCase
         $indexName = uniqid();
         $index = $this->sigmie->collect($indexName, true);
 
-        $index->add(new Document(['foo' => 'bar'], '4'),);
+        $index->add(new Document(['foo' => 'bar'], '4'));
 
         $docs = [
             new Document(['foo' => 'bar'], '4'),

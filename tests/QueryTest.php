@@ -4,24 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use ArrayAccess;
-use Countable;
-use IteratorAggregate;
-use Exception;
-use Sigmie\Index\Analysis\Analyzer;
-use Sigmie\Index\Analysis\DefaultAnalyzer;
-use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Index\Mappings;
-use Sigmie\Mappings\NewProperties;
-use Sigmie\Base\APIs\Explain;
-use Sigmie\Base\APIs\Index;
-use Sigmie\Base\APIs\Search;
-use Sigmie\Document\Document;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
+use Sigmie\Document\Document;
 use Sigmie\Query\Queries\Compound\Boolean as QueriesCompoundBoolean;
 use Sigmie\Testing\TestCase;
-
-use function Sigmie\Functions\random_letters;
 
 class QueryTest extends TestCase
 {
@@ -138,7 +124,7 @@ class QueryTest extends TestCase
                     ['multi_match' => [
                         'fields' => ['foo', 'bar'],
                         'boost' => 1.0,
-                        'query' => 'baz'
+                        'query' => 'baz',
                     ]],
                 ],
                 'must' => [
@@ -178,7 +164,7 @@ class QueryTest extends TestCase
                                 'unqie',
                             ],
                             'boost' => 1.0,
-                        ]
+                        ],
                     ],
                 ],
                 'should' => [

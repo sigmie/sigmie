@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use ArrayAccess;
-use Countable;
-use IteratorAggregate;
 use Exception;
 use Sigmie\Index\Analysis\CharFilter\CharFilter;
 use Sigmie\Index\Analysis\CharFilter\Pattern as PatternCharFilter;
@@ -15,10 +12,7 @@ use Sigmie\Index\Analysis\TokenFilter\Stopwords;
 use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
 use Sigmie\Index\Analysis\Tokenizers\Pattern as PatternTokenizer;
 use Sigmie\Index\Analysis\Tokenizers\Tokenizer;
-use Sigmie\Base\APIs\Index;
 use Sigmie\Testing\TestCase;
-
-use function Sigmie\Functions\random_letters;
 
 class MapTest extends TestCase
 {
@@ -62,7 +56,6 @@ class MapTest extends TestCase
 
         CharFilter::fromRaw(['bar' => ['type' => 'bar']]);
     }
-
 
     /**
      * @test

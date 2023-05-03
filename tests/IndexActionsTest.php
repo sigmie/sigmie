@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use PhpParser\ErrorHandler\Collecting;
-use Sigmie\Index\Actions\Index as IndexActions;
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Index;
 use Sigmie\Index\Mappings;
 use Sigmie\Index\Settings;
 use Sigmie\Shared\Collection;
 use Sigmie\Testing\TestCase;
-use Sigmie\Testing\HasTestConnection;
-use Sigmie\Tests\CollectionTest;
 
 class IndexActionsTest extends TestCase
 {

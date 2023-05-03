@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Sigmie\Index\Analysis\Tokenizers\Pattern;
-use Sigmie\Testing\TestCase;
 use Sigmie\Testing\Assert;
-use Sigmie\Index\AliasedIndex;
+use Sigmie\Testing\TestCase;
 
 class AnalysisTest extends TestCase
 {

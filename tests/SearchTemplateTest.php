@@ -4,31 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use RachidLaasri\Travel\Travel;
-use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Index\NewIndex;
-use Sigmie\Testing\TestCase;
-use Exception;
-use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
-use Sigmie\Index\Analysis\CharFilter\Mapping;
-use Sigmie\Index\Analysis\CharFilter\Pattern as PatternCharFilter;
-use Sigmie\Index\Analysis\Tokenizers\NonLetter;
-use Sigmie\Index\Analysis\Tokenizers\Pattern as PatternTokenizer;
-use Sigmie\Index\Analysis\Tokenizers\Whitespace;
-use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Base\APIs\Index;
-use Sigmie\English\Builder as EnglishBuilder;
-use Sigmie\English\English;
-use Sigmie\German\Builder as GermanBuilder;
-use Sigmie\German\German;
-use Sigmie\Greek\Builder as GreekBuilder;
-use Sigmie\Greek\Greek;
-use Sigmie\Index\Analysis\TokenFilter\Unique;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
-use Sigmie\Testing\Assert;
+use Sigmie\Testing\TestCase;
 
 class SearchTemplateTest extends TestCase
 {
@@ -52,15 +32,15 @@ class SearchTemplateTest extends TestCase
         $index->merge([
             new Document([
                 'name' => 'Mickey',
-                'description' => 'Adventure in the woods'
+                'description' => 'Adventure in the woods',
             ]),
             new Document([
                 'name' => 'Goofy',
-                'description' => 'Mickey and his friends'
+                'description' => 'Mickey and his friends',
             ]),
             new Document([
                 'name' => 'Donald',
-                'description' => 'Chasing Goofy'
+                'description' => 'Chasing Goofy',
             ]),
         ]);
 
@@ -71,7 +51,7 @@ class SearchTemplateTest extends TestCase
             ->fields(['name', 'description'])
             ->weight([
                 'name' => 5,
-                'description' => 1
+                'description' => 1,
             ])
             ->sort('_score')
             ->get()
@@ -80,7 +60,7 @@ class SearchTemplateTest extends TestCase
         $template = $this->sigmie->template($templateId);
 
         $hits = $template->run($indexName, [
-            'query_string' => 'Mickey'
+            'query_string' => 'Mickey',
         ])->json('hits.hits');
 
         $this->assertEquals('Mickey', $hits[0]['_source']['name']);
@@ -94,16 +74,15 @@ class SearchTemplateTest extends TestCase
             ->sort('_score')
             ->weight([
                 'name' => 1,
-                'description' => 5
+                'description' => 5,
             ])
             ->get()
             ->save();
 
-
         $template = $this->sigmie->template($templateId);
 
         $hits = $template->run($indexName, [
-            'query_string' => 'Mickey'
+            'query_string' => 'Mickey',
         ])->json('hits.hits');
 
         $this->assertEquals('Goofy', $hits[0]['_source']['name']);
@@ -139,7 +118,7 @@ class SearchTemplateTest extends TestCase
             ->fields(['name'])
             ->typoTolerance()
             ->typoTolerantAttributes([
-                'name'
+                'name',
             ])
             ->get()
             ->save();
@@ -147,7 +126,7 @@ class SearchTemplateTest extends TestCase
         $template = $this->sigmie->template($templateId);
 
         $hits = $template->run($indexName, [
-            'query_string' => 'Mockey'
+            'query_string' => 'Mockey',
         ])->json('hits.hits');
 
         $this->assertCount(1, $hits);
@@ -186,7 +165,7 @@ class SearchTemplateTest extends TestCase
         $template = $this->sigmie->template($templateId);
 
         $hits = $template->run($indexName, [
-            'query_string' => 'Mockey'
+            'query_string' => 'Mockey',
         ])->json('hits.hits');
 
         $this->assertCount(0, $hits);
@@ -226,12 +205,12 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName,  [
-            'query_string' => 'a'
+        $hits = $template->run($indexName, [
+            'query_string' => 'a',
         ])->json('hits.hits');
 
-        $this->assertArrayHasKey('name', $hits[0]['_source'],);
-        $this->assertArrayNotHasKey('category', $hits[0]['_source'],);
+        $this->assertArrayHasKey('name', $hits[0]['_source']);
+        $this->assertArrayNotHasKey('category', $hits[0]['_source']);
 
         $templateId = uniqid();
 
@@ -244,11 +223,11 @@ class SearchTemplateTest extends TestCase
         $template = $this->sigmie->template($templateId);
 
         $hits = $template->run($indexName, [
-            'query_string' => 'a'
+            'query_string' => 'a',
         ])->json('hits.hits');
 
-        $this->assertArrayHasKey('name', $hits[0]['_source'],);
-        $this->assertArrayHasKey('category', $hits[0]['_source'],);
+        $this->assertArrayHasKey('name', $hits[0]['_source']);
+        $this->assertArrayHasKey('category', $hits[0]['_source']);
     }
 
     /**
@@ -278,14 +257,14 @@ class SearchTemplateTest extends TestCase
         $saved = $this->sigmie->newTemplate($templateId)
             ->properties($blueprint)
             ->fields(['category'])
-            ->highlighting(['category',], '<span class="font-bold">', '</span>')
+            ->highlighting(['category'], '<span class="font-bold">', '</span>')
             ->get()
             ->save();
 
         $template = $this->sigmie->template($templateId);
 
         $hits = $template->run($indexName, [
-            'query_string' => 'a'
+            'query_string' => 'a',
         ])->json('hits.hits');
 
         $this->assertEquals('<span class="font-bold">a</span>', $hits[0]['highlight']['category'][0]);
@@ -330,7 +309,7 @@ class SearchTemplateTest extends TestCase
         $this->assertEquals('a', $hits[2]['_source']['category']);
 
         $hits = $template->run($indexName, [
-            'sort' => (new SortParser($blueprint))->parse('category:asc')
+            'sort' => (new SortParser($blueprint))->parse('category:asc'),
         ])->json('hits.hits');
 
         $this->assertEquals('a', $hits[0]['_source']['category']);
@@ -375,7 +354,7 @@ class SearchTemplateTest extends TestCase
         $this->assertCount(2, $hits);
 
         $hits = $template->run($indexName, [
-            'filters' => (new FilterParser($blueprint))->parse('is_not:active')->toRaw()
+            'filters' => (new FilterParser($blueprint))->parse('is_not:active')->toRaw(),
         ])->json('hits.hits');
 
         $this->assertCount(1, $hits);
@@ -413,12 +392,12 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName,)->json('hits.hits');
+        $hits = $template->run($indexName)->json('hits.hits');
 
         $this->assertCount(2, $hits);
 
         $hits = $template->run($indexName, [
-            'size' => 3
+            'size' => 3,
         ])->json('hits.hits');
 
         $this->assertCount(3, $hits);
@@ -466,12 +445,12 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName,)->json('hits.hits');
+        $hits = $template->run($indexName)->json('hits.hits');
 
         $this->assertCount(3, $hits);
 
         $hits = $template->run($indexName, [
-            'query_string' => 'Good'
+            'query_string' => 'Good',
         ])->json('hits.hits');
 
         $this->assertCount(2, $hits);
@@ -520,7 +499,7 @@ class SearchTemplateTest extends TestCase
         $template = $this->sigmie->template($templateId);
 
         $hits = $template->run($indexName, [
-            'query_string' => ''
+            'query_string' => '',
         ])->json('hits.hits');
 
         $this->assertCount(3, $hits);
@@ -570,19 +549,18 @@ class SearchTemplateTest extends TestCase
 
         $rendered = $template->render([
             'query_string' => '',
-            'from' => 10
+            'from' => 10,
         ]);
 
         $this->assertEquals(10, $rendered['from']);
 
         $rendered = $template->render([
             'query_string' => '',
-            'from' => 20
+            'from' => 20,
         ]);
 
         $this->assertEquals(20, $rendered['from']);
     }
-
 
     /**
      * @test
@@ -627,7 +605,7 @@ class SearchTemplateTest extends TestCase
         $template = $this->sigmie->template($templateId);
 
         $rendered = $template->render([
-            'query_string' => ''
+            'query_string' => '',
         ]);
 
         $this->assertArrayHasKey('match_all', $rendered['query']['bool']['must'][1]['bool']['should']);
@@ -637,7 +615,7 @@ class SearchTemplateTest extends TestCase
         $this->assertArrayHasKey('match_all', $rendered['query']['bool']['must'][1]['bool']['should']);
 
         $rendered = $template->render([
-            'query_string' => 'dis'
+            'query_string' => 'dis',
         ]);
 
         $this->assertArrayNotHasKey('match_all', $rendered['query']['bool']['must'][1]['bool']['should']);
