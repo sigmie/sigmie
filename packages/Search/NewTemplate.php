@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use function Sigmie\Functions\auto_fuzziness;
+
+use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
@@ -13,6 +15,7 @@ use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Search;
+use Sigmie\Query\Suggest;
 use Sigmie\Search\Contracts\SearchTemplateBuilder as SearchTemplateBuilderInterface;
 use Sigmie\Shared\Collection;
 
@@ -106,7 +109,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
                 $field = $this->properties[$field];
 
-                $fuzziness = ! in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
                 $queries = $field->hasQueriesCallback ? $field->queriesFromCallback('{{query_string}}') : $field->queries('{{query_string}}');
 
@@ -125,6 +128,17 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             $query = json_encode($queryBoolean->toRaw()['bool']['should'] ?? (new MatchAll)->toRaw());
 
             $boolean->addRaw('should', "@query_string($query)@endquery_string");
+        });
+
+        $search->suggest(function (Suggest $suggest) {
+
+            $this->properties
+                ->completionFields()
+                ->each(fn (Text $field) =>
+                $suggest
+                    ->completion($field->name . '-suggest',)
+                    ->field($field->name)
+                    ->prefix('{{query_string}}'));
         });
 
         return new SearchTemplate($this->elasticsearchConnection, $search->toRaw(), $this->id);

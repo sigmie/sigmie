@@ -15,6 +15,77 @@ class SearchTemplateTest extends TestCase
     /**
      * @test
      */
+    public function with_suggestion()
+    {
+        $indexName = uniqid();
+
+        $indexName = uniqid();
+        $blueprint = new NewProperties;
+        $blueprint->text('name')->completion();
+        $blueprint->text('description');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'name' => 'Mickey',
+                'description' => 'Adventure in the woods',
+            ]),
+            new Document([
+                'name' => 'Minie',
+                'description' => 'Adventure in the woods',
+            ]),
+            new Document([
+                'name' => 'Modern',
+                'description' => 'Adventure in the woods',
+            ]),
+            new Document([
+                'name' => 'Mice',
+                'description' => 'Adventure in the woods',
+            ]),
+            new Document([
+                'name' => 'Marisa',
+                'description' => 'Adventure in the woods',
+            ]),
+        ]);
+
+        $templateId = uniqid();
+
+        $this->sigmie->newTemplate($templateId)
+            ->properties($blueprint)
+            ->fields(['name', 'description'])
+            ->weight([
+                'name' => 5,
+                'description' => 1,
+            ])
+            ->sort('_score')
+            ->get()
+            ->save();
+
+        $template = $this->sigmie->template($templateId);
+
+        $res = $template->run($indexName, [
+            'query_string' => 'm',
+        ]);
+
+        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.name-suggest.0.options'));
+
+        $this->assertEquals([
+            "Marisa",
+            "Mice",
+            "Mickey",
+            "Minie",
+            "Modern",
+        ], $suggestions);
+    }
+
+    /**
+     * @test
+     */
     public function with_weight()
     {
         $indexName = uniqid();
