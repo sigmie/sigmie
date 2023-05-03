@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 namespace Sigmie\Functions {
-
     use Carbon\Carbon;
     use Exception;
     use GuzzleHttp\Promise\Utils;

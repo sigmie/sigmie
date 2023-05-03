@@ -10,6 +10,7 @@ use Sigmie\Index\Analysis\TokenFilter\AsciiFolding;
 use Sigmie\Index\Analysis\TokenFilter\DecimalDigit;
 use Sigmie\Index\Analysis\TokenFilter\Keywords;
 use Sigmie\Index\Analysis\TokenFilter\Lowercase;
+use Sigmie\Index\Analysis\TokenFilter\Shingle;
 use Sigmie\Index\Analysis\TokenFilter\Stemmer;
 use Sigmie\Index\Analysis\TokenFilter\Stopwords;
 use Sigmie\Index\Analysis\TokenFilter\Synonyms;
@@ -49,6 +50,15 @@ trait Filters
         $name = $name ?? $this->createFilterName('decimal_digit');
 
         $this->addFilter(new DecimalDigit($name));
+
+        return $this;
+    }
+
+    public function shingle(int $minSize = 2, int $maxSize = 2, null|string $name = null): static
+    {
+        $name = $name ?? $this->createFilterName('shingle');
+
+        $this->addFilter(new Shingle($name, $minSize, $maxSize));
 
         return $this;
     }

@@ -29,36 +29,40 @@ class FacetParser extends Parser
         $aggregation = new Aggs;
 
         foreach ($facets as $field) {
-            if (!$this->fieldExists($field)) {
+            if (! $this->fieldExists($field)) {
                 $this->handleError("Field {$field} does not exist.", [
                     'field' => $field,
                 ]);
+
                 continue;
             }
 
-            /** @var  Field */
+            /** @var Field */
             $field = $this->properties[$field];
 
             if ($field instanceof Text && $field->isFilterable()) {
                 $aggregation->terms($field->name(), $field->filterableName());
+
                 continue;
             }
 
             if ($field instanceof Keyword) {
                 $aggregation->terms($field->name(), $field->name());
+
                 continue;
             }
 
             if ($field instanceof Number) {
                 $aggregation->stats($field->name(), $field->name());
+
                 continue;
             }
 
             if ($field instanceof Boolean) {
                 $aggregation->terms($field->name(), $field->name());
+
                 continue;
             }
-
 
             $this->handleError("Field {$field->name()} is not filterable.", [
                 'field' => $field->name(),

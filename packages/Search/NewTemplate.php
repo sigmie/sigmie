@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use function Sigmie\Functions\auto_fuzziness;
-
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;

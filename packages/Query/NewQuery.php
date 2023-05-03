@@ -33,7 +33,7 @@ class NewQuery implements Queries
 
         $this->search->setElasticsearchConnection($httpConnection);
 
-        if (!is_null($index)) {
+        if (! is_null($index)) {
             $this->search->index($index);
         }
     }

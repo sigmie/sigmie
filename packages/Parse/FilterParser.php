@@ -224,9 +224,9 @@ class FilterParser extends Parser
     {
         [$field, $value] = explode(':', $term);
 
-        // Remove quotes from value 
+        // Remove quotes from value
         $value = trim($value, '\'');
-        // Remove quotes from value 
+        // Remove quotes from value
         $value = trim($value, '"');
 
         $field = $this->handleFieldName($field);

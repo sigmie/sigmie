@@ -10,7 +10,7 @@ class Date extends Type
 
     public function __construct(
         string $name,
-        protected array $formats = ["strict_date_optional_time_nanos"]
+        protected array $formats = ['strict_date_optional_time_nanos']
         // Y-m-d\TH:i:s.uP
     ) {
         parent::__construct($name);

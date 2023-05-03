@@ -7,8 +7,6 @@ namespace Sigmie\Query;
 use Http\Promise\Promise;
 use Sigmie\Base\APIs\Script as APIsScript;
 use Sigmie\Base\APIs\Search as APIsSearch;
-use Sigmie\Base\Contracts\ElasticsearchRequest;
-use Sigmie\Base\Http\Requests\Search as SearchRequest;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
 use Sigmie\Query\Contracts\QueryClause as Query;
@@ -37,13 +35,25 @@ class Search
 
     public function __construct(
         protected Query $query = new MatchAll(),
-        protected AggsInterface $aggs = new Aggs()
+        protected AggsInterface $aggs = new Aggs(),
+        protected Suggest $suggest = new Suggest()
     ) {
     }
 
     public function aggregate(callable $callable)
     {
         $callable($this->aggs);
+
+        return $this;
+    }
+
+    public function suggest(callable $callable, null|string $text = null): Search
+    {
+        if (! is_null($text)) {
+            $this->suggest->text($text);
+        }
+
+        $callable($this->suggest);
 
         return $this;
     }
@@ -170,6 +180,10 @@ class Search
             ],
             ...$this->raw,
         ];
+
+        if (count($this->suggest->toRaw()) > 0) {
+            $result['suggest'] = $this->suggest->toRaw();
+        }
 
         if (count($this->aggs->toRaw()) > 0) {
             $result['aggs'] = $this->aggs->toRaw();

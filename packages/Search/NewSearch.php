@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use function Sigmie\Functions\auto_fuzziness;
-
 use Http\Promise\Promise;
-use Sigmie\Base\Http\Responses\Search as ResponsesSearch;
+use function Sigmie\Functions\auto_fuzziness;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
@@ -120,7 +118,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $field = $this->properties[$field];
 
-                $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                $fuzziness = ! in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
                 $queries = $field->hasQueriesCallback ? $field->queriesFromCallback($this->queryString) : $field->queries($this->queryString);
 

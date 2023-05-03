@@ -7,10 +7,9 @@ namespace Sigmie\Http;
 use Elastic\Transport\Transport;
 use Elastic\Transport\TransportBuilder;
 use GuzzleHttp\Client as GuzzleHttpClient;
+use Http\Promise\Promise;
 use Sigmie\Http\Contracts\JSONClient as JSONClientInterface;
 use Sigmie\Http\Contracts\JSONRequest;
-use GuzzleHttp\Promise\Utils;
-use Http\Promise\Promise;
 
 class JSONClient implements JSONClientInterface
 {
