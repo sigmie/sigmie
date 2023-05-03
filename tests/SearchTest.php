@@ -14,6 +14,63 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function completion_suggests_test()
+    {
+        $indexName = uniqid();
+        $blueprint = new NewProperties;
+        $blueprint->text('name')->completion();
+        $blueprint->text('description');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'name' => 'Mickey',
+                'description' => 'Adventure in the woods',
+            ]),
+            new Document([
+                'name' => 'Minie',
+                'description' => 'Adventure in the woods',
+            ]),
+            new Document([
+                'name' => 'Modern',
+                'description' => 'Adventure in the woods',
+            ]),
+            new Document([
+                'name' => 'Mice',
+                'description' => 'Adventure in the woods',
+            ]),
+            new Document([
+                'name' => 'Marisa',
+                'description' => 'Adventure in the woods',
+            ]),
+        ]);
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('m')
+            ->fields(['name'])
+            ->retrieve(['name'])
+            ->get();
+
+        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.name-suggest.0.options'));
+
+        $this->assertEquals([
+            "Marisa",
+            "Mice",
+            "Mickey",
+            "Minie",
+            "Modern",
+        ], $suggestions);
+    }
+
+    /**
+     * @test
+     */
     public function search_promises_test()
     {
         $indexName = uniqid();
@@ -29,7 +86,7 @@ class SearchTest extends TestCase
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
-        //
+       
         $index->merge([
             new Document([
                 'name' => 'Mickey',

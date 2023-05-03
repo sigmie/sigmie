@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use Http\Promise\Promise;
+use Sigmie\Mappings\Types\Text;
+
 use function Sigmie\Functions\auto_fuzziness;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
@@ -14,6 +16,7 @@ use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Search;
+use Sigmie\Query\Suggest;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
 use Sigmie\Shared\Collection;
 
@@ -118,7 +121,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $field = $this->properties[$field];
 
-                $fuzziness = ! in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
                 $queries = $field->hasQueriesCallback ? $field->queriesFromCallback($this->queryString) : $field->queries($this->queryString);
 
@@ -135,6 +138,17 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             });
 
             $boolean->should()->query($queryBoolean);
+        });
+
+        $search->suggest(function (Suggest $suggest) {
+
+            $this->properties
+                ->completionFields()
+                ->each(fn (Text $field) =>
+                $suggest
+                    ->completion($field->name . '-suggest',)
+                    ->field($field->name)
+                    ->prefix($this->queryString));
         });
 
         return $search;
