@@ -17,6 +17,48 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
+    public function async_update()
+    {
+        $alias = uniqid();
+
+        $index = $this->sigmie->newIndex($alias)
+            ->stopwords(['foo', 'bar'], 'demo')
+            ->mapChars(['foo' => 'bar'], 'some_char_filter_name')
+            ->stripHTML()
+            ->create();
+
+        $docs = [];
+        for ($i = 0; $i < 10; $i++) {
+            $docs[] = new Document(['foo' => 'bar']);
+        }
+
+        $collection = $this->sigmie->collect($alias, true);
+        $collection->merge($docs);
+
+        $indexUpdateTask = $index->asyncUpdate(function (Update $update) {
+            $update->stopwords(['foo', 'bar'], 'demo');
+
+            return $update;
+        });
+
+        // wait until isComplete method returns true
+        while (true) {
+            if ($indexUpdateTask->isCompleted()) {
+                $indexUpdateTask->finish();
+                break;
+            }
+            // Sleep for a short interval before checking the condition again
+            usleep(100000); // 100 milliseconds
+        }
+
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertAnalyzerHasNotCharFilter('default', 'html_strip');
+            $index->assertAnalyzerHasNotCharFilter('default', 'some_char_filter_name');
+        });
+    }
+    /**
+     * @test
+     */
     public function analyzer_remove_html_char_filters()
     {
         $alias = uniqid();
@@ -268,7 +310,7 @@ class IndexUpdateTest extends TestCase
             ->twoWaySynonyms([
                 ['treasure', 'gem', 'gold', 'price'],
                 ['friend', 'buddy', 'partner'],
-            ], 'foo_two_way_synonyms', )
+            ], 'foo_two_way_synonyms',)
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {

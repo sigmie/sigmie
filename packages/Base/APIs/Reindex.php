@@ -12,8 +12,11 @@ trait Reindex
 {
     use API;
 
-    public function reindexAPICall(string $source, string $dest): ElasticsearchResponse
-    {
+    public function reindexAPICall(
+        string $source,
+        string $dest,
+        bool $waitForCompletion = true
+    ): ElasticsearchResponse {
         $body = [
             'source' => ['index' => $source],
             'dest' => ['index' => $dest],
@@ -21,6 +24,7 @@ trait Reindex
 
         $uri = new Uri('/_reindex');
         $uri = Uri::withQueryValue($uri, 'refresh', 'true');
+        $uri = Uri::withQueryValue($uri, 'wait_for_completion', $waitForCompletion ? 'true' : 'false');
 
         $esRequest = new RequestsReindex('POST', $uri, $body);
 

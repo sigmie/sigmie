@@ -94,6 +94,37 @@ class AliasedIndex extends Index
         throw new RuntimeException('Something went wrong while updating index.');
     }
 
+    public function asyncUpdate(callable $newUpdate): IndexUpdateTask
+    {
+        $oldAlias = $this->name;
+
+        $update = new UpdateIndex($this->elasticsearchConnection);
+
+        $update->alias($this->alias);
+        $update->config('refresh_interval', '-1');
+
+        $update = $newUpdate($update);
+
+        $blueprint = $update->make();
+        $requestedReplicas = $blueprint->settings->replicaShards();
+
+        $newAlias = $update->getAlias();
+        $update->replicas(0);
+
+        $newIndex = $update->create();
+
+        $this->disableWrite();
+
+        return new IndexUpdateTask(
+            $this->elasticsearchConnection,
+            $this->name,
+            $newIndex->name,
+            $oldAlias,
+            $newAlias,
+            $requestedReplicas
+        );
+    }
+
     public function disableWrite(): void
     {
         $this->indexAPICall("{$this->name}/_settings", 'PUT', [
