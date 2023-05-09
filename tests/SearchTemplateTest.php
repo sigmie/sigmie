@@ -21,10 +21,11 @@ class SearchTemplateTest extends TestCase
 
         $indexName = uniqid();
         $blueprint = new NewProperties;
-        $blueprint->text('name')->completion();
+        $blueprint->name();
         $blueprint->text('description');
 
         $index = $this->sigmie->newIndex($indexName)
+            ->autocomplete()
             ->properties($blueprint)
             ->create();
 
@@ -72,7 +73,7 @@ class SearchTemplateTest extends TestCase
             'query_string' => 'm',
         ]);
 
-        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.name-suggest.0.options'));
+        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
 
         $this->assertEquals([
             "Marisa",
@@ -679,16 +680,16 @@ class SearchTemplateTest extends TestCase
             'query_string' => '',
         ]);
 
-        $this->assertArrayHasKey('match_all', $rendered['query']['bool']['must'][1]['bool']['should']);
+        $this->assertArrayHasKey('match_all', $rendered['query']['function_score']['query']['bool']['must'][1]['bool']['should']);
 
         $rendered = $template->render();
 
-        $this->assertArrayHasKey('match_all', $rendered['query']['bool']['must'][1]['bool']['should']);
+        $this->assertArrayHasKey('match_all', $rendered['query']['function_score']['query']['bool']['must'][1]['bool']['should']);
 
         $rendered = $template->render([
             'query_string' => 'dis',
         ]);
 
-        $this->assertArrayNotHasKey('match_all', $rendered['query']['bool']['must'][1]['bool']['should']);
+        $this->assertArrayNotHasKey('match_all', $rendered['query']['function_score']['query']['bool']['must'][1]['bool']['should']);
     }
 }

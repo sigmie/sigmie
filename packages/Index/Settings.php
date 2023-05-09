@@ -16,6 +16,8 @@ class Settings implements SettingsInterface
 
     protected AnalysisInterface $analysis;
 
+    protected string $defaultPipeline;
+
     public function __construct(
         int $primaryShards = 1,
         int $replicaShards = 2,
@@ -30,6 +32,13 @@ class Settings implements SettingsInterface
     public function analysis(): AnalysisInterface
     {
         return $this->analysis;
+    }
+
+    public function defaultPipeline(string $name): self
+    {
+        $this->defaultPipeline = $name;
+
+        return $this;
     }
 
     public function config(string $name, string $value): self
@@ -65,10 +74,16 @@ class Settings implements SettingsInterface
 
     public function toRaw(): array
     {
-        return array_merge([
+        $res = array_merge([
             'number_of_shards' => $this->primaryShards,
             'number_of_replicas' => $this->replicaShards,
             'analysis' => $this->analysis()->toRaw(),
         ], $this->configs);
+
+        if ($this->defaultPipeline ?? false) {
+            $res['default_pipeline'] = $this->defaultPipeline;
+        }
+
+        return $res;
     }
 }

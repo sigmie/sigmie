@@ -40,7 +40,7 @@ trait Actions
 
         $response = $this->bulkAPICall($indexName, $body, $refresh);
 
-        if (! ($document->_id ?? false)) {
+        if (!($document->_id ?? false)) {
             $document->id($response->json('items.0.create._id'));
         }
 
@@ -87,11 +87,11 @@ trait Actions
             $response = $value[$action];
 
             $doc = $documents[$index];
-            if (! isset($doc->_id)) {
+            if (!isset($doc->_id)) {
                 $doc->id($response['_id']);
             }
 
-            if (! isset($doc->_index)) {
+            if (!isset($doc->_index)) {
                 $doc->index($response['_index']);
             }
         }
@@ -118,11 +118,11 @@ trait Actions
             throw new ElasticsearchException($res->json('items.0.create.error'), $res->code());
         }
 
-        if (! isset($doc->_id)) {
+        if (!isset($doc->_id)) {
             $doc->id($res->json('items.0.create._id'));
         }
 
-        if (! isset($doc->_index)) {
+        if (!isset($doc->_index)) {
             $doc->index($res->json('items.0.create._index'));
         }
 

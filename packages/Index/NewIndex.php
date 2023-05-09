@@ -8,6 +8,7 @@ use Sigmie\Base\Contracts\ElasticsearchConnection;
 use function Sigmie\Functions\index_name;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Analysis\Analysis;
+use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
@@ -30,8 +31,11 @@ class NewIndex
     use Shards;
     use Replicas;
     use Tokenizer;
+    use Autocomplete;
 
     protected string $alias;
+
+    protected bool $autocomplete = false;
 
     protected DefaultAnalyzer $defaultAnalyzer;
 
@@ -65,6 +69,13 @@ class NewIndex
     public function config(string $name, string|array|bool|int $value): static
     {
         $this->config[$name] = $value;
+
+        return $this;
+    }
+
+    public function autocomplete(bool $default = true): static
+    {
+        $this->autocomplete = $default;
 
         return $this;
     }
@@ -131,6 +142,16 @@ class NewIndex
 
         $analyzers = $mappings->analyzers();
 
+        if ($this->autocomplete) {
+
+            $pipeline = $this->createAutocompletePipeline($mappings);
+            $autocompleteAnalyzer = $this->createAutocompleteAnalyzer();
+
+            $this->analysis()->addAnalyzer($autocompleteAnalyzer);
+
+            $mappings->properties()->autocomplete($autocompleteAnalyzer);
+        }
+
         $this->analysis()->addAnalyzers($analyzers);
 
         $settings = new Settings(
@@ -140,8 +161,14 @@ class NewIndex
             configs: $this->config
         );
 
+        if ($this->autocomplete) {
+            $settings->defaultPipeline($pipeline->name);
+        }
+
         $name = index_name($this->alias);
 
-        return new Index($name, $settings, $mappings);
+        $index = new Index($name, $settings, $mappings);
+
+        return $index;
     }
 }

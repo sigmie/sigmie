@@ -25,6 +25,8 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
     protected string $id;
 
+    protected bool $autocompletion = true;
+
     public function id(string $id)
     {
         $this->id = $id;
@@ -130,17 +132,24 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             $boolean->addRaw('should', "@query_string($query)@endquery_string");
         });
 
-        $search->suggest(function (Suggest $suggest) {
+        if ($this->autocompletion) {
 
-            $this->properties
-                ->completionFields()
-                ->each(fn (Text $field) =>
-                $suggest
-                    ->completion($field->name . '-suggest',)
-                    ->field($field->name)
-                    ->prefix('{{query_string}}'));
-        });
+            $search->suggest(function (Suggest $suggest) {
+
+                $suggest->completion(name: 'autocompletion')
+                    ->field('autocomplete')
+                    ->fuzzy()
+                    ->prefix('{{query_string}}');
+            });
+        }
 
         return new SearchTemplate($this->elasticsearchConnection, $search->toRaw(), $this->id);
+    }
+
+    public function autocomplete(bool $default = true): self
+    {
+        $this->autocompletion = $default;
+
+        return $this;
     }
 }

@@ -49,7 +49,7 @@ class Search
 
     public function suggest(callable $callable, null|string $text = null): Search
     {
-        if (! is_null($text)) {
+        if (!is_null($text)) {
             $this->suggest->text($text);
         }
 
@@ -57,6 +57,7 @@ class Search
 
         return $this;
     }
+
 
     public function trackTotalHits(int $trackTotalHits = -1)
     {
@@ -166,7 +167,17 @@ class Search
         $result = [
             'track_total_hits' => $this->trackTotalHits < 0 ? true : $this->trackTotalHits,
             '_source' => $this->fields,
-            'query' => $this->query->toRaw(),
+            'query' => [
+                "function_score" => [
+                    'query' => $this->query->toRaw(),
+                    "script_score" => [
+                        "script" => [
+                            "source" => "doc['boost'].size()== 0 ? 1 : doc['boost'].value"
+                        ]
+                    ],
+                    "boost_mode" => "multiply"
+                ],
+            ],
             'from' => $this->from,
             'size' => $this->size,
             'sort' => [...$this->sort],

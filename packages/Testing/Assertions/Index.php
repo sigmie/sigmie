@@ -20,6 +20,17 @@ trait Index
         $this->assertArrayHasKey('mappings', $this->data, "Failed to assert that index {$this->name} has mappings.");
     }
 
+    public function assertIndexHasPipeline(string $pipeline): void
+    {
+        $this->assertArrayHasKey('default_pipeline', $this->data['settings']['index'], "Failed to assert that index {$this->name} has a default pipeline.");
+        $this->assertEquals($pipeline, $this->data['settings']['index']['default_pipeline'], "Failed to assert that index {$this->name} has {$pipeline} pipeline.");
+    }
+
+    public function assertIndexHasNotPipeline(): void
+    {
+        $this->assertArrayNotHasKey('default_pipeline', $this->data['settings']['index'], "Failed to assert that index {$this->name} has a default pipeline.");
+    }
+
     public function assertAnalyzerExists(string $analyzer): void
     {
         $this->assertArrayHasKey(

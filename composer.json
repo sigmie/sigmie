@@ -49,5 +49,10 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "bin": []
+    "bin": [],
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    }
 }

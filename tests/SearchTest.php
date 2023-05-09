@@ -18,10 +18,11 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
         $blueprint = new NewProperties;
-        $blueprint->text('name')->completion();
+        $blueprint->name('name');
         $blueprint->text('description');
 
         $index = $this->sigmie->newIndex($indexName)
+            ->autocomplete()
             ->properties($blueprint)
             ->create();
 
@@ -57,7 +58,7 @@ class SearchTest extends TestCase
             ->retrieve(['name'])
             ->get();
 
-        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.name-suggest.0.options'));
+        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
 
         $this->assertEquals([
             "Marisa",
@@ -86,7 +87,7 @@ class SearchTest extends TestCase
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
-       
+
         $index->merge([
             new Document([
                 'name' => 'Mickey',

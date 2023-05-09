@@ -10,14 +10,32 @@ class Completion extends Suggester
 {
     protected string $prefix = '';
 
+    protected string $analyzer;
+
+    protected bool $fuzzy = false;
+
     public function type(): SuggesterType
     {
         return SuggesterType::Completion;
     }
 
+    public function analyzer(string $analyzer): self
+    {
+        $this->analyzer = $analyzer;
+
+        return $this;
+    }
+
     public function prefix(string $prefix): self
     {
         $this->prefix = $prefix;
+
+        return $this;
+    }
+
+    public function fuzzy(): static
+    {
+        $this->fuzzy = true;
 
         return $this;
     }
@@ -28,6 +46,14 @@ class Completion extends Suggester
 
         if ($this->prefix ?? false) {
             $res[$this->name]['prefix'] = $this->prefix;
+        }
+
+        if ($this->fuzzy ?? false) {
+            $res[$this->name][$this->type()->value]['fuzzy'] = true;
+        }
+
+        if ($this->analyzer ?? false) {
+            $res[$this->name][$this->type()->value]['analyzer'] = 'autocomplete_analyzer';
         }
 
         return $res;

@@ -111,78 +111,88 @@ class QueryTest extends TestCase
 
         $this->assertEquals(
             $query['query'],
-            ['bool' => [
-                'boost' => 1.0,
-                'filter' => [
-                    ['match_all' => (object) [
-                        'boost' => 1.0,
+            [
+                'function_score' =>
+                [
+                    'script_score' => ['script' => [
+                        'source' => "doc['boost'].size()== 0 ? 1 : doc['boost'].value"
                     ]],
-                    ['match_none' => (object) [
+                    'boost_mode' => 'multiply',
+                    'query' =>
+                    ['bool' => [
                         'boost' => 1.0,
-                    ]],
-                    ['fuzzy' => ['bar' => ['value' => 'baz']]],
-                    ['multi_match' => [
-                        'fields' => ['foo', 'bar'],
-                        'boost' => 1.0,
-                        'query' => 'baz',
-                    ]],
-                ],
-                'must' => [
-                    [
-                        'term' => [
-                            'foo' => [
-                                'value' => 'bar',
+                        'filter' => [
+                            ['match_all' => (object) [
                                 'boost' => 1.0,
-                            ],
+                            ]],
+                            ['match_none' => (object) [
+                                'boost' => 1.0,
+                            ]],
+                            ['fuzzy' => ['bar' => ['value' => 'baz']]],
+                            ['multi_match' => [
+                                'fields' => ['foo', 'bar'],
+                                'boost' => 1.0,
+                                'query' => 'baz',
+                            ]],
                         ],
-                    ],
-                    [
-                        'exists' => [
-                            'field' => 'bar',
-                            'boost' => 1.0,
-                        ],
-                    ],
-                    [
-                        'terms' => [
-                            'foo' => ['bar', 'baz'],
-                            'boost' => 1.0,
-                        ],
-                    ],
-                ],
-                'must_not' => [
-                    [
-                        'wildcard' => [
-                            'foo' => [
-                                'value' => '**/*',
-                                'boost' => '1.0',
-                            ],
-                        ],
-                    ],
-                    [
-                        'ids' => [
-                            'values' => [
-                                'unqie',
-                            ],
-                            'boost' => 1.0,
-                        ],
-                    ],
-                ],
-                'should' => [
-                    [
-                        'bool' => [
-                            'must' => [
-                                ['match' => [
+                        'must' => [
+                            [
+                                'term' => [
                                     'foo' => [
-                                        'query' => 'bar',
+                                        'value' => 'bar',
                                         'boost' => 1.0,
                                     ],
-                                ]],
+                                ],
                             ],
-                            'boost' => 1.0,
+                            [
+                                'exists' => [
+                                    'field' => 'bar',
+                                    'boost' => 1.0,
+                                ],
+                            ],
+                            [
+                                'terms' => [
+                                    'foo' => ['bar', 'baz'],
+                                    'boost' => 1.0,
+                                ],
+                            ],
                         ],
-                    ],
-                ],
-            ]]
+                        'must_not' => [
+                            [
+                                'wildcard' => [
+                                    'foo' => [
+                                        'value' => '**/*',
+                                        'boost' => '1.0',
+                                    ],
+                                ],
+                            ],
+                            [
+                                'ids' => [
+                                    'values' => [
+                                        'unqie',
+                                    ],
+                                    'boost' => 1.0,
+                                ],
+                            ],
+                        ],
+                        'should' => [
+                            [
+                                'bool' => [
+                                    'must' => [
+                                        ['match' => [
+                                            'foo' => [
+                                                'query' => 'bar',
+                                                'boost' => 1.0,
+                                            ],
+                                        ]],
+                                    ],
+                                    'boost' => 1.0,
+                                ],
+                            ],
+                        ],
+                    ]]
+                ]
+            ]
         );
     }
 }

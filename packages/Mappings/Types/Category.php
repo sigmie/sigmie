@@ -16,6 +16,11 @@ class Category extends Text
         $this->unstructuredText()->indexPrefixes()->keyword();
     }
 
+    public function isAutocompletable(): bool
+    {
+        return true;
+    }
+
     public function analyze(NewAnalyzer $newAnalyzer): void
     {
         $this->makeSortable();

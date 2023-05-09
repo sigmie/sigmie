@@ -6,8 +6,14 @@ namespace Sigmie\Mappings;
 
 use ArrayAccess;
 use Exception;
+use Sigmie\English\Filter\Lowercase;
+use Sigmie\English\Filter\Stemmer;
+use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\SimpleAnalyzer;
+use Sigmie\Index\Analysis\TokenFilter\Shingle;
+use Sigmie\Index\Analysis\TokenFilter\Trim;
+use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\Keyword;
@@ -21,7 +27,18 @@ class Properties extends Type implements ArrayAccess
     public function __construct(string $name = 'mappings', protected array $fields = [])
     {
         $this->type = ElasticsearchMappingType::PROPERTIES->value;
+
+        if ($name === 'mappings') {
+            $this->fields['boost'] = (new Number('boost'))->float();
+            $this->fields['autocomplete'] = (new Text('autocomplete'))->completion();
+        }
+
         parent::__construct($name);
+    }
+
+    public function autocomplete(Analyzer $analyzer)
+    {
+        $this->fields['autocomplete'] = (new Text('autocomplete'))->completion($analyzer);
     }
 
     public function queries(string $queryString): array

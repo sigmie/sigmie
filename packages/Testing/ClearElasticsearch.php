@@ -8,9 +8,11 @@ use Sigmie\Base\APIs\API;
 use Sigmie\Base\APIs\Cat;
 use Sigmie\Base\APIs\Cluster;
 use Sigmie\Base\APIs\Index;
+use Sigmie\Base\APIs\Ingest;
 use Sigmie\Base\APIs\Script;
 use Sigmie\Base\APIs\Template;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Base\ElasticsearchException;
 
 trait ClearElasticsearch
 {
@@ -20,10 +22,26 @@ trait ClearElasticsearch
     use Script;
     use Cluster;
     use Template;
+    use Ingest;
 
     protected function clearElasticsearch(ElasticsearchConnection $connection): void
     {
         $this->setElasticsearchConnection($connection);
+
+        try {
+
+            $response = $this->ingestAPICall('', 'GET');
+
+            // Delete ingest pipelines
+            foreach ($response->json() as $id => $pipeline) {
+                $this->ingestAPICall($id, 'DELETE');
+            }
+        } catch (ElasticsearchException $exception) {
+            if ($exception->getCode() !== 404) {
+                throw $exception;
+            }
+        }
+
 
         $response = $this->catAPICall('indices', 'GET');
 
