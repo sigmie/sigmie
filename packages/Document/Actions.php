@@ -86,6 +86,10 @@ trait Actions
             $action = array_key_first($value);
             $response = $value[$action];
 
+            if (!($response['_id'] ?? false)) {
+                dd($index, $value);
+            }
+
             $doc = $documents[$index];
             if (!isset($doc->_id)) {
                 $doc->id($response['_id']);

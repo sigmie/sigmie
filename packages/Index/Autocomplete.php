@@ -79,7 +79,9 @@ trait Autocomplete
         $fieldNames = $collection->filter(fn ($type) => $type instanceof Text)
             ->filter(fn (Text $type) => in_array($type::class, [
                 Email::class, SearchableNumber::class,
-                Path::class, Sentence::class, Keyword::class, CaseSensitiveKeyword::class, Tags::class,
+                Path::class,
+                Keyword::class, CaseSensitiveKeyword::class, Tags::class,
+                // Sentence::class,
                 Name::class
             ]))
             ->mapWithKeys(fn (Text $type, string $name) => [$name => "(ctx.{$name}?.trim() ?: '')"])

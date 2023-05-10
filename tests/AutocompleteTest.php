@@ -174,7 +174,7 @@ class AutocompleteTest extends TestCase
         $this->sigmie
             ->newIndex($name)
             ->mapping(function (NewProperties $blueprint) {
-                $blueprint->title('title');
+                $blueprint->name('title');
                 $blueprint->category('color');
                 $blueprint->category('type');
                 $blueprint->category('brand');
@@ -194,7 +194,7 @@ class AutocompleteTest extends TestCase
                 'brand' => 'levis',
             ],
             [
-                // 'title' => 'Nice shoes by Levis',
+                'title' => 'Nice shoes by Levis',
                 'color' => 'red',
                 'type' => 'shoes',
                 'brand' => 'levis',
@@ -290,9 +290,7 @@ class AutocompleteTest extends TestCase
 
         $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
 
-        $this->assertEquals([
-            'Ultra jacket by Solomon',
-        ], $suggestions);
+        $this->assertEquals([], $suggestions);
     }
 
     /**
@@ -305,7 +303,7 @@ class AutocompleteTest extends TestCase
         $this->sigmie
             ->newIndex($name)
             ->mapping(function (NewProperties $blueprint) {
-                $blueprint->title('title');
+                $blueprint->name('title');
             })
             ->lowercase()
             ->trim()
@@ -338,6 +336,71 @@ class AutocompleteTest extends TestCase
             "Barbarosa",
             "Barber shop",
             "Beaturiful dress made from Levis",
+        ], $suggestions);
+    }
+
+    /**
+     * @test
+     */
+    public function case_1()
+    {
+        $name = uniqid();
+
+        $this->sigmie
+            ->newIndex($name)
+            ->mapping(function (NewProperties $blueprint) {
+                $blueprint->category('model');
+                $blueprint->category('storage');
+                $blueprint->category('color');
+                $blueprint->price();
+            })
+            ->lowercase()
+            ->trim()
+            ->autocomplete()
+            ->create();
+
+        $collection = $this->sigmie->collect($name, true);
+
+        $iphones = [
+            [
+                "model" => "iPhone 13 Pro Max",
+                "storage" => "512GB",
+                "color" => "Graphite",
+                "price" => 1399.00
+            ],
+            [
+                "model" => "iPhone 13 Pro",
+                "storage" => "256GB",
+                "color" => "Sierra Blue",
+                "price" => 1199.00
+            ],
+            [
+
+                "model" => "iPhone 13",
+                "storage" => "128GB",
+                "color" => "Pink",
+                "price" => 799.00
+            ],
+            [
+                "model" => "iPhone SE",
+                "storage" => "64GB",
+                "color" => "Black",
+                "price" => 399.00
+            ]
+        ];
+
+        $docs = array_map(fn ($values) => new Document($values), $iphones);
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->newSearch($name)
+            ->queryString('black')
+            ->get();
+
+        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+
+        $this->assertEquals([
+            "Black 64GB iPhone SE",
         ], $suggestions);
     }
 }
