@@ -38,6 +38,19 @@ trait Autocomplete
 {
     use Ingest;
 
+    protected bool $autocomplete = false;
+
+    protected array $autocompleteFields = [];
+
+    public function autocomplete(array $fields): static
+    {
+        $this->autocomplete = true;
+
+        $this->autocompleteFields = $fields;
+
+        return $this;
+    }
+
     public function createAutocompletePipeline(Mappings $mappings): Pipeline
     {
         /** @var  Properties */
@@ -53,6 +66,7 @@ trait Autocomplete
         $all = $autocompletions->filter(fn ($values) => count($values) > 0)
             ->flatten()
             ->toArray();
+
 
         $autocomplete = '[' . implode(',', $all) . ']';
 
@@ -77,6 +91,7 @@ trait Autocomplete
         $collection = new Collection($properties->toArray());
 
         $fieldNames = $collection->filter(fn ($type) => $type instanceof Text)
+            ->filter(fn (Text $type, $name) => in_array($name, $this->autocompleteFields))
             ->filter(fn (Text $type) => in_array($type::class, [
                 Email::class, SearchableNumber::class,
                 Path::class,
@@ -98,6 +113,7 @@ trait Autocomplete
             ->filter(fn (Text $type) => in_array($type::class, [
                 Category::class
             ]))
+            ->filter(fn (Text $type, $name) => in_array($name, $this->autocompleteFields))
             ->mapWithKeys(fn (Text $type, string $name) => [$name => "(ctx.{$name}?.trim() ?: '')"])
             ->values();
 

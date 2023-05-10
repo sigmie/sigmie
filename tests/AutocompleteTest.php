@@ -75,7 +75,7 @@ class AutocompleteTest extends TestCase
             })
             ->lowercase()
             ->trim()
-            ->autocomplete()
+            ->autocomplete(['color', 'type'])
             ->create();
 
         $this->assertIndex($name, function (Assert $index) {
@@ -120,7 +120,7 @@ class AutocompleteTest extends TestCase
             })
             ->lowercase()
             ->trim()
-            ->autocomplete()
+            ->autocomplete(['color', 'type'])
             ->create();
 
         $collection = $this->sigmie->collect($name, true);
@@ -154,7 +154,7 @@ class AutocompleteTest extends TestCase
             ->newIndex($name)
             ->mapping(function (NewProperties $blueprint) {
             })
-            ->autocomplete()
+            ->autocomplete([])
             ->create();
 
         $this->assertIndex($name, function (Assert $index) {
@@ -181,7 +181,7 @@ class AutocompleteTest extends TestCase
             })
             ->lowercase()
             ->trim()
-            ->autocomplete()
+            ->autocomplete(['color', 'type', 'brand'])
             ->create();
 
         $collection = $this->sigmie->collect($name, true);
@@ -247,7 +247,7 @@ class AutocompleteTest extends TestCase
             })
             ->lowercase()
             ->trim()
-            ->autocomplete()
+            ->autocomplete(['color', 'type', 'brand'])
             ->create();
 
         $collection = $this->sigmie->collect($name, true);
@@ -307,7 +307,7 @@ class AutocompleteTest extends TestCase
             })
             ->lowercase()
             ->trim()
-            ->autocomplete()
+            ->autocomplete(['title'])
             ->create();
 
         $collection = $this->sigmie->collect($name, true);
@@ -356,7 +356,7 @@ class AutocompleteTest extends TestCase
             })
             ->lowercase()
             ->trim()
-            ->autocomplete()
+            ->autocomplete(['model', 'storage', 'color'])
             ->create();
 
         $collection = $this->sigmie->collect($name, true);

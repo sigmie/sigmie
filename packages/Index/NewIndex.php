@@ -35,8 +35,6 @@ class NewIndex
 
     protected string $alias;
 
-    protected bool $autocomplete = false;
-
     protected DefaultAnalyzer $defaultAnalyzer;
 
     protected AnalysisInterface $analysis;
@@ -69,13 +67,6 @@ class NewIndex
     public function config(string $name, string|array|bool|int $value): static
     {
         $this->config[$name] = $value;
-
-        return $this;
-    }
-
-    public function autocomplete(bool $default = true): static
-    {
-        $this->autocomplete = $default;
 
         return $this;
     }
