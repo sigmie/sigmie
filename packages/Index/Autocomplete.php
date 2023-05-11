@@ -68,7 +68,8 @@ trait Autocomplete
         $combinableFields = $this->combinableFields($properties);
         $nonCombinableFields = $this->nonCombinableFields($properties);
 
-        $fields = implode(',', [...$combinableFields, ...$nonCombinableFields]);
+        $fields1 = implode(',', $nonCombinableFields);
+        $fields2 = implode(',', $combinableFields);
 
         $newPipeline = new NewPipeline($this->elasticsearchConnection, 'create_autocomplete_field');
 
@@ -78,29 +79,41 @@ trait Autocomplete
             'max_permutations' => 3
         ]);
         $processor->source("
-      def fields = [{$fields}];
+      def fields1 = [{$fields1}];
+      def fields2 = [{$fields2}];
       def lowercase = params.lowercase;
       def flattenedFields = [];
       def permutations = [];
       def max_permutations = params.max_permutations ?: 10;
       
       // Flatten any nested arrays and convert to string
-      for (def i = 0; i < fields.length; i++) {
-        if (fields[i] == null) {
+      for (def i = 0; i < fields1.length; i++) {
+        if (fields1[i] == null) {
           continue;
         }
-        if (fields[i] instanceof List) {
-          flattenedFields.add(fields[i].join(' '));
+        if (fields1[i] instanceof List) {
+          flattenedFields.add([fields1[i].join(' '), 3]);
         } else {
-          flattenedFields.add(fields[i].toString());
+          flattenedFields.add([fields1[i].toString(), 3]);
+        }
+      }
+      
+      for (def i = 0; i < fields2.length; i++) {
+        if (fields2[i] == null) {
+          continue;
+        }
+        if (fields2[i] instanceof List) {
+          flattenedFields.add([fields2[i].join(' '), 1]);
+        } else {
+          flattenedFields.add([fields2[i].toString(), 1]);
         }
       }
 
       // Lowercase all field values if requested
       if (lowercase) {
         for (def i = 0; i < flattenedFields.length; i++) {
-          if (flattenedFields[i] != null) {
-            flattenedFields[i] = flattenedFields[i].toLowerCase();
+          if (flattenedFields[i][0] != null) {
+            flattenedFields[i][0] = flattenedFields[i][0].toLowerCase();
           }
         }
       }
@@ -108,20 +121,20 @@ trait Autocomplete
       // Convert permutations to list of maps with input and weight keys
       def result = [];
       for (int i = 0; i < flattenedFields.length; i++) {
-        def perm = flattenedFields[i].trim();
+        def perm = flattenedFields[i][0].trim();
         def map = [:];
         map['input'] = perm;
-        map['weight'] = 1;
+        map['weight'] = flattenedFields[i][1];
         result.add(map);
       }
 
-        def uniqueValues = new HashSet();
-        for (value in result) {
+      def uniqueValues = new HashSet();
+      for (value in result) {
         uniqueValues.add(value);
-        }
-        result = uniqueValues.toArray();
-      
-        ctx.autocomplete = result;
+      }
+      result = uniqueValues.toArray();
+
+      ctx.autocomplete = result;
         ");
 
         return $newPipeline

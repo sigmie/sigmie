@@ -114,19 +114,20 @@ class AutocompleteTest extends TestCase
         $this->sigmie
             ->newIndex($name)
             ->mapping(function (NewProperties $blueprint) {
-                $blueprint->text('title');
+                $blueprint->title('title');
                 $blueprint->category('color');
                 $blueprint->category('type');
             })
             ->lowercase()
             ->trim()
-            ->autocomplete(['color', 'type'])
+            ->autocomplete(['color', 'type', 'title'])
             ->create();
 
         $collection = $this->sigmie->collect($name, true);
 
         $docs = [
             new Document([
+                'title'=> 'nice dresss',
                 'color' => 'red',
                 'type' => 'dress',
             ], 'document_id'),
@@ -139,6 +140,7 @@ class AutocompleteTest extends TestCase
         $this->assertArrayHasKey('autocomplete', $doc->_source);
         $this->assertEquals([
             ['input' => 'red dress', 'weight' => 1],
+            ['input' => 'nice dresss', 'weight' => 3],
             ['input' => 'dress red', 'weight' => 1],
         ], $doc->_source['autocomplete']);
     }
