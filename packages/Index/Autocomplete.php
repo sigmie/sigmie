@@ -9,6 +9,8 @@ use Sigmie\English\Filter\Lowercase;
 use Sigmie\English\Filter\Stemmer;
 use Sigmie\English\Filter\Stopwords;
 use Sigmie\Index\Analysis\Analyzer;
+use Sigmie\Index\Analysis\TokenFilter\AsciiFolding;
+use Sigmie\Index\Analysis\TokenFilter\DecimalDigit;
 use Sigmie\Index\Analysis\TokenFilter\Shingle;
 use Sigmie\Index\Analysis\TokenFilter\Stopwords as TokenFilterStopwords;
 use Sigmie\Index\Analysis\TokenFilter\Trim;
@@ -204,19 +206,19 @@ trait Autocomplete
         return $result;
     }
 
+    abstract protected function autocompleteTokenFilters(): array;
+
     public function createAutocompleteAnalyzer(): Analyzer
     {
         $autocompleteAnalyzer = new Analyzer(
             'autocomplete_analyzer',
             new WordBoundaries(),
             [
-                new Stopwords(),
-                new TokenFilterStopwords('custom_stopwords', ['and', 'the']),
-                new Truncate('demo', 2),
-                new Lowercase(),
+                ...$this->autocompleteTokenFilters(),
+                new AsciiFolding('autocomplete_ascii_folding'),
+                new Unique('autocomplete_unique', false),
                 new Trim('autocomplete_trim'),
-                new Stemmer(),
-                new Unique('autocomplete_unique'),
+                new DecimalDigit('autocomplete_decimal_digit'),
                 new Shingle('autocomplete_shingle', 2, 3),
             ]
         );

@@ -30,6 +30,15 @@ class Builder extends IndexBuilder implements LanguageBuilder
         return $this;
     }
 
+    protected function autocompleteTokenFilters(): array
+    {
+        return [
+            new GreekStemmer('autocomplete_greek_stemmer'),
+            new GreekStopwords('autocomplete_greek_stopwords'),
+            new GreekLowercase('autocomplete_greek_lowercase'),
+        ];
+    }
+
     public function greekStemmer(null|string $name = null): static
     {
         $filter = is_null($name) ? new GreekStemmer() : new GreekStemmer($name);

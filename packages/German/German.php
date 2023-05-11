@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\German;
 
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\German\Filter\GermanNormalization;
 use Sigmie\Index\Contracts\Language;
 use Sigmie\Index\Contracts\LanguageBuilder;
 

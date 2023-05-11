@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\German;
 
+use Sigmie\German\Filter\GermanNormalization;
 use Sigmie\German\Filter\LightStemmer as GermanLightStemmer;
 use Sigmie\German\Filter\Lowercase as GermanLowercase;
 use Sigmie\German\Filter\MinimalStemmer as GermanMinimalStemmer;
@@ -77,5 +78,15 @@ class Builder extends IndexBuilder implements LanguageBuilder
         $this->addFilter($filter);
 
         return $this;
+    }
+
+    protected function autocompleteTokenFilters(): array
+    {
+        return [
+            new GermanNormalization('autocomplete_german_normalization'),
+            new GermanLightStemmer('autocomplete_german_light_stemmer'),
+            new GermanStopwords('autocomplete_german_stopwords'),
+            new GermanLowercase('autocomplete_german_lowercase'),
+        ];
     }
 }

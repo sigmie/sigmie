@@ -21,6 +21,9 @@ use Sigmie\Index\Shared\Shards;
 use Sigmie\Index\Shared\Tokenizer;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
+use Sigmie\English\Filter\Lowercase;
+use Sigmie\English\Filter\Stemmer;
+use Sigmie\English\Filter\Stopwords;
 
 class NewIndex
 {
@@ -42,6 +45,15 @@ class NewIndex
     protected array $config = [];
 
     protected Properties $properties;
+
+    protected function autocompleteTokenFilters(): array
+    {
+        return [
+            new Stemmer('autocomplete_english_stemmer'),
+            new Stopwords('autocomplete_english_stopwords'),
+            new Lowercase('autocomplete_english_lowercase')
+        ];
+    }
 
     public function __construct(ElasticsearchConnection $connection)
     {

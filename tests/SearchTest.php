@@ -22,7 +22,7 @@ class SearchTest extends TestCase
         $blueprint->text('description');
 
         $index = $this->sigmie->newIndex($indexName)
-            ->autocomplete()
+            ->autocomplete(['name', 'description'])
             ->properties($blueprint)
             ->create();
 
