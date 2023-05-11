@@ -65,17 +65,19 @@ abstract class Type implements Name, ToRaw, TypeInterface
 
     public function toRaw(): array
     {
-        $this->meta = [
-            ...$this->meta,
-            'class' => static::class,
-        ];
-
         $raw = [
             $this->name => [
                 'type' => $this->type(),
-                'meta' => $this->meta,
             ],
         ];
+
+        if ($this->type() !== 'completion') {
+            $raw[$this->name]['meta'] =
+                [
+                    ...$this->meta,
+                    'class' => static::class,
+                ];
+        }
 
         return $raw;
     }

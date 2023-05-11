@@ -138,8 +138,8 @@ class AutocompleteTest extends TestCase
 
         $this->assertArrayHasKey('autocomplete', $doc->_source);
         $this->assertEquals([
-            'red dress',
-            'dress red'
+            ['input' => 'red dress', 'weight' => 1],
+            ['input' => 'dress red', 'weight' => 1],
         ], $doc->_source['autocomplete']);
     }
 

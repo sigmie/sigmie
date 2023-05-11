@@ -82,6 +82,11 @@ trait Actions
 
         $res = $this->bulkAPICall($indexName, $body, $refresh);
 
+        if ($res->json('errors'))
+        {
+            dd($res->json());
+        }
+
         foreach ($res->json('items') as $index => $value) {
             $action = array_key_first($value);
             $response = $value[$action];

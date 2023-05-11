@@ -40,6 +40,8 @@ trait Autocomplete
 
     protected bool $autocomplete = false;
 
+    protected bool $lowercaseAutocomplete = false;
+
     protected array $autocompleteFields = [];
 
     public function autocomplete(array $fields): static
@@ -47,6 +49,13 @@ trait Autocomplete
         $this->autocomplete = true;
 
         $this->autocompleteFields = $fields;
+
+        return $this;
+    }
+
+    public function lowercaseAutocompletions(): static
+    {
+        $this->lowercaseAutocomplete = true;
 
         return $this;
     }
@@ -59,27 +68,61 @@ trait Autocomplete
         $combinableFields = $this->combinableFields($properties);
         $nonCombinableFields = $this->nonCombinableFields($properties);
 
-        $autocomplete = '';
-
-        $autocompletions = new Collection([$combinableFields, $nonCombinableFields]);
-
-        $all = $autocompletions->filter(fn ($values) => count($values) > 0)
-            ->flatten()
-            ->toArray();
-
-
-        $autocomplete = '[' . implode(',', $all) . ']';
+        $fields = implode(',', [...$combinableFields, ...$nonCombinableFields]);
 
         $newPipeline = new NewPipeline($this->elasticsearchConnection, 'create_autocomplete_field');
 
         $processor = new Script;
-        $processor->source("ctx.autocomplete = {$autocomplete}")
-            ->params([
-                'stemmer' => [
-                    'type' => 'stemmer',
-                    'name' => 'english'
-                ]
-            ]);
+        $processor->params([
+            'lowercase' => $this->lowercaseAutocomplete,
+            'max_permutations' => 3
+        ]);
+        $processor->source("
+      def fields = [{$fields}];
+      def lowercase = params.lowercase;
+      def flattenedFields = [];
+      def permutations = [];
+      def max_permutations = params.max_permutations ?: 10;
+      
+      // Flatten any nested arrays and convert to string
+      for (def i = 0; i < fields.length; i++) {
+        if (fields[i] == null) {
+          continue;
+        }
+        if (fields[i] instanceof List) {
+          flattenedFields.add(fields[i].join(' '));
+        } else {
+          flattenedFields.add(fields[i].toString());
+        }
+      }
+
+      // Lowercase all field values if requested
+      if (lowercase) {
+        for (def i = 0; i < flattenedFields.length; i++) {
+          if (flattenedFields[i] != null) {
+            flattenedFields[i] = flattenedFields[i].toLowerCase();
+          }
+        }
+      }
+      
+      // Convert permutations to list of maps with input and weight keys
+      def result = [];
+      for (int i = 0; i < flattenedFields.length; i++) {
+        def perm = flattenedFields[i].trim();
+        def map = [:];
+        map['input'] = perm;
+        map['weight'] = 1;
+        result.add(map);
+      }
+
+        def uniqueValues = new HashSet();
+        for (value in result) {
+        uniqueValues.add(value);
+        }
+        result = uniqueValues.toArray();
+      
+        ctx.autocomplete = result;
+        ");
 
         return $newPipeline
             ->addPocessor($processor)
@@ -96,10 +139,10 @@ trait Autocomplete
                 Email::class, SearchableNumber::class,
                 Path::class,
                 Keyword::class, CaseSensitiveKeyword::class, Tags::class,
-                // Sentence::class,
+                Sentence::class,
                 Name::class
             ]))
-            ->mapWithKeys(fn (Text $type, string $name) => [$name => "(ctx.{$name}?.trim() ?: '')"])
+            ->mapWithKeys(fn (Text $type, string $name) => [$name => "(ctx.{$name} != null ? (ctx.{$name} instanceof List ? ctx.{$name}.join(' ') : ctx.{$name}?.trim() + ' ') : '')"])
             ->values();
 
         return $fieldNames;
@@ -114,11 +157,11 @@ trait Autocomplete
                 Category::class
             ]))
             ->filter(fn (Text $type, $name) => in_array($name, $this->autocompleteFields))
-            ->mapWithKeys(fn (Text $type, string $name) => [$name => "(ctx.{$name}?.trim() ?: '')"])
+            ->mapWithKeys(fn (Text $type, string $name) => [$name => "(ctx.{$name} != null ? (ctx.{$name} instanceof List ? ctx.{$name}.join(' ') + ' ' : ctx.{$name}?.trim() + ' ') : '')"])
             ->values();
 
         $categoryFieldsPermutations = $this->permutations($categoryFieldsPermutations, 10);
-        $categoryFieldsValues = array_map(fn ($values) => implode(' + " " + ', $values), $categoryFieldsPermutations);
+        $categoryFieldsValues = array_map(fn ($values) => "(" . implode('+', $values) . ")", $categoryFieldsPermutations);
 
         return $categoryFieldsValues;
     }
