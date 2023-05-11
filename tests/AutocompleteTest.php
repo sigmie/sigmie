@@ -8,6 +8,9 @@ use Sigmie\Base\APIs\Explain;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Document\Document;
+use Sigmie\English\English;
+use Sigmie\German\German;
+use Sigmie\Greek\Greek;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\Suggest;
 use Sigmie\Search\Autocomplete\NewPipeline;
@@ -127,7 +130,7 @@ class AutocompleteTest extends TestCase
 
         $docs = [
             new Document([
-                'title'=> 'nice dresss',
+                'title' => 'nice dresss',
                 'color' => 'red',
                 'type' => 'dress',
             ], 'document_id'),
@@ -534,6 +537,134 @@ class AutocompleteTest extends TestCase
 
         $this->assertEquals([
             "red black 64gb iphone se",
+        ], $suggestions);
+    }
+
+    /**
+     * @test
+     */
+    public function greek_autocomplete()
+    {
+        $name = uniqid();
+
+        $this->sigmie
+            ->newIndex($name)
+            ->language(new Greek)
+            ->mapping(function (NewProperties $blueprint) {
+                $blueprint->category('name');
+            })
+            ->lowercase()
+            ->trim()
+            ->autocomplete(['name'])
+            ->create();
+
+        $collection = $this->sigmie->collect($name, true);
+
+        $names = [
+            ["name" => "Αθήνα"],
+            ["name" => "Σπάρτη"],
+            ["name" => "Θεσσαλονίκη"],
+            ["name" => "Πάτρα"],
+        ];
+
+        $docs = array_map(fn ($values) => new Document($values), $names);
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->newSearch($name)
+            ->queryString('α')
+            ->get();
+
+        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+
+        // This means that the greek lowercase filter is used
+        $this->assertEquals([
+            "Αθήνα",
+        ], $suggestions);
+    }
+
+    /**
+     * @test
+     */
+    public function german_autocomplete()
+    {
+        $name = uniqid();
+
+        $this->sigmie
+            ->newIndex($name)
+            ->language(new German)
+            ->mapping(function (NewProperties $blueprint) {
+                $blueprint->category('name');
+            })
+            ->lowercase()
+            ->trim()
+            ->autocomplete(['name'])
+            ->create();
+
+        $collection = $this->sigmie->collect($name, true);
+
+        $names = [
+            ["name" => "Düsseldort"],
+            ["name" => "Berlin"],
+            ["name" => "Dortmund"],
+            ["name" => "Iserlohn"],
+        ];
+
+        $docs = array_map(fn ($values) => new Document($values), $names);
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->newSearch($name)
+            ->queryString('d')
+            ->get();
+
+        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+
+        // This means that the dortmund lowercase filter is used
+        $this->assertEquals([
+            "Dortmund",
+            "Düsseldort",
+        ], $suggestions);
+    }
+
+    /**
+     * @test
+     */
+    public function english_autocomplete()
+    {
+        $name = uniqid();
+
+        $this->sigmie
+            ->newIndex($name)
+            ->language(new English)
+            ->mapping(function (NewProperties $blueprint) {
+                $blueprint->category('name');
+            })
+            ->lowercase()
+            ->trim()
+            ->autocomplete(['name'])
+            ->create();
+
+        $collection = $this->sigmie->collect($name, true);
+
+        $names = [
+            ["name" => "London"],
+            ["name" => "Wien"],
+        ];
+
+        $docs = array_map(fn ($values) => new Document($values), $names);
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->newSearch($name)
+            ->queryString('l')
+            ->get();
+
+        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+
+        // This means that the dortmund lowercase filter is used
+        $this->assertEquals([
+            "London",
         ], $suggestions);
     }
 }
