@@ -403,4 +403,135 @@ class AutocompleteTest extends TestCase
             "Black 64GB iPhone SE",
         ], $suggestions);
     }
+
+    /**
+     * @test
+     */
+    public function completion_arrays()
+    {
+        $name = uniqid();
+
+        $this->sigmie
+            ->newIndex($name)
+            ->mapping(function (NewProperties $blueprint) {
+                $blueprint->category('model');
+                $blueprint->category('storage');
+                $blueprint->category('color');
+                $blueprint->price();
+            })
+            ->lowercase()
+            ->trim()
+            ->autocomplete(['model', 'storage', 'color'])
+            ->create();
+
+        $collection = $this->sigmie->collect($name, true);
+
+        $iphones = [
+            [
+                "model" => "iPhone 13 Pro Max",
+                "storage" => "512GB",
+                "color" => "Graphite",
+                "price" => 1399.00
+            ],
+            [
+                "model" => "iPhone 13 Pro",
+                "storage" => "256GB",
+                "color" => "Sierra Blue",
+                "price" => 1199.00
+            ],
+            [
+
+                "model" => "iPhone 13",
+                "storage" => "128GB",
+                "color" => "Pink",
+                "price" => 799.00
+            ],
+            [
+                "model" => "iPhone SE",
+                "storage" => "64GB",
+                "color" => ["Red", "Black"],
+                "price" => 399.00
+            ]
+        ];
+
+        $docs = array_map(fn ($values) => new Document($values), $iphones);
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->newSearch($name)
+            ->queryString('red')
+            ->get();
+
+        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+
+        $this->assertEquals([
+            "Red Black 64GB iPhone SE",
+        ], $suggestions);
+    }
+
+    /**
+     * @test
+     */
+    public function lowercase_completions()
+    {
+        $name = uniqid();
+
+        $this->sigmie
+            ->newIndex($name)
+            ->mapping(function (NewProperties $blueprint) {
+                $blueprint->category('model');
+                $blueprint->category('storage');
+                $blueprint->category('color');
+                $blueprint->price();
+            })
+            ->lowercase()
+            ->lowercaseAutocompletions()
+            ->trim()
+            ->autocomplete(['model', 'storage', 'color'])
+            ->create();
+
+        $collection = $this->sigmie->collect($name, true);
+
+        $iphones = [
+            [
+                "model" => "iPhone 13 Pro Max",
+                "storage" => "512GB",
+                "color" => "Graphite",
+                "price" => 1399.00
+            ],
+            [
+                "model" => "iPhone 13 Pro",
+                "storage" => "256GB",
+                "color" => "Sierra Blue",
+                "price" => 1199.00
+            ],
+            [
+
+                "model" => "iPhone 13",
+                "storage" => "128GB",
+                "color" => "Pink",
+                "price" => 799.00
+            ],
+            [
+                "model" => "iPhone SE",
+                "storage" => "64GB",
+                "color" => ["Red", "Black"],
+                "price" => 399.00
+            ]
+        ];
+
+        $docs = array_map(fn ($values) => new Document($values), $iphones);
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->newSearch($name)
+            ->queryString('red')
+            ->get();
+
+        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+
+        $this->assertEquals([
+            "red black 64gb iphone se",
+        ], $suggestions);
+    }
 }
