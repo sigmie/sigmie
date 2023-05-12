@@ -46,6 +46,8 @@ trait Autocomplete
 
     protected array $autocompleteFields = [];
 
+    protected int $maxAutocompletePermutations = 25;
+
     public function autocomplete(array $fields): static
     {
         $this->autocomplete = true;
@@ -54,6 +56,14 @@ trait Autocomplete
 
         return $this;
     }
+
+    public function maxAutocompletePermutations(int $max = 25): static
+    {
+        $this->maxAutocompletePermutations = $max;
+
+        return $this;
+    }
+
 
     public function lowercaseAutocompletions(): static
     {
@@ -77,8 +87,7 @@ trait Autocomplete
 
         $processor = new Script;
         $processor->params([
-            'lowercase' => $this->lowercaseAutocomplete,
-            'max_permutations' => 3
+            'lowercase' => $this->lowercaseAutocomplete
         ]);
         $processor->source("
       def fields1 = [{$fields1}];
@@ -86,7 +95,6 @@ trait Autocomplete
       def lowercase = params.lowercase;
       def flattenedFields = [];
       def permutations = [];
-      def max_permutations = params.max_permutations ?: 10;
       
       // Flatten any nested arrays and convert to string
       for (def i = 0; i < fields1.length; i++) {
@@ -181,8 +189,10 @@ trait Autocomplete
         return $categoryFieldsValues;
     }
 
-    private function permutations($array, $maxLength = 10)
+    private function permutations($array)
     {
+        $maxLength = $this->maxAutocompletePermutations;
+
         if (count($array) == 1) {
             return [$array];
         }
