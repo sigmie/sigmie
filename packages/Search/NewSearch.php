@@ -28,8 +28,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected string $index;
 
-    protected bool $autocompletion = true;
-
     public function queryString(string $query): static
     {
         $this->queryString = $query;
@@ -142,25 +140,21 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $boolean->should()->query($queryBoolean);
         });
 
-        if ($this->autocompletion && $this->queryString !== '') {
+        if ($this->queryString !== '') {
 
             $search->suggest(function (Suggest $suggest) {
 
                 $suggest->completion(name: 'autocompletion')
                     ->field('autocomplete')
-                    ->fuzzy()
+                    ->size($this->autocompleteSize)
+                    ->fuzzyMinLegth($this->autocompleteFuzzyMinLength)
+                    ->fuzzyPrefixLenght($this->autocompleteFuzzyPrefixLength)
+                    ->fuzzy($this->autocompletion)
                     ->prefix($this->queryString);
             });
         }
 
         return $search;
-    }
-
-    public function autocomplete(bool $default = true): self
-    {
-        $this->autocompletion = $default;
-
-        return $this;
     }
 
     public function get()

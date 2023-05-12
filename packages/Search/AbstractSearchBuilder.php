@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use Predis\Command\PrefixableCommandInterface;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
@@ -25,6 +26,8 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected array $sorts = ['_score'];
 
+    protected bool $autocompletion = true;
+
     protected array $fields = [];
 
     protected array $retrieve = [];
@@ -32,6 +35,8 @@ abstract class AbstractSearchBuilder implements SearchBuilder
     protected array $typoTolerantAttributes = [];
 
     protected int $size = 20;
+
+    protected int $autocompleteSize = 5;
 
     protected int $from = 0;
 
@@ -42,6 +47,10 @@ abstract class AbstractSearchBuilder implements SearchBuilder
     protected int $minCharsForOneTypo = 3;
 
     protected int $minCharsForTwoTypo = 6;
+
+    protected int $autocompleteFuzzyMinLength = 3;
+
+    protected int $autocompleteFuzzyPrefixLength = 1;
 
     protected array $weight = [];
 
@@ -88,6 +97,26 @@ abstract class AbstractSearchBuilder implements SearchBuilder
     public function size(int $size = 20): static
     {
         $this->size = $size;
+
+        return $this;
+    }
+
+    public function autocompleteSize(int $size = 5): static
+    {
+        $this->autocompleteSize = $size;
+
+        return $this;
+    }
+
+    public function autocomplete(
+        bool $enabled = true,
+        int $minLength = 3,
+        int $prefixLength = 1,
+    ): self {
+
+        $this->autocompletion = $enabled;
+        $this->autocompleteFuzzyMinLength = $minLength;
+        $this->autocompleteFuzzyPrefixLength = $prefixLength;
 
         return $this;
     }

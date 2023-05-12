@@ -6,10 +6,6 @@ namespace Sigmie\Index\Analysis\TokenFilter;
 
 use function Sigmie\Functions\name_configs;
 
-// Shingle generates only sequential terms for example.
-// This is perfect for titles etc. In autocompletion
-// all categories are equaly important that why we
-// generate all possible permutations of them.
 class Shingle extends TokenFilter
 {
     public function __construct(

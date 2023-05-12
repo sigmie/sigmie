@@ -33,6 +33,7 @@ trait Actions
             'mappings' => $mappings->toRaw(),
         ];
 
+
         $this->templateAPICall($name, 'PUT', $body);
 
         return new IndexTemplate($name, $patterns, $settings, $mappings);
