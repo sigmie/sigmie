@@ -48,7 +48,7 @@ class Number extends Type
     {
         $queries = [];
 
-        $queries[] = new Term($this->name, $queryString);
+        // $queries[] = new Term($this->name, $queryString);
 
         return $queries;
     }
