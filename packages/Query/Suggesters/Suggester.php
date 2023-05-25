@@ -45,6 +45,10 @@ abstract class Suggester implements ToRaw
             ],
         ];
 
+        if ($res[$this->name][$this->type()->value] === 'completion') {
+            $res[$this->name][$this->type()->value]['skip_duplicates'] = true;
+        }
+
         return $res;
     }
 }

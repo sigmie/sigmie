@@ -78,9 +78,6 @@ class Completion extends Suggester
             $res[$this->name][$this->type()->value]['analyzer'] = 'autocomplete_analyzer';
         }
 
-        if ($this->analyzer ?? false) {
-            $res[$this->name][$this->type()->value]['skip_duplicates'] = true;
-        }
 
         return $res;
     }
