@@ -21,6 +21,7 @@ use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
+use Throwable;
 
 class Properties extends Type implements ArrayAccess
 {
@@ -90,22 +91,24 @@ class Properties extends Type implements ArrayAccess
     {
         $fields = [];
 
+
         foreach ($raw as $fieldName => $value) {
-            $field = match (true) {
-                isset($value['properties']) && !isset($value['properties']['type']) => self::create($value['properties'], $defaultAnalyzer, $analyzers, (string) $fieldName),
-                in_array(
-                    $value['type'],
-                    ['search_as_you_type', 'text', 'completion']
-                ) => Text::fromRaw([$fieldName => $value]),
-                $value['type'] === 'keyword' => (new Keyword($fieldName)),
-                $value['type'] === 'integer' => (new Number($fieldName))->integer(),
-                $value['type'] === 'long' => (new Number($fieldName))->long(),
-                $value['type'] === 'float' => (new Number($fieldName))->float(),
-                $value['type'] === 'scaled_float' => (new Number($fieldName))->scaledFloat(),
-                $value['type'] === 'boolean' => new Boolean($fieldName),
-                $value['type'] === 'date' => new Date($fieldName),
-                default => throw new Exception('Field ' . $value['type'] . ' couldn\'t be mapped')
-            };
+
+                $field = match (true) {
+                    isset($value['properties']) && !isset($value['type']) => self::create($value['properties'], $defaultAnalyzer, $analyzers, (string) $fieldName),
+                    in_array(
+                        $value['type'],
+                        ['search_as_you_type', 'text', 'completion']
+                    ) => Text::fromRaw([$fieldName => $value]),
+                    $value['type'] === 'keyword' => (new Keyword($fieldName)),
+                    $value['type'] === 'integer' => (new Number($fieldName))->integer(),
+                    $value['type'] === 'long' => (new Number($fieldName))->long(),
+                    $value['type'] === 'float' => (new Number($fieldName))->float(),
+                    $value['type'] === 'scaled_float' => (new Number($fieldName))->scaledFloat(),
+                    $value['type'] === 'boolean' => new Boolean($fieldName),
+                    $value['type'] === 'date' => new Date($fieldName),
+                    default => throw new Exception('Field ' . $value['type'] . ' couldn\'t be mapped')
+                };
 
             if ($field instanceof Text && !isset($value['analyzer'])) {
                 $value['analyzer'] = 'default';

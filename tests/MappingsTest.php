@@ -12,6 +12,7 @@ use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Mappings;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
@@ -21,6 +22,55 @@ use Sigmie\Testing\TestCase;
 
 class MappingsTest extends TestCase
 {
+    /**
+     * @test
+     */
+    public function nested()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                "phones" => [
+                    [
+                        "type" => "numbers",
+                        "phone_type" => "phone",
+                        "phone_number" => "+20 65 3615086",
+                    ],
+                    [
+                        "type" => "numbers",
+                        "phone_type" => "phone",
+                        "phone_number" => "+20 65 3615087",
+                    ],
+                    [
+                        "type" => "numbers",
+                        "phone_type" => "phone",
+                        "phone_number" => "+20 65 3615088",
+                    ],
+                    [
+                        "type" => "numbers",
+                        "phone_type" => "phone",
+                        "phone_number" => "+20 65 3615089",
+                    ]
+                ]
+            ])
+        ]);
+
+        $props = $this->sigmie->index($indexName)->mappings->properties();
+
+        $this->assertInstanceOf(Properties::class, $props['phones']);
+    }
+
+
     /**
      * @test
      */
