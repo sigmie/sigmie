@@ -14,6 +14,7 @@ use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Mappings\Types\Nested;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
@@ -30,6 +31,14 @@ class MappingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
+        $blueprint->nested('comments', function (NewProperties $props) {
+            $props->keyword('comment_id');
+            $props->text('text');
+            $props->nested('user', function (NewProperties $props) {
+                $props->keyword('name');
+                $props->number('age');
+            });
+        });
 
         $index = $this->sigmie
             ->newIndex($indexName)
@@ -40,6 +49,29 @@ class MappingsTest extends TestCase
 
         $index->merge([
             new Document([
+                "title" => "Introduction to Elasticsearch",
+                "author" => [
+                    "name" => "John Doe",
+                    "age" => 35
+                ],
+                "comments" => [
+                    [
+                        "comment_id" => "1",
+                        "text" => "Great article!",
+                        "user" => [
+                            "name" => "Jane Smith",
+                            "age" => 28
+                        ]
+                    ],
+                    [
+                        "comment_id" => "2",
+                        "text" => "Very helpful. Thanks!",
+                        "user" => [
+                            "name" => "Mike Johnson",
+                            "age" => 42
+                        ]
+                    ]
+                ],
                 "phones" => [
                     [
                         "type" => "numbers",
@@ -68,6 +100,8 @@ class MappingsTest extends TestCase
         $props = $this->sigmie->index($indexName)->mappings->properties();
 
         $this->assertInstanceOf(Properties::class, $props['phones']);
+        $this->assertInstanceOf(Properties::class, $props['author']);
+        $this->assertInstanceOf(Nested::class, $props['comments']);
     }
 
 

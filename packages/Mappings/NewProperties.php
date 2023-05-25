@@ -241,7 +241,11 @@ class NewProperties
             return $field;
         }
 
-        $field->properties($callable);
+        $props = new NewProperties;
+
+        $callable(new NewProperties);
+
+        $field->properties($props);
 
         return $field;
     }
