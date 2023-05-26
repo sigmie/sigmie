@@ -62,9 +62,12 @@ class Completion extends Suggester
     {
         $res = parent::toRaw();
 
+        $res[$this->name][$this->type()->value]['skip_duplicates'] = true;
+
         if ($this->prefix ?? false) {
             $res[$this->name]['prefix'] = $this->prefix;
         }
+
 
         if ($this->fuzzy ?? false) {
             $res[$this->name][$this->type()->value]['fuzzy'] = [
@@ -77,7 +80,6 @@ class Completion extends Suggester
         if ($this->analyzer ?? false) {
             $res[$this->name][$this->type()->value]['analyzer'] = 'autocomplete_analyzer';
         }
-
 
         return $res;
     }
