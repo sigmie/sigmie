@@ -19,17 +19,33 @@ class IndexUpdateTask
 
     public function __construct(
         ElasticsearchConnection $elasticsearchConnection,
-        protected string $source,
-        protected string $dest,
-        protected string $oldAlias,
-        protected string $newAlias,
-        protected int $requestedReplicas
+        public readonly string $source,
+        public readonly string $dest,
+        public readonly string $oldAlias,
+        public readonly string $newAlias,
+        public readonly int $requestedReplicas
     ) {
         $this->setElasticsearchConnection($elasticsearchConnection);
 
         $res = $this->reindexAPICall($source, $dest, false);
 
         $this->task = $res->json('task');
+    }
+
+    public function pack(): array
+    {
+        return [
+            'source' => $this->source,
+            'dest' => $this->dest,
+            'old_alias' => $this->oldAlias,
+            'new_alias' => $this->newAlias,
+            'requested_replicas' => $this->requestedReplicas
+        ];
+    }
+
+    public static function unpack(ElasticsearchConnection $connection, array $packed): static
+    {
+        return new static($connection, $packed['source'], $packed['dest'], $packed['old_alias'], $packed['new_alias'], $packed['requested_replicas']);
     }
 
     public function task(): array

@@ -531,19 +531,17 @@ class SearchTest extends TestCase
     public function search_test()
     {
         $indexName = uniqid();
-        $blueprint = new NewProperties;
-        $blueprint->text('name');
-        $blueprint->text('description');
-
-        $props = ($blueprint)();
+        $properties = new NewProperties;
+        $properties->text('name');
+        $properties->text('description');
 
         $index = $this->sigmie->newIndex($indexName)
-            ->properties($blueprint)
+            ->properties($properties)
             ->lowercase()
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
-        //
+        
         $index->merge([
             new Document([
                 'name' => 'Mickey',
@@ -560,7 +558,7 @@ class SearchTest extends TestCase
         ]);
 
         $hits = $this->sigmie->newSearch($indexName)
-            ->properties($props)
+            ->properties($properties)
             ->queryString('mickey')
             ->fields(['name'])
             ->retrieve(['name', 'description'])
