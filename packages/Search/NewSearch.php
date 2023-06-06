@@ -154,6 +154,8 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             });
         }
 
+        $search->trackTotalHits();
+
         return $search;
     }
 
