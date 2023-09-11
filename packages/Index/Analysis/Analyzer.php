@@ -6,7 +6,6 @@ namespace Sigmie\Index\Analysis;
 
 use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
-use Sigmie\Index\Analysis\Tokenizers\NonLetter;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\CharFilter;
@@ -15,6 +14,27 @@ use Sigmie\Index\Contracts\TokenFilter;
 use Sigmie\Index\Contracts\Tokenizer;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\Name;
+use Sigmie\English\Filter\Lowercase;
+use Sigmie\English\Filter\Stemmer;
+use Sigmie\English\Filter\Stopwords;
+use Sigmie\Index\Analysis\TokenFilter\AsciiFolding;
+use Sigmie\Index\Analysis\TokenFilter\DecimalDigit;
+use Sigmie\Index\Analysis\TokenFilter\Shingle;
+use Sigmie\Index\Analysis\TokenFilter\Trim;
+use Sigmie\Index\Analysis\TokenFilter\Unique;
+
+use Sigmie\Greek\Filter\Lowercase as GreekLowercase;
+use Sigmie\Greek\Filter\Stemmer as GreekStemmer;
+use Sigmie\Greek\Filter\Stopwords as GreekStopwords;
+
+use Sigmie\German\Filter\GermanNormalization;
+use Sigmie\German\Filter\LightStemmer as GermanLightStemmer;
+use Sigmie\German\Filter\Lowercase as GermanLowercase;
+use Sigmie\German\Filter\MinimalStemmer as GermanMinimalStemmer;
+use Sigmie\German\Filter\Normalize as GermanNormalize;
+use Sigmie\German\Filter\Stemmer as GermanStemmer;
+use Sigmie\German\Filter\Stemmer2 as GermanStemmer2;
+use Sigmie\German\Filter\Stopwords as GermanStopwords;
 
 class Analyzer implements CustomAnalyzerInterface
 {
@@ -51,7 +71,29 @@ class Analyzer implements CustomAnalyzerInterface
         [$name, $config] = name_configs($raw);
 
         foreach ($config['filter'] as $filterName) {
-            $analyzerFilters[$filterName] = $filters[$filterName];
+            $analyzerFilters[$filterName] = match ($filterName) {
+
+                'autocomplete_english_stemmer' => new Stemmer($filterName),
+                'autocomplete_english_stopwords' => new Stopwords($filterName),
+                'autocomplete_english_lowercase' => new Lowercase($filterName),
+
+                'autocomplete_german_normalization' => new GermanNormalization($filterName),
+                'autocomplete_german_light_stemmer' => new GermanLightStemmer($filterName),
+                'autocomplete_german_stopwords' => new GermanStopwords($filterName),
+                'autocomplete_german_lowercase' => new GermanLowercase($filterName),
+
+                'autocomplete_greek_stemmer' => new GreekStemmer($filterName),
+                'autocomplete_greek_stopwords' => new GreekStopwords($filterName),
+                'autocomplete_greek_lowercase' => new GreekLowercase($filterName),
+
+                'autocomplete_ascii_folding' =>  new AsciiFolding($filterName),
+                'autocomplete_unique' => new Unique($filterName),
+                'autocomplete_trim' => new Trim($filterName),
+                'autocomplete_decimal_digit' => new  DecimalDigit($filterName),
+                'autocomplete_shingle' => new Shingle($filterName),
+
+                default => $filters[$filterName]
+            };
         }
 
         foreach ($config['char_filter'] as $filterName) {
@@ -65,7 +107,6 @@ class Analyzer implements CustomAnalyzerInterface
 
         $analyzerTokenizer = match ($tokenizerName) {
             'whitespace' => new Whitespace(),
-            // 'letter' => new NonLetter(),
             default => $tokenizers[$tokenizerName]
         };
 
