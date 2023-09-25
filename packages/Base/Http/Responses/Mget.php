@@ -17,7 +17,7 @@ class Mget extends ElasticsearchResponse
     {
         $this->response = $psrResponse;
 
-        $collection = new Collection($this->json('docs'));
+        $collection = new Collection($this->json('docs') ?? []);
 
         $this->collection = $collection
             ->filter(fn ($value) => $value['found'] ?? false)
