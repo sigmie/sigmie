@@ -251,9 +251,9 @@ class Text extends Type implements FromRaw
         }
 
         if (!$this->fields->isEmpty()) {
-            $this->fields->each(function (Type $field) use (&$raw) {
-                $raw[$this->name]['fields'] = $field->toRaw();
-            });
+            $raw[$this->name]['fields'] = $this->fields->mapWithKeys(function (Type $field) {
+                return  $field->toRaw();
+            })->toArray();
         }
 
         return $raw;

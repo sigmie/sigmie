@@ -14,6 +14,39 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function name_search_test()
+    {
+        $indexName = uniqid();
+        $blueprint = new NewProperties;
+        $blueprint->name('name');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'name' => 'Jason Preston',
+            ])
+        ]);
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('jas')
+            ->fields(['name'])
+            ->retrieve(['name'])
+            ->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertNotEmpty($hits);
+    }
+
+    /**
+     * @test
+     */
     public function completion_suggests_test()
     {
         $indexName = uniqid();
@@ -541,7 +574,7 @@ class SearchTest extends TestCase
             ->create();
 
         $index = $this->sigmie->collect($indexName, refresh: true);
-        
+
         $index->merge([
             new Document([
                 'name' => 'Mickey',
