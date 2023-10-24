@@ -3,9 +3,9 @@ parameters:
     checkMissingIterableValueType: false
     checkGenericClassInNonGenericObjectType: false
     paths:
-        - packages
+        - src
     excludePaths:
-        - packages/Testing
+        - src/Testing
     ignoreErrors:
         - '#Unsafe usage of new static\(\)\.#'
         - '#Method .* should return .* but returns Sigmie\\Base\\Contracts\\ElasticsearchResponse.#'
