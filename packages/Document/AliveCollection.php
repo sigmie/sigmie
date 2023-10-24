@@ -91,7 +91,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     public function remove(array|string $_id): bool
     {
         if (is_array($_id)) {
-            $this->deleteDocuments($this->name, $_id, $this->refresh);
+            return $this->deleteDocuments($this->name, $_id, $this->refresh);
         }
 
         return $this->deleteDocument($this->name, $_id, $this->refresh);
