@@ -32,7 +32,8 @@
         "rachidlaasri/travel": "^1.06",
         "sigmie/german": "^1.0",
         "sigmie/greek": "^1.0",
-        "sigmie/english": "^1.0"
+        "sigmie/english": "^1.0",
+        "sigmie/testing": "^1.0"
     },
     "autoload": {
         "psr-4": {
