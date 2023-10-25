@@ -12,7 +12,7 @@ trait Tasks
 {
     use API;
 
-    public function taskAPICall(): ElasticsearchResponse
+    public function tasksAPICall(): ElasticsearchResponse
     {
         $uri = new Uri("/_tasks");
 

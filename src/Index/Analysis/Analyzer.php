@@ -77,7 +77,7 @@ class Analyzer implements CustomAnalyzerInterface
                 'autocomplete_english_stopwords' => new Stopwords($filterName),
                 'autocomplete_english_lowercase' => new Lowercase($filterName),
 
-                'autocomplete_german_normalization' => new GermanNormalization($filterName),
+                'autocomplete_german_normalization' => new GermanNormalization(),
                 'autocomplete_german_light_stemmer' => new GermanLightStemmer($filterName),
                 'autocomplete_german_stopwords' => new GermanStopwords($filterName),
                 'autocomplete_german_lowercase' => new GermanLowercase($filterName),

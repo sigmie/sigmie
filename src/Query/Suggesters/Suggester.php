@@ -20,14 +20,14 @@ abstract class Suggester implements ToRaw
 
     abstract public function type(): SuggesterType;
 
-    public function field(string $field): self
+    public function field(string $field): static
     {
         $this->field = $field;
 
         return $this;
     }
 
-    public function size(int $size): self
+    public function size(int $size): static
     {
         $this->size = $size;
 

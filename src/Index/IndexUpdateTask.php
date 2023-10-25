@@ -27,7 +27,7 @@ class IndexUpdateTask
     ) {
         $this->setElasticsearchConnection($elasticsearchConnection);
 
-        $res = $this->reindexAPICall($source, $dest, false);
+        $res = $this->reindexAPICall($source, $dest, waitForCompletion: false);
 
         $this->task = $res->json('task');
     }
@@ -48,14 +48,9 @@ class IndexUpdateTask
         return new static($connection, $packed['source'], $packed['dest'], $packed['old_alias'], $packed['new_alias'], $packed['requested_replicas']);
     }
 
-    public function task(): array
-    {
-        return $this->taskAPICall($this->task)->json();
-    }
-
     protected function runningTasks(): array
     {
-        $nodes = $this->taskAPICall()->json('nodes');
+        $nodes = $this->tasksAPICall()->json('nodes');
         $res = [];
 
         foreach ($nodes as $node) {

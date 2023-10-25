@@ -183,7 +183,7 @@ trait Autocomplete
             ->mapWithKeys(fn (Text $type, string $name) => [$name => "(ctx.{$name} != null ? (ctx.{$name} instanceof List ? ctx.{$name}.join(' ') + ' ' : ctx.{$name}?.trim() + ' ') : '')"])
             ->values();
 
-        $categoryFieldsPermutations = $this->permutations($categoryFieldsPermutations, 10);
+        $categoryFieldsPermutations = $this->permutations($categoryFieldsPermutations);
         $categoryFieldsValues = array_map(fn ($values) => "(" . implode('+', $values) . ")", $categoryFieldsPermutations);
 
         return $categoryFieldsValues;
@@ -201,7 +201,7 @@ trait Autocomplete
         foreach ($array as $index => $element) {
             $subarray = $array;
             unset($subarray[$index]);
-            foreach ($this->permutations($subarray, $maxLength) as $permutation) {
+            foreach ($this->permutations($subarray) as $permutation) {
                 array_unshift($permutation, $element);
                 $result[] = $permutation;
                 if (count($permutation) >= $maxLength) {

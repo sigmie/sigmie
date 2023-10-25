@@ -37,7 +37,6 @@ class FacetParser extends Parser
                 continue;
             }
 
-            /** @var Field */
             $field = $this->properties[$field];
 
             if ($field instanceof Text && $field->isFilterable()) {

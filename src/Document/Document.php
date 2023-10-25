@@ -12,7 +12,7 @@ class Document implements FromRaw
 
     public readonly string $_index; // @phpstan-ignore-line
 
-    public readonly string $_id;
+    public readonly string $_id; // @phpstan-ignore-line
 
     public function __construct(
         array $_source = [],
