@@ -7,7 +7,7 @@
     </testsuites>
     <coverage>
         <include>
-            <directory suffix=".php">./packages</directory>
+            <directory suffix=".php">./src</directory>
         </include>
         <report>
             <clover outputFile="coverage.xml"/>
