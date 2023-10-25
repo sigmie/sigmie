@@ -8,5 +8,3 @@
 /phpstan.neon        export-ignore
 /Dockerfile          export-ignore
 /docker-compose.yml  export-ignore
-
-/src/Testing         export-ignore
