@@ -19,7 +19,6 @@
         "nesbot/carbon": "^2.48",
         "adbario/php-dot-notation": "^2.2",
         "elastic/transport": "^8.5",
-        "guzzlehttp/psr7": "^2.4",
         "php-http/guzzle7-adapter": "^1.0",
         "sigmie/http": "^1"
     },
