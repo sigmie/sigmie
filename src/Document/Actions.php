@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Document;
 
+use Exception;
 use Sigmie\Base\APIs\Bulk as BulkAPI;
 use Sigmie\Base\APIs\Delete as DeleteAPI;
 use Sigmie\Base\APIs\Doc as DocAPI;
@@ -82,16 +83,16 @@ trait Actions
 
         $res = $this->bulkAPICall($indexName, $body, $refresh);
 
-        if ($res->json('errors'))
-        {
-            dd($res->json());
-        }
-
         foreach ($res->json('items') as $index => $value) {
             $action = array_key_first($value);
             $response = $value[$action];
 
             $doc = $documents[$index];
+
+            if ($response['status'] >= 400) {
+                throw new ElasticsearchException($response['error'], $response['status']);
+            }
+
             if (!isset($doc->_id)) {
                 $doc->id($response['_id']);
             }
