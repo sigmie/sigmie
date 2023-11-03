@@ -242,9 +242,6 @@ class Text extends Type implements FromRaw
             $raw[$this->name]['index_prefixes'] = $this->indexPrefixes;
         }
 
-        if (!is_null($this->raw)) {
-            $raw[$this->name]['fields'] = [$this->raw => ['type' => 'keyword']];
-        }
 
         if (!is_null($this->analyzer)) {
             $raw[$this->name]['analyzer'] = $this->analyzer->name();
@@ -254,6 +251,10 @@ class Text extends Type implements FromRaw
             $raw[$this->name]['fields'] = $this->fields->mapWithKeys(function (Type $field) {
                 return  $field->toRaw();
             })->toArray();
+        }
+
+        if (!is_null($this->raw)) {
+            $raw[$this->name]['fields'][$this->raw] = ['type' => 'keyword'];
         }
 
         return $raw;

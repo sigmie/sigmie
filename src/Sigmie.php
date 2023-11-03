@@ -42,7 +42,7 @@ class Sigmie
             return $name;
         }
 
-        return $this->application.'-'.$name;
+        return $this->application . '-' . $name;
     }
 
     public function application(string $application)
@@ -136,7 +136,7 @@ class Sigmie
 
             $res = ($this->elasticsearchConnection)($request);
 
-            return ! $res->failed();
+            return !$res->failed();
         } catch (ConnectException) {
             return false;
         }
@@ -153,7 +153,9 @@ class Sigmie
 
     public function delete(string $index): bool
     {
-        $index = $this->withApplicationPrefix($index);
+        if (!str_starts_with($index, $this->application)) {
+            $index = $this->withApplicationPrefix($index);
+        }
 
         return $this->deleteIndex($index);
     }

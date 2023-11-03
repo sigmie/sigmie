@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use Exception;
 use Http\Promise\Promise;
+use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\Text;
 
 use function Sigmie\Functions\auto_fuzziness;
@@ -119,7 +121,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
 
-                $field = $this->properties[$field];
+                $field = $this->properties[$field] ?? throw new PropertiesFieldNotFound($field);
 
                 $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 

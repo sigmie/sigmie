@@ -6,6 +6,7 @@ namespace Sigmie\Mappings\Types;
 
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Text\Match_;
+use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
 
 class SearchableNumber extends Text
 {
@@ -17,7 +18,7 @@ class SearchableNumber extends Text
 
     public function configure(): void
     {
-        $this->unstructuredText()->keyword()->indexPrefixes();
+        $this->unstructuredText()->keyword();
     }
 
     public function queries(string $queryString): array
@@ -25,7 +26,7 @@ class SearchableNumber extends Text
         $queries = [];
 
         $queries[] = new Match_($this->name, $queryString);
-        $queries[] = new Prefix($this->name, $queryString);
+        $queries[] = new MatchPhrasePrefix($this->name, $queryString);
 
         return $queries;
     }

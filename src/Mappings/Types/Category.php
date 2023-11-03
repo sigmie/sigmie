@@ -8,12 +8,13 @@ use Sigmie\Index\NewAnalyzer;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
+use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
 
 class Category extends Text
 {
     public function configure(): void
     {
-        $this->unstructuredText()->indexPrefixes()->keyword();
+        $this->unstructuredText()->keyword();
     }
 
     public function isAutocompletable(): bool
@@ -32,7 +33,7 @@ class Category extends Text
 
         $queries[] = new Match_($this->name, $queryString);
         $queries[] = new Term("{$this->name}.keyword", $queryString);
-        $queries[] = new Prefix($this->name, $queryString);
+        $queries[] = new MatchPhrasePrefix($this->name, $queryString);
 
         return $queries;
     }

@@ -71,7 +71,7 @@ abstract class Type implements Name, ToRaw, TypeInterface
             ],
         ];
 
-        if (!in_array($this->type(), ['nested', 'completion'])) {
+        if (!in_array($this->type(), ['nested', 'completion', 'object'])) {
             $raw[$this->name]['meta'] =
                 [
                     ...$this->meta,

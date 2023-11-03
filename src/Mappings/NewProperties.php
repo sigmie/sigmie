@@ -19,6 +19,7 @@ use Sigmie\Mappings\Types\LongText;
 use Sigmie\Mappings\Types\Name;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
+use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Price;
 use Sigmie\Mappings\Types\SearchableNumber;
 use Sigmie\Mappings\Types\Sentence;
@@ -218,6 +219,15 @@ class NewProperties
     public function bool(string $name): Boolean
     {
         $field = new Boolean($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function object(string $name): Object_ 
+    {
+        $field = new Object_($name);
 
         $this->fields->add($field);
 

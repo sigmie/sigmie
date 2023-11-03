@@ -19,6 +19,7 @@ use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
+use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
@@ -109,6 +110,7 @@ class Properties extends Type implements ArrayAccess
                 $value['type'] === 'scaled_float' => (new Number($fieldName))->scaledFloat(),
                 $value['type'] === 'boolean' => new Boolean($fieldName),
                 $value['type'] === 'date' => new Date($fieldName),
+                $value['type'] === 'object' => new Object_($fieldName),
                 default => throw new Exception('Field ' . $value['type'] . ' couldn\'t be mapped')
             };
 

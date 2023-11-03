@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use DateTime;
+use InvalidArgumentException;
+use Sigmie\Base\ElasticsearchException;
+use Exception;
 use Sigmie\Document\Document;
+use Sigmie\Index\Alias\MultipleIndicesForAlias;
 use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
@@ -13,8 +17,10 @@ use Sigmie\Index\Mappings;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Nested;
+use Sigmie\Mappings\Types\Object_;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
@@ -23,6 +29,26 @@ use Sigmie\Testing\TestCase;
 
 class MappingsTest extends TestCase
 {
+    /**
+     * @test
+     */
+    public function object()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->object('contact');
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $props = $this->sigmie->index($indexName)->mappings->properties();
+
+        $this->assertInstanceOf(Object_::class, $props['contact']);
+    }
+
     /**
      * @test
      */
@@ -123,6 +149,70 @@ class MappingsTest extends TestCase
         $this->assertIndex($indexName, function (Assert $index) {
             $index->assertPropertyHasMeta('category', 'class', Keyword::class);
         });
+    }
+
+    /**
+     * @test
+     */
+    public function case_sensitive_keyword_mapping()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->caseSensitiveKeyword('code');
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->lowercase()
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, true)->merge([
+            new Document([
+                'code' => 'Abcd'
+            ])
+        ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('abcd')
+            ->fields(['code'])
+            ->get()
+            ->json('hits.hits');
+
+        $this->assertEmpty($hits);
+    }
+
+    /**
+     * @test
+     */
+    public function keyword_mapping()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('code');
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->lowercase()
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, true)->merge([
+            new Document([
+                'code' => 'Abcd'
+            ])
+        ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('abcd')
+            ->fields(['code'])
+            ->get()
+            ->json('hits.hits');
+
+        $this->assertNotEmpty($hits);
     }
 
     /**
@@ -497,6 +587,62 @@ class MappingsTest extends TestCase
         // Using the 'withNewAnalyzer' method does
         // not include the prefix query
         $this->assertEmpty($hits);
+    }
+    /**
+     * @test
+     */
+    public function properties_field_no_found()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->category('code');
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->expectException(PropertiesFieldNotFound::class);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('DT')
+            ->fields(['codee'])
+            ->get();
+    }
+
+    /**
+     * @test
+     */
+    public function category_prefix()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->category('code');
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->lowercase()
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['code' => 'DTM']),
+        ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('DT')
+            ->fields(['code'])
+            ->get();
+
+        $hits = $search->json('hits.hits');
+
+        $this->assertNotEmpty($hits);
     }
 
     /**

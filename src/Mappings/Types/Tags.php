@@ -8,6 +8,7 @@ use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\Contracts\Analyze;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Text\Match_;
+use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
 
 class Tags extends Text implements Analyze
 {
@@ -28,7 +29,7 @@ class Tags extends Text implements Analyze
         $queries = [];
 
         $queries[] = new Match_($this->name, $queryString);
-        $queries[] = new Prefix($this->name, $queryString);
+        $queries[] = new MatchPhrasePrefix($this->name, $queryString);
 
         return $queries;
     }

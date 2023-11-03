@@ -10,6 +10,7 @@ use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\Normalizer as NormalizerInterface;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
+use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
 
 class Keyword extends Type
 {
