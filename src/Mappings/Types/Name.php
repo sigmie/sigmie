@@ -9,6 +9,8 @@ use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\Contracts\Analyze;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Text\Match_;
+use Sigmie\Query\Queries\Text\MatchBoolPrefix;
+use Sigmie\Query\Queries\Text\MatchPhrase;
 use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
 
 class Name extends Text implements Analyze
@@ -29,16 +31,16 @@ class Name extends Text implements Analyze
     public function analyze(NewAnalyzer $newAnalyzer): void
     {
         $prefixField = (new Text("{$this->name}_text"))->unstructuredText()->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
-            $newAnalyzer->tokenizeOnWordBoundaries()
-                ->truncate($this->minGrams - 1)
+            $newAnalyzer->tokenizeOnWhitespaces()
                 ->lowercase()
+                ->truncate($this->minGrams - 1)
                 ->trim();
         });
 
         $this->field($prefixField);
 
         $newAnalyzer
-            ->tokenizeOnWordBoundaries()
+            ->tokenizeOnWhitespaces()
             ->tokenFilter(new Ngram("{$this->name}_ngram", $this->minGrams, $this->maxGrams))
             // ->truncate($this->maxGramms)
             ->lowercase();
@@ -60,6 +62,7 @@ class Name extends Text implements Analyze
 
         $queries[] = new Match_($this->name, $queryString);
         $queries[] = new MatchPhrasePrefix("{$this->name}.{$this->name}_text", $queryString);
+        $queries[] = new MatchBoolPrefix("{$this->name}.{$this->name}_text", $queryString);
 
         return $queries;
     }

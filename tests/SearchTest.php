@@ -6,11 +6,52 @@ namespace Sigmie\Tests;
 
 use Http\Promise\Promise;
 use Sigmie\Document\Document;
+use Sigmie\Index\Analysis\TokenFilter\Unique;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\TestCase;
 
 class SearchTest extends TestCase
 {
+    /**
+     * @test
+     */
+    public function name_two_words_search_test()
+    {
+        $documentId = uniqid();
+        $indexName = uniqid();
+        $blueprint = new NewProperties;
+        $blueprint->name('first_name');
+        $blueprint->name('last_name');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'first_name' => 'Bam',
+                'last_name' => 'Adebayo'
+            ], $documentId)
+        ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('bam ade')
+            ->fields(['first_name', 'last_name'])
+            ->retrieve(['first_name', 'last_name'])
+            ->make();
+
+        $query = $search->toRaw()['query']['function_score']['query'];
+
+        $res = $search->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertNotEmpty($hits);
+    }
+
     /**
      * @test
      */
