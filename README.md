@@ -1,4 +1,4 @@
-<p align="center"><a href="https://sigmie.com" target="_blank"><img width="400" src="https://github.com/sigmie/art/blob/main/logo/png/logo-full-black.png?raw=true"></a></p>
+<p align="center"><a href="https://sigmie.com" target="_blank"><img width="400" src="https://github.com/sigmie/art/blob/main/logo/png/logo-full-black-outline.png?raw=true"></a></p>
 
 <p align="center">
 
