@@ -29,7 +29,22 @@ class FacetParser extends Parser
         $aggregation = new Aggs;
 
         foreach ($facets as $field) {
-            if (! $this->fieldExists($field)) {
+
+            $limit = 10;
+
+            if (str_contains($field, ':')) {
+                [$field, $limit] = explode(':', $field);
+            }
+
+            if (!is_numeric($limit)) {
+                $this->handleError("Limit {$limit} must be numeric.", [
+                    'field' => $field,
+                ]);
+            }
+
+            $limit = (int) $limit;
+
+            if (!$this->fieldExists($field)) {
                 $this->handleError("Field {$field} does not exist.", [
                     'field' => $field,
                 ]);
@@ -40,13 +55,13 @@ class FacetParser extends Parser
             $field = $this->properties[$field];
 
             if ($field instanceof Text && $field->isFilterable()) {
-                $aggregation->terms($field->name(), $field->filterableName());
+                $aggregation->terms($field->name(), $field->filterableName())->size($limit);
 
                 continue;
             }
 
             if ($field instanceof Keyword) {
-                $aggregation->terms($field->name(), $field->name());
+                $aggregation->terms($field->name(), $field->name())->size($limit);
 
                 continue;
             }

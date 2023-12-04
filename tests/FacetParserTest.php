@@ -90,12 +90,13 @@ class FacetParserTest extends TestCase
 
         $parser = new FacetParser($props);
 
-        $aggs = $parser->parse('category stock active');
+        $aggs = $parser->parse('category:2 stock active');
 
         $res = $this->sigmie->query($indexName, new MatchAll, $aggs)->get();
 
         $json = $res->json();
 
+        $this->assertCount(2, $json['aggregations']['category']['buckets']);
         $this->assertArrayHasKey('aggregations', $json);
         $this->assertArrayHasKey('category', $json['aggregations']);
         $this->assertArrayHasKey('stock', $json['aggregations']);

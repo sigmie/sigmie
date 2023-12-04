@@ -57,6 +57,7 @@ trait Actions
         $body = [];
         $documents = new Collection($documents);
         $documents->each(function (Doc $document, $index) use (&$body) {
+
             //Upsert docs with id
             if (isset($document->_id)) {
                 $body = [
