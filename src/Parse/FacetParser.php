@@ -8,6 +8,7 @@ use Sigmie\Mappings\Field;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Number;
+use Sigmie\Mappings\Types\Price;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Query\Aggs;
 
@@ -66,7 +67,7 @@ class FacetParser extends Parser
                 continue;
             }
 
-            if ($field instanceof Number) {
+            if ($field instanceof Number || $field instanceof Price) {
                 $aggregation->stats($field->name(), $field->name());
 
                 continue;
