@@ -14,6 +14,6 @@ class Bulk extends NdJSONRequest implements ElasticsearchRequest
 {
     public function response(ResponseInterface $psr): ElasticsearchResponse
     {
-        return new BulkResponse($psr);
+        return BulkResponse::fromPsrResponse($psr);
     }
 }

@@ -20,6 +20,6 @@ class Delete extends HttpElasticsearchRequest implements ElasticsearchRequest
 
     public function response(ResponseInterface $psr): ElasticsearchResponse
     {
-        return new DeleteResponse($psr);
+        return DeleteResponse::fromPsrResponse($psr);
     }
 }

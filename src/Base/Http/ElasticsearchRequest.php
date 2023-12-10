@@ -13,6 +13,6 @@ class ElasticsearchRequest extends JSONRequest implements ElasticsearchRequestIn
 {
     public function response(ResponseInterface $psr): ElasticsearchResponseInterface
     {
-        return new ElasticsearchResponse($psr);
+        return ElasticsearchResponse::fromPsrResponse($psr);
     }
 }

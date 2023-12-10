@@ -13,10 +13,8 @@ class Mget extends ElasticsearchResponse
 {
     protected Collection $collection;
 
-    public function __construct(ResponseInterface $psrResponse)
+    private function createCollection()
     {
-        $this->response = $psrResponse;
-
         $collection = new Collection($this->json('docs') ?? []);
 
         $this->collection = $collection
@@ -26,11 +24,19 @@ class Mget extends ElasticsearchResponse
 
     public function docs(): array
     {
+        if (!isset($this->collection)) {
+            $this->createCollection();
+        }
+
         return $this->collection->toArray();
     }
 
     public function first(): null|Document
     {
+        if (!isset($this->collection)) {
+            $this->createCollection();
+        }
+
         return $this->collection->first();
     }
 }

@@ -13,6 +13,6 @@ class MSearch extends NdJSONRequest implements ElasticsearchRequest
 {
     public function response(ResponseInterface $psr): ElasticsearchResponse
     {
-        return new ElasticsearchResponse($psr);
+        return ElasticsearchResponse::fromPsrResponse($psr);
     }
 }

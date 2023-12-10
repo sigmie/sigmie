@@ -14,6 +14,6 @@ class Reindex extends HttpElasticsearchRequest implements ElasticsearchRequest
 {
     public function response(ResponseInterface $psr): ElasticsearchResponse
     {
-        return new ReindexResponse($psr);
+        return ReindexResponse::fromPsrResponse($psr);
     }
 }

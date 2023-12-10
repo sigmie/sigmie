@@ -14,6 +14,6 @@ class Search extends HttpElasticsearchRequest implements ElasticsearchRequest
 {
     public function response(ResponseInterface $psr): ElasticsearchResponse
     {
-        return new SearchResponse($psr);
+        return SearchResponse::fromPsrResponse($psr);
     }
 }

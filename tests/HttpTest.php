@@ -19,7 +19,7 @@ class HttpTest extends TestCase
      */
     public function response(): void
     {
-        $successfulResponse = new JSONResponse(new PsrResponse(200, ['content-type' => 'application/json'], '{"foo":"bar"}'));
+        $successfulResponse = JSONResponse::fromPsrResponse(new PsrResponse(200, ['content-type' => 'application/json'], '{"foo":"bar"}'));
 
         $this->assertEquals(200, $successfulResponse->code());
         $this->assertEquals(['foo' => 'bar'], $successfulResponse->json());
@@ -29,7 +29,7 @@ class HttpTest extends TestCase
         $this->assertEquals('{"foo":"bar"}', $successfulResponse->body());
         $this->assertEquals('application/json', $successfulResponse->header('content-type'));
 
-        $errorResponse = new JSONResponse(new PsrResponse(500, ['content-type' => 'application/json'], '{"foo":"bar"}'));
+        $errorResponse = JSONResponse::fromPsrResponse(new PsrResponse(500, ['content-type' => 'application/json'], '{"foo":"bar"}'));
 
         $this->assertEquals(true, $errorResponse->failed());
         $this->assertEquals(false, $errorResponse->clientError());

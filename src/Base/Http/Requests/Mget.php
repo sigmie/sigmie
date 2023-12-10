@@ -14,6 +14,6 @@ class Mget extends HttpElasticsearchRequest implements ElasticsearchRequest
 {
     public function response(ResponseInterface $psr): ElasticsearchResponse
     {
-        return new MgetResponse($psr);
+        return MgetResponse::fromPsrResponse($psr);
     }
 }
