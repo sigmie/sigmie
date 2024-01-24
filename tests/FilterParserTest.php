@@ -17,6 +17,60 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function parse_empty_term_double_quotes()
+    {
+        $blueprint = new NewProperties;
+        $blueprint->keyword('database');
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse('database:""');
+
+        // other wise we get an exception
+        $this->assertTrue(true);
+    }
+
+    /**
+     * @test
+     */
+    public function parse_empty_term()
+    {
+        $blueprint = new NewProperties;
+        $blueprint->keyword('database');
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse("database:''");
+
+        // other wise we get an exception
+        $this->assertTrue(true);
+    }
+
+    /**
+     * @test
+     */
+    public function parse_empty_in()
+    {
+        $blueprint = new NewProperties;
+        $blueprint->keyword('database');
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse("database:[]");
+
+        // other wise we get an exception
+        $this->assertTrue(true);
+    }
+
+    /**
+     * @test
+     */
     public function parse_non_existing_parenthesis()
     {
         $indexName = uniqid();

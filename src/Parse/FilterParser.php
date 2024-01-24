@@ -138,9 +138,9 @@ class FilterParser extends Parser
             preg_match('/^(\w+)([<>]=?)(\'.+\')/', $string) => $this->handleRange($string),
             preg_match('/^(\w+)([<>]=?)(\".+\")/', $string) => $this->handleRange($string),
             preg_match('/^_id:[a-z_A-Z0-9]+/', $string) => $this->handleIDs($string),
-            preg_match('/\w+:\[.+\]/', $string) => $this->handleIn($string),
-            preg_match('/\w+:".+"/', $string) => $this->handleTerm($string),
-            preg_match('/\w+:\'.+\'/', $string) => $this->handleTerm($string),
+            preg_match('/\w+:\[.*\]/', $string) => $this->handleIn($string),
+            preg_match('/\w+:".*"/', $string) => $this->handleTerm($string),
+            preg_match('/\w+:\'.*\'/', $string) => $this->handleTerm($string),
             default => null
         };
 
