@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Sigmie\Index\Analysis\TokenFilter;
 
 use function Sigmie\Functions\name_configs;
-use Sigmie\Greek\Filter\Stopwords as FilterStopwords;
+
+use Sigmie\Greek\Filter\Stopwords as GreekStopwords;
+use Sigmie\English\Filter\Stopwords as EnglishStopwords;
+use Sigmie\German\Filter\Stopwords as GermanStopwords;
 
 class Stopwords extends TokenFilter
 {
@@ -19,15 +22,15 @@ class Stopwords extends TokenFilter
         [$name, $configs] = name_configs($raw);
 
         if ($configs['stopwords'] === '_greek_') {
-            return new FilterStopwords($name);
+            return new GreekStopwords($name);
         }
 
         if ($configs['stopwords'] === '_german_') {
-            return new FilterStopwords($name);
+            return new GermanStopwords($name);
         }
 
         if ($configs['stopwords'] === '_english_') {
-            return new FilterStopwords($name);
+            return new EnglishStopwords($name);
         }
 
         $instance = new static($name, $configs['stopwords']);
