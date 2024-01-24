@@ -9,10 +9,30 @@ use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Parse\FilterParser;
+use Sigmie\Parse\ParseException;
 use Sigmie\Testing\TestCase;
 
 class FilterParserTest extends TestCase
 {
+    /**
+     * @test
+     */
+    public function parse_non_existing_parenthesis()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('database');
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $this->expectException(ParseException::class);
+
+        $query = $parser->parse("(database:['GeneReviews','OMIM']) AND (mode_of_inheritance:['autosomal_dominant','autosomal_recessive'])");
+    }
+
     /**
      * @test
      */

@@ -33,7 +33,7 @@ class FilterParser extends Parser
             $matchWithoutParentheses = preg_replace('/^\((.+)\)$/', '$1', $matchWithParentheses);
 
             //Remove the parenthetic expresion from the query
-            $query = preg_replace("/((\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^'\"]*['\"]){2})*[^'\"]*$)) )?\({$matchWithoutParentheses}\)/", '', $query);
+            $query = preg_replace("/((\b(?:AND NOT|AND|OR)?\b(?=(?:(?:[^'\"]*['\"]){2})*[^'\"]*$)) )?\Q({$matchWithoutParentheses})\E/", '', $query);
 
             //Trim leading and trailing spaces
             $query = trim($query);
