@@ -41,8 +41,10 @@ class FilterParser extends Parser
             //Create filter from parentheses match
             $filter = $this->parseString($matchWithoutParentheses);
         } else {
-            // Split on the first AND NOT, AND or OR operator that is not in quotes
-            [$filter] = preg_split('/\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^\'"]*[\'"]){2})*[^\'"]*$)/', $query, limit: 2);
+            // This code splits the query on the first occurrence of 'AND NOT', 'AND', or 'OR' that is not within quotes
+            // and trims any parentheses from the first part of the split query.
+            [$splitFilters] = preg_split('/\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^\'"]*[\'"]){2})*[^\'"]*$)/', $query, limit: 2);
+            $filter = trim($splitFilters, "()");
         }
 
         // A nested filter like (inStock = 1 AND active = true) is

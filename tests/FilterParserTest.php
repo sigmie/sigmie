@@ -17,6 +17,25 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function parse_empty_term_double_quote()
+    {
+        $blueprint = new NewProperties;
+        $blueprint->keyword('last_activity_label');
+        $blueprint->number('started_surveys_count');
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse("(started_surveys_count>0 AND (last_activity_label:'survey_session_started' OR last_activity_label:'smartlead_sent_time'))");
+
+        // other wise we get an exception
+        $this->assertTrue(true);
+    }
+
+    /**
+     * @test
+     */
     public function parse_empty_term_double_quotes()
     {
         $blueprint = new NewProperties;
@@ -31,6 +50,7 @@ class FilterParserTest extends TestCase
         // other wise we get an exception
         $this->assertTrue(true);
     }
+
 
     /**
      * @test
