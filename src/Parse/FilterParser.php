@@ -25,8 +25,14 @@ class FilterParser extends Parser
         // Trim leading and trailing spaces
         $query = trim($query);
 
+        // Remove all single items in parenthesis
+        // for example the ((emails_sent_count>0) AND (last_activity_label:'click_time'))
+        // will change to (emails_sent_count>0 AND last_activity_label:'click_time')
+        $query = preg_replace("/\(([^()]*)\)/", '$1', $query);
+
         // If first filter is a parenthetic expression
-        if (preg_match_all("/^\((((?>[^()]+)|(?R))*)\)/", $query, $matches)) {
+        if (preg_match_all("/\(([^()]|(?R))*\)/", $query, $matches)) {
+
             $matchWithParentheses = $matches[0][0];
 
             //Remove outer parenthesis
@@ -41,10 +47,8 @@ class FilterParser extends Parser
             //Create filter from parentheses match
             $filter = $this->parseString($matchWithoutParentheses);
         } else {
-            // This code splits the query on the first occurrence of 'AND NOT', 'AND', or 'OR' that is not within quotes
-            // and trims any parentheses from the first part of the split query.
-            [$splitFilters] = preg_split('/\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^\'"]*[\'"]){2})*[^\'"]*$)/', $query, limit: 2);
-            $filter = trim($splitFilters, "()");
+            // Split on the first AND NOT, AND or OR operator that is not in quotes
+            [$filter] = preg_split('/\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^\'"]*[\'"]){2})*[^\'"]*$)/', $query, limit: 2);
         }
 
         // A nested filter like (inStock = 1 AND active = true) is
@@ -68,6 +72,7 @@ class FilterParser extends Parser
             $res['operator'] = $operator;
             $res['values'] = $this->parseString($query);
         }
+
 
         return $res;
     }

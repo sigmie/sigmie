@@ -22,15 +22,20 @@ class FilterParserTest extends TestCase
         $blueprint = new NewProperties;
         $blueprint->keyword('last_activity_label');
         $blueprint->number('started_surveys_count');
+        $blueprint->number('emails_sent_count');
+        $blueprint->number('account_id');
+        $blueprint->date('last_activity');
 
         $props = $blueprint();
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse("(started_surveys_count>0 AND (last_activity_label:'survey_session_started' OR last_activity_label:'smartlead_sent_time'))");
+        $query = $parser->parse("((emails_sent_count>0) AND (last_activity_label:'smartlead_click_time')) AND last_activity>='2001-01-01T00:00:00.000000+00:00' AND last_activity<='2100-12-31T23:59:59.999999+00:00' AND account_id:'10'");
 
-        // other wise we get an exception
-        $this->assertTrue(true);
+        $raw = $query->toRaw();
+
+        $this->assertArrayHasKey('emails_sent_count', $raw['bool']['must'][0]['bool']['must'][0]['range'] ?? []);
+        $this->assertArrayHasKey('last_activity_label', $raw['bool']['must'][0]['bool']['must'][1]['bool']['must'][0]['term'] ?? []);
     }
 
     /**
@@ -138,8 +143,8 @@ class FilterParserTest extends TestCase
         $blueprint->number('stock')->integer();
 
         $index = $this->sigmie->newIndex($indexName)
-        ->properties($blueprint)
-        ->create();
+            ->properties($blueprint)
+            ->create();
 
         $index = $this->sigmie->collect($indexName, true);
 
