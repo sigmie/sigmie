@@ -56,6 +56,8 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected array $highlight = [];
 
+    protected bool $noResultsOnEmptySearch = false;
+
     protected Boolean $filters;
 
     protected Aggs $facets;
@@ -104,6 +106,13 @@ abstract class AbstractSearchBuilder implements SearchBuilder
     public function autocompleteSize(int $size = 5): static
     {
         $this->autocompleteSize = $size;
+
+        return $this;
+    }
+
+    public function noResultsOnEmptySearch($value = true): static
+    {
+        $this->noResultsOnEmptySearch = $value;
 
         return $this;
     }

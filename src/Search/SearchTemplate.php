@@ -6,6 +6,8 @@ namespace Sigmie\Search;
 
 use Sigmie\Base\APIs\Script as APIsScript;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Query\Queries\MatchAll;
+use Sigmie\Query\Queries\MatchNone;
 
 class SearchTemplate
 {
@@ -14,7 +16,8 @@ class SearchTemplate
     public function __construct(
         ElasticsearchConnection $connection,
         protected array $raw,
-        protected string $id
+        protected string $id,
+        protected bool $matchNoneOnEmptyQueryString = false
     ) {
         $this->elasticsearchConnection = $connection;
     }
@@ -39,7 +42,7 @@ class SearchTemplate
 
         $parsedSource = $this->handleQueryParameter(
             'query_string',
-            '{"match_all": {}}',
+            json_encode(($this->matchNoneOnEmptyQueryString ? new MatchNone : new MatchAll)->toRaw()),
             $parsedSource
         );
         $parsedSource = $this->handleParameter('size', $parsedSource);
@@ -53,13 +56,16 @@ class SearchTemplate
 
     private function handleQueryParameter(string $tag, string $fallback, string $parsedSource)
     {
-        if (preg_match('/"@'.$tag.'\((.+)\)@end'.$tag.'"/', $parsedSource, $sortMatches)) {
+        if (preg_match('/"@' . $tag . '\((.+)\)@end' . $tag . '"/', $parsedSource, $sortMatches)) {
             $default = stripslashes($sortMatches[1]);
 
+            // this in case we want to improve and still render the queries in case
+            // of an empty string.
+            // $rawDefault = "{{#{$tag}}}{$default}{{/{$tag}}} {{^{$tag}}}{$default}{{/{$tag}}}";
             $rawDefault = "{{#{$tag}}}{$default}{{/{$tag}}} {{^{$tag}}}{$fallback}{{/{$tag}}}";
 
             $parsedSource = preg_replace(
-                '/"@'.$tag.'\((.+)\)@end'.$tag.'"/',
+                '/"@' . $tag . '\((.+)\)@end' . $tag . '"/',
                 $rawDefault,
                 $parsedSource
             );
@@ -70,13 +76,13 @@ class SearchTemplate
 
     private function handleParameter(string $tag, string $parsedSource): string
     {
-        if (preg_match('/"@'.$tag.'\((.+)\)@end'.$tag.'"/', $parsedSource, $sortMatches)) {
+        if (preg_match('/"@' . $tag . '\((.+)\)@end' . $tag . '"/', $parsedSource, $sortMatches)) {
             $default = stripslashes($sortMatches[1]);
 
             $rawDefault = "{{^{$tag}.isEmpty}}{{#toJson}}{$tag}{{/toJson}}{{/{$tag}.isEmpty}} {{^{$tag}}}{$default}{{/{$tag}}}";
 
             $parsedSource = preg_replace(
-                '/"@'.$tag.'\((.+)\)@end'.$tag.'"/',
+                '/"@' . $tag . '\((.+)\)@end' . $tag . '"/',
                 $rawDefault,
                 $parsedSource
             );

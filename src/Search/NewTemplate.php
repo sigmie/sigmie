@@ -146,6 +146,6 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
         $search->trackTotalHits();
 
-        return new SearchTemplate($this->elasticsearchConnection, $search->toRaw(), $this->id);
+        return new SearchTemplate($this->elasticsearchConnection, $search->toRaw(), $this->id, $this->noResultsOnEmptySearch);
     }
 }

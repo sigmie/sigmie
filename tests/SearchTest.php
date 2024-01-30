@@ -15,6 +15,48 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function empty_results_on_empty_string()
+    {
+        $indexName = uniqid();
+        $blueprint = new NewProperties;
+        $blueprint->name('name');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'name' => 'Jason Preston',
+                'autocomplete'=> [''] 
+            ])
+        ]);
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('')
+            ->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertNotEmpty($hits);
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->noResultsOnEmptySearch()
+            ->queryString('')
+            ->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertEmpty($hits);
+    }
+
+    /**
+     * @test
+     */
     public function boost_search_test()
     {
         $indexName = uniqid();

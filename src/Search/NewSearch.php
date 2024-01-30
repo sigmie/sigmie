@@ -113,7 +113,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $fields = new Collection($this->fields);
 
             $fields->each(function ($field) use ($queryBoolean) {
-                if ($this->queryString === '') {
+                if ($this->queryString === '' && !$this->noResultsOnEmptySearch) {
                     $queryBoolean->should()->query(new MatchAll);
 
                     return;

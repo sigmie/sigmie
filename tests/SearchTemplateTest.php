@@ -15,6 +15,85 @@ class SearchTemplateTest extends TestCase
     /**
      * @test
      */
+    public function no_empty_results_on_empty_string()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('name');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'name' => 'Mickey',
+                'description' => 'Adventure in the woods',
+            ])
+        ]);
+
+        $templateId = uniqid();
+
+        $saved = $this->sigmie->newTemplate($templateId)
+            ->properties($blueprint)
+            ->noResultsOnEmptySearch()
+            ->get()
+            ->save();
+
+        $template = $this->sigmie->template($templateId);
+
+        $hits = $template->run($indexName, [
+            'query_string' => '',
+        ])->json('hits.hits');
+
+        $this->assertEmpty($hits);
+    }
+
+    /**
+     * @test
+     */
+    public function empty_results_on_empty_string()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('name');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'name' => 'Mickey',
+                'description' => 'Adventure in the woods',
+            ])
+        ]);
+
+        $templateId = uniqid();
+
+        $saved = $this->sigmie->newTemplate($templateId)
+            ->properties($blueprint)
+            ->get()
+            ->save();
+
+        $template = $this->sigmie->template($templateId);
+
+        $hits = $template->run($indexName, [
+            'query_string' => '',
+        ])->json('hits.hits');
+
+        $this->assertNotEmpty($hits);
+    }
+
+    /**
+     * @test
+     */
     public function with_suggestion()
     {
         $indexName = uniqid();
