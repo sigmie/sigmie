@@ -8,10 +8,18 @@ class Price extends Type
 {
     public function toRaw(): array
     {
-        return [$this->name => [
+        $raw = [$this->name => [
             'type' => 'scaled_float',
             'scaling_factor' => 100,
         ]];
+
+        $raw[$this->name]['meta'] =
+            [
+                ...$this->meta,
+                'class' => static::class,
+            ];
+
+        return $raw;
     }
 
     public function queries(string $queryString): array

@@ -8,6 +8,7 @@ use Http\Promise\Promise;
 use Sigmie\Document\Document;
 use Sigmie\Index\Analysis\TokenFilter\Unique;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Types\Price;
 use Sigmie\Testing\TestCase;
 
 class SearchTest extends TestCase
@@ -26,7 +27,12 @@ class SearchTest extends TestCase
             ->properties($blueprint)
             ->create();
 
+        $res = $this->indexAPICall($indexName, 'GET');
+
+        $this->assertEquals(Price::class, $res->json("{$index->name}.mappings.properties.price.meta.class"));
+
         $index = $this->sigmie->collect($indexName, refresh: true);
+
 
         $index->merge([
             new Document(['price' => 200]),
