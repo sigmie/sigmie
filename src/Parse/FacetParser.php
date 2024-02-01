@@ -31,19 +31,19 @@ class FacetParser extends Parser
 
         foreach ($facets as $field) {
 
-            $limit = 10;
+            $param = 10;
 
             if (str_contains($field, ':')) {
-                [$field, $limit] = explode(':', $field);
+                [$field, $param] = explode(':', $field);
             }
 
-            if (!is_numeric($limit)) {
-                $this->handleError("Limit {$limit} must be numeric.", [
+            if (!is_numeric($param)) {
+                $this->handleError("Limit {$param} must be numeric.", [
                     'field' => $field,
                 ]);
             }
 
-            $limit = (int) $limit;
+            $param = (int) $param;
 
             if (!$this->fieldExists($field)) {
                 $this->handleError("Field {$field} does not exist.", [
@@ -55,14 +55,20 @@ class FacetParser extends Parser
 
             $field = $this->properties[$field];
 
+            if ($field instanceof Price) {
+                $aggregation->histogram($field->name(), $field->name(), interval: $param);
+
+                continue;
+            }
+
             if ($field instanceof Text && $field->isFilterable()) {
-                $aggregation->terms($field->name(), $field->filterableName())->size($limit);
+                $aggregation->terms($field->name(), $field->filterableName())->size($param);
 
                 continue;
             }
 
             if ($field instanceof Keyword) {
-                $aggregation->terms($field->name(), $field->name())->size($limit);
+                $aggregation->terms($field->name(), $field->name())->size($param);
 
                 continue;
             }

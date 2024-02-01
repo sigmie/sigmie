@@ -6,6 +6,7 @@ namespace Sigmie\Query;
 
 use Sigmie\Query\Aggregations\Bucket\DateHistogram;
 use Sigmie\Query\Aggregations\Bucket\Global_;
+use Sigmie\Query\Aggregations\Bucket\Histogram;
 use Sigmie\Query\Aggregations\Bucket\Missing;
 use Sigmie\Query\Aggregations\Bucket\Range;
 use Sigmie\Query\Aggregations\Bucket\SignificantText;
@@ -33,6 +34,15 @@ class Aggs implements AggsInterface
         $this->aggs[] = $aggs;
 
         return $this;
+    }
+
+    public function histogram(string $name, string $field, int $interval): Histogram
+    {
+        $aggregation = new Histogram($name, $field, $interval);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
     }
 
     public function dateHistogram(string $name, string $field, CalendarInterval $interval): DateHistogram

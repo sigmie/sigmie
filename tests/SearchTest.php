@@ -15,6 +15,39 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function price_facet()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->price();
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['price' => 200]),
+            new Document(['price' => 100]),
+            new Document(['price' => 50]),
+        ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets('price')
+            ->get();
+
+        $aggs = $search->aggregation('price')['buckets'] ?? [];
+
+        $this->assertCount(3, $aggs);
+    }
+
+    /**
+     * @test
+     */
     public function empty_results_on_empty_string()
     {
         $indexName = uniqid();
@@ -30,7 +63,7 @@ class SearchTest extends TestCase
         $index->merge([
             new Document([
                 'name' => 'Jason Preston',
-                'autocomplete'=> [''] 
+                'autocomplete' => ['']
             ])
         ]);
 
@@ -72,7 +105,7 @@ class SearchTest extends TestCase
         $index->merge([
             new Document([
                 'name' => 'Jason Preston',
-                'autocomplete'=> [''] 
+                'autocomplete' => ['']
             ])
         ]);
 
