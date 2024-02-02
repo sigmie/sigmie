@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Base\Http\ElasticsearchResponse;
+use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Term;
 
 class Boolean extends Type

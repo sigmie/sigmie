@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use Closure;
+use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Mappings\Contracts\Type as TypeInterface;
+use Sigmie\Query\Aggs;
 use Sigmie\Shared\Contracts\Name;
 use Sigmie\Shared\Contracts\ToRaw;
 
@@ -83,4 +85,19 @@ abstract class Type implements Name, ToRaw, TypeInterface
     }
 
     abstract public function queries(string $queryString): array;
+
+    public function aggregation(Aggs $aggs, string|int $param): void
+    {
+        return;
+    }
+
+    public function isFacetable(): bool
+    {
+        return false;
+    }
+
+    public function facets(ElasticsearchResponse $response): array
+    {
+        return [];
+    }
 }

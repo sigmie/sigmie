@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Sigmie\Query\Aggregations\Pipeline;
 
 use Sigmie\Query\Contracts\Aggregation;
+use Sigmie\Query\Shared\Meta;
 
 abstract class Pipeline implements Aggregation
 {
+    use Meta;
+
     public function __construct(
         protected string $name,
         protected string $type,
@@ -22,6 +25,12 @@ abstract class Pipeline implements Aggregation
                 'buckets_path' => $this->path,
             ],
         ]];
+
+        if (count($this->meta) > 0) {
+            $raw[$this->name]['meta'] = [
+                ...$this->meta,
+            ];
+        }
 
         return $raw;
     }

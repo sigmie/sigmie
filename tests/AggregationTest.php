@@ -52,11 +52,14 @@ class AggregationTest extends TestCase
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation) {
-                $aggregation->significantText('significant', 'title');
+                $aggregation->significantText('significant', 'title')
+                    ->meta(['something' => 'something else']);
             })
             ->get();
 
         $value = $res->aggregation('significant.buckets');
+
+        $this->assertArrayHasKey('something', $res->json('aggregations.significant.meta'));
 
         $this->assertCount(0, $value);
     }

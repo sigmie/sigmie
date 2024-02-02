@@ -7,9 +7,12 @@ namespace Sigmie\Query\Aggregations\Bucket;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\Aggregation;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
+use Sigmie\Query\Shared\Meta;
 
 abstract class Bucket implements Aggregation
 {
+    use Meta;
+
     protected AggsInterface $aggs;
 
     public function __construct(
@@ -26,6 +29,12 @@ abstract class Bucket implements Aggregation
 
         if (isset($this->aggs)) {
             $raw[$this->name]['aggs'] = $this->aggs->toRaw();
+        }
+
+        if (count($this->meta) > 0) {
+            $raw[$this->name]['meta'] = [
+                ...$this->meta,
+            ];
         }
 
         return $raw;

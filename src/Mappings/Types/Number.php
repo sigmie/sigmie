@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Mappings\ElasticsearchMappingType;
+use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Term;
 
 class Number extends Type
@@ -51,5 +53,20 @@ class Number extends Type
         // $queries[] = new Term($this->name, $queryString);
 
         return $queries;
+    }
+
+    public function aggregation(Aggs $aggs, string|int $param): void
+    {
+        $aggs->stats($this->name(), $this->name());
+    }
+
+    public function isFacetable(): bool
+    {
+        return true;
+    }
+
+    public function facets(ElasticsearchResponse $response): array
+    {
+        return $response->json("aggregations.{$this->name()}");
     }
 }

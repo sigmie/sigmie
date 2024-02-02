@@ -18,6 +18,7 @@ class SearchTest extends TestCase
      */
     public function price_facet()
     {
+
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
@@ -33,7 +34,6 @@ class SearchTest extends TestCase
 
         $index = $this->sigmie->collect($indexName, refresh: true);
 
-
         $index->merge([
             new Document(['price' => 200]),
             new Document(['price' => 100]),
@@ -46,9 +46,15 @@ class SearchTest extends TestCase
             ->facets('price')
             ->get();
 
-        $aggs = $search->aggregation('price')['buckets'] ?? [];
+        $aggs = $search->aggregation('price_histogram')['buckets'] ?? [];
 
         $this->assertCount(3, $aggs);
+
+        $minAgg = $search->aggregation('price_min');
+        $maxAgg = $search->aggregation('price_max');
+
+        $this->assertEquals(50, $minAgg['value']);
+        $this->assertEquals(200, $maxAgg['value']);
     }
 
     /**

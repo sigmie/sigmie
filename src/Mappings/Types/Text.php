@@ -6,11 +6,14 @@ namespace Sigmie\Mappings\Types;
 
 use Closure;
 use Exception;
+use Sigmie\Base\Http\ElasticsearchResponse;
+
 use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\Contracts\Analyze;
+use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
 use Sigmie\Shared\Collection;
@@ -275,5 +278,22 @@ class Text extends Type implements FromRaw
         }
 
         return $queries;
+    }
+
+    public function aggregation(Aggs $aggs, string|int $param): void
+    {
+        $aggs->terms($this->name(), $this->filterableName())->size($param);
+    }
+
+    public function isFacetable(): bool
+    {
+        return $this->isFilterable();
+    }
+
+    public function facets(ElasticsearchResponse $response): array
+    {
+        $originalBuckets = $response->json("aggregations.{$this->name()}")['buckets'] ?? [];
+
+        return array_column($originalBuckets, 'doc_count', 'key');
     }
 }

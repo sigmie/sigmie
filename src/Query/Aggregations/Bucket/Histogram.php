@@ -21,7 +21,6 @@ class Histogram extends Bucket
                 'field' => $this->field,
                 'interval' => $this->interval,
                 'min_doc_count' => $this->minDocCount,
-                'keyed' => true
             ],
         ];
 
