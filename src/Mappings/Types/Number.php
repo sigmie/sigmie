@@ -65,7 +65,7 @@ class Number extends Type
         return true;
     }
 
-    public function facets(ElasticsearchResponse $response): array
+    public function facets(ElasticsearchResponse $response): null|array
     {
         return $response->json("aggregations.{$this->name()}");
     }

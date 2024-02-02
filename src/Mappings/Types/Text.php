@@ -290,7 +290,7 @@ class Text extends Type implements FromRaw
         return $this->isFilterable();
     }
 
-    public function facets(ElasticsearchResponse $response): array
+    public function facets(ElasticsearchResponse $response): null|array
     {
         $originalBuckets = $response->json("aggregations.{$this->name()}")['buckets'] ?? [];
 

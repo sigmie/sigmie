@@ -96,8 +96,8 @@ abstract class Type implements Name, ToRaw, TypeInterface
         return false;
     }
 
-    public function facets(ElasticsearchResponse $response): array
+    public function facets(ElasticsearchResponse $response): null|array
     {
-        return [];
+        return null;
     }
 }

@@ -64,7 +64,7 @@ class Keyword extends Type
         $aggs->terms($this->name(), $this->name())->size($param);
     }
 
-    public function facets(ElasticsearchResponse $response): array
+    public function facets(ElasticsearchResponse $response): null|array
     {
         $originalBuckets = $response->json("aggregations.{$this->name()}")['buckets'] ?? [];
 

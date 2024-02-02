@@ -44,7 +44,7 @@ class Price extends Type
         $aggs->max("{$this->name()}_max", $this->name());
     }
 
-    public function facets(ElasticsearchResponse $response): array
+    public function facets(ElasticsearchResponse $response): null|array
     {
         $originalBuckets = $response->json("aggregations.{$this->name()}_histogram")['buckets'] ?? [];
 
