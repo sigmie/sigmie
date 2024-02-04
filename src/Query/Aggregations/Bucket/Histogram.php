@@ -10,7 +10,7 @@ class Histogram extends Bucket
         protected string $name,
         protected string $field,
         protected int $interval,
-        protected int $minDocCount = 1
+        protected int $minDocCount = 0
     ) {
     }
 

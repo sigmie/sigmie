@@ -68,6 +68,7 @@ class FacetsTest extends TestCase
             0 => 1,
             100 => 2,
             200 => 2,
+            300 => 0,
             400 => 2,
             500 => 1,
         ];
@@ -177,5 +178,45 @@ class FacetsTest extends TestCase
         $textFacets = $props['text']->facets($searchResponse);
 
         $this->assertEquals($expectedTextFacets, $textFacets);
+    }
+
+    /**
+     * @test
+     */
+    public function category_facets()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->category();
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['category' => 'sport',]),
+            new Document(['category' => 'action',]),
+        ]);
+
+        $searchResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets('category')
+            ->get();
+
+        /** @var Properties $props */
+        $props = $blueprint();
+
+        $facets = $props['category']->facets($searchResponse);
+
+        $expectedHistogram = [
+            'action' => 1,
+            'sport' => 1,
+        ];
+
+        $this->assertEquals($expectedHistogram, $facets);
     }
 }
