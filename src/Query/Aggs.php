@@ -36,9 +36,15 @@ class Aggs implements AggsInterface
         return $this;
     }
 
-    public function histogram(string $name, string $field, int $interval): Histogram
-    {
-        $aggregation = new Histogram($name, $field, $interval);
+    public function histogram(
+        string $name,
+        string $field,
+        int $interval,
+        int $minDocCount = 0,
+        array|null
+        $extendedBounds = null
+    ): Histogram {
+        $aggregation = new Histogram($name, $field, $interval, $minDocCount, $extendedBounds);
 
         $this->aggs[] = $aggregation;
 

@@ -10,7 +10,8 @@ class Histogram extends Bucket
         protected string $name,
         protected string $field,
         protected int $interval,
-        protected int $minDocCount = 0
+        protected int $minDocCount = 0,
+        protected null|array $extendedBounds = null
     ) {
     }
 
@@ -23,6 +24,10 @@ class Histogram extends Bucket
                 'min_doc_count' => $this->minDocCount,
             ],
         ];
+
+        if (!is_null($this->extendedBounds)) {
+            $value['histogram']['extended_bounds'] = $this->extendedBounds;
+        }
 
         return $value;
     }
