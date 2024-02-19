@@ -51,9 +51,15 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
-    public function dateHistogram(string $name, string $field, CalendarInterval $interval): DateHistogram
-    {
-        $aggregation = new DateHistogram($name, $field, $interval);
+    public function dateHistogram(
+        string $name,
+        string $field,
+        CalendarInterval $interval,
+        int $minDocCount = 0,
+        null|array $extendedBounds = null
+
+    ): DateHistogram {
+        $aggregation = new DateHistogram($name, $field, $interval, $minDocCount, $extendedBounds);
 
         $this->aggs[] = $aggregation;
 
