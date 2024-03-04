@@ -12,6 +12,8 @@ class Terms extends Bucket
 
     protected int $size;
 
+    protected array $order = [];
+
     public function __construct(
         protected string $name,
         protected string $field,
@@ -23,11 +25,21 @@ class Terms extends Bucket
         $this->size = $size;
     }
 
+    public function order(string $subaggregation, string $direction): self
+    {
+        $this->order = ['order' => [
+            $subaggregation => $direction
+        ]];
+
+        return $this;
+    }
+
     public function value(): array
     {
         $value = [
             'terms' => [
                 'field' => $this->field,
+                ...$this->order
             ],
         ];
 
