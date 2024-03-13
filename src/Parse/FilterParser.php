@@ -25,13 +25,32 @@ class FilterParser extends Parser
         // Trim leading and trailing spaces
         $query = trim($query);
 
+        // Remove spaces between parentheses if not in quotes
+        $query = preg_replace_callback('/\(\s+(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)/', function ($matches) {
+            return '('; // Replace opening parenthesis with spaces with just an opening parenthesis
+        }, $query);
+        $query = preg_replace_callback('/\s+\)(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)/', function ($matches) {
+            return ')'; // Replace closing parenthesis with spaces with just a closing parenthesis
+        }, $query);
+
         // Remove all single items in parenthesis
         // for example the ((emails_sent_count>0) AND (last_activity_label:'click_time'))
         // will change to (emails_sent_count>0 AND last_activity_label:'click_time')
-        $query = preg_replace("/\(([^()]*)\)/", '$1', $query);
+        // $query = preg_replace("/\(([^()]*)\)/", '$1', $query);
+        $query = preg_replace_callback("/\(([^()]*)\)/", function ($matches) {
+            // Check if the match contains OR or AND, indicating it's not a single item
+            if (strpos($matches[1], ' OR ') !== false || strpos($matches[1], ' AND ') !== false || strpos($matches[1], ' AND NOT') !== false) {
+                return $matches[0]; // Return the original match with parentheses
+            } else {
+                return $matches[1]; // Return without parentheses for single items
+            }
+        }, $query);
 
         // If first filter is a parenthetic expression
-        if (preg_match_all("/\(([^()]|(?R))*\)/", $query, $matches)) {
+        if (str_starts_with($query, '(',)) {
+
+            // match all parenthentic expresions recusively
+            preg_match_all("/\(([^()]|(?R))*\)/", $query, $matches);
 
             $matchWithParentheses = $matches[0][0];
 
@@ -49,7 +68,11 @@ class FilterParser extends Parser
         } else {
             // Split on the first AND NOT, AND or OR operator that is not in quotes
             [$filter] = preg_split('/\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^\'"]*[\'"]){2})*[^\'"]*$)/', $query, limit: 2);
+
+            //Remove white spaces
+            $filter = trim($filter);
         }
+
 
         // A nested filter like (inStock = 1 AND active = true) is
         // returned as an array from the `parseString` method.

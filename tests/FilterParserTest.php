@@ -17,6 +17,70 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function fix_ignored_or()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->date('last_activity');
+        $blueprint->number('account_id')->integer();
+        $blueprint->number('finished_surveys_count')->integer();
+        $blueprint->number('emails_click_count')->integer();
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $filter = "(
+                        (
+                            emails_click_count:'1' 
+                            OR emails_click_count:'2'
+                            OR emails_click_count:'3'
+                        )
+                     AND 
+                     (
+                      finished_surveys_count:'1' 
+                      OR finished_surveys_count:'2' 
+                      OR finished_surveys_count:'3' 
+                      OR finished_surveys_count:'4' 
+                      OR finished_surveys_count>='5'
+                     )
+                    ) 
+                    AND last_activity>='2024-02-12T21:59:59.999999+00:00' 
+                    AND last_activity<='2024-03-13T21:59:59.999999+00:00' 
+                    AND account_id:'2'";
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'account_id' => 2,
+                'last_activity' => '2024-03-01T21:59:59.999999+00:00',
+                'finished_surveys_count' => 0,
+                'emails_click_count' => 2,
+            ])
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse($filter);
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(0, $res->json('hits.hits'));
+    }
+
+    /**
+     * @test
+     */
     public function parse_empty_term_double_quote()
     {
         $blueprint = new NewProperties;

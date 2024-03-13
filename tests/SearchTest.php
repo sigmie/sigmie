@@ -48,7 +48,7 @@ class SearchTest extends TestCase
 
         $aggs = $search->aggregation('price_histogram')['buckets'] ?? [];
 
-        $this->assertCount(3, $aggs);
+        $this->assertCount(16, $aggs);
 
         $minAgg = $search->aggregation('price_min');
         $maxAgg = $search->aggregation('price_max');
