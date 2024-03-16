@@ -37,9 +37,15 @@ class Price extends Type
         return $queries;
     }
 
-    public function aggregation(Aggs $aggs, string|int $param): void
+    public function aggregation(Aggs $aggs, string $param): void
     {
-        $aggs->histogram("{$this->name()}_histogram", $this->name(), interval: $param);
+        [$interval] = explode(',', $param);
+
+        $aggs->histogram(
+            "{$this->name()}_histogram",
+            $this->name(),
+            interval: (int) $interval
+        );
         $aggs->min("{$this->name()}_min", $this->name());
         $aggs->max("{$this->name()}_max", $this->name());
     }

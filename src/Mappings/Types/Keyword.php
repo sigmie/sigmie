@@ -59,9 +59,19 @@ class Keyword extends Type
         return $queries;
     }
 
-    public function aggregation(Aggs $aggs, string|int $param): void
+    public function aggregation(Aggs $aggs, string $params): void
     {
-        $aggs->terms($this->name(), $this->name())->size($param);
+        $params = explode(',', $params);
+        $size = $params[0];
+        $order = $params[1] ?? null;
+
+        $aggregation = $aggs->terms($this->name(), $this->name());
+
+        $aggregation->size((int)$size);
+
+        if (in_array($order, ['asc', 'desc'])) {
+            $aggregation->order('_key', $order);
+        }
     }
 
     public function facets(ElasticsearchResponse $response): null|array

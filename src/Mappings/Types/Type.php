@@ -86,7 +86,7 @@ abstract class Type implements Name, ToRaw, TypeInterface
 
     abstract public function queries(string $queryString): array;
 
-    public function aggregation(Aggs $aggs, string|int $param): void
+    public function aggregation(Aggs $aggs, string $params): void
     {
         return;
     }

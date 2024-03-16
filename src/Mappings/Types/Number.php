@@ -55,7 +55,7 @@ class Number extends Type
         return $queries;
     }
 
-    public function aggregation(Aggs $aggs, string|int $param): void
+    public function aggregation(Aggs $aggs, string $param): void
     {
         $aggs->stats($this->name(), $this->name());
     }

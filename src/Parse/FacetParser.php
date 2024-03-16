@@ -32,19 +32,11 @@ class FacetParser extends Parser
 
         foreach ($facets as $field) {
 
-            $param = 10;
+            $params = '10';
 
             if (str_contains($field, ':')) {
-                [$field, $param] = explode(':', $field);
+                [$field, $params] = explode(':', $field);
             }
-
-            if (!is_numeric($param)) {
-                $this->handleError("Limit {$param} must be numeric.", [
-                    'field' => $field,
-                ]);
-            }
-
-            $param = (int) $param;
 
             if (!$this->fieldExists($field)) {
                 $this->handleError("Field {$field} does not exist.", [
@@ -64,7 +56,13 @@ class FacetParser extends Parser
                 continue;
             }
 
-            $field->aggregation($aggregation, $param);
+            try {
+                $field->aggregation($aggregation, $params);
+            } catch (ParseException $e) {
+                $this->handleError($e->getMessage(), [
+                    'field' => $field->name(),
+                ]);
+            }
         }
 
         return $aggregation;

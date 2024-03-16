@@ -280,9 +280,19 @@ class Text extends Type implements FromRaw
         return $queries;
     }
 
-    public function aggregation(Aggs $aggs, string|int $param): void
+    public function aggregation(Aggs $aggs, string $params): void
     {
-        $aggs->terms($this->name(), $this->filterableName())->size($param);
+        $params = explode(',', $params);
+        $size = $params[0];
+        $order = $params[1] ?? null;
+
+        $aggregation = $aggs->terms($this->name(), $this->filterableName());
+
+        $aggregation->size((int)$size);
+
+        if (in_array($order, ['asc', 'desc'])) {
+            $aggregation->order('_key', $order);
+        }
     }
 
     public function isFacetable(): bool
