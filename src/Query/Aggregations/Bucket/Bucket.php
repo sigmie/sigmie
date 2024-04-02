@@ -17,7 +17,6 @@ abstract class Bucket implements Aggregation
 
     public function __construct(
         protected string $name,
-        protected string $field,
     ) {
     }
 

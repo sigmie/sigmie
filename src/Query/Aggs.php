@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Sigmie\Query;
 
+use Sigmie\Query\Aggregations\Bucket\BucketSelector;
 use Sigmie\Query\Aggregations\Bucket\DateHistogram;
+use Sigmie\Query\Aggregations\Bucket\Filter;
 use Sigmie\Query\Aggregations\Bucket\Global_;
 use Sigmie\Query\Aggregations\Bucket\Histogram;
 use Sigmie\Query\Aggregations\Bucket\Missing;
 use Sigmie\Query\Aggregations\Bucket\Range;
 use Sigmie\Query\Aggregations\Bucket\SignificantText;
+use Sigmie\Query\Aggregations\Bucket\Sort;
 use Sigmie\Query\Aggregations\Bucket\Terms;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Aggregations\Metrics\Avg;
@@ -34,6 +37,44 @@ class Aggs implements AggsInterface
         $this->aggs[] = $aggs;
 
         return $this;
+    }
+
+    public function filter(
+        string $name,
+        string $field,
+        string $term,
+    ): Filter {
+        $aggregation = new Filter($name, $field, $term);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    public function bucketSelector(
+        string $name,
+        array $bucketPath,
+        string $script
+    ): BucketSelector {
+
+        $aggregation = new BucketSelector($name, $bucketPath, $script);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    public function sort(
+        string $name,
+        array $sort,
+        int $size = null,
+        int $from = null,
+    ): Sort {
+        $aggregation = new Sort($name, $sort, $size, $from);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
     }
 
     public function histogram(

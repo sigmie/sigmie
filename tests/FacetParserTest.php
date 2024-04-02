@@ -43,7 +43,7 @@ class FacetParserTest extends TestCase
 
         $parser = new FacetParser($props);
 
-        $aggs = $parser->parse('name:10,asc');
+        $aggs = $parser->parse('name:2,asc');
 
         $res = $this->sigmie->query($indexName, new MatchAll, $aggs)->get();
 
@@ -51,8 +51,8 @@ class FacetParserTest extends TestCase
 
         $this->assertEquals('1', $json['aggregations']['name']['buckets'][0]['key']);
         $this->assertEquals('1.1', $json['aggregations']['name']['buckets'][1]['key']);
-        $this->assertEquals('1.1/2', $json['aggregations']['name']['buckets'][2]['key']);
-        $this->assertEquals('11', $json['aggregations']['name']['buckets'][3]['key']);
+        $this->assertNull($json['aggregations']['name']['buckets'][2]['key'] ?? null);
+        $this->assertNull($json['aggregations']['name']['buckets'][3]['key'] ?? null);
     }
 
     /**
