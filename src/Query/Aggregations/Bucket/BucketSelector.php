@@ -8,7 +8,7 @@ class BucketSelector extends Bucket
 {
     public function __construct(
         protected string $name,
-        protected array $bucketPath,
+        protected array $bucketsPath,
         protected string $script,
     ) {
         parent::__construct($name);
@@ -18,7 +18,7 @@ class BucketSelector extends Bucket
     {
         return [
             "bucket_selector" => [
-                "buckets_path" => $this->bucketPath,
+                "buckets_path" => $this->bucketsPath,
                 "script" => $this->script
             ]
         ];

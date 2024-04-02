@@ -53,11 +53,11 @@ class Aggs implements AggsInterface
 
     public function bucketSelector(
         string $name,
-        array $bucketPath,
+        array $bucketsPath,
         string $script
     ): BucketSelector {
 
-        $aggregation = new BucketSelector($name, $bucketPath, $script);
+        $aggregation = new BucketSelector($name, $bucketsPath, $script);
 
         $this->aggs[] = $aggregation;
 
