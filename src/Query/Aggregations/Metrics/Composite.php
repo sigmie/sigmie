@@ -13,7 +13,9 @@ class Composite extends Bucket
 
     public function __construct(
         protected string $name,
-        protected array $sources
+        protected array $sources,
+        protected int $size = 10,
+        protected null|array $after = null,
     ) {
     }
 
@@ -22,8 +24,13 @@ class Composite extends Bucket
         $value = [
             'composite' => [
                 'sources' => $this->sources,
+                'size' => $this->size,
             ],
         ];
+
+        if ($this->after) {
+            $value['composite']['after'] = (object) $this->after;
+        }
 
         return $value;
     }

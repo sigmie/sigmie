@@ -215,9 +215,13 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
-    public function composite(string $name, array $sources): Composite
-    {
-        $aggregation = new Composite($name, $sources);
+    public function composite(
+        string $name,
+        array $sources,
+        int $size = 10,
+        null|array $after = null,
+    ): Composite {
+        $aggregation = new Composite($name, $sources, $size, $after);
 
         $this->aggs[] = $aggregation;
 
