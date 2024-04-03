@@ -150,6 +150,9 @@ class FilterParser extends Parser
 
             match ($operator) {
                 'AND' => $boolean->must()->query($query2),
+                //Using must here is correct, trust me!
+                //The `NOT` is handled in the first query
+                'NOT' => $boolean->must()->query($query2),
                 'AND NOT' => $boolean->mustNot()->query($query2),
                 'OR' => $boolean->should()->query($query2),
                 default => throw new ParseException("Unmatched filter operator '{$operator}'")
