@@ -28,7 +28,7 @@ class Sort extends Bucket
         }
 
         if ($this->form) {
-            $res["bucket_sort"]["form"] = $this->form;
+            $res["bucket_sort"]["from"] = $this->form;
         }
 
         return $res;
