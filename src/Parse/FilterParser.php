@@ -37,7 +37,7 @@ class FilterParser extends Parser
         // for example the ((emails_sent_count>0) AND (last_activity_label:'click_time'))
         // will change to (emails_sent_count>0 AND last_activity_label:'click_time')
         // $query = preg_replace("/\(([^()]*)\)/", '$1', $query);
-        $query = preg_replace_callback("/\(([^()]*)\)/", function ($matches) {
+        $query = preg_replace_callback("/\(((?:[^()\"']|\"[^\"]*\"|'[^']*')*)\)/", function ($matches) {
             // Check if the match contains OR or AND, indicating it's not a single item
             if (strpos($matches[1], ' OR ') !== false || strpos($matches[1], ' AND ') !== false || strpos($matches[1], ' AND NOT') !== false) {
                 return $matches[0]; // Return the original match with parentheses

@@ -17,6 +17,86 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function fix_dont_replace_parenthesis_in_double_quotes()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->caseSensitiveKeyword('title');
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+        $filter = '(title:["Chief Executive Officer (CEO)"])';
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'title' => 'Chief Executive Officer (CEO)',
+            ])
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse($filter);
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(1, $res->json('hits.hits'));
+    }
+
+    /**
+     * @test
+     */
+    public function fix_dont_replace_parenthesis_in_quotes()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->caseSensitiveKeyword('title');
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+        $filter = "(title:['Chief Executive Officer (CEO)'])";
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'title' => 'Chief Executive Officer (CEO)',
+            ])
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse($filter);
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(1, $res->json('hits.hits'));
+    }
+
+    /**
+     * @test
+     */
     public function fix_ignored_or()
     {
         $indexName = uniqid();
