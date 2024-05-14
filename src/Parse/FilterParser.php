@@ -111,8 +111,6 @@ class FilterParser extends Parser
 
         $filters = $this->parseString($filterString);
 
-        ray($filters);
-
         $bool = $this->apply($filters);
 
         return $bool;
