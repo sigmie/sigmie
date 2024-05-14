@@ -22,12 +22,13 @@ class FilterParserTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->caseSensitiveKeyword('title');
+        $blueprint->caseSensitiveKeyword('job_titles');
+        $blueprint->caseSensitiveKeyword('industry');
 
         $props = $blueprint();
 
         $parser = new FilterParser($props);
-        $filter = '(title:["Chief Executive Officer (CEO)"])';
+        $filter = 'job_titles:["Chief Information Officer (CIO)"] AND industry:["Renewables & Environment"]';
 
         $index = $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -37,7 +38,8 @@ class FilterParserTest extends TestCase
 
         $docs = [
             new Document([
-                'title' => 'Chief Executive Officer (CEO)',
+                'job_titles' => 'Chief Information Officer (CIO)',
+                'industry' => 'Renewables & Environment',
             ])
         ];
 
