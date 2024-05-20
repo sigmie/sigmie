@@ -239,6 +239,13 @@ class FilterParser extends Parser
         [$field, $value] = explode(':', $terms);
         $value = trim($value, '[]');
         $values = explode(',', $value);
+
+        $values = array_filter($values, function ($value) {
+            return $value !== '';
+        });
+
+        // Remove whitespaces from values
+        $values = array_map(fn ($value) => trim($value, ' '), $values);
         // Remove doublue quotes from values
         $values = array_map(fn ($value) => trim($value, '\''), $values);
         // Remove single quotes from values

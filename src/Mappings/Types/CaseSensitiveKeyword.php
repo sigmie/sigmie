@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Base\Contracts\ElasticsearchResponse;
+use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 
@@ -20,5 +22,32 @@ class CaseSensitiveKeyword extends Type
         $queries[] = new Prefix($this->name, $queryString);
 
         return $queries;
+    }
+
+    public function aggregation(Aggs $aggs, string $params): void
+    {
+        $params = explode(',', $params);
+        $size = $params[0];
+        $order = $params[1] ?? null;
+
+        $aggregation = $aggs->terms($this->name(), $this->name());
+
+        $aggregation->size((int)$size);
+
+        if (in_array($order, ['asc', 'desc'])) {
+            $aggregation->order('_key', $order);
+        }
+    }
+
+    public function facets(ElasticsearchResponse $response): null|array
+    {
+        $originalBuckets = $response->json("aggregations.{$this->name()}")['buckets'] ?? [];
+
+        return array_column($originalBuckets, 'doc_count', 'key');
+    }
+
+    public function isFacetable(): bool
+    {
+        return true;
     }
 }

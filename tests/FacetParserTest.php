@@ -16,6 +16,48 @@ class FacetParserTest extends TestCase
     /**
      * @test
      */
+    public function case_sensitive_keyword()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->caseSensitiveKeyword('name');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document(['name' => '1',]),
+            new Document(['name' => '1.1',]),
+            new Document(['name' => '11',]),
+            new Document(['name' => '1.1/2',]),
+            new Document(['name' => 'a',]),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FacetParser($props);
+
+        $aggs = $parser->parse('name:2,asc');
+
+        $res = $this->sigmie->query($indexName, new MatchAll, $aggs)->get();
+
+        $json = $res->json();
+
+        $this->assertEquals('1', $json['aggregations']['name']['buckets'][0]['key']);
+        $this->assertEquals('1.1', $json['aggregations']['name']['buckets'][1]['key']);
+        $this->assertNull($json['aggregations']['name']['buckets'][2]['key'] ?? null);
+        $this->assertNull($json['aggregations']['name']['buckets'][3]['key'] ?? null);
+    }
+
+    /**
+     * @test
+     */
     public function sort_numbers()
     {
         $indexName = uniqid();

@@ -14,6 +14,95 @@ use Sigmie\Testing\TestCase;
 
 class FilterParserTest extends TestCase
 {
+    public function handle_empty_in()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->number('some_id')->integer();
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+        $filter = "some_id:[]";
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'some_id' => 123,
+            ]),
+            new Document([
+                'some_id' => 456,
+            ]),
+            new Document([
+                'some_id' => 789,
+            ])
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse($filter);
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(0, $res->json('hits.hits'));
+    }
+
+    /**
+     * @test
+     */
+    public function fix_trim_in_spaces()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->number('some_id')->integer();
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+        $filter = "some_id:[' 123 ', ' 456 ', '789']";
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'some_id' => 123,
+            ]),
+            new Document([
+                'some_id' => 456,
+            ]),
+            new Document([
+                'some_id' => 789,
+            ])
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse($filter);
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(3, $res->json('hits.hits'));
+    }
+
     /**
      * @test
      */
