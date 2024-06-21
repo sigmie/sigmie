@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use Sigmie\Index\Analysis\TokenFilter\Ngram;
+use Sigmie\Index\Analysis\TokenFilter\Synonyms;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\Contracts\Analyze;
 use Sigmie\Query\Queries\Term\Prefix;
@@ -65,5 +66,12 @@ class Name extends Text implements Analyze
         $queries[] = new MatchBoolPrefix("{$this->name}.{$this->name}_text", $queryString);
 
         return $queries;
+    }
+
+    public function notAllowedFilters()
+    {
+        return [
+            Synonyms::class
+        ];
     }
 }

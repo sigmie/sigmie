@@ -306,4 +306,9 @@ class Text extends Type implements FromRaw
 
         return array_column($originalBuckets, 'doc_count', 'key');
     }
+
+    public function notAllowedFilters()
+    {
+        return [];
+    }
 }

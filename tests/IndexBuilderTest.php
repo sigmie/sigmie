@@ -63,6 +63,13 @@ class IndexBuilderTest extends TestCase
 
         $greekBuilder
             ->properties($blueprint)
+            ->stemming([
+                ['go', ['going']]
+            ])
+            ->synonyms([
+                ['ΑΓΑΣΙΑ', 'ΑΓΑΣΙΑ ΚΑΙ ΑΓΑΣΙΑ ΚΑΙ ΑΓΑΣΙΑ'],
+            ])
+            ->stopwords(['ΑΓΑΣΙΑ', 'ΑΓΑΣΙΑ ΚΑΙ ΑΓΑΣΙΑ ΚΑΙ ΑΓΑΣΙΑ'])
             ->greekLowercase()
             ->greekStemmer()
             ->greekStopwords()
