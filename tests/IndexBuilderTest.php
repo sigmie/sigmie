@@ -55,16 +55,25 @@ class IndexBuilderTest extends TestCase
     {
         $alias = uniqid();
 
+        $blueprint = new NewProperties;
+        $blueprint->name('name');
+
         /** @var GreekBuilder */
         $greekBuilder = $this->sigmie->newIndex($alias)->language(new Greek());
 
         $greekBuilder
+            ->properties($blueprint)
             ->greekLowercase()
             ->greekStemmer()
             ->greekStopwords()
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
+
+            $index->assertAnalyzerHasFilter('name_field_analyzer', 'greek_stopwords');
+            $index->assertAnalyzerHasFilter('name_field_analyzer', 'greek_stemmer');
+            $index->assertAnalyzerHasFilter('name_field_analyzer', 'greek_lowercase');
+
             $index->assertAnalyzerHasFilter('default', 'greek_stopwords');
             $index->assertAnalyzerHasFilter('default', 'greek_stemmer');
             $index->assertAnalyzerHasFilter('default', 'greek_lowercase');
@@ -562,7 +571,7 @@ class IndexBuilderTest extends TestCase
             ->twoWaySynonyms([
                 ['treasure', 'gem', 'gold', 'price'],
                 ['friend', 'buddy', 'partner'],
-            ], name: 'sigmie_two_way_synonyms', )
+            ], name: 'sigmie_two_way_synonyms',)
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -670,7 +679,7 @@ class IndexBuilderTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->oneWaySynonyms([
                 ['ipod', ['i-pod', 'i pod']],
-            ], name: 'sigmie_one_way_synonyms', )
+            ], name: 'sigmie_one_way_synonyms',)
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {

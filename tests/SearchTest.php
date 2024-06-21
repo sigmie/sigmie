@@ -67,6 +67,7 @@ class SearchTest extends TestCase
         $blueprint->name('name');
 
         $index = $this->sigmie->newIndex($indexName)
+            ->trim()
             ->properties($blueprint)
             ->create();
 

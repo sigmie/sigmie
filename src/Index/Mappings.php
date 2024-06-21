@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Index;
 
+use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Contracts\CustomAnalyzer;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
@@ -34,8 +35,14 @@ class Mappings implements MappingsInterface
     {
         $result = $this->properties->textFields()
             ->filter(fn (Type $field) => $field instanceof Text)
-            ->filter(fn (Text $field) => ! is_null($field->analyzer()))
-            ->mapToDictionary(fn (Text $field) => [$field->analyzer()->name() => $field->analyzer()]);
+            ->filter(fn (Text $field) => !is_null($field->analyzer()))
+            ->mapToDictionary(fn (Text $field) => [$field->analyzer()->name() => $field->analyzer()])
+            ->map(function (Analyzer $analyzer) {
+
+                $analyzer->addFilters($this->defaultAnalyzer->filters());
+
+                return $analyzer;
+            });
 
         return $result->add($this->defaultAnalyzer)->toArray();
     }
