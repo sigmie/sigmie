@@ -42,6 +42,10 @@ class Mappings implements MappingsInterface
 
                 $analyzer = $field->analyzer();
 
+                if ($analyzer->name() === 'autocomplete_analyzer') {
+                    return [$analyzer->name() => $analyzer];
+                }
+
                 $filters = array_filter($this->defaultAnalyzer->filters(), fn (TokenFilter $filter) =>
                 !in_array($filter::class, $field->notAllowedFilters()));
 
