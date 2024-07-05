@@ -14,6 +14,67 @@ use Sigmie\Testing\TestCase;
 
 class FilterParserTest extends TestCase
 {
+    /**
+     * @test
+     */
+    public function parse_geo_distance()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->geoPoint('location');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'location' => [
+                    'lat' => 51.49,
+                    'lon' => 13.77,
+                ],
+            ]),
+            new Document([
+                'location' => [
+                    'lat' => 51.49,
+                    'lon' => 13.77,
+                ],
+            ]),
+            new Document([
+                'location' => [
+                    'lat' => 60.15,
+                    'lon' => -164.10,
+                ],
+            ])
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse('location:1km[51.49,13.77]');
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(2, $res->json('hits.hits'));
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse('location:200000mi[51.49,13.77]');
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(3, $res->json('hits.hits'));
+    }
+
+    /**
+     * @test
+     */
     public function handle_empty_in()
     {
         $indexName = uniqid();

@@ -11,6 +11,7 @@ use Sigmie\Query\Queries\Term\IDs;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Term\Terms;
+use Sigmie\Query\Queries\GeoDistance;
 
 class FilterParser extends Parser
 {
@@ -32,6 +33,7 @@ class FilterParser extends Parser
         $query = preg_replace_callback('/\s+\)(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)/', function ($matches) {
             return ')'; // Replace closing parenthesis with spaces with just a closing parenthesis
         }, $query);
+
 
         // Remove all single items in parenthesis
         // for example the ((emails_sent_count>0) AND (last_activity_label:'click_time'))
@@ -174,6 +176,7 @@ class FilterParser extends Parser
             preg_match('/\w+:\[.*\]/', $string) => $this->handleIn($string),
             preg_match('/\w+:".*"/', $string) => $this->handleTerm($string),
             preg_match('/\w+:\'.*\'/', $string) => $this->handleTerm($string),
+            preg_match('/^\w+:\d+(km|m|cm|mm|mi|yd|ft|in|nmi)\[\d+\.\d+,\d+\.\d+\]/', $string) => $this->handleGeo($string),
             default => null
         };
 
@@ -184,6 +187,19 @@ class FilterParser extends Parser
         $this->handleError("Filter string '{$string}' couldn't be parsed.");
 
         return new MatchNone;
+    }
+
+    public function handleGeo(string $geo)
+    {
+        [$field, $distanceWithCoordinates] = explode(':', $geo);
+
+        preg_match('/(\d+km|\d+m|\d+cm|\d+mm|\d+mi|\d+yd|\d+ft|\d+in|\d+nmi)\[(\d+\.\d+),(\d+\.\d+)\]/', $distanceWithCoordinates, $matches);
+
+        $distance = $matches[1];
+        $latitude = $matches[2];
+        $longitude = $matches[3];
+
+        return new GeoDistance($field, $distance, $latitude, $longitude);
     }
 
     public function handleRange(string $range)

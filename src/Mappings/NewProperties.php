@@ -12,6 +12,7 @@ use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\Email;
+use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\HTML;
 use Sigmie\Mappings\Types\Id;
 use Sigmie\Mappings\Types\Keyword;
@@ -68,6 +69,15 @@ class NewProperties
         $this->fields->add($field);
 
         return $field->unstructuredText();
+    }
+
+    public function geoPoint(string $name): GeoPoint
+    {
+        $field = new GeoPoint($name);
+
+        $this->fields->add($field);
+
+        return $field;
     }
 
     public function searchableNumber(string $name): SearchableNumber
