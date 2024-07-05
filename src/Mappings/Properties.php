@@ -16,6 +16,7 @@ use Sigmie\Index\Analysis\TokenFilter\Trim;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Date;
+use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
@@ -109,6 +110,7 @@ class Properties extends Type implements ArrayAccess
                 $value['type'] === 'float' => (new Number($fieldName))->float(),
                 $value['type'] === 'scaled_float' => (new Number($fieldName))->scaledFloat(),
                 $value['type'] === 'boolean' => new Boolean($fieldName),
+                $value['type'] === 'geo_point' => new GeoPoint($fieldName),
                 $value['type'] === 'date' => new Date($fieldName),
                 $value['type'] === 'object' => new Object_($fieldName),
                 default => throw new Exception('Field ' . $value['type'] . ' couldn\'t be mapped')
