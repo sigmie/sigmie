@@ -17,6 +17,64 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function parse_exception_for_space_between_filters()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->geoPoint('location');
+        $blueprint->bool('active');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'location' => [
+                    'lat' => 51.49,
+                    'lon' => 13.77,
+                ],
+                'active' => true,
+            ]),
+            new Document([
+                'location' => [
+                    'lat' => 51.49,
+                    'lon' => 13.77,
+                ],
+                'active' => true,
+            ]),
+            new Document([
+                'location' => [
+                    'lat' => 51.49,
+                    'lon' => 13.77,
+                ],
+                'active' => false,
+            ])
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse('location:1km[51.49,13.77] AND is:active');
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(2, $res->json('hits.hits'));
+
+        $this->expectException(ParseException::class);
+
+        $query = $parser->parse('location:1km[51.49,13.77] is:active');
+    }
+
+    /**
+     * @test
+     */
     public function parse_geo_distance()
     {
         $indexName = uniqid();

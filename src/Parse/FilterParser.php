@@ -126,12 +126,21 @@ class FilterParser extends Parser
         $operator = $filters['operator'] ?? $operator;
         $values = $filters['values'] ?? null;
 
+
         if (is_string($filter) && str_starts_with($filter, 'NOT')) {
             $operator = 'NOT';
             $filter = trim($filter, 'NOT');
             $filter = trim($filter);
             $query1 = $this->stringToQueryClause($filter);
-        } elseif (is_string($filter)) {
+        }
+        if (is_string($filter)) {
+
+            // Throw an error if there's a space in the filter string
+            // and it's not in a quote
+            if (preg_match('/\s(?!AND|OR|NOT|AND NOT)(?=(?:[^\'"]|\'[^\']*\'|"[^"]*")*$)/', $filter) && !preg_match('/[\'"].*\s.*[\'"]/', $filter)) {
+                throw new ParseException("Invalid filter string: '{$filter}'");
+            }
+
             $query1 = $this->stringToQueryClause($filter);
         } else {
             $query1 = $this->apply($filter, $operator);
