@@ -12,6 +12,7 @@ use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Term\Terms;
 use Sigmie\Query\Queries\GeoDistance;
+use Sigmie\Query\Queries\Term\Exists;
 
 class FilterParser extends Parser
 {
@@ -177,6 +178,7 @@ class FilterParser extends Parser
     {
         $query = match (1) {
             preg_match('/^is:[a-z_A-Z0-9]+/', $string) => $this->handleIs($string),
+            preg_match('/^has:[a-z_A-Z0-9]+/', $string) => $this->handleHas($string),
             preg_match('/^is_not:[a-z_A-Z0-9]+/', $string) => $this->handleIsNot($string),
             preg_match('/^(\w+)([<>]=?)(.+)/', $string) => $this->handleRange($string),
             preg_match('/^(\w+)([<>]=?)(\'.+\')/', $string) => $this->handleRange($string),
@@ -245,6 +247,17 @@ class FilterParser extends Parser
         }
 
         return new Term($field, true);
+    }
+
+    public function handleHas(string $has)
+    {
+        [, $field] = explode(':', $has);
+
+        if (is_null($field)) {
+            return;
+        }
+
+        return new Exists($field);
     }
 
     public function handleIsNot(string $is)

@@ -17,6 +17,92 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function has_not_filter()
+    {
+        $mappings = new Properties();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name')->unstructuredText();
+
+        $props = $blueprint();
+        $parser = new FilterParser($props);
+        $boolean = $parser->parse('NOT has:name');
+
+        $indexName = uniqid();
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'name' => null,
+            ]),
+            new Document([
+                'name' => 'Arthur',
+            ]),
+            new Document([
+                'name' => 'Dory',
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $res = $this->sigmie->query($indexName, $boolean)->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertCount(1, $hits);
+    }
+
+    /**
+     * @test
+     */
+    public function has_filter()
+    {
+        $mappings = new Properties();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name')->unstructuredText();
+
+        $props = $blueprint();
+        $parser = new FilterParser($props);
+        $boolean = $parser->parse('has:name');
+
+        $indexName = uniqid();
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'name' => null,
+            ]),
+            new Document([
+                'name' => 'Arthur',
+            ]),
+            new Document([
+                'name' => 'Dory',
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $res = $this->sigmie->query($indexName, $boolean)->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertCount(2, $hits);
+    }
+
+    /**
+     * @test
+     */
     public function parse_exception_for_space_between_filters()
     {
         $indexName = uniqid();
