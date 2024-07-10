@@ -187,7 +187,7 @@ class FilterParser extends Parser
             preg_match('/\w+:\[.*\]/', $string) => $this->handleIn($string),
             preg_match('/\w+:".*"/', $string) => $this->handleTerm($string),
             preg_match('/\w+:\'.*\'/', $string) => $this->handleTerm($string),
-            preg_match('/^\w+:\d+(km|m|cm|mm|mi|yd|ft|in|nmi)\[\d+\.\d+,\d+\.\d+\]/', $string) => $this->handleGeo($string),
+            preg_match('/^\w+:\d+(km|m|cm|mm|mi|yd|ft|in|nmi)\[\-?\d+(\.\d+)?\,\-?\d+(\.\d+)?\]/', $string) => $this->handleGeo($string),
             default => null
         };
 
@@ -202,13 +202,16 @@ class FilterParser extends Parser
 
     public function handleGeo(string $geo)
     {
-        [$field, $distanceWithCoordinates] = explode(':', $geo);
+        preg_match(
+            '/(?P<field>\w+):(?P<distance>\d+)(?P<unit>km|m|cm|mm|mi|yd|ft|in|nmi)\[(?P<latitude>-?\d+(\.\d+)?),(?P<longitude>-?\d+(\.\d+)?)\]/',
+            $geo,
+            $matches
+        );
 
-        preg_match('/(\d+km|\d+m|\d+cm|\d+mm|\d+mi|\d+yd|\d+ft|\d+in|\d+nmi)\[(\d+\.\d+),(\d+\.\d+)\]/', $distanceWithCoordinates, $matches);
-
-        $distance = $matches[1];
-        $latitude = $matches[2];
-        $longitude = $matches[3];
+        $field = $matches['field'];
+        $distance = $matches['distance'];
+        $latitude = $matches['latitude'];
+        $longitude = $matches['longitude'];
 
         return new GeoDistance($field, $distance, $latitude, $longitude);
     }

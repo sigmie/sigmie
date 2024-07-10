@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use PHPUnit\Framework\ExpectationFailedException;
 use RuntimeException;
+use SebastianBergmann\RecursionContext\InvalidArgumentException;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
@@ -17,8 +19,44 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function location_parsing()
+    {
+        $filterStrings = [
+            "location:70km[52.31,8.61]",
+            "location:70km[52,8]",
+            "location:70km[52,8.61]",
+            "location:70km[52.31,8]",
+            "location:100m[40.7128,-74.0060]",
+            "location:5mi[-33.8688,151.2093]",
+            "location:2km[48.8566,2.3522]",
+            "location:500yd[35.6762,139.6503]",
+            "location:1000ft[55.7558,37.6173]",
+            "location:10nmi[-22.9068,-43.1729]",
+            "location:50cm[-1.2921,36.8219]",
+            "location:3in[41.9028,12.4964]",
+        ];
+
+        $mappings = new Properties();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name')->unstructuredText();
+
+        $props = $blueprint();
+        $parser = new FilterParser($props);
+
+        foreach ($filterStrings as $filterString) {
+            $boolean = $parser->parse($filterString);
+
+            $this->assertTrue(true);
+        }
+    }
+
+    /**
+     * @test
+     */
     public function has_not_filter()
     {
+
         $mappings = new Properties();
 
         $blueprint = new NewProperties;
@@ -209,7 +247,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('location:200000mi[51.49,13.77]');
+        $query = $parser->parse('location:2000000000mi[51.49,13.77]');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
