@@ -171,7 +171,10 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         /** @var EnglishBuilder */
-        $englishBuilder = $this->sigmie->newIndex($alias)->language(new English());
+        $englishBuilder = $this->sigmie->newIndex($alias)
+            ->shards(4)
+            ->replicas(4)
+            ->language(new English());
 
         $englishBuilder
 
@@ -187,6 +190,9 @@ class IndexBuilderTest extends TestCase
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
+            $index->assertShards(4);
+            $index->assertReplicas(4);
+
             $index->assertAnalyzerHasFilter('default', 'english_lowercase');
             $index->assertAnalyzerHasFilter('default', 'english_stemmer');
             $index->assertAnalyzerHasFilter('default', 'english_stemmer_porter_2');

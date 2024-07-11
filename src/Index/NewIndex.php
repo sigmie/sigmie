@@ -95,6 +95,8 @@ class NewIndex
         $builder = $language->builder($this->getElasticsearchConnection());
 
         $builder->alias($this->alias);
+        $builder->shards($this->shards);
+        $builder->replicas($this->replicas);
 
         return  $builder;
     }
