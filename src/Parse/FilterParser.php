@@ -213,6 +213,10 @@ class FilterParser extends Parser
         $latitude = $matches['latitude'];
         $longitude = $matches['longitude'];
 
+        if (preg_match('/^0(?:km|m|cm|mm|mi|yd|ft|in|nmi)$/', $distance)) {
+            return new MatchNone;
+        }
+
         return new GeoDistance($field, $distance, $latitude, $longitude);
     }
 

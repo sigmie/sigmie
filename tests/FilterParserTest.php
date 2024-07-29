@@ -19,6 +19,44 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function parse_location_filter_with_zero_distance()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->geoPoint('location');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'location' => [
+                    'lat' => 51.16,
+                    'lon' => 13.49,
+                ],
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse('location:0km[51.16,13.49]');
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(0, $res->json('hits.hits'));
+    }
+
+    /**
+     * @test
+     */
     public function parse_location_filter()
     {
         $indexName = uniqid();
