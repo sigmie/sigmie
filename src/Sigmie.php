@@ -29,6 +29,8 @@ class Sigmie
 {
     use IndexActions;
 
+    public const DATE_FORMAT = 'Y-m-d H:i:s.u';
+
     protected string $application = '';
 
     public function __construct(Connection $httpConnection)
