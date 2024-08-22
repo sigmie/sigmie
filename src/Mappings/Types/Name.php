@@ -53,7 +53,8 @@ class Name extends Text implements Analyze
     {
         return [
             $this->name,
-            "{$this->name}.{$this->name}_text",
+            // "{$this->name}.{$this->name}_text",
+            $this->parentName ? "{$this->parentName}.{$this->name}.{$this->name}_text" : "{$this->name}.{$this->name}_text"
         ];
     }
 
@@ -61,7 +62,7 @@ class Name extends Text implements Analyze
     {
         $queries = [];
 
-        $prefixField = $this->parentName ? "{$this->parentName}.{$this->name}.{$this->name}_text" : "{$this->name}_text";
+        $prefixField = $this->parentName ? "{$this->parentName}.{$this->name}.{$this->name}_text" : "{$this->name}.{$this->name}_text";
 
         $queries[] = new Match_($this->name, $queryString);
         $queries[] = new MatchPhrasePrefix($prefixField, $queryString);
