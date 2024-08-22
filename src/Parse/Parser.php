@@ -7,6 +7,8 @@ namespace Sigmie\Parse;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Mappings\Types\Nested;
+use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\Contracts\Parser as ParserInterface;
 
@@ -77,29 +79,29 @@ abstract class Parser implements ParserInterface
         return $field->sortableName();
     }
 
-    protected function handleFieldName(string $field): null|string
+    protected function handleFieldName(string $name): null|string
     {
-        if (! $this->fieldExists($field)) {
-            $this->handleError("Field {$field} does not exist.", [
-                'field' => $field,
+        if (! $this->fieldExists($name)) {
+            $this->handleError("Field {$name} does not exist.", [
+                'field' => $name,
             ]);
 
             return null;
         }
 
-        if (! $this->isTextOrKeywordField($field)) {
-            return $field;
+        if (! $this->isTextOrKeywordField($name)) {
+            return $name;
         }
 
-        $field = $this->properties[$field];
+        $field = $this->properties->getNestedField($name);
 
         if ($field instanceof Keyword) {
-            return $field->name;
+            return $name;
         }
 
         if (! $field->isFilterable()) {
-            $this->handleError("Field {$field->name} is not filterable.", [
-                'field' => $field->name,
+            $this->handleError("Field {$name} is not filterable.", [
+                'field' => $name,
             ]);
 
             return null;
@@ -113,14 +115,29 @@ abstract class Parser implements ParserInterface
         return $this->errors;
     }
 
+    protected function getNestedField(string $field)
+    {
+        $fields = explode('.', $field);
+
+        $firstField = $fields[0];
+
+        $type = $this->properties[$firstField];
+
+        while ($type instanceof Nested || $type instanceof Object_) {
+            $type = $type->properties[$firstField];
+        }
+
+        return $type;
+    }
+
     protected function fieldExists(string $field): bool
     {
-        return isset($this->properties[$field]);
+        return $this->properties->getNestedField($field) !== null;
     }
 
     protected function isTextOrKeywordField(string $field): bool
     {
-        $field = $this->properties[$field];
+        $field = $this->properties->getNestedField($field);
 
         return $field instanceof Text || $field instanceof Keyword;
     }

@@ -177,17 +177,17 @@ class FilterParser extends Parser
     protected function stringToQueryClause(string $string): QueryClause
     {
         $query = match (1) {
-            preg_match('/^is:[a-z_A-Z0-9]+/', $string) => $this->handleIs($string),
-            preg_match('/^has:[a-z_A-Z0-9]+/', $string) => $this->handleHas($string),
-            preg_match('/^is_not:[a-z_A-Z0-9]+/', $string) => $this->handleIsNot($string),
-            preg_match('/^(\w+)([<>]=?)(.+)/', $string) => $this->handleRange($string),
-            preg_match('/^(\w+)([<>]=?)(\'.+\')/', $string) => $this->handleRange($string),
-            preg_match('/^(\w+)([<>]=?)(\".+\")/', $string) => $this->handleRange($string),
+            preg_match('/^is:[a-z_A-Z0-9.]+/', $string) => $this->handleIs($string),
+            preg_match('/^has:[a-z_A-Z0-9.]+/', $string) => $this->handleHas($string),
+            preg_match('/^is_not:[a-z_A-Z0-9.]+/', $string) => $this->handleIsNot($string),
+            preg_match('/^([\w\.]+)([<>]=?)(.+)/', $string) => $this->handleRange($string),
+            preg_match('/^([\w\.]+)([<>]=?)(\'.+\')/', $string) => $this->handleRange($string),
+            preg_match('/^([\w\.]+)([<>]=?)(\".+\")/', $string) => $this->handleRange($string),
             preg_match('/^_id:[a-z_A-Z0-9]+/', $string) => $this->handleIDs($string),
-            preg_match('/\w+:\[.*\]/', $string) => $this->handleIn($string),
-            preg_match('/\w+:".*"/', $string) => $this->handleTerm($string),
-            preg_match('/\w+:\'.*\'/', $string) => $this->handleTerm($string),
-            preg_match('/^\w+:\d+(km|m|cm|mm|mi|yd|ft|in|nmi)\[\-?\d+(\.\d+)?\,\-?\d+(\.\d+)?\]/', $string) => $this->handleGeo($string),
+            preg_match('/[\w\.]+:\[.*\]/', $string) => $this->handleIn($string),
+            preg_match('/[\w\.]+:".*"/', $string) => $this->handleTerm($string),
+            preg_match('/[\w\.]+:\'.*\'/', $string) => $this->handleTerm($string),
+            preg_match('/^[\w\.]+:\d+(km|m|cm|mm|mi|yd|ft|in|nmi)\[\-?\d+(\.\d+)?\,\-?\d+(\.\d+)?\]/', $string) => $this->handleGeo($string),
             default => null
         };
 
@@ -222,7 +222,7 @@ class FilterParser extends Parser
 
     public function handleRange(string $range)
     {
-        preg_match('/^(\w+)([<>]=?)(("|\')?.+("|\')?)/', $range, $matches);
+        preg_match('/^([\w\.]+)([<>]=?)(("|\')?.+("|\')?)/', $range, $matches);
 
         $field = $matches[1];
         $operator = $matches[2];

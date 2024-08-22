@@ -16,57 +16,53 @@ use Sigmie\Testing\TestCase;
 
 class FilterParserTest extends TestCase
 {
-    // /**
-    //  * @test
-    //  */
-    // public function in_filter()
-    // {
-    //     $indexName = uniqid();
+    /**
+     * @test
+     */
+    public function parse_nested_object_filter()
+    {
+        $indexName = uniqid();
 
-    //     $blueprint = new NewProperties;
-    //     $blueprint->keyword('zip_1');
-    //     $blueprint->keyword('zip_2');
-    //     $blueprint->keyword('zip_3');
-    //     $blueprint->keyword('zip_4');
-    //     $blueprint->keyword('zip_5');
+        $blueprint = new NewProperties;
+        $blueprint->object('contact', function (NewProperties $props) {
+            $props->geoPoint('location');
+            $props->bool('active');
+            $props->number('points')->integer();
+            $props->keyword('languages');
+        });
 
-    //     $index = $this->sigmie->newIndex($indexName)
-    //         ->properties($blueprint)
-    //         ->create();
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
 
-    //     $index = $this->sigmie->collect($indexName, true);
+        $index = $this->sigmie->collect($indexName, true);
 
-    //     $docs = [
-    //         new Document([
-    //             'zip_1' => '46031',
-    //             'zip_2' => '44009',
-    //             'zip_3' => '46200',
-    //             'zip_4' => '44017',
-    //             'zip_5' => '45500',
-    //         ]),
-    //         new Document([
-    //             'zip_1' => '46033',
-    //             'zip_2' => '44009',
-    //             'zip_3' => '46200',
-    //             'zip_4' => '44017',
-    //             'zip_5' => '45500',
-    //         ]),
-    //     ];
+        $docs = [
+            new Document([
+                'contact' => [
+                    'active' => true,
+                    'points' => 100,
+                    'languages' => ['en', 'de'],
+                    'location' => [
+                        'lat' => 51.16,
+                        'lon' => 13.49,
+                    ],
+                ],
+            ]),
+        ];
 
-    //     $index->merge($docs);
+        $index->merge($docs);
 
-    //     $props = $blueprint();
+        $props = $blueprint();
 
-    //     $parser = new FilterParser($props);
+        $parser = new FilterParser($props);
 
-    //     $query = $parser->parse("NOT (NOT zip_1:['46031'])");
+        $query = $parser->parse('contact.location:0km[51.16,13.49] AND is:contact.active');
 
-    //     $res = $this->sigmie->query($indexName, $query)->get();
+        $res = $this->sigmie->query($indexName, $query)->get();
 
-    //     $this->assertCount(1, $res->json('hits.hits'));
-    //     $this->assertEquals('46031', $res->json('hits.hits')[0]['_source']['zip_1']);
-    // }
-
+        $this->assertCount(0, $res->json('hits.hits'));
+    }
 
     /**
      * @test
@@ -1193,5 +1189,254 @@ class FilterParserTest extends TestCase
         $this->assertCount(2, $hits);
         $this->assertNotEquals('Sports', $hits[0]['_source']['category']);
         $this->assertNotEquals('Sports', $hits[1]['_source']['category']);
+    }
+
+    /**
+     * @test
+     */
+    public function nested_object_is_active_filter()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->object('contact', function (NewProperties $props) {
+            $props->bool('is_active');
+            $props->text('name')->unstructuredText();
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'contact' => [
+                    'is_active' => true,
+                    'name' => 'John Doe',
+                ],
+            ]),
+            new Document([
+                'contact' => [
+                    'is_active' => false,
+                    'name' => 'Jane Doe',
+                ],
+            ]),
+            new Document([
+                'contact' => [
+                    'is_active' => true,
+                    'name' => 'Alice',
+                ],
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse('is:contact.is_active');
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertCount(2, $hits);
+        $this->assertTrue($hits[0]['_source']['contact']['is_active']);
+        $this->assertTrue($hits[1]['_source']['contact']['is_active']);
+    }
+
+    /**
+     * @test
+     */
+    public function nested_object_is_not_active_filter()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->object('contact', function (NewProperties $props) {
+            $props->bool('is_active');
+            $props->text('name')->unstructuredText();
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'contact' => [
+                    'is_active' => true,
+                    'name' => 'John Doe',
+                ],
+            ]),
+            new Document([
+                'contact' => [
+                    'is_active' => false,
+                    'name' => 'Jane Doe',
+                ],
+            ]),
+            new Document([
+                'contact' => [
+                    'is_active' => true,
+                    'name' => 'Alice',
+                ],
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse('is_not:contact.is_active');
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertCount(1, $hits);
+        $this->assertFalse($hits[0]['_source']['contact']['is_active']);
+    }
+
+    /**
+     * @test
+     */
+    public function nested_object_name_filter()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->object('contact', function (NewProperties $props) {
+            $props->bool('is_active');
+            $props->name('name');
+            $props->address();
+            $props->caseSensitiveKeyword('code');
+            $props->category();
+            $props->date('created_at');
+            $props->email();
+            $props->geoPoint('location');
+            $props->searchableNumber('searchable_number');
+            $props->title('title');
+            $props->longText('long_text');
+            $props->number('number');
+            $props->tags('tags');
+            $props->price('price');
+            $props->html('html');
+            $props->bool('is_active');
+            $props->id('id');
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'contact' => [
+                    'is_active' => true,
+                    'name' => 'John Doe',
+                    'address' => '123 Main St',
+                    'code' => 'A1B2C3',
+                    'category' => 'Employee',
+                    'created_at' => '2023-09-07T00:00:00.000000Z',
+                    'email' => 'john.doe@example.com',
+                    'location' => [
+                        'lat' => 40.7128,
+                        'lon' => -74.0060
+                    ],
+                    'searchable_number' => 12345,
+                    'title' => 'Mr.',
+                    'long_text' => 'This is a long text field.',
+                    'number' => 42,
+                    'tags' => ['tag1', 'tag2'],
+                    'price' => 99.99,
+                    'html' => '<p>Some HTML content</p>',
+                    'is_active' => true,
+                    'id' => '1',
+                ],
+            ]),
+            new Document([
+                'contact' => [
+                    'is_active' => false,
+                    'name' => 'Jane Doe',
+                    'address' => '456 Elm St',
+                    'code' => 'D4E5F6',
+                    'category' => 'Manager',
+                    'created_at' => '2023-09-08T00:00:00.000000Z',
+                    'email' => 'jane.doe@example.com',
+                    'location' => [
+                        'lat' => 34.0522,
+                        'lon' => -118.2437
+                    ],
+                    'searchable_number' => 67890,
+                    'title' => 'Ms.',
+                    'long_text' => 'This is another long text field.',
+                    'number' => 84,
+                    'tags' => ['tag3', 'tag4'],
+                    'price' => 199.99,
+                    'html' => '<p>Another HTML content</p>',
+                    'id' => '2',
+                ],
+            ]),
+            new Document([
+                'contact' => [
+                    'is_active' => true,
+                    'name' => 'Alice',
+                    'address' => '789 Oak St',
+                    'code' => 'G7H8I9',
+                    'category' => 'Intern',
+                    'created_at' => '2023-09-09T00:00:00.000000Z',
+                    'email' => 'alice@example.com',
+                    'location' => [
+                        'lat' => 37.7749,
+                        'lon' => -122.4194
+                    ],
+                    'searchable_number' => 54321,
+                    'title' => 'Ms.',
+                    'long_text' => 'This is yet another long text field.',
+                    'number' => 21,
+                    'tags' => ['tag5', 'tag6'],
+                    'price' => 299.99,
+                    'html' => '<p>Yet another HTML content</p>',
+                    'id' => '3',
+                ],
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse('is:contact.is_active AND contact.name:"Alice" AND contact.address:"789 Oak St" AND contact.code:"G7H8I9" AND contact.category:"Intern" AND contact.email:"alice@example.com" AND contact.searchable_number:\'54321\' AND contact.title:"Ms." AND contact.number:\'21\' AND contact.price:\'299.99\' AND contact.id:"3"');
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertCount(1, $hits);
+        $this->assertEquals(true, $hits[0]['_source']['contact']['is_active']);
+        $this->assertEquals('Alice', $hits[0]['_source']['contact']['name']);
+        $this->assertEquals('789 Oak St', $hits[0]['_source']['contact']['address']);
+        $this->assertEquals('G7H8I9', $hits[0]['_source']['contact']['code']);
+        $this->assertEquals('Intern', $hits[0]['_source']['contact']['category']);
+        $this->assertEquals('2023-09-09T00:00:00.000000Z', $hits[0]['_source']['contact']['created_at']);
+        $this->assertEquals('alice@example.com', $hits[0]['_source']['contact']['email']);
+        $this->assertEquals(37.7749, $hits[0]['_source']['contact']['location']['lat']);
+        $this->assertEquals(-122.4194, $hits[0]['_source']['contact']['location']['lon']);
+        $this->assertEquals(54321, $hits[0]['_source']['contact']['searchable_number']);
+        $this->assertEquals('Ms.', $hits[0]['_source']['contact']['title']);
+        $this->assertEquals('This is yet another long text field.', $hits[0]['_source']['contact']['long_text']);
+        $this->assertEquals(21, $hits[0]['_source']['contact']['number']);
+        $this->assertEquals(['tag5', 'tag6'], $hits[0]['_source']['contact']['tags']);
+        $this->assertEquals(299.99, $hits[0]['_source']['contact']['price']);
+        $this->assertEquals('<p>Yet another HTML content</p>', $hits[0]['_source']['contact']['html']);
+        $this->assertEquals('3', $hits[0]['_source']['contact']['id']);
     }
 }

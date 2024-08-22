@@ -179,12 +179,20 @@ class Text extends Type implements FromRaw
 
     public function sortableName(): null|string
     {
-        return (!$this->sortable) ? null : "{$this->name}.sortable";
+        if (is_null($this->parentName)) {
+            return (!$this->sortable) ? null : "{$this->name}.sortable";
+        }
+
+        return (!$this->sortable) ? null : "{$this->parentName}.{$this->name}.sortable";
     }
 
     public function filterableName(): null|string
     {
-        return (is_null($this->raw)) ? null : "{$this->name}.{$this->raw}";
+        if (is_null($this->parentName)) {
+            return (is_null($this->raw)) ? null : "{$this->name}.{$this->raw}";
+        }
+
+        return (is_null($this->raw)) ? null : "{$this->parentName}.{$this->name}.{$this->raw}";
     }
 
     public function searchAsYouType(Analyzer $analyzer = null): self

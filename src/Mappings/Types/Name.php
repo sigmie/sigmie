@@ -42,7 +42,7 @@ class Name extends Text implements Analyze
 
         $newAnalyzer
             ->tokenizeOnWhitespaces()
-            ->tokenFilter(new Ngram("{$this->name}_ngram", $this->minGrams, $this->maxGrams))
+            ->tokenFilter(new Ngram("{$this->parentName}{$this->name}_ngram", $this->minGrams, $this->maxGrams))
             // ->truncate($this->maxGramms)
             ->lowercase();
 

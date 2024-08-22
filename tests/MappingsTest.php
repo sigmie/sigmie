@@ -39,9 +39,39 @@ class MappingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
+        $blueprint->name('name');
+        $blueprint->address();
+        $blueprint->caseSensitiveKeyword('code');
+        $blueprint->category();
+        $blueprint->date('created_at');
+        $blueprint->email();
+        $blueprint->geoPoint('location');
+        $blueprint->searchableNumber('searchable_number');
+        $blueprint->title('title');
+        $blueprint->longText('long_text');
+        $blueprint->number('number');
+        $blueprint->tags('tags');
+        $blueprint->price('price');
+        $blueprint->html('html');
+        $blueprint->bool('is_active');
+        $blueprint->id('id');
         $blueprint->object('contact', function (NewProperties $props) {
             $props->name('name');
-            $props->keyword('email');
+            $props->address();
+            $props->caseSensitiveKeyword('code');
+            $props->category();
+            $props->date('created_at');
+            $props->email();
+            $props->geoPoint('location');
+            $props->searchableNumber('searchable_number');
+            $props->title('title');
+            $props->longText('long_text');
+            $props->number('number');
+            $props->tags('tags');
+            $props->price('price');
+            $props->html('html');
+            $props->bool('is_active');
+            $props->id('id');
         });
 
         $index = $this->sigmie
@@ -54,7 +84,7 @@ class MappingsTest extends TestCase
         $this->assertInstanceOf(Object_::class, $props['contact']);
 
         $this->assertInstanceOf(Text::class, $props['contact']->properties['name']);
-        $this->assertInstanceOf(Keyword::class, $props['contact']->properties['email']);
+        $this->assertInstanceOf(Text::class, $props['contact']->properties['email']);
     }
 
     /**

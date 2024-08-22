@@ -190,4 +190,34 @@ class Properties extends Type implements ArrayAccess
             return [$this->name() => ['properties' => $fields]];
         }
     }
+
+    public function getNestedField(string $fieldName)
+    {
+        $fields = explode('.', $fieldName);
+
+        $firstField = $fields[0];
+
+        if (! isset($this->fields[$firstField])) {
+            return null;
+        }
+
+        if (count($fields) === 1) {
+            return $this->fields[$firstField];
+        }
+
+        $nestedOrObject = $this->fields[$firstField];
+
+        if (! $nestedOrObject instanceof Nested && ! $nestedOrObject instanceof Object_) {
+            return null;
+        }
+
+        return $nestedOrObject->properties->getNestedField(implode('.', array_slice($fields, 1)));
+    }
+
+    public function setParentName(string $parentName)
+    {
+        foreach ($this->fields as $field) {
+            $field->parentName($parentName);
+        }
+    }
 }
