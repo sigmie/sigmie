@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings;
 
+use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use ArrayAccess;
 use Exception;
 use Sigmie\English\Filter\Lowercase;
@@ -74,20 +75,55 @@ class Properties extends Type implements ArrayAccess
     {
         $collection = new Collection($this->fields);
 
-        return $collection->filter(fn (Type $type) => $type instanceof Text);
+        return $collection->filter(fn(Type $type) => $type instanceof Text);
     }
 
     public function completionFields(): Collection
     {
         $collection = new Collection($this->fields);
 
-        return $collection->filter(fn (Type $type) => $type instanceof Text)
-            ->filter(fn (Text $text) => $text->type() === 'completion');
+        return $collection->filter(fn(Type $type) => $type instanceof Text)
+            ->filter(fn(Text $text) => $text->type() === 'completion');
     }
 
     public function toArray(): array
     {
         return $this->fields;
+    }
+
+    public function handleCustomAnalyzers(AnalysisInterface $analysis)
+    {
+        foreach ($this->fields as $type) {
+            if ($type instanceof Text) {
+                $type->handleCustomAnalyzer($analysis);
+            }
+
+            if ($type instanceof Object_) {
+                $type->properties->handleCustomAnalyzers($analysis);
+            }
+
+            if ($type instanceof Nested) {
+                $type->properties->handleCustomAnalyzers($analysis);
+            }
+        }
+    }
+
+    public function handleNormalizers(AnalysisInterface $analysis)
+    {
+
+        foreach ($this->fields as $type) {
+            if ($type instanceof Keyword) {
+                $type->handleNormalizer($analysis);
+            }
+
+            if ($type instanceof Object_) {
+                $type->properties->handleNormalizers($analysis);
+            }
+
+            if ($type instanceof Nested) {
+                $type->properties->handleNormalizers($analysis);
+            }
+        }
     }
 
     public static function create(array $raw, DefaultAnalyzer $defaultAnalyzer, array $analyzers, string $name): self
@@ -98,8 +134,12 @@ class Properties extends Type implements ArrayAccess
 
             $field = match (true) {
                 // This is an object type
-                isset($value['properties']) && !isset($value['type']) => self::create($value['properties'], $defaultAnalyzer, $analyzers, (string) $fieldName),
-                isset($value['properties']) && $value['type'] === 'nested' => (new Nested($fieldName))->properties(self::create($value['properties'], $defaultAnalyzer, $analyzers, (string) $fieldName)),
+                isset($value['properties']) && !isset($value['type']) => (new Object_($fieldName))->properties(
+                    self::create($value['properties'], $defaultAnalyzer, $analyzers, (string) $fieldName)
+                ),
+                isset($value['properties']) && $value['type'] === 'nested' => (new Nested($fieldName))->properties(
+                    self::create($value['properties'], $defaultAnalyzer, $analyzers, (string) $fieldName)
+                ),
                 in_array(
                     $value['type'],
                     ['search_as_you_type', 'text', 'completion']
@@ -141,7 +181,7 @@ class Properties extends Type implements ArrayAccess
     public function toRaw(): array
     {
         $fields = (new Collection($this->fields))
-            ->mapToDictionary(fn (Type $value) => $value->toRaw())
+            ->mapToDictionary(fn(Type $value) => $value->toRaw())
             ->toArray();
 
         if ($this->name === 'mappings') {

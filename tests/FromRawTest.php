@@ -15,6 +15,7 @@ use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\Number;
+use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Testing\TestCase;
 
@@ -161,7 +162,7 @@ class FromRawTest extends TestCase
         $properties = $mappings->properties();
 
         $this->assertArrayHasKey('user', $properties);
-        $this->assertInstanceOf(Properties::class, $properties['user']);
+        $this->assertInstanceOf(Object_::class, $properties['user']);
 
         $this->assertArrayHasKey('title', $properties);
         $this->assertInstanceOf(Text::class, $properties['title']);

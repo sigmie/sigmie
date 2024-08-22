@@ -47,19 +47,18 @@ class NewProperties
         AnalysisInterface $analysis = new Analysis(),
         string $name = 'mappings'
     ): Properties {
-        $fields = $this->fields->mapToDictionary(function (Type $type) use ($analysis) {
-            if ($type instanceof Text) {
-                $type->handleCustomAnalyzer($analysis);
-            }
 
-            if ($type instanceof Keyword) {
-                $type->handleNormalizer($analysis);
-            }
+        $fields = $this->fields
+            ->mapToDictionary(function (Type $type) use ($analysis) {
+                return [$type->name() => $type];
+            })->toArray();
 
-            return [$type->name() => $type];
-        })->toArray();
+        $props = new Properties($name, $fields);
 
-        return new Properties($name, $fields);
+        $props->handleCustomAnalyzers($analysis);
+        $props->handleNormalizers($analysis);
+
+        return $props;
     }
 
     public function text(string $name): Text
@@ -235,11 +234,21 @@ class NewProperties
         return $field;
     }
 
-    public function object(string $name): Object_ 
+    public function object(string $name, null|callable $callable = null): Object_
     {
         $field = new Object_($name);
 
         $this->fields->add($field);
+
+        if (is_null($callable)) {
+            return $field;
+        }
+
+        $props = new NewProperties;
+
+        $callable($props);
+
+        $field->properties($props);
 
         return $field;
     }

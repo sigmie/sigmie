@@ -19,8 +19,10 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Mappings\Types\Name;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Object_;
+use Sigmie\Mappings\Types\Text;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
@@ -37,7 +39,10 @@ class MappingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->object('contact');
+        $blueprint->object('contact', function (NewProperties $props) {
+            $props->name('name');
+            $props->keyword('email');
+        });
 
         $index = $this->sigmie
             ->newIndex($indexName)
@@ -47,6 +52,9 @@ class MappingsTest extends TestCase
         $props = $this->sigmie->index($indexName)->mappings->properties();
 
         $this->assertInstanceOf(Object_::class, $props['contact']);
+
+        $this->assertInstanceOf(Text::class, $props['contact']->properties['name']);
+        $this->assertInstanceOf(Keyword::class, $props['contact']->properties['email']);
     }
 
     /**
@@ -125,8 +133,8 @@ class MappingsTest extends TestCase
 
         $props = $this->sigmie->index($indexName)->mappings->properties();
 
-        $this->assertInstanceOf(Properties::class, $props['phones']);
-        $this->assertInstanceOf(Properties::class, $props['author']);
+        $this->assertInstanceOf(Object_::class, $props['phones']);
+        $this->assertInstanceOf(Object_::class, $props['author']);
         $this->assertInstanceOf(Nested::class, $props['comments']);
     }
 
@@ -255,7 +263,7 @@ class MappingsTest extends TestCase
 
         $res = $this->analyzeAPICall($indexName, 'Hohn Doe 28, 58511', 'address_field_analyzer');
 
-        $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
+        $tokens = array_map(fn($token) => $token['token'], $res->json('tokens'));
 
         $this->assertEquals(['hohn', 'doe', '28', '58511'], $tokens);
     }
@@ -328,7 +336,7 @@ class MappingsTest extends TestCase
 
         $hits = $search->json('hits.hits');
 
-        $res = array_map(fn ($hit) => $hit['_source']['title'], $hits);
+        $res = array_map(fn($hit) => $hit['_source']['title'], $hits);
 
         $this->assertEquals('Alpha', $res[0]);
         $this->assertEquals('beta', $res[1]);
@@ -676,7 +684,7 @@ class MappingsTest extends TestCase
 
         $res = $this->analyzeAPICall($indexName, 'john.doe@gmail.com', 'default');
 
-        $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
+        $tokens = array_map(fn($token) => $token['token'], $res->json('tokens'));
 
         $res = $this->indexAPICall($indexName, 'GET');
 

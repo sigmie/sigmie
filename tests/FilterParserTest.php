@@ -16,6 +16,58 @@ use Sigmie\Testing\TestCase;
 
 class FilterParserTest extends TestCase
 {
+    // /**
+    //  * @test
+    //  */
+    // public function in_filter()
+    // {
+    //     $indexName = uniqid();
+
+    //     $blueprint = new NewProperties;
+    //     $blueprint->keyword('zip_1');
+    //     $blueprint->keyword('zip_2');
+    //     $blueprint->keyword('zip_3');
+    //     $blueprint->keyword('zip_4');
+    //     $blueprint->keyword('zip_5');
+
+    //     $index = $this->sigmie->newIndex($indexName)
+    //         ->properties($blueprint)
+    //         ->create();
+
+    //     $index = $this->sigmie->collect($indexName, true);
+
+    //     $docs = [
+    //         new Document([
+    //             'zip_1' => '46031',
+    //             'zip_2' => '44009',
+    //             'zip_3' => '46200',
+    //             'zip_4' => '44017',
+    //             'zip_5' => '45500',
+    //         ]),
+    //         new Document([
+    //             'zip_1' => '46033',
+    //             'zip_2' => '44009',
+    //             'zip_3' => '46200',
+    //             'zip_4' => '44017',
+    //             'zip_5' => '45500',
+    //         ]),
+    //     ];
+
+    //     $index->merge($docs);
+
+    //     $props = $blueprint();
+
+    //     $parser = new FilterParser($props);
+
+    //     $query = $parser->parse("NOT (NOT zip_1:['46031'])");
+
+    //     $res = $this->sigmie->query($indexName, $query)->get();
+
+    //     $this->assertCount(1, $res->json('hits.hits'));
+    //     $this->assertEquals('46031', $res->json('hits.hits')[0]['_source']['zip_1']);
+    // }
+
+
     /**
      * @test
      */
