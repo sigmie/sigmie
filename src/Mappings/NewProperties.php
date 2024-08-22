@@ -272,7 +272,7 @@ class NewProperties
 
         $props = new NewProperties;
 
-        $callable(new NewProperties);
+        $callable($props);
 
         $field->properties($props);
 

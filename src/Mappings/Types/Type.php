@@ -60,6 +60,10 @@ abstract class Type implements Name, ToRaw, TypeInterface
 
     public function name(): string
     {
+        if (!is_null($this->parentName)) {
+            return "{$this->parentName}.{$this->name}";
+        }
+
         return $this->name;
     }
 

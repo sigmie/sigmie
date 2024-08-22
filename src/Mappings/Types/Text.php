@@ -40,7 +40,7 @@ class Text extends Type implements FromRaw
         parent::__construct($name);
 
         $this->fields = new Collection();
-        $this->newAnalyzerClosure = fn () => null;
+        $this->newAnalyzerClosure = fn() => null;
 
         $this->configure();
     }
@@ -64,9 +64,12 @@ class Text extends Type implements FromRaw
 
     public function handleCustomAnalyzer(AnalysisInterface $analysis)
     {
+        $name = !is_null($this->parentName) ? "{$this->parentName}_{$this->name}_field_analyzer" : "{$this->name}_field_analyzer";
+        $name = str_replace('.', '_', $name);
+
         $newAnalyzer = new NewAnalyzer(
             $analysis,
-            "{$this->name}_field_analyzer"
+            $name
         );
 
         if (($this->hasAnalyzerCallback)) {
@@ -84,7 +87,7 @@ class Text extends Type implements FromRaw
         }
 
         $this->fields
-            ->filter(fn ($type) => $type instanceof Text)
+            ->filter(fn($type) => $type instanceof Text)
             ->map(function (Text $text) use ($analysis) {
                 $text->handleCustomAnalyzer($analysis);
 
@@ -92,7 +95,7 @@ class Text extends Type implements FromRaw
             });
 
         $this->fields
-            ->filter(fn ($type) => $type instanceof Keyword)
+            ->filter(fn($type) => $type instanceof Keyword)
             ->map(function (Keyword $keyword) use ($analysis) {
                 $keyword->handleNormalizer($analysis);
 

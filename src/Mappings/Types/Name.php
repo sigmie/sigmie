@@ -42,7 +42,7 @@ class Name extends Text implements Analyze
 
         $newAnalyzer
             ->tokenizeOnWhitespaces()
-            ->tokenFilter(new Ngram("{$this->parentName}{$this->name}_ngram", $this->minGrams, $this->maxGrams))
+            ->tokenFilter(new Ngram(prefix_id('ngram'), $this->minGrams, $this->maxGrams))
             // ->truncate($this->maxGramms)
             ->lowercase();
 
@@ -61,9 +61,11 @@ class Name extends Text implements Analyze
     {
         $queries = [];
 
+        $prefixField = $this->parentName ? "{$this->parentName}.{$this->name}.{$this->name}_text" : "{$this->name}_text";
+
         $queries[] = new Match_($this->name, $queryString);
-        $queries[] = new MatchPhrasePrefix("{$this->name}.{$this->name}_text", $queryString);
-        $queries[] = new MatchBoolPrefix("{$this->name}.{$this->name}_text", $queryString);
+        $queries[] = new MatchPhrasePrefix($prefixField, $queryString);
+        $queries[] = new MatchBoolPrefix($prefixField, $queryString);
 
         return $queries;
     }

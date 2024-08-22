@@ -15,6 +15,65 @@ class SearchTemplateTest extends TestCase
     /**
      * @test
      */
+    public function nested_name_property()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->name('name');
+        $blueprint->nested('contact', function (NewProperties $blueprint) {
+            $blueprint->name('name');
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'name' => 'Mickey',
+                'contact' => [
+                    'name' => 'Mickey',
+                ],
+            ])
+        ]);
+
+        $templateId = uniqid();
+
+        $saved = $this->sigmie->newTemplate($templateId)
+            ->properties($blueprint)
+            ->fields(['contact.name'])
+            ->get()
+            ->save();
+
+        $template = $this->sigmie->template($templateId);
+
+        $hits = $template->run($indexName, [
+            'query_string' => 'Mickey',
+        ])->json('hits.hits');
+
+        $this->assertNotEmpty($hits);
+
+        $saved = $this->sigmie->newTemplate($templateId)
+            ->properties($blueprint)
+            ->fields(['name'])
+            ->get()
+            ->save();
+
+        $template = $this->sigmie->template($templateId);
+
+        $hits = $template->run($indexName, [
+            'query_string' => 'Mickey',
+        ])->json('hits.hits');
+
+        $this->assertNotEmpty($hits);
+    }
+
+    /**
+     * @test
+     */
     public function no_empty_results_on_empty_string()
     {
         $indexName = uniqid();
@@ -152,7 +211,7 @@ class SearchTemplateTest extends TestCase
             'query_string' => 'm',
         ]);
 
-        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+        $suggestions = array_map(fn($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
 
         $this->assertEquals([
             "Marisa",

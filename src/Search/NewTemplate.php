@@ -107,9 +107,9 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             $fields->each(function ($field) use ($queryBoolean) {
                 $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
 
-                $field = $this->properties[$field];
+                $field = $this->properties->getNestedField($field);
 
-                $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                $fuzziness = !in_array($field->name(), $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
                 $queries = $field->hasQueriesCallback ? $field->queriesFromCallback('{{query_string}}') : $field->queries('{{query_string}}');
 
