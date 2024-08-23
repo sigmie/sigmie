@@ -23,6 +23,59 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
+    public function deeper_nested_price_facets()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->nested('shirt', function (NewProperties $blueprint) {
+            $blueprint->nested('red', function (NewProperties $blueprint) {
+                $blueprint->price();
+            });
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['shirt' => ['red' => ['price' => 500]]]),
+            new Document(['shirt' => ['red' => ['price' => 400]]]),
+            new Document(['shirt' => ['red' => ['price' => 400]]]),
+        ]);
+
+        $searchResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets('shirt.red.price:100')
+            ->get();
+
+        /** @var Properties $props */
+        $props = $blueprint();
+
+        $field = $props->getNestedField('shirt.red.price');
+
+        $facets = $field->facets($searchResponse);
+
+        $this->assertArrayHasKey('min', $facets);
+        $this->assertEquals(400, $facets['min']);
+
+        $this->assertArrayHasKey('max', $facets);
+        $this->assertEquals(500, $facets['max']);
+
+        $expectedHistogram = [
+            400 => 2,
+            500 => 1,
+        ];
+
+        $this->assertEquals($expectedHistogram, $facets['histogram']);
+    }
+
+    /**
+     * @test
+     */
     public function nested_price_facets()
     {
         $indexName = uniqid();
@@ -130,6 +183,92 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
+    public function nested_keywords_facets()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->nested('foo', function (NewProperties $blueprint) {
+            $blueprint->keyword('keyword');
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['foo' => ['keyword' => 'sport']]),
+            new Document(['foo' => ['keyword' => 'action']]),
+        ]);
+
+        $searchResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets('foo.keyword')
+            ->get();
+
+        /** @var Properties $props */
+        $props = $blueprint();
+
+        $facets = $props->getNestedField('foo.keyword')->facets($searchResponse);
+
+        $expectedHistogram = [
+            'action' => 1,
+            'sport' => 1,
+        ];
+
+        $this->assertEquals($expectedHistogram, $facets);
+    }
+
+    /**
+     * @test
+     */
+    public function deeper_nested_keywords_facets()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->nested('foo', function (NewProperties $blueprint) {
+            $blueprint->nested('bar', function (NewProperties $blueprint) {
+                $blueprint->keyword('keyword');
+            });
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['foo' => ['bar' => ['keyword' => 'sport']]]),
+            new Document(['foo' => ['bar' => ['keyword' => 'action']]]),
+        ]);
+
+        $searchResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets('foo.bar.keyword')
+            ->get();
+
+        /** @var Properties $props */
+        $props = $blueprint();
+
+        $facets = $props->getNestedField('foo.bar.keyword')->facets($searchResponse);
+
+        $expectedHistogram = [
+            'action' => 1,
+            'sport' => 1,
+        ];
+
+        $this->assertEquals($expectedHistogram, $facets);
+    }
+
+    /**
+     * @test
+     */
     public function keywords_facets()
     {
         $indexName = uniqid();
@@ -218,7 +357,6 @@ class FacetsTest extends TestCase
         ];
 
         $countFacets = $props['count']->facets($searchResponse);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
 
         $this->assertEquals($expectedCountFacets, $countFacets);
 
@@ -263,6 +401,50 @@ class FacetsTest extends TestCase
         $props = $blueprint();
 
         $facets = $props['category']->facets($searchResponse);
+
+        $expectedHistogram = [
+            'action' => 1,
+            'sport' => 1,
+        ];
+
+        $this->assertEquals($expectedHistogram, $facets);
+    }
+
+    /**
+     * @test
+     */
+    public function nested_category_facets()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->nested('category', function (NewProperties $blueprint) {
+            $blueprint->nested('sport', function (NewProperties $blueprint) {
+                $blueprint->keyword('type');
+            });
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['category' => ['sport' => ['type' => 'sport']]]),
+            new Document(['category' => ['sport' => ['type' => 'action']]]),
+        ]);
+
+        $searchResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets('category.sport.type')
+            ->get();
+
+        /** @var Properties $props */
+        $props = $blueprint();
+
+        $facets = $props->getNestedField('category.sport.type')->facets($searchResponse);
 
         $expectedHistogram = [
             'action' => 1,
