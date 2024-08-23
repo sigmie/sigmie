@@ -26,7 +26,9 @@ class Object_ extends Type
     {
         $this->properties = $props instanceof NewProperties ? $props->get() : $props;
 
-        $this->properties->setParentName($this->name);
+        $parentName = $this->parentPath ? "{$this->parentPath}.{$this->name}" : $this->name;
+
+        $this->properties->setParentPath($parentName);
 
         return $this;
     }

@@ -17,6 +17,7 @@ use Sigmie\Query\Contracts\FuzzyQuery;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Query;
+use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
@@ -97,7 +98,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $search->fields($this->retrieve);
 
-        $boolean->must()->bool(fn (Boolean $boolean) => $boolean->filter()->query($this->filters));
+        $boolean->must()->bool(fn(Boolean $boolean) => $boolean->filter()->query($this->filters));
 
         $search->addRaw('sort', $this->sort);
 
@@ -121,7 +122,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
 
-                $field = $this->properties[$field] ?? throw new PropertiesFieldNotFound($field);
+                $field = $this->properties->getNestedField($field) ?? throw new PropertiesFieldNotFound($field);
 
                 $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
@@ -129,14 +130,21 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $queries = new Collection($queries);
 
-                $queries->map(function (Query $queryClause) use ($boost, $fuzziness) {
+                $queries->map(function (Query $queryClause) use ($boost, $fuzziness, $field) {
+
                     if ($queryClause instanceof FuzzyQuery) {
                         $queryClause->fuzziness($fuzziness);
                     }
 
-                    return $queryClause->boost($boost);
+                    $queryClause = $queryClause->boost($boost);
+
+                    if ($field->parentPath) {
+                        $queryClause = new Nested($field->parentPath, $queryClause);
+                    }
+
+                    return $queryClause;
                 })
-                    ->each(fn (Query $queryClase) => $queryBoolean->should()->query($queryClase));
+                    ->each(fn(Query $queryClase) => $queryBoolean->should()->query($queryClase));
             });
 
             $boolean->should()->query($queryBoolean);

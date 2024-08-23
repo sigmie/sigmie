@@ -112,8 +112,6 @@ class NewIndex
     {
         $index = $this->make();
 
-        ray($index->mappings->toRaw());
-
         $this->createIndex($index->name, $index->settings, $index->mappings);
 
         $this->createAlias($index->name, $this->alias);

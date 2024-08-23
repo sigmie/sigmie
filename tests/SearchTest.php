@@ -16,6 +16,50 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function nested_name_property()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->name('name');
+        $blueprint->nested('contact', function (NewProperties $blueprint) {
+            $blueprint->name('name');
+            $blueprint->nested('dog', function (NewProperties $blueprint) {
+                $blueprint->name('name');
+            });
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'name' => 'Mickey',
+                'contact' => [
+                    'name' => 'Mickey',
+                    'dog' => [
+                        'name' => 'Pluto',
+                    ],
+                ],
+            ])
+        ]);
+
+        $saved = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Pluto')
+            ->fields(['contact.dog.name']);
+
+        $hits = $saved->get()->json('hits.hits');
+
+        $this->assertNotEmpty($hits);
+    }
+
+    /**
+     * @test
+     */
     public function price_facet()
     {
 
@@ -254,7 +298,7 @@ class SearchTest extends TestCase
             ->retrieve(['name'])
             ->get();
 
-        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+        $suggestions = array_map(fn($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
 
         $this->assertEquals([
             "Marisa",

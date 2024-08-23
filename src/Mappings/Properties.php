@@ -197,7 +197,8 @@ class Properties extends Type implements ArrayAccess
 
         $firstField = $fields[0];
 
-        if (! isset($this->fields[$firstField])) {
+        if (!isset($this->fields[$firstField])) {
+            ray($this->fields);
             return null;
         }
 
@@ -207,17 +208,21 @@ class Properties extends Type implements ArrayAccess
 
         $nestedOrObject = $this->fields[$firstField];
 
-        if (! $nestedOrObject instanceof Nested && ! $nestedOrObject instanceof Object_) {
-            return null;
+
+        while ($nestedOrObject instanceof Nested || $nestedOrObject instanceof Object_) {
+
+            $childName = implode('.', array_slice($fields, 1));
+
+            $nestedOrObject = $nestedOrObject->properties->getNestedField($childName);
         }
 
-        return $nestedOrObject->properties->getNestedField(implode('.', array_slice($fields, 1)));
+        return $nestedOrObject;
     }
 
-    public function setParentName(string $parentName)
+    public function setParentPath(string $parentPath)
     {
         foreach ($this->fields as $field) {
-            $field->parentName($parentName);
+            $field->parentPath($parentPath);
         }
     }
 }

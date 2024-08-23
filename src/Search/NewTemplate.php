@@ -14,6 +14,7 @@ use Sigmie\Query\Contracts\FuzzyQuery;
 use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
+use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
 use Sigmie\Search\Contracts\SearchTemplateBuilder as SearchTemplateBuilderInterface;
@@ -115,9 +116,12 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
                 $queries = new Collection($queries);
 
-                $queries->map(function (QueryClause $queryClause) use ($boost, $fuzziness) {
+                $queries->map(function (QueryClause $queryClause) use ($boost, $fuzziness, $field) {
                     if ($queryClause instanceof FuzzyQuery) {
                         $queryClause->fuzziness($fuzziness);
+                    }
+                    if ($field->parentPath) {
+                        $queryClause = new Nested($field->parentPath, $queryClause);
                     }
 
                     return $queryClause->boost($boost);

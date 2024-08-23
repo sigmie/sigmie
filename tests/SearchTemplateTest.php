@@ -33,7 +33,7 @@ class SearchTemplateTest extends TestCase
 
         $index->merge([
             new Document([
-                'name' => 'Mickey',
+                'name' => 'Goofy',
                 'contact' => [
                     'name' => 'Mickey',
                 ],
@@ -65,7 +65,7 @@ class SearchTemplateTest extends TestCase
         $template = $this->sigmie->template($templateId);
 
         $hits = $template->run($indexName, [
-            'query_string' => 'Mickey',
+            'query_string' => 'Goofy',
         ])->json('hits.hits');
 
         $this->assertNotEmpty($hits);

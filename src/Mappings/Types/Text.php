@@ -64,7 +64,7 @@ class Text extends Type implements FromRaw
 
     public function handleCustomAnalyzer(AnalysisInterface $analysis)
     {
-        $name = !is_null($this->parentName) ? "{$this->parentName}_{$this->name}_field_analyzer" : "{$this->name}_field_analyzer";
+        $name = !is_null($this->parentPath) ? "{$this->parentPath}_{$this->name}_field_analyzer" : "{$this->name}_field_analyzer";
         $name = str_replace('.', '_', $name);
 
         $newAnalyzer = new NewAnalyzer(
@@ -182,20 +182,20 @@ class Text extends Type implements FromRaw
 
     public function sortableName(): null|string
     {
-        if (is_null($this->parentName)) {
+        if (is_null($this->parentPath)) {
             return (!$this->sortable) ? null : "{$this->name}.sortable";
         }
 
-        return (!$this->sortable) ? null : "{$this->parentName}.{$this->name}.sortable";
+        return (!$this->sortable) ? null : "{$this->parentPath}.{$this->name}.sortable";
     }
 
     public function filterableName(): null|string
     {
-        if (is_null($this->parentName)) {
+        if (is_null($this->parentPath)) {
             return (is_null($this->raw)) ? null : "{$this->name}.{$this->raw}";
         }
 
-        return (is_null($this->raw)) ? null : "{$this->parentName}.{$this->name}.{$this->raw}";
+        return (is_null($this->raw)) ? null : "{$this->parentPath}.{$this->name}.{$this->raw}";
     }
 
     public function searchAsYouType(Analyzer $analyzer = null): self

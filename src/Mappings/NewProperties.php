@@ -33,7 +33,7 @@ class NewProperties
 {
     protected Collection $fields;
 
-    public function __construct()
+    public function __construct(protected string $parentPath = '')
     {
         $this->fields = new Collection();
     }
@@ -50,7 +50,7 @@ class NewProperties
 
         $fields = $this->fields
             ->mapToDictionary(function (Type $type) use ($analysis) {
-                return [$type->name() => $type];
+                return [$type->name => $type];
             })->toArray();
 
         $props = new Properties($name, $fields);
@@ -237,6 +237,7 @@ class NewProperties
     public function object(string $name, null|callable $callable = null): Object_
     {
         $field = new Object_($name);
+        $field->parentPath($this->parentPath);
 
         $this->fields->add($field);
 
@@ -244,7 +245,7 @@ class NewProperties
             return $field;
         }
 
-        $props = new NewProperties;
+        $props = new NewProperties($name);
 
         $callable($props);
 
@@ -263,6 +264,7 @@ class NewProperties
     public function nested(string $name, null|callable $callable = null): Nested
     {
         $field = new Nested($name);
+        $field->parentPath($this->parentPath);
 
         $this->fields->add($field);
 
@@ -270,7 +272,7 @@ class NewProperties
             return $field;
         }
 
-        $props = new NewProperties;
+        $props = new NewProperties($name);
 
         $callable($props);
 
