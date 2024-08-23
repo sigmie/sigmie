@@ -47,7 +47,7 @@ class FacetParser extends Parser
             }
 
             /** @var Type $field  */
-            $field = $this->properties[$field];
+            $field = $this->properties->getNestedField($field);
 
             if (!$field->isFacetable()) {
                 $this->handleError("The field '{$field->name()}' does not support facets.", [
@@ -57,7 +57,13 @@ class FacetParser extends Parser
             }
 
             try {
-                $field->aggregation($aggregation, $params);
+                if ($field->parentPath) {
+                    $aggregation->nested($field->name(), $field->parentPath, function (Aggs $aggs) use ($params, $field) {
+                        $field->aggregation($aggs, $params);
+                    });
+                } else {
+                    $field->aggregation($aggregation, $params);
+                }
             } catch (ParseException $e) {
                 $this->handleError($e->getMessage(), [
                     'field' => $field->name(),

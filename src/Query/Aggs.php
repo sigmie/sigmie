@@ -10,6 +10,7 @@ use Sigmie\Query\Aggregations\Bucket\Filter;
 use Sigmie\Query\Aggregations\Bucket\Global_;
 use Sigmie\Query\Aggregations\Bucket\Histogram;
 use Sigmie\Query\Aggregations\Bucket\Missing;
+use Sigmie\Query\Aggregations\Bucket\Nested;
 use Sigmie\Query\Aggregations\Bucket\Range;
 use Sigmie\Query\Aggregations\Bucket\SignificantText;
 use Sigmie\Query\Aggregations\Bucket\Sort;
@@ -28,6 +29,8 @@ use Sigmie\Query\Aggregations\Metrics\Sum;
 use Sigmie\Query\Aggregations\Metrics\ValueCount;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
 
+use function PHPUnit\Framework\callback;
+
 class Aggs implements AggsInterface
 {
     protected array $aggs = [];
@@ -37,6 +40,19 @@ class Aggs implements AggsInterface
         $this->aggs[] = $aggs;
 
         return $this;
+    }
+
+    public function nested(string $name, string $path, callable $callable)
+    {
+        $aggs = new Aggs;
+
+        $callable($aggs);
+
+        $aggregation = new Nested($name, $path, $aggs);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
     }
 
     public function filter(

@@ -46,23 +46,24 @@ class Price extends Type
             $this->name(),
             interval: (int) $interval
         );
+
         $aggs->min("{$this->name()}_min", $this->name());
         $aggs->max("{$this->name()}_max", $this->name());
     }
 
     public function facets(ElasticsearchResponse $response): null|array
     {
-        $originalBuckets = $response->json("aggregations.{$this->name()}_histogram")['buckets'] ?? [];
+        $json = $response->json();
+
+        $originalBuckets = $json['aggregations'][$this->name()][$this->name() . '_histogram']['buckets'] ?? $json['aggregations'][$this->name() . '_histogram']['buckets'] ?? [];
+        $min = $json['aggregations'][$this->name()][$this->name() . '_min']['value'] ?? $json['aggregations'][$this->name() . '_min']['value'] ?? 0;
+        $max = $json['aggregations'][$this->name()][$this->name() . '_max']['value'] ?? $json['aggregations'][$this->name() . '_max']['value'] ?? 0;
 
         $histogram = array_column($originalBuckets, 'doc_count', 'key');
 
-        $min = $response->json("aggregations.{$this->name()}_min");
-
-        $max = $response->json("aggregations.{$this->name()}_max");
-
         return [
-            'min' => $min['value'],
-            'max' => $max['value'],
+            'min' => $min,
+            'max' => $max,
             'histogram' => $histogram
         ];
     }

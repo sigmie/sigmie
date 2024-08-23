@@ -76,7 +76,8 @@ class Keyword extends Type
 
     public function facets(ElasticsearchResponse $response): null|array
     {
-        $originalBuckets = $response->json("aggregations.{$this->name()}")['buckets'] ?? [];
+        $json = $response->json();
+        $originalBuckets = $json['aggregations'][$this->name()][$this->name()]['buckets'] ?? $json['aggregations'][$this->name()]['buckets'] ?? [];
 
         return array_column($originalBuckets, 'doc_count', 'key');
     }
