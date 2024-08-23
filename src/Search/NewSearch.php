@@ -7,6 +7,7 @@ namespace Sigmie\Search;
 use Exception;
 use Http\Promise\Promise;
 use Sigmie\Mappings\PropertiesFieldNotFound;
+use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Mappings\Types\Text;
 
 use function Sigmie\Functions\auto_fuzziness;
@@ -138,7 +139,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                     $queryClause = $queryClause->boost($boost);
 
-                    if ($field->parentPath) {
+                    if ($field->parentPath && $field->parentType === TypesNested::class) {
                         $queryClause = new Nested($field->parentPath, $queryClause);
                     }
 

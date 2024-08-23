@@ -237,7 +237,7 @@ class NewProperties
     public function object(string $name, null|callable $callable = null): Object_
     {
         $field = new Object_($name);
-        $field->parentPath($this->parentPath);
+        $field->parent($this->parentPath, $field::class);
 
         $this->fields->add($field);
 
@@ -264,7 +264,7 @@ class NewProperties
     public function nested(string $name, null|callable $callable = null): Nested
     {
         $field = new Nested($name);
-        $field->parentPath($this->parentPath);
+        $field->parent($this->parentPath, $field::class);
 
         $this->fields->add($field);
 

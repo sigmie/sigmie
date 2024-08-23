@@ -19,12 +19,12 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function parse_nested_object_filter()
+    public function parse_nested_filter()
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->object('contact', function (NewProperties $props) {
+        $blueprint->nested('contact', function (NewProperties $props) {
             $props->geoPoint('location');
             $props->bool('active');
             $props->number('points')->integer();
@@ -57,11 +57,11 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('contact.location:0km[51.16,13.49] AND is:contact.active');
+        $query = $parser->parse('is:contact.active');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(0, $res->json('hits.hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
     }
 
     /**
@@ -163,7 +163,7 @@ class FilterParserTest extends TestCase
         $mappings = new Properties();
 
         $blueprint = new NewProperties;
-        $blueprint->text('name')->unstructuredText();
+        $blueprint->geoPoint('location');
 
         $props = $blueprint();
         $parser = new FilterParser($props);

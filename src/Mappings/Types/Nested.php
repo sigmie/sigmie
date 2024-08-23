@@ -28,7 +28,7 @@ class Nested extends Type
 
         $parentName = $this->parentPath ? "{$this->parentPath}.{$this->name}" : $this->name;
 
-        $this->properties->setParentPath($parentName);
+        $this->properties->propertiesParent($parentName, static::class);
 
         return $this;
     }

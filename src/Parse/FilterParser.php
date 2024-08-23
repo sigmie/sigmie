@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Parse;
 
+use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchNone;
@@ -12,7 +13,9 @@ use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Term\Terms;
 use Sigmie\Query\Queries\GeoDistance;
+use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Queries\Term\Exists;
+use Sigmie\Query\Queries\Text\Nested;
 
 class FilterParser extends Parser
 {
@@ -127,13 +130,13 @@ class FilterParser extends Parser
         $operator = $filters['operator'] ?? $operator;
         $values = $filters['values'] ?? null;
 
-
         if (is_string($filter) && str_starts_with($filter, 'NOT')) {
             $operator = 'NOT';
             $filter = trim($filter, 'NOT');
             $filter = trim($filter);
             $query1 = $this->stringToQueryClause($filter);
         }
+
         if (is_string($filter)) {
 
             // Throw an error if there's a space in the filter string
@@ -217,7 +220,7 @@ class FilterParser extends Parser
             return new MatchNone;
         }
 
-        return new GeoDistance($field, $distance, $latitude, $longitude);
+        return $this->filterQuery($field, new GeoDistance($field, $distance, $latitude, $longitude));
     }
 
     public function handleRange(string $range)
@@ -233,7 +236,7 @@ class FilterParser extends Parser
             return;
         }
 
-        return new Range($field, [$operator => $value]);
+        return $this->filterQuery($field, new Range($field, [$operator => $value]));
     }
 
     public function handleIDs(string $id)
@@ -253,7 +256,7 @@ class FilterParser extends Parser
             return;
         }
 
-        return new Term($field, true);
+        return $this->filterQuery($field, new Term($field, true));
     }
 
     public function handleHas(string $has)
@@ -264,7 +267,7 @@ class FilterParser extends Parser
             return;
         }
 
-        return new Exists($field);
+        return $this->filterQuery($field, new Exists($field));
     }
 
     public function handleIsNot(string $is)
@@ -276,7 +279,7 @@ class FilterParser extends Parser
             return;
         }
 
-        return new Term($field, false);
+        return $this->filterQuery($field, new Term($field, false));
     }
 
     public function handleIn(string $terms)
@@ -290,11 +293,11 @@ class FilterParser extends Parser
         });
 
         // Remove whitespaces from values
-        $values = array_map(fn ($value) => trim($value, ' '), $values);
+        $values = array_map(fn($value) => trim($value, ' '), $values);
         // Remove doublue quotes from values
-        $values = array_map(fn ($value) => trim($value, '\''), $values);
+        $values = array_map(fn($value) => trim($value, '\''), $values);
         // Remove single quotes from values
-        $values = array_map(fn ($value) => trim($value, '"'), $values);
+        $values = array_map(fn($value) => trim($value, '"'), $values);
 
         $field = $this->handleFieldName($field);
 
@@ -302,7 +305,18 @@ class FilterParser extends Parser
             return;
         }
 
-        return new Terms($field, $values);
+        return $this->filterQuery($field, new Terms($field, $values));
+    }
+
+    private function filterQuery(string $field, Query $query): Query
+    {
+        $fieldType = $this->properties->getNestedField($field);
+
+        if ($fieldType->parentPath && $fieldType->parentType === TypesNested::class) {
+            return new Nested($fieldType->parentPath, $query);
+        }
+
+        return $query;
     }
 
     public function handleTerm(string $term)
@@ -315,10 +329,11 @@ class FilterParser extends Parser
         $value = trim($value, '"');
 
         $field = $this->handleFieldName($field);
+
         if (is_null($field)) {
             return;
         }
 
-        return new Term($field, $value);
+        return $this->filterQuery($field, new Term($field, $value));
     }
 }

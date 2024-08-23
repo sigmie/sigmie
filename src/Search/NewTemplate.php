@@ -6,6 +6,7 @@ namespace Sigmie\Search;
 
 use function Sigmie\Functions\auto_fuzziness;
 
+use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
@@ -120,7 +121,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
                     if ($queryClause instanceof FuzzyQuery) {
                         $queryClause->fuzziness($fuzziness);
                     }
-                    if ($field->parentPath) {
+                    if ($field->parentPath && $field->parentType === TypesNested::class) {
                         $queryClause = new Nested($field->parentPath, $queryClause);
                     }
 

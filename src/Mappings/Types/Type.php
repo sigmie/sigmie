@@ -17,15 +17,20 @@ abstract class Type implements Name, ToRaw, TypeInterface
 
     protected array $meta = [];
 
-    public function __construct(public string $name, public ?string $parentPath = null) {}
+    public function __construct(
+        public string $name,
+        public ?string $parentPath = null,
+        public ?string $parentType = null
+    ) {}
 
     public bool $hasQueriesCallback = false;
 
     public Closure $queriesClosure;
 
-    public function parentPath(string $parentPath): static
+    public function parent(string $parentPath, string $parentType): static
     {
         $this->parentPath = $parentPath;
+        $this->parentType = $parentType;
 
         return $this;
     }
