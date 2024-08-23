@@ -17,6 +17,72 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
+    public function nested_text_asc_filter()
+    {
+        $blueprint = new NewProperties;
+        $blueprint->nested('contact', function (NewProperties $props) {
+            $props->bool('active');
+            $props->text('name')->keyword()->makeSortable();
+            $props->text('category');
+        });
+
+        $props = $blueprint();
+        $parser = new SortParser($props);
+        $sorts = $parser->parse('contact.name:asc');
+
+        $indexName = uniqid();
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'contact' => [
+                    'active' => true,
+                    'name' => 'Pluto',
+                    'category' => 'Disney',
+                ],
+            ]),
+            new Document([
+                'contact' => [
+                    'active' => true,
+                    'name' => 'Arthur',
+                    'category' => 'Disney',
+                ],
+            ]),
+            new Document([
+                'contact' => [
+                    'active' => false,
+                    'name' => 'Dory',
+                    'category' => 'Disney',
+                ],
+            ]),
+            new Document([
+                'contact' => [
+                    'active' => false,
+                    'name' => 'Dory',
+                    'category' => 'Disney',
+                ],
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $res = $this->sigmie->query($indexName)
+            ->addRaw('sort', $sorts)
+            ->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertTrue($hits[0]['_source']['contact']['name'] === 'Arthur');
+    }
+
+    /**
+     * @test
+     */
     public function geo_distance_sort_with_valid_unit()
     {
         $indexName = uniqid();
@@ -72,6 +138,80 @@ class SortParserTest extends TestCase
         $this->expectException(ParseException::class, "Invalid latitude or longitude for geo distance sort.");
 
         $query = $parser->parse('location[91,13.77]:km:asc');
+    }
+
+    /**
+     * @test
+     */
+    public function nested_geo_distance_sort()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->nested('contact', function (NewProperties $props) { 
+            $props->geoPoint('location');
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'contact' => [
+                    'location' => [
+                        'lat' => 52.49,
+                        'lon' => 13.77,
+                    ]
+                ]
+            ]),
+            new Document([
+                'contact' => [
+                    'location' => [
+                        'lat' => 53.49,
+                        'lon' => 13.77,
+                    ]
+                ]
+            ]),
+            new Document([
+                'contact' => [
+                    'location' => [
+                        'lat' => 54.49,
+                        'lon' => 13.77,
+                    ]
+                ]
+            ])
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new SortParser($props);
+
+        $query = $parser->parse('contact.location[52.49,13.77]:km:asc');
+
+        $res = $this->sigmie->query($indexName)
+            ->addRaw('sort', $query)
+            ->get();
+
+        $this->assertTrue($res->json('hits.hits')[0]['_source']['contact']['location']['lat'] === 52.49);
+        $this->assertTrue($res->json('hits.hits')[1]['_source']['contact']['location']['lat'] === 53.49);
+        $this->assertTrue($res->json('hits.hits')[2]['_source']['contact']['location']['lat'] === 54.49);
+
+        $parser = new SortParser($props);
+
+        $query = $parser->parse('contact.location[52.49,13.77]:km:desc');
+
+        $res = $this->sigmie->query($indexName)
+            ->addRaw('sort', $query)
+            ->get();
+
+        $this->assertTrue($res->json('hits.hits')[0]['_source']['contact']['location']['lat'] === 54.49);
+        $this->assertTrue($res->json('hits.hits')[1]['_source']['contact']['location']['lat'] === 53.49);
+        $this->assertTrue($res->json('hits.hits')[2]['_source']['contact']['location']['lat'] === 52.49);
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Parse;
 
 use Sigmie\Mappings\Types\GeoPoint;
+use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Type;
 
 class SortParser extends Parser
@@ -28,12 +29,12 @@ class SortParser extends Parser
             }
 
             if (preg_match(
-                '/(?P<field>\w+)\[(?P<latitude>-?\d+(\.\d+)?),(?P<longitude>-?\d+(\.\d+)?)\]:(?P<unit>\w+):(?P<order>\w+)/',
+                '/(?P<field>\w+(\.\w+)*(\.\w+)*)\[(?P<latitude>-?\d+(\.\d+)?),(?P<longitude>-?\d+(\.\d+)?)\]:(?P<unit>\w+):(?P<order>\w+)/',
                 $match,
                 $matches
             )) {
 
-                $fieldType = $this->properties[$matches['field']];
+                $fieldType = $this->properties->getNestedField($matches['field']);
 
                 if (!$fieldType instanceof GeoPoint) {
 
@@ -72,16 +73,34 @@ class SortParser extends Parser
                     continue;
                 }
 
-                $sort[] = [
-                    '_geo_distance' => [
-                        $field => [
-                            'lat' => $latitude,
-                            'lon' => $longitude,
-                        ],
-                        "order" => $order,
-                        "unit" => $unit,
-                    ]
-                ];
+
+                if ($fieldType->parentPath && $fieldType->parentType === Nested::class) {
+                    $sort[] = [
+                        '_geo_distance' => [
+                            "nested" => [
+                                "path" => $fieldType->parentPath,
+                            ],
+                            $field => [
+                                'lat' => $latitude,
+                                'lon' => $longitude,
+                            ],
+                            "order" => $order,
+                            "unit" => $unit,
+                        ]
+                    ];
+                } else {
+                    $sort[] = [
+                        '_geo_distance' => [
+                            $field => [
+                                'lat' => $latitude,
+                                'lon' => $longitude,
+                            ],
+                            "order" => $order,
+                            "unit" => $unit,
+
+                        ]
+                    ];
+                }
 
                 continue;
             } elseif (str_contains($match, ':')) {
@@ -93,14 +112,28 @@ class SortParser extends Parser
                 $direction = 'asc';
             }
 
-            $field = $this->handleSortableFieldName($field);
+            $sortableName = $this->handleSortableFieldName($field);
+
 
             // Field isn't sortable
             if (is_null($field)) {
                 continue;
             }
 
-            $sort[] =  [$field => $direction];
+            $type = $this->properties->getNestedField($field);
+
+            if ($type->parentPath && $type->parentType === Nested::class) {
+                $sort[] = [
+                    $sortableName => [
+                        'nested' => [
+                            'path' => $type->parentPath,
+                        ],
+                        'order' => $direction,
+                    ],
+                ];
+            } else {
+                $sort[] =  [$sortableName => $direction];
+            }
         }
 
         return $sort;

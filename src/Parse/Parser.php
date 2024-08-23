@@ -62,7 +62,7 @@ abstract class Parser implements ParserInterface
             return $field;
         }
 
-        $field = $this->properties[$field];
+        $field = $this->properties->getNestedField($field);
 
         if ($field instanceof Keyword) {
             return $field->name;
