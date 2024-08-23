@@ -17,12 +17,68 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
+    public function non_existing_field()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->object('contact', function (NewProperties $props) {
+            $props->geoPoint('location');
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'contact' => [
+                    'location' => [
+                        'lat' => 52.49,
+                        'lon' => 13.77,
+                    ]
+                ]
+            ]),
+            new Document([
+                'contact' => [
+                    'location' => [
+                        'lat' => 53.49,
+                        'lon' => 13.77,
+                    ]
+                ]
+            ]),
+            new Document([
+                'contact' => [
+                    'location' => [
+                        'lat' => 54.49,
+                        'lon' => 13.77,
+                    ]
+                ]
+            ])
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new SortParser($props, false);
+
+        $query = $parser->parse('population:desc');
+
+        $this->assertEmpty($query);
+    }
+
+    /**
+     * @test
+     */
     public function object_geo_distance_sort()
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->object('contact', function (NewProperties $props) { 
+        $blueprint->object('contact', function (NewProperties $props) {
             $props->geoPoint('location');
         });
 
@@ -222,7 +278,7 @@ class SortParserTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->nested('contact', function (NewProperties $props) { 
+        $blueprint->nested('contact', function (NewProperties $props) {
             $props->geoPoint('location');
         });
 

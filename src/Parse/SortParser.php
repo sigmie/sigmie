@@ -114,9 +114,8 @@ class SortParser extends Parser
 
             $sortableName = $this->handleSortableFieldName($field);
 
-
             // Field isn't sortable
-            if (is_null($field)) {
+            if (is_null($sortableName)) {
                 continue;
             }
 
