@@ -17,6 +17,80 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
+    public function object_geo_distance_sort()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->object('contact', function (NewProperties $props) { 
+            $props->geoPoint('location');
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'contact' => [
+                    'location' => [
+                        'lat' => 52.49,
+                        'lon' => 13.77,
+                    ]
+                ]
+            ]),
+            new Document([
+                'contact' => [
+                    'location' => [
+                        'lat' => 53.49,
+                        'lon' => 13.77,
+                    ]
+                ]
+            ]),
+            new Document([
+                'contact' => [
+                    'location' => [
+                        'lat' => 54.49,
+                        'lon' => 13.77,
+                    ]
+                ]
+            ])
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new SortParser($props);
+
+        $query = $parser->parse('contact.location[52.49,13.77]:km:asc');
+
+        $res = $this->sigmie->query($indexName)
+            ->addRaw('sort', $query)
+            ->get();
+
+        $this->assertTrue($res->json('hits.hits')[0]['_source']['contact']['location']['lat'] === 52.49);
+        $this->assertTrue($res->json('hits.hits')[1]['_source']['contact']['location']['lat'] === 53.49);
+        $this->assertTrue($res->json('hits.hits')[2]['_source']['contact']['location']['lat'] === 54.49);
+
+        $parser = new SortParser($props);
+
+        $query = $parser->parse('contact.location[52.49,13.77]:km:desc');
+
+        $res = $this->sigmie->query($indexName)
+            ->addRaw('sort', $query)
+            ->get();
+
+        $this->assertTrue($res->json('hits.hits')[0]['_source']['contact']['location']['lat'] === 54.49);
+        $this->assertTrue($res->json('hits.hits')[1]['_source']['contact']['location']['lat'] === 53.49);
+        $this->assertTrue($res->json('hits.hits')[2]['_source']['contact']['location']['lat'] === 52.49);
+    }
+
+    /**
+     * @test
+     */
     public function nested_text_asc_filter()
     {
         $blueprint = new NewProperties;
