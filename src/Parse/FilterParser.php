@@ -206,7 +206,7 @@ class FilterParser extends Parser
     public function handleGeo(string $geo)
     {
         preg_match(
-            '/(?P<field>\w+):(?P<distance>\d+(?:km|m|cm|mm|mi|yd|ft|in|nmi))\[(?P<latitude>-?\d+(\.\d+)?),(?P<longitude>-?\d+(\.\d+)?)\]/',
+            '/(?P<field>[\w\.]+):(?P<distance>\d+(?:km|m|cm|mm|mi|yd|ft|in|nmi))\[(?P<latitude>-?\d+(\.\d+)?),(?P<longitude>-?\d+(\.\d+)?)\]/',
             $geo,
             $matches
         );

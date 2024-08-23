@@ -57,7 +57,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('is:contact.active');
+        $query = $parser->parse('contact.location:1km[51.16,13.49] AND is:contact.active');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
