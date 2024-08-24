@@ -27,6 +27,7 @@ class FilterParserTest extends TestCase
         $blueprint->nested('contact', function (NewProperties $props) {
             $props->nested('address', function (NewProperties $props) {
                 $props->keyword('city');
+                $props->keyword('marker');
             });
         });
 
@@ -40,14 +41,28 @@ class FilterParserTest extends TestCase
             new Document([
                 'contact' => [
                     'address' => [
-                        'city' => 'Berlin',
+                        [
+                            'city' => 'Berlin',
+                            'marker' => 'X',
+                        ],
+                        [
+                            'city' => 'Hamburg',
+                            'marker' => 'A',
+                        ]
                     ],
                 ],
             ]),
             new Document([
                 'contact' => [
                     'address' => [
-                        'city' => 'Hamburg',
+                        [
+                            'city' => 'Berlin',
+                            'marker' => 'A',
+                        ],
+                        [
+                            'city' => 'Athens',
+                            'marker' => 'X',
+                        ]
                     ],
                 ],
             ]),
@@ -59,7 +74,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('contact:{ address:{ city:"Berlin" } }');
+        $query = $parser->parse('contact:{ address:{ city:"Berlin" AND marker:"X" } }');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 

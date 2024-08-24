@@ -72,8 +72,8 @@ class FilterParser extends Parser
             //Create filter from parentheses match
             $filter = $this->parseString($matchWithoutParentheses);
         } else {
-            // Split on the first AND NOT, AND or OR operator that is not in quotes and not in curly braces
-            [$filter] = preg_split('/\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^\'"\{\}]*[\'"\{\}]){2})*[^\'"\{\}]*$)/', $query, limit: 2);
+            // Split on the first AND NOT, AND or OR operator that is not in quotes and not in nested curly braces
+            [$filter] = preg_split('/\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^\'"\{\}]*[\'"\{\}]){2})*[^\'"\{\}]*$)(?=(?:(?:[^\{\}]*\{[^\{\}]*\})*[^\{\}]*$))/', $query, limit: 2);
 
             //Remove white spaces
             $filter = trim($filter);
