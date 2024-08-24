@@ -195,26 +195,24 @@ class Properties extends Type implements ArrayAccess
     {
         $fields = explode('.', $fieldName);
 
-        $firstField = $fields[0];
+        $firstField = array_shift($fields);
 
         if (!isset($this->fields[$firstField])) {
             return null;
         }
 
-        if (count($fields) === 1) {
-            return $this->fields[$firstField];
+        $type = $this->fields[$firstField];
+
+        if (empty($fields)) {
+            return $type;
         }
 
-        $nestedOrObject = $this->fields[$firstField];
-
-        while ($nestedOrObject instanceof Nested || $nestedOrObject instanceof Object_) {
-
-            $childName = implode('.', array_slice($fields, 1));
-
-            $nestedOrObject = $nestedOrObject->properties->getNestedField($childName);
+        if ($type instanceof Nested || $type instanceof Object_) {
+            $childName = implode('.', $fields);
+            return $type->properties->getNestedField($childName);
         }
 
-        return $nestedOrObject;
+        return null;
     }
 
     public function propertiesParent(string $parentPath, string $parentType)

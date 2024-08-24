@@ -19,6 +19,131 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function parse_object_filter()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->object('contact', function (NewProperties $props) {
+            $props->bool('active');
+            $props->keyword('languages');
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'contact' => [
+                    'active' => true,
+                    'points' => 100,
+                    'languages' => ['en', 'de'],
+                    'location' => [
+                        'lat' => 51.16,
+                        'lon' => 13.49,
+                    ],
+                ],
+            ]),
+            new Document([
+                'contact' => [
+                    'active' => false,
+                    'points' => 100,
+                    'languages' => ['en', 'de'],
+                    'location' => [
+                        'lat' => 51.16,
+                        'lon' => 13.49,
+                    ],
+                ],
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse('is:contact.active AND contact.languages:"en"');
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(1, $res->json('hits.hits'));
+    }
+
+    /**
+     * @test
+     */
+    public function multi_nested_filter()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->nested('driver', function (NewProperties $props) {
+            $props->name('name');
+            $props->nested('vehicle', function (NewProperties $props) {
+                $props->keyword('make');
+                $props->keyword('model');
+            });
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'driver' => [
+                    'last_name' => 'McQueen',
+                    'vehicle' => [
+                        [
+                            'make' => 'Powell Motors',
+                            'model' => 'Canyonero'
+                        ],
+                        [
+                            'make' => 'Miller-Meteor',
+                            'model' => 'Ecto-1'
+                        ]
+                    ]
+                ],
+            ]),
+            new Document([
+                'driver' => [
+                    'last_name' => 'Hudson',
+                    'vehicle' => [
+                        [
+                            'make' => 'Mifune',
+                            'model' => 'Canyonero'
+                        ],
+                        [
+                            'make' => 'Powell Motors',
+                            'model' => 'Ecto-1'
+                        ]
+                    ]
+                ],
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse("driver.vehicle:{make:'Powell Motors' AND model:'Canyonero'}");
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(1, $res->json('hits.hits'));
+    }
+
+    /**
+     * @test
+     */
     public function parse_nested_filter()
     {
         $indexName = uniqid();
@@ -57,7 +182,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('contact.location:1km[51.16,13.49] AND is:contact.active');
+        $query = $parser->parse('contact:{ is:active AND location:1km[51.16,13.49] }');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 

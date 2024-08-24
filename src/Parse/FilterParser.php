@@ -72,8 +72,8 @@ class FilterParser extends Parser
             //Create filter from parentheses match
             $filter = $this->parseString($matchWithoutParentheses);
         } else {
-            // Split on the first AND NOT, AND or OR operator that is not in quotes
-            [$filter] = preg_split('/\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^\'"]*[\'"]){2})*[^\'"]*$)/', $query, limit: 2);
+            // Split on the first AND NOT, AND or OR operator that is not in quotes and not in curly braces
+            [$filter] = preg_split('/\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^\'"\{\}]*[\'"\{\}]){2})*[^\'"\{\}]*$)/', $query, limit: 2);
 
             //Remove white spaces
             $filter = trim($filter);
@@ -141,7 +141,10 @@ class FilterParser extends Parser
 
             // Throw an error if there's a space in the filter string
             // and it's not in a quote
-            if (preg_match('/\s(?!AND|OR|NOT|AND NOT)(?=(?:[^\'"]|\'[^\']*\'|"[^"]*")*$)/', $filter) && !preg_match('/[\'"].*\s.*[\'"]/', $filter)) {
+            if (
+                preg_match('/\s(?!AND|OR|NOT|AND NOT)(?=(?:[^\'"]|\'[^\']*\'|"[^"]*")*$)/', $filter)
+                && !preg_match('/[\'"{].*\s.*[\'"}]/', $filter)
+            ) {
                 throw new ParseException("Invalid filter string: '{$filter}'");
             }
 
@@ -180,6 +183,7 @@ class FilterParser extends Parser
     protected function stringToQueryClause(string $string): QueryClause
     {
         $query = match (1) {
+            preg_match('/^[\w\.]+:\{.*\}$/', $string) => $this->handleNested($string),
             preg_match('/^is:[a-z_A-Z0-9.]+/', $string) => $this->handleIs($string),
             preg_match('/^has:[a-z_A-Z0-9.]+/', $string) => $this->handleHas($string),
             preg_match('/^is_not:[a-z_A-Z0-9.]+/', $string) => $this->handleIsNot($string),
@@ -201,6 +205,36 @@ class FilterParser extends Parser
         $this->handleError("Filter string '{$string}' couldn't be parsed.");
 
         return new MatchNone;
+    }
+
+    public function handleNested(string $string)
+    {
+        preg_match(
+            '/(?P<field>[\w\.]+):\{(?P<filters>.*)\}/',
+            $string,
+            $matches
+        );
+
+        $field = $matches['field'];
+        $filters = trim($matches['filters']);
+
+        $type = $this->properties->getNestedField($field);
+
+        if (!$type instanceof TypesNested) {
+            $this->handleError("Field '{$field}' isn't a nested field.");
+        }
+
+        $filters = trim($filters);
+
+        $filters = preg_replace_callback('/(\w+):/', function ($matches) use ($field) {
+            $prefixes = ['is', 'has', 'is_not'];
+            if (in_array($matches[1], $prefixes)) {
+                return $matches[1] . ':' . $field . '.';
+            }
+            return $field . '.' . $matches[1] . ':';
+        }, $filters);
+
+        return new Nested($field, $this->parse($filters));
     }
 
     public function handleGeo(string $geo)
@@ -312,9 +346,9 @@ class FilterParser extends Parser
     {
         $fieldType = $this->properties->getNestedField($field);
 
-        if ($fieldType->parentPath && $fieldType->parentType === TypesNested::class) {
-            return new Nested($fieldType->parentPath, $query);
-        }
+        // if ($fieldType->parentPath && $fieldType->parentType === TypesNested::class) {
+        //     return new Nested($fieldType->parentPath, $query);
+        // }
 
         return $query;
     }
