@@ -19,6 +19,56 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function parse_deep_nested_filter()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->nested('contact', function (NewProperties $props) {
+            $props->nested('address', function (NewProperties $props) {
+                $props->keyword('city');
+            });
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'contact' => [
+                    'address' => [
+                        'city' => 'Berlin',
+                    ],
+                ],
+            ]),
+            new Document([
+                'contact' => [
+                    'address' => [
+                        'city' => 'Hamburg',
+                    ],
+                ],
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse('contact:{ address:{ city:"Berlin" } }');
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(1, $res->json('hits.hits'));
+    }
+
+    /**
+     * @test
+     */
     public function parse_object_filter()
     {
         $indexName = uniqid();

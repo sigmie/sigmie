@@ -226,13 +226,20 @@ class FilterParser extends Parser
 
         $filters = trim($filters);
 
-        $filters = preg_replace_callback('/(\w+):/', function ($matches) use ($field) {
-            $prefixes = ['is', 'has', 'is_not'];
-            if (in_array($matches[1], $prefixes)) {
-                return $matches[1] . ':' . $field . '.';
-            }
-            return $field . '.' . $matches[1] . ':';
-        }, $filters);
+        $filters = preg_replace_callback(
+            '/(\w+)(?![^{}]*}):/',
+            function ($matches) use ($field) {
+                $prefixes = ['is', 'has', 'is_not'];
+                $path = $field . '.';
+
+                if (in_array($matches[1], $prefixes)) {
+                    return $matches[1] . ':' . $path;
+                }
+
+                return $path . $matches[1] . ':';
+            },
+            $filters
+        );
 
         return new Nested($field, $this->parse($filters));
     }
