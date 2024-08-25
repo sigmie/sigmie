@@ -42,7 +42,7 @@ class FilterParserTest extends TestCase
                 'contact' => [
                     'address' => [
                         [
-                            'city' => 'Berlin',
+                            'city' => 'Be{rlin',
                             'marker' => 'X',
                         ],
                         [
@@ -56,7 +56,7 @@ class FilterParserTest extends TestCase
                 'contact' => [
                     'address' => [
                         [
-                            'city' => 'Berlin',
+                            'city' => 'Be{rlin',
                             'marker' => 'A',
                         ],
                         [
@@ -74,7 +74,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('contact:{ address:{ city:"Berlin" AND marker:"X" } }');
+        $query = $parser->parse('contact:{ address:{ city:"Be{rlin" AND marker:"X" } }');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 

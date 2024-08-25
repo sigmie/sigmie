@@ -19,6 +19,19 @@ use Sigmie\Query\Queries\Text\Nested;
 
 class FilterParser extends Parser
 {
+    protected ?string $parentPath = null;
+
+    public function parentPath(string $path)
+    {
+        $this->parentPath = $path;
+
+        return $this;
+    }
+
+    private function fieldName(string $field) {
+        return $this->parentPath ? $this->parentPath . '.' . $field : $field;
+    }
+
     protected function parseString(string $query)
     {
         // Replace breaks with spaces
@@ -226,22 +239,19 @@ class FilterParser extends Parser
 
         $filters = trim($filters);
 
-        $filters = preg_replace_callback(
-            '/(\w+)(?![^{}]*}):/',
-            function ($matches) use ($field) {
-                $prefixes = ['is', 'has', 'is_not'];
-                $path = $field . '.';
+        $parentPath = $this->parentPath ? $this->parentPath . '.' . $field : $field;
 
-                if (in_array($matches[1], $prefixes)) {
-                    return $matches[1] . ':' . $path;
-                }
+        $parser = new static($type->properties);
+        $parser->parentPath($parentPath);
 
-                return $path . $matches[1] . ':';
-            },
-            $filters
-        );
+        // dump(
+        //     '$filters: ' . $filters,
+        //     '$field: ' . $field,
+        //     '$this->parentPath: ' . $this->parentPath
+        // );
+        $query = $parser->parse($filters);
 
-        return new Nested($field, $this->parse($filters));
+        return new Nested($parentPath, $query);
     }
 
     public function handleGeo(string $geo)
@@ -261,7 +271,7 @@ class FilterParser extends Parser
             return new MatchNone;
         }
 
-        return $this->filterQuery($field, new GeoDistance($field, $distance, $latitude, $longitude));
+        return $this->filterQuery($field, new GeoDistance($this->fieldName($field), $distance, $latitude, $longitude));
     }
 
     public function handleRange(string $range)
@@ -277,7 +287,7 @@ class FilterParser extends Parser
             return;
         }
 
-        return $this->filterQuery($field, new Range($field, [$operator => $value]));
+        return $this->filterQuery($field, new Range($this->fieldName($field), [$operator => $value]));
     }
 
     public function handleIDs(string $id)
@@ -297,7 +307,7 @@ class FilterParser extends Parser
             return;
         }
 
-        return $this->filterQuery($field, new Term($field, true));
+        return $this->filterQuery($field, new Term($this->fieldName($field), true));
     }
 
     public function handleHas(string $has)
@@ -308,7 +318,7 @@ class FilterParser extends Parser
             return;
         }
 
-        return $this->filterQuery($field, new Exists($field));
+        return $this->filterQuery($field, new Exists($this->fieldName($field)));
     }
 
     public function handleIsNot(string $is)
@@ -320,7 +330,7 @@ class FilterParser extends Parser
             return;
         }
 
-        return $this->filterQuery($field, new Term($field, false));
+        return $this->filterQuery($field, new Term($this->fieldName($field), false));
     }
 
     public function handleIn(string $terms)
@@ -346,7 +356,7 @@ class FilterParser extends Parser
             return;
         }
 
-        return $this->filterQuery($field, new Terms($field, $values));
+        return $this->filterQuery($field, new Terms($this->fieldName($field), $values));
     }
 
     private function filterQuery(string $field, Query $query): Query
@@ -375,6 +385,6 @@ class FilterParser extends Parser
             return;
         }
 
-        return $this->filterQuery($field, new Term($field, $value));
+        return $this->filterQuery($field, new Term($this->fieldName($field), $value));
     }
 }
