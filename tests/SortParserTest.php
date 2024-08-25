@@ -32,13 +32,13 @@ class SortParserTest extends TestCase
 
         $docs = [
             new Document([
-                'id' => 11,
+                'id' => 2,
             ]),
             new Document([
-                'id' => 201,
+                'id' => 10,
             ]),
             new Document([
-                'id' => 301,
+                'id' => 1,
             ])
         ];
 
@@ -54,9 +54,9 @@ class SortParserTest extends TestCase
             ->addRaw('sort', $query)
             ->get();
 
-        $this->assertTrue($res->json('hits.hits')[0]['_source']['id'] === 301);
-        $this->assertTrue($res->json('hits.hits')[1]['_source']['id'] === 201);
-        $this->assertTrue($res->json('hits.hits')[2]['_source']['id'] === 11);
+        $this->assertTrue($res->json('hits.hits')[0]['_source']['id'] === 10);
+        $this->assertTrue($res->json('hits.hits')[1]['_source']['id'] === 2);
+        $this->assertTrue($res->json('hits.hits')[2]['_source']['id'] === 1);
     }
 
     /**

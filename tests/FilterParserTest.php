@@ -19,6 +19,40 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function same_filter_nested_filter()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('name');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document(['name' => 'Arthur']),
+            new Document(['name' => 'Dory']),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse('name:"Arthur" AND name:"Arthur"');
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(1, $res->json('hits.hits'));
+    }
+
+    /**
+     * @test
+     */
     public function parse_deep_nested_filter()
     {
         $indexName = uniqid();

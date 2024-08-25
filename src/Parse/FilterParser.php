@@ -98,7 +98,7 @@ class FilterParser extends Parser
         //If it's a string filter like inStock = 1 and not
         //a subquery like (inStock = 1 AND active = true).
         if (is_string($filter)) {
-            $query = str_replace($filter, '', $query);
+            $query = preg_replace('/' . preg_quote($filter, '/') . '/', '', $query, 1);
             $query = trim($query);
             $filter = trim($filter);
         }
