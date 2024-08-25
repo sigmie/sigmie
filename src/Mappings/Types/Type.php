@@ -114,4 +114,9 @@ abstract class Type implements Name, ToRaw, TypeInterface
     {
         return null;
     }
+
+    public function sortableName(): null|string
+    {
+        return $this->name;
+    }
 }

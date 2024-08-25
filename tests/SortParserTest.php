@@ -17,6 +17,51 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
+    public function id_sort()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->id('id');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'id' => 11,
+            ]),
+            new Document([
+                'id' => 201,
+            ]),
+            new Document([
+                'id' => 301,
+            ])
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new SortParser($props);
+
+        $query = $parser->parse('id:desc');
+
+        $res = $this->sigmie->query($indexName)
+            ->addRaw('sort', $query)
+            ->get();
+
+        $this->assertTrue($res->json('hits.hits')[0]['_source']['id'] === 301);
+        $this->assertTrue($res->json('hits.hits')[1]['_source']['id'] === 201);
+        $this->assertTrue($res->json('hits.hits')[2]['_source']['id'] === 11);
+    }
+
+    /**
+     * @test
+     */
     public function non_existing_field()
     {
         $indexName = uniqid();

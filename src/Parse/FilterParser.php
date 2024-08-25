@@ -244,11 +244,6 @@ class FilterParser extends Parser
         $parser = new static($type->properties);
         $parser->parentPath($parentPath);
 
-        // dump(
-        //     '$filters: ' . $filters,
-        //     '$field: ' . $field,
-        //     '$this->parentPath: ' . $this->parentPath
-        // );
         $query = $parser->parse($filters);
 
         return new Nested($parentPath, $query);
@@ -361,7 +356,7 @@ class FilterParser extends Parser
 
     private function filterQuery(string $field, Query $query): Query
     {
-        $fieldType = $this->properties->getNestedField($field);
+        // $fieldType = $this->properties->getNestedField($field);
 
         // if ($fieldType->parentPath && $fieldType->parentType === TypesNested::class) {
         //     return new Nested($fieldType->parentPath, $query);

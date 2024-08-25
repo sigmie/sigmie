@@ -112,14 +112,14 @@ class SortParser extends Parser
                 $direction = 'asc';
             }
 
+            $type = $this->properties->getNestedField($field);
+
             $sortableName = $this->handleSortableFieldName($field);
 
             // Field isn't sortable
             if (is_null($sortableName)) {
                 continue;
             }
-
-            $type = $this->properties->getNestedField($field);
 
             if ($type->parentPath && $type->parentType === Nested::class) {
                 $sort[] = [

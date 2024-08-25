@@ -12,4 +12,23 @@ class Id extends CaseSensitiveKeyword
 
         return $queries;
     }
+
+    public function toRaw(): array
+    {
+        $raw = [
+            $this->name => [
+                'type' => $this->type(),
+                'fields' => [
+                    ...(new Number('sortable'))->integer()->toRaw(),
+                ],
+            ],
+        ];
+
+        return $raw;
+    }
+
+    public function sortableName(): null|string
+    {
+        return 'id.sortable';
+    }
 }

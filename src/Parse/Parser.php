@@ -48,35 +48,35 @@ abstract class Parser implements ParserInterface
         }
     }
 
-    protected function handleSortableFieldName(string $field): null|string
+    protected function handleSortableFieldName(string $fieldName): null|string
     {
-        if (! $this->fieldExists($field)) {
-            $this->handleError("Field {$field} does not exist.", [
-                'field' => $field,
+        if (! $this->fieldExists($fieldName)) {
+            $this->handleError("Field {$fieldName} does not exist.", [
+                'field' => $fieldName,
             ]);
 
             return null;
         }
 
-        if (! $this->isTextOrKeywordField($field)) {
-            return $field;
+        $fieldType = $this->properties->getNestedField($fieldName);
+
+        if (! $this->isTextOrKeywordField($fieldName)) {
+            return $fieldType->sortableName();
         }
 
-        $field = $this->properties->getNestedField($field);
-
-        if ($field instanceof Keyword) {
-            return $field->name;
+        if ($fieldType instanceof Keyword) {
+            return $fieldName;
         }
 
-        if (! $field->isSortable()) {
-            $this->handleError("Field {$field->name} is not sortable.", [
-                'field' => $field->name,
+        if (! $fieldType->isSortable()) {
+            $this->handleError("Field {$fieldName} is not sortable.", [
+                'field' => $fieldName,
             ]);
 
             return null;
         }
 
-        return $field->sortableName();
+        return $fieldType->sortableName();
     }
 
     protected function handleFieldName(string $name): null|string
