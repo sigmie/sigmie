@@ -17,6 +17,7 @@ use Sigmie\Parse\SortParser;
 use Sigmie\Query\Contracts\FuzzyQuery;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
+use Sigmie\Query\Queries\MatchNone;
 use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
@@ -114,10 +115,11 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
             $fields = new Collection($this->fields);
 
-            $fields->each(function ($field) use ($queryBoolean) {
-                if ($this->queryString === '' && !$this->noResultsOnEmptySearch) {
-                    $queryBoolean->should()->query(new MatchAll);
+            $shouldClauses = new Collection();
 
+            $fields->each(function ($field) use ($queryBoolean, &$shouldClauses) {
+                if ($this->queryString === '' && !$this->noResultsOnEmptySearch) {
+                    $shouldClauses->add(new MatchAll);
                     return;
                 }
 
@@ -131,7 +133,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $queries = new Collection($queries);
 
-                $queries->map(function (Query $queryClause) use ($boost, $fuzziness, $field) {
+                $queries->map(function (Query $queryClause) use ($boost, $fuzziness, $field, &$shouldClauses) {
 
                     if ($queryClause instanceof FuzzyQuery) {
                         $queryClause->fuzziness($fuzziness);
@@ -143,10 +145,15 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                         $queryClause = new Nested($field->parentPath, $queryClause);
                     }
 
-                    return $queryClause;
-                })
-                    ->each(fn(Query $queryClase) => $queryBoolean->should()->query($queryClase));
+                    $shouldClauses->add($queryClause);
+                });
             });
+
+            if ($shouldClauses->isEmpty()) {
+                $queryBoolean->should()->query(new MatchNone);
+            } else {
+                $shouldClauses->each(fn(Query $queryClase) => $queryBoolean->should()->query($queryClase));
+            }
 
             $boolean->should()->query($queryBoolean);
         });

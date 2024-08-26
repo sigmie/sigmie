@@ -6,6 +6,7 @@ namespace Sigmie\Search;
 
 use function Sigmie\Functions\auto_fuzziness;
 
+use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FacetParser;
@@ -15,6 +16,7 @@ use Sigmie\Query\Contracts\FuzzyQuery;
 use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
+use Sigmie\Query\Queries\MatchNone;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
@@ -81,13 +83,13 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
         $search = new Search($boolean);
         $highlight = new Collection($this->highlight);
 
-        $highlight->each(fn (string $field) => $search->highlight($field, $this->highlightPrefix, $this->highlightSuffix));
+        $highlight->each(fn(string $field) => $search->highlight($field, $this->highlightPrefix, $this->highlightSuffix));
 
         $search->fields($this->retrieve);
 
         $defaultFilters = json_encode($this->filters->toRaw());
 
-        $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('filter', "@filters($defaultFilters)@endfilters"));
+        $boolean->must()->bool(fn(Boolean $boolean) => $boolean->addRaw('filter', "@filters($defaultFilters)@endfilters"));
 
         $defaultSorts = json_encode($this->sort);
 
@@ -106,10 +108,12 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
             $fields = new Collection($this->fields);
 
-            $fields->each(function ($field) use ($queryBoolean) {
+            $shouldClauses = new Collection();
+
+            $fields->each(function ($field) use ($queryBoolean, &$shouldClauses) {
                 $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
 
-                $field = $this->properties->getNestedField($field);
+                $field = $this->properties->getNestedField($field) ?? throw new PropertiesFieldNotFound($field);
 
                 $fuzziness = !in_array($field->name(), $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
@@ -117,7 +121,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
                 $queries = new Collection($queries);
 
-                $queries->map(function (QueryClause $queryClause) use ($boost, $fuzziness, $field) {
+                $queries->map(function (QueryClause $queryClause) use ($boost, $fuzziness, $field, &$shouldClauses) {
                     if ($queryClause instanceof FuzzyQuery) {
                         $queryClause->fuzziness($fuzziness);
                     }
@@ -125,10 +129,17 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
                         $queryClause = new Nested($field->parentPath, $queryClause);
                     }
 
-                    return $queryClause->boost($boost);
-                })
-                    ->each(fn (QueryClause $queryClase) => $queryBoolean->should()->query($queryClase));
+                    $shouldClauses->add(
+                        $queryClause->boost($boost)
+                    );
+                });
             });
+
+            if ($shouldClauses->isEmpty()) {
+                $queryBoolean->should()->query(new MatchNone);
+            } else {
+                $shouldClauses->each(fn(QueryClause $queryClase) => $queryBoolean->should()->query($queryClase));
+            }
 
             $query = json_encode($queryBoolean->toRaw()['bool']['should'] ?? (new MatchAll)->toRaw());
 

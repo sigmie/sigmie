@@ -15,6 +15,45 @@ class SearchTemplateTest extends TestCase
     /**
      * @test
      */
+    public function search_on_non_queriable_field()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->date('date');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'date' => '2024-01-01',
+            ])
+        ]);
+
+        $templateId = uniqid();
+
+        $saved = $this->sigmie->newTemplate($templateId)
+            ->properties($blueprint)
+            ->fields(['date'])
+            ->get()
+            ->save();
+
+        $template = $this->sigmie->template($templateId);
+
+        $hits = $template->run($indexName, [
+            'query_string' => '2024-01-01',
+        ])->json('hits.hits');
+
+        $this->assertEmpty($hits);
+    }
+
+    /**
+     * @test
+     */
     public function nested_name_property()
     {
         $indexName = uniqid();

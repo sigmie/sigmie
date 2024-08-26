@@ -16,6 +16,70 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function empty_on_non_queriable_field()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->date('date');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'date' => '2024-01-01',
+            ])
+        ]);
+
+        $saved = $this->sigmie->newSearch($indexName)
+            ->fields(['date'])
+            ->properties($blueprint)
+            ->queryString('123');
+
+        $hits = $saved->get()->json('hits.hits');
+
+        $this->assertEmpty($hits);
+    }
+
+    /**
+     * @test
+     */
+    public function id_search()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->id('id');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'id' => '123',
+            ])
+        ]);
+
+        $saved = $this->sigmie->newSearch($indexName)
+            ->fields(['id'])
+            ->properties($blueprint)
+            ->queryString('123');
+
+        $hits = $saved->get()->json('hits.hits');
+
+        $this->assertNotEmpty($hits);
+    }
+
+    /**
+     * @test
+     */
     public function nested_retrieve()
     {
         $indexName = uniqid();
