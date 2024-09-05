@@ -12,6 +12,8 @@ class SortParser extends Parser
 {
     public function parse(string $string): array
     {
+        $this->errors = [];
+
         $string = trim($string);
 
         if ($string === '') {

@@ -16,6 +16,55 @@ use Sigmie\Testing\TestCase;
 
 class FilterParserTest extends TestCase
 {
+
+    /**
+     * @test
+     */
+    public function parse_parentheses_filter()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->nested('subject_services', function (NewProperties $props) {
+            $props->id('id');
+            $props->text('name');
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'subject_services' => [
+                    ['name' => 'BMAT', 'id' => 23],
+                    ['name' => 'IMAT', 'id' => 24],
+                    ['name' => 'UCAT', 'id' => 25],
+                ],
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props, false);
+
+        $query = $parser->parse('subject_service:{id:"23"}');
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertNotEmpty($parser->errors());
+
+        $query = $parser->parse('subject_services:{id:"23"}');
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertEmpty($parser->errors());
+    }
+
     /**
      * @test
      */

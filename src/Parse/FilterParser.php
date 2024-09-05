@@ -28,7 +28,8 @@ class FilterParser extends Parser
         return $this;
     }
 
-    private function fieldName(string $field) {
+    private function fieldName(string $field)
+    {
         return $this->parentPath ? $this->parentPath . '.' . $field : $field;
     }
 
@@ -121,6 +122,8 @@ class FilterParser extends Parser
 
     public function parse(string $filterString): Boolean
     {
+        $this->errors = [];
+
         if (trim($filterString) === '') {
             $bool = new Boolean;
             $bool->must->matchAll();
@@ -241,7 +244,13 @@ class FilterParser extends Parser
 
         $parentPath = $this->parentPath ? $this->parentPath . '.' . $field : $field;
 
+        // If the type is not nested and  we don't throw on error, we return a MatchNone
+        if (is_null($type)) {
+            return new MatchNone;
+        }
+
         $parser = new static($type->properties);
+
         $parser->parentPath($parentPath);
 
         $query = $parser->parse($filters);

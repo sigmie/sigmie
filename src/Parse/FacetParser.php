@@ -17,6 +17,8 @@ class FacetParser extends Parser
 {
     public function parse(string $string): Aggs
     {
+        $this->errors = [];
+
         // Remove extra spaces that aren't in quotes
         // and replace them with only one. This regex handles
         // also quotes that are escapted
