@@ -48,4 +48,17 @@ class Object_ extends Type
 
         return $raw;
     }
+
+    public function validate(string $key, mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [false, "Object field {$key} must be an object."];
+        }
+
+        if (count($value) === count($value, COUNT_RECURSIVE)) {
+            return [false, "Onject field {$key} must be an array of objects."];
+        }
+
+        return [true, ''];
+    }
 }

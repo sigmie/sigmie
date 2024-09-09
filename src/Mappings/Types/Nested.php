@@ -48,4 +48,17 @@ class Nested extends Type
 
         return $queries;
     }
+
+    public function validate(string $key, mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [false, "Nested field {$key} must be an object."];
+        }
+
+        if (count($value) === count($value, COUNT_RECURSIVE)) {
+            return [false, "Nested field {$key} must be an array of objects."];
+        }
+
+        return [true, ''];
+    }
 }

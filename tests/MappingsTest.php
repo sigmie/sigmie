@@ -31,6 +31,150 @@ use Sigmie\Testing\TestCase;
 
 class MappingsTest extends TestCase
 {
+
+    /**
+     * @test
+     */
+    public function validate_geo()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->geoPoint('location');
+
+        $props = $blueprint->get();
+
+        [$valid, $message] = $props['location']->validate('location', 1);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['location']->validate('location', [
+            [
+                'lat' => 12.34,
+                'lon' => 56.78
+            ]
+        ]);
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['location']->validate('location', [
+            'lat' => 12.34,
+            'lon' => 56.78
+        ]);
+
+        $this->assertTrue($valid);
+    }
+
+    /**
+     * @test
+     */
+    public function validate_object()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->object('comments', function (NewProperties $props) {});
+
+
+        $props = $blueprint->get();
+
+        [$valid, $message] = $props['comments']->validate('comments', 'foo');
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['comments']->validate('comments', [
+            [
+                'comment_id' => '1',
+                'text' => 'Great article!',
+                'user' => [
+                    'name' => 'Jane Smith',
+                    'age' => 28
+                ]
+            ]
+        ]);
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['comments']->validate(
+            'comments',
+            [
+                'comment_id' => '1',
+                'text' => 'Great article!',
+                'user' => [
+                    'name' => 'Jane Smith',
+                    'age' => 28
+                ]
+            ]
+        );
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['comments']->validate(
+            'comments',
+            [
+                'comment_id' => '1',
+                'comment_id' => '1',
+            ]
+        );
+
+        $this->assertFalse($valid);
+    }
+
+    /**
+     * @test
+     */
+    public function validate_nested()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->nested('comments', function (NewProperties $props) {});
+
+
+        $props = $blueprint->get();
+
+        [$valid, $message] = $props['comments']->validate('comments', 'foo');
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['comments']->validate('comments', [
+            [
+                'comment_id' => '1',
+                'text' => 'Great article!',
+                'user' => [
+                    'name' => 'Jane Smith',
+                    'age' => 28
+                ]
+            ]
+        ]);
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['comments']->validate(
+            'comments',
+            [
+                'comment_id' => '1',
+                'text' => 'Great article!',
+                'user' => [
+                    'name' => 'Jane Smith',
+                    'age' => 28
+                ]
+            ]
+        );
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['comments']->validate(
+            'comments',
+            [
+                'comment_id' => '1',
+                'comment_id' => '1',
+            ]
+        );
+
+        $this->assertFalse($valid);
+    }
+
     /**
      * @test
      */

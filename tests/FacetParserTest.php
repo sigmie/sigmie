@@ -16,6 +16,38 @@ class FacetParserTest extends TestCase
     /**
      * @test
      */
+    public function no_existing_field()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->caseSensitiveKeyword('name');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document(['name' => '1',]),
+            new Document(['name' => '1.1',]),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FacetParser($props, throwOnError: false);
+
+        $aggs = $parser->parse('nameabc:2,asc');
+
+        $this->assertNotEmpty($parser->errors());
+    }
+
+    /**
+     * @test
+     */
     public function case_sensitive_keyword()
     {
         $indexName = uniqid();

@@ -7,7 +7,6 @@ namespace Sigmie\Mappings\Types;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Mappings\ElasticsearchMappingType;
 use Sigmie\Query\Aggs;
-use Sigmie\Query\Queries\Term\Term;
 
 class Number extends Type
 {

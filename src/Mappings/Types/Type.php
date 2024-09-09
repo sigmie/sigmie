@@ -119,4 +119,9 @@ abstract class Type implements Name, ToRaw, TypeInterface
     {
         return $this->name;
     }
+
+    public function validate(string $key, mixed $value): array
+    {
+        return [true, ''];
+    }
 }
