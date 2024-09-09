@@ -63,11 +63,8 @@ class Completion extends Suggester
         $res = parent::toRaw();
 
         $res[$this->name][$this->type()->value]['skip_duplicates'] = true;
-
-        if ($this->prefix ?? false) {
-            $res[$this->name]['prefix'] = $this->prefix;
-        }
-
+        $res[$this->name]['prefix'] = $this->prefix;
+    
 
         if ($this->fuzzy ?? false) {
             $res[$this->name][$this->type()->value]['fuzzy'] = [

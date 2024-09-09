@@ -6,11 +6,48 @@ namespace Sigmie\Tests;
 
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Document\Document;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\Queries\Compound\Boolean as QueriesCompoundBoolean;
 use Sigmie\Testing\TestCase;
 
 class QueryTest extends TestCase
 {
+    /**
+     * @test
+     */
+    public function zero_query()
+    {
+        $name = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->name('name');
+
+        $this->sigmie->newIndex($name)
+            ->properties($blueprint)
+            ->create();
+
+        $collection = $this->sigmie->collect($name, refresh: true);
+
+        $docs = [
+            new Document([
+                'name' => 'John Doe',
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $search =  $this->sigmie->newSearch($name)
+            ->properties($blueprint)
+            ->queryString('0');
+
+        $res = $search->get();
+
+        $hits = $res->json();
+
+        // this is a test for completion suggester
+        $this->assertTrue(true);
+    }
+
     /**
      * @test
      */
@@ -69,7 +106,7 @@ class QueryTest extends TestCase
             $boolean->mustNot->wildcard('foo', '**/*');
             $boolean->mustNot->ids(['unqie']);
 
-            $boolean->should->bool(fn (QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
+            $boolean->should->bool(fn(QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
         })
             ->from(0)
             ->size(2)
@@ -96,7 +133,7 @@ class QueryTest extends TestCase
             $boolean->mustNot->wildcard('foo', '**/*');
             $boolean->mustNot->ids(['unqie']);
 
-            $boolean->should->bool(fn (QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
+            $boolean->should->bool(fn(QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
         })->sort('title.raw', 'asc')
             ->fields(['title'])
             ->from(0)
