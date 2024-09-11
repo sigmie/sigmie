@@ -72,4 +72,13 @@ class Price extends Type
     {
         return true;
     }
+
+    public function validate(string $key, mixed $value): array
+    {
+        if (!is_numeric($value)) {
+            return [false, "The field {$key} mapped as price must be a number"];
+        }
+
+        return [true, ''];
+    }
 }

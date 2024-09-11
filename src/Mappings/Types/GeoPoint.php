@@ -24,7 +24,7 @@ class GeoPoint extends Type
             foreach ($value as $geoPoint) {
 
                 if (!isset($geoPoint['lat']) || !isset($geoPoint['lon'])) {
-                    return [false, "GeoPoint field {$key} must have lat and lon keys."];
+                    return [false, "The field {$key} mapped as {$this->typeName()} must have lat and lon keys."];
 
                 }
             }
@@ -33,7 +33,7 @@ class GeoPoint extends Type
 
         } else {
 
-            return [false, "GeoPoint field {$key} must have lat and lon keys."];
+            return [false, "The field {$key} mapped as {$this->typeName()} must have lat and lon keys."];
         }
     }
 }

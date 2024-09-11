@@ -24,4 +24,13 @@ class Id extends CaseSensitiveKeyword
     {
         return 'id.sortable';
     }
+
+    public function validate(string $key, mixed $value): array
+    {
+        if (!is_int($value)) {
+            return [false, "The field {$key} mapped as {$this->typeName()} must be an integer"];
+        }
+
+        return [true, ''];
+    }
 }

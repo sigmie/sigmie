@@ -70,4 +70,24 @@ class Number extends Type
 
         return $json['aggregations'][$this->name()] ?? $json['aggregations'][$this->name()][$this->name()] ?? 0;
     }
+
+    public function validate(string $key, mixed $value): array
+    {
+        if (!is_numeric($value)) {
+            return [false, "The field {$key} mapped as {$this->typeName()} must be a number"];
+        }
+
+        return [true, ''];
+    }
+
+    public function typeName(): string
+    {
+        return match ($this->type) {
+            ElasticsearchMappingType::INTEGER->value => 'integer',
+            ElasticsearchMappingType::FLOAT->value => 'float',
+            ElasticsearchMappingType::SCALED_FLOAT->value => 'scaled_float',
+            ElasticsearchMappingType::LONG->value => 'long',
+            default => 'number',
+        };
+    }
 }

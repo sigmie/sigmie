@@ -22,4 +22,13 @@ class Boolean extends Type
 
         return $queries;
     }
+
+    public function validate(string $key, mixed $value): array
+    {
+        if (!is_bool($value)) {
+            return [false, "The field {$key} mapped as {$this->typeName()} must be a boolean"];
+        }
+
+        return [true, ''];
+    }
 }

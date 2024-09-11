@@ -8,6 +8,8 @@ use DateTime;
 use InvalidArgumentException;
 use Sigmie\Base\ElasticsearchException;
 use Exception;
+use SebastianBergmann\RecursionContext\InvalidArgumentException as RecursionContextInvalidArgumentException;
+use PHPUnit\Framework\ExpectationFailedException;
 use Sigmie\Document\Document;
 use Sigmie\Index\Alias\MultipleIndicesForAlias;
 use Sigmie\Index\Analysis\Analyzer;
@@ -31,6 +33,286 @@ use Sigmie\Testing\TestCase;
 
 class MappingsTest extends TestCase
 {
+    /**
+     * @test
+     */
+    public function validate_case_sensitive_keyword()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->caseSensitiveKeyword('code');
+
+        $props = $blueprint->get();
+
+        [$valid, $message] = $props['code']->validate('code', 1);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['code']->validate('code', '1');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['code']->validate('code', [
+            [
+                'lat' => 12.34,
+                'lon' => 56.78
+            ]
+        ]);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['code']->validate('code', 'foo');
+
+        $this->assertTrue($valid);
+    }
+
+    /**
+     * @test
+     */
+    public function validate_price()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->price('price');
+
+        $props = $blueprint->get();
+
+        [$valid, $message] = $props['price']->validate('price', 1);
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['price']->validate('price', '1');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['price']->validate('price', [
+            [
+                'lat' => 12.34,
+                'lon' => 56.78
+            ]
+        ]);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['price']->validate('price', 'foo');
+
+        $this->assertFalse($valid);
+    }
+
+    /**
+     * @test
+     */
+    public function validate_number()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->number('location');
+
+        $props = $blueprint->get();
+
+        [$valid, $message] = $props['location']->validate('location', 1);
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['location']->validate('location', '1');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['location']->validate('location', [
+            [
+                'lat' => 12.34,
+                'lon' => 56.78
+            ]
+        ]);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['location']->validate('location', 'foo');
+
+        $this->assertFalse($valid);
+    }
+
+    /**
+     * @test
+     */
+    public function validate_date()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->date('created_at');
+
+        $props = $blueprint->get();
+
+        [$valid, $message] = $props['created_at']->validate('created_at', 1);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['created_at']->validate('created_at', 'foo');
+
+        $this->isFalse($valid);
+
+        [$valid, $message] = $props['created_at']->validate('created_at', [
+            [
+                'lat' => 12.34,
+                'lon' => 56.78
+            ]
+        ]);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['created_at']->validate('created_at', true);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29.000000Z');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29.000000+02:00');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29.000000-02:00');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29.000000Z');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29.000Z');
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29Z');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29+02:00');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29-02:00');
+
+        $this->assertTrue($valid);
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $this->sigmie->collect($indexName, true)->merge([
+            new Document([
+                'created_at' => '2023-04-07T12:38:29.000000Z'
+            ]),
+            new Document([
+                'created_at' => '2023-04-07T12:38:29.000000Z'
+            ]),
+            new Document([
+                'created_at' => '2023-04-07T12:38:29'
+            ]),
+            new Document([
+                'created_at' => '2023-04-07'
+            ]),
+            new Document([
+                'created_at' => '2023-04-07T12:38:29.000000+02:00'
+            ]),
+            new Document([
+                'created_at' => '2023-04-07T12:38:29.000000-02:00'
+            ]),
+            new Document([
+                'created_at' => '2023-04-07T12:38:29Z'
+            ]),
+            new Document([
+                'created_at' => '2023-04-07T12:38:29+02:00'
+            ]),
+            new Document([
+                'created_at' => '2023-04-07T12:38:29-02:00'
+            ]),
+        ]);
+
+        $res = $this->sigmie->newSearch($indexName)->properties($blueprint)->queryString('')->get();
+
+        // expect no exception when indexing date
+        $this->assertTrue(true);
+    }
+
+    /**
+     * @test
+     */
+    public function validate_keyword()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('location');
+
+        $props = $blueprint->get();
+
+        [$valid, $message] = $props['location']->validate('location', 1);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['location']->validate('location', 'foo');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['location']->validate('location', [
+            [
+                'lat' => 12.34,
+                'lon' => 56.78
+            ]
+        ]);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['location']->validate('location', 'foo');
+
+        $this->assertTrue($valid);
+    }
+
+    /**
+     * @test
+     */
+    public function validate_text()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('location');
+
+        $props = $blueprint->get();
+
+        [$valid, $message] = $props['location']->validate('location', 1);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['location']->validate('location', 'foo');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['location']->validate('location', [
+            [
+                'lat' => 12.34,
+                'lon' => 56.78
+            ]
+        ]);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['location']->validate('location', 'foo');
+
+        $this->assertTrue($valid);
+    }
 
     /**
      * @test

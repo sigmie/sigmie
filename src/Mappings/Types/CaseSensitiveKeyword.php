@@ -52,4 +52,13 @@ class CaseSensitiveKeyword extends Type
     {
         return true;
     }
+
+    public function validate(string $key, mixed $value): array
+    {
+        if (!is_string($value)) {
+            return [false, "The field {$key} mapped as {$this->typeName()} must be a string"];
+        }
+
+        return [true, ''];
+    }
 }
