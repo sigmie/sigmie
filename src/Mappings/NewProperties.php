@@ -21,6 +21,7 @@ use Sigmie\Mappings\Types\Name;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Object_;
+use Sigmie\Mappings\Types\Path;
 use Sigmie\Mappings\Types\Price;
 use Sigmie\Mappings\Types\SearchableNumber;
 use Sigmie\Mappings\Types\Sentence;
@@ -219,6 +220,15 @@ class NewProperties
     public function html(string $name): HTML
     {
         $field = new HTML($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function path(string $name): Path
+    {
+        $field = new Path($name);
 
         $this->fields->add($field);
 

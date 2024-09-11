@@ -20,10 +20,22 @@ use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\PropertiesFieldNotFound;
+use Sigmie\Mappings\Types\Address;
+use Sigmie\Mappings\Types\CaseSensitiveKeyword;
+use Sigmie\Mappings\Types\Category;
+use Sigmie\Mappings\Types\Email;
+use Sigmie\Mappings\Types\HTML;
+use Sigmie\Mappings\Types\Id;
 use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Mappings\Types\LongText;
 use Sigmie\Mappings\Types\Name;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Object_;
+use Sigmie\Mappings\Types\Path;
+use Sigmie\Mappings\Types\Price;
+use Sigmie\Mappings\Types\SearchableNumber;
+use Sigmie\Mappings\Types\Sentence;
+use Sigmie\Mappings\Types\Tags;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
@@ -604,6 +616,19 @@ class MappingsTest extends TestCase
 
         $blueprint = new NewProperties;
         $blueprint->keyword('category');
+        $blueprint->id('id');
+        $blueprint->category('category');
+        $blueprint->caseSensitiveKeyword('case_sensitive_keyword');
+        $blueprint->address('address');
+        $blueprint->email('email');
+        $blueprint->html('html');
+        $blueprint->longText('long_text');
+        $blueprint->name('name');
+        $blueprint->path('path');
+        $blueprint->searchableNumber('searchable_number');
+        $blueprint->title('sentence');
+        $blueprint->tags('tags');
+        $blueprint->price('price');
 
         $index = $this->sigmie
             ->newIndex($indexName)
@@ -611,7 +636,20 @@ class MappingsTest extends TestCase
             ->create();
 
         $this->assertIndex($indexName, function (Assert $index) {
-            $index->assertPropertyHasMeta('category', 'class', Keyword::class);
+            $index->assertPropertyHasMeta('category', 'class', Category::class);
+            $index->assertPropertyHasMeta('id', 'class', Id::class);
+            $index->assertPropertyHasMeta('path', 'class', Path::class);
+            $index->assertPropertyHasMeta('case_sensitive_keyword', 'class', CaseSensitiveKeyword::class);
+            $index->assertPropertyHasMeta('address', 'class', Address::class);
+            $index->assertPropertyHasMeta('email', 'class', Email::class);
+            $index->assertPropertyHasMeta('html', 'class', HTML::class);
+            $index->assertPropertyHasMeta('long_text', 'class', LongText::class);
+            $index->assertPropertyHasMeta('name', 'class', Name::class);
+            $index->assertPropertyHasMeta('path', 'class', Path::class);
+            $index->assertPropertyHasMeta('searchable_number', 'class', SearchableNumber::class);
+            $index->assertPropertyHasMeta('sentence', 'class', Sentence::class);
+            $index->assertPropertyHasMeta('tags', 'class', Tags::class);
+            $index->assertPropertyHasMeta('price', 'class', Price::class);
         });
     }
 

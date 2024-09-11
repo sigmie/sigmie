@@ -8,13 +8,11 @@ class Id extends CaseSensitiveKeyword
 {
     public function toRaw(): array
     {
-        $raw = [
-            $this->name => [
-                'type' => $this->type(),
-                'fields' => [
-                    ...(new Number('sortable'))->integer()->toRaw(),
-                ],
-            ],
+        $raw = parent::toRaw();
+
+        $raw[$this->name]['fields'] = [
+            ...($raw[$this->name]['fields'] ?? []),
+            ...(new Number('sortable'))->integer()->toRaw(),
         ];
 
         return $raw;
