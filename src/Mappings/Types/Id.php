@@ -33,4 +33,9 @@ class Id extends CaseSensitiveKeyword
 
         return [true, ''];
     }
+
+    public function typeName(): string
+    {
+        return 'identifier';
+    }
 }
