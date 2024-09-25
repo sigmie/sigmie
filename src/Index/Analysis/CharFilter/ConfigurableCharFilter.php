@@ -12,8 +12,7 @@ abstract class ConfigurableCharFilter extends CharFilter
 
     public function __construct(
         public readonly string $name,
-    ) {
-    }
+    ) {}
 
     abstract public function settings(array $settings): void;
 }

@@ -48,7 +48,7 @@ abstract class Parser implements ParserInterface
         }
     }
 
-    protected function handleSortableFieldName(string $fieldName): null|string
+    protected function handleSortableFieldName(string $fieldName): ?string
     {
         if (! $this->fieldExists($fieldName)) {
             $this->handleError("Field {$fieldName} does not exist.", [
@@ -79,7 +79,7 @@ abstract class Parser implements ParserInterface
         return $fieldType->sortableName();
     }
 
-    protected function handleFieldName(string $name): null|string
+    protected function handleFieldName(string $name): ?string
     {
         if (! $this->fieldExists($name)) {
             $this->handleError("Field {$name} does not exist.", [

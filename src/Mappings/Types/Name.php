@@ -8,13 +8,9 @@ use Sigmie\Index\Analysis\TokenFilter\Ngram;
 use Sigmie\Index\Analysis\TokenFilter\Synonyms;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\Contracts\Analyze;
-use Sigmie\Query\Queries\Query;
-use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MatchBoolPrefix;
-use Sigmie\Query\Queries\Text\MatchPhrase;
 use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
-use Sigmie\Query\Queries\Text\Nested;
 
 class Name extends Text implements Analyze
 {
@@ -56,7 +52,7 @@ class Name extends Text implements Analyze
         return [
             $this->name,
             // "{$this->name}.{$this->name}_text",
-            $this->parentPath ? "{$this->parentPath}.{$this->name}.{$this->name}_text" : "{$this->name}.{$this->name}_text"
+            $this->parentPath ? "{$this->parentPath}.{$this->name}.{$this->name}_text" : "{$this->name}.{$this->name}_text",
         ];
     }
 
@@ -76,7 +72,7 @@ class Name extends Text implements Analyze
     public function notAllowedFilters()
     {
         return [
-            Synonyms::class
+            Synonyms::class,
         ];
     }
 }

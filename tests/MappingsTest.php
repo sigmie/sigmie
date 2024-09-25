@@ -5,20 +5,14 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use DateTime;
-use InvalidArgumentException;
-use Sigmie\Base\ElasticsearchException;
 use Exception;
-use SebastianBergmann\RecursionContext\InvalidArgumentException as RecursionContextInvalidArgumentException;
-use PHPUnit\Framework\ExpectationFailedException;
 use Sigmie\Document\Document;
-use Sigmie\Index\Alias\MultipleIndicesForAlias;
 use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Mappings;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
@@ -26,7 +20,6 @@ use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Email;
 use Sigmie\Mappings\Types\HTML;
 use Sigmie\Mappings\Types\Id;
-use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\LongText;
 use Sigmie\Mappings\Types\Name;
 use Sigmie\Mappings\Types\Nested;
@@ -68,8 +61,8 @@ class MappingsTest extends TestCase
         [$valid, $message] = $props['code']->validate('code', [
             [
                 'lat' => 12.34,
-                'lon' => 56.78
-            ]
+                'lon' => 56.78,
+            ],
         ]);
 
         $this->assertFalse($valid);
@@ -102,8 +95,8 @@ class MappingsTest extends TestCase
         [$valid, $message] = $props['price']->validate('price', [
             [
                 'lat' => 12.34,
-                'lon' => 56.78
-            ]
+                'lon' => 56.78,
+            ],
         ]);
 
         $this->assertFalse($valid);
@@ -136,8 +129,8 @@ class MappingsTest extends TestCase
         [$valid, $message] = $props['location']->validate('location', [
             [
                 'lat' => 12.34,
-                'lon' => 56.78
-            ]
+                'lon' => 56.78,
+            ],
         ]);
 
         $this->assertFalse($valid);
@@ -170,8 +163,8 @@ class MappingsTest extends TestCase
         [$valid, $message] = $props['created_at']->validate('created_at', [
             [
                 'lat' => 12.34,
-                'lon' => 56.78
-            ]
+                'lon' => 56.78,
+            ],
         ]);
 
         $this->assertFalse($valid);
@@ -224,31 +217,31 @@ class MappingsTest extends TestCase
 
         $this->sigmie->collect($indexName, true)->merge([
             new Document([
-                'created_at' => '2023-04-07T12:38:29.000000Z'
+                'created_at' => '2023-04-07T12:38:29.000000Z',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29.000000Z'
+                'created_at' => '2023-04-07T12:38:29.000000Z',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29'
+                'created_at' => '2023-04-07T12:38:29',
             ]),
             new Document([
-                'created_at' => '2023-04-07'
+                'created_at' => '2023-04-07',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29.000000+02:00'
+                'created_at' => '2023-04-07T12:38:29.000000+02:00',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29.000000-02:00'
+                'created_at' => '2023-04-07T12:38:29.000000-02:00',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29Z'
+                'created_at' => '2023-04-07T12:38:29Z',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29+02:00'
+                'created_at' => '2023-04-07T12:38:29+02:00',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29-02:00'
+                'created_at' => '2023-04-07T12:38:29-02:00',
             ]),
         ]);
 
@@ -281,8 +274,8 @@ class MappingsTest extends TestCase
         [$valid, $message] = $props['location']->validate('location', [
             [
                 'lat' => 12.34,
-                'lon' => 56.78
-            ]
+                'lon' => 56.78,
+            ],
         ]);
 
         $this->assertFalse($valid);
@@ -315,8 +308,8 @@ class MappingsTest extends TestCase
         [$valid, $message] = $props['location']->validate('location', [
             [
                 'lat' => 12.34,
-                'lon' => 56.78
-            ]
+                'lon' => 56.78,
+            ],
         ]);
 
         $this->assertFalse($valid);
@@ -345,15 +338,15 @@ class MappingsTest extends TestCase
         [$valid, $message] = $props['location']->validate('location', [
             [
                 'lat' => 12.34,
-                'lon' => 56.78
-            ]
+                'lon' => 56.78,
+            ],
         ]);
 
         $this->assertTrue($valid);
 
         [$valid, $message] = $props['location']->validate('location', [
             'lat' => 12.34,
-            'lon' => 56.78
+            'lon' => 56.78,
         ]);
 
         $this->assertTrue($valid);
@@ -369,7 +362,6 @@ class MappingsTest extends TestCase
         $blueprint = new NewProperties;
         $blueprint->object('comments', function (NewProperties $props) {});
 
-
         $props = $blueprint->get();
 
         [$valid, $message] = $props['comments']->validate('comments', 'foo');
@@ -382,9 +374,9 @@ class MappingsTest extends TestCase
                 'text' => 'Great article!',
                 'user' => [
                     'name' => 'Jane Smith',
-                    'age' => 28
-                ]
-            ]
+                    'age' => 28,
+                ],
+            ],
         ]);
 
         $this->assertTrue($valid);
@@ -396,8 +388,8 @@ class MappingsTest extends TestCase
                 'text' => 'Great article!',
                 'user' => [
                     'name' => 'Jane Smith',
-                    'age' => 28
-                ]
+                    'age' => 28,
+                ],
             ]
         );
 
@@ -424,7 +416,6 @@ class MappingsTest extends TestCase
         $blueprint = new NewProperties;
         $blueprint->nested('comments', function (NewProperties $props) {});
 
-
         $props = $blueprint->get();
 
         [$valid, $message] = $props['comments']->validate('comments', 'foo');
@@ -437,9 +428,9 @@ class MappingsTest extends TestCase
                 'text' => 'Great article!',
                 'user' => [
                     'name' => 'Jane Smith',
-                    'age' => 28
-                ]
-            ]
+                    'age' => 28,
+                ],
+            ],
         ]);
 
         $this->assertTrue($valid);
@@ -451,8 +442,8 @@ class MappingsTest extends TestCase
                 'text' => 'Great article!',
                 'user' => [
                     'name' => 'Jane Smith',
-                    'age' => 28
-                ]
+                    'age' => 28,
+                ],
             ]
         );
 
@@ -551,52 +542,52 @@ class MappingsTest extends TestCase
 
         $index->merge([
             new Document([
-                "title" => "Introduction to Elasticsearch",
-                "author" => [
-                    "name" => "John Doe",
-                    "age" => 35
+                'title' => 'Introduction to Elasticsearch',
+                'author' => [
+                    'name' => 'John Doe',
+                    'age' => 35,
                 ],
-                "comments" => [
+                'comments' => [
                     [
-                        "comment_id" => "1",
-                        "text" => "Great article!",
-                        "user" => [
-                            "name" => "Jane Smith",
-                            "age" => 28
-                        ]
+                        'comment_id' => '1',
+                        'text' => 'Great article!',
+                        'user' => [
+                            'name' => 'Jane Smith',
+                            'age' => 28,
+                        ],
                     ],
                     [
-                        "comment_id" => "2",
-                        "text" => "Very helpful. Thanks!",
-                        "user" => [
-                            "name" => "Mike Johnson",
-                            "age" => 42
-                        ]
-                    ]
+                        'comment_id' => '2',
+                        'text' => 'Very helpful. Thanks!',
+                        'user' => [
+                            'name' => 'Mike Johnson',
+                            'age' => 42,
+                        ],
+                    ],
                 ],
-                "phones" => [
+                'phones' => [
                     [
-                        "type" => "numbers",
-                        "phone_type" => "phone",
-                        "phone_number" => "+20 65 3615086",
+                        'type' => 'numbers',
+                        'phone_type' => 'phone',
+                        'phone_number' => '+20 65 3615086',
                     ],
                     [
-                        "type" => "numbers",
-                        "phone_type" => "phone",
-                        "phone_number" => "+20 65 3615087",
+                        'type' => 'numbers',
+                        'phone_type' => 'phone',
+                        'phone_number' => '+20 65 3615087',
                     ],
                     [
-                        "type" => "numbers",
-                        "phone_type" => "phone",
-                        "phone_number" => "+20 65 3615088",
+                        'type' => 'numbers',
+                        'phone_type' => 'phone',
+                        'phone_number' => '+20 65 3615088',
                     ],
                     [
-                        "type" => "numbers",
-                        "phone_type" => "phone",
-                        "phone_number" => "+20 65 3615089",
-                    ]
-                ]
-            ])
+                        'type' => 'numbers',
+                        'phone_type' => 'phone',
+                        'phone_number' => '+20 65 3615089',
+                    ],
+                ],
+            ]),
         ]);
 
         $props = $this->sigmie->index($indexName)->mappings->properties();
@@ -605,7 +596,6 @@ class MappingsTest extends TestCase
         $this->assertInstanceOf(Object_::class, $props['author']);
         $this->assertInstanceOf(Nested::class, $props['comments']);
     }
-
 
     /**
      * @test
@@ -671,8 +661,8 @@ class MappingsTest extends TestCase
 
         $this->sigmie->collect($indexName, true)->merge([
             new Document([
-                'code' => 'Abcd'
-            ])
+                'code' => 'Abcd',
+            ]),
         ]);
 
         $hits = $this->sigmie->newSearch($indexName)
@@ -703,8 +693,8 @@ class MappingsTest extends TestCase
 
         $this->sigmie->collect($indexName, true)->merge([
             new Document([
-                'code' => 'Abcd'
-            ])
+                'code' => 'Abcd',
+            ]),
         ]);
 
         $hits = $this->sigmie->newSearch($indexName)
@@ -757,7 +747,7 @@ class MappingsTest extends TestCase
 
         $res = $this->analyzeAPICall($indexName, 'Hohn Doe 28, 58511', 'address_field_analyzer');
 
-        $tokens = array_map(fn($token) => $token['token'], $res->json('tokens'));
+        $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
 
         $this->assertEquals(['hohn', 'doe', '28', '58511'], $tokens);
     }
@@ -830,7 +820,7 @@ class MappingsTest extends TestCase
 
         $hits = $search->json('hits.hits');
 
-        $res = array_map(fn($hit) => $hit['_source']['title'], $hits);
+        $res = array_map(fn ($hit) => $hit['_source']['title'], $hits);
 
         $this->assertEquals('Alpha', $res[0]);
         $this->assertEquals('beta', $res[1]);
@@ -1090,6 +1080,7 @@ class MappingsTest extends TestCase
         // not include the prefix query
         $this->assertEmpty($hits);
     }
+
     /**
      * @test
      */
@@ -1178,7 +1169,7 @@ class MappingsTest extends TestCase
 
         $res = $this->analyzeAPICall($indexName, 'john.doe@gmail.com', 'default');
 
-        $tokens = array_map(fn($token) => $token['token'], $res->json('tokens'));
+        $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
 
         $res = $this->indexAPICall($indexName, 'GET');
 

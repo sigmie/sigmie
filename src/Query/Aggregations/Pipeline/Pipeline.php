@@ -15,8 +15,7 @@ abstract class Pipeline implements Aggregation
         protected string $name,
         protected string $type,
         protected string $path
-    ) {
-    }
+    ) {}
 
     public function toRaw(): array
     {

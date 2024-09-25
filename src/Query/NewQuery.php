@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Query;
 
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Properties;
+use Sigmie\Parse\FilterParser;
 use Sigmie\Query\Contracts\Queries;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\Compound\Boolean;
@@ -25,17 +28,30 @@ class NewQuery implements Queries
 {
     protected Search $search;
 
+    protected Properties $properties;
+
     public function __construct(
         protected ElasticsearchConnection $httpConnection,
-        protected null|string $index = null,
+        protected ?string $index = null,
     ) {
         $this->search = new Search();
 
         $this->search->setElasticsearchConnection($httpConnection);
 
+        $this->properties = new Properties();
+
         if (! is_null($index)) {
             $this->search->index($index);
         }
+    }
+
+    public function properties(Properties|NewProperties $props): static
+    {
+        $this->properties = $props instanceof NewProperties ? $props->get() : $props;
+
+        $this->search->properties($props);
+
+        return $this;
     }
 
     public function term(string $field, string|bool|int|float $value): Search
@@ -45,9 +61,18 @@ class NewQuery implements Queries
 
     public function bool(callable $callable, float $boost = 1): Search
     {
-        $query = new Boolean();
+        $query = new Boolean($this->properties);
 
         $callable($query->boost($boost));
+
+        return $this->search->query($query);
+    }
+
+    public function parse(string $filterString): Search
+    {
+        $parser = new FilterParser($this->properties);
+
+        $query = $parser->parse($filterString);
 
         return $this->search->query($query);
     }

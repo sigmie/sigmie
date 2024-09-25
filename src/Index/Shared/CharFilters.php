@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Sigmie\Index\Shared;
 
 use Exception;
-use function Sigmie\Functions\random_letters;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Analysis\CharFilter\Pattern;
 use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\CharFilter;
 use Sigmie\Shared\Collection;
+
+use function Sigmie\Functions\random_letters;
 
 trait CharFilters
 {
@@ -43,7 +44,7 @@ trait CharFilters
     public function patternReplace(
         string $pattern,
         string $replace,
-        string|null $name = null
+        ?string $name = null
     ): static {
         $name = $name ?? $this->createCharFilterName('pattern_replace_filter');
 
@@ -52,7 +53,7 @@ trait CharFilters
         return $this;
     }
 
-    public function mapChars(array $mappings, string|null $name = null): static
+    public function mapChars(array $mappings, ?string $name = null): static
     {
         $name = $name ?? $this->createCharFilterName('mapping_filter');
 

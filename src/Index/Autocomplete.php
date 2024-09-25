@@ -5,21 +5,15 @@ declare(strict_types=1);
 namespace Sigmie\Index;
 
 use Sigmie\Base\APIs\Ingest;
-use Sigmie\English\Filter\Lowercase;
-use Sigmie\English\Filter\Stemmer;
-use Sigmie\English\Filter\Stopwords;
 use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\TokenFilter\AsciiFolding;
 use Sigmie\Index\Analysis\TokenFilter\DecimalDigit;
 use Sigmie\Index\Analysis\TokenFilter\Shingle;
-use Sigmie\Index\Analysis\TokenFilter\Stopwords as TokenFilterStopwords;
 use Sigmie\Index\Analysis\TokenFilter\Trim;
-use Sigmie\Index\Analysis\TokenFilter\Truncate;
 use Sigmie\Index\Analysis\TokenFilter\Unique;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\Mappings;
 use Sigmie\Mappings\Properties;
-use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Email;
@@ -33,7 +27,6 @@ use Sigmie\Mappings\Types\Text;
 use Sigmie\Search\Autocomplete\NewPipeline;
 use Sigmie\Search\Autocomplete\Pipeline;
 use Sigmie\Search\Autocomplete\Script;
-use Sigmie\Search\Autocomplete\Set;
 use Sigmie\Shared\Collection;
 
 trait Autocomplete
@@ -64,7 +57,6 @@ trait Autocomplete
         return $this;
     }
 
-
     public function lowercaseAutocompletions(): static
     {
         $this->lowercaseAutocomplete = true;
@@ -74,7 +66,7 @@ trait Autocomplete
 
     public function createAutocompletePipeline(Mappings $mappings): Pipeline
     {
-        /** @var  Properties */
+        /** @var Properties */
         $properties = $mappings->properties();
 
         $combinableFields = $this->combinableFields($properties);
@@ -87,7 +79,7 @@ trait Autocomplete
 
         $processor = new Script;
         $processor->params([
-            'lowercase' => $this->lowercaseAutocomplete
+            'lowercase' => $this->lowercaseAutocomplete,
         ]);
         $processor->source("
       def fields1 = [{$fields1}];
@@ -163,7 +155,7 @@ trait Autocomplete
                 Path::class,
                 Keyword::class, CaseSensitiveKeyword::class, Tags::class,
                 Sentence::class,
-                Name::class
+                Name::class,
             ]))
             ->mapWithKeys(fn (Text $type, string $name) => [$name => "(ctx.{$name} != null ? (ctx.{$name} instanceof List ? ctx.{$name}.join(' ') : ctx.{$name}?.trim() + ' ') : '')"])
             ->values();
@@ -177,14 +169,14 @@ trait Autocomplete
 
         $categoryFieldsPermutations = $collection->filter(fn ($type) => $type instanceof Text)
             ->filter(fn (Text $type) => in_array($type::class, [
-                Category::class
+                Category::class,
             ]))
             ->filter(fn (Text $type, $name) => in_array($name, $this->autocompleteFields))
             ->mapWithKeys(fn (Text $type, string $name) => [$name => "(ctx.{$name} != null ? (ctx.{$name} instanceof List ? ctx.{$name}.join(' ') + ' ' : ctx.{$name}?.trim() + ' ') : '')"])
             ->values();
 
         $categoryFieldsPermutations = $this->permutations($categoryFieldsPermutations);
-        $categoryFieldsValues = array_map(fn ($values) => "(" . implode('+', $values) . ")", $categoryFieldsPermutations);
+        $categoryFieldsValues = array_map(fn ($values) => '('.implode('+', $values).')', $categoryFieldsPermutations);
 
         return $categoryFieldsValues;
     }

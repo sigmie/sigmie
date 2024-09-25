@@ -9,8 +9,7 @@ class Field
     public function __construct(
         protected string $name,
         protected string $type
-    ) {
-    }
+    ) {}
 
     public function name(): string
     {

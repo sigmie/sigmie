@@ -16,8 +16,7 @@ class AutoDateHistogram extends Bucket
         protected string $field,
         protected int $buckets,
         protected MinimumInterval $minimumInterval = MinimumInterval::Second
-    ) {
-    }
+    ) {}
 
     public function value(): array
     {

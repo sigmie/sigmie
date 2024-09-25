@@ -14,7 +14,7 @@ class Ngram extends TokenFilter
         protected string|int $maxGram = 2,
         protected bool $preserveOriginal = false,
     ) {
-        parent::__construct(name: $name, settings:[
+        parent::__construct(name: $name, settings: [
             'min_gram' => $this->minGram,
             'max_gram' => $this->maxGram,
             'preserve_original' => $this->preserveOriginal,

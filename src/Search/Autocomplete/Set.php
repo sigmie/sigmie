@@ -23,7 +23,7 @@ class Set extends Processor
     {
         return [
             'field' => $this->field,
-            'value' => $this->value
+            'value' => $this->value,
         ];
     }
 

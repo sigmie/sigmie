@@ -11,8 +11,7 @@ class Wildcard extends Query
     public function __construct(
         protected string $field,
         protected string $value
-    ) {
-    }
+    ) {}
 
     public function toRaw(): array
     {

@@ -17,10 +17,10 @@ class BucketSelector extends Bucket
     public function value(): array
     {
         return [
-            "bucket_selector" => [
-                "buckets_path" => $this->bucketsPath,
-                "script" => $this->script
-            ]
+            'bucket_selector' => [
+                'buckets_path' => $this->bucketsPath,
+                'script' => $this->script,
+            ],
         ];
     }
 }

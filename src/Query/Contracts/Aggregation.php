@@ -6,6 +6,4 @@ namespace Sigmie\Query\Contracts;
 
 use Sigmie\Shared\Contracts\ToRaw;
 
-interface Aggregation extends ToRaw
-{
-}
+interface Aggregation extends ToRaw {}

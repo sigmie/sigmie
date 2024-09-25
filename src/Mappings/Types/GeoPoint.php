@@ -2,8 +2,6 @@
 
 namespace Sigmie\Mappings\Types;
 
-use Sigmie\Mappings\Types\Type;
-
 class GeoPoint extends Type
 {
     protected string $type = 'geo_point';
@@ -23,7 +21,7 @@ class GeoPoint extends Type
 
             foreach ($value as $geoPoint) {
 
-                if (!isset($geoPoint['lat']) || !isset($geoPoint['lon'])) {
+                if (! isset($geoPoint['lat']) || ! isset($geoPoint['lon'])) {
                     return [false, "The field {$key} mapped as {$this->typeName()} must have lat and lon keys."];
 
                 }

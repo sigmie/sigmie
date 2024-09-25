@@ -6,7 +6,6 @@ namespace Sigmie\Tests;
 
 use Http\Promise\Promise;
 use Sigmie\Document\Document;
-use Sigmie\Index\Analysis\TokenFilter\Unique;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Price;
 use Sigmie\Testing\TestCase;
@@ -32,7 +31,7 @@ class SearchTest extends TestCase
         $index->merge([
             new Document([
                 'date' => '2024-01-01',
-            ])
+            ]),
         ]);
 
         $saved = $this->sigmie->newSearch($indexName)
@@ -64,7 +63,7 @@ class SearchTest extends TestCase
         $index->merge([
             new Document([
                 'id' => '123',
-            ])
+            ]),
         ]);
 
         $saved = $this->sigmie->newSearch($indexName)
@@ -108,7 +107,7 @@ class SearchTest extends TestCase
                         'name' => 'Pluto',
                     ],
                 ],
-            ])
+            ]),
         ]);
 
         $saved = $this->sigmie->newSearch($indexName)
@@ -154,7 +153,7 @@ class SearchTest extends TestCase
                         'name' => 'Pluto',
                     ],
                 ],
-            ])
+            ]),
         ]);
 
         $saved = $this->sigmie->newSearch($indexName)
@@ -230,8 +229,8 @@ class SearchTest extends TestCase
         $index->merge([
             new Document([
                 'name' => 'Jason Preston',
-                'autocomplete' => ['']
-            ])
+                'autocomplete' => [''],
+            ]),
         ]);
 
         $res = $this->sigmie->newSearch($indexName)
@@ -272,8 +271,8 @@ class SearchTest extends TestCase
         $index->merge([
             new Document([
                 'name' => 'Jason Preston',
-                'autocomplete' => ['']
-            ])
+                'autocomplete' => [''],
+            ]),
         ]);
 
         $res = $this->sigmie->newSearch($indexName)
@@ -308,8 +307,8 @@ class SearchTest extends TestCase
         $index->merge([
             new Document([
                 'first_name' => 'Bam',
-                'last_name' => 'Adebayo'
-            ], $documentId)
+                'last_name' => 'Adebayo',
+            ], $documentId),
         ]);
 
         $search = $this->sigmie->newSearch($indexName)
@@ -346,7 +345,7 @@ class SearchTest extends TestCase
         $index->merge([
             new Document([
                 'name' => 'Jason Preston',
-            ])
+            ]),
         ]);
 
         $res = $this->sigmie->newSearch($indexName)
@@ -408,14 +407,14 @@ class SearchTest extends TestCase
             ->retrieve(['name'])
             ->get();
 
-        $suggestions = array_map(fn($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
 
         $this->assertEquals([
-            "Marisa",
-            "Mice",
-            "Mickey",
-            "Minie",
-            "Modern",
+            'Marisa',
+            'Mice',
+            'Mickey',
+            'Minie',
+            'Modern',
         ], $suggestions);
     }
 

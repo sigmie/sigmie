@@ -56,6 +56,7 @@ class IndexUpdateTest extends TestCase
             $index->assertAnalyzerHasNotCharFilter('default', 'some_char_filter_name');
         });
     }
+
     /**
      * @test
      */
@@ -310,7 +311,7 @@ class IndexUpdateTest extends TestCase
             ->twoWaySynonyms([
                 ['treasure', 'gem', 'gold', 'price'],
                 ['friend', 'buddy', 'partner'],
-            ], 'foo_two_way_synonyms',)
+            ], 'foo_two_way_synonyms', )
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {

@@ -11,8 +11,7 @@ class MultiMatch extends Query
     public function __construct(
         protected array $fields,
         protected string $query,
-    ) {
-    }
+    ) {}
 
     public function toRaw(): array
     {

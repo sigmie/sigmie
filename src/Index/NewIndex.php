@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Sigmie\Index;
 
 use Sigmie\Base\Contracts\ElasticsearchConnection;
-use function Sigmie\Functions\index_name;
+use Sigmie\English\Filter\Lowercase;
+use Sigmie\English\Filter\Stemmer;
+use Sigmie\English\Filter\Stopwords;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Analysis\Analysis;
-use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
@@ -21,20 +22,19 @@ use Sigmie\Index\Shared\Shards;
 use Sigmie\Index\Shared\Tokenizer;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
-use Sigmie\English\Filter\Lowercase;
-use Sigmie\English\Filter\Stemmer;
-use Sigmie\English\Filter\Stopwords;
+
+use function Sigmie\Functions\index_name;
 
 class NewIndex
 {
-    use IndexActions;
-    use Filters;
-    use Mappings;
-    use CharFilters;
-    use Shards;
-    use Replicas;
-    use Tokenizer;
     use Autocomplete;
+    use CharFilters;
+    use Filters;
+    use IndexActions;
+    use Mappings;
+    use Replicas;
+    use Shards;
+    use Tokenizer;
 
     protected string $alias;
 
@@ -51,7 +51,7 @@ class NewIndex
         return [
             new Stemmer('autocomplete_english_stemmer'),
             new Stopwords('autocomplete_english_stopwords'),
-            new Lowercase('autocomplete_english_lowercase')
+            new Lowercase('autocomplete_english_lowercase'),
         ];
     }
 
@@ -98,7 +98,7 @@ class NewIndex
         $builder->shards($this->shards);
         $builder->replicas($this->replicas);
 
-        return  $builder;
+        return $builder;
     }
 
     public function defaultAnalyzer(): DefaultAnalyzer

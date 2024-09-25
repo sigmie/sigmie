@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\Tokenizers;
 
-use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\Tokenizer;
+
+use function Sigmie\Functions\name_configs;
 
 class Ngram implements Tokenizer
 {
@@ -14,8 +15,7 @@ class Ngram implements Tokenizer
         protected string|int $minGram = 3,
         protected string|int $maxGram = 3,
         protected array $tokenChars = ['letter'],
-    ) {
-    }
+    ) {}
 
     public static function fromRaw(array $raw): static
     {

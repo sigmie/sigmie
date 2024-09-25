@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Predis\Command\PrefixableCommandInterface;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;

@@ -39,7 +39,7 @@ class SortParserTest extends TestCase
             ]),
             new Document([
                 'id' => 1,
-            ])
+            ]),
         ];
 
         $index->merge($docs);
@@ -83,25 +83,25 @@ class SortParserTest extends TestCase
                     'location' => [
                         'lat' => 52.49,
                         'lon' => 13.77,
-                    ]
-                ]
+                    ],
+                ],
             ]),
             new Document([
                 'contact' => [
                     'location' => [
                         'lat' => 53.49,
                         'lon' => 13.77,
-                    ]
-                ]
+                    ],
+                ],
             ]),
             new Document([
                 'contact' => [
                     'location' => [
                         'lat' => 54.49,
                         'lon' => 13.77,
-                    ]
-                ]
-            ])
+                    ],
+                ],
+            ]),
         ];
 
         $index->merge($docs);
@@ -139,25 +139,25 @@ class SortParserTest extends TestCase
                     'location' => [
                         'lat' => 52.49,
                         'lon' => 13.77,
-                    ]
-                ]
+                    ],
+                ],
             ]),
             new Document([
                 'contact' => [
                     'location' => [
                         'lat' => 53.49,
                         'lon' => 13.77,
-                    ]
-                ]
+                    ],
+                ],
             ]),
             new Document([
                 'contact' => [
                     'location' => [
                         'lat' => 54.49,
                         'lon' => 13.77,
-                    ]
-                ]
-            ])
+                    ],
+                ],
+            ]),
         ];
 
         $index->merge($docs);
@@ -276,20 +276,20 @@ class SortParserTest extends TestCase
                 'location' => [
                     'lat' => 52.49,
                     'lon' => 13.77,
-                ]
+                ],
             ]),
             new Document([
                 'location' => [
                     'lat' => 53.49,
                     'lon' => 13.77,
-                ]
+                ],
             ]),
             new Document([
                 'location' => [
                     'lat' => 54.49,
                     'lon' => 13.77,
-                ]
-            ])
+                ],
+            ]),
         ];
 
         $index->merge($docs);
@@ -306,11 +306,11 @@ class SortParserTest extends TestCase
 
         $query = $parser->parse('location[52.49,13.77]:km:foo');
 
-        $this->expectException(ParseException::class, "Invalid latitude or longitude for geo distance sort.");
+        $this->expectException(ParseException::class, 'Invalid latitude or longitude for geo distance sort.');
 
         $query = $parser->parse('location[foo,13.77]:km:asc');
 
-        $this->expectException(ParseException::class, "Invalid latitude or longitude for geo distance sort.");
+        $this->expectException(ParseException::class, 'Invalid latitude or longitude for geo distance sort.');
 
         $query = $parser->parse('location[91,13.77]:km:asc');
     }
@@ -339,25 +339,25 @@ class SortParserTest extends TestCase
                     'location' => [
                         'lat' => 52.49,
                         'lon' => 13.77,
-                    ]
-                ]
+                    ],
+                ],
             ]),
             new Document([
                 'contact' => [
                     'location' => [
                         'lat' => 53.49,
                         'lon' => 13.77,
-                    ]
-                ]
+                    ],
+                ],
             ]),
             new Document([
                 'contact' => [
                     'location' => [
                         'lat' => 54.49,
                         'lon' => 13.77,
-                    ]
-                ]
-            ])
+                    ],
+                ],
+            ]),
         ];
 
         $index->merge($docs);
@@ -410,20 +410,20 @@ class SortParserTest extends TestCase
                 'location' => [
                     'lat' => 52.49,
                     'lon' => 13.77,
-                ]
+                ],
             ]),
             new Document([
                 'location' => [
                     'lat' => 53.49,
                     'lon' => 13.77,
-                ]
+                ],
             ]),
             new Document([
                 'location' => [
                     'lat' => 54.49,
                     'lon' => 13.77,
-                ]
-            ])
+                ],
+            ]),
         ];
 
         $index->merge($docs);
@@ -454,7 +454,6 @@ class SortParserTest extends TestCase
         $this->assertTrue($res->json('hits.hits')[1]['_source']['location']['lat'] === 53.49);
         $this->assertTrue($res->json('hits.hits')[2]['_source']['location']['lat'] === 52.49);
     }
-
 
     /**
      * @test

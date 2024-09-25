@@ -45,7 +45,6 @@ abstract class Suggester implements ToRaw
             ],
         ];
 
-
         return $res;
     }
 }

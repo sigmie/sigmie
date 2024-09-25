@@ -15,7 +15,7 @@ class SimpleAnalyzer implements Analyzer
 
     public function toRaw(): array
     {
-        return  [
+        return [
             $this->name() => [
                 'type' => 'simple',
             ],

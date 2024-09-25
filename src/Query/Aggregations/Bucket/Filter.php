@@ -17,8 +17,8 @@ class Filter extends Bucket
     public function value(): array
     {
         return [
-            "filter" => [
-                "term" => [
+            'filter' => [
+                'term' => [
                     $this->field => $this->term,
                 ],
             ],

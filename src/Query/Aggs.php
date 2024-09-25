@@ -29,8 +29,6 @@ use Sigmie\Query\Aggregations\Metrics\Sum;
 use Sigmie\Query\Aggregations\Metrics\ValueCount;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
 
-use function PHPUnit\Framework\callback;
-
 class Aggs implements AggsInterface
 {
     protected array $aggs = [];
@@ -83,8 +81,8 @@ class Aggs implements AggsInterface
     public function sort(
         string $name,
         array $sort,
-        int $size = null,
-        int $from = null,
+        ?int $size = null,
+        ?int $from = null,
     ): Sort {
         $aggregation = new Sort($name, $sort, $size, $from);
 
@@ -98,8 +96,7 @@ class Aggs implements AggsInterface
         string $field,
         int $interval,
         int $minDocCount = 0,
-        array|null
-        $extendedBounds = null
+        ?array $extendedBounds = null
     ): Histogram {
         $aggregation = new Histogram($name, $field, $interval, $minDocCount, $extendedBounds);
 
@@ -113,7 +110,7 @@ class Aggs implements AggsInterface
         string $field,
         CalendarInterval $interval,
         int $minDocCount = 0,
-        null|array $extendedBounds = null
+        ?array $extendedBounds = null
 
     ): DateHistogram {
         $aggregation = new DateHistogram($name, $field, $interval, $minDocCount, $extendedBounds);
@@ -235,7 +232,7 @@ class Aggs implements AggsInterface
         string $name,
         array $sources,
         int $size = 10,
-        null|array $after = null,
+        ?array $after = null,
     ): Composite {
         $aggregation = new Composite($name, $sources, $size, $after);
 

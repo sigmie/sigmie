@@ -23,7 +23,7 @@ class Script extends Processor
     {
         return [
             'source' => $this->source,
-            'params' => (object) $this->params
+            'params' => (object) $this->params,
         ];
     }
 

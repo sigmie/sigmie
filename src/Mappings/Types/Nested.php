@@ -51,7 +51,7 @@ class Nested extends Type
 
     public function validate(string $key, mixed $value): array
     {
-        if (!is_array($value)) {
+        if (! is_array($value)) {
             return [false, "Nested field {$key} must be an object."];
         }
 

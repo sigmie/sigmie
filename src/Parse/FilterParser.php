@@ -7,14 +7,14 @@ namespace Sigmie\Parse;
 use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\Queries\Compound\Boolean;
+use Sigmie\Query\Queries\GeoDistance;
 use Sigmie\Query\Queries\MatchNone;
+use Sigmie\Query\Queries\Query;
+use Sigmie\Query\Queries\Term\Exists;
 use Sigmie\Query\Queries\Term\IDs;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Term\Terms;
-use Sigmie\Query\Queries\GeoDistance;
-use Sigmie\Query\Queries\Query;
-use Sigmie\Query\Queries\Term\Exists;
 use Sigmie\Query\Queries\Text\Nested;
 
 class FilterParser extends Parser
@@ -30,7 +30,7 @@ class FilterParser extends Parser
 
     private function fieldName(string $field)
     {
-        return $this->parentPath ? $this->parentPath . '.' . $field : $field;
+        return $this->parentPath ? $this->parentPath.'.'.$field : $field;
     }
 
     protected function parseString(string $query)
@@ -52,7 +52,6 @@ class FilterParser extends Parser
             return ')'; // Replace closing parenthesis with spaces with just a closing parenthesis
         }, $query);
 
-
         // Remove all single items in parenthesis
         // for example the ((emails_sent_count>0) AND (last_activity_label:'click_time'))
         // will change to (emails_sent_count>0 AND last_activity_label:'click_time')
@@ -67,7 +66,7 @@ class FilterParser extends Parser
         }, $query);
 
         // If first filter is a parenthetic expression
-        if (str_starts_with($query, '(',)) {
+        if (str_starts_with($query, '(')) {
 
             // match all parenthentic expresions recusively
             preg_match_all("/\(([^()]|(?R))*\)/", $query, $matches);
@@ -93,13 +92,12 @@ class FilterParser extends Parser
             $filter = trim($filter);
         }
 
-
         // A nested filter like (inStock = 1 AND active = true) is
         // returned as an array from the `parseString` method.
         //If it's a string filter like inStock = 1 and not
         //a subquery like (inStock = 1 AND active = true).
         if (is_string($filter)) {
-            $query = preg_replace('/' . preg_quote($filter, '/') . '/', '', $query, 1);
+            $query = preg_replace('/'.preg_quote($filter, '/').'/', '', $query, 1);
             $query = trim($query);
             $filter = trim($filter);
         }
@@ -115,7 +113,6 @@ class FilterParser extends Parser
             $res['operator'] = $operator;
             $res['values'] = $this->parseString($query);
         }
-
 
         return $res;
     }
@@ -159,7 +156,7 @@ class FilterParser extends Parser
             // and it's not in a quote
             if (
                 preg_match('/\s(?!AND|OR|NOT|AND NOT)(?=(?:[^\'"]|\'[^\']*\'|"[^"]*")*$)/', $filter)
-                && !preg_match('/[\'"{].*\s.*[\'"}]/', $filter)
+                && ! preg_match('/[\'"{].*\s.*[\'"}]/', $filter)
             ) {
                 throw new ParseException("Invalid filter string: '{$filter}'");
             }
@@ -236,13 +233,13 @@ class FilterParser extends Parser
 
         $type = $this->properties->getNestedField($field);
 
-        if (!$type instanceof TypesNested) {
+        if (! $type instanceof TypesNested) {
             $this->handleError("Field '{$field}' isn't a nested field.");
         }
 
         $filters = trim($filters);
 
-        $parentPath = $this->parentPath ? $this->parentPath . '.' . $field : $field;
+        $parentPath = $this->parentPath ? $this->parentPath.'.'.$field : $field;
 
         // If the type is not nested and  we don't throw on error, we return a MatchNone
         if (is_null($type)) {
@@ -348,11 +345,11 @@ class FilterParser extends Parser
         });
 
         // Remove whitespaces from values
-        $values = array_map(fn($value) => trim($value, ' '), $values);
+        $values = array_map(fn ($value) => trim($value, ' '), $values);
         // Remove doublue quotes from values
-        $values = array_map(fn($value) => trim($value, '\''), $values);
+        $values = array_map(fn ($value) => trim($value, '\''), $values);
         // Remove single quotes from values
-        $values = array_map(fn($value) => trim($value, '"'), $values);
+        $values = array_map(fn ($value) => trim($value, '"'), $values);
 
         $field = $this->handleFieldName($field);
 

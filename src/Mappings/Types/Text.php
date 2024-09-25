@@ -7,8 +7,6 @@ namespace Sigmie\Mappings\Types;
 use Closure;
 use Exception;
 use Sigmie\Base\Http\ElasticsearchResponse;
-
-use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Index\NewAnalyzer;
@@ -19,11 +17,13 @@ use Sigmie\Query\Queries\Text\MultiMatch;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\Contracts\FromRaw;
 
+use function Sigmie\Functions\name_configs;
+
 class Text extends Type implements FromRaw
 {
-    protected null|Analyzer $analyzer = null;
+    protected ?Analyzer $analyzer = null;
 
-    protected null|array $indexPrefixes = null;
+    protected ?array $indexPrefixes = null;
 
     public bool $hasAnalyzerCallback = false;
 
@@ -35,12 +35,12 @@ class Text extends Type implements FromRaw
 
     public function __construct(
         string $name,
-        protected null|string $raw = null,
+        protected ?string $raw = null,
     ) {
         parent::__construct($name);
 
         $this->fields = new Collection();
-        $this->newAnalyzerClosure = fn() => null;
+        $this->newAnalyzerClosure = fn () => null;
 
         $this->configure();
     }
@@ -64,7 +64,7 @@ class Text extends Type implements FromRaw
 
     public function handleCustomAnalyzer(AnalysisInterface $analysis)
     {
-        $name = !is_null($this->parentPath) ? "{$this->parentPath}_{$this->name}_field_analyzer" : "{$this->name}_field_analyzer";
+        $name = ! is_null($this->parentPath) ? "{$this->parentPath}_{$this->name}_field_analyzer" : "{$this->name}_field_analyzer";
         $name = str_replace('.', '_', $name);
 
         $newAnalyzer = new NewAnalyzer(
@@ -87,7 +87,7 @@ class Text extends Type implements FromRaw
         }
 
         $this->fields
-            ->filter(fn($type) => $type instanceof Text)
+            ->filter(fn ($type) => $type instanceof Text)
             ->map(function (Text $text) use ($analysis) {
                 $text->handleCustomAnalyzer($analysis);
 
@@ -95,7 +95,7 @@ class Text extends Type implements FromRaw
             });
 
         $this->fields
-            ->filter(fn($type) => $type instanceof Keyword)
+            ->filter(fn ($type) => $type instanceof Keyword)
             ->map(function (Keyword $keyword) use ($analysis) {
                 $keyword->handleNormalizer($analysis);
 
@@ -112,7 +112,7 @@ class Text extends Type implements FromRaw
 
     public function hasFields()
     {
-        return !$this->fields->isEmpty();
+        return ! $this->fields->isEmpty();
     }
 
     public function analysisFromCallback(NewAnalyzer $newAnalyzer): void
@@ -146,7 +146,7 @@ class Text extends Type implements FromRaw
             'text' => $instance->unstructuredText(),
             'search_as_you_type' => $instance->searchAsYouType(),
             'completion' => $instance->completion(),
-            default => throw new Exception('Field ' . $configs['type'] . ' couldn\'t be mapped')
+            default => throw new Exception('Field '.$configs['type'].' couldn\'t be mapped')
         };
 
         return $instance;
@@ -162,7 +162,7 @@ class Text extends Type implements FromRaw
 
     public function isKeyword(): bool
     {
-        return !is_null($this->raw);
+        return ! is_null($this->raw);
     }
 
     public function isSortable(): bool
@@ -172,24 +172,24 @@ class Text extends Type implements FromRaw
 
     public function isFilterable(): bool
     {
-        return !is_null($this->raw);
+        return ! is_null($this->raw);
     }
 
-    public function keywordName(): null|string
+    public function keywordName(): ?string
     {
         return (is_null($this->raw)) ? null : "{$this->name}.{$this->raw}";
     }
 
-    public function sortableName(): null|string
+    public function sortableName(): ?string
     {
         if (is_null($this->parentPath)) {
-            return (!$this->sortable) ? null : "{$this->name}.sortable";
+            return (! $this->sortable) ? null : "{$this->name}.sortable";
         }
 
-        return (!$this->sortable) ? null : "{$this->parentPath}.{$this->name}.sortable";
+        return (! $this->sortable) ? null : "{$this->parentPath}.{$this->name}.sortable";
     }
 
-    public function filterableName(): null|string
+    public function filterableName(): ?string
     {
         if (is_null($this->parentPath)) {
             return (is_null($this->raw)) ? null : "{$this->name}.{$this->raw}";
@@ -198,7 +198,7 @@ class Text extends Type implements FromRaw
         return (is_null($this->raw)) ? null : "{$this->parentPath}.{$this->name}.{$this->raw}";
     }
 
-    public function searchAsYouType(Analyzer $analyzer = null): self
+    public function searchAsYouType(?Analyzer $analyzer = null): self
     {
         $this->analyzer = $analyzer;
         $this->type = 'search_as_you_type';
@@ -206,7 +206,7 @@ class Text extends Type implements FromRaw
         return $this;
     }
 
-    public function unstructuredText(Analyzer $analyzer = null): self
+    public function unstructuredText(?Analyzer $analyzer = null): self
     {
         $this->analyzer = $analyzer;
         $this->type = 'text';
@@ -225,7 +225,7 @@ class Text extends Type implements FromRaw
         return $this;
     }
 
-    public function completion(Analyzer $analyzer = null): self
+    public function completion(?Analyzer $analyzer = null): self
     {
         $this->analyzer = $analyzer;
         $this->type = 'completion';
@@ -243,7 +243,7 @@ class Text extends Type implements FromRaw
         $this->analyzer = $analyzer;
     }
 
-    public function analyzer(): null|Analyzer
+    public function analyzer(): ?Analyzer
     {
         return $this->analyzer;
     }
@@ -252,22 +252,21 @@ class Text extends Type implements FromRaw
     {
         $raw = parent::toRaw();
 
-        if (!is_null($this->indexPrefixes)) {
+        if (! is_null($this->indexPrefixes)) {
             $raw[$this->name]['index_prefixes'] = $this->indexPrefixes;
         }
 
-
-        if (!is_null($this->analyzer)) {
+        if (! is_null($this->analyzer)) {
             $raw[$this->name]['analyzer'] = $this->analyzer->name();
         }
 
-        if (!$this->fields->isEmpty()) {
+        if (! $this->fields->isEmpty()) {
             $raw[$this->name]['fields'] = $this->fields->mapWithKeys(function (Type $field) {
-                return  $field->toRaw();
+                return $field->toRaw();
             })->toArray();
         }
 
-        if (!is_null($this->raw)) {
+        if (! is_null($this->raw)) {
             $raw[$this->name]['fields'][$this->raw] = ['type' => 'keyword'];
         }
 
@@ -299,7 +298,7 @@ class Text extends Type implements FromRaw
 
         $aggregation = $aggs->terms($this->name(), $this->filterableName());
 
-        $aggregation->size((int)$size);
+        $aggregation->size((int) $size);
 
         if (in_array($order, ['asc', 'desc'])) {
             $aggregation->order('_key', $order);
@@ -311,7 +310,7 @@ class Text extends Type implements FromRaw
         return $this->isFilterable();
     }
 
-    public function facets(ElasticsearchResponse $response): null|array
+    public function facets(ElasticsearchResponse $response): ?array
     {
         $originalBuckets = $response->json("aggregations.{$this->name()}")['buckets'] ?? [];
 
@@ -325,7 +324,7 @@ class Text extends Type implements FromRaw
 
     public function validate(string $key, mixed $value): array
     {
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             return [false, "The field {$key} mapped as {$this->typeName()} must be a string"];
         }
 

@@ -4,12 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Parse;
 
-use Sigmie\Mappings\Field;
-use Sigmie\Mappings\Types\Boolean;
-use Sigmie\Mappings\Types\Keyword;
-use Sigmie\Mappings\Types\Number;
-use Sigmie\Mappings\Types\Price;
-use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Query\Aggs;
 
@@ -40,7 +34,7 @@ class FacetParser extends Parser
                 [$field, $params] = explode(':', $field);
             }
 
-            if (!$this->fieldExists($field)) {
+            if (! $this->fieldExists($field)) {
                 $this->handleError("Field {$field} does not exist.", [
                     'field' => $field,
                 ]);
@@ -48,13 +42,14 @@ class FacetParser extends Parser
                 continue;
             }
 
-            /** @var Type $field  */
+            /** @var Type $field */
             $field = $this->properties->getNestedField($field);
 
-            if (!$field->isFacetable()) {
+            if (! $field->isFacetable()) {
                 $this->handleError("The field '{$field->name()}' does not support facets.", [
                     'field' => $field->name(),
                 ]);
+
                 continue;
             }
 

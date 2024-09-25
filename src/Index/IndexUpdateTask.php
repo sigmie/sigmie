@@ -11,9 +11,9 @@ use Sigmie\Base\Contracts\ElasticsearchConnection;
 
 class IndexUpdateTask
 {
-    use Tasks;
-    use Reindex;
     use Actions;
+    use Reindex;
+    use Tasks;
 
     protected string $task;
 
@@ -39,7 +39,7 @@ class IndexUpdateTask
             'dest' => $this->dest,
             'old_alias' => $this->oldAlias,
             'new_alias' => $this->newAlias,
-            'requested_replicas' => $this->requestedReplicas
+            'requested_replicas' => $this->requestedReplicas,
         ];
     }
 
@@ -64,7 +64,7 @@ class IndexUpdateTask
 
     public function isCompleted(): bool
     {
-        return !in_array($this->task, $this->runningTasks());
+        return ! in_array($this->task, $this->runningTasks());
     }
 
     public function finish()

@@ -10,8 +10,7 @@ class IDs extends Query
 {
     public function __construct(
         protected array $ids
-    ) {
-    }
+    ) {}
 
     public function toRaw(): array
     {

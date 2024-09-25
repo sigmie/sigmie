@@ -36,8 +36,7 @@ class IndexBuilderTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->mapping(function (NewProperties $blueprint) {
                 $blueprint->bool('active');
-                $blueprint->text('description')->newAnalyzer(function (NewAnalyzer $newAnalyzer) {
-                });
+                $blueprint->text('description')->newAnalyzer(function (NewAnalyzer $newAnalyzer) {});
 
                 return $blueprint;
             })
@@ -64,7 +63,7 @@ class IndexBuilderTest extends TestCase
         $greekBuilder
             ->properties($blueprint)
             ->stemming([
-                ['go', ['going']]
+                ['go', ['going']],
             ])
             ->synonyms([
                 ['ΑΓΑΣΙΑ', 'ΑΓΑΣΙΑ ΚΑΙ ΑΓΑΣΙΑ ΚΑΙ ΑΓΑΣΙΑ'],
@@ -584,7 +583,7 @@ class IndexBuilderTest extends TestCase
             ->twoWaySynonyms([
                 ['treasure', 'gem', 'gold', 'price'],
                 ['friend', 'buddy', 'partner'],
-            ], name: 'sigmie_two_way_synonyms',)
+            ], name: 'sigmie_two_way_synonyms', )
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -692,7 +691,7 @@ class IndexBuilderTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->oneWaySynonyms([
                 ['ipod', ['i-pod', 'i pod']],
-            ], name: 'sigmie_one_way_synonyms',)
+            ], name: 'sigmie_one_way_synonyms', )
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {

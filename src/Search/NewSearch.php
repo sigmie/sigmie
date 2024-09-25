@@ -4,13 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Exception;
 use Http\Promise\Promise;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\Nested as TypesNested;
-use Sigmie\Mappings\Types\Text;
-
-use function Sigmie\Functions\auto_fuzziness;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
@@ -24,6 +20,8 @@ use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
 use Sigmie\Shared\Collection;
+
+use function Sigmie\Functions\auto_fuzziness;
 
 class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInterface
 {
@@ -100,7 +98,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $search->fields($this->retrieve);
 
-        $boolean->must()->bool(fn(Boolean $boolean) => $boolean->filter()->query($this->filters));
+        $boolean->must()->bool(fn (Boolean $boolean) => $boolean->filter()->query($this->filters));
 
         $search->addRaw('sort', $this->sort);
 
@@ -117,9 +115,10 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
             $shouldClauses = new Collection();
 
-            $fields->each(function ($field) use ($queryBoolean, &$shouldClauses) {
-                if ($this->queryString === '' && !$this->noResultsOnEmptySearch) {
+            $fields->each(function ($field) use (&$shouldClauses) {
+                if ($this->queryString === '' && ! $this->noResultsOnEmptySearch) {
                     $shouldClauses->add(new MatchAll);
+
                     return;
                 }
 
@@ -127,7 +126,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $field = $this->properties->getNestedField($field) ?? throw new PropertiesFieldNotFound($field);
 
-                $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                $fuzziness = ! in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
                 $queries = $field->hasQueriesCallback ? $field->queriesFromCallback($this->queryString) : $field->queries($this->queryString);
 
@@ -152,7 +151,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             if ($shouldClauses->isEmpty()) {
                 $queryBoolean->should()->query(new MatchNone);
             } else {
-                $shouldClauses->each(fn(Query $queryClase) => $queryBoolean->should()->query($queryClase));
+                $shouldClauses->each(fn (Query $queryClase) => $queryBoolean->should()->query($queryClase));
             }
 
             $boolean->should()->query($queryBoolean);

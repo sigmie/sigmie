@@ -10,8 +10,7 @@ class Range extends Bucket
         protected string $name,
         protected string $field,
         protected array $ranges
-    ) {
-    }
+    ) {}
 
     public function value(): array
     {

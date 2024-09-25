@@ -50,7 +50,7 @@ class NewProperties
     ): Properties {
 
         $fields = $this->fields
-            ->mapToDictionary(function (Type $type) use ($analysis) {
+            ->mapToDictionary(function (Type $type) {
                 return [$type->name => $type];
             })->toArray();
 
@@ -244,7 +244,7 @@ class NewProperties
         return $field;
     }
 
-    public function object(string $name, null|callable $callable = null): Object_
+    public function object(string $name, ?callable $callable = null): Object_
     {
         $field = new Object_($name);
         $field->parent($this->parentPath, $field::class);
@@ -271,7 +271,7 @@ class NewProperties
         return $this;
     }
 
-    public function nested(string $name, null|callable $callable = null): Nested
+    public function nested(string $name, ?callable $callable = null): Nested
     {
         $field = new Nested($name);
         $field->parent($this->parentPath, $field::class);

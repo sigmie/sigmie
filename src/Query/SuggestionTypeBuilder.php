@@ -17,8 +17,5 @@ class SuggestionTypeBuilder
         return $this;
     }
 
-    public function term()
-    {
-
-    }
+    public function term() {}
 }

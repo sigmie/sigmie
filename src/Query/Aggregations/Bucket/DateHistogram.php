@@ -16,9 +16,8 @@ class DateHistogram extends Bucket
         protected string $field,
         protected CalendarInterval $interval,
         protected int $minDocCount = 0,
-        protected null|array $extendedBounds = null
-    ) {
-    }
+        protected ?array $extendedBounds = null
+    ) {}
 
     public function value(): array
     {
@@ -34,7 +33,7 @@ class DateHistogram extends Bucket
             $value['date_histogram']['missing'] = $this->missing;
         }
 
-        if (!is_null($this->extendedBounds)) {
+        if (! is_null($this->extendedBounds)) {
             $value['date_histogram']['extended_bounds'] = $this->extendedBounds;
         }
 

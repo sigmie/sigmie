@@ -11,8 +11,7 @@ class WordBoundaries extends Tokenizer
     public function __construct(
         protected readonly string $name = 'standard',
         protected int $maxTokenLength = 255
-    ) {
-    }
+    ) {}
 
     public function name(): string
     {

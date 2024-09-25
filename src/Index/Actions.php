@@ -16,9 +16,9 @@ use Sigmie\Index\Index as BaseIndex;
 
 trait Actions
 {
+    use AliasActions;
     use CatAPI;
     use IndexAPI;
-    use AliasActions;
     use Template;
 
     protected function saveIndexTemplate(
@@ -32,7 +32,6 @@ trait Actions
             'settings' => $settings->toRaw(),
             'mappings' => $mappings->toRaw(),
         ];
-
 
         $this->templateAPICall($name, 'PUT', $body);
 

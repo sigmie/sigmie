@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\Tokenizers;
 
-use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\Tokenizer;
+
+use function Sigmie\Functions\name_configs;
 
 class NonLetter implements Tokenizer
 {
     public function __construct(
         protected readonly string $name,
-    ) {
-    }
+    ) {}
 
     public static function fromRaw(array $raw): static
     {

@@ -49,7 +49,7 @@ class Date extends Type
         //     '2023-09-11T15:30:00.123456789+02:00', // Date and time with UTC timezone and nanoseconds and offset
         // ];
 
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             return [false, "The field {$key} mapped as date must be a date string"];
         }
 
@@ -78,8 +78,8 @@ class Date extends Type
             }
         }
 
-        if (!$isValid) {
-            return [false, "The field {$key} mapped as {$this->typeName()} must be a string in one of the following formats: " . implode(', ', $dateFormats)];
+        if (! $isValid) {
+            return [false, "The field {$key} mapped as {$this->typeName()} must be a string in one of the following formats: ".implode(', ', $dateFormats)];
         }
 
         return [true, ''];

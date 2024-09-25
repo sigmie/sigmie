@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Shared;
 
-use function Sigmie\Functions\random_letters;
 use Sigmie\Index\Analysis\Tokenizers\NonLetter;
 use Sigmie\Index\Analysis\Tokenizers\Noop;
 use Sigmie\Index\Analysis\Tokenizers\PathHierarchy;
@@ -15,6 +14,8 @@ use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\Tokenizer as TokenizerInterface;
+
+use function Sigmie\Functions\random_letters;
 
 trait Tokenizer
 {
@@ -29,7 +30,7 @@ trait Tokenizer
         return $this;
     }
 
-    public function dontTokenize(string|null $name = null): static
+    public function dontTokenize(?string $name = null): static
     {
         $name = $name ?? $this->createTokenizerName('whitespace');
 
@@ -38,7 +39,7 @@ trait Tokenizer
         return $this;
     }
 
-    public function tokenizeOnNonLetter(string|null $name = null): static
+    public function tokenizeOnNonLetter(?string $name = null): static
     {
         $name = $name ?? $this->createTokenizerName('non_letter');
 
@@ -47,7 +48,7 @@ trait Tokenizer
         return $this;
     }
 
-    public function tokenizePathHierarchy(string $delimiter = '/', string|null $name = null): static
+    public function tokenizePathHierarchy(string $delimiter = '/', ?string $name = null): static
     {
         $name = $name ?? $this->createTokenizerName('path_hierarchy');
 
@@ -56,7 +57,7 @@ trait Tokenizer
         return $this;
     }
 
-    public function tokenizeOnWhitespaces(string|null $name = null): static
+    public function tokenizeOnWhitespaces(?string $name = null): static
     {
         $name = $name ?? $this->createTokenizerName('whitespace');
 
@@ -78,8 +79,8 @@ trait Tokenizer
 
     public function tokenizeOnPattern(
         string $pattern,
-        null|string $flags = null,
-        string|null $name = null
+        ?string $flags = null,
+        ?string $name = null
     ): static {
         $name = $name ?? $this->createTokenizerName('pattern_tokenizer');
 
@@ -90,7 +91,7 @@ trait Tokenizer
 
     public function tokenizeOnSimplePattern(
         string $pattern,
-        string|null $name = null
+        ?string $name = null
     ): static {
         $name = $name ?? $this->createTokenizerName('simple_pattern_split_tokenizer');
 
@@ -101,7 +102,7 @@ trait Tokenizer
 
     public function tokenizeOnPatternMatch(
         string $pattern,
-        string|null $name = null
+        ?string $name = null
     ): static {
         $name = $name ?? $this->createTokenizerName('simple_pattern');
 
@@ -110,7 +111,7 @@ trait Tokenizer
         return $this;
     }
 
-    public function tokenizeOnWordBoundaries(string|null $name = null): static
+    public function tokenizeOnWordBoundaries(?string $name = null): static
     {
         $name = $name ?? $this->createTokenizerName('standard');
 

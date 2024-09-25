@@ -15,9 +15,8 @@ class Composite extends Bucket
         protected string $name,
         protected array $sources,
         protected int $size = 10,
-        protected null|array $after = null,
-    ) {
-    }
+        protected ?array $after = null,
+    ) {}
 
     protected function value(): array
     {

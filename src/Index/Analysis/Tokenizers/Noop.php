@@ -10,8 +10,7 @@ class Noop implements Tokenizer
 {
     public function __construct(
         protected readonly string $name = 'keyword',
-    ) {
-    }
+    ) {}
 
     public static function fromRaw(array $raw): static
     {

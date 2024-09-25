@@ -51,20 +51,20 @@ class Price extends Type
         $aggs->max("{$this->name()}_max", $this->name());
     }
 
-    public function facets(ElasticsearchResponse $response): null|array
+    public function facets(ElasticsearchResponse $response): ?array
     {
         $json = $response->json();
 
-        $originalBuckets = $json['aggregations'][$this->name()][$this->name() . '_histogram']['buckets'] ?? $json['aggregations'][$this->name() . '_histogram']['buckets'] ?? [];
-        $min = $json['aggregations'][$this->name()][$this->name() . '_min']['value'] ?? $json['aggregations'][$this->name() . '_min']['value'] ?? 0;
-        $max = $json['aggregations'][$this->name()][$this->name() . '_max']['value'] ?? $json['aggregations'][$this->name() . '_max']['value'] ?? 0;
+        $originalBuckets = $json['aggregations'][$this->name()][$this->name().'_histogram']['buckets'] ?? $json['aggregations'][$this->name().'_histogram']['buckets'] ?? [];
+        $min = $json['aggregations'][$this->name()][$this->name().'_min']['value'] ?? $json['aggregations'][$this->name().'_min']['value'] ?? 0;
+        $max = $json['aggregations'][$this->name()][$this->name().'_max']['value'] ?? $json['aggregations'][$this->name().'_max']['value'] ?? 0;
 
         $histogram = array_column($originalBuckets, 'doc_count', 'key');
 
         return [
             'min' => $min,
             'max' => $max,
-            'histogram' => $histogram
+            'histogram' => $histogram,
         ];
     }
 
@@ -75,7 +75,7 @@ class Price extends Type
 
     public function validate(string $key, mixed $value): array
     {
-        if (!is_numeric($value)) {
+        if (! is_numeric($value)) {
             return [false, "The field {$key} mapped as price must be a number"];
         }
 

@@ -51,7 +51,7 @@ class Object_ extends Type
 
     public function validate(string $key, mixed $value): array
     {
-        if (!is_array($value)) {
+        if (! is_array($value)) {
             return [false, "Object field {$key} must be an object."];
         }
 

@@ -32,18 +32,18 @@ class CaseSensitiveKeyword extends Type
 
         $aggregation = $aggs->terms($this->name(), $this->name());
 
-        $aggregation->size((int)$size);
+        $aggregation->size((int) $size);
 
         if (in_array($order, ['asc', 'desc'])) {
             $aggregation->order('_key', $order);
         }
     }
 
-    public function facets(ElasticsearchResponse $response): null|array
+    public function facets(ElasticsearchResponse $response): ?array
     {
         $json = $response->json();
 
-        $originalBuckets = $json['aggregations'][$this->name()][$this->name() . '_histogram']['buckets'] ?? $json['aggregations'][$this->name() . '_histogram']['buckets'] ?? [];
+        $originalBuckets = $json['aggregations'][$this->name()][$this->name().'_histogram']['buckets'] ?? $json['aggregations'][$this->name().'_histogram']['buckets'] ?? [];
 
         return array_column($originalBuckets, 'doc_count', 'key');
     }
@@ -55,7 +55,7 @@ class CaseSensitiveKeyword extends Type
 
     public function validate(string $key, mixed $value): array
     {
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             return [false, "The field {$key} mapped as {$this->typeName()} must be a string"];
         }
 

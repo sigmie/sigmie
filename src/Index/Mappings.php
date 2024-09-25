@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Index;
 
-use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Contracts\CustomAnalyzer;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Contracts\TokenFilter;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Properties;
-use Sigmie\Mappings\Types\Name;
 use Sigmie\Mappings\Types\Text;
 
 class Mappings implements MappingsInterface
@@ -37,7 +35,7 @@ class Mappings implements MappingsInterface
     {
         $result = $this->properties->textFields()
             ->filter(fn (Type $field) => $field instanceof Text)
-            ->filter(fn (Text $field) => !is_null($field->analyzer()))
+            ->filter(fn (Text $field) => ! is_null($field->analyzer()))
             ->mapToDictionary(function (Text $field) {
 
                 $analyzer = $field->analyzer();
@@ -46,8 +44,7 @@ class Mappings implements MappingsInterface
                     return [$analyzer->name() => $analyzer];
                 }
 
-                $filters = array_filter($this->defaultAnalyzer->filters(), fn (TokenFilter $filter) =>
-                !in_array($filter::class, $field->notAllowedFilters()));
+                $filters = array_filter($this->defaultAnalyzer->filters(), fn (TokenFilter $filter) => ! in_array($filter::class, $field->notAllowedFilters()));
 
                 $analyzer->addFilters($filters);
 

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Queries;
 
-use Sigmie\Query\Queries\Query;
-
 class GeoDistance extends Query
 {
     public function __construct(
@@ -13,8 +11,7 @@ class GeoDistance extends Query
         protected string $distance,
         protected string $latitude,
         protected string $longitude,
-    ) {
-    }
+    ) {}
 
     public function toRaw(): array
     {

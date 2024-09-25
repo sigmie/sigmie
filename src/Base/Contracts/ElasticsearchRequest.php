@@ -8,7 +8,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Sigmie\Http\Contracts\JSONRequest;
 
-interface ElasticsearchRequest extends RequestInterface, JSONRequest
+interface ElasticsearchRequest extends JSONRequest, RequestInterface
 {
     public function response(ResponseInterface $psr): ElasticsearchResponse;
 }

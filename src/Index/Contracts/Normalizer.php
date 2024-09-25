@@ -8,7 +8,7 @@ use Sigmie\Shared\Contracts\FromRaw;
 use Sigmie\Shared\Contracts\Name;
 use Sigmie\Shared\Contracts\ToRaw;
 
-interface Normalizer extends FromRaw, ToRaw, Name
+interface Normalizer extends FromRaw, Name, ToRaw
 {
     public function filters(): array;
 

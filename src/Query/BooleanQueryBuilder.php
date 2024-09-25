@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Query;
 
+use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Properties;
+use Sigmie\Parse\FilterParser;
 use Sigmie\Query\Contracts\Queries;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\Compound\Boolean;
@@ -23,7 +26,20 @@ use Sigmie\Query\Queries\Text\MultiMatch;
 
 class BooleanQueryBuilder implements Queries
 {
+    public function __construct(
+        protected NewProperties|Properties $properties = new NewProperties()
+    ) {}
+
     protected array $clauses = [];
+
+    public function parse(string $filterString)
+    {
+        $parser = new FilterParser($this->properties);
+
+        $query = $parser->parse($filterString);
+
+        $this->query($query);
+    }
 
     public function matchAll(float|int $boost = 1): self
     {

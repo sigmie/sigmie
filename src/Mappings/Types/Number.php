@@ -64,7 +64,7 @@ class Number extends Type
         return true;
     }
 
-    public function facets(ElasticsearchResponse $response): null|array
+    public function facets(ElasticsearchResponse $response): ?array
     {
         $json = $response->json();
 
@@ -73,7 +73,7 @@ class Number extends Type
 
     public function validate(string $key, mixed $value): array
     {
-        if (!is_numeric($value)) {
+        if (! is_numeric($value)) {
             return [false, "The field {$key} mapped as {$this->typeName()} must be a number"];
         }
 

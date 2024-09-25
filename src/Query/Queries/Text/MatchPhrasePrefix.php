@@ -11,11 +11,10 @@ class MatchPhrasePrefix extends Query
     public function __construct(
         protected string $field,
         protected string $query,
-        protected string|null $fuzziness = null,
-    ) {
-    }
+        protected ?string $fuzziness = null,
+    ) {}
 
-    public function fuzziness(null|string $fuzziness): static
+    public function fuzziness(?string $fuzziness): static
     {
         $this->fuzziness = $fuzziness;
 

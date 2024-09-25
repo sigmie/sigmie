@@ -12,7 +12,6 @@ use Sigmie\Index\Contracts\Normalizer as NormalizerInterface;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
-use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
 
 class Keyword extends Type
 {
@@ -24,14 +23,14 @@ class Keyword extends Type
 
         $raw = parent::toRaw();
 
-        if (!is_null($normalizer)) {
+        if (! is_null($normalizer)) {
             $raw[$this->name]['normalizer'] = $normalizer->name();
         }
 
         return $raw;
     }
 
-    public function normalizer(): null|NormalizerInterface
+    public function normalizer(): ?NormalizerInterface
     {
         return new Normalizer(
             "{$this->name}_field_normalizer",
@@ -67,14 +66,14 @@ class Keyword extends Type
 
         $aggregation = $aggs->terms($this->name(), $this->name());
 
-        $aggregation->size((int)$size);
+        $aggregation->size((int) $size);
 
         if (in_array($order, ['asc', 'desc'])) {
             $aggregation->order('_key', $order);
         }
     }
 
-    public function facets(ElasticsearchResponse $response): null|array
+    public function facets(ElasticsearchResponse $response): ?array
     {
         $json = $response->json();
         $originalBuckets = $json['aggregations'][$this->name()][$this->name()]['buckets'] ?? $json['aggregations'][$this->name()]['buckets'] ?? [];
@@ -89,7 +88,7 @@ class Keyword extends Type
 
     public function validate(string $key, mixed $value): array
     {
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             return [false, "The field {$key} mapped as {$this->typeName()} must be a string"];
         }
 

@@ -10,8 +10,7 @@ class Whitespace implements Tokenizer
 {
     public function __construct(
         protected readonly string $name = 'whitespace',
-    ) {
-    }
+    ) {}
 
     public static function fromRaw(array $raw): static
     {

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\TokenFilter;
 
-use function Sigmie\Functions\name_configs;
-
-use Sigmie\Greek\Filter\Stopwords as GreekStopwords;
 use Sigmie\English\Filter\Stopwords as EnglishStopwords;
 use Sigmie\German\Filter\Stopwords as GermanStopwords;
+use Sigmie\Greek\Filter\Stopwords as GreekStopwords;
+
+use function Sigmie\Functions\name_configs;
 
 class Stopwords extends TokenFilter
 {

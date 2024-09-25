@@ -15,9 +15,9 @@ use Sigmie\Testing\TestCase;
 
 class SuggestTest extends TestCase
 {
+    use Explain;
     use Index;
     use Search;
-    use Explain;
 
     /**
      * @test

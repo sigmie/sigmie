@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Http\Responses;
 
-use Psr\Http\Message\ResponseInterface;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Document\Document;
 use Sigmie\Shared\Collection;
@@ -24,16 +23,16 @@ class Mget extends ElasticsearchResponse
 
     public function docs(): array
     {
-        if (!isset($this->collection)) {
+        if (! isset($this->collection)) {
             $this->createCollection();
         }
 
         return $this->collection->toArray();
     }
 
-    public function first(): null|Document
+    public function first(): ?Document
     {
-        if (!isset($this->collection)) {
+        if (! isset($this->collection)) {
             $this->createCollection();
         }
 

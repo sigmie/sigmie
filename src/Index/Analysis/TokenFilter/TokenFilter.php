@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\TokenFilter;
 
-use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\TokenFilter as TokenFilterInterface;
+
+use function Sigmie\Functions\name_configs;
 
 abstract class TokenFilter implements TokenFilterInterface
 {
@@ -21,8 +22,7 @@ abstract class TokenFilter implements TokenFilterInterface
     public function __construct(
         public readonly string $name,
         protected array $settings = [],
-    ) {
-    }
+    ) {}
 
     public static function filterMap(array $map)
     {

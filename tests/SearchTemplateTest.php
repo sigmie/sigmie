@@ -31,7 +31,7 @@ class SearchTemplateTest extends TestCase
         $index->merge([
             new Document([
                 'date' => '2024-01-01',
-            ])
+            ]),
         ]);
 
         $templateId = uniqid();
@@ -76,7 +76,7 @@ class SearchTemplateTest extends TestCase
                 'contact' => [
                     'name' => 'Mickey',
                 ],
-            ])
+            ]),
         ]);
 
         $templateId = uniqid();
@@ -130,7 +130,7 @@ class SearchTemplateTest extends TestCase
             new Document([
                 'name' => 'Mickey',
                 'description' => 'Adventure in the woods',
-            ])
+            ]),
         ]);
 
         $templateId = uniqid();
@@ -170,7 +170,7 @@ class SearchTemplateTest extends TestCase
             new Document([
                 'name' => 'Mickey',
                 'description' => 'Adventure in the woods',
-            ])
+            ]),
         ]);
 
         $templateId = uniqid();
@@ -250,14 +250,14 @@ class SearchTemplateTest extends TestCase
             'query_string' => 'm',
         ]);
 
-        $suggestions = array_map(fn($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
 
         $this->assertEquals([
-            "Marisa",
-            "Mice",
-            "Mickey",
-            "Minie",
-            "Modern",
+            'Marisa',
+            'Mice',
+            'Mickey',
+            'Minie',
+            'Modern',
         ], $suggestions);
     }
 

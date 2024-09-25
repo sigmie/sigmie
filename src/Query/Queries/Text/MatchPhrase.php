@@ -11,8 +11,7 @@ class MatchPhrase extends Query
     public function __construct(
         protected string $field,
         protected string $query
-    ) {
-    }
+    ) {}
 
     public function toRaw(): array
     {

@@ -14,8 +14,7 @@ class PercentileRanks extends Metric
         protected string $name,
         protected string $field,
         protected array $values
-    ) {
-    }
+    ) {}
 
     protected function value(): array
     {

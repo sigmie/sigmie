@@ -11,8 +11,7 @@ class Terms extends Query
     public function __construct(
         protected string $field,
         protected array $values
-    ) {
-    }
+    ) {}
 
     public function toRaw(): array
     {

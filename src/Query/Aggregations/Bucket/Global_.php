@@ -8,8 +8,7 @@ class Global_ extends Bucket
 {
     public function __construct(
         protected string $name,
-    ) {
-    }
+    ) {}
 
     public function value(): array
     {

@@ -10,15 +10,13 @@ use Sigmie\Base\APIs\Search;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
-use Sigmie\Query\Aggregations\Enums\CalendarInterval;
-use Sigmie\Query\Aggs as SearchAggregation;
 use Sigmie\Testing\TestCase;
 
 class FacetsTest extends TestCase
 {
+    use Explain;
     use Index;
     use Search;
-    use Explain;
 
     /**
      * @test
@@ -387,8 +385,8 @@ class FacetsTest extends TestCase
         $index = $this->sigmie->collect($indexName, refresh: true);
 
         $index->merge([
-            new Document(['category' => 'sport',]),
-            new Document(['category' => 'action',]),
+            new Document(['category' => 'sport']),
+            new Document(['category' => 'action']),
         ]);
 
         $searchResponse = $this->sigmie->newSearch($indexName)

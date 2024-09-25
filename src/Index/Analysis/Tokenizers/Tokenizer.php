@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Index\Analysis\Tokenizers;
 
 use Exception;
-use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\Tokenizer as TokenizerInterface;
+
+use function Sigmie\Functions\name_configs;
 
 abstract class Tokenizer implements TokenizerInterface
 {

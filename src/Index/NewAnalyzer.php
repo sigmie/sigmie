@@ -15,10 +15,10 @@ use Sigmie\Shared\Name;
 
 class NewAnalyzer
 {
-    use Filters;
     use CharFilters;
-    use Tokenizer;
+    use Filters;
     use Name;
+    use Tokenizer;
 
     public function __construct(protected AnalysisInterface $analysis, string $name)
     {

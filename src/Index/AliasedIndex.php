@@ -16,17 +16,17 @@ use Sigmie\Index\Contracts\Settings as SettingsInterface;
 
 class AliasedIndex extends Index
 {
-    use Reindex;
-    use IndexAPI;
-    use Analyze;
     use AliasActions;
+    use Analyze;
     use IndexActions;
+    use IndexAPI;
+    use Reindex;
 
     public function __construct(
         string $name,
         protected string $alias,
-        SettingsInterface $settings = null,
-        MappingsInterface $mappings = null
+        ?SettingsInterface $settings = null,
+        ?MappingsInterface $mappings = null
     ) {
         parent::__construct($name, $settings, $mappings);
     }

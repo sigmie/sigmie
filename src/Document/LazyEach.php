@@ -11,8 +11,8 @@ use Sigmie\Document\Actions as DocumentActions;
 
 trait LazyEach
 {
-    use DocumentActions;
     use Count;
+    use DocumentActions;
 
     protected int $chunk = 500;
 

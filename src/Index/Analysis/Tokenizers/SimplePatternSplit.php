@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\Tokenizers;
 
-use function Sigmie\Functions\name_configs;
 use Sigmie\Shared\Name;
+
+use function Sigmie\Functions\name_configs;
 
 class SimplePatternSplit extends Tokenizer
 {
@@ -14,8 +15,7 @@ class SimplePatternSplit extends Tokenizer
     public function __construct(
         public readonly string $name,
         protected string $pattern
-    ) {
-    }
+    ) {}
 
     public static function fromRaw(array $raw): static
     {

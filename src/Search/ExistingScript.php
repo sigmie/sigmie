@@ -13,7 +13,7 @@ use Sigmie\Base\ElasticsearchException;
 
 class ExistingScript
 {
-    use TemplateAPI, ScriptAPI, RenderAPI, Index;
+    use Index, RenderAPI, ScriptAPI, TemplateAPI;
 
     public function __construct(
         public readonly string $id,
@@ -32,7 +32,7 @@ class ExistingScript
         return $this->indexAPICall("{$index}/_search/template", 'POST', $body);
     }
 
-    public function render(array $params = []): null|array
+    public function render(array $params = []): ?array
     {
         try {
             $res = $this->renderAPICall($this->id, $params);
@@ -49,7 +49,7 @@ class ExistingScript
         }
     }
 
-    public function get(): string|null
+    public function get(): ?string
     {
         try {
             $res = $this->scriptAPICall('GET', $this->id);

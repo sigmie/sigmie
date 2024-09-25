@@ -9,8 +9,7 @@ class Rate extends Metric
     public function __construct(
         protected string $name,
         protected string $field,
-    ) {
-    }
+    ) {}
 
     protected function value(): array
     {

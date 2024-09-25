@@ -8,7 +8,7 @@ use Sigmie\Shared\Contracts\FromRaw;
 use Sigmie\Shared\Contracts\Name;
 use Sigmie\Shared\Contracts\ToRaw;
 
-interface TokenFilter extends ToRaw, FromRaw, Name
+interface TokenFilter extends FromRaw, Name, ToRaw
 {
     public function value(): array;
 

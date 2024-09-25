@@ -26,7 +26,6 @@ class TopHits extends Bucket
             'top_hits' => [],
         ];
 
-
         return $value;
     }
 }

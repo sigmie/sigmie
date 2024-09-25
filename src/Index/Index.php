@@ -6,7 +6,6 @@ namespace Sigmie\Index;
 
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Contracts\Settings as SettingsInterface;
-use Sigmie\Search\Autocomplete\Pipeline;
 
 class Index
 {
@@ -16,13 +15,13 @@ class Index
 
     public function __construct(
         public readonly string $name,
-        SettingsInterface $settings = null,
-        MappingsInterface $mappings = null
+        ?SettingsInterface $settings = null,
+        ?MappingsInterface $mappings = null
     ) {
         $this->settings = $settings ?: new Settings();
         $this->mappings = $mappings ?: new Mappings();
     }
-    
+
     public static function fromRaw(string $name, array $raw): static
     {
         $settings = Settings::fromRaw($raw);

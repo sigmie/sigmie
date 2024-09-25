@@ -16,7 +16,7 @@ class Document implements FromRaw
 
     public function __construct(
         array $_source = [],
-        string|null $_id = null,
+        ?string $_id = null,
     ) {
         $this->_source = $_source;
 

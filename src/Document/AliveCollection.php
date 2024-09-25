@@ -119,7 +119,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         return $this->has((string) $offset);
     }
 
-    public function offsetGet(mixed $offset): null|Document
+    public function offsetGet(mixed $offset): ?Document
     {
         return $this->get((string) $offset);
     }

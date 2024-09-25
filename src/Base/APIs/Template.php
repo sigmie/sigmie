@@ -12,7 +12,7 @@ trait Template
 {
     use API;
 
-    protected function templateAPICall(string $name, string $method, null|array $body = null): ElasticsearchResponse
+    protected function templateAPICall(string $name, string $method, ?array $body = null): ElasticsearchResponse
     {
         $uri = new Uri("/_template/{$name}");
 

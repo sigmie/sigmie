@@ -12,7 +12,7 @@ trait Ingest
 {
     use API;
 
-    protected function ingestAPICall(string $name, string $method, array $body = null): ElasticsearchResponse
+    protected function ingestAPICall(string $name, string $method, ?array $body = null): ElasticsearchResponse
     {
         $uri = new Uri("/_ingest/pipeline/{$name}");
 

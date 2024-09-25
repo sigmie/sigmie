@@ -8,6 +8,4 @@ use Sigmie\Shared\Contracts\FromRaw;
 use Sigmie\Shared\Contracts\Name;
 use Sigmie\Shared\Contracts\ToRaw;
 
-interface CharFilter extends ToRaw, FromRaw, Name
-{
-}
+interface CharFilter extends FromRaw, Name, ToRaw {}

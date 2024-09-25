@@ -6,6 +6,4 @@ namespace Sigmie\Base\Http\Responses;
 
 use Sigmie\Base\Http\ElasticsearchResponse;
 
-class Reindex extends ElasticsearchResponse
-{
-}
+class Reindex extends ElasticsearchResponse {}

@@ -18,17 +18,17 @@ class Sort extends Bucket
     public function value(): array
     {
         $res = [
-            "bucket_sort" => [
-                "sort" => $this->sort,
-            ]
+            'bucket_sort' => [
+                'sort' => $this->sort,
+            ],
         ];
 
         if ($this->size) {
-            $res["bucket_sort"]["size"] = $this->size;
+            $res['bucket_sort']['size'] = $this->size;
         }
 
         if ($this->form) {
-            $res["bucket_sort"]["from"] = $this->form;
+            $res['bucket_sort']['from'] = $this->form;
         }
 
         return $res;

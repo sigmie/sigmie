@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use Sigmie\Base\Http\ElasticsearchResponse;
-use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Term;
 
 class Boolean extends Type
@@ -25,7 +23,7 @@ class Boolean extends Type
 
     public function validate(string $key, mixed $value): array
     {
-        if (!is_bool($value)) {
+        if (! is_bool($value)) {
             return [false, "The field {$key} mapped as {$this->typeName()} must be a boolean"];
         }
 

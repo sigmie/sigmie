@@ -14,8 +14,7 @@ class Percentiles extends Metric
         protected string $name,
         protected string $field,
         protected array $percents = [1, 5, 25, 50, 75, 95, 99]
-    ) {
-    }
+    ) {}
 
     protected function value(): array
     {

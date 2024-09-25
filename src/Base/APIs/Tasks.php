@@ -14,7 +14,7 @@ trait Tasks
 
     public function tasksAPICall(): ElasticsearchResponse
     {
-        $uri = new Uri("/_tasks");
+        $uri = new Uri('/_tasks');
 
         $esRequest = new ElasticsearchRequest('GET', $uri);
 

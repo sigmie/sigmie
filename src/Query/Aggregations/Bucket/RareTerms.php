@@ -15,8 +15,7 @@ class RareTerms extends Bucket
     public function __construct(
         protected string $name,
         protected string $field,
-    ) {
-    }
+    ) {}
 
     public function size(int $size)
     {

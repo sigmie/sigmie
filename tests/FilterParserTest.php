@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use PHPUnit\Framework\ExpectationFailedException;
 use RuntimeException;
-use SebastianBergmann\RecursionContext\InvalidArgumentException;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
@@ -16,7 +14,6 @@ use Sigmie\Testing\TestCase;
 
 class FilterParserTest extends TestCase
 {
-
     /**
      * @test
      */
@@ -131,7 +128,7 @@ class FilterParserTest extends TestCase
                         [
                             'city' => 'Hamburg',
                             'marker' => 'A',
-                        ]
+                        ],
                     ],
                 ],
             ]),
@@ -145,7 +142,7 @@ class FilterParserTest extends TestCase
                         [
                             'city' => 'Athens',
                             'marker' => 'X',
-                        ]
+                        ],
                     ],
                 ],
             ]),
@@ -250,13 +247,13 @@ class FilterParserTest extends TestCase
                     'vehicle' => [
                         [
                             'make' => 'Powell Motors',
-                            'model' => 'Canyonero'
+                            'model' => 'Canyonero',
                         ],
                         [
                             'make' => 'Miller-Meteor',
-                            'model' => 'Ecto-1'
-                        ]
-                    ]
+                            'model' => 'Ecto-1',
+                        ],
+                    ],
                 ],
             ]),
             new Document([
@@ -265,13 +262,13 @@ class FilterParserTest extends TestCase
                     'vehicle' => [
                         [
                             'make' => 'Mifune',
-                            'model' => 'Canyonero'
+                            'model' => 'Canyonero',
                         ],
                         [
                             'make' => 'Powell Motors',
-                            'model' => 'Ecto-1'
-                        ]
-                    ]
+                            'model' => 'Ecto-1',
+                        ],
+                    ],
                 ],
             ]),
         ];
@@ -419,18 +416,18 @@ class FilterParserTest extends TestCase
     public function location_parsing()
     {
         $filterStrings = [
-            "location:70km[52.31,8.61]",
-            "location:70km[52,8]",
-            "location:70km[52,8.61]",
-            "location:70km[52.31,8]",
-            "location:100m[40.7128,-74.0060]",
-            "location:5mi[-33.8688,151.2093]",
-            "location:2km[48.8566,2.3522]",
-            "location:500yd[35.6762,139.6503]",
-            "location:1000ft[55.7558,37.6173]",
-            "location:10nmi[-22.9068,-43.1729]",
-            "location:50cm[-1.2921,36.8219]",
-            "location:3in[41.9028,12.4964]",
+            'location:70km[52.31,8.61]',
+            'location:70km[52,8]',
+            'location:70km[52,8.61]',
+            'location:70km[52.31,8]',
+            'location:100m[40.7128,-74.0060]',
+            'location:5mi[-33.8688,151.2093]',
+            'location:2km[48.8566,2.3522]',
+            'location:500yd[35.6762,139.6503]',
+            'location:1000ft[55.7558,37.6173]',
+            'location:10nmi[-22.9068,-43.1729]',
+            'location:50cm[-1.2921,36.8219]',
+            'location:3in[41.9028,12.4964]',
         ];
 
         $mappings = new Properties();
@@ -574,7 +571,7 @@ class FilterParserTest extends TestCase
                     'lon' => 13.77,
                 ],
                 'active' => false,
-            ])
+            ]),
         ];
 
         $index->merge($docs);
@@ -628,7 +625,7 @@ class FilterParserTest extends TestCase
                     'lat' => 60.15,
                     'lon' => -164.10,
                 ],
-            ])
+            ]),
         ];
 
         $index->merge($docs);
@@ -665,7 +662,7 @@ class FilterParserTest extends TestCase
         $props = $blueprint();
 
         $parser = new FilterParser($props);
-        $filter = "some_id:[]";
+        $filter = 'some_id:[]';
 
         $index = $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -682,7 +679,7 @@ class FilterParserTest extends TestCase
             ]),
             new Document([
                 'some_id' => 789,
-            ])
+            ]),
         ];
 
         $index->merge($docs);
@@ -728,7 +725,7 @@ class FilterParserTest extends TestCase
             ]),
             new Document([
                 'some_id' => 789,
-            ])
+            ]),
         ];
 
         $index->merge($docs);
@@ -770,7 +767,7 @@ class FilterParserTest extends TestCase
             new Document([
                 'job_titles' => 'Chief Information Officer (CIO)',
                 'industry' => 'Renewables & Environment',
-            ])
+            ]),
         ];
 
         $index->merge($docs);
@@ -810,7 +807,7 @@ class FilterParserTest extends TestCase
         $docs = [
             new Document([
                 'title' => 'Chief Executive Officer (CEO)',
-            ])
+            ]),
         ];
 
         $index->merge($docs);
@@ -874,7 +871,7 @@ class FilterParserTest extends TestCase
                 'last_activity' => '2024-03-01T21:59:59.999999+00:00',
                 'finished_surveys_count' => 0,
                 'emails_click_count' => 2,
-            ])
+            ]),
         ];
 
         $index->merge($docs);
@@ -932,7 +929,6 @@ class FilterParserTest extends TestCase
         $this->assertTrue(true);
     }
 
-
     /**
      * @test
      */
@@ -963,7 +959,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse("database:[]");
+        $query = $parser->parse('database:[]');
 
         // other wise we get an exception
         $this->assertTrue(true);
@@ -1621,7 +1617,7 @@ class FilterParserTest extends TestCase
                     'email' => 'john.doe@example.com',
                     'location' => [
                         'lat' => 40.7128,
-                        'lon' => -74.0060
+                        'lon' => -74.0060,
                     ],
                     'searchable_number' => 12345,
                     'title' => 'Mr.',
@@ -1645,7 +1641,7 @@ class FilterParserTest extends TestCase
                     'email' => 'jane.doe@example.com',
                     'location' => [
                         'lat' => 34.0522,
-                        'lon' => -118.2437
+                        'lon' => -118.2437,
                     ],
                     'searchable_number' => 67890,
                     'title' => 'Ms.',
@@ -1668,7 +1664,7 @@ class FilterParserTest extends TestCase
                     'email' => 'alice@example.com',
                     'location' => [
                         'lat' => 37.7749,
-                        'lon' => -122.4194
+                        'lon' => -122.4194,
                     ],
                     'searchable_number' => 54321,
                     'title' => 'Ms.',

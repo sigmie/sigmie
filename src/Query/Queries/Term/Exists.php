@@ -10,8 +10,7 @@ class Exists extends Query
 {
     public function __construct(
         protected string $field,
-    ) {
-    }
+    ) {}
 
     public function toRaw(): array
     {

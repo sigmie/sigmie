@@ -12,8 +12,8 @@ class IndexTemplate extends Index
     public function __construct(
         string $name,
         public readonly array $patterns,
-        SettingsInterface $settings = null,
-        MappingsInterface $mappings = null
+        ?SettingsInterface $settings = null,
+        ?MappingsInterface $mappings = null
     ) {
         parent::__construct($name, $settings, $mappings);
     }

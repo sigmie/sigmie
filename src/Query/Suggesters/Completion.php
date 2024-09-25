@@ -64,7 +64,6 @@ class Completion extends Suggester
 
         $res[$this->name][$this->type()->value]['skip_duplicates'] = true;
         $res[$this->name]['prefix'] = $this->prefix;
-    
 
         if ($this->fuzzy ?? false) {
             $res[$this->name][$this->type()->value]['fuzzy'] = [

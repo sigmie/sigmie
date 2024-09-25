@@ -12,9 +12,7 @@ use Traversable;
 
 class Collection implements ArrayAccess, Countable
 {
-    public function __construct(protected array $elements = [])
-    {
-    }
+    public function __construct(protected array $elements = []) {}
 
     public function deepen(int|float $depth = INF): static
     {

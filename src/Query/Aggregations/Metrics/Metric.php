@@ -14,8 +14,7 @@ abstract class Metric implements Aggregation
     public function __construct(
         protected string $name,
         protected string $field
-    ) {
-    }
+    ) {}
 
     public function toRaw(): array
     {

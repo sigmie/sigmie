@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use function Sigmie\Functions\random_letters;
 use Sigmie\Testing\TestCase;
+
+use function Sigmie\Functions\random_letters;
 
 class FunctionsTest extends TestCase
 {

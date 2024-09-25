@@ -65,7 +65,7 @@ abstract class Type implements Name, ToRaw, TypeInterface
 
     public function name(): string
     {
-        if (!is_null($this->parentPath)) {
+        if (! is_null($this->parentPath)) {
             return "{$this->parentPath}.{$this->name}";
         }
 
@@ -87,7 +87,7 @@ abstract class Type implements Name, ToRaw, TypeInterface
             ],
         ];
 
-        if (!in_array($this->type(), ['nested', 'completion', 'object'])) {
+        if (! in_array($this->type(), ['nested', 'completion', 'object'])) {
             $raw[$this->name]['meta'] =
                 [
                     ...$this->meta,
@@ -100,22 +100,19 @@ abstract class Type implements Name, ToRaw, TypeInterface
 
     abstract public function queries(string $queryString): array;
 
-    public function aggregation(Aggs $aggs, string $params): void
-    {
-        return;
-    }
+    public function aggregation(Aggs $aggs, string $params): void {}
 
     public function isFacetable(): bool
     {
         return false;
     }
 
-    public function facets(ElasticsearchResponse $response): null|array
+    public function facets(ElasticsearchResponse $response): ?array
     {
         return null;
     }
 
-    public function sortableName(): null|string
+    public function sortableName(): ?string
     {
         return $this->name;
     }

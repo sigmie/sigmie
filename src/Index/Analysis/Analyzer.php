@@ -4,8 +4,22 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis;
 
-use function Sigmie\Functions\name_configs;
+use Sigmie\English\Filter\Lowercase;
+use Sigmie\English\Filter\Stemmer;
+use Sigmie\English\Filter\Stopwords;
+use Sigmie\German\Filter\GermanNormalization;
+use Sigmie\German\Filter\LightStemmer as GermanLightStemmer;
+use Sigmie\German\Filter\Lowercase as GermanLowercase;
+use Sigmie\German\Filter\Stopwords as GermanStopwords;
+use Sigmie\Greek\Filter\Lowercase as GreekLowercase;
+use Sigmie\Greek\Filter\Stemmer as GreekStemmer;
+use Sigmie\Greek\Filter\Stopwords as GreekStopwords;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
+use Sigmie\Index\Analysis\TokenFilter\AsciiFolding;
+use Sigmie\Index\Analysis\TokenFilter\DecimalDigit;
+use Sigmie\Index\Analysis\TokenFilter\Shingle;
+use Sigmie\Index\Analysis\TokenFilter\Trim;
+use Sigmie\Index\Analysis\TokenFilter\Unique;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\CharFilter;
@@ -14,27 +28,8 @@ use Sigmie\Index\Contracts\TokenFilter;
 use Sigmie\Index\Contracts\Tokenizer;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\Name;
-use Sigmie\English\Filter\Lowercase;
-use Sigmie\English\Filter\Stemmer;
-use Sigmie\English\Filter\Stopwords;
-use Sigmie\Index\Analysis\TokenFilter\AsciiFolding;
-use Sigmie\Index\Analysis\TokenFilter\DecimalDigit;
-use Sigmie\Index\Analysis\TokenFilter\Shingle;
-use Sigmie\Index\Analysis\TokenFilter\Trim;
-use Sigmie\Index\Analysis\TokenFilter\Unique;
 
-use Sigmie\Greek\Filter\Lowercase as GreekLowercase;
-use Sigmie\Greek\Filter\Stemmer as GreekStemmer;
-use Sigmie\Greek\Filter\Stopwords as GreekStopwords;
-
-use Sigmie\German\Filter\GermanNormalization;
-use Sigmie\German\Filter\LightStemmer as GermanLightStemmer;
-use Sigmie\German\Filter\Lowercase as GermanLowercase;
-use Sigmie\German\Filter\MinimalStemmer as GermanMinimalStemmer;
-use Sigmie\German\Filter\Normalize as GermanNormalize;
-use Sigmie\German\Filter\Stemmer as GermanStemmer;
-use Sigmie\German\Filter\Stemmer2 as GermanStemmer2;
-use Sigmie\German\Filter\Stopwords as GermanStopwords;
+use function Sigmie\Functions\name_configs;
 
 class Analyzer implements CustomAnalyzerInterface
 {
@@ -86,10 +81,10 @@ class Analyzer implements CustomAnalyzerInterface
                 'autocomplete_greek_stopwords' => new GreekStopwords($filterName),
                 'autocomplete_greek_lowercase' => new GreekLowercase($filterName),
 
-                'autocomplete_ascii_folding' =>  new AsciiFolding($filterName),
+                'autocomplete_ascii_folding' => new AsciiFolding($filterName),
                 'autocomplete_unique' => new Unique($filterName),
                 'autocomplete_trim' => new Trim($filterName),
-                'autocomplete_decimal_digit' => new  DecimalDigit($filterName),
+                'autocomplete_decimal_digit' => new DecimalDigit($filterName),
                 'autocomplete_shingle' => new Shingle($filterName),
 
                 default => $filters[$filterName]

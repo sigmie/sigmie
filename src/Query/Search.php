@@ -8,14 +8,17 @@ use Http\Promise\Promise;
 use Sigmie\Base\APIs\Script as APIsScript;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
-use Sigmie\Query\Contracts\Aggs as AggsInterface;
+use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Properties;
+use Sigmie\Parse\FacetParser;
+use Sigmie\Parse\SortParser;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\MatchAll;
 
 class Search
 {
-    use APIsSearch;
     use APIsScript;
+    use APIsSearch;
 
     protected string $index;
 
@@ -33,11 +36,19 @@ class Search
 
     protected array $highlight = [];
 
+    protected Properties $properties;
+
     public function __construct(
         protected Query $query = new MatchAll(),
-        protected AggsInterface $aggs = new Aggs(),
+        protected Aggs $aggs = new Aggs(),
         protected Suggest $suggest = new Suggest()
-    ) {
+    ) {}
+
+    public function properties(NewProperties|Properties $props): self
+    {
+        $this->properties = $props instanceof NewProperties ? $props->get() : $props;
+
+        return $this;
     }
 
     public function aggregate(callable $callable)
@@ -47,9 +58,20 @@ class Search
         return $this;
     }
 
-    public function suggest(callable $callable, null|string $text = null): Search
+    public function facets(string $string)
     {
-        if (!is_null($text)) {
+        $parser = new FacetParser($this->properties);
+
+        $aggs = $parser->parse($string);
+
+        $this->aggs->add($aggs);
+
+        return $this;
+    }
+
+    public function suggest(callable $callable, ?string $text = null): Search
+    {
+        if (! is_null($text)) {
             $this->suggest->text($text);
         }
 
@@ -57,7 +79,6 @@ class Search
 
         return $this;
     }
-
 
     public function trackTotalHits(int $trackTotalHits = -1)
     {
@@ -94,7 +115,19 @@ class Search
         return $this;
     }
 
-    public function sort(string $field, string $direction = null): self
+    public function sortString(string $sortString): self
+    {
+        $parser = new SortParser($this->properties);
+
+        $this->sort = [
+            ...$this->sort,
+            ...$parser->parse($sortString),
+        ];
+
+        return $this;
+    }
+
+    public function sort(string $field, ?string $direction = null): self
     {
         if ($field === '_score') {
             $this->sort[] = $field;
@@ -168,14 +201,14 @@ class Search
             'track_total_hits' => $this->trackTotalHits < 0 ? true : $this->trackTotalHits,
             '_source' => $this->fields,
             'query' => [
-                "function_score" => [
+                'function_score' => [
                     'query' => $this->query->toRaw(),
-                    "script_score" => [
-                        "script" => [
-                            "source" => "doc['boost'].size()== 0 ? 1 : doc['boost'].value"
-                        ]
+                    'script_score' => [
+                        'script' => [
+                            'source' => "doc['boost'].size()== 0 ? 1 : doc['boost'].value",
+                        ],
                     ],
-                    "boost_mode" => "multiply"
+                    'boost_mode' => 'multiply',
                 ],
             ],
             'from' => $this->from,

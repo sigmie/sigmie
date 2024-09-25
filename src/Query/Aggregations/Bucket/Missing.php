@@ -9,8 +9,7 @@ class Missing extends Bucket
     public function __construct(
         protected string $name,
         protected string $field
-    ) {
-    }
+    ) {}
 
     public function value(): array
     {

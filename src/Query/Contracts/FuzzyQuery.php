@@ -6,5 +6,5 @@ namespace Sigmie\Query\Contracts;
 
 interface FuzzyQuery
 {
-    public function fuzziness(null|string $fuzziness): static;
+    public function fuzziness(?string $fuzziness): static;
 }

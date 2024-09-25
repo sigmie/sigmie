@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Sigmie\Index\Analysis\Normalizer;
 
 use Exception;
-use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Contracts\CharFilter;
 use Sigmie\Index\Contracts\Normalizer as NormalizerInterface;
 use Sigmie\Index\Contracts\NormalizerFilter;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\Name;
+
+use function Sigmie\Functions\name_configs;
 
 class Normalizer implements NormalizerInterface
 {

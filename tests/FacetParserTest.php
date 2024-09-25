@@ -30,8 +30,8 @@ class FacetParserTest extends TestCase
         $index = $this->sigmie->collect($indexName, true);
 
         $docs = [
-            new Document(['name' => '1',]),
-            new Document(['name' => '1.1',]),
+            new Document(['name' => '1']),
+            new Document(['name' => '1.1']),
         ];
 
         $index->merge($docs);
@@ -62,11 +62,11 @@ class FacetParserTest extends TestCase
         $index = $this->sigmie->collect($indexName, true);
 
         $docs = [
-            new Document(['name' => '1',]),
-            new Document(['name' => '1.1',]),
-            new Document(['name' => '11',]),
-            new Document(['name' => '1.1/2',]),
-            new Document(['name' => 'a',]),
+            new Document(['name' => '1']),
+            new Document(['name' => '1.1']),
+            new Document(['name' => '11']),
+            new Document(['name' => '1.1/2']),
+            new Document(['name' => 'a']),
         ];
 
         $index->merge($docs);
@@ -104,11 +104,11 @@ class FacetParserTest extends TestCase
         $index = $this->sigmie->collect($indexName, true);
 
         $docs = [
-            new Document(['name' => '1',]),
-            new Document(['name' => '1.1',]),
-            new Document(['name' => '11',]),
-            new Document(['name' => '1.1/2',]),
-            new Document(['name' => 'a',]),
+            new Document(['name' => '1']),
+            new Document(['name' => '1.1']),
+            new Document(['name' => '11']),
+            new Document(['name' => '1.1/2']),
+            new Document(['name' => 'a']),
         ];
 
         $index->merge($docs);
@@ -146,10 +146,10 @@ class FacetParserTest extends TestCase
         $index = $this->sigmie->collect($indexName, true);
 
         $docs = [
-            new Document(['name' => 'a',]),
-            new Document(['name' => 'z',]),
-            new Document(['name' => 'b',]),
-            new Document(['name' => 'c',]),
+            new Document(['name' => 'a']),
+            new Document(['name' => 'z']),
+            new Document(['name' => 'b']),
+            new Document(['name' => 'c']),
         ];
 
         $index->merge($docs);

@@ -15,14 +15,14 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\Suggest;
 use Sigmie\Search\Autocomplete\NewPipeline;
 use Sigmie\Search\Autocomplete\Script;
-use Sigmie\Testing\TestCase;
 use Sigmie\Testing\Assert;
+use Sigmie\Testing\TestCase;
 
 class AutocompleteTest extends TestCase
 {
+    use Explain;
     use Index;
     use Search;
-    use Explain;
 
     /**
      * @test
@@ -32,11 +32,11 @@ class AutocompleteTest extends TestCase
         $newPipeline = new NewPipeline($this->elasticsearchConnection, 'create_autocomplete_field');
 
         $processor = new Script;
-        $processor->source("ctx.autocomplete = [
+        $processor->source('ctx.autocomplete = [
             ctx.category,
             ctx.color,
-            ctx.category + \" \" + ctx.color
-          ]");
+            ctx.category + " " + ctx.color
+          ]');
 
         $pipeline = $newPipeline->addPocessor($processor)->create();
 
@@ -44,12 +44,12 @@ class AutocompleteTest extends TestCase
 
         $res = $pipeline->simulate([
             [
-                "_index" => "index",
-                "_id" => "id",
-                "_source" => [
-                    "category" => "dress",
-                    "color" => "red"
-                ]
+                '_index' => 'index',
+                '_id' => 'id',
+                '_source' => [
+                    'category' => 'dress',
+                    'color' => 'red',
+                ],
             ],
         ]);
 
@@ -58,7 +58,7 @@ class AutocompleteTest extends TestCase
         $this->assertEquals([
             'dress',
             'red',
-            'dress red'
+            'dress red',
         ], $autocomplete);
     }
 
@@ -157,8 +157,7 @@ class AutocompleteTest extends TestCase
 
         $this->sigmie
             ->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {
-            })
+            ->mapping(function (NewProperties $blueprint) {})
             ->autocomplete([])
             ->create();
 
@@ -216,7 +215,6 @@ class AutocompleteTest extends TestCase
 
         $collection->merge($docs);
 
-
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->suggest(function (Suggest $suggest) {
@@ -231,7 +229,7 @@ class AutocompleteTest extends TestCase
 
         $this->assertEquals([
             'levis dress red',
-            'levis red shoes'
+            'levis red shoes',
         ], $suggestions);
     }
 
@@ -282,7 +280,6 @@ class AutocompleteTest extends TestCase
 
         $collection->merge($docs);
 
-
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
             ->suggest(function (Suggest $suggest) {
@@ -318,12 +315,12 @@ class AutocompleteTest extends TestCase
         $collection = $this->sigmie->collect($name, true);
 
         $docs = [
-            ['title' => 'Beaturiful dress made from Levis',],
-            ['title' => 'Barber shop',],
-            ['title' => 'Brooklyn\'s Bridge',],
-            ['title' => 'Babadook',],
-            ['title' => 'Bohemian Rapsody',],
-            ['title' => 'Barbarosa',],
+            ['title' => 'Beaturiful dress made from Levis'],
+            ['title' => 'Barber shop'],
+            ['title' => 'Brooklyn\'s Bridge'],
+            ['title' => 'Babadook'],
+            ['title' => 'Bohemian Rapsody'],
+            ['title' => 'Barbarosa'],
         ];
 
         $docs = array_map(fn ($values) => new Document($values), $docs);
@@ -366,30 +363,30 @@ class AutocompleteTest extends TestCase
 
         $iphones = [
             [
-                "model" => "iPhone 13 Pro Max",
-                "storage" => "512GB",
-                "color" => "Graphite",
-                "price" => 1399.00
+                'model' => 'iPhone 13 Pro Max',
+                'storage' => '512GB',
+                'color' => 'Graphite',
+                'price' => 1399.00,
             ],
             [
-                "model" => "iPhone 13 Pro",
-                "storage" => "256GB",
-                "color" => "Sierra Blue",
-                "price" => 1199.00
+                'model' => 'iPhone 13 Pro',
+                'storage' => '256GB',
+                'color' => 'Sierra Blue',
+                'price' => 1199.00,
             ],
             [
 
-                "model" => "iPhone 13",
-                "storage" => "128GB",
-                "color" => "Pink",
-                "price" => 799.00
+                'model' => 'iPhone 13',
+                'storage' => '128GB',
+                'color' => 'Pink',
+                'price' => 799.00,
             ],
             [
-                "model" => "iPhone SE",
-                "storage" => "64GB",
-                "color" => "Black",
-                "price" => 399.00
-            ]
+                'model' => 'iPhone SE',
+                'storage' => '64GB',
+                'color' => 'Black',
+                'price' => 399.00,
+            ],
         ];
 
         $docs = array_map(fn ($values) => new Document($values), $iphones);
@@ -403,7 +400,7 @@ class AutocompleteTest extends TestCase
         $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
 
         $this->assertEquals([
-            "Black 64GB iPhone SE",
+            'Black 64GB iPhone SE',
         ], $suggestions);
     }
 
@@ -431,30 +428,30 @@ class AutocompleteTest extends TestCase
 
         $iphones = [
             [
-                "model" => "iPhone 13 Pro Max",
-                "storage" => "512GB",
-                "color" => "Graphite",
-                "price" => 1399.00
+                'model' => 'iPhone 13 Pro Max',
+                'storage' => '512GB',
+                'color' => 'Graphite',
+                'price' => 1399.00,
             ],
             [
-                "model" => "iPhone 13 Pro",
-                "storage" => "256GB",
-                "color" => "Sierra Blue",
-                "price" => 1199.00
+                'model' => 'iPhone 13 Pro',
+                'storage' => '256GB',
+                'color' => 'Sierra Blue',
+                'price' => 1199.00,
             ],
             [
 
-                "model" => "iPhone 13",
-                "storage" => "128GB",
-                "color" => "Pink",
-                "price" => 799.00
+                'model' => 'iPhone 13',
+                'storage' => '128GB',
+                'color' => 'Pink',
+                'price' => 799.00,
             ],
             [
-                "model" => "iPhone SE",
-                "storage" => "64GB",
-                "color" => ["Red", "Black"],
-                "price" => 399.00
-            ]
+                'model' => 'iPhone SE',
+                'storage' => '64GB',
+                'color' => ['Red', 'Black'],
+                'price' => 399.00,
+            ],
         ];
 
         $docs = array_map(fn ($values) => new Document($values), $iphones);
@@ -468,7 +465,7 @@ class AutocompleteTest extends TestCase
         $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
 
         $this->assertEquals([
-            "Red Black 64GB iPhone SE",
+            'Red Black 64GB iPhone SE',
         ], $suggestions);
     }
 
@@ -497,30 +494,30 @@ class AutocompleteTest extends TestCase
 
         $iphones = [
             [
-                "model" => "iPhone 13 Pro Max",
-                "storage" => "512GB",
-                "color" => "Graphite",
-                "price" => 1399.00
+                'model' => 'iPhone 13 Pro Max',
+                'storage' => '512GB',
+                'color' => 'Graphite',
+                'price' => 1399.00,
             ],
             [
-                "model" => "iPhone 13 Pro",
-                "storage" => "256GB",
-                "color" => "Sierra Blue",
-                "price" => 1199.00
+                'model' => 'iPhone 13 Pro',
+                'storage' => '256GB',
+                'color' => 'Sierra Blue',
+                'price' => 1199.00,
             ],
             [
 
-                "model" => "iPhone 13",
-                "storage" => "128GB",
-                "color" => "Pink",
-                "price" => 799.00
+                'model' => 'iPhone 13',
+                'storage' => '128GB',
+                'color' => 'Pink',
+                'price' => 799.00,
             ],
             [
-                "model" => "iPhone SE",
-                "storage" => "64GB",
-                "color" => ["Red", "Black"],
-                "price" => 399.00
-            ]
+                'model' => 'iPhone SE',
+                'storage' => '64GB',
+                'color' => ['Red', 'Black'],
+                'price' => 399.00,
+            ],
         ];
 
         $docs = array_map(fn ($values) => new Document($values), $iphones);
@@ -534,7 +531,7 @@ class AutocompleteTest extends TestCase
         $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
 
         $this->assertEquals([
-            "red black 64gb iphone se",
+            'red black 64gb iphone se',
         ], $suggestions);
     }
 
@@ -559,10 +556,10 @@ class AutocompleteTest extends TestCase
         $collection = $this->sigmie->collect($name, true);
 
         $names = [
-            ["name" => "Αθήνα"],
-            ["name" => "Σπάρτη"],
-            ["name" => "Θεσσαλονίκη"],
-            ["name" => "Πάτρα"],
+            ['name' => 'Αθήνα'],
+            ['name' => 'Σπάρτη'],
+            ['name' => 'Θεσσαλονίκη'],
+            ['name' => 'Πάτρα'],
         ];
 
         $docs = array_map(fn ($values) => new Document($values), $names);
@@ -577,7 +574,7 @@ class AutocompleteTest extends TestCase
 
         // This means that the greek lowercase filter is used
         $this->assertEquals([
-            "Αθήνα",
+            'Αθήνα',
         ], $suggestions);
     }
 
@@ -602,10 +599,10 @@ class AutocompleteTest extends TestCase
         $collection = $this->sigmie->collect($name, true);
 
         $names = [
-            ["name" => "Düsseldort"],
-            ["name" => "Berlin"],
-            ["name" => "Dortmund"],
-            ["name" => "Iserlohn"],
+            ['name' => 'Düsseldort'],
+            ['name' => 'Berlin'],
+            ['name' => 'Dortmund'],
+            ['name' => 'Iserlohn'],
         ];
 
         $docs = array_map(fn ($values) => new Document($values), $names);
@@ -620,8 +617,8 @@ class AutocompleteTest extends TestCase
 
         // This means that the dortmund lowercase filter is used
         $this->assertEquals([
-            "Dortmund",
-            "Düsseldort",
+            'Dortmund',
+            'Düsseldort',
         ], $suggestions);
     }
 
@@ -646,8 +643,8 @@ class AutocompleteTest extends TestCase
         $collection = $this->sigmie->collect($name, true);
 
         $names = [
-            ["name" => "London"],
-            ["name" => "Wien"],
+            ['name' => 'London'],
+            ['name' => 'Wien'],
         ];
 
         $docs = array_map(fn ($values) => new Document($values), $names);
@@ -662,7 +659,7 @@ class AutocompleteTest extends TestCase
 
         // This means that the dortmund lowercase filter is used
         $this->assertEquals([
-            "London",
+            'London',
         ], $suggestions);
     }
 }

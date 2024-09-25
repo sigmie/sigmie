@@ -13,7 +13,7 @@ interface CustomAnalyzer extends Analyzer
         array $tokenizers
     ): CustomAnalyzer;
 
-    public function tokenizer(): null|Tokenizer;
+    public function tokenizer(): ?Tokenizer;
 
     public function filters(): array;
 

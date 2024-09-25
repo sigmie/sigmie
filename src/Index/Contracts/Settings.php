@@ -7,7 +7,7 @@ namespace Sigmie\Index\Contracts;
 use Sigmie\Shared\Contracts\FromRaw;
 use Sigmie\Shared\Contracts\ToRaw;
 
-interface Settings extends ToRaw, FromRaw
+interface Settings extends FromRaw, ToRaw
 {
     public function toRaw(): array;
 

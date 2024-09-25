@@ -6,6 +6,4 @@ namespace Sigmie\Parse;
 
 use RuntimeException;
 
-class ParseException extends RuntimeException
-{
-}
+class ParseException extends RuntimeException {}

@@ -8,6 +8,4 @@ use Sigmie\Shared\Contracts\FromRaw;
 use Sigmie\Shared\Contracts\Name;
 use Sigmie\Shared\Contracts\ToRaw;
 
-interface Tokenizer extends FromRaw, ToRaw, Name
-{
-}
+interface Tokenizer extends FromRaw, Name, ToRaw {}

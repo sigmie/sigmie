@@ -4,17 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings;
 
-use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use ArrayAccess;
 use Exception;
-use Sigmie\English\Filter\Lowercase;
-use Sigmie\English\Filter\Stemmer;
 use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\SimpleAnalyzer;
-use Sigmie\Index\Analysis\TokenFilter\Shingle;
-use Sigmie\Index\Analysis\TokenFilter\Trim;
-use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\GeoPoint;
@@ -25,7 +20,6 @@ use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
-use Throwable;
 
 class Properties extends Type implements ArrayAccess
 {
@@ -75,15 +69,15 @@ class Properties extends Type implements ArrayAccess
     {
         $collection = new Collection($this->fields);
 
-        return $collection->filter(fn(Type $type) => $type instanceof Text);
+        return $collection->filter(fn (Type $type) => $type instanceof Text);
     }
 
     public function completionFields(): Collection
     {
         $collection = new Collection($this->fields);
 
-        return $collection->filter(fn(Type $type) => $type instanceof Text)
-            ->filter(fn(Text $text) => $text->type() === 'completion');
+        return $collection->filter(fn (Type $type) => $type instanceof Text)
+            ->filter(fn (Text $text) => $text->type() === 'completion');
     }
 
     public function toArray(): array
@@ -134,7 +128,7 @@ class Properties extends Type implements ArrayAccess
 
             $field = match (true) {
                 // This is an object type
-                isset($value['properties']) && !isset($value['type']) => (new Object_($fieldName))->properties(
+                isset($value['properties']) && ! isset($value['type']) => (new Object_($fieldName))->properties(
                     self::create($value['properties'], $defaultAnalyzer, $analyzers, (string) $fieldName)
                 ),
                 isset($value['properties']) && $value['type'] === 'nested' => (new Nested($fieldName))->properties(
@@ -153,10 +147,10 @@ class Properties extends Type implements ArrayAccess
                 $value['type'] === 'geo_point' => new GeoPoint($fieldName),
                 $value['type'] === 'date' => new Date($fieldName),
                 $value['type'] === 'object' => new Object_($fieldName),
-                default => throw new Exception('Field ' . $value['type'] . ' couldn\'t be mapped')
+                default => throw new Exception('Field '.$value['type'].' couldn\'t be mapped')
             };
 
-            if ($field instanceof Text && !isset($value['analyzer'])) {
+            if ($field instanceof Text && ! isset($value['analyzer'])) {
                 $value['analyzer'] = 'default';
             }
 
@@ -181,7 +175,7 @@ class Properties extends Type implements ArrayAccess
     public function toRaw(): array
     {
         $fields = (new Collection($this->fields))
-            ->mapToDictionary(fn(Type $value) => $value->toRaw())
+            ->mapToDictionary(fn (Type $value) => $value->toRaw())
             ->toArray();
 
         if ($this->name === 'mappings') {
@@ -197,7 +191,7 @@ class Properties extends Type implements ArrayAccess
 
         $firstField = array_shift($fields);
 
-        if (!isset($this->fields[$firstField])) {
+        if (! isset($this->fields[$firstField])) {
             return null;
         }
 
@@ -209,6 +203,7 @@ class Properties extends Type implements ArrayAccess
 
         if ($type instanceof Nested || $type instanceof Object_) {
             $childName = implode('.', $fields);
+
             return $type->properties->getNestedField($childName);
         }
 

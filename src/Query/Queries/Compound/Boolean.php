@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Queries\Compound;
 
+use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Properties;
 use Sigmie\Query\BooleanQueryBuilder;
 use Sigmie\Query\Queries\Query;
 
@@ -19,12 +21,12 @@ class Boolean extends Query
 
     public array $raw = [];
 
-    public function __construct()
+    public function __construct(NewProperties|Properties $properties = new NewProperties())
     {
-        $this->must = new BooleanQueryBuilder();
-        $this->mustNot = new BooleanQueryBuilder();
-        $this->filter = new BooleanQueryBuilder();
-        $this->should = new BooleanQueryBuilder();
+        $this->must = new BooleanQueryBuilder($properties);
+        $this->mustNot = new BooleanQueryBuilder($properties);
+        $this->filter = new BooleanQueryBuilder($properties);
+        $this->should = new BooleanQueryBuilder($properties);
     }
 
     public function must(): BooleanQueryBuilder

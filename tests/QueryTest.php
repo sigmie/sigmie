@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Exception;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
@@ -12,6 +13,180 @@ use Sigmie\Testing\TestCase;
 
 class QueryTest extends TestCase
 {
+    /**
+     * @test
+     */
+    public function facet_parse_query()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->number('age')->integer();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $collection = $this->sigmie->collect($indexName, refresh: true);
+
+        $docs = [
+            new Document([
+                'name' => 'John Doe',
+                'age' => 20,
+            ]),
+            new Document([
+                'name' => 'John Smith',
+                'age' => 25,
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $facets = $this->sigmie->newQuery($indexName)
+            ->properties($blueprint)
+            ->matchAll()
+            ->facets('age')
+            ->get()
+            ->json('aggregations.age');
+
+        $this->assertNotEmpty($facets);
+    }
+
+    /**
+     * @test
+     */
+    public function sort_parse_query()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->name('name');
+        $blueprint->number('age')->integer();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $collection = $this->sigmie->collect($indexName, refresh: true);
+
+        $docs = [
+            new Document([
+                'name' => 'John Doe',
+                'age' => 20,
+            ]),
+            new Document([
+                'name' => 'John Smith',
+                'age' => 25,
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $search = $this->sigmie->newQuery($indexName)
+            ->properties($blueprint)
+            ->matchAll()
+            ->sortString('age:asc')
+            ->get();
+
+        $this->assertEquals('John Doe', $search->json('hits.hits.0._source.name'));
+        $this->assertEquals('John Smith', $search->json('hits.hits.1._source.name'));
+
+        $search = $this->sigmie->newQuery($indexName)
+            ->properties($blueprint)
+            ->matchAll()
+            ->sortString('age:desc')
+            ->get();
+
+        $this->assertEquals('John Smith', $search->json('hits.hits.0._source.name'));
+        $this->assertEquals('John Doe', $search->json('hits.hits.1._source.name'));
+    }
+
+    /**
+     * @test
+     */
+    public function filter_parse_without_mappings_query()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $collection = $this->sigmie->collect($indexName, refresh: true);
+
+        $docs = [
+            new Document([
+                'name' => 'John Doe',
+                'age' => 20,
+            ]),
+            new Document([
+                'name' => 'John Smith',
+                'age' => 25,
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $this->expectException(Exception::class);
+
+        $this->sigmie->newQuery($indexName)
+            ->parse('name:"John Doe" AND age<21')
+            ->get();
+    }
+
+    /**
+     * @test
+     */
+    public function filter_parse_query()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->name('name');
+        $blueprint->number('age')->integer();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $collection = $this->sigmie->collect($indexName, refresh: true);
+
+        $docs = [
+            new Document([
+                'name' => 'John Doe',
+                'age' => 20,
+            ]),
+            new Document([
+                'name' => 'John Smith',
+                'age' => 25,
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $search = $this->sigmie->newQuery($indexName)
+            ->properties($blueprint)
+            ->parse('name:"John Doe" AND age<21')
+            ->get();
+
+        $count = $search->json('hits.total.value');
+
+        $this->assertEquals(1, $count);
+
+        $search = $this->sigmie->newQuery($indexName)
+            ->properties($blueprint)
+            ->bool(
+                fn (QueriesCompoundBoolean $bool) => $bool->must()->parse('name:"John Doe" AND age<21')
+            )
+            ->get();
+
+        $count = $search->json('hits.total.value');
+
+        $this->assertEquals(1, $count);
+    }
+
     /**
      * @test
      */
@@ -36,7 +211,7 @@ class QueryTest extends TestCase
 
         $collection->merge($docs);
 
-        $search =  $this->sigmie->newSearch($name)
+        $search = $this->sigmie->newSearch($name)
             ->properties($blueprint)
             ->queryString('0');
 
@@ -106,7 +281,7 @@ class QueryTest extends TestCase
             $boolean->mustNot->wildcard('foo', '**/*');
             $boolean->mustNot->ids(['unqie']);
 
-            $boolean->should->bool(fn(QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
+            $boolean->should->bool(fn (QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
         })
             ->from(0)
             ->size(2)
@@ -133,7 +308,7 @@ class QueryTest extends TestCase
             $boolean->mustNot->wildcard('foo', '**/*');
             $boolean->mustNot->ids(['unqie']);
 
-            $boolean->should->bool(fn(QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
+            $boolean->should->bool(fn (QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
         })->sort('title.raw', 'asc')
             ->fields(['title'])
             ->from(0)
@@ -149,14 +324,12 @@ class QueryTest extends TestCase
         $this->assertEquals(
             $query['query'],
             [
-                'function_score' =>
-                [
+                'function_score' => [
                     'script_score' => ['script' => [
-                        'source' => "doc['boost'].size()== 0 ? 1 : doc['boost'].value"
+                        'source' => "doc['boost'].size()== 0 ? 1 : doc['boost'].value",
                     ]],
                     'boost_mode' => 'multiply',
-                    'query' =>
-                    ['bool' => [
+                    'query' => ['bool' => [
                         'boost' => 1.0,
                         'filter' => [
                             ['match_all' => (object) [
@@ -227,8 +400,8 @@ class QueryTest extends TestCase
                                 ],
                             ],
                         ],
-                    ]]
-                ]
+                    ]],
+                ],
             ]
         );
     }
