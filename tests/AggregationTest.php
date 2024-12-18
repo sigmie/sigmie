@@ -91,7 +91,8 @@ class AggregationTest extends TestCase
                             )
                                 ->missing('2021-01-01')
                                 ->aggregate(function (SearchAggregation $aggregation) {
-                                    $aggregation->sum('count_sum', 'nested_property.count');
+                                    $aggregation->max('count_sum', 'nested_property.count')
+                                        ->missing(0);
                                 });
                         });
                     }
@@ -99,9 +100,9 @@ class AggregationTest extends TestCase
             })
             ->get();
 
-            $value = $res->aggregation('nested_property.range_filter.histogram.buckets.0.count_sum.value');
+        $value = $res->aggregation('nested_property.range_filter.histogram.buckets.0.count_sum.value');
 
-            $this->assertEquals(2, $value);
+        $this->assertEquals(2, $value);
     }
 
     /**

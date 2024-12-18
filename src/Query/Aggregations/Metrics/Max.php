@@ -19,7 +19,7 @@ class Max extends Metric
         ];
 
         if (isset($this->missing)) {
-            $value['min']['missing'] = $this->missing;
+            $value['max']['missing'] = $this->missing;
         }
 
         return $value;
