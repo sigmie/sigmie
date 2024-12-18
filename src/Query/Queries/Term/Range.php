@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Query\Queries\Term;
 
 use Exception;
+use Sigmie\Parse\RangeOperatorParser;
 use Sigmie\Query\Queries\Query;
 
 class Range extends Query
@@ -26,13 +27,9 @@ class Range extends Query
         ];
 
         foreach ($this->values as $operator => $value) {
-            $operator = match ($operator) {
-                '>' => 'gt',
-                '>=' => 'gte',
-                '<' => 'lt',
-                '<=' => 'lte',
-                default => throw new Exception('Range operator is required')
-            };
+
+            $operator = (new RangeOperatorParser)->parse($operator);
+
             $res['range'][$this->field][$operator] = $value;
         }
 

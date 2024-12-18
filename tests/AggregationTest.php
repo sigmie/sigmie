@@ -22,6 +22,91 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
+    public function nested_date_histogram_aggregation()
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)
+            ->mapping(function (NewProperties $blueprint) {
+                $blueprint->date('date');
+                $blueprint->nested('nested_property', function (NewProperties $blueprint) {
+                    $blueprint->date('date');
+                    $blueprint->number('count');
+                });
+            })
+            ->create();
+
+        $collection = $this->sigmie->collect($name, refresh: true);
+
+        $docs = [
+            new Document([
+                'nested_property' => [
+                    [
+                        'date' => '2020-01-01',
+                        'count' => 1,
+                    ],
+                ],
+            ]),
+            new Document([
+                'nested_property' => [
+                    [
+                        'date' => '2019-01-01',
+                        'count' => 2,
+                    ],
+                ],
+            ]),
+            new Document([
+                'nested_property' => [
+                    [
+                        'date' => '2018-01-01',
+                        'count' => 1,
+                    ],
+                ],
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->newQuery($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation) {
+
+                $aggregation->nested(
+                    'nested_property',
+                    'nested_property',
+                    function (SearchAggregation $aggregation) {
+
+                        $aggregation->rangeFilter(
+                            'range_filter',
+                            'nested_property.date',
+                            [
+                                '>=' => '2019-01-01',
+                                '<=' => '2019-01-01',
+                            ]
+                        )->aggregate(function (SearchAggregation $aggregation) {
+                            $aggregation->dateHistogram(
+                                'histogram',
+                                'nested_property.date',
+                                CalendarInterval::Year,
+                            )
+                                ->missing('2021-01-01')
+                                ->aggregate(function (SearchAggregation $aggregation) {
+                                    $aggregation->sum('count_sum', 'nested_property.count');
+                                });
+                        });
+                    }
+                );
+            })
+            ->get();
+
+            $value = $res->aggregation('nested_property.range_filter.histogram.buckets.0.count_sum.value');
+
+            $this->assertEquals(2, $value);
+    }
+
+    /**
+     * @test
+     */
     public function significant_text_aggregation()
     {
         $name = uniqid();

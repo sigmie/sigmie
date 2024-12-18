@@ -12,8 +12,10 @@ use Sigmie\Query\Aggregations\Bucket\Histogram;
 use Sigmie\Query\Aggregations\Bucket\Missing;
 use Sigmie\Query\Aggregations\Bucket\Nested;
 use Sigmie\Query\Aggregations\Bucket\Range;
+use Sigmie\Query\Aggregations\Bucket\RangeFilter;
 use Sigmie\Query\Aggregations\Bucket\SignificantText;
 use Sigmie\Query\Aggregations\Bucket\Sort;
+use Sigmie\Query\Aggregations\Bucket\TermFilter;
 use Sigmie\Query\Aggregations\Bucket\Terms;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Aggregations\Metrics\Avg;
@@ -59,6 +61,27 @@ class Aggs implements AggsInterface
         string $term,
     ): Filter {
         $aggregation = new Filter($name, $field, $term);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    public function termFilter(
+        string $name,
+        string $field,
+        string $term,
+    ): TermFilter {
+        return $this->filter($name, $field, $term);
+    }
+
+    public function rangeFilter(
+        string $name,
+        string $field,
+        array $ranges,
+    ): RangeFilter {
+
+        $aggregation = new RangeFilter($name, $field, $ranges);
 
         $this->aggs[] = $aggregation;
 
