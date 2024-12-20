@@ -38,6 +38,10 @@ class Search
 
     protected Properties $properties;
 
+    protected string $scriptScoreSource = "doc['boost'].size()== 0 ? 1 : doc['boost'].value";
+
+    protected string $scriptScoreBoostMode = 'multiply';
+
     public function __construct(
         protected Query $query = new MatchAll(),
         protected Aggs $aggs = new Aggs(),
@@ -65,6 +69,14 @@ class Search
         $aggs = $parser->parse($string);
 
         $this->aggs->add($aggs);
+
+        return $this;
+    }
+
+    public function scriptScore(string $source, string $boostMode = 'multiply')
+    {
+        $this->scriptScoreSource = $source;
+        $this->scriptScoreBoostMode = $boostMode;
 
         return $this;
     }
@@ -201,15 +213,11 @@ class Search
             'track_total_hits' => $this->trackTotalHits < 0 ? true : $this->trackTotalHits,
             '_source' => $this->fields,
             'query' => [
-                'function_score' => [
-                    'query' => $this->query->toRaw(),
-                    'script_score' => [
-                        'script' => [
-                            'source' => "doc['boost'].size()== 0 ? 1 : doc['boost'].value",
-                        ],
-                    ],
-                    'boost_mode' => 'multiply',
-                ],
+                ...(new FunctionScore(
+                    $this->query,
+                    source: $this->scriptScoreSource,
+                    boostMode: $this->scriptScoreBoostMode
+                ))->toRaw(),
             ],
             'from' => $this->from,
             'size' => $this->size,

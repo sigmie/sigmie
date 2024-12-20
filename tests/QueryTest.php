@@ -46,10 +46,14 @@ class QueryTest extends TestCase
             ->properties($blueprint)
             ->matchAll()
             ->facets('age')
-            ->get()
-            ->json('aggregations.age');
+            ->scriptScore(
+                source: "10",
+                boostMode: 'replace'
+            )
+            ->get();
 
-        $this->assertNotEmpty($facets);
+        $this->assertEquals(10, $facets->json('hits.hits.0._score'));
+        $this->assertEquals(10, $facets->json('hits.hits.1._score'));
     }
 
     /**
