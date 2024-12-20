@@ -97,6 +97,13 @@ class FilterParser extends Parser
         //If it's a string filter like inStock = 1 and not
         //a subquery like (inStock = 1 AND active = true).
         if (is_string($filter)) {
+
+            // Remove spaces that are not in quotes
+            // eg. {user: { id:'465'}} becomes {user:{id:'465'}}
+            $filter = preg_replace_callback('/\s*(\{|\}|:|,)\s*/', function ($matches) {
+                return $matches[1];
+            }, $filter);
+
             $query = preg_replace('/'.preg_quote($filter, '/').'/', '', $query, 1);
             $query = trim($query);
             $filter = trim($filter);

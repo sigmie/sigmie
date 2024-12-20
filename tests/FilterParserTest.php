@@ -17,6 +17,67 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function parse_spaces()
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties();
+        $props->id('id');
+        $props->id('system_id');
+        $props->caseSensitiveKeyword('interval');
+        $props->text('order_notes');
+        $props->nested('user', function (NewProperties $props) {
+            $props->id('id');
+            $props->path('slug');
+            $props->bool('internal');
+        });
+        $props->object('lead_type', function (NewProperties $props) {
+            $props->id('id');
+            $props->keyword('short_code');
+        });
+        $props->nested('delivery_history', function (NewProperties $props) {
+            $props->id('id');
+            $props->date('timestamp');
+            $props->number('limit_amount')->integer();
+            $props->number('requested_amount')->integer();
+            $props->number('delivered_amount')->integer();
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($props)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'system_id' => 26,
+                'user' => [
+                    'id' => 465,
+                ],
+                'lead_type' => [
+                    'id' => 270,
+                ],
+                'status' => 'active',
+            ]),
+        ];
+
+        $index->merge($docs);
+
+
+        $parser = new FilterParser($props, false);
+
+        $query = $parser->parse("(user: { id:'465'} ) AND system_id:'26'");
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(1, $res->json('hits.hits'));
+    }
+
+
+    /**
+     * @test
+     */
     public function parse_parentheses_filter()
     {
         $indexName = uniqid();

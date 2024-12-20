@@ -19,6 +19,7 @@ class AggregationTest extends TestCase
     use Index;
     use Search;
 
+
     /**
      * @test
      */
