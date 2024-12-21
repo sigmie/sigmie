@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Query;
 
+use Sigmie\Query\Aggregations\Bucket\AutoDateHistogram;
 use Sigmie\Query\Aggregations\Bucket\BucketSelector;
 use Sigmie\Query\Aggregations\Bucket\DateHistogram;
 use Sigmie\Query\Aggregations\Bucket\Filter;
@@ -18,6 +19,7 @@ use Sigmie\Query\Aggregations\Bucket\Sort;
 use Sigmie\Query\Aggregations\Bucket\TermFilter;
 use Sigmie\Query\Aggregations\Bucket\Terms;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
+use Sigmie\Query\Aggregations\Enums\MinimumInterval;
 use Sigmie\Query\Aggregations\Metrics\Avg;
 use Sigmie\Query\Aggregations\Metrics\Cardinality;
 use Sigmie\Query\Aggregations\Metrics\Composite;
@@ -122,6 +124,19 @@ class Aggs implements AggsInterface
         ?array $extendedBounds = null
     ): Histogram {
         $aggregation = new Histogram($name, $field, $interval, $minDocCount, $extendedBounds);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    public function autoDateHistogram(
+        string $name,
+        string $field,
+        int $buckets,
+        MinimumInterval $minimumInterval = MinimumInterval::Second
+    ) {
+        $aggregation = new AutoDateHistogram($name, $field, $buckets, $minimumInterval);
 
         $this->aggs[] = $aggregation;
 
