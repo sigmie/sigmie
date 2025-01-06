@@ -17,6 +17,41 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function parse_dash()
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties();
+        $props->id('id');
+        $props->caseSensitiveKeyword('status');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($props)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'id' => 1,
+                'status' => 'in-progress',
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $parser = new FilterParser($props, false);
+
+        $query = $parser->parse("status:'in-progress' AND has:id");
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(1, $res->json('hits.hits'));
+    }
+
+    /**
+     * @test
+     */
     public function parse_spaces()
     {
         $indexName = uniqid();

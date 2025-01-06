@@ -15,6 +15,33 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function handle_boost_missing_gracefully()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->date('date');
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'date' => '2024-01-01',
+            ]),
+        ]);
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->sort('_score')
+            ->queryString('')
+            ->get();
+
+        $this->assertEquals(200, $res->code());
+    }
+
+    /**
+     * @test
+     */
     public function empty_on_non_queriable_field()
     {
         $indexName = uniqid();
@@ -407,7 +434,7 @@ class SearchTest extends TestCase
             ->retrieve(['name'])
             ->get();
 
-        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+        $suggestions = array_map(fn($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
 
         $this->assertEquals([
             'Marisa',

@@ -38,7 +38,7 @@ class Search
 
     protected Properties $properties;
 
-    protected string $scriptScoreSource = "doc['boost'].size()== 0 ? 1 : doc['boost'].value";
+    protected string $scriptScoreSource = "doc.containsKey('boost') && doc['boost'].size() > 0 ? doc['boost'].value : 1";
 
     protected string $scriptScoreBoostMode = 'multiply';
 

@@ -330,7 +330,7 @@ class QueryTest extends TestCase
             [
                 'function_score' => [
                     'script_score' => ['script' => [
-                        'source' => "doc['boost'].size()== 0 ? 1 : doc['boost'].value",
+                        'source' => "doc.containsKey('boost') && doc['boost'].size() > 0 ? doc['boost'].value : 1",
                     ]],
                     'boost_mode' => 'multiply',
                     'query' => ['bool' => [
