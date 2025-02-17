@@ -17,6 +17,7 @@ use Sigmie\Query\Queries\MatchNone;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
+use Sigmie\Search\Contracts\EmbeddingsQueries;
 use Sigmie\Search\Contracts\SearchTemplateBuilder as SearchTemplateBuilderInterface;
 use Sigmie\Shared\Collection;
 
@@ -116,7 +117,12 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
                 $fuzziness = ! in_array($field->name(), $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
-                $queries = $field->hasQueriesCallback ? $field->queriesFromCallback('{{query_string}}') : $field->queries('{{query_string}}');
+                $queries = match(true)
+                {
+                    $field->type instanceof EmbeddingsQueries => $field->queries('{{embeddings}}'),
+                    $field->hasQueriesCallback => $field->queriesFromCallback('{{query_string}}'),
+                    default => $field->queries('{{query_string}}')
+                };
 
                 $queries = new Collection($queries);
 

@@ -18,6 +18,7 @@ trait Index
 
         $esRequest = new ElasticsearchRequest($method, $uri, $body);
 
+        ray($esRequest);
         return $this->elasticsearchCall($esRequest);
     }
 }

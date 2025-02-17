@@ -6,11 +6,13 @@ namespace Sigmie\Mappings;
 
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
+use Sigmie\Mappings\Contracts\Type as ContractsType;
 use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Date;
+use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Email;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\HTML;
@@ -50,7 +52,7 @@ class NewProperties
     ): Properties {
 
         $fields = $this->fields
-            ->mapToDictionary(function (Type $type) {
+            ->mapToDictionary(function (ContractsType $type) {
                 return [$type->name => $type];
             })->toArray();
 
@@ -60,6 +62,15 @@ class NewProperties
         $props->handleNormalizers($analysis);
 
         return $props;
+    }
+
+    public function denseVector(string $name) 
+    {
+        $field = new DenseVector($name);
+
+        $this->fields->add($field);
+
+        return $field;
     }
 
     public function text(string $name): Text

@@ -8,10 +8,11 @@ use Closure;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Mappings\Contracts\Type as TypeInterface;
 use Sigmie\Query\Aggs;
+use Sigmie\Search\Contracts\TextQueries;
 use Sigmie\Shared\Contracts\Name;
 use Sigmie\Shared\Contracts\ToRaw;
 
-abstract class Type implements Name, ToRaw, TypeInterface
+abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
 {
     protected string $type;
 
@@ -97,8 +98,6 @@ abstract class Type implements Name, ToRaw, TypeInterface
 
         return $raw;
     }
-
-    abstract public function queries(string $queryString): array;
 
     public function aggregation(Aggs $aggs, string $params): void {}
 

@@ -18,6 +18,7 @@ use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
+use Sigmie\Search\Contracts\EmbeddingsQueries;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
 use Sigmie\Shared\Collection;
 
@@ -29,11 +30,20 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected string $queryString = '';
 
+    protected array $embeddings = [];
+
     protected string $index;
 
     public function queryString(string $query): static
     {
         $this->queryString = $query;
+
+        return $this;
+    }
+
+    public function embeddings(array $embeddings): static
+    {
+        $this->embeddings = $embeddings;
 
         return $this;
     }
@@ -98,7 +108,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $search->fields($this->retrieve);
 
-        $boolean->must()->bool(fn (Boolean $boolean) => $boolean->filter()->query($this->filters));
+        $boolean->must()->bool(fn(Boolean $boolean) => $boolean->filter()->query($this->filters));
 
         $search->addRaw('sort', $this->sort);
 
@@ -128,7 +138,11 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $fuzziness = ! in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
-                $queries = $field->hasQueriesCallback ? $field->queriesFromCallback($this->queryString) : $field->queries($this->queryString);
+                $queries = match (true) {
+                    $field->hasQueriesCallback ?? false => $field->queriesFromCallback($this->queryString),
+                    $field instanceof EmbeddingsQueries => $field->queries($this->embeddings),
+                    default => $field->queries($this->queryString)
+                };
 
                 $queries = new Collection($queries);
 
@@ -140,7 +154,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                     $queryClause = $queryClause->boost($boost);
 
-                    if ($field->parentPath && $field->parentType === TypesNested::class) {
+                    if ($field->parentPath ?? false && $field->parentType === TypesNested::class) {
                         $queryClause = new Nested($field->parentPath, $queryClause);
                     }
 
@@ -151,7 +165,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             if ($shouldClauses->isEmpty()) {
                 $queryBoolean->should()->query(new MatchNone);
             } else {
-                $shouldClauses->each(fn (Query $queryClase) => $queryBoolean->should()->query($queryClase));
+                $shouldClauses->each(fn(Query $queryClase) => $queryBoolean->should()->query($queryClase));
             }
 
             $boolean->should()->query($queryBoolean);

@@ -14,6 +14,7 @@ trait Bulk
 
     protected function bulkAPICall(string $indexName, array $data, string $refresh = 'false'): BulkResponse
     {
+        // $uri = new Uri("/{$indexName}/_bulk?pipeline=embedding-pipeline");
         $uri = new Uri("/{$indexName}/_bulk");
 
         $uri = Uri::withQueryValue($uri, 'refresh', $refresh);

@@ -10,6 +10,7 @@ use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\SimpleAnalyzer;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
+use Sigmie\Mappings\Contracts\Type as ContractsType;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\GeoPoint;
@@ -69,7 +70,7 @@ class Properties extends Type implements ArrayAccess
     {
         $collection = new Collection($this->fields);
 
-        return $collection->filter(fn (Type $type) => $type instanceof Text);
+        return $collection->filter(fn (ContractsType $type) => $type instanceof Text);
     }
 
     public function completionFields(): Collection
@@ -175,7 +176,7 @@ class Properties extends Type implements ArrayAccess
     public function toRaw(): array
     {
         $fields = (new Collection($this->fields))
-            ->mapToDictionary(fn (Type $value) => $value->toRaw())
+            ->mapToDictionary(fn (ContractsType $value) => $value->toRaw())
             ->toArray();
 
         if ($this->name === 'mappings') {

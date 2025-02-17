@@ -23,6 +23,7 @@ use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Search;
 use Sigmie\Search\ExistingScript;
 use Sigmie\Search\NewSearch;
+use Sigmie\Search\NewSemanticSearch;
 use Sigmie\Search\NewTemplate;
 
 class Sigmie
@@ -97,6 +98,15 @@ class Sigmie
         $index = $this->withApplicationPrefix($index);
 
         $search = new NewSearch($this->elasticsearchConnection);
+
+        return $search->index($index);
+    }
+
+    public function newSemanticSearch(string $index): NewSemanticSearch
+    {
+        $index = $this->withApplicationPrefix($index);
+
+        $search = new NewSemanticSearch($this->elasticsearchConnection);
 
         return $search->index($index);
     }

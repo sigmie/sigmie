@@ -172,8 +172,6 @@ class NewIndex
 
         $name = index_name($this->alias);
 
-        // dump($settings->toRaw());
-
         $index = new Index($name, $settings, $mappings);
 
         return $index;
