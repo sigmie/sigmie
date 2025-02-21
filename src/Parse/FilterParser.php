@@ -15,6 +15,7 @@ use Sigmie\Query\Queries\Term\IDs;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Term\Terms;
+use Sigmie\Query\Queries\Term\Wildcard;
 use Sigmie\Query\Queries\Text\Nested;
 
 class FilterParser extends Parser
@@ -212,6 +213,7 @@ class FilterParser extends Parser
             preg_match('/^([\w\.]+)([<>]=?)(\".+\")/', $string) => $this->handleRange($string),
             preg_match('/^_id:[a-z_A-Z0-9]+/', $string) => $this->handleIDs($string),
             preg_match('/[\w\.]+:\[.*\]/', $string) => $this->handleIn($string),
+            preg_match('/^[\w\.]+:.*\*.*$/', $string) => $this->handleWildcard($string),
             preg_match('/[\w\.]+:".*"/', $string) => $this->handleTerm($string),
             preg_match('/[\w\.]+:\'.*\'/', $string) => $this->handleTerm($string),
             preg_match('/^[\w\.]+:\d+(km|m|cm|mm|mi|yd|ft|in|nmi)\[\-?\d+(\.\d+)?\,\-?\d+(\.\d+)?\]/', $string) => $this->handleGeo($string),
@@ -394,5 +396,23 @@ class FilterParser extends Parser
         }
 
         return $this->filterQuery($field, new Term($this->fieldName($field), $value));
+    }
+
+    public function handleWildcard(string $term)
+    {
+        [$field, $value] = explode(':', $term);
+
+        // Remove quotes from value
+        $value = trim($value, '\'');
+        // Remove quotes from value
+        $value = trim($value, '"');
+
+        $field = $this->handleFieldName($field);
+
+        if (is_null($field)) {
+            return;
+        }
+
+        return $this->filterQuery($field, new Wildcard($this->fieldName($field), $value));
     }
 }

@@ -17,6 +17,81 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function wildcard_in_query()
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties();
+        $props->searchableNumber('number');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($props)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'number' => '2353051650',
+            ]),
+            new Document([
+                'number' => '2353051651',
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $parser = new FilterParser($props, false);
+
+        $query = $parser->parse("number:'*650'");
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(1, $res->json('hits.hits'));
+
+        $query = $parser->parse("number:'2353*'");
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(2, $res->json('hits.hits'));
+    }
+
+    public function end_in_query()
+    {
+
+        $indexName = uniqid();
+
+        $props = new NewProperties();
+        $props->id('id');
+        $props->caseSensitiveKeyword('status');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($props)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'id' => 1,
+                'status' => 'in-progress',
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $parser = new FilterParser($props, false);
+
+        $query = $parser->parse("status:'in-progress' AND has:id");
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(1, $res->json('hits.hits'));
+    }
+
+    /**
+     * @test
+     */
     public function parse_dash()
     {
         $indexName = uniqid();
