@@ -63,15 +63,15 @@ class SemanticTest extends TestCase
         ]);
 
         $response = $this->sigmie
-            // ->newSemanticSearch($indexName)
             ->newSearch($indexName)
             ->noResultsOnEmptySearch()
             ->properties($blueprint)
-            // ->embeddings($this->embeddings('man'))
-            ->embeddings($this->embeddings('woman'))
+            ->embeddings($this->embeddings('man'))
             ->get();
 
         $hits = $response->json('hits.hits');
+
+        $this->assertEquals('King', $hits[0]['_source']['name']);
     }
 
     public function embeddings(string $text)

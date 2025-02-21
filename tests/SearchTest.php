@@ -15,6 +15,36 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function find_without_dash()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->searchableNumber('number');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'number' => '08000234379',
+            ]),
+        ]);
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('0800-0234379')
+            ->get();
+
+        $this->assertNotEmpty($res->hits());
+    }
+
+    /**
+     * @test
+     */
     public function handle_boost_missing_gracefully()
     {
         $indexName = uniqid();

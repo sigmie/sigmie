@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Index\NewAnalyzer;
+use Sigmie\Mappings\Contracts\Analyze;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
 
-class SearchableNumber extends Text
+class SearchableNumber extends Text implements Analyze
 {
     public function __construct(
         string $name,
@@ -18,6 +20,15 @@ class SearchableNumber extends Text
     public function configure(): void
     {
         $this->unstructuredText()->keyword();
+    }
+
+    public function analyze(NewAnalyzer $newAnalyzer): void
+    {
+        $newAnalyzer->tokenizeOnWordBoundaries();
+        $newAnalyzer->lowercase();
+        $newAnalyzer->patternReplace('[^0-9]', '');
+
+        $this->makeSortable();
     }
 
     public function queries(string $queryString): array

@@ -13,6 +13,7 @@ use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Mappings\Contracts\Type as ContractsType;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Date;
+use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Nested;
@@ -70,15 +71,15 @@ class Properties extends Type implements ArrayAccess
     {
         $collection = new Collection($this->fields);
 
-        return $collection->filter(fn (ContractsType $type) => $type instanceof Text);
+        return $collection->filter(fn(ContractsType $type) => $type instanceof Text);
     }
 
     public function completionFields(): Collection
     {
         $collection = new Collection($this->fields);
 
-        return $collection->filter(fn (Type $type) => $type instanceof Text)
-            ->filter(fn (Text $text) => $text->type() === 'completion');
+        return $collection->filter(fn(Type $type) => $type instanceof Text)
+            ->filter(fn(Text $text) => $text->type() === 'completion');
     }
 
     public function toArray(): array
@@ -148,7 +149,8 @@ class Properties extends Type implements ArrayAccess
                 $value['type'] === 'geo_point' => new GeoPoint($fieldName),
                 $value['type'] === 'date' => new Date($fieldName),
                 $value['type'] === 'object' => new Object_($fieldName),
-                default => throw new Exception('Field '.$value['type'].' couldn\'t be mapped')
+                $value['type'] === 'elastiknn_dense_float_vector' => new DenseVector($fieldName, $value['elastiknn']['dims']),
+                default => throw new Exception('Field ' . $value['type'] . ' couldn\'t be mapped')
             };
 
             if ($field instanceof Text && ! isset($value['analyzer'])) {
@@ -176,7 +178,7 @@ class Properties extends Type implements ArrayAccess
     public function toRaw(): array
     {
         $fields = (new Collection($this->fields))
-            ->mapToDictionary(fn (ContractsType $value) => $value->toRaw())
+            ->mapToDictionary(fn(ContractsType $value) => $value->toRaw())
             ->toArray();
 
         if ($this->name === 'mappings') {

@@ -119,7 +119,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
                 $queries = match(true)
                 {
-                    $field->type instanceof EmbeddingsQueries => $field->queries('{{embeddings}}'),
+                    $field->type() instanceof EmbeddingsQueries => $field->queries('{{embeddings}}'),
                     $field->hasQueriesCallback => $field->queriesFromCallback('{{query_string}}'),
                     default => $field->queries('{{query_string}}')
                 };
