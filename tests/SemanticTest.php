@@ -4,69 +4,74 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Request;
 use Sigmie\Document\Document;
-use Sigmie\Mappings\Field;
-use Sigmie\Mappings\NewProperties;
-use Sigmie\Search\Autocomplete\HttpProcessor;
-use Sigmie\Search\Autocomplete\NewPipeline;
-use Sigmie\Search\Autocomplete\Processor;
+use Sigmie\SigmieIndex; use Sigmie\Mappings\NewProperties; use Sigmie\Semantic\Embeddings\Openai;
 use Sigmie\Testing\TestCase;
+use Symfony\Component\Dotenv\Dotenv;
 
 class SemanticTest extends TestCase
 {
     /**
+     * @before
+     */
+    public function loadEnv()
+    {
+        $dotenv = new Dotenv();
+        $dotenv->usePutenv(true);
+        $dotenv->loadEnv(__DIR__ . '/../.env', overrideExistingVars: true);
+    }
+
+    /**
      * @test
      */
-    public function semantic_search()
+    public function openai_search()
     {
-        $pipeline = new NewPipeline(
-            $this->sigmie->getElasticsearchConnection(),
-            'embedding-pipeline'
+        $openai = new Openai(
+            getenv('OPENAI_API_KEY'),
+            model: 'text-embedding-3-large',
+            dims: 384
         );
 
-        $pipeline->addPocessor(new HttpProcessor());
-        $pipeline->create();
+        $testIndex = new class($this->sigmie) extends SigmieIndex {
 
-        $indexName = uniqid();
+            protected string $name;
 
-        $blueprint = new NewProperties();
-        $blueprint->denseVector('embedding');
-        // $blueprint->type(new Field(
-        //     name: 'embedding',
-        //     type: 'elastiknn_dense_float_vector',
-        //     options: [
-        //         'elastiknn' => [
-        //             "dims" => 384,
-        //             "model" => "exact",
-        //         ]
-        //     ]
-        // ));
+            public function init(): void
+            {
+                $this->name = uniqid();
+            }
 
-        $index = $this->sigmie
-            ->newIndex($indexName)
-            ->properties($blueprint)
-            ->create();
+            public function name(): string
+            {
+                return $this->name;
+            }
 
-        $index = $this->sigmie->collect($indexName, refresh: true);
+            public function properties(): NewProperties
+            {
+                $blueprint = new NewProperties();
+                $blueprint->title()->semantic();
 
-        $index->merge([
+                return $blueprint;
+            }
+        };
+
+        // NOTE: Use larger models for larger texts
+        // $openai = new SigmieEmbeddings();
+        // $res = $openai->embeddings('Hello');
+
+        $testIndex->newIndex()->create();
+
+        $testIndex->collect()->merge([
             new Document([
                 'name' => 'King',
-                'embedding' => $this->embeddings('King')
             ]),
             new Document([
                 'name' => 'Queen',
-                'embedding' => $this->embeddings('Queen')
             ]),
         ]);
 
-        $response = $this->sigmie
-            ->newSearch($indexName)
+        $response = $testIndex->newSearch()
             ->noResultsOnEmptySearch()
-            ->properties($blueprint)
-            ->embeddings($this->embeddings('man'))
             ->get();
 
         $hits = $response->json('hits.hits');
@@ -74,25 +79,77 @@ class SemanticTest extends TestCase
         $this->assertEquals('King', $hits[0]['_source']['name']);
     }
 
-    public function embeddings(string $text)
+    /**
+     * @test
+     */
+    public function nested_semantic_search()
     {
-        $client = new Client();
+        //TODO
+    }
 
-        $request = new Request(
-            "POST",
-            "https://app.sigmie.com/embeddings",
-            [
-                "Content-Type" => "application/json; charset=utf-8",
-            ],
-            json_encode([
-                'text' => $text
-            ])
-        );
+    /**
+     * @test
+     */
+    public function noop_provider()
+    {
+        //TODO
+    }
 
-        $response = $client->send($request);
+    /**
+     * @test
+     */
+    public function index_template()
+    {
+        //TODO
+    }
 
-        $json = json_decode($response->getBody()->getContents(), true);
+    /**
+     * @test
+     */
+    public function semantic_search_basic()
+    {
+        $indexName = uniqid();
 
-        return $json;
+        $blueprint = new NewProperties();
+        $blueprint->title('name')->semantic();
+
+        $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'name' => 'King',
+                ]),
+                new Document([
+                    'name' => 'Queen',
+                ]),
+            ]);
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->queryString('woman')
+            ->get();
+
+        $hits = $response->json('hits.hits');
+
+        $this->assertEquals('Queen', $hits[0]['_source']['name'] ?? null);
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->queryString('king')
+            ->get();
+
+        $hits = $response->json('hits.hits');
+
+        $this->assertEquals('King', $hits[0]['_source']['name'] ?? null);
     }
 }

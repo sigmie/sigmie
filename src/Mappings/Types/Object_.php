@@ -15,7 +15,7 @@ class Object_ extends Type
 
     public function __construct(
         string $name,
-        NewProperties $properties = new NewProperties
+        Properties|NewProperties $properties = new NewProperties
     ) {
         parent::__construct($name);
 

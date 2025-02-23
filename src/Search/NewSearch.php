@@ -7,6 +7,7 @@ namespace Sigmie\Search;
 use Http\Promise\Promise;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\Nested as TypesNested;
+use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
@@ -21,11 +22,14 @@ use Sigmie\Query\Suggest;
 use Sigmie\Search\Contracts\EmbeddingsQueries;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
 use Sigmie\Shared\Collection;
+use Sigmie\Shared\EmbeddingsProvider;
 
 use function Sigmie\Functions\auto_fuzziness;
 
 class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInterface
 {
+    use EmbeddingsProvider;
+
     protected array $sort = ['_score'];
 
     protected string $queryString = '';
@@ -126,6 +130,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $shouldClauses = new Collection();
 
             $fields->each(function ($field) use (&$shouldClauses) {
+
                 if ($this->queryString === '' && ! $this->noResultsOnEmptySearch) {
                     $shouldClauses->add(new MatchAll);
 
@@ -136,15 +141,25 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $field = $this->properties->getNestedField($field) ?? throw new PropertiesFieldNotFound($field);
 
+
                 $fuzziness = ! in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
                 $queries = match (true) {
                     $field->hasQueriesCallback ?? false => $field->queriesFromCallback($this->queryString),
-                    $field instanceof EmbeddingsQueries => $field->queries($this->embeddings),
                     default => $field->queries($this->queryString)
                 };
 
-                $queries = new Collection($queries);
+                $vectorQueries = [];
+
+                if ($field instanceof Text && $field->isSemantic()) {
+                    $vectorQueries = $this->embeddingsProvider->queries(
+                        "embeddings.$field->name",
+                        $this->queryString,
+                        $field
+                    );
+                }
+
+                $queries = new Collection([...$queries, ...$vectorQueries]);
 
                 $queries->map(function (Query $queryClause) use ($boost, $fuzziness, $field, &$shouldClauses) {
 

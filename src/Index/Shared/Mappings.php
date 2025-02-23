@@ -4,15 +4,24 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Shared;
 
+use Sigmie\Index\Analysis\Analysis as AnalysisAnalysis;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Mappings as IndexMappings;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Properties;
 
 trait Mappings
 {
-    abstract public function analysis(): Analysis;
+    protected Analysis $analysis;
+
+    protected Properties $properties;
+
+    public function analysis(): Analysis
+    {
+        return $this->analysis ?? new AnalysisAnalysis();
+    }
 
     public function mapping(callable $callable): static
     {

@@ -583,7 +583,7 @@ class IndexBuilderTest extends TestCase
             ->twoWaySynonyms([
                 ['treasure', 'gem', 'gold', 'price'],
                 ['friend', 'buddy', 'partner'],
-            ], name: 'sigmie_two_way_synonyms', )
+            ], name: 'sigmie_two_way_synonyms',)
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -691,7 +691,7 @@ class IndexBuilderTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->oneWaySynonyms([
                 ['ipod', ['i-pod', 'i pod']],
-            ], name: 'sigmie_one_way_synonyms', )
+            ], name: 'sigmie_one_way_synonyms',)
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -726,7 +726,9 @@ class IndexBuilderTest extends TestCase
             $index->assertFilterEquals('sigmie_stopwords', [
                 'type' => 'stop',
                 'stopwords' => [
-                    'about', 'after', 'again',
+                    'about',
+                    'after',
+                    'again',
                 ],
             ]);
         });

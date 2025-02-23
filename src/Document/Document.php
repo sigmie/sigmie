@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Document;
 
+use ArrayAccess;
 use Sigmie\Shared\Contracts\FromRaw;
 
-class Document implements FromRaw
+class Document implements FromRaw, ArrayAccess
 {
     public array $_source;
 
@@ -23,6 +24,26 @@ class Document implements FromRaw
         if ($_id !== null) {
             $this->_id = $_id;
         }
+    }
+
+    public function offsetExists(mixed $offset): bool
+    {
+        return isset($this->_source[$offset]);
+    }
+
+    public function offsetGet(mixed $offset): mixed
+    {
+        return $this->_source[$offset];
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        $this->_source[$offset] = $value;
+    }
+
+    public function offsetUnset(mixed $offset): void
+    {
+        unset($this->_source[$offset]);
     }
 
     public function __set(string $name, mixed $value): void

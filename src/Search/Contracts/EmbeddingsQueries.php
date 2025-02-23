@@ -6,5 +6,5 @@ namespace Sigmie\Search\Contracts;
 
 interface EmbeddingsQueries
 {
-    public function queries(array $embeddings): array;
+    public function vectorQueries(array $embeddings): array;
 }

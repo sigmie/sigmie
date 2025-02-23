@@ -22,6 +22,7 @@ use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
+use Sigmie\Semantic\Embeddings\Sigmie as SigmieEmbeddings;
 
 class Properties extends Type implements ArrayAccess
 {
@@ -72,6 +73,11 @@ class Properties extends Type implements ArrayAccess
         $collection = new Collection($this->fields);
 
         return $collection->filter(fn(ContractsType $type) => $type instanceof Text);
+    }
+
+    public function embeddingsFields(): Collection
+    {
+        return $this->textFields()->filter(fn(Text $text) => $text->isSemantic());
     }
 
     public function completionFields(): Collection
@@ -181,7 +187,7 @@ class Properties extends Type implements ArrayAccess
             ->mapToDictionary(fn(ContractsType $value) => $value->toRaw())
             ->toArray();
 
-        if ($this->name === 'mappings') {
+        if (in_array($this->name, ['mappings', 'embeddings'])) {
             return $fields;
         } else {
             return [$this->name() => ['properties' => $fields]];

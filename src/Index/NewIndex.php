@@ -14,6 +14,7 @@ use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Language;
+use Sigmie\Index\Mappings as IndexMappings;
 use Sigmie\Index\Shared\CharFilters;
 use Sigmie\Index\Shared\Filters;
 use Sigmie\Index\Shared\Mappings;
@@ -22,6 +23,9 @@ use Sigmie\Index\Shared\Shards;
 use Sigmie\Index\Shared\Tokenizer;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
+use Sigmie\Semantic\Contracts\Provider;
+use Sigmie\Semantic\Embeddings\Sigmie as DefaultEmbeddingsProvider;
+use Sigmie\Shared\EmbeddingsProvider;
 
 use function Sigmie\Functions\index_name;
 
@@ -35,6 +39,7 @@ class NewIndex
     use Replicas;
     use Shards;
     use Tokenizer;
+    use EmbeddingsProvider;
 
     protected string $alias;
 
@@ -64,6 +69,8 @@ class NewIndex
         $this->analysis = new Analysis();
 
         $this->properties = new MappingsProperties;
+
+        $this->embeddingsProvider = new DefaultEmbeddingsProvider();
     }
 
     public function getAlias(): string
@@ -143,7 +150,9 @@ class NewIndex
         $defaultAnalyzer->addFilters($this->filters());
         $defaultAnalyzer->setTokenizer($this->tokenizer);
 
+        /** @var IndexMappings $mappings */
         $mappings = $this->createMappings($defaultAnalyzer);
+        $mappings->embeddingsProvider($this->embeddingsProvider);
 
         $analyzers = $mappings->analyzers();
 

@@ -10,10 +10,15 @@ use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Contracts\TokenFilter;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\Semantic\Embeddings\Sigmie as SigmieEmbeddings;
+use Sigmie\Shared\EmbeddingsProvider;
 
 class Mappings implements MappingsInterface
 {
+    use EmbeddingsProvider;
+
     protected Properties $properties;
 
     protected CustomAnalyzer $defaultAnalyzer;
@@ -34,8 +39,8 @@ class Mappings implements MappingsInterface
     public function analyzers(): array
     {
         $result = $this->properties->textFields()
-            ->filter(fn (Type $field) => $field instanceof Text)
-            ->filter(fn (Text $field) => ! is_null($field->analyzer()))
+            ->filter(fn(Type $field) => $field instanceof Text)
+            ->filter(fn(Text $field) => ! is_null($field->analyzer()))
             ->mapToDictionary(function (Text $field) {
 
                 $analyzer = $field->analyzer();
@@ -44,7 +49,7 @@ class Mappings implements MappingsInterface
                     return [$analyzer->name() => $analyzer];
                 }
 
-                $filters = array_filter($this->defaultAnalyzer->filters(), fn (TokenFilter $filter) => ! in_array($filter::class, $field->notAllowedFilters()));
+                $filters = array_filter($this->defaultAnalyzer->filters(), fn(TokenFilter $filter) => ! in_array($filter::class, $field->notAllowedFilters()));
 
                 $analyzer->addFilters($filters);
 
@@ -57,9 +62,30 @@ class Mappings implements MappingsInterface
     public function toRaw(): array
     {
         return [
-            'properties' => $this->properties->toRaw(),
+            'properties' => [
+                ...$this->properties->toRaw(),
+                ...$this->embeddings(),
+            ],
         ];
     }
+
+    public function embeddings(): array
+    {
+        $fields = $this->properties->textFields()
+            ->filter(fn(Text $field) => $field->isSemantic())
+            ->mapToDictionary(
+                fn(Text $field) => [
+                    $field->name() => $this->embeddingsProvider->type($field->name())
+                ]
+            )
+            ->toArray();
+
+        $props = new Properties('embeddings', $fields);
+        $object = new Object_('embeddings', $props);
+
+        return $object->toRaw();
+    }
+
 
     public static function create(array $data, array $analyzers): static
     {

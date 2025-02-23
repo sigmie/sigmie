@@ -3,6 +3,7 @@
 .idea
 .vscode
 .devcontainer
+.env
 
 composer.phar
 composer.lock

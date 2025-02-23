@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use Sigmie\Mappings\Contracts\Type;
+use Sigmie\Mappings\Types\Type as AbstractType;
 use Sigmie\Query\Queries\Elastiknn\NearestNeighbors;
 use Sigmie\Search\Contracts\EmbeddingsQueries;
 
-class DenseVector implements EmbeddingsQueries, Type
+class DenseVector extends AbstractType implements Type
 {
     // protected string $type = 'dense_vector';
     protected string $type = 'elastiknn_dense_float_vector';
@@ -17,6 +18,11 @@ class DenseVector implements EmbeddingsQueries, Type
         public string $name,
         protected int $dims = 384
     ) {}
+
+    public function queries(string $queryString): array
+    {
+        return [];
+    }
 
     public function type(): string
     {
@@ -44,13 +50,4 @@ class DenseVector implements EmbeddingsQueries, Type
         ];
     }
 
-    public function queries(array $embeddings): array
-    {
-        return [
-            new NearestNeighbors(
-                $this->name,
-                $embeddings
-            )
-        ];
-    }
 }

@@ -25,10 +25,14 @@ use Sigmie\Search\ExistingScript;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewSemanticSearch;
 use Sigmie\Search\NewTemplate;
+use Sigmie\Shared\EmbeddingsProvider;
+use Sigmie\Semantic\Embeddings\Sigmie as DefaultEmbeddingsProvider;
 
 class Sigmie
 {
     use IndexActions;
+
+    use EmbeddingsProvider;
 
     public const DATE_FORMAT = 'Y-m-d H:i:s.u';
 
@@ -37,6 +41,7 @@ class Sigmie
     public function __construct(Connection $httpConnection)
     {
         $this->elasticsearchConnection = $httpConnection;
+        $this->embeddingsProvider = new DefaultEmbeddingsProvider();
     }
 
     private function withApplicationPrefix(string $name): string
@@ -58,6 +63,7 @@ class Sigmie
     public function newIndex(string $name): NewIndex
     {
         $builder = new NewIndex($this->elasticsearchConnection);
+        $builder->embeddingsProvider($this->embeddingsProvider);
 
         return $builder->alias($this->withApplicationPrefix($name));
     }
@@ -70,6 +76,7 @@ class Sigmie
     public function collect(string $name, bool $refresh = false): AliveCollection
     {
         $aliveIndex = new AliveCollection($this->withApplicationPrefix($name), $this->elasticsearchConnection, $refresh ? 'true' : 'false');
+        $aliveIndex->embeddingsProvider($this->embeddingsProvider);
 
         return $aliveIndex;
     }
@@ -98,15 +105,7 @@ class Sigmie
         $index = $this->withApplicationPrefix($index);
 
         $search = new NewSearch($this->elasticsearchConnection);
-
-        return $search->index($index);
-    }
-
-    public function newSemanticSearch(string $index): NewSemanticSearch
-    {
-        $index = $this->withApplicationPrefix($index);
-
-        $search = new NewSemanticSearch($this->elasticsearchConnection);
+        $search->embeddingsProvider($this->embeddingsProvider);
 
         return $search->index($index);
     }

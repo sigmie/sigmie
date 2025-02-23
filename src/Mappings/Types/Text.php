@@ -14,8 +14,10 @@ use Sigmie\Mappings\Contracts\Analyze;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
+use Sigmie\Semantic\Embeddings\Sigmie;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\Contracts\FromRaw;
+use Sigmie\Semantic\Embeddings\Sigmie as SigmieEmbeddings;
 
 use function Sigmie\Functions\name_configs;
 
@@ -33,6 +35,8 @@ class Text extends Type implements FromRaw
 
     protected Collection $fields;
 
+    protected bool $semantic = false;
+
     public function __construct(
         string $name,
         protected ?string $raw = null,
@@ -40,7 +44,7 @@ class Text extends Type implements FromRaw
         parent::__construct($name);
 
         $this->fields = new Collection();
-        $this->newAnalyzerClosure = fn () => null;
+        $this->newAnalyzerClosure = fn() => null;
 
         $this->configure();
     }
@@ -50,6 +54,18 @@ class Text extends Type implements FromRaw
         $this->sortable = true;
 
         $this->field(new Keyword('sortable'));
+    }
+
+    public function semantic(bool $semantic = true)
+    {
+        $this->semantic = $semantic;
+
+        return $this;
+    }
+
+    public function isSemantic(): bool
+    {
+        return $this->semantic;
     }
 
     public function configure(): void
@@ -87,7 +103,7 @@ class Text extends Type implements FromRaw
         }
 
         $this->fields
-            ->filter(fn ($type) => $type instanceof Text)
+            ->filter(fn($type) => $type instanceof Text)
             ->map(function (Text $text) use ($analysis) {
                 $text->handleCustomAnalyzer($analysis);
 
@@ -95,7 +111,7 @@ class Text extends Type implements FromRaw
             });
 
         $this->fields
-            ->filter(fn ($type) => $type instanceof Keyword)
+            ->filter(fn($type) => $type instanceof Keyword)
             ->map(function (Keyword $keyword) use ($analysis) {
                 $keyword->handleNormalizer($analysis);
 
@@ -146,7 +162,7 @@ class Text extends Type implements FromRaw
             'text' => $instance->unstructuredText(),
             'search_as_you_type' => $instance->searchAsYouType(),
             'completion' => $instance->completion(),
-            default => throw new Exception('Field '.$configs['type'].' couldn\'t be mapped')
+            default => throw new Exception('Field ' . $configs['type'] . ' couldn\'t be mapped')
         };
 
         return $instance;
@@ -246,6 +262,11 @@ class Text extends Type implements FromRaw
     public function analyzer(): ?Analyzer
     {
         return $this->analyzer;
+    }
+
+    public function toVectorRaw(): array
+    {
+        return (new SigmieEmbeddings())->type($this->name)->toRaw();
     }
 
     public function toRaw(): array

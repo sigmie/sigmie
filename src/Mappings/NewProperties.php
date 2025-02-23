@@ -30,25 +30,35 @@ use Sigmie\Mappings\Types\Sentence;
 use Sigmie\Mappings\Types\Tags;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
+use Sigmie\Semantic\Contracts\Provider;
 use Sigmie\Shared\Collection;
 
 class NewProperties
 {
     protected Collection $fields;
 
+    protected string $name = 'mappings';
+
     public function __construct(protected string $parentPath = '')
     {
         $this->fields = new Collection();
     }
 
-    public function __invoke(string $name = 'mappings'): Properties
+    public function propertiesName(string $name): self
     {
-        return $this->get(name: $name);
+        $this->name = $name;
+
+        return $this;
+    }
+
+    public function __invoke(null|string $name = null): Properties
+    {
+        return $this->get(name: $name ?? $this->name);
     }
 
     public function get(
         AnalysisInterface $analysis = new Analysis(),
-        string $name = 'mappings'
+        null|string $name = null
     ): Properties {
 
         $fields = $this->fields
@@ -56,7 +66,7 @@ class NewProperties
                 return [$type->name => $type];
             })->toArray();
 
-        $props = new Properties($name, $fields);
+        $props = new Properties($name ?? $this->name, $fields);
 
         $props->handleCustomAnalyzers($analysis);
         $props->handleNormalizers($analysis);
@@ -64,13 +74,18 @@ class NewProperties
         return $props;
     }
 
-    public function denseVector(string $name) 
+    public function denseVector(string $name, int $dims = 384)
     {
-        $field = new DenseVector($name);
+        $field = new DenseVector($name, $dims);
 
         $this->fields->add($field);
 
         return $field;
+    }
+
+    public function embeddings(Provider $provider, string $name)
+    {
+        $this->fields->add($provider->type($name));
     }
 
     public function text(string $name): Text

@@ -11,6 +11,10 @@ use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Document\Actions as DocumentActions;
 use Sigmie\Document\Contracts\DocumentCollection;
 use Sigmie\Index\Actions as IndexActions;
+use Sigmie\Index\Contracts\Analysis;
+use Sigmie\Index\Shared\Mappings;
+use Sigmie\Mappings\Types\Text;
+use Sigmie\Shared\EmbeddingsProvider;
 use Traversable;
 
 class AliveCollection implements ArrayAccess, Countable, DocumentCollection
@@ -19,6 +23,8 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     use IndexActions;
     use LazyEach;
     use Search;
+    use Mappings;
+    use EmbeddingsProvider;
 
     public function __construct(
         protected string $name,
@@ -27,6 +33,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     ) {
         $this->setElasticsearchConnection($connection);
     }
+
 
     public function refresh()
     {
@@ -37,6 +44,8 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function replace(Document $document): Document
     {
+        $document = $this->documentEmbeddings($document);
+
         $doc = $this->updateDocument($this->name, $document, $this->refresh);
 
         return $doc;
@@ -54,6 +63,8 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function add(Document $document): Document
     {
+        $document = $this->documentEmbeddings($document);
+
         $document = $this->createDocument($this->name, $document, $this->refresh);
 
         return $document;
@@ -61,9 +72,29 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function merge(array $docs): AliveCollection
     {
+        $docs = array_map(fn(Document $doc) => $this->documentEmbeddings($doc), $docs);
+
         $collection = $this->upsertDocuments($this->name, $docs, $this->refresh);
 
         return $this;
+    }
+
+    private function documentEmbeddings(Document $document): Document
+    {
+        $embeddings = [];
+
+        $this->properties->embeddingsFields()
+            ->each(function (Text $field) use (&$embeddings, $document) {
+
+                $text = $document[$field->name()] ?? null;
+
+                $embeddings[$field->name()] = $this->embeddingsProvider->embeddings($text);
+
+            });
+
+        $document['embeddings'] = $embeddings;
+
+        return $document;
     }
 
     public function toArray(): array
