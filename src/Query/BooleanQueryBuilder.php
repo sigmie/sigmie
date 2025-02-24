@@ -77,7 +77,7 @@ class BooleanQueryBuilder implements Queries
         return $this;
     }
 
-    public function query(Query|FunctionScore $query): self
+    public function query(Query $query): self
     {
         $this->clauses[] = $query;
 

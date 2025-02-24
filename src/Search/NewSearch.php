@@ -16,7 +16,8 @@ use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\MatchNone;
-use Sigmie\Query\Queries\Query;
+// use Sigmie\Query\Queries\Query;
+use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
@@ -201,7 +202,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             if ($shouldClauses->isEmpty()) {
                 $queryBoolean->should()->query(new MatchNone);
             } else {
-                $shouldClauses->each(fn(Query|FunctionScore $queryClase) => $queryBoolean->should()->query($queryClase));
+                $shouldClauses->each(fn(Query $queryClase) => $queryBoolean->should()->query($queryClase));
             }
 
             $boolean->should()->query($queryBoolean);
