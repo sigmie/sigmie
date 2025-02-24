@@ -49,4 +49,9 @@ class Sigmie implements Provider
             )
         ];
     }
+
+    public function threshold(): float
+    {
+        return 1.3;
+    }
 }

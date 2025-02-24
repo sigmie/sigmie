@@ -182,6 +182,50 @@ class SemanticTest extends TestCase
     /**
      * @test
      */
+    public function semantic_search_with_filters()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->title('name')->semantic();
+        $blueprint->number('age')->integer();
+
+        $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'name' => 'King',
+                    'age' => 10,
+                ]),
+                new Document([
+                    'name' => 'Queen',
+                    'age' => 20,
+                ]),
+            ]);
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->properties($blueprint)
+            ->semantic()
+            ->noResultsOnEmptySearch()
+            ->filters('age>15')
+            ->queryString('woman')
+            ->get();
+
+        $hits = $response->json('hits.hits');
+
+        $this->assertEquals('Queen', $hits[0]['_source']['name'] ?? null);
+    }
+
+    /**
+     * @test
+     */
     public function semantic_search_basic()
     {
         $indexName = uniqid();
@@ -203,6 +247,9 @@ class SemanticTest extends TestCase
                 ]),
                 new Document([
                     'name' => 'Queen',
+                ]),
+                new Document([
+                    'name' => 'Sandwich',
                 ]),
             ]);
 

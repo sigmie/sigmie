@@ -62,4 +62,9 @@ class Openai implements Provider
     {
         return new DenseVector($name, dims: $this->dims);
     }
+
+    public function threshold(): float
+    {
+        return 1.3;
+    }
 }

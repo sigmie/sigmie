@@ -12,6 +12,7 @@ use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
 use Sigmie\Query\Contracts\FuzzyQuery;
+use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\MatchNone;
@@ -115,7 +116,9 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $search->from($this->from);
 
-        $search->minScore($this->minScore);
+        $minScore = $this->semanticSearch && $this->minScore === 0 ? 0.01 : $this->minScore;
+
+        $search->minScore($minScore);
 
         $boolean->must()->bool(function (Boolean $boolean) {
             $queryBoolean = new Boolean;
@@ -125,7 +128,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $shouldClauses = new Collection();
 
             // Vector queries
-            $this->properties->nestedSemanticFields()
+            $vectorQueries = $this->properties->nestedSemanticFields()
                 ->map(function (Text $field) {
                     return $this->embeddingsProvider->queries(
                         "embeddings.{$field->name()}",
@@ -133,12 +136,28 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                         $field
                     );
                 })
-                ->flatten(1)
-                ->map(function (Query $queryClause) use (&$shouldClauses) {
-                    if ($this->semanticSearch) {
-                        $shouldClauses->add($queryClause);
-                    }
-                });
+                ->flatten(1);
+
+            if ($this->semanticSearch) {
+                $vectorBool = new Boolean;
+                $vectorQueries
+                    ->each(fn(Query $query) => $vectorBool->should()->query($query));
+
+                $functionScore = new FunctionScore(
+                    $vectorBool,
+                    // source: 'return _score;',
+                    source: "return _score > {$this->embeddingsProvider->threshold()} ? _score : 0;",
+                    boostMode: 'replace'
+                );
+
+                $shouldClauses->add($functionScore);
+            }
+
+            // ->map(function (Query $queryClause) use (&$shouldClauses) {
+            //     if ($this->semanticSearch) {
+            //         $shouldClauses->add($queryClause);
+            //     }
+            // });
 
             // Text queries
             $fields->each(function ($field) use (&$shouldClauses) {
@@ -182,7 +201,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             if ($shouldClauses->isEmpty()) {
                 $queryBoolean->should()->query(new MatchNone);
             } else {
-                $shouldClauses->each(fn(Query $queryClase) => $queryBoolean->should()->query($queryClase));
+                $shouldClauses->each(fn(Query|FunctionScore $queryClase) => $queryBoolean->should()->query($queryClase));
             }
 
             $boolean->should()->query($queryBoolean);
