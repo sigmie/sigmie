@@ -13,6 +13,7 @@ use Sigmie\Document\Contracts\DocumentCollection;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Shared\Mappings;
+use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Shared\EmbeddingsProvider;
 use Traversable;
@@ -32,6 +33,8 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         protected string $refresh = 'false'
     ) {
         $this->setElasticsearchConnection($connection);
+
+        $this->properties = new Properties();
     }
 
 
@@ -83,13 +86,14 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     {
         $embeddings = [];
 
-        $this->properties->embeddingsFields()
-            ->each(function (Text $field) use (&$embeddings, $document) {
+        $this->properties->nestedSemanticFields()
+            ->each(function (Text $field, $name) use (&$embeddings, $document) {
 
-                $text = $document[$field->name()] ?? null;
+                $text = dot($document->_source)->get($name);
 
-                $embeddings[$field->name()] = $this->embeddingsProvider->embeddings($text);
-
+                if ($text) {
+                    $embeddings[$name] = $this->embeddingsProvider->embeddings($text);
+                }
             });
 
         $document['embeddings'] = $embeddings;

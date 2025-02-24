@@ -57,6 +57,8 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected bool $noResultsOnEmptySearch = false;
 
+    protected bool $semanticSearch= false;
+
     protected Boolean $filters;
 
     protected Aggs $facets;
@@ -112,6 +114,13 @@ abstract class AbstractSearchBuilder implements SearchBuilder
     public function noResultsOnEmptySearch($value = true): static
     {
         $this->noResultsOnEmptySearch = $value;
+
+        return $this;
+    }
+
+    public function semantic(bool $value = true): static
+    {
+        $this->semanticSearch = $value;
 
         return $this;
     }

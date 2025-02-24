@@ -75,6 +75,13 @@ class Properties extends Type implements ArrayAccess
         return $collection->filter(fn(ContractsType $type) => $type instanceof Text);
     }
 
+    public function deepFields(): Collection
+    {
+        $collection = new Collection($this->fields);
+
+        return $collection->filter(fn(Type $type) => $type instanceof Object_ || $type instanceof Nested);
+    }
+
     public function embeddingsFields(): Collection
     {
         return $this->textFields()->filter(fn(Text $text) => $text->isSemantic());
@@ -224,5 +231,35 @@ class Properties extends Type implements ArrayAccess
         foreach ($this->fields as $field) {
             $field->parent($parentPath, $parentType);
         }
+    }
+
+    private function semanticFields()
+    {
+        return $this->textFields()
+            ->filter(fn(Text $field) => $field->isSemantic())
+            ->mapWithKeys(fn(Text $field) => [$field->name() => $field]);
+    }
+
+    public function nestedSemanticFields()
+    {
+        $textFields = $this->semanticFields();
+
+        $nestedFields = $this->deepFields()
+            ->mapWithKeys(function (Object_|Nested $field) {
+
+                $result = [
+                    ...$field->properties->semanticFields()->toArray(),
+                    ...$field->properties->nestedSemanticFields()->toArray()
+                ];
+
+                return $result;
+            });
+
+        $res = [
+            ...$textFields->toArray(),
+            ...$nestedFields->toArray()
+        ];
+
+        return new Collection($res);
     }
 }

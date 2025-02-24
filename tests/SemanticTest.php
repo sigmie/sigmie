@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Sigmie\Document\Document;
-use Sigmie\SigmieIndex; use Sigmie\Mappings\NewProperties; use Sigmie\Semantic\Embeddings\Openai;
+use Sigmie\SigmieIndex;
+use Sigmie\Mappings\NewProperties;
+use Sigmie\Semantic\Embeddings\Openai;
 use Sigmie\Testing\TestCase;
 use Symfony\Component\Dotenv\Dotenv;
 
@@ -71,12 +73,13 @@ class SemanticTest extends TestCase
         ]);
 
         $response = $testIndex->newSearch()
+            ->semantic()
             ->noResultsOnEmptySearch()
             ->get();
 
         $hits = $response->json('hits.hits');
 
-        $this->assertEquals('King', $hits[0]['_source']['name']);
+        $this->assertEquals('King', $hits[0]['_source']['name'] ?? null);
     }
 
     /**
@@ -84,7 +87,60 @@ class SemanticTest extends TestCase
      */
     public function nested_semantic_search()
     {
-        //TODO
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->title('owner_name')->semantic();
+        $blueprint->object('pet_type', function (NewProperties $blueprint) {
+            $blueprint->title('name')->semantic();
+            $blueprint->object('pet', function (NewProperties $blueprint) {
+                $blueprint->title('name')->semantic();
+            });
+        });
+
+        $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $documents = $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'owner_name' => 'John',
+                    'pet_type' => [
+                        'name' => 'Dog',
+                        'pet' => [
+                            'name' => 'King',
+                        ],
+                    ],
+                ]),
+                new Document([
+                    'owner_name' => 'Jane',
+                    'pet_type' => [
+                        'name' => 'Cat',
+                        'pet' => [
+                            'name' => 'Queen',
+                        ],
+                    ],
+                ]),
+            ])
+            ->toArray();
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->semantic()
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->queryString('woman price')
+            ->get();
+
+        $hits = $response->json('hits.hits');
+
+        $this->assertEquals('Jane', $hits[0]['_source']['owner_name'] ?? null);
+        $this->assertEquals('Cat', $hits[0]['_source']['pet_type']['name'] ?? null);
+        $this->assertEquals('Queen', $hits[0]['_source']['pet_type']['pet']['name'] ?? null);
     }
 
     /**
@@ -99,6 +155,23 @@ class SemanticTest extends TestCase
      * @test
      */
     public function index_template()
+    {
+        //TODO
+    }
+
+    /**
+     * @test
+     */
+    public function dont_retrieve_embeddings_field_in_hits()
+    {
+        //TODO make elasticsearch index a trait and a interface
+        //TODO
+    }
+
+    /**
+     * @test
+     */
+    public function different_model_per_field()
     {
         //TODO
     }
@@ -132,6 +205,7 @@ class SemanticTest extends TestCase
 
         $response = $this->sigmie
             ->newSearch($indexName)
+            ->semantic()
             ->noResultsOnEmptySearch()
             ->properties($blueprint)
             ->queryString('woman')

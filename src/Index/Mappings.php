@@ -10,6 +10,7 @@ use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Contracts\TokenFilter;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Semantic\Embeddings\Sigmie as SigmieEmbeddings;
@@ -61,18 +62,19 @@ class Mappings implements MappingsInterface
 
     public function toRaw(): array
     {
-        return [
+        $raw = [
             'properties' => [
                 ...$this->properties->toRaw(),
                 ...$this->embeddings(),
             ],
         ];
+
+        return $raw;
     }
 
     public function embeddings(): array
     {
-        $fields = $this->properties->textFields()
-            ->filter(fn(Text $field) => $field->isSemantic())
+        $fields = $this->properties->nestedSemanticFields()
             ->mapToDictionary(
                 fn(Text $field) => [
                     $field->name() => $this->embeddingsProvider->type($field->name())

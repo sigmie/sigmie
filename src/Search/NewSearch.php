@@ -45,13 +45,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this;
     }
 
-    public function embeddings(array $embeddings): static
-    {
-        $this->embeddings = $embeddings;
-
-        return $this;
-    }
-
     public function index(string $index): static
     {
         $this->index = $index;
@@ -129,6 +122,23 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
             $shouldClauses = new Collection();
 
+            // Vector queries
+            $this->properties->nestedSemanticFields()
+                ->map(function (Text $field) {
+                    return $this->embeddingsProvider->queries(
+                        "embeddings.{$field->name()}",
+                        $this->queryString,
+                        $field
+                    );
+                })
+                ->flatten(1)
+                ->map(function (Query $queryClause) use (&$shouldClauses) {
+                    if ($this->semanticSearch) {
+                        $shouldClauses->add($queryClause);
+                    }
+                });
+
+            // Text queries
             $fields->each(function ($field) use (&$shouldClauses) {
 
                 if ($this->queryString === '' && ! $this->noResultsOnEmptySearch) {
@@ -141,7 +151,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $field = $this->properties->getNestedField($field) ?? throw new PropertiesFieldNotFound($field);
 
-
                 $fuzziness = ! in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
                 $queries = match (true) {
@@ -149,17 +158,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                     default => $field->queries($this->queryString)
                 };
 
-                $vectorQueries = [];
-
-                if ($field instanceof Text && $field->isSemantic()) {
-                    $vectorQueries = $this->embeddingsProvider->queries(
-                        "embeddings.$field->name",
-                        $this->queryString,
-                        $field
-                    );
-                }
-
-                $queries = new Collection([...$queries, ...$vectorQueries]);
+                $queries = new Collection($queries);
 
                 $queries->map(function (Query $queryClause) use ($boost, $fuzziness, $field, &$shouldClauses) {
 
@@ -169,7 +168,8 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                     $queryClause = $queryClause->boost($boost);
 
-                    if ($field->parentPath ?? false && $field->parentType === TypesNested::class) {
+                    // Query nested fields if there is a parent path
+                    if (($field->parentPath ?? false) && $field->parentType === TypesNested::class) {
                         $queryClause = new Nested($field->parentPath, $queryClause);
                     }
 
