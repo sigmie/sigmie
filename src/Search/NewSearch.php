@@ -116,7 +116,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $search->from($this->from);
 
-        $minScore = $this->semanticSearch && $this->minScore === 0 ? 0.01 : $this->minScore;
+        $minScore = $this->semanticSearch && $this->minScore == 0 ? 0.01 : $this->minScore;
 
         $search->minScore($minScore);
 
