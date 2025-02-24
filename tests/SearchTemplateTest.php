@@ -15,6 +15,52 @@ class SearchTemplateTest extends TestCase
     /**
      * @test
      */
+    public function min_score()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->name('name');
+        $blueprint->nested('contact', function (NewProperties $blueprint) {
+            $blueprint->name('name');
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'name' => 'Goofy',
+                'contact' => [
+                    'name' => 'Mickey',
+                ],
+            ]),
+        ]);
+
+        $templateId = uniqid();
+
+        $saved = $this->sigmie->newTemplate($templateId)
+            ->properties($blueprint)
+            ->minScore(5)
+            ->fields(['contact.name'])
+            ->get()
+            ->save();
+
+        $template = $this->sigmie->template($templateId);
+
+        $hits = $template->run($indexName, [
+            'query_string' => 'Mickey',
+        ])->json('hits.hits');
+
+        $this->assertEmpty($hits);
+    }
+
+    /**
+     * @test
+     */
     public function search_on_non_queriable_field()
     {
         $indexName = uniqid();

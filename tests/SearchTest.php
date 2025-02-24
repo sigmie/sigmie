@@ -226,6 +226,55 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function min_score()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->title();
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'title' => 'Mickey',
+            ]),
+        ]);
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->weight([
+                'title' => 5,
+            ])
+            ->queryString('Mickey')
+            ->get();
+
+        $hits = $response->json('hits.hits');
+
+        $this->assertGreaterThan(2, $hits[0]['_score']);
+        $this->assertLessThan(3, $hits[0]['_score']);
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->weight([
+                'title' => 5,
+            ])
+            ->queryString('Mickey')
+            ->minScore(3)
+            ->get();
+
+        $hits = $response->json('hits.hits');
+
+        $this->assertEmpty($hits);
+    }
+
+    /**
+     * @test
+     */
     public function price_facet()
     {
 

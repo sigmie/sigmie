@@ -39,6 +39,8 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected int $from = 0;
 
+    protected float $minScore = 0;
+
     protected bool $filterable = false;
 
     protected bool $sortable = false;
@@ -114,6 +116,13 @@ abstract class AbstractSearchBuilder implements SearchBuilder
     public function noResultsOnEmptySearch($value = true): static
     {
         $this->noResultsOnEmptySearch = $value;
+
+        return $this;
+    }
+
+    public function minScore(float $score): static
+    {
+        $this->minScore = $score;
 
         return $this;
     }

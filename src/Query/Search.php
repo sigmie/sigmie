@@ -26,6 +26,8 @@ class Search
 
     protected int|string $from = 0;
 
+    protected int|float $minScore = 0;
+
     protected int|string $size = 500;
 
     protected array $fields = ['*'];
@@ -95,6 +97,13 @@ class Search
     public function trackTotalHits(int $trackTotalHits = -1)
     {
         $this->trackTotalHits = $trackTotalHits;
+
+        return $this;
+    }
+
+    public function minScore(float $minScore): self
+    {
+        $this->minScore = $minScore;
 
         return $this;
     }
@@ -221,6 +230,7 @@ class Search
             ],
             'from' => $this->from,
             'size' => $this->size,
+            'min_score' => $this->minScore,
             'sort' => [...$this->sort],
             'highlight' => [
                 // 'require_field_match' => false,

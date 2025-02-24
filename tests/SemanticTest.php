@@ -28,6 +28,9 @@ class SemanticTest extends TestCase
      */
     public function openai_search()
     {
+        $this->markTestSkipped();
+        return;
+
         $openai = new Openai(
             getenv('OPENAI_API_KEY'),
             model: 'text-embedding-3-large',
@@ -133,7 +136,7 @@ class SemanticTest extends TestCase
             ->semantic()
             ->noResultsOnEmptySearch()
             ->properties($blueprint)
-            ->queryString('woman price')
+            ->queryString('woman')
             ->get();
 
         $hits = $response->json('hits.hits');

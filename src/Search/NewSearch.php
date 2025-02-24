@@ -115,6 +115,8 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $search->from($this->from);
 
+        $search->minScore($this->minScore);
+
         $boolean->must()->bool(function (Boolean $boolean) {
             $queryBoolean = new Boolean;
 
