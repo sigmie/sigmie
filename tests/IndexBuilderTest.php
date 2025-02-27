@@ -6,6 +6,7 @@ namespace Sigmie\Tests;
 
 use Exception;
 use RachidLaasri\Travel\Travel;
+use Sigmie\Document\Document;
 use Sigmie\English\Builder as EnglishBuilder;
 use Sigmie\English\English;
 use Sigmie\German\Builder as GermanBuilder;
@@ -26,6 +27,36 @@ use Sigmie\Testing\TestCase;
 
 class IndexBuilderTest extends TestCase
 {
+    /**
+     * @test
+     */
+    public function maxWindow()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->config('index.max_result_window', 1)
+            ->create();
+
+        $index = $this->sigmie->collect($alias, refresh: true);
+
+        $index->merge([
+            new Document([
+                'number' => '08000234379',
+            ]),
+            new Document([
+                'number' => '08000234379',
+            ]),
+        ]);
+
+        $this->expectException(Exception::class);
+
+        $this->sigmie->newSearch($alias)
+            ->queryString('')
+            ->size(2)
+            ->get();
+    }
+
     /**
      * @test
      */

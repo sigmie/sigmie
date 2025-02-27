@@ -329,6 +329,7 @@ class QueryTest extends TestCase
             $query['query'],
             [
                 'function_score' => [
+                    'boost' => 1.0,
                     'script_score' => ['script' => [
                         'source' => "doc.containsKey('boost') && doc['boost'].size() > 0 ? doc['boost'].value : 1",
                     ]],

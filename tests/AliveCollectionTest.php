@@ -15,6 +15,43 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
+    public function take()
+    {
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document(['foo' => 'bar'], '4'),
+            new Document(['foo' => 'baz']),
+            new Document(['foo' => 'baz']),
+            new Document(['foo' => 'baz']),
+            new Document(['foo' => 'baz']),
+            new Document(['foo' => 'baz']),
+            new Document(['foo' => 'baz']),
+            new Document(['foo' => 'baz']),
+            new Document(['foo' => 'baz']),
+            new Document(['foo' => 'baz']),
+            new Document(['baz' => 'john'], '2'),
+        ];
+
+        $index->merge($docs);
+
+        $docs = $index->take(1);
+
+        $this->assertCount(1, $docs);
+        $this->assertEquals('4', $docs[0]->_id);
+
+        $docs = $index->take(-1);
+
+        $this->assertCount(1, $docs);
+        $this->assertEquals('2', $docs[0]->_id);
+    }
+
+    /**
+     * @test
+     */
     public function index_delete_method()
     {
         $indexName = uniqid();

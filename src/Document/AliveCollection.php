@@ -64,6 +64,20 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         return $this->documentExists($this->name, $_id);
     }
 
+    public function take(int $limit)
+    {
+        if ($limit > 0) {
+            return $this->listDocuments($this->name, 0, $limit)->toArray();
+        }
+
+        $total = $this->count();
+        $pageSize = abs($limit);
+        $lastPage = (int) ceil($total / $pageSize);
+        $offset = ($lastPage - 1) * $pageSize;
+
+        return $this->listDocuments($this->name, $offset, $pageSize)->toArray();
+    }
+
     public function add(Document $document): Document
     {
         $document = $this->documentEmbeddings($document);
