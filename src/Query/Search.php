@@ -30,7 +30,7 @@ class Search
 
     protected int|string $size = 500;
 
-    protected array $fields = ['*'];
+    protected array $fields = [];
 
     protected array $raw = [];
 

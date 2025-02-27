@@ -29,7 +29,7 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected array $fields = [];
 
-    protected array $retrieve = [];
+    protected null|array $retrieve = null;
 
     protected array $typoTolerantAttributes = [];
 

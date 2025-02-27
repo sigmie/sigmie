@@ -233,6 +233,24 @@ class Properties extends Type implements ArrayAccess
         }
     }
 
+    public function fieldNames()
+    {
+        $collection = new Collection($this->fields);
+
+        return $collection->map(function (ContractsType $type) {
+            if ($type instanceof Object_) {
+                return $type->properties->fieldNames();
+            }
+
+            if ($type instanceof Nested) {
+                return $type->properties->fieldNames();
+            }
+
+            return $type->name();
+        })->flatten()
+            ->toArray();
+    }
+
     private function semanticFields()
     {
         return $this->textFields()

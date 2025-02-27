@@ -105,7 +105,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             }
         });
 
-        $search->fields($this->retrieve);
+        $search->fields($this->retrieve ?? $this->properties->fieldNames());
 
         $boolean->must()->bool(fn(Boolean $boolean) => $boolean->filter()->query($this->filters));
 

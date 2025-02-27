@@ -167,8 +167,47 @@ class SemanticTest extends TestCase
      */
     public function dont_retrieve_embeddings_field_in_hits()
     {
-        //TODO make elasticsearch index a trait and a interface
-        //TODO
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->title('owner_name')->semantic();
+        $blueprint->object('pet_type', function (NewProperties $blueprint) {
+            $blueprint->title('name')->semantic();
+            $blueprint->object('pet', function (NewProperties $blueprint) {
+                $blueprint->title('name')->semantic();
+            });
+        });
+
+        $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $documents = $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'owner_name' => 'Jane',
+                    'pet_type' => [
+                        'name' => 'Cat',
+                        'pet' => [
+                            'name' => 'Queen',
+                        ],
+                    ],
+                ]),
+            ])
+            ->toArray();
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->semantic()
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->queryString('woman')
+            ->get();
+
+        $this->assertArrayNotHasKey('embeddings', $response->json('hits.hits.0._source'));
     }
 
     /**

@@ -50,7 +50,9 @@ class SortParserTest extends TestCase
 
         $query = $parser->parse('id:desc');
 
-        $res = $this->sigmie->query($indexName)
+        $res = $this->sigmie
+            ->query($indexName)
+            ->properties($blueprint)
             ->addRaw('sort', $query)
             ->get();
 

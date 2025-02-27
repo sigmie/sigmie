@@ -85,7 +85,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
         $highlight->each(fn (string $field) => $search->highlight($field, $this->highlightPrefix, $this->highlightSuffix));
 
-        $search->fields($this->retrieve);
+        $search->fields($this->retrieve ?? $this->properties->fieldNames());
 
         $defaultFilters = json_encode($this->filters->toRaw());
 
