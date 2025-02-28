@@ -30,8 +30,6 @@ use function Sigmie\Functions\auto_fuzziness;
 
 class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInterface
 {
-    use EmbeddingsProvider;
-
     protected array $sort = ['_score'];
 
     protected string $queryString = '';
@@ -133,7 +131,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 ->map(function (Text $field) {
                     return $this->embeddingsProvider->queries(
                         "embeddings.{$field->name()}",
-                        $this->queryString,
+                        $this->embeddingsProvider->embeddings($this->queryString),
                         $field
                     );
                 })
@@ -153,12 +151,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $shouldClauses->add($functionScore);
             }
-
-            // ->map(function (Query $queryClause) use (&$shouldClauses) {
-            //     if ($this->semanticSearch) {
-            //         $shouldClauses->add($queryClause);
-            //     }
-            // });
 
             // Text queries
             $fields->each(function ($field) use (&$shouldClauses) {

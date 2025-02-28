@@ -12,9 +12,12 @@ use Sigmie\Query\Aggs as FacetAggs;
 use Sigmie\Query\Contracts\Aggs;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Search\Contracts\SearchBuilder;
+use Sigmie\Shared\EmbeddingsProvider;
 
 abstract class AbstractSearchBuilder implements SearchBuilder
 {
+    use EmbeddingsProvider;
+
     protected Properties $properties;
 
     protected string $highlightSuffix;

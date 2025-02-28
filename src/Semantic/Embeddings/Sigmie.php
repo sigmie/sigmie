@@ -39,13 +39,13 @@ class Sigmie implements Provider
 
     public function queries(
         string $name,
-        string $text,
+        array|string $text,
         Type $originalField
     ): array {
         return [
             new NearestNeighbors(
                 $name,
-                $this->embeddings($text)
+                $text
             )
         ];
     }

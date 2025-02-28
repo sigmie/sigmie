@@ -26,7 +26,7 @@ class Search
 
     protected int|string $from = 0;
 
-    protected int|float $minScore = 0;
+    protected string|float $minScore = 0;
 
     protected int|string $size = 500;
 
@@ -101,7 +101,7 @@ class Search
         return $this;
     }
 
-    public function minScore(float $minScore): self
+    public function minScore(string|float $minScore): self
     {
         $this->minScore = $minScore;
 

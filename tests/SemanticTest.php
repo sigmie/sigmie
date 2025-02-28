@@ -8,6 +8,7 @@ use Sigmie\Document\Document;
 use Sigmie\SigmieIndex;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Semantic\Embeddings\Openai;
+use Sigmie\Semantic\Embeddings\Sigmie;
 use Sigmie\Testing\TestCase;
 use Symfony\Component\Dotenv\Dotenv;
 
@@ -159,7 +160,62 @@ class SemanticTest extends TestCase
      */
     public function index_template()
     {
-        //TODO
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->title('name')->semantic();
+        $blueprint->number('age')->integer();
+
+        $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'name' => 'King',
+                    'age' => 10,
+                ]),
+                new Document([
+                    'name' => 'Queen',
+                    'age' => 20,
+                ]),
+            ]);
+
+        $templateName = uniqid();
+
+        $saved = $this->sigmie
+            ->newTemplate($templateName)
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->semantic()
+            ->fields(['name'])
+            ->get()
+            ->save();
+
+        $template = $this->sigmie->template($templateName);
+
+        $hits = $template->run($indexName, [
+            'query_string' => '',
+        ])->json('hits.hits.0');
+
+        $this->assertNull($hits);
+
+        $hits = $template->run($indexName, [
+            'query_string' => 'woman',
+            'embeddings' => ((new Sigmie)->embeddings('woman')),
+        ])->json('hits.hits');
+
+        $this->assertEquals('Queen', $hits[0]['_source']['name'] ?? null);
+
+        $hits = $template->run($indexName, [
+            'query_string' => 'woman',
+        ])->json('hits.hits');
+
+        $this->assertEmpty($hits);
     }
 
     /**
@@ -167,6 +223,7 @@ class SemanticTest extends TestCase
      */
     public function dont_retrieve_embeddings_field_in_hits()
     {
+
         $indexName = uniqid();
 
         $blueprint = new NewProperties();

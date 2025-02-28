@@ -10,7 +10,7 @@ class NearestNeighbors extends Query
 {
     public function __construct(
         protected string $field,
-        protected array $embeddings
+        protected array|string $embeddings
     ) {}
 
     public function toRaw(): array

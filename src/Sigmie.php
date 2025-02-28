@@ -117,6 +117,7 @@ class Sigmie
         $builder = new NewTemplate(
             $this->elasticsearchConnection,
         );
+        $builder->embeddingsProvider($this->embeddingsProvider);
 
         return $builder->id($id);
     }

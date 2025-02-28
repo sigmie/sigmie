@@ -50,6 +50,8 @@ class SearchTemplate
         $parsedSource = $this->handleParameter('filters', $parsedSource);
         $parsedSource = $this->handleParameter('sort', $parsedSource);
         $parsedSource = $this->handleParameter('facets', $parsedSource);
+        $parsedSource = $this->handleParameter('embeddings', $parsedSource);
+        $parsedSource = $this->handleParameter('minscore', $parsedSource);
 
         return $parsedSource;
     }

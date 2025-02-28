@@ -12,7 +12,7 @@ interface Provider
 
     public function type(string $name): Type;
 
-    public function queries(string $name, string $text, Type $originalType): array;
+    public function queries(string $name, array|string $text, Type $originalType): array;
 
     public function threshold(): float;
 }

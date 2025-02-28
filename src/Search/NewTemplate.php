@@ -6,20 +6,25 @@ namespace Sigmie\Search;
 
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\Nested as TypesNested;
+use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
 use Sigmie\Query\Contracts\FuzzyQuery;
 use Sigmie\Query\Contracts\QueryClause;
+use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\MatchNone;
+use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
 use Sigmie\Search\Contracts\EmbeddingsQueries;
 use Sigmie\Search\Contracts\SearchTemplateBuilder as SearchTemplateBuilderInterface;
+use Sigmie\Semantic\Embeddings\Sigmie;
 use Sigmie\Shared\Collection;
+use Sigmie\Shared\EmbeddingsProvider;
 
 use function Sigmie\Functions\auto_fuzziness;
 
@@ -46,8 +51,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
     }
 
     public function facets(string $facets): static
-    {
-        $parser = new FacetParser($this->properties);
+    { $parser = new FacetParser($this->properties);
 
         $this->facets = $parser->parse($facets);
 
@@ -103,12 +107,44 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
         $search->from("@from({$this->from})@endfrom");
 
+        $minScore = $this->semanticSearch && $this->minScore == 0 ? 0.01 : $this->minScore;
+
+        $search->minScore("@minscore({$minScore})@endminscore");
+
         $boolean->must()->bool(function (Boolean $boolean) {
             $queryBoolean = new Boolean;
 
             $fields = new Collection($this->fields);
 
             $shouldClauses = new Collection();
+
+            $defaultEmbeddings = json_encode([]);
+
+            // Vector queries
+            $vectorQueries = $this->properties->nestedSemanticFields()
+                ->map(function (Text $field) use ($defaultEmbeddings) {
+                    return $this->embeddingsProvider->queries(
+                        "embeddings.{$field->name()}",
+                        "@embeddings({$defaultEmbeddings})@endembeddings",
+                        $field
+                    );
+                })
+                ->flatten(1);
+
+            if ($this->semanticSearch) {
+                $vectorBool = new Boolean;
+                $vectorQueries
+                    ->each(fn(Query $query) => $vectorBool->should()->query($query));
+
+                $functionScore = new FunctionScore(
+                    $vectorBool,
+                    source: "return _score > {$this->embeddingsProvider->threshold()} ? _score : 0;",
+                    boostMode: 'replace'
+                );
+
+                $shouldClauses->add($functionScore);
+            }
+
 
             $fields->each(function ($field) use (&$shouldClauses) {
                 $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
@@ -119,7 +155,6 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
                 $queries = match(true)
                 {
-                    $field->type() instanceof EmbeddingsQueries => $field->queries('{{embeddings}}'),
                     $field->hasQueriesCallback => $field->queriesFromCallback('{{query_string}}'),
                     default => $field->queries('{{query_string}}')
                 };
@@ -166,8 +201,6 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
         }
 
         $search->trackTotalHits();
-
-        $search->minScore($this->minScore);
 
         return new SearchTemplate($this->elasticsearchConnection, $search->toRaw(), $this->id, $this->noResultsOnEmptySearch);
     }
