@@ -24,7 +24,7 @@ use Sigmie\Index\Shared\Tokenizer;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
 use Sigmie\Semantic\Contracts\Provider;
-use Sigmie\Semantic\Embeddings\Sigmie as DefaultEmbeddingsProvider;
+use Sigmie\Semantic\Embeddings\SigmieAI as DefaultEmbeddingsProvider;
 use Sigmie\Shared\EmbeddingsProvider;
 
 use function Sigmie\Functions\index_name;

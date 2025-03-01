@@ -22,7 +22,7 @@ use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
 use Sigmie\Search\Contracts\EmbeddingsQueries;
 use Sigmie\Search\Contracts\SearchTemplateBuilder as SearchTemplateBuilderInterface;
-use Sigmie\Semantic\Embeddings\Sigmie;
+use Sigmie\Semantic\Embeddings\SigmieAI;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\EmbeddingsProvider;
 

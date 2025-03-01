@@ -26,7 +26,7 @@ use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewSemanticSearch;
 use Sigmie\Search\NewTemplate;
 use Sigmie\Shared\EmbeddingsProvider;
-use Sigmie\Semantic\Embeddings\Sigmie as DefaultEmbeddingsProvider;
+use Sigmie\Semantic\Embeddings\SigmieAI as DefaultEmbeddingsProvider;
 
 class Sigmie
 {

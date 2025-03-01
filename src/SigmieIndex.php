@@ -9,7 +9,7 @@ use Sigmie\Index\NewIndex;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Search\NewSearch;
 use Sigmie\Semantic\Contracts\Provider;
-use Sigmie\Semantic\Embeddings\Sigmie as SigmieEmbeddings;
+use Sigmie\Semantic\Embeddings\SigmieAI as SigmieEmbeddings;
 
 
 abstract class SigmieIndex

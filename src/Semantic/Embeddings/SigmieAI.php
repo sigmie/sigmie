@@ -14,20 +14,28 @@ use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Query\Queries\Elastiknn\NearestNeighbors;
 use Sigmie\Semantic\Contracts\Provider;
 
-class Sigmie implements Provider
+class SigmieAI implements Provider
 {
     protected JSONClient $http;
 
     public function __construct()
     {
-        $this->http = JSONClient::create(['https://app.sigmie.com']);
+        $this->http = JSONClient::create([
+            'https://ai-a.sigmie.app',
+            'https://ai-b.sigmie.app',
+            'https://ai-c.sigmie.app',
+        ]);
     }
 
-    public function embeddings(string $text): array
+    public function embed(string $text): array
     {
-        $response = $this->http->request(new JSONRequest('POST', new Uri('/embeddings'), [
-            'text' => $text
-        ]));
+        $response = $this->http->request(new JSONRequest(
+            'POST',
+            new Uri('/embeddings'),
+            [
+                'text' => $text
+            ]
+        ));
 
         return $response->json();
     }

@@ -8,7 +8,7 @@ use Sigmie\Mappings\Contracts\Type;
 
 interface Provider
 {
-    public function embeddings(string $text): array;
+    public function embed(string $text): array;
 
     public function type(string $name): Type;
 

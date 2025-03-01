@@ -8,7 +8,7 @@ use Sigmie\Document\Document;
 use Sigmie\SigmieIndex;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Semantic\Embeddings\Openai;
-use Sigmie\Semantic\Embeddings\Sigmie;
+use Sigmie\Semantic\Embeddings\SigmieAI;
 use Sigmie\Testing\TestCase;
 use Symfony\Component\Dotenv\Dotenv;
 
@@ -206,7 +206,7 @@ class SemanticTest extends TestCase
 
         $hits = $template->run($indexName, [
             'query_string' => 'woman',
-            'embeddings' => ((new Sigmie)->embeddings('woman')),
+            'embeddings' => ((new SigmieAI)->embed('woman')),
         ])->json('hits.hits');
 
         $this->assertEquals('Queen', $hits[0]['_source']['name'] ?? null);

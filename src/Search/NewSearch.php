@@ -131,7 +131,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 ->map(function (Text $field) {
                     return $this->embeddingsProvider->queries(
                         "embeddings.{$field->name()}",
-                        $this->embeddingsProvider->embeddings($this->queryString),
+                        $this->embeddingsProvider->embed($this->queryString),
                         $field
                     );
                 })
