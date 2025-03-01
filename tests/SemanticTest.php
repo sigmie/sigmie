@@ -7,6 +7,7 @@ namespace Sigmie\Tests;
 use Sigmie\Document\Document;
 use Sigmie\SigmieIndex;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Semantic\Embeddings\Noop;
 use Sigmie\Semantic\Embeddings\Openai;
 use Sigmie\Semantic\Embeddings\SigmieAI;
 use Sigmie\Testing\TestCase;
@@ -90,7 +91,54 @@ class SemanticTest extends TestCase
      */
     public function noop_provider()
     {
-        //TODO
+        $indexName = uniqid();
+        $provider = new Noop();
+
+        $blueprint = new NewProperties();
+        $blueprint->title('name')->semantic();
+        $blueprint->number('age')->integer();
+
+        $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->embeddingsProvider($provider)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->embeddingsProvider($provider)
+            ->merge([
+                new Document([
+                    'name' => 'King',
+                    'age' => 10,
+                ]),
+                new Document([
+                    'name' => 'Queen',
+                    'age' => 20,
+                ]),
+            ]);
+
+        $templateName = uniqid();
+
+        $saved = $this->sigmie
+            ->newTemplate($templateName)
+            ->embeddingsProvider($provider)
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->semantic()
+            ->fields(['name'])
+            ->get()
+            ->save();
+
+        $template = $this->sigmie->template($templateName);
+
+        $hits = $template->run($indexName, [
+            'query_string' => 'woman',
+        ])->json('hits.hits.0');
+
+        //Noop provider should not return queen 
+        $this->assertEquals('King', $hits['_source']['name'] ?? null);
     }
 
     /**
@@ -98,6 +146,7 @@ class SemanticTest extends TestCase
      */
     public function index_template()
     {
+
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
