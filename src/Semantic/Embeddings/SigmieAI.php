@@ -13,6 +13,7 @@ use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Query\Queries\Elastiknn\NearestNeighbors;
 use Sigmie\Semantic\Contracts\Provider;
+use Sigmie\Sigmie;
 
 class SigmieAI implements Provider
 {
@@ -48,8 +49,9 @@ class SigmieAI implements Provider
     public function queries(
         string $name,
         array|string $text,
-        Type $originalField
+        Type $type
     ): array {
+
         return [
             new NearestNeighbors(
                 $name,

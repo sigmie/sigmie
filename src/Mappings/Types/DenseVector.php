@@ -6,18 +6,20 @@ namespace Sigmie\Mappings\Types;
 
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\Type as AbstractType;
-use Sigmie\Query\Queries\Elastiknn\NearestNeighbors;
-use Sigmie\Search\Contracts\EmbeddingsQueries;
+use Sigmie\Sigmie;
+use Sigmie\Enums\ElasticsearchVersion as Version;
 
 class DenseVector extends AbstractType implements Type
 {
-    // protected string $type = 'dense_vector';
-    protected string $type = 'elastiknn_dense_float_vector';
-
     public function __construct(
         public string $name,
         protected int $dims = 384
-    ) {}
+    ) {
+        $this->type = match (Sigmie::$version) {
+            Version::v7 => 'elastiknn_dense_float_vector',
+            Version::v8 => 'dense_vector',
+        };
+    }
 
     public function queries(string $queryString): array
     {
@@ -38,16 +40,21 @@ class DenseVector extends AbstractType implements Type
 
     public function toRaw(): array
     {
-        return [
-            $this->name => [
-                'type' => $this->type,
-                'elastiknn' => [
-                    // 'type' => $this->type,
-                    'dims' => $this->dims,
-                    'model' => 'exact',
+        return match (Sigmie::$version) {
+            Version::v7 => [
+                $this->name => [
+                    'type' => $this->type,
+                    'elastiknn' => [
+                        'dims' => $this->dims,
+                        'model' => 'exact',
+                    ]
+                ]
+            ],
+            Version::v8 => [
+                $this->name => [
+                    'type' => $this->type,
                 ]
             ]
-        ];
+        };
     }
-
 }

@@ -27,68 +27,6 @@ class SemanticTest extends TestCase
     /**
      * @test
      */
-    public function openai_search()
-    {
-        $this->markTestSkipped();
-        return;
-
-        $openai = new Openai(
-            getenv('OPENAI_API_KEY'),
-            model: 'text-embedding-3-large',
-            dims: 384
-        );
-
-        $testIndex = new class($this->sigmie) extends SigmieIndex {
-
-            protected string $name;
-
-            public function init(): void
-            {
-                $this->name = uniqid();
-            }
-
-            public function name(): string
-            {
-                return $this->name;
-            }
-
-            public function properties(): NewProperties
-            {
-                $blueprint = new NewProperties();
-                $blueprint->title()->semantic();
-
-                return $blueprint;
-            }
-        };
-
-        // NOTE: Use larger models for larger texts
-        // $openai = new SigmieEmbeddings();
-        // $res = $openai->embeddings('Hello');
-
-        $testIndex->newIndex()->create();
-
-        $testIndex->collect()->merge([
-            new Document([
-                'name' => 'King',
-            ]),
-            new Document([
-                'name' => 'Queen',
-            ]),
-        ]);
-
-        $response = $testIndex->newSearch()
-            ->semantic()
-            ->noResultsOnEmptySearch()
-            ->get();
-
-        $hits = $response->json('hits.hits');
-
-        $this->assertEquals('King', $hits[0]['_source']['name'] ?? null);
-    }
-
-    /**
-     * @test
-     */
     public function nested_semantic_search()
     {
         $indexName = uniqid();
@@ -265,14 +203,6 @@ class SemanticTest extends TestCase
             ->get();
 
         $this->assertArrayNotHasKey('embeddings', $response->json('hits.hits.0._source'));
-    }
-
-    /**
-     * @test
-     */
-    public function different_model_per_field()
-    {
-        //TODO
     }
 
     /**

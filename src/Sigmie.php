@@ -10,6 +10,7 @@ use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
 use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Document\AliveCollection;
+use Sigmie\Enums\ElasticsearchVersion as Version;
 use Sigmie\Http\JSONClient;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\AliasedIndex;
@@ -37,6 +38,15 @@ class Sigmie
     public const DATE_FORMAT = 'Y-m-d H:i:s.u';
 
     protected string $application = '';
+
+    public static Version $version = Version::v7;
+
+    public function version(Version $version)
+    {
+        $this->version = $version;
+
+        return $this;
+    }
 
     public function __construct(Connection $httpConnection)
     {

@@ -35,7 +35,7 @@ class Openai implements Provider
     public function queries(
         string $name,
         string $text,
-        Type $originalField
+        Type $type
     ): array {
         return [
             new NearestNeighbors(
