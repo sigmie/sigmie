@@ -7,12 +7,12 @@ namespace Sigmie\Tests;
 use Exception;
 use RachidLaasri\Travel\Travel;
 use Sigmie\Document\Document;
-use Sigmie\English\Builder as EnglishBuilder;
-use Sigmie\English\English;
-use Sigmie\German\Builder as GermanBuilder;
-use Sigmie\German\German;
-use Sigmie\Greek\Builder as GreekBuilder;
-use Sigmie\Greek\Greek;
+use Sigmie\Languages\English\Builder as EnglishBuilder;
+use Sigmie\Languages\English\English;
+use Sigmie\Languages\German\Builder as GermanBuilder;
+use Sigmie\Languages\German\German;
+use Sigmie\Languages\Greek\Builder as GreekBuilder;
+use Sigmie\Languages\Greek\Greek;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Analysis\CharFilter\Pattern as PatternCharFilter;
@@ -22,6 +22,7 @@ use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Sigmie;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
 
@@ -76,6 +77,79 @@ class IndexBuilderTest extends TestCase
         $this->assertIndex($alias, function (Assert $index) {
             $index->assertAnalyzerExists('default');
         });
+    }
+
+    /**
+     * @test
+     */
+    public function language_greek_with_skroutz_plugin()
+    {
+        $alias = uniqid();
+
+        Sigmie::registerPlugins([
+            'elasticsearch-skroutz-greekstemmer',
+            // 'elasticsearch-analysis-greeklish'
+        ]);
+
+        $blueprint = new NewProperties;
+        $blueprint->name('name');
+
+        /** @var GreekBuilder */
+        $greekBuilder = $this->sigmie->newIndex($alias)->language(new Greek());
+
+        $greekBuilder
+            ->properties($blueprint)
+            ->stemming([
+                ['go', ['going']],
+            ])
+            ->synonyms([
+                ['ΑΓΑΣΙΑ', 'ΑΓΑΣΙΑ ΚΑΙ ΑΓΑΣΙΑ ΚΑΙ ΑΓΑΣΙΑ'],
+            ])
+            ->stopwords(['ΑΓΑΣΙΑ', 'ΑΓΑΣΙΑ ΚΑΙ ΑΓΑΣΙΑ ΚΑΙ ΑΓΑΣΙΑ'])
+            ->greekLowercase()
+            ->greekStemmer()
+            ->greekGreeklish()
+            ->greekStopwords()
+            ->create();
+
+        $this->assertIndex($alias, function (Assert $index) {
+
+            $index->assertAnalyzerHasFilter('name_field_analyzer', 'greek_stopwords');
+            $index->assertAnalyzerHasFilter('name_field_analyzer', 'skroutz_greek_stemmer');
+            // $index->assertAnalyzerHasFilter('name_field_analyzer', 'skroutz_greeklish');
+            $index->assertAnalyzerHasFilter('name_field_analyzer', 'greek_lowercase');
+
+            $index->assertAnalyzerHasFilter('default', 'greek_stopwords');
+            $index->assertAnalyzerHasFilter('default', 'skroutz_greek_stemmer');
+            // $index->assertAnalyzerHasFilter('default', 'skroutz_greeklish');
+            $index->assertAnalyzerHasFilter('default', 'greek_lowercase');
+
+            $index->assertFilterEquals('greek_lowercase', ['type' => 'lowercase', 'language' => 'greek']);
+            $index->assertFilterEquals('greek_stopwords', ['type' => 'stop', 'stopwords' => '_greek_']);
+            // $index->assertFilterEquals('skroutz_greeklish', ['type' => 'skroutz_greeklish', 'max_expansions' => 20]);
+            $index->assertFilterEquals(
+                'skroutz_greek_stemmer',
+                [
+                    'type' => 'skroutz_stem_greek',
+                ]
+            );
+        });
+
+        $this->sigmie->collect($alias, refresh: true)
+            ->merge([
+                new Document([
+                    'name' => 'καλημερα',
+                ]),
+            ]);
+
+        $res = $this->sigmie->newSearch($alias)
+            ->properties($blueprint)
+            ->queryString('kalim')
+            ->get();
+
+        //Skroutz greeklish fails and shuts down es on 7.17.9
+        //uncommend above assertions
+        $this->assertEquals(200, $res->getStatusCode());
     }
 
     /**

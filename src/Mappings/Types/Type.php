@@ -36,6 +36,11 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
         return $this;
     }
 
+    public function queries(string $queryString): array
+    {
+        return [];
+    }
+
     public function meta(array $meta): void
     {
         $this->meta = [...$this->meta, ...$meta];

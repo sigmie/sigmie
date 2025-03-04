@@ -10,6 +10,7 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Semantic\Embeddings\Noop;
 use Sigmie\Semantic\Embeddings\Openai;
 use Sigmie\Semantic\Embeddings\SigmieAI;
+use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 use Symfony\Component\Dotenv\Dotenv;
 
@@ -30,6 +31,10 @@ class SemanticTest extends TestCase
      */
     public function nested_semantic_search()
     {
+        Sigmie::registerPlugins([
+            'elastiknn'
+        ]);
+
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
@@ -89,8 +94,69 @@ class SemanticTest extends TestCase
     /**
      * @test
      */
+    public function noop_provider_without_elastiknn()
+    {
+        Sigmie::registerPlugins([]);
+
+        $indexName = uniqid();
+        $provider = new Noop();
+
+        $blueprint = new NewProperties();
+        $blueprint->title('name')->semantic();
+        $blueprint->number('age')->integer();
+
+        $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->embeddingsProvider($provider)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->embeddingsProvider($provider)
+            ->merge([
+                new Document([
+                    'name' => 'King',
+                    'age' => 10,
+                ]),
+                new Document([
+                    'name' => 'Queen',
+                    'age' => 20,
+                ]),
+            ]);
+
+        $templateName = uniqid();
+
+        $saved = $this->sigmie
+            ->newTemplate($templateName)
+            ->embeddingsProvider($provider)
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->semantic()
+            ->fields(['name'])
+            ->get()
+            ->save();
+
+        $template = $this->sigmie->template($templateName);
+
+        $hits = $template->run($indexName, [
+            'query_string' => 'woman',
+        ])->json('hits.hits.0');
+
+        //Noop provider should not return queen 
+        $this->assertEquals('King', $hits['_source']['name'] ?? null);
+    }
+
+    /**
+     * @test
+     */
     public function noop_provider()
     {
+        Sigmie::registerPlugins([
+            'elastiknn'
+        ]);
+
         $indexName = uniqid();
         $provider = new Noop();
 
@@ -146,6 +212,9 @@ class SemanticTest extends TestCase
      */
     public function index_template()
     {
+        Sigmie::registerPlugins([
+            'elastiknn'
+        ]);
 
         $indexName = uniqid();
 
@@ -210,6 +279,9 @@ class SemanticTest extends TestCase
      */
     public function dont_retrieve_embeddings_field_in_hits()
     {
+        Sigmie::registerPlugins([
+            'elastiknn'
+        ]);
 
         $indexName = uniqid();
 
@@ -259,6 +331,10 @@ class SemanticTest extends TestCase
      */
     public function semantic_search_with_filters()
     {
+        Sigmie::registerPlugins([
+            'elastiknn'
+        ]);
+
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
@@ -303,6 +379,10 @@ class SemanticTest extends TestCase
      */
     public function semantic_search_basic()
     {
+        Sigmie::registerPlugins([
+            'elastiknn'
+        ]);
+
         $indexName = uniqid();
 
         $blueprint = new NewProperties();

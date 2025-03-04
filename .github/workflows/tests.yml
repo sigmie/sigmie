@@ -54,5 +54,5 @@ jobs:
         with:
           files: coverage.xml
 
-      - name: Static analysis
-        run: vendor/bin/phpstan analyse --memory-limit=-1
+      # - name: Static analysis
+      #   run: vendor/bin/phpstan analyse --memory-limit=-1

@@ -30,9 +30,6 @@
         "spatie/ray": "^1.1",
         "brianium/paratest": "^6.3",
         "rachidlaasri/travel": "^1.06",
-        "sigmie/german": "^1.0",
-        "sigmie/greek": "^1.0",
-        "sigmie/english": "^1.0",
         "sigmie/testing": "^1.0",
         "symfony/dotenv": "^7.2"
     },

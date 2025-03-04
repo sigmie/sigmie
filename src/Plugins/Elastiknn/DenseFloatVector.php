@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Mappings\Types;
+namespace Sigmie\Plugins\Elastiknn;
 
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\Type as AbstractType;
 
-class DenseVector extends AbstractType implements Type
+class DenseFloatVector extends AbstractType implements Type
 {
     public function __construct(
         public string $name,
         protected int $dims = 384
     ) {
-        $this->type = 'dense_vector';
+        $this->type = 'elastiknn_dense_float_vector';
     }
 
     public function toRaw(): array
@@ -21,7 +21,10 @@ class DenseVector extends AbstractType implements Type
         return [
             $this->name => [
                 'type' => $this->type,
-                'dims' => $this->dims,
+                'elastiknn' => [
+                    'dims' => $this->dims,
+                    'model' => 'exact',
+                ]
             ]
         ];
     }

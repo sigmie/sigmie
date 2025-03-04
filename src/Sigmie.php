@@ -41,6 +41,8 @@ class Sigmie
 
     public static Version $version = Version::v7;
 
+    public static array $plugins = [];
+
     public function version(Version $version)
     {
         $this->version = $version;
@@ -60,7 +62,7 @@ class Sigmie
             return $name;
         }
 
-        return $this->application.'-'.$name;
+        return $this->application . '-' . $name;
     }
 
     public function application(string $application)
@@ -180,5 +182,15 @@ class Sigmie
         }
 
         return $this->deleteIndex($index);
+    }
+
+    public static function registerPlugins(array|string $plugins)
+    {
+        self::$plugins = array_merge(self::$plugins, (array) $plugins);
+    }
+
+    public static function isPluginRegistered(string $plugin)
+    {
+        return in_array($plugin, self::$plugins);
     }
 }

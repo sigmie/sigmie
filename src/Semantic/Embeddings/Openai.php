@@ -9,7 +9,7 @@ use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\DenseVector;
-use Sigmie\Query\Queries\Elastiknn\NearestNeighbors;
+use Sigmie\Query\Queries\NearestNeighbors;
 use Sigmie\Semantic\Contracts\Provider;
 
 class Openai implements Provider

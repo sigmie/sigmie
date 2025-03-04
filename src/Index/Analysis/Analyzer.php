@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis;
 
-use Sigmie\English\Filter\Lowercase;
-use Sigmie\English\Filter\Stemmer;
-use Sigmie\English\Filter\Stopwords;
-use Sigmie\German\Filter\GermanNormalization;
-use Sigmie\German\Filter\LightStemmer as GermanLightStemmer;
-use Sigmie\German\Filter\Lowercase as GermanLowercase;
-use Sigmie\German\Filter\Stopwords as GermanStopwords;
-use Sigmie\Greek\Filter\Lowercase as GreekLowercase;
-use Sigmie\Greek\Filter\Stemmer as GreekStemmer;
-use Sigmie\Greek\Filter\Stopwords as GreekStopwords;
+use Sigmie\Languages\English\Filter\Lowercase;
+use Sigmie\Languages\English\Filter\Stemmer;
+use Sigmie\Languages\English\Filter\Stopwords;
+use Sigmie\Languages\German\Filter\GermanNormalization;
+use Sigmie\Languages\German\Filter\LightStemmer as GermanLightStemmer;
+use Sigmie\Languages\German\Filter\Lowercase as GermanLowercase;
+use Sigmie\Languages\German\Filter\Stopwords as GermanStopwords;
+use Sigmie\Languages\Greek\Filter\Lowercase as GreekLowercase;
+use Sigmie\Languages\Greek\Filter\Stemmer as GreekStemmer;
+use Sigmie\Languages\Greek\Filter\Stopwords as GreekStopwords;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Index\Analysis\TokenFilter\AsciiFolding;
 use Sigmie\Index\Analysis\TokenFilter\DecimalDigit;

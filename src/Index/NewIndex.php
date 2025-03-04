@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Index;
 
 use Sigmie\Base\Contracts\ElasticsearchConnection;
-use Sigmie\English\Filter\Lowercase;
-use Sigmie\English\Filter\Stemmer;
-use Sigmie\English\Filter\Stopwords;
+use Sigmie\Languages\English\Filter\Lowercase;
+use Sigmie\Languages\English\Filter\Stemmer;
+use Sigmie\Languages\English\Filter\Stopwords;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Analysis\DefaultAnalyzer;

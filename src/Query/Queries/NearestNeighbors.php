@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Query\Queries\Elastiknn;
+namespace Sigmie\Query\Queries;
 
 use Sigmie\Query\Queries\Query;
 use Sigmie\Enums\ElasticsearchVersion as Version;
@@ -19,14 +19,7 @@ class NearestNeighbors extends Query
     {
         return match (Sigmie::$version) {
             Version::v7 => [
-                "elastiknn_nearest_neighbors" => [
-                    "field" => $this->field,
-                    "vec" => [
-                        "values" => $this->embeddings
-                    ],
-                    "model" => "exact",
-                    "similarity" => "cosine",
-                ]
+                // TODO add function cosine
             ],
             Version::v8 => [
                 "knn" => [

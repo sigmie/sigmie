@@ -11,7 +11,8 @@ use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\DenseVector;
-use Sigmie\Query\Queries\Elastiknn\NearestNeighbors;
+use Sigmie\Plugins\Elastiknn\DenseFloatVector;
+use Sigmie\Query\Queries\NearestNeighbors;
 use Sigmie\Semantic\Contracts\Provider;
 use Sigmie\Sigmie;
 
@@ -19,12 +20,16 @@ class Noop implements Provider
 {
     public function embed(string $text): array
     {
-        return [];
+        return Sigmie::isPluginRegistered('elastiknn') ?
+            [] :
+            [-1];
     }
 
     public function type(string $name): Type
     {
-        return new DenseVector($name, dims: 0);
+        return Sigmie::isPluginRegistered('elastiknn') ?
+            new DenseFloatVector($name, dims: 0) :
+            new DenseVector($name, dims: 1);
     }
 
     public function queries(

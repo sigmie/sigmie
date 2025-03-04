@@ -1,0 +1,11 @@
+.history
+.idea
+.vscode
+.devcontainer
+
+composer.phar
+composer.lock
+
+/vendor/
+
+.DS_Store

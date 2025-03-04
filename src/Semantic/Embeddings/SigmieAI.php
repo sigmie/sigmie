@@ -11,7 +11,9 @@ use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\DenseVector;
-use Sigmie\Query\Queries\Elastiknn\NearestNeighbors;
+use Sigmie\Plugins\Elastiknn\DenseFloatVector;
+use Sigmie\Plugins\Elastiknn\NearestNeighbors as ElastiknnNearestNeighbors;
+use Sigmie\Query\Queries\NearestNeighbors;
 use Sigmie\Semantic\Contracts\Provider;
 use Sigmie\Sigmie;
 
@@ -43,7 +45,9 @@ class SigmieAI implements Provider
 
     public function type(string $name): Type
     {
-        return new DenseVector($name, dims: 384);
+        return Sigmie::isPluginRegistered('elastiknn') ?
+            new DenseFloatVector($name, dims: 384) :
+            new DenseVector($name, dims: 384);
     }
 
     public function queries(
@@ -52,7 +56,12 @@ class SigmieAI implements Provider
         Type $type
     ): array {
 
-        return [
+        return Sigmie::isPluginRegistered('elastiknn') ? [
+            new ElastiknnNearestNeighbors(
+                $name,
+                $text
+            )
+        ] : [
             new NearestNeighbors(
                 $name,
                 $text
