@@ -31,6 +31,47 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Wait for Elasticsearch to Start
+        run: |
+          echo "Waiting for Elasticsearch to start..."
+          until curl -s http://localhost:9200 | grep "tagline"; do
+            sleep 5
+          done
+          echo "Elasticsearch is ready!"
+
+      - name: Install Plugins
+        run: |
+          curl -X PUT "http://localhost:9200/_cluster/settings" -H "Content-Type: application/json" -d '{
+            "persistent": {
+              "action.destructive_requires_name": false
+            }
+          }'
+          plugins=(
+            "https://github.com/alexklibisz/elastiknn/releases/download/7.17.9.0/elastiknn-7.17.9.0.zip"
+            "https://github.com/sigmie/elasticsearch-skroutz-greekstemmer/releases/download/17.7.9.0/elasticsearch-skroutz-greekstemmer-7.17.9.0.zip"
+            "https://github.com/sigmie/elasticsearch-analysis-greeklish/releases/download/7.17.9.0/elasticsearch-skroutz-greekstemmer-7.17.9.0.zip"
+          )
+          for plugin in "${plugins[@]}"; do
+            docker exec $(docker ps -q --filter ancestor=docker.elastic.co/elasticsearch/elasticsearch:7.17.9) elasticsearch-plugin install --batch $plugin
+          done
+          docker restart $(docker ps -q --filter ancestor=docker.elastic.co/elasticsearch/elasticsearch:7.17.9)
+
+      - name: Wait for Elasticsearch to Restart
+        run: |
+          echo "Waiting for Elasticsearch to start..."
+          until curl -s http://localhost:9200 | grep "tagline"; do
+            sleep 5
+          done
+          echo "Elasticsearch is ready!"
+
+      - name: Verify Plugin Installation
+        run: |
+          curl -X GET "http://localhost:9200/_cat/plugins?v"
+
+      - name: Create .env file
+        run: |
+           touch .env
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
