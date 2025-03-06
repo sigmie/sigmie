@@ -5,32 +5,21 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Sigmie\Document\Document;
-use Sigmie\SigmieIndex;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Semantic\Embeddings\Noop;
-use Sigmie\Semantic\Embeddings\Openai;
 use Sigmie\Semantic\Embeddings\SigmieAI;
 use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
-use Symfony\Component\Dotenv\Dotenv;
 
 class SemanticTest extends TestCase
 {
-    /**
-     * @before
-     */
-    public function loadEnv()
-    {
-        $dotenv = new Dotenv();
-        $dotenv->usePutenv(true);
-        $dotenv->loadEnv(__DIR__ . '/../.env', overrideExistingVars: true);
-    }
-
     /**
      * @test
      */
     public function nested_semantic_search()
     {
+        $this->skipIfElasticsearchPluginNotInstalled('elastiknn');
+
         Sigmie::registerPlugins([
             'elastiknn'
         ]);
@@ -153,6 +142,8 @@ class SemanticTest extends TestCase
      */
     public function noop_provider()
     {
+        $this->skipIfElasticsearchPluginNotInstalled('elastiknn');
+
         Sigmie::registerPlugins([
             'elastiknn'
         ]);
@@ -212,6 +203,8 @@ class SemanticTest extends TestCase
      */
     public function index_template()
     {
+        $this->skipIfElasticsearchPluginNotInstalled('elastiknn');
+
         Sigmie::registerPlugins([
             'elastiknn'
         ]);
@@ -279,6 +272,8 @@ class SemanticTest extends TestCase
      */
     public function dont_retrieve_embeddings_field_in_hits()
     {
+        $this->skipIfElasticsearchPluginNotInstalled('elastiknn');
+
         Sigmie::registerPlugins([
             'elastiknn'
         ]);
@@ -331,6 +326,8 @@ class SemanticTest extends TestCase
      */
     public function semantic_search_with_filters()
     {
+        $this->skipIfElasticsearchPluginNotInstalled('elastiknn');
+
         Sigmie::registerPlugins([
             'elastiknn'
         ]);
@@ -379,6 +376,8 @@ class SemanticTest extends TestCase
      */
     public function semantic_search_basic()
     {
+        $this->skipIfElasticsearchPluginNotInstalled('elastiknn');
+
         Sigmie::registerPlugins([
             'elastiknn'
         ]);

@@ -84,6 +84,9 @@ class IndexBuilderTest extends TestCase
      */
     public function language_greek_with_skroutz_plugin()
     {
+        $this->skipIfElasticsearchPluginNotInstalled('elasticsearch-skroutz-greekstemmer');
+        $this->skipIfElasticsearchPluginNotInstalled('elasticsearch-analysis-greeklish');
+
         $alias = uniqid();
 
         Sigmie::registerPlugins([
