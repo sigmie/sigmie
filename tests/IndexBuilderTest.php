@@ -91,7 +91,7 @@ class IndexBuilderTest extends TestCase
 
         Sigmie::registerPlugins([
             'elasticsearch-skroutz-greekstemmer',
-            // 'elasticsearch-analysis-greeklish'
+            'elasticsearch-analysis-greeklish'
         ]);
 
         $blueprint = new NewProperties;
@@ -119,17 +119,17 @@ class IndexBuilderTest extends TestCase
 
             $index->assertAnalyzerHasFilter('name_field_analyzer', 'greek_stopwords');
             $index->assertAnalyzerHasFilter('name_field_analyzer', 'skroutz_greek_stemmer');
-            // $index->assertAnalyzerHasFilter('name_field_analyzer', 'skroutz_greeklish');
+            $index->assertAnalyzerHasFilter('name_field_analyzer', 'skroutz_greeklish');
             $index->assertAnalyzerHasFilter('name_field_analyzer', 'greek_lowercase');
 
             $index->assertAnalyzerHasFilter('default', 'greek_stopwords');
             $index->assertAnalyzerHasFilter('default', 'skroutz_greek_stemmer');
-            // $index->assertAnalyzerHasFilter('default', 'skroutz_greeklish');
+            $index->assertAnalyzerHasFilter('default', 'skroutz_greeklish');
             $index->assertAnalyzerHasFilter('default', 'greek_lowercase');
 
             $index->assertFilterEquals('greek_lowercase', ['type' => 'lowercase', 'language' => 'greek']);
             $index->assertFilterEquals('greek_stopwords', ['type' => 'stop', 'stopwords' => '_greek_']);
-            // $index->assertFilterEquals('skroutz_greeklish', ['type' => 'skroutz_greeklish', 'max_expansions' => 20]);
+            $index->assertFilterEquals('skroutz_greeklish', ['type' => 'skroutz_greeklish', 'max_expansions' => 20]);
             $index->assertFilterEquals(
                 'skroutz_greek_stemmer',
                 [
@@ -149,10 +149,13 @@ class IndexBuilderTest extends TestCase
             ->properties($blueprint)
             ->queryString('kalim')
             ->get();
-
-        //Skroutz greeklish fails and shuts down es on 7.17.9
-        //uncommend above assertions
+        
         $this->assertEquals(200, $res->getStatusCode());
+
+        $res = $this->analyzeAPICall($alias, 'καλημέρα', 'name_field_analyzer',);
+
+        $this->assertEquals('καλημ', $res->json()['tokens'][2]['token']);
+        $this->assertEquals('kalim', $res->json()['tokens'][3]['token']);
     }
 
     /**
