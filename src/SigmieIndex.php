@@ -8,8 +8,8 @@ use Sigmie\Document\AliveCollection;
 use Sigmie\Index\NewIndex;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Search\NewSearch;
-use Sigmie\Semantic\Contracts\Provider;
-use Sigmie\Semantic\Embeddings\SigmieAI as SigmieEmbeddings;
+use Sigmie\Semantic\Contracts\AIProvider;
+use Sigmie\Semantic\Providers\SigmieAI as SigmieEmbeddings;
 
 
 abstract class SigmieIndex
@@ -25,7 +25,7 @@ abstract class SigmieIndex
 
     abstract public function properties(): NewProperties;
 
-    public function embeddings(): Provider
+    public function embeddings(): AIProvider
     {
         return new SigmieEmbeddings;
     }

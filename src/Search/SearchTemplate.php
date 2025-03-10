@@ -58,7 +58,7 @@ class SearchTemplate
 
     private function handleQueryParameter(string $tag, string $fallback, string $parsedSource)
     {
-        if (preg_match('/"@'.$tag.'\((.+)\)@end'.$tag.'"/', $parsedSource, $sortMatches)) {
+        if (preg_match('/"@' . $tag . '\((.+)\)@end' . $tag . '"/', $parsedSource, $sortMatches)) {
             $default = stripslashes($sortMatches[1]);
 
             // this in case we want to improve and still render the queries in case
@@ -67,7 +67,7 @@ class SearchTemplate
             $rawDefault = "{{#{$tag}}}{$default}{{/{$tag}}} {{^{$tag}}}{$fallback}{{/{$tag}}}";
 
             $parsedSource = preg_replace(
-                '/"@'.$tag.'\((.+)\)@end'.$tag.'"/',
+                '/"@' . $tag . '\((.+)\)@end' . $tag . '"/',
                 $rawDefault,
                 $parsedSource
             );
@@ -78,16 +78,21 @@ class SearchTemplate
 
     private function handleParameter(string $tag, string $parsedSource): string
     {
-        if (preg_match('/"@'.$tag.'\((.+)\)@end'.$tag.'"/', $parsedSource, $sortMatches)) {
-            $default = stripslashes($sortMatches[1]);
+        while (str_contains($parsedSource, '@' . $tag . '(')) {
 
-            $rawDefault = "{{^{$tag}.isEmpty}}{{#toJson}}{$tag}{{/toJson}}{{/{$tag}.isEmpty}} {{^{$tag}}}{$default}{{/{$tag}}}";
+            if (preg_match('/"@' . $tag . '\((.+?)\)@end' . $tag . '"/s', $parsedSource, $sortMatches)) {
 
-            $parsedSource = preg_replace(
-                '/"@'.$tag.'\((.+)\)@end'.$tag.'"/',
-                $rawDefault,
-                $parsedSource
-            );
+                $default = stripslashes($sortMatches[1]);
+
+                $rawDefault = "{{^{$tag}.isEmpty}}{{#toJson}}{$tag}{{/toJson}}{{/{$tag}.isEmpty}} {{^{$tag}}}{$default}{{/{$tag}}}";
+
+                $parsedSource = preg_replace(
+                    '/"@' . $tag . '\((.+?)\)@end' . $tag . '"/s',
+                    $rawDefault,
+                    $parsedSource
+                );
+            }
+
         }
 
         return $parsedSource;

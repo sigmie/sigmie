@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use Http\Promise\Promise;
+use Sigmie\Base\Http\Responses\Search as ResponsesSearch;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Mappings\Types\Text;
@@ -23,6 +24,7 @@ use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
 use Sigmie\Search\Contracts\EmbeddingsQueries;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
+use Sigmie\Semantic\Reranker;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\EmbeddingsProvider;
 
@@ -37,6 +39,8 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     protected array $embeddings = [];
 
     protected string $index;
+
+    protected bool $rerank = false;
 
     public function queryString(string $query): static
     {
@@ -129,9 +133,9 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             // Vector queries
             $vectorQueries = $this->properties->nestedSemanticFields()
                 ->map(function (Text $field) {
-                    return $this->embeddingsProvider->queries(
+                    return $this->aiProvider->queries(
                         "embeddings.{$field->name()}",
-                        $this->embeddingsProvider->embed($this->queryString),
+                        $this->aiProvider->embed($this->queryString),
                         $field
                     );
                 })
@@ -145,7 +149,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 $functionScore = new FunctionScore(
                     $vectorBool,
                     // source: 'return _score;',
-                    source: "return _score > {$this->embeddingsProvider->threshold()} ? _score : 0;",
+                    source: "return _score > {$this->aiProvider->threshold()} ? _score : 0;",
                     boostMode: 'replace'
                 );
 
@@ -219,7 +223,34 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $search;
     }
 
-    public function get()
+    public function get(): ResponsesSearch
+    {
+        return $this->rerank ? $this->getReranked() : $this->getNotReranked();
+    }
+
+    public function getReranked(): ResponsesSearch
+    {
+        /** @var ResponsesSearch  */
+        $res = $this->make()->get();
+
+        $reranker = new Reranker(
+            $this->queryString,
+            $res->hits(),
+            $this->aiProvider,
+            $this->properties
+        );
+
+        return $reranker->rerank($res);
+    }
+
+    public function rerank(bool $value = true): static
+    {
+        $this->rerank = $value;
+
+        return $this;
+    }
+
+    public function getNotReranked(): ResponsesSearch
     {
         return $this->make()->get();
     }

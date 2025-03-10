@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Semantic\Embeddings;
+namespace Sigmie\Semantic\Providers;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
@@ -13,10 +13,10 @@ use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Plugins\Elastiknn\DenseFloatVector;
 use Sigmie\Query\Queries\NearestNeighbors;
-use Sigmie\Semantic\Contracts\Provider;
+use Sigmie\Semantic\Contracts\AIProvider;
 use Sigmie\Sigmie;
 
-class Noop implements Provider
+class Noop extends AbstractAIProvider
 {
     public function embed(string $text): array
     {

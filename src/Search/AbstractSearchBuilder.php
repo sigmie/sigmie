@@ -62,7 +62,7 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected bool $noResultsOnEmptySearch = false;
 
-    protected bool $semanticSearch= false;
+    protected bool $semanticSearch = false;
 
     protected Boolean $filters;
 
@@ -130,12 +130,14 @@ abstract class AbstractSearchBuilder implements SearchBuilder
         return $this;
     }
 
-    public function semantic(bool $value = true): static
-    {
+    public function semantic(
+        bool $value = true,
+    ): static {
         $this->semanticSearch = $value;
 
         return $this;
     }
+
 
     public function autocomplete(
         bool $enabled = true,

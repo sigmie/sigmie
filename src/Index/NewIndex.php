@@ -23,8 +23,8 @@ use Sigmie\Index\Shared\Shards;
 use Sigmie\Index\Shared\Tokenizer;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
-use Sigmie\Semantic\Contracts\Provider;
-use Sigmie\Semantic\Embeddings\SigmieAI as DefaultEmbeddingsProvider;
+use Sigmie\Semantic\Contracts\AIProvider;
+use Sigmie\Semantic\Providers\SigmieAI as DefaultEmbeddingsProvider;
 use Sigmie\Shared\EmbeddingsProvider;
 
 use function Sigmie\Functions\index_name;
@@ -70,7 +70,7 @@ class NewIndex
 
         $this->properties = new MappingsProperties;
 
-        $this->embeddingsProvider = new DefaultEmbeddingsProvider();
+        $this->aiProvider = new DefaultEmbeddingsProvider();
     }
 
     public function getAlias(): string
@@ -152,7 +152,7 @@ class NewIndex
 
         /** @var IndexMappings $mappings */
         $mappings = $this->createMappings($defaultAnalyzer);
-        $mappings->embeddingsProvider($this->embeddingsProvider);
+        $mappings->aiProvider($this->aiProvider);
 
         $analyzers = $mappings->analyzers();
 

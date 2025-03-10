@@ -105,9 +105,15 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
                 $text = dot($document->_source)->get($name);
 
-                if ($text) {
-                    $embeddings[$name] = $this->embeddingsProvider->embed($text);
+                if (!$text) {
+                    return;
                 }
+
+                if (is_array($text)) {
+                    $text = implode(' ', $text);
+                }
+
+                $embeddings[$name] = $this->aiProvider->embed($text);
             });
 
         $document['embeddings'] = $embeddings;

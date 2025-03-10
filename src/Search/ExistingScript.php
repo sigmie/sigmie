@@ -7,13 +7,14 @@ namespace Sigmie\Search;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Render as RenderAPI;
 use Sigmie\Base\APIs\Script as ScriptAPI;
+use Sigmie\Base\APIs\Search as SearchAPI;
 use Sigmie\Base\APIs\Template as TemplateAPI;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\ElasticsearchException;
 
 class ExistingScript
 {
-    use Index, RenderAPI, ScriptAPI, TemplateAPI;
+    use Index, RenderAPI, ScriptAPI, TemplateAPI, SearchAPI;
 
     public function __construct(
         public readonly string $id,
@@ -29,7 +30,7 @@ class ExistingScript
             'params' => (object) $params,
         ];
 
-        return $this->indexAPICall("{$index}/_search/template", 'POST', $body);
+        return $this->searchTemplateRequest($index, $body);
     }
 
     public function render(array $params = []): ?array

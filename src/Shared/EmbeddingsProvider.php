@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Sigmie\Shared;
 
-use Sigmie\Semantic\Contracts\Provider;
+use Sigmie\Semantic\Contracts\AIProvider;
 
 trait EmbeddingsProvider
 {
-    protected Provider $embeddingsProvider;
+    protected AIProvider $aiProvider;
 
-    public function embeddingsProvider(Provider $provider): static
+    public function aiProvider(AIProvider $provider): static
     {
-        $this->embeddingsProvider = $provider;
+        $this->aiProvider = $provider;
 
         return $this;
     }

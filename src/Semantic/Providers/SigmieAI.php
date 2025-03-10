@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Semantic\Embeddings;
+namespace Sigmie\Semantic\Providers;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
@@ -14,10 +14,10 @@ use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Plugins\Elastiknn\DenseFloatVector;
 use Sigmie\Plugins\Elastiknn\NearestNeighbors as ElastiknnNearestNeighbors;
 use Sigmie\Query\Queries\NearestNeighbors;
-use Sigmie\Semantic\Contracts\Provider;
+use Sigmie\Semantic\Contracts\AIProvider;
 use Sigmie\Sigmie;
 
-class SigmieAI implements Provider
+class SigmieAI extends AbstractAIProvider
 {
     protected JSONClient $http;
 

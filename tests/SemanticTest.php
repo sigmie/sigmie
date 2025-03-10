@@ -6,8 +6,8 @@ namespace Sigmie\Tests;
 
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Semantic\Embeddings\Noop;
-use Sigmie\Semantic\Embeddings\SigmieAI;
+use Sigmie\Semantic\Providers\Noop;
+use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
@@ -18,6 +18,7 @@ class SemanticTest extends TestCase
      */
     public function nested_semantic_search()
     {
+
         $this->skipIfElasticsearchPluginNotInstalled('elastiknn');
 
         Sigmie::registerPlugins([
@@ -97,13 +98,13 @@ class SemanticTest extends TestCase
         $this->sigmie
             ->newIndex($indexName)
             ->properties($blueprint)
-            ->embeddingsProvider($provider)
+            ->aiProvider($provider)
             ->create();
 
         $this->sigmie
             ->collect($indexName, refresh: true)
             ->properties($blueprint)
-            ->embeddingsProvider($provider)
+            ->aiProvider($provider)
             ->merge([
                 new Document([
                     'name' => 'King',
@@ -119,7 +120,7 @@ class SemanticTest extends TestCase
 
         $saved = $this->sigmie
             ->newTemplate($templateName)
-            ->embeddingsProvider($provider)
+            ->aiProvider($provider)
             ->noResultsOnEmptySearch()
             ->properties($blueprint)
             ->semantic()
@@ -158,13 +159,13 @@ class SemanticTest extends TestCase
         $this->sigmie
             ->newIndex($indexName)
             ->properties($blueprint)
-            ->embeddingsProvider($provider)
+            ->aiProvider($provider)
             ->create();
 
         $this->sigmie
             ->collect($indexName, refresh: true)
             ->properties($blueprint)
-            ->embeddingsProvider($provider)
+            ->aiProvider($provider)
             ->merge([
                 new Document([
                     'name' => 'King',
@@ -180,7 +181,7 @@ class SemanticTest extends TestCase
 
         $saved = $this->sigmie
             ->newTemplate($templateName)
-            ->embeddingsProvider($provider)
+            ->aiProvider($provider)
             ->noResultsOnEmptySearch()
             ->properties($blueprint)
             ->semantic()
@@ -429,5 +430,63 @@ class SemanticTest extends TestCase
         $hits = $response->json('hits.hits');
 
         $this->assertEquals('King', $hits[0]['_source']['name'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function semantic_search_array_fields()
+    {
+        $this->skipIfElasticsearchPluginNotInstalled('elastiknn');
+
+        Sigmie::registerPlugins([
+            'elastiknn'
+        ]);
+
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->title('name')->semantic();
+
+        $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'name' => [
+                        'King',
+                        'King 2',
+                    ],
+                ]),
+                new Document([
+                    'name' => [
+                        'Queen',
+                        'Ant',
+                    ],
+                ]),
+                new Document([
+                    'name' => [
+                        'Food',
+                        'Sandwich',
+                    ],
+                ]),
+            ]);
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->semantic()
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->queryString('woman')
+            ->get();
+
+        $hits = $response->json('hits.hits');
+
+        $this->assertEquals('Queen', $hits[0]['_source']['name'][0] ?? null);
     }
 }

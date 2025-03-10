@@ -22,7 +22,7 @@ use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
 use Sigmie\Search\Contracts\EmbeddingsQueries;
 use Sigmie\Search\Contracts\SearchTemplateBuilder as SearchTemplateBuilderInterface;
-use Sigmie\Semantic\Embeddings\SigmieAI;
+use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\EmbeddingsProvider;
 
@@ -123,7 +123,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             // Vector queries
             $vectorQueries = $this->properties->nestedSemanticFields()
                 ->map(function (Text $field) use ($defaultEmbeddings) {
-                    return $this->embeddingsProvider->queries(
+                    return $this->aiProvider->queries(
                         "embeddings.{$field->name()}",
                         "@embeddings({$defaultEmbeddings})@endembeddings",
                         $field
@@ -138,7 +138,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
                 $functionScore = new FunctionScore(
                     $vectorBool,
-                    source: "return _score > {$this->embeddingsProvider->threshold()} ? _score : 0;",
+                    source: "return _score > {$this->aiProvider->threshold()} ? _score : 0;",
                     boostMode: 'replace'
                 );
 

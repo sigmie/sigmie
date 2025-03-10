@@ -14,10 +14,10 @@ use Sigmie\Mappings\Contracts\Analyze;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
-use Sigmie\Semantic\Embeddings\SigmieAI;
+use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\Contracts\FromRaw;
-use Sigmie\Semantic\Embeddings\SigmieAI as SigmieEmbeddings;
+use Sigmie\Semantic\Providers\SigmieAI as SigmieEmbeddings;
 
 use function Sigmie\Functions\name_configs;
 

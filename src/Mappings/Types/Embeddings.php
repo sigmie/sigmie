@@ -6,7 +6,7 @@ namespace Sigmie\Mappings\Types;
 
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
-use Sigmie\Semantic\Contracts\Provider;
+use Sigmie\Semantic\Contracts\AIProvider;
 
 class Embeddings extends Object_
 {

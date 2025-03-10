@@ -22,7 +22,7 @@ use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
-use Sigmie\Semantic\Embeddings\SigmieAI as SigmieEmbeddings;
+use Sigmie\Semantic\Providers\SigmieAI as SigmieEmbeddings;
 
 class Properties extends Type implements ArrayAccess
 {

@@ -25,4 +25,11 @@ trait Search
 
         return new SearchRequest('POST', $uri, $query);
     }
+
+    protected function searchTemplateRequest(string $index, array $query): SearchResponse
+    {
+        $uri = new Uri("/{$index}/_search/template");
+
+        return $this->elasticsearchCall(new SearchRequest('POST', $uri, $query));
+    }
 }

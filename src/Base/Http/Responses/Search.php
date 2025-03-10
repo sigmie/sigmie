@@ -25,11 +25,18 @@ class Search extends ElasticsearchResponse
 
     public function autocompletion(): array
     {
-        return array_map(fn ($value) => $value['text'], $this->json('suggest.autocompletion.0.options') ?? []);
+        return array_map(fn($value) => $value['text'], $this->json('suggest.autocompletion.0.options') ?? []);
     }
 
     public function hits(): array
     {
         return $this->json('hits.hits');
+    }
+
+    public function replaceHits(array $hits): array
+    {
+        $this->decoded->set('hits.hits', $hits);
+
+        return $this->hits();
     }
 }

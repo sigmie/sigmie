@@ -30,7 +30,7 @@ use Sigmie\Mappings\Types\Sentence;
 use Sigmie\Mappings\Types\Tags;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
-use Sigmie\Semantic\Contracts\Provider;
+use Sigmie\Semantic\Contracts\AIProvider;
 use Sigmie\Shared\Collection;
 
 class NewProperties
@@ -83,7 +83,7 @@ class NewProperties
         return $field;
     }
 
-    public function embeddings(Provider $provider, string $name)
+    public function embeddings(AIProvider $provider, string $name)
     {
         $this->fields->add($provider->type($name));
     }

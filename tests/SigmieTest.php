@@ -7,7 +7,7 @@ namespace Sigmie\Tests;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Plugins\Elastiknn\NearestNeighbors as ElastiknnNearestNeighbors;
 use Sigmie\Query\Queries\NearestNeighbors;
-use Sigmie\Semantic\Embeddings\SigmieAI;
+use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
