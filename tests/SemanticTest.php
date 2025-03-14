@@ -16,6 +16,81 @@ class SemanticTest extends TestCase
     /**
      * @test
      */
+    public function remove_embeddings_when_using_take()
+    {
+        // 
+    }
+
+    /**
+     * @test
+     */
+    public function empty_query_string()
+    {
+        // Emtpy query throws errors on v8 because empty array embeddings
+        // is different with field vector size
+
+        // $this->skipIfElasticsearchPluginNotInstalled('elastiknn');
+
+        // Sigmie::registerPlugins([
+        //     'elastiknn'
+        // ]);
+
+        // $indexName = uniqid();
+
+        // $blueprint = new NewProperties();
+        // $blueprint->title('title')->semantic();
+        // $blueprint->shortText('short_description')->semantic();
+
+        // $this->sigmie
+        //     ->newIndex($indexName)
+        //     ->properties($blueprint)
+        //     ->create();
+
+        // $documents = $this->sigmie
+        //     ->collect($indexName, refresh: true)
+        //     ->properties($blueprint)
+        //     ->merge([
+        //         new Document([
+        //             'title' => 'Top 10 Travel Destinations for 2023',
+        //             'short_description' => 'Exploring how artificial intelligence is revolutionizing medical diagnostics and patient care',
+        //         ]),
+        //         new Document([
+        //             'title' => 'The Future of AI in Healthcare',
+        //             'short_description' => 'Discover the most breathtaking and trending places to visit this year',
+        //         ]),
+        //     ])
+        //     ->toArray();
+
+        // $response = $this->sigmie
+        //     ->newSearch($indexName)
+        //     ->semantic()
+        //     ->noResultsOnEmptySearch()
+        //     ->properties($blueprint)
+        //     ->fields(['short_description'])
+        //     ->queryString('2023')
+        //     ->get();
+
+        // $hits = $response->json('hits.hits');
+
+        // $this->assertEquals('The Future of AI in Healthcare', $hits[0]['_source']['title'] ?? null);
+
+        // $response = $this->sigmie
+        //     ->newSearch($indexName)
+        //     ->semantic()
+        //     ->noResultsOnEmptySearch()
+        //     ->properties($blueprint)
+        //     ->fields(['title'])
+        //     ->queryString('2023')
+        //     ->get();
+
+        // $hits = $response->json('hits.hits');
+
+        // $this->assertEquals('Top 10 Travel Destinations for 2023', $hits[0]['_source']['title'] ?? null);
+    }
+
+    /**
+     * @test
+     */
     public function dimension_per_field()
     {
         $this->skipIfElasticsearchPluginNotInstalled('elastiknn');

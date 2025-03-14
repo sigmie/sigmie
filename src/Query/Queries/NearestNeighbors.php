@@ -18,9 +18,7 @@ class NearestNeighbors extends Query
     public function toRaw(): array
     {
         return match (Sigmie::$version) {
-            Version::v7 => [
-                // TODO add function cosine
-            ],
+            Version::v7 => throw new \Exception('NearestNeighbors is not supported in Elasticsearch 7'),
             Version::v8 => [
                 "knn" => [
                     "field" => $this->field,

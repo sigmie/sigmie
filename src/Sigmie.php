@@ -45,7 +45,7 @@ class Sigmie
 
     public function version(Version $version)
     {
-        $this->version = $version;
+        self::$version = $version;
 
         return $this;
     }

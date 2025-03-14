@@ -21,6 +21,7 @@ use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
+use Sigmie\Plugins\Elastiknn\DenseFloatVector;
 use Sigmie\Shared\Collection;
 use Sigmie\Semantic\Providers\SigmieAI as SigmieEmbeddings;
 
@@ -162,7 +163,8 @@ class Properties extends Type implements ArrayAccess
                 $value['type'] === 'geo_point' => new GeoPoint($fieldName),
                 $value['type'] === 'date' => new Date($fieldName),
                 $value['type'] === 'object' => new Object_($fieldName),
-                $value['type'] === 'elastiknn_dense_float_vector' => new DenseVector($fieldName, $value['elastiknn']['dims']),
+                $value['type'] === 'elastiknn_dense_float_vector' => new DenseFloatVector($fieldName, $value['elastiknn']['dims']),
+                $value['type'] === 'dense_vector' => new DenseVector($fieldName, $value['dims']),
                 default => throw new Exception('Field ' . $value['type'] . ' couldn\'t be mapped')
             };
 
