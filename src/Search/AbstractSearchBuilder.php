@@ -64,6 +64,8 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected bool $semanticSearch = false;
 
+    protected float $semanticThreshold = 1.3;
+
     protected Boolean $filters;
 
     protected Aggs $facets;
@@ -87,7 +89,7 @@ abstract class AbstractSearchBuilder implements SearchBuilder
         $this->properties = $props instanceof NewProperties ? $props->get() : $props;
 
         if (count($this->fields) === 0) {
-            $this->fields = array_keys($this->properties->toArray());
+            $this->fields = $this->properties->fieldNames();
         }
 
         return $this;
@@ -132,8 +134,10 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     public function semantic(
         bool $value = true,
+        float $threshold = 1.3,
     ): static {
         $this->semanticSearch = $value;
+        $this->semanticThreshold = $threshold;
 
         return $this;
     }

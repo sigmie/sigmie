@@ -62,7 +62,6 @@ class Reranker
             return $b['_score'] <=> $a['_score'];
         });
 
-
         $res->replaceHits($rerankedHits);
 
         return $res;

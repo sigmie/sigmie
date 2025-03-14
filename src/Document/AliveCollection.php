@@ -14,9 +14,11 @@ use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Shared\Mappings;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\HTML;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Shared\EmbeddingsProvider;
 use Traversable;
+use Sigmie\Shared\Collection;
 
 class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 {
@@ -99,22 +101,56 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     private function documentEmbeddings(Document $document): Document
     {
         $embeddings = [];
+        $fields = $this->properties->nestedSemanticFields();
 
-        $this->properties->nestedSemanticFields()
-            ->each(function (Text $field, $name) use (&$embeddings, $document) {
+        // If no semantic fields, return document as is
+        if ($fields->isEmpty()) {
+            return $document;
+        }
 
-                $text = dot($document->_source)->get($name);
+        // Prepare batch embedding request items
+        $embeddingItems = [];
+        $fieldMap = [];
 
-                if (!$text) {
-                    return;
-                }
+        $fields->each(function (Text $field, $name) use (&$embeddingItems, &$fieldMap, $document) {
+            $text = dot($document->_source)->get($name);
 
-                if (is_array($text)) {
-                    $text = implode(' ', $text);
-                }
+            if (!$text) {
+                return;
+            }
 
-                $embeddings[$name] = $this->aiProvider->embed($text);
-            });
+            if (is_array($text)) {
+                $text = implode(' ', $text);
+            }
+
+            if ($field instanceof HTML) {
+                $text = strip_tags($text);
+            }
+
+            $itemIndex = count($embeddingItems);
+            $embeddingItems[] = [
+                'text' => $text,
+                'type' => $field,
+            ];
+
+            $fieldMap[$itemIndex] = $name;
+        });
+
+        // If no items to embed, return document as is
+        if (empty($embeddingItems)) {
+            return $document;
+        }
+
+        // Get embeddings in a single batch request
+        $batchResults = $this->aiProvider->batchEmbed($embeddingItems);
+
+        // Map results back to their fields
+        foreach ($batchResults as $index => $result) {
+            $fieldName = $fieldMap[$index] ?? null;
+            if ($fieldName && isset($result['embeddings'])) {
+                $embeddings[$fieldName] = $result['embeddings'];
+            }
+        }
 
         $document['embeddings'] = $embeddings;
 

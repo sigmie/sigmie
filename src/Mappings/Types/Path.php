@@ -18,6 +18,12 @@ class Path extends Text implements Analyze
             ->lowercase();
     }
 
+    public function semantic(bool $semantic = true)
+    {
+        // Paths are not semantic
+        $this->semantic = false;
+    }
+
     public function configure(): void
     {
         $this->unstructuredText()->indexPrefixes()->keyword();

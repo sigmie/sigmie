@@ -37,6 +37,8 @@ class Text extends Type implements FromRaw
 
     protected bool $semantic = false;
 
+    protected int $dims = 256;
+
     public function __construct(
         string $name,
         protected ?string $raw = null,
@@ -59,6 +61,22 @@ class Text extends Type implements FromRaw
     public function semantic(bool $semantic = true)
     {
         $this->semantic = $semantic;
+
+        return $this;
+    }
+
+    public function complexityDepth(int $level): self
+    {
+        $this->dims = match ($level) {
+            0 => 128, // Simple
+            1 => 256, // Basic
+            2 => 384, // Standard
+            3 => 512, // Advanced
+            4 => 768, // Expert
+            5 => 1024, // Deep knowledge
+            6 => 1280, // Deep expert
+            default => 384,
+        };
 
         return $this;
     }
@@ -350,5 +368,25 @@ class Text extends Type implements FromRaw
         }
 
         return [true, ''];
+    }
+
+    public function embeddingsName(): string
+    {
+        return "embeddings.{$this->name()}";
+    }
+
+    public function embeddingsType(): string
+    {
+        return 'text';
+    }
+
+    public function dims(): int
+    {
+        return $this->dims;
+    }
+
+    public function originalName(): string
+    {
+        return $this->name();
     }
 }

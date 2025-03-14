@@ -27,6 +27,7 @@ use Sigmie\Mappings\Types\Path;
 use Sigmie\Mappings\Types\Price;
 use Sigmie\Mappings\Types\SearchableNumber;
 use Sigmie\Mappings\Types\Sentence;
+use Sigmie\Mappings\Types\ShortText;
 use Sigmie\Mappings\Types\Tags;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
@@ -172,6 +173,15 @@ class NewProperties
     public function longText(string $name): LongText
     {
         $field = new LongText($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function shortText(string $name): ShortText
+    {
+        $field = new ShortText($name);
 
         $this->fields->add($field);
 

@@ -4,22 +4,19 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use GuzzleHttp\Psr7\Response;
 use Sigmie\Document\Document;
-use Sigmie\Http\JSONClient;
-use Sigmie\Http\JSONRequest;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Semantic\Providers\VoyageAI;
+use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Semantic\Reranker;
 use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
-class VoyageAITest extends TestCase
+class RerankTest extends TestCase
 {
     /**
      * @test
      */
-    public function voyage_ai_rerank()
+    public function sigmie_ai_rerank()
     {
         $this->skipIfElasticsearchPluginNotInstalled('elastiknn');
 
@@ -27,12 +24,7 @@ class VoyageAITest extends TestCase
             'elastiknn'
         ]);
 
-        if (getenv('VOYAGE_API_KEY') === false) {
-            $this->markTestSkipped('VOYAGE_API_KEY is not set');
-        }
-
         $indexName = uniqid();
-        $provider = new VoyageAI(getenv('VOYAGE_API_KEY'));
 
         $blueprint = new NewProperties();
         $blueprint->longText('name')->semantic();
@@ -46,13 +38,11 @@ class VoyageAITest extends TestCase
         $this->sigmie
             ->newIndex($indexName)
             ->properties($blueprint)
-            ->aiProvider($provider)
             ->create();
 
         $this->sigmie
             ->collect($indexName, refresh: true)
             ->properties($blueprint)
-            ->aiProvider($provider)
             ->merge([
 
                 new Document([
@@ -96,7 +86,6 @@ class VoyageAITest extends TestCase
         $response = $this->sigmie
             ->newSearch($indexName)
             ->properties($blueprint)
-            ->aiProvider($provider)
             // ->semantic()
             ->rerank()
             ->queryString('Best programming language for AI and machine learning')
@@ -110,7 +99,7 @@ class VoyageAITest extends TestCase
     /**
      * @test
      */
-    public function voyage_ai_rerank_with_template()
+    public function sigmie_ai_rerank_with_template()
     {
         $this->skipIfElasticsearchPluginNotInstalled('elastiknn');
 
@@ -206,12 +195,10 @@ class VoyageAITest extends TestCase
             'query_string' => $queryString,
         ]);
 
-        $provider = new VoyageAI(getenv('VOYAGE_API_KEY'));
-
         $reranker = new Reranker(
             $queryString,
             $res->json('hits.hits'),
-            $provider,
+            new SigmieAI(),
             $blueprint->get()
         );
 
@@ -220,5 +207,73 @@ class VoyageAITest extends TestCase
         $hits = $reranked->json('hits.hits');
 
         $this->assertEquals('Python for AI and Machine Learning – A Complete Guide', $hits[0]['_source']['name'][0] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function template_with_different_dimensions()
+    {
+        $this->skipIfElasticsearchPluginNotInstalled('elastiknn');
+
+        Sigmie::registerPlugins([
+            'elastiknn'
+        ]);
+
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->title('title')->semantic();
+        $blueprint->shortText('short_description')->semantic();
+
+        $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $documents = $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'title' => 'Top 10 Travel Destinations for 2023',
+                    'short_description' => 'The art of bread baking',
+                ]),
+                new Document([
+                    'title' => 'The Future of AI in Healthcare',
+                    'short_description' => 'American history',
+                ]),
+            ])
+            ->toArray();
+
+        $templateName = uniqid();
+
+        $saved = $this->sigmie
+            ->newTemplate($templateName)
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->semantic(threshold: 0)
+            ->get()
+            ->save();
+
+        $template = $this->sigmie->template($templateName);
+
+        $query = 'Artificial intelligence';
+
+        $res = $template->run($indexName, [
+            'query_string' => $query,
+            'embeddings_title' => ((new SigmieAI)->embed($query, $blueprint->title('title'))),
+        ]);
+
+        $this->assertEquals('The Future of AI in Healthcare', $res->json('hits.hits')[0]['_source']['title'] ?? null);
+
+        $query = 'techniques for sourdough';
+
+        $res = $template->run($indexName, [
+            'query_string' => $query,
+            'embeddings_short_description' => ((new SigmieAI)->embed($query, $blueprint->shortText('short_description'))),
+        ]);
+
+        $this->assertEquals('The art of bread baking', $res->json('hits.hits')[0]['_source']['short_description'] ?? null);
     }
 }

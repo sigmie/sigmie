@@ -11,6 +11,7 @@ use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\DenseVector;
+use Sigmie\Mappings\Types\Text;
 use Sigmie\Plugins\Elastiknn\DenseFloatVector;
 use Sigmie\Query\Queries\NearestNeighbors;
 use Sigmie\Semantic\Contracts\AIProvider;
@@ -18,30 +19,24 @@ use Sigmie\Sigmie;
 
 class Noop extends AbstractAIProvider
 {
-    public function embed(string $text): array
+    public function embed(string $text, Text $originalType): array
     {
         return Sigmie::isPluginRegistered('elastiknn') ?
             [] :
             [-1];
     }
 
-    public function type(string $name): Type
+    public function type(Text $originalType): Type
     {
         return Sigmie::isPluginRegistered('elastiknn') ?
-            new DenseFloatVector($name, dims: 0) :
-            new DenseVector($name, dims: 1);
+            new DenseFloatVector($originalType->originalName(), dims: 0) :
+            new DenseVector($originalType->originalName(), dims: 1);
     }
 
     public function queries(
-        string $name,
         array|string $text,
-        Type $type
+        Text $type
     ): array {
         return [];
-    }
-
-    public function threshold(): float
-    {
-        return 0.0;
     }
 }

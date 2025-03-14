@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace Sigmie\Semantic\Providers;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\DenseVector;
+use Sigmie\Mappings\Types\Text;
 use Sigmie\Plugins\Elastiknn\DenseFloatVector;
 use Sigmie\Plugins\Elastiknn\NearestNeighbors as ElastiknnNearestNeighbors;
 use Sigmie\Query\Queries\NearestNeighbors;
-use Sigmie\Semantic\Contracts\AIProvider;
 use Sigmie\Sigmie;
 
 class SigmieAI extends AbstractAIProvider
@@ -30,47 +28,101 @@ class SigmieAI extends AbstractAIProvider
         ]);
     }
 
-    public function embed(string $text): array
+    public function rerank(array $documents, string $queryString): array
+    {
+        $payload = [
+            'documents' => $documents,
+            'query' => $queryString,
+        ];
+
+        $response = $this->http->request(
+            new JSONRequest(
+                'POST',
+                new Uri('/rerank'),
+                $payload
+            )
+        );
+
+        return $response->json('reranked_scores');
+    }
+
+    public function batchEmbed(array $textTypes): array
+    {
+        if (count($textTypes) === 0) {
+            return [];
+        }
+
+        $payload = [];
+        $textTypes = array_values($textTypes);
+
+        foreach ($textTypes as $textType) {
+            $payload[] = [
+                'text' => $textType['text'],
+                'dims' => (string) $textType['type']->dims()
+            ];
+        }
+
+        $response = $this->http->request(new JSONRequest(
+            'POST',
+            new Uri('/embeddings'),
+            $payload
+        ));
+
+        $embeddings = [];
+
+        foreach ($response->json() as $index => $result) {
+            $embeddings[] = [
+                'embeddings' => dot($result)->get('embeddings'),
+            ];
+        }
+
+        return $embeddings;
+    }
+
+    public function embed(string $text, Text $originalType): array
     {
         $response = $this->http->request(new JSONRequest(
             'POST',
             new Uri('/embeddings'),
             [
-                'text' => $text
+                [
+                    'text' => $text,
+                    'dims' => (string) $originalType->dims()
+                ]
             ]
         ));
 
-        return $response->json();
+        return $response->json('0.embeddings');
     }
 
-    public function type(string $name): Type
+    public function type(Text $originalType): Type
     {
         return Sigmie::isPluginRegistered('elastiknn') ?
-            new DenseFloatVector($name, dims: 384) :
-            new DenseVector($name, dims: 384);
+            new DenseFloatVector(
+                name: $originalType->originalName(),
+                dims: $originalType->dims()
+            ) :
+            new DenseVector(
+                name: $originalType->originalName(),
+                dims: $originalType->dims()
+            );
     }
 
     public function queries(
-        string $name,
         array|string $text,
-        Type $type
+        Text $type
     ): array {
 
         return Sigmie::isPluginRegistered('elastiknn') ? [
             new ElastiknnNearestNeighbors(
-                $name,
+                $type->embeddingsName(),
                 $text
             )
         ] : [
             new NearestNeighbors(
-                $name,
+                $type->embeddingsName(),
                 $text
             )
         ];
-    }
-
-    public function threshold(): float
-    {
-        return 1.3;
     }
 }

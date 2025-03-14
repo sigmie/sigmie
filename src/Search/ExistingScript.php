@@ -27,7 +27,9 @@ class ExistingScript
     {
         $body = [
             'id' => $this->id,
-            'params' => (object) $params,
+            'params' => (object) [
+                ...$params,
+            ],
         ];
 
         return $this->searchTemplateRequest($index, $body);

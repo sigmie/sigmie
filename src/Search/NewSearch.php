@@ -131,15 +131,33 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $shouldClauses = new Collection();
 
             // Vector queries
-            $vectorQueries = $this->properties->nestedSemanticFields()
-                ->map(function (Text $field) {
+            $embeddings = $this->aiProvider
+                ->batchEmbed(
+                    $this->properties->nestedSemanticFields()
+                        ->filter(fn(Text $field) => $field->isSemantic())
+                        // Only fields that are in the fields array
+                        ->filter(fn(Text $field) => $fields->indexOf($field->name()) !== false)
+                        ->map(fn(Text $field) => [
+                            'text' => $this->queryString,
+                            'type' => $field,
+                        ])->toArray()
+                );
+
+            $semanticFields = array_values($this->properties->nestedSemanticFields()
+                ->filter(fn(Text $field) => $field->isSemantic())
+                // Only fields that are in the fields array
+                ->filter(fn(Text $field) => $fields->indexOf($field->name()) !== false)
+                ->toArray());
+
+            $vectorQueries = (new Collection($embeddings))
+                ->map(function (array $embedding, int $index) use ($semanticFields) {
                     return $this->aiProvider->queries(
-                        "embeddings.{$field->name()}",
-                        $this->aiProvider->embed($this->queryString),
-                        $field
+                        $embedding['embeddings'],
+                        $semanticFields[$index]
                     );
                 })
                 ->flatten(1);
+
 
             if ($this->semanticSearch) {
                 $vectorBool = new Boolean;
@@ -149,7 +167,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 $functionScore = new FunctionScore(
                     $vectorBool,
                     // source: 'return _score;',
-                    source: "return _score > {$this->aiProvider->threshold()} ? _score : 0;",
+                    source: "return _score > {$this->semanticThreshold} ? _score : 0;",
                     boostMode: 'replace'
                 );
 

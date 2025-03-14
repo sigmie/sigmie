@@ -67,11 +67,8 @@ jobs:
           }'
           declare -a plugins
           plugins+=("https://github.com/alexklibisz/elastiknn/releases/download/${{ matrix.elasticsearch_version }}.0/elastiknn-${{ matrix.elasticsearch_version }}.0.zip")
-
-          if [[ "${{ matrix.elasticsearch_version }}" == "7.17.9" ]]; then
-            plugins+=("https://github.com/sigmie/elasticsearch-skroutz-greekstemmer/releases/download/7.17.9.0/elasticsearch-skroutz-greekstemmer-7.17.9.0.zip")
-            plugins+=("https://github.com/sigmie/elasticsearch-analysis-greeklish/releases/download/7.17.9.0/elasticsearch-analysis-greeklish-7.17.9.0.zip")
-          fi
+          plugins+=("https://github.com/sigmie/elasticsearch-skroutz-greekstemmer/releases/download/${{ matrix.elasticsearch_version }}.0/elasticsearch-skroutz-greekstemmer-${{ matrix.elasticsearch_version }}.0.zip")
+          plugins+=("https://github.com/sigmie/elasticsearch-analysis-greeklish/releases/download/${{ matrix.elasticsearch_version }}.0/elasticsearch-analysis-greeklish-${{ matrix.elasticsearch_version }}.0.zip")
 
           for plugin in "${plugins[@]}"; do
             docker exec $(docker ps -q --filter ancestor=docker.elastic.co/elasticsearch/elasticsearch:${{ matrix.elasticsearch_version}}) elasticsearch-plugin install --batch $plugin

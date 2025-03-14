@@ -22,7 +22,7 @@ class SigmieTest extends TestCase
             'elastiknn'
         ]);
 
-        $queries = (new SigmieAI)->queries('test', 'test query string', new Text('test'));
+        $queries = (new SigmieAI)->queries('test query string', new Text('test'));
 
         $this->assertInstanceOf(ElastiknnNearestNeighbors::class, $queries[0]);
     }
@@ -36,7 +36,7 @@ class SigmieTest extends TestCase
             // 'elastiknn'
         ]);
 
-        $queries = (new SigmieAI)->queries('test', 'test query string', new Text('test'));
+        $queries = (new SigmieAI)->queries('test query string', new Text('test'));
 
         $this->assertInstanceOf(NearestNeighbors::class, $queries[0]);
     }

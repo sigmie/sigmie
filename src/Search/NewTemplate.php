@@ -51,7 +51,8 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
     }
 
     public function facets(string $facets): static
-    { $parser = new FacetParser($this->properties);
+    {
+        $parser = new FacetParser($this->properties);
 
         $this->facets = $parser->parse($facets);
 
@@ -87,13 +88,13 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
         $search = new Search($boolean);
         $highlight = new Collection($this->highlight);
 
-        $highlight->each(fn (string $field) => $search->highlight($field, $this->highlightPrefix, $this->highlightSuffix));
+        $highlight->each(fn(string $field) => $search->highlight($field, $this->highlightPrefix, $this->highlightSuffix));
 
         $search->fields($this->retrieve ?? $this->properties->fieldNames());
 
         $defaultFilters = json_encode($this->filters->toRaw());
 
-        $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('filter', "@filters($defaultFilters)@endfilters"));
+        $boolean->must()->bool(fn(Boolean $boolean) => $boolean->addRaw('filter', "@filters($defaultFilters)@endfilters"));
 
         $defaultSorts = json_encode($this->sort);
 
@@ -111,7 +112,9 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
         $search->minScore("@minscore({$minScore})@endminscore");
 
-        $boolean->must()->bool(function (Boolean $boolean) {
+        $embeddingsTags = [];
+
+        $boolean->must()->bool(function (Boolean $boolean) use (&$embeddingsTags) {
             $queryBoolean = new Boolean;
 
             $fields = new Collection($this->fields);
@@ -122,10 +125,13 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
             // Vector queries
             $vectorQueries = $this->properties->nestedSemanticFields()
-                ->map(function (Text $field) use ($defaultEmbeddings) {
+                ->map(function (Text $field) use ($defaultEmbeddings, &$embeddingsTags) {
+
+                    $tag = 'embeddings_' . str_replace('.', '', $field->name());
+                    $embeddingsTags[] = $tag;
+
                     return $this->aiProvider->queries(
-                        "embeddings.{$field->name()}",
-                        "@embeddings({$defaultEmbeddings})@endembeddings",
+                        "@{$tag}({$defaultEmbeddings})@end{$tag}",
                         $field
                     );
                 })
@@ -138,7 +144,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
                 $functionScore = new FunctionScore(
                     $vectorBool,
-                    source: "return _score > {$this->aiProvider->threshold()} ? _score : 0;",
+                    source: "return _score > {$this->semanticThreshold} ? _score : 0;",
                     boostMode: 'replace'
                 );
 
@@ -153,8 +159,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
                 $fuzziness = ! in_array($field->name(), $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
-                $queries = match(true)
-                {
+                $queries = match (true) {
                     $field->hasQueriesCallback => $field->queriesFromCallback('{{query_string}}'),
                     default => $field->queries('{{query_string}}')
                 };
@@ -178,7 +183,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             if ($shouldClauses->isEmpty()) {
                 $queryBoolean->should()->query(new MatchNone);
             } else {
-                $shouldClauses->each(fn (QueryClause $queryClase) => $queryBoolean->should()->query($queryClase));
+                $shouldClauses->each(fn(QueryClause $queryClase) => $queryBoolean->should()->query($queryClase));
             }
 
             $query = json_encode($queryBoolean->toRaw()['bool']['should'] ?? (new MatchAll)->toRaw());
@@ -202,6 +207,12 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
         $search->trackTotalHits();
 
-        return new SearchTemplate($this->elasticsearchConnection, $search->toRaw(), $this->id, $this->noResultsOnEmptySearch);
+        return new SearchTemplate(
+            $this->elasticsearchConnection,
+            $search->toRaw(),
+            $this->id,
+            $this->noResultsOnEmptySearch,
+            $embeddingsTags
+        );
     }
 }

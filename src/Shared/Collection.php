@@ -191,7 +191,7 @@ class Collection implements ArrayAccess, Countable
         return isset($this->elements[$key]) || array_key_exists($key, $this->elements);
     }
 
-    public function indexOf($element): int|string
+    public function indexOf($element): int|string|bool
     {
         return array_search($element, $this->elements, true);
     }
@@ -242,7 +242,7 @@ class Collection implements ArrayAccess, Countable
 
     public function map(Closure $func): static
     {
-        return new static(array_map($func, $this->elements));
+        return new static(array_map($func, $this->elements, array_keys($this->elements)));
     }
 
     public function filter(Closure $p): static

@@ -17,7 +17,8 @@ class SearchTemplate
         ElasticsearchConnection $connection,
         protected array $raw,
         protected string $id,
-        protected bool $matchNoneOnEmptyQueryString = false
+        protected bool $matchNoneOnEmptyQueryString = false,
+        protected array $embeddingsTags = []
     ) {
         $this->elasticsearchConnection = $connection;
     }
@@ -50,8 +51,11 @@ class SearchTemplate
         $parsedSource = $this->handleParameter('filters', $parsedSource);
         $parsedSource = $this->handleParameter('sort', $parsedSource);
         $parsedSource = $this->handleParameter('facets', $parsedSource);
-        $parsedSource = $this->handleParameter('embeddings', $parsedSource);
         $parsedSource = $this->handleParameter('minscore', $parsedSource);
+
+        foreach ($this->embeddingsTags as $tag) {
+            $parsedSource = $this->handleParameter($tag, $parsedSource);
+        }
 
         return $parsedSource;
     }
