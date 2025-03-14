@@ -54,12 +54,13 @@ class Reranker
         $rerankedHits = [];
 
         foreach ($res->hits() as $index => $hit) {
-            $hit['_score'] = $rerankedScores[$index];
+            // Preserve the original score and add a new rerank score
+            $hit['_rerank_score'] = $rerankedScores[$index];
             $rerankedHits[] = $hit;
         }
 
         usort($rerankedHits, function ($a, $b) {
-            return $b['_score'] <=> $a['_score'];
+            return $b['_rerank_score'] <=> $a['_rerank_score'];
         });
 
         $res->replaceHits($rerankedHits);
