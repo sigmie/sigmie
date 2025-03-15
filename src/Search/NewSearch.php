@@ -143,23 +143,24 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                         ])->toArray()
                 );
 
-            $semanticFields = array_values($this->properties->nestedSemanticFields()
-                ->filter(fn(Text $field) => $field->isSemantic())
-                // Only fields that are in the fields array
-                ->filter(fn(Text $field) => $fields->indexOf($field->name()) !== false)
-                ->toArray());
-
-            $vectorQueries = (new Collection($embeddings))
-                ->map(function (array $embedding, int $index) use ($semanticFields) {
-                    return $this->aiProvider->queries(
-                        $embedding['embeddings'],
-                        $semanticFields[$index]
-                    );
-                })
-                ->flatten(1);
-
 
             if ($this->semanticSearch && trim($this->queryString) !== '') {
+
+                $semanticFields = array_values($this->properties->nestedSemanticFields()
+                    ->filter(fn(Text $field) => $field->isSemantic())
+                    // Only fields that are in the fields array
+                    ->filter(fn(Text $field) => $fields->indexOf($field->name()) !== false)
+                    ->toArray());
+
+                $vectorQueries = (new Collection($embeddings))
+                    ->map(function (array $embedding, int $index) use ($semanticFields) {
+                        return $this->aiProvider->queries(
+                            $embedding['embeddings'] ?? '',
+                            $semanticFields[$index]
+                        );
+                    })
+                    ->flatten(1);
+
 
                 $vectorBool = new Boolean;
                 $vectorQueries
