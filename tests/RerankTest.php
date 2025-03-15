@@ -16,6 +16,15 @@ class RerankTest extends TestCase
     /**
      * @test
      */
+    public function rerank_time_ms()
+    {
+        // TODO add rerank time
+        // test empty query string
+    }
+
+    /**
+     * @test
+     */
     public function sigmie_ai_rerank()
     {
         $this->skipIfElasticsearchPluginNotInstalled('elastiknn');

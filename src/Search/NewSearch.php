@@ -159,7 +159,8 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 ->flatten(1);
 
 
-            if ($this->semanticSearch) {
+            if ($this->semanticSearch && trim($this->queryString) !== '') {
+
                 $vectorBool = new Boolean;
                 $vectorQueries
                     ->each(fn(Query $query) => $vectorBool->should()->query($query));
