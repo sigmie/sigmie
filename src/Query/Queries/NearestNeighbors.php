@@ -24,11 +24,11 @@ class NearestNeighbors extends Query
                     "field" => $this->field,
                     "query_vector" => $this->embeddings,
                     "k" => 100,
-                    "num_candidates" => 100
+                    "num_candidates" => 100,
                     // "model" => "exact",
                     // "similarity" => "cosine",
+                    'boost' => $this->boost
                 ],
-                'boost' => $this->boost
             ]
         };
     }
