@@ -25,6 +25,50 @@ class RerankTest extends TestCase
     /**
      * @test
      */
+    public function rerank_threshold()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->longText('name')->semantic();
+        $blueprint->longText('description')->semantic();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['name' => 'PHP Framework', 'description' => 'Laravel is a PHP framework for web development']),
+            new Document(['name' => 'JavaScript Library', 'description' => 'React is a JavaScript library for building user interfaces']),
+            new Document(['name' => 'Python Framework', 'description' => 'Django is a Python framework for web development']),
+        ]);
+
+        // Test with threshold that should return all results
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('server framework')
+            ->semantic()
+            ->get();
+
+        $this->assertEquals(2, $res->total());
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('server framework')
+            ->rerank('server framework', 5)
+            ->get();
+
+        // Only PHP and Python frameworks should match due to "web framework" in description
+        $hits = $res->json('hits.hits');
+
+        $this->assertEmpty($hits);
+    }
+
+    /**
+     * @test
+     */
     public function sigmie_ai_rerank()
     {
         $this->skipIfElasticsearchPluginNotInstalled('elastiknn');

@@ -42,6 +42,10 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected bool $rerank = false;
 
+    protected float $rerankThreshold = 0.0;
+
+    protected string $rerankQuery = '';
+
     public function queryString(string $query, float $weight = 1.0): static
     {
         $this->queryStrings[] = [
@@ -270,18 +274,19 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $res = $this->make()->get();
 
         $reranker = new Reranker(
-            $this->queryStrings[0]['query'],
-            $res->hits(),
             $this->aiProvider,
-            $this->properties
+            $this->properties,
+            $this->rerankThreshold
         );
 
-        return $reranker->rerank($res);
+        return $reranker->rerank($res, $this->rerankQuery);
     }
 
-    public function rerank(bool $value = true): static
+    public function rerank(string $query, float $threshold = 0.0): static
     {
-        $this->rerank = $value;
+        $this->rerank = true;
+        $this->rerankQuery = $query;
+        $this->rerankThreshold = $threshold;
 
         return $this;
     }

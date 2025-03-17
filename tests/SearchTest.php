@@ -12,6 +12,7 @@ use Sigmie\Testing\TestCase;
 
 class SearchTest extends TestCase
 {
+
     /**
      * @test
      */

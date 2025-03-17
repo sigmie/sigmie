@@ -35,6 +35,10 @@ class SigmieAI extends AbstractAIProvider
             'query' => $queryString,
         ];
 
+        if (count($documents) === 0) {
+            return [];
+        }
+
         $response = $this->http->request(
             new JSONRequest(
                 'POST',

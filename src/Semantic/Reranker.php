@@ -13,19 +13,18 @@ use Sigmie\Shared\Collection;
 class Reranker
 {
     public function __construct(
-        protected string $queryString,
-        protected array $documents,
         protected AIProvider $aiProvider,
         protected Properties $properties,
+        protected float $rerankThreshold = 0.0
     ) {}
 
-    public function rerank(Search $res): Search
+    public function rerank(Search $res, string $queryString): Search
     {
         if ($res->total() === 0) {
             return $res;
         }
 
-        if (trim($this->queryString) === '') {
+        if (trim($queryString) === '') {
             return $res;
         }
 
@@ -49,18 +48,22 @@ class Reranker
             return implode("|", $document);
         });
 
-        $rerankedScores = $this->aiProvider->rerank($documents->toArray(), $this->queryString);
+        $rerankedScores = $this->aiProvider->rerank($documents->toArray(), $queryString);
 
         $rerankedHits = [];
 
         foreach ($res->hits() as $index => $hit) {
             // Preserve the original score and add a new rerank score
-            $hit['_rerank_score'] = $rerankedScores[$index];
+            $hit['_rerank_score'] = $rerankedScores[$index] ?? 0;
             $rerankedHits[] = $hit;
         }
 
         usort($rerankedHits, function ($a, $b) {
             return $b['_rerank_score'] <=> $a['_rerank_score'];
+        });
+
+        $rerankedHits = array_filter($rerankedHits, function ($hit) {
+            return $hit['_rerank_score'] >= $this->rerankThreshold;
         });
 
         $res->replaceHits($rerankedHits);
