@@ -24,7 +24,8 @@ class NearestNeighbors extends QueryNearestNeighbors implements ToRaw
                 ],
                 "model" => "exact",
                 "similarity" => "cosine",
-            ]
+                'boost' => $this->boost
+            ],
         ];
     }
 }

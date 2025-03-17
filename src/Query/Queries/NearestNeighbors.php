@@ -27,7 +27,8 @@ class NearestNeighbors extends Query
                     "num_candidates" => 100
                     // "model" => "exact",
                     // "similarity" => "cosine",
-                ]
+                ],
+                'boost' => $this->boost
             ]
         };
     }

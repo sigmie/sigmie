@@ -84,6 +84,7 @@ class IndexBuilderTest extends TestCase
      */
     public function language_greek_with_skroutz_plugin()
     {
+        $this->markTestSkipped('Waiting for the plugin to be released');
         $this->skipIfElasticsearchPluginNotInstalled('elasticsearch-skroutz-greekstemmer');
         $this->skipIfElasticsearchPluginNotInstalled('elasticsearch-analysis-greeklish');
 

@@ -34,7 +34,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 {
     protected array $sort = ['_score'];
 
-    protected string $queryString = '';
+    protected array $queryStrings = [];
 
     protected array $embeddings = [];
 
@@ -42,9 +42,12 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected bool $rerank = false;
 
-    public function queryString(string $query): static
+    public function queryString(string $query, float $weight = 1.0): static
     {
-        $this->queryString = $query;
+        $this->queryStrings[] = [
+            'query' => $query,
+            'weight' => $weight
+        ];
 
         return $this;
     }
@@ -130,92 +133,18 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
             $shouldClauses = new Collection();
 
-            // Vector queries
-            $embeddings = $this->aiProvider
-                ->batchEmbed(
-                    $this->properties->nestedSemanticFields()
-                        ->filter(fn(Text $field) => $field->isSemantic())
-                        // Only fields that are in the fields array
-                        ->filter(fn(Text $field) => $fields->indexOf($field->name()) !== false)
-                        ->map(fn(Text $field) => [
-                            'text' => $this->queryString,
-                            'type' => $field,
-                        ])->toArray()
-                );
-
-
-            if ($this->semanticSearch && trim($this->queryString) !== '') {
-
-                $semanticFields = array_values($this->properties->nestedSemanticFields()
-                    ->filter(fn(Text $field) => $field->isSemantic())
-                    // Only fields that are in the fields array
-                    ->filter(fn(Text $field) => $fields->indexOf($field->name()) !== false)
-                    ->toArray());
-
-                $vectorQueries = (new Collection($embeddings))
-                    ->map(function (array $embedding, int $index) use ($semanticFields) {
-                        return $this->aiProvider->queries(
-                            $embedding['embeddings'] ?? '',
-                            $semanticFields[$index]
-                        );
-                    })
-                    ->flatten(1);
-
-
-                $vectorBool = new Boolean;
-                $vectorQueries
-                    ->each(fn(Query $query) => $vectorBool->should()->query($query));
-
-                $functionScore = new FunctionScore(
-                    $vectorBool,
-                    // source: 'return _score;',
-                    source: "return _score > {$this->semanticThreshold} ? _score : 0;",
-                    boostMode: 'replace'
-                );
-
-                $shouldClauses->add($functionScore);
+            // Text queries for weighted query strings
+            foreach ($this->queryStrings as $weightedQuery) {
+                $this->addTextQueries($weightedQuery['query'], $fields, $shouldClauses, $weightedQuery['weight']);
             }
 
-            // Text queries
-            $fields->each(function ($field) use (&$shouldClauses) {
-
-                if ($this->queryString === '' && ! $this->noResultsOnEmptySearch) {
-                    $shouldClauses->add(new MatchAll);
-
-                    return;
-                }
-
-                $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
-
-                $field = $this->properties->getNestedField($field) ?? throw new PropertiesFieldNotFound($field);
-
-                $fuzziness = ! in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
-
-                $queries = match (true) {
-                    $field->hasQueriesCallback ?? false => $field->queriesFromCallback($this->queryString),
-                    default => $field->queries($this->queryString)
-                };
-
-                $queries = new Collection($queries);
-
-                $queries->map(function (Query $queryClause) use ($boost, $fuzziness, $field, &$shouldClauses) {
-
-                    if ($queryClause instanceof FuzzyQuery) {
-                        $queryClause->fuzziness($fuzziness);
-                    }
-
-                    $queryClause = $queryClause->boost($boost);
-
-                    // Query nested fields if there is a parent path
-                    if (($field->parentPath ?? false) && $field->parentType === TypesNested::class) {
-                        $queryClause = new Nested($field->parentPath, $queryClause);
-                    }
-
-                    $shouldClauses->add($queryClause);
-                });
-            });
-
-            if ($shouldClauses->isEmpty()) {
+            if (
+                $shouldClauses->isEmpty() &&
+                empty($this->queryStrings) &&
+                !$this->noResultsOnEmptySearch
+            ) {
+                $queryBoolean->should()->query(new MatchAll);
+            } else if ($shouldClauses->isEmpty()) {
                 $queryBoolean->should()->query(new MatchNone);
             } else {
                 $shouldClauses->each(fn(Query $queryClase) => $queryBoolean->should()->query($queryClase));
@@ -224,7 +153,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $boolean->should()->query($queryBoolean);
         });
 
-        if ($this->queryString !== '') {
+        if (!empty($this->queryStrings[0]['query'] ?? '')) {
 
             $search->suggest(function (Suggest $suggest) {
 
@@ -234,13 +163,100 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                     ->fuzzyMinLegth($this->autocompleteFuzzyMinLength)
                     ->fuzzyPrefixLenght($this->autocompleteFuzzyPrefixLength)
                     ->fuzzy($this->autocompletion)
-                    ->prefix($this->queryString);
+                    ->prefix($this->queryStrings[0]['query']);
             });
         }
 
         $search->trackTotalHits();
 
         return $search;
+    }
+
+    private function addTextQueries(string $queryString, Collection $fields, Collection &$shouldClauses, float $queryBoost = 1.0): void
+    {
+        // Vector queries
+        $embeddings = $this->aiProvider
+            ->batchEmbed(
+                $this->properties->nestedSemanticFields()
+                    ->filter(fn(Text $field) => $field->isSemantic())
+                    // Only fields that are in the fields array
+                    ->filter(fn(Text $field) => $fields->indexOf($field->name()) !== false)
+                    ->map(fn(Text $field) => [
+                        'text' => $queryString,
+                        'type' => $field,
+                    ])->toArray()
+            );
+
+
+        if ($this->semanticSearch && trim($queryString) !== '') {
+
+            $semanticFields = array_values($this->properties->nestedSemanticFields()
+                ->filter(fn(Text $field) => $field->isSemantic())
+                // Only fields that are in the fields array
+                ->filter(fn(Text $field) => $fields->indexOf($field->name()) !== false)
+                ->toArray());
+
+            $vectorQueries = (new Collection($embeddings))
+                ->map(function (array $embedding, int $index) use ($semanticFields) {
+
+                    return $this->aiProvider->queries(
+                        $embedding['embeddings'] ?? '',
+                        $semanticFields[$index]
+                    );
+                })
+                ->flatten(1)
+                ->map(fn(Query $query) => $query->boost($queryBoost));
+
+
+            $vectorBool = new Boolean;
+            $vectorQueries
+                ->each(fn(Query $query) => $vectorBool->should()->query($query));
+
+            $functionScore = new FunctionScore(
+                $vectorBool,
+                // source: 'return _score;',
+                source: "return _score > {$this->semanticThreshold} ? _score : 0;",
+                boostMode: 'replace'
+            );
+
+            $shouldClauses->add($functionScore);
+        }
+
+        if ($queryString === '' && !$this->noResultsOnEmptySearch) {
+            $shouldClauses->add(new MatchAll);
+            return;
+        }
+
+        $fields->each(function ($field) use (&$shouldClauses, $queryString, $queryBoost) {
+
+            $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] * $queryBoost : $queryBoost;
+
+            $field = $this->properties->getNestedField($field) ?? throw new PropertiesFieldNotFound($field);
+
+            $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+
+            $queries = match (true) {
+                $field->hasQueriesCallback ?? false => $field->queriesFromCallback($queryString),
+                default => $field->queries($queryString)
+            };
+
+            $queries = new Collection($queries);
+
+            $queries->map(function (Query $queryClause) use ($boost, $fuzziness, $field, &$shouldClauses) {
+                if ($queryClause instanceof FuzzyQuery) {
+                    $queryClause->fuzziness($fuzziness);
+                }
+
+                $queryClause = $queryClause->boost($boost);
+
+                // Query nested fields if there is a parent path
+                if (($field->parentPath ?? false) && $field->parentType === TypesNested::class) {
+                    $queryClause = new Nested($field->parentPath, $queryClause);
+                }
+
+                $shouldClauses->add($queryClause);
+            });
+        });
     }
 
     public function get(): ResponsesSearch
@@ -254,7 +270,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $res = $this->make()->get();
 
         $reranker = new Reranker(
-            $this->queryString,
+            $this->queryStrings[0]['query'],
             $res->hits(),
             $this->aiProvider,
             $this->properties

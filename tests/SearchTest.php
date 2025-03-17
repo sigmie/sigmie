@@ -15,6 +15,56 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function search_template_with_query_weight()
+    {
+    }
+
+    /**
+     * @test
+     */
+    public function weighted_query_string()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['name' => 'Mickey']),
+            new Document(['name' => 'Goofy']),
+            new Document(['name' => 'Donald']),
+        ]);
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Mickey', weight: 2)
+            ->queryString('Goofy', weight: 1)
+            ->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertEquals('Mickey', $hits[0]['_source']['name']);
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Mickey', weight: 2)
+            ->queryString('Goofy', weight: 3)
+            ->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertEquals('Goofy', $hits[0]['_source']['name']);
+    }
+
+    /**
+     * @test
+     */
     public function find_without_dash()
     {
         $indexName = uniqid();

@@ -13,6 +13,7 @@ use Sigmie\Testing\TestCase;
 
 class SemanticTest extends TestCase
 {
+
     /**
      * @test
      */
