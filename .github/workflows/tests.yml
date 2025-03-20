@@ -16,7 +16,7 @@ jobs:
         php: ['8.1', 
         # '8.2', '8.3', '8.4'
         ]
-        elasticsearch_version: ['7.17.9', '8.17.1']
+        elasticsearch_version: ['7.17.9', '8.17.3']
         stability: [prefer-stable]
         include:
           - php: '8.1'
