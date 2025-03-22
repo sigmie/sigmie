@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Queries\Text;
 
+use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\Queries\Query;
 
 class Nested extends Query
 {
     public function __construct(
         protected string $path,
-        protected Query $query,
+        protected QueryClause $query,
         protected string $scoreMode = 'avg',
     ) {}
 
@@ -19,6 +20,7 @@ class Nested extends Query
         $raw = [
             'nested' => [
                 'path' => $this->path,
+                'score_mode' => $this->scoreMode,
                 'query' => $this->query->toRaw(),
                 'boost' => $this->boost,
             ],

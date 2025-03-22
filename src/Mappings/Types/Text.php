@@ -7,6 +7,7 @@ namespace Sigmie\Mappings\Types;
 use Closure;
 use Exception;
 use Sigmie\Base\Http\ElasticsearchResponse;
+use Sigmie\Enums\VectorStrategy;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Index\NewAnalyzer;
@@ -37,6 +38,8 @@ class Text extends Type implements FromRaw
 
     protected bool $semantic = false;
 
+    protected VectorStrategy $vectorStrategy = VectorStrategy::Concatenate;
+
     protected int $dims = 256;
 
     public function __construct(
@@ -63,6 +66,18 @@ class Text extends Type implements FromRaw
         $this->semantic = $semantic;
 
         return $this;
+    }
+
+    public function vectorStrategy(VectorStrategy $strategy)
+    {
+        $this->vectorStrategy = $strategy;
+
+        return $this;
+    }
+
+    public function strategy(): VectorStrategy
+    {
+        return $this->vectorStrategy;
     }
 
     public function complexityDepth(int $level): self

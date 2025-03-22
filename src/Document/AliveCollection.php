@@ -10,6 +10,7 @@ use Sigmie\Base\APIs\Search;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Document\Actions as DocumentActions;
 use Sigmie\Document\Contracts\DocumentCollection;
+use Sigmie\Enums\VectorStrategy;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Shared\Mappings;
@@ -29,6 +30,10 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     use Mappings;
     use EmbeddingsProvider;
 
+    protected bool $retrieveEmbeddings = false;
+
+    protected bool $populateEmbeddings = true;
+
     public function __construct(
         protected string $name,
         ElasticsearchConnection $connection,
@@ -39,6 +44,19 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         $this->properties = new Properties();
     }
 
+    public function populateEmbeddings(bool $value = true)
+    {
+        $this->populateEmbeddings = $value;
+
+        return $this;
+    }
+
+    public function retrieveEmbeddings(bool $value = true)
+    {
+        $this->retrieveEmbeddings = $value;
+
+        return $this;
+    }
 
     public function refresh()
     {
@@ -103,52 +121,130 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         $embeddings = [];
         $fields = $this->properties->nestedSemanticFields();
 
-        // If no semantic fields, return document as is
         if ($fields->isEmpty()) {
             return $document;
         }
 
-        // Prepare batch embedding request items
-        $embeddingItems = [];
-        $fieldMap = [];
+        // First pass: collect field texts by strategy
+        $fieldTexts = [];
+        $fieldStrategies = [];
 
-        $fields->each(function (Text $field, $name) use (&$embeddingItems, &$fieldMap, $document) {
-            $text = dot($document->_source)->get($name);
-
-            if (!$text) {
+        $fields->each(function (Text $field, $name) use (&$fieldTexts, &$fieldStrategies, $document) {
+            $value = dot($document->_source)->get($name);
+            if (!$value) {
                 return;
             }
 
-            if (is_array($text)) {
-                $text = implode(' ', $text);
+            $fieldStrategies[$name] = $field->strategy();
+            
+            // Handle both scalar and array values
+            if (is_array($value)) {
+                $fieldTexts[$name] = $value;
+            } else {
+                $fieldTexts[$name] = [$value];
             }
-
-            if ($field instanceof HTML) {
-                $text = strip_tags($text);
-            }
-
-            $itemIndex = count($embeddingItems);
-            $embeddingItems[] = [
-                'text' => $text,
-                'type' => $field,
-            ];
-
-            $fieldMap[$itemIndex] = $name;
         });
 
-        // If no items to embed, return document as is
-        if (empty($embeddingItems)) {
+        if (empty($fieldTexts)) {
             return $document;
         }
 
-        // Get embeddings in a single batch request
+        // Second pass: prepare embedding items based on strategy
+        $embeddingItems = [];
+        $fieldMap = [];
+        
+        foreach ($fieldTexts as $name => $values) {
+            $strategy = $fieldStrategies[$name];
+            $field = $fields->get($name);
+            
+            if ($strategy === VectorStrategy::Concatenate) {
+                // For Concatenate: join all values with space and create a single embedding
+                $concatenated = implode(' ', $values);
+                $embeddingItems[] = [
+                    'text' => $concatenated,
+                    'type' => $field
+                ];
+                $fieldMap[count($embeddingItems) - 1] = [
+                    'field' => $name,
+                    'index' => null,
+                    'strategy' => $strategy
+                ];
+            } else if ($strategy === VectorStrategy::Average || $strategy === VectorStrategy::ScriptScore) {
+                // For Average and ScriptScore: process each value individually
+                foreach ($values as $i => $value) {
+                    $embeddingItems[] = [
+                        'text' => $value,
+                        'type' => $field
+                    ];
+                    $fieldMap[count($embeddingItems) - 1] = [
+                        'field' => $name,
+                        'index' => $i,
+                        'strategy' => $strategy
+                    ];
+                }
+            }
+        }
+
+        // Get embeddings from AI provider
         $batchResults = $this->aiProvider->batchEmbed($embeddingItems);
 
-        // Map results back to their fields
+        // Group embeddings per field
+        $fieldEmbeddings = [];
         foreach ($batchResults as $index => $result) {
-            $fieldName = $fieldMap[$index] ?? null;
-            if ($fieldName && isset($result['embeddings'])) {
-                $embeddings[$fieldName] = $result['embeddings'];
+            if (!isset($result['embeddings']) || !is_array($result['embeddings'])) {
+                continue;
+            }
+
+            $map = $fieldMap[$index] ?? null;
+            if (!$map) {
+                continue;
+            }
+
+            $field = $map['field'];
+            $i = $map['index'];
+            $strategy = $map['strategy'];
+            
+            // Store embeddings based on vector strategy
+            if ($strategy === VectorStrategy::Concatenate) {
+                // For Concatenate: directly store the embedding
+                $embeddings[$field] = $result['embeddings'];
+            } else {
+                // For other strategies: collect for further processing
+                $fieldEmbeddings[$field] ??= [];
+                $fieldEmbeddings[$field][$i] = $result['embeddings'];
+            }
+        }
+        
+        // Process remaining strategies
+        foreach ($fieldEmbeddings as $field => $values) {
+            if (empty($values)) continue;
+            
+            $strategy = $fieldStrategies[$field];
+            
+            if ($strategy === VectorStrategy::ScriptScore) {
+                // For ScriptScore: create array of objects with embedding field
+                $embeddings[$field] = array_map(function($embedding) {
+                    return ['embedding' => $embedding];
+                }, $values);
+            } else if ($strategy === VectorStrategy::Average && count($values) > 1) {
+                // For Average: compute average of all vectors
+                $dimensions = count(reset($values));
+                $sum = array_fill(0, $dimensions, 0);
+                
+                foreach ($values as $vector) {
+                    foreach ($vector as $i => $val) {
+                        $sum[$i] += $val;
+                    }
+                }
+                
+                $avg = array_map(function($total) use ($values) {
+                    return $total / count($values);
+                }, $sum);
+                
+                $embeddings[$field] = $avg;
+            } else if ($strategy === VectorStrategy::Average && count($values) === 1) {
+                // Single item for Average: use as is
+                $embeddings[$field] = reset($values);
             }
         }
 

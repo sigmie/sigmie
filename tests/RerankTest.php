@@ -140,7 +140,7 @@ class RerankTest extends TestCase
             ->newSearch($indexName)
             ->properties($blueprint)
             // ->semantic()
-            ->rerank()
+            ->rerank('Best programming language for AI and machine learning')
             ->queryString('Best programming language for AI and machine learning')
             ->get();
 
@@ -249,13 +249,11 @@ class RerankTest extends TestCase
         ]);
 
         $reranker = new Reranker(
-            $queryString,
-            $res->json('hits.hits'),
             new SigmieAI(),
             $blueprint->get()
         );
 
-        $reranked = $reranker->rerank($res);
+        $reranked = $reranker->rerank($res, $queryString);
 
         $hits = $reranked->json('hits.hits');
 

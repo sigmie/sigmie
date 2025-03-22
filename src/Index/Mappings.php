@@ -9,6 +9,7 @@ use Sigmie\Index\Contracts\CustomAnalyzer;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Contracts\TokenFilter;
 use Sigmie\Mappings\Contracts\Type;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Embeddings;
 use Sigmie\Mappings\Types\Nested;

@@ -5,14 +5,20 @@ declare(strict_types=1);
 namespace Sigmie\Semantic\Providers;
 
 use GuzzleHttp\Psr7\Uri;
+use Sigmie\Enums\VectorStrategy;
 use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Mappings\Contracts\Type;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\DenseVector;
+use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Plugins\Elastiknn\DenseFloatVector;
 use Sigmie\Plugins\Elastiknn\NearestNeighbors as ElastiknnNearestNeighbors;
+use Sigmie\Query\FunctionScore;
+use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\NearestNeighbors;
+use Sigmie\Query\Queries\Text\Nested as TextNested;
 use Sigmie\Sigmie;
 
 class SigmieAI extends AbstractAIProvider
@@ -101,7 +107,33 @@ class SigmieAI extends AbstractAIProvider
 
     public function type(Text $originalType): Type
     {
-        return Sigmie::isPluginRegistered('elastiknn') ?
+        if ($originalType->strategy() === VectorStrategy::ScriptScore) {
+
+            $type =
+                Sigmie::isPluginRegistered('elastiknn') ?
+                new DenseFloatVector(
+                    // name: $originalType->originalName(),
+                    name: 'embedding',
+                    dims: $originalType->dims()
+                ) :
+                new DenseVector(
+                    // name: $originalType->originalName(),
+                    name: 'embedding',
+                    dims: $originalType->dims()
+                );
+
+            $field = new Nested($originalType->name());
+
+            $props = new NewProperties($originalType->name());
+            $props->type($type);
+
+            $field->properties($props);
+
+            return $field;
+        }
+
+        $type =
+            Sigmie::isPluginRegistered('elastiknn') ?
             new DenseFloatVector(
                 name: $originalType->originalName(),
                 dims: $originalType->dims()
@@ -110,12 +142,35 @@ class SigmieAI extends AbstractAIProvider
                 name: $originalType->originalName(),
                 dims: $originalType->dims()
             );
+
+        return $type;
     }
 
     public function queries(
         array|string $text,
         Text $type
     ): array {
+
+        if ($type->strategy() === VectorStrategy::ScriptScore) {
+            $fnQuery = new FunctionScore(
+                query: new MatchAll(),
+                source: 'cosineSimilarity(params.query_vector, \'embeddings.' . $type->name() . '.embedding\') + 1.0',
+                boostMode: 'multiply',
+                params: [
+                    'query_vector' => $text
+                ]
+            );
+
+            $query = new TextNested(
+                "embeddings.{$type->name()}",
+                $fnQuery,
+                scoreMode: 'max'
+            );
+
+            return [
+                $query
+            ];
+        }
 
         return Sigmie::isPluginRegistered('elastiknn') ? [
             new ElastiknnNearestNeighbors(

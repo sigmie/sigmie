@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Sigmie\Document\Document;
+use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Semantic\Providers\Noop;
 use Sigmie\Semantic\Providers\SigmieAI;
@@ -13,6 +14,57 @@ use Sigmie\Testing\TestCase;
 
 class SemanticTest extends TestCase
 {
+    /**
+     * @test
+     */
+    public function handle_script_score_strategy()
+    {
+        $blueprint = new NewProperties();
+        $blueprint->shortText('experience')
+            ->semantic()
+            ->vectorStrategy(VectorStrategy::ScriptScore);
+
+        $indexName = uniqid();
+
+        $noop = new Noop();
+
+        $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $documents = $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'experience' => [
+                        'Artist',
+                        'Design',
+                    ],
+                ]),
+                new Document([
+                    'experience' => [
+                        'Engineering',
+                        'Code',
+                    ],
+                ]),
+            ])
+            ->toArray();
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->semantic()
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->queryString('drawing')
+            ->get();
+
+        $hits = $response->hits();
+
+        $this->assertEquals('Engineering', $hits[0]['_source']['experience'][0] ?? null);
+    }
+
 
     /**
      * @test
@@ -103,8 +155,12 @@ class SemanticTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->title('title')->semantic();
-        $blueprint->shortText('short_description')->semantic();
+        $blueprint->title('title')
+            ->semantic()
+            ->vectorStrategy(VectorStrategy::Concatenate);
+        $blueprint->shortText('short_description')
+            ->semantic()
+            ->vectorStrategy(VectorStrategy::Concatenate);
 
         $this->sigmie
             ->newIndex($indexName)
@@ -167,11 +223,17 @@ class SemanticTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->title('owner_name')->semantic();
+        $blueprint->title('owner_name')
+            ->semantic()
+            ->vectorStrategy(VectorStrategy::Concatenate);
         $blueprint->object('pet_type', function (NewProperties $blueprint) {
-            $blueprint->title('name')->semantic();
+            $blueprint->title('name')
+                ->semantic()
+                ->vectorStrategy(VectorStrategy::Concatenate);
             $blueprint->object('pet', function (NewProperties $blueprint) {
-                $blueprint->title('name')->semantic();
+                $blueprint->title('name')
+                    ->semantic()
+                    ->vectorStrategy(VectorStrategy::Concatenate);
             });
         });
 
@@ -231,7 +293,9 @@ class SemanticTest extends TestCase
         $provider = new Noop();
 
         $blueprint = new NewProperties();
-        $blueprint->title('name')->semantic();
+        $blueprint->title('name')
+            ->semantic()
+            ->vectorStrategy(VectorStrategy::Concatenate);
         $blueprint->number('age')->integer();
 
         $this->sigmie
@@ -352,7 +416,9 @@ class SemanticTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->title('name')->semantic();
+        $blueprint->title('name')
+            ->semantic()
+            ->vectorStrategy(VectorStrategy::Concatenate);
         $blueprint->number('age')->integer();
 
         $this->sigmie
@@ -421,11 +487,17 @@ class SemanticTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->title('owner_name')->semantic();
+        $blueprint->title('owner_name')
+            ->semantic()
+            ->vectorStrategy(VectorStrategy::Concatenate);
         $blueprint->object('pet_type', function (NewProperties $blueprint) {
-            $blueprint->title('name')->semantic();
+            $blueprint->title('name')
+                ->semantic()
+                ->vectorStrategy(VectorStrategy::Concatenate);
             $blueprint->object('pet', function (NewProperties $blueprint) {
-                $blueprint->title('name')->semantic();
+                $blueprint->title('name')
+                    ->semantic()
+                    ->vectorStrategy(VectorStrategy::Concatenate);
             });
         });
 
@@ -475,7 +547,9 @@ class SemanticTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->title('name')->semantic();
+        $blueprint->title('name')
+            ->semantic()
+            ->vectorStrategy(VectorStrategy::Concatenate);
         $blueprint->number('age')->integer();
 
         $this->sigmie
@@ -525,7 +599,9 @@ class SemanticTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->title('name')->semantic();
+        $blueprint->title('name')
+            ->semantic()
+            ->vectorStrategy(VectorStrategy::Concatenate);
 
         $this->sigmie
             ->newIndex($indexName)
@@ -585,7 +661,9 @@ class SemanticTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->title('name')->semantic();
+        $blueprint->title('name')
+            ->semantic()
+            ->vectorStrategy(VectorStrategy::Concatenate);
 
         $this->sigmie
             ->newIndex($indexName)

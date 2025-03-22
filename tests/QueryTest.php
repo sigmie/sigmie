@@ -10,6 +10,7 @@ use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\Queries\Compound\Boolean as QueriesCompoundBoolean;
 use Sigmie\Testing\TestCase;
+use stdClass;
 
 class QueryTest extends TestCase
 {
@@ -330,9 +331,12 @@ class QueryTest extends TestCase
             [
                 'function_score' => [
                     'boost' => 1.0,
-                    'script_score' => ['script' => [
-                        'source' => "doc.containsKey('boost') && doc['boost'].size() > 0 ? doc['boost'].value : 1",
-                    ]],
+                    'script_score' => [
+                        'script' => [
+                            'source' => "doc.containsKey('boost') && doc['boost'].size() > 0 ? doc['boost'].value : 1",
+                            'params' => new stdClass(),
+                        ],
+                    ],
                     'boost_mode' => 'multiply',
                     'query' => ['bool' => [
                         'boost' => 1.0,

@@ -178,19 +178,17 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     private function addTextQueries(string $queryString, Collection $fields, Collection &$shouldClauses, float $queryBoost = 1.0): void
     {
-        // Vector queries
-        $embeddings = $this->aiProvider
-            ->batchEmbed(
-                $this->properties->nestedSemanticFields()
-                    ->filter(fn(Text $field) => $field->isSemantic())
-                    // Only fields that are in the fields array
-                    ->filter(fn(Text $field) => $fields->indexOf($field->name()) !== false)
-                    ->map(fn(Text $field) => [
-                        'text' => $queryString,
-                        'type' => $field,
-                    ])->toArray()
-            );
+        $textTypes = $this->properties->nestedSemanticFields()
+            ->filter(fn(Text $field) => $field->isSemantic())
+            // Only fields that are in the fields array
+            ->filter(fn(Text $field) => $fields->indexOf($field->name()) !== false)
+            ->map(fn(Text $field) => [
+                'text' => $queryString,
+                'type' => $field,
+            ])->toArray();
 
+        // Vector queries
+        $embeddings = $this->aiProvider->batchEmbed($textTypes);
 
         if ($this->semanticSearch && trim($queryString) !== '') {
 
