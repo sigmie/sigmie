@@ -164,7 +164,7 @@ class SigmieAI extends AbstractAIProvider
             $query = new TextNested(
                 "embeddings.{$type->name()}",
                 $fnQuery,
-                scoreMode: 'max'
+                scoreMode: 'sum'
             );
 
             return [

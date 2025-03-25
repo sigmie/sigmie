@@ -62,7 +62,7 @@ class SemanticTest extends TestCase
 
         $hits = $response->hits();
 
-        $this->assertEquals('Engineering', $hits[0]['_source']['experience'][0] ?? null);
+        $this->assertEquals('Artist', $hits[0]['_source']['experience'][0] ?? null);
     }
 
 
