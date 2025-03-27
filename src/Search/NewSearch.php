@@ -211,6 +211,9 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
 
             $vectorBool = new Boolean;
+            // An empty boolean query acts like a match_all for this reason
+            // we make sure the boolean query is not empty by adding a match none
+            $vectorBool->should()->query(new MatchNone);
             $vectorQueries
                 ->each(fn(Query $query) => $vectorBool->should()->query($query));
 
@@ -229,7 +232,9 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             return;
         }
 
-        $fields->each(function ($field) use (&$shouldClauses, $queryString, $queryBoost) {
+        $textQueries = (new Collection());
+
+        $fields->each(function ($field) use (&$shouldClauses, &$textQueries, $queryString, $queryBoost) {
 
             $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] * $queryBoost : $queryBoost;
 
@@ -244,7 +249,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
             $queries = new Collection($queries);
 
-            $queries->map(function (Query $queryClause) use ($boost, $fuzziness, $field, &$shouldClauses) {
+            $queries->map(function (Query $queryClause) use ($boost, $fuzziness, $field, &$shouldClauses, &$textQueries) {
                 if ($queryClause instanceof FuzzyQuery) {
                     $queryClause->fuzziness($fuzziness);
                 }
@@ -256,9 +261,29 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                     $queryClause = new Nested($field->parentPath, $queryClause);
                 }
 
-                $shouldClauses->add($queryClause);
+                $textQueries->add($queryClause);
+                // $shouldClauses->add($queryClause);
             });
         });
+
+        // $textQueries->each(fn(Query $query) => $shouldClauses->add($query));
+
+        // dd($shouldClauses);
+        $textBool = new Boolean;
+
+        // An empty boolean query acts like a match_all for this reason
+        // we make sure the boolean query is not empty by adding a match none
+        $textBool->should()->query(new MatchNone);
+
+        $textQueries->each(fn(Query $query) => $textBool->should()->query($query));
+
+        $textFnScore = new FunctionScore(
+            $textBool,
+            source: "return _score;",
+            boostMode: 'replace'
+        );
+
+        $shouldClauses->add($textFnScore);
     }
 
     public function get(): ResponsesSearch
