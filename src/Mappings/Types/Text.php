@@ -40,6 +40,8 @@ class Text extends Type implements FromRaw
 
     protected VectorStrategy $vectorStrategy = VectorStrategy::Concatenate;
 
+    protected string $vectorScoreMode = 'avg';
+
     protected int $dims = 256;
 
     public function __construct(
@@ -78,6 +80,18 @@ class Text extends Type implements FromRaw
     public function strategy(): VectorStrategy
     {
         return $this->vectorStrategy;
+    }
+
+    public function vectorMode(): string
+    {
+        return $this->vectorScoreMode;
+    }
+
+    public function vectorScoreMode(string $mode): self
+    {
+        $this->vectorScoreMode = $mode;
+
+        return $this;
     }
 
     public function complexityDepth(int $level): self

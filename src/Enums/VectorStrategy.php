@@ -17,4 +17,14 @@ enum VectorStrategy: string
     // Max accuracy
     // Good for short strings
     case ScriptScore = 'script_score';
+
+    case ScriptScoreMin = 'script_score_min';
+
+    case ScriptScoreMax = 'script_score_max';
+
+    case ScriptScoreAvg = 'script_score_avg';
+
+    case ScriptScoreSum = 'script_score_sum';
+
+    case ScriptScoreMedian = 'script_score_median';
 }

@@ -155,7 +155,7 @@ class SigmieAI extends AbstractAIProvider
             $fnQuery = new FunctionScore(
                 query: new MatchAll(),
                 source: 'cosineSimilarity(params.query_vector, \'embeddings.' . $type->name() . '.embedding\') + 1.0',
-                boostMode: 'multiply',
+                boostMode: 'replace', // Doesn't matter, because of match all 
                 params: [
                     'query_vector' => $text
                 ]
@@ -164,7 +164,7 @@ class SigmieAI extends AbstractAIProvider
             $query = new TextNested(
                 "embeddings.{$type->name()}",
                 $fnQuery,
-                scoreMode: 'sum'
+                scoreMode: $type->vectorMode()
             );
 
             return [
