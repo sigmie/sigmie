@@ -23,8 +23,10 @@ class NearestNeighbors extends Query
                 "knn" => [
                     "field" => $this->field,
                     "query_vector" => $this->embeddings,
-                    "k" => 100,
-                    "num_candidates" => 100,
+                    "k" => 150, // Top 150 Nearest
+                    "num_candidates" => 10000, // 10000 Candidates
+                    // "similarity" => 1000,
+
                     // "model" => "exact",
                     // "similarity" => "cosine",
                     'boost' => $this->boost

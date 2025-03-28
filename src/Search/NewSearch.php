@@ -213,15 +213,16 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $vectorBool = new Boolean;
             // An empty boolean query acts like a match_all for this reason
             // we make sure the boolean query is not empty by adding a match none
-            $vectorBool->should()->query(new MatchNone);
+            // $vectorBool->should()->query(new MatchNone);
             $vectorQueries
                 ->each(fn(Query $query) => $vectorBool->should()->query($query));
 
             $functionScore = new FunctionScore(
                 $vectorBool,
-                // source: 'return _score;',
-                source: "return _score > {$this->semanticThreshold} ? _score : 0;",
+                source: 'return _score * 1.9;',
+                // source: "return _score > {$this->semanticThreshold} ? _score : 0;",
                 boostMode: 'replace'
+                // boostMode: 'multiply'
             );
 
             $shouldClauses->add($functionScore);
@@ -279,8 +280,15 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $textFnScore = new FunctionScore(
             $textBool,
-            source: "return _score;",
-            boostMode: 'replace'
+            source: "return _score * 0.1;",
+            // source: "return _score / 10;",
+            // source: "return Math.min(_score, 0.1);", // Caps BM25 impact
+            boostMode: 'replace',
+            // boostMode: 'multiply'
+            // source: "return Math.min(_score, 0.5);", // Caps BM25 impact
+            // boostMode: 'replace'
+            // boostMode: 'multiply'
+            // source: "return _score;",
         );
 
         $shouldClauses->add($textFnScore);
