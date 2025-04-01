@@ -39,8 +39,37 @@ class Reranker
                 $text = dot($hit['_source'])->get($semanticProp);
 
                 if (is_array($text)) {
-                    $text = implode('/', $text);
+                    // Remove description part if it exists
+                    $res = '';
+                    foreach ($text as $item) {
+                        // Parse the item to extract structured information
+                        $title = '';
+                        $company = '';
+                        $yearFrom = '';
+                        $yearTo = '';
+                        $branchesString = '';
+                        $description = '';
+
+                        // Check if the item follows the expected format
+                        if (preg_match('/(.+) at (.+) from (.+) to (.+)(?: in (.+))?: (.+)/', $item, $matches)) {
+                            $title = $matches[1] ?? '';
+                            $company = $matches[2] ?? '';
+                            $yearFrom = $matches[3] ?? '';
+                            $yearTo = $matches[4] ?? '';
+                            $branchesString = !empty($matches[5]) ? ' in ' . $matches[5] : '';
+                            $description = $matches[6] ?? '';
+
+                            // $text = "$title at $company from $yearFrom to $yearTo$branchesString: $description";
+                            $res .= "$title at $company from $yearFrom to $yearTo: $description | "; // 29 / 60
+                            // $res .= "$title at $company from $yearFrom to $yearTo | "; // 24 / 60
+                        }
+                    }
+
+                    // $text = implode(' | ', $text); // 16 / 60
+
+                    $text = $res;
                 }
+
 
                 $document[] = $semanticProp . ': ' . $text;
             }
