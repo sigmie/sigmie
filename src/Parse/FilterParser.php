@@ -211,7 +211,8 @@ class FilterParser extends Parser
             preg_match('/^([\w\.]+)([<>]=?)(.+)/', $string) => $this->handleRange($string),
             preg_match('/^([\w\.]+)([<>]=?)(\'.+\')/', $string) => $this->handleRange($string),
             preg_match('/^([\w\.]+)([<>]=?)(\".+\")/', $string) => $this->handleRange($string),
-            preg_match('/^_id:[a-z_A-Z0-9]+/', $string) => $this->handleIDs($string),
+            preg_match('/^_id:\[.*\]/', $string) => $this->handleIDs($string),
+            preg_match('/^_id:[a-z_A-Z0-9]+/', $string) => $this->handleID($string),
             preg_match('/[\w\.]+:\[.*\]/', $string) => $this->handleIn($string),
             preg_match('/^[\w\.]+:.*\*.*$/', $string) => $this->handleWildcard($string),
             preg_match('/[\w\.]+:".*"/', $string) => $this->handleTerm($string),
@@ -300,11 +301,27 @@ class FilterParser extends Parser
         return $this->filterQuery($field, new Range($this->fieldName($field), [$operator => $value]));
     }
 
-    public function handleIDs(string $id)
+    public function handleID(string $id)
     {
         [, $value] = explode(':', $id);
 
         return new IDs([$value]);
+    }
+
+    public function handleIDs(string $ids)
+    {
+        [, $value] = explode(':', $ids);
+
+        $value = trim($value, '[]');
+        $values = explode(',', $value);
+
+        $values = array_filter($values, function ($value) {
+            return $value !== '';
+        });
+
+        $values = array_map(fn ($value) => trim($value, ' '), $values);
+
+        return new IDs($values);
     }
 
     public function handleIs(string $is)
