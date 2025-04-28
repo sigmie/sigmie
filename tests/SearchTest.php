@@ -60,6 +60,7 @@ class SearchTest extends TestCase
         $hits = $res->json('hits.hits');
 
         $this->assertEquals('Mickey', $hits[0]['_source']['name']);
+        $this->assertEquals(2, $res->total());
 
         $res = $this->sigmie->newSearch($indexName)
             ->properties($blueprint)
@@ -70,6 +71,7 @@ class SearchTest extends TestCase
         $hits = $res->json('hits.hits');
 
         $this->assertEquals('Goofy', $hits[0]['_source']['name']);
+        $this->assertEquals(2, $res->total());
     }
 
     /**

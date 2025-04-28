@@ -13,6 +13,7 @@ use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Mappings;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\NewSemanticField;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
@@ -747,7 +748,7 @@ class MappingsTest extends TestCase
 
         $res = $this->analyzeAPICall($indexName, 'Hohn Doe 28, 58511', 'address_field_analyzer');
 
-        $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
+        $tokens = array_map(fn($token) => $token['token'], $res->json('tokens'));
 
         $this->assertEquals(['hohn', 'doe', '28', '58511'], $tokens);
     }
@@ -820,7 +821,7 @@ class MappingsTest extends TestCase
 
         $hits = $search->json('hits.hits');
 
-        $res = array_map(fn ($hit) => $hit['_source']['title'], $hits);
+        $res = array_map(fn($hit) => $hit['_source']['title'], $hits);
 
         $this->assertEquals('Alpha', $res[0]);
         $this->assertEquals('beta', $res[1]);
@@ -1169,7 +1170,7 @@ class MappingsTest extends TestCase
 
         $res = $this->analyzeAPICall($indexName, 'john.doe@gmail.com', 'default');
 
-        $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
+        $tokens = array_map(fn($token) => $token['token'], $res->json('tokens'));
 
         $res = $this->indexAPICall($indexName, 'GET');
 
@@ -1222,5 +1223,129 @@ class MappingsTest extends TestCase
 
         $this->assertContains($defaultAnalyzer, $analyzers);
         $this->assertContains($analyzer, $analyzers);
+    }
+
+    /**
+     * @test
+     */
+    public function cosine_semantic_builder()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('job_description')
+            ->semantic(function (NewSemanticField $semantic) {
+                $semantic->cosineSimilarity();
+            });
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->assertIndex($indexName, function (Assert $assert) {
+            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description'] ?? [];
+
+            $this->assertEquals('cosine', $field['similarity'] ?? null);
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function euclidean_semantic_builder()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('job_description')
+            ->semantic(function (NewSemanticField $semantic) {
+                $semantic->euclideanSimilarity();
+            });
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->assertIndex($indexName, function (Assert $assert) {
+            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description'] ?? [];
+
+            $this->assertEquals('l2_norm', $field['similarity'] ?? null);
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function dot_product_semantic_builder()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('job_description')
+            ->semantic(function (NewSemanticField $semantic) {
+                $semantic->dotProductSimilarity();
+            });
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->assertIndex($indexName, function (Assert $assert) {
+            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description'] ?? [];
+
+            $this->assertEquals('dot_product', $field['similarity'] ?? null);
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function max_inner_product_semantic_builder()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('job_description')
+            ->semantic(function (NewSemanticField $semantic) {
+                $semantic->maxInnerProductSimilarity();
+            });
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->assertIndex($indexName, function (Assert $assert) {
+            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description'] ?? [];
+
+            $this->assertEquals('max_inner_product', $field['similarity'] ?? null);
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function dimensions_semantic_builder()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('job_description')
+            ->semantic()
+            ->dimensions(512)
+            ->cosineSimilarity()
+            ->accuracy(3);
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->index($indexName);
+
+        $this->assertIndex($indexName, function (Assert $assert) {
+
+            $assert->assertEmbeddingsPropertyEquals('job_description.index_options.m', '64');
+            $assert->assertEmbeddingsPropertyEquals('job_description.index_options.ef_construction', '400');
+            $assert->assertEmbeddingsPropertyEquals('job_description.dims', '512');
+        });
     }
 }

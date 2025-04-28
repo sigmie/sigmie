@@ -30,7 +30,7 @@
         "spatie/ray": "^1.1",
         "brianium/paratest": "^6.3",
         "rachidlaasri/travel": "^1.06",
-        "sigmie/testing": "^1.0"
+        "sigmie/testing": "dev-master"
     },
     "autoload": {
         "psr-4": {

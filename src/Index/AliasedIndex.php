@@ -22,11 +22,13 @@ class AliasedIndex extends Index
     use IndexAPI;
     use Reindex;
 
+    protected array $raw;
+
     public function __construct(
         string $name,
         protected string $alias,
         ?SettingsInterface $settings = null,
-        ?MappingsInterface $mappings = null
+        ?MappingsInterface $mappings = null,
     ) {
         parent::__construct($name, $settings, $mappings);
     }
@@ -142,5 +144,12 @@ class AliasedIndex extends Index
     public function delete(): bool
     {
         return $this->deleteIndex($this->name);
+    }
+
+    public function get(?string $path = null): array
+    {
+        $raw = $this->raw ??= $this->indexAPICall("/{$this->name}", 'GET')->json();
+
+        return dot($raw)->get($path);
     }
 }

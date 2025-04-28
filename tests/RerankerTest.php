@@ -11,7 +11,7 @@ use Sigmie\Semantic\Reranker;
 use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
-class RerankTest extends TestCase
+class RerankerTest extends TestCase
 {
     /**
      * @test

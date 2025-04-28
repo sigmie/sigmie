@@ -12,6 +12,7 @@ use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\Contracts\Analyze;
+use Sigmie\Mappings\NewSemanticField;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
@@ -36,7 +37,7 @@ class Text extends Type implements FromRaw
 
     protected Collection $fields;
 
-    protected bool $semantic = false;
+    protected ?NewSemanticField $semantic = null;
 
     protected VectorStrategy $vectorStrategy = VectorStrategy::Concatenate;
 
@@ -63,11 +64,16 @@ class Text extends Type implements FromRaw
         $this->field(new Keyword('sortable'));
     }
 
-    public function semantic(bool $semantic = true)
+    public function semantic(): NewSemanticField
     {
-        $this->semantic = $semantic;
+        $this->semantic = new NewSemanticField($this->name);
 
-        return $this;
+        return $this->semantic;
+    }
+
+    public function vectorField()
+    {
+        return $this->semantic->make();
     }
 
     public function vectorStrategy(VectorStrategy $strategy)
@@ -112,7 +118,7 @@ class Text extends Type implements FromRaw
 
     public function isSemantic(): bool
     {
-        return $this->semantic;
+        return ! is_null($this->semantic);
     }
 
     public function configure(): void

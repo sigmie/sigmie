@@ -68,7 +68,7 @@ class Mappings implements MappingsInterface
             ->nestedSemanticFields()
             ->mapToDictionary(
                 fn(Text $field) => [
-                    $field->name() => $this->aiProvider->type($field)
+                    $field->name() => $field->vectorField()
                 ]
             )
             ->toArray();

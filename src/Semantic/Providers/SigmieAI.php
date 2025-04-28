@@ -107,43 +107,44 @@ class SigmieAI extends AbstractAIProvider
 
     public function type(Text $originalType): Type
     {
-        if ($originalType->strategy() === VectorStrategy::ScriptScore) {
+        throw new \Exception('Should be removed');
+        // if ($originalType->strategy() === VectorStrategy::ScriptScore) {
 
-            $type =
-                Sigmie::isPluginRegistered('elastiknn') ?
-                new DenseFloatVector(
-                    // name: $originalType->originalName(),
-                    name: 'embedding',
-                    dims: $originalType->dims()
-                ) :
-                new DenseVector(
-                    // name: $originalType->originalName(),
-                    name: 'embedding',
-                    dims: $originalType->dims()
-                );
+        //     $type =
+        //         Sigmie::isPluginRegistered('elastiknn') ?
+        //         new DenseFloatVector(
+        //             // name: $originalType->originalName(),
+        //             name: 'embedding',
+        //             dims: $originalType->dims()
+        //         ) :
+        //         new DenseVector(
+        //             // name: $originalType->originalName(),
+        //             name: 'embedding',
+        //             dims: $originalType->dims()
+        //         );
 
-            $field = new Nested($originalType->name());
+        //     $field = new Nested($originalType->name());
 
-            $props = new NewProperties($originalType->name());
-            $props->type($type);
+        //     $props = new NewProperties($originalType->name());
+        //     $props->type($type);
 
-            $field->properties($props);
+        //     $field->properties($props);
 
-            return $field;
-        }
+        //     return $field;
+        // }
 
-        $type =
-            Sigmie::isPluginRegistered('elastiknn') ?
-            new DenseFloatVector(
-                name: $originalType->originalName(),
-                dims: $originalType->dims()
-            ) :
-            new DenseVector(
-                name: $originalType->originalName(),
-                dims: $originalType->dims()
-            );
+        // $type =
+        //     Sigmie::isPluginRegistered('elastiknn') ?
+        //     new DenseFloatVector(
+        //         name: $originalType->originalName(),
+        //         dims: $originalType->dims()
+        //     ) :
+        //     new DenseVector(
+        //         name: $originalType->originalName(),
+        //         dims: $originalType->dims()
+        //     );
 
-        return $type;
+        // return $type;
     }
 
     public function queries(
