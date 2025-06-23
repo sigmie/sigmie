@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Semantic;
 
 use Sigmie\Base\Http\Responses\Search;
+use Sigmie\Document\Hit;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Semantic\Contracts\AIProvider;
@@ -30,7 +31,7 @@ class Reranker
 
         $semanticProps = $this->properties->nestedSemanticFields()->map(fn(Text $field) => $field->name())->toArray();
 
-        $documents = (new Collection($res->hits()))->map(function (array $hit) use ($semanticProps) {
+        $documents = (new Collection($res->hits()))->map(function (Hit $hit) use ($semanticProps) {
 
             $document = [];
 

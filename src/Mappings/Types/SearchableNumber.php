@@ -31,12 +31,6 @@ class SearchableNumber extends Text implements Analyze
         $this->makeSortable();
     }
 
-    public function semantic(bool $semantic = true)
-    {
-        // Numbers are not semantic
-        $this->semantic = false;
-    }
-
     public function queries(string $queryString): array
     {
         $queries = [];

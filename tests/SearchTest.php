@@ -29,6 +29,7 @@ class SearchTest extends TestCase
     {
     }
 
+
     /**
      * @test
      */
@@ -1083,5 +1084,39 @@ class SearchTest extends TestCase
             ->json('hits');
 
         $this->assertNotEmpty($hits);
+    }
+
+    /**
+     * @test
+     */
+    public function hits()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['name' => 'Mickey']),
+            new Document(['name' => 'Goofy']),
+            new Document(['name' => 'Donald']),
+        ]);
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Mickey', weight: 2)
+            ->queryString('Goofy', weight: 1)
+            ->get();
+
+        $hits = $res->hits();
+
+        $this->assertEquals('Mickey', $hits[0]['name']);
+        $this->assertEquals(2, $res->total());
     }
 }

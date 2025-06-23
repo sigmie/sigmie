@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Http\Responses;
 
 use Sigmie\Base\Http\ElasticsearchResponse;
+use Sigmie\Document\Hit;
 
 class Search extends ElasticsearchResponse
 {
@@ -30,7 +31,11 @@ class Search extends ElasticsearchResponse
 
     public function hits(): array
     {
-        return $this->json('hits.hits');
+        return array_map(fn($value) => new Hit(
+            $value['_source'],
+            $value['_id'],
+            $value['_score']
+        ), $this->json('hits.hits') ?? []);
     }
 
     public function replaceHits(array $hits): array

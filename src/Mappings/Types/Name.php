@@ -27,12 +27,6 @@ class Name extends Text implements Analyze
         $this->unstructuredText()->indexPrefixes()->keyword();
     }
 
-    public function semantic(bool $semantic = true)
-    {
-        // Names are not semantic
-        $this->semantic = false;
-    }
-
     public function analyze(NewAnalyzer $newAnalyzer): void
     {
         $prefixField = (new Text("{$this->name}_text"))->unstructuredText()->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {

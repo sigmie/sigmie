@@ -46,6 +46,10 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected string $rerankQuery = '';
 
+    protected float $textScoreMultiplier = 1.0;
+
+    protected float $semanticScoreMultiplier = 1.0;
+
     public function queryString(string $query, float $weight = 1.0): static
     {
         $this->queryStrings[] = [
@@ -68,6 +72,20 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $parser = new FilterParser($this->properties, $thorwOnError);
 
         $this->filters = $parser->parse($filters);
+
+        return $this;
+    }
+
+    public function textScoreMultiplier(float $multiplier = 1.0): static
+    {
+        $this->textScoreMultiplier = $multiplier;
+
+        return $this;
+    }
+
+    public function semanticScoreMultiplier(float $multiplier = 1.0): static
+    {
+        $this->semanticScoreMultiplier = $multiplier;
 
         return $this;
     }
@@ -219,7 +237,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
             $functionScore = new FunctionScore(
                 $vectorBool,
-                source: 'return _score * 1.9;',
+                source: "return _score * {$this->semanticScoreMultiplier};",
                 // source: "return _score > {$this->semanticThreshold} ? _score : 0;",
                 boostMode: 'replace'
                 // boostMode: 'multiply'
@@ -269,7 +287,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         // $textQueries->each(fn(Query $query) => $shouldClauses->add($query));
 
-        // dd($shouldClauses);
         $textBool = new Boolean;
 
         // An empty boolean query acts like a match_all for this reason
@@ -280,7 +297,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $textFnScore = new FunctionScore(
             $textBool,
-            source: "return _score * 0.1;",
+            source: "return _score * {$this->textScoreMultiplier};",
             // source: "return _score / 10;",
             // source: "return Math.min(_score, 0.1);", // Caps BM25 impact
             boostMode: 'replace',

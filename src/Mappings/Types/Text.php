@@ -37,13 +37,7 @@ class Text extends Type implements FromRaw
 
     protected Collection $fields;
 
-    protected ?NewSemanticField $semantic = null;
-
-    protected VectorStrategy $vectorStrategy = VectorStrategy::Concatenate;
-
-    protected string $vectorScoreMode = 'avg';
-
-    protected int $dims = 256;
+    protected array $vectors = [];
 
     public function __construct(
         string $name,
@@ -64,61 +58,29 @@ class Text extends Type implements FromRaw
         $this->field(new Keyword('sortable'));
     }
 
-    public function semantic(): NewSemanticField
+    public function newSemantic(Closure $closure, ?string $suffix = null): static
     {
-        $this->semantic = new NewSemanticField($this->name);
+        $field = new NewSemanticField($suffix ? "{$this->name}.{$suffix}" : $this->name);
 
-        return $this->semantic;
-    }
+        $closure($field);
 
-    public function vectorField()
-    {
-        return $this->semantic->make();
-    }
-
-    public function vectorStrategy(VectorStrategy $strategy)
-    {
-        $this->vectorStrategy = $strategy;
+        $this->vectors[] = $field->make();
 
         return $this;
     }
 
-    public function strategy(): VectorStrategy
+    public function semantic(int $accuracy = 3, int $dimensions = 256)
     {
-        return $this->vectorStrategy;
-    }
-
-    public function vectorMode(): string
-    {
-        return $this->vectorScoreMode;
-    }
-
-    public function vectorScoreMode(string $mode): self
-    {
-        $this->vectorScoreMode = $mode;
-
-        return $this;
-    }
-
-    public function complexityDepth(int $level): self
-    {
-        $this->dims = match ($level) {
-            0 => 128, // Simple
-            1 => 256, // Basic
-            2 => 384, // Standard
-            3 => 512, // Advanced
-            4 => 768, // Expert
-            5 => 1024, // Deep knowledge
-            6 => 1280, // Deep expert
-            default => 384,
-        };
+        $this->newSemantic(function (NewSemanticField $semantic) use ($accuracy, $dimensions) {
+            $semantic->accuracy($accuracy, $dimensions);
+        });
 
         return $this;
     }
 
     public function isSemantic(): bool
     {
-        return ! is_null($this->semantic);
+        return count($this->vectors) > 0;
     }
 
     public function configure(): void
@@ -423,5 +385,10 @@ class Text extends Type implements FromRaw
     public function originalName(): string
     {
         return $this->name();
+    }
+
+    public function vectors(): Collection
+    {
+        return new Collection($this->vectors);
     }
 }

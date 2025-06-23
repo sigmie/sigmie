@@ -1234,7 +1234,7 @@ class MappingsTest extends TestCase
 
         $blueprint = new NewProperties();
         $blueprint->text('job_description')
-            ->semantic(function (NewSemanticField $semantic) {
+            ->newSemantic(function (NewSemanticField $semantic) {
                 $semantic->cosineSimilarity();
             });
 
@@ -1243,7 +1243,7 @@ class MappingsTest extends TestCase
             ->create();
 
         $this->assertIndex($indexName, function (Assert $assert) {
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description'] ?? [];
+            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_0'] ?? [];
 
             $this->assertEquals('cosine', $field['similarity'] ?? null);
         });
@@ -1258,7 +1258,7 @@ class MappingsTest extends TestCase
 
         $blueprint = new NewProperties();
         $blueprint->text('job_description')
-            ->semantic(function (NewSemanticField $semantic) {
+            ->newSemantic(function (NewSemanticField $semantic) {
                 $semantic->euclideanSimilarity();
             });
 
@@ -1267,7 +1267,7 @@ class MappingsTest extends TestCase
             ->create();
 
         $this->assertIndex($indexName, function (Assert $assert) {
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description'] ?? [];
+            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_0'] ?? [];
 
             $this->assertEquals('l2_norm', $field['similarity'] ?? null);
         });
@@ -1282,7 +1282,7 @@ class MappingsTest extends TestCase
 
         $blueprint = new NewProperties();
         $blueprint->text('job_description')
-            ->semantic(function (NewSemanticField $semantic) {
+            ->newSemantic(function (NewSemanticField $semantic) {
                 $semantic->dotProductSimilarity();
             });
 
@@ -1291,7 +1291,7 @@ class MappingsTest extends TestCase
             ->create();
 
         $this->assertIndex($indexName, function (Assert $assert) {
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description'] ?? [];
+            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_0'] ?? [];
 
             $this->assertEquals('dot_product', $field['similarity'] ?? null);
         });
@@ -1306,7 +1306,7 @@ class MappingsTest extends TestCase
 
         $blueprint = new NewProperties();
         $blueprint->text('job_description')
-            ->semantic(function (NewSemanticField $semantic) {
+            ->newSemantic(function (NewSemanticField $semantic) {
                 $semantic->maxInnerProductSimilarity();
             });
 
@@ -1315,7 +1315,7 @@ class MappingsTest extends TestCase
             ->create();
 
         $this->assertIndex($indexName, function (Assert $assert) {
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description'] ?? [];
+            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_0'] ?? [];
 
             $this->assertEquals('max_inner_product', $field['similarity'] ?? null);
         });
@@ -1324,28 +1324,114 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function dimensions_semantic_builder()
+    public function dimensions_accuracy_1()
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->text('job_description')
-            ->semantic()
-            ->dimensions(512)
-            ->cosineSimilarity()
-            ->accuracy(3);
+        $blueprint->text('job_description')->semantic(accuracy: 1);
 
-        $this->sigmie->newIndex($indexName)
-            ->properties($blueprint)
-            ->create();
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
         $index = $this->sigmie->index($indexName);
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $assert->assertEmbeddingsPropertyEquals('job_description.index_options.m', '64');
-            $assert->assertEmbeddingsPropertyEquals('job_description.index_options.ef_construction', '400');
-            $assert->assertEmbeddingsPropertyEquals('job_description.dims', '512');
+            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.m', '16');
+            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.ef_construction', '80');
+            $assert->assertEmbeddingsPropertyEquals('job_description_0.dims', '256');
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function dimensions_accuracy_2()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('job_description')->semantic(accuracy: 1);
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $index = $this->sigmie->index($indexName);
+
+        $this->assertIndex($indexName, function (Assert $assert) {
+
+            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.m', '16');
+            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.ef_construction', '80');
+            $assert->assertEmbeddingsPropertyEquals('job_description_0.dims', '256');
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function dimensions_accuracy_3()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('job_description')->semantic(accuracy: 3, dimensions: 512);
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $index = $this->sigmie->index($indexName);
+
+        $this->assertIndex($indexName, function (Assert $assert) {
+
+            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.m', '64');
+            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.ef_construction', '400');
+            $assert->assertEmbeddingsPropertyEquals('job_description_0.dims', '512');
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function dimensions_accuracy_5()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('job_description')->semantic(accuracy: 5);
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $index = $this->sigmie->index($indexName);
+
+        $this->assertIndex($indexName, function (Assert $assert) {
+
+            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.m', '64');
+            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.ef_construction', '400');
+            $assert->assertEmbeddingsPropertyEquals('job_description_0.dims', '256');
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function multiple_vectors_per_field()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('job_description')
+            ->semantic(accuracy: 3, dimensions: 512)
+            ->semantic(accuracy: 5, dimensions: 512);
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->assertIndex($indexName, function (Assert $assert) {
+
+            $field0 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_0']['index_options'] ?? [];
+            $field1 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_1']['index_options'] ?? [];
+
+            $assert->assertEquals(64, $field0['m'], 'm should be 64 for accuracy 3 and dimensions 512');
+            $assert->assertEquals(128, $field1['m'], 'm should be 128 for accuracy 5 and dimensions 512');
         });
     }
 }

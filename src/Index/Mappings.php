@@ -11,6 +11,7 @@ use Sigmie\Index\Contracts\TokenFilter;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Embeddings;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Object_;
@@ -66,14 +67,22 @@ class Mappings implements MappingsInterface
     {
         $fields = $this->properties
             ->nestedSemanticFields()
-            ->mapToDictionary(
-                fn(Text $field) => [
-                    $field->name() => $field->vectorField()
-                ]
+            ->map(
+                fn(Text $field) =>
+                $field->vectors()
+                    ->map(function (DenseVector $vector, int $key) {
+                        $vector->name = $vector->name . '_' . $key;
+
+                        return $vector;
+                    })
+                    ->mapToDictionary(fn(DenseVector $vector, int $key) => [$field->name() . '_' . $key => $vector])
             )
+            ->flattenWithKeys()
             ->toArray();
 
         $embeddings = new Embeddings($fields);
+
+        ray($fields, $embeddings->toRaw());
 
         $raw = [
             'properties' => [
