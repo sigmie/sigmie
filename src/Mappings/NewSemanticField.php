@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Sigmie\Mappings;
 
 use Exception;
+use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Mappings\Types\DenseVector;
 
 class NewSemanticField
 {
-    protected string $similarity = 'cosine';
+    protected VectorSimilarity $similarity = VectorSimilarity::Cosine;
 
     protected int $dims = 256;
 
@@ -26,28 +27,35 @@ class NewSemanticField
 
     public function cosineSimilarity()
     {
-        $this->similarity = 'cosine';
+        $this->similarity = VectorSimilarity::Cosine;
 
         return $this;
     }
 
     public function euclideanSimilarity()
     {
-        $this->similarity = 'l2_norm';
+        $this->similarity = VectorSimilarity::Euclidean;
 
         return $this;
     }
 
     public function dotProductSimilarity()
     {
-        $this->similarity = 'dot_product';
+        $this->similarity = VectorSimilarity::DotProduct;
 
         return $this;
     }
 
     public function maxInnerProductSimilarity()
     {
-        $this->similarity = 'max_inner_product';
+        $this->similarity = VectorSimilarity::MaxInnerProduct;
+
+        return $this;
+    }
+
+    public function similarity(VectorSimilarity $similarity)
+    {
+        $this->similarity = $similarity;
 
         return $this;
     }
@@ -109,7 +117,7 @@ class NewSemanticField
         return new DenseVector(
             name: $this->name,
             dims: $this->dims,
-            similarity: $this->similarity,
+            similarity: $this->similarity->value,
             efConstruction: $this->efConstruction,
             m: $this->m,
         );

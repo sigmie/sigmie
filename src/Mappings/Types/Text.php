@@ -7,6 +7,7 @@ namespace Sigmie\Mappings\Types;
 use Closure;
 use Exception;
 use Sigmie\Base\Http\ElasticsearchResponse;
+use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Analyzer;
@@ -69,13 +70,12 @@ class Text extends Type implements FromRaw
         return $this;
     }
 
-    public function semantic(int $accuracy = 3, int $dimensions = 256)
+    public function semantic(int $accuracy = 3, int $dimensions = 256, VectorSimilarity $similarity = VectorSimilarity::Cosine)
     {
-        $this->newSemantic(function (NewSemanticField $semantic) use ($accuracy, $dimensions) {
-            $semantic->accuracy($accuracy, $dimensions);
-        });
-
-        return $this;
+        return $this->newSemantic(
+            fn(NewSemanticField $semantic) => $semantic->accuracy($accuracy, $dimensions)
+                ->similarity($similarity)
+        );
     }
 
     public function isSemantic(): bool

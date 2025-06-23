@@ -7,6 +7,7 @@ namespace Sigmie\Tests;
 use DateTime;
 use Exception;
 use Sigmie\Document\Document;
+use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
@@ -1351,7 +1352,8 @@ class MappingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->text('job_description')->semantic(accuracy: 1);
+        $blueprint->text('job_description')
+            ->semantic(accuracy: 1, similarity: VectorSimilarity::Cosine);
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
@@ -1362,6 +1364,7 @@ class MappingsTest extends TestCase
             $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.m', '16');
             $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.ef_construction', '80');
             $assert->assertEmbeddingsPropertyEquals('job_description_0.dims', '256');
+            $assert->assertEmbeddingsPropertyEquals('job_description_0.similarity', 'cosine');
         });
     }
 
@@ -1419,7 +1422,7 @@ class MappingsTest extends TestCase
         $blueprint = new NewProperties();
         $blueprint->text('job_description')
             ->semantic(accuracy: 3, dimensions: 512)
-            ->semantic(accuracy: 5, dimensions: 512);
+            ->semantic(accuracy: 5, dimensions: 512, similarity: VectorSimilarity::Euclidean);
 
         $this->sigmie->newIndex($indexName)
             ->properties($blueprint)

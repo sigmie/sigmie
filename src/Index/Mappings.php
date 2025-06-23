@@ -82,8 +82,6 @@ class Mappings implements MappingsInterface
 
         $embeddings = new Embeddings($fields);
 
-        ray($fields, $embeddings->toRaw());
-
         $raw = [
             'properties' => [
                 ...$this->properties->toRaw(),
