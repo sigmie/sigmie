@@ -11,7 +11,7 @@ interface AIProvider
 {
     public function embed(string $text, Text $originalType): array;
 
-    public function batchEmbed(array $textTypes): array;
+    public function batchEmbed(array $payload): array;
 
     public function type(Text $originalType): Type;
 

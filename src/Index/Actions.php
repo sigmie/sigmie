@@ -45,6 +45,8 @@ trait Actions
             'mappings' => $mappings->toRaw(),
         ];
 
+        ray($body)->blue();
+
         $this->indexAPICall("{$indexName}", 'PUT', $body);
     }
 

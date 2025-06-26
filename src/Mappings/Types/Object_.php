@@ -33,7 +33,7 @@ class Object_ extends Type
         return $this;
     }
 
-    public function queries(string $queryString): array
+    public function queries(array|string $queryString): array
     {
         $queries = [];
 

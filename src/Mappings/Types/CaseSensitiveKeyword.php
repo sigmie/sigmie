@@ -13,7 +13,7 @@ class CaseSensitiveKeyword extends Type
 {
     protected string $type = 'keyword';
 
-    public function queries(string $queryString): array
+    public function queries(array|string $queryString): array
     {
         $queries = [];
 

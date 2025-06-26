@@ -6,7 +6,7 @@ class GeoPoint extends Type
 {
     protected string $type = 'geo_point';
 
-    public function queries(string $queryString): array
+    public function queries(array|string $queryString): array
     {
         return [];
     }

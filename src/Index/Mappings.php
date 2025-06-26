@@ -69,18 +69,14 @@ class Mappings implements MappingsInterface
             ->nestedSemanticFields()
             ->map(
                 fn(Text $field) =>
-                $field->vectors()
-                    ->map(function (DenseVector $vector, int $key) {
-                        $vector->name = $vector->name . '_' . $key;
-
-                        return $vector;
-                    })
-                    ->mapToDictionary(fn(DenseVector $vector, int $key) => [$field->name() . '_' . $key => $vector])
+                $field->vectorFields()
             )
             ->flattenWithKeys()
             ->toArray();
 
         $embeddings = new Embeddings($fields);
+
+        ray($embeddings->toRaw())->green();
 
         $raw = [
             'properties' => [

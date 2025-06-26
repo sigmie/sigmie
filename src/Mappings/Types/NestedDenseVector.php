@@ -11,9 +11,8 @@ use Sigmie\Mappings\Types\Type as AbstractType;
 use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\NearestNeighbors;
-use Sigmie\Query\Queries\Text\Nested;
 
-class DenseVector extends AbstractType implements Type
+class NestedDenseVector extends AbstractType implements Type
 {
     public function __construct(
         public string $name,
@@ -88,7 +87,7 @@ class DenseVector extends AbstractType implements Type
         if ($this->index) {
             return [
                 new NearestNeighbors(
-                    "embeddings.{$this->name}",
+                    "embeddings.name.{$this->name}",
                     $vector,
                     // // k: $this->dims,
                     numCandidates: $this->efConstruction * 2
@@ -96,24 +95,23 @@ class DenseVector extends AbstractType implements Type
             ];
         }
 
-        $source = "1.0+cosineSimilarity(params.query_vector, 'embeddings.name_exact.vector')";
+        $source = "";
+        $source .= "double maxSim = 0;";
+        $source .= "for (int i = 0; i < doc['embeddings.name.{$this->name}'].length; i++) {";
+        $source .= "  double sim = cosineSimilarity(params.query_vector, doc['embeddings.name.{$this->name}'][i]);";
+        $source .= "  if (sim > maxSim) maxSim = sim;";
+        $source .= "}";
+        $source .= "return maxSim;";
 
-        $query = [
-            new Nested(
-                "embeddings.name_exact",
-                new FunctionScore(
-                    query: new MatchAll(),
-                    source: $source,
-                    boostMode: 'replace',
-                    params: [
-                        'query_vector' => $vector
-                    ]
-                )
+        return [
+            new FunctionScore(
+                query: new MatchAll(),
+                source: $source,
+                boostMode: 'replace', // Doesn't matter, because of match all 
+                params: [
+                    'query_vector' => $vector
+                ]
             )
         ];
-
-        ray($query[0]->toRaw())->blue();
-
-        return $query;
     }
 }

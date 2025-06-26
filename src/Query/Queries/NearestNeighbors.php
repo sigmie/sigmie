@@ -12,8 +12,17 @@ class NearestNeighbors extends Query
 {
     public function __construct(
         protected string $field,
-        protected array|string $embeddings
+        protected array|string $queryVector,
+        protected int $k = 300,
+        protected int $numCandidates = 1000,
     ) {}
+
+    public function k(int $k): self
+    {
+        $this->k = $k;
+
+        return $this;
+    }
 
     public function toRaw(): array
     {
@@ -22,13 +31,10 @@ class NearestNeighbors extends Query
             Version::v8 => [
                 "knn" => [
                     "field" => $this->field,
-                    "query_vector" => $this->embeddings,
-                    "k" => 300, // Needs to be same as size in search
-                    "num_candidates" => 1000, // 10000 Candidates
-                    // "similarity" => 1000,
-
-                    // "model" => "exact",
-                    // "similarity" => "cosine",
+                    "query_vector" => $this->queryVector,
+                    "k" => $this->k, // Needs to be same as size in search
+                    // "num_candidates" => $this->numCandidates,
+                    "num_candidates" => 10000 ,
                     'boost' => $this->boost,
                 ],
             ]

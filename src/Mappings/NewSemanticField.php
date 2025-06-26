@@ -6,7 +6,11 @@ namespace Sigmie\Mappings;
 
 use Exception;
 use Sigmie\Enums\VectorSimilarity;
+use Sigmie\Enums\VectorStrategy;
+use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\DenseVector;
+use Sigmie\Mappings\Types\Nested;
+use Sigmie\Mappings\Types\Object_;
 
 class NewSemanticField
 {
@@ -14,9 +18,13 @@ class NewSemanticField
 
     protected int $dims = 256;
 
-    protected int $efConstruction = 300;
+    protected ?int $efConstruction = 300;
 
-    protected int $m = 64;
+    protected ?int $m = 64;
+
+    protected bool $index = true;
+
+    protected VectorStrategy $strategy = VectorStrategy::Concatenate;
 
     public string $name;
 
@@ -64,9 +72,33 @@ class NewSemanticField
     {
         $dimensions = $dimensions ?? $this->dims;
 
-        if ($level < 1 || $level > 6) {
-            throw new Exception('Accuracy level must be between 1 and 6');
+        if (!in_array($dimensions, [
+            256,
+            384,
+            512,
+            1024,
+            1536,
+            2048,
+            3072,
+        ])) {
+            throw new Exception('Dimensions must be one of: 16, 24, 32, 48, 64, 80, 128, 200, 256, 300, 384, 400, 512, 1024, 1536, 2048, 3072');
         }
+
+        if ($level < 1 || $level > 7) {
+            throw new Exception('Accuracy level must be between 1 and 7');
+        }
+
+        $this->strategy = match ($level) {
+            1 => VectorStrategy::Concatenate,
+            2 => VectorStrategy::Concatenate,
+            3 => VectorStrategy::Average,
+            4 => VectorStrategy::Average,
+            5 => VectorStrategy::Average,
+            6 => VectorStrategy::Average,
+            7 => VectorStrategy::ScriptScore,
+        };
+
+        $this->index = $level < 7;
 
         // Base values for 256 dimensions
         $base = [
@@ -78,15 +110,20 @@ class NewSemanticField
             6 => [80, 512],
         ];
 
-        [$baseM, $baseEf] = $base[$level];
+        $this->dims = $dimensions;
 
         // Scale factor relative to 256 dims
-        $scale = $dimensions / 256;
 
-        // Scale with upper bounds to avoid unbounded growth
-        $this->m = min((int) round($baseM * $scale), 128);
-        $this->efConstruction = min((int) round($baseEf * $scale), 1000);
-        $this->dims = $dimensions;
+        if ($level < 7) {
+            [$baseM, $baseEf] = $base[$level];
+            $scale = $dimensions / 256;
+
+            $this->m = min((int) round($baseM * $scale), 128);
+            $this->efConstruction = min((int) round($baseEf * $scale), 1000);
+        } else {
+            $this->m = null;
+            $this->efConstruction = null;
+        }
 
         return $this;
     }
@@ -112,14 +149,36 @@ class NewSemanticField
         return $this;
     }
 
-    public function make(): DenseVector
+    public function make(): Type 
     {
-        return new DenseVector(
-            name: $this->name,
+        $suffix = 'm' . $this->m . '_efc' . $this->efConstruction . '_dims' . $this->dims . '_' . $this->similarity->value;
+        $name = $this->name . '_' . $suffix;
+
+        if (!$this->index) {
+            $properties = new NewProperties($name);
+            $properties->type(new DenseVector(
+                name: 'vector',
+                dims: $this->dims,
+                strategy: $this->strategy,
+                index: $this->index,
+                similarity: $this->similarity,
+                efConstruction: $this->efConstruction,
+                m: $this->m,
+            ));
+
+            return new Nested($this->name . '_exact', $properties->get());
+        }
+
+        $type = new DenseVector(
+            name: $name,
             dims: $this->dims,
-            similarity: $this->similarity->value,
+            strategy: $this->strategy,
+            index: $this->index,
+            similarity: $this->similarity,
             efConstruction: $this->efConstruction,
             m: $this->m,
         );
+
+        return $type;
     }
 }

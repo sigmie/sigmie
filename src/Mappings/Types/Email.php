@@ -25,7 +25,7 @@ class Email extends Text implements Analyze
         $this->makeSortable();
     }
 
-    public function queries(string $queryString): array
+    public function queries(array|string $queryString): array
     {
         $queries = [];
 

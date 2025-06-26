@@ -23,7 +23,7 @@ class Tags extends Text implements Analyze
             ->lowercase();
     }
 
-    public function queries(string $queryString): array
+    public function queries(array|string $queryString): array
     {
         $queries = [];
 

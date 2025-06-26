@@ -56,20 +56,10 @@ class SigmieAI extends AbstractAIProvider
         return $response->json('reranked_scores');
     }
 
-    public function batchEmbed(array $textTypes): array
+    public function batchEmbed(array $payload): array
     {
-        if (count($textTypes) === 0) {
+        if (count($payload) === 0) {
             return [];
-        }
-
-        $payload = [];
-        $textTypes = array_values($textTypes);
-
-        foreach ($textTypes as $textType) {
-            $payload[] = [
-                'text' => $textType['text'],
-                'dims' => (string) $textType['type']->dims()
-            ];
         }
 
         $response = $this->http->request(new JSONRequest(
@@ -78,15 +68,16 @@ class SigmieAI extends AbstractAIProvider
             $payload
         ));
 
-        $embeddings = [];
-
         foreach ($response->json() as $index => $result) {
-            $embeddings[] = [
-                'embeddings' => dot($result)->get('embeddings'),
-            ];
+            // $embeddings[] = [
+            //     'embeddings' => dot($result)->get('embeddings'),
+            //     dot($result)->get('embeddings')
+            // ];
+
+            $payload[$index]['vector'] = dot($result)->get('embeddings');
         }
 
-        return $embeddings;
+        return $payload;
     }
 
     public function embed(string $text, Text $originalType): array
@@ -151,6 +142,8 @@ class SigmieAI extends AbstractAIProvider
         array|string $text,
         Text $type
     ): array {
+
+        dd($text);
 
         if ($type->strategy() === VectorStrategy::ScriptScore) {
             $fnQuery = new FunctionScore(

@@ -19,7 +19,7 @@ class LongText extends Text
         $this->unstructuredText();
     }
 
-    public function queries(string $queryString): array
+    public function queries(array|string $queryString): array
     {
         $queries = [];
 

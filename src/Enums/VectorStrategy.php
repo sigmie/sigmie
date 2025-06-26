@@ -10,21 +10,53 @@ enum VectorStrategy: string
     // Good for short strings
     case Concatenate = 'concatenate';
 
-    // Average accuracy
-    // Good for long strings
+        // Average accuracy
+        // Good for long strings
     case Average = 'average';
 
-    // Max accuracy
-    // Good for short strings
+        // Max accuracy
+        // Good for short strings
     case ScriptScore = 'script_score';
 
-    case ScriptScoreMin = 'script_score_min';
+    public function prepare(array $values): array
+    {
+        return match ($this) {
+            self::Concatenate => [implode(' ', $values)],
+            default => $values,
+        };
+    }
 
-    case ScriptScoreMax = 'script_score_max';
+    public function format(array $embeddings): array
+    {
+        return (match ($this) {
+            self::Concatenate => function ($embeddings) {
+                return $embeddings[0] ?? [];
+            },
+            self::Average => function ($embeddings) {
 
-    case ScriptScoreAvg = 'script_score_avg';
+                $count = count($embeddings);
 
-    case ScriptScoreSum = 'script_score_sum';
+                if ($count === 1) {
+                    return $embeddings[0];
+                }
 
-    case ScriptScoreMedian = 'script_score_median';
+                $dimensions = count($embeddings[0]);
+                $sum = array_fill(0, $dimensions, 0.0);
+
+                foreach ($embeddings as $vector) {
+                    foreach ($vector as $i => $val) {
+                        $sum[$i] += $val;
+                    }
+                }
+
+                return array_map(fn($total) => $total / $count, $sum);
+            },
+            self::ScriptScore => function (array $embeddings) {
+                // For ScriptScore: create array of objects with embedding field
+                return array_map(function ($embedding) {
+                    return ['vector' => $embedding];
+                }, $embeddings);
+            },
+        })($embeddings);
+    }
 }

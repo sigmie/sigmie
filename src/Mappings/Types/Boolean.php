@@ -10,7 +10,7 @@ class Boolean extends Type
 {
     protected string $type = 'boolean';
 
-    public function queries(string $queryString): array
+    public function queries(array|string $queryString): array
     {
         $queries = [];
 

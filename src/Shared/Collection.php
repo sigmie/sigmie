@@ -250,6 +250,50 @@ class Collection implements ArrayAccess, Countable
         return new static(array_filter($this->elements, $p, ARRAY_FILTER_USE_BOTH));
     }
 
+    public function uniqueBy(string $key): static
+    {
+        $unique = [];
+        $seen = [];
+
+        foreach ($this->elements as $element) {
+            // Support both array and object
+            if (is_array($element) && array_key_exists($key, $element)) {
+                $value = $element[$key];
+            } elseif (is_object($element) && isset($element->{$key})) {
+                $value = $element->{$key};
+            } else {
+                continue;
+            }
+
+            if (!in_array($value, $seen, true)) {
+                $seen[] = $value;
+                $unique[] = $element;
+            }
+        }
+
+        return new static($unique);
+    }
+
+    public function groupBy(string $key): static
+    {
+        $grouped = [];
+
+        foreach ($this->elements as $element) {
+            // Support both array and object
+            if (is_array($element) && array_key_exists($key, $element)) {
+                $groupKey = $element[$key];
+            } elseif (is_object($element) && isset($element->{$key})) {
+                $groupKey = $element->{$key};
+            } else {
+                continue;
+            }
+
+            $grouped[$groupKey][] = $element;
+        }
+
+        return new static($grouped);
+    }
+
     public function each(Closure $p): static
     {
         foreach ($this->elements as $key => $element) {

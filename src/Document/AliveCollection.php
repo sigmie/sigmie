@@ -17,6 +17,7 @@ use Sigmie\Index\Shared\Mappings;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\HTML;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\Semantic\DocumentEmbeddings;
 use Sigmie\Shared\EmbeddingsProvider;
 use Traversable;
 use Sigmie\Shared\Collection;
@@ -109,7 +110,9 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function merge(array $docs): AliveCollection
     {
-        $docs = array_map(fn(Document $doc) => $this->documentEmbeddings($doc), $docs);
+        $documentEmbeddings = new DocumentEmbeddings($this->properties, $this->aiProvider);
+        
+        $docs = array_map(fn(Document $doc) => $documentEmbeddings->make($doc), $docs);
 
         $collection = $this->upsertDocuments($this->name, $docs, $this->refresh);
 
@@ -130,7 +133,9 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         $fieldStrategies = [];
 
         $fields->each(function (Text $field, $name) use (&$fieldTexts, &$fieldStrategies, $document) {
+
             $value = dot($document->_source)->get($name);
+
             if (!$value) {
                 return;
             }

@@ -23,12 +23,12 @@ abstract class AbstractAIProvider implements AIProvider
         return [];
     }
 
-    public function batchEmbed(array $textTypes): array
+    public function batchEmbed(array $payload): array
     {
         $embeddings = [];
 
-        foreach ($textTypes as $textType) {
-            $embeddings[] = $this->embed($textType['text'], $textType['type']);
+        foreach ($payload as $item) {
+            $embeddings[] = $this->embed($item);
         }
 
         return $embeddings;

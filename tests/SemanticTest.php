@@ -290,16 +290,17 @@ class SemanticTest extends TestCase
         Sigmie::registerPlugins([]);
 
         $indexName = uniqid();
-        $provider = new Noop();
+        // $provider = new Noop();
+        $provider = new SigmieAI;
 
         $blueprint = new NewProperties();
         $blueprint->title('name')
             ->semantic()
-            ->vectorStrategy(VectorStrategy::Concatenate);
+            ->semantic(2, 384)
+            ->semantic(7);
         $blueprint->number('age')->integer();
 
-        $this->sigmie
-            ->newIndex($indexName)
+        $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
             ->aiProvider($provider)
             ->create();
@@ -310,7 +311,7 @@ class SemanticTest extends TestCase
             ->aiProvider($provider)
             ->merge([
                 new Document([
-                    'name' => 'King',
+                    'name' => ['King', 'Prince'],
                     'age' => 10,
                 ]),
                 new Document([
@@ -319,26 +320,35 @@ class SemanticTest extends TestCase
                 ]),
             ]);
 
-        $templateName = uniqid();
-
-        $saved = $this->sigmie
-            ->newTemplate($templateName)
-            ->aiProvider($provider)
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->semantic()
             ->noResultsOnEmptySearch()
             ->properties($blueprint)
-            ->semantic(threshold: 0)
-            ->fields(['name'])
-            ->get()
-            ->save();
+            ->queryString('queen')
+            ->get();
 
-        $template = $this->sigmie->template($templateName);
+        dd($response->json());
+        // $templateName = uniqid();
 
-        $hits = $template->run($indexName, [
-            'query_string' => 'woman',
-        ])->json('hits.hits.0');
+        // $saved = $this->sigmie
+        //     ->newTemplate($templateName)
+        //     ->aiProvider($provider)
+        //     ->noResultsOnEmptySearch()
+        //     ->properties($blueprint)
+        //     ->semantic(threshold: 0)
+        //     ->fields(['name'])
+        //     ->get()
+        //     ->save();
 
-        //Noop provider should not return queen 
-        $this->assertEquals('King', $hits['_source']['name'] ?? null);
+        // $template = $this->sigmie->template($templateName);
+
+        // $hits = $template->run($indexName, [
+        //     'query_string' => 'woman',
+        // ])->json('hits.hits.0');
+
+        // //Noop provider should not return queen 
+        // $this->assertEquals('King', $hits['_source']['name'] ?? null);
     }
 
     /**

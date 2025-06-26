@@ -42,7 +42,7 @@ class Nested extends Type
         return $raw;
     }
 
-    public function queries(string $queryString): array
+    public function queries(array|string $queryString): array
     {
         $queries = [];
 

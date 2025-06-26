@@ -44,7 +44,7 @@ class Properties extends Type implements ArrayAccess
         $this->fields['autocomplete'] = (new Text('autocomplete'))->completion($analyzer);
     }
 
-    public function queries(string $queryString): array
+    public function queries(array|string $queryString): array
     {
         return [];
     }

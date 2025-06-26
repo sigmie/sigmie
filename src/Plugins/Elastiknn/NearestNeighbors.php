@@ -20,7 +20,7 @@ class NearestNeighbors extends QueryNearestNeighbors implements ToRaw
             "elastiknn_nearest_neighbors" => [
                 "field" => $this->field,
                 "vec" => [
-                    "values" => $this->embeddings
+                    "values" => $this->queryVector
                 ],
                 "model" => "exact",
                 "similarity" => "cosine",

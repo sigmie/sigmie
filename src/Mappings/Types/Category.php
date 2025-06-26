@@ -26,7 +26,7 @@ class Category extends Text
         $this->makeSortable();
     }
 
-    public function queries(string $queryString): array
+    public function queries(array|string $queryString): array
     {
         $queries = [];
 

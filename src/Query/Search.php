@@ -192,6 +192,8 @@ class Search
     {
         $raw = $this->getDSL();
 
+        // ray(json_encode($raw, JSON_PRETTY_PRINT));
+
         return $this->searchAPICall($this->index, $raw);
     }
 

@@ -47,7 +47,7 @@ class Keyword extends Type
         }
     }
 
-    public function queries(string $queryString): array
+    public function queries(array|string $queryString): array
     {
         $queries = [];
 

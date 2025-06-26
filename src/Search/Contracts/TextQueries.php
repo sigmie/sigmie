@@ -6,5 +6,5 @@ namespace Sigmie\Search\Contracts;
 
 interface TextQueries
 {
-    public function queries(string $queryString): array;
+    public function queries(array|string $queryString): array;
 }

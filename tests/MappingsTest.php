@@ -1244,7 +1244,8 @@ class MappingsTest extends TestCase
             ->create();
 
         $this->assertIndex($indexName, function (Assert $assert) {
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_0'] ?? [];
+
+            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m64_efc300_dims256_cosine'] ?? [];
 
             $this->assertEquals('cosine', $field['similarity'] ?? null);
         });
@@ -1268,7 +1269,8 @@ class MappingsTest extends TestCase
             ->create();
 
         $this->assertIndex($indexName, function (Assert $assert) {
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_0'] ?? [];
+
+            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m64_efc300_dims256_l2_norm'] ?? [];
 
             $this->assertEquals('l2_norm', $field['similarity'] ?? null);
         });
@@ -1292,7 +1294,7 @@ class MappingsTest extends TestCase
             ->create();
 
         $this->assertIndex($indexName, function (Assert $assert) {
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_0'] ?? [];
+            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m64_efc300_dims256_dot_product'] ?? [];
 
             $this->assertEquals('dot_product', $field['similarity'] ?? null);
         });
@@ -1316,7 +1318,7 @@ class MappingsTest extends TestCase
             ->create();
 
         $this->assertIndex($indexName, function (Assert $assert) {
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_0'] ?? [];
+            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m64_efc300_dims256_max_inner_product'] ?? [];
 
             $this->assertEquals('max_inner_product', $field['similarity'] ?? null);
         });
@@ -1338,9 +1340,9 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.m', '16');
-            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.ef_construction', '80');
-            $assert->assertEmbeddingsPropertyEquals('job_description_0.dims', '256');
+            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.index_options.m', '16');
+            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.index_options.ef_construction', '80');
+            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.dims', '256');
         });
     }
 
@@ -1361,10 +1363,10 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.m', '16');
-            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.ef_construction', '80');
-            $assert->assertEmbeddingsPropertyEquals('job_description_0.dims', '256');
-            $assert->assertEmbeddingsPropertyEquals('job_description_0.similarity', 'cosine');
+            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.index_options.m', '16');
+            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.index_options.ef_construction', '80');
+            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.dims', '256');
+            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.similarity', 'cosine');
         });
     }
 
@@ -1384,9 +1386,9 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.m', '64');
-            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.ef_construction', '400');
-            $assert->assertEmbeddingsPropertyEquals('job_description_0.dims', '512');
+            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims512_cosine.index_options.m', '64');
+            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims512_cosine.index_options.ef_construction', '400');
+            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims512_cosine.dims', '512');
         });
     }
 
@@ -1406,9 +1408,9 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.m', '64');
-            $assert->assertEmbeddingsPropertyEquals('job_description_0.index_options.ef_construction', '400');
-            $assert->assertEmbeddingsPropertyEquals('job_description_0.dims', '256');
+            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims256_cosine.index_options.m', '64');
+            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims256_cosine.index_options.ef_construction', '400');
+            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims256_cosine.dims', '256');
         });
     }
 
@@ -1430,11 +1432,37 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $field0 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_0']['index_options'] ?? [];
-            $field1 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_1']['index_options'] ?? [];
+            $field0 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m64_efc400_dims512_cosine']['index_options'] ?? [];
+            $field1 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m128_efc800_dims512_l2_norm']['index_options'] ?? [];
 
             $assert->assertEquals(64, $field0['m'], 'm should be 64 for accuracy 3 and dimensions 512');
             $assert->assertEquals(128, $field1['m'], 'm should be 128 for accuracy 5 and dimensions 512');
+
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function script_score_strategy()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('job_description')->semantic(accuracy: 7);
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $index = $this->sigmie->index($indexName);
+
+        $this->assertIndex($indexName, function (Assert $assert) {
+
+            $index = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_exact']['index'];
+            $indexOptions = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_exact']['index_options'] ?? null;
+
+            $this->assertFalse($index);
+            $this->assertNull($indexOptions);
         });
     }
 }
+

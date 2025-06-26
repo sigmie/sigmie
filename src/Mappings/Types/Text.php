@@ -70,8 +70,11 @@ class Text extends Type implements FromRaw
         return $this;
     }
 
-    public function semantic(int $accuracy = 3, int $dimensions = 256, VectorSimilarity $similarity = VectorSimilarity::Cosine)
-    {
+    public function semantic(
+        int $accuracy = 3,
+        int $dimensions = 256,
+        VectorSimilarity $similarity = VectorSimilarity::Cosine
+    ) {
         return $this->newSemantic(
             fn(NewSemanticField $semantic) => $semantic->accuracy($accuracy, $dimensions)
                 ->similarity($similarity)
@@ -309,7 +312,7 @@ class Text extends Type implements FromRaw
         return $raw;
     }
 
-    public function queries(string $queryString): array
+    public function queries(array|string $queryString): array
     {
         $queries = [];
 
@@ -387,7 +390,7 @@ class Text extends Type implements FromRaw
         return $this->name();
     }
 
-    public function vectors(): Collection
+    public function vectorFields(): Collection
     {
         return new Collection($this->vectors);
     }

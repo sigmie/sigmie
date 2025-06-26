@@ -7,11 +7,13 @@ namespace Sigmie\Search;
 use Http\Promise\Promise;
 use Sigmie\Base\Http\Responses\Search as ResponsesSearch;
 use Sigmie\Mappings\PropertiesFieldNotFound;
+use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
+use Sigmie\Plugins\Elastiknn\NearestNeighbors;
 use Sigmie\Query\Contracts\FuzzyQuery;
 use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\Compound\Boolean;
@@ -194,7 +196,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $search;
     }
 
-    private function addTextQueries(string $queryString, Collection $fields, Collection &$shouldClauses, float $queryBoost = 1.0): void
+    private function addTextqueries(array|string $queryString, Collection $fields, Collection &$shouldClauses, float $queryBoost = 1.0): void
     {
         $textTypes = $this->properties->nestedSemanticFields()
             ->filter(fn(Text $field) => $field->isSemantic())
@@ -205,27 +207,67 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 'type' => $field,
             ])->toArray();
 
-        // Vector queries
-        $embeddings = $this->aiProvider->batchEmbed($textTypes);
-
         if ($this->semanticSearch && trim($queryString) !== '') {
 
-            $semanticFields = array_values($this->properties->nestedSemanticFields()
+            $vectorFieldsFields = $this->properties->nestedSemanticFields()
                 ->filter(fn(Text $field) => $field->isSemantic())
                 // Only fields that are in the fields array
                 ->filter(fn(Text $field) => $fields->indexOf($field->name()) !== false)
-                ->toArray());
+                ->map(fn(Text $field) => $field->vectorFields())
+                ->flatten(1);
 
-            $vectorQueries = (new Collection($embeddings))
-                ->map(function (array $embedding, int $index) use ($semanticFields) {
+            $dims = $vectorFieldsFields
+                ->map(function (TypesNested|DenseVector $field) use ($queryString) {
 
-                    return $this->aiProvider->queries(
-                        $embedding['embeddings'] ?? '',
-                        $semanticFields[$index]
-                    );
+                    $name = $field->name();
+
+                    if ($field instanceof TypesNested) {
+                        $field = $field->properties['vector'];
+                        $name = str_replace('.vector', '', $name);
+                    }
+
+                    return [
+                        'text' => $queryString,
+                        'dims' => (string) $field->dims(),
+                        'name' => $name,
+                        'vector' => []
+                    ];
+                })
+                ->uniqueBy('dims')
+                ->toArray();
+
+            $embeddings = $this->aiProvider->batchEmbed($dims);
+
+            $vectorByDims = (new Collection($embeddings))->mapWithKeys(fn($item) => [$item['dims'] => $item['vector']]);
+
+            $vectorQueries = $vectorFieldsFields
+                ->map(function (TypesNested|DenseVector $field) use ($vectorByDims) {
+
+                    if ($field instanceof TypesNested) {
+                        $field = $field->properties['vector'];
+                    }
+
+                    return $field->queries($vectorByDims->get($field->dims()));
                 })
                 ->flatten(1)
-                ->map(fn(Query $query) => $query->boost($queryBoost));
+                ->map(function (Query $query) use ($queryBoost) {
+                    if ($query instanceof NearestNeighbors) {
+                        $query->k($this->size);
+                    }
+
+                    return $query;
+                });
+
+            // $vectorQueries = (new Collection($embeddings))
+            //     ->map(function (array $embedding, int $index) use ($semanticFields) {
+
+            //         return $this->aiProvider->queries(
+            //             $embedding['embeddings'] ?? '',
+            //             $semanticFields[$index]
+            //         );
+            //     })
+            //     ->flatten(1)
+            //     ->map(fn(Query $query) => $query->boost($queryBoost));
 
 
             $vectorBool = new Boolean;
@@ -235,16 +277,21 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $vectorQueries
                 ->each(fn(Query $query) => $vectorBool->should()->query($query));
 
-            $functionScore = new FunctionScore(
-                $vectorBool,
-                source: "return _score * {$this->semanticScoreMultiplier};",
-                // source: "return _score > {$this->semanticThreshold} ? _score : 0;",
-                boostMode: 'replace'
-                // boostMode: 'multiply'
-            );
+            // Supported since ES 8.12
+            // https://discuss.elastic.co/t/knn-search-with-function-score-or-scoring-script/356432
+            // $functionScore = new FunctionScore(
+            //     $vectorBool,
+            //     source: "return _score * {$this->semanticScoreMultiplier};",
+            //     // source: "return _score > {$this->semanticThreshold} ? _score : 0;",
+            //     boostMode: 'replace'
+            //     // boostMode: 'multiply'
+            // );
+            // $shouldClauses->add($functionScore);
 
-            $shouldClauses->add($functionScore);
+            $shouldClauses->add($vectorBool);
         }
+
+        ray($shouldClauses[0]->should);
 
         if ($queryString === '' && !$this->noResultsOnEmptySearch) {
             $shouldClauses->add(new MatchAll);
@@ -308,7 +355,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             // source: "return _score;",
         );
 
-        $shouldClauses->add($textFnScore);
+        // $shouldClauses->add($textFnScore);
     }
 
     public function get(): ResponsesSearch

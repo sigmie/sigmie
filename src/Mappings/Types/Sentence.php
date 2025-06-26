@@ -25,7 +25,7 @@ class Sentence extends Text implements Analyze
         $this->unstructuredText()->keyword();
     }
 
-    public function queries(string $queryString): array
+    public function queries(array|string $queryString): array
     {
         $queries = [];
 
