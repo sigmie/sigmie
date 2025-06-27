@@ -244,7 +244,10 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 ->map(function (TypesNested|DenseVector $field) use ($vectorByDims) {
 
                     if ($field instanceof TypesNested) {
+                        $name = $field->name();
+                        /** @var DenseVector $field  */
                         $field = $field->properties['vector'];
+                        $field->parent($name, TypesNested::class);
                     }
 
                     return $field->queries($vectorByDims->get($field->dims()));
@@ -258,104 +261,90 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                     return $query;
                 });
 
-            // $vectorQueries = (new Collection($embeddings))
-            //     ->map(function (array $embedding, int $index) use ($semanticFields) {
-
-            //         return $this->aiProvider->queries(
-            //             $embedding['embeddings'] ?? '',
-            //             $semanticFields[$index]
-            //         );
-            //     })
-            //     ->flatten(1)
-            //     ->map(fn(Query $query) => $query->boost($queryBoost));
-
-
             $vectorBool = new Boolean;
             // An empty boolean query acts like a match_all for this reason
             // we make sure the boolean query is not empty by adding a match none
-            // $vectorBool->should()->query(new MatchNone);
+            $vectorBool->should()->query(new MatchNone);
             $vectorQueries
                 ->each(fn(Query $query) => $vectorBool->should()->query($query));
 
             // Supported since ES 8.12
             // https://discuss.elastic.co/t/knn-search-with-function-score-or-scoring-script/356432
-            // $functionScore = new FunctionScore(
-            //     $vectorBool,
-            //     source: "return _score * {$this->semanticScoreMultiplier};",
-            //     // source: "return _score > {$this->semanticThreshold} ? _score : 0;",
-            //     boostMode: 'replace'
-            //     // boostMode: 'multiply'
-            // );
-            // $shouldClauses->add($functionScore);
-
-            $shouldClauses->add($vectorBool);
+            $functionScore = new FunctionScore(
+                $vectorBool,
+                source: "return _score * {$this->semanticScoreMultiplier};",
+                // source: "return _score > {$this->semanticThreshold} ? _score : 0;",
+                boostMode: 'replace'
+                // boostMode: 'multiply'
+            );
+            $shouldClauses->add($functionScore);
         }
-
-        ray($shouldClauses[0]->should);
 
         if ($queryString === '' && !$this->noResultsOnEmptySearch) {
             $shouldClauses->add(new MatchAll);
             return;
         }
 
-        $textQueries = (new Collection());
+        if (!$this->noKeywordSearch) {
 
-        $fields->each(function ($field) use (&$shouldClauses, &$textQueries, $queryString, $queryBoost) {
+            $textQueries = (new Collection());
 
-            $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] * $queryBoost : $queryBoost;
+            $fields->each(function ($field) use (&$shouldClauses, &$textQueries, $queryString, $queryBoost) {
 
-            $field = $this->properties->getNestedField($field) ?? throw new PropertiesFieldNotFound($field);
+                $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] * $queryBoost : $queryBoost;
 
-            $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                $field = $this->properties->getNestedField($field) ?? throw new PropertiesFieldNotFound($field);
 
-            $queries = match (true) {
-                $field->hasQueriesCallback ?? false => $field->queriesFromCallback($queryString),
-                default => $field->queries($queryString)
-            };
+                $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
 
-            $queries = new Collection($queries);
+                $queries = match (true) {
+                    $field->hasQueriesCallback ?? false => $field->queriesFromCallback($queryString),
+                    default => $field->queries($queryString)
+                };
 
-            $queries->map(function (Query $queryClause) use ($boost, $fuzziness, $field, &$shouldClauses, &$textQueries) {
-                if ($queryClause instanceof FuzzyQuery) {
-                    $queryClause->fuzziness($fuzziness);
-                }
+                $queries = new Collection($queries);
 
-                $queryClause = $queryClause->boost($boost);
+                $queries->map(function (Query $queryClause) use ($boost, $fuzziness, $field, &$shouldClauses, &$textQueries) {
+                    if ($queryClause instanceof FuzzyQuery) {
+                        $queryClause->fuzziness($fuzziness);
+                    }
 
-                // Query nested fields if there is a parent path
-                if (($field->parentPath ?? false) && $field->parentType === TypesNested::class) {
-                    $queryClause = new Nested($field->parentPath, $queryClause);
-                }
+                    $queryClause = $queryClause->boost($boost);
 
-                $textQueries->add($queryClause);
-                // $shouldClauses->add($queryClause);
+                    // Query nested fields if there is a parent path
+                    if (($field->parentPath ?? false) && $field->parentType === TypesNested::class) {
+                        $queryClause = new Nested($field->parentPath, $queryClause);
+                    }
+
+                    $textQueries->add($queryClause);
+                });
             });
-        });
 
-        // $textQueries->each(fn(Query $query) => $shouldClauses->add($query));
+            $textQueries->each(fn(Query $query) => $shouldClauses->add($query));
 
-        $textBool = new Boolean;
+            $textBool = new Boolean;
 
-        // An empty boolean query acts like a match_all for this reason
-        // we make sure the boolean query is not empty by adding a match none
-        $textBool->should()->query(new MatchNone);
+            // An empty boolean query acts like a match_all for this reason
+            // we make sure the boolean query is not empty by adding a match none
+            $textBool->should()->query(new MatchNone);
 
-        $textQueries->each(fn(Query $query) => $textBool->should()->query($query));
+            $textQueries->each(fn(Query $query) => $textBool->should()->query($query));
 
-        $textFnScore = new FunctionScore(
-            $textBool,
-            source: "return _score * {$this->textScoreMultiplier};",
-            // source: "return _score / 10;",
-            // source: "return Math.min(_score, 0.1);", // Caps BM25 impact
-            boostMode: 'replace',
-            // boostMode: 'multiply'
-            // source: "return Math.min(_score, 0.5);", // Caps BM25 impact
-            // boostMode: 'replace'
-            // boostMode: 'multiply'
-            // source: "return _score;",
-        );
+            $textFnScore = new FunctionScore(
+                $textBool,
+                source: "return _score * {$this->textScoreMultiplier};",
+                // source: "return _score / 10;",
+                // source: "return Math.min(_score, 0.1);", // Caps BM25 impact
+                boostMode: 'replace',
+                // boostMode: 'multiply'
+                // source: "return Math.min(_score, 0.5);", // Caps BM25 impact
+                // boostMode: 'replace'
+                // boostMode: 'multiply'
+                // source: "return _score;",
+            );
 
-        // $shouldClauses->add($textFnScore);
+            $shouldClauses->add($textFnScore);
+        }
     }
 
     public function get(): ResponsesSearch

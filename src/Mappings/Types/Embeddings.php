@@ -13,7 +13,6 @@ class Embeddings extends Object_
     public function __construct(
         array $fields
     ) {
-
         $props = new Properties('embeddings', $fields);
 
         parent::__construct('embeddings', $props);

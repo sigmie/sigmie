@@ -85,10 +85,13 @@ class DenseVector extends AbstractType implements Type
 
     public function queries(array|string $vector): array
     {
+        $field = "embeddings.{$this->parentPath}.{$this->name}";
+
+        dump($field);
         if ($this->index) {
             return [
                 new NearestNeighbors(
-                    "embeddings.{$this->name}",
+                    $field,
                     $vector,
                     // // k: $this->dims,
                     numCandidates: $this->efConstruction * 2
@@ -96,11 +99,11 @@ class DenseVector extends AbstractType implements Type
             ];
         }
 
-        $source = "1.0+cosineSimilarity(params.query_vector, 'embeddings.name_exact.vector')";
+        $source = "1.0+cosineSimilarity(params.query_vector, '{$field}')";
 
         $query = [
             new Nested(
-                "embeddings.name_exact",
+                "embeddings.{$this->parentPath}",
                 new FunctionScore(
                     query: new MatchAll(),
                     source: $source,
@@ -111,8 +114,6 @@ class DenseVector extends AbstractType implements Type
                 )
             )
         ];
-
-        ray($query[0]->toRaw())->blue();
 
         return $query;
     }

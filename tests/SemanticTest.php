@@ -294,11 +294,10 @@ class SemanticTest extends TestCase
         $provider = new SigmieAI;
 
         $blueprint = new NewProperties();
-        $blueprint->title('name')
-            ->semantic()
-            ->semantic(2, 384)
-            ->semantic(7);
-        $blueprint->number('age')->integer();
+        $blueprint->title('name');
+        // ->semantic()
+        // ->semantic(2, 384)
+        // ->semantic(7);
 
         $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -324,8 +323,9 @@ class SemanticTest extends TestCase
             ->newSearch($indexName)
             ->semantic()
             ->noResultsOnEmptySearch()
+            ->disableKeywordSearch()
             ->properties($blueprint)
-            ->queryString('queen')
+            ->queryString('Queen')
             ->get();
 
         dd($response->json());
@@ -715,5 +715,51 @@ class SemanticTest extends TestCase
         $hits = $response->json('hits.hits');
 
         $this->assertEquals('Queen', $hits[0]['_source']['name'][0] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function foo_bar()
+    {
+        $indexName = uniqid();
+        $provider = new SigmieAI;
+
+        $blueprint = new NewProperties();
+        $blueprint->title('name')
+            // ->semantic()
+            // ->semantic(2, 384)
+            ->semantic(7);
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->aiProvider($provider)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->aiProvider($provider)
+            ->merge([
+                new Document([
+                    'name' => ['King', 'Prince'],
+                    'age' => 10,
+                ]),
+                new Document([
+                    'name' => 'Queen',
+                    'age' => 20,
+                ]),
+            ]);
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->properties($blueprint)
+            ->semantic()
+            ->noResultsOnEmptySearch()
+            ->disableKeywordSearch()
+            ->queryString('Queen')
+            ->get();
+
+        dd($response->json());
     }
 }

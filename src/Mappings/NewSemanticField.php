@@ -149,10 +149,12 @@ class NewSemanticField
         return $this;
     }
 
-    public function make(): Type 
+    public function make(): Type
     {
-        $suffix = 'm' . $this->m . '_efc' . $this->efConstruction . '_dims' . $this->dims . '_' . $this->similarity->value;
-        $name = $this->name . '_' . $suffix;
+        $name = match ($this->index) {
+            true => 'm' . $this->m . '_efc' . $this->efConstruction . '_dims' . $this->dims . '_' . $this->similarity->value,
+            false => 'exact_dims' . $this->dims . '_' . $this->similarity->value,
+        };
 
         if (!$this->index) {
             $properties = new NewProperties($name);
@@ -166,7 +168,7 @@ class NewSemanticField
                 m: $this->m,
             ));
 
-            return new Nested($this->name . '_exact', $properties->get());
+            return new Nested($name, $properties->get());
         }
 
         $type = new DenseVector(

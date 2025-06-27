@@ -220,6 +220,7 @@ class Search
 
     public function toRaw(): array
     {
+        ray($this->query->toRaw())->blue();
         $result = [
             'track_total_hits' => $this->trackTotalHits < 0 ? true : $this->trackTotalHits,
             '_source' => $this->fields,

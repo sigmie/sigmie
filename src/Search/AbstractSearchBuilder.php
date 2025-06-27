@@ -62,6 +62,8 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected bool $noResultsOnEmptySearch = false;
 
+    protected bool $noKeywordSearch = false;
+
     protected bool $semanticSearch = false;
 
     protected float $semanticThreshold = 1.3;
@@ -121,6 +123,13 @@ abstract class AbstractSearchBuilder implements SearchBuilder
     public function noResultsOnEmptySearch($value = true): static
     {
         $this->noResultsOnEmptySearch = $value;
+
+        return $this;
+    }
+
+    public function disableKeywordSearch($value = true): static
+    {
+        $this->noKeywordSearch = $value;
 
         return $this;
     }

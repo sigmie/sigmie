@@ -8,6 +8,7 @@ use Http\Promise\Promise;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Price;
+use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
 class SearchTest extends TestCase
@@ -1118,5 +1119,55 @@ class SearchTest extends TestCase
 
         $this->assertEquals('Mickey', $hits[0]['name']);
         $this->assertEquals(2, $res->total());
+    }
+
+    /**
+     * @test
+     */
+    public function no_keyword_search_flag()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->title('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'name' => ['King', 'Prince'],
+                    'age' => 10,
+                ]),
+                new Document([
+                    'name' => 'Queen',
+                    'age' => 20,
+                ]),
+            ]);
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->semantic()
+            ->noResultsOnEmptySearch()
+            ->disableKeywordSearch()
+            ->properties($blueprint)
+            ->queryString('Queen')
+            ->get();
+
+        $this->assertEquals(0, $response->json('hits.total.value'));
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->semantic()
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->queryString('Queen')
+            ->get();
+
+        $this->assertEquals(1, $response->json('hits.total.value'));
     }
 }

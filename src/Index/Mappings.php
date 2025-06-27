@@ -68,15 +68,20 @@ class Mappings implements MappingsInterface
         $fields = $this->properties
             ->nestedSemanticFields()
             ->map(
-                fn(Text $field) =>
-                $field->vectorFields()
+                function (Text $field) {
+
+                    $props = new NewProperties();
+
+                    $field->vectorFields()
+                        ->map(fn(Type $vectorField) => $props->type($vectorField));
+
+                    return new Object_($field->name(), $props);
+                }
             )
             ->flattenWithKeys()
             ->toArray();
 
         $embeddings = new Embeddings($fields);
-
-        ray($embeddings->toRaw())->green();
 
         $raw = [
             'properties' => [
