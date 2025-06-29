@@ -11,6 +11,7 @@ use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Object_;
+use Sigmie\Mappings\Types\SigmieVector;
 
 class NewSemanticField
 {
@@ -152,13 +153,13 @@ class NewSemanticField
     public function make(): Type
     {
         $name = match ($this->index) {
-            true => 'm' . $this->m . '_efc' . $this->efConstruction . '_dims' . $this->dims . '_' . $this->similarity->value,
-            false => 'exact_dims' . $this->dims . '_' . $this->similarity->value,
+            true => 'm' . $this->m . '_efc' . $this->efConstruction . '_dims' . $this->dims . '_' . $this->similarity->value . '_' . $this->strategy->suffix(),
+            false => 'exact_dims' . $this->dims . '_' . $this->similarity->value . '_' . $this->strategy->suffix(),
         };
 
         if (!$this->index) {
-            $properties = new NewProperties($name);
-            $properties->type(new DenseVector(
+            $properties = new NewProperties($this->name);
+            $vector = new SigmieVector(
                 name: 'vector',
                 dims: $this->dims,
                 strategy: $this->strategy,
@@ -166,12 +167,18 @@ class NewSemanticField
                 similarity: $this->similarity,
                 efConstruction: $this->efConstruction,
                 m: $this->m,
-            ));
+            );
 
-            return new Nested($name, $properties->get());
+            $vector->textFieldName($this->name);
+
+            $properties->type($vector);
+            $properties = $properties->get();
+            // $properties->propertiesParent($this->name, Nested::class);
+
+            return new Nested($name, $properties);
         }
 
-        $type = new DenseVector(
+        $type = new SigmieVector(
             name: $name,
             dims: $this->dims,
             strategy: $this->strategy,

@@ -18,6 +18,15 @@ enum VectorStrategy: string
         // Good for short strings
     case ScriptScore = 'script_score';
 
+    public function suffix(): string
+    {
+        return match ($this) {
+            self::Concatenate => 'concat',
+            self::Average => 'avg',
+            self::ScriptScore => 'script',
+        };
+    }
+
     public function prepare(array $values): array
     {
         return match ($this) {

@@ -64,6 +64,8 @@ class NewProperties
 
         $fields = $this->fields
             ->mapToDictionary(function (ContractsType $type) {
+
+
                 return [$type->name => $type];
             })->toArray();
 
@@ -283,7 +285,7 @@ class NewProperties
     public function object(string $name, ?callable $callable = null): Object_
     {
         $field = new Object_($name);
-        $field->parent($this->parentPath, $field::class);
+        $field->parent($this->parentPath, $field::class, $this->parentPath);
 
         $this->fields->add($field);
 
@@ -296,6 +298,7 @@ class NewProperties
         $callable($props);
 
         $field->properties($props);
+        $field->parent($this->parentPath, $field::class, $this->parentPath);
 
         return $field;
     }
@@ -310,7 +313,7 @@ class NewProperties
     public function nested(string $name, ?callable $callable = null): Nested
     {
         $field = new Nested($name);
-        $field->parent($this->parentPath, $field::class);
+        $field->parent($this->parentPath, $field::class, $this->parentPath);
 
         $this->fields->add($field);
 

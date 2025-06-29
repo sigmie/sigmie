@@ -727,9 +727,9 @@ class SemanticTest extends TestCase
 
         $blueprint = new NewProperties();
         $blueprint->title('name')
-            // ->semantic()
-            // ->semantic(2, 384)
-            ->semantic(7);
+            ->semantic()
+            // ->semantic(7)
+            ->semantic(2, 384);
 
         $this->sigmie->newIndex($indexName)
             ->properties($blueprint)

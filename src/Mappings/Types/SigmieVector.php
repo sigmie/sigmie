@@ -13,7 +13,7 @@ use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\NearestNeighbors;
 use Sigmie\Query\Queries\Text\Nested;
 
-class DenseVector extends AbstractType implements Type
+class SigmieVector extends DenseVector 
 {
     public ?string $textFieldName = null;
 
@@ -99,14 +99,10 @@ class DenseVector extends AbstractType implements Type
 
     public function queries(array|string $vector): array
     {
-        $field = $this->name();
-
-        dump($field);
-
         if ($this->index) {
             return [
                 new NearestNeighbors(
-                    $field,
+                    $this->fullPath,
                     $vector,
                     // // k: $this->dims,
                     numCandidates: $this->efConstruction * 2
@@ -114,21 +110,23 @@ class DenseVector extends AbstractType implements Type
             ];
         }
 
-        $source = "1.0+cosineSimilarity(params.query_vector, '{$field}')";
+        // $source = "1.0+cosineSimilarity(params.query_vector, '{$this->fullPath}')";
 
-        $query = [
-            new Nested(
-                $field,
-                new FunctionScore(
-                    query: new MatchAll(),
-                    source: $source,
-                    boostMode: 'replace',
-                    params: [
-                        'query_vector' => $vector
-                    ]
-                )
-            )
-        ];
+        // $query = [
+        //     new Nested(
+        //         $this->fullPath,
+        //         new FunctionScore(
+        //             query: new MatchAll(),
+        //             source: $source,
+        //             boostMode: 'replace',
+        //             params: [
+        //                 'query_vector' => $vector
+        //             ]
+        //         )
+        //     )
+        // ];
+
+        return [];
 
         return $query;
     }

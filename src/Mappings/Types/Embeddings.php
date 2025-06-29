@@ -14,6 +14,9 @@ class Embeddings extends Object_
         array $fields
     ) {
         $props = new Properties('embeddings', $fields);
+        $props->propertiesParent('embeddings', Object_::class, 'embeddings');
+
+        ray($props);
 
         parent::__construct('embeddings', $props);
     }

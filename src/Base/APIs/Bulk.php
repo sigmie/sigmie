@@ -18,8 +18,6 @@ trait Bulk
 
         $uri = Uri::withQueryValue($uri, 'refresh', $refresh);
 
-        ray(json_encode($data));
-
         $request = new BulkRequest('POST', $uri, $data);
 
         /* @var  BulkResponse */

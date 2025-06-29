@@ -59,13 +59,15 @@ class Text extends Type implements FromRaw
         $this->field(new Keyword('sortable'));
     }
 
-    public function newSemantic(Closure $closure, ?string $suffix = null): static
+    public function newSemantic(Closure $closure): static
     {
-        $field = new NewSemanticField($suffix ? "{$this->name}.{$suffix}" : $this->name);
+        $field = new NewSemanticField($this->name);
 
         $closure($field);
 
-        $this->vectors[] = $field->make();
+        $vector = $field->make();
+
+        $this->vectors[] = $vector;
 
         return $this;
     }
@@ -76,7 +78,8 @@ class Text extends Type implements FromRaw
         VectorSimilarity $similarity = VectorSimilarity::Cosine
     ) {
         return $this->newSemantic(
-            fn(NewSemanticField $semantic) => $semantic->accuracy($accuracy, $dimensions)
+            fn(NewSemanticField $semantic) =>
+                $semantic->accuracy($accuracy, $dimensions)
                 ->similarity($similarity)
         );
     }
@@ -380,11 +383,6 @@ class Text extends Type implements FromRaw
         return 'text';
     }
 
-    public function dims(): int
-    {
-        return $this->dims;
-    }
-
     public function originalName(): string
     {
         return $this->name();
@@ -392,6 +390,9 @@ class Text extends Type implements FromRaw
 
     public function vectorFields(): Collection
     {
-        return new Collection($this->vectors);
+        return (new Collection($this->vectors))
+            ->map(function (Nested|DenseVector $field) {
+                return $field;
+            });
     }
 }

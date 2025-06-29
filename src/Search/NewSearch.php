@@ -223,7 +223,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                     if ($field instanceof TypesNested) {
                         $field = $field->properties['vector'];
-                        $name = str_replace('.vector', '', $name);
                     }
 
                     return [
@@ -244,10 +243,10 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 ->map(function (TypesNested|DenseVector $field) use ($vectorByDims) {
 
                     if ($field instanceof TypesNested) {
-                        $name = $field->name();
+                        // $name = $field->name();
                         /** @var DenseVector $field  */
                         $field = $field->properties['vector'];
-                        $field->parent($name, TypesNested::class);
+                        // $field->textFieldName($name);
                     }
 
                     return $field->queries($vectorByDims->get($field->dims()));

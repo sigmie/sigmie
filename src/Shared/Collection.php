@@ -294,6 +294,31 @@ class Collection implements ArrayAccess, Countable
         return new static($grouped);
     }
 
+    public function mapToGroup(Closure $closure): static
+    {
+        $grouped = [];
+
+        foreach ($this->elements as $key => $element) {
+            $result = $closure($element, $key);
+
+            // Expecting $result to be [groupKey => value] or ['key' => ..., 'value' => ...]
+            if (is_array($result) && count($result) === 1) {
+                foreach ($result as $groupKey => $value) {
+                    $grouped[$groupKey][] = $value;
+                }
+            } elseif (is_array($result) && isset($result['key']) && array_key_exists('value', $result)) {
+                $grouped[$result['key']][] = $result['value'];
+            } else {
+                // fallback: treat $result as [groupKey, value]
+                if (is_array($result) && count($result) === 2 && array_keys($result) === [0,1]) {
+                    $grouped[$result[0]][] = $result[1];
+                }
+            }
+        }
+
+        return new static($grouped);
+    }
+
     public function each(Closure $p): static
     {
         foreach ($this->elements as $key => $element) {

@@ -15,6 +15,7 @@ use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Embeddings;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Object_;
+use Sigmie\Mappings\Types\SigmieVector;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Semantic\Providers\SigmieAI as SigmieEmbeddings;
 use Sigmie\Shared\EmbeddingsProvider;
@@ -71,17 +72,45 @@ class Mappings implements MappingsInterface
                 function (Text $field) {
 
                     $props = new NewProperties();
+                    // $props->propertiesName($field->name());
+
+                    $props = $props->get();
+
+                    if (!$field->parentPath) {
+                        $props->fullPath = 'embeddings.' . $field->name();
+                    }
 
                     $field->vectorFields()
-                        ->map(fn(Type $vectorField) => $props->type($vectorField));
+                        ->map(function (Type $vectorField) use ($props, &$field) {
 
-                    return new Object_($field->name(), $props);
+                            $vectorField->fullPath = $props->fullPath . '.' . $vectorField->name;
+
+                            // Script score
+                            if ($vectorField instanceof SigmieVector) {
+                                //hmm
+
+                            }
+
+                            $props[$vectorField->name] = $vectorField;
+
+                            return $vectorField;
+                        });
+
+                    // if (!$field->parentPath) {
+                    //     // $field->parentPath = 'embeddings';
+                    // }
+
+                    $obj = new Object_($field->name(), $props);
+
+                    return $obj;
                 }
             )
             ->flattenWithKeys()
             ->toArray();
 
         $embeddings = new Embeddings($fields);
+
+        // ray($embeddings)->die();
 
         $raw = [
             'properties' => [

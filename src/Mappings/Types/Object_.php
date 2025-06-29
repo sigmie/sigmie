@@ -28,7 +28,7 @@ class Object_ extends Type
 
         $parentName = $this->parentPath ? "{$this->parentPath}.{$this->name}" : $this->name;
 
-        $this->properties->propertiesParent($parentName, static::class);
+        $this->properties->propertiesParent($parentName, static::class, null);
 
         return $this;
     }

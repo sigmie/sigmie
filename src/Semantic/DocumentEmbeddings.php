@@ -39,22 +39,28 @@ class DocumentEmbeddings
                 return;
             }
 
-            $value = $field->vectorFields()->map(function (Nested|DenseVector $vector) use ($value) {
-                $name = $vector->name();
-                if ($vector instanceof Nested) {
-                    $vector = $vector->properties['vector'];
-                    $name = str_replace('.vector', '', $name);
-                }
+            $value = $field
+                ->vectorFields()
+                ->map(function (Nested|DenseVector $vector) use ($value) {
 
-                return [
-                    array_map(fn($text) => [
-                        'name' => $name,
-                        'text' => $text,
-                        'strategy' => $vector->strategy(),
-                        'dims' => (string) $vector->dims(),
-                    ], $vector->strategy()->prepare($value)),
-                ];
-            })->flatten(2)
+                    // Name without parent eg. m36_efc192_dims384_cosine_concat
+                    // instead of name.m36_efc192_dims384_cosine_concat
+                    $name = $vector->name;
+
+                    if ($vector instanceof Nested) {
+                        $vector = $vector->properties['vector'];
+                    }
+
+                    return [
+                        array_map(fn($text) => [
+                            'name' => $name,
+                            'text' => $text,
+                            'strategy' => $vector->strategy(),
+                            'dims' => (string) $vector->dims(),
+                        ], $vector->strategy()->prepare($value)),
+                    ];
+                })
+                ->flatten(2)
                 ->groupBy('name')
                 ->mapWithKeys(fn($group, $groupName) => [
                     $groupName => [
@@ -75,25 +81,23 @@ class DocumentEmbeddings
             $values = (new Collection($value))->map(fn($item) => $item['vectors'])->flatten(1)->values();
 
             $vectors = $this->aiProvider->batchEmbed($values);
-
             $vectors = new Collection($vectors);
 
-            $vectors = $vectors->groupBy('name')
+            $vectors = $vectors
+                ->groupBy('name')
                 ->mapWithKeys(function ($group, $name) use ($nameStrategy) {
+
                     /** @var VectorStrategy $strategy */
                     $nameStrategy = $nameStrategy->get($name);
 
                     $vectors = (new Collection($group))->map(fn($item) => $item['vector'])->toArray();
 
-                    $name = str_replace('embeddings.', '', $name);
-
                     return [$name => $nameStrategy->format($vectors)];
                 })->toArray();
 
-            $embeddings = [...$embeddings, ...$vectors];
+            $embeddings = [...$embeddings, $name => $vectors];
         });
 
-        ray($embeddings)->red();
         $document['embeddings'] = $embeddings;
 
         return $document;
