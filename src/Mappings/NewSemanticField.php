@@ -10,6 +10,7 @@ use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Nested;
+use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\SigmieVector;
 
@@ -158,24 +159,7 @@ class NewSemanticField
         };
 
         if (!$this->index) {
-            $properties = new NewProperties($this->name);
-            $vector = new SigmieVector(
-                name: 'vector',
-                dims: $this->dims,
-                strategy: $this->strategy,
-                index: $this->index,
-                similarity: $this->similarity,
-                efConstruction: $this->efConstruction,
-                m: $this->m,
-            );
-
-            $vector->textFieldName($this->name);
-
-            $properties->type($vector);
-            $properties = $properties->get();
-            // $properties->propertiesParent($this->name, Nested::class);
-
-            return new Nested($name, $properties);
+            return new NestedVector($name, $this->dims);
         }
 
         $type = new SigmieVector(

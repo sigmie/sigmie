@@ -15,9 +15,13 @@ class Object_ extends Type
 
     public function __construct(
         string $name,
-        Properties|NewProperties $properties = new NewProperties
+        Properties|NewProperties $properties = new NewProperties,
+        ?string $fullPath = null,
     ) {
-        parent::__construct($name);
+        parent::__construct(
+            name: $name,
+            fullPath: $fullPath
+        );
 
         $this->properties($properties);
     }
@@ -28,7 +32,11 @@ class Object_ extends Type
 
         $parentName = $this->parentPath ? "{$this->parentPath}.{$this->name}" : $this->name;
 
-        $this->properties->propertiesParent($parentName, static::class, null);
+        if (!$this->fullPath) {
+            dd($this);
+        }
+
+        $this->properties->propertiesParent($parentName, static::class, $this->fullPath);
 
         return $this;
     }

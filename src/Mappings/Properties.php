@@ -228,10 +228,20 @@ class Properties extends Type implements ArrayAccess
         return null;
     }
 
-    public function propertiesParent(string $parentPath, string $parentType, ?string $parentFullPath)
+    public function propertiesParent(string $parentPath, string $parentType, string $parentFullPath)
     {
         foreach ($this->fields as $field) {
             $field->parent($parentPath, $parentType, $parentFullPath);
+
+            if ($field instanceof Nested || $field instanceof Object_) {
+                $field
+                    ->properties
+                    ->propertiesParent(
+                        $parentPath,
+                        $field::class,
+                        $parentFullPath . '.' . $field->name
+                    );
+            }
         }
     }
 

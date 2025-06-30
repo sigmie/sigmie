@@ -762,4 +762,181 @@ class SemanticTest extends TestCase
 
         dd($response->json());
     }
+
+    /**
+     * @test
+     */
+    public function nested_semantic_fields()
+    {
+        $indexName = uniqid();
+        $provider = new SigmieAI;
+
+        $blueprint = new NewProperties();
+        $blueprint->nested('charachter', function (NewProperties $blueprint) {
+            $blueprint->nested('details', function (NewProperties $blueprint) {
+                $blueprint->nested('meta', function (NewProperties $blueprint) {
+                    $blueprint->nested('extra', function (NewProperties $blueprint) {
+                        $blueprint->nested('deep', function (NewProperties $blueprint) {
+                            $blueprint->title('deepnote')->semantic(3);
+                        });
+                    });
+                });
+            });
+        });
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->aiProvider($provider)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->aiProvider($provider)
+            ->merge([
+                new Document([
+                    'charachter' => [
+                        'details' => [
+                            'meta' => [
+                                'extra' => [
+                                    'deep' => [
+                                        'deepnote' => ['King'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ]),
+                new Document([
+                    'charachter' => [
+                        'details' => [
+                            'meta' => [
+                                'extra' => [
+                                    'deep' => [
+                                        'deepnote' => ['Queen'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ]),
+            ]);
+
+        $search = $this->sigmie
+            ->newSearch($indexName)
+            ->properties($blueprint)
+            ->semantic()
+            ->noResultsOnEmptySearch()
+            ->disableKeywordSearch()
+            ->queryString('woman');
+
+        $nestedQuery = $search->make()->toRaw()['query']['function_score']['query']['bool']['must'][1]['bool']['should'][0]['bool']['should'][0]['function_score']['query']['bool']['should'][1];
+
+        $this->assertArrayHasKey('knn', $nestedQuery);
+        $this->assertEquals('embeddings.charachter.details.meta.extra.deep.deepnote.m80_efc512_dims256_cosine_avg', $nestedQuery['knn']['field']);
+
+        $response = $search->get();
+
+        $this->assertEquals('Queen', $response->json('hits.hits.0._source.charachter.name.0') ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function knn_vector_match()
+    {
+        $indexName = uniqid();
+        $provider = new SigmieAI;
+
+        $blueprint = new NewProperties();
+        $blueprint->title('name')->semantic(6);
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->aiProvider($provider)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->aiProvider($provider)
+            ->merge([
+                new Document([
+                    'name' => ['King', 'Prince'],
+                    'age' => 10,
+                ]),
+                new Document([
+                    'name' => 'Queen',
+                    'age' => 20,
+                ]),
+            ]);
+
+        $search = $this->sigmie
+            ->newSearch($indexName)
+            ->properties($blueprint)
+            ->semantic()
+            ->noResultsOnEmptySearch()
+            ->disableKeywordSearch()
+            ->queryString('woman');
+
+        $nestedQuery = $search->make()->toRaw()['query']['function_score']['query']['bool']['must'][1]['bool']['should'][0]['bool']['should'][0]['function_score']['query']['bool']['should'][1];
+
+        $this->assertArrayHasKey('knn', $nestedQuery);
+        $this->assertEquals('embeddings.name.m80_efc512_dims256_cosine_avg', $nestedQuery['knn']['field']);
+
+        $response = $search->get();
+
+        $this->assertEquals('Queen', $response->json('hits.hits.0._source.name') ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function exact_vector_match()
+    {
+        $indexName = uniqid();
+        $provider = new SigmieAI;
+
+        $blueprint = new NewProperties();
+        $blueprint->title('name')->semantic(7);
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->aiProvider($provider)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->aiProvider($provider)
+            ->merge([
+                new Document([
+                    'name' => ['King', 'Prince'],
+                    'age' => 10,
+                ]),
+                new Document([
+                    'name' => 'Queen',
+                    'age' => 20,
+                ]),
+            ]);
+
+        $search = $this->sigmie
+            ->newSearch($indexName)
+            ->properties($blueprint)
+            ->semantic()
+            ->noResultsOnEmptySearch()
+            ->disableKeywordSearch()
+            ->queryString('woman');
+
+        $nestedQuery = $search->make()->toRaw()['query']['function_score']['query']['bool']['must'][1]['bool']['should'][0]['bool']['should'][0]['function_score']['query']['bool']['should'][1];
+
+        $this->assertEquals('embeddings.name.exact_dims256_cosine_script', $nestedQuery['nested']['path']);
+        $this->assertEquals('avg', $nestedQuery['nested']['score_mode']);
+        $this->assertArrayHasKey('function_score', $nestedQuery['nested']['query']);
+        $this->assertEquals('1.0+cosineSimilarity(params.query_vector, \'embeddings.name.exact_dims256_cosine_script.vector\')', $nestedQuery['nested']['query']['function_score']['script_score']['script']['source']);
+
+        $response = $search->get();
+
+        $this->assertEquals('Queen', $response->json('hits.hits.0._source.name') ?? null);
+    }
 }

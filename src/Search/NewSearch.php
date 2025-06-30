@@ -9,6 +9,8 @@ use Sigmie\Base\Http\Responses\Search as ResponsesSearch;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Nested as TypesNested;
+use Sigmie\Mappings\Types\NestedVector;
+use Sigmie\Mappings\Types\SigmieVector;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
@@ -217,13 +219,9 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 ->flatten(1);
 
             $dims = $vectorFieldsFields
-                ->map(function (TypesNested|DenseVector $field) use ($queryString) {
+                ->map(function (NestedVector|DenseVector|SigmieVector $field) use ($queryString) {
 
                     $name = $field->name();
-
-                    if ($field instanceof TypesNested) {
-                        $field = $field->properties['vector'];
-                    }
 
                     return [
                         'text' => $queryString,
@@ -237,19 +235,16 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
             $embeddings = $this->aiProvider->batchEmbed($dims);
 
+            // Array that has as key the dims and as value the vector
+            // eg. [1024 => [1, 2, 3], 2048 => [4, 5, 6]]
             $vectorByDims = (new Collection($embeddings))->mapWithKeys(fn($item) => [$item['dims'] => $item['vector']]);
 
             $vectorQueries = $vectorFieldsFields
                 ->map(function (TypesNested|DenseVector $field) use ($vectorByDims) {
 
-                    if ($field instanceof TypesNested) {
-                        // $name = $field->name();
-                        /** @var DenseVector $field  */
-                        $field = $field->properties['vector'];
-                        // $field->textFieldName($name);
-                    }
+                    $vectors = $vectorByDims->get($field->dims());
 
-                    return $field->queries($vectorByDims->get($field->dims()));
+                    return $field->queries($vectors);
                 })
                 ->flatten(1)
                 ->map(function (Query $query) use ($queryBoost) {

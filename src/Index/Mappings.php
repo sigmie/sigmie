@@ -66,51 +66,7 @@ class Mappings implements MappingsInterface
 
     public function toRaw(): array
     {
-        $fields = $this->properties
-            ->nestedSemanticFields()
-            ->map(
-                function (Text $field) {
-
-                    $props = new NewProperties();
-                    // $props->propertiesName($field->name());
-
-                    $props = $props->get();
-
-                    if (!$field->parentPath) {
-                        $props->fullPath = 'embeddings.' . $field->name();
-                    }
-
-                    $field->vectorFields()
-                        ->map(function (Type $vectorField) use ($props, &$field) {
-
-                            $vectorField->fullPath = $props->fullPath . '.' . $vectorField->name;
-
-                            // Script score
-                            if ($vectorField instanceof SigmieVector) {
-                                //hmm
-
-                            }
-
-                            $props[$vectorField->name] = $vectorField;
-
-                            return $vectorField;
-                        });
-
-                    // if (!$field->parentPath) {
-                    //     // $field->parentPath = 'embeddings';
-                    // }
-
-                    $obj = new Object_($field->name(), $props);
-
-                    return $obj;
-                }
-            )
-            ->flattenWithKeys()
-            ->toArray();
-
-        $embeddings = new Embeddings($fields);
-
-        // ray($embeddings)->die();
+        $embeddings = new Embeddings($this->properties);
 
         $raw = [
             'properties' => [

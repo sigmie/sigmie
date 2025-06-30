@@ -6,18 +6,59 @@ namespace Sigmie\Mappings\Types;
 
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
-use Sigmie\Semantic\Contracts\AIProvider;
 
 class Embeddings extends Object_
 {
     public function __construct(
-        array $fields
+        Properties $properties
     ) {
-        $props = new Properties('embeddings', $fields);
-        $props->propertiesParent('embeddings', Object_::class, 'embeddings');
+        $properties->propertiesParent(
+            'embeddings',
+            Object_::class,
+            'embeddings'
+        );
 
-        ray($props);
+        $props = new Properties(
+            'embeddings',
+            $this->createFields($properties)
+        );
 
-        parent::__construct('embeddings', $props);
+        parent::__construct(
+            'embeddings',
+            $props,
+            fullPath: 'embeddings'
+        );
+    }
+
+    public function createFields(Properties $properties): array
+    {
+        return $properties
+            ->nestedSemanticFields()
+            ->map(
+                function (Text $field) {
+
+                    $props = new NewProperties();
+
+                    $props = $props->get();
+
+                    $field->vectorFields()
+                        ->map(function (Type $vectorField) use ($props, &$field) {
+
+                            $props[$vectorField->name] = $vectorField;
+
+                            return $vectorField;
+                        });
+
+                    $obj = new Object_(
+                        $field->name(),
+                        $props,
+                        fullPath: 'embeddings.' . $field->name()
+                    );
+
+                    return $obj;
+                }
+            )
+            ->flattenWithKeys()
+            ->toArray();
     }
 }
