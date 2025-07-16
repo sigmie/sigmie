@@ -66,12 +66,12 @@ class Mappings implements MappingsInterface
 
     public function toRaw(): array
     {
-        $embeddings = new Embeddings($this->properties);
+        //$embeddings = new Embeddings($this->properties);
 
         $raw = [
             'properties' => [
                 ...$this->properties->toRaw(),
-                ...$embeddings->toRaw(),
+                //...$embeddings->toRaw(),
             ],
         ];
 

@@ -192,8 +192,6 @@ class Search
     {
         $raw = $this->getDSL();
 
-        // ray(json_encode($raw, JSON_PRETTY_PRINT));
-
         return $this->searchAPICall($this->index, $raw);
     }
 
@@ -220,7 +218,7 @@ class Search
 
     public function toRaw(): array
     {
-        ray($this->query->toRaw()['bool']['must'][1]['bool']['should'][0]['bool']['should'][0]['function_score']['query']['bool']['should'])->blue();
+        //ray($this->query->toRaw()['bool']['must'][1]['bool']['should'][0]['bool']['should'][0]['function_score']['query']['bool']['should'])->blue();
         $result = [
             'track_total_hits' => $this->trackTotalHits < 0 ? true : $this->trackTotalHits,
             '_source' => $this->fields,

@@ -114,7 +114,6 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         
         $docs = array_map(fn(Document $doc) => $documentEmbeddings->make($doc), $docs);
 
-        ray($docs);
         $collection = $this->upsertDocuments($this->name, $docs, $this->refresh);
 
         return $this;
