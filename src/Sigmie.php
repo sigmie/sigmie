@@ -6,6 +6,7 @@ namespace Sigmie;
 
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
+use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
 use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
@@ -32,6 +33,7 @@ use Sigmie\Semantic\Providers\SigmieAI as DefaultEmbeddingsProvider;
 class Sigmie
 {
     use IndexActions;
+    use APIsSearch; 
 
     use EmbeddingsProvider;
 
@@ -91,6 +93,15 @@ class Sigmie
         $aliveIndex->aiProvider($this->aiProvider);
 
         return $aliveIndex;
+    }
+
+    public function rawQuery(
+        string $index,
+        array $query
+    ) {
+        $res = $this->searchAPICall($index, $query);
+
+        return $res;
     }
 
     public function query(

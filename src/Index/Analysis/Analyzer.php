@@ -65,7 +65,7 @@ class Analyzer implements CustomAnalyzerInterface
 
         [$name, $config] = name_configs($raw);
 
-        foreach ($config['filter'] as $filterName) {
+        foreach ($config['filter'] ?? [] as $filterName) {
             $analyzerFilters[$filterName] = match ($filterName) {
 
                 'autocomplete_english_stemmer' => new Stemmer($filterName),
@@ -91,14 +91,14 @@ class Analyzer implements CustomAnalyzerInterface
             };
         }
 
-        foreach ($config['char_filter'] as $filterName) {
+        foreach ($config['char_filter'] ?? [] as $filterName) {
             $analyzerCharFilters[$filterName] = match ($filterName) {
                 'html_strip' => new HTMLStrip(),
                 default => $charFilters[$filterName]
             };
         }
 
-        $tokenizerName = $config['tokenizer'];
+        $tokenizerName = $config['tokenizer'] ?? null;
 
         $analyzerTokenizer = match ($tokenizerName) {
             'whitespace' => new Whitespace(),

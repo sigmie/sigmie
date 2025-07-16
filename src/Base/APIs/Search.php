@@ -12,16 +12,31 @@ trait Search
 {
     use API;
 
-    protected function searchAPICall(string $index, array $query): SearchResponse
+    protected function searchAPICall(string $index, array $query, ?string $scroll = null): SearchResponse
     {
-        $esRequest = $this->searchRequest($index, $query);
+        $esRequest = $this->searchRequest($index, $query, $scroll);
 
         return $this->elasticsearchCall($esRequest);
     }
 
-    protected function searchRequest(string $index, array $query): SearchRequest
+    protected function scrollAPICall(string $scrollId, string $scroll): SearchResponse
+    {
+        $uri = new Uri("/_search/scroll");
+
+        return $this->elasticsearchCall(new SearchRequest('POST', $uri, [
+            'scroll' => $scroll,
+            'scroll_id' => $scrollId,
+        ]));
+    }
+
+
+    protected function searchRequest(string $index, array $query, ?string $scroll = null): SearchRequest
     {
         $uri = new Uri("/{$index}/_search");
+
+        if ($scroll) {
+            $uri = $uri->withQuery('scroll=' . $scroll);
+        }
 
         return new SearchRequest('POST', $uri, $query);
     }

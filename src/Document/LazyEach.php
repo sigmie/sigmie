@@ -16,9 +16,18 @@ trait LazyEach
 
     protected int $chunk = 500;
 
+    protected array $fields = [];
+
     public function chunk(int $size): self
     {
         $this->chunk = $size;
+
+        return $this;
+    }
+
+    public function fields(array $fields): self
+    {
+        $this->fields = $fields;
 
         return $this;
     }
@@ -37,24 +46,35 @@ trait LazyEach
         $page = 1;
         $total = (int) $this->countAPICall($this->name)->json('count');
 
-        yield from $this->pageGenerator($page);
-
-        while ($this->chunk * $page < $total) {
-            $page++;
-
-            yield from $this->pageGenerator($page);
-        }
-    }
-
-    protected function pageGenerator(int $page): Iterator
-    {
+        // Initial scroll request
         $body = [
-            'from' => ($page - 1) * $this->chunk,
             'size' => $this->chunk,
             'query' => ['match_all' => (object) []],
         ];
 
-        $response = $this->searchAPICall($this->name, $body);
+        if ($this->fields) {
+            $body['_source'] = $this->fields;
+        }
+
+        $response = $this->searchAPICall(index: "$this->name", query: $body, scroll: '1m');
+
+        $scrollId = $response->json('_scroll_id');
+
+        foreach ($response->json('hits')['hits'] as $data) {
+            yield $data['_id'] => new Document($data['_source'], $data['_id']);
+        }
+
+        while ($this->chunk * $page < $total) {
+            $page++;
+
+            yield from $this->pageGenerator($scrollId);
+        }
+    }
+
+    protected function pageGenerator(string $scrollId): Iterator
+    {
+        // Continue scrolling with scroll_id
+        $response = $this->scrollAPICall($scrollId, '1m');
 
         $values = $response->json('hits')['hits'];
 

@@ -32,33 +32,35 @@ class Embeddings extends Object_
 
     public function createFields(Properties $properties): array
     {
-        return $properties
-            ->nestedSemanticFields()
-            ->map(
-                function (Text $field) {
+        $fields = $properties
+            ->nestedSemanticFields();
 
-                    $props = new NewProperties();
+            //ray($fields);
+            // ->map(
+            //     function (Text $field) {
 
-                    $props = $props->get();
+            //         $props = new NewProperties();
 
-                    $field->vectorFields()
-                        ->map(function (Type $vectorField) use ($props, &$field) {
+            //         $props = $props->get();
 
-                            $props[$vectorField->name] = $vectorField;
+            //         $field->vectorFields()
+            //             ->map(function (Type $vectorField) use ($props, &$field) {
 
-                            return $vectorField;
-                        });
+            //                 $props[$vectorField->name] = $vectorField;
 
-                    $obj = new Object_(
-                        $field->name(),
-                        $props,
-                        fullPath: 'embeddings.' . $field->name()
-                    );
+            //                 return $vectorField;
+            //             });
 
-                    return $obj;
-                }
-            )
-            ->flattenWithKeys()
-            ->toArray();
+            //         $obj = new Object_(
+            //             $field->name(),
+            //             $props,
+            //             fullPath: 'embeddings.' . $field->name()
+            //         );
+
+            //         return $obj;
+            //     }
+            // )
+            // ->flattenWithKeys()
+            // ->toArray();
     }
 }

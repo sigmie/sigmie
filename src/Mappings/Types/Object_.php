@@ -52,7 +52,7 @@ class Object_ extends Type
     {
         $raw = parent::toRaw();
 
-        $raw[$this->name]['properties'] = $this->properties->toRaw();
+        $raw[$this->name]['properties'] = (object) $this->properties->toRaw();
 
         return $raw;
     }
