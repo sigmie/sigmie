@@ -10,7 +10,8 @@ class MatchPhrase extends Query
 {
     public function __construct(
         protected string $field,
-        protected string $query
+        protected string $query,
+        protected string $analyzer = 'default',
     ) {}
 
     public function toRaw(): array
@@ -20,6 +21,7 @@ class MatchPhrase extends Query
                 $this->field => [
                     'query' => $this->query,
                     'boost' => $this->boost,
+                    'analyzer' => $this->analyzer,
                 ],
             ],
         ];

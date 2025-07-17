@@ -22,6 +22,7 @@ use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Sigmie;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
@@ -149,7 +150,7 @@ class IndexBuilderTest extends TestCase
             ->properties($blueprint)
             ->queryString('kalim')
             ->get();
-        
+
         $this->assertEquals(200, $res->getStatusCode());
 
         $res = $this->analyzeAPICall($alias, 'καλημέρα', 'name_field_analyzer',);
@@ -973,5 +974,50 @@ class IndexBuilderTest extends TestCase
             $index->assertShards(4);
             $index->assertReplicas(3);
         });
+    }
+
+    /**
+     * @test
+     */
+    public function index_synonyms_graph()
+    {
+        $alias = uniqid();
+
+        $properties = new NewProperties();
+        $properties->text('title_one')->searchSynonyms(true);
+        $properties->text('title_two')->searchSynonyms(false);
+
+        $this->sigmie->newIndex($alias)
+            ->dontTokenize()
+            ->searchSynonyms([
+                'ipod => i-pod, i pod',
+            ])
+            ->create();
+
+        $collected = $this->sigmie->collect($alias, true);
+
+        $collected->merge([new Document([
+            'title_one' => 'i pod',
+            'title_two' => 'i pod',
+        ])]);
+
+        $index = $this->sigmie->index($alias);
+
+        $tokens = $index->analyze('ipod', 'default_with_synonyms');
+
+        $this->assertEquals($tokens, ['i-pod', 'i pod']);
+
+        $res = $this->sigmie->newSearch($alias)
+            ->properties($properties)
+            ->fields([
+                'title_two',
+                'title_one'
+            ])
+            ->queryString('ipod')
+            ->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertCount(1, $hits);
     }
 }

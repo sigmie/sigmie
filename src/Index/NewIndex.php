@@ -19,6 +19,7 @@ use Sigmie\Index\Shared\CharFilters;
 use Sigmie\Index\Shared\Filters;
 use Sigmie\Index\Shared\Mappings;
 use Sigmie\Index\Shared\Replicas;
+use Sigmie\Index\Shared\SearchSynonyms;
 use Sigmie\Index\Shared\Shards;
 use Sigmie\Index\Shared\Tokenizer;
 use Sigmie\Mappings\Properties;
@@ -34,6 +35,7 @@ class NewIndex
     use Autocomplete;
     use CharFilters;
     use Filters;
+    use SearchSynonyms;
     use IndexActions;
     use Mappings;
     use Replicas;
@@ -167,6 +169,10 @@ class NewIndex
         }
 
         $this->analysis()->addAnalyzers($analyzers);
+
+        if ($this->searchSynonyms) {
+            $this->analysis()->addAnalyzer($this->makeSearchSynonymsAnalyzer());
+        }
 
         $settings = new Settings(
             primaryShards: $this->shards,

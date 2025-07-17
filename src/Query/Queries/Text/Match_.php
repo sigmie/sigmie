@@ -13,6 +13,7 @@ class Match_ extends Query implements FuzzyQuery
         protected string $field,
         protected string $query,
         protected ?string $fuzziness = null,
+        protected string $analyzer = 'default',
     ) {}
 
     public function fuzziness(?string $fuzziness): static
@@ -29,6 +30,7 @@ class Match_ extends Query implements FuzzyQuery
                 $this->field => [
                     'query' => $this->query,
                     'boost' => $this->boost,
+                    'analyzer' => $this->analyzer,
                 ],
             ],
         ];

@@ -11,6 +11,7 @@ class MultiMatch extends Query
     public function __construct(
         protected array $fields,
         protected string $query,
+        protected string $analyzer = 'default',
     ) {}
 
     public function toRaw(): array
@@ -19,6 +20,7 @@ class MultiMatch extends Query
             'multi_match' => [
                 'query' => $this->query,
                 'boost' => $this->boost,
+                'analyzer' => $this->analyzer,
             ],
         ];
 

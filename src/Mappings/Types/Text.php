@@ -40,6 +40,8 @@ class Text extends Type implements FromRaw
 
     protected array $vectors = [];
 
+    protected bool $searchSynonyms = false;
+
     public function __construct(
         string $name,
         protected ?string $raw = null,
@@ -50,6 +52,13 @@ class Text extends Type implements FromRaw
         $this->newAnalyzerClosure = fn() => null;
 
         $this->configure();
+    }
+
+    public function searchSynonyms(bool $value = true): static
+    {
+        $this->searchSynonyms = $value;
+
+        return $this;
     }
 
     public function makeSortable()
@@ -280,6 +289,11 @@ class Text extends Type implements FromRaw
         $this->analyzer = $analyzer;
     }
 
+    public function searchAnalyzer(): string
+    {
+        return $this->searchSynonyms ? 'default_with_synonyms' : 'default';
+    }
+
     public function analyzer(): ?Analyzer
     {
         return $this->analyzer;
@@ -326,7 +340,7 @@ class Text extends Type implements FromRaw
                 "{$this->name}._3gram",
             ], $queryString);
         } else {
-            $queries[] = new Match_($this->name, $queryString);
+            $queries[] = new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer());
         }
 
         return $queries;

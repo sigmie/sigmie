@@ -29,7 +29,7 @@ class Email extends Text implements Analyze
     {
         $queries = [];
 
-        $queries[] = new Match_($this->name, $queryString);
+        $queries[] = new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer());
 
         $queries[] = new Prefix($this->name, $queryString);
 

@@ -27,7 +27,7 @@ class Address extends Text implements Analyze
     {
         $queries = [];
 
-        $queries[] = new MatchBoolPrefix($this->name, $queryString);
+        $queries[] = new MatchBoolPrefix($this->name, $queryString, analyzer: $this->searchAnalyzer());
 
         return $queries;
     }

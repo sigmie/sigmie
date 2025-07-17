@@ -13,6 +13,7 @@ abstract class TokenFilter implements TokenFilterInterface
     public static $map = [
         'stop' => Stopwords::class,
         'synonym' => Synonyms::class,
+        'synonym_graph' => SynonymGraph::class,
         'stemmer_override' => Stemmer::class,
         'decimal_digit' => DecimalDigit::class,
         'ascii_folding' => AsciiFolding::class,
@@ -69,5 +70,8 @@ abstract class TokenFilter implements TokenFilterInterface
         );
     }
 
-    abstract protected function getValues(): array;
+    protected function getValues(): array
+    {
+        return [];
+    }
 }

@@ -29,7 +29,12 @@ class HTML extends Text
     {
         $queries = [];
 
-        $queries[] = new Match_($this->name, $queryString);
+        $queries[] = new Match_(
+            $this->name,
+            $queryString,
+            // TODO: use the new analyzer name defined above
+            //analyzer: $this->searchAnalyzer()
+        );
 
         return $queries;
     }

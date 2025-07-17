@@ -62,9 +62,9 @@ class Name extends Text implements Analyze
 
         $prefixField = $this->parentPath ? "{$this->parentPath}.{$this->name}.{$this->name}_text" : "{$this->name}.{$this->name}_text";
 
-        $queries[] = new Match_($this->name, $queryString);
-        $queries[] = new MatchPhrasePrefix($prefixField, $queryString);
-        $queries[] = new MatchBoolPrefix($prefixField, $queryString);
+        $queries[] = new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer());
+        $queries[] = new MatchPhrasePrefix($prefixField, $queryString, analyzer: $this->searchAnalyzer());
+        $queries[] = new MatchBoolPrefix($prefixField, $queryString, analyzer: $this->searchAnalyzer());
 
         return $queries;
     }

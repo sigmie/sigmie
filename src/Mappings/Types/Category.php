@@ -30,9 +30,9 @@ class Category extends Text
     {
         $queries = [];
 
-        $queries[] = new Match_($this->name, $queryString);
+        $queries[] = new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer());
         $queries[] = new Term("{$this->name}.keyword", $queryString);
-        $queries[] = new MatchPhrasePrefix($this->name, $queryString);
+        $queries[] = new MatchPhrasePrefix($this->name, $queryString, analyzer: $this->searchAnalyzer());
 
         return $queries;
     }
