@@ -378,4 +378,41 @@ class AliveCollectionTest extends TestCase
         $this->assertInstanceOf(ArrayAccess::class, $index);
         $this->assertInstanceOf(IteratorAggregate::class, $index);
     }
+
+    /**
+     * @test
+     */
+    public function random()
+    {
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs1 = [
+            new Document(['title' => 'First Document'], '1'),
+            new Document(['title' => 'Second Document'], '2'),
+            new Document(['title' => 'Third Document'], '3'),
+            new Document(['title' => 'Fourth Document'], '4'),
+            new Document(['title' => 'Fifth Document'], '5'),
+            new Document(['title' => 'Sixth Document'], '6'),
+            new Document(['title' => 'Seventh Document'], '7'),
+            new Document(['title' => 'Eighth Document'], '8'),
+            new Document(['title' => 'Ninth Document'], '9'),
+            new Document(['title' => 'Tenth Document'], '10'),
+            new Document(['name' => 'Alice'], '11'),
+        ];
+
+        $index->merge($docs1);
+
+        $docs1 = $index->random(2);
+
+        $this->assertCount(2, $docs1);
+
+        $docs2 = $index->random(2);
+
+        $this->assertCount(2, $docs2);
+
+        $this->assertNotEquals($docs1, $docs2);
+    }
 }

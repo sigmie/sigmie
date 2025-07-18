@@ -281,8 +281,7 @@ class FacetsTest extends TestCase
         $index = $this->sigmie->collect($indexName, refresh: true);
 
         $index->merge([
-            new Document(['keyword' => 'sport']),
-            new Document(['keyword' => 'action']),
+            new Document(['keyword' => 'sport']), new Document(['keyword' => 'action']),
         ]);
 
         $searchResponse = $this->sigmie->newSearch($indexName)

@@ -49,6 +49,9 @@ trait LazyEach
         // Initial scroll request
         $body = [
             'size' => $this->chunk,
+            // Return documents in the order they are stored internally in the index, per shard.
+            // It is the most efficient sort, especially for large scans or scrolls.
+            'sort' => [['_doc' => 'asc']],
             'query' => ['match_all' => (object) []],
         ];
 

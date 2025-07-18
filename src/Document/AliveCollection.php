@@ -85,6 +85,34 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         return $this->documentExists($this->name, $_id);
     }
 
+    public function random(int $size = 10)
+    {
+        $response = $this->searchAPICall($this->name, [
+            'from' => 0,
+            'size' => $size,
+            'query' => [
+                'function_score' => [
+                    'query' => ['match_all' => (object) []],
+                    'random_score' => (object) [],
+                    'boost_mode' => 'replace',
+                ],
+            ],
+        ]);
+
+        $collection = new Collection();
+
+        $values = $response->json('hits')['hits'];
+
+        foreach ($values as $data) {
+            $doc = new Document($data['_source'], $data['_id']);
+            $collection->add($doc);
+        }
+
+        return $collection;
+
+        return $res->json('hits')['hits'];
+    }
+
     public function take(int $limit)
     {
         if ($limit > 0) {
@@ -111,7 +139,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     public function merge(array $docs): AliveCollection
     {
         $documentEmbeddings = new DocumentEmbeddings($this->properties, $this->aiProvider);
-        
+
         $docs = array_map(fn(Document $doc) => $documentEmbeddings->make($doc), $docs);
 
         $collection = $this->upsertDocuments($this->name, $docs, $this->refresh);
@@ -141,7 +169,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
             }
 
             $fieldStrategies[$name] = $field->strategy();
-            
+
             // Handle both scalar and array values
             if (is_array($value)) {
                 $fieldTexts[$name] = $value;
@@ -157,11 +185,11 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         // Second pass: prepare embedding items based on strategy
         $embeddingItems = [];
         $fieldMap = [];
-        
+
         foreach ($fieldTexts as $name => $values) {
             $strategy = $fieldStrategies[$name];
             $field = $fields->get($name);
-            
+
             if ($strategy === VectorStrategy::Concatenate) {
                 // For Concatenate: join all values with space and create a single embedding
                 $concatenated = implode(' ', $values);
@@ -208,7 +236,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
             $field = $map['field'];
             $i = $map['index'];
             $strategy = $map['strategy'];
-            
+
             // Store embeddings based on vector strategy
             if ($strategy === VectorStrategy::Concatenate) {
                 // For Concatenate: directly store the embedding
@@ -219,33 +247,33 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
                 $fieldEmbeddings[$field][$i] = $result['embeddings'];
             }
         }
-        
+
         // Process remaining strategies
         foreach ($fieldEmbeddings as $field => $values) {
             if (empty($values)) continue;
-            
+
             $strategy = $fieldStrategies[$field];
-            
+
             if ($strategy === VectorStrategy::ScriptScore) {
                 // For ScriptScore: create array of objects with embedding field
-                $embeddings[$field] = array_map(function($embedding) {
+                $embeddings[$field] = array_map(function ($embedding) {
                     return ['embedding' => $embedding];
                 }, $values);
             } else if ($strategy === VectorStrategy::Average && count($values) > 1) {
                 // For Average: compute average of all vectors
                 $dimensions = count(reset($values));
                 $sum = array_fill(0, $dimensions, 0);
-                
+
                 foreach ($values as $vector) {
                     foreach ($vector as $i => $val) {
                         $sum[$i] += $val;
                     }
                 }
-                
-                $avg = array_map(function($total) use ($values) {
+
+                $avg = array_map(function ($total) use ($values) {
                     return $total / count($values);
                 }, $sum);
-                
+
                 $embeddings[$field] = $avg;
             } else if ($strategy === VectorStrategy::Average && count($values) === 1) {
                 // Single item for Average: use as is

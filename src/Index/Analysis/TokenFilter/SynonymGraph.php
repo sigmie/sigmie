@@ -11,6 +11,7 @@ class SynonymGraph extends TokenFilter
     public function __construct(
         string $name,
         protected array $synonyms = [],
+        protected bool $expand = true,
     ) {
         parent::__construct($name, [
             'synonyms' => $this->synonyms,
@@ -42,6 +43,7 @@ class SynonymGraph extends TokenFilter
         return [
             $this->name() => [
                 'type' => $this->type(),
+                'expand' => $this->expand,
                 'synonyms' => $this->synonyms,
             ]
         ];

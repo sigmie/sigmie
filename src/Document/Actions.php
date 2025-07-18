@@ -152,8 +152,12 @@ trait Actions
     protected function listDocuments(string $indexName, int $offset = 0, int $limit = 100): Collection
     {
         $response = $this->searchAPICall($indexName, [
-            'from' => $offset, 'size' => $limit,
+            'from' => $offset,
+            'size' => $limit,
             'query' => ['match_all' => (object) []],
+            // Return documents in the order they are stored internally in the index, per shard.
+            // It is the most efficient sort, especially for large scans or scrolls.
+            'sort' => [['_doc' => 'asc']],
         ]);
 
         $collection = new Collection();
