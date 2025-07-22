@@ -281,6 +281,7 @@ class Text extends Type implements FromRaw
 
     public function newAnalyzer(Closure $callable)
     {
+        $this->hasAnalyzerCallback = true;
         $this->newAnalyzerClosure = $callable;
     }
 

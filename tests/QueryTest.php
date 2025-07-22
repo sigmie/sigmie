@@ -183,7 +183,7 @@ class QueryTest extends TestCase
         $search = $this->sigmie->newQuery($indexName)
             ->properties($blueprint)
             ->bool(
-                fn (QueriesCompoundBoolean $bool) => $bool->must()->parse('name:"John Doe" AND age<21')
+                fn(QueriesCompoundBoolean $bool) => $bool->must()->parse('name:"John Doe" AND age<21')
             )
             ->get();
 
@@ -286,7 +286,7 @@ class QueryTest extends TestCase
             $boolean->mustNot->wildcard('foo', '**/*');
             $boolean->mustNot->ids(['unqie']);
 
-            $boolean->should->bool(fn (QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
+            $boolean->should->bool(fn(QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
         })
             ->from(0)
             ->size(2)
@@ -313,7 +313,7 @@ class QueryTest extends TestCase
             $boolean->mustNot->wildcard('foo', '**/*');
             $boolean->mustNot->ids(['unqie']);
 
-            $boolean->should->bool(fn (QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
+            $boolean->should->bool(fn(QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
         })->sort('title.raw', 'asc')
             ->fields(['title'])
             ->from(0)
@@ -413,5 +413,22 @@ class QueryTest extends TestCase
                 ],
             ]
         );
+    }
+
+    /**
+     * @test
+     */
+    public function match_query_analyzer()
+    {
+        $query = $this->sigmie
+            ->newQuery('index')
+            ->match(
+                'foo',
+                'bar',
+                analyzer: 'custom_analyzer'
+            )
+            ->getDSL();
+
+        $this->assertEquals('custom_analyzer', $query['query']['function_score']['query']['match']['foo']['analyzer']);
     }
 }

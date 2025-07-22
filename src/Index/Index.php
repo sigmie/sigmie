@@ -16,7 +16,8 @@ class Index
     public function __construct(
         public readonly string $name,
         ?SettingsInterface $settings = null,
-        ?MappingsInterface $mappings = null
+        ?MappingsInterface $mappings = null,
+        public readonly ?array $raw = null
     ) {
         $this->settings = $settings ?: new Settings();
         $this->mappings = $mappings ?: new Mappings();

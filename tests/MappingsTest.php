@@ -1464,5 +1464,26 @@ class MappingsTest extends TestCase
             $this->assertNull($indexOptions);
         });
     }
+
+    /**
+     * @test
+     */
+    public function html_custom_analyzer()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->html('html');
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->index($indexName);
+
+        $this->assertEquals('html_field_analyzer', $index->raw['mappings']['properties']['html']['analyzer']);
+    }
+
 }
 

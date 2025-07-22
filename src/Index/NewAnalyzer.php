@@ -27,6 +27,13 @@ class NewAnalyzer
         $this->tokenizer = new WordBoundaries();
     }
 
+    public function name(string $name)
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
     public function analysis(): AnalysisInterface
     {
         return $this->analysis;

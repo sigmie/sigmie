@@ -107,9 +107,17 @@ class NewQuery implements Queries
     }
 
     //TODO allow passing search analyzer
-    public function match(string $field, string $query, float $boost = 1): Search
-    {
-        $cluase = new Match_($field, $query);
+    public function match(
+        string $field,
+        string $query,
+        float $boost = 1,
+        string $analyzer = 'default'
+    ): Search {
+        $cluase = new Match_(
+            $field,
+            $query,
+            analyzer: $analyzer
+        );
 
         return $this->search->query($cluase->boost($boost));
     }

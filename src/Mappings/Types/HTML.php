@@ -16,7 +16,7 @@ class HTML extends Text
 
         $this->unstructuredText();
 
-        $this->newAnalyzer(function (NewAnalyzer $newAnalyzer) {
+        $this->newAnalyzer(function (NewAnalyzer $newAnalyzer) use ($name) {
             $newAnalyzer->tokenizeOnWordBoundaries();
             $newAnalyzer->stripHTML();
             $newAnalyzer->trim();
@@ -32,8 +32,6 @@ class HTML extends Text
         $queries[] = new Match_(
             $this->name,
             $queryString,
-            // TODO: use the new analyzer name defined above
-            //analyzer: $this->searchAnalyzer()
         );
 
         return $queries;

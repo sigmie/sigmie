@@ -81,13 +81,13 @@ trait Actions
         $mappings = Mappings::create($data['mappings'], $analyzers);
 
         if (isset($data['aliases']) && in_array($alias, array_keys($data['aliases']))) {
-            $index = new AliasedIndex($name, $alias, $settings, $mappings);
+            $index = new AliasedIndex($name, $alias, $settings, $mappings, $data);
             $index->setElasticsearchConnection($this->getElasticsearchConnection());
 
             return $index;
         }
 
-        $index = new BaseIndex($name, $settings, $mappings);
+        $index = new BaseIndex($name, $settings, $mappings, $data);
 
         return $index;
     }

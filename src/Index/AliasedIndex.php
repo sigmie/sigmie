@@ -22,15 +22,14 @@ class AliasedIndex extends Index
     use IndexAPI;
     use Reindex;
 
-    protected array $raw;
-
     public function __construct(
         string $name,
         protected string $alias,
         ?SettingsInterface $settings = null,
         ?MappingsInterface $mappings = null,
+        ?array $raw = null
     ) {
-        parent::__construct($name, $settings, $mappings);
+        parent::__construct($name, $settings, $mappings, $raw);
     }
 
     public function collect(bool $refresh = false): AliveCollection
@@ -148,8 +147,6 @@ class AliasedIndex extends Index
 
     public function get(?string $path = null): array
     {
-        $raw = $this->raw ??= $this->indexAPICall("/{$this->name}", 'GET')->json();
-
-        return dot($raw)->get($path);
+        return dot($this->raw)->get($path);
     }
 }

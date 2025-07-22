@@ -109,8 +109,6 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         }
 
         return $collection;
-
-        return $res->json('hits')['hits'];
     }
 
     public function take(int $limit)
