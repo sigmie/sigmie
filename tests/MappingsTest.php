@@ -1437,7 +1437,6 @@ class MappingsTest extends TestCase
 
             $assert->assertEquals(64, $field0['m'], 'm should be 64 for accuracy 3 and dimensions 512');
             $assert->assertEquals(128, $field1['m'], 'm should be 128 for accuracy 5 and dimensions 512');
-
         });
     }
 
@@ -1485,5 +1484,72 @@ class MappingsTest extends TestCase
         $this->assertEquals('html_field_analyzer', $index->raw['mappings']['properties']['html']['analyzer']);
     }
 
-}
+    /**
+     * @test
+     */
+    public function all_fields()
+    {
+        $indexName = uniqid();
 
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $blueprint->nested('comments', function (NewProperties $props) {
+            $props->keyword('comment_id');
+            $props->text('text');
+            $props->nested('user', function (NewProperties $props) {
+                $props->keyword('name');
+                $props->number('age');
+            });
+        });
+        $blueprint->object('user', function (NewProperties $props) {
+            $props->keyword('name');
+            $props->number('age');
+            $props->object('address', function (NewProperties $props) { 
+                $props->keyword('street');
+                $props->keyword('city');
+            });
+        });
+
+        $this->assertEquals([
+            'title',
+            'comments.comment_id',
+            'comments.text',
+            'comments.user.name',
+            'comments.user.age',
+            'user.name',
+            'user.age',
+            'user.address.street',
+            'user.address.city',
+            'boost',
+            'autocomplete'
+        ], $blueprint->get()->fieldNames());
+
+        $this->assertEquals([
+            'title',
+            'comments',
+            'comments.comment_id',
+            'comments.text',
+            'comments.user',
+            'comments.user.name',
+            'comments.user.age',
+            'user',
+            'user.name',
+            'user.age',
+            'user.address',
+            'user.address.street',
+            'user.address.city',
+            'boost',
+            'autocomplete'
+        ], $blueprint->get()->fieldNames(true));
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $mappings = $this->sigmie->index($indexName)->mappings;
+
+        dd($mappings->properties()->fieldNames());
+    }
+}

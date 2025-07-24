@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings;
 
+use PHPUnit\Framework\Constraint\ObjectEquals;
 use Sigmie\Index\Analysis\Analysis;
+use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Mappings\Contracts\Type as ContractsType;
 use Sigmie\Mappings\Types\Address;
@@ -40,8 +42,11 @@ class NewProperties
 
     protected string $name = 'mappings';
 
-    public function __construct(protected string $parentPath = '')
-    {
+    public function __construct(
+        public string $parentPath = '',
+        public string $fullPath = '',
+        public string $parentType = Mapping::class
+    ) {
         $this->fields = new Collection();
     }
 
@@ -62,12 +67,19 @@ class NewProperties
         null|string $name = null
     ): Properties {
 
-        $fields = $this->fields
-            ->mapToDictionary(function (ContractsType $type) {
+        if ($this->name === 'mappings') {
+            $this->fields->add((new Number('boost'))->float());
+            $this->fields->add((new Text('autocomplete'))->completion());
+        }
 
+        $fields = $this->fields
+            ->mapToDictionary(function (Type $type) {
+
+                $type->parent($this->parentPath, $this::class);
 
                 return [$type->name => $type];
             })->toArray();
+
 
         $props = new Properties($name ?? $this->name, $fields);
 
@@ -284,23 +296,7 @@ class NewProperties
 
     public function object(string $name, ?callable $callable = null): Object_
     {
-        $field = new Object_($name);
-        $field->parent($this->parentPath, $field::class, $this->parentPath);
-
-        $this->fields->add($field);
-
-        if (is_null($callable)) {
-            return $field;
-        }
-
-        $props = new NewProperties($name);
-
-        $callable($props);
-
-        $field->properties($props);
-        $field->parent($this->parentPath, $field::class, $this->parentPath);
-
-        return $field;
+        return $this->propertiesType(new Object_($name), $name, $callable);
     }
 
     public function type(Type $field): self
@@ -313,15 +309,26 @@ class NewProperties
     public function nested(string $name, ?callable $callable = null): Nested
     {
         $field = new Nested($name);
-        $field->parent($this->parentPath, $field::class, $this->parentPath);
+
+        return $this->propertiesType($field, $name, $callable);
+    }
+
+    protected function propertiesType(Nested|Object_ $field, string $name, callable $callable): Object_|Nested
+    {
+        $props = new NewProperties(
+            parentPath: $this->parentPath,
+            fullPath: trim($this->fullPath . '.' . $name, '.'),
+            parentType: $field::class
+        );
+        $props->propertiesName($name);
+
+        $field->parent($this->parentPath, $field::class);
 
         $this->fields->add($field);
 
         if (is_null($callable)) {
             return $field;
         }
-
-        $props = new NewProperties($name);
 
         $callable($props);
 

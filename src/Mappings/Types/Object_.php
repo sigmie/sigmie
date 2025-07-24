@@ -16,7 +16,7 @@ class Object_ extends Type
     public function __construct(
         string $name,
         Properties|NewProperties $properties = new NewProperties,
-        ?string $fullPath = null,
+        ?string $fullPath = '',
     ) {
         parent::__construct(
             name: $name,
@@ -30,13 +30,7 @@ class Object_ extends Type
     {
         $this->properties = $props instanceof NewProperties ? $props->get() : $props;
 
-        $parentName = $this->parentPath ? "{$this->parentPath}.{$this->name}" : $this->name;
-
-        if (!$this->fullPath) {
-            // dd($this);
-        }
-
-        $this->properties->propertiesParent($parentName, static::class, $this->fullPath);
+        $this->properties->propertiesParent($props->fullPath, static::class);
 
         return $this;
     }

@@ -31,11 +31,6 @@ class Properties extends Type implements ArrayAccess
     {
         $this->type = ElasticsearchMappingType::PROPERTIES->value;
 
-        if ($name === 'mappings') {
-            $this->fields['boost'] = (new Number('boost'))->float();
-            $this->fields['autocomplete'] = (new Text('autocomplete'))->completion();
-        }
-
         parent::__construct($name);
     }
 
@@ -187,6 +182,9 @@ class Properties extends Type implements ArrayAccess
             $fields[$fieldName] = $field;
         }
 
+
+
+
         return new Properties($name, $fields);
     }
 
@@ -228,37 +226,34 @@ class Properties extends Type implements ArrayAccess
         return null;
     }
 
-    public function propertiesParent(string $parentPath, string $parentType, string $parentFullPath)
+    public function propertiesParent(string $parentPath, string $parentType)
     {
         foreach ($this->fields as $field) {
-            $field->parent($parentPath, $parentType, $parentFullPath);
-
-            if ($field instanceof Nested || $field instanceof Object_) {
-                $field
-                    ->properties
-                    ->propertiesParent(
-                        $parentPath,
-                        $field::class,
-                        $parentFullPath . '.' . $field->name
-                    );
-            }
+            $field->parent($parentPath, $parentType);
         }
     }
 
-    public function fieldNames()
+    public function fieldNames(bool $withParent = false)
     {
         $collection = new Collection($this->fields);
 
-        return $collection->map(function (ContractsType $type) {
+        return $collection->map(function (ContractsType $type) use ($withParent) {
+
             if ($type instanceof Object_) {
-                return $type->properties->fieldNames();
+                return [
+                    ...$withParent ? [$type->fullPath] : [],
+                    ...$type->properties->fieldNames($withParent)
+                ];
             }
 
             if ($type instanceof Nested) {
-                return $type->properties->fieldNames();
+                return [
+                    ...$withParent ? [$type->fullPath] : [],
+                    ...$type->properties->fieldNames($withParent)
+                ];
             }
 
-            return $type->name();
+            return $type->fullPath;
         })->flatten()
             ->toArray();
     }

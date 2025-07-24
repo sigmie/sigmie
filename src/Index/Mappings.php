@@ -24,7 +24,7 @@ class Mappings implements MappingsInterface
 {
     use EmbeddingsProvider;
 
-    protected Properties $properties;
+    public readonly Properties $properties;
 
     protected CustomAnalyzer $defaultAnalyzer;
 
@@ -34,6 +34,11 @@ class Mappings implements MappingsInterface
     ) {
         $this->defaultAnalyzer = $defaultAnalyzer ?: new DefaultAnalyzer();
         $this->properties = $properties ?: new Properties(name: 'mappings');
+    }
+
+    public function fieldNames(bool $withParent = false): array
+    {
+        return $this->properties->fieldNames($withParent);
     }
 
     public function properties(): Properties

@@ -15,9 +15,12 @@ class Nested extends Type
 
     public function __construct(
         string $name,
-        Properties|NewProperties $properties = new NewProperties
+        Properties|NewProperties $properties = new NewProperties,
+        string $parentPath = ''
     ) {
         parent::__construct($name);
+
+        $this->parentPath = $parentPath;
 
         $this->properties($properties);
     }
@@ -26,9 +29,7 @@ class Nested extends Type
     {
         $this->properties = $props instanceof NewProperties ? $props->get() : $props;
 
-        $parentName = $this->parentPath ? "{$this->parentPath}.{$this->name}" : $this->name;
-
-        $this->properties->propertiesParent($parentName, static::class, $this->fullPath);
+        $this->properties->propertiesParent($props->fullPath, static::class);
 
         return $this;
     }

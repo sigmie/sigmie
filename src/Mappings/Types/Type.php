@@ -29,11 +29,14 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
 
     public Closure $queriesClosure;
 
-    public function parent(string $parentPath, string $parentType, string $parentFullPath): static
-    {
+
+    public function parent(
+        string $parentPath,
+        string $parentType,
+    ): static {
         $this->parentPath = $parentPath;
         $this->parentType = $parentType;
-        $this->fullPath = $parentFullPath . '.' . $this->name;
+        $this->fullPath = trim($parentPath . '.' . $this->name, '.');
 
         return $this;
     }
