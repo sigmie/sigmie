@@ -112,6 +112,7 @@ class Text extends Type implements FromRaw
     {
         $name = ! is_null($this->parentPath) ? "{$this->parentPath}_{$this->name}_field_analyzer" : "{$this->name}_field_analyzer";
         $name = str_replace('.', '_', $name);
+        $name = trim($name, '_');
 
         $newAnalyzer = new NewAnalyzer(
             $analysis,

@@ -16,11 +16,12 @@ class Nested extends Type
     public function __construct(
         string $name,
         Properties|NewProperties $properties = new NewProperties,
-        string $parentPath = ''
+        ?string $fullPath = '',
     ) {
-        parent::__construct($name);
-
-        $this->parentPath = $parentPath;
+        parent::__construct(
+            name: $name,
+            fullPath: $fullPath
+        );
 
         $this->properties($properties);
     }

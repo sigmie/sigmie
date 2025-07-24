@@ -1542,14 +1542,5 @@ class MappingsTest extends TestCase
             'boost',
             'autocomplete'
         ], $blueprint->get()->fieldNames(true));
-
-        $index = $this->sigmie
-            ->newIndex($indexName)
-            ->properties($blueprint)
-            ->create();
-
-        $mappings = $this->sigmie->index($indexName)->mappings;
-
-        dd($mappings->properties()->fieldNames());
     }
 }
