@@ -27,9 +27,19 @@ use Sigmie\Semantic\Providers\SigmieAI as SigmieEmbeddings;
 
 class Properties extends Type implements ArrayAccess
 {
-    public function __construct(string $name = 'mappings', protected array $fields = [])
+    protected array $fields = [];
+    public function __construct(string $name = 'mappings', array $fields = [])
     {
         $this->type = ElasticsearchMappingType::PROPERTIES->value;
+
+        $this->fields = array_map(function (Type $field) use ($name) {
+
+            $name = $name !== 'mappings' ? $name : '';
+
+            $field->parent($name, self::class);
+
+            return $field;
+        }, $fields);
 
         parent::__construct($name);
     }
@@ -131,20 +141,57 @@ class Properties extends Type implements ArrayAccess
         }
     }
 
-    public static function create(array $raw, DefaultAnalyzer $defaultAnalyzer, array $analyzers, string $name): self
-    {
+    public static function create(
+        array $raw,
+        DefaultAnalyzer $defaultAnalyzer,
+        array $analyzers,
+        string $name,
+        string $parentPath = ''
+    ): self {
+
         $fields = [];
 
         foreach ($raw as $fieldName => $value) {
 
             $field = match (true) {
                 // This is an object type
-                isset($value['properties']) && ! isset($value['type']) => (new Object_($fieldName))->properties(
-                    self::create($value['properties'], $defaultAnalyzer, $analyzers, (string) $fieldName)
-                ),
-                isset($value['properties']) && $value['type'] === 'nested' => (new Nested($fieldName))->properties(
-                    self::create($value['properties'], $defaultAnalyzer, $analyzers, (string) $fieldName)
-                ),
+                isset($value['properties']) && ! isset($value['type']) => (function () use ($fieldName, $value, $defaultAnalyzer, $analyzers, $parentPath) {
+
+                    $props = self::create(
+                        $value['properties'],
+                        $defaultAnalyzer,
+                        $analyzers,
+                        (string) $fieldName,
+                        $fieldName
+                    );
+                    $props->parent($parentPath, self::class);
+
+                    $object = new Object_(
+                        $fieldName,
+                        $props,
+                    );
+
+                    return $object;
+                })(),
+                isset($value['properties']) && $value['type'] === 'nested' => (function () use (
+                    $fieldName,
+                    $value,
+                    $defaultAnalyzer,
+                    $analyzers,
+                    $parentPath
+                ) {
+                    $props = self::create(
+                        $value['properties'],
+                        $defaultAnalyzer,
+                        $analyzers,
+                        (string) $fieldName,
+                    );
+                    $props->parent($parentPath, self::class);
+
+                    $nested = new Nested($fieldName, $props);
+
+                    return $nested;
+                })(),
                 in_array(
                     $value['type'],
                     ['search_as_you_type', 'text', 'completion']
@@ -182,10 +229,10 @@ class Properties extends Type implements ArrayAccess
             $fields[$fieldName] = $field;
         }
 
+        $props = new Properties($name, $fields);
+        $props->parent("{$parentPath}.{$name}", self::class);
 
-
-
-        return new Properties($name, $fields);
+        return $props;
     }
 
     public function toRaw(): array
@@ -194,11 +241,11 @@ class Properties extends Type implements ArrayAccess
             ->mapToDictionary(fn(ContractsType $value) => $value->toRaw())
             ->toArray();
 
-        if (in_array($this->name, ['mappings', 'embeddings'])) {
+        // if (in_array($this->name, ['mappings', 'embeddings'])) {
             return $fields;
-        } else {
-            return [$this->name() => ['properties' => $fields]];
-        }
+        // } else {
+        //     return [$this->name() => ['properties' => $fields]];
+        // }
     }
 
     public function getNestedField(string $fieldName)

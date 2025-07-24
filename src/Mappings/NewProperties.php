@@ -75,8 +75,6 @@ class NewProperties
         $fields = $this->fields
             ->mapToDictionary(function (Type $type) {
 
-                $type->parent($this->parentPath, $this::class);
-
                 return [$type->name => $type];
             })->toArray();
 

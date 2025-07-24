@@ -6,12 +6,14 @@ namespace Sigmie\Mappings\Types;
 
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Contracts\PropertiesField;
+use Sigmie\Mappings\Shared\Properties as SharedProperties;
 
-class Nested extends Type
+class Nested extends Type implements PropertiesField
 {
-    protected string $type = 'nested';
+    use SharedProperties;
 
-    public Properties $properties;
+    protected string $type = 'nested';
 
     public function __construct(
         string $name,
@@ -24,15 +26,6 @@ class Nested extends Type
         );
 
         $this->properties($properties);
-    }
-
-    public function properties(Properties|NewProperties $props): static
-    {
-        $this->properties = $props instanceof NewProperties ? $props->get() : $props;
-
-        $this->properties->propertiesParent($props->fullPath, static::class);
-
-        return $this;
     }
 
     public function toRaw(): array

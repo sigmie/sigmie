@@ -76,11 +76,7 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
 
     public function name(): string
     {
-        if (! is_null($this->parentPath)) {
-            return "{$this->parentPath}.{$this->name}";
-        }
-
-        return $this->name;
+        return trim("{$this->parentPath}.{$this->name}", '.');
     }
 
     public function names(): array

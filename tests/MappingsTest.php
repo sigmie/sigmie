@@ -1505,7 +1505,7 @@ class MappingsTest extends TestCase
         $blueprint->object('user', function (NewProperties $props) {
             $props->keyword('name');
             $props->number('age');
-            $props->object('address', function (NewProperties $props) { 
+            $props->object('address', function (NewProperties $props) {
                 $props->keyword('street');
                 $props->keyword('city');
             });
@@ -1542,5 +1542,74 @@ class MappingsTest extends TestCase
             'boost',
             'autocomplete'
         ], $blueprint->get()->fieldNames(true));
+    }
+
+    /**
+     * @test
+     */
+    public function object_field_names_from_index()
+    {
+        $indexName = uniqid();
+
+        $index = $this->sigmie->newIndex($indexName)->create();
+
+        $this->sigmie->collect($indexName)->merge([
+            new Document([
+                'title' => 'Hello World',
+                'comments' => [
+                    'comment_id' => 1,
+                    'text' => 'This is a comment',
+                    'user' => [
+                        'name' => 'John Doe',
+                        'age' => 30,
+                    ],
+                ],
+            ])
+        ]);
+
+        $index = $this->sigmie->index($indexName);
+
+        $this->assertEquals([
+            'comments.comment_id',
+            'comments.text',
+            'comments.user.age',
+            'comments.user.name',
+            'title',
+        ], $index->mappings->properties()->fieldNames());
+    }
+
+    /**
+     * @test
+     */
+    public function nested_field_names_from_index()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->object('comments', function (NewProperties $props) {
+            $props->keyword('comment_id');
+            $props->text('text');
+            $props->object('user', function (NewProperties $props) {
+                $props->keyword('name');
+                $props->number('age');
+            });
+        });
+
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)->create();
+
+        $index = $this->sigmie->index($indexName);
+
+        $this->assertEquals([
+            'autocomplete',
+            'boost',
+            'comments.comment_id',
+            'comments.text',
+            'comments.user.age',
+            'comments.user.name',
+            'title',
+        ], $index->mappings->properties()->fieldNames());
     }
 }

@@ -8,7 +8,11 @@ use Sigmie\Index\Contracts\CharFilter;
 
 class HTMLStrip implements CharFilter
 {
-    public string $name = 'html_strip';
+    public function __construct(
+        public string $name = 'html_strip',
+    ) {
+
+    }
 
     public static function fromRaw(array $raw)
     {
@@ -26,6 +30,6 @@ class HTMLStrip implements CharFilter
 
     public function name(): string
     {
-        return 'html_strip';
+        return $this->name; 
     }
 }

@@ -34,9 +34,11 @@ trait CharFilters
         return $this->charFilters->toArray();
     }
 
-    public function stripHTML(): static
+    public function stripHTML(?string $name = null): static
     {
-        $this->addCharFilter(new HTMLStrip());
+        $name = $name ?? $this->createCharFilterName('html_strip');
+
+        $this->addCharFilter(new HTMLStrip($name));
 
         return $this;
     }
@@ -65,7 +67,7 @@ trait CharFilters
     private function ensureCharFilterNameIsAvailable(string $name): void
     {
         if ($this->analysis()->hasCharFilter($name)) {
-            throw new Exception('Char filter name already exists.');
+            throw new Exception('Char filter name `'.$name.'` already exists.');
         }
     }
 
