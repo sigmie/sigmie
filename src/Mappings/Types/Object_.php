@@ -33,7 +33,7 @@ class Object_ extends Type
         $parentName = $this->parentPath ? "{$this->parentPath}.{$this->name}" : $this->name;
 
         if (!$this->fullPath) {
-            dd($this);
+            // dd($this);
         }
 
         $this->properties->propertiesParent($parentName, static::class, $this->fullPath);

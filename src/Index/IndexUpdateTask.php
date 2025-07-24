@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Index;
 
+use Carbon\Carbon;
 use RuntimeException;
 use Sigmie\Base\APIs\Reindex;
 use Sigmie\Base\APIs\Tasks;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+
+use function Nicoorfi\Insist\insist_fibonnaci;
+use function Nicoorfi\Insist\insist_linear;
 
 class IndexUpdateTask
 {
@@ -89,5 +93,33 @@ class IndexUpdateTask
         }
 
         throw new RuntimeException('Something went wrong while updating index.');
+    }
+
+    public function waitAndFinish(
+        ?Carbon $startPollingAt = null,
+        int $maxTries = 100,
+    ) {
+        $startPollingAt = $startPollingAt ?? Carbon::now();
+        $tries = 0;
+
+        while (true) {
+            if (Carbon::now()->isBefore($startPollingAt)) {
+
+                sleep(1);
+
+                continue;
+            }
+
+            if ($this->isCompleted()) {
+                $this->finish();
+                break;
+            }
+
+            $tries++;
+
+            if ($tries > $maxTries) {
+                throw new RuntimeException('Index update is not completed. Tried ' . $tries . ' times.');
+            }
+        }
     }
 }

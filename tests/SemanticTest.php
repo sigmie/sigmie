@@ -328,7 +328,7 @@ class SemanticTest extends TestCase
             ->queryString('Queen')
             ->get();
 
-        dd($response->json());
+        // dd($response->json());
         // $templateName = uniqid();
 
         // $saved = $this->sigmie
@@ -760,7 +760,7 @@ class SemanticTest extends TestCase
             ->queryString('Queen')
             ->get();
 
-        dd($response->json());
+        // dd($response->json());
     }
 
     /**

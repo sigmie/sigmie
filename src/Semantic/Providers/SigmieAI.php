@@ -143,7 +143,7 @@ class SigmieAI extends AbstractAIProvider
         Text $type
     ): array {
 
-        dd($text);
+        // dd($text);
 
         if ($type->strategy() === VectorStrategy::ScriptScore) {
             $fnQuery = new FunctionScore(

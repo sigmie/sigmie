@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Carbon\Carbon;
 use Sigmie\Document\Document;
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
@@ -529,5 +530,32 @@ class IndexUpdateTest extends TestCase
             $index->assertShards(2);
             $index->assertReplicas(2);
         });
+    }
+
+    /**
+     * @test
+     */
+    public function update_index_wait_and_finish()
+    {
+        $alias = uniqid();
+
+        $index = $this->sigmie->newIndex($alias)
+            ->shards(1)
+            ->replicas(1)
+            ->create();
+
+        $oldName = $this->sigmie->index($alias)->raw['settings']['index']['provided_name'];
+
+        $task = $index->asyncUpdate(function (Update $update) {
+            $update->replicas(2)->shards(2);
+
+            return $update;
+        });
+
+        $task->waitAndFinish();
+
+        $newName = $this->sigmie->index($alias)->raw['settings']['index']['provided_name'];
+
+        $this->assertNotEquals($oldName, $newName);
     }
 }

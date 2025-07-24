@@ -87,11 +87,6 @@ class Sigmie
         return $this->getIndex($this->withApplicationPrefix($name));
     }
 
-    public function raw(string $name): RawIndex
-    {
-        return new RawIndex($this->elasticsearchConnection, $this->withApplicationPrefix($name));
-    }
-
     public function collect(string $name, bool $refresh = false): AliveCollection
     {
         $aliveIndex = new AliveCollection($this->withApplicationPrefix($name), $this->elasticsearchConnection, $refresh ? 'true' : 'false');

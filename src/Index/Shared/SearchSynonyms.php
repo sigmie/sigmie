@@ -28,7 +28,6 @@ trait SearchSynonyms
 
         $analyzer->addFilters([$graph]);
 
-
         // Inherit the default analyzer settings
         $analyzer->addCharFilters($this->charFilters());
         $analyzer->addFilters($this->filters());

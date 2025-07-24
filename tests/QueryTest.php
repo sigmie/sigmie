@@ -431,4 +431,30 @@ class QueryTest extends TestCase
 
         $this->assertEquals('custom_analyzer', $query['query']['function_score']['query']['match']['foo']['analyzer']);
     }
+
+    /**
+     * @test
+     */
+    public function raw_query()
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->create();
+
+        $this->sigmie->collect($name, true)->merge([
+            new Document([
+                'foo' => 'bar',
+            ]),
+        ]);
+
+        $res = $this->sigmie->rawQuery($name, [
+            'query' => [
+                'match' => [
+                    'foo' => 'bar',
+                ],
+            ],
+        ]);
+
+        $this->assertEquals(1, $res->json()['hits']['total']['value']);
+    }
 }
