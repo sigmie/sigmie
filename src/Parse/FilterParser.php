@@ -22,6 +22,10 @@ class FilterParser extends Parser
 {
     protected ?string $parentPath = null;
 
+    public static int $maxNestingLevel = 32;
+
+    protected int $nestingLevel = 0;
+
     public function parentPath(string $path)
     {
         $this->parentPath = $path;
@@ -34,8 +38,19 @@ class FilterParser extends Parser
         return $this->parentPath ? $this->parentPath.'.'.$field : $field;
     }
 
+    protected function handleNesting()
+    {
+        $this->nestingLevel++;
+
+        if ($this->nestingLevel > self::$maxNestingLevel) {
+            throw new ParseException("Nesting level exceeded. Max nesting level is " . self::$maxNestingLevel . ".");
+        }
+    }
+
     protected function parseString(string $query)
     {
+        $this->handleNesting();
+
         // Replace breaks with spaces
         $query = str_replace(["\r", "\n"], ' ', $query);
         // Remove extra spaces that aren't in quotes

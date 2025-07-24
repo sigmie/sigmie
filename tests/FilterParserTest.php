@@ -1879,4 +1879,50 @@ class FilterParserTest extends TestCase
         $this->assertEquals('<p>Yet another HTML content</p>', $hits[0]['_source']['contact']['html']);
         $this->assertEquals('3', $hits[0]['_source']['contact']['id']);
     }
+
+    /**
+     * @test
+     */
+    public function max_nested_filter()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->number('some_number');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'some_number' => 10,
+            ]),
+            new Document([
+                'some_number' => 20,
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+        $parser = new FilterParser($props);
+
+        $filter = '';
+        $filter .= '(((((((((((((((((NOT some_number:"20" AND NOT some_number:"10")';
+        $filter .= ' AND (some_number>"5" OR some_number<"15"))';
+        $filter .= ' AND NOT some_number:"12")';
+        $filter .= ' OR (some_number>="8" AND some_number<="25"))';
+        $filter .= ' OR (NOT some_number:"18" AND some_number>"0"))';
+        $filter .= ' OR (some_number<"30" AND NOT some_number:"22"))';
+        $filter .= ' OR (some_number>="1" AND some_number<="50")))))))))))))))))';
+
+        $this->expectException(ParseException::class);
+
+        $query = $parser->parse($filter);
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+    }
 }
