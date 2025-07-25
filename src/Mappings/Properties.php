@@ -9,6 +9,7 @@ use Exception;
 use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\SimpleAnalyzer;
+use Sigmie\Index\Analysis\Standard;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Mappings\Contracts\Type as ContractsType;
 use Sigmie\Mappings\Types\Boolean;
@@ -207,6 +208,7 @@ class Properties extends Type implements ArrayAccess
                 $value['type'] === 'object' => new Object_($fieldName),
                 $value['type'] === 'elastiknn_dense_float_vector' => new DenseFloatVector($fieldName, $value['elastiknn']['dims']),
                 $value['type'] === 'dense_vector' => new DenseVector($fieldName, $value['dims']),
+                $value['type'] === 'knn_vector' => new DenseFloatVector($fieldName, $value['dimension']),
                 default => throw new Exception('Field ' . $value['type'] . ' couldn\'t be mapped')
             };
 
@@ -219,6 +221,7 @@ class Properties extends Type implements ArrayAccess
 
                 $analyzer = match ($analyzerName) {
                     'simple' => new SimpleAnalyzer(),
+                    'standard' => new Standard(),
                     'default' => $defaultAnalyzer,
                     default => $analyzers[$analyzerName]
                 };
@@ -242,7 +245,7 @@ class Properties extends Type implements ArrayAccess
             ->toArray();
 
         // if (in_array($this->name, ['mappings', 'embeddings'])) {
-            return $fields;
+        return $fields;
         // } else {
         //     return [$this->name() => ['properties' => $fields]];
         // }

@@ -16,7 +16,6 @@ trait LazyEach
 
     protected int $chunk = 500;
 
-    protected array $fields = [];
 
     public function chunk(int $size): self
     {
@@ -25,12 +24,6 @@ trait LazyEach
         return $this;
     }
 
-    public function fields(array $fields): self
-    {
-        $this->fields = $fields;
-
-        return $this;
-    }
 
     public function each(Closure $fn): self
     {
@@ -55,8 +48,17 @@ trait LazyEach
             'query' => ['match_all' => (object) []],
         ];
 
-        if ($this->fields) {
-            $body['_source'] = $this->fields;
+        if ($this->only || $this->except) {
+
+            $body['_source'] = [];
+
+            if ($this->only) {
+                $body['_source']['includes'] = $this->only;
+            }
+
+            if ($this->except) {
+                $body['_source']['excludes'] = $this->except;
+            }
         }
 
         $response = $this->searchAPICall(index: "$this->name", query: $body, scroll: '1m');

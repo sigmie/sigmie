@@ -81,11 +81,12 @@ class Analyzer implements CustomAnalyzerInterface
                 'autocomplete_greek_stopwords' => new GreekStopwords($filterName),
                 'autocomplete_greek_lowercase' => new GreekLowercase($filterName),
 
-                'autocomplete_ascii_folding' => new AsciiFolding($filterName),
-                'autocomplete_unique' => new Unique($filterName),
-                'autocomplete_trim' => new Trim($filterName),
-                'autocomplete_decimal_digit' => new DecimalDigit($filterName),
-                'autocomplete_shingle' => new Shingle($filterName),
+                'lowercase' => new Lowercase($filterName),
+                'ascii_folding' => new AsciiFolding($filterName),
+                'unique' => new Unique($filterName),
+                'trim' => new Trim($filterName),
+                'decimal_digit' => new DecimalDigit($filterName),
+                'shingle' => new Shingle($filterName),
 
                 default => $filters[$filterName]
             };
@@ -102,6 +103,7 @@ class Analyzer implements CustomAnalyzerInterface
 
         $analyzerTokenizer = match ($tokenizerName) {
             'whitespace' => new Whitespace(),
+            'standard' => new WordBoundaries(),
             default => $tokenizers[$tokenizerName]
         };
 

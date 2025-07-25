@@ -415,4 +415,74 @@ class AliveCollectionTest extends TestCase
 
         $this->assertNotEquals($docs1, $docs2);
     }
+
+    /**
+     * @test
+     */
+    public function only()
+    {
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document(['foo' => 'bar'], '4'),
+            new Document(['foo' => 'baz'], '89'),
+            new Document(['baz' => 'john'], '2'),
+        ];
+
+        $index->merge($docs);
+
+        $index = $index->chunk(1)->only(['foo']);
+
+        $doc = iterator_to_array($index->all())['2'];
+
+        $this->assertEmpty($doc->_source);
+
+        $doc = $index->get('2');
+
+        $this->assertEmpty($doc->_source);
+
+        $docs = $index->take(3);
+        
+        $firstDoc = null;
+        foreach ($docs as $doc) {
+            if ($doc->_id === '2') {
+                $firstDoc = $doc;
+                break;
+            }
+        }
+
+        $this->assertEmpty($firstDoc->_source);
+    }
+
+    /**
+     * @test
+     */
+    public function except()
+    {
+        $indexName = uniqid();
+        $index = $this->sigmie->newIndex($indexName)->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document(['foo' => 'bar'], '4'),
+            new Document(['foo' => 'baz'], '89'),
+            new Document(['baz' => 'john'], '2'),
+        ];
+
+        $index->merge($docs);
+
+        $index = $index->chunk(1)->except(['foo']);
+
+        $all = iterator_to_array($index->all());
+
+        $this->assertArrayNotHasKey('foo', $all['4']->_source);
+        $this->assertArrayNotHasKey('foo', $all['89']->_source);
+        $this->assertArrayNotHasKey('foo', $all['2']->_source);
+        $this->assertArrayHasKey('baz', $all['2']->_source);
+    }
+
 }

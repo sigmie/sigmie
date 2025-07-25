@@ -31,7 +31,9 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     use Mappings;
     use EmbeddingsProvider;
 
-    protected bool $retrieveEmbeddings = false;
+    protected ?array $only = null;
+
+    protected ?array $except = null;
 
     protected bool $populateEmbeddings = true;
 
@@ -48,13 +50,6 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     public function populateEmbeddings(bool $value = true)
     {
         $this->populateEmbeddings = $value;
-
-        return $this;
-    }
-
-    public function retrieveEmbeddings(bool $value = true)
-    {
-        $this->retrieveEmbeddings = $value;
 
         return $this;
     }
@@ -350,5 +345,19 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     public function offsetUnset(mixed $_id): void
     {
         $this->remove((string) $_id);
+    }
+
+    public function only(array $fields): self
+    {
+        $this->only = $fields;
+
+        return $this;
+    }
+
+    public function except(array $fields): self
+    {
+        $this->except = $fields;
+
+        return $this;
     }
 }

@@ -12,9 +12,10 @@ trait Mget
 {
     use API;
 
-    public function mgetAPICall(string $index, array $body = []): MgetResponse
+    public function mgetAPICall(string $index, array $body = [], array $query = []): MgetResponse
     {
         $uri = new Uri("/{$index}/_mget");
+        $uri = $uri->withQuery(http_build_query($query));
 
         $esRequest = new MgetRequest('POST', $uri, $body);
 

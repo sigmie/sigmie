@@ -144,20 +144,55 @@ trait Actions
 
     protected function getDocument(string $indexName, string $identifier): ?Doc
     {
-        $response = $this->mgetAPICall($indexName, ['docs' => [['_id' => $identifier]]]);
+        $payload = [
+            'docs' => [['_id' => $identifier],]
+        ];
+
+        $query = [];
+
+        if ($this->only) {
+            $query['_source_includes'] = implode($this->only);
+        }
+
+        if ($this->except) {
+            $query['_source_excludes'] = implode($this->except);
+        }
+
+        $response = $this->mgetAPICall($indexName, $payload, $query);
 
         return $response->first();
     }
 
-    protected function listDocuments(string $indexName, int $offset = 0, int $limit = 100): Collection
-    {
-        $response = $this->searchAPICall($indexName, [
+    protected function listDocuments(
+        string $indexName,
+        int $offset = 0,
+        int $limit = 100,
+    ): Collection {
+
+        $payload = [
             'from' => $offset,
             'size' => $limit,
             'query' => ['match_all' => (object) []],
             // Return documents in the order they are stored internally in the index, per shard.
             // It is the most efficient sort, especially for large scans or scrolls.
             'sort' => [['_doc' => 'asc']],
+        ];
+
+        if ($this->only || $this->except) {
+            $payload['_source'] = [];
+
+            if ($this->only) {
+                $payload['_source']['includes'] = $this->only;
+            }
+
+            if ($this->except) {
+                $payload['_source']['excludes'] = $this->except;
+            }
+        }
+
+
+        $response = $this->searchAPICall($indexName, [
+            ...$payload
         ]);
 
         $collection = new Collection();
