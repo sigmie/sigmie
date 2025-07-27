@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use Http\Promise\Promise;
+use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as ResponsesSearch;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\DenseVector;
@@ -27,8 +28,10 @@ use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
 use Sigmie\Search\Contracts\EmbeddingsQueries;
+use Sigmie\Search\Contracts\ResponseFormater;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
-use Sigmie\Semantic\Reranker;
+use Sigmie\Search\Formatters\RawElasticsearchFormat;
+use Sigmie\Search\Formatters\SigmieFormat;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\EmbeddingsProvider;
 
@@ -38,25 +41,35 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 {
     protected array $sort = ['_score'];
 
-    protected array $queryStrings = [];
-
     protected array $embeddings = [];
 
     protected string $index;
-
-    protected bool $rerank = false;
-
-    protected float $rerankThreshold = 0.0;
-
-    protected string $rerankQuery = '';
 
     protected float $textScoreMultiplier = 1.0;
 
     protected float $semanticScoreMultiplier = 1.0;
 
+    protected SearchContext $searchContext;
+
+    public function __construct(
+        ElasticsearchConnection $elasticsearchConnection,
+    ) {
+        parent::__construct($elasticsearchConnection);
+
+        $this->searchContext = new SearchContext();
+    }
+
+    public function page(int $page, int $perPage = 20): static
+    {
+        $this->searchContext->from = ($page - 1) * $perPage;
+        $this->searchContext->size = $perPage;
+
+        return $this;
+    }
+
     public function queryString(string $query, float $weight = 1.0): static
     {
-        $this->queryStrings[] = [
+        $this->searchContext->queryStrings[] = [
             'query' => $query,
             'weight' => $weight
         ];
@@ -75,6 +88,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     {
         $parser = new FilterParser($this->properties, $thorwOnError);
 
+        $this->searchContext->filterString = $filters;
         $this->filters = $parser->parse($filters);
 
         return $this;
@@ -98,6 +112,8 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     {
         $parser = new FacetParser($this->properties, $thorwOnError);
 
+        $this->searchContext->facetString = $facets;
+        $this->searchContext->facetFields = $parser->fields($facets);
         $this->facets = $parser->parse($facets);
 
         return $this;
@@ -107,6 +123,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     {
         $parser = new SortParser($this->properties, $thorwOnError);
 
+        $this->searchContext->sortString = $sort;
         $this->sort = $parser->parse($sort);
 
         return $this;
@@ -138,15 +155,19 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $search->fields($this->retrieve ?? $this->properties->fieldNames());
 
-        $boolean->must()->bool(fn(Boolean $boolean) => $boolean->filter()->query($this->filters));
+        $boolean->must()->bool(
+            fn(Boolean $boolean) => $boolean->filter()->query(
+                $this->filters
+            )
+        );
 
         $search->addRaw('sort', $this->sort);
 
         $search->addRaw('aggs', $this->facets->toRaw());
 
-        $search->size($this->size);
+        $search->size($this->searchContext->size);
 
-        $search->from($this->from);
+        $search->from($this->searchContext->from);
 
         $minScore = $this->semanticSearch && $this->minScore == 0 ? 0.01 : $this->minScore;
 
@@ -160,13 +181,13 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $shouldClauses = new Collection();
 
             // Text queries for weighted query strings
-            foreach ($this->queryStrings as $weightedQuery) {
+            foreach ($this->searchContext->queryStrings as $weightedQuery) {
                 $this->addTextQueries($weightedQuery['query'], $fields, $shouldClauses, $weightedQuery['weight']);
             }
 
             if (
                 $shouldClauses->isEmpty() &&
-                empty($this->queryStrings) &&
+                empty($this->searchContext->queryStrings) &&
                 !$this->noResultsOnEmptySearch
             ) {
                 $queryBoolean->should()->query(new MatchAll);
@@ -179,7 +200,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $boolean->should()->query($queryBoolean);
         });
 
-        if (!empty($this->queryStrings[0]['query'] ?? '')) {
+        if (!empty($this->searchContext->queryStrings[0]['query'] ?? '')) {
 
             $search->suggest(function (Suggest $suggest) {
 
@@ -189,7 +210,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                     ->fuzzyMinLegth($this->autocompleteFuzzyMinLength)
                     ->fuzzyPrefixLenght($this->autocompleteFuzzyPrefixLength)
                     ->fuzzy($this->autocompletion)
-                    ->prefix($this->queryStrings[0]['query']);
+                    ->prefix($this->searchContext->queryStrings[0]['query']);
             });
         }
 
@@ -249,7 +270,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 ->flatten(1)
                 ->map(function (Query $query) use ($queryBoost) {
                     if ($query instanceof NearestNeighbors) {
-                        $query->k($this->size);
+                        $query->k($this->searchContext->size);
                     }
 
                     return $query;
@@ -341,35 +362,18 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         }
     }
 
+    public function formatted(): array
+    {
+        $formatter = $this->formatter ?? new SigmieFormat($this->properties);
+
+        $res = $this->get();
+
+        $formatter->context($this->searchContext)->json($res->json());
+
+        return $formatter->format();
+    }
+
     public function get(): ResponsesSearch
-    {
-        return $this->rerank ? $this->getReranked() : $this->getNotReranked();
-    }
-
-    public function getReranked(): ResponsesSearch
-    {
-        /** @var ResponsesSearch  */
-        $res = $this->make()->get();
-
-        $reranker = new Reranker(
-            $this->aiProvider,
-            $this->properties,
-            $this->rerankThreshold
-        );
-
-        return $reranker->rerank($res, $this->rerankQuery);
-    }
-
-    public function rerank(string $query, float $threshold = 0.0): static
-    {
-        $this->rerank = true;
-        $this->rerankQuery = $query;
-        $this->rerankThreshold = $threshold;
-
-        return $this;
-    }
-
-    public function getNotReranked(): ResponsesSearch
     {
         return $this->make()->get();
     }

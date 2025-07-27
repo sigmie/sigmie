@@ -112,7 +112,7 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
         return false;
     }
 
-    public function facets(ElasticsearchResponse $response): ?array
+    public function facets(array $aggregation): ?array
     {
         return null;
     }

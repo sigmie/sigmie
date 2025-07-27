@@ -73,10 +73,9 @@ class Keyword extends Type
         }
     }
 
-    public function facets(ElasticsearchResponse $response): ?array
+    public function facets(array $aggregation): ?array
     {
-        $json = $response->json();
-        $originalBuckets = $json['aggregations'][$this->name()][$this->name()]['buckets'] ?? $json['aggregations'][$this->name()]['buckets'] ?? [];
+        $originalBuckets = $aggregation[$this->name()]['buckets'] ?? [];
 
         return array_column($originalBuckets, 'doc_count', 'key');
     }

@@ -26,9 +26,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function search_template_with_query_weight()
-    {
-    }
+    public function search_template_with_query_weight() {}
 
 
     /**
@@ -102,6 +100,7 @@ class SearchTest extends TestCase
             ->properties($blueprint)
             ->queryString('0800-0234379')
             ->get();
+
 
         $this->assertNotEmpty($res->hits());
     }
@@ -1169,5 +1168,46 @@ class SearchTest extends TestCase
             ->get();
 
         $this->assertEquals(1, $response->json('hits.total.value'));
+    }
+
+    /**
+     * @test
+     */
+    public function format()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->category('type');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'name' => 'Queen',
+                    'age' => 20,
+                    'type'=> 'human'
+                ]),
+                new Document([
+                    'name' => 'Lion',
+                    'age' => 20,
+                    'type'=> 'animal'
+                ]),
+            ]);
+
+        $normalized = $this->sigmie
+            ->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('')
+            ->facets('type')
+            ->page(2, perPage: 1)
+            ->formatted();
+
+        dd($normalized);
     }
 }

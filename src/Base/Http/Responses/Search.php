@@ -44,4 +44,38 @@ class Search extends ElasticsearchResponse
 
         return $this->hits();
     }
+
+    public function normalize()
+    {
+        $results = $this->json();
+
+        $hits = [];
+
+        // $facets = collect($properties->toArray())
+        //     ->filter(fn(Type $type) => $type->isFacetable())
+        //     ->filter(fn(Type $type) => in_array($type->name, $requestedFacets))
+        //     ->mapWithKeys(fn(Type $type) => [$type->name => (object) $type->facets($response)])
+        //     ->filter(fn($value) => !is_null($value))
+        //     ->toArray();
+
+        // $autocompletions = array_map(fn($value) => $value['text'], $response->json('suggest.autocompletion.0.options') ?? []);
+
+        // $autocompletions = trim($query) === '' ? explode(';', $trending) : $autocompletions;
+
+        return [
+            'hits' => (object) $hits,
+            'processing_time_ms' => $took,
+            'total' => $total,
+            // 'per_page' => $perPage,
+            // 'page' => $page,
+            // 'query' => $query,
+            // // 'search' => $search,
+            // 'autocomplete' => $autocompletions,
+            // 'params' => $params,
+            // 'index' => $index,
+            // 'filters' => $filter,
+            // 'facets' => $facets,
+            // 'sort' => $sortString,
+        ];
+    }
 }

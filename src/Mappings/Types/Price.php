@@ -51,13 +51,12 @@ class Price extends Type
         $aggs->max("{$this->name()}_max", $this->name());
     }
 
-    public function facets(ElasticsearchResponse $response): ?array
+    public function facets(array $aggregation): ?array
     {
-        $json = $response->json();
+        $originalBuckets = $aggregation[$this->name()]['buckets'] ?? [];
 
-        $originalBuckets = $json['aggregations'][$this->name()][$this->name().'_histogram']['buckets'] ?? $json['aggregations'][$this->name().'_histogram']['buckets'] ?? [];
-        $min = $json['aggregations'][$this->name()][$this->name().'_min']['value'] ?? $json['aggregations'][$this->name().'_min']['value'] ?? 0;
-        $max = $json['aggregations'][$this->name()][$this->name().'_max']['value'] ?? $json['aggregations'][$this->name().'_max']['value'] ?? 0;
+        $min = $aggregation[$this->name()]['min'] ?? 0;
+        $max = $aggregation[$this->name()]['max'] ?? 0;
 
         $histogram = array_column($originalBuckets, 'doc_count', 'key');
 

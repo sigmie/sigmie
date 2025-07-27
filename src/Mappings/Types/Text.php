@@ -42,6 +42,8 @@ class Text extends Type implements FromRaw
 
     protected bool $searchSynonyms = false;
 
+    protected string $searchAnalyzer = 'default';
+
     public function __construct(
         string $name,
         protected ?string $raw = null,
@@ -57,6 +59,7 @@ class Text extends Type implements FromRaw
     public function searchSynonyms(bool $value = true): static
     {
         $this->searchSynonyms = $value;
+        $this->searchAnalyzer = 'default_with_synonyms';
 
         return $this;
     }
@@ -281,11 +284,12 @@ class Text extends Type implements FromRaw
     public function withAnalyzer(Analyzer $analyzer): void
     {
         $this->analyzer = $analyzer;
+        $this->searchAnalyzer = $analyzer->name();
     }
 
     public function searchAnalyzer(): string
     {
-        return $this->searchSynonyms ? 'default_with_synonyms' : 'default';
+        return $this->searchAnalyzer;
     }
 
     public function analyzer(): ?Analyzer
@@ -360,9 +364,9 @@ class Text extends Type implements FromRaw
         return $this->isFilterable();
     }
 
-    public function facets(ElasticsearchResponse $response): ?array
+    public function facets(array $aggregation): ?array
     {
-        $originalBuckets = $response->json("aggregations.{$this->name()}")['buckets'] ?? [];
+        $originalBuckets = $aggregation[$this->name]['buckets'] ?? [];
 
         return array_column($originalBuckets, 'doc_count', 'key');
     }

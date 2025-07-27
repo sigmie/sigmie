@@ -13,16 +13,7 @@ class FacetParser extends Parser
     {
         $this->errors = [];
 
-        // Remove extra spaces that aren't in quotes
-        // and replace them with only one. This regex handles
-        // also quotes that are escapted
-        $string = preg_replace('/\s+(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)/', ' ', $string);
-
-        $string = trim($string);
-
-        $string = str_replace(["\r", "\n"], ' ', $string);
-
-        $facets = explode(' ', $string);
+        $facets = $this->explode($string);
 
         $aggregation = new Aggs;
 
@@ -69,5 +60,31 @@ class FacetParser extends Parser
         }
 
         return $aggregation;
+    }
+
+    protected function explode(string $string)
+    {
+
+        $string = preg_replace('/\s+(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)/', ' ', $string);
+
+        $string = trim($string);
+
+        $string = str_replace(["\r", "\n"], ' ', $string);
+
+        return explode(' ', $string);
+    }
+
+    public function fields(string $string): array
+    {
+        $fields = $this->explode($string);
+
+        return array_map(function ($field) {
+
+            if (str_contains($field, ':')) {
+                [$field, $param] = explode(':', $field);
+            }
+
+            return $field;
+        }, $fields);
     }
 }

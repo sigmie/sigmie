@@ -39,11 +39,9 @@ class CaseSensitiveKeyword extends Type
         }
     }
 
-    public function facets(ElasticsearchResponse $response): ?array
+    public function facets(array $aggregation): ?array
     {
-        $json = $response->json();
-
-        $originalBuckets = $json['aggregations'][$this->name()][$this->name().'_histogram']['buckets'] ?? $json['aggregations'][$this->name().'_histogram']['buckets'] ?? [];
+        $originalBuckets = $aggregation[$this->name()]['buckets'] ?? [];
 
         return array_column($originalBuckets, 'doc_count', 'key');
     }

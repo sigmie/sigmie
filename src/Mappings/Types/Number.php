@@ -64,11 +64,11 @@ class Number extends Type
         return true;
     }
 
-    public function facets(ElasticsearchResponse $response): ?array
+    public function facets(array $aggregation): ?array
     {
-        $json = $response->json();
+        $originalBuckets = $aggregation[$this->name()]['buckets'] ?? [];
 
-        return $json['aggregations'][$this->name()] ?? $json['aggregations'][$this->name()][$this->name()] ?? 0;
+        return array_column($originalBuckets, 'doc_count', 'key');
     }
 
     public function validate(string $key, mixed $value): array
