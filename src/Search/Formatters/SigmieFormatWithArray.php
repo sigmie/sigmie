@@ -33,8 +33,8 @@ class SigmieFormatWithArray extends AbstractFormatter
     {
         return [
             'hits' => $this->formatHits(),
-            'processing_time_ms' => $this->raw['took'] ?? 0,
-            'total' => $this->raw['hits']['total']['value'] ?? 0,
+            'processing_time_ms' => $this->queryResponseRaw['took'] ?? 0,
+            'total' => $this->queryResponseRaw['hits']['total']['value'] ?? 0,
             
             'query' => $this->parameters['queryStrings'] ?? [],
             'filters' => $this->parameters['filterString'] ?? '',
@@ -55,7 +55,7 @@ class SigmieFormatWithArray extends AbstractFormatter
     {
         $hits = [];
 
-        foreach ($this->raw['hits']['hits'] ?? [] as $hit) {
+        foreach ($this->queryResponseRaw['hits']['hits'] ?? [] as $hit) {
             $only = array_intersect_key($hit, array_flip(['_source', '_id', 'highlight', '_score']));
 
             $hits[(string) $hit['_id']] = [

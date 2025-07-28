@@ -90,6 +90,9 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
         $this->facetFilters = new Boolean;
         $this->facetFilters->must()->matchAll();
+
+        $this->globalFilters = new Boolean;
+        $this->globalFilters->must()->matchAll();
     }
 
     public function properties(Properties|NewProperties $props): static

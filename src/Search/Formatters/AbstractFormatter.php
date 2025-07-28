@@ -8,7 +8,9 @@ use Sigmie\Search\SearchContext;
 
 abstract class AbstractFormatter implements ResponseFormater
 {
-    protected array $raw = [];
+    protected array $queryResponseRaw = [];
+
+    protected array $facetsResponseRaw = [];
 
     protected array $facets = [];
 
@@ -16,15 +18,16 @@ abstract class AbstractFormatter implements ResponseFormater
 
     abstract public function format(): array;
 
-    public function json(array $raw): static
+    public function queryResponseRaw(array $raw): static
     {
-        $this->raw = $raw;
+        $this->queryResponseRaw = $raw;
+
         return $this;
     }
 
-    public function facets(array $raw): static
+    public function facetsResponseRaw(array $raw): static
     {
-        $this->facets = $raw;
+        $this->facetsResponseRaw = $raw;
 
         return $this;
     }
@@ -34,5 +37,9 @@ abstract class AbstractFormatter implements ResponseFormater
         $this->search = $context;
 
         return $this;
+    }
+
+    public function facetAggregations(): array {
+        return $this->facetsResponseRaw['aggregations'] ?? [];
     }
 }

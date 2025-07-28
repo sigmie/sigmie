@@ -4,16 +4,20 @@ namespace Sigmie\Search\Formatters;
 
 use Sigmie\Mappings\Properties;
 
-class SigmieFormat extends AbstractFormatter
+class SigmieSearchResponse extends AbstractFormatter
 {
     public function __construct(protected Properties $properties) {}
+
+    public function json(?string $key = null): array {
+        return (array) dot($this->format())->get($key);
+    }
 
     public function format(): array
     {
         return [
             'hits' => $this->formatHits(),
-            'processing_time_ms' => $this->raw['took'] ?? 0,
-            'total' => $this->raw['hits']['total']['value'] ?? 0,
+            'processing_time_ms' => $this->queryResponseRaw['took'] ?? 0,
+            'total' => $this->queryResponseRaw['hits']['total']['value'] ?? 0,
 
             'query_strings' => $this->search->queryStrings ?? [],
             'filter_string' => $this->search->filterString ?? '',
@@ -21,7 +25,7 @@ class SigmieFormat extends AbstractFormatter
             'sort_string' => $this->search->sortString ?? '',
             'page' => $this->search->size > 0 ? intval($this->search->from / $this->search->size) + 1 : 1,
             'per_page' => $this->search->size,
-            'total_pages' => $this->search->size > 0 ? intval($this->raw['hits']['total']['value'] / $this->search->size) : 1,
+            'total_pages' => $this->search->size > 0 ? intval($this->queryResponseRaw['hits']['total']['value'] / $this->search->size) : 1,
 
             'facets' => $this->formatFacets(),
 
@@ -35,7 +39,7 @@ class SigmieFormat extends AbstractFormatter
         $facets = [];
         foreach ($this->properties->toArray() as $type) {
             if ($type->isFacetable() && in_array($type->name, $this->search->facetFields)) {
-                $facetData = $type->facets($this->facets['aggregations']);
+                $facetData = $type->facets($this->facetAggregations());
                 if (!is_null($facetData)) {
                     $facets[$type->name] = (object) $facetData;
                 }
@@ -49,7 +53,7 @@ class SigmieFormat extends AbstractFormatter
     {
         $hits = [];
 
-        foreach ($this->raw['hits']['hits'] ?? [] as $hit) {
+        foreach ($this->queryResponseRaw['hits']['hits'] ?? [] as $hit) {
             $only = array_intersect_key($hit, array_flip(['_source', '_id', 'highlight', '_score']));
 
             $hits[(string) $hit['_id']] = [

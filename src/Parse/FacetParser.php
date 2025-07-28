@@ -54,8 +54,14 @@ class FacetParser extends Parser
             try {
                 if ($field->parentPath) {
 
-                    $aggregation->nested($field->name(), $field->parentPath, function (Aggs $aggs) use ($params, $field) {
-                        $field->aggregation($aggs, $params);
+                    $aggregation->nested($field->name(), $field->parentPath, function (Aggs $aggs) use ($params, $field, $query) {
+
+                        $aggs->filter($field->name(), $query)
+                            ->aggregate(function (Aggs $aggs) use ($params, $field) {
+                                $field->aggregation($aggs, $params);
+                            });
+
+                        // $field->aggregation($aggs, $params);
                     });
                 } else {
 

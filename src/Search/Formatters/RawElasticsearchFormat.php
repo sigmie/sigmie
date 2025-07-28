@@ -8,6 +8,6 @@ class RawElasticsearchFormat extends AbstractFormatter
 {
     public function format(): array
     {
-        return $this->raw;
+        return $this->queryResponseRaw;
     }
 }

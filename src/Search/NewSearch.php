@@ -35,7 +35,7 @@ use Sigmie\Search\Contracts\EmbeddingsQueries;
 use Sigmie\Search\Contracts\ResponseFormater;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
 use Sigmie\Search\Formatters\RawElasticsearchFormat;
-use Sigmie\Search\Formatters\SigmieFormat;
+use Sigmie\Search\Formatters\SigmieSearchResponse;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\EmbeddingsProvider;
 
@@ -144,7 +144,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     public function facets(
         string $facets,
-        string $filters,
+        string $filters = '',
     ): static {
 
         $this->searchContext->facetFields = $this->facetParser->fields($facets);
@@ -417,21 +417,16 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     public function formatted(): array
     {
-        $formatter = $this->formatter ?? new SigmieFormat($this->properties);
+        $formatter = $this->formatter ?? new SigmieSearchResponse($this->properties);
 
         [
             $searchResponse,
             $facetsResponse
         ] = $this->get();
 
-        $formatter->context($this->searchContext)
-            ->facets($facetsResponse->json())
-            ->json($searchResponse->json());
-
-        return $formatter->format();
     }
 
-    public function get(): array
+    public function get(): ResponseFormater
     {
         $facets = new Facets(
             filters: $this->globalFilters,
@@ -445,11 +440,13 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $facets->promise()
         ])->wait();
 
-        return [
-            $searchResponse,
-            $facetsResponse,
-        ];
+        $formatter = $this->formatter ?? new SigmieSearchResponse($this->properties);
 
+        $formatter->context($this->searchContext)
+            ->facetsResponseRaw($facetsResponse->json())
+            ->queryResponseRaw($searchResponse->json());
+
+        return $formatter;
     }
 
     public function promise(): Promise

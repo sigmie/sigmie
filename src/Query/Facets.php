@@ -33,8 +33,6 @@ class Facets extends Search
             'aggs' => $this->aggs->toRaw(),
         ];
 
-        dump($result);
-
         return $result;
     }
 

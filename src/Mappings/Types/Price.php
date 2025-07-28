@@ -53,10 +53,10 @@ class Price extends Type
 
     public function facets(array $aggregation): ?array
     {
-        $originalBuckets = $aggregation[$this->name()]['buckets'] ?? [];
+        $originalBuckets = $aggregation[$this->name()][$this->name()][$this->name() . '_histogram']['buckets'] ?? [];
 
-        $min = $aggregation[$this->name()]['min'] ?? 0;
-        $max = $aggregation[$this->name()]['max'] ?? 0;
+        $min = $aggregation[$this->name()][$this->name()][$this->name() . '_min']['value'] ?? 0;
+        $max = $aggregation[$this->name()][$this->name()][$this->name() . '_max']['value'] ?? 0;
 
         $histogram = array_column($originalBuckets, 'doc_count', 'key');
 

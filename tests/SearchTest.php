@@ -1207,7 +1207,6 @@ class SearchTest extends TestCase
             ->facets('type')
             ->page(2, perPage: 1)
             ->formatted();
-
-        dd($normalized);
+        // dd($normalized);
     }
 }
