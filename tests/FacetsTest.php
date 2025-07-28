@@ -354,7 +354,7 @@ class FacetsTest extends TestCase
             'sum' => 3.0,
         ];
 
-        $countFacets = $props['count']->facets($searchResponse);
+        $countFacets = $props['count']->facets($searchResponse->facetAggregations());
 
         $this->assertEquals($expectedCountFacets, $countFacets);
 
@@ -363,7 +363,7 @@ class FacetsTest extends TestCase
             'Some text about action' => 1,
         ];
 
-        $textFacets = $props['text']->facets($searchResponse);
+        $textFacets = $props['text']->facets($searchResponse->facetAggregations());
 
         $this->assertEquals($expectedTextFacets, $textFacets);
     }

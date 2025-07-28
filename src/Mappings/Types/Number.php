@@ -66,9 +66,9 @@ class Number extends Type
 
     public function facets(array $aggregation): ?array
     {
-        $originalBuckets = $aggregation[$this->name()]['buckets'] ?? [];
+        $originalBuckets = $aggregation[$this->name()][$this->name()] ?? $aggregation[$this->name()] ?? [];
 
-        return array_column($originalBuckets, 'doc_count', 'key');
+        return $originalBuckets;
     }
 
     public function validate(string $key, mixed $value): array
