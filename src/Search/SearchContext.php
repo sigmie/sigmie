@@ -9,6 +9,7 @@ class SearchContext
     public function __construct(
         public array $queryStrings = [],
         public string $filterString = '',
+        public string $facetFilterString = '',
         public string $sortString = '',
         public string $facetString = '',
         public array $facetFields = [],

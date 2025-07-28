@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace Sigmie\Parse;
 
+use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Query\Aggs;
 
 class FacetParser extends Parser
 {
-    public function parse(string $string): Aggs
+    public function parse(string $string, string $filterString = ''): Aggs
     {
         $this->errors = [];
 
         $facets = $this->explode($string);
 
         $aggregation = new Aggs;
+        $filterParser = new FilterParser($this->properties, $this->throwOnError);
+
 
         foreach ($facets as $field) {
 
@@ -33,8 +36,10 @@ class FacetParser extends Parser
                 continue;
             }
 
+
             /** @var Type $field */
             $field = $this->properties->getNestedField($field);
+
 
             if (! $field->isFacetable()) {
                 $this->handleError("The field '{$field->name()}' does not support facets.", [
@@ -44,13 +49,23 @@ class FacetParser extends Parser
                 continue;
             }
 
+            $query = $filterParser->facetFilter($field, $filterString);
+
             try {
                 if ($field->parentPath) {
+
                     $aggregation->nested($field->name(), $field->parentPath, function (Aggs $aggs) use ($params, $field) {
                         $field->aggregation($aggs, $params);
                     });
                 } else {
-                    $field->aggregation($aggregation, $params);
+
+                    $aggregation->filter($field->name(), $query)
+                        ->aggregate(function (Aggs $aggs) use ($params, $field) {
+                            $field->aggregation($aggs, $params);
+                        });
+
+                    // dd($aggregation->toRaw());
+                    // $field->aggregation($aggregation, $params);
                 }
             } catch (ParseException $e) {
                 $this->handleError($e->getMessage(), [

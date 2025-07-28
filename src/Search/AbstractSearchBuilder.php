@@ -70,6 +70,10 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected Boolean $filters;
 
+    protected Boolean $globalFilters;
+
+    protected Boolean $facetFilters;
+
     protected Aggs $facets;
 
     public function __construct(
@@ -82,8 +86,10 @@ abstract class AbstractSearchBuilder implements SearchBuilder
         $this->facets->global('all');
 
         $this->filters = new Boolean;
-
         $this->filters->must()->matchAll();
+
+        $this->facetFilters = new Boolean;
+        $this->facetFilters->must()->matchAll();
     }
 
     public function properties(Properties|NewProperties $props): static

@@ -7,6 +7,8 @@ namespace Sigmie\Search;
 use Http\Promise\Promise;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as ResponsesSearch;
+use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Nested as TypesNested;
@@ -24,6 +26,7 @@ use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\MatchNone;
 // use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Contracts\QueryClause as Query;
+use Sigmie\Query\Facets;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
@@ -49,7 +52,15 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected float $semanticScoreMultiplier = 1.0;
 
+    protected ResponseFormater $formatter;
+
     protected SearchContext $searchContext;
+
+    protected FilterParser $filterParser;
+
+    protected FacetParser $facetParser;
+
+    protected SortParser $sortParser;
 
     public function __construct(
         ElasticsearchConnection $elasticsearchConnection,
@@ -57,6 +68,9 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         parent::__construct($elasticsearchConnection);
 
         $this->searchContext = new SearchContext();
+        $this->filterParser = new FilterParser($this->properties, false);
+        $this->facetParser = new FacetParser($this->properties, false);
+        $this->sortParser = new SortParser($this->properties, false);
     }
 
     public function page(int $page, int $perPage = 20): static
@@ -84,12 +98,31 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this;
     }
 
+    public function properties(Properties|NewProperties $props): static
+    {
+        parent::properties($props);
+
+        $this->filterParser->properties($props);
+        $this->facetParser->properties($props);
+        $this->sortParser->properties($props);
+
+        return $this;
+    }
+
     public function filters(string $filters, bool $thorwOnError = true): static
     {
-        $parser = new FilterParser($this->properties, $thorwOnError);
-
         $this->searchContext->filterString = $filters;
-        $this->filters = $parser->parse($filters);
+
+        $filters = implode(
+            ' AND ',
+            array_filter([
+                "({$this->searchContext->filterString})",
+                "({$this->searchContext->facetFilterString})",
+            ], fn($filter) => !empty(trim($filter, '()')))
+        );
+
+        $this->globalFilters = $this->filterParser->parse($this->searchContext->filterString);
+        $this->filters = $this->filterParser->parse($filters);
 
         return $this;
     }
@@ -108,13 +141,25 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this;
     }
 
-    public function facets(string $facets, bool $thorwOnError = true): static
-    {
-        $parser = new FacetParser($this->properties, $thorwOnError);
+    public function facets(
+        string $facets,
+        string $filters,
+    ): static {
 
+        $this->searchContext->facetFields = $this->facetParser->fields($facets);
         $this->searchContext->facetString = $facets;
-        $this->searchContext->facetFields = $parser->fields($facets);
-        $this->facets = $parser->parse($facets);
+        $this->searchContext->facetFilterString = $filters;
+
+        $allFilters = implode(
+            ' AND ',
+            array_filter([
+                "({$this->searchContext->filterString})",
+                "({$this->searchContext->facetFilterString})",
+            ], fn($filter) => !empty(trim($filter, '()')))
+        );
+
+        $this->filters = $this->filterParser->parse($allFilters);
+        $this->facets = $this->facetParser->parse($facets, $filters);
 
         return $this;
     }
@@ -362,20 +407,42 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         }
     }
 
+    public function formatter(ResponseFormater $formatter): static
+    {
+        $this->formatter = $formatter;
+
+        return $this;
+    }
+
     public function formatted(): array
     {
         $formatter = $this->formatter ?? new SigmieFormat($this->properties);
 
-        $res = $this->get();
+        [
+            $searchResponse,
+            $facetsResponse
+        ] = $this->get();
 
-        $formatter->context($this->searchContext)->json($res->json());
+        $formatter->context($this->searchContext)
+            ->facets($facetsResponse->json())
+            ->json($searchResponse->json());
 
         return $formatter->format();
     }
 
-    public function get(): ResponsesSearch
+    public function get(): array
     {
-        return $this->make()->get();
+        $facets = new Facets(
+            filters: $this->globalFilters,
+            aggs:$this->facets
+        );
+        $facets->index($this->index);
+        $facets->setElasticsearchConnection($this->elasticsearchConnection);
+
+        return [
+            $this->make()->get(),
+            $facets->get(),
+        ];
     }
 
     public function promise(): Promise

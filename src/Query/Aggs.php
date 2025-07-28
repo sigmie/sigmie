@@ -59,10 +59,13 @@ class Aggs implements AggsInterface
 
     public function filter(
         string $name,
-        string $field,
-        string $term,
+        // string $field,
+        //TODO add cast
+        $query,
     ): Filter {
-        $aggregation = new Filter($name, $field, $term);
+        $aggregation = new Filter($name, 
+        // $field,
+         $query);
 
         $this->aggs[] = $aggregation;
 

@@ -218,7 +218,6 @@ class Search
 
     public function toRaw(): array
     {
-        //ray($this->query->toRaw()['bool']['must'][1]['bool']['should'][0]['bool']['should'][0]['function_score']['query']['bool']['should'])->blue();
         $result = [
             'track_total_hits' => $this->trackTotalHits < 0 ? true : $this->trackTotalHits,
             '_source' => $this->fields,

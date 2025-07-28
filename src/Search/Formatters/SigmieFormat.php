@@ -35,7 +35,7 @@ class SigmieFormat extends AbstractFormatter
         $facets = [];
         foreach ($this->properties->toArray() as $type) {
             if ($type->isFacetable() && in_array($type->name, $this->search->facetFields)) {
-                $facetData = $type->facets($this->raw['aggregations']);
+                $facetData = $type->facets($this->facets['aggregations']);
                 if (!is_null($facetData)) {
                     $facets[$type->name] = (object) $facetData;
                 }

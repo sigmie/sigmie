@@ -366,7 +366,7 @@ class Text extends Type implements FromRaw
 
     public function facets(array $aggregation): ?array
     {
-        $originalBuckets = $aggregation[$this->name]['buckets'] ?? [];
+        $originalBuckets = $aggregation[$this->name][$this->name]['buckets'] ?? [];
 
         return array_column($originalBuckets, 'doc_count', 'key');
     }

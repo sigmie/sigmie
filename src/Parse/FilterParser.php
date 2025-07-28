@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Parse;
 
+use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Mappings\Types\Nested as TypesNested;
+use Sigmie\Mappings\Types\Type;
 use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\GeoDistance;
@@ -25,6 +27,8 @@ class FilterParser extends Parser
     public static int $maxNestingLevel = 32;
 
     protected int $nestingLevel = 0;
+
+    protected Type $facetField;
 
     public function parentPath(string $path)
     {
@@ -214,6 +218,25 @@ class FilterParser extends Parser
         }
 
         return $boolean;
+    }
+
+    public function facetFilter(Type $field, string $filterString): Boolean
+    {
+        $this->facetField = $field;
+        $this->errors = [];
+
+        if (trim($filterString) === '') {
+            $bool = new Boolean;
+            $bool->must->matchAll();
+
+            return $bool;
+        }
+
+        $filters = $this->parseString($filterString);
+
+        $bool = $this->apply($filters);
+
+        return $bool;
     }
 
     protected function stringToQueryClause(string $string): QueryClause
@@ -421,7 +444,13 @@ class FilterParser extends Parser
         // Remove quotes from value
         $value = trim($value, '"');
 
+        // if (($this->facetField ?? false) && $field === $this->facetField->name()) {
+        if (($this->facetField ?? false) && $field === $this->facetField->name()) {
+            return new MatchAll;
+        }
+
         $field = $this->handleFieldName($field);
+
 
         if (is_null($field)) {
             return;

@@ -281,7 +281,8 @@ class FacetsTest extends TestCase
         $index = $this->sigmie->collect($indexName, refresh: true);
 
         $index->merge([
-            new Document(['keyword' => 'sport']), new Document(['keyword' => 'action']),
+            new Document(['keyword' => 'sport']),
+            new Document(['keyword' => 'action']),
         ]);
 
         $searchResponse = $this->sigmie->newSearch($indexName)
@@ -449,5 +450,70 @@ class FacetsTest extends TestCase
         ];
 
         $this->assertEquals($expectedHistogram, $facets);
+    }
+
+    /**
+     * @test
+     */
+    public function facet_exclusion_logic()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->category('color');
+        $blueprint->category('size');
+        $blueprint->category('type');
+        $blueprint->number('stock');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'color'=> 'red',
+                'size'=> 'xl',
+                'type'=> 'shirt', 
+                'stock'=> 10,
+            ]),
+            new Document([
+                'color'=> 'red',
+                'size'=> 'lg',
+                'type'=> 'pants',
+                'stock'=> 20,
+            ]),
+            new Document([
+                'color'=> 'green',
+                'size'=> 'md',
+                'type'=> 'jacket',
+                'stock'=> 30,
+            ]),
+            new Document([
+                'color'=> 'red',
+                'size'=> 'xs',
+                'type'=> 'jacket',
+                'stock'=> 0,
+            ]),
+        ]);
+
+        $searchResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->filters("stock>'0'")
+            ->facets('color size', "color:'red' AND size:'xl'")
+            ->formatted();
+
+        $facets = (array) $searchResponse['facets'];
+
+        $this->assertArrayHasKey('size', $facets);
+        $this->assertArrayHasKey('color', $facets);
+
+        $sizes = (array) $facets['size'];
+
+        $this->assertEquals(1, $sizes['lg'] ?? null);
+        $this->assertEquals(1, $sizes['xl'] ?? null);
+        $this->assertNull($sizes['xs'] ?? null);
     }
 }

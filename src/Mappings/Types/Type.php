@@ -6,6 +6,7 @@ namespace Sigmie\Mappings\Types;
 
 use Closure;
 use Sigmie\Base\Http\ElasticsearchResponse;
+use Sigmie\Enums\FacetLogic;
 use Sigmie\Mappings\Contracts\Type as TypeInterface;
 use Sigmie\Query\Aggs;
 use Sigmie\Search\Contracts\TextQueries;
@@ -17,6 +18,8 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
     protected string $type;
 
     protected array $meta = [];
+
+    protected FacetLogic $facetLogic = FacetLogic::Conjunctive;
 
     public function __construct(
         public string $name,
@@ -130,5 +133,19 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
     protected function typeName(): string
     {
         return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', (new \ReflectionClass($this))->getShortName()));
+    }
+
+    public function facetLogicConjunctive(): static
+    {
+        $this->facetLogic = FacetLogic::Conjunctive;
+
+        return $this;
+    }
+
+    public function facetLogicDisjunctive(): static
+    {
+        $this->facetLogic = FacetLogic::Disjunctive;
+
+        return $this;
     }
 }

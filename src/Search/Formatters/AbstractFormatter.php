@@ -10,6 +10,8 @@ abstract class AbstractFormatter implements ResponseFormater
 {
     protected array $raw = [];
 
+    protected array $facets = [];
+
     protected SearchContext $search;
 
     abstract public function format(): array;
@@ -17,6 +19,13 @@ abstract class AbstractFormatter implements ResponseFormater
     public function json(array $raw): static
     {
         $this->raw = $raw;
+        return $this;
+    }
+
+    public function facets(array $raw): static
+    {
+        $this->facets = $raw;
+
         return $this;
     }
 
