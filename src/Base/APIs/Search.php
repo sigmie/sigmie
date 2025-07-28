@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\APIs;
 
 use GuzzleHttp\Psr7\Uri;
+use Http\Promise\Promise;
 use Sigmie\Base\Http\Requests\Search as SearchRequest;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 
@@ -28,7 +29,6 @@ trait Search
             'scroll_id' => $scrollId,
         ]));
     }
-
 
     protected function searchRequest(string $index, array $query, ?string $scroll = null): SearchRequest
     {

@@ -7,6 +7,7 @@ namespace Sigmie\Base\APIs;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
+use Http\Promise\Promise;
 
 trait API
 {

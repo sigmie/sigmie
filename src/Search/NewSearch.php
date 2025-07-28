@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use GuzzleHttp\Promise\Utils;
 use Http\Promise\Promise;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as ResponsesSearch;
@@ -434,15 +435,21 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     {
         $facets = new Facets(
             filters: $this->globalFilters,
-            aggs:$this->facets
+            aggs: $this->facets
         );
         $facets->index($this->index);
         $facets->setElasticsearchConnection($this->elasticsearchConnection);
 
+        [$searchResponse, $facetsResponse] = Utils::all([
+            $this->make()->promise(),
+            $facets->promise()
+        ])->wait();
+
         return [
-            $this->make()->get(),
-            $facets->get(),
+            $searchResponse,
+            $facetsResponse,
         ];
+
     }
 
     public function promise(): Promise
