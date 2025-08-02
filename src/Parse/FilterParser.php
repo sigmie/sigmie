@@ -320,7 +320,7 @@ class FilterParser extends Parser
             return new MatchNone;
         }
 
-        return $this->filterQuery($field, new GeoDistance($this->fieldName($field), $distance, $latitude, $longitude));
+        return $this->prepareQuery($field, new GeoDistance($this->fieldName($field), $distance, $latitude, $longitude));
     }
 
     public function handleRange(string $range)
@@ -336,7 +336,7 @@ class FilterParser extends Parser
             return;
         }
 
-        return $this->filterQuery($field, new Range($this->fieldName($field), [$operator => $value]));
+        return $this->prepareQuery($field, new Range($this->fieldName($field), [$operator => $value]));
     }
 
     public function handleID(string $id)
@@ -372,7 +372,7 @@ class FilterParser extends Parser
             return;
         }
 
-        return $this->filterQuery($field, new Term($this->fieldName($field), true));
+        return $this->prepareQuery($field, new Term($this->fieldName($field), true));
     }
 
     public function handleHas(string $has)
@@ -383,7 +383,7 @@ class FilterParser extends Parser
             return;
         }
 
-        return $this->filterQuery($field, new Exists($this->fieldName($field)));
+        return $this->prepareQuery($field, new Exists($this->fieldName($field)));
     }
 
     public function handleIsNot(string $is)
@@ -395,7 +395,7 @@ class FilterParser extends Parser
             return;
         }
 
-        return $this->filterQuery($field, new Term($this->fieldName($field), false));
+        return $this->prepareQuery($field, new Term($this->fieldName($field), false));
     }
 
     public function handleIn(string $terms)
@@ -421,10 +421,10 @@ class FilterParser extends Parser
             return;
         }
 
-        return $this->filterQuery($field, new Terms($this->fieldName($field), $values));
+        return $this->prepareQuery($field, new Terms($this->fieldName($field), $values));
     }
 
-    private function filterQuery(string $field, Query $query): Query
+    private function prepareQuery(string $field, Query $query): Query
     {
         // $fieldType = $this->properties->getNestedField($field);
 
@@ -444,7 +444,6 @@ class FilterParser extends Parser
         // Remove quotes from value
         $value = trim($value, '"');
 
-        // if (($this->facetField ?? false) && $field === $this->facetField->name()) {
         if (($this->facetField ?? false) && $field === $this->facetField->name()) {
             return new MatchAll;
         }
@@ -456,7 +455,7 @@ class FilterParser extends Parser
             return;
         }
 
-        return $this->filterQuery($field, new Term($this->fieldName($field), $value));
+        return $this->prepareQuery($field, new Term($this->fieldName($field), $value));
     }
 
     public function handleWildcard(string $term)
@@ -474,6 +473,6 @@ class FilterParser extends Parser
             return;
         }
 
-        return $this->filterQuery($field, new Wildcard($this->fieldName($field), $value));
+        return $this->prepareQuery($field, new Wildcard($this->fieldName($field), $value));
     }
 }

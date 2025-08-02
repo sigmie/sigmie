@@ -24,6 +24,7 @@ use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Search;
 use Sigmie\Search\ExistingScript;
+use Sigmie\Search\NewFacetSearch;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewSemanticSearch;
 use Sigmie\Search\NewTemplate;
@@ -129,6 +130,15 @@ class Sigmie
 
         $search = new NewSearch($this->elasticsearchConnection);
         $search->aiProvider($this->aiProvider);
+
+        return $search->index($index);
+    }
+
+    public function newFacetSearch(string $index): NewFacetSearch
+    {
+        $index = $this->withApplicationPrefix($index);
+
+        $search = new NewFacetSearch($this->elasticsearchConnection);
 
         return $search->index($index);
     }

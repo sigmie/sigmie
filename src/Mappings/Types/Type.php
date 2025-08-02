@@ -110,6 +110,16 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
 
     public function aggregation(Aggs $aggs, string $params): void {}
 
+    public function isFacetConjunctive(): bool
+    {
+        return $this->facetLogic === FacetLogic::Conjunctive;
+    }
+
+    public function isFacetDisjunctive(): bool
+    {
+        return $this->facetLogic === FacetLogic::Disjunctive;
+    }
+
     public function isFacetable(): bool
     {
         return false;
@@ -135,14 +145,21 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
         return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', (new \ReflectionClass($this))->getShortName()));
     }
 
-    public function facetLogicConjunctive(): static
+
+
+    public function isFacetSearchable(): bool
+    {
+        return $this->facetLogic === FacetLogic::Searchable;
+    }
+
+    public function facetConjunctive(): static
     {
         $this->facetLogic = FacetLogic::Conjunctive;
 
         return $this;
     }
 
-    public function facetLogicDisjunctive(): static
+    public function facetDisjunctive(): static
     {
         $this->facetLogic = FacetLogic::Disjunctive;
 

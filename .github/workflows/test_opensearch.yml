@@ -1,0 +1,94 @@
+name: Test Opensearch 
+
+on: push
+
+jobs:
+  tests:
+    runs-on: ubuntu-20.04
+
+    env:
+      OPENSEARCH_VERSION:
+      OPENSEARCH_PLUGINS:
+
+    strategy:
+      fail-fast: true
+      matrix:
+        php: ['8.1', 
+        # '8.2', '8.3', '8.4'
+        ]
+        opensearch_version: ['2.11.0', '2.12.0']
+        stability: [prefer-stable]
+        include:
+          - php: '8.1'
+            flags: "--ignore-platform-req=php"
+            stability: prefer-stable
+
+    services:
+      opensearch:
+        image: opensearchproject/opensearch:${{ matrix.opensearch_version }}
+        ports:
+        - 9200:9200
+        - 9600:9600
+        options: -e="OPENSEARCH_INITIAL_ADMIN_PASSWORD=Koala$193tree" -e="discovery.type=single-node" --health-cmd="curl -k -u admin:Koala$193tree https://localhost:9200/_cluster/health" --health-interval=10s --health-timeout=5s --health-retries=10
+
+    name: PHP ${{ matrix.php }} - OpenSearch ${{ matrix.opensearch_version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set OpenSearch Version as GitHub Action ENV Vars
+        run: |
+          set -e 
+          echo "OPENSEARCH_VERSION=${{ matrix.opensearch_version }}" >> $GITHUB_ENV
+          echo "OPENSEARCH_PLUGINS=" >> $GITHUB_ENV
+
+      - name: Wait for OpenSearch to Start
+        run: |
+          echo "Waiting for OpenSearch to start..."
+          until curl -k -u admin:Koala\$193tree -s https://localhost:9200 | grep "cluster_name"; do
+            sleep 5
+          done
+          echo "OpenSearch is ready!"
+
+      - name: Install Plugins
+        run: |
+          set -e 
+          curl -k -u admin:Koala\$193tree -X PUT "https://localhost:9200/_cluster/settings" -H "Content-Type: application/json" -d '{
+            "persistent": {
+              "action.destructive_requires_name": false
+            }
+          }'
+
+      - name: Verify Plugin Installation
+        run: |
+          curl -k -u admin:Koala\$193tree -X GET "https://localhost:9200/_cat/plugins?v"
+
+      - name: Create .env file
+        run: touch .env
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, libxml, mbstring, zip, pcntl, gd,
+          tools: composer:v2
+          coverage: xdebug
+
+      - name: Install dependencies
+        uses: nick-invision/retry@v1
+        with:
+          timeout_minutes: 5
+          max_attempts: 5
+          command: composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress ${{ matrix.flags }}
+
+      - name: Tests
+        continue-on-error: ${{ matrix.php > 8 }}
+        run: vendor/bin/phpunit -c phpunit.xml
+
+      - uses: codecov/codecov-action@v3
+        with:
+          files: coverage.xml
+
+      # - name: Static analysis
+      #   run: vendor/bin/phpstan analyse --memory-limit=-1

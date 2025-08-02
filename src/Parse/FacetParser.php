@@ -10,6 +10,53 @@ use Sigmie\Query\Aggs;
 
 class FacetParser extends Parser
 {
+    public function parseFilterString(string $filterString): string
+    {
+        if (empty($filterString)) {
+            return '';
+        }
+
+        $filters = $this->explode($filterString);
+
+        $fields = [];
+
+        foreach ($filters as $filter) {
+
+            [$field, $value] = explode(':', $filter);
+
+
+            if (!isset($fields[$field])) {
+                $fields[$field] = [];
+            }
+
+            $fields[$field][] = $value;
+        }
+
+        $res = [];
+        foreach ($fields as $field => $values) {
+
+            $type = $this->properties->getNestedField($field);
+
+            $fieldFilters = [];
+
+            foreach ($values as $value) {
+                $fieldFilters[] = $field . ':' . $value;
+            }
+
+            if ($type->isFacetable() && $type->isFacetConjunctive()) {
+                $facetFilter = implode(' AND ', $fieldFilters);
+            }
+
+            if ($type->isFacetable() && $type->isFacetDisjunctive()) {
+                $facetFilter = implode(' OR ', $fieldFilters);
+            }
+
+            $res[] = "({$facetFilter})";
+        }
+
+        return implode(' AND ', $res);
+    }
+
     public function parse(string $string, string $filterString = ''): Aggs
     {
         $this->errors = [];

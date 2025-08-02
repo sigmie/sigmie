@@ -147,9 +147,11 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         string $filters = '',
     ): static {
 
+        $facetFilterString = $this->facetParser->parseFilterString($filters);
+
         $this->searchContext->facetFields = $this->facetParser->fields($facets);
         $this->searchContext->facetString = $facets;
-        $this->searchContext->facetFilterString = $filters;
+        $this->searchContext->facetFilterString = $facetFilterString;
 
         $allFilters = implode(
             ' AND ',
@@ -435,10 +437,13 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $facets->index($this->index);
         $facets->setElasticsearchConnection($this->elasticsearchConnection);
 
+
         [$searchResponse, $facetsResponse] = Utils::all([
             $this->make()->promise(),
             $facets->promise()
         ])->wait();
+
+        ray($searchResponse->json());
 
         $formatter = $this->formatter ?? new SigmieSearchResponse($this->properties);
 

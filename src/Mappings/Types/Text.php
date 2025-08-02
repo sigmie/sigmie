@@ -7,6 +7,7 @@ namespace Sigmie\Mappings\Types;
 use Closure;
 use Exception;
 use Sigmie\Base\Http\ElasticsearchResponse;
+use Sigmie\Enums\FacetLogic;
 use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
@@ -60,6 +61,19 @@ class Text extends Type implements FromRaw
     {
         $this->searchSynonyms = $value;
         $this->searchAnalyzer = 'default_with_synonyms';
+
+        return $this;
+    }
+
+    public function facetSearchable(): static
+    {
+        $this->facetLogic = FacetLogic::Searchable;
+
+        $field = new Text('facet_search');
+
+        $this->field($field->completion());
+
+        $this->makeSortable();
 
         return $this;
     }

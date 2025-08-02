@@ -473,28 +473,28 @@ class FacetsTest extends TestCase
 
         $index->merge([
             new Document([
-                'color'=> 'red',
-                'size'=> 'xl',
-                'type'=> 'shirt', 
-                'stock'=> 10,
+                'color' => 'red',
+                'size' => 'xl',
+                'type' => 'shirt',
+                'stock' => 10,
             ]),
             new Document([
-                'color'=> 'red',
-                'size'=> 'lg',
-                'type'=> 'pants',
-                'stock'=> 20,
+                'color' => 'red',
+                'size' => 'lg',
+                'type' => 'pants',
+                'stock' => 20,
             ]),
             new Document([
-                'color'=> 'green',
-                'size'=> 'md',
-                'type'=> 'jacket',
-                'stock'=> 30,
+                'color' => 'green',
+                'size' => 'md',
+                'type' => 'jacket',
+                'stock' => 30,
             ]),
             new Document([
-                'color'=> 'red',
-                'size'=> 'xs',
-                'type'=> 'jacket',
-                'stock'=> 0,
+                'color' => 'red',
+                'size' => 'xs',
+                'type' => 'jacket',
+                'stock' => 0,
             ]),
         ]);
 
@@ -515,5 +515,164 @@ class FacetsTest extends TestCase
         $this->assertEquals(1, $sizes['lg'] ?? null);
         $this->assertEquals(1, $sizes['xl'] ?? null);
         $this->assertNull($sizes['xs'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function facet_disjunctive()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->category('color')->facetDisjunctive();
+        $blueprint->category('size')->facetDisjunctive();
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'color' => ['red', 'blue'],
+                'size' => 'lg',
+            ]),
+            new Document([
+                'color' => 'red',
+                'size' => 'lg',
+            ]),
+            new Document([
+                'color' => 'blue',
+                'size' => 'lg',
+            ]),
+        ]);
+
+        $searchResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets('color size', "color:'red' color:'blue' size:'lg'")
+            ->get();
+
+        $res = $searchResponse->json();
+
+        $facets = (array) $res['facets'];
+
+        $color = (array) $facets['color'];
+
+        $this->assertArrayHasKey('red', $color);
+        $this->assertArrayHasKey('blue', $color);
+
+        $this->assertCount(3, (array) $res['hits']);
+    }
+
+    /**
+     * @test
+     */
+    public function facet_conjunctive()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->category('color')->facetConjunctive();
+        $blueprint->category('size')->facetConjunctive();
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'color' => ['red', 'blue'],
+                'size' => 'xl',
+            ]),
+            new Document([
+                'color' => 'red',
+                'size' => 'lg',
+            ]),
+            new Document([
+                'color' => 'blue',
+                'size' => 'lg',
+            ]),
+        ]);
+
+        $searchResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets('color size', filters: "color:'red' color:'blue'")
+            ->get();
+
+        $res = $searchResponse->json();
+
+        $facets = (array) $res['facets'];
+
+        $color = (array) $facets['color'];
+
+        $this->assertArrayHasKey('red', $color);
+        $this->assertArrayHasKey('blue', $color);
+
+        $this->assertCount(1, (array) $res['hits']);
+    }
+
+    /**
+     * @test
+     */
+    public function facet_search()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->category('color')->facetSearchable();
+        $blueprint->category('size');
+        $blueprint->category('type');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'color' => ['rosmary', 'yellow', 'ring'],
+                'size' => 'xl',
+                'type' => 'shirt',
+                'stock' => 10,
+            ]),
+            new Document([
+                'color' => 'rose',
+                'size' => 'lg',
+                'type' => 'pants',
+                'stock' => 20,
+            ]),
+            new Document([
+                'color' => ['blue', 'antique', 'green'],
+                'size' => 'md',
+                'type' => 'jacket',
+                'stock' => 30,
+            ]),
+            new Document([
+                'color' => 'red',
+                'size' => 'xs',
+                'type' => 'jacket',
+                'stock' => 0,
+            ]),
+        ]);
+
+        dump("Index", $this->sigmie->index($indexName)->raw);
+
+        $searchResponse = $this->sigmie
+            ->newFacetSearch($indexName)
+            ->properties($blueprint)
+            ->facet('color')
+            // ->filters("stock>'0'")
+            ->query('ro')
+            ->get()
+            ->json();
+
+        dd($searchResponse);
     }
 }

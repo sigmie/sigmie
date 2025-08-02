@@ -6,4 +6,5 @@ enum FacetLogic: string
 {
     case Conjunctive = 'conjunctive';
     case Disjunctive = 'disjunctive';
+    case Searchable = 'searchable';
 }
