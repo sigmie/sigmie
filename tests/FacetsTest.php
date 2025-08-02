@@ -527,6 +527,7 @@ class FacetsTest extends TestCase
         $blueprint = new NewProperties;
         $blueprint->category('color')->facetDisjunctive();
         $blueprint->category('size')->facetDisjunctive();
+        $blueprint->price();
 
         $index = $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -538,21 +539,24 @@ class FacetsTest extends TestCase
             new Document([
                 'color' => ['red', 'blue'],
                 'size' => 'lg',
+                'price' => 100,
             ]),
             new Document([
                 'color' => 'red',
                 'size' => 'lg',
+                'price' => 150,
             ]),
             new Document([
                 'color' => 'blue',
                 'size' => 'lg',
+                'price' => 200,
             ]),
         ]);
 
         $searchResponse = $this->sigmie->newSearch($indexName)
             ->properties($blueprint())
             ->queryString('')
-            ->facets('color size', "color:'red' color:'blue' size:'lg'")
+            ->facets('color size', "color:'red' color:'blue' size:'lg' price:100..200")
             ->get();
 
         $res = $searchResponse->json();
@@ -577,6 +581,7 @@ class FacetsTest extends TestCase
         $blueprint = new NewProperties;
         $blueprint->category('color')->facetConjunctive();
         $blueprint->category('size')->facetConjunctive();
+        $blueprint->price();
 
         $index = $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -588,21 +593,24 @@ class FacetsTest extends TestCase
             new Document([
                 'color' => ['red', 'blue'],
                 'size' => 'xl',
+                'price' => 100,
             ]),
             new Document([
                 'color' => 'red',
                 'size' => 'lg',
+                'price' => 150,
             ]),
             new Document([
                 'color' => 'blue',
                 'size' => 'lg',
+                'price' => 200,
             ]),
         ]);
 
         $searchResponse = $this->sigmie->newSearch($indexName)
             ->properties($blueprint())
             ->queryString('')
-            ->facets('color size', filters: "color:'red' color:'blue'")
+            ->facets('color size', filters: "color:'red' color:'blue' price:100..200")
             ->get();
 
         $res = $searchResponse->json();
@@ -628,6 +636,7 @@ class FacetsTest extends TestCase
         $blueprint->category('color')->facetSearchable();
         $blueprint->category('size');
         $blueprint->category('type');
+        $blueprint->price();
 
         $index = $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -641,24 +650,21 @@ class FacetsTest extends TestCase
                 'size' => 'xl',
                 'type' => 'shirt',
                 'stock' => 10,
+                'price' => 100,
             ]),
             new Document([
                 'color' => 'rose',
                 'size' => 'lg',
                 'type' => 'pants',
                 'stock' => 20,
+                'price' => 150,
             ]),
             new Document([
                 'color' => ['blue', 'antique', 'green'],
                 'size' => 'md',
                 'type' => 'jacket',
                 'stock' => 30,
-            ]),
-            new Document([
-                'color' => 'red',
-                'size' => 'xs',
-                'type' => 'jacket',
-                'stock' => 0,
+                'price' => 200,
             ]),
         ]);
 

@@ -22,14 +22,17 @@ class FacetParser extends Parser
 
         foreach ($filters as $filter) {
 
-            [$field, $value] = explode(':', $filter);
-
+            if (preg_match('/^([a-zA-Z_][a-zA-Z0-9_.]*)[:<=](.*)$/', $filter, $matches)) {
+                $field = $matches[1];
+            } else {
+                $field = $filter;
+            }
 
             if (!isset($fields[$field])) {
                 $fields[$field] = [];
             }
 
-            $fields[$field][] = $value;
+            $fields[$field][] = $filter;
         }
 
         $res = [];
@@ -40,7 +43,7 @@ class FacetParser extends Parser
             $fieldFilters = [];
 
             foreach ($values as $value) {
-                $fieldFilters[] = $field . ':' . $value;
+                $fieldFilters[] = $value;
             }
 
             if ($type->isFacetable() && $type->isFacetConjunctive()) {

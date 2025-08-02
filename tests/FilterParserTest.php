@@ -56,9 +56,11 @@ class FilterParserTest extends TestCase
         $this->assertCount(2, $res->json('hits.hits'));
     }
 
+    /**
+     * @test
+     */
     public function end_in_query()
     {
-
         $indexName = uniqid();
 
         $props = new NewProperties();
@@ -82,7 +84,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props, false);
 
-        $query = $parser->parse("status:'in-progress' AND has:id");
+        $query = $parser->parse("status:'in-progress' AND id:*");
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
@@ -117,7 +119,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props, false);
 
-        $query = $parser->parse("status:'in-progress' AND has:id");
+        $query = $parser->parse("status:'in-progress' AND id:*");
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
@@ -382,7 +384,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('is:contact.active AND contact.languages:"en"');
+        $query = $parser->parse('contact.active:true AND contact.languages:"en"');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
@@ -498,7 +500,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('contact:{ is:active AND location:1km[51.16,13.49] }');
+        $query = $parser->parse('contact:{ active:true AND location:1km[51.16,13.49] }');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
@@ -629,7 +631,7 @@ class FilterParserTest extends TestCase
 
         $props = $blueprint();
         $parser = new FilterParser($props);
-        $boolean = $parser->parse('NOT has:name');
+        $boolean = $parser->parse('NOT name:*');
 
         $indexName = uniqid();
         $index = $this->sigmie
@@ -672,7 +674,7 @@ class FilterParserTest extends TestCase
 
         $props = $blueprint();
         $parser = new FilterParser($props);
-        $boolean = $parser->parse('has:name');
+        $boolean = $parser->parse('name:*');
 
         $indexName = uniqid();
         $index = $this->sigmie
@@ -751,7 +753,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('location:1km[51.49,13.77] AND is:active');
+        $query = $parser->parse('location:1km[51.49,13.77] AND active:true');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
@@ -759,7 +761,7 @@ class FilterParserTest extends TestCase
 
         $this->expectException(ParseException::class);
 
-        $query = $parser->parse('location:1km[51.49,13.77] is:active');
+        $query = $parser->parse('location:1km[51.49,13.77] active:true');
     }
 
     /**
@@ -1170,7 +1172,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $boolean = $parser->parse('category:"sports" AND is:active OR name:foo');
+        $boolean = $parser->parse('category:"sports" AND active:true OR name:foo');
     }
 
     /**
@@ -1207,43 +1209,43 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('is:active AND NOT (category:"drama" OR category:"horror")');
+        $query = $parser->parse('active:true AND NOT (category:"drama" OR category:"horror")');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
         $this->assertCount(2, $res->json('hits.hits'));
 
-        $query = $parser->parse("is:active AND NOT category:'drama'");
+        $query = $parser->parse("active:true AND NOT category:'drama'");
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
         $this->assertCount(3, $res->json('hits.hits'));
 
-        $query = $parser->parse('is:active AND stock>0');
+        $query = $parser->parse('active:true AND stock>0');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
         $this->assertCount(3, $res->json('hits.hits'));
 
-        $query = $parser->parse('is:active');
+        $query = $parser->parse('active:true');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
         $this->assertCount(4, $res->json('hits.hits'));
 
-        $query = $parser->parse('is:active AND stock>0 AND (category:"action" OR category:"horror")');
+        $query = $parser->parse('active:true AND stock>0 AND (category:"action" OR category:"horror")');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
         $this->assertCount(1, $res->json('hits.hits'));
 
-        $query = $parser->parse('(category:"action" OR category:"horror") AND is:active AND stock>0');
+        $query = $parser->parse('(category:"action" OR category:"horror") AND active:true AND stock>0');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
         $this->assertCount(1, $res->json('hits.hits'));
 
-        $query = $parser->parse('is:active AND (category:"action" OR category:"horror") AND stock>0');
+        $query = $parser->parse('active:true AND (category:"action" OR category:"horror") AND stock>0');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
@@ -1403,10 +1405,13 @@ class FilterParserTest extends TestCase
 
         $props = $blueprint();
         $parser = new FilterParser($props);
-        $boolean = $parser->parse('is_not:active');
+        $boolean = $parser->parse('active:false');
 
         $indexName = uniqid();
         $index = $this->sigmie
+    /**
+     * @test
+     */
             ->newIndex($indexName)
             ->properties($blueprint)
             ->create();
@@ -1455,7 +1460,7 @@ class FilterParserTest extends TestCase
 
         $props = $blueprint();
         $parser = new FilterParser($props);
-        $boolean = $parser->parse('is:active');
+        $boolean = $parser->parse('active:true');
 
         $indexName = uniqid();
         $index = $this->sigmie
@@ -1676,7 +1681,7 @@ class FilterParserTest extends TestCase
         $props = $blueprint();
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('is:contact.is_active');
+        $query = $parser->parse('contact.is_active:true');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
@@ -1732,7 +1737,7 @@ class FilterParserTest extends TestCase
         $props = $blueprint();
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('is_not:contact.is_active');
+        $query = $parser->parse('contact.is_active:false');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
@@ -1854,7 +1859,7 @@ class FilterParserTest extends TestCase
         $props = $blueprint();
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('is:contact.is_active AND contact.name:"Alice" AND contact.address:"789 Oak St" AND contact.code:"G7H8I9" AND contact.category:"Intern" AND contact.email:"alice@example.com" AND contact.searchable_number:\'54321\' AND contact.title:"Ms." AND contact.number:\'21\' AND contact.price:\'299.99\' AND contact.id:"3"');
+        $query = $parser->parse('contact.is_active:true AND contact.name:"Alice" AND contact.address:"789 Oak St" AND contact.code:"G7H8I9" AND contact.category:"Intern" AND contact.email:"alice@example.com" AND contact.searchable_number:\'54321\' AND contact.title:"Ms." AND contact.number:\'21\' AND contact.price:\'299.99\' AND contact.id:"3"');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
@@ -1924,5 +1929,141 @@ class FilterParserTest extends TestCase
         $query = $parser->parse($filter);
 
         $res = $this->sigmie->query($indexName, $query)->get();
+    }
+
+    /**
+     * @test
+     */
+    public function handle_between()
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties();
+        $props->number('price');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($props)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'price' => 100,
+            ]),
+            new Document([
+                'price' => 150,
+            ]),
+            new Document([
+                'price' => 200,
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $parser = new FilterParser($props, false);
+
+        $query = $parser->parse("price:100..180");
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(2, $res->json('hits.hits'));
+
+        $query = $parser->parse("price:100..200");
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(3, $res->json('hits.hits'));
+    }
+
+    /**
+     * @test
+     */
+    public function handle_between_with_dates()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->date('last_activity');
+
+        $props = $blueprint();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'last_activity' => '2001-01-01T00:00:00.000000+00:00',
+            ]),
+            new Document([
+                'last_activity' => '2100-12-31T23:59:59.999999+00:00',
+            ]),
+            new Document([
+                'last_activity' => '2001-01-01T00:00:00.000000+00:00',
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $parser = new FilterParser($props);
+
+        $query = $parser->parse("last_activity:2001-01-01T00:00:00.000000+00:00..2100-12-31T23:59:59.999999+00:00");
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(3, $res->json('hits.hits'));
+
+        $query = $parser->parse("last_activity:2090-01-01T00:00:00.000000+00:00..2100-12-31T23:59:59.999999+00:00");
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(1, $res->json('hits.hits'));
+    }
+
+    /**
+     * @test
+     */
+    public function handle_numbers_without_quotes()
+    {
+        $mappings = new Properties();
+
+        $blueprint = new NewProperties;
+        $blueprint->price();
+
+        $indexName = uniqid();
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document(
+                ['price' => 100],
+            ),
+            new Document(
+                ['price' => 150],
+            ),
+            new Document(
+                ['price' => 200],
+            ),
+            new Document(
+                ['price' => 250],
+            ),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $boolean = $parser->parse("price:100");
+
+        $res = $this->sigmie->query($indexName, $boolean)->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertCount(1, $hits);
     }
 }

@@ -39,7 +39,7 @@ class FilterParser extends Parser
 
     private function fieldName(string $field)
     {
-        return $this->parentPath ? $this->parentPath.'.'.$field : $field;
+        return $this->parentPath ? $this->parentPath . '.' . $field : $field;
     }
 
     protected function handleNesting()
@@ -124,7 +124,7 @@ class FilterParser extends Parser
                 return $matches[1];
             }, $filter);
 
-            $query = preg_replace('/'.preg_quote($filter, '/').'/', '', $query, 1);
+            $query = preg_replace('/' . preg_quote($filter, '/') . '/', '', $query, 1);
             $query = trim($query);
             $filter = trim($filter);
         }
@@ -243,9 +243,9 @@ class FilterParser extends Parser
     {
         $query = match (1) {
             preg_match('/^[\w\.]+:\{.*\}$/', $string) => $this->handleNested($string),
-            preg_match('/^is:[a-z_A-Z0-9.]+/', $string) => $this->handleIs($string),
-            preg_match('/^has:[a-z_A-Z0-9.]+/', $string) => $this->handleHas($string),
-            preg_match('/^is_not:[a-z_A-Z0-9.]+/', $string) => $this->handleIsNot($string),
+            preg_match('/[\w\.]+:\*$/', $string) => $this->handleHas($string),
+            preg_match('/[\w\.]+:true$/', $string) => $this->handleIs($string),
+            preg_match('/[\w\.]+:false$/', $string) => $this->handleIsNot($string),
             preg_match('/^([\w\.]+)([<>]=?)(.+)/', $string) => $this->handleRange($string),
             preg_match('/^([\w\.]+)([<>]=?)(\'.+\')/', $string) => $this->handleRange($string),
             preg_match('/^([\w\.]+)([<>]=?)(\".+\")/', $string) => $this->handleRange($string),
@@ -255,7 +255,9 @@ class FilterParser extends Parser
             preg_match('/^[\w\.]+:.*\*.*$/', $string) => $this->handleWildcard($string),
             preg_match('/[\w\.]+:".*"/', $string) => $this->handleTerm($string),
             preg_match('/[\w\.]+:\'.*\'/', $string) => $this->handleTerm($string),
+            preg_match('/^([\w\.]+):(\d+(.+)?)\.\.(\d+(.+)?)$/', $string) => $this->handleBetween($string),
             preg_match('/^[\w\.]+:\d+(km|m|cm|mm|mi|yd|ft|in|nmi)\[\-?\d+(\.\d+)?\,\-?\d+(\.\d+)?\]/', $string) => $this->handleGeo($string),
+            preg_match('/[\w\.]+:.*$/', $string) => $this->handleTerm($string),
             default => null
         };
 
@@ -287,7 +289,7 @@ class FilterParser extends Parser
 
         $filters = trim($filters);
 
-        $parentPath = $this->parentPath ? $this->parentPath.'.'.$field : $field;
+        $parentPath = $this->parentPath ? $this->parentPath . '.' . $field : $field;
 
         // If the type is not nested and  we don't throw on error, we return a MatchNone
         if (is_null($type)) {
@@ -321,6 +323,29 @@ class FilterParser extends Parser
         }
 
         return $this->prepareQuery($field, new GeoDistance($this->fieldName($field), $distance, $latitude, $longitude));
+    }
+
+    public function handleBetween(string $range)
+    {
+        preg_match('/^([\w\.]+):(.+)\.\.(.+)$/', $range, $matches);
+
+        $field = $matches[1];
+        $min = $matches[2];
+        $max = $matches[3];
+
+        $field = $this->handleFieldName($field);
+
+        if (is_null($field)) {
+            return;
+        }
+
+        return $this->prepareQuery(
+            $field,
+            new Range($this->fieldName($field), [
+                '>=' => $min,
+                '<=' => $max
+            ])
+        );
     }
 
     public function handleRange(string $range)
@@ -357,14 +382,14 @@ class FilterParser extends Parser
             return $value !== '';
         });
 
-        $values = array_map(fn ($value) => trim($value, ' '), $values);
+        $values = array_map(fn($value) => trim($value, ' '), $values);
 
         return new IDs($values);
     }
 
     public function handleIs(string $is)
     {
-        [, $field] = explode(':', $is);
+        [$field] = explode(':', $is);
 
         $field = $this->handleFieldName($field);
 
@@ -377,7 +402,7 @@ class FilterParser extends Parser
 
     public function handleHas(string $has)
     {
-        [, $field] = explode(':', $has);
+        [$field] = explode(':', $has);
 
         if (is_null($field)) {
             return;
@@ -388,7 +413,7 @@ class FilterParser extends Parser
 
     public function handleIsNot(string $is)
     {
-        [, $field] = explode(':', $is);
+        [$field] = explode(':', $is);
 
         $field = $this->handleFieldName($field);
         if (is_null($field)) {
@@ -409,11 +434,11 @@ class FilterParser extends Parser
         });
 
         // Remove whitespaces from values
-        $values = array_map(fn ($value) => trim($value, ' '), $values);
+        $values = array_map(fn($value) => trim($value, ' '), $values);
         // Remove doublue quotes from values
-        $values = array_map(fn ($value) => trim($value, '\''), $values);
+        $values = array_map(fn($value) => trim($value, '\''), $values);
         // Remove single quotes from values
-        $values = array_map(fn ($value) => trim($value, '"'), $values);
+        $values = array_map(fn($value) => trim($value, '"'), $values);
 
         $field = $this->handleFieldName($field);
 
