@@ -23,6 +23,11 @@ class Id extends CaseSensitiveKeyword
         return 'id.sortable';
     }
 
+    public function filterableName(): ?string
+    {
+        return trim("{$this->parentPath}.{$this->name}", '.');
+    }
+
     public function validate(string $key, mixed $value): array
     {
         if (! is_int($value)) {

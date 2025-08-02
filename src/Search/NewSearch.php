@@ -153,7 +153,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $this->searchContext->facetString = $facets;
         $this->searchContext->facetFilterString = $facetFilterString;
 
-
         $allFilters = implode(
             ' AND ',
             array_filter([
@@ -163,7 +162,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         );
 
         $this->filters = $this->filterParser->parse($allFilters);
-        $this->facets = $this->facetParser->parse($facets, $filters);
+        $this->facets = $this->facetParser->parse($facets, $facetFilterString);
 
         return $this;
     }

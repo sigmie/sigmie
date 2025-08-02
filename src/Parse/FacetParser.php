@@ -92,7 +92,6 @@ class FacetParser extends Parser
         $aggregation = new Aggs;
         $filterParser = new FilterParser($this->properties, $this->throwOnError);
 
-
         foreach ($facets as $field) {
 
             $params = '10';

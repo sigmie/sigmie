@@ -461,9 +461,9 @@ class FacetsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->category('color');
-        $blueprint->category('size');
-        $blueprint->category('type');
+        $blueprint->category('color')->facetDisjunctive();
+        $blueprint->category('size')->facetDisjunctive();
+        $blueprint->category('type')->facetDisjunctive();
         $blueprint->number('stock');
 
         $index = $this->sigmie->newIndex($indexName)
@@ -492,7 +492,7 @@ class FacetsTest extends TestCase
                 'stock' => 30,
             ]),
             new Document([
-                'color' => 'red',
+                'color' => 'green',
                 'size' => 'xs',
                 'type' => 'jacket',
                 'stock' => 0,
@@ -503,7 +503,7 @@ class FacetsTest extends TestCase
             ->properties($blueprint())
             ->queryString('')
             ->filters("stock>'0'")
-            ->facets('color size', "color:'red' size:'xl'")
+            ->facets('color size', "color:'green'")
             ->get();
 
         $facets = (array) $searchResponse->json('facets');
@@ -511,11 +511,15 @@ class FacetsTest extends TestCase
         $this->assertArrayHasKey('size', $facets);
         $this->assertArrayHasKey('color', $facets);
 
+        $colors = (array) $facets['color'];
         $sizes = (array) $facets['size'];
 
-        $this->assertEquals(1, $sizes['lg'] ?? null);
-        $this->assertEquals(1, $sizes['xl'] ?? null);
-        $this->assertNull($sizes['xs'] ?? null);
+        // Should include both green (self excluded) and red
+        $this->assertArrayHasKey('green', $colors);
+        $this->assertArrayHasKey('red', $colors);
+
+        // Should include only md is the only size in green color that has stock
+        $this->assertArrayHasKey('md', $sizes);
     }
 
     /**

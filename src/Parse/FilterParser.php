@@ -53,6 +53,7 @@ class FilterParser extends Parser
 
     protected function parseString(string $query)
     {
+        //TODO hanlde throw error is passed eg. color:red price:100 (without logical operator)
         $this->handleNesting();
 
         // Replace breaks with spaces
@@ -322,7 +323,13 @@ class FilterParser extends Parser
             return new MatchNone;
         }
 
-        return $this->prepareQuery($field, new GeoDistance($this->fieldName($field), $distance, $latitude, $longitude));
+        $realFieldName = $this->handleFieldName($field);
+
+        if (is_null($realFieldName)) {
+            return;
+        }
+
+        return $this->prepareQuery($field, new GeoDistance($this->fieldName($realFieldName), $distance, $latitude, $longitude));
     }
 
     public function handleBetween(string $range)
@@ -333,15 +340,15 @@ class FilterParser extends Parser
         $min = $matches[2];
         $max = $matches[3];
 
-        $field = $this->handleFieldName($field);
+        $realFieldName = $this->handleFieldName($field);
 
-        if (is_null($field)) {
+        if (is_null($realFieldName)) {
             return;
         }
 
         return $this->prepareQuery(
             $field,
-            new Range($this->fieldName($field), [
+            new Range($this->fieldName($realFieldName), [
                 '>=' => $min,
                 '<=' => $max
             ])
@@ -356,12 +363,12 @@ class FilterParser extends Parser
         $operator = $matches[2];
         $value = trim($matches[3], '"\'');
 
-        $field = $this->handleFieldName($field);
-        if (is_null($field)) {
+        $realFieldName = $this->handleFieldName($field);
+        if (is_null($realFieldName)) {
             return;
         }
 
-        return $this->prepareQuery($field, new Range($this->fieldName($field), [$operator => $value]));
+        return $this->prepareQuery($field, new Range($this->fieldName($realFieldName), [$operator => $value]));
     }
 
     public function handleID(string $id)
@@ -393,34 +400,39 @@ class FilterParser extends Parser
 
         $field = $this->handleFieldName($field);
 
-        if (is_null($field)) {
+        $realFieldName = $this->handleFieldName($field);
+
+        if (is_null($realFieldName)) {
             return;
         }
 
-        return $this->prepareQuery($field, new Term($this->fieldName($field), true));
+        return $this->prepareQuery($field, new Term($this->fieldName($realFieldName), true));
     }
 
     public function handleHas(string $has)
     {
         [$field] = explode(':', $has);
 
-        if (is_null($field)) {
+        $realFieldName = $this->properties->getNestedField($field)->filterableName();
+
+        if (is_null($realFieldName)) {
             return;
         }
 
-        return $this->prepareQuery($field, new Exists($this->fieldName($field)));
+        return $this->prepareQuery($field, new Exists($this->fieldName($realFieldName)));
     }
 
     public function handleIsNot(string $is)
     {
         [$field] = explode(':', $is);
 
-        $field = $this->handleFieldName($field);
-        if (is_null($field)) {
+        $realFieldName = $this->handleFieldName($field);
+
+        if (is_null($realFieldName)) {
             return;
         }
 
-        return $this->prepareQuery($field, new Term($this->fieldName($field), false));
+        return $this->prepareQuery($field, new Term($this->fieldName($realFieldName), false));
     }
 
     public function handleIn(string $terms)
@@ -440,22 +452,23 @@ class FilterParser extends Parser
         // Remove single quotes from values
         $values = array_map(fn($value) => trim($value, '"'), $values);
 
-        $field = $this->handleFieldName($field);
+        $realFieldName = $this->handleFieldName($field);
 
-        if (is_null($field)) {
+        if (is_null($realFieldName)) {
             return;
         }
 
-        return $this->prepareQuery($field, new Terms($this->fieldName($field), $values));
+        return $this->prepareQuery($field, new Terms($this->fieldName($realFieldName), $values));
     }
 
     private function prepareQuery(string $field, Query $query): Query
     {
-        // $fieldType = $this->properties->getNestedField($field);
+        $fieldType = $this->properties->getNestedField($field);
 
-        // if ($fieldType->parentPath && $fieldType->parentType === TypesNested::class) {
-        //     return new Nested($fieldType->parentPath, $query);
-        // }
+        // If it's a facets filter we match all for the facet value
+        if (($this->facetField ?? false) && $fieldType->fullPath === $this->facetField->fullPath) {
+            return new MatchAll;
+        }
 
         return $query;
     }
@@ -469,18 +482,13 @@ class FilterParser extends Parser
         // Remove quotes from value
         $value = trim($value, '"');
 
-        if (($this->facetField ?? false) && $field === $this->facetField->name()) {
-            return new MatchAll;
-        }
+        $realFieldName = $this->handleFieldName($field);
 
-        $field = $this->handleFieldName($field);
-
-
-        if (is_null($field)) {
+        if (is_null($realFieldName)) {
             return;
         }
 
-        return $this->prepareQuery($field, new Term($this->fieldName($field), $value));
+        return $this->prepareQuery($field, new Term($this->fieldName($realFieldName), $value));
     }
 
     public function handleWildcard(string $term)
@@ -492,12 +500,12 @@ class FilterParser extends Parser
         // Remove quotes from value
         $value = trim($value, '"');
 
-        $field = $this->handleFieldName($field);
+        $realFieldName = $this->handleFieldName($field);
 
-        if (is_null($field)) {
+        if (is_null($realFieldName)) {
             return;
         }
 
-        return $this->prepareQuery($field, new Wildcard($this->fieldName($field), $value));
+        return $this->prepareQuery($field, new Wildcard($this->fieldName($realFieldName), $value));
     }
 }
