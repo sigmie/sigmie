@@ -28,6 +28,7 @@ class SigmieSearchResponse extends AbstractFormatter
             'total_pages' => $this->search->size > 0 ? intval($this->queryResponseRaw['hits']['total']['value'] / $this->search->size) : 1,
 
             'facets' => $this->formatFacets(),
+            'errors' => $this->errors,
 
             // 'autocomplete' => $this->context->autocomplete ?? [],
             // 'params' => $this->context->params ?? [],

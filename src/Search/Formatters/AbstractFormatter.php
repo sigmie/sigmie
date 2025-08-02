@@ -14,6 +14,8 @@ abstract class AbstractFormatter implements ResponseFormater
 
     protected array $facets = [];
 
+    protected array $errors;
+
     protected SearchContext $search;
 
     abstract public function format(): array;
@@ -32,6 +34,13 @@ abstract class AbstractFormatter implements ResponseFormater
         return $this;
     }
 
+    public function errors(array $errors): static
+    {
+        $this->errors = $errors;
+
+        return $this;
+    }
+
     public function context(SearchContext $context): static
     {
         $this->search = $context;
@@ -39,7 +48,8 @@ abstract class AbstractFormatter implements ResponseFormater
         return $this;
     }
 
-    public function facetAggregations(): array {
+    public function facetAggregations(): array
+    {
         return $this->facetsResponseRaw['aggregations'] ?? [];
     }
 }

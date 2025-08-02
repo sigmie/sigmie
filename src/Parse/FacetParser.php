@@ -12,7 +12,23 @@ class FacetParser extends Parser
 {
     public function parseFilterString(string $filterString): string
     {
-        if (empty($filterString)) {
+        // Trim leading and trailing spaces
+        $filterString = trim($filterString);
+
+        if ($filterString === '') {
+            return '';
+        }
+
+        // Remove AND NOT, AND and OR from the filter string
+        if (preg_match('/\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^\'"\{\}]*[\'"\{\}]){2})*[^\'"\{\}]*$)(?=(?:(?:[^\{\}]*\{[^\{\}]*\})*[^\{\}]*$))/', $filterString)) {
+            $this->handleError("Facet filter string cannot contain logical operators (AND, OR, AND NOT): '{$filterString}'");
+        }
+
+        if (preg_match('/\((?=(?:[^\'"]|\'[^\']*\'|"[^"]*")*$)/', $filterString)) {
+            $this->handleError("Facet filter string cannot contain parenthetic expressions: '{$filterString}'");
+        }
+
+        if (count($this->errors()) > 0) {
             return '';
         }
 
@@ -22,7 +38,8 @@ class FacetParser extends Parser
 
         foreach ($filters as $filter) {
 
-            if (preg_match('/^([a-zA-Z_][a-zA-Z0-9_.]*)[:<=](.*)$/', $filter, $matches)) {
+            // Match field name
+            if (preg_match('/^([\w\.]+)[:<=](.*)$/', $filter, $matches)) {
                 $field = $matches[1];
             } else {
                 $field = $filter;
@@ -46,6 +63,14 @@ class FacetParser extends Parser
                 $fieldFilters[] = $value;
             }
 
+            if (is_null($type)) {
+                $this->handleError("Facet field '{$field}' was not found.", [
+                    'field' => $field,
+                ]);
+
+                continue;
+            }
+
             if ($type->isFacetable() && $type->isFacetConjunctive()) {
                 $facetFilter = implode(' AND ', $fieldFilters);
             }
@@ -62,8 +87,6 @@ class FacetParser extends Parser
 
     public function parse(string $string, string $filterString = ''): Aggs
     {
-        $this->errors = [];
-
         $facets = $this->explode($string);
 
         $aggregation = new Aggs;

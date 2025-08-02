@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Carbon\Exceptions\ParseErrorException;
 use Sigmie\Base\APIs\Explain;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Search;
@@ -502,7 +503,7 @@ class FacetsTest extends TestCase
             ->properties($blueprint())
             ->queryString('')
             ->filters("stock>'0'")
-            ->facets('color size', "color:'red' AND size:'xl'")
+            ->facets('color size', "color:'red' size:'xl'")
             ->get();
 
         $facets = (array) $searchResponse->json('facets');
@@ -628,14 +629,11 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
-    public function facet_search()
+    public function facet_parenthetic_expressions()
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->category('color')->facetSearchable();
-        $blueprint->category('size');
-        $blueprint->category('type');
         $blueprint->price();
 
         $index = $this->sigmie->newIndex($indexName)
@@ -646,39 +644,25 @@ class FacetsTest extends TestCase
 
         $index->merge([
             new Document([
-                'color' => ['rosmary', 'yellow', 'ring'],
-                'size' => 'xl',
-                'type' => 'shirt',
-                'stock' => 10,
                 'price' => 100,
             ]),
             new Document([
-                'color' => 'rose',
-                'size' => 'lg',
-                'type' => 'pants',
-                'stock' => 20,
-                'price' => 150,
+                'price' => 200,
             ]),
             new Document([
-                'color' => ['blue', 'antique', 'green'],
-                'size' => 'md',
-                'type' => 'jacket',
-                'stock' => 30,
-                'price' => 200,
+                'price' => 300,
+            ]),
+            new Document([
+                'price' => 400,
             ]),
         ]);
 
-        dump("Index", $this->sigmie->index($indexName)->raw);
+        $searchResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets('price', "(price:100..200)")
+            ->get();
 
-        $searchResponse = $this->sigmie
-            ->newFacetSearch($indexName)
-            ->properties($blueprint)
-            ->facet('color')
-            // ->filters("stock>'0'")
-            ->query('ro')
-            ->get()
-            ->json();
-
-        dd($searchResponse);
+        $this->assertNotEmpty($searchResponse->json('errors'));
     }
 }

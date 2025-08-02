@@ -14,5 +14,7 @@ interface ResponseFormater
 
     public function format(): array;
 
+    public function errors(array $errors): static;
+
     public function context(SearchContext $context): static;
 }

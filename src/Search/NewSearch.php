@@ -153,6 +153,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $this->searchContext->facetString = $facets;
         $this->searchContext->facetFilterString = $facetFilterString;
 
+
         $allFilters = implode(
             ' AND ',
             array_filter([
@@ -417,17 +418,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this;
     }
 
-    public function formatted(): array
-    {
-        $formatter = $this->formatter ?? new SigmieSearchResponse($this->properties);
-
-        [
-            $searchResponse,
-            $facetsResponse
-        ] = $this->get();
-
-    }
-
     public function get(): ResponseFormater
     {
         $facets = new Facets(
@@ -443,11 +433,14 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $facets->promise()
         ])->wait();
 
-        ray($searchResponse->json());
-
         $formatter = $this->formatter ?? new SigmieSearchResponse($this->properties);
 
         $formatter->context($this->searchContext)
+            ->errors([
+                ...$this->filterParser->errors(),
+                ...$this->facetParser->errors(),
+                ...$this->sortParser->errors(),
+            ])
             ->facetsResponseRaw($facetsResponse->json())
             ->queryResponseRaw($searchResponse->json());
 

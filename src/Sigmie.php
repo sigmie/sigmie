@@ -134,15 +134,6 @@ class Sigmie
         return $search->index($index);
     }
 
-    public function newFacetSearch(string $index): NewFacetSearch
-    {
-        $index = $this->withApplicationPrefix($index);
-
-        $search = new NewFacetSearch($this->elasticsearchConnection);
-
-        return $search->index($index);
-    }
-
     public function newTemplate(string $id): NewTemplate
     {
         $id = $this->withApplicationPrefix($id);
