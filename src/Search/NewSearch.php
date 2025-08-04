@@ -249,19 +249,19 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $boolean->should()->query($queryBoolean);
         });
 
-        if (!empty($this->searchContext->queryStrings[0]['query'] ?? '')) {
+        // if (!empty($this->searchContext->queryStrings[0]['query'] ?? '')) {
 
-            $search->suggest(function (Suggest $suggest) {
+        //     $search->suggest(function (Suggest $suggest) {
 
-                $suggest->completion(name: 'autocompletion')
-                    ->field('autocomplete')
-                    ->size($this->autocompleteSize)
-                    ->fuzzyMinLegth($this->autocompleteFuzzyMinLength)
-                    ->fuzzyPrefixLenght($this->autocompleteFuzzyPrefixLength)
-                    ->fuzzy($this->autocompletion)
-                    ->prefix($this->searchContext->queryStrings[0]['query']);
-            });
-        }
+        //         $suggest->completion(name: 'autocompletion')
+        //             ->field('autocomplete')
+        //             ->size($this->autocompleteSize)
+        //             ->fuzzyMinLegth($this->autocompleteFuzzyMinLength)
+        //             ->fuzzyPrefixLenght($this->autocompleteFuzzyPrefixLength)
+        //             ->fuzzy($this->autocompletion)
+        //             ->prefix($this->searchContext->queryStrings[0]['query']);
+        //     });
+        // }
 
         $search->trackTotalHits();
 

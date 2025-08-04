@@ -17,6 +17,8 @@ use Sigmie\Index\NewIndex as IndexBuilder;
 
 class Builder extends IndexBuilder implements LanguageBuilder
 {
+    protected string $language = 'english';
+
     public function englishStopwords(null|string $name = null): static
     {
         $filter = is_null($name) ? new EnglishStopwords() : new EnglishStopwords($name);

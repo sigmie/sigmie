@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Shared;
 
+use Composer\InstalledVersions;
 use Sigmie\Index\Analysis\Analysis as AnalysisAnalysis;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Contracts\Analysis;
@@ -45,7 +46,12 @@ trait Mappings
     {
         return new IndexMappings(
             defaultAnalyzer: $defaultAnalyzer,
-            properties: $this->properties
+            properties: $this->properties,
+            meta: [
+                "created_by" => "sigmie",
+                "lib_version" => InstalledVersions::getVersion('sigmie/sigmie'),
+                "language" => $this->language,
+            ],
         );
     }
 }

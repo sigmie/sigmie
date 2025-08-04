@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Exception;
+use OutOfBoundsException;
 use RachidLaasri\Travel\Travel;
 use Sigmie\Document\Document;
 use Sigmie\Languages\English\Builder as EnglishBuilder;
@@ -1019,5 +1020,21 @@ class IndexBuilderTest extends TestCase
         $hits = $res->json('hits');
 
         $this->assertCount(1, $hits);
+    }
+
+    /**
+     * @test
+     */
+    public function index_meta()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)->create();
+
+        $raw = $this->sigmie->index($alias)->raw;
+
+        $this->assertArrayHasKey('_meta', $raw['mappings']);
+        $this->assertArrayHasKey('created_by', $raw['mappings']['_meta']);
+        $this->assertArrayHasKey('lib_version', $raw['mappings']['_meta']);
     }
 }

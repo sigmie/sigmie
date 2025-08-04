@@ -457,4 +457,35 @@ class QueryTest extends TestCase
 
         $this->assertEquals(1, $res->json()['hits']['total']['value']);
     }
+
+    /**
+     * @test
+     */
+    public function multi_raw_query()
+    {
+        $name = uniqid();
+        $name2 = uniqid();
+
+        $this->sigmie->newIndex($name)->create();
+        $this->sigmie->newIndex($name2)->create();
+
+        $docs = [
+            new Document([
+                'foo' => 'bar',
+            ]),
+        ];
+
+        $this->sigmie->collect($name, true)->merge($docs);
+        $this->sigmie->collect($name2, true)->merge($docs);
+
+        $res = $this->sigmie->rawQuery("$name,$name2", [
+            'query' => [
+                'match' => [
+                    'foo' => 'bar',
+                ],
+            ],
+        ]);
+
+        $this->assertEquals(2, $res->json()['hits']['total']['value']);
+    }
 }

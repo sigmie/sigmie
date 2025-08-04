@@ -15,6 +15,8 @@ use Sigmie\Sigmie;
 
 class Builder extends IndexBuilder implements LanguageBuilder
 {
+    protected string $language = 'greek';
+
     public function greekStopwords(null|string $name = null): static
     {
         $filter = is_null($name) ? new GreekStopwords() : new GreekStopwords($name);

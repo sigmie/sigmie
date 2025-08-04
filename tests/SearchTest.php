@@ -6,6 +6,8 @@ namespace Sigmie\Tests;
 
 use Http\Promise\Promise;
 use Sigmie\Document\Document;
+use Sigmie\Languages\English\English;
+use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Price;
 use Sigmie\Sigmie;
@@ -1276,5 +1278,51 @@ class SearchTest extends TestCase
         $hits = $res->json('hits');
 
         $this->assertEquals(4, $hits[0]['_source']['boost']);
+    }
+
+    /**
+     * @test
+     */
+    public function multi_lang_search()
+    {
+        $deIndexName = uniqid('de');
+        $enIndexName = uniqid('en');
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($deIndexName)
+            ->properties($blueprint)
+            ->language(new German)
+            //without normalize it's not found
+            ->germanNormalize()
+            ->create();
+
+        $this->sigmie->newIndex($enIndexName)
+            ->properties($blueprint)
+            ->language(new English)
+            ->create();
+
+        $deDocs = [
+            new Document([
+                'name'=> 'tür'
+            ]),
+        ];
+
+        $enDocs = [
+            new Document([
+                'name'=> 'door'
+            ]),
+        ];
+
+        $this->sigmie->collect($deIndexName, refresh: true)->merge($deDocs);
+        $this->sigmie->collect($enIndexName, refresh: true)->merge($enDocs);
+
+        $res = $this->sigmie->newSearch("$deIndexName,$enIndexName")
+            ->properties($blueprint)
+            ->queryString('door tur')
+            ->get();
+
+        $this->assertEquals(2, $res->total());
     }
 }

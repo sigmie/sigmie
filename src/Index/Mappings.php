@@ -28,12 +28,21 @@ class Mappings implements MappingsInterface
 
     protected CustomAnalyzer $defaultAnalyzer;
 
+    protected readonly array $meta;
+
     public function __construct(
         ?CustomAnalyzer $defaultAnalyzer = null,
         ?Properties $properties = null,
+        ?array $meta = null,
     ) {
         $this->defaultAnalyzer = $defaultAnalyzer ?: new DefaultAnalyzer();
         $this->properties = $properties ?: new Properties(name: 'mappings');
+        $this->meta = $meta ?? [];
+    }
+
+    public function meta(): array
+    {
+        return $this->meta;
     }
 
     public function fieldNames(bool $withParent = false): array
@@ -78,6 +87,7 @@ class Mappings implements MappingsInterface
                 ...$this->properties->toRaw(),
                 //...$embeddings->toRaw(),
             ],
+            '_meta' => $this->meta,
         ];
 
         return $raw;
@@ -91,12 +101,13 @@ class Mappings implements MappingsInterface
             $data['properties'] ?? [],
             $defaultAnalyzer,
             $analyzers,
-            name: 'mappings'
+            name: 'mappings',
         );
 
         return new static(
             defaultAnalyzer: $defaultAnalyzer,
             properties: $properties,
+            meta: $data['_meta'] ?? [],
         );
     }
 }

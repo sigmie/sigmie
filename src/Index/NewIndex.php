@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Index;
 
+use Carbon\Carbon;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Languages\English\Filter\Lowercase;
 use Sigmie\Languages\English\Filter\Stemmer;
@@ -28,8 +29,6 @@ use Sigmie\Semantic\Contracts\AIProvider;
 use Sigmie\Semantic\Providers\SigmieAI as DefaultEmbeddingsProvider;
 use Sigmie\Shared\EmbeddingsProvider;
 
-use function Sigmie\Functions\index_name;
-
 class NewIndex
 {
     use Autocomplete;
@@ -42,6 +41,8 @@ class NewIndex
     use Shards;
     use Tokenizer;
     use EmbeddingsProvider;
+
+    protected string $language = 'no_lang';
 
     protected string $alias;
 
@@ -185,10 +186,17 @@ class NewIndex
             $settings->defaultPipeline($pipeline->name);
         }
 
-        $name = index_name($this->alias);
+        $name = $this->createIndexName();
 
         $index = new Index($name, $settings, $mappings);
 
         return $index;
+    }
+
+    protected function createIndexName() {
+
+        $timestamp = Carbon::now()->format('YmdHisu');
+
+        return "{$this->alias}_{$timestamp}";
     }
 }
