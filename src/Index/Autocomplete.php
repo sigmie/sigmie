@@ -136,7 +136,7 @@ trait Autocomplete
       }
       result = uniqueValues.toArray();
 
-      ctx.autocomplete = result;
+      ctx.{$properties->autocompleteField->name()} = result;
         ");
 
         return $newPipeline
@@ -209,22 +209,4 @@ trait Autocomplete
     }
 
     abstract protected function autocompleteTokenFilters(): array;
-
-    public function createAutocompleteAnalyzer(): Analyzer
-    {
-        $autocompleteAnalyzer = new Analyzer(
-            'autocomplete_analyzer',
-            new WordBoundaries(),
-            [
-                ...$this->autocompleteTokenFilters(),
-                new AsciiFolding('autocomplete_ascii_folding'),
-                new Unique('autocomplete_unique', false),
-                new Trim('autocomplete_trim'),
-                new DecimalDigit('autocomplete_decimal_digit'),
-                new Shingle('autocomplete_shingle', 2, 3),
-            ]
-        );
-
-        return $autocompleteAnalyzer;
-    }
 }

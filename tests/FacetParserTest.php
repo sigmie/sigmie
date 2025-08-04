@@ -81,10 +81,10 @@ class FacetParserTest extends TestCase
 
         $json = $res->json();
 
-        $this->assertEquals('1', $json['aggregations']['name']['buckets'][0]['key']);
-        $this->assertEquals('1.1', $json['aggregations']['name']['buckets'][1]['key']);
-        $this->assertNull($json['aggregations']['name']['buckets'][2]['key'] ?? null);
-        $this->assertNull($json['aggregations']['name']['buckets'][3]['key'] ?? null);
+        $this->assertEquals('1', $json['aggregations']['name']['name']['buckets'][0]['key']);
+        $this->assertEquals('1.1', $json['aggregations']['name']['name']['buckets'][1]['key']);
+        $this->assertNull($json['aggregations']['name']['name']['buckets'][2]['key'] ?? null);
+        $this->assertNull($json['aggregations']['name']['name']['buckets'][3]['key'] ?? null);
     }
 
     /**
@@ -123,10 +123,10 @@ class FacetParserTest extends TestCase
 
         $json = $res->json();
 
-        $this->assertEquals('1', $json['aggregations']['name']['buckets'][0]['key']);
-        $this->assertEquals('1.1', $json['aggregations']['name']['buckets'][1]['key']);
-        $this->assertNull($json['aggregations']['name']['buckets'][2]['key'] ?? null);
-        $this->assertNull($json['aggregations']['name']['buckets'][3]['key'] ?? null);
+        $this->assertEquals('1', $json['aggregations']['name']['name']['buckets'][0]['key']);
+        $this->assertEquals('1.1', $json['aggregations']['name']['name']['buckets'][1]['key']);
+        $this->assertNull($json['aggregations']['name']['name']['buckets'][2]['key'] ?? null);
+        $this->assertNull($json['aggregations']['name']['name']['buckets'][3]['key'] ?? null);
     }
 
     /**
@@ -164,8 +164,8 @@ class FacetParserTest extends TestCase
 
         $json = $res->json();
 
-        $this->assertEquals('a', $json['aggregations']['name']['buckets'][0]['key']);
-        $this->assertEquals('b', $json['aggregations']['name']['buckets'][1]['key']);
+        $this->assertEquals('a', $json['aggregations']['name']['name']['buckets'][0]['key']);
+        $this->assertEquals('b', $json['aggregations']['name']['name']['buckets'][1]['key']);
 
         $aggs = $parser->parse('name:2,desc');
 
@@ -173,8 +173,8 @@ class FacetParserTest extends TestCase
 
         $json = $res->json();
 
-        $this->assertEquals('z', $json['aggregations']['name']['buckets'][0]['key']);
-        $this->assertEquals('c', $json['aggregations']['name']['buckets'][1]['key']);
+        $this->assertEquals('z', $json['aggregations']['name']['name']['buckets'][0]['key']);
+        $this->assertEquals('c', $json['aggregations']['name']['name']['buckets'][1]['key']);
 
         $aggs = $parser->parse('name:1,desc');
 
@@ -182,8 +182,8 @@ class FacetParserTest extends TestCase
 
         $json = $res->json();
 
-        $this->assertEquals('z', $json['aggregations']['name']['buckets'][0]['key']);
-        $this->assertCount(1, $json['aggregations']['name']['buckets']);
+        $this->assertEquals('z', $json['aggregations']['name']['name']['buckets'][0]['key']);
+        $this->assertCount(1, $json['aggregations']['name']['name']['buckets']);
     }
 
     /**
@@ -269,7 +269,7 @@ class FacetParserTest extends TestCase
 
         $json = $res->json();
 
-        $this->assertCount(2, $json['aggregations']['category']['buckets']);
+        $this->assertCount(2, $json['aggregations']['category']['category']['buckets']);
         $this->assertArrayHasKey('aggregations', $json);
         $this->assertArrayHasKey('category', $json['aggregations']);
         $this->assertArrayHasKey('stock', $json['aggregations']);

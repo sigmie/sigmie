@@ -31,9 +31,13 @@ class SigmieSearchResponse extends AbstractFormatter
             'facets' => $this->formatFacets(),
             'errors' => $this->errors,
 
-            // 'autocomplete' => $this->context->autocomplete ?? [],
+            'autocomplete' => $this->queryResponseRaw['suggest']['autocompletion'] ?? [],
             // 'params' => $this->context->params ?? [],
         ];
+    }
+
+    public function autocompletion() {
+        return $this->queryResponseRaw['suggest']['autocompletion'] ?? [];
     }
 
     public function hits()

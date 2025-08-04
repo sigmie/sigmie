@@ -12,6 +12,7 @@ use Sigmie\Index\Analysis\SimpleAnalyzer;
 use Sigmie\Index\Analysis\Standard;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Mappings\Contracts\Type as ContractsType;
+use Sigmie\Mappings\Types\Autocomplete;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Boost;
 use Sigmie\Mappings\Types\Date;
@@ -32,15 +33,22 @@ class Properties extends Type implements ArrayAccess
 
     public readonly Boost $boostField;
 
+    public readonly Autocomplete $autocompleteField;
+
     public function __construct(string $name = 'mappings', array $fields = [])
     {
         $this->type = ElasticsearchMappingType::PROPERTIES->value;
 
         $boostField = array_values(array_filter($fields, fn(Type $field) => $field instanceof Boost))[0] ?? null;
+        $autocompleteField = array_values(array_filter($fields, fn(Type $field) => $field instanceof Autocomplete))[0] ?? null;
 
         // Boost field can only as a top level prop 
         if ($name === 'mappings' && $boostField) {
             $this->boostField = $boostField;
+        }
+
+        if ($name === 'mappings' && $autocompleteField) {
+            $this->autocompleteField = $autocompleteField;
         }
 
         $this->fields = array_map(function (Type $field) use ($name) {
@@ -53,11 +61,6 @@ class Properties extends Type implements ArrayAccess
         }, $fields);
 
         parent::__construct($name);
-    }
-
-    public function autocomplete(Analyzer $analyzer)
-    {
-        $this->fields['autocomplete'] = (new Text('autocomplete'))->completion($analyzer);
     }
 
     public function queries(array|string $queryString): array

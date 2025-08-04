@@ -159,16 +159,6 @@ class NewIndex
 
         $analyzers = $mappings->analyzers();
 
-        if ($this->autocomplete) {
-
-            $pipeline = $this->createAutocompletePipeline($mappings);
-            $autocompleteAnalyzer = $this->createAutocompleteAnalyzer();
-
-            $this->analysis()->addAnalyzer($autocompleteAnalyzer);
-
-            $mappings->properties()->autocomplete($autocompleteAnalyzer);
-        }
-
         $this->analysis()->addAnalyzers($analyzers);
 
         if ($this->searchSynonyms) {
@@ -182,7 +172,9 @@ class NewIndex
             configs: $this->config
         );
 
-        if ($this->autocomplete) {
+        if ($this->autocomplete && ($mappings->properties()->autocompleteField ?? false)) {
+            $pipeline = $this->createAutocompletePipeline($mappings);
+
             $settings->defaultPipeline($pipeline->name);
         }
 

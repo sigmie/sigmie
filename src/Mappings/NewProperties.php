@@ -12,6 +12,7 @@ use Sigmie\Mappings\Contracts\Type as ContractsType;
 use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Boost;
+use Sigmie\Mappings\Types\Autocomplete;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Date;
@@ -68,10 +69,6 @@ class NewProperties
         null|string $name = null
     ): Properties {
 
-        if ($this->name === 'mappings') {
-            $this->fields->add((new Text('autocomplete'))->completion());
-        }
-
         $fields = $this->fields
             ->mapToDictionary(function (Type $type) {
 
@@ -87,7 +84,7 @@ class NewProperties
         return $props;
     }
 
-    public function boost(string $name = 'boost')
+    public function boost(string $name = 'boost'): Boost
     {
         $field = new Boost($name);
 
@@ -96,7 +93,16 @@ class NewProperties
         return $field;
     }
 
-    public function denseVector(string $name, int $dims = 384)
+    public function autocomplete(string $name = 'autocomplete'): Autocomplete
+    {
+        $field = new Autocomplete($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function denseVector(string $name, int $dims = 384): DenseVector
     {
         $field = new DenseVector($name, $dims);
 

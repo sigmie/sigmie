@@ -133,7 +133,6 @@ class FacetParser extends Parser
                                 $field->aggregation($aggs, $params);
                             });
 
-                        // $field->aggregation($aggs, $params);
                     });
                 } else {
 
@@ -142,8 +141,6 @@ class FacetParser extends Parser
                             $field->aggregation($aggs, $params);
                         });
 
-                    // dd($aggregation->toRaw());
-                    // $field->aggregation($aggregation, $params);
                 }
             } catch (ParseException $e) {
                 $this->handleError($e->getMessage(), [

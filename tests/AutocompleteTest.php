@@ -69,13 +69,15 @@ class AutocompleteTest extends TestCase
     {
         $name = uniqid();
 
+        $properties = new NewProperties;
+        $properties->text('title');
+        $properties->category('color');
+        $properties->category('type');
+        $properties->autocomplete();
+
         $this->sigmie
             ->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {
-                $blueprint->text('title');
-                $blueprint->category('color');
-                $blueprint->category('type');
-            })
+            ->properties($properties)
             ->lowercase()
             ->trim()
             ->autocomplete(['color', 'type'])
@@ -120,6 +122,7 @@ class AutocompleteTest extends TestCase
                 $blueprint->title('title');
                 $blueprint->category('color');
                 $blueprint->category('type');
+                $blueprint->autocomplete();
             })
             ->lowercase()
             ->trim()
@@ -155,16 +158,24 @@ class AutocompleteTest extends TestCase
     {
         $name = uniqid();
 
+        $properties = new NewProperties;
+        $properties->autocomplete();
+        $properties->title('title');
+        $properties->category('color');
+        $properties->category('type');
+        $properties->category('brand');
+        $properties->boost();
+
         $this->sigmie
             ->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {})
+            ->properties($properties)
             ->autocomplete([])
             ->create();
 
         $this->assertIndex($name, function (Assert $index) {
             $index->assertPropertyExists('boost');
             $index->assertPropertyExists('autocomplete');
-            $index->assertAnalyzerExists('autocomplete_analyzer');
+            $index->assertAnalyzerExists('autocomplete_field_analyzer');
         });
     }
 
@@ -175,14 +186,16 @@ class AutocompleteTest extends TestCase
     {
         $name = uniqid();
 
+        $properties = new NewProperties;
+        $properties->autocomplete();
+        $properties->name('title');
+        $properties->category('color');
+        $properties->category('type');
+        $properties->category('brand');
+
         $this->sigmie
             ->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {
-                $blueprint->name('title');
-                $blueprint->category('color');
-                $blueprint->category('type');
-                $blueprint->category('brand');
-            })
+            ->properties($properties)
             ->lowercase()
             ->trim()
             ->autocomplete(['color', 'type', 'brand'])
@@ -240,14 +253,16 @@ class AutocompleteTest extends TestCase
     {
         $name = uniqid();
 
+        $properties = new NewProperties;
+        $properties->autocomplete();
+        $properties->title('title');
+        $properties->category('color');
+        $properties->category('type');
+        $properties->category('brand');
+
         $this->sigmie
             ->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {
-                $blueprint->title('title');
-                $blueprint->category('color');
-                $blueprint->category('type');
-                $blueprint->category('brand');
-            })
+            ->properties($properties)
             ->lowercase()
             ->trim()
             ->autocomplete(['color', 'type', 'brand'])
@@ -302,11 +317,13 @@ class AutocompleteTest extends TestCase
     {
         $name = uniqid();
 
+        $properties = new NewProperties;
+        $properties->autocomplete();
+        $properties->name('title');
+
         $this->sigmie
             ->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {
-                $blueprint->name('title');
-            })
+            ->properties($properties)
             ->lowercase()
             ->trim()
             ->autocomplete(['title'])
@@ -328,10 +345,11 @@ class AutocompleteTest extends TestCase
         $collection->merge($docs);
 
         $res = $this->sigmie->newSearch($name)
+            ->properties($properties)
             ->queryString('b')
             ->get();
 
-        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+        $suggestions = array_map(fn ($value) => $value['text'], $res->autocompletion()[0]['options']);
 
         $this->assertNotEmpty($suggestions);
         foreach ($suggestions as $suggestion) {
@@ -346,14 +364,16 @@ class AutocompleteTest extends TestCase
     {
         $name = uniqid();
 
+        $properties = new NewProperties;
+        $properties->autocomplete();
+        $properties->category('model');
+        $properties->category('storage');
+        $properties->category('color');
+        $properties->price();
+
         $this->sigmie
             ->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {
-                $blueprint->category('model');
-                $blueprint->category('storage');
-                $blueprint->category('color');
-                $blueprint->price();
-            })
+            ->properties($properties)
             ->lowercase()
             ->trim()
             ->autocomplete(['model', 'storage', 'color'])
@@ -394,10 +414,11 @@ class AutocompleteTest extends TestCase
         $collection->merge($docs);
 
         $res = $this->sigmie->newSearch($name)
+            ->properties($properties)
             ->queryString('black')
             ->get();
 
-        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+        $suggestions = array_map(fn ($value) => $value['text'], $res->autocompletion()[0]['options']);
 
         $this->assertEquals([
             'Black 64GB iPhone SE',
@@ -411,14 +432,16 @@ class AutocompleteTest extends TestCase
     {
         $name = uniqid();
 
+        $properties = new NewProperties;
+        $properties->autocomplete();
+        $properties->category('model');
+        $properties->category('storage');
+        $properties->category('color');
+        $properties->price();
+
         $this->sigmie
             ->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {
-                $blueprint->category('model');
-                $blueprint->category('storage');
-                $blueprint->category('color');
-                $blueprint->price();
-            })
+            ->properties($properties)
             ->lowercase()
             ->trim()
             ->autocomplete(['model', 'storage', 'color'])
@@ -459,10 +482,11 @@ class AutocompleteTest extends TestCase
         $collection->merge($docs);
 
         $res = $this->sigmie->newSearch($name)
+            ->properties($properties)
             ->queryString('red')
             ->get();
 
-        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+        $suggestions = array_map(fn ($value) => $value['text'], $res->autocompletion()[0]['options']);
 
         $this->assertEquals([
             'Red Black 64GB iPhone SE',
@@ -476,14 +500,16 @@ class AutocompleteTest extends TestCase
     {
         $name = uniqid();
 
+        $properties = new NewProperties;
+        $properties->autocomplete();
+        $properties->category('model');
+        $properties->category('storage');
+        $properties->category('color');
+        $properties->price();
+
         $this->sigmie
             ->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {
-                $blueprint->category('model');
-                $blueprint->category('storage');
-                $blueprint->category('color');
-                $blueprint->price();
-            })
+            ->properties($properties)
             ->lowercase()
             ->lowercaseAutocompletions()
             ->trim()
@@ -525,10 +551,11 @@ class AutocompleteTest extends TestCase
         $collection->merge($docs);
 
         $res = $this->sigmie->newSearch($name)
+            ->properties($properties)
             ->queryString('red')
             ->get();
 
-        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+        $suggestions = array_map(fn ($value) => $value['text'], $res->autocompletion()[0]['options']);
 
         $this->assertEquals([
             'red black 64gb iphone se',
@@ -542,12 +569,14 @@ class AutocompleteTest extends TestCase
     {
         $name = uniqid();
 
+        $properties = new NewProperties;
+        $properties->autocomplete();
+        $properties->category('name');
+
         $this->sigmie
             ->newIndex($name)
             ->language(new Greek)
-            ->mapping(function (NewProperties $blueprint) {
-                $blueprint->category('name');
-            })
+            ->properties($properties)
             ->lowercase()
             ->trim()
             ->autocomplete(['name'])
@@ -567,10 +596,11 @@ class AutocompleteTest extends TestCase
         $collection->merge($docs);
 
         $res = $this->sigmie->newSearch($name)
+            ->properties($properties)
             ->queryString('α')
             ->get();
 
-        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+        $suggestions = array_map(fn ($value) => $value['text'], $res->autocompletion()[0]['options']);
 
         // This means that the greek lowercase filter is used
         $this->assertEquals([
@@ -585,12 +615,14 @@ class AutocompleteTest extends TestCase
     {
         $name = uniqid();
 
+        $properties = new NewProperties;
+        $properties->autocomplete();
+        $properties->category('name');
+
         $this->sigmie
             ->newIndex($name)
             ->language(new German)
-            ->mapping(function (NewProperties $blueprint) {
-                $blueprint->category('name');
-            })
+            ->properties($properties)
             ->lowercase()
             ->trim()
             ->autocomplete(['name'])
@@ -610,10 +642,11 @@ class AutocompleteTest extends TestCase
         $collection->merge($docs);
 
         $res = $this->sigmie->newSearch($name)
+            ->properties($properties)
             ->queryString('d')
             ->get();
 
-        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+        $suggestions = array_map(fn ($value) => $value['text'], $res->autocompletion()[0]['options']);
 
         // This means that the dortmund lowercase filter is used
         $this->assertEquals([
@@ -629,12 +662,14 @@ class AutocompleteTest extends TestCase
     {
         $name = uniqid();
 
+        $properties = new NewProperties;
+        $properties->autocomplete();
+        $properties->name('name');
+
         $this->sigmie
             ->newIndex($name)
             ->language(new English)
-            ->mapping(function (NewProperties $blueprint) {
-                $blueprint->category('name');
-            })
+            ->properties($properties)
             ->lowercase()
             ->trim()
             ->autocomplete(['name'])
@@ -652,10 +687,11 @@ class AutocompleteTest extends TestCase
         $collection->merge($docs);
 
         $res = $this->sigmie->newSearch($name)
+            ->properties($properties)
             ->queryString('l')
             ->get();
 
-        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.autocompletion.0.options'));
+        $suggestions = array_map(fn ($value) => $value['text'], $res->autocompletion()[0]['options']);
 
         // This means that the dortmund lowercase filter is used
         $this->assertEquals([
