@@ -97,7 +97,7 @@ trait Actions
         $catResponse = $this->catAPICall("indices/{$pattern}", 'GET');
 
         return array_map(function ($values) {
-            $index = new BaseIndex($values['index']);
+            $index = ListedIndex::fromRaw($values['index'], $values);
 
             return $index;
         }, $catResponse->json());
