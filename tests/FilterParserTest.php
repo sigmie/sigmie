@@ -1409,9 +1409,9 @@ class FilterParserTest extends TestCase
 
         $indexName = uniqid();
         $index = $this->sigmie
-    /**
-     * @test
-     */
+            /**
+             * @test
+             */
             ->newIndex($indexName)
             ->properties($blueprint)
             ->create();
@@ -2065,5 +2065,45 @@ class FilterParserTest extends TestCase
         $hits = $res->json('hits.hits');
 
         $this->assertCount(1, $hits);
+    }
+
+    /**
+     * @test
+     */
+    public function filter_syntax_exception()
+    {
+        $mappings = new Properties();
+
+        $blueprint = new NewProperties;
+        $blueprint->category('color');
+        $blueprint->number('stock');
+
+        $indexName = uniqid();
+
+        $index = $this->sigmie
+            ->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document(
+                [
+                    'color' => 'red',
+                    'stock' => 100,
+                ],
+            ),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        $this->expectException(ParseException::class);
+
+        $parser->parse("color:'red' color:'blue'");
     }
 }

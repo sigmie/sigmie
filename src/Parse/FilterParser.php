@@ -183,8 +183,17 @@ class FilterParser extends Parser
             // Throw an error if there's a space in the filter string
             // and it's not in a quote
             if (
-                preg_match('/\s(?!AND|OR|NOT|AND NOT)(?=(?:[^\'"]|\'[^\']*\'|"[^"]*")*$)/', $filter)
-                && ! preg_match('/[\'"{].*\s.*[\'"}]/', $filter)
+                preg_match(
+                    '/\s/',
+                    // The preg_replace_callback removes (replaces with underscores) anything inside:
+                    // • single or double quotes
+                    // • {...} blocks (non-nested or shallowly nested)
+                    preg_replace_callback(
+                        '/(["\'])(?:\\\\.|[^\\\\])*?\1|{(?:[^{}]|(?R))*}/',
+                        fn($m) => str_repeat('_', strlen($m[0])),
+                        $filter
+                    )
+                )
             ) {
                 throw new ParseException("Invalid filter string: '{$filter}'");
             }
