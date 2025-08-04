@@ -267,12 +267,8 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
 
         if ($this->properties->boostField ?? false) {
-
-            $name = $this->properties->boostField->name();
-
             $search->scriptScore(
-                "doc.containsKey('{$name}') && doc['{$name}'].size() > 0 ? doc['{$name}'].value : 1",
-                boostMode: 'multiply'
+                ...$this->properties->boostField->scriptScore()
             );
         }
 
