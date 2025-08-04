@@ -672,7 +672,7 @@ class MappingsTest extends TestCase
             ->queryString('abcd')
             ->fields(['code'])
             ->get()
-            ->json('hits.hits');
+            ->json('hits');
 
         $this->assertEmpty($hits);
     }
@@ -704,7 +704,7 @@ class MappingsTest extends TestCase
             ->queryString('abcd')
             ->fields(['code'])
             ->get()
-            ->json('hits.hits');
+            ->json('hits');
 
         $this->assertNotEmpty($hits);
     }
@@ -785,7 +785,7 @@ class MappingsTest extends TestCase
             ->queryString('')
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertCount(2, $hits);
     }
@@ -820,7 +820,7 @@ class MappingsTest extends TestCase
             ->sort('title:asc')
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $res = array_map(fn($hit) => $hit['_source']['title'], $hits);
 
@@ -858,7 +858,7 @@ class MappingsTest extends TestCase
             ->fields(['year'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertCount(2, $hits);
     }
@@ -894,7 +894,7 @@ class MappingsTest extends TestCase
             ->fields(['category'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertCount(2, $hits);
     }
@@ -928,7 +928,7 @@ class MappingsTest extends TestCase
             ->fields(['number'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertEquals('9999999', $hits[0]['_source']['number']);
         $this->assertCount(1, $hits);
@@ -941,7 +941,7 @@ class MappingsTest extends TestCase
             ->fields(['number'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertEquals('2353051500', $hits[0]['_source']['number']);
         $this->assertCount(1, $hits);
@@ -993,7 +993,7 @@ class MappingsTest extends TestCase
             ->fields(['email'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertEquals('john.doe@gmail.com', $hits[0]['_source']['email']);
         $this->assertCount(1, $hits);
@@ -1004,7 +1004,7 @@ class MappingsTest extends TestCase
             ->fields(['email'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertCount(3, $hits);
 
@@ -1014,7 +1014,7 @@ class MappingsTest extends TestCase
             ->fields(['email'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertEquals('phill.braun@outlook.com', $hits[0]['_source']['email']);
     }
@@ -1055,7 +1055,7 @@ class MappingsTest extends TestCase
             ->fields(['email'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertEquals('john.doe@gmail.com', $hits[0]['_source']['email']);
         $this->assertCount(1, $hits);
@@ -1066,7 +1066,7 @@ class MappingsTest extends TestCase
             ->fields(['email'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertCount(3, $hits);
 
@@ -1076,7 +1076,7 @@ class MappingsTest extends TestCase
             ->fields(['email'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         // Using the 'withNewAnalyzer' method does
         // not include the prefix query
@@ -1135,7 +1135,7 @@ class MappingsTest extends TestCase
             ->fields(['code'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertNotEmpty($hits);
     }
@@ -1175,7 +1175,7 @@ class MappingsTest extends TestCase
 
         $res = $this->indexAPICall($indexName, 'GET');
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertEquals('john.doe@gmail.com', $hits[0]['_source']['email']);
         $this->assertCount(1, $hits);
@@ -1186,7 +1186,7 @@ class MappingsTest extends TestCase
             ->fields(['email'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertCount(3, $hits);
 
@@ -1196,7 +1196,7 @@ class MappingsTest extends TestCase
             ->fields(['email'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertEquals('phill.braun@outlook.com', $hits[0]['_source']['email']);
     }

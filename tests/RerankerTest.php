@@ -61,7 +61,7 @@ class RerankerTest extends TestCase
             ->get();
 
         // Only PHP and Python frameworks should match due to "web framework" in description
-        $hits = $res->json('hits.hits');
+        $hits = $res->json('hits');
 
         $this->assertEmpty($hits);
     }
@@ -144,7 +144,7 @@ class RerankerTest extends TestCase
             ->queryString('Best programming language for AI and machine learning')
             ->get();
 
-        $hits = $response->json('hits.hits');
+        $hits = $response->json('hits');
 
         $this->assertEquals('Python for AI and Machine Learning – A Complete Guide', $hits[0]['_source']['name'] ?? null);
     }
@@ -255,7 +255,7 @@ class RerankerTest extends TestCase
 
         $reranked = $reranker->rerank($res, $queryString);
 
-        $hits = $reranked->json('hits.hits');
+        $hits = $reranked->json('hits');
 
         $this->assertEquals('Python for AI and Machine Learning – A Complete Guide', $hits[0]['_source']['name'][0] ?? null);
     }
@@ -316,7 +316,7 @@ class RerankerTest extends TestCase
             'embeddings_title' => ((new SigmieAI)->embed($query, $blueprint->title('title'))),
         ]);
 
-        $this->assertEquals('The Future of AI in Healthcare', $res->json('hits.hits')[0]['_source']['title'] ?? null);
+        $this->assertEquals('The Future of AI in Healthcare', $res->json('hits')[0]['_source']['title'] ?? null);
 
         $query = 'techniques for sourdough';
 
@@ -325,6 +325,6 @@ class RerankerTest extends TestCase
             'embeddings_short_description' => ((new SigmieAI)->embed($query, $blueprint->shortText('short_description'))),
         ]);
 
-        $this->assertEquals('The art of bread baking', $res->json('hits.hits')[0]['_source']['short_description'] ?? null);
+        $this->assertEquals('The art of bread baking', $res->json('hits')[0]['_source']['short_description'] ?? null);
     }
 }

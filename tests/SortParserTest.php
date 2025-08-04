@@ -56,9 +56,9 @@ class SortParserTest extends TestCase
             ->addRaw('sort', $query)
             ->get();
 
-        $this->assertTrue($res->json('hits.hits')[0]['_source']['id'] === 10);
-        $this->assertTrue($res->json('hits.hits')[1]['_source']['id'] === 2);
-        $this->assertTrue($res->json('hits.hits')[2]['_source']['id'] === 1);
+        $this->assertTrue($res->json('hits')[0]['_source']['id'] === 10);
+        $this->assertTrue($res->json('hits')[1]['_source']['id'] === 2);
+        $this->assertTrue($res->json('hits')[2]['_source']['id'] === 1);
     }
 
     /**
@@ -174,9 +174,9 @@ class SortParserTest extends TestCase
             ->addRaw('sort', $query)
             ->get();
 
-        $this->assertTrue($res->json('hits.hits')[0]['_source']['contact']['location']['lat'] === 52.49);
-        $this->assertTrue($res->json('hits.hits')[1]['_source']['contact']['location']['lat'] === 53.49);
-        $this->assertTrue($res->json('hits.hits')[2]['_source']['contact']['location']['lat'] === 54.49);
+        $this->assertTrue($res->json('hits')[0]['_source']['contact']['location']['lat'] === 52.49);
+        $this->assertTrue($res->json('hits')[1]['_source']['contact']['location']['lat'] === 53.49);
+        $this->assertTrue($res->json('hits')[2]['_source']['contact']['location']['lat'] === 54.49);
 
         $parser = new SortParser($props);
 
@@ -186,9 +186,9 @@ class SortParserTest extends TestCase
             ->addRaw('sort', $query)
             ->get();
 
-        $this->assertTrue($res->json('hits.hits')[0]['_source']['contact']['location']['lat'] === 54.49);
-        $this->assertTrue($res->json('hits.hits')[1]['_source']['contact']['location']['lat'] === 53.49);
-        $this->assertTrue($res->json('hits.hits')[2]['_source']['contact']['location']['lat'] === 52.49);
+        $this->assertTrue($res->json('hits')[0]['_source']['contact']['location']['lat'] === 54.49);
+        $this->assertTrue($res->json('hits')[1]['_source']['contact']['location']['lat'] === 53.49);
+        $this->assertTrue($res->json('hits')[2]['_source']['contact']['location']['lat'] === 52.49);
     }
 
     /**
@@ -252,7 +252,7 @@ class SortParserTest extends TestCase
             ->addRaw('sort', $sorts)
             ->get();
 
-        $hits = $res->json('hits.hits');
+        $hits = $res->json('hits');
 
         $this->assertTrue($hits[0]['_source']['contact']['name'] === 'Arthur');
     }
@@ -374,9 +374,9 @@ class SortParserTest extends TestCase
             ->addRaw('sort', $query)
             ->get();
 
-        $this->assertTrue($res->json('hits.hits')[0]['_source']['contact']['location']['lat'] === 52.49);
-        $this->assertTrue($res->json('hits.hits')[1]['_source']['contact']['location']['lat'] === 53.49);
-        $this->assertTrue($res->json('hits.hits')[2]['_source']['contact']['location']['lat'] === 54.49);
+        $this->assertTrue($res->json('hits')[0]['_source']['contact']['location']['lat'] === 52.49);
+        $this->assertTrue($res->json('hits')[1]['_source']['contact']['location']['lat'] === 53.49);
+        $this->assertTrue($res->json('hits')[2]['_source']['contact']['location']['lat'] === 54.49);
 
         $parser = new SortParser($props);
 
@@ -386,9 +386,9 @@ class SortParserTest extends TestCase
             ->addRaw('sort', $query)
             ->get();
 
-        $this->assertTrue($res->json('hits.hits')[0]['_source']['contact']['location']['lat'] === 54.49);
-        $this->assertTrue($res->json('hits.hits')[1]['_source']['contact']['location']['lat'] === 53.49);
-        $this->assertTrue($res->json('hits.hits')[2]['_source']['contact']['location']['lat'] === 52.49);
+        $this->assertTrue($res->json('hits')[0]['_source']['contact']['location']['lat'] === 54.49);
+        $this->assertTrue($res->json('hits')[1]['_source']['contact']['location']['lat'] === 53.49);
+        $this->assertTrue($res->json('hits')[2]['_source']['contact']['location']['lat'] === 52.49);
     }
 
     /**
@@ -440,9 +440,9 @@ class SortParserTest extends TestCase
             ->addRaw('sort', $query)
             ->get();
 
-        $this->assertTrue($res->json('hits.hits')[0]['_source']['location']['lat'] === 52.49);
-        $this->assertTrue($res->json('hits.hits')[1]['_source']['location']['lat'] === 53.49);
-        $this->assertTrue($res->json('hits.hits')[2]['_source']['location']['lat'] === 54.49);
+        $this->assertTrue($res->json('hits')[0]['_source']['location']['lat'] === 52.49);
+        $this->assertTrue($res->json('hits')[1]['_source']['location']['lat'] === 53.49);
+        $this->assertTrue($res->json('hits')[2]['_source']['location']['lat'] === 54.49);
 
         $parser = new SortParser($props);
 
@@ -452,9 +452,9 @@ class SortParserTest extends TestCase
             ->addRaw('sort', $query)
             ->get();
 
-        $this->assertTrue($res->json('hits.hits')[0]['_source']['location']['lat'] === 54.49);
-        $this->assertTrue($res->json('hits.hits')[1]['_source']['location']['lat'] === 53.49);
-        $this->assertTrue($res->json('hits.hits')[2]['_source']['location']['lat'] === 52.49);
+        $this->assertTrue($res->json('hits')[0]['_source']['location']['lat'] === 54.49);
+        $this->assertTrue($res->json('hits')[1]['_source']['location']['lat'] === 53.49);
+        $this->assertTrue($res->json('hits')[2]['_source']['location']['lat'] === 52.49);
     }
 
     /**
@@ -528,7 +528,7 @@ class SortParserTest extends TestCase
             ->addRaw('sort', $sorts)
             ->get();
 
-        $hits = $res->json('hits.hits');
+        $hits = $res->json('hits');
 
         $this->assertTrue($hits[0]['_source']['name'] === 'Arthur');
     }
@@ -586,7 +586,7 @@ class SortParserTest extends TestCase
             ->addRaw('sort', $sorts)
             ->get();
 
-        $hits = $res->json('hits.hits');
+        $hits = $res->json('hits');
 
         $this->assertTrue($hits[0]['_source']['name'] === 'Zoro');
     }
@@ -631,7 +631,7 @@ class SortParserTest extends TestCase
             ->addRaw('sort', $sorts)
             ->get();
 
-        $hits = $res->json('hits.hits');
+        $hits = $res->json('hits');
 
         $this->assertTrue($hits[0]['_source']['created_at'] === '2023-06-07T12:38:29.000000Z');
         $this->assertTrue($hits[1]['_source']['created_at'] === '2023-05-07T12:38:29.000000Z');
@@ -678,7 +678,7 @@ class SortParserTest extends TestCase
             ->addRaw('sort', $sorts)
             ->get();
 
-        $hits = $res->json('hits.hits');
+        $hits = $res->json('hits');
 
         $this->assertTrue($hits[0]['_source']['created_at'] === '2023-04-07T12:38:29.000000Z');
         $this->assertTrue($hits[1]['_source']['created_at'] === '2023-05-07T12:38:29.000000Z');

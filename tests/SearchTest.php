@@ -57,7 +57,7 @@ class SearchTest extends TestCase
             ->queryString('Goofy', weight: 1)
             ->get();
 
-        $hits = $res->json('hits.hits');
+        $hits = $res->json('hits');
 
         $this->assertEquals('Mickey', $hits[0]['_source']['name']);
         $this->assertEquals(2, $res->total());
@@ -68,7 +68,7 @@ class SearchTest extends TestCase
             ->queryString('Goofy', weight: 3)
             ->get();
 
-        $hits = $res->json('hits.hits');
+        $hits = $res->json('hits');
 
         $this->assertEquals('Goofy', $hits[0]['_source']['name']);
         $this->assertEquals(2, $res->total());
@@ -159,7 +159,7 @@ class SearchTest extends TestCase
             ->properties($blueprint)
             ->queryString('123');
 
-        $hits = $saved->get()->json('hits.hits');
+        $hits = $saved->get()->json('hits');
 
         $this->assertEmpty($hits);
     }
@@ -191,7 +191,7 @@ class SearchTest extends TestCase
             ->properties($blueprint)
             ->queryString('123');
 
-        $hits = $saved->get()->json('hits.hits');
+        $hits = $saved->get()->json('hits');
 
         $this->assertNotEmpty($hits);
     }
@@ -236,7 +236,7 @@ class SearchTest extends TestCase
             ->fields(['contact.dog.name'])
             ->retrieve(['contact.dog.name']);
 
-        $hits = $saved->get()->json('hits.hits');
+        $hits = $saved->get()->json('hits');
 
         $this->assertNull($hits[0]['_source']['contact']['name'] ?? null);
         $this->assertNotNull($hits[0]['_source']['contact']['dog']['name'] ?? null);
@@ -281,7 +281,7 @@ class SearchTest extends TestCase
             ->queryString('Pluto')
             ->fields(['contact.dog.name']);
 
-        $hits = $saved->get()->json('hits.hits');
+        $hits = $saved->get()->json('hits');
 
         $this->assertNotEmpty($hits);
     }
@@ -316,7 +316,7 @@ class SearchTest extends TestCase
             ->queryString('Mickey')
             ->get();
 
-        $hits = $response->json('hits.hits');
+        $hits = $response->json('hits');
 
         $this->assertGreaterThan(2, $hits[0]['_score']);
         $this->assertLessThan(3, $hits[0]['_score']);
@@ -330,7 +330,7 @@ class SearchTest extends TestCase
             ->minScore(3)
             ->get();
 
-        $hits = $response->json('hits.hits');
+        $hits = $response->json('hits');
 
         $this->assertEmpty($hits);
     }
@@ -407,7 +407,7 @@ class SearchTest extends TestCase
             ->queryString('')
             ->get();
 
-        $hits = $res->json('hits.hits');
+        $hits = $res->json('hits');
 
         $this->assertNotEmpty($hits);
 
@@ -417,7 +417,7 @@ class SearchTest extends TestCase
             ->queryString('')
             ->get();
 
-        $hits = $res->json('hits.hits');
+        $hits = $res->json('hits');
 
         $this->assertEmpty($hits);
     }
@@ -451,7 +451,7 @@ class SearchTest extends TestCase
             ->retrieve(['name'])
             ->get();
 
-        $hits = $res->json('hits.hits');
+        $hits = $res->json('hits');
 
         $this->assertNotEmpty($hits);
     }
@@ -491,7 +491,7 @@ class SearchTest extends TestCase
 
         $res = $search->get();
 
-        $hits = $res->json('hits.hits');
+        $hits = $res->json('hits');
 
         $this->assertNotEmpty($hits);
     }
@@ -524,7 +524,7 @@ class SearchTest extends TestCase
             ->retrieve(['name'])
             ->get();
 
-        $hits = $res->json('hits.hits');
+        $hits = $res->json('hits');
 
         $this->assertNotEmpty($hits);
     }
@@ -675,7 +675,7 @@ class SearchTest extends TestCase
             ->sort('_score')
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertEquals('Mickey', $hits[0]['_source']['name']);
         $this->assertCount(2, $hits);
@@ -691,7 +691,7 @@ class SearchTest extends TestCase
             ])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertEquals('Goofy', $hits[0]['_source']['name']);
         $this->assertCount(2, $hits);
@@ -731,7 +731,7 @@ class SearchTest extends TestCase
             ])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertCount(1, $hits);
     }
@@ -764,7 +764,7 @@ class SearchTest extends TestCase
             ->fields(['name'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertCount(0, $hits);
     }
@@ -800,7 +800,7 @@ class SearchTest extends TestCase
             ->fields(['category'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertArrayHasKey('name', $hits[0]['_source']);
         $this->assertArrayNotHasKey('category', $hits[0]['_source']);
@@ -811,7 +811,7 @@ class SearchTest extends TestCase
             ->fields(['category'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertArrayHasKey('name', $hits[0]['_source']);
         $this->assertArrayHasKey('category', $hits[0]['_source']);
@@ -847,7 +847,7 @@ class SearchTest extends TestCase
             ->fields(['category'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertEquals('<span class="font-bold">a</span>', $hits[0]['highlight']['category'][0]);
     }
@@ -881,7 +881,7 @@ class SearchTest extends TestCase
             ->fields(['name', 'description'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertEquals('c', $hits[0]['_source']['category']);
         $this->assertEquals('b', $hits[1]['_source']['category']);
@@ -917,7 +917,7 @@ class SearchTest extends TestCase
             ->fields(['name', 'description'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertCount(2, $hits);
     }
@@ -951,7 +951,7 @@ class SearchTest extends TestCase
             ->fields(['name', 'description'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertCount(2, $hits);
     }
@@ -995,7 +995,7 @@ class SearchTest extends TestCase
             ->fields(['name', 'description'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertCount(2, $hits);
     }
@@ -1038,7 +1038,7 @@ class SearchTest extends TestCase
             ->fields(['name', 'description'])
             ->get();
 
-        $hits = $search->json('hits.hits');
+        $hits = $search->json('hits');
 
         $this->assertCount(3, $hits);
     }
@@ -1191,12 +1191,12 @@ class SearchTest extends TestCase
                 new Document([
                     'name' => 'Queen',
                     'age' => 20,
-                    'type'=> 'human'
+                    'type' => 'human'
                 ]),
                 new Document([
                     'name' => 'Lion',
                     'age' => 20,
-                    'type'=> 'animal'
+                    'type' => 'animal'
                 ]),
             ]);
 
@@ -1208,5 +1208,73 @@ class SearchTest extends TestCase
             ->page(2, perPage: 1)
             ->formatted();
         // dd($normalized);
+    }
+
+    /**
+     * @test
+     */
+    public function boost_field_search_test()
+    {
+        $indexName = uniqid();
+        $blueprint = new NewProperties;
+        $blueprint->boost();
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'boost' => 4,
+            ]),
+            new Document([
+                'boost' => 10,
+            ]),
+        ]);
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('')
+            ->get();
+
+        $hits = $res->json('hits');
+
+        $this->assertEquals(10, $hits[0]['_source']['boost']);
+    }
+
+    /**
+     * @test
+     */
+    public function no_boost_field_search_test()
+    {
+        $indexName = uniqid();
+        $blueprint = new NewProperties;
+        $blueprint->number('boost');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document([
+                'boost' => 4,
+            ]),
+            new Document([
+                'boost' => 10,
+            ]),
+        ]);
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('')
+            ->get();
+
+        $hits = $res->json('hits');
+
+        $this->assertEquals(4, $hits[0]['_source']['boost']);
     }
 }

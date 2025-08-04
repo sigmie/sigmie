@@ -40,7 +40,7 @@ class Search
 
     protected Properties $properties;
 
-    protected string $scriptScoreSource = "doc.containsKey('boost') && doc['boost'].size() > 0 ? doc['boost'].value : 1";
+    protected string $scriptScoreSource;
 
     protected string $scriptScoreBoostMode = 'multiply';
 
@@ -221,13 +221,15 @@ class Search
         $result = [
             'track_total_hits' => $this->trackTotalHits < 0 ? true : $this->trackTotalHits,
             '_source' => $this->fields,
-            'query' => [
-                ...(new FunctionScore(
+            'query' => (($this->scriptScoreSource ?? false) ?
+                (new FunctionScore(
                     $this->query,
                     source: $this->scriptScoreSource,
                     boostMode: $this->scriptScoreBoostMode
-                ))->toRaw(),
-            ],
+                ))->toRaw()
+                : [
+                    ...$this->query->toRaw()
+                ]),
             'from' => $this->from,
             'size' => $this->size,
             'min_score' => $this->minScore,
@@ -242,6 +244,8 @@ class Search
             ],
             ...$this->raw,
         ];
+
+        ray($result);
 
         if (count($this->suggest->toRaw()) > 0) {
             $result['suggest'] = $this->suggest->toRaw();

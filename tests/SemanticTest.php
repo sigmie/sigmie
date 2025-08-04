@@ -123,7 +123,7 @@ class SemanticTest extends TestCase
         //     ->queryString('2023')
         //     ->get();
 
-        // $hits = $response->json('hits.hits');
+        // $hits = $response->json('hits');
 
         // $this->assertEquals('The Future of AI in Healthcare', $hits[0]['_source']['title'] ?? null);
 
@@ -136,7 +136,7 @@ class SemanticTest extends TestCase
         //     ->queryString('2023')
         //     ->get();
 
-        // $hits = $response->json('hits.hits');
+        // $hits = $response->json('hits');
 
         // $this->assertEquals('Top 10 Travel Destinations for 2023', $hits[0]['_source']['title'] ?? null);
     }
@@ -191,7 +191,7 @@ class SemanticTest extends TestCase
             ->queryString('2023')
             ->get();
 
-        $hits = $response->json('hits.hits');
+        $hits = $response->json('hits');
 
         $this->assertEquals('The Future of AI in Healthcare', $hits[0]['_source']['title'] ?? null);
 
@@ -204,7 +204,7 @@ class SemanticTest extends TestCase
             ->queryString('2023')
             ->get();
 
-        $hits = $response->json('hits.hits');
+        $hits = $response->json('hits');
 
         $this->assertEquals('Top 10 Travel Destinations for 2023', $hits[0]['_source']['title'] ?? null);
     }
@@ -275,7 +275,7 @@ class SemanticTest extends TestCase
             ->queryString('woman')
             ->get();
 
-        $hits = $response->json('hits.hits');
+        $hits = $response->json('hits');
 
         $this->assertEquals('Jane', $hits[0]['_source']['owner_name'] ?? null);
         $this->assertEquals('Cat', $hits[0]['_source']['pet_type']['name'] ?? null);
@@ -472,13 +472,13 @@ class SemanticTest extends TestCase
         $hits = $template->run($indexName, [
             'query_string' => 'woman',
             'embeddings_name' => ((new SigmieAI)->embed('woman', $blueprint->title('name'))),
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertEquals('Queen', $hits[0]['_source']['name'] ?? null);
 
         $hits = $template->run($indexName, [
             'query_string' => 'woman',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertEmpty($hits);
     }
@@ -590,7 +590,7 @@ class SemanticTest extends TestCase
             ->queryString('woman')
             ->get();
 
-        $hits = $response->json('hits.hits');
+        $hits = $response->json('hits');
 
         $this->assertEquals('Queen', $hits[0]['_source']['name'] ?? null);
     }
@@ -641,7 +641,7 @@ class SemanticTest extends TestCase
             ->queryString('woman')
             ->get();
 
-        $hits = $response->json('hits.hits');
+        $hits = $response->json('hits');
 
         $this->assertEquals('Queen', $hits[0]['_source']['name'] ?? null);
 
@@ -652,7 +652,7 @@ class SemanticTest extends TestCase
             ->queryString('king')
             ->get();
 
-        $hits = $response->json('hits.hits');
+        $hits = $response->json('hits');
 
         $this->assertEquals('King', $hits[0]['_source']['name'] ?? null);
     }
@@ -712,7 +712,7 @@ class SemanticTest extends TestCase
             ->queryString('woman')
             ->get();
 
-        $hits = $response->json('hits.hits');
+        $hits = $response->json('hits');
 
         $this->assertEquals('Queen', $hits[0]['_source']['name'][0] ?? null);
     }

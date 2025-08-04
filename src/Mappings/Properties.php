@@ -13,6 +13,7 @@ use Sigmie\Index\Analysis\Standard;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Mappings\Contracts\Type as ContractsType;
 use Sigmie\Mappings\Types\Boolean;
+use Sigmie\Mappings\Types\Boost;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\GeoPoint;
@@ -24,14 +25,23 @@ use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Plugins\Elastiknn\DenseFloatVector;
 use Sigmie\Shared\Collection;
-use Sigmie\Semantic\Providers\SigmieAI as SigmieEmbeddings;
 
 class Properties extends Type implements ArrayAccess
 {
     protected array $fields = [];
+
+    public readonly Boost $boostField;
+
     public function __construct(string $name = 'mappings', array $fields = [])
     {
         $this->type = ElasticsearchMappingType::PROPERTIES->value;
+
+        $boostField = array_values(array_filter($fields, fn(Type $field) => $field instanceof Boost))[0] ?? null;
+
+        // Boost field can only as a top level prop 
+        if ($name === 'mappings' && $boostField) {
+            $this->boostField = $boostField;
+        }
 
         $this->fields = array_map(function (Type $field) use ($name) {
 

@@ -53,7 +53,7 @@ class SearchTemplateTest extends TestCase
 
         $hits = $template->run($indexName, [
             'query_string' => 'Mickey',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertEmpty($hits);
     }
@@ -92,7 +92,7 @@ class SearchTemplateTest extends TestCase
 
         $hits = $template->run($indexName, [
             'query_string' => '2024-01-01',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertEmpty($hits);
     }
@@ -137,7 +137,7 @@ class SearchTemplateTest extends TestCase
 
         $hits = $template->run($indexName, [
             'query_string' => 'Mickey',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertNotEmpty($hits);
 
@@ -151,7 +151,7 @@ class SearchTemplateTest extends TestCase
 
         $hits = $template->run($indexName, [
             'query_string' => 'Goofy',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertNotEmpty($hits);
     }
@@ -191,7 +191,7 @@ class SearchTemplateTest extends TestCase
 
         $hits = $template->run($indexName, [
             'query_string' => '',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertEmpty($hits);
     }
@@ -230,7 +230,7 @@ class SearchTemplateTest extends TestCase
 
         $hits = $template->run($indexName, [
             'query_string' => '',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertNotEmpty($hits);
     }
@@ -356,7 +356,7 @@ class SearchTemplateTest extends TestCase
 
         $hits = $template->run($indexName, [
             'query_string' => 'Mickey',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertEquals('Mickey', $hits[0]['_source']['name']);
         $this->assertCount(2, $hits);
@@ -378,7 +378,7 @@ class SearchTemplateTest extends TestCase
 
         $hits = $template->run($indexName, [
             'query_string' => 'Mickey',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertEquals('Goofy', $hits[0]['_source']['name']);
         $this->assertCount(2, $hits);
@@ -422,7 +422,7 @@ class SearchTemplateTest extends TestCase
 
         $hits = $template->run($indexName, [
             'query_string' => 'Mockey',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertCount(1, $hits);
     }
@@ -461,7 +461,7 @@ class SearchTemplateTest extends TestCase
 
         $hits = $template->run($indexName, [
             'query_string' => 'Mockey',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertCount(0, $hits);
     }
@@ -502,7 +502,7 @@ class SearchTemplateTest extends TestCase
 
         $hits = $template->run($indexName, [
             'query_string' => 'a',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertArrayHasKey('name', $hits[0]['_source']);
         $this->assertArrayNotHasKey('category', $hits[0]['_source']);
@@ -519,7 +519,7 @@ class SearchTemplateTest extends TestCase
 
         $hits = $template->run($indexName, [
             'query_string' => 'a',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertArrayHasKey('name', $hits[0]['_source']);
         $this->assertArrayHasKey('category', $hits[0]['_source']);
@@ -560,7 +560,7 @@ class SearchTemplateTest extends TestCase
 
         $hits = $template->run($indexName, [
             'query_string' => 'a',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertEquals('<span class="font-bold">a</span>', $hits[0]['highlight']['category'][0]);
     }
@@ -597,7 +597,7 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName)->json('hits.hits');
+        $hits = $template->run($indexName)->json('hits');
 
         $this->assertEquals('c', $hits[0]['_source']['category']);
         $this->assertEquals('b', $hits[1]['_source']['category']);
@@ -605,7 +605,7 @@ class SearchTemplateTest extends TestCase
 
         $hits = $template->run($indexName, [
             'sort' => (new SortParser($blueprint))->parse('category:asc'),
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertEquals('a', $hits[0]['_source']['category']);
         $this->assertEquals('b', $hits[1]['_source']['category']);
@@ -644,13 +644,13 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName)->json('hits.hits');
+        $hits = $template->run($indexName)->json('hits');
 
         $this->assertCount(2, $hits);
 
         $hits = $template->run($indexName, [
             'filters' => (new FilterParser($blueprint))->parse('is_not:active')->toRaw(),
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertCount(1, $hits);
     }
@@ -687,13 +687,13 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName)->json('hits.hits');
+        $hits = $template->run($indexName)->json('hits');
 
         $this->assertCount(2, $hits);
 
         $hits = $template->run($indexName, [
             'size' => 3,
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertCount(3, $hits);
     }
@@ -740,13 +740,13 @@ class SearchTemplateTest extends TestCase
 
         $template = $this->sigmie->template($templateId);
 
-        $hits = $template->run($indexName)->json('hits.hits');
+        $hits = $template->run($indexName)->json('hits');
 
         $this->assertCount(3, $hits);
 
         $hits = $template->run($indexName, [
             'query_string' => 'Good',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertCount(2, $hits);
     }
@@ -795,7 +795,7 @@ class SearchTemplateTest extends TestCase
 
         $hits = $template->run($indexName, [
             'query_string' => '',
-        ])->json('hits.hits');
+        ])->json('hits');
 
         $this->assertCount(3, $hits);
     }

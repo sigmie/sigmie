@@ -11,6 +11,7 @@ use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Mappings\Contracts\Type as ContractsType;
 use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\Boolean;
+use Sigmie\Mappings\Types\Boost;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Date;
@@ -68,7 +69,6 @@ class NewProperties
     ): Properties {
 
         if ($this->name === 'mappings') {
-            $this->fields->add((new Number('boost'))->float());
             $this->fields->add((new Text('autocomplete'))->completion());
         }
 
@@ -85,6 +85,15 @@ class NewProperties
         $props->handleNormalizers($analysis);
 
         return $props;
+    }
+
+    public function boost(string $name = 'boost')
+    {
+        $field = new Boost($name);
+
+        $this->fields->add($field);
+
+        return $field;
     }
 
     public function denseVector(string $name, int $dims = 384)

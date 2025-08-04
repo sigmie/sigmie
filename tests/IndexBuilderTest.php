@@ -1016,7 +1016,7 @@ class IndexBuilderTest extends TestCase
             ->queryString('ipod')
             ->get();
 
-        $hits = $res->json('hits.hits');
+        $hits = $res->json('hits');
 
         $this->assertCount(1, $hits);
     }

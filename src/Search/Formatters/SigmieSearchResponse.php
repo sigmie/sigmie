@@ -8,14 +8,15 @@ class SigmieSearchResponse extends AbstractFormatter
 {
     public function __construct(protected Properties $properties) {}
 
-    public function json(?string $key = null): array {
+    public function json(?string $key = null): array
+    {
         return (array) dot($this->format())->get($key);
     }
 
     public function format(): array
     {
         return [
-            'hits' => $this->formatHits(),
+            'hits' => $this->queryResponseRaw['hits']['hits'] ?? [],
             'processing_time_ms' => $this->queryResponseRaw['took'] ?? 0,
             'total' => $this->queryResponseRaw['hits']['total']['value'] ?? 0,
 
@@ -35,6 +36,16 @@ class SigmieSearchResponse extends AbstractFormatter
         ];
     }
 
+    public function hits()
+    {
+        return $this->queryResponseRaw['hits']['hits'] ?? [];
+    }
+
+    public function total()
+    {
+        return $this->queryResponseRaw['hits']['total']['value'] ?? 0;
+    }
+
     public function formatFacets(): object
     {
         $facets = [];
@@ -48,23 +59,5 @@ class SigmieSearchResponse extends AbstractFormatter
         }
 
         return (object) $facets;
-    }
-
-    protected function formatHits(): object
-    {
-        $hits = [];
-
-        foreach ($this->queryResponseRaw['hits']['hits'] ?? [] as $hit) {
-            $only = array_intersect_key($hit, array_flip(['_source', '_id', 'highlight', '_score']));
-
-            $hits[(string) $hit['_id']] = [
-                ...($only['_source'] ?? []),
-                '_id' => $only['_id'] ?? null,
-                '_score' => $only['_score'] ?? null,
-                '_highlight' => $only['highlight'] ?? [],
-            ];
-        }
-
-        return (object) $hits;
     }
 }

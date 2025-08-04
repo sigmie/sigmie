@@ -6,6 +6,7 @@ namespace Sigmie\Search;
 
 use GuzzleHttp\Promise\Utils;
 use Http\Promise\Promise;
+use Sigmie\Base\ElasticsearchException;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as ResponsesSearch;
 use Sigmie\Mappings\NewProperties;
@@ -264,6 +265,17 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $search->trackTotalHits();
 
+
+        if ($this->properties->boostField ?? false) {
+
+            $name = $this->properties->boostField->name();
+
+            $search->scriptScore(
+                "doc.containsKey('{$name}') && doc['{$name}'].size() > 0 ? doc['{$name}'].value : 1",
+                boostMode: 'multiply'
+            );
+        }
+
         return $search;
     }
 
@@ -431,6 +443,10 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $this->make()->promise(),
             $facets->promise()
         ])->wait();
+
+        if ($searchResponse->failed() || $facetsResponse->failed()) {
+            throw new ElasticsearchException($searchResponse->json(), $searchResponse->code());
+        }
 
         $formatter = $this->formatter ?? new SigmieSearchResponse($this->properties);
 
