@@ -15,8 +15,6 @@ use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\Tokenizer as TokenizerInterface;
 
-use function Sigmie\Functions\random_letters;
-
 trait Tokenizer
 {
     protected TokenizerInterface $tokenizer;
@@ -68,13 +66,7 @@ trait Tokenizer
 
     private function createTokenizerName(string $name): string
     {
-        $suffixed = $name.'_'.random_letters();
-
-        while ($this->analysis()->hasTokenizer($suffixed)) {
-            $suffixed = $name.'_'.random_letters();
-        }
-
-        return $suffixed;
+        return prefix_id($name);
     }
 
     public function tokenizeOnPattern(

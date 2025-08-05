@@ -26,7 +26,6 @@ use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\EmbeddingsProvider;
 
-use function Sigmie\Functions\auto_fuzziness;
 
 class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilderInterface
 {
@@ -155,9 +154,9 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             $fields->each(function ($field) use (&$shouldClauses) {
                 $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
 
-                $field = $this->properties->getNestedField($field) ?? throw new PropertiesFieldNotFound($field);
+                $field = $this->properties->get($field) ?? throw new PropertiesFieldNotFound($field);
 
-                $fuzziness = ! in_array($field->name(), $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
+                $fuzziness = ! in_array($field->name(), $this->typoTolerantAttributes) ? null : "AUTO:{$this->minCharsForOneTypo},{$this->minCharsForTwoTypo}";
 
                 $queries = match (true) {
                     $field->hasQueriesCallback => $field->queriesFromCallback('{{query_string}}'),

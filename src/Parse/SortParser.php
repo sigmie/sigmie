@@ -35,7 +35,7 @@ class SortParser extends Parser
                 $matches
             )) {
 
-                $fieldType = $this->properties->getNestedField($matches['field']);
+                $fieldType = $this->properties->get($matches['field']);
 
                 if (! $fieldType instanceof GeoPoint) {
 
@@ -115,7 +115,7 @@ class SortParser extends Parser
                 $direction = 'asc';
             }
 
-            $type = $this->properties->getNestedField($field);
+            $type = $this->properties->get($field);
 
             $sortableName = $this->handleSortableFieldName($field);
 

@@ -58,7 +58,7 @@ abstract class Parser implements ParserInterface
             return null;
         }
 
-        $fieldType = $this->properties->getNestedField($fieldName);
+        $fieldType = $this->properties->get($fieldName);
 
         if (! $this->isTextOrKeywordField($fieldName)) {
             return $fieldType->sortableName();
@@ -93,7 +93,7 @@ abstract class Parser implements ParserInterface
             return $name;
         }
 
-        $field = $this->properties->getNestedField($name);
+        $field = $this->properties->get($name);
 
         if ($field instanceof Keyword) {
             return $name;
@@ -132,12 +132,12 @@ abstract class Parser implements ParserInterface
 
     protected function fieldExists(string $field): bool
     {
-        return $this->properties->getNestedField($field) !== null;
+        return $this->properties->get($field) !== null;
     }
 
     protected function isTextOrKeywordField(string $field): bool
     {
-        $field = $this->properties->getNestedField($field);
+        $field = $this->properties->get($field);
 
         return $field instanceof Text || $field instanceof Keyword;
     }

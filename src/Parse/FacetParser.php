@@ -55,7 +55,7 @@ class FacetParser extends Parser
         $res = [];
         foreach ($fields as $field => $values) {
 
-            $type = $this->properties->getNestedField($field);
+            $type = $this->properties->get($field);
 
             $fieldFilters = [];
 
@@ -110,7 +110,7 @@ class FacetParser extends Parser
 
 
             /** @var Type $field */
-            $field = $this->properties->getNestedField($field);
+            $field = $this->properties->get($field);
 
 
             if (! $field->isFacetable()) {

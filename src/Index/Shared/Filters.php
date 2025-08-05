@@ -22,8 +22,6 @@ use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\TokenFilter;
 use Sigmie\Shared\Collection;
 
-use function Sigmie\Functions\random_letters;
-
 trait Filters
 {
     private Collection $filters;
@@ -204,12 +202,6 @@ trait Filters
 
     private function createFilterName(string $name): string
     {
-        $suffixed = $name.'_'.random_letters();
-
-        while ($this->analysis()->hasFilter($suffixed)) {
-            $suffixed = $name.'_'.random_letters();
-        }
-
-        return $suffixed;
+        return prefix_id($name);
     }
 }

@@ -264,7 +264,7 @@ class Properties extends Type implements ArrayAccess
         // }
     }
 
-    public function getNestedField(string $fieldName)
+    public function get(string $fieldName)
     {
         $fields = explode('.', $fieldName);
 
@@ -283,7 +283,7 @@ class Properties extends Type implements ArrayAccess
         if ($type instanceof Nested || $type instanceof Object_) {
             $childName = implode('.', $fields);
 
-            return $type->properties->getNestedField($childName);
+            return $type->properties->get($childName);
         }
 
         return null;

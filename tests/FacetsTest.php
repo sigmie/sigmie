@@ -54,7 +54,7 @@ class FacetsTest extends TestCase
         /** @var Properties $props */
         $props = $blueprint();
 
-        $field = $props->getNestedField('shirt.red.price');
+        $field = $props->get('shirt.red.price');
 
         $facets = $field->facets($searchResponse->facetAggregations());
 
@@ -105,7 +105,7 @@ class FacetsTest extends TestCase
         /** @var Properties $props */
         $props = $blueprint();
 
-        $field = $props->getNestedField('shirt.price');
+        $field = $props->get('shirt.price');
 
         $facets = $field->facets($searchResponse->facetAggregations());
 
@@ -211,7 +211,7 @@ class FacetsTest extends TestCase
         /** @var Properties $props */
         $props = $blueprint();
 
-        $facets = $props->getNestedField('foo.keyword')->facets($searchResponse->facetAggregations());
+        $facets = $props->get('foo.keyword')->facets($searchResponse->facetAggregations());
 
         $expectedHistogram = [
             'action' => 1,
@@ -255,7 +255,7 @@ class FacetsTest extends TestCase
         /** @var Properties $props */
         $props = $blueprint();
 
-        $facets = $props->getNestedField('foo.bar.keyword')->facets($searchResponse->facetAggregations());
+        $facets = $props->get('foo.bar.keyword')->facets($searchResponse->facetAggregations());
 
         $expectedHistogram = [
             'action' => 1,
@@ -443,7 +443,7 @@ class FacetsTest extends TestCase
         /** @var Properties $props */
         $props = $blueprint();
 
-        $facets = $props->getNestedField('category.sport.type')->facets($searchResponse->facetAggregations());
+        $facets = $props->get('category.sport.type')->facets($searchResponse->facetAggregations());
 
         $expectedHistogram = [
             'action' => 1,

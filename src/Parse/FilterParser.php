@@ -291,7 +291,7 @@ class FilterParser extends Parser
         $field = $matches['field'];
         $filters = trim($matches['filters']);
 
-        $type = $this->properties->getNestedField($field);
+        $type = $this->properties->get($field);
 
         if (! $type instanceof TypesNested) {
             $this->handleError("Field '{$field}' isn't a nested field.");
@@ -422,7 +422,7 @@ class FilterParser extends Parser
     {
         [$field] = explode(':', $has);
 
-        $realFieldName = $this->properties->getNestedField($field)->filterableName();
+        $realFieldName = $this->properties->get($field)->filterableName();
 
         if (is_null($realFieldName)) {
             return;
@@ -472,7 +472,7 @@ class FilterParser extends Parser
 
     private function prepareQuery(string $field, Query $query): Query
     {
-        $fieldType = $this->properties->getNestedField($field);
+        $fieldType = $this->properties->get($field);
 
         // If it's a facets filter we match all for the facet value
         if (($this->facetField ?? false) && $fieldType->fullPath === $this->facetField->fullPath) {

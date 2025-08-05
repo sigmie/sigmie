@@ -17,6 +17,7 @@ use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\SigmieVector;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\Mappings\Types\Type;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
@@ -38,9 +39,6 @@ use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
 use Sigmie\Search\Formatters\RawElasticsearchFormat;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
 use Sigmie\Shared\Collection;
-use Sigmie\Shared\EmbeddingsProvider;
-
-use function Sigmie\Functions\auto_fuzziness;
 
 class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInterface
 {
@@ -193,7 +191,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $highlight->each(function (string $field) use (&$fields) {
             $properties = $this->properties;
 
-            $field = $properties->getNestedField($field);
+            $field = $properties->get($field);
 
             foreach ($field->names() as $name) {
                 $fields[$name] = [
@@ -257,7 +255,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected function handleFiltersQuery(Boolean $boolean)
     {
-
         $boolean->must()->bool(
             fn(Boolean $boolean) => $boolean->filter()->query(
                 $this->filters
@@ -271,14 +268,17 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
             $queryBoolean = new Boolean;
 
-            $fields = new Collection($this->fields);
-
             $shouldClauses = new Collection();
 
-            // Text queries for weighted query strings
-            foreach ($this->searchContext->queryStrings as $weightedQuery) {
-                $this->addTextQueries($weightedQuery['query'], $fields, $shouldClauses, $weightedQuery['weight']);
-            }
+            $queryStrings = new Collection($this->searchContext->queryStrings);
+
+            $queryStrings->each(function (array $weightedQuery) use ($shouldClauses) {
+
+                $query = $this->addTextQueries($weightedQuery['query'], $weightedQuery['weight']);
+
+                $shouldClauses->add($query);
+            });
+
 
             if (
                 $shouldClauses->isEmpty() &&
@@ -371,16 +371,36 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $search;
     }
 
-    private function addTextqueries(array|string $queryString, Collection $fields, Collection &$shouldClauses, float $queryBoost = 1.0): void
+    protected function onEmptyQueryString(): Query
     {
-        $textTypes = $this->properties->nestedSemanticFields()
-            ->filter(fn(Text $field) => $field->isSemantic())
-            // Only fields that are in the fields array
-            ->filter(fn(Text $field) => $fields->indexOf($field->name()) !== false)
-            ->map(fn(Text $field) => [
-                'text' => $queryString,
-                'type' => $field,
-            ])->toArray();
+        if ($this->noResultsOnEmptySearch) {
+            return new MatchNone;
+        }
+
+        return new MatchAll;
+    }
+
+    public function queryBoost(Type $field, float $queryWeight): float
+    {
+        $fieldWeight = $this->weight[$field->fullPath] ?? 1;
+
+        $boost = array_key_exists($field->fullPath, $this->weight) ? $fieldWeight * $queryWeight : $queryWeight;
+
+        return $boost;
+    }
+
+    public function queryFuzziness(Text $field): ?string
+    {
+        return ! in_array($field->fullPath, $this->typoTolerantAttributes) ? null : "AUTO:{$this->minCharsForOneTypo},{$this->minCharsForTwoTypo}";
+    }
+
+    protected function addTextqueries(string $queryString,  float $queryBoost = 1.0): Query
+    {
+        if ($queryString === '' && !$this->noResultsOnEmptySearch) {
+            return $this->onEmptyQueryString();
+        }
+
+        $semanticQuery = new MatchNone;
 
         if ($this->semanticSearch && trim($queryString) !== '') {
 
@@ -447,71 +467,80 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $shouldClauses->add($functionScore);
         }
 
-        if ($queryString === '' && !$this->noResultsOnEmptySearch) {
-            $shouldClauses->add(new MatchAll);
-            return;
-        }
+        $keywordQuery = new MatchNone;
 
         if (!$this->noKeywordSearch) {
-
-            $textQueries = (new Collection());
-
-            $fields->each(function ($field) use (&$shouldClauses, &$textQueries, $queryString, $queryBoost) {
-
-                $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] * $queryBoost : $queryBoost;
-
-                $field = $this->properties->getNestedField($field) ?? throw new PropertiesFieldNotFound($field);
-
-                $fuzziness = !in_array($field->name, $this->typoTolerantAttributes) ? null : auto_fuzziness($this->minCharsForOneTypo, $this->minCharsForTwoTypo);
-
-                $queries = match (true) {
-                    $field->hasQueriesCallback ?? false => $field->queriesFromCallback($queryString),
-                    default => $field->queries($queryString)
-                };
-
-                $queries = new Collection($queries);
-
-                $queries->map(function (Query $queryClause) use ($boost, $fuzziness, $field, &$shouldClauses, &$textQueries) {
-                    if ($queryClause instanceof FuzzyQuery) {
-                        $queryClause->fuzziness($fuzziness);
-                    }
-
-                    $queryClause = $queryClause->boost($boost);
-
-                    // Query nested fields if there is a parent path
-                    if (($field->parentPath ?? false) && $field->parentType === TypesNested::class) {
-                        $queryClause = new Nested($field->parentPath, $queryClause);
-                    }
-
-                    $textQueries->add($queryClause);
-                });
-            });
-
-            $textQueries->each(fn(Query $query) => $shouldClauses->add($query));
-
-            $textBool = new Boolean;
-
-            // An empty boolean query acts like a match_all for this reason
-            // we make sure the boolean query is not empty by adding a match none
-            $textBool->should()->query(new MatchNone);
-
-            $textQueries->each(fn(Query $query) => $textBool->should()->query($query));
-
-            $textFnScore = new FunctionScore(
-                $textBool,
-                source: "return _score * {$this->textScoreMultiplier};",
-                // source: "return _score / 10;",
-                // source: "return Math.min(_score, 0.1);", // Caps BM25 impact
-                boostMode: 'replace',
-                // boostMode: 'multiply'
-                // source: "return Math.min(_score, 0.5);", // Caps BM25 impact
-                // boostMode: 'replace'
-                // boostMode: 'multiply'
-                // source: "return _score;",
-            );
-
-            $shouldClauses->add($textFnScore);
+            $keywordQuery = $this->createTextQuery($queryString, $queryBoost);
         }
+
+        $boolean = new Boolean;
+        $boolean->should()->query($semanticQuery);
+        $boolean->should()->query($keywordQuery);
+
+        return $boolean;
+    }
+
+    protected function createTextQuery(string $queryString, float $queryBoost = 1.0): Query
+    {
+        $keywordBoolean = new Boolean;
+
+        // An empty boolean query acts like a match_all for this reason
+        // we make sure the boolean query is not empty by adding a match none
+        $keywordBoolean->should()->query(new MatchNone);
+
+        // Reuqested field names eg. ['title', 'category']
+        $fields = new Collection($this->fields);
+
+        $fields->each(function ($field) use ($keywordBoolean, $queryString, $queryBoost) {
+
+            $field = $this->properties->get($field) ?? throw new PropertiesFieldNotFound($field);
+
+            $queries = match (true) {
+                $field->hasQueriesCallback ?? false => $field->queriesFromCallback($queryString),
+                default => $field->queries($queryString)
+            };
+
+            $queries = new Collection($queries);
+
+            $queries->map(function (Query $queryClause) use ($keywordBoolean, $queryBoost, $field) {
+
+                // Handle fuzziness for fuzzy queries
+                if ($queryClause instanceof FuzzyQuery) {
+                    $fuzziness = $this->queryFuzziness($field);
+                    $queryClause->fuzziness($fuzziness);
+                }
+
+                // Handle boost for all queries
+                $boost = $this->queryBoost($field, $queryBoost);
+                $queryClause = $queryClause->boost($boost);
+
+                // Query nested fields if there is a parent path
+                if (($field->parentPath ?? false) && $field->parentType === TypesNested::class) {
+                    return new Nested($field->parentPath, $queryClause);
+                }
+
+                return $queryClause;
+            })
+                ->each(fn(Query $query) => $keywordBoolean->should()->query($query));
+        });
+
+        // $textQueries->each(fn(Query $query) => $shouldClauses->add($query));
+        // $textQueries->each(fn(Query $query) => $textBool->should()->query($query));
+
+        $textFnScore = new FunctionScore(
+            $keywordBoolean,
+            source: "return _score * {$this->textScoreMultiplier};",
+            // source: "return _score / 10;",
+            // source: "return Math.min(_score, 0.1);", // Caps BM25 impact
+            boostMode: 'replace',
+            // boostMode: 'multiply'
+            // source: "return Math.min(_score, 0.5);", // Caps BM25 impact
+            // boostMode: 'replace'
+            // boostMode: 'multiply'
+            // source: "return _score;",
+        );
+
+        return $textFnScore;
     }
 
     public function formatter(ResponseFormater $formatter): static
@@ -530,7 +559,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         );
         $facets->index($this->index);
         $facets->setElasticsearchConnection($this->elasticsearchConnection);
-
 
         [$searchResponse, $facetsResponse] = Utils::all([
             $this->make()->promise(),
