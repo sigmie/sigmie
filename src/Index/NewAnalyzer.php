@@ -17,8 +17,9 @@ class NewAnalyzer
 {
     use CharFilters;
     use Filters;
-    use Name;
     use Tokenizer;
+
+    public string $name;
 
     public function __construct(protected AnalysisInterface $analysis, string $name)
     {

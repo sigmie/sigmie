@@ -18,6 +18,7 @@ class Autocomplete extends Text
         $this->newAnalyzer(function (NewAnalyzer $newAnalyzer) use ($name) {
             $newAnalyzer->tokenizeOnWordBoundaries();
             $newAnalyzer->asciiFolding();
+            $newAnalyzer->lowercase();
             $newAnalyzer->unique();
             $newAnalyzer->trim();
             $newAnalyzer->decimalDigit();

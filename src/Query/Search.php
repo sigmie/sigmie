@@ -5,24 +5,19 @@ declare(strict_types=1);
 namespace Sigmie\Query;
 
 use Http\Promise\Promise;
-use Sigmie\Base\APIs\Script as APIsScript;
 use Sigmie\Base\APIs\Search as APIsSearch;
+use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
-use Sigmie\Mappings\NewProperties;
-use Sigmie\Mappings\Properties;
-use Sigmie\Parse\FacetParser;
-use Sigmie\Parse\SortParser;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\MatchAll;
 
 class Search
 {
-    use APIsScript;
     use APIsSearch;
 
     protected string $index;
 
-    protected int $trackTotalHits = 10000;
+    protected bool|int $trackTotalHits;
 
     protected int|string $from = 0;
 
@@ -36,65 +31,86 @@ class Search
 
     protected array $sort = [];
 
-    protected array $highlight = [];
+    protected array $highlight;
 
-    protected Properties $properties;
+    // protected Properties $properties;
 
     protected string $scriptScoreSource;
 
     protected string $scriptScoreBoostMode = 'multiply';
 
-    public function __construct(
-        protected Query $query = new MatchAll(),
-        protected Aggs $aggs = new Aggs(),
-        protected Suggest $suggest = new Suggest()
-    ) {}
+    protected Query $query;
 
-    public function properties(NewProperties|Properties $props): self
+    protected Aggs $aggs;
+
+    protected Suggest $suggest;
+
+    public function __construct(ElasticsearchConnection $connection)
     {
-        $this->properties = $props instanceof NewProperties ? $props->get() : $props;
+        $this->setElasticsearchConnection($connection);
+
+        $this->query = new MatchAll();
+    }
+
+    // public function properties(NewProperties|Properties $props): self
+    // {
+    //     $this->properties = $props instanceof NewProperties ? $props->get() : $props;
+
+    //     return $this;
+    // }
+
+    // public function aggregate(callable $callable)
+    // {
+    //     $callable($this->aggs);
+
+    //     return $this;
+    // }
+
+    // public function facets(string $string)
+    // {
+    //     $parser = new FacetParser($this->properties);
+
+    //     $aggs = $parser->parse($string);
+
+    //     $this->aggs->add($aggs);
+
+    //     return $this;
+    // }
+
+    public function highlight(array $highlight): self
+    {
+        $this->highlight = $highlight;
 
         return $this;
     }
 
-    public function aggregate(callable $callable)
-    {
-        $callable($this->aggs);
+    // public function scriptScore(string $source, string $boostMode = 'multiply')
+    // {
+    //     $this->scriptScoreSource = $source;
+    //     $this->scriptScoreBoostMode = $boostMode;
+
+    //     return $this;
+    // }
+
+    public function suggest(Suggest $suggest): self {
+
+        $this->suggest = $suggest;
 
         return $this;
     }
 
-    public function facets(string $string)
-    {
-        $parser = new FacetParser($this->properties);
+    // public function suggest(callable $callable, ?string $text = null): Search
+    // {
+    //     if (! is_null($text)) {
+    //         $this->suggest->text($text);
+    //     }
 
-        $aggs = $parser->parse($string);
+    //     $callable($this->suggest);
 
-        $this->aggs->add($aggs);
+    //     return $this;
+    // }
 
-        return $this;
-    }
-
-    public function scriptScore(string $source, string $boostMode = 'multiply')
-    {
-        $this->scriptScoreSource = $source;
-        $this->scriptScoreBoostMode = $boostMode;
-
-        return $this;
-    }
-
-    public function suggest(callable $callable, ?string $text = null): Search
-    {
-        if (! is_null($text)) {
-            $this->suggest->text($text);
-        }
-
-        $callable($this->suggest);
-
-        return $this;
-    }
-
-    public function trackTotalHits(int $trackTotalHits = -1)
+    public function trackTotalHits(bool|int $trackTotalHits = true)
     {
         $this->trackTotalHits = $trackTotalHits;
 
@@ -136,30 +152,30 @@ class Search
         return $this;
     }
 
-    public function sortString(string $sortString): self
-    {
-        $parser = new SortParser($this->properties);
+    // public function sortString(string $sortString): self
+    // {
+    //     $parser = new SortParser($this->properties);
 
-        $this->sort = [
-            ...$this->sort,
-            ...$parser->parse($sortString),
-        ];
+    //     $this->sort = [
+    //         ...$this->sort,
+    //         ...$parser->parse($sortString),
+    //     ];
 
-        return $this;
-    }
+    //     return $this;
+    // }
 
-    public function sort(string $field, ?string $direction = null): self
-    {
-        if ($field === '_score') {
-            $this->sort[] = $field;
+    // public function sort(string $field, ?string $direction = null): self
+    // {
+    //     if ($field === '_score') {
+    //         $this->sort[] = $field;
 
-            return $this;
-        }
+    //         return $this;
+    //     }
 
-        $this->sort[] = [$field => $direction];
+    //     $this->sort[] = [$field => $direction];
 
-        return $this;
-    }
+    //     return $this;
+    // }
 
     public function addRaw(string $key, mixed $value)
     {
@@ -168,18 +184,18 @@ class Search
         return $this;
     }
 
-    public function highlight(string $field, string $preTag, string $postTag)
-    {
-        $this->highlight[$field] = [
-            'type' => 'plain',
-            'force_source' => true,
-            'pre_tags' => [$preTag],
-            'post_tags' => [$postTag],
-            'fragment_size' => 150,
-            'number_of_fragments' => 3,
-            'no_match_size' => 150,
-        ];
-    }
+    // public function highlight(string $field, string $preTag, string $postTag)
+    // {
+    //     $this->highlight[$field] = [
+    //         'type' => 'plain',
+    //         'force_source' => true,
+    //         'pre_tags' => [$preTag],
+    //         'post_tags' => [$postTag],
+    //         'fragment_size' => 150,
+    //         'number_of_fragments' => 3,
+    //         'no_match_size' => 150,
+    //     ];
+    // }
 
     public function response()
     {
@@ -216,44 +232,53 @@ class Search
         return $this;
     }
 
+    public function aggs(Aggs $aggs)
+    {
+        $this->aggs = $aggs;
+
+        return $this;
+    }
+
     public function toRaw(): array
     {
         $result = [
-            'track_total_hits' => $this->trackTotalHits < 0 ? true : $this->trackTotalHits,
+            // 'track_total_hits' => $this->trackTotalHits < 0 ? true : $this->trackTotalHits,
             '_source' => $this->fields,
-            'query' => (($this->scriptScoreSource ?? false) ?
-                (new FunctionScore(
-                    $this->query,
-                    source: $this->scriptScoreSource,
-                    boostMode: $this->scriptScoreBoostMode
-                ))->toRaw()
-                : [
-                    ...$this->query->toRaw()
-                ]),
+            'query' => $this->query->toRaw(),
             'from' => $this->from,
             'size' => $this->size,
             'min_score' => $this->minScore,
-            'sort' => [...$this->sort],
-            'highlight' => [
-                // 'require_field_match' => false,
-                'force_source' => true,
-                'no_match_size' => 100,
-                'fields' => [
-                    ...$this->highlight,
-                ],
-            ],
+            // 'sort' => [...$this->sort],
+            'sort' => $this->sort,
+            // 'highlight' => [
+            //     // 'require_field_match' => false,
+            //     'force_source' => true,
+            //     'no_match_size' => 100,
+            //     'fields' => [
+            //         ...$this->highlight,
+            //     ],
+            // ],
             ...$this->raw,
         ];
 
-        ray($result);
 
-        if (count($this->suggest->toRaw()) > 0) {
+        if ($this->highlight ?? false) {
+            $result['highlight'] = $this->highlight;
+        }
+
+        if ($this->trackTotalHits ?? false) {
+            $result['track_total_hits'] = $this->trackTotalHits;
+        }
+
+        if ($this->suggest ?? false) {
             $result['suggest'] = $this->suggest->toRaw();
         }
 
-        if (count($this->aggs->toRaw()) > 0) {
+        if ($this->aggs ?? false) {
             $result['aggs'] = $this->aggs->toRaw();
         }
+
+        ray($result);
 
         return $result;
     }

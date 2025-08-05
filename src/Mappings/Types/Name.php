@@ -14,6 +14,10 @@ use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
 
 class Name extends Text implements Analyze
 {
+    protected string $prefixAnalyzer = 'name_text_field_analyzer';
+
+    protected string $ngramAnalyzer = 'name_ngram_field_analyzer';
+
     public function __construct(
         string $name,
         protected int $minGrams = 4,
@@ -29,17 +33,20 @@ class Name extends Text implements Analyze
 
     public function analyze(NewAnalyzer $newAnalyzer): void
     {
-        $prefixField = (new Text("{$this->name}_text"))->unstructuredText()->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
-            $newAnalyzer->tokenizeOnWhitespaces()
-                ->lowercase()
-                ->truncate($this->minGrams - 1)
-                ->trim();
-        });
+        $prefixField = (new Text("{$this->name}_text"))->unstructuredText()
+            ->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
+                $newAnalyzer->tokenizeOnWhitespaces()
+                    ->name($this->prefixAnalyzer)
+                    ->lowercase()
+                    ->truncate($this->minGrams - 1)
+                    ->trim();
+            });
 
         $this->field($prefixField);
 
         $newAnalyzer
             ->tokenizeOnWhitespaces()
+            ->name($this->ngramAnalyzer)
             ->tokenFilter(new Ngram(prefix_id('ngram'), $this->minGrams, $this->maxGrams))
             // ->truncate($this->maxGramms)
             ->lowercase();
@@ -62,9 +69,9 @@ class Name extends Text implements Analyze
 
         $prefixField = $this->parentPath ? "{$this->parentPath}.{$this->name}.{$this->name}_text" : "{$this->name}.{$this->name}_text";
 
-        $queries[] = new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer());
-        $queries[] = new MatchPhrasePrefix($prefixField, $queryString, analyzer: $this->searchAnalyzer());
-        $queries[] = new MatchBoolPrefix($prefixField, $queryString, analyzer: $this->searchAnalyzer());
+        $queries[] = new Match_($this->name(), $queryString, analyzer: $this->ngramAnalyzer);
+        $queries[] = new MatchPhrasePrefix($prefixField, $queryString, analyzer: $this->prefixAnalyzer);
+        $queries[] = new MatchBoolPrefix($prefixField, $queryString, analyzer: $this->prefixAnalyzer);
 
         return $queries;
     }

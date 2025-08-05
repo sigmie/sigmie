@@ -19,12 +19,14 @@ class Boost extends Number
         return false;
     }
 
-    public function scriptScore(): array
+    public function scriptScoreSource(): string
     {
-        return [
-            "doc.containsKey('{$this->name}') && doc['{$this->name}'].size() > 0 ? doc['{$this->name}'].value : 1",
-            'multiply'
-        ];
+        return "doc.containsKey('{$this->name}') && doc['{$this->name}'].size() > 0 ? doc['{$this->name}'].value : 1";
+    }
+
+    public function scriptScoreBoostMode(): string
+    {
+        return 'multiply';
     }
 
     public function queries(array|string $queryString): array

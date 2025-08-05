@@ -93,6 +93,13 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this;
     }
 
+    public function autocompletePrefix(string $prefix): static
+    {
+        $this->searchContext->autocompletePrefixStrings[] = $prefix;
+
+        return $this;
+    }
+
     public function index(string $index): static
     {
         $this->index = $index;
@@ -178,51 +185,90 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this;
     }
 
-    public function make(): Search
+    protected function handleHighlight(Search $search)
     {
-        $boolean = new Boolean;
-
-        $search = new Search($boolean);
-
-        $search->index($this->index);
-
-        $search->setElasticsearchConnection($this->elasticsearchConnection);
-
         $highlight = new Collection($this->highlight);
 
-        // $field = $this->properties[$field];
-        // $highlight->each(fn (string $field) => $search->highlight($field, $this->highlightPrefix, $this->highlightSuffix));
-        $highlight->each(function (string $field) use ($search) {
+        $fields = [];
+        $highlight->each(function (string $field) use (&$fields) {
             $properties = $this->properties;
 
             $field = $properties->getNestedField($field);
 
             foreach ($field->names() as $name) {
-                $search->highlight($name, $this->highlightPrefix, $this->highlightSuffix);
+                $fields[$name] = [
+                    'type' => 'plain',
+                    'force_source' => true,
+                    'pre_tags' => [$this->highlightPrefix],
+                    'post_tags' => [$this->highlightSuffix],
+                    'fragment_size' => 150,
+                    'number_of_fragments' => 3,
+                    'no_match_size' => 150,
+                ];
             }
         });
 
+        $search->highlight([
+            // 'require_field_match' => false,
+            'force_source' => true,
+            'no_match_size' => 100,
+            'fields' => $fields
+        ]);
+    }
+
+    public function size(int $size = 20): static
+    {
+        $this->searchContext->size = $size;
+
+        return $this;
+    }
+
+    protected function handleRetrievableFields(Search $search)
+    {
         $search->fields($this->retrieve ?? $this->properties->fieldNames());
+    }
+
+    protected function handleSize(Search $search)
+    {
+        $search->size($this->searchContext->size);
+    }
+
+    protected function handleFrom(Search $search)
+    {
+        $search->from($this->searchContext->from);
+    }
+
+    protected function handleAggs(Search $search)
+    {
+        $search->addRaw('aggs', $this->facets->toRaw());
+    }
+
+    protected function handleSort(Search $search)
+    {
+        $search->addRaw('sort', $this->sort);
+    }
+
+    protected function handleMinScore(Search $search)
+    {
+        $minScore = $this->semanticSearch && $this->minScore == 0 ? 0.01 : $this->minScore;
+
+        $search->minScore($minScore);
+    }
+
+    protected function handleFiltersQuery(Boolean $boolean)
+    {
 
         $boolean->must()->bool(
             fn(Boolean $boolean) => $boolean->filter()->query(
                 $this->filters
             )
         );
+    }
 
-        $search->addRaw('sort', $this->sort);
-
-        $search->addRaw('aggs', $this->facets->toRaw());
-
-        $search->size($this->searchContext->size);
-
-        $search->from($this->searchContext->from);
-
-        $minScore = $this->semanticSearch && $this->minScore == 0 ? 0.01 : $this->minScore;
-
-        $search->minScore($minScore);
-
+    public function handleQueryStrings(Boolean $boolean)
+    {
         $boolean->must()->bool(function (Boolean $boolean) {
+
             $queryBoolean = new Boolean;
 
             $fields = new Collection($this->fields);
@@ -248,31 +294,79 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
             $boolean->should()->query($queryBoolean);
         });
+    }
 
-        if (!empty($this->searchContext->queryStrings[0]['query'] ?? '')
+    public function handleSuggest(Search $search)
+    {
+        if (
+            ($this->searchContext->autocompletePrefixStrings[0] ?? false)
             && ($this->properties->autocompleteField ?? false)
         ) {
+            $suggest = new Suggest;
 
-            $search->suggest(function (Suggest $suggest) {
+            $suggest->completion(name: 'autocompletion')
+                ->field($this->properties->autocompleteField->name())
+                ->size($this->autocompleteSize)
+                ->fuzzyMinLegth($this->autocompleteFuzzyMinLength)
+                ->fuzzyPrefixLenght($this->autocompleteFuzzyPrefixLength)
+                ->fuzzy($this->autocompletion)
+                ->prefix($this->searchContext->autocompletePrefixStrings[0]);
 
-                $suggest->completion(name: 'autocompletion')
-                    ->field($this->properties->autocompleteField->name())
-                    ->size($this->autocompleteSize)
-                    ->fuzzyMinLegth($this->autocompleteFuzzyMinLength)
-                    ->fuzzyPrefixLenght($this->autocompleteFuzzyPrefixLength)
-                    ->fuzzy($this->autocompletion)
-                    ->prefix($this->searchContext->queryStrings[0]['query']);
-            });
+            $search->suggest($suggest);
         }
+    }
 
+    protected function handleTrackTotalHits(Search $search)
+    {
         $search->trackTotalHits();
+    }
 
-
+    protected function handleBoostField(Query $query)
+    {
         if ($this->properties->boostField ?? false) {
-            $search->scriptScore(
-                ...$this->properties->boostField->scriptScore()
+            return new FunctionScore(
+                $query,
+                source: $this->properties->boostField->scriptScoreSource(),
+                boostMode: $this->properties->boostField->scriptScoreBoostMode()
             );
         }
+
+        return $query;
+    }
+
+    public function make(): Search
+    {
+        $search = new Search($this->elasticsearchConnection);
+
+        $search->index($this->index);
+
+        $this->handleHighlight($search);
+
+        $this->handleRetrievableFields($search);
+
+        $this->handleSort($search);
+
+        $this->handleAggs($search);
+
+        $this->handleSize($search);
+
+        $this->handleFrom($search);
+
+        $this->handleMinScore($search);
+
+        $boolean = new Boolean;
+
+        $this->handleFiltersQuery($boolean);
+
+        $this->handleQueryStrings($boolean);
+
+        $this->handleSuggest($search);
+
+        $this->handleTrackTotalHits($search);
+
+        $query = $this->handleBoostField($boolean);
+
+        $search->query($query);
 
         return $search;
     }
@@ -430,6 +524,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     public function get(): ResponseFormater
     {
         $facets = new Facets(
+            $this->elasticsearchConnection,
             filters: $this->globalFilters,
             aggs: $this->facets
         );
