@@ -62,6 +62,8 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected SortParser $sortParser;
 
+    protected array $vectorPool = [];
+
     public function __construct(
         ElasticsearchConnection $elasticsearchConnection,
     ) {
@@ -266,33 +268,30 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     {
         $boolean->must()->bool(function (Boolean $boolean) {
 
-            $queryBoolean = new Boolean;
-
-            $shouldClauses = new Collection();
-
             $queryStrings = new Collection($this->searchContext->queryStrings);
 
-            $queryStrings->each(function (array $weightedQuery) use ($shouldClauses) {
+            $queryStrings->each(function (array $weightedQuery) use ($boolean) {
 
-                $query = $this->addTextQueries($weightedQuery['query'], $weightedQuery['weight']);
+                $query = $this->createStringQueries($weightedQuery['query'], $weightedQuery['weight']);
 
-                $shouldClauses->add($query);
+                $boolean->should()->query($query);
             });
 
+            // if (
+            //     $textQueries->isEmpty() &&
+            //     empty($this->searchContext->queryStrings) &&
+            //     !$this->noResultsOnEmptySearch
+            // ) {
+            //     $queryBoolean->should()->query(new MatchAll);
+            // } else if ($textQueries->isEmpty()) {
+            //     $queryBoolean->should()->query(new MatchNone);
+            // } else {
+            // $textQueries->each(fn(Query $queryClase) => $queryBoolean->should()->query($queryClase));
+            // }
 
-            if (
-                $shouldClauses->isEmpty() &&
-                empty($this->searchContext->queryStrings) &&
-                !$this->noResultsOnEmptySearch
-            ) {
-                $queryBoolean->should()->query(new MatchAll);
-            } else if ($shouldClauses->isEmpty()) {
-                $queryBoolean->should()->query(new MatchNone);
-            } else {
-                $shouldClauses->each(fn(Query $queryClase) => $queryBoolean->should()->query($queryClase));
-            }
+            // $queryBoolean = new Boolean;
 
-            $boolean->should()->query($queryBoolean);
+            // $boolean->should()->query($queryBoolean);
         });
     }
 
@@ -354,21 +353,47 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $this->handleMinScore($search);
 
+        $this->handleSuggest($search);
+
+        $this->handleTrackTotalHits($search);
+
         $boolean = new Boolean;
+
+        $this->populateVectorPool();
 
         $this->handleFiltersQuery($boolean);
 
         $this->handleQueryStrings($boolean);
-
-        $this->handleSuggest($search);
-
-        $this->handleTrackTotalHits($search);
 
         $query = $this->handleBoostField($boolean);
 
         $search->query($query);
 
         return $search;
+    }
+
+    public function populateVectorPool()
+    {
+        $vectorFieldsFields = $this->properties->nestedSemanticFields()
+            ->filter(fn(Text $field) => $field->isSemantic())
+            // Only fields that are in the fields array
+            ->filter(fn(Text $field) => in_array($field->fullPath, $this->fields))
+            ->map(fn(Text $field) => $field->vectorFields())
+            ->flatten(1);
+
+        $dims = $vectorFieldsFields
+            ->map(fn(NestedVector|DenseVector|SigmieVector $field) => $field->dims())
+            ->unique()
+            ->toArray();
+
+        $pool = [];
+
+        foreach ($dims as $dim) {
+            $pool[$dim] ?? $pool[$dim] = [];
+            $pool[$dim] = array_map(fn(array $query) => $this->aiProvider->promiseEmbed($query['query'], $dim), $this->searchContext->queryStrings);
+        }
+
+        $this->vectorPool = $pool;
     }
 
     protected function onEmptyQueryString(): Query
@@ -394,7 +419,24 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return ! in_array($field->fullPath, $this->typoTolerantAttributes) ? null : "AUTO:{$this->minCharsForOneTypo},{$this->minCharsForTwoTypo}";
     }
 
-    protected function addTextqueries(string $queryString,  float $queryBoost = 1.0): Query
+    protected function createVectorQuery(array $vector, float $queryBoost = 1.0) {}
+
+    protected function createVectorQueries(string $queryString, float $queryBoost = 1.0)
+    {
+        $vectorFieldsFields = $this->properties->nestedSemanticFields()
+            ->filter(fn(Text $field) => $field->isSemantic())
+            // Only fields that are in the fields array
+            ->filter(fn(Text $field) => in_array($field->fullPath, $this->fields))
+            ->map(fn(Text $field) => $field->vectorFields())
+            ->flatten(1);
+
+        $dims = $vectorFieldsFields
+            ->map(fn(NestedVector|DenseVector|SigmieVector $field) => $field->dims())
+            ->unique()
+            ->toArray();
+    }
+
+    protected function createStringQueries(string $queryString,  float $queryBoost = 1.0): Query
     {
         if ($queryString === '' && !$this->noResultsOnEmptySearch) {
             return $this->onEmptyQueryString();
@@ -404,27 +446,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         if ($this->semanticSearch && trim($queryString) !== '') {
 
-            $vectorFieldsFields = $this->properties->nestedSemanticFields()
-                ->filter(fn(Text $field) => $field->isSemantic())
-                // Only fields that are in the fields array
-                ->filter(fn(Text $field) => $fields->indexOf($field->name()) !== false)
-                ->map(fn(Text $field) => $field->vectorFields())
-                ->flatten(1);
-
-            $dims = $vectorFieldsFields
-                ->map(function (NestedVector|DenseVector|SigmieVector $field) use ($queryString) {
-
-                    $name = $field->name();
-
-                    return [
-                        'text' => $queryString,
-                        'dims' => (string) $field->dims(),
-                        'name' => $name,
-                        'vector' => []
-                    ];
-                })
-                ->uniqueBy('dims')
-                ->toArray();
+            $vectorQueries = $this->createVectorQueries($queryString, $queryBoost);
 
             $embeddings = $this->aiProvider->batchEmbed($dims);
 

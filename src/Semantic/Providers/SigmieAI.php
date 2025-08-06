@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Semantic\Providers;
 
+use Http\Promise\Promise;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Http\JSONClient;
@@ -62,7 +63,7 @@ class SigmieAI extends AbstractAIProvider
             return [];
         }
 
-        $response = $this->http->request(new JSONRequest(
+        $response = $this->http->promise(new JSONRequest(
             'POST',
             new Uri('/embeddings'),
             $payload
@@ -78,6 +79,18 @@ class SigmieAI extends AbstractAIProvider
         }
 
         return $payload;
+    }
+
+    public function promiseEmbed(string $text, int $dims): Promise
+    {
+        return $this->http->promise(new JSONRequest(
+            'POST',
+            new Uri('/embeddings'),
+            [
+                'text' => $text,
+                'dims' => (string) $dims
+            ]
+        ));
     }
 
     public function embed(string $text, Text $originalType): array

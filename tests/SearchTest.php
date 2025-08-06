@@ -1112,55 +1112,56 @@ class SearchTest extends TestCase
         $this->assertEquals(2, $res->total());
     }
 
-    // /**
-    //  * @test
-    //  */
-    // public function no_keyword_search_flag()
-    // {
-    //     $indexName = uniqid();
+    /**
+     * @test
+     */
+    public function no_keyword_search_flag()
+    {
+        $indexName = uniqid();
 
-    //     $blueprint = new NewProperties();
-    //     $blueprint->title('name');
+        $blueprint = new NewProperties();
+        $blueprint->title('name')->semantic();
 
-    //     $this->sigmie->newIndex($indexName)
-    //         ->properties($blueprint)
-    //         ->create();
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
 
-    //     $this->sigmie
-    //         ->collect($indexName, refresh: true)
-    //         ->properties($blueprint)
-    //         ->merge([
-    //             new Document([
-    //                 'name' => ['King', 'Prince'],
-    //                 'age' => 10,
-    //             ]),
-    //             new Document([
-    //                 'name' => 'Queen',
-    //                 'age' => 20,
-    //             ]),
-    //         ]);
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'name' => ['King', 'Prince'],
+                    'age' => 10,
+                ]),
+                new Document([
+                    'name' => 'Queen',
+                    'age' => 20,
+                ]),
+            ]);
 
-    //     $response = $this->sigmie
-    //         ->newSearch($indexName)
-    //         ->semantic()
-    //         ->noResultsOnEmptySearch()
-    //         ->disableKeywordSearch()
-    //         ->properties($blueprint)
-    //         ->queryString('Queen')
-    //         ->get();
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->semantic()
+            ->noResultsOnEmptySearch()
+            ->disableKeywordSearch()
+            ->properties($blueprint)
+            ->queryString('Queen')
+            ->queryString('Woman')
+            ->get();
 
-    //     $this->assertEquals(0, $response->total());
+        $this->assertEquals(0, $response->total());
 
-    //     $response = $this->sigmie
-    //         ->newSearch($indexName)
-    //         ->semantic()
-    //         ->noResultsOnEmptySearch()
-    //         ->properties($blueprint)
-    //         ->queryString('Queen')
-    //         ->get();
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->semantic()
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->queryString('Queen')
+            ->get();
 
-    //     $this->assertEquals(1, $response->total());
-    // }
+        $this->assertEquals(1, $response->total());
+    }
 
     /**
      * @test

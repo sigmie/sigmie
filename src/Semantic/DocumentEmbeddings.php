@@ -80,22 +80,22 @@ class DocumentEmbeddings
 
             $values = (new Collection($value))->map(fn($item) => $item['vectors'])->flatten(1)->values();
 
-            $vectors = $this->aiProvider->batchEmbed($values);
-            $vectors = new Collection($vectors);
+            // $vectors = $this->aiProvider->batchEmbed($values);
+            // $vectors = new Collection($vectors);
 
-            $vectors = $vectors
-                ->groupBy('name')
-                ->mapWithKeys(function ($group, $name) use ($nameStrategy) {
+            // $vectors = $vectors
+            //     ->groupBy('name')
+            //     ->mapWithKeys(function ($group, $name) use ($nameStrategy) {
 
-                    /** @var VectorStrategy $strategy */
-                    $nameStrategy = $nameStrategy->get($name);
+            //         /** @var VectorStrategy $strategy */
+            //         $nameStrategy = $nameStrategy->get($name);
 
-                    $vectors = (new Collection($group))->map(fn($item) => $item['vector'])->toArray();
+            //         $vectors = (new Collection($group))->map(fn($item) => $item['vector'])->toArray();
 
-                    return [$name => $nameStrategy->format($vectors)];
-                })->toArray();
+            //         return [$name => $nameStrategy->format($vectors)];
+            //     })->toArray();
 
-            $embeddings = [...$embeddings, $name => $vectors];
+            // $embeddings = [...$embeddings, $name => $vectors];
         });
 
         $document['embeddings'] = $embeddings;

@@ -250,6 +250,11 @@ class Collection implements ArrayAccess, Countable
         return new static(array_filter($this->elements, $p, ARRAY_FILTER_USE_BOTH));
     }
 
+    public function unique(): static
+    {
+        return new static(array_unique($this->elements));
+    }
+
     public function uniqueBy(string $key): static
     {
         $unique = [];
