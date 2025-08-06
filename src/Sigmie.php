@@ -110,9 +110,11 @@ class Sigmie
         Query $query = new MatchAll(),
         AggsInterface $aggs = new Aggs()
     ) {
-        $search = new Search($query, $aggs);
+        $search = new Search($this->elasticsearchConnection);
 
-        $search->setElasticsearchConnection($this->elasticsearchConnection);
+        $search = $search->query($query);
+        // $search->aggs($aggs);
+
 
         return $search->index($this->withApplicationPrefix($index));
     }

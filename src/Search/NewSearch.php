@@ -277,22 +277,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $boolean->should()->query($query);
             });
-
-            // if (
-            //     $textQueries->isEmpty() &&
-            //     empty($this->searchContext->queryStrings) &&
-            //     !$this->noResultsOnEmptySearch
-            // ) {
-            //     $queryBoolean->should()->query(new MatchAll);
-            // } else if ($textQueries->isEmpty()) {
-            //     $queryBoolean->should()->query(new MatchNone);
-            // } else {
-            // $textQueries->each(fn(Query $queryClase) => $queryBoolean->should()->query($queryClase));
-            // }
-
-            // $queryBoolean = new Boolean;
-
-            // $boolean->should()->query($queryBoolean);
         });
     }
 
@@ -340,7 +324,15 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $search->index($this->index);
 
-        $this->configureSearch($search);
+        $this->handleHighlight($search);
+        $this->handleRetrievableFields($search);
+        $this->handleSort($search);
+        $this->handleAggs($search);
+        $this->handleSize($search);
+        $this->handleFrom($search);
+        $this->handleMinScore($search);
+        $this->handleSuggest($search);
+        $this->handleTrackTotalHits($search);
 
         $boolean = new Boolean;
 
@@ -355,18 +347,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $search;
     }
 
-    protected function configureSearch(Search $search): void
-    {
-        $this->handleHighlight($search);
-        $this->handleRetrievableFields($search);
-        $this->handleSort($search);
-        $this->handleAggs($search);
-        $this->handleSize($search);
-        $this->handleFrom($search);
-        $this->handleMinScore($search);
-        $this->handleSuggest($search);
-        $this->handleTrackTotalHits($search);
-    }
 
     protected function buildMainQuery(Boolean $boolean): void
     {
@@ -445,7 +425,11 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $semanticQuery = $this->buildSemanticQuery($queryString, $queryBoost);
         $keywordQuery = $this->buildKeywordQuery($queryString, $queryBoost);
 
-        return $this->combineQueries($semanticQuery, $keywordQuery);
+        $boolean = new Boolean;
+        $boolean->should()->query($semanticQuery);
+        $boolean->should()->query($keywordQuery);
+
+        return $boolean;
     }
 
     protected function buildSemanticQuery(string $queryString, float $queryBoost): Query
@@ -466,15 +450,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this->createTextQuery($queryString, $queryBoost);
     }
 
-    protected function combineQueries(Query $semanticQuery, Query $keywordQuery): Query
-    {
-        $boolean = new Boolean;
-        $boolean->should()->query($semanticQuery);
-        $boolean->should()->query($keywordQuery);
-
-        return $boolean;
-    }
-
     protected function createVectorQuery(string $queryString, float $queryBoost = 1.0): Query
     {
         $vectorFields = $this->getVectorFields();
@@ -484,8 +459,9 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             return new MatchNone;
         }
 
-        $embeddings = $this->getEmbeddings($dims);
+        $embeddings = $this->getEmbeddings($dims, $queryString);
         $vectorByDims = $this->mapEmbeddingsByDimensions($embeddings);
+        dd($vectorByDims);
         $vectorQueries = $this->buildVectorQueries($vectorFields, $vectorByDims, $queryBoost);
 
         return $this->wrapVectorQueries($vectorQueries);
@@ -508,9 +484,9 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             ->toArray();
     }
 
-    protected function getEmbeddings(array $dims): array
+    protected function getEmbeddings(array $dims, string $queryString): array
     {
-        return $this->aiProvider->batchEmbed($dims);
+        return array_map(fn($dim) => $this->aiProvider->embed($queryString, $dim), $dims);
     }
 
     protected function mapEmbeddingsByDimensions(array $embeddings): Collection

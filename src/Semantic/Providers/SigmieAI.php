@@ -22,7 +22,7 @@ use Sigmie\Query\Queries\NearestNeighbors;
 use Sigmie\Query\Queries\Text\Nested as TextNested;
 use Sigmie\Sigmie;
 
-class SigmieAI extends AbstractAIProvider
+class SigmieAI
 {
     protected JSONClient $http;
 
@@ -63,7 +63,7 @@ class SigmieAI extends AbstractAIProvider
             return [];
         }
 
-        $response = $this->http->promise(new JSONRequest(
+        $response = $this->http->request(new JSONRequest(
             'POST',
             new Uri('/embeddings'),
             $payload
@@ -93,7 +93,7 @@ class SigmieAI extends AbstractAIProvider
         ));
     }
 
-    public function embed(string $text, Text $originalType): array
+    public function embed(string $text, int $dims): array
     {
         $response = $this->http->request(new JSONRequest(
             'POST',
@@ -101,7 +101,7 @@ class SigmieAI extends AbstractAIProvider
             [
                 [
                     'text' => $text,
-                    'dims' => (string) $originalType->dims()
+                    'dims' => (string) $dims
                 ]
             ]
         ));
