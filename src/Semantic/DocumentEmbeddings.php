@@ -13,14 +13,13 @@ use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Text;
-use Sigmie\Semantic\Contracts\AIProvider;
 use Sigmie\Shared\Collection;
 
 class DocumentEmbeddings
 {
     public function __construct(
         protected Properties $properties,
-        protected AIProvider $aiProvider,
+        protected $aiProvider,
     ) {}
 
     public function make(Document $document): Document

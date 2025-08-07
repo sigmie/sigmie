@@ -38,6 +38,7 @@ use Sigmie\Search\Contracts\ResponseFormater;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
 use Sigmie\Search\Formatters\RawElasticsearchFormat;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
+use Sigmie\Search\QueryString;
 use Sigmie\Shared\Collection;
 
 class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInterface
@@ -85,10 +86,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     public function queryString(string $query, float $weight = 1.0): static
     {
-        $this->searchContext->queryStrings[] = [
-            'query' => $query,
-            'weight' => $weight
-        ];
+        $this->searchContext->queryStrings[] = new QueryString($query, $weight);
 
         return $this;
     }
@@ -185,6 +183,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this;
     }
 
+
     protected function handleHighlight(Search $search)
     {
         $highlight = new Collection($this->highlight);
@@ -264,38 +263,22 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         );
     }
 
-    public function handleQueryStrings(Boolean $boolean)
+    protected function handleQueryStrings(Boolean $boolean): void
     {
         $boolean->must()->bool(function (Boolean $boolean) {
 
             $queryStrings = new Collection($this->searchContext->queryStrings);
 
-            $queryStrings->each(function (array $weightedQuery) use ($boolean) {
+            $queryStrings->each(function (QueryString $queryString) use ($boolean) {
 
-                $query = $this->createStringQueries($weightedQuery['query'], $weightedQuery['weight']);
+                $query = $this->createStringQueries($queryString->text(), $queryString->weight());
 
                 $boolean->should()->query($query);
             });
-
-            // if (
-            //     $textQueries->isEmpty() &&
-            //     empty($this->searchContext->queryStrings) &&
-            //     !$this->noResultsOnEmptySearch
-            // ) {
-            //     $queryBoolean->should()->query(new MatchAll);
-            // } else if ($textQueries->isEmpty()) {
-            //     $queryBoolean->should()->query(new MatchNone);
-            // } else {
-            // $textQueries->each(fn(Query $queryClase) => $queryBoolean->should()->query($queryClase));
-            // }
-
-            // $queryBoolean = new Boolean;
-
-            // $boolean->should()->query($queryBoolean);
         });
     }
 
-    public function handleSuggest(Search $search)
+    protected function handleSuggest(Search $search): void
     {
         if (
             ($this->searchContext->autocompletePrefixStrings[0] ?? false)
@@ -340,30 +323,20 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $search->index($this->index);
 
         $this->handleHighlight($search);
-
         $this->handleRetrievableFields($search);
-
         $this->handleSort($search);
-
         $this->handleAggs($search);
-
         $this->handleSize($search);
-
         $this->handleFrom($search);
-
         $this->handleMinScore($search);
-
         $this->handleSuggest($search);
-
         $this->handleTrackTotalHits($search);
 
         $boolean = new Boolean;
 
         $this->populateVectorPool();
 
-        $this->handleFiltersQuery($boolean);
-
-        $this->handleQueryStrings($boolean);
+        $this->buildMainQuery($boolean);
 
         $query = $this->handleBoostField($boolean);
 
@@ -372,7 +345,14 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $search;
     }
 
-    public function populateVectorPool()
+
+    protected function buildMainQuery(Boolean $boolean): void
+    {
+        $this->handleFiltersQuery($boolean);
+        $this->handleQueryStrings($boolean);
+    }
+
+    protected function populateVectorPool(): void
     {
         $vectorFieldsFields = $this->properties->nestedSemanticFields()
             ->filter(fn(Text $field) => $field->isSemantic())
@@ -390,7 +370,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         foreach ($dims as $dim) {
             $pool[$dim] ?? $pool[$dim] = [];
-            $pool[$dim] = array_map(fn(array $query) => $this->aiProvider->promiseEmbed($query['query'], $dim), $this->searchContext->queryStrings);
+            $pool[$dim] = array_map(fn(QueryString $queryString) => $this->aiProvider->promiseEmbed($queryString->text(), $dim), $this->searchContext->queryStrings);
         }
 
         $this->vectorPool = $pool;
@@ -405,7 +385,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return new MatchAll;
     }
 
-    public function queryBoost(Type $field, float $queryWeight): float
+    protected function queryBoost(Type $field, float $queryWeight): float
     {
         $fieldWeight = $this->weight[$field->fullPath] ?? 1;
 
@@ -414,12 +394,10 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $boost;
     }
 
-    public function queryFuzziness(Text $field): ?string
+    protected function queryFuzziness(Text $field): ?string
     {
         return ! in_array($field->fullPath, $this->typoTolerantAttributes) ? null : "AUTO:{$this->minCharsForOneTypo},{$this->minCharsForTwoTypo}";
     }
-
-    protected function createVectorQuery(array $vector, float $queryBoost = 1.0) {}
 
     protected function createVectorQueries(string $queryString, float $queryBoost = 1.0)
     {
@@ -436,64 +414,14 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             ->toArray();
     }
 
-    protected function createStringQueries(string $queryString,  float $queryBoost = 1.0): Query
+    protected function createStringQueries(string $queryString, float $queryBoost = 1.0): Query
     {
         if ($queryString === '' && !$this->noResultsOnEmptySearch) {
             return $this->onEmptyQueryString();
         }
 
-        $semanticQuery = new MatchNone;
-
-        if ($this->semanticSearch && trim($queryString) !== '') {
-
-            $vectorQueries = $this->createVectorQueries($queryString, $queryBoost);
-
-            $embeddings = $this->aiProvider->batchEmbed($dims);
-
-            // Array that has as key the dims and as value the vector
-            // eg. [1024 => [1, 2, 3], 2048 => [4, 5, 6]]
-            $vectorByDims = (new Collection($embeddings))->mapWithKeys(fn($item) => [$item['dims'] => $item['vector']]);
-
-            $vectorQueries = $vectorFieldsFields
-                ->map(function (TypesNested|DenseVector $field) use ($vectorByDims) {
-
-                    $vectors = $vectorByDims->get($field->dims());
-
-                    return $field->queries($vectors);
-                })
-                ->flatten(1)
-                ->map(function (Query $query) use ($queryBoost) {
-                    if ($query instanceof NearestNeighbors) {
-                        $query->k($this->searchContext->size);
-                    }
-
-                    return $query;
-                });
-
-            $vectorBool = new Boolean;
-            // An empty boolean query acts like a match_all for this reason
-            // we make sure the boolean query is not empty by adding a match none
-            $vectorBool->should()->query(new MatchNone);
-            $vectorQueries
-                ->each(fn(Query $query) => $vectorBool->should()->query($query));
-
-            // Supported since ES 8.12
-            // https://discuss.elastic.co/t/knn-search-with-function-score-or-scoring-script/356432
-            $functionScore = new FunctionScore(
-                $vectorBool,
-                source: "return _score * {$this->semanticScoreMultiplier};",
-                // source: "return _score > {$this->semanticThreshold} ? _score : 0;",
-                boostMode: 'replace'
-                // boostMode: 'multiply'
-            );
-            $shouldClauses->add($functionScore);
-        }
-
-        $keywordQuery = new MatchNone;
-
-        if (!$this->noKeywordSearch) {
-            $keywordQuery = $this->createTextQuery($queryString, $queryBoost);
-        }
+        $semanticQuery = $this->buildSemanticQuery($queryString, $queryBoost);
+        $keywordQuery = $this->buildKeywordQuery($queryString, $queryBoost);
 
         $boolean = new Boolean;
         $boolean->should()->query($semanticQuery);
@@ -502,67 +430,157 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $boolean;
     }
 
+    protected function buildSemanticQuery(string $queryString, float $queryBoost): Query
+    {
+        if (!$this->semanticSearch || trim($queryString) === '') {
+            return new MatchNone;
+        }
+
+        return $this->createVectorQuery($queryString, $queryBoost);
+    }
+
+    protected function buildKeywordQuery(string $queryString, float $queryBoost): Query
+    {
+        if ($this->noKeywordSearch) {
+            return new MatchNone;
+        }
+
+        return $this->createTextQuery($queryString, $queryBoost);
+    }
+
+    protected function createVectorQuery(string $queryString, float $queryBoost = 1.0): Query
+    {
+        $vectorFields = $this->getVectorFields();
+        $dims = $this->getVectorDimensions($vectorFields);
+
+        if (empty($dims)) {
+            return new MatchNone;
+        }
+
+        $embeddings = $this->getEmbeddings($dims, $queryString);
+        $vectorByDims = $this->mapEmbeddingsByDimensions($embeddings);
+
+        $vectorQueries = $this->buildVectorQueries($vectorFields, $vectorByDims, $queryBoost);
+
+        return $this->wrapVectorQueries($vectorQueries);
+    }
+
+    protected function getVectorFields(): Collection
+    {
+        return $this->properties->nestedSemanticFields()
+            ->filter(fn(Text $field) => $field->isSemantic())
+            ->filter(fn(Text $field) => in_array($field->fullPath, $this->fields))
+            ->map(fn(Text $field) => $field->vectorFields())
+            ->flatten(1);
+    }
+
+    protected function getVectorDimensions(Collection $vectorFields): array
+    {
+        return $vectorFields
+            ->map(fn(NestedVector|DenseVector|SigmieVector $field) => $field->dims())
+            ->unique()
+            ->toArray();
+    }
+
+    protected function getEmbeddings(array $dims, string $queryString): array
+    {
+        return array_map(fn($dim) => [
+            'dims' => $dim,
+            'vector' => $this->aiProvider->embed($queryString, $dim)
+        ], $dims);
+    }
+
+    protected function mapEmbeddingsByDimensions(array $embeddings): Collection
+    {
+        return (new Collection($embeddings))->mapWithKeys(fn($item) => [$item['dims'] => $item['vector']]);
+    }
+
+    protected function buildVectorQueries(Collection $vectorFields, Collection $vectorByDims, float $queryBoost): Collection
+    {
+        return $vectorFields
+            ->map(function (TypesNested|DenseVector $field) use ($vectorByDims) {
+                $vectors = $vectorByDims->get($field->dims());
+                return $field->queries($vectors);
+            })
+            ->flatten(1)
+            ->map(function (Query $query) use ($queryBoost) {
+                return $this->configureVectorQuery($query, $queryBoost);
+            });
+    }
+
+    protected function configureVectorQuery(Query $query, float $queryBoost): Query
+    {
+        if ($query instanceof NearestNeighbors) {
+            $query->k($this->searchContext->size);
+        }
+        return $query;
+    }
+
+    protected function wrapVectorQueries(Collection $vectorQueries): Query
+    {
+        $vectorBool = new Boolean;
+        $vectorBool->should()->query(new MatchNone);
+        $vectorQueries->each(fn(Query $query) => $vectorBool->should()->query($query));
+
+        return $this->applyVectorScoring($vectorBool);
+    }
+
+    protected function applyVectorScoring(Query $query): Query
+    {
+        return new FunctionScore(
+            $query,
+            source: "return _score * {$this->semanticScoreMultiplier};",
+            boostMode: 'replace'
+        );
+    }
+
     protected function createTextQuery(string $queryString, float $queryBoost = 1.0): Query
     {
         $keywordBoolean = new Boolean;
-
-        // An empty boolean query acts like a match_all for this reason
-        // we make sure the boolean query is not empty by adding a match none
         $keywordBoolean->should()->query(new MatchNone);
 
-        // Reuqested field names eg. ['title', 'category']
         $fields = new Collection($this->fields);
 
         $fields->each(function ($field) use ($keywordBoolean, $queryString, $queryBoost) {
-
             $field = $this->properties->get($field) ?? throw new PropertiesFieldNotFound($field);
 
-            $queries = match (true) {
-                $field->hasQueriesCallback ?? false => $field->queriesFromCallback($queryString),
-                default => $field->queries($queryString)
-            };
-
+            $queries = $this->buildFieldQueries($field, $queryString);
             $queries = new Collection($queries);
 
             $queries->map(function (Query $queryClause) use ($keywordBoolean, $queryBoost, $field) {
-
-                // Handle fuzziness for fuzzy queries
-                if ($queryClause instanceof FuzzyQuery) {
-                    $fuzziness = $this->queryFuzziness($field);
-                    $queryClause->fuzziness($fuzziness);
-                }
-
-                // Handle boost for all queries
-                $boost = $this->queryBoost($field, $queryBoost);
-                $queryClause = $queryClause->boost($boost);
-
-                // Query nested fields if there is a parent path
-                if (($field->parentPath ?? false) && $field->parentType === TypesNested::class) {
-                    return new Nested($field->parentPath, $queryClause);
-                }
-
-                return $queryClause;
-            })
-                ->each(fn(Query $query) => $keywordBoolean->should()->query($query));
+                $queryClause = $this->configureQueryClause($queryClause, $field, $queryBoost);
+                return $this->wrapNestedQuery($queryClause, $field);
+            })->each(fn(Query $query) => $keywordBoolean->should()->query($query));
         });
 
-        // $textQueries->each(fn(Query $query) => $shouldClauses->add($query));
-        // $textQueries->each(fn(Query $query) => $textBool->should()->query($query));
+        return $this->applyTextScoring($keywordBoolean);
+    }
 
-        $textFnScore = new FunctionScore(
-            $keywordBoolean,
-            source: "return _score * {$this->textScoreMultiplier};",
-            // source: "return _score / 10;",
-            // source: "return Math.min(_score, 0.1);", // Caps BM25 impact
-            boostMode: 'replace',
-            // boostMode: 'multiply'
-            // source: "return Math.min(_score, 0.5);", // Caps BM25 impact
-            // boostMode: 'replace'
-            // boostMode: 'multiply'
-            // source: "return _score;",
-        );
+    protected function buildFieldQueries($field, string $queryString): array
+    {
+        return match (true) {
+            $field->hasQueriesCallback ?? false => $field->queriesFromCallback($queryString),
+            default => $field->queries($queryString)
+        };
+    }
 
-        return $textFnScore;
+    protected function configureQueryClause(Query $queryClause, $field, float $queryBoost): Query
+    {
+        if ($queryClause instanceof FuzzyQuery) {
+            $fuzziness = $this->queryFuzziness($field);
+            $queryClause->fuzziness($fuzziness);
+        }
+
+        $boost = $this->queryBoost($field, $queryBoost);
+        return $queryClause->boost($boost);
+    }
+
+    protected function wrapNestedQuery(Query $queryClause, $field): Query
+    {
+        if (($field->parentPath ?? false) && $field->parentType === TypesNested::class) {
+            return new Nested($field->parentPath, $queryClause);
+        }
+        return $queryClause;
     }
 
     public function formatter(ResponseFormater $formatter): static
@@ -608,5 +626,14 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     public function promise(): Promise
     {
         return $this->make()->promise();
+    }
+
+    protected function applyTextScoring(Query $query): Query
+    {
+        return new FunctionScore(
+            $query,
+            source: "return _score * {$this->textScoreMultiplier};",
+            boostMode: 'replace'
+        );
     }
 }

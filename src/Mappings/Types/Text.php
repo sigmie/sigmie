@@ -93,6 +93,16 @@ class Text extends Type implements FromRaw
 
         $vector = $field->make();
 
+        // Initialize the parent path for the vector field
+        if ($this->fullPath !== null && $this->fullPath !== '') {
+            $vector->parent($this->fullPath, static::class);
+        } elseif ($this->parentPath !== null) {
+            $vector->parent($this->parentPath, $this->parentType ?? static::class);
+        } else {
+            // If no parent context, set the parent to just this field's name
+            $vector->parent($this->name, static::class);
+        }
+
         $this->vectors[] = $vector;
 
         return $this;

@@ -8,9 +8,9 @@ use Sigmie\Semantic\Contracts\AIProvider;
 
 trait EmbeddingsProvider
 {
-    protected AIProvider $aiProvider;
+    protected $aiProvider;
 
-    public function aiProvider(AIProvider $provider): static
+    public function aiProvider($provider): static
     {
         $this->aiProvider = $provider;
 

@@ -71,7 +71,10 @@ class NewProperties
 
         $fields = $this->fields
             ->mapToDictionary(function (Type $type) {
-
+                // Initialize the parent path for each field based on current context
+                if ($this->fullPath !== '') {
+                    $type->parent($this->fullPath, $this->parentType);
+                }
                 return [$type->name => $type];
             })->toArray();
 
