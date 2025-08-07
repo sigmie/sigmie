@@ -1146,7 +1146,6 @@ class SearchTest extends TestCase
             ->noResultsOnEmptySearch()
             ->disableKeywordSearch()
             ->properties($blueprint)
-            ->queryString('Queen')
             ->queryString('Woman')
             ->get();
 

@@ -38,6 +38,7 @@ use Sigmie\Search\Contracts\ResponseFormater;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
 use Sigmie\Search\Formatters\RawElasticsearchFormat;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
+use Sigmie\Search\QueryString;
 use Sigmie\Shared\Collection;
 
 class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInterface
@@ -85,10 +86,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     public function queryString(string $query, float $weight = 1.0): static
     {
-        $this->searchContext->queryStrings[] = [
-            'query' => $query,
-            'weight' => $weight
-        ];
+        $this->searchContext->queryStrings[] = new QueryString($query, $weight);
 
         return $this;
     }
@@ -271,9 +269,9 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
             $queryStrings = new Collection($this->searchContext->queryStrings);
 
-            $queryStrings->each(function (array $weightedQuery) use ($boolean) {
+            $queryStrings->each(function (QueryString $queryString) use ($boolean) {
 
-                $query = $this->createStringQueries($weightedQuery['query'], $weightedQuery['weight']);
+                $query = $this->createStringQueries($queryString->text(), $queryString->weight());
 
                 $boolean->should()->query($query);
             });
@@ -372,7 +370,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         foreach ($dims as $dim) {
             $pool[$dim] ?? $pool[$dim] = [];
-            $pool[$dim] = array_map(fn(array $query) => $this->aiProvider->promiseEmbed($query['query'], $dim), $this->searchContext->queryStrings);
+            $pool[$dim] = array_map(fn(QueryString $queryString) => $this->aiProvider->promiseEmbed($queryString->text(), $dim), $this->searchContext->queryStrings);
         }
 
         $this->vectorPool = $pool;
@@ -461,7 +459,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $embeddings = $this->getEmbeddings($dims, $queryString);
         $vectorByDims = $this->mapEmbeddingsByDimensions($embeddings);
-        dd($vectorByDims);
+
         $vectorQueries = $this->buildVectorQueries($vectorFields, $vectorByDims, $queryBoost);
 
         return $this->wrapVectorQueries($vectorQueries);
@@ -486,7 +484,10 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected function getEmbeddings(array $dims, string $queryString): array
     {
-        return array_map(fn($dim) => $this->aiProvider->embed($queryString, $dim), $dims);
+        return array_map(fn($dim) => [
+            'dims' => $dim,
+            'vector' => $this->aiProvider->embed($queryString, $dim)
+        ], $dims);
     }
 
     protected function mapEmbeddingsByDimensions(array $embeddings): Collection
