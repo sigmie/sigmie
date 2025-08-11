@@ -104,5 +104,7 @@ class SigmieTest extends TestCase
 
         $this->assertInstanceOf(ListedIndex::class, $indices[0]);
         $this->assertEquals(1, $indices[0]->documentsCount);
+
+        $this->assertTrue(in_array($alias, $indices[0]->aliases));
     }
 }

@@ -94,10 +94,26 @@ trait Actions
 
     protected function listIndices(string $pattern = '*'): array
     {
-        $catResponse = $this->catAPICall("indices/{$pattern}", 'GET');
+        $catResponse = $this->catAPICall("indices/{$pattern}?h=index,health,status,uuid,pri,rep,docs.count,docs.deleted,store.size,pri.store.size,creation.date.string", 'GET');
+        $aliasesResponse = $this->catAPICall("aliases", 'GET');
 
-        return array_map(function ($values) {
-            $index = ListedIndex::fromRaw($values['index'], $values);
+        $aliasesData = $aliasesResponse->json();
+        
+        $aliasesByIndex = [];
+        foreach ($aliasesData as $aliasInfo) {
+            $indexName = $aliasInfo['index'];
+            $aliasName = $aliasInfo['alias'];
+            
+            if (!isset($aliasesByIndex[$indexName])) {
+                $aliasesByIndex[$indexName] = [];
+            }
+            $aliasesByIndex[$indexName][] = $aliasName;
+        }
+
+        return array_map(function ($values) use ($aliasesByIndex) {
+            $aliases = $aliasesByIndex[$values['index']] ?? [];
+            
+            $index = ListedIndex::fromRaw($values, $aliases);
 
             return $index;
         }, $catResponse->json());
