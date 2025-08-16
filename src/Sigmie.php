@@ -25,6 +25,7 @@ use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Search;
 use Sigmie\Search\ExistingScript;
 use Sigmie\Search\NewFacetSearch;
+use Sigmie\Search\NewMultiSearch;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewSemanticSearch;
 use Sigmie\Search\NewTemplate;
@@ -88,6 +89,20 @@ class Sigmie
         return $this->getIndex($this->withApplicationPrefix($name));
     }
 
+    public function indexUpsert(string $name, callable $builder): AliasedIndex
+    {
+        $existingIndex = $this->index($name);
+
+        if ($existingIndex instanceof AliasedIndex) {
+            return $existingIndex->update($builder);
+        }
+
+        $newIndex = $this->newIndex($name);
+        $newIndex = $builder($newIndex);
+
+        return $newIndex->create();
+    }
+
     public function collect(string $name, bool $refresh = false): AliveCollection
     {
         $aliveIndex = new AliveCollection($this->withApplicationPrefix($name), $this->elasticsearchConnection, $refresh ? 'true' : 'false');
@@ -112,9 +127,7 @@ class Sigmie
     ) {
         $search = new Search($this->elasticsearchConnection);
 
-        $search = $search->query($query);
-        // $search->aggs($aggs);
-
+        $search = $search->query($query)->aggs($aggs);
 
         return $search->index($this->withApplicationPrefix($index));
     }
@@ -134,6 +147,11 @@ class Sigmie
         $search->aiProvider($this->aiProvider);
 
         return $search->index($index);
+    }
+
+    public function newMultiSearch(): NewMultiSearch
+    {
+        return new NewMultiSearch($this->elasticsearchConnection);
     }
 
     public function newTemplate(string $id): NewTemplate

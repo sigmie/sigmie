@@ -10,6 +10,7 @@ use Sigmie\Mappings\Properties;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Query\Contracts\Queries;
 use Sigmie\Query\Contracts\QueryClause as Query;
+use Sigmie\Search\Contracts\MultiSearchable;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\MatchNone;
@@ -24,17 +25,20 @@ use Sigmie\Query\Queries\Term\Wildcard;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
 
-class NewQuery implements Queries
+class NewQuery implements Queries, MultiSearchable
 {
     protected Search $search;
 
     protected Properties $properties;
+    
+    protected string $searchName = '';
 
     public function __construct(
         protected ElasticsearchConnection $httpConnection,
         protected ?string $index = null,
     ) {
         $this->search = new Search();
+        $this->searchName = prefix_id('qr');
 
         $this->search->setElasticsearchConnection($httpConnection);
 
@@ -169,5 +173,64 @@ class NewQuery implements Queries
         $clause = new Wildcard($field, $value);
 
         return $this->search->query($clause->boost($boost));
+    }
+
+    public function toMultiSearch(): array
+    {
+        $search = $this->search->query(new MatchAll());
+        
+        return [
+            [
+                'index' => $search->index
+            ],
+            $search->toRaw()
+        ];
+    }
+
+    public function formatMultiSearchResponse(array $responses, int $startIndex): array
+    {
+        $searchResponse = $responses[$startIndex] ?? [];
+        
+        return [
+            'hits' => $searchResponse['hits']['hits'] ?? [],
+            'processing_time_ms' => $searchResponse['took'] ?? 0,
+            'total' => $searchResponse['hits']['total']['value'] ?? 0,
+            'max_score' => $searchResponse['hits']['max_score'] ?? null,
+            'timed_out' => $searchResponse['timed_out'] ?? false,
+        ];
+    }
+
+    public function multisearchResCount(): int
+    {
+        return 1; // just search
+    }
+
+    public function sliceMultiSearchResponse(array $responses): array
+    {
+        $searchResponse = $responses[0] ?? [];
+        
+        return [
+            'hits' => $searchResponse['hits']['hits'] ?? [],
+            'processing_time_ms' => $searchResponse['took'] ?? 0,
+            'total' => $searchResponse['hits']['total']['value'] ?? 0,
+            'max_score' => $searchResponse['hits']['max_score'] ?? null,
+            'timed_out' => $searchResponse['timed_out'] ?? false,
+        ];
+    }
+
+    public function name(string $name): static
+    {
+        $this->searchName = $name;
+        
+        return $this;
+    }
+
+    public function getName(): string
+    {
+        if (!empty($this->searchName)) {
+            return $this->searchName;
+        }
+        
+        return prefix_id('qr');
     }
 }

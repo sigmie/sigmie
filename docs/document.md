@@ -228,6 +228,29 @@ $movies->merge([/* documents */]);
 $documentsArray = $movies->toArray();
 ```
 
+### Getting Random Documents
+
+You can retrieve random documents from a collection using the `random()` method:
+
+```php
+$movies = $sigmie->collect('movies');
+
+// Get 10 random documents (returns a collection)
+$randomMovies = $movies->random(10);
+
+// Get a single random document
+$randomMovie = $movies->random(1);
+
+// Convert random documents to array
+$randomArray = $movies->random(5)->toArray();
+```
+
+This is useful for:
+- Displaying sample data in your UI
+- Testing and development
+- Creating recommendation systems
+- Generating preview content
+
 ## Document Operations
 
 ### Updating Documents
