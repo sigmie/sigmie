@@ -66,6 +66,8 @@ class MultiSearchTest extends TestCase
 
         $res = $multisearch->get();
 
+        dd($res);
+
         dd($res['search1']->json());
 
         $formatted = $res->get('search1')->json();

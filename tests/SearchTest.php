@@ -476,7 +476,7 @@ class SearchTest extends TestCase
             ->queryString('bam ade')
             ->fields(['first_name', 'last_name'])
             ->retrieve(['first_name', 'last_name'])
-            ->make();
+            ->makeSearch();
 
         $res = $search->get();
 

@@ -830,7 +830,7 @@ class SemanticTest extends TestCase
             ->disableKeywordSearch()
             ->queryString('woman');
 
-        $nestedQuery = $search->make()->toRaw()['query']['function_score']['query']['bool']['must'][1]['bool']['should'][0]['bool']['should'][0]['function_score']['query']['bool']['should'][1];
+        $nestedQuery = $search->makeSearch()->toRaw()['query']['function_score']['query']['bool']['must'][1]['bool']['should'][0]['bool']['should'][0]['function_score']['query']['bool']['should'][1];
 
         $this->assertArrayHasKey('knn', $nestedQuery);
         $this->assertEquals('embeddings.charachter.details.meta.extra.deep.deepnote.m80_efc512_dims256_cosine_avg', $nestedQuery['knn']['field']);
@@ -879,7 +879,7 @@ class SemanticTest extends TestCase
             ->disableKeywordSearch()
             ->queryString('woman');
 
-        $nestedQuery = $search->make()->toRaw()['query']['function_score']['query']['bool']['must'][1]['bool']['should'][0]['bool']['should'][0]['function_score']['query']['bool']['should'][1];
+        $nestedQuery = $search->makeSearch()->toRaw()['query']['function_score']['query']['bool']['must'][1]['bool']['should'][0]['bool']['should'][0]['function_score']['query']['bool']['should'][1];
 
         $this->assertArrayHasKey('knn', $nestedQuery);
         $this->assertEquals('embeddings.name.m80_efc512_dims256_cosine_avg', $nestedQuery['knn']['field']);
@@ -928,7 +928,7 @@ class SemanticTest extends TestCase
             ->disableKeywordSearch()
             ->queryString('woman');
 
-        $nestedQuery = $search->make()->toRaw()['query']['function_score']['query']['bool']['must'][1]['bool']['should'][0]['bool']['should'][0]['function_score']['query']['bool']['should'][1];
+        $nestedQuery = $search->makeSearch()->toRaw()['query']['function_score']['query']['bool']['must'][1]['bool']['should'][0]['bool']['should'][0]['function_score']['query']['bool']['should'][1];
 
         $this->assertEquals('embeddings.name.exact_dims256_cosine_script', $nestedQuery['nested']['path']);
         $this->assertEquals('avg', $nestedQuery['nested']['score_mode']);

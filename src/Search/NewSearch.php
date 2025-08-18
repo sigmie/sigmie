@@ -320,7 +320,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $query;
     }
 
-    public function make(): Search
+    public function makeSearch(): Search
     {
         $search = new Search($this->elasticsearchConnection);
 
@@ -622,7 +622,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $multi = new NewMultiSearch($this->elasticsearchConnection);
 
-        $multi->raw('search_query', $this->index, $this->make()->toRaw());
+        $multi->raw('search_query', $this->index, $this->makeSearch()->toRaw());
         $multi->raw('search_facets', $this->index, $facets->toRaw());
 
         $res = $multi->get();
@@ -632,7 +632,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     public function promise(): Promise
     {
-        return $this->make()->promise();
+        return $this->makeSearch()->promise();
     }
 
     protected function applyTextScoring(Query $query): Query
@@ -646,7 +646,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     public function toMultiSearch(): array
     {
-        $search = $this->make();
+        $search = $this->makeSearch();
 
         $facets = new Facets(
             $this->elasticsearchConnection,
