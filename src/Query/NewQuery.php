@@ -30,23 +30,32 @@ class NewQuery implements Queries, MultiSearchable
     protected Search $search;
 
     protected Properties $properties;
-    
+
     protected string $searchName = '';
 
     public function __construct(
         protected ElasticsearchConnection $httpConnection,
         protected ?string $index = null,
     ) {
-        $this->search = new Search();
-        $this->searchName = prefix_id('qr');
-
-        $this->search->setElasticsearchConnection($httpConnection);
+        $this->search = new Search($httpConnection);
 
         $this->properties = new Properties();
 
-        if (! is_null($index)) {
+        if ($index) {
             $this->search->index($index);
         }
+    }
+
+    public function formatResponses(...$responses): mixed
+    {
+        return $responses[0];
+    }
+
+    public function index(string $index): static
+    {
+        $this->search->index($index);
+
+        return $this;
     }
 
     public function properties(Properties|NewProperties $props): static
@@ -177,20 +186,18 @@ class NewQuery implements Queries, MultiSearchable
 
     public function toMultiSearch(): array
     {
-        $search = $this->search->query(new MatchAll());
-        
         return [
             [
-                'index' => $search->index
+                'index' => $this->search->index
             ],
-            $search->toRaw()
+            $this->search->toRaw()
         ];
     }
 
     public function formatMultiSearchResponse(array $responses, int $startIndex): array
     {
         $searchResponse = $responses[$startIndex] ?? [];
-        
+
         return [
             'hits' => $searchResponse['hits']['hits'] ?? [],
             'processing_time_ms' => $searchResponse['took'] ?? 0,
@@ -208,7 +215,7 @@ class NewQuery implements Queries, MultiSearchable
     public function sliceMultiSearchResponse(array $responses): array
     {
         $searchResponse = $responses[0] ?? [];
-        
+
         return [
             'hits' => $searchResponse['hits']['hits'] ?? [],
             'processing_time_ms' => $searchResponse['took'] ?? 0,
@@ -218,19 +225,12 @@ class NewQuery implements Queries, MultiSearchable
         ];
     }
 
-    public function name(string $name): static
-    {
-        $this->searchName = $name;
-        
-        return $this;
-    }
-
     public function getName(): string
     {
         if (!empty($this->searchName)) {
             return $this->searchName;
         }
-        
+
         return prefix_id('qr');
     }
 }

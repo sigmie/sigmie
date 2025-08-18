@@ -8,6 +8,7 @@ use Http\Promise\Promise;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
+use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\MatchAll;
 
@@ -15,7 +16,7 @@ class Search
 {
     use APIsSearch;
 
-    protected string $index;
+    public string $index;
 
     protected bool|int $trackTotalHits;
 
@@ -50,6 +51,7 @@ class Search
         $this->setElasticsearchConnection($connection);
 
         $this->query = new MatchAll();
+        $this->aggs = new Aggs();
     }
 
     // public function properties(NewProperties|Properties $props): self
@@ -59,12 +61,12 @@ class Search
     //     return $this;
     // }
 
-    // public function aggregate(callable $callable)
-    // {
-    //     $callable($this->aggs);
+    public function aggregate(callable $callable)
+    {
+        $callable($this->aggs);
 
-    //     return $this;
-    // }
+        return $this;
+    }
 
     // public function facets(string $string)
     // {
@@ -274,8 +276,11 @@ class Search
             $result['suggest'] = $this->suggest->toRaw();
         }
 
-        if ($this->aggs ?? false) {
-            $result['aggs'] = $this->aggs->toRaw();
+        if (isset($this->aggs)) {
+            $aggsRaw = $this->aggs->toRaw();
+            if (!empty($aggsRaw)) {
+                $result['aggs'] = $aggsRaw;
+            }
         }
 
         ray($result);

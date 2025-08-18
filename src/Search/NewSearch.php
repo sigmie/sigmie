@@ -50,8 +50,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected string $index;
 
-    public string $searchName;
-
     protected float $textScoreMultiplier = 1.0;
 
     protected float $semanticScoreMultiplier = 1.0;
@@ -73,7 +71,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     ) {
         parent::__construct($elasticsearchConnection);
 
-        $this->searchName = prefix_id('srch', 15);
         $this->searchContext = new SearchContext();
         $this->filterParser = new FilterParser($this->properties, false);
         $this->facetParser = new FacetParser($this->properties, false);
@@ -318,6 +315,17 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         }
 
         return $query;
+    }
+
+    public function makeFacetSearch(): Search
+    {
+        $facets = new Search($this->elasticsearchConnection);
+
+        $facets->index($this->index)
+            ->query($this->globalFilters)
+            ->aggs($this->facets);
+
+        return $facets;
     }
 
     public function makeSearch(): Search
@@ -594,8 +602,8 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this;
     }
 
-    public function formatRespones($searchResponse, $facetsResponse) {
-
+    public function formatRespones($searchResponse, $facetsResponse)
+    {
         $formatter = $this->formatter ?? new SigmieSearchResponse($this->properties);
 
         $formatter->context($this->searchContext)
@@ -612,22 +620,14 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     public function get(): ResponseFormater
     {
-        $facets = new Facets(
-            $this->elasticsearchConnection,
-            filters: $this->globalFilters,
-            aggs: $this->facets
-        );
-        $facets->index($this->index);
-        $facets->setElasticsearchConnection($this->elasticsearchConnection);
-
         $multi = new NewMultiSearch($this->elasticsearchConnection);
 
-        $multi->raw('search_query', $this->index, $this->makeSearch()->toRaw());
-        $multi->raw('search_facets', $this->index, $facets->toRaw());
+        $multi->raw($this->index, $this->makeSearch()->toRaw());
+        $multi->raw($this->index, $this->makeFacetSearch()->toRaw());
 
-        $res = $multi->get();
+        [$searchResponse, $facetsResponse] = $multi->get();
 
-        return $this->formatRespones($res['search_query'], $res['search_facets']);
+        return $this->formatRespones($searchResponse, $facetsResponse);
     }
 
     public function promise(): Promise
@@ -646,29 +646,19 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     public function toMultiSearch(): array
     {
-        $search = $this->makeSearch();
-
-        $facets = new Facets(
-            $this->elasticsearchConnection,
-            filters: $this->globalFilters,
-            aggs: $this->facets
-        );
-        $facets->index($this->index);
-        $facets->setElasticsearchConnection($this->elasticsearchConnection);
-
         return [
             [
                 'index' => $this->index
             ],
-            $search->toRaw(),
+            $this->makeSearch()->toRaw(),
             [
                 'index' => $this->index
             ],
-            $facets->toRaw()
+            $this->makeFacetSearch()->toRaw()
         ];
     }
 
-    public function sliceMultiSearchResponse(array $responses)
+    public function formatResponses(...$responses): mixed
     {
         $searchResponse = $responses[0] ?? [];
         $facetsResponse = $responses[1] ?? [];
@@ -679,12 +669,5 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     public function multisearchResCount(): int
     {
         return 2; // search + facets
-    }
-
-    public function name(string $name): static
-    {
-        $this->searchName = $name;
-
-        return $this;
     }
 }

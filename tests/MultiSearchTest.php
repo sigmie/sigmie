@@ -4,13 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Http\Promise\Promise;
 use Sigmie\Document\Document;
-use Sigmie\Languages\English\English;
-use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Mappings\Types\Price;
-use Sigmie\Sigmie;
+use Sigmie\Search\Formatters\SigmieSearchResponse;
 use Sigmie\Testing\TestCase;
 
 class MultiSearchTest extends TestCase
@@ -27,10 +23,12 @@ class MultiSearchTest extends TestCase
         $blueprint->text('name');
 
         $this->sigmie->newIndex($indexName1)
+            ->lowercase()
             ->properties($blueprint)
             ->create();
 
         $this->sigmie->newIndex($indexName2)
+            ->lowercase()
             ->properties($blueprint)
             ->create();
 
@@ -39,39 +37,40 @@ class MultiSearchTest extends TestCase
 
         $collected1->merge([
             new Document(['name' => 'Mickey']),
-            new Document(['name' => 'Goofy']),
             new Document(['name' => 'Donald']),
         ]);
 
         $collected2->merge([
-            new Document(['name' => 'Mickey']),
             new Document(['name' => 'Goofy']),
-            new Document(['name' => 'Donald']),
         ]);
 
         $multisearch = $this->sigmie->newMultiSearch();
 
-        $res = $multisearch->newSearch($indexName2)
-            ->properties($blueprint)
-            ->queryString('Goofy')->get();
-
         $multisearch->newSearch($indexName1)
             ->properties($blueprint)
-            ->name('search1')
             ->queryString('Mickey');
 
         $multisearch->newSearch($indexName2)
             ->properties($blueprint)
             ->queryString('Goofy');
 
-        $res = $multisearch->get();
+        //Calling the query get method should affect the results
+        $res = $multisearch->newQuery($indexName1)->matchAll()->get();
 
-        dd($res);
+        $res = $multisearch->raw($indexName1, $multisearch->newQuery($indexName1)->matchNone()->toRaw());
 
-        dd($res['search1']->json());
+        [$search1Res, $search2Res, $newQueryRes, $rawRes] = $multisearch->get();
 
-        $formatted = $res->get('search1')->json();
+        $this->assertInstanceOf(SigmieSearchResponse::class, $search1Res);
+        $this->assertInstanceOf(SigmieSearchResponse::class, $search2Res);
+        $this->assertIsArray($newQueryRes);
 
-        dd($formatted);
+        $search1Hit = ($search1Res->json('hits.0._source'));
+        $search2Hit = ($search2Res->json('hits.0._source'));
+
+        $this->assertEquals('Mickey', $search1Hit['name']);
+        $this->assertEquals('Goofy', $search2Hit['name']);
+        $this->assertEquals(2, $newQueryRes['hits']['total']['value']);
+        $this->assertEquals(0, $rawRes['hits']['total']['value']);
     }
 }

@@ -8,16 +8,15 @@ use Sigmie\Base\APIs\MSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\ElasticsearchException;
 use Sigmie\Query\NewQuery;
+use Sigmie\Search\Contracts\MultiSearchable;
 use Sigmie\Search\MultiSearchResponse;
 
 class NewMultiSearch
 {
     use MSearch;
 
-    /** @var MultiSearchable[] */
-    protected array $searches = [];
-
-    protected array $rawQueries = [];
+    /** @var array Ordered list of all queries (MultiSearchable objects and raw arrays) */
+    protected array $queries = [];
 
     public function __construct(
         protected ElasticsearchConnection $elasticsearchConnection
@@ -28,23 +27,24 @@ class NewMultiSearch
         $search = new NewSearch($this->elasticsearchConnection);
         $search->index($name);
 
-        $this->searches[$name] = $search;
+        $this->queries[] = $search;
 
         return $search;
     }
 
     public function newQuery(string $index): NewQuery
     {
-        $query = new NewQuery($this->elasticsearchConnection, $index);
+        $query = new NewQuery($this->elasticsearchConnection);
+        $query = $query->index($index);
 
-        $this->searches[] = $query;
+        $this->queries[] = $query;
 
         return $query;
     }
 
-    public function raw(string $name, string $index, array $query) {
-
-        $this->rawQueries[$name] = [
+    public function raw(string $index, array $query)
+    {
+        $this->queries[] = [
             ['index' => $index],
             $query
         ];
@@ -52,27 +52,22 @@ class NewMultiSearch
         return $this;
     }
 
-    public function query(string $index): NewQuery
-    {
-        return $this->newQuery($index);
-    }
-
     public function get(): array
     {
         $body = [];
 
-        foreach ($this->rawQueries as $name => $query) {
-            $body = [
-                ...$body,
-                ...$query
-            ];
-        }
-
-        foreach ($this->searches as $index => $search) {
-            $body = [
-                ...$body,
-                ...$search->toMultiSearch()
-            ];
+        // Build body in the order queries were added
+        foreach ($this->queries as $query) {
+            if ($query instanceof MultiSearchable) {
+                $body = [
+                    ...$body,
+                    ...$query->toMultiSearch()
+                ];
+            } else {
+                // Raw query (array format: [header, body])
+                $body[] = $query[0]; // header
+                $body[] = $query[1]; // body
+            }
         }
 
         $response = $this->msearchAPICall($body);
@@ -81,21 +76,21 @@ class NewMultiSearch
             throw new ElasticsearchException($response->json(), $response->code());
         }
 
-        $responses = $response->json()['responses'] ?? [];
+        $responses = $response->json('responses') ?? [];
         $results = [];
         $responseIndex = 0;
 
-        // Handle raw queries first
-        foreach ($this->rawQueries as $name => $query) {
-            $results[$name] = $responses[$responseIndex] ?? [];
-            $responseIndex += 1;
-        }
-
-        // Handle MultiSearchable objects
-        foreach ($this->searches as $index => $search) {
-            $searchResponses = array_slice($responses, $responseIndex, $search->multisearchResCount());
-            $results[$search->searchName] = $search->sliceMultiSearchResponse($searchResponses);
-            $responseIndex += $search->multisearchResCount();
+        // Process responses in the same order
+        foreach ($this->queries as $query) {
+            if ($query instanceof MultiSearchable) {
+                $searchResponses = array_slice($responses, $responseIndex, $query->multisearchResCount());
+                $results[] = $query->formatResponses(...$searchResponses);
+                $responseIndex += $query->multisearchResCount();
+            } else {
+                // Raw query
+                $results[] = $responses[$responseIndex] ?? [];
+                $responseIndex += 1;
+            }
         }
 
         return $results;
