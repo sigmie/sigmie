@@ -45,6 +45,13 @@ class Number extends Type
         return $this;
     }
 
+    public function double(): self
+    {
+        $this->type = ElasticsearchMappingType::DOUBLE->value;
+
+        return $this;
+    }
+
     public function queries(array|string $queryString): array
     {
         $queries = [];
@@ -87,6 +94,7 @@ class Number extends Type
             ElasticsearchMappingType::FLOAT->value => 'float',
             ElasticsearchMappingType::SCALED_FLOAT->value => 'scaled_float',
             ElasticsearchMappingType::LONG->value => 'long',
+            ElasticsearchMappingType::DOUBLE->value => 'double',
             default => 'number',
         };
     }

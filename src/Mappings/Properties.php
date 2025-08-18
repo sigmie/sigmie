@@ -24,6 +24,7 @@ use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
+use Sigmie\Mappings\Types\FlatObject;
 use Sigmie\Plugins\Elastiknn\DenseFloatVector;
 use Sigmie\Shared\Collection;
 
@@ -214,11 +215,13 @@ class Properties extends Type implements ArrayAccess
                 $value['type'] === 'integer' => (new Number($fieldName))->integer(),
                 $value['type'] === 'long' => (new Number($fieldName))->long(),
                 $value['type'] === 'float' => (new Number($fieldName))->float(),
+                $value['type'] === 'double' => (new Number($fieldName))->double(),
                 $value['type'] === 'scaled_float' => (new Number($fieldName))->scaledFloat(),
                 $value['type'] === 'boolean' => new Boolean($fieldName),
                 $value['type'] === 'geo_point' => new GeoPoint($fieldName),
                 $value['type'] === 'date' => new Date($fieldName),
                 $value['type'] === 'object' => new Object_($fieldName),
+                $value['type'] === 'flat_object' => new FlatObject($fieldName),
                 $value['type'] === 'elastiknn_dense_float_vector' => new DenseFloatVector($fieldName, $value['elastiknn']['dims']),
                 $value['type'] === 'dense_vector' => new DenseVector($fieldName, $value['dims']),
                 $value['type'] === 'knn_vector' => new DenseFloatVector($fieldName, $value['dimension']),

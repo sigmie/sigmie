@@ -16,6 +16,7 @@ use Sigmie\Http\JSONClient;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Index;
+use Sigmie\Index\ListedIndex;
 use Sigmie\Index\NewIndex;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
@@ -213,7 +214,17 @@ class Sigmie
             $index = $this->withApplicationPrefix($index);
         }
 
-        return $this->deleteIndex($index);
+        $indices = $this->listIndices($index);
+
+        /** @var ListedIndex $listedIndex */
+        foreach ($indices as $listedIndex) {
+            // Check if the index name matches or if any of its aliases match
+            if ($listedIndex->name === $index || in_array($index, $listedIndex->aliases)) {
+                $this->deleteIndex($listedIndex->name);
+            }
+        }
+
+        return true;
     }
 
     public static function registerPlugins(array|string $plugins)

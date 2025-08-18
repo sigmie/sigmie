@@ -15,6 +15,8 @@ enum ElasticsearchMappingType: string
     case TEXT = 'text';
     case SEARCH_AS_YOU_TYPE = 'search_as_you_type';
     case COMPLETION = 'completion';
+    case DOUBLE = 'double';
+    case FLAT_OBJECT = 'flat_object';
 
     public function isKeyword(string $type)
     {

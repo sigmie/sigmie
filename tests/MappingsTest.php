@@ -1612,4 +1612,86 @@ class MappingsTest extends TestCase
             'title',
         ], $index->mappings->properties()->fieldNames());
     }
+
+    /**
+     * @test
+     */
+    public function double_field_mapping()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->number('score')->double();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->assertIndex($indexName, function (Assert $assert) {
+            $scoreField = $assert->data()['mappings']['properties']['score'];
+            $this->assertEquals('double', $scoreField['type']);
+        });
+    }
+
+    /**
+     * @test 
+     */
+    public function flat_object_field_mapping()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->add(new \Sigmie\Mappings\Types\FlatObject('metadata'));
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->assertIndex($indexName, function (Assert $assert) {
+            $metadataField = $assert->data()['mappings']['properties']['metadata'];
+            $this->assertEquals('flat_object', $metadataField['type']);
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function field_mapping_from_raw_double()
+    {
+        $rawMapping = [
+            'score' => [
+                'type' => 'double'
+            ]
+        ];
+
+        $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
+        
+        // Test that double field type doesn't throw exception
+        $properties = \Sigmie\Mappings\Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
+        
+        $scoreField = $properties->get('score');
+        $this->assertInstanceOf(\Sigmie\Mappings\Types\Number::class, $scoreField);
+        $this->assertEquals('double', $scoreField->type());
+    }
+
+    /**
+     * @test
+     */
+    public function field_mapping_from_raw_flat_object()
+    {
+        $rawMapping = [
+            'metadata' => [
+                'type' => 'flat_object'
+            ]
+        ];
+
+        $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
+        
+        // Test that flat_object field type doesn't throw exception
+        $properties = \Sigmie\Mappings\Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
+        
+        $metadataField = $properties->get('metadata');
+        $this->assertInstanceOf(\Sigmie\Mappings\Types\FlatObject::class, $metadataField);
+        $this->assertEquals('flat_object', $metadataField->type());
+    }
 }
