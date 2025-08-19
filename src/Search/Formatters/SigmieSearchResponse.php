@@ -20,7 +20,7 @@ class SigmieSearchResponse extends AbstractFormatter
             'processing_time_ms' => $this->queryResponseRaw['took'] ?? 0,
             'total' => $this->queryResponseRaw['hits']['total']['value'] ?? 0,
 
-            'query_strings' => $this->search->queryStrings ?? [],
+            'query_strings' => array_map(fn($qs) => (string) $qs, $this->search->queryStrings ?? []),
             'filter_string' => $this->search->filterString ?? '',
             'facets_string' => $this->search->facetString ?? '',
             'sort_string' => $this->search->sortString ?? '',

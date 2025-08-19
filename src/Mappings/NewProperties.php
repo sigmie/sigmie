@@ -29,6 +29,7 @@ use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Path;
 use Sigmie\Mappings\Types\Price;
+use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\SearchableNumber;
 use Sigmie\Mappings\Types\Sentence;
 use Sigmie\Mappings\Types\ShortText;
@@ -236,6 +237,15 @@ class NewProperties
         return $field;
     }
 
+    public function range(string $name): Range
+    {
+        $field = new Range($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
     public function properties(string $name, callable $callable)
     {
         $blueprint = new NewProperties;
@@ -316,6 +326,13 @@ class NewProperties
     }
 
     public function type(Type $field): self
+    {
+        $this->fields->add($field);
+
+        return $this;
+    }
+
+    public function add(Type $field): self
     {
         $this->fields->add($field);
 

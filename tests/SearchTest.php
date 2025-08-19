@@ -10,6 +10,7 @@ use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Price;
+use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
@@ -1274,5 +1275,67 @@ class SearchTest extends TestCase
             ->get();
 
         $this->assertEquals(2, $res->total());
+    }
+
+    /**
+     * @test
+     */
+    public function range_query()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->range('numbers')->integer()
+            ->withQueries(function (string $queryString) {
+                return [
+                    new Range('numbers', [
+                        '>=' => $queryString,
+                        '<=' => $queryString,
+                    ]),
+                ];
+            });
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'numbers' => ['gt' => 10, 'lt' => 20],
+                ]),
+                new Document([
+                    'numbers' => ['gt' => 21, 'lt' => 31],
+                ]),
+            ]);
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->queryString('lorem')
+            ->get();
+
+        $this->assertEquals(0, $response->total());
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->queryString('15')
+            ->get();
+
+        $this->assertEquals(1, $response->total());
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->queryString('9')
+            ->get();
+
+        $this->assertEquals(0, $response->total());
     }
 }

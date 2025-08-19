@@ -52,15 +52,6 @@ class Number extends Type
         return $this;
     }
 
-    public function queries(array|string $queryString): array
-    {
-        $queries = [];
-
-        // $queries[] = new Term($this->name, $queryString);
-
-        return $queries;
-    }
-
     public function aggregation(Aggs $aggs, string $param): void
     {
         $aggs->stats($this->name(), $this->name());

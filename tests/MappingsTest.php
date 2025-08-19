@@ -28,6 +28,7 @@ use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Path;
 use Sigmie\Mappings\Types\Price;
+use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\SearchableNumber;
 use Sigmie\Mappings\Types\Sentence;
 use Sigmie\Mappings\Types\Tags;
@@ -1693,5 +1694,104 @@ class MappingsTest extends TestCase
         $metadataField = $properties->get('metadata');
         $this->assertInstanceOf(\Sigmie\Mappings\Types\FlatObject::class, $metadataField);
         $this->assertEquals('flat_object', $metadataField->type());
+    }
+
+    /**
+     * @test
+     */
+    public function validate_range()
+    {
+        $blueprint = new NewProperties;
+        $blueprint->range('age_range');
+
+        $props = $blueprint->get();
+
+        [$valid, $message] = $props['age_range']->validate('age_range', ['gte' => 18, 'lte' => 65]);
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['age_range']->validate('age_range', ['gt' => 18, 'lt' => 65]);
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['age_range']->validate('age_range', 'invalid');
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['age_range']->validate('age_range', []);
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['age_range']->validate('age_range', ['invalid_key' => 18]);
+        $this->assertFalse($valid);
+    }
+
+    /**
+     * @test
+     */
+    public function range_field_types()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->range('integer_range')->integer();
+        $blueprint->range('float_range')->float();
+        $blueprint->range('long_range')->long();
+        $blueprint->range('double_range')->double();
+        $blueprint->range('date_range')->date();
+        $blueprint->range('ip_range')->ip();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->assertIndex($indexName, function (Assert $assert) {
+            $integerRange = $assert->data()['mappings']['properties']['integer_range'];
+            $this->assertEquals('integer_range', $integerRange['type']);
+
+            $floatRange = $assert->data()['mappings']['properties']['float_range'];
+            $this->assertEquals('float_range', $floatRange['type']);
+
+            $longRange = $assert->data()['mappings']['properties']['long_range'];
+            $this->assertEquals('long_range', $longRange['type']);
+
+            $doubleRange = $assert->data()['mappings']['properties']['double_range'];
+            $this->assertEquals('double_range', $doubleRange['type']);
+
+            $dateRange = $assert->data()['mappings']['properties']['date_range'];
+            $this->assertEquals('date_range', $dateRange['type']);
+
+            $ipRange = $assert->data()['mappings']['properties']['ip_range'];
+            $this->assertEquals('ip_range', $ipRange['type']);
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function range_field_mapping_from_raw()
+    {
+        $rawMapping = [
+            'age_range' => ['type' => 'integer_range'],
+            'price_range' => ['type' => 'double_range'],
+            'date_range' => ['type' => 'date_range'],
+            'ip_range' => ['type' => 'ip_range'],
+        ];
+
+        $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
+        
+        $properties = \Sigmie\Mappings\Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
+        
+        $ageRange = $properties->get('age_range');
+        $this->assertInstanceOf(\Sigmie\Mappings\Types\Range::class, $ageRange);
+        $this->assertEquals('integer_range', $ageRange->type());
+
+        $priceRange = $properties->get('price_range');
+        $this->assertInstanceOf(\Sigmie\Mappings\Types\Range::class, $priceRange);
+        $this->assertEquals('double_range', $priceRange->type());
+
+        $dateRange = $properties->get('date_range');
+        $this->assertInstanceOf(\Sigmie\Mappings\Types\Range::class, $dateRange);
+        $this->assertEquals('date_range', $dateRange->type());
+
+        $ipRange = $properties->get('ip_range');
+        $this->assertInstanceOf(\Sigmie\Mappings\Types\Range::class, $ipRange);
+        $this->assertEquals('ip_range', $ipRange->type());
     }
 }

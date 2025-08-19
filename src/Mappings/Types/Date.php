@@ -18,12 +18,6 @@ class Date extends Type
         parent::__construct($name);
     }
 
-    public function queries(array|string $queryString): array
-    {
-        $queries = [];
-
-        return $queries;
-    }
 
     public function format(string $format): void
     {

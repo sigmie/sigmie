@@ -15,12 +15,6 @@ class FlatObject extends Type
         $this->type = ElasticsearchMappingType::FLAT_OBJECT->value;
     }
 
-    public function queries(array|string $queryString): array
-    {
-        $queries = [];
-
-        return $queries;
-    }
 
     public function validate(string $key, mixed $value): array
     {

@@ -570,10 +570,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected function buildFieldQueries($field, string $queryString): array
     {
-        return match (true) {
-            $field->hasQueriesCallback ?? false => $field->queriesFromCallback($queryString),
-            default => $field->queries($queryString)
-        };
+        return $field->queryStringQueries($queryString);
     }
 
     protected function configureQueryClause(Query $queryClause, $field, float $queryBoost): Query

@@ -22,6 +22,7 @@ use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Object_;
+use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Mappings\Types\FlatObject;
@@ -225,6 +226,12 @@ class Properties extends Type implements ArrayAccess
                 $value['type'] === 'elastiknn_dense_float_vector' => new DenseFloatVector($fieldName, $value['elastiknn']['dims']),
                 $value['type'] === 'dense_vector' => new DenseVector($fieldName, $value['dims']),
                 $value['type'] === 'knn_vector' => new DenseFloatVector($fieldName, $value['dimension']),
+                $value['type'] === 'integer_range' => (new Range($fieldName))->integer(),
+                $value['type'] === 'float_range' => (new Range($fieldName))->float(),
+                $value['type'] === 'long_range' => (new Range($fieldName))->long(),
+                $value['type'] === 'double_range' => (new Range($fieldName))->double(),
+                $value['type'] === 'date_range' => (new Range($fieldName))->date(),
+                $value['type'] === 'ip_range' => (new Range($fieldName))->ip(),
                 default => throw new Exception('Field ' . $value['type'] . ' couldn\'t be mapped')
             };
 
