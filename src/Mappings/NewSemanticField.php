@@ -75,6 +75,7 @@ class NewSemanticField
         $dimensions = $dimensions ?? $this->dims;
 
         if (!in_array($dimensions, [
+            128,
             256,
             384,
             512,
