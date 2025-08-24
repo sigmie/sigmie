@@ -13,7 +13,7 @@ use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\NearestNeighbors;
 use Sigmie\Query\Queries\Text\Nested;
 
-class SigmieVector extends DenseVector 
+class SigmieVector extends DenseVector
 {
     public ?string $textFieldName = null;
 
@@ -102,10 +102,12 @@ class SigmieVector extends DenseVector
         if ($this->index) {
             return [
                 new NearestNeighbors(
-                    $this->fullPath,
+                    "embeddings." . $this->fullPath,
                     $vector,
                     // // k: $this->dims,
-                    numCandidates: $this->efConstruction * 2
+                    // numCandidates: $this->efConstruction * 2
+                    // Should be >= K 
+                    numCandidates: 300 
                 )
             ];
         }

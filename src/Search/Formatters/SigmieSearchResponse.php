@@ -26,7 +26,7 @@ class SigmieSearchResponse extends AbstractFormatter
             'sort_string' => $this->search->sortString ?? '',
             'page' => $this->search->size > 0 ? intval($this->search->from / $this->search->size) + 1 : 1,
             'per_page' => $this->search->size,
-            'total_pages' => $this->search->size > 0 ? intval($this->queryResponseRaw['hits']['total']['value'] / $this->search->size) : 1,
+            'total_pages' => $this->search->size > 0 ? intval(($this->queryResponseRaw['hits']['total']['value'] ?? 0) / $this->search->size) : 1,
 
             'facets' => $this->formatFacets(),
             'errors' => $this->errors,

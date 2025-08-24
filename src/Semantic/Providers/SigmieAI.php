@@ -29,9 +29,9 @@ class SigmieAI
     public function __construct()
     {
         $this->http = JSONClient::create([
-            'https://ai-a.sigmie.app',
+            // 'https://ai-a.sigmie.app',
             'https://ai-b.sigmie.app',
-            'https://ai-c.sigmie.app',
+            // 'https://ai-c.sigmie.app',
         ]);
     }
 
@@ -70,10 +70,10 @@ class SigmieAI
         ));
 
         foreach ($response->json() as $index => $result) {
-            // $embeddings[] = [
-            //     'embeddings' => dot($result)->get('embeddings'),
-            //     dot($result)->get('embeddings')
-            // ];
+            $embeddings[] = [
+                'embeddings' => dot($result)->get('embeddings'),
+                dot($result)->get('embeddings')
+            ];
 
             $payload[$index]['vector'] = dot($result)->get('embeddings');
         }

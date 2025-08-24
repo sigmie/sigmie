@@ -30,6 +30,7 @@ use Sigmie\Query\Queries\MatchNone;
 // use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Facets;
+use Sigmie\Query\Queries\NearestNeighbors as QueriesNearestNeighbors;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
@@ -47,6 +48,8 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     protected array $sort = ['_score'];
 
     protected array $embeddings = [];
+
+    protected array $knn = [];
 
     protected string $index;
 
@@ -238,6 +241,11 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $search->from($this->searchContext->from);
     }
 
+    protected function handleKnn(Search $search)
+    {
+        $search->knn($this->knn);
+    }
+
     protected function handleAggs(Search $search)
     {
         $search->addRaw('aggs', $this->facets->toRaw());
@@ -250,7 +258,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected function handleMinScore(Search $search)
     {
-        $minScore = $this->semanticSearch && $this->minScore == 0 ? 0.01 : $this->minScore;
+        $minScore = $this->semanticSearch && $this->minScore == 0 ? 0 : $this->minScore;
 
         $search->minScore($minScore);
     }
@@ -354,9 +362,10 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $search->query($query);
 
+        $this->handleKnn($search);
+
         return $search;
     }
-
 
     protected function buildMainQuery(Boolean $boolean): void
     {
@@ -411,20 +420,20 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return ! in_array($field->fullPath, $this->typoTolerantAttributes) ? null : "AUTO:{$this->minCharsForOneTypo},{$this->minCharsForTwoTypo}";
     }
 
-    protected function createVectorQueries(string $queryString, float $queryBoost = 1.0)
-    {
-        $vectorFieldsFields = $this->properties->nestedSemanticFields()
-            ->filter(fn(Text $field) => $field->isSemantic())
-            // Only fields that are in the fields array
-            ->filter(fn(Text $field) => in_array($field->fullPath, $this->fields))
-            ->map(fn(Text $field) => $field->vectorFields())
-            ->flatten(1);
+    // protected function createVectorQueries(string $queryString, float $queryBoost = 1.0)
+    // {
+    //     $vectorFieldsFields = $this->properties->nestedSemanticFields()
+    //         ->filter(fn(Text $field) => $field->isSemantic())
+    //         // Only fields that are in the fields array
+    //         ->filter(fn(Text $field) => in_array($field->fullPath, $this->fields))
+    //         ->map(fn(Text $field) => $field->vectorFields())
+    //         ->flatten(1);
 
-        $dims = $vectorFieldsFields
-            ->map(fn(NestedVector|DenseVector|SigmieVector $field) => $field->dims())
-            ->unique()
-            ->toArray();
-    }
+    //     $dims = $vectorFieldsFields
+    //         ->map(fn(NestedVector|DenseVector|SigmieVector $field) => $field->dims())
+    //         ->unique()
+    //         ->toArray();
+    // }
 
     protected function createStringQueries(string $queryString, float $queryBoost = 1.0): Query
     {
@@ -436,16 +445,20 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $keywordQuery = $this->buildKeywordQuery($queryString, $queryBoost);
 
         $boolean = new Boolean;
-        $boolean->should()->query($semanticQuery);
         $boolean->should()->query($keywordQuery);
+
+        $this->knn = $semanticQuery;
+        // Moved to root KNN query
+        // $boolean->should()->query($semanticQuery);
 
         return $boolean;
     }
 
-    protected function buildSemanticQuery(string $queryString, float $queryBoost): Query
+    protected function buildSemanticQuery(string $queryString, float $queryBoost): array
     {
         if (!$this->semanticSearch || trim($queryString) === '') {
-            return new MatchNone;
+            // return new MatchNone;
+            return [];
         }
 
         return $this->createVectorQuery($queryString, $queryBoost);
@@ -460,13 +473,13 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this->createTextQuery($queryString, $queryBoost);
     }
 
-    protected function createVectorQuery(string $queryString, float $queryBoost = 1.0): Query
+    protected function createVectorQuery(string $queryString, float $queryBoost = 1.0): array
     {
         $vectorFields = $this->getVectorFields();
         $dims = $this->getVectorDimensions($vectorFields);
 
         if (empty($dims)) {
-            return new MatchNone;
+            return [];
         }
 
         $embeddings = $this->getEmbeddings($dims, $queryString);
@@ -474,7 +487,13 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $vectorQueries = $this->buildVectorQueries($vectorFields, $vectorByDims, $queryBoost);
 
-        return $this->wrapVectorQueries($vectorQueries);
+        $queries = [];
+        $vectorQueries->each(function (Query $query) use (&$queries) {
+            $queries[] = $query;
+        });
+
+        // return $this->applyVectorScoring($queries);
+        return $queries;
     }
 
     protected function getVectorFields(): Collection
@@ -511,30 +530,29 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     {
         return $vectorFields
             ->map(function (TypesNested|DenseVector $field) use ($vectorByDims) {
+
                 $vectors = $vectorByDims->get($field->dims());
+
                 return $field->queries($vectors);
             })
             ->flatten(1)
             ->map(function (Query $query) use ($queryBoost) {
+
                 return $this->configureVectorQuery($query, $queryBoost);
             });
     }
 
     protected function configureVectorQuery(Query $query, float $queryBoost): Query
     {
-        if ($query instanceof NearestNeighbors) {
+        if ($query instanceof NearestNeighbors || $query instanceof QueriesNearestNeighbors) {
             $query->k($this->searchContext->size);
         }
+
+        if ($query instanceof QueriesNearestNeighbors) {
+            $query->filter($this->filters->toRaw());
+        }
+
         return $query;
-    }
-
-    protected function wrapVectorQueries(Collection $vectorQueries): Query
-    {
-        $vectorBool = new Boolean;
-        $vectorBool->should()->query(new MatchNone);
-        $vectorQueries->each(fn(Query $query) => $vectorBool->should()->query($query));
-
-        return $this->applyVectorScoring($vectorBool);
     }
 
     protected function applyVectorScoring(Query $query): Query

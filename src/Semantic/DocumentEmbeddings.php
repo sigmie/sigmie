@@ -32,13 +32,17 @@ class DocumentEmbeddings
 
             $value = dot($document->_source)->get($field->name());
 
+            if (!$value) {
+                return;
+            }
+
             $value = is_array($value) ? $value : [$value];
 
             if (count($value) === 0) {
                 return;
             }
 
-            $value = $field
+            $fieldVectors = $field
                 ->vectorFields()
                 ->map(function (Nested|DenseVector $vector) use ($value) {
 
@@ -75,26 +79,28 @@ class DocumentEmbeddings
                 ])
                 ->toArray();
 
-            $nameStrategy = (new Collection($value))->mapWithKeys(fn($item) => [$item['name'] => $item['strategy']]);
+            $nameStrategy = (new Collection($fieldVectors))->mapWithKeys(fn($item) => [$item['name'] => $item['strategy']]);
 
-            $values = (new Collection($value))->map(fn($item) => $item['vectors'])->flatten(1)->values();
+            $values = (new Collection($fieldVectors))->map(fn($item) => $item['vectors'])->flatten(1)->values();
 
-            // $vectors = $this->aiProvider->batchEmbed($values);
-            // $vectors = new Collection($vectors);
+            // Get embeddings from AI provider
+            $vectors = $this->aiProvider->batchEmbed($values);
 
-            // $vectors = $vectors
-            //     ->groupBy('name')
-            //     ->mapWithKeys(function ($group, $name) use ($nameStrategy) {
+            $vectors = new Collection($vectors);
 
-            //         /** @var VectorStrategy $strategy */
-            //         $nameStrategy = $nameStrategy->get($name);
+            $vectors = $vectors
+                ->groupBy('name')
+                ->mapWithKeys(function ($group, $name) use ($nameStrategy) {
 
-            //         $vectors = (new Collection($group))->map(fn($item) => $item['vector'])->toArray();
+                    /** @var VectorStrategy $strategy */
+                    $strategy = $nameStrategy->get($name);
 
-            //         return [$name => $nameStrategy->format($vectors)];
-            //     })->toArray();
+                    $vectors = (new Collection($group))->map(fn($item) => $item['vector'] ?? [])->toArray();
 
-            // $embeddings = [...$embeddings, $name => $vectors];
+                    return [$name => $strategy->format($vectors)];
+                })->toArray();
+
+            $embeddings = [...$embeddings, $name => $vectors];
         });
 
         $document['embeddings'] = $embeddings;

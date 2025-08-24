@@ -66,8 +66,6 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected bool $semanticSearch = false;
 
-    protected float $semanticThreshold = 1.3;
-
     protected Boolean $filters;
 
     protected Boolean $globalFilters;
@@ -152,10 +150,8 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     public function semantic(
         bool $value = true,
-        float $threshold = 1.3,
     ): static {
         $this->semanticSearch = $value;
-        $this->semanticThreshold = $threshold;
 
         return $this;
     }

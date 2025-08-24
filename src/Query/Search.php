@@ -32,6 +32,8 @@ class Search
 
     protected array $sort = [];
 
+    protected array $knn= [];
+
     protected array $highlight;
 
     // protected Properties $properties;
@@ -97,6 +99,13 @@ class Search
     public function suggest(Suggest $suggest): self {
 
         $this->suggest = $suggest;
+
+        return $this;
+    }
+
+    public function knn(array $knn) {
+
+        $this->knn = $knn;
 
         return $this;
     }
@@ -251,6 +260,7 @@ class Search
             'size' => $this->size,
             'min_score' => $this->minScore,
             // 'sort' => [...$this->sort],
+            'knn' => array_map(fn(Query $query) => $query->toRaw()['knn'], $this->knn),
             'sort' => $this->sort,
             // 'highlight' => [
             //     // 'require_field_match' => false,
@@ -284,6 +294,7 @@ class Search
         }
 
         ray($result);
+        // ray(json_encode($result));
 
         return $result;
     }
