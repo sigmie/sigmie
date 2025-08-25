@@ -344,7 +344,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $search->index($this->index);
 
-        $this->handleHighlight($search);
+        // $this->handleHighlight($search);
         $this->handleRetrievableFields($search);
         $this->handleSort($search);
         $this->handleAggs($search);
