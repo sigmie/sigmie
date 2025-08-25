@@ -92,6 +92,7 @@ class NewRag
         $response = $search->properties($this->properties)
             ->index($this->index)
             ->aiProvider($this->aiProvider)
+            // ->disableKeywordSearch()
             ->queryString($this->question)
             ->filters($this->filters)
             ->size($this->size)
@@ -100,7 +101,7 @@ class NewRag
         $hits = $response->json('hits');
 
         $documents = array_map(function ($hit) {
-            return $hit['_source']['text'];
+            return json_encode($hit['_source']);
         }, $hits);
 
         $reranked = $this->aiProvider->rerank($documents, $this->question);
@@ -111,7 +112,7 @@ class NewRag
         }, array_keys($reranked));
 
         $context = implode("\n\n", array_map(function ($hit) {
-            return $hit['_source']['text'];
+            return json_encode($hit['_source']);
         }, $hits));
 
         $prompt = str_replace('{{context}}', $context, $this->prompt);
