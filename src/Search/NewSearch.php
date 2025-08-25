@@ -243,7 +243,9 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected function handleKnn(Search $search)
     {
-        $search->knn($this->knn);
+        if (!empty($this->knn)) {
+            $search->knn($this->knn);
+        }
     }
 
     protected function handleAggs(Search $search)
@@ -355,14 +357,16 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $boolean = new Boolean;
 
         $this->populateVectorPool();
+        
+        // Build KNN queries independently before main query
+        $this->buildKnnQueries();
+        $this->handleKnn($search);
 
         $this->buildMainQuery($boolean);
 
         $query = $this->handleBoostField($boolean);
 
         $search->query($query);
-
-        $this->handleKnn($search);
 
         return $search;
     }
@@ -420,48 +424,39 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return ! in_array($field->fullPath, $this->typoTolerantAttributes) ? null : "AUTO:{$this->minCharsForOneTypo},{$this->minCharsForTwoTypo}";
     }
 
-    // protected function createVectorQueries(string $queryString, float $queryBoost = 1.0)
-    // {
-    //     $vectorFieldsFields = $this->properties->nestedSemanticFields()
-    //         ->filter(fn(Text $field) => $field->isSemantic())
-    //         // Only fields that are in the fields array
-    //         ->filter(fn(Text $field) => in_array($field->fullPath, $this->fields))
-    //         ->map(fn(Text $field) => $field->vectorFields())
-    //         ->flatten(1);
-
-    //     $dims = $vectorFieldsFields
-    //         ->map(fn(NestedVector|DenseVector|SigmieVector $field) => $field->dims())
-    //         ->unique()
-    //         ->toArray();
-    // }
-
     protected function createStringQueries(string $queryString, float $queryBoost = 1.0): Query
     {
         if ($queryString === '' && !$this->noResultsOnEmptySearch) {
             return $this->onEmptyQueryString();
         }
 
-        $semanticQuery = $this->buildSemanticQuery($queryString, $queryBoost);
         $keywordQuery = $this->buildKeywordQuery($queryString, $queryBoost);
 
         $boolean = new Boolean;
         $boolean->should()->query($keywordQuery);
 
-        $this->knn = $semanticQuery;
-        // Moved to root KNN query
-        // $boolean->should()->query($semanticQuery);
-
         return $boolean;
     }
 
-    protected function buildSemanticQuery(string $queryString, float $queryBoost): array
+    protected function buildKnnQueries(): void
     {
-        if (!$this->semanticSearch || trim($queryString) === '') {
-            // return new MatchNone;
-            return [];
+        if (!$this->semanticSearch) {
+            $this->knn = [];
+            return;
         }
 
-        return $this->createVectorQuery($queryString, $queryBoost);
+        $allKnnQueries = [];
+        
+        foreach ($this->searchContext->queryStrings as $queryString) {
+            if (trim($queryString->text()) === '') {
+                continue;
+            }
+            
+            $knnQueries = $this->createVectorQuery($queryString->text(), $queryString->weight());
+            $allKnnQueries = array_merge($allKnnQueries, $knnQueries);
+        }
+        
+        $this->knn = $allKnnQueries;
     }
 
     protected function buildKeywordQuery(string $queryString, float $queryBoost): Query
@@ -487,13 +482,15 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $vectorQueries = $this->buildVectorQueries($vectorFields, $vectorByDims, $queryBoost);
 
-        $queries = [];
-        $vectorQueries->each(function (Query $query) use (&$queries) {
-            $queries[] = $query;
+        $knnQueries = [];
+        $vectorQueries->each(function (Query $query) use (&$knnQueries) {
+            $raw = $query->toRaw();
+            if (isset($raw['knn'])) {
+                $knnQueries[] = $raw['knn'];
+            }
         });
 
-        // return $this->applyVectorScoring($queries);
-        return $queries;
+        return $knnQueries;
     }
 
     protected function getVectorFields(): Collection
@@ -535,7 +532,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 return $field->queries($vectors);
             })
-            ->flatten(1)
+           ->flatten(1)
             ->map(function (Query $query) use ($queryBoost) {
 
                 return $this->configureVectorQuery($query, $queryBoost);
@@ -553,15 +550,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         }
 
         return $query;
-    }
-
-    protected function applyVectorScoring(Query $query): Query
-    {
-        return new FunctionScore(
-            $query,
-            source: "return _score * {$this->semanticScoreMultiplier};",
-            boostMode: 'replace'
-        );
     }
 
     protected function createTextQuery(string $queryString, float $queryBoost = 1.0): Query

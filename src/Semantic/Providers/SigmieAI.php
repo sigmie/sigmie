@@ -191,4 +191,20 @@ class SigmieAI
             )
         ];
     }
+
+    public function answer(string $prompt): array
+    {
+        $response = $this->http->request(new JSONRequest(
+            'POST',
+            new Uri('/answer'),
+            [
+                'input' => $prompt,
+                'instructions' => "Answer only from Context. If insufficient, set \"answer\" to \"I don't know\".
+Return valid JSON with: { \"answer\": string, \"citations\": string[] }.
+No extra text.",
+            ]
+        ));
+
+        return $response->json();
+    }
 }

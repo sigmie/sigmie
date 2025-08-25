@@ -27,6 +27,7 @@ use Sigmie\Query\Search;
 use Sigmie\Search\ExistingScript;
 use Sigmie\Search\NewFacetSearch;
 use Sigmie\Search\NewMultiSearch;
+use Sigmie\Search\NewRag;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewSemanticSearch;
 use Sigmie\Search\NewTemplate;
@@ -148,6 +149,16 @@ class Sigmie
         $search->aiProvider($this->aiProvider);
 
         return $search->index($index);
+    }
+
+    public function newRag(string $index): NewRag
+    {
+        $index = $this->withApplicationPrefix($index);
+
+        $rag = new NewRag($this->elasticsearchConnection);
+        $rag->aiProvider($this->aiProvider);
+
+        return $rag->index($index);
     }
 
     public function newMultiSearch(): NewMultiSearch

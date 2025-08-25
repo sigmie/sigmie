@@ -32,7 +32,7 @@ class Search
 
     protected array $sort = [];
 
-    protected array $knn= [];
+    protected array $knn = [];
 
     protected array $highlight;
 
@@ -103,8 +103,8 @@ class Search
         return $this;
     }
 
-    public function knn(array $knn) {
-
+    public function knn(array $knn): self
+    {
         $this->knn = $knn;
 
         return $this;
@@ -260,7 +260,7 @@ class Search
             'size' => $this->size,
             'min_score' => $this->minScore,
             // 'sort' => [...$this->sort],
-            'knn' => array_map(fn(Query $query) => $query->toRaw()['knn'], $this->knn),
+            'knn' => $this->knn,
             'sort' => $this->sort,
             // 'highlight' => [
             //     // 'require_field_match' => false,
