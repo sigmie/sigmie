@@ -13,9 +13,9 @@ interface Settings extends FromRaw, ToRaw
 
     public static function fromRaw(array $raw): static;
 
-    public function primaryShards(): int;
+    public function primaryShards(): ?int;
 
-    public function replicaShards(): int;
+    public function replicaShards(): ?int;
 
     public function config(string $name, string $value): self;
 

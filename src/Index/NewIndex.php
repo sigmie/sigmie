@@ -166,8 +166,8 @@ class NewIndex
         }
 
         $settings = new Settings(
-            primaryShards: $this->shards,
-            replicaShards: $this->replicas,
+            primaryShards: $this->serverless ? null : $this->shards,
+            replicaShards: $this->serverless ? null : $this->replicas,
             analysis: $this->analysis,
             configs: $this->config
         );

@@ -1037,4 +1037,18 @@ class IndexBuilderTest extends TestCase
         $this->assertArrayHasKey('created_by', $raw['mappings']['_meta']);
         $this->assertArrayHasKey('lib_version', $raw['mappings']['_meta']);
     }
+
+    /**
+     * @test
+     */
+    public function index_serverless()
+    {
+        $alias = uniqid();
+
+        $settings = $this->sigmie->newIndex($alias)
+            ->serverless(true)->make()->settings;
+
+        $this->assertArrayNotHasKey('number_of_shards', $settings->toRaw());
+        $this->assertArrayNotHasKey('number_of_replicas', $settings->toRaw());
+    }
 }
