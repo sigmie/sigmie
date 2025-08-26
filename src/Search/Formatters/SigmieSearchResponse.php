@@ -2,6 +2,7 @@
 
 namespace Sigmie\Search\Formatters;
 
+use Sigmie\Document\Hit;
 use Sigmie\Mappings\Properties;
 
 class SigmieSearchResponse extends AbstractFormatter
@@ -42,7 +43,12 @@ class SigmieSearchResponse extends AbstractFormatter
 
     public function hits()
     {
-        return $this->queryResponseRaw['hits']['hits'] ?? [];
+        return array_map(fn(array $hit) => new Hit(
+            $hit['_source'],
+            $hit['_id'],
+            $hit['_score'],
+            $hit['_index'],
+        ), $this->queryResponseRaw['hits']['hits'] ?? []);
     }
 
     public function total()

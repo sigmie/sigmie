@@ -12,8 +12,11 @@ class Hit extends Document
         array $_source,
         string $_id,
         float $_score,
+        ?string $_index = null,
     ) {
         parent::__construct($_source, $_id);
+
+        $this->index($_index);
 
         $this->_score = $_score;
     }

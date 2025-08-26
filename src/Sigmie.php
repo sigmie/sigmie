@@ -156,9 +156,14 @@ class Sigmie
         $index = $this->withApplicationPrefix($index);
 
         $rag = new NewRag($this->elasticsearchConnection);
-        $rag->aiProvider($this->aiProvider);
+        $rag->index($index);
+        
+        // Set the default AI provider if available
+        if (isset($this->aiProvider)) {
+            $rag->aiProvider($this->aiProvider);
+        }
 
-        return $rag->index($index);
+        return $rag;
     }
 
     public function newMultiSearch(): NewMultiSearch

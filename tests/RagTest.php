@@ -4,13 +4,26 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\AI\ProviderFactory;
 use Sigmie\Document\Document;
+use Sigmie\Document\Hit;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Search\NewContextComposer;
+use Sigmie\Search\NewPrompt;
 use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Testing\TestCase;
 
 class RagTest extends TestCase
 {
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        // Set API keys for testing (these should be in environment variables)
+        // ProviderFactory::setApiKey('openai', $_ENV['OPENAI_API_KEY'] ?? 'test-key');
+        // ProviderFactory::setApiKey('voyage', $_ENV['VOYAGE_API_KEY'] ?? 'test-key');
+    }
+
     /**
      * @test
      */
@@ -18,15 +31,15 @@ class RagTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties;
-        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 256);
-        $blueprint->text('text')->semantic(accuracy: 1, dimensions: 256);
-        $blueprint->category('language');
+        $props = new NewProperties;
+        $props->text('title')->semantic(accuracy: 1, dimensions: 256);
+        $props->text('text')->semantic(accuracy: 1, dimensions: 256);
+        $props->category('language');
 
-        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
 
         $collected = $this->sigmie->collect($indexName, true)
-            ->properties($blueprint);
+            ->properties($props);
 
         $collected->aiProvider(new SigmieAI)
             ->populateEmbeddings()
@@ -50,22 +63,30 @@ class RagTest extends TestCase
 
         $answer = $this->sigmie
             ->newRag($indexName)
-            ->properties($blueprint)
-            ->question('What is the privacy policy?')
+            ->properties($props)
+
+            // ->embedWith('voyage', model: 'voyage-3')
+            // ->rerankWith('voyage', model: 'rerank-2', topK: 3)
+            // ->llm(provider: 'openai', model: 'gpt-4', maxTokens: 450, temperature: 0.1)
+
             ->rerank()
+            ->retrieve(['text'])
+            ->question('What is the privacy policy?')
             ->filter('language:"en"')
             ->size(3)
-            ->prompt("
-                Question:
-                {{question}}
+            ->compose(fn(Hit $hit) => json_encode($hit->_source))
+            ->prompt(function (NewPrompt $prompt) {
+                $prompt->system("Answer only from Context. If insufficient, set \"answer\" to \"I don't know\"");
+                $prompt->template("
+                    Question:
+                    {{question}}
 
-                Answer using only the context. Cite after each claim.
-
-                Context:
-                {{context}}
-            ")
+                    Context:
+                    {{context}}");
+            })
             ->answer();
 
         $this->assertArrayHasKey('answer', $answer);
+        $this->assertStringContainsString('privacy policy', $answer['answer']);
     }
 }
