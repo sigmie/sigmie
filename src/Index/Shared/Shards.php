@@ -17,7 +17,7 @@ trait Shards
         return $this;
     }
 
-    public function serverless(bool $serverless): static
+    public function serverless(bool $serverless = true): static
     {
         $this->serverless = $serverless;
 

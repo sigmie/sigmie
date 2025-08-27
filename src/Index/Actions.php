@@ -74,7 +74,7 @@ trait Actions
         }
 
         $data = array_values($res->json())[0];
-        $name = $data['settings']['index']['provided_name'];
+        $name = $data['settings']['index']['provided_name'] ?? $this->indexAPICall("_resolve/index/{$alias}", 'GET')->json('indices.0.name');
 
         $settings = Settings::fromRaw($data['settings']);
         $analyzers = $settings->analysis()->analyzers();
@@ -98,12 +98,12 @@ trait Actions
         $aliasesResponse = $this->catAPICall("aliases", 'GET');
 
         $aliasesData = $aliasesResponse->json();
-        
+
         $aliasesByIndex = [];
         foreach ($aliasesData as $aliasInfo) {
             $indexName = $aliasInfo['index'];
             $aliasName = $aliasInfo['alias'];
-            
+
             if (!isset($aliasesByIndex[$indexName])) {
                 $aliasesByIndex[$indexName] = [];
             }
@@ -112,7 +112,7 @@ trait Actions
 
         return array_map(function ($values) use ($aliasesByIndex) {
             $aliases = $aliasesByIndex[$values['index']] ?? [];
-            
+
             $index = ListedIndex::fromRaw($values, $aliases);
 
             return $index;
