@@ -2,26 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\AI\EmbeddingProviders;
+namespace Sigmie\AI\Embedders;
 
 use Http\Promise\Promise;
 use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Promise\PromiseInterface;
-use Sigmie\AI\Contracts\EmbeddingProvider;
+use Sigmie\AI\Contracts\Embedder;
 
-class OpenAIProvider implements EmbeddingProvider
+class VoyageProvider implements Embedder
 {
     protected Client $client;
     protected string $apiKey;
     protected string $model;
 
-    public function __construct(string $apiKey, string $model = 'text-embedding-3-small')
+    public function __construct(string $apiKey, string $model = 'voyage-3')
     {
         $this->apiKey = $apiKey;
         $this->model = $model;
         $this->client = new Client([
-            'base_uri' => 'https://api.openai.com',
+            'base_uri' => 'https://api.voyageai.com',
             'headers' => [
                 'Authorization' => 'Bearer ' . $apiKey,
                 'Content-Type' => 'application/json',
@@ -34,8 +33,8 @@ class OpenAIProvider implements EmbeddingProvider
         $response = $this->client->post('/v1/embeddings', [
             'json' => [
                 'model' => $this->model,
-                'input' => $text,
-                'dimensions' => $dimensions,
+                'input' => [$text],
+                'output_dimension' => $dimensions,
             ]
         ]);
 
@@ -50,14 +49,19 @@ class OpenAIProvider implements EmbeddingProvider
         }
 
         $texts = array_column($payload, 'text');
-        $dimensions = isset($payload[0]['dims']) ? (int)$payload[0]['dims'] : 1536;
+        $dimensions = isset($payload[0]['dims']) ? (int)$payload[0]['dims'] : null;
+
+        $requestData = [
+            'model' => $this->model,
+            'input' => $texts,
+        ];
+
+        if ($dimensions !== null) {
+            $requestData['output_dimension'] = $dimensions;
+        }
 
         $response = $this->client->post('/v1/embeddings', [
-            'json' => [
-                'model' => $this->model,
-                'input' => $texts,
-                'dimensions' => $dimensions,
-            ]
+            'json' => $requestData
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -74,8 +78,8 @@ class OpenAIProvider implements EmbeddingProvider
         $promise = $this->client->postAsync('/v1/embeddings', [
             'json' => [
                 'model' => $this->model,
-                'input' => $text,
-                'dimensions' => $dimensions,
+                'input' => [$text],
+                'output_dimension' => $dimensions,
             ]
         ]);
 

@@ -4,42 +4,74 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use Sigmie\Document\Hit;
+use Sigmie\Document\RerankedHit;
+
 class NewContextComposer
 {
-    protected int $maxContextTokens = 4000;
-    protected string $citationStyle = 'numeric';
-    protected array $includeMetadata = [];
-
-    public function maxContextTokens(int $tokens): self
+    protected array $fields = [];
+    protected $formatter = null;
+    protected string $separator = "\n\n";
+    
+    public function fields(array $fields): self
     {
-        $this->maxContextTokens = $tokens;
+        $this->fields = $fields;
         return $this;
     }
-
-    public function citationStyle(string $style): self
+    
+    public function formatter(callable $formatter): self
     {
-        $this->citationStyle = $style;
+        $this->formatter = $formatter;
         return $this;
     }
-
-    public function includeMetadata(array $metadata): self
+    
+    public function separator(string $separator): self
     {
-        $this->includeMetadata = $metadata;
+        $this->separator = $separator;
         return $this;
     }
-
-    public function getMaxContextTokens(): int
+    
+    public function compose(array $hits): string
     {
-        return $this->maxContextTokens;
+        $contextParts = [];
+        
+        /** @var Hit|RerankedHit $hit */
+        foreach ($hits as $hit) {
+            $contextParts[] = $this->formatHit($hit);
+        }
+        
+        return implode($this->separator, $contextParts);
     }
-
-    public function getCitationStyle(): string
+    
+    protected function formatHit($hit): string
     {
-        return $this->citationStyle;
+        // If a custom formatter is provided, use it
+        if ($this->formatter) {
+            return call_user_func($this->formatter, $hit);
+        }
+        
+        // Extract the specified fields or all fields
+        $data = $this->extractFields($hit);
+        
+        // Default formatting as JSON
+        return json_encode($data);
     }
-
-    public function getIncludeMetadata(): array
+    
+    protected function extractFields($hit): array
     {
-        return $this->includeMetadata;
+        if (empty($this->fields)) {
+            // Return all fields from the source
+            return $hit->_source ?? [];
+        }
+        
+        // Extract only specified fields
+        $data = [];
+        foreach ($this->fields as $field) {
+            if (isset($hit->_source[$field])) {
+                $data[$field] = $hit->_source[$field];
+            }
+        }
+        
+        return $data;
     }
 }

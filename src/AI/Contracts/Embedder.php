@@ -6,7 +6,7 @@ namespace Sigmie\AI\Contracts;
 
 use Http\Promise\Promise;
 
-interface EmbeddingProvider
+interface Embedder
 {
     /**
      * Generate embeddings for a single text

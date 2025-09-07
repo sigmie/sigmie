@@ -6,14 +6,14 @@ namespace Sigmie\Semantic\Providers;
 
 use Http\Promise\Promise;
 use GuzzleHttp\Psr7\Uri;
-use Sigmie\AI\Contracts\EmbeddingProvider;
+use Sigmie\AI\Contracts\Embedder;
 use Sigmie\AI\Contracts\LLM;
 use Sigmie\AI\Contracts\Reranker;
 use Sigmie\Document\Hit;
 use Sigmie\Http\JSONClient;
 use Sigmie\Http\JSONRequest;
 
-class SigmieAI implements EmbeddingProvider, LLM, Reranker
+class SigmieAI implements Embedder, LLM, Reranker
 {
     protected JSONClient $http;
     protected string $model = 'sigmie-all';

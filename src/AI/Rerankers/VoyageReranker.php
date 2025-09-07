@@ -6,6 +6,7 @@ namespace Sigmie\AI\Rerankers;
 
 use GuzzleHttp\Client;
 use Sigmie\AI\Contracts\Reranker;
+use Sigmie\Document\Hit;
 
 class VoyageReranker implements Reranker
 {
@@ -25,6 +26,8 @@ class VoyageReranker implements Reranker
             ]
         ]);
     }
+
+    public function formatHit(Hit $hit): string {}
 
     public function rerank(array $documents, string $queryString, ?int $topK = null): array
     {
@@ -47,7 +50,7 @@ class VoyageReranker implements Reranker
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
-        
+
         // Voyage returns results sorted by relevance score
         $results = [];
         foreach ($data['data'] as $item) {

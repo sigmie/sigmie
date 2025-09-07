@@ -20,7 +20,12 @@ class Embeddings extends Object_
         foreach ($names as $name) {
 
             $newProperties->object($name, function (NewProperties $props) use ($name, $properties) {
+
                 $type = $properties->get($name);
+
+                if (!$type instanceof Text) {
+                    return;
+                }
 
                 $type->vectorFields()
                     ->map(function (Type $vectorField) use ($props) {

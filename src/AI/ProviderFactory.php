@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\AI;
 
-use Sigmie\AI\Contracts\EmbeddingProvider;
+use Sigmie\AI\Contracts\Embedder;
 use Sigmie\AI\Contracts\LLM;
 use Sigmie\AI\Contracts\Reranker;
-use Sigmie\AI\EmbeddingProviders\OpenAIProvider;
-use Sigmie\AI\EmbeddingProviders\SigmieProvider;
-use Sigmie\AI\EmbeddingProviders\VoyageProvider;
+use Sigmie\AI\Embedders\OpenAIProvider;
+use Sigmie\AI\Embedders\SigmieProvider;
+use Sigmie\AI\Embedders\VoyageProvider;
 use Sigmie\AI\LLMs\OpenAILLM;
 use Sigmie\AI\LLMs\SigmieLLM;
 use Sigmie\AI\Rerankers\SigmieReranker;
@@ -24,7 +24,7 @@ class ProviderFactory
         self::$apiKeys[$provider] = $apiKey;
     }
 
-    public static function createEmbeddingProvider(string $provider, ?string $model = null): EmbeddingProvider
+    public static function createEmbeddingProvider(string $provider, ?string $model = null): Embedder
     {
         return match ($provider) {
             'sigmie' => new SigmieProvider(),

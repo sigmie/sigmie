@@ -55,6 +55,11 @@ class SigmieSearchResponse extends AbstractFormatter
     {
         return $this->queryResponseRaw['hits']['total']['value'] ?? 0;
     }
+    
+    public function getContext()
+    {
+        return $this->search ?? null;
+    }
 
     public function formatFacets(): object
     {

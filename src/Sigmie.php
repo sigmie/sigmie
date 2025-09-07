@@ -6,6 +6,8 @@ namespace Sigmie;
 
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
+use Sigmie\AI\Contracts\LLM;
+use Sigmie\AI\Contracts\Reranker;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
 use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
@@ -37,7 +39,7 @@ use Sigmie\Semantic\Providers\SigmieAI as DefaultEmbeddingsProvider;
 class Sigmie
 {
     use IndexActions;
-    use APIsSearch; 
+    use APIsSearch;
 
     use EmbeddingsProvider;
 
@@ -151,17 +153,12 @@ class Sigmie
         return $search->index($index);
     }
 
-    public function newRag(string $index): NewRag
-    {
-        $index = $this->withApplicationPrefix($index);
+    public function newRag(
+        ?LLM $llm,
+        ?Reranker $reranker = null,
+    ): NewRag {
 
-        $rag = new NewRag($this->elasticsearchConnection);
-        $rag->index($index);
-        
-        // Set the default AI provider if available
-        if (isset($this->aiProvider)) {
-            $rag->aiProvider($this->aiProvider);
-        }
+        $rag = new NewRag($this->elasticsearchConnection, $llm, $reranker);
 
         return $rag;
     }

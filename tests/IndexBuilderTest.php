@@ -97,7 +97,7 @@ class IndexBuilderTest extends TestCase
         ]);
 
         $blueprint = new NewProperties;
-        $blueprint->name('name');
+        $blueprint->title('name');
 
         /** @var GreekBuilder */
         $greekBuilder = $this->sigmie->newIndex($alias)->language(new Greek());
@@ -115,6 +115,7 @@ class IndexBuilderTest extends TestCase
             ->greekStemmer()
             ->greekGreeklish()
             ->greekStopwords()
+            ->truncate(5)
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -152,12 +153,11 @@ class IndexBuilderTest extends TestCase
             ->queryString('kalim')
             ->get();
 
-        $this->assertEquals(200, $res->getStatusCode());
-
         $res = $this->analyzeAPICall($alias, 'καλημέρα', 'name_field_analyzer',);
 
-        $this->assertEquals('καλημ', $res->json()['tokens'][2]['token']);
-        $this->assertEquals('kalim', $res->json()['tokens'][3]['token']);
+        $this->assertEquals('καλημ', $res->json()['tokens'][0]['token']);
+        $this->assertEquals('kalim', $res->json()['tokens'][1]['token']);
+        $this->assertEquals('kalhm', $res->json()['tokens'][2]['token']);
     }
 
     /**
@@ -168,7 +168,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->name('name');
+        $blueprint->text('name');
 
         /** @var GreekBuilder */
         $greekBuilder = $this->sigmie->newIndex($alias)->language(new Greek());

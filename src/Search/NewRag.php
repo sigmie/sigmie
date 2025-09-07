@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use Closure;
-use Sigmie\AI\Contracts\EmbeddingProvider;
+use Sigmie\AI\Contracts\Embedder;
 use Sigmie\AI\Contracts\LLM;
 use Sigmie\AI\Contracts\Reranker;
 use Sigmie\AI\ProviderFactory;
@@ -14,210 +14,113 @@ use Sigmie\Document\Hit;
 use Sigmie\Document\RerankedHit;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
+use Sigmie\Rag\NewRerank;
 use Sigmie\Semantic\Providers\SigmieAI;
+use Sigmie\Search\Formatters\SigmieSearchResponse;
 
 class NewRag
 {
-    protected ElasticsearchConnection $connection;
-    protected string $index;
-    protected NewProperties|Properties $properties;
+    protected null|NewSearch|NewMultiSearch $searchBuilder = null;
 
-    protected ?EmbeddingProvider $embeddingProvider = null;
-    protected ?Reranker $reranker = null;
-    protected ?LLM $llm = null;
-    protected ?int $rerankTopK = null;
+    protected ?NewRerank $rerankBuilder = null;
 
-    protected ?array $retrieve = null;
-    protected string $question = '';
-    protected string $filters = '';
-    protected int $size = 10;
+    protected ?NewPrompt $promptBuilder = null;
 
-    protected ?Closure $contextComposer = null;
-    protected NewPrompt $promptBuilder;
-
-    protected array $llmOptions = [];
-
-    // Legacy support
-    protected ?SigmieAI $aiProvider = null;
-    protected ?string $prompt = null;
-    protected bool $rerank = false;
-
-    public function __construct(ElasticsearchConnection $connection)
-    {
-        $this->connection = $connection;
-        $this->contextComposer = fn(Hit $hit) => $hit;
+    public function __construct(
+        protected ElasticsearchConnection $connection,
+        protected ?LLM $llm = null,
+        protected ?Reranker $reranker = null,
+    ) {
         $this->promptBuilder = new NewPrompt();
-
-        // Default to SigmieAI provider
-        $sigmieAI = new SigmieAI();
-        $this->embeddingProvider = $sigmieAI;
-        $this->reranker = $sigmieAI;
-        $this->llm = $sigmieAI;
-        $this->aiProvider = $sigmieAI;
     }
 
-    public function index(string $index): self
+    public function search(Closure $callback): self
     {
-        $this->index = $index;
-        return $this;
-    }
+        $this->searchBuilder = new NewSearch($this->connection);
 
-    public function aiProvider(SigmieAI $aiProvider): self
-    {
-        $this->aiProvider = $aiProvider;
-        $this->embeddingProvider = $aiProvider;
-        $this->reranker = $aiProvider;
-        $this->llm = $aiProvider;
-        return $this;
-    }
-
-    public function properties(Properties|NewProperties $props): self
-    {
-        $this->properties = $props;
-        return $this;
-    }
-
-    public function embedWith(?string $provider = null, ?string $model = null): self
-    {
-        if ($provider === null) {
-            // Keep default SigmieAI
-            return $this;
-        }
-        $this->embeddingProvider = ProviderFactory::createEmbeddingProvider($provider, $model);
-        return $this;
-    }
-
-    public function rerankWith(string $provider, ?string $model = null, ?int $topK = null): self
-    {
-        $this->reranker = ProviderFactory::createReranker($provider, $model);
-        $this->rerankTopK = $topK;
-        $this->rerank = true;
-        return $this;
-    }
-
-    public function llm(string $provider, ?string $model = null, ?int $maxTokens = null, ?float $temperature = null): self
-    {
-        $this->llm = ProviderFactory::createLLM($provider, $model);
-
-        if ($maxTokens !== null) {
-            $this->llmOptions['max_tokens'] = $maxTokens;
-        }
-        if ($temperature !== null) {
-            $this->llmOptions['temperature'] = $temperature;
-        }
+        $callback($this->searchBuilder);
 
         return $this;
     }
 
-    public function retrieve(array $retrieve): self
+    public function multiSearch(Closure $callback): self
     {
-        $this->retrieve = $retrieve;
+        $this->searchBuilder = new NewMultiSearch($this->connection);
+
+        $callback($this->searchBuilder);
+
         return $this;
+        
     }
 
-    public function question(string $question): self
+    public function rerank(Closure $callback): self
     {
-        $this->question = $question;
-        return $this;
-    }
+        $this->rerankBuilder = new NewRerank($this->reranker);
 
-    public function filter(string $filter): self
-    {
-        $this->filters = $filter;
-        return $this;
-    }
-
-    public function size(int $size): self
-    {
-        $this->size = $size;
-        return $this;
-    }
-
-    public function compose(callable $callback): self
-    {
-        $this->contextComposer = $callback;
+        $callback($this->rerankBuilder);
 
         return $this;
     }
 
-    public function prompt($callbackOrString): self
+    public function prompt(Closure $callback): self
     {
-        if (is_callable($callbackOrString)) {
-            $callbackOrString($this->promptBuilder);
-        } else {
-            // Legacy string prompt support
-            $this->prompt = $callbackOrString;
-        }
-        return $this;
-    }
-
-    public function rerank(): self
-    {
-        $this->rerank = true;
+        $this->promptBuilder = new NewPrompt();
+        $callback($this->promptBuilder);
         return $this;
     }
 
     public function answer(): array
     {
-        // Create a new search with the configured parameters
-        $search = new NewSearch($this->connection);
-
-        $searchQuery = $search->properties($this->properties)
-            ->index($this->index)
-            ->queryString($this->question)
-            ->filters($this->filters)
-            ->size($this->size);
-
-        if ($this->retrieve) {
-            $searchQuery = $searchQuery->retrieve($this->retrieve);
+        // Execute search
+        if (!$this->searchBuilder) {
+            throw new \RuntimeException('Search must be configured before calling answer()');
         }
 
-        // Set AI provider if it's a SigmieAI instance
-        if ($this->aiProvider instanceof SigmieAI) {
-            $searchQuery->aiProvider($this->aiProvider);
+        $searchResponse = $this->searchBuilder->get();
+
+        $hits = $searchResponse->hits();
+
+        dd($hits);
+
+        // Apply reranking if configured
+        if ($this->rerankBuilder) {
+            $rerankedResponse = $this->rerankBuilder->rerank($searchResponse);
+            $hits = $rerankedResponse->hits();
         }
 
-        $response = $searchQuery->get();
-        $hits = $response->hits();
+        dump($hits);
 
-        // Rerank if configured
-        if ($this->rerank && $this->reranker) {
-
-            $documents = array_map(fn(Hit $hit) => $this->reranker->formatHit($hit), $hits);
-
-            $rerankedScores = $this->reranker->rerank($documents, $this->question);
-
-            $rerankedHits = array_map(
-                fn($rerankedScore, $index) => new RerankedHit($hits[$index], $rerankedScore),
-                $rerankedScores,
-                array_keys($rerankedScores)
-            );
-
-            $hits = $rerankedHits;
-        }
-
-        // Build context from reranked documents
+        // Build context from hits
         $context = $this->buildContext($hits);
 
         // Build and execute prompt
         $finalPrompt = $this->buildPrompt($context);
 
+        dump($context, $finalPrompt);
+
         // Get answer from LLM
         $llmResponse = $this->llm->answer(
             $finalPrompt,
-            $this->promptBuilder->getSystemPrompt() ?: '',
+            $this->promptBuilder->getInstructions() ?: '',
             $this->llmOptions
         );
+
+        dump($llmResponse);
 
         return $llmResponse;
     }
 
     protected function buildContext(array $hits): string
     {
-        $res = [];
+        // If prompt builder has a context composer, use it
+        if ($this->promptBuilder && $this->promptBuilder->getContextComposer()) {
+            return $this->promptBuilder->getContextComposer()->compose($hits);
+        }
 
+        // Default context building
+        $res = [];
         /** @var Hit|RerankedHit $hit */
-        foreach ($hits as $index => $hit) {
+        foreach ($hits as $hit) {
             $res[] = json_encode($hit->_source);
         }
 
@@ -226,20 +129,15 @@ class NewRag
 
     protected function buildPrompt(string $context): string
     {
-        // Use new prompt builder if configured, otherwise fall back to legacy
-        if ($this->promptBuilder->getTemplate()) {
+        if ($this->promptBuilder && $this->promptBuilder->getTemplate()) {
             $template = $this->promptBuilder->getTemplate();
             $prompt = str_replace('{{context}}', $context, $template);
-            $prompt = str_replace('{{question}}', $this->question, $prompt);
+            $prompt = str_replace('{{question}}', $this->promptBuilder->getQuestion(), $prompt);
             return $prompt;
-        } elseif ($this->prompt) {
-            // Legacy prompt support
-            $prompt = str_replace('{{context}}', $context, $this->prompt);
-            $prompt = str_replace('{{question}}', $this->question, $prompt);
-            return $prompt;
-        } else {
-            // Default prompt
-            return "Question: {$this->question}\n\nContext:\n{$context}";
         }
+
+        // Default prompt
+        $question = $this->promptBuilder ? $this->promptBuilder->getQuestion() : '';
+        return "Question: {$question}\n\nContext:\n{$context}";
     }
 }

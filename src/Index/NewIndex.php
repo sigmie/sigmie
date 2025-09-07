@@ -153,6 +153,8 @@ class NewIndex
         $defaultAnalyzer->addFilters($this->filters());
         $defaultAnalyzer->setTokenizer($this->tokenizer);
 
+        ray($defaultAnalyzer);
+
         /** @var IndexMappings $mappings */
         $mappings = $this->createMappings($defaultAnalyzer);
         $mappings->aiProvider($this->aiProvider);
