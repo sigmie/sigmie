@@ -25,9 +25,8 @@ use Sigmie\Index\Shared\Shards;
 use Sigmie\Index\Shared\Tokenizer;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
-use Sigmie\Semantic\Contracts\AIProvider;
-use Sigmie\Semantic\Providers\SigmieAI as DefaultEmbeddingsProvider;
-use Sigmie\Shared\EmbeddingsProvider;
+use Sigmie\AI\Contracts\Embedder;
+use Sigmie\Semantic\Providers\SigmieAI as DefaultEmbedder;
 
 class NewIndex
 {
@@ -40,7 +39,6 @@ class NewIndex
     use Replicas;
     use Shards;
     use Tokenizer;
-    use EmbeddingsProvider;
 
     protected string $language = 'no_lang';
 
@@ -63,8 +61,10 @@ class NewIndex
         ];
     }
 
-    public function __construct(ElasticsearchConnection $connection)
-    {
+    public function __construct(
+        ElasticsearchConnection $connection,
+        protected ?Embedder $embedder = null
+    ) {
         $this->setElasticsearchConnection($connection);
 
         $this->tokenizer = new WordBoundaries();
@@ -73,12 +73,19 @@ class NewIndex
 
         $this->properties = new MappingsProperties;
 
-        $this->aiProvider = new DefaultEmbeddingsProvider();
+        $this->embedder ??= new DefaultEmbedder();
     }
 
     public function getAlias(): string
     {
         return $this->alias;
+    }
+
+    public function withEmbedder(Embedder $embedder): static
+    {
+        $this->embedder = $embedder;
+
+        return $this;
     }
 
     public function analysis(): AnalysisInterface
@@ -157,7 +164,7 @@ class NewIndex
 
         /** @var IndexMappings $mappings */
         $mappings = $this->createMappings($defaultAnalyzer);
-        $mappings->aiProvider($this->aiProvider);
+        $mappings->withEmbedder($this->embedder);
 
         $analyzers = $mappings->analyzers();
 

@@ -10,6 +10,7 @@ use Sigmie\Enums\FacetLogic;
 use Sigmie\Mappings\Contracts\Type as TypeInterface;
 use Sigmie\Query\Aggs;
 use Sigmie\Search\Contracts\TextQueries;
+use Sigmie\Shared\Collection;
 use Sigmie\Shared\Contracts\Name;
 use Sigmie\Shared\Contracts\ToRaw;
 
@@ -173,5 +174,13 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
         $this->facetLogic = FacetLogic::Disjunctive;
 
         return $this;
+    }
+
+    public function vectorFields() 
+    {
+        return (new Collection([]))
+            ->map(function (Nested|DenseVector $field) {
+                return $field;
+            });
     }
 }

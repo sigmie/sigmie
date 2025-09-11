@@ -33,15 +33,14 @@ use Sigmie\Search\NewRag;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewSemanticSearch;
 use Sigmie\Search\NewTemplate;
-use Sigmie\Shared\EmbeddingsProvider;
-use Sigmie\Semantic\Providers\SigmieAI as DefaultEmbeddingsProvider;
+use Sigmie\AI\Contracts\Embedder;
+use Sigmie\Semantic\Providers\SigmieAI as DefaultEmbedder;
 
 class Sigmie
 {
     use IndexActions;
     use APIsSearch;
 
-    use EmbeddingsProvider;
 
     public const DATE_FORMAT = 'Y-m-d H:i:s.u';
 
@@ -58,10 +57,12 @@ class Sigmie
         return $this;
     }
 
-    public function __construct(Connection $httpConnection)
-    {
+    public function __construct(
+        Connection $httpConnection,
+        protected ?Embedder $embedder = null
+    ) {
         $this->elasticsearchConnection = $httpConnection;
-        $this->aiProvider = new DefaultEmbeddingsProvider();
+        $this->embedder ??= new DefaultEmbedder();
     }
 
     private function withApplicationPrefix(string $name): string
@@ -80,12 +81,17 @@ class Sigmie
         return $this;
     }
 
+    public function withEmbedder(Embedder $embedder): static
+    {
+        $this->embedder = $embedder;
+
+        return $this;
+    }
+
     public function newIndex(string $name): NewIndex
     {
-        $builder = new NewIndex($this->elasticsearchConnection);
-        $builder->aiProvider($this->aiProvider);
-
-        return $builder->alias($this->withApplicationPrefix($name));
+        return (new NewIndex($this->elasticsearchConnection, $this->embedder))
+            ->alias($this->withApplicationPrefix($name));
     }
 
     public function index(string $name): null|AliasedIndex|Index
@@ -109,10 +115,12 @@ class Sigmie
 
     public function collect(string $name, bool $refresh = false): AliveCollection
     {
-        $aliveIndex = new AliveCollection($this->withApplicationPrefix($name), $this->elasticsearchConnection, $refresh ? 'true' : 'false');
-        $aliveIndex->aiProvider($this->aiProvider);
-
-        return $aliveIndex;
+        return new AliveCollection(
+            $this->withApplicationPrefix($name),
+            $this->elasticsearchConnection,
+            $this->embedder,
+            $refresh ? 'true' : 'false'
+        );
     }
 
     public function rawQuery(
@@ -147,10 +155,8 @@ class Sigmie
     {
         $index = $this->withApplicationPrefix($index);
 
-        $search = new NewSearch($this->elasticsearchConnection);
-        $search->aiProvider($this->aiProvider);
-
-        return $search->index($index);
+        return (new NewSearch($this->elasticsearchConnection, $this->embedder))
+            ->index($index);
     }
 
     public function newRag(
@@ -172,12 +178,8 @@ class Sigmie
     {
         $id = $this->withApplicationPrefix($id);
 
-        $builder = new NewTemplate(
-            $this->elasticsearchConnection,
-        );
-        $builder->aiProvider($this->aiProvider);
-
-        return $builder->id($id);
+        return (new NewTemplate($this->elasticsearchConnection, $this->embedder))
+            ->id($id);
     }
 
     public function refresh(string $indexName)
@@ -212,13 +214,16 @@ class Sigmie
         }
     }
 
-    public static function create(array|string $hosts, array $config = []): static
-    {
+    public static function create(
+        array|string $hosts, 
+        array $config = [],
+        ?Embedder $embedder = null
+    ): static {
         $hosts = (is_string($hosts)) ? explode(',', $hosts) : $hosts;
 
         $client = JSONClient::create($hosts, $config);
 
-        return new static(new HttpConnection($client));
+        return new static(new HttpConnection($client), $embedder);
     }
 
     public function delete(string $index): bool

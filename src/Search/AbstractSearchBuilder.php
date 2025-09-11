@@ -11,12 +11,11 @@ use Sigmie\Mappings\Properties as MappingsProperties;
 use Sigmie\Query\Aggs as FacetAggs;
 use Sigmie\Query\Contracts\Aggs;
 use Sigmie\Query\Queries\Compound\Boolean;
+use Sigmie\AI\Contracts\Embedder;
 use Sigmie\Search\Contracts\SearchBuilder;
-use Sigmie\Shared\EmbeddingsProvider;
 
 abstract class AbstractSearchBuilder implements SearchBuilder
 {
-    use EmbeddingsProvider;
 
     protected Properties $properties;
 
@@ -76,6 +75,7 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     public function __construct(
         protected ElasticsearchConnection $elasticsearchConnection,
+        protected ?Embedder $embedder = null
     ) {
         $this->properties = new MappingsProperties();
 
@@ -91,6 +91,13 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
         $this->globalFilters = new Boolean;
         $this->globalFilters->must()->matchAll();
+    }
+
+    public function withEmbedder(Embedder $embedder): static
+    {
+        $this->embedder = $embedder;
+
+        return $this;
     }
 
     public function properties(Properties|NewProperties $props): static

@@ -16,8 +16,8 @@ use Sigmie\Index\Shared\Mappings;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\HTML;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\AI\Contracts\Embedder;
 use Sigmie\Semantic\DocumentEmbeddings;
-use Sigmie\Shared\EmbeddingsProvider;
 use Traversable;
 use Sigmie\Shared\Collection;
 
@@ -28,7 +28,6 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     use LazyEach;
     use Search;
     use Mappings;
-    use EmbeddingsProvider;
 
     protected ?array $only = null;
 
@@ -39,11 +38,19 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     public function __construct(
         protected string $name,
         ElasticsearchConnection $connection,
+        protected ?Embedder $embedder = null,
         protected string $refresh = 'false'
     ) {
         $this->setElasticsearchConnection($connection);
 
         $this->properties = new Properties();
+    }
+
+    public function withEmbedder(Embedder $embedder): static
+    {
+        $this->embedder = $embedder;
+
+        return $this;
     }
 
     public function populateEmbeddings(bool $value = true)
@@ -130,8 +137,8 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function merge(array $docs): AliveCollection
     {
-        if ($this->populateEmbeddings && $this->aiProvider) {
-            $documentEmbeddings = new DocumentEmbeddings($this->properties, $this->aiProvider);
+        if ($this->populateEmbeddings && $this->embedder) {
+            $documentEmbeddings = new DocumentEmbeddings($this->properties, $this->embedder);
             $docs = array_map(fn(Document $doc) => $documentEmbeddings->make($doc), $docs);
         }
 
@@ -142,11 +149,11 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     private function documentEmbeddings(Document $document): Document
     {
-        if (!$this->populateEmbeddings || !$this->aiProvider) {
+        if (!$this->populateEmbeddings || !$this->embedder) {
             return $document;
         }
 
-        $documentEmbeddings = new DocumentEmbeddings($this->properties, $this->aiProvider);
+        $documentEmbeddings = new DocumentEmbeddings($this->properties, $this->embedder);
         
         return $documentEmbeddings->make($document);
     }
