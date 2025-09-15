@@ -1,0 +1,25 @@
+name: Sync Docs to sigmie.com
+
+on:
+  push:
+    branches:
+      - v2
+    paths:
+      - 'docs/**'
+      - '.github/workflows/sync-docs-to-sigmie-com.yml'
+
+jobs:
+  trigger-docs-sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger sigmie.com docs sync
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: Bearer ${{ secrets.SIGMIE_COM_TRIGGER_TOKEN }}" \
+            https://api.github.com/repos/sigmie/sigmie.com/dispatches \
+            -d '{"event_type":"sync-v2-docs"}'
+      
+      - name: Confirm trigger sent
+        run: echo "✅ Documentation sync triggered for sigmie.com"
