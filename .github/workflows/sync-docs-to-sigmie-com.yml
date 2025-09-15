@@ -16,8 +16,8 @@ jobs:
       - name: Trigger sigmie.com docs sync
         run: |
           curl -X POST \
+            -H "Authorization: token ${{ secrets.SIGMIE_COM_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/repos/sigmie/sigmie.com/dispatches \
             -d '{"event_type":"sync-v2-docs"}'
       
