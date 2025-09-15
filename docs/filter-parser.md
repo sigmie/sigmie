@@ -92,9 +92,110 @@ color:'red'
 For strings, the `{value}` must be enclosed in double `"` or single quotes `'`.
 You can escape quotes inside the `{value}` using a **backslash** `\`.
 
+### Boolean Field Filtering
+
+Boolean fields can be filtered using two different syntaxes, giving you flexibility in how you write your filter expressions.
+
+#### Direct Boolean Value Syntax
+
+You can filter boolean fields directly using `true` or `false` values:
+
+```bash
+{field}:true
+{field}:false
+```
+
+For example, given a document structure:
+```json
+{
+  "active": true,
+  "published": false
+}
+```
+
+You can filter for active documents:
+```sql
+active:true
+```
+
+Or filter for inactive documents:
+```sql
+active:false
+```
+
+#### Using Boolean Values in Complex Queries
+
+Boolean filters work seamlessly with logical operators:
+
+```sql
+# Find active and published documents
+active:true AND published:true
+
+# Find documents that are either active OR published
+active:true OR published:true
+
+# Find active documents that are NOT published
+active:true AND NOT published:true
+
+# Complex boolean filtering with other field types
+active:true AND category:"sports" AND stock>0
+```
+
+#### Boolean Values in Nested Objects
+
+Boolean filtering also works with nested object properties using dot notation:
+
+```sql
+# For object properties
+contact.active:true
+contact.is_verified:false
+
+# Combining nested boolean with other conditions
+contact.active:true AND contact.name:"John Doe"
+```
+
+For deeply nested structures, you can chain the dot notation:
+```sql
+user.profile.active:true
+user.settings.notifications:false
+```
+
+#### Boolean Values in Nested Fields
+
+For true nested fields (not object properties), use the curly brace syntax:
+
+```sql
+# Single boolean condition in nested field
+contact:{ active:true }
+
+# Multiple conditions in nested field
+contact:{ active:true AND verified:false }
+
+# Complex nested boolean filtering
+contact:{ active:true AND location:1km[51.16,13.49] }
+```
+
+#### Real-World Boolean Filtering Examples
+
+Based on practical use cases, here are some comprehensive examples:
+
+```sql
+# E-commerce product filtering
+active:true AND stock>0 AND (category:"electronics" OR category:"computers")
+
+# User management with nested object properties
+contact.is_active:true AND contact.is_verified:false AND contact.category:"premium"
+
+# Complex nested filtering with boolean conditions
+driver.vehicle:{ active:true AND model:"Canyonero" } AND driver.license:true
+
+# Multi-level boolean conditions
+contact:{ active:true AND verified:true } AND account.premium:true AND status:"confirmed"
+```
+
 ### is & is_not
 
-The `is:` and `is_not:` operators are used to filter `boolean` fields.
+The `is:` and `is_not:` operators provide an alternative, more semantic way to filter `boolean` fields.
 
 The `is` operator matches documents where the specified **boolean** field value is `true`.
 
@@ -128,6 +229,74 @@ is_not:active
 ```
 
 to match documents that **are NOT** active.
+
+#### Equivalence Between Syntaxes
+
+The following filter expressions are equivalent:
+
+```sql
+# These all match documents where active=true
+active:true
+is:active
+
+# These all match documents where active=false  
+active:false
+is_not:active
+
+# These all exclude active documents
+NOT active:true
+NOT is:active
+active:false
+is_not:active
+```
+
+Choose the syntax that feels most natural for your use case. The `is:` and `is_not:` operators can make filters more readable, especially in complex queries:
+
+```sql
+# Using direct boolean syntax
+active:true AND published:true AND featured:false
+
+# Using semantic operators (equivalent)
+is:active AND is:published AND is_not:featured
+```
+
+### Important Notes for Boolean Filtering
+
+1. **No Quotes Required**: Boolean values (`true`/`false`) don't require quotes:
+   ```sql
+   # ✅ Correct
+   active:true
+   published:false
+   
+   # ⚠️ Also works, but unnecessary
+   active:"true"
+   published:"false"
+   ```
+
+2. **Case Sensitivity**: Boolean values are case-sensitive and must be lowercase:
+   ```sql
+   # ✅ Correct
+   active:true
+   active:false
+   
+   # ❌ Will not work as expected
+   active:True
+   active:FALSE
+   active:TRUE
+   ```
+
+3. **Type Validation**: The filter parser validates that boolean syntax is only used with actual boolean fields defined in your mappings.
+
+4. **Performance**: Boolean filters are typically very fast as they create efficient term queries in Elasticsearch.
+
+5. **Nested Field Behavior**: When using boolean filters in nested fields, each nested document is evaluated independently:
+   ```sql
+   # This matches any nested document where both conditions are true in the same nested object
+   contact:{ active:true AND verified:true }
+   
+   # This is different from object properties where conditions apply to the parent document
+   contact.active:true AND contact.verified:true
+   ```
 
 ### In
 
