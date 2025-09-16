@@ -12,7 +12,7 @@ use Sigmie\Document\Hit;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Rag\NewRerank;
 use Sigmie\Search\NewContextComposer;
-use Sigmie\Search\NewPrompt;
+use Sigmie\Search\NewRagPrompt;
 use Sigmie\Search\NewSearch;
 use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Testing\TestCase;
@@ -65,31 +65,41 @@ class RagTest extends TestCase
             ],),
         ]);
 
+        $voyageReranker = new VoyageReranker(getenv('VOYAGE_API_KEY'));
+
         $answer = $sigmie
-            ->newRag(
-                llm: $openai,
-                reranker: new VoyageReranker(getenv('VOYAGE_API_KEY'))
-            )
+            ->newRag($openai)
+            ->reranker($voyageReranker)
             ->search(
-                fn(NewSearch $search) => $search
+                $sigmie->newMultiSearch()
+                    ->newSearch($indexName)
                     ->index($indexName)
                     ->properties($props)
                     ->retrieve(['text', 'title'])
                     ->queryString('What is the privacy policy?')
                     ->filters('language:"en"')
                     ->size(3)
-            )->rerank(
-                fn(NewRerank $rerank) => $rerank->fields(['text'])->topK(3)
-            )->prompt(function (NewPrompt $prompt) {
-                $prompt->question('What is the privacy policy?');
-                $prompt->instructions("Answer only from Context. If insufficient, set \"answer\" to \"I don't know\"");
-                $prompt->context(fn(NewContextComposer $context) => $context->fields(['text', 'title']));
-                $prompt->template("
-                    Question:
-                    {{question}}
-                    Context:
-                    {{context}}");
+            )
+            ->rerank(function (NewRerank $rerank) {
+                $rerank->fields(['text', 'title']);
+                $rerank->topK(1);
+                $rerank->query('What is the privacy policy?');
             })
+            ->prompt(function (NewRagPrompt $prompt) {
+                $prompt->question('What is the privacy policy?');
+                $prompt->contextFields([
+                    'text',
+                    // 'title'
+                ]);
+                $prompt->guardrails([
+                    'Answer only from provided context.',
+                    'Do not fabricate facts.',
+                    'Prefer primary sources.',
+                    'Be concise. Use bullet points when possible.',
+                ]);
+            })
+            ->instructions("You are a precise, no-fluff technical assistant. Answer in English. Cite sources as [^id]. If unknown, say 'Unknown.'")
+            ->limits(maxTokens: 600, temperature: 0.1)
             ->answer();
 
         dd($answer);

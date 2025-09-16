@@ -21,24 +21,25 @@ class NewRag
 {
     protected null|NewSearch|NewMultiSearch $searchBuilder = null;
 
+    protected ?Reranker $reranker = null;
+
+    protected ?Closure $promptBuilder = null;
+
     protected ?NewRerank $rerankBuilder = null;
 
-    protected ?NewPrompt $promptBuilder = null;
+    protected string $instructions = '';
+
+    protected array $llmOptions = [];
 
     public function __construct(
         protected ElasticsearchConnection $connection,
         protected ?LLM $llm = null,
-        protected ?Reranker $reranker = null,
         protected ?Embedder $embedder = null
-    ) {
-        $this->promptBuilder = new NewPrompt();
-    }
+    ) {}
 
-    public function search(Closure $callback): self
+    public function search(NewSearch|NewMultiSearch $search): self
     {
-        $this->searchBuilder = new NewSearch($this->connection, $this->embedder);
-
-        $callback($this->searchBuilder);
+        $this->searchBuilder = $search;
 
         return $this;
     }
@@ -48,6 +49,13 @@ class NewRag
         $this->searchBuilder = new NewMultiSearch($this->connection);
 
         $callback($this->searchBuilder);
+
+        return $this;
+    }
+
+    public function reranker(Reranker $reranker): self
+    {
+        $this->reranker = $reranker;
 
         return $this;
     }
@@ -63,8 +71,8 @@ class NewRag
 
     public function prompt(Closure $callback): self
     {
-        $this->promptBuilder = new NewPrompt();
-        $callback($this->promptBuilder);
+        $this->promptBuilder = $callback;
+
         return $this;
     }
 
@@ -79,29 +87,24 @@ class NewRag
 
         $hits = $searchResponse->hits();
 
-        dd($hits);
-
         // Apply reranking if configured
-        if ($this->rerankBuilder) {
-            $rerankedResponse = $this->rerankBuilder->rerank($searchResponse);
-            $hits = $rerankedResponse->hits();
+        if ($this->reranker && $this->rerankBuilder) {
+            $hits = $this->rerankBuilder->rerank($hits)->hits();
         }
 
-        dump($hits);
+        $prompt = new NewRagPrompt($hits);
 
-        // Build context from hits
-        $context = $this->buildContext($hits);
+        ($this->promptBuilder)($prompt);
 
         // Build and execute prompt
-        $finalPrompt = $this->buildPrompt($context);
-
-        dump($context, $finalPrompt);
+        $finalPrompt = $prompt->create();
 
         // Get answer from LLM
         $llmResponse = $this->llm->answer(
             $finalPrompt,
-            $this->promptBuilder->getInstructions() ?: '',
-            $this->llmOptions
+            $this->instructions,
+            $this->llmOptions['max_tokens'],
+            $this->llmOptions['temperature']
         );
 
         dump($llmResponse);
@@ -109,34 +112,20 @@ class NewRag
         return $llmResponse;
     }
 
-    protected function buildContext(array $hits): string
+    public function instructions(string $instructions): self
     {
-        // If prompt builder has a context composer, use it
-        if ($this->promptBuilder && $this->promptBuilder->getContextComposer()) {
-            return $this->promptBuilder->getContextComposer()->compose($hits);
-        }
+        $this->instructions = $instructions;
 
-        // Default context building
-        $res = [];
-        /** @var Hit|RerankedHit $hit */
-        foreach ($hits as $hit) {
-            $res[] = json_encode($hit->_source);
-        }
-
-        return implode("\n\n", $res);
+        return $this;
     }
 
-    protected function buildPrompt(string $context): string
+    public function limits(int $maxTokens, float $temperature): self
     {
-        if ($this->promptBuilder && $this->promptBuilder->getTemplate()) {
-            $template = $this->promptBuilder->getTemplate();
-            $prompt = str_replace('{{context}}', $context, $template);
-            $prompt = str_replace('{{question}}', $this->promptBuilder->getQuestion(), $prompt);
-            return $prompt;
-        }
+        $this->llmOptions = [
+            'max_tokens' => $maxTokens,
+            'temperature' => $temperature,
+        ];
 
-        // Default prompt
-        $question = $this->promptBuilder ? $this->promptBuilder->getQuestion() : '';
-        return "Question: {$question}\n\nContext:\n{$context}";
+        return $this;
     }
 }

@@ -75,7 +75,6 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     public function __construct(
         protected ElasticsearchConnection $elasticsearchConnection,
-        protected ?Embedder $embedder = null
     ) {
         $this->properties = new MappingsProperties();
 
@@ -91,13 +90,6 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
         $this->globalFilters = new Boolean;
         $this->globalFilters->must()->matchAll();
-    }
-
-    public function withEmbedder(Embedder $embedder): static
-    {
-        $this->embedder = $embedder;
-
-        return $this;
     }
 
     public function properties(Properties|NewProperties $props): static

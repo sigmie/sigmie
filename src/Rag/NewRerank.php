@@ -14,7 +14,10 @@ class NewRerank
     protected array $fields = [];
     protected int $topK = 10;
     protected ?string $query = null;
-    protected ?Reranker $reranker = null;
+
+    public function __construct(protected Reranker $reranker) {
+        
+    }
     
     public function query(string $query): self
     {
@@ -34,30 +37,23 @@ class NewRerank
         return $this;
     }
     
-    public function rerank(SigmieSearchResponse $response): RerankedSearchResponse
+    public function rerank(array $hits): RerankedSearchResponse
     {
-        if (!$this->reranker) {
-            throw new \Exception('Reranker not set');
-        }
-        
-        $hits = $response->hits();
-        
-        // Get the query from the response if not explicitly set
-        $query = $this->query ?: $this->extractQueryFromResponse($response);
+        $query = $this->query;
         
         if (empty($hits) || !$query) {
-            return new RerankedSearchResponse($response);
+            return new RerankedSearchResponse($hits, $this->fields, $query, $this->topK);
         }
         
         // Format hits for reranking
         $documents = $this->formatHitsForReranking($hits);
         
         // Perform reranking
-        $rerankedScores = $this->reranker->rerank($documents, $query) ?? [];
+        $rerankedScores = $this->reranker->rerank($documents, $query, $this->topK) ?? [];
         
         // Create reranked hits
         $rerankedHits = array_map(
-            fn($rerankedScore, $index) => new RerankedHit($hits[$index], $rerankedScore),
+            fn($rerankedScore, $index) => new RerankedHit($hits[$rerankedScore['index']], $rerankedScore['score']),
             $rerankedScores,
             array_keys($rerankedScores)
         );
@@ -66,7 +62,7 @@ class NewRerank
         usort($rerankedHits, fn($a, $b) => $b->_rerank_score <=> $a->_rerank_score);
         $rerankedHits = array_slice($rerankedHits, 0, $this->topK);
         
-        return new RerankedSearchResponse($response, $rerankedHits);
+        return new RerankedSearchResponse($rerankedHits, $this->fields, $query, $this->topK);
     }
     
     protected function formatHitsForReranking(array $hits): array

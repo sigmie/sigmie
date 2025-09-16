@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use Sigmie\AI\Contracts\Embedder;
 use Sigmie\Base\APIs\MSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\ElasticsearchException;
@@ -19,12 +20,13 @@ class NewMultiSearch
     protected array $queries = [];
 
     public function __construct(
-        protected ElasticsearchConnection $elasticsearchConnection
+        protected ElasticsearchConnection $elasticsearchConnection,
+        protected ?Embedder $embedder = null
     ) {}
 
     public function newSearch(string $name): NewSearch
     {
-        $search = new NewSearch($this->elasticsearchConnection);
+        $search = new NewSearch($this->elasticsearchConnection, $this->embedder);
         $search->index($name);
 
         $this->queries[] = $search;
@@ -94,5 +96,12 @@ class NewMultiSearch
         }
 
         return $results;
+    }
+
+    public function hits() {
+
+        $results = $this->get();
+
+        return array_map(fn($result) => $result->hits(), $results);
     }
 }

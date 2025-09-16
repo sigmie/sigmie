@@ -27,8 +27,6 @@ class VoyageReranker implements Reranker
         ]);
     }
 
-    public function formatHit(Hit $hit): string {}
-
     public function rerank(array $documents, string $queryString, ?int $topK = null): array
     {
         if (count($documents) === 0) {

@@ -359,7 +359,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $boolean = new Boolean;
 
         $this->populateVectorPool();
-        
+
         // Build KNN queries independently before main query
         $this->buildKnnQueries();
         $this->handleKnn($search);
@@ -394,8 +394,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             ->toArray();
 
         $pool = [];
-
-        dump('populateVectorPool');
 
         foreach ($dims as $dim) {
             $pool[$dim] ?? $pool[$dim] = [];
@@ -450,16 +448,16 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         }
 
         $allKnnQueries = [];
-        
+
         foreach ($this->searchContext->queryStrings as $queryString) {
             if (trim($queryString->text()) === '') {
                 continue;
             }
-            
+
             $knnQueries = $this->createVectorQuery($queryString->text(), $queryString->weight());
             $allKnnQueries = array_merge($allKnnQueries, $knnQueries);
         }
-        
+
         $this->knn = $allKnnQueries;
     }
 
@@ -537,7 +535,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 return $field->queries($vectors);
             })
-           ->flatten(1)
+            ->flatten(1)
             ->map(function (Query $query) use ($queryBoost) {
 
                 return $this->configureVectorQuery($query, $queryBoost);
@@ -677,5 +675,10 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     public function multisearchResCount(): int
     {
         return 2; // search + facets
+    }
+
+    public function hits()
+    {
+        return $this->get()->hits();
     }
 }

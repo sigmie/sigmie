@@ -22,9 +22,4 @@ interface Embedder
      * Generate embeddings asynchronously
      */
     public function promiseEmbed(string $text, int $dimensions): Promise;
-
-    /**
-     * Get the model name
-     */
-    public function getModel(): string;
 }

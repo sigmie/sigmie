@@ -158,18 +158,17 @@ class Sigmie
     }
 
     public function newRag(
-        ?LLM $llm,
-        ?Reranker $reranker = null,
+        LLM $llm,
     ): NewRag {
 
-        $rag = new NewRag($this->elasticsearchConnection, $llm, $reranker, $this->embedder);
+        $rag = new NewRag($this->elasticsearchConnection, $llm, $this->embedder);
 
         return $rag;
     }
 
     public function newMultiSearch(): NewMultiSearch
     {
-        return new NewMultiSearch($this->elasticsearchConnection);
+        return new NewMultiSearch($this->elasticsearchConnection, $this->embedder);
     }
 
     public function newTemplate(string $id): NewTemplate

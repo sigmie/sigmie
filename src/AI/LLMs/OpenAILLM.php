@@ -87,14 +87,17 @@ class OpenAILLM implements LLM, Embedder
         ]);
     }
 
-    public function answer(string $input, string $instructions, ?array $options = []): array
+    public function answer(string $input, string $instructions, int $maxTokens, float $temperature): array
     {
         $messages = [
             ['role' => 'system', 'content' => $instructions],
             ['role' => 'user', 'content' => $input]
         ];
 
-        return $this->chat($messages, $options);
+        return $this->chat($messages, [
+            'max_tokens' => $maxTokens,
+            'temperature' => $temperature
+        ]);
     }
 
     public function chat(array $messages, ?array $options = []): array
@@ -117,17 +120,5 @@ class OpenAILLM implements LLM, Embedder
             'usage' => $data['usage'] ?? null,
             'model' => $data['model'] ?? $this->model,
         ];
-    }
-
-    public function getModel(): string
-    {
-        return $this->model;
-    }
-
-    public function withOptions(array $options): self
-    {
-        $clone = clone $this;
-        $clone->options = array_merge($this->options, $options);
-        return $clone;
     }
 }
