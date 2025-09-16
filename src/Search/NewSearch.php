@@ -514,7 +514,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected function getEmbeddings(array $dims, string $queryString): array
     {
-        dump('getEmbeddings');
         return array_map(fn($dim) => [
             'dims' => $dim,
             'vector' => $this->embedder->embed($queryString, $dim)

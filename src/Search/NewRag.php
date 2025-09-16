@@ -107,8 +107,6 @@ class NewRag
             $this->llmOptions['temperature']
         );
 
-        dump($llmResponse);
-
         return $llmResponse;
     }
 

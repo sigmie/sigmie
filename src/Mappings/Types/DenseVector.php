@@ -101,8 +101,6 @@ class DenseVector extends AbstractType implements Type
     {
         $field = $this->name();
 
-        dump($field);
-
         if ($this->index) {
             return [
                 new NearestNeighbors(
