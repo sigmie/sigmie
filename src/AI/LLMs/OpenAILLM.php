@@ -100,6 +100,19 @@ class OpenAILLM implements LLM, Embedder
         ]);
     }
 
+    public function streamAnswer(string $input, string $instructions, int $maxTokens, float $temperature): iterable
+    {
+        $messages = [
+            ['role' => 'system', 'content' => $instructions],
+            ['role' => 'user', 'content' => $input]
+        ];
+
+        return $this->streamChat($messages, [
+            'max_tokens' => $maxTokens,
+            'temperature' => $temperature
+        ]);
+    }
+
     public function chat(array $messages, ?array $options = []): array
     {
         $mergedOptions = array_merge($this->options, $options ?: []);
@@ -120,5 +133,50 @@ class OpenAILLM implements LLM, Embedder
             'usage' => $data['usage'] ?? null,
             'model' => $data['model'] ?? $this->model,
         ];
+    }
+
+    public function streamChat(array $messages, ?array $options = []): iterable
+    {
+        $mergedOptions = array_merge($this->options, $options ?: []);
+
+        $payload = array_merge([
+            'model' => $this->model,
+            'messages' => $messages,
+            'stream' => true,
+        ], $mergedOptions);
+
+        $response = $this->client->post('/v1/chat/completions', [
+            'json' => $payload,
+            'stream' => true,
+        ]);
+
+        $body = $response->getBody();
+        $buffer = '';
+
+        while (!$body->eof()) {
+            $chunk = $body->read(1024);
+            $buffer .= $chunk;
+            
+            $lines = explode("\n", $buffer);
+            $buffer = array_pop($lines);
+            
+            foreach ($lines as $line) {
+                if (trim($line) === '' || $line === 'data: [DONE]') {
+                    continue;
+                }
+                
+                if (strpos($line, 'data: ') === 0) {
+                    $json = substr($line, 6);
+                    $data = json_decode($json, true);
+                    
+                    if (isset($data['choices'][0]['delta']['content'])) {
+                        yield [
+                            'content' => $data['choices'][0]['delta']['content'],
+                            'finish_reason' => $data['choices'][0]['finish_reason'] ?? null,
+                        ];
+                    }
+                }
+            }
+        }
     }
 }

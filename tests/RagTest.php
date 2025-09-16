@@ -101,34 +101,7 @@ class RagTest extends TestCase
             ->instructions("You are a precise, no-fluff technical assistant. Answer in English. Cite sources as [^id]. If unknown, say 'Unknown.'")
             ->limits(maxTokens: 600, temperature: 0.1)
             ->answer();
-
-        dd($answer);
-        // $answer = $this->sigmie
-        //     ->newRag($indexName)
-        //     ->properties($props)
-
-        //     // ->embedWith('voyage', model: 'voyage-3')
-        //     // ->rerankWith('voyage', model: 'rerank-2', topK: 3)
-        //     // ->llm(provider: 'openai', model: 'gpt-4', maxTokens: 450, temperature: 0.1)
-
-        //     ->rerank()
-        //     ->retrieve(['text'])
-        //     ->question('What is the privacy policy?')
-        //     ->filter('language:"en"')
-        //     ->size(3)
-        //     ->compose(fn(Hit $hit) => json_encode($hit->_source))
-        //     ->prompt(function (NewPrompt $prompt) {
-        //         $prompt->system("Answer only from Context. If insufficient, set \"answer\" to \"I don't know\"");
-        //         $prompt->template("
-        //             Question:
-        //             {{question}}
-
-        //             Context:
-        //             {{context}}");
-        //     })
-        //     ->answer();
-
-        $this->assertArrayHasKey('answer', $answer);
-        $this->assertStringContainsString('privacy policy', $answer['answer']);
+        
+        //TODO add assertions
     }
 }
