@@ -6,6 +6,7 @@ namespace Sigmie\Search;
 
 use GuzzleHttp\Promise\Utils;
 use Http\Promise\Promise;
+use Sigmie\AI\Contracts\Embedder;
 use Sigmie\Base\ElasticsearchException;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as ResponsesSearch;
@@ -71,6 +72,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     public function __construct(
         ElasticsearchConnection $elasticsearchConnection,
+        protected ?Embedder $embedder = null
     ) {
         parent::__construct($elasticsearchConnection);
 
@@ -393,9 +395,11 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $pool = [];
 
+        dump('populateVectorPool');
+
         foreach ($dims as $dim) {
             $pool[$dim] ?? $pool[$dim] = [];
-            $pool[$dim] = array_map(fn(QueryString $queryString) => $this->aiProvider->promiseEmbed($queryString->text(), $dim), $this->searchContext->queryStrings);
+            $pool[$dim] = array_map(fn(QueryString $queryString) => $this->embedder->promiseEmbed($queryString->text(), $dim), $this->searchContext->queryStrings);
         }
 
         $this->vectorPool = $pool;
@@ -512,9 +516,10 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected function getEmbeddings(array $dims, string $queryString): array
     {
+        dump('getEmbeddings');
         return array_map(fn($dim) => [
             'dims' => $dim,
-            'vector' => $this->aiProvider->embed($queryString, $dim)
+            'vector' => $this->embedder->embed($queryString, $dim)
         ], $dims);
     }
 

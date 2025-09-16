@@ -18,10 +18,8 @@ use Sigmie\Mappings\NewSemanticField;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
-use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\Contracts\FromRaw;
-use Sigmie\Semantic\Providers\SigmieAI as SigmieEmbeddings;
 
 use function Sigmie\Functions\name_configs;
 
@@ -319,11 +317,6 @@ class Text extends Type implements FromRaw
     public function analyzer(): ?Analyzer
     {
         return $this->analyzer;
-    }
-
-    public function toVectorRaw(): array
-    {
-        return (new SigmieEmbeddings())->type($this->name)->toRaw();
     }
 
     public function toRaw(): array

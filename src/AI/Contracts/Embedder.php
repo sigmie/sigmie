@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\AI\Contracts;
 
-use Http\Promise\Promise;
+use GuzzleHttp\Promise\Promise; 
 
 interface Embedder
 {

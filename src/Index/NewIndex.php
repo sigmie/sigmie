@@ -26,7 +26,6 @@ use Sigmie\Index\Shared\Tokenizer;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
 use Sigmie\AI\Contracts\Embedder;
-use Sigmie\Semantic\Providers\SigmieAI as DefaultEmbedder;
 
 class NewIndex
 {
@@ -72,8 +71,6 @@ class NewIndex
         $this->analysis = new Analysis();
 
         $this->properties = new MappingsProperties;
-
-        $this->embedder ??= new DefaultEmbedder();
     }
 
     public function getAlias(): string
@@ -160,11 +157,8 @@ class NewIndex
         $defaultAnalyzer->addFilters($this->filters());
         $defaultAnalyzer->setTokenizer($this->tokenizer);
 
-        ray($defaultAnalyzer);
-
         /** @var IndexMappings $mappings */
         $mappings = $this->createMappings($defaultAnalyzer);
-        $mappings->withEmbedder($this->embedder);
 
         $analyzers = $mappings->analyzers();
 

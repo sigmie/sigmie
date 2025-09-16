@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Rag;
 
 use Sigmie\AI\Contracts\Reranker;
-use Sigmie\Document\Hit;
 use Sigmie\Document\RerankedHit;
 use Sigmie\Search\Formatters\RerankedSearchResponse;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
-use Sigmie\Semantic\Providers\SigmieAI;
 
 class NewRerank
 {
@@ -17,7 +15,6 @@ class NewRerank
     protected int $topK = 10;
     protected ?string $query = null;
     protected ?Reranker $reranker = null;
-    protected ?SigmieAI $aiProvider = null;
     
     public function query(string $query): self
     {
@@ -37,22 +34,10 @@ class NewRerank
         return $this;
     }
     
-    public function aiProvider(SigmieAI $aiProvider): self
-    {
-        $this->aiProvider = $aiProvider;
-        $this->reranker = $aiProvider;
-        return $this;
-    }
-    
     public function rerank(SigmieSearchResponse $response): RerankedSearchResponse
     {
-        if (!$this->reranker && $this->aiProvider) {
-            $this->reranker = $this->aiProvider;
-        }
-        
         if (!$this->reranker) {
-            // Default to SigmieAI if no reranker is set
-            $this->reranker = new SigmieAI();
+            throw new \Exception('Reranker not set');
         }
         
         $hits = $response->hits();

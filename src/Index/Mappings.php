@@ -17,11 +17,9 @@ use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\SigmieVector;
 use Sigmie\Mappings\Types\Text;
-use Sigmie\AI\Contracts\Embedder;
 
 class Mappings implements MappingsInterface
 {
-
     public readonly Properties $properties;
 
     protected CustomAnalyzer $defaultAnalyzer;
@@ -31,19 +29,11 @@ class Mappings implements MappingsInterface
     public function __construct(
         ?CustomAnalyzer $defaultAnalyzer = null,
         ?Properties $properties = null,
-        ?array $meta = null,
-        protected ?Embedder $embedder = null
+        ?array $meta = null
     ) {
         $this->defaultAnalyzer = $defaultAnalyzer ?: new DefaultAnalyzer();
         $this->properties = $properties ?: new Properties(name: 'mappings');
         $this->meta = $meta ?? [];
-    }
-
-    public function withEmbedder(Embedder $embedder): static
-    {
-        $this->embedder = $embedder;
-
-        return $this;
     }
 
     public function meta(): array

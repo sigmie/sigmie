@@ -27,20 +27,16 @@ use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Search;
 use Sigmie\Search\ExistingScript;
-use Sigmie\Search\NewFacetSearch;
 use Sigmie\Search\NewMultiSearch;
 use Sigmie\Search\NewRag;
 use Sigmie\Search\NewSearch;
-use Sigmie\Search\NewSemanticSearch;
 use Sigmie\Search\NewTemplate;
 use Sigmie\AI\Contracts\Embedder;
-use Sigmie\Semantic\Providers\SigmieAI as DefaultEmbedder;
 
 class Sigmie
 {
     use IndexActions;
     use APIsSearch;
-
 
     public const DATE_FORMAT = 'Y-m-d H:i:s.u';
 
@@ -62,7 +58,13 @@ class Sigmie
         protected ?Embedder $embedder = null
     ) {
         $this->elasticsearchConnection = $httpConnection;
-        $this->embedder ??= new DefaultEmbedder();
+    }
+
+    public function embedder(Embedder $embedder): static
+    {
+        $this->embedder = $embedder;
+
+        return $this;
     }
 
     private function withApplicationPrefix(string $name): string
@@ -77,13 +79,6 @@ class Sigmie
     public function application(string $application)
     {
         $this->application = $application;
-
-        return $this;
-    }
-
-    public function withEmbedder(Embedder $embedder): static
-    {
-        $this->embedder = $embedder;
 
         return $this;
     }
@@ -155,7 +150,10 @@ class Sigmie
     {
         $index = $this->withApplicationPrefix($index);
 
-        return (new NewSearch($this->elasticsearchConnection, $this->embedder))
+        return (new NewSearch(
+            $this->elasticsearchConnection,
+            $this->embedder
+        ))
             ->index($index);
     }
 
@@ -164,7 +162,7 @@ class Sigmie
         ?Reranker $reranker = null,
     ): NewRag {
 
-        $rag = new NewRag($this->elasticsearchConnection, $llm, $reranker);
+        $rag = new NewRag($this->elasticsearchConnection, $llm, $reranker, $this->embedder);
 
         return $rag;
     }
@@ -215,7 +213,7 @@ class Sigmie
     }
 
     public static function create(
-        array|string $hosts, 
+        array|string $hosts,
         array $config = [],
         ?Embedder $embedder = null
     ): static {

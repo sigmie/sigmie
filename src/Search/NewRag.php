@@ -15,7 +15,6 @@ use Sigmie\Document\RerankedHit;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Rag\NewRerank;
-use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
 
 class NewRag
@@ -30,13 +29,14 @@ class NewRag
         protected ElasticsearchConnection $connection,
         protected ?LLM $llm = null,
         protected ?Reranker $reranker = null,
+        protected ?Embedder $embedder = null
     ) {
         $this->promptBuilder = new NewPrompt();
     }
 
     public function search(Closure $callback): self
     {
-        $this->searchBuilder = new NewSearch($this->connection);
+        $this->searchBuilder = new NewSearch($this->connection, $this->embedder);
 
         $callback($this->searchBuilder);
 
@@ -50,7 +50,6 @@ class NewRag
         $callback($this->searchBuilder);
 
         return $this;
-        
     }
 
     public function rerank(Closure $callback): self
