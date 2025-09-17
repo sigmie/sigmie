@@ -62,6 +62,7 @@ $response = $sigmie->newSearch('movies')
 - **[Analysis](analysis.md)** - Text processing and tokenization
 - **[Language Support](language.md)** - Multi-language search capabilities
 - **[Semantic Search](semantic-search.md)** - Vector-based search
+- **[RAG (Retrieval-Augmented Generation)](rag.md)** - LLM-powered intelligent answers
 - **[Facets & Aggregations](facets.md)** - Faceted search interfaces
 - **[Filter Parser](filter-parser.md)** - Advanced filtering syntax
 - **[Sort Parser](sort-parser.md)** - Flexible sorting options
@@ -92,6 +93,12 @@ $response = $sigmie->newSearch('movies')
 - Typo tolerance and fuzzy matching
 - Multi-field searching with custom weights
 - Semantic search using vector embeddings
+
+### 🤖 **AI-Powered Features**
+- Retrieval-Augmented Generation (RAG) for intelligent answers
+- Streaming responses for real-time user experiences
+- Vector embeddings and semantic search
+- LLM integration with reranking capabilities
 
 ### 📝 **Document Management**  
 - Type-safe document creation and validation
@@ -167,6 +174,33 @@ $response = $sigmie->newSearch('documents')
     ->get();
 ```
 
+### AI-Powered Question Answering
+
+```php
+use Sigmie\AI\LLMs\OpenAILLM;
+
+$llm = new OpenAILLM('your-openai-api-key');
+
+// Streaming response for real-time experience
+$stream = $sigmie->newRag($llm)
+    ->search(
+        $sigmie->newSearch('knowledge-base')
+            ->queryString('What is machine learning?')
+            ->size(5)
+    )
+    ->prompt(function ($prompt) {
+        $prompt->question('What is machine learning?');
+        $prompt->contextFields(['title', 'content']);
+    })
+    ->instructions('You are a helpful technical assistant.')
+    ->answer(stream: true);
+
+foreach ($stream as $chunk) {
+    echo $chunk;
+    flush();
+}
+```
+
 ## Common Use Cases
 
 ### User-Facing Search
@@ -174,6 +208,9 @@ Build search experiences with typo tolerance, highlighting, and faceted navigati
 
 ### Content Discovery
 Enable semantic search to find content by meaning, not just keywords.
+
+### Intelligent Q&A Systems
+Create AI-powered question-answering systems that provide contextually accurate responses using your own data.
 
 ### Data Analysis
 Use aggregations and facets to analyze and summarize your data.
@@ -191,7 +228,17 @@ Implement autocomplete and search-as-you-type functionality.
 │ • Controllers   │    │ • Query         │    │ • Documents     │
 │ • Views         │    │ • Index         │    │ • Mappings      │
 └─────────────────┘    │ • Document      │    └─────────────────┘
-                       │ • Properties    │
+                       │ • Properties    │           ▲
+                       │ • RAG           │           │
+                       └─────────────────┘           │
+                               │                     │
+                               ▼                     │
+                       ┌─────────────────┐           │
+                       │   AI Services   │───────────┘
+                       │                 │
+                       │ • OpenAI        │
+                       │ • Embeddings    │
+                       │ • Rerankers     │
                        └─────────────────┘
 ```
 
@@ -214,3 +261,5 @@ Sigmie is released under the MIT License. See the LICENSE file for details.
 **Ready to get started?** Begin with the [Installation Guide](installation.md) or jump straight into the [Getting Started Tutorial](getting-started.md).
 
 For experienced Elasticsearch users, the [API Reference](api-reference.md) provides comprehensive documentation of all available methods and classes.
+
+To explore AI-powered search capabilities, check out the [RAG Documentation](rag.md) for intelligent question-answering systems.

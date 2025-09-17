@@ -163,14 +163,19 @@ $rag->limits(
 );
 ```
 
-## Methods
+## Response Methods
 
-### answer()
+### answer() - Unified Streaming and Non-Streaming API
+
+The `answer()` method provides a unified interface for both streaming and non-streaming responses through the `stream` parameter:
+
+#### Non-Streaming Response (Default)
 
 Get a complete answer synchronously:
 
 ```php
-$response = $rag->answer();
+$response = $rag->answer(stream: false);
+// or simply: $response = $rag->answer();
 
 // Response structure:
 [
@@ -184,23 +189,76 @@ $response = $rag->answer();
 ]
 ```
 
-### streamAnswer()
+#### Streaming Response
 
 Stream the answer in real-time for better user experience:
 
 ```php
-foreach ($rag->streamAnswer() as $chunk) {
-    echo $chunk['content'];
-    
-    if ($chunk['finish_reason'] === 'stop') {
-        break;
-    }
+$stream = $rag->answer(stream: true);
+
+foreach ($stream as $chunk) {
+    echo $chunk; // Output each chunk as it arrives
+    flush(); // Flush output buffer for real-time display
 }
+```
+
+### Streaming Benefits
+
+Streaming provides several advantages for RAG applications:
+
+- **Better User Experience**: Users see responses appearing in real-time rather than waiting for the complete answer
+- **Lower Perceived Latency**: Content appears immediately as the LLM generates it
+- **Progressive Display**: Ideal for web applications with typewriter-style effects
+- **Reduced Memory Usage**: Process chunks as they arrive rather than buffering the entire response
+
+### Collecting Full Response from Stream
+
+If you need the complete response from a stream:
+
+```php
+$stream = $rag->answer(stream: true);
+
+$fullResponse = '';
+foreach ($stream as $chunk) {
+    $fullResponse .= $chunk;
+    echo $chunk; // Still display in real-time
+    flush();
+}
+
+// Now $fullResponse contains the complete answer
+echo "\n\nComplete response: " . $fullResponse;
 ```
 
 ## Advanced Examples
 
-### Semantic Search with Reranking
+### Real-Time Streaming with Progress Indication
+
+```php
+echo "Searching for relevant documents...\n";
+
+$stream = $sigmie
+    ->newRag($openai)
+    ->search(
+        $sigmie->newSearch('knowledge-base')
+            ->queryString('quantum computing applications')
+            ->size(8)
+    )
+    ->prompt(function (NewRagPrompt $prompt) {
+        $prompt->question('What are the practical applications of quantum computing?');
+        $prompt->contextFields(['title', 'content', 'category']);
+    })
+    ->instructions('You are a technical expert explaining complex topics clearly.')
+    ->answer(stream: true);
+
+echo "Generating response:\n";
+foreach ($stream as $chunk) {
+    echo $chunk;
+    flush();
+}
+echo "\n\nGeneration complete!\n";
+```
+
+### Semantic Search with Streaming
 
 ```php
 use Sigmie\AI\LLMs\OpenAILLM;
@@ -215,7 +273,7 @@ $props = new NewProperties;
 $props->text('title')->semantic(accuracy: 1, dimensions: 256);
 $props->text('content')->semantic(accuracy: 1, dimensions: 256);
 
-$answer = $sigmie
+$stream = $sigmie
     ->newRag($openai)
     ->reranker($voyageReranker)
     ->search(
@@ -241,93 +299,140 @@ $answer = $sigmie
     })
     ->instructions('You are a biology teacher explaining complex topics clearly.')
     ->limits(maxTokens: 600, temperature: 0.2)
-    ->answer();
-```
+    ->answer(stream: true);
 
-### Custom Prompt Template
-
-```php
-$rag->prompt(function (NewRagPrompt $prompt) {
-    $prompt->question('What are the latest trends in AI?');
-    $prompt->contextFields(['headline', 'summary', 'published_date']);
-    
-    $prompt->template('
-        QUESTION: {{question}}
-        
-        INSTRUCTIONS:
-        {{guardrails}}
-        
-        RECENT ARTICLES:
-        {{context}}
-        
-        ANALYSIS:
-        Based on the articles above, provide a comprehensive trend analysis.
-    ');
-    
-    $prompt->guardrails([
-        'Focus on recent developments (last 12 months)',
-        'Organize by trend categories',
-        'Include timeline information when available'
-    ]);
-});
-```
-
-### Streaming with Progress Updates
-
-```php
-echo "Searching for relevant documents...\n";
-
-$stream = $rag->streamAnswer();
-
-echo "Generating response:\n";
+// Stream the response
 foreach ($stream as $chunk) {
-    echo $chunk['content'];
+    echo $chunk;
     flush();
-    
-    if ($chunk['finish_reason']) {
-        echo "\n\nGeneration complete: " . $chunk['finish_reason'] . "\n";
-        break;
-    }
 }
 ```
 
-### Multi-Index Research
+### Custom Prompt Template with Streaming
 
 ```php
-$rag->multiSearch(function ($multiSearch) {
-    // Search academic papers
-    $multiSearch
-        ->newSearch('papers')
-        ->queryString('climate change impacts')
-        ->filters('peer_reviewed:true')
-        ->size(3);
+$stream = $rag
+    ->prompt(function (NewRagPrompt $prompt) {
+        $prompt->question('What are the latest trends in AI?');
+        $prompt->contextFields(['headline', 'summary', 'published_date']);
         
-    // Search news articles  
-    $multiSearch
-        ->newSearch('news')
-        ->queryString('climate change 2024')
-        ->filters('published_date:[2024-01-01 TO *]')
-        ->size(2);
+        $prompt->template('
+            QUESTION: {{question}}
+            
+            INSTRUCTIONS:
+            {{guardrails}}
+            
+            RECENT ARTICLES:
+            {{context}}
+            
+            ANALYSIS:
+            Based on the articles above, provide a comprehensive trend analysis.
+        ');
         
-    // Search government reports
-    $multiSearch
-        ->newSearch('reports')
-        ->queryString('climate policy')
-        ->filters('source:government')
-        ->size(2);
-})
-->prompt(function ($prompt) {
-    $prompt->question('What are the current climate change impacts and policy responses?');
-    $prompt->contextFields(['title', 'abstract', 'key_findings']);
-    $prompt->guardrails([
-        'Distinguish between academic research, news reports, and policy documents',
-        'Note publication dates and sources',
-        'Highlight consensus vs. conflicting information'
-    ]);
-});
+        $prompt->guardrails([
+            'Focus on recent developments (last 12 months)',
+            'Organize by trend categories',
+            'Include timeline information when available'
+        ]);
+    })
+    ->answer(stream: true);
+
+foreach ($stream as $chunk) {
+    echo $chunk;
+    flush();
+}
+```
+
+### Multi-Index Research with Streaming
+
+```php
+$stream = $sigmie
+    ->newRag($openai)
+    ->multiSearch(function ($multiSearch) {
+        // Search academic papers
+        $multiSearch
+            ->newSearch('papers')
+            ->queryString('climate change impacts')
+            ->filters('peer_reviewed:true')
+            ->size(3);
+            
+        // Search news articles  
+        $multiSearch
+            ->newSearch('news')
+            ->queryString('climate change 2024')
+            ->filters('published_date:[2024-01-01 TO *]')
+            ->size(2);
+            
+        // Search government reports
+        $multiSearch
+            ->newSearch('reports')
+            ->queryString('climate policy')
+            ->filters('source:government')
+            ->size(2);
+    })
+    ->prompt(function ($prompt) {
+        $prompt->question('What are the current climate change impacts and policy responses?');
+        $prompt->contextFields(['title', 'abstract', 'key_findings']);
+        $prompt->guardrails([
+            'Distinguish between academic research, news reports, and policy documents',
+            'Note publication dates and sources',
+            'Highlight consensus vs. conflicting information'
+        ]);
+    })
+    ->answer(stream: true);
+
+foreach ($stream as $chunk) {
+    echo $chunk;
+    flush();
+}
+```
+
+### Comparison: Non-Streaming vs Streaming
+
+```php
+// Non-streaming - blocks until complete
+$startTime = microtime(true);
+$response = $rag->answer(stream: false);
+$endTime = microtime(true);
+echo "Non-streaming took: " . ($endTime - $startTime) . " seconds\n";
+echo $response['answer'];
+
+// Streaming - provides immediate feedback
+$startTime = microtime(true);
+$stream = $rag->answer(stream: true);
+$firstChunkTime = null;
+$fullResponse = '';
+
+foreach ($stream as $chunk) {
+    if ($firstChunkTime === null) {
+        $firstChunkTime = microtime(true);
+        echo "First chunk arrived after: " . ($firstChunkTime - $startTime) . " seconds\n";
+    }
+    
+    $fullResponse .= $chunk;
+    echo $chunk;
+    flush();
+}
+
+$endTime = microtime(true);
+echo "\nStreaming completed in: " . ($endTime - $startTime) . " seconds\n";
 ```
 
 ## Best Practices
+
+### When to Use Streaming
+
+**Use Streaming When:**
+- Building interactive applications with real-time feedback
+- Responses are expected to be longer than a few sentences
+- User experience is critical (web apps, chatbots, APIs)
+- You want to display progressive results
+
+**Use Non-Streaming When:**
+- Building batch processing systems
+- Response length is typically short
+- You need the complete response before proceeding
+- Working with structured response formats
 
 ### Search Optimization
 - **Use semantic search** for conceptual queries when you have embedding-enabled fields
@@ -357,23 +462,71 @@ $rag->multiSearch(function ($multiSearch) {
 - **Monitor token usage** to optimize costs
 - **Index optimization** - ensure your search indices are properly configured for your RAG queries
 
+### Streaming Considerations
+- **Flush output buffers** regularly when displaying streaming content
+- **Handle connection timeouts** gracefully in web applications
+- **Consider memory usage** for very long responses
+- **Implement proper error handling** for stream interruptions
+
 ### Error Handling
+
+#### Non-Streaming Error Handling
 ```php
 try {
-    $answer = $rag->answer();
+    $answer = $rag->answer(stream: false);
+    echo $answer['answer'];
 } catch (\RuntimeException $e) {
     if (str_contains($e->getMessage(), 'Search must be configured')) {
-        // Handle missing search configuration
         echo "Please configure a search query first";
     }
 } catch (\Exception $e) {
-    // Handle API errors, network issues, etc.
     echo "RAG query failed: " . $e->getMessage();
+}
+```
+
+#### Streaming Error Handling
+```php
+try {
+    $stream = $rag->answer(stream: true);
+    
+    foreach ($stream as $chunk) {
+        echo $chunk;
+        flush();
+    }
+} catch (\RuntimeException $e) {
+    if (str_contains($e->getMessage(), 'Search must be configured')) {
+        echo "Please configure a search query first";
+    }
+} catch (\Exception $e) {
+    echo "Streaming failed: " . $e->getMessage();
 }
 ```
 
 ### Security Considerations
 - **Validate user input** before using in search queries
-- **Implement rate limiting** for expensive RAG operations
+- **Implement rate limiting** for expensive RAG operations, especially streaming
 - **Filter sensitive information** from context fields
 - **Use appropriate API key permissions** for your LLM and reranking services
+- **Monitor streaming connections** to prevent resource exhaustion
+
+## Integration with Web Applications
+
+### Simple Web Streaming Example
+```php
+// Set headers for Server-Sent Events
+header('Content-Type: text/event-stream');
+header('Cache-Control: no-cache');
+header('Connection: keep-alive');
+
+$stream = $rag->answer(stream: true);
+
+foreach ($stream as $chunk) {
+    echo "data: " . json_encode(['content' => $chunk]) . "\n\n";
+    flush();
+}
+
+echo "data: " . json_encode(['finished' => true]) . "\n\n";
+flush();
+```
+
+This documentation covers the unified streaming API where `answer(stream: bool)` handles both streaming and non-streaming responses, providing developers with flexibility and improved user experience options.
