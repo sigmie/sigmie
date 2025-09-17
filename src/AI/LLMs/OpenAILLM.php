@@ -88,39 +88,30 @@ class OpenAILLM implements LLM, Embedder
 
     public function answer(string $input, string $instructions, bool $stream = false): iterable
     {
-        $response = $this->client->post('/v1/responses', [
+        $options = [
             RequestOptions::JSON => [
                 'model' => $this->llmModel,
                 'input' => $input,
                 'instructions' => $instructions,
                 'stream' => $stream,
-                // 'text' => [
-                //     'format' => [
-                //         'name' => 'rag_answer',
-                //         'type' => 'json_schema',
-                //         'schema' => [
-                //             'type' => 'object',
-                //             'required' => ['answer', 'citations'],
-                //             'properties' => [
-                //                 'answer' => ['type' => 'string'],
-                //                 'citations' => [
-                //                     'type' => 'array',
-                //                     'items' => ['type' => 'string']
-                //                 ],
-                //             ],
-                //             'additionalProperties' => false,
-                //         ],
-                //         'strict' => true
-                //     ]
-                // ],
             ],
-        ]);
+        ];
 
+        // Add stream option for Guzzle when streaming
         if ($stream) {
-            return $this->streamAnswer($response);
+            $options[RequestOptions::STREAM] = true;
         }
 
-        return json_decode($response->getBody()->getContents(), true);
+        $response = $this->client->post('/v1/responses', $options);
+
+        if ($stream) {
+            // Return generator for direct streaming
+            yield from $this->streamAnswer($response);
+        } else {
+            // Return array wrapped in generator for consistency
+            $data = json_decode($response->getBody()->getContents(), true);
+            yield $data;
+        }
     }
 
     private function streamAnswer(ResponseInterface $response): iterable
@@ -129,9 +120,15 @@ class OpenAILLM implements LLM, Embedder
         $buffer = '';
 
         while (!$stream->eof()) {
-            $buffer .= $stream->read(1024);
+            // Read smaller chunks for faster yielding
+            $chunk = $stream->read(256);
+            if ($chunk === '') {
+                continue;
+            }
+            
+            $buffer .= $chunk;
 
-            // Process complete SSE lines
+            // Process complete SSE lines immediately
             while (($pos = strpos($buffer, "\n")) !== false) {
                 $line = substr($buffer, 0, $pos);
                 $buffer = substr($buffer, $pos + 1);
@@ -147,8 +144,20 @@ class OpenAILLM implements LLM, Embedder
                     $decoded = json_decode(trim($data), true);
 
                     if (isset($decoded['type']) && $decoded['type'] === 'response.output_text.delta') {
+                        // Yield immediately without buffering
                         yield $decoded['delta'];
                     }
+                }
+            }
+        }
+        
+        // Process any remaining buffer
+        if (!empty($buffer) && strpos($buffer, 'data: ') === 0) {
+            $data = substr($buffer, 6);
+            if (trim($data) !== '[DONE]') {
+                $decoded = json_decode(trim($data), true);
+                if (isset($decoded['type']) && $decoded['type'] === 'response.output_text.delta') {
+                    yield $decoded['delta'];
                 }
             }
         }

@@ -11,6 +11,7 @@ use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Rag\NewRerank;
+use Sigmie\Rag\RagResponse;
 use Sigmie\Search\NewContextComposer;
 use Sigmie\Search\NewRagPrompt;
 use Sigmie\Search\NewSearch;
@@ -26,6 +27,74 @@ class RagTest extends TestCase
         // Set API keys for testing (these should be in environment variables)
         // ProviderFactory::setApiKey('openai', $_ENV['OPENAI_API_KEY'] ?? 'test-key');
         // ProviderFactory::setApiKey('voyage', $_ENV['VOYAGE_API_KEY'] ?? 'test-key');
+    }
+
+    /**
+     * @test
+     */
+    public function rag_non_streaming()
+    {
+        $indexName = uniqid();
+        $openai = new OpenAILLM(getenv('OPENAI_API_KEY'));
+
+        $sigmie = $this->sigmie->embedder($openai);
+
+        $props = new NewProperties;
+        $props->text('title')->semantic(accuracy: 1, dimensions: 256);
+        $props->text('text')->semantic(accuracy: 1, dimensions: 256);
+        $props->category('language');
+
+        $sigmie->newIndex($indexName)->properties($props)->create();
+
+        $collected = $sigmie->collect($indexName, true)->properties($props);
+
+        $collected->merge([
+            new Document([
+                'title' => 'Patient Privacy and Confidentiality Policy',
+                'text' => 'Patient privacy and confidentiality are essential for maintaining trust and respect in healthcare.',
+                'language' => 'en',
+            ]),
+            new Document([
+                'title' => 'Emergency Room Triage Protocol',
+                'text' => 'The emergency room triage protocol ensures patients receive timely care based on severity.',
+                'language' => 'en',
+            ]),
+        ]);
+
+        $responses = $sigmie
+            ->newRag($openai)
+            ->search(
+                $sigmie->newMultiSearch()
+                    ->newSearch($indexName)
+                    ->index($indexName)
+                    ->properties($props)
+                    ->retrieve(['text', 'title'])
+                    ->queryString('What is the privacy policy?')
+                    ->filters('language:"en"')
+                    ->size(2)
+            )
+            ->prompt(function (NewRagPrompt $prompt) {
+                $prompt->question('What is the privacy policy?');
+                $prompt->contextFields(['text', 'title']);
+            })
+            ->instructions("Be concise.")
+            ->answer(stream: false);
+
+        // Get the RagResponse object
+        $ragResponse = null;
+        foreach ($responses as $response) {
+            $ragResponse = $response;
+        }
+
+        // Assert RagResponse structure
+        $this->assertInstanceOf(RagResponse::class, $ragResponse);
+        $this->assertNotEmpty($ragResponse->finalAnswer());
+        $this->assertNotEmpty($ragResponse->retrievedDocuments());
+        $this->assertNotEmpty($ragResponse->prompt());
+
+        $context = $ragResponse->context();
+        $this->assertEquals(2, $context['retrieved_count']);
+        $this->assertFalse($context['has_reranking']);
     }
 
     /**
@@ -101,14 +170,40 @@ class RagTest extends TestCase
             ->instructions("You are a precise, no-fluff technical assistant. Answer in English. Cite sources as [^id]. If unknown, say 'Unknown.'")
             ->answer(stream: true);
 
-        // Output the stream
+        // Process the stream
         $fullResponse = '';
+        $context = null;
+        $chunks = [];
+        $startedStreamed = false;
+        $doneStreamed = false;
+
         foreach ($answer as $chunk) {
-            $fullResponse .= $chunk;
+            // Handle different chunk types
+            if (is_array($chunk)) {
+                $chunks[] = $chunk;
+
+                if ($chunk['type'] === 'start') {
+                    // Initial context with retrieved and reranked docs
+                    $context = $chunk['context'];
+                    $startedStreamed = true;
+
+                } elseif ($chunk['type'] === 'delta') {
+                    // Streaming text chunks
+                    $fullResponse .= $chunk['delta'];
+                } elseif ($chunk['type'] === 'done') {
+                    $doneStreamed = true;
+                }
+            }
         }
 
-        // Assert that we got a response
+        // Assert that we got a valid response structure
         $this->assertNotEmpty($fullResponse);
         $this->assertIsString($fullResponse);
+        $this->assertNotNull($context);
+        $this->assertArrayHasKey('retrieved_count', $context);
+        $this->assertArrayHasKey('documents', $context);
+        $this->assertTrue($startedStreamed);
+        $this->assertTrue($doneStreamed);
+        $this->assertGreaterThan(0, count($chunks));
     }
 }

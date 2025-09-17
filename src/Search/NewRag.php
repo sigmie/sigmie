@@ -15,6 +15,7 @@ use Sigmie\Document\RerankedHit;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Rag\NewRerank;
+use Sigmie\Rag\RagResponse;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
 
 class NewRag
@@ -85,11 +86,15 @@ class NewRag
 
         $searchResponse = $this->searchBuilder->get();
 
-        $hits = $searchResponse->hits();
+        $retrievedHits = $searchResponse->hits();
+        $rerankedHits = null;
 
         // Apply reranking if configured
         if ($this->reranker && $this->rerankBuilder) {
-            $hits = $this->rerankBuilder->rerank($hits)->hits();
+            $rerankedHits = $this->rerankBuilder->rerank($retrievedHits)->hits();
+            $hits = $rerankedHits;
+        } else {
+            $hits = $retrievedHits;
         }
 
         $prompt = new NewRagPrompt($hits);
@@ -99,12 +104,38 @@ class NewRag
         // Build and execute prompt
         $finalPrompt = $prompt->create();
 
-        // Get answer from LLM
-        yield from $this->llm->answer(
-            $finalPrompt,
-            $this->instructions,
-            $stream
+        // Create RagResponse
+        $ragResponse = new RagResponse(
+            hits: $retrievedHits,
+            rerankedHits: $rerankedHits,
+            ragPrompt: $finalPrompt
         );
+
+        if ($stream) {
+            // Yield the initial context
+            yield $ragResponse->startStreamingChunk();
+
+            // Stream the answer directly from LLM without buffering
+            foreach ($this->llm->answer($finalPrompt, $this->instructions, true) as $chunk) {
+                // Pass through chunks immediately as they arrive
+                yield $ragResponse->streamingChunk($chunk);
+            }
+
+            // Yield done signal
+            yield $ragResponse->streamingChunk('', true);
+            return;
+        }
+
+        // Get complete answer
+        $answer = '';
+
+        foreach ($this->llm->answer($finalPrompt, $this->instructions, false) as $chunk) {
+            $answer .= $chunk;
+        }
+        $ragResponse->setFinalAnswer($answer);
+
+        // Return complete response
+        yield $ragResponse;
     }
 
     public function instructions(string $instructions): self
