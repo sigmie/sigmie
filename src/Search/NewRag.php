@@ -76,7 +76,7 @@ class NewRag
         return $this;
     }
 
-    public function answer(): array
+    public function answer(bool $stream = false): iterable
     {
         // Execute search
         if (!$this->searchBuilder) {
@@ -100,66 +100,16 @@ class NewRag
         $finalPrompt = $prompt->create();
 
         // Get answer from LLM
-        $llmResponse = $this->llm->answer(
+        yield from $this->llm->answer(
             $finalPrompt,
             $this->instructions,
-            $this->llmOptions['max_tokens'],
-            $this->llmOptions['temperature']
+            $stream
         );
-
-        return $llmResponse;
-    }
-
-    public function streamAnswer(): iterable
-    {
-        // Execute search
-        if (!$this->searchBuilder) {
-            throw new \RuntimeException('Search must be configured before calling streamAnswer()');
-        }
-
-        $searchResponse = $this->searchBuilder->get();
-
-        $hits = $searchResponse->hits();
-
-        // Apply reranking if configured
-        if ($this->reranker && $this->rerankBuilder) {
-            $hits = $this->rerankBuilder->rerank($hits)->hits();
-        }
-
-        $prompt = new NewRagPrompt($hits);
-
-        ($this->promptBuilder)($prompt);
-
-        // Build and execute prompt
-        $finalPrompt = $prompt->create();
-
-        // Stream answer from LLM
-        $stream = $this->llm->streamAnswer(
-            $finalPrompt,
-            $this->instructions,
-            $this->llmOptions['max_tokens'],
-            $this->llmOptions['temperature']
-        );
-
-        // Pass through the stream
-        foreach ($stream as $chunk) {
-            yield $chunk;
-        }
     }
 
     public function instructions(string $instructions): self
     {
         $this->instructions = $instructions;
-
-        return $this;
-    }
-
-    public function limits(int $maxTokens, float $temperature): self
-    {
-        $this->llmOptions = [
-            'max_tokens' => $maxTokens,
-            'temperature' => $temperature,
-        ];
 
         return $this;
     }

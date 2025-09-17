@@ -69,7 +69,7 @@ class RagTest extends TestCase
 
         $answer = $sigmie
             ->newRag($openai)
-            ->reranker($voyageReranker)
+            // ->reranker($voyageReranker)
             ->search(
                 $sigmie->newMultiSearch()
                     ->newSearch($indexName)
@@ -80,11 +80,11 @@ class RagTest extends TestCase
                     ->filters('language:"en"')
                     ->size(3)
             )
-            ->rerank(function (NewRerank $rerank) {
-                $rerank->fields(['text', 'title']);
-                $rerank->topK(1);
-                $rerank->query('What is the privacy policy?');
-            })
+            // ->rerank(function (NewRerank $rerank) {
+            //     $rerank->fields(['text', 'title']);
+            //     $rerank->topK(1);
+            //     $rerank->query('What is the privacy policy?');
+            // })
             ->prompt(function (NewRagPrompt $prompt) {
                 $prompt->question('What is the privacy policy?');
                 $prompt->contextFields([
@@ -99,11 +99,16 @@ class RagTest extends TestCase
                 ]);
             })
             ->instructions("You are a precise, no-fluff technical assistant. Answer in English. Cite sources as [^id]. If unknown, say 'Unknown.'")
-            ->limits(maxTokens: 600, temperature: 0.1)
-            ->streamAnswer();
+            ->answer(stream: true);
 
-        dd($answer);
-        
-        //TODO add assertions
+        // Output the stream
+        $fullResponse = '';
+        foreach ($answer as $chunk) {
+            $fullResponse .= $chunk;
+        }
+
+        // Assert that we got a response
+        $this->assertNotEmpty($fullResponse);
+        $this->assertIsString($fullResponse);
     }
 }

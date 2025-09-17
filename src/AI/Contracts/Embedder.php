@@ -21,5 +21,5 @@ interface Embedder
     /**
      * Generate embeddings asynchronously
      */
-    public function promiseEmbed(string $text, int $dimensions): Promise;
+    public function promiseEmbed(string $text, int $dimensions);
 }
