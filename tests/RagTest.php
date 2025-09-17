@@ -173,25 +173,60 @@ class RagTest extends TestCase
         // Process the stream
         $fullResponse = '';
         $context = null;
-        $chunks = [];
-        $startedStreamed = false;
-        $doneStreamed = false;
+        $events = [];
+        $eventTypes = [];
 
         foreach ($answer as $chunk) {
             // Handle different chunk types
             if (is_array($chunk)) {
-                $chunks[] = $chunk;
+                $events[] = $chunk;
+                $eventTypes[] = $chunk['type'];
 
-                if ($chunk['type'] === 'start') {
-                    // Initial context with retrieved and reranked docs
-                    $context = $chunk['context'];
-                    $startedStreamed = true;
-
-                } elseif ($chunk['type'] === 'delta') {
-                    // Streaming text chunks
-                    $fullResponse .= $chunk['delta'];
-                } elseif ($chunk['type'] === 'done') {
-                    $doneStreamed = true;
+                switch ($chunk['type']) {
+                    case 'search.started':
+                        echo "[SEARCH] {$chunk['message']}\n";
+                        break;
+                    
+                    case 'search.completed':
+                        echo "[SEARCH] {$chunk['message']}\n";
+                        break;
+                    
+                    case 'rerank.started':
+                        echo "[RERANK] {$chunk['message']}\n";
+                        break;
+                    
+                    case 'rerank.completed':
+                        echo "[RERANK] {$chunk['message']}\n";
+                        break;
+                    
+                    case 'prompt.generated':
+                        echo "[PROMPT] {$chunk['message']}\n";
+                        break;
+                    
+                    case 'stream.start':
+                        // Initial context with retrieved and reranked docs
+                        $context = $chunk['context'];
+                        echo "[STREAM] Starting response stream with {$context['retrieved_count']} documents\n";
+                        break;
+                    
+                    case 'llm.request.started':
+                        echo "[LLM] {$chunk['message']}\n";
+                        break;
+                    
+                    case 'llm.first_token':
+                        echo "[LLM] {$chunk['message']}\n\n";
+                        break;
+                    
+                    case 'content.delta':
+                        // Streaming text chunks
+                        echo $chunk['delta'];
+                        $fullResponse .= $chunk['delta'];
+                        flush();
+                        break;
+                    
+                    case 'stream.complete':
+                        echo "\n\n[STREAM] Response generation complete\n";
+                        break;
                 }
             }
         }
@@ -202,8 +237,16 @@ class RagTest extends TestCase
         $this->assertNotNull($context);
         $this->assertArrayHasKey('retrieved_count', $context);
         $this->assertArrayHasKey('documents', $context);
-        $this->assertTrue($startedStreamed);
-        $this->assertTrue($doneStreamed);
-        $this->assertGreaterThan(0, count($chunks));
+        
+        // Assert we got the expected events
+        $this->assertContains('search.started', $eventTypes);
+        $this->assertContains('search.completed', $eventTypes);
+        $this->assertContains('prompt.generated', $eventTypes);
+        $this->assertContains('stream.start', $eventTypes);
+        $this->assertContains('llm.request.started', $eventTypes);
+        $this->assertContains('content.delta', $eventTypes);
+        $this->assertContains('stream.complete', $eventTypes);
+        
+        $this->assertGreaterThan(0, count($events));
     }
 }

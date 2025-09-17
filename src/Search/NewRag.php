@@ -84,27 +84,54 @@ class NewRag
             throw new \RuntimeException('Search must be configured before calling answer()');
         }
 
-        $searchResponse = $this->searchBuilder->get();
+        // Create temporary RagResponse for events
+        $ragResponse = new RagResponse([], null, null);
 
+        if ($stream) {
+            // Emit search started event
+            yield $ragResponse->searchingEvent();
+        }
+
+        $searchResponse = $this->searchBuilder->get();
         $retrievedHits = $searchResponse->hits();
+        
+        if ($stream) {
+            // Emit search completed event
+            yield $ragResponse->searchCompleteEvent(count($retrievedHits));
+        }
+
         $rerankedHits = null;
 
         // Apply reranking if configured
         if ($this->reranker && $this->rerankBuilder) {
+            if ($stream) {
+                // Emit reranking started event
+                yield $ragResponse->rerankingEvent();
+            }
+            
             $rerankedHits = $this->rerankBuilder->rerank($retrievedHits)->hits();
             $hits = $rerankedHits;
+            
+            if ($stream) {
+                // Emit reranking completed event
+                yield $ragResponse->rerankCompleteEvent(count($retrievedHits), count($rerankedHits));
+            }
         } else {
             $hits = $retrievedHits;
         }
 
         $prompt = new NewRagPrompt($hits);
-
         ($this->promptBuilder)($prompt);
 
         // Build and execute prompt
         $finalPrompt = $prompt->create();
 
-        // Create RagResponse
+        if ($stream) {
+            // Emit prompt generation event
+            yield $ragResponse->promptGenerationEvent();
+        }
+
+        // Create final RagResponse with all data
         $ragResponse = new RagResponse(
             hits: $retrievedHits,
             rerankedHits: $rerankedHits,
@@ -112,16 +139,27 @@ class NewRag
         );
 
         if ($stream) {
-            // Yield the initial context
+            // Yield the stream start with context
             yield $ragResponse->startStreamingChunk();
+            
+            // Emit LLM request started event
+            yield $ragResponse->llmRequestEvent();
+
+            // Track if this is the first token
+            $firstToken = true;
 
             // Stream the answer directly from LLM without buffering
             foreach ($this->llm->answer($finalPrompt, $this->instructions, true) as $chunk) {
-                // Pass through chunks immediately as they arrive
+                if ($firstToken && !empty($chunk)) {
+                    // Emit first token event
+                    yield $ragResponse->llmFirstTokenEvent();
+                    $firstToken = false;
+                }
+                // Pass through content chunks immediately as they arrive
                 yield $ragResponse->streamingChunk($chunk);
             }
 
-            // Yield done signal
+            // Yield completion signal
             yield $ragResponse->streamingChunk('', true);
             return;
         }

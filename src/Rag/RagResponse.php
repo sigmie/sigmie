@@ -80,7 +80,7 @@ class RagResponse
     public function streamingChunk(string $delta, bool $done = false): array
     {
         return [
-            'type' => $done ? 'done' : 'delta',
+            'type' => $done ? 'stream.complete' : 'content.delta',
             'delta' => $delta,
             'done' => $done,
             'context' => $done ? $this->context() : null,
@@ -90,10 +90,94 @@ class RagResponse
     public function startStreamingChunk(): array
     {
         return [
-            'type' => 'start',
+            'type' => 'stream.start',
             'delta' => '',
             'done' => false,
             'context' => $this->context(),
+        ];
+    }
+
+    public function searchingEvent(): array
+    {
+        return [
+            'type' => 'search.started',
+            'message' => 'Searching for relevant documents...',
+            'delta' => '',
+            'done' => false,
+            'context' => null,
+        ];
+    }
+
+    public function searchCompleteEvent(int $count): array
+    {
+        return [
+            'type' => 'search.completed',
+            'message' => "Found {$count} relevant documents",
+            'delta' => '',
+            'done' => false,
+            'context' => null,
+            'metadata' => [
+                'document_count' => $count,
+            ],
+        ];
+    }
+
+    public function rerankingEvent(): array
+    {
+        return [
+            'type' => 'rerank.started',
+            'message' => 'Reranking documents for relevance...',
+            'delta' => '',
+            'done' => false,
+            'context' => null,
+        ];
+    }
+
+    public function rerankCompleteEvent(int $originalCount, int $rerankedCount): array
+    {
+        return [
+            'type' => 'rerank.completed',
+            'message' => "Reranked {$originalCount} documents to top {$rerankedCount}",
+            'delta' => '',
+            'done' => false,
+            'context' => null,
+            'metadata' => [
+                'original_count' => $originalCount,
+                'reranked_count' => $rerankedCount,
+            ],
+        ];
+    }
+
+    public function promptGenerationEvent(): array
+    {
+        return [
+            'type' => 'prompt.generated',
+            'message' => 'Generated RAG prompt with context',
+            'delta' => '',
+            'done' => false,
+            'context' => null,
+        ];
+    }
+
+    public function llmRequestEvent(): array
+    {
+        return [
+            'type' => 'llm.request.started',
+            'message' => 'Generating response...',
+            'delta' => '',
+            'done' => false,
+            'context' => null,
+        ];
+    }
+
+    public function llmFirstTokenEvent(): array
+    {
+        return [
+            'type' => 'llm.first_token',
+            'message' => 'Response stream started',
+            'delta' => '',
+            'done' => false,
+            'context' => null,
         ];
     }
 }

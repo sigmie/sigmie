@@ -21,7 +21,7 @@ use Sigmie\Search\NewRagPrompt;
 $llm = new OpenAILLM('your-openai-api-key');
 
 // Create a basic RAG query
-$answer = $sigmie
+$responses = $sigmie
     ->newRag($llm)
     ->search(
         $sigmie->newSearch('my-index')
@@ -40,7 +40,10 @@ $answer = $sigmie
     ->limits(maxTokens: 500, temperature: 0.1)
     ->answer();
 
-echo $answer['answer'];
+// Get the RagResponse object
+foreach ($responses as $ragResponse) {
+    echo $ragResponse->finalAnswer();
+}
 ```
 
 ## Configuration Options
@@ -163,6 +166,53 @@ $rag->limits(
 );
 ```
 
+## RagResponse Object
+
+The `answer()` method returns RagResponse objects (when not streaming) that provide full visibility into the RAG pipeline. This structured response gives you access to:
+
+- Retrieved documents from the search phase
+- Reranked documents (if reranking was applied)
+- The complete prompt sent to the LLM
+- The final generated answer
+- Context metadata for debugging and logging
+
+### RagResponse Methods
+
+```php
+$responses = $rag->answer(stream: false);
+
+foreach ($responses as $ragResponse) {
+    // Get the final answer
+    $answer = $ragResponse->finalAnswer();
+    
+    // Access retrieved documents
+    $retrievedDocs = $ragResponse->retrievedDocuments();
+    
+    // Access reranked documents (if reranking was applied)
+    $rerankedDocs = $ragResponse->rerankedDocuments();
+    
+    // Check if reranking was performed
+    $hasReranking = $ragResponse->hasReranking();
+    
+    // Get the complete prompt sent to the LLM
+    $prompt = $ragResponse->prompt();
+    
+    // Get context summary
+    $context = $ragResponse->context();
+    
+    // Convert to array for serialization
+    $array = $ragResponse->toArray();
+}
+```
+
+### Benefits of RagResponse
+
+- **Full Pipeline Visibility**: See exactly what documents were retrieved and how they were processed
+- **Debugging Support**: Access the complete prompt and context for troubleshooting
+- **Performance Insights**: Monitor document counts and reranking effectiveness
+- **Audit Trail**: Complete record of the RAG process for logging and analysis
+- **Consistent Interface**: Same methods available for both streaming and non-streaming modes
+
 ## Response Methods
 
 ### answer() - Unified Streaming and Non-Streaming API
@@ -171,36 +221,118 @@ The `answer()` method provides a unified interface for both streaming and non-st
 
 #### Non-Streaming Response (Default)
 
-Get a complete answer synchronously:
+Get complete RagResponse objects synchronously:
 
 ```php
-$response = $rag->answer(stream: false);
-// or simply: $response = $rag->answer();
+$responses = $rag->answer(stream: false);
+// or simply: $responses = $rag->answer();
 
-// Response structure:
-[
-    'answer' => 'The generated response text...',
-    'usage' => [
-        'prompt_tokens' => 150,
-        'completion_tokens' => 200,
-        'total_tokens' => 350
-    ],
-    'model' => 'gpt-4'
-]
+foreach ($responses as $ragResponse) {
+    // Access the final answer
+    $answer = $ragResponse->finalAnswer();
+    
+    // Get context information
+    $context = $ragResponse->context();
+    echo "Retrieved: {$context['retrieved_count']} documents\n";
+    
+    if ($context['has_reranking']) {
+        echo "Reranked to: {$context['reranked_count']} documents\n";
+    }
+    
+    // Access retrieved documents
+    foreach ($ragResponse->retrievedDocuments() as $doc) {
+        echo "Source: {$doc['title']}\n";
+    }
+    
+    echo "Answer: {$answer}\n";
+}
 ```
 
 #### Streaming Response
 
-Stream the answer in real-time for better user experience:
+Stream the answer in real-time with structured chunks:
 
 ```php
 $stream = $rag->answer(stream: true);
 
+$fullResponse = '';
+$context = null;
+
 foreach ($stream as $chunk) {
-    echo $chunk; // Output each chunk as it arrives
-    flush(); // Flush output buffer for real-time display
+    if ($chunk['type'] === 'start') {
+        // Initial context with retrieved and reranked docs
+        $context = $chunk['context'];
+        echo "Processing {$context['retrieved_count']} documents...\n";
+        if ($context['has_reranking']) {
+            echo "Reranked to {$context['reranked_count']} documents\n";
+        }
+    } elseif ($chunk['type'] === 'delta') {
+        // Stream text chunks in real-time
+        echo $chunk['delta'];
+        $fullResponse .= $chunk['delta'];
+        flush(); // Flush output buffer for real-time display
+    } elseif ($chunk['type'] === 'done') {
+        // Streaming complete
+        echo "\n\nComplete!\n";
+    }
 }
 ```
+
+### Streaming Format
+
+When streaming (`answer(stream: true)`), the response yields three types of chunks:
+
+1. **Start chunk**: Contains initial context with documents
+   ```php
+   [
+       'type' => 'start', 
+       'delta' => '', 
+       'done' => false, 
+       'context' => [
+           'retrieved_count' => 5,
+           'reranked_count' => 3,
+           'has_reranking' => true,
+           'retrieved_documents' => [...],
+           'reranked_documents' => [...]
+       ]
+   ]
+   ```
+
+2. **Delta chunks**: Text chunks as they arrive from the LLM
+   ```php
+   [
+       'type' => 'delta', 
+       'delta' => 'Machine learning is', 
+       'done' => false, 
+       'context' => null
+   ]
+   ```
+
+3. **Done chunk**: Final signal with complete context
+   ```php
+   [
+       'type' => 'done', 
+       'delta' => '', 
+       'done' => true, 
+       'context' => [
+           'retrieved_count' => 5,
+           'reranked_count' => 3,
+           'has_reranking' => true,
+           'final_answer' => 'Complete response...',
+           'prompt' => 'The complete prompt sent to LLM...'
+       ]
+   ]
+   ```
+
+### Direct Streaming Performance
+
+The streaming implementation provides optimal performance through:
+
+- **Direct Chunk Passing**: Chunks are passed directly from OpenAI without buffering
+- **Single-Word Deltas**: Normal behavior that provides the most responsive user experience
+- **Guzzle STREAM Option**: Uses HTTP streaming for immediate processing
+- **256-Byte Chunks**: Reads in small chunks for immediate processing
+- **No Artificial Delays**: Raw streaming speed from the LLM provider
 
 ### Streaming Benefits
 
@@ -209,27 +341,47 @@ Streaming provides several advantages for RAG applications:
 - **Better User Experience**: Users see responses appearing in real-time rather than waiting for the complete answer
 - **Lower Perceived Latency**: Content appears immediately as the LLM generates it
 - **Progressive Display**: Ideal for web applications with typewriter-style effects
+- **Context Awareness**: Access to document context before the answer begins
 - **Reduced Memory Usage**: Process chunks as they arrive rather than buffering the entire response
 
-### Collecting Full Response from Stream
+## Advanced Examples
 
-If you need the complete response from a stream:
+### Non-Streaming with Full Pipeline Access
 
 ```php
-$stream = $rag->answer(stream: true);
+$responses = $sigmie->newRag($openai)
+    ->search($searchBuilder)
+    ->prompt(function (NewRagPrompt $prompt) {
+        $prompt->question('What is the privacy policy?');
+        $prompt->contextFields(['text', 'title']);
+    })
+    ->instructions("Be concise.")
+    ->answer(stream: false);
 
-$fullResponse = '';
-foreach ($stream as $chunk) {
-    $fullResponse .= $chunk;
-    echo $chunk; // Still display in real-time
-    flush();
+// Get the RagResponse object
+foreach ($responses as $ragResponse) {
+    // Access components
+    $answer = $ragResponse->finalAnswer();
+    $retrievedDocs = $ragResponse->retrievedDocuments();
+    $rerankedDocs = $ragResponse->rerankedDocuments();
+    $prompt = $ragResponse->prompt();
+    
+    // Get context summary
+    $context = $ragResponse->context();
+    echo "Retrieved: {$context['retrieved_count']} documents\n";
+    if ($context['has_reranking']) {
+        echo "Reranked to: {$context['reranked_count']} documents\n";
+    }
+    
+    // Display sources
+    echo "\nSources used:\n";
+    foreach ($retrievedDocs as $doc) {
+        echo "- {$doc['title']}\n";
+    }
+    
+    echo "\nAnswer: {$answer}\n";
 }
-
-// Now $fullResponse contains the complete answer
-echo "\n\nComplete response: " . $fullResponse;
 ```
-
-## Advanced Examples
 
 ### Real-Time Streaming with Progress Indication
 
@@ -250,15 +402,31 @@ $stream = $sigmie
     ->instructions('You are a technical expert explaining complex topics clearly.')
     ->answer(stream: true);
 
-echo "Generating response:\n";
+$fullResponse = '';
+$context = null;
+
 foreach ($stream as $chunk) {
-    echo $chunk;
-    flush();
+    if ($chunk['type'] === 'start') {
+        // Initial context with retrieved and reranked docs
+        $context = $chunk['context'];
+        echo "Processing {$context['retrieved_count']} documents...\n";
+        if ($context['has_reranking']) {
+            echo "Reranked to {$context['reranked_count']} documents\n";
+        }
+        echo "Generating response:\n";
+    } elseif ($chunk['type'] === 'delta') {
+        // Stream text chunks in real-time
+        echo $chunk['delta'];
+        $fullResponse .= $chunk['delta'];
+        flush(); // Flush output buffer for real-time display
+    } elseif ($chunk['type'] === 'done') {
+        // Streaming complete
+        echo "\n\nComplete!\n";
+    }
 }
-echo "\n\nGeneration complete!\n";
 ```
 
-### Semantic Search with Streaming
+### Semantic Search with Streaming and Pipeline Inspection
 
 ```php
 use Sigmie\AI\LLMs\OpenAILLM;
@@ -301,49 +469,28 @@ $stream = $sigmie
     ->limits(maxTokens: 600, temperature: 0.2)
     ->answer(stream: true);
 
-// Stream the response
+// Stream the response with detailed logging
 foreach ($stream as $chunk) {
-    echo $chunk;
-    flush();
+    if ($chunk['type'] === 'start') {
+        $context = $chunk['context'];
+        echo "=== RAG Pipeline Started ===\n";
+        echo "Retrieved: {$context['retrieved_count']} documents\n";
+        echo "Reranked: {$context['reranked_count']} documents\n";
+        echo "Sources:\n";
+        foreach ($context['retrieved_documents'] as $doc) {
+            echo "- {$doc['title']} (by {$doc['author']})\n";
+        }
+        echo "\n=== Generating Answer ===\n";
+    } elseif ($chunk['type'] === 'delta') {
+        echo $chunk['delta'];
+        flush();
+    } elseif ($chunk['type'] === 'done') {
+        echo "\n\n=== Generation Complete ===\n";
+    }
 }
 ```
 
-### Custom Prompt Template with Streaming
-
-```php
-$stream = $rag
-    ->prompt(function (NewRagPrompt $prompt) {
-        $prompt->question('What are the latest trends in AI?');
-        $prompt->contextFields(['headline', 'summary', 'published_date']);
-        
-        $prompt->template('
-            QUESTION: {{question}}
-            
-            INSTRUCTIONS:
-            {{guardrails}}
-            
-            RECENT ARTICLES:
-            {{context}}
-            
-            ANALYSIS:
-            Based on the articles above, provide a comprehensive trend analysis.
-        ');
-        
-        $prompt->guardrails([
-            'Focus on recent developments (last 12 months)',
-            'Organize by trend categories',
-            'Include timeline information when available'
-        ]);
-    })
-    ->answer(stream: true);
-
-foreach ($stream as $chunk) {
-    echo $chunk;
-    flush();
-}
-```
-
-### Multi-Index Research with Streaming
+### Multi-Index Research with Full Context Access
 
 ```php
 $stream = $sigmie
@@ -382,57 +529,69 @@ $stream = $sigmie
     ->answer(stream: true);
 
 foreach ($stream as $chunk) {
-    echo $chunk;
-    flush();
+    if ($chunk['type'] === 'start') {
+        $context = $chunk['context'];
+        echo "Analyzed {$context['retrieved_count']} documents from multiple sources\n";
+    } elseif ($chunk['type'] === 'delta') {
+        echo $chunk['delta'];
+        flush();
+    }
 }
 ```
 
 ### Comparison: Non-Streaming vs Streaming
 
 ```php
-// Non-streaming - blocks until complete
+// Non-streaming - blocks until complete but provides full RagResponse
 $startTime = microtime(true);
-$response = $rag->answer(stream: false);
+$responses = $rag->answer(stream: false);
 $endTime = microtime(true);
 echo "Non-streaming took: " . ($endTime - $startTime) . " seconds\n";
-echo $response['answer'];
 
-// Streaming - provides immediate feedback
+foreach ($responses as $ragResponse) {
+    $context = $ragResponse->context();
+    echo "Retrieved {$context['retrieved_count']} documents\n";
+    echo $ragResponse->finalAnswer();
+}
+
+// Streaming - provides immediate feedback with structured chunks
 $startTime = microtime(true);
 $stream = $rag->answer(stream: true);
 $firstChunkTime = null;
 $fullResponse = '';
 
 foreach ($stream as $chunk) {
-    if ($firstChunkTime === null) {
+    if ($chunk['type'] === 'start') {
         $firstChunkTime = microtime(true);
         echo "First chunk arrived after: " . ($firstChunkTime - $startTime) . " seconds\n";
+        $context = $chunk['context'];
+        echo "Retrieved {$context['retrieved_count']} documents\n";
+    } elseif ($chunk['type'] === 'delta') {
+        $fullResponse .= $chunk['delta'];
+        echo $chunk['delta'];
+        flush();
+    } elseif ($chunk['type'] === 'done') {
+        $endTime = microtime(true);
+        echo "\nStreaming completed in: " . ($endTime - $startTime) . " seconds\n";
     }
-    
-    $fullResponse .= $chunk;
-    echo $chunk;
-    flush();
 }
-
-$endTime = microtime(true);
-echo "\nStreaming completed in: " . ($endTime - $startTime) . " seconds\n";
 ```
 
 ## Best Practices
 
-### When to Use Streaming
+### When to Use Streaming vs Non-Streaming
 
 **Use Streaming When:**
 - Building interactive applications with real-time feedback
 - Responses are expected to be longer than a few sentences
 - User experience is critical (web apps, chatbots, APIs)
-- You want to display progressive results
+- You want to display progressive results and document context
 
 **Use Non-Streaming When:**
 - Building batch processing systems
 - Response length is typically short
-- You need the complete response before proceeding
-- Working with structured response formats
+- You need the complete RagResponse object before proceeding
+- Working with structured response formats that require full context
 
 ### Search Optimization
 - **Use semantic search** for conceptual queries when you have embedding-enabled fields
@@ -465,16 +624,24 @@ echo "\nStreaming completed in: " . ($endTime - $startTime) . " seconds\n";
 ### Streaming Considerations
 - **Flush output buffers** regularly when displaying streaming content
 - **Handle connection timeouts** gracefully in web applications
-- **Consider memory usage** for very long responses
+- **Process chunks immediately** to maintain streaming benefits
 - **Implement proper error handling** for stream interruptions
 
-### Error Handling
+### RagResponse Debugging
+- **Log context metadata** for performance monitoring
+- **Inspect retrieved documents** to validate search quality
+- **Review generated prompts** to optimize context formatting
+- **Monitor reranking effectiveness** through document count changes
 
-#### Non-Streaming Error Handling
+## Error Handling
+
+### Non-Streaming Error Handling
 ```php
 try {
-    $answer = $rag->answer(stream: false);
-    echo $answer['answer'];
+    $responses = $rag->answer(stream: false);
+    foreach ($responses as $ragResponse) {
+        echo $ragResponse->finalAnswer();
+    }
 } catch (\RuntimeException $e) {
     if (str_contains($e->getMessage(), 'Search must be configured')) {
         echo "Please configure a search query first";
@@ -484,14 +651,16 @@ try {
 }
 ```
 
-#### Streaming Error Handling
+### Streaming Error Handling
 ```php
 try {
     $stream = $rag->answer(stream: true);
     
     foreach ($stream as $chunk) {
-        echo $chunk;
-        flush();
+        if ($chunk['type'] === 'delta') {
+            echo $chunk['delta'];
+            flush();
+        }
     }
 } catch (\RuntimeException $e) {
     if (str_contains($e->getMessage(), 'Search must be configured')) {
@@ -502,16 +671,9 @@ try {
 }
 ```
 
-### Security Considerations
-- **Validate user input** before using in search queries
-- **Implement rate limiting** for expensive RAG operations, especially streaming
-- **Filter sensitive information** from context fields
-- **Use appropriate API key permissions** for your LLM and reranking services
-- **Monitor streaming connections** to prevent resource exhaustion
-
 ## Integration with Web Applications
 
-### Simple Web Streaming Example
+### Server-Sent Events Streaming
 ```php
 // Set headers for Server-Sent Events
 header('Content-Type: text/event-stream');
@@ -521,12 +683,30 @@ header('Connection: keep-alive');
 $stream = $rag->answer(stream: true);
 
 foreach ($stream as $chunk) {
-    echo "data: " . json_encode(['content' => $chunk]) . "\n\n";
+    if ($chunk['type'] === 'start') {
+        echo "data: " . json_encode([
+            'type' => 'context',
+            'retrieved_count' => $chunk['context']['retrieved_count'],
+            'has_reranking' => $chunk['context']['has_reranking']
+        ]) . "\n\n";
+    } elseif ($chunk['type'] === 'delta') {
+        echo "data: " . json_encode([
+            'type' => 'delta',
+            'content' => $chunk['delta']
+        ]) . "\n\n";
+    } elseif ($chunk['type'] === 'done') {
+        echo "data: " . json_encode(['type' => 'done']) . "\n\n";
+    }
     flush();
 }
-
-echo "data: " . json_encode(['finished' => true]) . "\n\n";
-flush();
 ```
 
-This documentation covers the unified streaming API where `answer(stream: bool)` handles both streaming and non-streaming responses, providing developers with flexibility and improved user experience options.
+### Security Considerations
+- **Validate user input** before using in search queries
+- **Implement rate limiting** for expensive RAG operations, especially streaming
+- **Filter sensitive information** from context fields
+- **Use appropriate API key permissions** for your LLM and reranking services
+- **Monitor streaming connections** to prevent resource exhaustion
+- **Log RagResponse context** for audit trails while respecting privacy
+
+This documentation covers the unified streaming API where `answer(stream: bool)` handles both streaming and non-streaming responses, providing developers with full visibility into the RAG pipeline through the RagResponse object and structured streaming chunks.
