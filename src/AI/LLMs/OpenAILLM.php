@@ -4,30 +4,24 @@ declare(strict_types=1);
 
 namespace Sigmie\AI\LLMs;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Promise\Promise as PromisePromise;
+use GuzzleHttp\Psr7\Uri;
 use Http\Promise\Promise;
 use Sigmie\AI\Contracts\Embedder;
 use Sigmie\AI\Contracts\LLM;
+use Sigmie\Http\JSONClient;
+use Sigmie\Http\JSONRequest;
+use Sigmie\Http\JSONResponse;
 
 class OpenAILLM implements LLM, Embedder
 {
-    protected Client $client;
-    protected string $apiKey;
-    protected string $model;
-    protected array $options = [];
+    protected JSONClient $http;
 
-    public function __construct(string $apiKey, string $model = 'gpt-4')
+    public function __construct(string $apiKey)
     {
-        $this->apiKey = $apiKey;
-        $this->model = $model;
-        $this->client = new Client([
-            'base_uri' => 'https://api.openai.com',
-            'headers' => [
-                'Authorization' => 'Bearer ' . $apiKey,
-                'Content-Type' => 'application/json',
-            ]
-        ]);
+        $this->http = JSONClient::createWithToken(
+            hosts: ['https://api.openai.com'],
+            token: $apiKey
+        );
     }
 
     public function embed(string $text, int $dimensions): array
@@ -38,13 +32,16 @@ class OpenAILLM implements LLM, Embedder
             'dimensions' => $dimensions
         ];
 
-        $response = $this->client->post('/v1/embeddings', [
-            'json' => $payload
-        ]);
+        $request = new JSONRequest(
+            'POST',
+            new Uri('/v1/embeddings'),
+            $payload
+        );
 
-        $data = json_decode($response->getBody()->getContents(), true);
+        /** @var JSONResponse $response */
+        $response = $this->http->request($request);
 
-        return $data['data'][0]['embedding'];
+        return $response->json('data.0.embedding');
     }
 
     public function batchEmbed(array $payload): array
@@ -59,124 +56,80 @@ class OpenAILLM implements LLM, Embedder
 
         $dimensions = $payload[0]['dims'] ?? 1536;
 
-        $response = $this->client->post('/v1/embeddings', [
-            'json' => [
+        $request = new JSONRequest(
+            'POST',
+            new Uri('/v1/embeddings'),
+            [
                 'model' => 'text-embedding-3-small',
                 'input' => $texts,
                 'dimensions' => (int) $dimensions
             ]
-        ]);
+        );
 
-        $data = json_decode($response->getBody()->getContents(), true);
+        $response = $this->http->request($request);
 
-        foreach ($data['data'] as $index => $result) {
+        /** @var JSONResponse $response */
+
+        foreach ($response->json('data') as $index => $result) {
             $payload[$index]['vector'] = $result['embedding'];
         }
 
         return $payload;
     }
 
-    public function promiseEmbed(string $text, int $dimensions): PromisePromise 
+    public function promiseEmbed(string $text, int $dimensions): Promise
     {
-        return $this->client->postAsync('/v1/embeddings', [
-            'json' => [
+        $request = new JSONRequest(
+            'POST',
+            new Uri('/v1/embeddings'),
+            [
                 'model' => 'text-embedding-3-small',
                 'input' => $text,
                 'dimensions' => $dimensions
             ]
-        ]);
+        );
+
+        return $this->http->promise($request);
     }
 
     public function answer(string $input, string $instructions, int $maxTokens, float $temperature): array
     {
-        $messages = [
-            ['role' => 'system', 'content' => $instructions],
-            ['role' => 'user', 'content' => $input]
-        ];
+        $request = new JSONRequest(
+            'POST',
+            new Uri('/v1/responses'),
+            [
+                'model' => 'gpt-5-nano',
+                'input' => $input,
+                'instructions' => $instructions,
+                'stream'=> true,
+                'text' => [
+                    'format' => [
+                        'name' => 'rag_answer',
+                        'type' => 'json_schema',
+                        'schema' => [
+                            'type' => 'object',
+                            'required' => ['answer', 'citations'],
+                            'properties' => [
+                                'answer' => ['type' => 'string'],
+                                'citations' => [
+                                    'type' => 'array',
+                                    'items' => ['type' => 'string']
+                                ],
+                            ],
+                            'additionalProperties' => false,
+                        ],
+                        'strict' => true
+                    ]
+                ],
+            ],
+        );
 
-        return $this->chat($messages, [
-            'max_tokens' => $maxTokens,
-            'temperature' => $temperature
-        ]);
+        $response = $this->http->request($request);
+
+        return $response->json();
     }
 
-    public function streamAnswer(string $input, string $instructions, int $maxTokens, float $temperature): iterable
-    {
-        $messages = [
-            ['role' => 'system', 'content' => $instructions],
-            ['role' => 'user', 'content' => $input]
-        ];
+    public function streamAnswer(string $input, string $instructions, int $maxTokens, float $temperature): iterable {
 
-        return $this->streamChat($messages, [
-            'max_tokens' => $maxTokens,
-            'temperature' => $temperature
-        ]);
-    }
-
-    public function chat(array $messages, ?array $options = []): array
-    {
-        $mergedOptions = array_merge($this->options, $options ?: []);
-
-        $payload = array_merge([
-            'model' => $this->model,
-            'messages' => $messages,
-        ], $mergedOptions);
-
-        $response = $this->client->post('/v1/chat/completions', [
-            'json' => $payload
-        ]);
-
-        $data = json_decode($response->getBody()->getContents(), true);
-
-        return [
-            'answer' => $data['choices'][0]['message']['content'],
-            'usage' => $data['usage'] ?? null,
-            'model' => $data['model'] ?? $this->model,
-        ];
-    }
-
-    public function streamChat(array $messages, ?array $options = []): iterable
-    {
-        $mergedOptions = array_merge($this->options, $options ?: []);
-
-        $payload = array_merge([
-            'model' => $this->model,
-            'messages' => $messages,
-            'stream' => true,
-        ], $mergedOptions);
-
-        $response = $this->client->post('/v1/chat/completions', [
-            'json' => $payload,
-            'stream' => true,
-        ]);
-
-        $body = $response->getBody();
-        $buffer = '';
-
-        while (!$body->eof()) {
-            $chunk = $body->read(1024);
-            $buffer .= $chunk;
-            
-            $lines = explode("\n", $buffer);
-            $buffer = array_pop($lines);
-            
-            foreach ($lines as $line) {
-                if (trim($line) === '' || $line === 'data: [DONE]') {
-                    continue;
-                }
-                
-                if (strpos($line, 'data: ') === 0) {
-                    $json = substr($line, 6);
-                    $data = json_decode($json, true);
-                    
-                    if (isset($data['choices'][0]['delta']['content'])) {
-                        yield [
-                            'content' => $data['choices'][0]['delta']['content'],
-                            'finish_reason' => $data['choices'][0]['finish_reason'] ?? null,
-                        ];
-                    }
-                }
-            }
-        }
     }
 }

@@ -100,7 +100,9 @@ class RagTest extends TestCase
             })
             ->instructions("You are a precise, no-fluff technical assistant. Answer in English. Cite sources as [^id]. If unknown, say 'Unknown.'")
             ->limits(maxTokens: 600, temperature: 0.1)
-            ->answer();
+            ->streamAnswer();
+
+        dd($answer);
         
         //TODO add assertions
     }
