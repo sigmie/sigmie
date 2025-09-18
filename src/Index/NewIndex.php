@@ -26,6 +26,7 @@ use Sigmie\Index\Shared\Tokenizer;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
 use Sigmie\AI\Contracts\Embedder;
+use Sigmie\AI\Contracts\EmbeddingsApi;
 
 class NewIndex
 {
@@ -62,7 +63,7 @@ class NewIndex
 
     public function __construct(
         ElasticsearchConnection $connection,
-        protected ?Embedder $embedder = null
+        protected ?EmbeddingsApi $embeddingsApi = null
     ) {
         $this->setElasticsearchConnection($connection);
 
@@ -78,9 +79,9 @@ class NewIndex
         return $this->alias;
     }
 
-    public function withEmbedder(Embedder $embedder): static
+    public function withEmbedder(EmbeddingsApi $embedder): static
     {
-        $this->embedder = $embedder;
+        $this->embeddingsApi = $embedder;
 
         return $this;
     }

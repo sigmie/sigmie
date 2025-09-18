@@ -17,6 +17,7 @@ use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\HTML;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\AI\Contracts\Embedder;
+use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Semantic\DocumentEmbeddings;
 use Traversable;
 use Sigmie\Shared\Collection;
@@ -38,7 +39,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     public function __construct(
         protected string $name,
         ElasticsearchConnection $connection,
-        protected ?Embedder $embedder = null,
+        protected ?EmbeddingsApi $embeddingsApi = null,
         protected string $refresh = 'false'
     ) {
         $this->setElasticsearchConnection($connection);
@@ -46,9 +47,9 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         $this->properties = new Properties();
     }
 
-    public function withEmbedder(Embedder $embedder): static
+    public function withEmbedder(EmbeddingsApi $embedder): static
     {
-        $this->embedder = $embedder;
+        $this->embeddingsApi = $embedder;
 
         return $this;
     }
@@ -137,8 +138,8 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function merge(array $docs): AliveCollection
     {
-        if ($this->populateEmbeddings && $this->embedder) {
-            $documentEmbeddings = new DocumentEmbeddings($this->properties, $this->embedder);
+        if ($this->populateEmbeddings && $this->embeddingsApi) {
+            $documentEmbeddings = new DocumentEmbeddings($this->properties, $this->embeddingsApi);
             $docs = array_map(fn(Document $doc) => $documentEmbeddings->make($doc), $docs);
         }
 
@@ -149,11 +150,11 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     private function documentEmbeddings(Document $document): Document
     {
-        if (!$this->populateEmbeddings || !$this->embedder) {
+        if (!$this->populateEmbeddings || !$this->embeddingsApi) {
             return $document;
         }
 
-        $documentEmbeddings = new DocumentEmbeddings($this->properties, $this->embedder);
+        $documentEmbeddings = new DocumentEmbeddings($this->properties, $this->embeddingsApi);
         
         return $documentEmbeddings->make($document);
     }

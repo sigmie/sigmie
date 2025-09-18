@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Rag;
 
-use Sigmie\AI\Contracts\Reranker;
+use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Document\RerankedHit;
 use Sigmie\Search\Formatters\RerankedSearchResponse;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
@@ -15,7 +15,7 @@ class NewRerank
     protected int $topK = 10;
     protected ?string $query = null;
 
-    public function __construct(protected Reranker $reranker) {
+    public function __construct(protected RerankApi $reranker) {
         
     }
     

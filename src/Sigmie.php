@@ -6,8 +6,8 @@ namespace Sigmie;
 
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
-use Sigmie\AI\Contracts\LLM;
-use Sigmie\AI\Contracts\Reranker;
+use Sigmie\AI\Contracts\LLMApi;
+use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
 use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
@@ -31,7 +31,7 @@ use Sigmie\Search\NewMultiSearch;
 use Sigmie\Search\NewRag;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewTemplate;
-use Sigmie\AI\Contracts\Embedder;
+use Sigmie\AI\Contracts\EmbeddingsApi;
 
 class Sigmie
 {
@@ -55,14 +55,14 @@ class Sigmie
 
     public function __construct(
         Connection $httpConnection,
-        protected ?Embedder $embedder = null
+        protected ?EmbeddingsApi $embeddingsApi = null
     ) {
         $this->elasticsearchConnection = $httpConnection;
     }
 
-    public function embedder(Embedder $embedder): static
+    public function embedder(EmbeddingsApi $embedder): static
     {
-        $this->embedder = $embedder;
+        $this->embeddingsApi = $embedder;
 
         return $this;
     }
@@ -85,7 +85,7 @@ class Sigmie
 
     public function newIndex(string $name): NewIndex
     {
-        return (new NewIndex($this->elasticsearchConnection, $this->embedder))
+        return (new NewIndex($this->elasticsearchConnection, $this->embeddingsApi))
             ->alias($this->withApplicationPrefix($name));
     }
 
@@ -113,7 +113,7 @@ class Sigmie
         return new AliveCollection(
             $this->withApplicationPrefix($name),
             $this->elasticsearchConnection,
-            $this->embedder,
+            $this->embeddingsApi,
             $refresh ? 'true' : 'false'
         );
     }
@@ -152,30 +152,30 @@ class Sigmie
 
         return (new NewSearch(
             $this->elasticsearchConnection,
-            $this->embedder
+            $this->embeddingsApi
         ))
             ->index($index);
     }
 
     public function newRag(
-        LLM $llm,
+        LLMApi $llm,
     ): NewRag {
 
-        $rag = new NewRag($this->elasticsearchConnection, $llm, $this->embedder);
+        $rag = new NewRag($this->elasticsearchConnection, $llm, $this->embeddingsApi);
 
         return $rag;
     }
 
     public function newMultiSearch(): NewMultiSearch
     {
-        return new NewMultiSearch($this->elasticsearchConnection, $this->embedder);
+        return new NewMultiSearch($this->elasticsearchConnection, $this->embeddingsApi);
     }
 
     public function newTemplate(string $id): NewTemplate
     {
         $id = $this->withApplicationPrefix($id);
 
-        return (new NewTemplate($this->elasticsearchConnection, $this->embedder))
+        return (new NewTemplate($this->elasticsearchConnection, $this->embeddingsApi))
             ->id($id);
     }
 

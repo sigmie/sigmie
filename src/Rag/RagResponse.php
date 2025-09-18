@@ -13,11 +13,13 @@ class RagResponse
     protected string $prompt = '';
     protected string $finalAnswer = '';
     protected bool $streaming = false;
+    protected ?string $conversationId = null;
 
     public function __construct(
         protected array $hits,
         protected ?array $rerankedHits = null,
         protected ?string $ragPrompt = null,
+        protected array $metadata = [],
     ) {
         $this->retrievedDocs = $hits;
         $this->rerankedDocs = $rerankedHits ?? [];
@@ -54,6 +56,16 @@ class RagResponse
         return $this->finalAnswer;
     }
 
+    public function setConversationId(string $conversationId): void
+    {
+        $this->conversationId = $conversationId;
+    }
+
+    public function conversationId(): ?string
+    {
+        return $this->conversationId;
+    }
+
     public function context(): array
     {
         return [
@@ -61,6 +73,7 @@ class RagResponse
             'reranked_count' => count($this->rerankedDocs),
             'has_reranking' => $this->hasReranking(),
             'documents' => $this->hasReranking() ? $this->rerankedDocs : $this->retrievedDocs,
+            'conversation_id' => $this->conversationId,
         ];
     }
 
@@ -70,6 +83,7 @@ class RagResponse
             'context' => $this->context(),
             'prompt' => $this->prompt,
             'answer' => $this->finalAnswer,
+            'conversation_id' => $this->conversationId,
             'metadata' => [
                 'retrieved_documents' => $this->retrievedDocs,
                 'reranked_documents' => $this->rerankedDocs,

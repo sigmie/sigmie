@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Sigmie\AI\Contracts\Embedder;
+use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Base\APIs\MSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\ElasticsearchException;
@@ -21,12 +21,12 @@ class NewMultiSearch
 
     public function __construct(
         protected ElasticsearchConnection $elasticsearchConnection,
-        protected ?Embedder $embedder = null
+        protected ?EmbeddingsApi $embeddingsApi = null
     ) {}
 
     public function newSearch(string $name): NewSearch
     {
-        $search = new NewSearch($this->elasticsearchConnection, $this->embedder);
+        $search = new NewSearch($this->elasticsearchConnection, $this->embeddingsApi);
         $search->index($name);
 
         $this->queries[] = $search;

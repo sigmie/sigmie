@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\AI\LLMs\OpenAILLM;
+use Sigmie\AI\APIs\OpenAIConversationsApi;
+use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
+use Sigmie\AI\APIs\OpenAIResponseApi;
+use Sigmie\AI\APIs\VoyageRerankApi;
 use Sigmie\AI\ProviderFactory;
-use Sigmie\AI\Rerankers\VoyageReranker;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Mappings\NewProperties;
@@ -35,9 +37,10 @@ class RagTest extends TestCase
     public function rag_non_streaming()
     {
         $indexName = uniqid();
-        $openai = new OpenAILLM(getenv('OPENAI_API_KEY'));
+        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
+        $llm = new OpenAIResponseApi(getenv('OPENAI_API_KEY'));
 
-        $sigmie = $this->sigmie->embedder($openai);
+        $sigmie = $this->sigmie->embedder($embeddings);
 
         $props = new NewProperties;
         $props->text('title')->semantic(accuracy: 1, dimensions: 256);
@@ -62,7 +65,7 @@ class RagTest extends TestCase
         ]);
 
         $responses = $sigmie
-            ->newRag($openai)
+            ->newRag($llm)
             ->search(
                 $sigmie->newMultiSearch()
                     ->newSearch($indexName)
@@ -103,9 +106,9 @@ class RagTest extends TestCase
     public function knn_filter()
     {
         $indexName = uniqid();
-        $openai = new OpenAILLM(getenv('OPENAI_API_KEY'));
+        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
 
-        $sigmie = $this->sigmie->embedder($openai);
+        $sigmie = $this->sigmie->embedder($embeddings);
 
         $props = new NewProperties;
         $props->text('title')->semantic(accuracy: 1, dimensions: 256);
@@ -134,11 +137,12 @@ class RagTest extends TestCase
             ],),
         ]);
 
-        $voyageReranker = new VoyageReranker(getenv('VOYAGE_API_KEY'));
+        // $llm = new OpenAIResponseApi(getenv('OPENAI_API_KEY'));
+        $llm = new OpenAIConversationsApi(getenv('OPENAI_API_KEY'));
+        $voyageReranker = new VoyageRerankApi(getenv('VOYAGE_API_KEY'));
 
         $answer = $sigmie
-            ->newRag($openai)
-            // ->reranker($voyageReranker)
+            ->newRag($llm)
             ->search(
                 $sigmie->newMultiSearch()
                     ->newSearch($indexName)
@@ -149,6 +153,7 @@ class RagTest extends TestCase
                     ->filters('language:"en"')
                     ->size(3)
             )
+            // ->reranker($voyageReranker)
             // ->rerank(function (NewRerank $rerank) {
             //     $rerank->fields(['text', 'title']);
             //     $rerank->topK(1);
@@ -183,47 +188,55 @@ class RagTest extends TestCase
                 $eventTypes[] = $chunk['type'];
 
                 switch ($chunk['type']) {
+                    case 'conversation.created':
+                        echo "[CONVERSATION] Created: {$chunk['conversation_id']}\n";
+                        break;
+
+                    case 'conversation.reused':
+                        echo "[CONVERSATION] Reused: {$chunk['conversation_id']}\n";
+                        break;
+
                     case 'search.started':
                         echo "[SEARCH] {$chunk['message']}\n";
                         break;
-                    
+
                     case 'search.completed':
                         echo "[SEARCH] {$chunk['message']}\n";
                         break;
-                    
+
                     case 'rerank.started':
                         echo "[RERANK] {$chunk['message']}\n";
                         break;
-                    
+
                     case 'rerank.completed':
                         echo "[RERANK] {$chunk['message']}\n";
                         break;
-                    
+
                     case 'prompt.generated':
                         echo "[PROMPT] {$chunk['message']}\n";
                         break;
-                    
+
                     case 'stream.start':
                         // Initial context with retrieved and reranked docs
                         $context = $chunk['context'];
                         echo "[STREAM] Starting response stream with {$context['retrieved_count']} documents\n";
                         break;
-                    
+
                     case 'llm.request.started':
                         echo "[LLM] {$chunk['message']}\n";
                         break;
-                    
+
                     case 'llm.first_token':
                         echo "[LLM] {$chunk['message']}\n\n";
                         break;
-                    
+
                     case 'content.delta':
                         // Streaming text chunks
                         echo $chunk['delta'];
                         $fullResponse .= $chunk['delta'];
                         flush();
                         break;
-                    
+
                     case 'stream.complete':
                         echo "\n\n[STREAM] Response generation complete\n";
                         break;
@@ -237,7 +250,7 @@ class RagTest extends TestCase
         $this->assertNotNull($context);
         $this->assertArrayHasKey('retrieved_count', $context);
         $this->assertArrayHasKey('documents', $context);
-        
+
         // Assert we got the expected events
         $this->assertContains('search.started', $eventTypes);
         $this->assertContains('search.completed', $eventTypes);
@@ -246,7 +259,7 @@ class RagTest extends TestCase
         $this->assertContains('llm.request.started', $eventTypes);
         $this->assertContains('content.delta', $eventTypes);
         $this->assertContains('stream.complete', $eventTypes);
-        
+
         $this->assertGreaterThan(0, count($events));
     }
 }

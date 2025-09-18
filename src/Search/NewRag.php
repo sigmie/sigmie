@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use Closure;
-use Sigmie\AI\Contracts\Embedder;
-use Sigmie\AI\Contracts\LLM;
-use Sigmie\AI\Contracts\Reranker;
+use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\AI\Contracts\LLMApi;
+use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\AI\ProviderFactory;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Document\Hit;
@@ -22,7 +22,7 @@ class NewRag
 {
     protected null|NewSearch|NewMultiSearch $searchBuilder = null;
 
-    protected ?Reranker $reranker = null;
+    protected ?RerankApi $reranker = null;
 
     protected ?Closure $promptBuilder = null;
 
@@ -34,8 +34,8 @@ class NewRag
 
     public function __construct(
         protected ElasticsearchConnection $connection,
-        protected ?LLM $llm = null,
-        protected ?Embedder $embedder = null
+        protected ?LLMApi $llm = null,
+        protected ?EmbeddingsApi $embeddingsApi = null
     ) {}
 
     public function search(NewSearch|NewMultiSearch $search): self
@@ -54,7 +54,7 @@ class NewRag
         return $this;
     }
 
-    public function reranker(Reranker $reranker): self
+    public function reranker(RerankApi $reranker): self
     {
         $this->reranker = $reranker;
 
@@ -94,7 +94,7 @@ class NewRag
 
         $searchResponse = $this->searchBuilder->get();
         $retrievedHits = $searchResponse->hits();
-        
+
         if ($stream) {
             // Emit search completed event
             yield $ragResponse->searchCompleteEvent(count($retrievedHits));
@@ -108,10 +108,10 @@ class NewRag
                 // Emit reranking started event
                 yield $ragResponse->rerankingEvent();
             }
-            
+
             $rerankedHits = $this->rerankBuilder->rerank($retrievedHits)->hits();
             $hits = $rerankedHits;
-            
+
             if ($stream) {
                 // Emit reranking completed event
                 yield $ragResponse->rerankCompleteEvent(count($retrievedHits), count($rerankedHits));
@@ -135,28 +135,48 @@ class NewRag
         $ragResponse = new RagResponse(
             hits: $retrievedHits,
             rerankedHits: $rerankedHits,
-            ragPrompt: $finalPrompt
+            ragPrompt: $finalPrompt,
+            metadata: $this->llm->metadata()
         );
 
         if ($stream) {
             // Yield the stream start with context
             yield $ragResponse->startStreamingChunk();
-            
+
             // Emit LLM request started event
             yield $ragResponse->llmRequestEvent();
 
             // Track if this is the first token
             $firstToken = true;
+            $conversationId = null;
 
             // Stream the answer directly from LLM without buffering
             foreach ($this->llm->answer($finalPrompt, $this->instructions, true) as $chunk) {
-                if ($firstToken && !empty($chunk)) {
-                    // Emit first token event
-                    yield $ragResponse->llmFirstTokenEvent();
-                    $firstToken = false;
+                // Handle conversation events
+                if (is_array($chunk)) {
+                    if (isset($chunk['type'])) {
+                        if ($chunk['type'] === 'conversation.created' || $chunk['type'] === 'conversation.reused') {
+                            $conversationId = $chunk['conversation_id'] ?? null;
+                            if ($conversationId) {
+                                $ragResponse->setConversationId($conversationId);
+                            }
+                            // Yield conversation event
+                            yield $chunk;
+                        }
+                    }
+                    continue; // Skip non-string chunks for streaming
                 }
-                // Pass through content chunks immediately as they arrive
-                yield $ragResponse->streamingChunk($chunk);
+
+                // Only process string chunks
+                if (is_string($chunk)) {
+                    if ($firstToken && !empty($chunk)) {
+                        // Emit first token event
+                        yield $ragResponse->llmFirstTokenEvent();
+                        $firstToken = false;
+                    }
+                    // Pass through content chunks immediately as they arrive
+                    yield $ragResponse->streamingChunk($chunk);
+                }
             }
 
             // Yield completion signal
@@ -166,11 +186,31 @@ class NewRag
 
         // Get complete answer
         $answer = '';
+        $conversationId = null;
 
         foreach ($this->llm->answer($finalPrompt, $this->instructions, false) as $chunk) {
-            $answer .= $chunk;
+            // Handle conversation events
+            if (is_array($chunk)) {
+                if (isset($chunk['type'])) {
+                    if ($chunk['type'] === 'conversation.created' || $chunk['type'] === 'conversation.reused') {
+                        $conversationId = $chunk['conversation_id'] ?? null;
+                        if ($conversationId) {
+                            $ragResponse->setConversationId($conversationId);
+                        }
+                    }
+                }
+                // For non-streaming, we might get the full response as an array
+                if (isset($chunk['output'])) {
+                    $answer = $chunk['output'];
+                } elseif (isset($chunk['content'])) {
+                    $answer = $chunk['content'][0]['text'];
+                }
+
+            } elseif (is_string($chunk)) {
+                $answer .= $chunk;
+            }
         }
-        $ragResponse->setFinalAnswer($answer);
+        // $ragResponse->setFinalAnswer($answer);
 
         // Return complete response
         yield $ragResponse;
