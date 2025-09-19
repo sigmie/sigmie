@@ -6,7 +6,7 @@ namespace Sigmie\Rag;
 
 use Sigmie\Document\Hit;
 
-class RagResponse
+class RagAnswer
 {
     protected array $retrievedDocs = [];
     protected array $rerankedDocs = [];
@@ -17,7 +17,6 @@ class RagResponse
 
     public function __construct(
         protected array $hits,
-        protected ?array $rerankedHits = null,
         protected ?string $ragPrompt = null,
         protected array $metadata = [],
     ) {

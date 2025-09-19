@@ -161,7 +161,7 @@ class Sigmie
         LLMApi $llm,
     ): NewRag {
 
-        $rag = new NewRag($this->elasticsearchConnection, $llm, $this->embeddingsApi);
+        $rag = new NewRag($llm);
 
         return $rag;
     }

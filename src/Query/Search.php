@@ -292,5 +292,7 @@ class Search
                 $result['aggs'] = $aggsRaw;
             }
         }
+        
+        return $result;
     }
 }

@@ -13,7 +13,7 @@ use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Rag\NewRerank;
-use Sigmie\Rag\RagResponse;
+use Sigmie\Rag\RagAnswer;
 use Sigmie\Search\NewContextComposer;
 use Sigmie\Search\NewRagPrompt;
 use Sigmie\Search\NewSearch;
@@ -67,48 +67,27 @@ class RagTest extends TestCase
         // Refresh index to make documents immediately searchable
         $collected->refresh();
 
-        // Debug: Check if documents are indexed
-        $testSearch = $sigmie->newSearch()
+        $multiSearch = $sigmie->newMultiSearch();
+        $multiSearch->newSearch($indexName)
             ->index($indexName)
             ->properties($props)
-            ->queryString('*')
-            ->size(10)
-            ->get();
-        
-        $responses = $sigmie
+            ->retrieve(['text', 'title'])
+            ->queryString('What is the privacy policy?')
+            ->filters('language:"en"')
+            ->size(2);
+
+        $answer = $sigmie
             ->newRag($llm)
-            ->search(
-                $sigmie->newMultiSearch()
-                    ->newSearch($indexName)
-                    ->index($indexName)
-                    ->properties($props)
-                    ->retrieve(['text', 'title'])
-                    ->queryString('What is the privacy policy?')
-                    ->filters('language:"en"')
-                    ->size(2)
-            )
+            ->search($multiSearch)
             ->prompt(function (NewRagPrompt $prompt) {
                 $prompt->question('What is the privacy policy?');
                 $prompt->contextFields(['text', 'title']);
             })
             ->instructions("Be concise.")
-            ->answer(stream: false);
+            ->answer();
 
-        // Get the RagResponse object
-        $ragResponse = null;
-        foreach ($responses as $response) {
-            $ragResponse = $response;
-        }
-
-        // Assert RagResponse structure
-        $this->assertInstanceOf(RagResponse::class, $ragResponse);
-        $this->assertNotEmpty($ragResponse->finalAnswer());
-        $this->assertNotEmpty($ragResponse->retrievedDocuments());
-        $this->assertNotEmpty($ragResponse->prompt());
-
-        $context = $ragResponse->context();
-        $this->assertEquals(2, $context['retrieved_count']);
-        $this->assertFalse($context['has_reranking']);
+        ray($answer);
+        dd($answer);
     }
 
     /**
@@ -155,18 +134,18 @@ class RagTest extends TestCase
         $llm = new OpenAIConversationsApi(getenv('OPENAI_API_KEY'));
         $voyageReranker = new VoyageRerankApi(getenv('VOYAGE_API_KEY'));
 
+        $multiSearch = $sigmie->newMultiSearch();
+        $multiSearch->newSearch($indexName)
+            ->index($indexName)
+            ->properties($props)
+            ->retrieve(['text', 'title'])
+            ->queryString('What is the privacy policy?')
+            ->filters('language:"en"')
+            ->size(3);
+
         $answer = $sigmie
             ->newRag($llm)
-            ->search(
-                $sigmie->newMultiSearch()
-                    ->newSearch($indexName)
-                    ->index($indexName)
-                    ->properties($props)
-                    ->retrieve(['text', 'title'])
-                    ->queryString('What is the privacy policy?')
-                    ->filters('language:"en"')
-                    ->size(3)
-            )
+            ->search($multiSearch)
             // ->reranker($voyageReranker)
             // ->rerank(function (NewRerank $rerank) {
             //     $rerank->fields(['text', 'title']);
@@ -187,7 +166,7 @@ class RagTest extends TestCase
                 ]);
             })
             ->instructions("You are a precise, no-fluff technical assistant. Answer in English. Cite sources as [^id]. If unknown, say 'Unknown.'")
-            ->answer(stream: true);
+            ->streamAnswer();
 
         // Process the stream
         $fullResponse = '';

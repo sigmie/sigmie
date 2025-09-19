@@ -65,7 +65,7 @@ class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
         return $this->conversationId ?? $this->createConversation('Hello!');
     }
 
-    public function answer(string $input, string $instructions, bool $stream = false): iterable
+    public function answer(string $input, string $instructions): iterable
     {
         $conversation = $this->conversation();
 
@@ -77,25 +77,40 @@ class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
                 'model' => $this->model,
                 'input' => $input,
                 'instructions' => $instructions,
-                'stream' => $stream,
+                'stream' => false,
             ],
-            RequestOptions::STREAM => $stream,
         ];
 
-        $response = $this->client->post('/v1/responses', [
-            ...$options
-        ]);
-
-        if ($stream) {
-            // Return generator for direct streaming
-            yield from $this->streamAnswer($response);
-        }
-
+        $response = $this->client->post('/v1/responses', $options);
+        
         // Return array wrapped in generator for consistency
         yield json_decode($response->getBody()->getContents(), true);
     }
 
-    private function streamAnswer(ResponseInterface $response): iterable
+    public function streamAnswer(string $input, string $instructions): iterable
+    {
+        $conversation = $this->conversation();
+
+        yield ['type' => 'conversation.created', 'conversation_id' => $conversation];
+
+        $options = [
+            RequestOptions::JSON => [
+                'conversation' => $conversation,
+                'model' => $this->model,
+                'input' => $input,
+                'instructions' => $instructions,
+                'stream' => true,
+            ],
+            RequestOptions::STREAM => true,
+        ];
+
+        $response = $this->client->post('/v1/responses', $options);
+        
+        // Return generator for direct streaming
+        yield from $this->processStreamResponse($response);
+    }
+
+    private function processStreamResponse(ResponseInterface $response): iterable
     {
         $stream = $response->getBody();
         $buffer = '';

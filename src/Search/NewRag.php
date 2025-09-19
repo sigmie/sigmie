@@ -4,52 +4,27 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Closure;
-use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Contracts\RerankApi;
-use Sigmie\AI\ProviderFactory;
-use Sigmie\Base\Contracts\ElasticsearchConnection;
-use Sigmie\Document\Hit;
-use Sigmie\Document\RerankedHit;
-use Sigmie\Mappings\NewProperties;
-use Sigmie\Mappings\Properties;
 use Sigmie\Rag\NewRerank;
+use Sigmie\Rag\RagAnswer;
 use Sigmie\Rag\RagResponse;
+use Sigmie\Search\Contracts\MultiSearchResponse;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
 
 class NewRag
 {
-    protected null|NewSearch|NewMultiSearch $searchBuilder = null;
-
-    protected ?RerankApi $reranker = null;
-
-    protected ?Closure $promptBuilder = null;
-
+    protected ?NewMultiSearch $searchBuilder = null;
     protected ?NewRerank $rerankBuilder = null;
-
+    protected ?RerankApi $reranker = null;
+    protected ?\Closure $promptBuilder = null;
     protected string $instructions = '';
 
-    protected array $llmOptions = [];
+    public function __construct(protected LLMApi $llm) {}
 
-    public function __construct(
-        protected ElasticsearchConnection $connection,
-        protected ?LLMApi $llm = null,
-        protected ?EmbeddingsApi $embeddingsApi = null
-    ) {}
-
-    public function search(NewSearch|NewMultiSearch $search): self
+    public function search(NewMultiSearch $builder): self
     {
-        $this->searchBuilder = $search;
-
-        return $this;
-    }
-
-    public function multiSearch(Closure $callback): self
-    {
-        $this->searchBuilder = new NewMultiSearch($this->connection);
-
-        $callback($this->searchBuilder);
+        $this->searchBuilder = $builder;
 
         return $this;
     }
@@ -61,164 +36,158 @@ class NewRag
         return $this;
     }
 
-    public function rerank(Closure $callback): self
+    public function rerank(\Closure $callback): self
     {
         $this->rerankBuilder = new NewRerank($this->reranker);
-
         $callback($this->rerankBuilder);
 
         return $this;
     }
 
-    public function prompt(Closure $callback): self
+    /**
+     * Configure the prompt builder
+     * @param \Closure $callback Callback that receives NewRagPrompt
+     */
+    public function prompt(\Closure $callback): self
     {
+        if (!is_callable($callback)) {
+            throw new \InvalidArgumentException('Prompt callback must be callable');
+        }
+
         $this->promptBuilder = $callback;
 
         return $this;
     }
 
-    public function answer(bool $stream = false): iterable
+    /**
+     * Get answer without streaming (returns complete response)
+     */
+    public function answer(): RagAnswer
     {
         // Execute search
         if (!$this->searchBuilder) {
             throw new \RuntimeException('Search must be configured before calling answer()');
         }
 
-        // Create temporary RagResponse for events
-        $ragResponse = new RagResponse([], null, null);
+        $hits = $this->searchBuilder->hits();
 
-        if ($stream) {
-            // Emit search started event
-            yield $ragResponse->searchingEvent();
+        // Apply reranking if configured
+        if ($this->reranker && $this->rerankBuilder) {
+            $rerankedHits = $this->rerankBuilder->rerank($hits)->hits();
+
+            $hits = $rerankedHits;
         }
 
-        $searchResponse = $this->searchBuilder->get();
+        // Build prompt
+        $prompt = $this->buildPrompt($hits);
+
+        $data = $this->llm->answer($prompt, $this->instructions);
+
+        return new RagAnswer($hits, $prompt, $data);
+    }
+
+    /**
+     * Stream answer with real-time events and chunks
+     */
+    public function streamAnswer(): iterable
+    {
+        // Execute search
+        if (!$this->searchBuilder) {
+            throw new \RuntimeException('Search must be configured before calling streamAnswer()');
+        }
+
+        // Create temporary RagAnswer for events
+        $ragAnswer = new RagAnswer([], null, null);
+
+        // Emit search started event
+        yield $ragAnswer->searchingEvent();
+
+        $searchResults = $this->searchBuilder->get();
+        // Get the first search response (we only have one search in the multi-search)
+        $searchResponse = $searchResults[0] ?? null;
+        if (!$searchResponse) {
+            throw new \RuntimeException('No search results returned');
+        }
         $retrievedHits = $searchResponse->hits();
 
-        if ($stream) {
-            // Emit search completed event
-            yield $ragResponse->searchCompleteEvent(count($retrievedHits));
-        }
+        // Emit search completed event
+        yield $ragAnswer->searchCompleteEvent(count($retrievedHits));
 
         $rerankedHits = null;
 
         // Apply reranking if configured
         if ($this->reranker && $this->rerankBuilder) {
-            if ($stream) {
-                // Emit reranking started event
-                yield $ragResponse->rerankingEvent();
-            }
+            // Emit reranking started event
+            yield $ragAnswer->rerankingEvent();
 
             $rerankedHits = $this->rerankBuilder->rerank($retrievedHits)->hits();
             $hits = $rerankedHits;
 
-            if ($stream) {
-                // Emit reranking completed event
-                yield $ragResponse->rerankCompleteEvent(count($retrievedHits), count($rerankedHits));
-            }
+            // Emit reranking completed event
+            yield $ragAnswer->rerankCompleteEvent(count($retrievedHits), count($rerankedHits));
         } else {
             $hits = $retrievedHits;
         }
 
-        $prompt = new NewRagPrompt($hits);
-        ($this->promptBuilder)($prompt);
+        // Build prompt
+        $finalPrompt = $this->buildPrompt($hits);
 
-        // Build and execute prompt
-        $finalPrompt = $prompt->create();
+        // Emit prompt generation event
+        yield $ragAnswer->promptGenerationEvent();
 
-        if ($stream) {
-            // Emit prompt generation event
-            yield $ragResponse->promptGenerationEvent();
-        }
-
-        // Create final RagResponse with all data
-        $ragResponse = new RagResponse(
+        // Create final RagAnswer with all data
+        $ragAnswer = new RagAnswer(
             hits: $retrievedHits,
             rerankedHits: $rerankedHits,
             ragPrompt: $finalPrompt,
             metadata: []
         );
 
-        if ($stream) {
-            // Yield the stream start with context
-            yield $ragResponse->startStreamingChunk();
+        // Yield the stream start with context
+        yield $ragAnswer->startStreamingChunk();
 
-            // Emit LLM request started event
-            yield $ragResponse->llmRequestEvent();
+        // Emit LLM request started event
+        yield $ragAnswer->llmRequestEvent();
 
-            // Track if this is the first token
-            $firstToken = true;
-            $conversationId = null;
-
-            // Stream the answer directly from LLM without buffering
-            foreach ($this->llm->answer($finalPrompt, $this->instructions, true) as $chunk) {
-                // Handle conversation events
-                if (is_array($chunk)) {
-                    if (isset($chunk['type'])) {
-                        if ($chunk['type'] === 'conversation.created' || $chunk['type'] === 'conversation.reused') {
-                            $conversationId = $chunk['conversation_id'] ?? null;
-                            if ($conversationId) {
-                                $ragResponse->setConversationId($conversationId);
-                            }
-                            // Yield conversation event
-                            yield $chunk;
-                        }
-                    }
-                    continue; // Skip non-string chunks for streaming
-                }
-
-                // Only process string chunks
-                if (is_string($chunk)) {
-                    if ($firstToken && !empty($chunk)) {
-                        // Emit first token event
-                        yield $ragResponse->llmFirstTokenEvent();
-                        $firstToken = false;
-                    }
-                    // Pass through content chunks immediately as they arrive
-                    yield $ragResponse->streamingChunk($chunk);
-                }
-            }
-
-            // Yield completion signal
-            yield $ragResponse->streamingChunk('', true);
-            return;
-        }
-
-        // Get complete answer
-        $answer = '';
+        // Track if this is the first token
+        $firstToken = true;
+        $fullAnswer = '';
         $conversationId = null;
 
-        foreach ($this->llm->answer($finalPrompt, $this->instructions, false) as $chunk) {
+        // Stream the answer
+        foreach ($this->llm->streamAnswer($finalPrompt, $this->instructions) as $chunk) {
             // Handle conversation events
             if (is_array($chunk)) {
+                // Yield conversation events directly
+                yield $chunk;
+
+                // Extract conversation ID if present
                 if (isset($chunk['type'])) {
                     if ($chunk['type'] === 'conversation.created' || $chunk['type'] === 'conversation.reused') {
                         $conversationId = $chunk['conversation_id'] ?? null;
                         if ($conversationId) {
-                            $ragResponse->setConversationId($conversationId);
+                            $ragAnswer->setConversationId($conversationId);
                         }
                     }
                 }
-                // For non-streaming, we get the full response as an array
-                if (isset($chunk['output']) && is_array($chunk['output'])) {
-                    // Find the message in the output array
-                    foreach ($chunk['output'] as $outputItem) {
-                        if (isset($outputItem['type']) && $outputItem['type'] === 'message' && 
-                            isset($outputItem['content'][0]['text'])) {
-                            $answer = $outputItem['content'][0]['text'];
-                            break;
-                        }
-                    }
+            } elseif (is_string($chunk)) {
+                // Only process string chunks as answer text
+                if ($firstToken) {
+                    // Emit first token event
+                    yield $ragAnswer->llmFirstTokenEvent();
+                    $firstToken = false;
                 }
 
-            } elseif (is_string($chunk)) {
-                $answer .= $chunk;
+                // Yield the text chunk
+                yield $ragAnswer->streamingChunk($chunk);
+                $fullAnswer .= $chunk;
             }
         }
-        $ragResponse->setFinalAnswer($answer);
 
-        // Return complete response
-        yield $ragResponse;
+        $ragAnswer->setFinalAnswer($fullAnswer);
+
+        // Yield completion signal
+        yield $ragAnswer->streamingChunk('', true);
     }
 
     public function instructions(string $instructions): self
@@ -226,5 +195,19 @@ class NewRag
         $this->instructions = $instructions;
 
         return $this;
+    }
+
+    /**
+     * Build the final prompt from hits
+     */
+    protected function buildPrompt(array $hits): string
+    {
+        $prompt = new NewRagPrompt($hits);
+
+        if ($this->promptBuilder) {
+            ($this->promptBuilder)($prompt);
+        }
+
+        return $prompt->create();
     }
 }

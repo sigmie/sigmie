@@ -637,6 +637,8 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this->formatRespones($searchResponse, $facetsResponse);
     }
 
+    
+
     public function promise(): Promise
     {
         return $this->makeSearch()->promise();

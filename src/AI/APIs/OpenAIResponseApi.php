@@ -17,35 +17,43 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
         parent::__construct($apiKey, $model);
     }
 
-    public function answer(string $input, string $instructions, bool $stream = false): iterable
+    public function answer(string $input, string $instructions): array
     {
         $options = [
             RequestOptions::JSON => [
                 'model' => $this->model,
                 'input' => $input,
                 'instructions' => $instructions,
-                'stream' => $stream,
+                'stream' => false,
             ],
         ];
 
-        // Add stream option for Guzzle when streaming
-        if ($stream) {
-            $options[RequestOptions::STREAM] = true;
-        }
+        $response = $this->client->post('/v1/responses', $options);
+
+        $data = json_decode($response->getBody()->getContents(), true);
+
+        return $data;
+    }
+
+    public function streamAnswer(string $input, string $instructions): iterable
+    {
+        $options = [
+            RequestOptions::JSON => [
+                'model' => $this->model,
+                'input' => $input,
+                'instructions' => $instructions,
+                'stream' => true,
+            ],
+            RequestOptions::STREAM => true,
+        ];
 
         $response = $this->client->post('/v1/responses', $options);
 
-        if ($stream) {
-            // Return generator for direct streaming
-            yield from $this->streamAnswer($response);
-        } else {
-            // Return array wrapped in generator for consistency
-            $data = json_decode($response->getBody()->getContents(), true);
-            yield $data;
-        }
+        // Return generator for direct streaming
+        yield from $this->processStreamResponse($response);
     }
 
-    private function streamAnswer(ResponseInterface $response): iterable
+    private function processStreamResponse(ResponseInterface $response): iterable
     {
         $stream = $response->getBody();
         $buffer = '';
@@ -56,7 +64,7 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
             if ($chunk === '') {
                 continue;
             }
-            
+
             $buffer .= $chunk;
 
             // Process complete SSE lines immediately
@@ -81,7 +89,7 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
                 }
             }
         }
-        
+
         // Process any remaining buffer
         if (!empty($buffer) && strpos($buffer, 'data: ') === 0) {
             $data = substr($buffer, 6);
