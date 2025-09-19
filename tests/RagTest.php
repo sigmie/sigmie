@@ -64,6 +64,17 @@ class RagTest extends TestCase
             ]),
         ]);
 
+        // Refresh index to make documents immediately searchable
+        $collected->refresh();
+
+        // Debug: Check if documents are indexed
+        $testSearch = $sigmie->newSearch()
+            ->index($indexName)
+            ->properties($props)
+            ->queryString('*')
+            ->size(10)
+            ->get();
+        
         $responses = $sigmie
             ->newRag($llm)
             ->search(
@@ -136,6 +147,9 @@ class RagTest extends TestCase
                 'language' => 'en',
             ],),
         ]);
+
+        // Refresh index to make documents immediately searchable
+        $collected->refresh();
 
         // $llm = new OpenAIResponseApi(getenv('OPENAI_API_KEY'));
         $llm = new OpenAIConversationsApi(getenv('OPENAI_API_KEY'));

@@ -136,7 +136,7 @@ class NewRag
             hits: $retrievedHits,
             rerankedHits: $rerankedHits,
             ragPrompt: $finalPrompt,
-            metadata: $this->llm->metadata()
+            metadata: []
         );
 
         if ($stream) {
@@ -199,18 +199,23 @@ class NewRag
                         }
                     }
                 }
-                // For non-streaming, we might get the full response as an array
-                if (isset($chunk['output'])) {
-                    $answer = $chunk['output'];
-                } elseif (isset($chunk['content'])) {
-                    $answer = $chunk['content'][0]['text'];
+                // For non-streaming, we get the full response as an array
+                if (isset($chunk['output']) && is_array($chunk['output'])) {
+                    // Find the message in the output array
+                    foreach ($chunk['output'] as $outputItem) {
+                        if (isset($outputItem['type']) && $outputItem['type'] === 'message' && 
+                            isset($outputItem['content'][0]['text'])) {
+                            $answer = $outputItem['content'][0]['text'];
+                            break;
+                        }
+                    }
                 }
 
             } elseif (is_string($chunk)) {
                 $answer .= $chunk;
             }
         }
-        // $ragResponse->setFinalAnswer($answer);
+        $ragResponse->setFinalAnswer($answer);
 
         // Return complete response
         yield $ragResponse;

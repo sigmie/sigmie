@@ -9,16 +9,54 @@ The RAG process in Sigmie works in three key steps:
 2. **Rerank** (optional): Improve result relevance using advanced reranking algorithms
 3. **Generate**: Use the retrieved context with an LLM to generate comprehensive answers
 
-## Basic Usage
+## New Modular API Architecture
 
-Here's a simple example of using RAG in Sigmie:
+Sigmie v2 introduces a modular API architecture that separates concerns and provides more flexibility for different use cases. The system now uses dedicated API classes instead of a single unified LLM class.
+
+### Core Interfaces
+
+- **`EmbeddingsApi`** - Interface for embedding operations
+- **`LLMApi`** - Interface for language model operations  
+- **`RerankApi`** - Interface for reranking operations
+
+### OpenAI API Classes
+
+- **`AbstractOpenAIApi`** - Base class for all OpenAI APIs to avoid code duplication
+- **`OpenAIEmbeddingsApi`** - Handles embeddings using text-embedding-3-small model
+- **`OpenAIResponseApi`** - Uses the /v1/responses endpoint for simple completions
+- **`OpenAIConversationsApi`** - Manages conversations and uses the Response API with conversation context
+
+### Voyage AI Classes
+
+- **`VoyageEmbeddingsApi`** - Voyage embeddings with query/document optimization
+- **`VoyageRerankApi`** - Voyage reranking service
+
+## API Selection Guide
+
+Choose the appropriate API implementation based on your needs:
+
+| Use Case | Embeddings API | LLM API | Notes |
+|----------|---------------|---------|--------|
+| Simple RAG | OpenAIEmbeddingsApi | OpenAIResponseApi | Basic implementation without conversation history |
+| Conversational RAG | OpenAIEmbeddingsApi | OpenAIConversationsApi | Maintains conversation context across requests |
+| High-quality search | VoyageEmbeddingsApi | Any LLM API | Voyage provides specialized query/document embeddings |
+| With reranking | Any Embeddings API | Any LLM API | Add VoyageRerankApi for relevance optimization |
+
+## Basic Usage Examples
+
+### Simple RAG with OpenAI Response API
 
 ```php
-use Sigmie\AI\LLMs\OpenAILLM;
+use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
+use Sigmie\AI\APIs\OpenAIResponseApi;
 use Sigmie\Search\NewRagPrompt;
 
-// Initialize your LLM
-$llm = new OpenAILLM('your-openai-api-key');
+// Initialize APIs
+$embeddings = new OpenAIEmbeddingsApi('your-openai-api-key');
+$llm = new OpenAIResponseApi('your-openai-api-key');
+
+// Set up Sigmie with embeddings
+$sigmie = $this->sigmie->embedder($embeddings);
 
 // Create a basic RAG query
 $responses = $sigmie
@@ -43,6 +81,245 @@ $responses = $sigmie
 // Get the RagResponse object
 foreach ($responses as $ragResponse) {
     echo $ragResponse->finalAnswer();
+}
+```
+
+### Conversational RAG with OpenAI Conversations API
+
+```php
+use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
+use Sigmie\AI\APIs\OpenAIConversationsApi;
+
+$embeddings = new OpenAIEmbeddingsApi('your-openai-api-key');
+
+// Create with new conversation
+$llm = new OpenAIConversationsApi(
+    apiKey: 'your-openai-api-key',
+    conversationId: null, // Will create new
+    metadata: ['project' => 'rag-demo'],
+    model: 'gpt-5-nano'
+);
+
+// Or reuse existing conversation
+$llm = new OpenAIConversationsApi(
+    apiKey: 'your-openai-api-key',
+    conversationId: 'conv_existing_id',
+    metadata: [],
+    model: 'gpt-5-nano'
+);
+
+$sigmie = $this->sigmie->embedder($embeddings);
+
+$answer = $sigmie
+    ->newRag($llm)
+    ->search($searchBuilder)
+    ->prompt(function (NewRagPrompt $prompt) {
+        $prompt->question('What is the privacy policy?');
+        $prompt->contextFields(['text', 'title']);
+    })
+    ->instructions("Be concise and precise")
+    ->answer(stream: true);
+
+foreach ($answer as $chunk) {
+    if (is_array($chunk)) {
+        // Handle events
+        if ($chunk['type'] === 'conversation.created') {
+            echo "Conversation: {$chunk['conversation_id']}\n";
+        } elseif ($chunk['type'] === 'content.delta') {
+            echo $chunk['delta'];
+        }
+    }
+}
+```
+
+### High-Quality Search with Voyage Embeddings and Reranking
+
+```php
+use Sigmie\AI\APIs\VoyageEmbeddingsApi;
+use Sigmie\AI\APIs\OpenAIResponseApi;
+use Sigmie\AI\APIs\VoyageRerankApi;
+use Sigmie\Rag\NewRerank;
+
+$embeddings = new VoyageEmbeddingsApi('your-voyage-api-key');
+$llm = new OpenAIResponseApi('your-openai-api-key');
+$reranker = new VoyageRerankApi('your-voyage-api-key');
+
+$sigmie = $this->sigmie->embedder($embeddings);
+
+$answer = $sigmie
+    ->newRag($llm)
+    ->reranker($reranker)
+    ->search($searchBuilder)
+    ->rerank(function (NewRerank $rerank) {
+        $rerank->fields(['text', 'title']);
+        $rerank->topK(3);
+        $rerank->query('privacy policy');
+    })
+    ->prompt(function (NewRagPrompt $prompt) {
+        $prompt->question('What is the privacy policy?');
+        $prompt->contextFields(['text', 'title']);
+    })
+    ->answer(stream: false);
+
+foreach ($answer as $ragResponse) {
+    echo $ragResponse->finalAnswer();
+}
+```
+
+## Enhanced Streaming Events
+
+The new architecture provides fine-grained control over the RAG pipeline with detailed streaming events. Here are all the events in order:
+
+1. **`conversation.created`** - Conversation was created with ID (OpenAIConversationsApi only)
+2. **`search.started`** - Starting document search
+3. **`search.completed`** - Found X documents
+4. **`rerank.started`** - Starting reranking (if enabled)
+5. **`rerank.completed`** - Reranked to top K documents
+6. **`prompt.generated`** - RAG prompt created
+7. **`stream.start`** - Response streaming begins with context
+8. **`llm.request.started`** - LLM processing started
+9. **`llm.first_token`** - First response token received
+10. **`content.delta`** - Text chunks as they arrive
+11. **`stream.complete`** - Streaming finished
+
+### Event-Driven Example
+
+```php
+$stream = $sigmie
+    ->newRag($llm)
+    ->search($searchBuilder)
+    ->prompt(function (NewRagPrompt $prompt) {
+        $prompt->question('What are renewable energy benefits?');
+        $prompt->contextFields(['title', 'content']);
+    })
+    ->answer(stream: true);
+
+foreach ($stream as $event) {
+    if (is_array($event)) {
+        switch ($event['type']) {
+            case 'conversation.created':
+                echo "Created conversation: {$event['conversation_id']}\n";
+                break;
+            case 'search.started':
+                echo "Searching for documents...\n";
+                break;
+            case 'search.completed':
+                echo "Found {$event['metadata']['document_count']} documents\n";
+                break;
+            case 'rerank.started':
+                echo "Reranking documents...\n";
+                break;
+            case 'rerank.completed':
+                echo "Reranked to {$event['metadata']['reranked_count']} documents\n";
+                break;
+            case 'prompt.generated':
+                echo "Generated RAG prompt\n";
+                break;
+            case 'stream.start':
+                $context = $event['context'];
+                echo "Starting response with {$context['retrieved_count']} documents\n";
+                break;
+            case 'llm.request.started':
+                echo "Generating response...\n";
+                break;
+            case 'llm.first_token':
+                echo "Response stream started\n";
+                break;
+            case 'content.delta':
+                echo $event['delta'];
+                flush();
+                break;
+            case 'stream.complete':
+                echo "\nResponse complete!\n";
+                break;
+        }
+    }
+}
+```
+
+## Enhanced RagResponse Object
+
+The `RagResponse` object has been enhanced to include conversation management:
+
+### New Methods
+
+```php
+$responses = $rag->answer(stream: false);
+
+foreach ($responses as $ragResponse) {
+    // Get conversation ID (when using OpenAIConversationsApi)
+    $conversationId = $ragResponse->conversationId();
+    
+    // Existing methods
+    $answer = $ragResponse->finalAnswer();
+    $retrievedDocs = $ragResponse->retrievedDocuments();
+    $rerankedDocs = $ragResponse->rerankedDocuments();
+    $hasReranking = $ragResponse->hasReranking();
+    $prompt = $ragResponse->prompt();
+    
+    // Enhanced context with conversation ID
+    $context = $ragResponse->context();
+    // Returns:
+    // [
+    //     'retrieved_count' => 5,
+    //     'reranked_count' => 3,
+    //     'has_reranking' => true,
+    //     'documents' => [...],
+    //     'conversation_id' => 'conv_abc123'
+    // ]
+    
+    // Enhanced toArray output
+    $array = $ragResponse->toArray();
+    // Includes conversation_id in output
+}
+```
+
+## Conversation Management
+
+The `OpenAIConversationsApi` provides methods for conversation management:
+
+### Creating and Reusing Conversations
+
+```php
+// Create new conversation
+$api = new OpenAIConversationsApi($apiKey);
+
+// Get current conversation ID
+$conversationId = $api->conversation();
+
+// Access metadata
+$metadata = $api->metadata(); // Returns ['conversation' => $id, 'model' => $model]
+
+// Reuse existing conversation
+$existingApi = new OpenAIConversationsApi(
+    apiKey: $apiKey,
+    conversationId: 'conv_existing_123'
+);
+```
+
+### Conversation Context in RAG
+
+```php
+$llm = new OpenAIConversationsApi($apiKey);
+
+$ragResponse = $sigmie
+    ->newRag($llm)
+    ->search($searchBuilder)
+    ->prompt(function (NewRagPrompt $prompt) {
+        $prompt->question('Follow-up question about previous topic');
+        $prompt->contextFields(['text']);
+    })
+    ->answer(stream: false);
+
+foreach ($ragResponse as $response) {
+    // Conversation ID is automatically included
+    $conversationId = $response->conversationId();
+    
+    // Use this ID for subsequent requests to maintain context
+    $followUpLlm = new OpenAIConversationsApi(
+        apiKey: $apiKey,
+        conversationId: $conversationId
+    );
 }
 ```
 
@@ -87,10 +364,10 @@ $rag->multiSearch(function ($multiSearch) {
 Improve search result relevance using advanced reranking:
 
 ```php
-use Sigmie\AI\Rerankers\VoyageReranker;
+use Sigmie\AI\APIs\VoyageRerankApi;
 use Sigmie\Rag\NewRerank;
 
-$voyageReranker = new VoyageReranker('your-voyage-api-key');
+$voyageReranker = new VoyageRerankApi('your-voyage-api-key');
 
 $rag->reranker($voyageReranker)
     ->rerank(function (NewRerank $rerank) {
@@ -99,10 +376,6 @@ $rag->reranker($voyageReranker)
         $rerank->query('What is machine learning?');
     });
 ```
-
-**Available Rerankers:**
-- `VoyageReranker` - High-quality semantic reranking
-- Custom rerankers implementing `Sigmie\AI\Contracts\Reranker`
 
 ### prompt()
 
@@ -137,12 +410,6 @@ $rag->prompt(function (NewRagPrompt $prompt) {
 });
 ```
 
-**Template Variables:**
-- `{{question}}` - The user's question
-- `{{context}}` - JSON-formatted search results
-- `{{guardrails}}` - List of behavioral guidelines
-- `{{hits}}` - Alias for `{{context}}`
-
 ### instructions()
 
 Set system-level instructions for the LLM:
@@ -166,53 +433,6 @@ $rag->limits(
 );
 ```
 
-## RagResponse Object
-
-The `answer()` method returns RagResponse objects (when not streaming) that provide full visibility into the RAG pipeline. This structured response gives you access to:
-
-- Retrieved documents from the search phase
-- Reranked documents (if reranking was applied)
-- The complete prompt sent to the LLM
-- The final generated answer
-- Context metadata for debugging and logging
-
-### RagResponse Methods
-
-```php
-$responses = $rag->answer(stream: false);
-
-foreach ($responses as $ragResponse) {
-    // Get the final answer
-    $answer = $ragResponse->finalAnswer();
-    
-    // Access retrieved documents
-    $retrievedDocs = $ragResponse->retrievedDocuments();
-    
-    // Access reranked documents (if reranking was applied)
-    $rerankedDocs = $ragResponse->rerankedDocuments();
-    
-    // Check if reranking was performed
-    $hasReranking = $ragResponse->hasReranking();
-    
-    // Get the complete prompt sent to the LLM
-    $prompt = $ragResponse->prompt();
-    
-    // Get context summary
-    $context = $ragResponse->context();
-    
-    // Convert to array for serialization
-    $array = $ragResponse->toArray();
-}
-```
-
-### Benefits of RagResponse
-
-- **Full Pipeline Visibility**: See exactly what documents were retrieved and how they were processed
-- **Debugging Support**: Access the complete prompt and context for troubleshooting
-- **Performance Insights**: Monitor document counts and reranking effectiveness
-- **Audit Trail**: Complete record of the RAG process for logging and analysis
-- **Consistent Interface**: Same methods available for both streaming and non-streaming modes
-
 ## Response Methods
 
 ### answer() - Unified Streaming and Non-Streaming API
@@ -230,6 +450,9 @@ $responses = $rag->answer(stream: false);
 foreach ($responses as $ragResponse) {
     // Access the final answer
     $answer = $ragResponse->finalAnswer();
+    
+    // Get conversation ID (if using OpenAIConversationsApi)
+    $conversationId = $ragResponse->conversationId();
     
     // Get context information
     $context = $ragResponse->context();
@@ -250,199 +473,70 @@ foreach ($responses as $ragResponse) {
 
 #### Streaming Response
 
-Stream the answer in real-time with structured chunks:
+Stream the answer in real-time with structured events:
 
 ```php
 $stream = $rag->answer(stream: true);
 
 $fullResponse = '';
 $context = null;
+$conversationId = null;
 
 foreach ($stream as $chunk) {
-    if ($chunk['type'] === 'start') {
-        // Initial context with retrieved and reranked docs
-        $context = $chunk['context'];
-        echo "Processing {$context['retrieved_count']} documents...\n";
-        if ($context['has_reranking']) {
-            echo "Reranked to {$context['reranked_count']} documents\n";
+    if (is_array($chunk)) {
+        switch ($chunk['type']) {
+            case 'conversation.created':
+                $conversationId = $chunk['conversation_id'];
+                echo "Conversation: {$conversationId}\n";
+                break;
+            case 'search.completed':
+                echo "Found {$chunk['metadata']['document_count']} documents\n";
+                break;
+            case 'stream.start':
+                // Initial context with retrieved and reranked docs
+                $context = $chunk['context'];
+                echo "Processing {$context['retrieved_count']} documents...\n";
+                if ($context['has_reranking']) {
+                    echo "Reranked to {$context['reranked_count']} documents\n";
+                }
+                break;
+            case 'content.delta':
+                // Stream text chunks in real-time
+                echo $chunk['delta'];
+                $fullResponse .= $chunk['delta'];
+                flush();
+                break;
+            case 'stream.complete':
+                echo "\nComplete!\n";
+                break;
         }
-    } elseif ($chunk['type'] === 'delta') {
-        // Stream text chunks in real-time
-        echo $chunk['delta'];
-        $fullResponse .= $chunk['delta'];
-        flush(); // Flush output buffer for real-time display
-    } elseif ($chunk['type'] === 'done') {
-        // Streaming complete
-        echo "\n\nComplete!\n";
     }
 }
 ```
-
-### Streaming Format
-
-When streaming (`answer(stream: true)`), the response yields three types of chunks:
-
-1. **Start chunk**: Contains initial context with documents
-   ```php
-   [
-       'type' => 'start', 
-       'delta' => '', 
-       'done' => false, 
-       'context' => [
-           'retrieved_count' => 5,
-           'reranked_count' => 3,
-           'has_reranking' => true,
-           'retrieved_documents' => [...],
-           'reranked_documents' => [...]
-       ]
-   ]
-   ```
-
-2. **Delta chunks**: Text chunks as they arrive from the LLM
-   ```php
-   [
-       'type' => 'delta', 
-       'delta' => 'Machine learning is', 
-       'done' => false, 
-       'context' => null
-   ]
-   ```
-
-3. **Done chunk**: Final signal with complete context
-   ```php
-   [
-       'type' => 'done', 
-       'delta' => '', 
-       'done' => true, 
-       'context' => [
-           'retrieved_count' => 5,
-           'reranked_count' => 3,
-           'has_reranking' => true,
-           'final_answer' => 'Complete response...',
-           'prompt' => 'The complete prompt sent to LLM...'
-       ]
-   ]
-   ```
-
-### Direct Streaming Performance
-
-The streaming implementation provides optimal performance through:
-
-- **Direct Chunk Passing**: Chunks are passed directly from OpenAI without buffering
-- **Single-Word Deltas**: Normal behavior that provides the most responsive user experience
-- **Guzzle STREAM Option**: Uses HTTP streaming for immediate processing
-- **256-Byte Chunks**: Reads in small chunks for immediate processing
-- **No Artificial Delays**: Raw streaming speed from the LLM provider
-
-### Streaming Benefits
-
-Streaming provides several advantages for RAG applications:
-
-- **Better User Experience**: Users see responses appearing in real-time rather than waiting for the complete answer
-- **Lower Perceived Latency**: Content appears immediately as the LLM generates it
-- **Progressive Display**: Ideal for web applications with typewriter-style effects
-- **Context Awareness**: Access to document context before the answer begins
-- **Reduced Memory Usage**: Process chunks as they arrive rather than buffering the entire response
 
 ## Advanced Examples
-
-### Non-Streaming with Full Pipeline Access
-
-```php
-$responses = $sigmie->newRag($openai)
-    ->search($searchBuilder)
-    ->prompt(function (NewRagPrompt $prompt) {
-        $prompt->question('What is the privacy policy?');
-        $prompt->contextFields(['text', 'title']);
-    })
-    ->instructions("Be concise.")
-    ->answer(stream: false);
-
-// Get the RagResponse object
-foreach ($responses as $ragResponse) {
-    // Access components
-    $answer = $ragResponse->finalAnswer();
-    $retrievedDocs = $ragResponse->retrievedDocuments();
-    $rerankedDocs = $ragResponse->rerankedDocuments();
-    $prompt = $ragResponse->prompt();
-    
-    // Get context summary
-    $context = $ragResponse->context();
-    echo "Retrieved: {$context['retrieved_count']} documents\n";
-    if ($context['has_reranking']) {
-        echo "Reranked to: {$context['reranked_count']} documents\n";
-    }
-    
-    // Display sources
-    echo "\nSources used:\n";
-    foreach ($retrievedDocs as $doc) {
-        echo "- {$doc['title']}\n";
-    }
-    
-    echo "\nAnswer: {$answer}\n";
-}
-```
-
-### Real-Time Streaming with Progress Indication
-
-```php
-echo "Searching for relevant documents...\n";
-
-$stream = $sigmie
-    ->newRag($openai)
-    ->search(
-        $sigmie->newSearch('knowledge-base')
-            ->queryString('quantum computing applications')
-            ->size(8)
-    )
-    ->prompt(function (NewRagPrompt $prompt) {
-        $prompt->question('What are the practical applications of quantum computing?');
-        $prompt->contextFields(['title', 'content', 'category']);
-    })
-    ->instructions('You are a technical expert explaining complex topics clearly.')
-    ->answer(stream: true);
-
-$fullResponse = '';
-$context = null;
-
-foreach ($stream as $chunk) {
-    if ($chunk['type'] === 'start') {
-        // Initial context with retrieved and reranked docs
-        $context = $chunk['context'];
-        echo "Processing {$context['retrieved_count']} documents...\n";
-        if ($context['has_reranking']) {
-            echo "Reranked to {$context['reranked_count']} documents\n";
-        }
-        echo "Generating response:\n";
-    } elseif ($chunk['type'] === 'delta') {
-        // Stream text chunks in real-time
-        echo $chunk['delta'];
-        $fullResponse .= $chunk['delta'];
-        flush(); // Flush output buffer for real-time display
-    } elseif ($chunk['type'] === 'done') {
-        // Streaming complete
-        echo "\n\nComplete!\n";
-    }
-}
-```
 
 ### Semantic Search with Streaming and Pipeline Inspection
 
 ```php
-use Sigmie\AI\LLMs\OpenAILLM;
-use Sigmie\AI\Rerankers\VoyageReranker;
+use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
+use Sigmie\AI\APIs\OpenAIConversationsApi;
+use Sigmie\AI\APIs\VoyageRerankApi;
 use Sigmie\Mappings\NewProperties;
 
-$openai = new OpenAILLM('your-openai-api-key');
-$voyageReranker = new VoyageReranker('your-voyage-api-key');
+$embeddings = new OpenAIEmbeddingsApi('your-openai-api-key');
+$llm = new OpenAIConversationsApi('your-openai-api-key');
+$voyageReranker = new VoyageRerankApi('your-voyage-api-key');
 
 // Set up semantic search properties
 $props = new NewProperties;
 $props->text('title')->semantic(accuracy: 1, dimensions: 256);
 $props->text('content')->semantic(accuracy: 1, dimensions: 256);
 
+$sigmie = $this->sigmie->embedder($embeddings);
+
 $stream = $sigmie
-    ->newRag($openai)
+    ->newRag($llm)
     ->reranker($voyageReranker)
     ->search(
         $sigmie->newSearch('knowledge-base')
@@ -471,21 +565,30 @@ $stream = $sigmie
 
 // Stream the response with detailed logging
 foreach ($stream as $chunk) {
-    if ($chunk['type'] === 'start') {
-        $context = $chunk['context'];
-        echo "=== RAG Pipeline Started ===\n";
-        echo "Retrieved: {$context['retrieved_count']} documents\n";
-        echo "Reranked: {$context['reranked_count']} documents\n";
-        echo "Sources:\n";
-        foreach ($context['retrieved_documents'] as $doc) {
-            echo "- {$doc['title']} (by {$doc['author']})\n";
+    if (is_array($chunk)) {
+        switch ($chunk['type']) {
+            case 'conversation.created':
+                echo "=== Conversation {$chunk['conversation_id']} ===\n";
+                break;
+            case 'stream.start':
+                $context = $chunk['context'];
+                echo "=== RAG Pipeline Started ===\n";
+                echo "Retrieved: {$context['retrieved_count']} documents\n";
+                echo "Reranked: {$context['reranked_count']} documents\n";
+                echo "Sources:\n";
+                foreach ($context['documents'] as $doc) {
+                    echo "- {$doc['title']}\n";
+                }
+                echo "\n=== Generating Answer ===\n";
+                break;
+            case 'content.delta':
+                echo $chunk['delta'];
+                flush();
+                break;
+            case 'stream.complete':
+                echo "\n\n=== Generation Complete ===\n";
+                break;
         }
-        echo "\n=== Generating Answer ===\n";
-    } elseif ($chunk['type'] === 'delta') {
-        echo $chunk['delta'];
-        flush();
-    } elseif ($chunk['type'] === 'done') {
-        echo "\n\n=== Generation Complete ===\n";
     }
 }
 ```
@@ -494,7 +597,7 @@ foreach ($stream as $chunk) {
 
 ```php
 $stream = $sigmie
-    ->newRag($openai)
+    ->newRag($llm)
     ->multiSearch(function ($multiSearch) {
         // Search academic papers
         $multiSearch
@@ -529,69 +632,87 @@ $stream = $sigmie
     ->answer(stream: true);
 
 foreach ($stream as $chunk) {
-    if ($chunk['type'] === 'start') {
-        $context = $chunk['context'];
-        echo "Analyzed {$context['retrieved_count']} documents from multiple sources\n";
-    } elseif ($chunk['type'] === 'delta') {
-        echo $chunk['delta'];
-        flush();
+    if (is_array($chunk)) {
+        if ($chunk['type'] === 'stream.start') {
+            $context = $chunk['context'];
+            echo "Analyzed {$context['retrieved_count']} documents from multiple sources\n";
+        } elseif ($chunk['type'] === 'content.delta') {
+            echo $chunk['delta'];
+            flush();
+        }
     }
 }
 ```
 
-### Comparison: Non-Streaming vs Streaming
+## Migration from Old OpenAILLM Class
+
+If you're migrating from the old unified `OpenAILLM` class, here's how to update your code:
+
+### Before (Old API)
 
 ```php
-// Non-streaming - blocks until complete but provides full RagResponse
-$startTime = microtime(true);
-$responses = $rag->answer(stream: false);
-$endTime = microtime(true);
-echo "Non-streaming took: " . ($endTime - $startTime) . " seconds\n";
+use Sigmie\AI\LLMs\OpenAILLM;
 
-foreach ($responses as $ragResponse) {
-    $context = $ragResponse->context();
-    echo "Retrieved {$context['retrieved_count']} documents\n";
-    echo $ragResponse->finalAnswer();
-}
+$llm = new OpenAILLM('your-openai-api-key');
 
-// Streaming - provides immediate feedback with structured chunks
-$startTime = microtime(true);
-$stream = $rag->answer(stream: true);
-$firstChunkTime = null;
-$fullResponse = '';
+$responses = $sigmie
+    ->newRag($llm)
+    ->search($searchBuilder)
+    ->answer();
+```
 
-foreach ($stream as $chunk) {
-    if ($chunk['type'] === 'start') {
-        $firstChunkTime = microtime(true);
-        echo "First chunk arrived after: " . ($firstChunkTime - $startTime) . " seconds\n";
-        $context = $chunk['context'];
-        echo "Retrieved {$context['retrieved_count']} documents\n";
-    } elseif ($chunk['type'] === 'delta') {
-        $fullResponse .= $chunk['delta'];
-        echo $chunk['delta'];
-        flush();
-    } elseif ($chunk['type'] === 'done') {
-        $endTime = microtime(true);
-        echo "\nStreaming completed in: " . ($endTime - $startTime) . " seconds\n";
-    }
-}
+### After (New API)
+
+```php
+use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
+use Sigmie\AI\APIs\OpenAIResponseApi;
+
+$embeddings = new OpenAIEmbeddingsApi('your-openai-api-key');
+$llm = new OpenAIResponseApi('your-openai-api-key');
+
+$sigmie = $this->sigmie->embedder($embeddings);
+
+$responses = $sigmie
+    ->newRag($llm)
+    ->search($searchBuilder)
+    ->answer();
+```
+
+### For Conversational RAG
+
+```php
+use Sigmie\AI\APIs\OpenAIConversationsApi;
+
+$llm = new OpenAIConversationsApi(
+    apiKey: 'your-openai-api-key',
+    conversationId: null, // Creates new conversation
+    metadata: ['project' => 'my-app']
+);
 ```
 
 ## Best Practices
 
-### When to Use Streaming vs Non-Streaming
+### When to Use Different APIs
 
-**Use Streaming When:**
-- Building interactive applications with real-time feedback
-- Responses are expected to be longer than a few sentences
-- User experience is critical (web apps, chatbots, APIs)
-- You want to display progressive results and document context
+**Use OpenAIResponseApi When:**
+- Building simple Q&A systems without conversation context
+- Each request is independent
+- You want the simplest implementation
 
-**Use Non-Streaming When:**
-- Building batch processing systems
-- Response length is typically short
-- You need the complete RagResponse object before proceeding
-- Working with structured response formats that require full context
+**Use OpenAIConversationsApi When:**
+- Building chatbots or conversational interfaces
+- Context from previous messages is important
+- You need conversation management features
+
+**Use VoyageEmbeddingsApi When:**
+- You need the highest quality semantic search
+- Working with specialized domains
+- Performance is critical
+
+**Use VoyageRerankApi When:**
+- You have more than 5 search results
+- Cross-lingual search is important
+- You need the best possible relevance
 
 ### Search Optimization
 - **Use semantic search** for conceptual queries when you have embedding-enabled fields
@@ -627,12 +748,6 @@ foreach ($stream as $chunk) {
 - **Process chunks immediately** to maintain streaming benefits
 - **Implement proper error handling** for stream interruptions
 
-### RagResponse Debugging
-- **Log context metadata** for performance monitoring
-- **Inspect retrieved documents** to validate search quality
-- **Review generated prompts** to optimize context formatting
-- **Monitor reranking effectiveness** through document count changes
-
 ## Error Handling
 
 ### Non-Streaming Error Handling
@@ -657,7 +772,7 @@ try {
     $stream = $rag->answer(stream: true);
     
     foreach ($stream as $chunk) {
-        if ($chunk['type'] === 'delta') {
+        if (is_array($chunk) && $chunk['type'] === 'content.delta') {
             echo $chunk['delta'];
             flush();
         }
@@ -683,21 +798,33 @@ header('Connection: keep-alive');
 $stream = $rag->answer(stream: true);
 
 foreach ($stream as $chunk) {
-    if ($chunk['type'] === 'start') {
-        echo "data: " . json_encode([
-            'type' => 'context',
-            'retrieved_count' => $chunk['context']['retrieved_count'],
-            'has_reranking' => $chunk['context']['has_reranking']
-        ]) . "\n\n";
-    } elseif ($chunk['type'] === 'delta') {
-        echo "data: " . json_encode([
-            'type' => 'delta',
-            'content' => $chunk['delta']
-        ]) . "\n\n";
-    } elseif ($chunk['type'] === 'done') {
-        echo "data: " . json_encode(['type' => 'done']) . "\n\n";
+    if (is_array($chunk)) {
+        switch ($chunk['type']) {
+            case 'conversation.created':
+                echo "data: " . json_encode([
+                    'type' => 'conversation',
+                    'conversation_id' => $chunk['conversation_id']
+                ]) . "\n\n";
+                break;
+            case 'stream.start':
+                echo "data: " . json_encode([
+                    'type' => 'context',
+                    'retrieved_count' => $chunk['context']['retrieved_count'],
+                    'has_reranking' => $chunk['context']['has_reranking']
+                ]) . "\n\n";
+                break;
+            case 'content.delta':
+                echo "data: " . json_encode([
+                    'type' => 'delta',
+                    'content' => $chunk['delta']
+                ]) . "\n\n";
+                break;
+            case 'stream.complete':
+                echo "data: " . json_encode(['type' => 'done']) . "\n\n";
+                break;
+        }
+        flush();
     }
-    flush();
 }
 ```
 
@@ -709,4 +836,4 @@ foreach ($stream as $chunk) {
 - **Monitor streaming connections** to prevent resource exhaustion
 - **Log RagResponse context** for audit trails while respecting privacy
 
-This documentation covers the unified streaming API where `answer(stream: bool)` handles both streaming and non-streaming responses, providing developers with full visibility into the RAG pipeline through the RagResponse object and structured streaming chunks.
+This documentation covers the new modular API architecture where dedicated API classes handle specific responsibilities, providing developers with flexibility to choose the right combination of services for their RAG applications while maintaining full visibility into the pipeline through enhanced streaming events and the RagResponse object.

@@ -292,10 +292,5 @@ class Search
                 $result['aggs'] = $aggsRaw;
             }
         }
-
-        ray($result);
-        // ray(json_encode($result));
-
-        return $result;
     }
 }
