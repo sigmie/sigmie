@@ -60,3 +60,7 @@ Sigmie provides a fluent, expressive interface for Elasticsearch operations with
 - **Performance**: Optimized for high-performance search applications
 
 The library emphasizes readability and maintainability while providing full access to Elasticsearch's powerful features.
+
+## Code Style Guidelines
+
+- Use `$foo['bar'] ?? null` instead of `isset($foo['bar']) ? $foo['bar'] : null`

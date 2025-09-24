@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use RuntimeException;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Rag\NewRerank;
@@ -62,7 +63,7 @@ class NewRag
     {
         // Execute search
         if (!$this->searchBuilder) {
-            throw new \RuntimeException('Search must be configured before calling answer()');
+            throw new RuntimeException('Search must be configured before calling answer()');
         }
 
         $hits = $this->searchBuilder->hits();
@@ -86,102 +87,48 @@ class NewRag
      */
     public function streamAnswer(): iterable
     {
+        // Emit search_start event
+        yield ['type' => 'search_start', 'timestamp' => microtime(true)];
+
         // Execute search
         if (!$this->searchBuilder) {
-            throw new \RuntimeException('Search must be configured before calling streamAnswer()');
+            throw new RuntimeException('Search must be configured before calling streamAnswer()');
         }
 
-        // Create temporary RagAnswer for events
-        $ragAnswer = new LLMAnswer([], null, null);
-
-        // Emit search started event
-        yield $ragAnswer->searchingEvent();
-
-        $searchResults = $this->searchBuilder->get();
-        // Get the first search response (we only have one search in the multi-search)
-        $searchResponse = $searchResults[0] ?? null;
-        if (!$searchResponse) {
-            throw new \RuntimeException('No search results returned');
-        }
-        $retrievedHits = $searchResponse->hits();
-
-        // Emit search completed event
-        yield $ragAnswer->searchCompleteEvent(count($retrievedHits));
-
-        $rerankedHits = null;
+        $hits = $this->searchBuilder->hits();
+        
+        // Emit search_complete event with hit count
+        yield ['type' => 'search_complete', 'hits' => count($hits), 'timestamp' => microtime(true)];
 
         // Apply reranking if configured
         if ($this->reranker && $this->rerankBuilder) {
-            // Emit reranking started event
-            yield $ragAnswer->rerankingEvent();
-
-            $rerankedHits = $this->rerankBuilder->rerank($retrievedHits)->hits();
-            $hits = $rerankedHits;
-
-            // Emit reranking completed event
-            yield $ragAnswer->rerankCompleteEvent(count($retrievedHits), count($rerankedHits));
-        } else {
-            $hits = $retrievedHits;
+            yield ['type' => 'rerank_start', 'timestamp' => microtime(true)];
+            
+            $hits = $this->rerankBuilder->rerank($hits);
+            
+            yield ['type' => 'rerank_complete', 'hits' => count($hits), 'timestamp' => microtime(true)];
         }
 
         // Build prompt
-        $finalPrompt = $this->buildPrompt($hits);
+        yield ['type' => 'prompt_start', 'timestamp' => microtime(true)];
+        
+        $prompt = new NewRagPrompt($hits);
 
-        // Emit prompt generation event
-        yield $ragAnswer->promptGenerationEvent();
+        if ($this->promptBuilder) {
+            ($this->promptBuilder)($prompt);
+        }
+        
+        yield ['type' => 'prompt_complete', 'timestamp' => microtime(true)];
 
-        // Create final RagAnswer with all data
-        $ragAnswer = new LLMAnswer(
-            hits: $retrievedHits,
-            rerankedHits: $rerankedHits,
-            ragPrompt: $finalPrompt,
-            metadata: []
-        );
+        // Start LLM streaming
+        yield ['type' => 'llm_start', 'timestamp' => microtime(true)];
 
-        // Yield the stream start with context
-        yield $ragAnswer->startStreamingChunk();
-
-        // Emit LLM request started event
-        yield $ragAnswer->llmRequestEvent();
-
-        // Track if this is the first token
-        $firstToken = true;
-        $fullAnswer = '';
-        $conversationId = null;
-
-        // Stream the answer
-        foreach ($this->llm->streamAnswer($finalPrompt, $this->instructions) as $chunk) {
-            // Handle conversation events
-            if (is_array($chunk)) {
-                // Yield conversation events directly
-                yield $chunk;
-
-                // Extract conversation ID if present
-                if (isset($chunk['type'])) {
-                    if ($chunk['type'] === 'conversation.created' || $chunk['type'] === 'conversation.reused') {
-                        $conversationId = $chunk['conversation_id'] ?? null;
-                        if ($conversationId) {
-                            $ragAnswer->setConversationId($conversationId);
-                        }
-                    }
-                }
-            } elseif (is_string($chunk)) {
-                // Only process string chunks as answer text
-                if ($firstToken) {
-                    // Emit first token event
-                    yield $ragAnswer->llmFirstTokenEvent();
-                    $firstToken = false;
-                }
-
-                // Yield the text chunk
-                yield $ragAnswer->streamingChunk($chunk);
-                $fullAnswer .= $chunk;
-            }
+        // Stream directly from OpenAI API response
+        foreach ($this->llm->streamAnswer($prompt) as $chunk) {
+            yield ['type' => 'llm_chunk', 'content' => $chunk, 'timestamp' => microtime(true)];
         }
 
-        $ragAnswer->setFinalAnswer($fullAnswer);
-
-        // Yield completion signal
-        yield $ragAnswer->streamingChunk('', true);
+        // Emit completion event
+        yield ['type' => 'llm_complete', 'timestamp' => microtime(true)];
     }
 }
