@@ -1051,4 +1051,68 @@ class IndexBuilderTest extends TestCase
         $this->assertArrayNotHasKey('number_of_shards', $settings->toRaw());
         $this->assertArrayNotHasKey('number_of_replicas', $settings->toRaw());
     }
+
+    /**
+     * @test
+     */
+    public function custom_meta()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->meta([
+                'department' => 'engineering',
+                'version' => '2.0',
+                'custom_field' => 'custom_value',
+                'environment' => 'testing'
+            ])
+            ->create();
+
+        $raw = $this->sigmie->index($alias)->raw;
+
+        // Assert default meta fields still exist
+        $this->assertArrayHasKey('_meta', $raw['mappings']);
+        $this->assertArrayHasKey('created_by', $raw['mappings']['_meta']);
+        $this->assertArrayHasKey('lib_version', $raw['mappings']['_meta']);
+        $this->assertArrayHasKey('language', $raw['mappings']['_meta']);
+        
+        // Assert custom meta fields were added
+        $this->assertArrayHasKey('department', $raw['mappings']['_meta']);
+        $this->assertEquals('engineering', $raw['mappings']['_meta']['department']);
+        
+        $this->assertArrayHasKey('version', $raw['mappings']['_meta']);
+        $this->assertEquals('2.0', $raw['mappings']['_meta']['version']);
+        
+        $this->assertArrayHasKey('custom_field', $raw['mappings']['_meta']);
+        $this->assertEquals('custom_value', $raw['mappings']['_meta']['custom_field']);
+        
+        $this->assertArrayHasKey('environment', $raw['mappings']['_meta']);
+        $this->assertEquals('testing', $raw['mappings']['_meta']['environment']);
+    }
+
+    /**
+     * @test
+     */
+    public function custom_meta_multiple_calls()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->meta(['department' => 'engineering'])
+            ->meta(['version' => '2.0'])
+            ->meta(['custom_field' => 'custom_value'])
+            ->create();
+
+        $raw = $this->sigmie->index($alias)->raw;
+
+        // Assert all custom meta fields were merged correctly
+        $this->assertArrayHasKey('department', $raw['mappings']['_meta']);
+        $this->assertEquals('engineering', $raw['mappings']['_meta']['department']);
+        
+        $this->assertArrayHasKey('version', $raw['mappings']['_meta']);
+        $this->assertEquals('2.0', $raw['mappings']['_meta']['version']);
+        
+        $this->assertArrayHasKey('custom_field', $raw['mappings']['_meta']);
+        $this->assertEquals('custom_value', $raw['mappings']['_meta']['custom_field']);
+    }
 }
