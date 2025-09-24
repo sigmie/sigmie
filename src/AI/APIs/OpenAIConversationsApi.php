@@ -6,7 +6,7 @@ namespace Sigmie\AI\APIs;
 
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
-use Sigmie\AI\Answers\OpenAIAnswer as AnswersLLMAnswer;
+use Sigmie\AI\Answers\OpenAIConversationAnswer;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Prompt;
 use Sigmie\AI\Contracts\LLMAnswer;
@@ -92,23 +92,7 @@ class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
 
         $data = json_decode($response->getBody()->getContents(), true);
 
-        // Extract the output text from the response
-        $outputText = '';
-
-        // The Response API returns output as an array with message objects
-        if (isset($data['output']) && is_array($data['output'])) {
-            foreach ($data['output'] as $outputItem) {
-                // Find the message type output
-                if (
-                    isset($outputItem['type']) && $outputItem['type'] === 'message' &&
-                    isset($outputItem['content'][0]['text'])
-                ) {
-                    $outputText .= $outputItem['content'][0]['text'];
-                }
-            }
-        }
-
-        return new AnswersLLMAnswer($input, $data);
+        return new OpenAIConversationAnswer($this->model, $options['json'], $data, $conversation);
     }
 
     public function streamAnswer(Prompt $prompt): iterable
