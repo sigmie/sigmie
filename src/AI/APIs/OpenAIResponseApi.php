@@ -6,7 +6,11 @@ namespace Sigmie\AI\APIs;
 
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
+use Sigmie\AI\Answers\OpenAIAnswer as AnswersLLMAnswer;
+use Sigmie\AI\Answers\OpenAIAnswer;
+use Sigmie\AI\Contracts\LLMAnswer;
 use Sigmie\AI\Contracts\LLMApi;
+use Sigmie\AI\Prompt;
 
 class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
 {
@@ -17,13 +21,19 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
         parent::__construct($apiKey, $model);
     }
 
-    public function answer(string $input, string $instructions): array
+    public function answer(Prompt $prompt): LLMAnswer
     {
+        $input = array_map(function ($message) {
+            return [
+                'role' => $message['role']->value,
+                'content' => $message['content']
+            ];
+        }, $prompt->messages());
+
         $options = [
             RequestOptions::JSON => [
                 'model' => $this->model,
                 'input' => $input,
-                'instructions' => $instructions,
                 'stream' => false,
             ],
         ];
@@ -32,16 +42,22 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
 
         $data = json_decode($response->getBody()->getContents(), true);
 
-        return $data;
+        return new OpenAIAnswer($this->model, $options['json'], $data);
     }
 
-    public function streamAnswer(string $input, string $instructions): iterable
+    public function streamAnswer(Prompt $prompt): iterable
     {
+        $input = array_map(function ($message) {
+            return [
+                'role' => $message['role']->value,
+                'content' => $message['content']
+            ];
+        }, $prompt->messages());
+
         $options = [
             RequestOptions::JSON => [
                 'model' => $this->model,
                 'input' => $input,
-                'instructions' => $instructions,
                 'stream' => true,
             ],
             RequestOptions::STREAM => true,

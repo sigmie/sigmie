@@ -7,20 +7,22 @@ namespace Sigmie\Search;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Rag\NewRerank;
-use Sigmie\Rag\RagAnswer;
 use Sigmie\Rag\RagResponse;
 use Sigmie\Search\Contracts\MultiSearchResponse;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
+use Sigmie\AI\Contracts\LLMAnswer;
 
 class NewRag
 {
     protected ?NewMultiSearch $searchBuilder = null;
     protected ?NewRerank $rerankBuilder = null;
-    protected ?RerankApi $reranker = null;
     protected ?\Closure $promptBuilder = null;
     protected string $instructions = '';
 
-    public function __construct(protected LLMApi $llm) {}
+    public function __construct(
+        protected LLMApi $llm,
+        protected ?RerankApi $reranker = null
+    ) {}
 
     public function search(NewMultiSearch $builder): self
     {
@@ -29,16 +31,10 @@ class NewRag
         return $this;
     }
 
-    public function reranker(RerankApi $reranker): self
-    {
-        $this->reranker = $reranker;
-
-        return $this;
-    }
-
     public function rerank(\Closure $callback): self
     {
         $this->rerankBuilder = new NewRerank($this->reranker);
+
         $callback($this->rerankBuilder);
 
         return $this;
@@ -62,7 +58,7 @@ class NewRag
     /**
      * Get answer without streaming (returns complete response)
      */
-    public function answer(): RagAnswer
+    public function answer(): LLMAnswer
     {
         // Execute search
         if (!$this->searchBuilder) {
@@ -73,17 +69,16 @@ class NewRag
 
         // Apply reranking if configured
         if ($this->reranker && $this->rerankBuilder) {
-            $rerankedHits = $this->rerankBuilder->rerank($hits)->hits();
-
-            $hits = $rerankedHits;
+            $hits = $this->rerankBuilder->rerank($hits);
         }
 
-        // Build prompt
-        $prompt = $this->buildPrompt($hits);
+        $prompt = new NewRagPrompt($hits);
 
-        $data = $this->llm->answer($prompt, $this->instructions);
+        if ($this->promptBuilder) {
+            ($this->promptBuilder)($prompt);
+        }
 
-        return new RagAnswer($hits, $prompt, $data);
+        return $this->llm->answer($prompt);
     }
 
     /**
@@ -97,7 +92,7 @@ class NewRag
         }
 
         // Create temporary RagAnswer for events
-        $ragAnswer = new RagAnswer([], null, null);
+        $ragAnswer = new LLMAnswer([], null, null);
 
         // Emit search started event
         yield $ragAnswer->searchingEvent();
@@ -136,7 +131,7 @@ class NewRag
         yield $ragAnswer->promptGenerationEvent();
 
         // Create final RagAnswer with all data
-        $ragAnswer = new RagAnswer(
+        $ragAnswer = new LLMAnswer(
             hits: $retrievedHits,
             rerankedHits: $rerankedHits,
             ragPrompt: $finalPrompt,
@@ -188,26 +183,5 @@ class NewRag
 
         // Yield completion signal
         yield $ragAnswer->streamingChunk('', true);
-    }
-
-    public function instructions(string $instructions): self
-    {
-        $this->instructions = $instructions;
-
-        return $this;
-    }
-
-    /**
-     * Build the final prompt from hits
-     */
-    protected function buildPrompt(array $hits): string
-    {
-        $prompt = new NewRagPrompt($hits);
-
-        if ($this->promptBuilder) {
-            ($this->promptBuilder)($prompt);
-        }
-
-        return $prompt->create();
     }
 }

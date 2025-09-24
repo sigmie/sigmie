@@ -4,76 +4,41 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-class NewRagPrompt
-{
-    protected array $guardrails = [];
+use Sigmie\AI\Prompt;
 
+class NewRagPrompt extends Prompt
+{
     protected array $contextFields = [];
 
-    protected string $question = '';
-
-    protected string $context = '';
-
-    protected string $template = '
-        Question:
-        {{question}}
-
-        Guardrails:
-        {{guardrails}}
-
-
-        Context:
-        {{context}}';
-
-    public function __construct(protected array $hits) {}
-
-    public function template(string $template): self {
-
-        $this->template = $template;
-
-        return $this;
+    public function __construct(protected array $hits)
+    {
+        parent::__construct([]);
     }
 
-    public function contextFields(array $contextFields): self {
-
+    public function contextFields(array $contextFields): self
+    {
         $this->contextFields = $contextFields;
 
-        return $this;
-    }
+        $context = $this->createContext($this->contextFields);
 
-    public function question(string $question): self {
-
-        $this->question = $question;
+        $this->system('Context: ' . json_encode($context));
 
         return $this;
     }
 
-    public function guardrails(array $guardrails): self
+    private function createContext($fields)
     {
+        $context = [];
 
-        $this->guardrails = $guardrails;
-
-        return $this;
-    }
-
-    public function create(): string {
-
-        $context = array_map(function($hit) {
-            $filteredSource = [];
-            foreach ($this->contextFields as $field) {
-                if (isset($hit->_source[$field])) {
-                    $filteredSource[$field] = $hit->_source[$field];
-                }
+        /** @var Hit $hit */
+        foreach ($this->hits as $hit) {
+            $contextItem = [];
+            foreach ($fields as $field) {
+                $contextItem[$field] = dot($hit->_source)->get($field);
             }
-            return json_encode($filteredSource);
-        }, $this->hits);
-        $template = $this->template;
+            $context[] = $contextItem;
+        }
 
-        $template = str_replace('{{question}}', $this->question, $template);
-        $template = str_replace('{{context}}', implode("\n", $context), $template);
-        $template = str_replace('{{guardrails}}', implode("\n", $this->guardrails), $template);
-        $template = str_replace('{{hits}}', implode("\n", $context), $template);
-
-        return $template;
+        return $context;
     }
 }

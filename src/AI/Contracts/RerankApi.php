@@ -9,5 +9,5 @@ interface RerankApi
     /**
      * Rerank documents based on a query
      */
-    public function rerank(array $documents, string $query, array $options = []): array;
+    public function rerank(array $newIndexes, string $query, ?int $topK = null): array;
 }

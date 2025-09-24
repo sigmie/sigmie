@@ -611,7 +611,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     public function formatRespones($searchResponse, $facetsResponse)
     {
-        $formatter = $this->formatter ?? new SigmieSearchResponse($this->properties);
+        $formatter = $this->formatter ?? new SigmieSearchResponse($this->properties, $this->semanticSearch);
 
         $formatter->context($this->searchContext)
             ->errors([

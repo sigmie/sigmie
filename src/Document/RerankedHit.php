@@ -12,7 +12,13 @@ class RerankedHit extends Hit
         Hit $hit,
         float $_rerank_score,
     ) {
-        parent::__construct($hit->_source, $hit->_id, $hit->_score, $hit->_index);
+        parent::__construct(
+            $hit->_source,
+            $hit->_id,
+            $hit->_score,
+            $hit->_index,
+            $hit->sort,
+        );
 
         $this->_rerank_score = $_rerank_score;
     }

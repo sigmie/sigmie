@@ -6,7 +6,10 @@ namespace Sigmie\AI\APIs;
 
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
+use Sigmie\AI\Answers\OpenAIAnswer as AnswersLLMAnswer;
 use Sigmie\AI\Contracts\LLMApi;
+use Sigmie\AI\Prompt;
+use Sigmie\AI\Contracts\LLMAnswer;
 
 class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
 {
@@ -65,47 +68,74 @@ class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
         return $this->conversationId ?? $this->createConversation('Hello!');
     }
 
-    public function answer(string $input, string $instructions): iterable
+    public function answer(Prompt $prompt): LLMAnswer
     {
         $conversation = $this->conversation();
 
-        yield ['type' => 'conversation.created', 'conversation_id' => $conversation];
+        $input = array_map(function ($message) {
+            return [
+                'role' => $message['role']->value,
+                'content' => $message['content']
+            ];
+        }, $prompt->messages());
 
         $options = [
             RequestOptions::JSON => [
                 'conversation' => $conversation,
                 'model' => $this->model,
                 'input' => $input,
-                'instructions' => $instructions,
                 'stream' => false,
             ],
         ];
 
         $response = $this->client->post('/v1/responses', $options);
-        
-        // Return array wrapped in generator for consistency
-        yield json_decode($response->getBody()->getContents(), true);
+
+        $data = json_decode($response->getBody()->getContents(), true);
+
+        // Extract the output text from the response
+        $outputText = '';
+
+        // The Response API returns output as an array with message objects
+        if (isset($data['output']) && is_array($data['output'])) {
+            foreach ($data['output'] as $outputItem) {
+                // Find the message type output
+                if (
+                    isset($outputItem['type']) && $outputItem['type'] === 'message' &&
+                    isset($outputItem['content'][0]['text'])
+                ) {
+                    $outputText .= $outputItem['content'][0]['text'];
+                }
+            }
+        }
+
+        return new AnswersLLMAnswer($input, $data);
     }
 
-    public function streamAnswer(string $input, string $instructions): iterable
+    public function streamAnswer(Prompt $prompt): iterable
     {
         $conversation = $this->conversation();
 
         yield ['type' => 'conversation.created', 'conversation_id' => $conversation];
+
+        $input = array_map(function ($message) {
+            return [
+                'role' => $message['role']->value,
+                'content' => $message['content']
+            ];
+        }, $prompt->messages());
 
         $options = [
             RequestOptions::JSON => [
                 'conversation' => $conversation,
                 'model' => $this->model,
                 'input' => $input,
-                'instructions' => $instructions,
                 'stream' => true,
             ],
             RequestOptions::STREAM => true,
         ];
 
         $response = $this->client->post('/v1/responses', $options);
-        
+
         // Return generator for direct streaming
         yield from $this->processStreamResponse($response);
     }

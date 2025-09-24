@@ -159,9 +159,10 @@ class Sigmie
 
     public function newRag(
         LLMApi $llm,
+        ?RerankApi $reranker = null
     ): NewRag {
 
-        $rag = new NewRag($llm);
+        $rag = new NewRag($llm, $reranker);
 
         return $rag;
     }

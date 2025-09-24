@@ -15,7 +15,7 @@ class VoyageRerankApi implements RerankApi
 
     public function __construct(
         string $apiKey,
-        string $model = 'rerank-1'
+        string $model = 'rerank-2.5-lite'
     ) {
         $this->model = $model;
         $this->client = new Client([
@@ -28,17 +28,17 @@ class VoyageRerankApi implements RerankApi
         ]);
     }
 
-    public function rerank(array $documents, string $query, array $options = []): array
+    public function rerank(array $newIndexes, string $query, ?int $topK = null): array
     {
         $payload = [
             'model' => $this->model,
             'query' => $query,
-            'documents' => $documents,
+            'documents' => $newIndexes,
         ];
 
         // Merge additional options
-        if (!empty($options)) {
-            $payload = array_merge($payload, $options);
+        if ($topK !== null) {
+            $payload['top_k'] = $topK;
         }
 
         // Common options that can be passed:
@@ -50,19 +50,18 @@ class VoyageRerankApi implements RerankApi
             RequestOptions::JSON => $payload
         ]);
 
-        $data = json_decode($response->getBody()->getContents(), true);
+        $json = json_decode($response->getBody()->getContents(), true);
 
-        return $data['results'] ?? [];
-    }
+        $data = $json['data'];
 
-    /**
-     * Convenience method to rerank with specific top_k
-     */
-    public function rerankTopK(array $documents, string $query, int $topK): array
-    {
-        return $this->rerank($documents, $query, [
-            'top_k' => $topK,
-            'return_documents' => true,
-        ]);
+        // Reorder documents based on reranking results using array_map
+        $newIndexes = array_map(function ($result) use ($newIndexes) {
+            return [
+                'index' => $result['index'],
+                'score' => $result['relevance_score']
+            ];
+        }, $data);
+
+        return $newIndexes;
     }
 }

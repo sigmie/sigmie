@@ -102,7 +102,7 @@ class NewMultiSearch
 
         $results = $this->get();
 
-        return array_map(function($result) {
+        $allHits = array_map(function($result) {
             // Handle raw query results (arrays) vs formatted results (objects with hits() method)
             if (is_array($result)) {
                 return $result['hits']['hits'] ?? [];
@@ -110,5 +110,7 @@ class NewMultiSearch
             return $result->hits();
 
         }, $results);
+
+        return array_merge(...$allHits);
     }
 }
