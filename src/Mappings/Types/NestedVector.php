@@ -36,11 +36,11 @@ class NestedVector extends TypesNested
 
     public function queries(array|string $vector): array
     {
-        $source = "1.0+cosineSimilarity(params.query_vector, '{$this->fullPath}.vector')";
+        $source = "cosineSimilarity(params.query_vector, 'embeddings.{$this->fullPath}.vector') + 1.0";
 
         return  [
             new Nested(
-                $this->fullPath,
+                "embeddings.{$this->fullPath}",
                 new FunctionScore(
                     query: new MatchAll(),
                     source: $source,

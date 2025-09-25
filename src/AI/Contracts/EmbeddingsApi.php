@@ -22,4 +22,6 @@ interface EmbeddingsApi
      * Generate embeddings asynchronously
      */
     public function promiseEmbed(string $text, int $dimensions): Promise;
+
+    public function model(): string;
 }

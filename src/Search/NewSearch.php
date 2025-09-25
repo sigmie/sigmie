@@ -53,6 +53,8 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected array $knn = [];
 
+    protected array $semanticQueries = [];
+
     protected string $index;
 
     protected float $textScoreMultiplier = 1.0;
@@ -290,6 +292,11 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
                 $boolean->should()->query($query);
             });
+
+            // Add semantic queries (function_score queries for accuracy 7)
+            foreach ($this->semanticQueries as $semanticQuery) {
+                $boolean->should()->query($semanticQuery);
+            }
         });
     }
 
@@ -446,21 +453,25 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     {
         if (!$this->semanticSearch) {
             $this->knn = [];
+            $this->semanticQueries = [];
             return;
         }
 
         $allKnnQueries = [];
+        $allSemanticQueries = [];
 
         foreach ($this->searchContext->queryStrings as $queryString) {
             if (trim($queryString->text()) === '') {
                 continue;
             }
 
-            $knnQueries = $this->createVectorQuery($queryString->text(), $queryString->weight());
-            $allKnnQueries = array_merge($allKnnQueries, $knnQueries);
+            $result = $this->createVectorQuery($queryString->text(), $queryString->weight());
+            $allKnnQueries = array_merge($allKnnQueries, $result['knn']);
+            $allSemanticQueries = array_merge($allSemanticQueries, $result['semantic']);
         }
 
         $this->knn = $allKnnQueries;
+        $this->semanticQueries = $allSemanticQueries;
     }
 
     protected function buildKeywordQuery(string $queryString, float $queryBoost): Query
@@ -478,7 +489,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $dims = $this->getVectorDimensions($vectorFields);
 
         if (empty($dims)) {
-            return [];
+            return ['knn' => [], 'semantic' => []];
         }
 
         $embeddings = $this->getEmbeddings($dims, $queryString);
@@ -487,14 +498,19 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $vectorQueries = $this->buildVectorQueries($vectorFields, $vectorByDims, $queryBoost);
 
         $knnQueries = [];
-        $vectorQueries->each(function (Query $query) use (&$knnQueries) {
+        $semanticQueries = [];
+        
+        $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries) {
             $raw = $query->toRaw();
             if (isset($raw['knn'])) {
                 $knnQueries[] = $raw['knn'];
+            } else {
+                // This is a function_score or other non-KNN query
+                $semanticQueries[] = $query;
             }
         });
 
-        return $knnQueries;
+        return ['knn' => $knnQueries, 'semantic' => $semanticQueries];
     }
 
     protected function getVectorFields(): Collection

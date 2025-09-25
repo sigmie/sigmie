@@ -29,4 +29,9 @@ abstract class AbstractOpenAIApi
             'timeout' => $timeout,
         ]);
     }
+
+    public function model(): string
+    {
+        return $this->model;
+    }
 }

@@ -63,7 +63,6 @@ class NewIndex
 
     public function __construct(
         ElasticsearchConnection $connection,
-        protected ?EmbeddingsApi $embeddingsApi = null
     ) {
         $this->setElasticsearchConnection($connection);
 
@@ -77,13 +76,6 @@ class NewIndex
     public function getAlias(): string
     {
         return $this->alias;
-    }
-
-    public function withEmbedder(EmbeddingsApi $embedder): static
-    {
-        $this->embeddingsApi = $embedder;
-
-        return $this;
     }
 
     public function analysis(): AnalysisInterface
@@ -189,7 +181,8 @@ class NewIndex
         return $index;
     }
 
-    protected function createIndexName() {
+    protected function createIndexName()
+    {
 
         $timestamp = Carbon::now()->format('YmdHisu');
 

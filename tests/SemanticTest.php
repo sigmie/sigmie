@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 use Sigmie\Document\Document;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\NewProperties;
@@ -145,51 +146,52 @@ class SemanticTest extends TestCase
      */
     public function exact_vector_match()
     {
-        $this->markTestSkipped();
-
         $indexName = uniqid();
-        $provider = new SigmieAI;
+        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
 
-        $blueprint = new NewProperties();
-        $blueprint->title('name')->semantic(7);
+        $sigmie = $this->sigmie->embedder($embeddings);
 
-        $this->sigmie->newIndex($indexName)
-            ->properties($blueprint)
-            ->aiProvider($provider)
-            ->create();
+        $props = new NewProperties;
+        $props->text('title')->semantic(accuracy: 7, dimensions: 256);
+        $props->text('text')->semantic(accuracy: 7, dimensions: 256);
 
-        $this->sigmie
-            ->collect($indexName, refresh: true)
-            ->properties($blueprint)
-            ->aiProvider($provider)
-            ->merge([
-                new Document([
-                    'name' => ['King', 'Prince'],
-                    'age' => 10,
-                ]),
-                new Document([
-                    'name' => 'Queen',
-                    'age' => 20,
-                ]),
-            ]);
+        $sigmie->newIndex($indexName)->properties($props)->create();
 
-        $search = $this->sigmie
-            ->newSearch($indexName)
-            ->properties($blueprint)
+        $collected = $sigmie->collect($indexName, true)->properties($props);
+
+        $collected->merge([
+            new Document([
+                'title' => 'Patient Privacy and Confidentiality Policy',
+                'text' => 'Patient privacy and confidentiality are essential for maintaining trust and respect in healthcare.',
+            ]),
+            new Document([
+                'title' => 'Emergency Room Triage Protocol',
+                'text' => 'The emergency room triage protocol ensures patients receive timely care based on severity.',
+            ]),
+        ]);
+
+        $multiSearch = $sigmie->newMultiSearch();
+        $search = $multiSearch->newSearch($indexName)
+            ->index($indexName)
+            ->properties($props)
             ->semantic()
-            ->noResultsOnEmptySearch()
             ->disableKeywordSearch()
-            ->queryString('woman');
+            ->retrieve(['text', 'title'])
+            ->queryString('What is the privacy policy?')
+            ->size(2);
 
-        $nestedQuery = $search->makeSearch()->toRaw();
+        // Debug: Get the raw query to inspect
+        $rawQuery = $search->makeSearch()->toRaw();
+        
+        // Check if it's using function_score instead of knn for accuracy 7
+        $this->assertEmpty($rawQuery['knn'], 'KNN should be empty for accuracy 7');
+        
+        // Verify function_score is present in the query
+        $queryJson = json_encode($rawQuery);
+        $this->assertStringContainsString('function_score', $queryJson, 'Should use function_score for accuracy 7');
+        $this->assertStringContainsString('cosineSimilarity', $queryJson, 'Should use cosineSimilarity for accuracy 7');
 
-        $this->assertEquals('embeddings.name.exact_dims256_cosine_script', $nestedQuery['knn']['field']);
-        // $this->assertEquals('avg', $nestedQuery['knn'][0]['score_mode']);
-        // $this->assertArrayHasKey('function_score', $nestedQuery['knn'][0]['query']);
-        // $this->assertEquals('1.0+cosineSimilarity(params.query_vector, \'embeddings.name.exact_dims256_cosine_script.vector\')', $nestedQuery['nested']['query']['function_score']['script_score']['script']['source']);
-
-        // $response = $search->get();
-
-        // $this->assertEquals('Queen', $response->json('hits.hits.0._source.name') ?? null);
+        $this->assertCount(2, $sigmie->collect($indexName, true));
+        $this->assertCount(2, $multiSearch->hits());
     }
 }

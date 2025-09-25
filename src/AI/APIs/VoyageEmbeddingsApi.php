@@ -29,6 +29,11 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
         ]);
     }
 
+    public function model(): string
+    {
+        return $this->model;
+    }
+
     public function embed(string $text, int $dimensions): array
     {
         $response = $this->client->post('/v1/embeddings', [
@@ -40,10 +45,10 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
-        
+
         // Voyage returns embeddings in a slightly different format
         $embedding = $data['data'][0]['embedding'];
-        
+
         // If dimensions are specified and different from the model's output, truncate or pad
         if ($dimensions > 0 && count($embedding) !== $dimensions) {
             if (count($embedding) > $dimensions) {
@@ -54,7 +59,7 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
                 $embedding = array_pad($embedding, $dimensions, 0.0);
             }
         }
-        
+
         return $embedding;
     }
 
@@ -82,7 +87,7 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
 
         foreach ($data['data'] as $index => $result) {
             $embedding = $result['embedding'];
-            
+
             // Apply dimension adjustment if needed
             if ($dimensions > 0 && count($embedding) !== $dimensions) {
                 if (count($embedding) > $dimensions) {
@@ -91,7 +96,7 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
                     $embedding = array_pad($embedding, $dimensions, 0.0);
                 }
             }
-            
+
             $payload[$index]['vector'] = $embedding;
         }
 
@@ -124,7 +129,7 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
 
         $data = json_decode($response->getBody()->getContents(), true);
         $embedding = $data['data'][0]['embedding'];
-        
+
         if ($dimensions > 0 && count($embedding) !== $dimensions) {
             if (count($embedding) > $dimensions) {
                 $embedding = array_slice($embedding, 0, $dimensions);
@@ -132,24 +137,7 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
                 $embedding = array_pad($embedding, $dimensions, 0.0);
             }
         }
-        
+
         return $embedding;
-    }
-
-    /**
-     * Get the model name
-     */
-    public function getModel(): string
-    {
-        return $this->model;
-    }
-
-    /**
-     * Set the model to use
-     */
-    public function setModel(string $model): self
-    {
-        $this->model = $model;
-        return $this;
     }
 }

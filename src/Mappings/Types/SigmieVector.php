@@ -77,10 +77,10 @@ class SigmieVector extends DenseVector
     public function createSuffix(): string
     {
         if (!$this->index) {
-            return 'exact';
+            return 'exact_dims' . $this->dims . '_' . $this->similarity->value . '_' . $this->strategy->value;
         }
 
-        $suffix = 'm' . $this->m . '_efc' . $this->efConstruction . '_dims' . $this->dims . '_' . $this->similarity->value;
+        $suffix = 'm' . $this->m . '_efc' . $this->efConstruction . '_dims' . $this->dims . '_' . $this->similarity->value . '_' . $this->strategy->value;
 
         return $suffix;
     }
@@ -112,23 +112,19 @@ class SigmieVector extends DenseVector
             ];
         }
 
-        // $source = "1.0+cosineSimilarity(params.query_vector, '{$this->fullPath}')";
+        // For exact vector search (accuracy 7), use function_score with cosineSimilarity
+        $source = "cosineSimilarity(params.query_vector, 'embeddings.{$this->fullPath}') + 1.0";
 
-        // $query = [
-        //     new Nested(
-        //         $this->fullPath,
-        //         new FunctionScore(
-        //             query: new MatchAll(),
-        //             source: $source,
-        //             boostMode: 'replace',
-        //             params: [
-        //                 'query_vector' => $vector
-        //             ]
-        //         )
-        //     )
-        // ];
-
-        // urn [];
+        $query = [
+            new FunctionScore(
+                query: new MatchAll(),
+                source: $source,
+                boostMode: 'replace',
+                params: [
+                    'query_vector' => $vector
+                ]
+            )
+        ];
 
         return $query;
     }

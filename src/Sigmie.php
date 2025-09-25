@@ -85,8 +85,14 @@ class Sigmie
 
     public function newIndex(string $name): NewIndex
     {
-        return (new NewIndex($this->elasticsearchConnection, $this->embeddingsApi))
+        $newIndex = (new NewIndex($this->elasticsearchConnection, $this->embeddingsApi))
             ->alias($this->withApplicationPrefix($name));
+
+        if ($this->embeddingsApi) {
+            $newIndex->meta(['embeddings_model' => $this->embeddingsApi->model()]);
+        }
+
+        return $newIndex;
     }
 
     public function index(string $name): null|AliasedIndex|Index
