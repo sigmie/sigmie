@@ -13,6 +13,8 @@ use Sigmie\Search\Contracts\MultiSearchResponse;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
 use Sigmie\AI\Contracts\LLMAnswer;
 use Sigmie\AI\History\Index as HistoryIndex;
+use Sigmie\AI\Role;
+use Sigmie\Document\Hit;
 
 class NewRag
 {
@@ -90,7 +92,7 @@ class NewRag
     /**
      * Get answer without streaming (returns complete response)
      */
-    public function answer(): LLMAnswer
+    public function answer()
     {
         // Execute search
         if (!$this->searchBuilder) {
@@ -123,25 +125,79 @@ class NewRag
         $documentHits = $groupedHits['documents'] ?? [];
         $historyHits = $groupedHits['history'] ?? [];
 
-        ray($historyHits);
-
-        // For now, use document hits as primary hits
-        $hits = $documentHits;
-
-        // Apply reranking if configured
+        // Apply reranking only to document hits
         if ($this->reranker && $this->rerankBuilder) {
-            $hits = $this->rerankBuilder->rerank($hits);
+            $documentHits = $this->rerankBuilder->rerank($documentHits);
         }
 
-        $prompt = new NewRagPrompt($hits);
+        $messages = array_merge(
+            ...array_map(function (Hit $hit) {
+                return array_map(
+                    fn(array $turn) => [
+                        'role'    => Role::from($turn['role']),
+                        'content' => $turn['content'],
+                    ],
+                    $hit->_source['turns']
+                );
+            }, $historyHits)
+        );
+
+        ray($messages, $historyHits, $this->conversationId)->green();
+
+        // Create prompt with all hits
+        $prompt = new NewRagPrompt($documentHits, $messages);
 
         if ($this->promptBuilder) {
             ($this->promptBuilder)($prompt);
         }
 
+        // Set conversation context
+        $conversationId = $this->conversationId ?: prefix_id('conv', 10);
+
+
         $answer = $this->llm->answer($prompt);
 
+        $answer->conversation($conversationId);
+
+        $turn = [
+            ...array_filter(
+                $prompt->messages(),
+                fn($message) => $message['role'] === Role::User
+            ),
+            [
+                'role' => Role::Model,
+                'content' => $answer->__toString(),
+            ]
+        ];
+
+        // The answer now contains all the conversation data
+        $this->historyIndex?->store(
+            $conversationId,
+            $turn,
+            $answer->model(),
+            $answer->timestamp,
+            $this->userToken,
+        );
+
         return $answer;
+    }
+
+    /**
+     * Create a summary from prompt messages
+     */
+    protected function createSummaryFromPrompt(NewRagPrompt $prompt): string
+    {
+        $messages = $prompt->getMessages();
+        $summary = '';
+
+        foreach ($messages as $message) {
+            if ($message['role'] === 'user') {
+                $content = substr($message['content'], 0, 100);
+                $summary .= "User: {$content}... ";
+            }
+        }
+
+        return trim($summary);
     }
 
     /**

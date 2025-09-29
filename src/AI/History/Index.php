@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\AI\History;
 
-use Sigmie\AI\Contracts\LLMAnswer;
+use Sigmie\AI\Role;
+use Sigmie\Rag\LLMAnswer;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Search\NewSearch;
@@ -37,20 +38,27 @@ class Index extends SigmieIndex
         return $properties;
     }
 
-    public function storeAnswer(LLMAnswer $answer)
-    {
-        $this->merge([
-            new Document([
-                'conversation_id' => $answer->conversationId,
-                'user_token' => $answer->userToken,
-                'timestamp' => $answer->timestamp,
-                'instructions' => $answer->instructions,
-                'summary' => $answer->summary,
-                'tags' => $answer->tags,
-                'model' => $answer->model,
-                'turns' => $answer->turns,
-            ])
+    public function store(
+        string $conversationId,
+        array $turns,
+        string $model,
+        string $timestamp,
+        ?string $userToken = null,
+    ) {
+        $doc = new Document([
+            'conversation_id' => $conversationId,
+            'user_token' => $userToken,
+            'timestamp' => $timestamp,
+            'model' => $model,
+            'turns' => array_map(fn($turn) => [
+                'role' => $turn['role']->value,
+                'content' => $turn['content'],
+            ], $turns)
         ]);
+
+        $this->merge([
+            $doc
+        ], true);
 
         return;
     }

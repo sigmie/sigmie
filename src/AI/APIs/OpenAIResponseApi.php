@@ -6,11 +6,10 @@ namespace Sigmie\AI\APIs;
 
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
-use Sigmie\AI\Answers\OpenAIAnswer as AnswersLLMAnswer;
-use Sigmie\AI\Answers\OpenAIAnswer;
-use Sigmie\AI\Contracts\LLMAnswer;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Prompt;
+use Sigmie\Rag\OpenAIRagAnswer;
+use Sigmie\Rag\LLMAnswer;
 
 class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
 {
@@ -30,6 +29,8 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
             ];
         }, $prompt->messages());
 
+        ray($input);
+
         $options = [
             RequestOptions::JSON => [
                 'model' => $this->model,
@@ -42,7 +43,25 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
 
         $data = json_decode($response->getBody()->getContents(), true);
 
-        return new OpenAIAnswer($this->model, $options['json'], $data);
+        // Always return OpenAIRagAnswer with context data if available
+        $conversationId = method_exists($prompt, 'getConversationId') ? $prompt->getConversationId() : '';
+        $userToken = method_exists($prompt, 'getUserToken') ? $prompt->getUserToken() : '';
+        $instructions = method_exists($prompt, 'getInstructions') ? $prompt->getInstructions() : '';
+        $summary = method_exists($prompt, 'getSummary') ? $prompt->getSummary() : '';
+        $tags = method_exists($prompt, 'getTags') ? $prompt->getTags() : [];
+        $turns = method_exists($prompt, 'getTurns') ? $prompt->getTurns() : [];
+
+        return new OpenAIRagAnswer(
+            $this->model,
+            $options['json'],
+            $data,
+            $conversationId,
+            $userToken,
+            $instructions,
+            $summary,
+            $tags,
+            $turns
+        );
     }
 
     public function streamAnswer(Prompt $prompt): iterable

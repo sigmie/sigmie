@@ -183,7 +183,6 @@ class NewIndex
 
     protected function createIndexName()
     {
-
         $timestamp = Carbon::now()->format('YmdHisu');
 
         return "{$this->alias}_{$timestamp}";

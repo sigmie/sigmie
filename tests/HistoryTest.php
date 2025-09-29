@@ -40,8 +40,6 @@ class HistoryTest extends TestCase
         $props = new NewProperties;
         $props->text('title')->semantic(accuracy: 1, dimensions: 256);
         $props->text('text')->semantic(accuracy: 1, dimensions: 256);
-        $props->keyword('language');
-        $props->number('position')->integer();
 
         $sigmie->newIndex($indexName)->properties($props)->create();
 
@@ -49,16 +47,12 @@ class HistoryTest extends TestCase
 
         $collected->merge([
             new Document([
-                'title' => 'Patient Privacy and Confidentiality Policy',
-                'text' => 'Patient privacy and confidentiality are essential for maintaining trust and respect in healthcare.',
-                'position' => 2,
-                'language' => 'en',
+                'title' => 'Dog Names',
+                'text' => 'Dog names are important. Here are some good dog names: Max, Bella, Rocky, Luna, Charlie, Daisy, Buddy, Sadie, Max, Bella, Rocky, Luna, Charlie, Daisy, Buddy, Sadie.',
             ]),
             new Document([
-                'title' => 'Emergency Room Triage Protocol',
-                'text' => 'The emergency room triage protocol ensures patients receive timely care based on severity.',
-                'position' => 1,
-                'language' => 'en',
+                'title' => 'Dog Breeds',
+                'text' => 'Dog breeds are important. Here are some good dog breeds: Labrador, German Shepherd, Golden Retriever, Bulldog, Poodle, Beagle, Boxer, Chihuahua, Dachshund, French Bulldog.',
             ]),
         ]);
 
@@ -68,9 +62,7 @@ class HistoryTest extends TestCase
             ->semantic()
             ->disableKeywordSearch()
             ->retrieve(['text', 'title'])
-            ->queryString('What is the privacy policy?')
-            ->filters('language:"en"')
-            ->sort('position:asc')
+            ->queryString('My name is Nico, what\'s a good name for a dog?')
             ->size(2);
 
         $historyIndex = $sigmie->chatHistoryIndex(uniqid('history'));
@@ -82,13 +74,38 @@ class HistoryTest extends TestCase
             ->search($newSearch)
             ->historyIndex($historyIndex)
             ->prompt(function (NewRagPrompt $prompt) {
-                $prompt->system("You are a precise assistant. Answer in 2 sentences max.");
+                $prompt->system("You are a precise assistant. Answer strictly only using one word.");
                 $prompt->developer("Guardrails: Answer only from provided context.");
-                $prompt->user("What is the privacy policy?");
-                $prompt->contextFields(['text',]);
+                $prompt->user("My name is Nico, what\'s a good name for a dog? Pick only one.");
+                $prompt->contextFields(['text']);
             })
             ->answer();
-        dd('ew');
 
+        $dogName = (string)$answer;
+
+        $answer = $sigmie
+            ->newRag($llm)
+            ->search($newSearch)
+            ->conversationId($answer->conversationId)
+            ->historyIndex($historyIndex)
+            ->prompt(function (NewRagPrompt $prompt) {
+                $prompt->system("You are a precise assistant. Answer strictly only using one word.");
+                $prompt->user("What did I say my name was ?");
+            })
+            ->answer();
+
+        $this->assertEquals('Nico', (string)$answer);
+
+        $answer = $sigmie
+            ->newRag($llm)
+            ->search($newSearch)
+            ->conversationId($answer->conversationId)
+            ->historyIndex($historyIndex)
+            ->prompt(function (NewRagPrompt $prompt) {
+                $prompt->user('And what name did you mention before ?');
+            })
+            ->answer();
+
+        $this->assertEquals($dogName, (string)$answer);
     }
 }

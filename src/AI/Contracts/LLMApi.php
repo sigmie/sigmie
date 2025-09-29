@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\AI\Contracts;
 
 use Sigmie\AI\Prompt;
+use Sigmie\Rag\LLMAnswer;
 
 interface LLMApi
 {

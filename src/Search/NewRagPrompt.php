@@ -9,6 +9,12 @@ use Sigmie\AI\Prompt;
 class NewRagPrompt extends Prompt
 {
     protected array $contextFields = [];
+    protected string $conversationId = '';
+    protected string $userToken = '';
+    protected string $instructions = '';
+    protected string $summary = '';
+    protected array $tags = [];
+    protected array $turns = [];
 
     public function __construct(
         protected array $hits,
