@@ -62,19 +62,14 @@ class NewRerank
 
         /** @var Hit $hit */
         foreach ($hits as $hit) {
-            if (empty($this->fields)) {
-                // Use the reranker's formatHit method (returns JSON string of entire source)
-                $documents[] = $hit['document'];
-            } else {
-                // Filter to specific fields and encode as JSON string
-                $filteredData = [];
-                foreach ($this->fields as $field) {
-                    if (isset($hit->_source[$field])) {
-                        $filteredData[$field] = $hit->_source[$field];
-                    }
+            // Filter to specific fields and encode as JSON string
+            $filteredData = [];
+            foreach ($this->fields as $field) {
+                if (isset($hit->_source[$field])) {
+                    $filteredData[$field] = $hit->_source[$field];
                 }
-                $documents[] = json_encode($filteredData);
             }
+            $documents[] = json_encode($filteredData);
         }
 
         return $documents;

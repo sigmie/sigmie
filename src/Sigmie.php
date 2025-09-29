@@ -32,6 +32,7 @@ use Sigmie\Search\NewRag;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewTemplate;
 use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\AI\History\Index as HistoryIndex;
 
 class Sigmie
 {
@@ -98,6 +99,15 @@ class Sigmie
     public function index(string $name): null|AliasedIndex|Index
     {
         return $this->getIndex($this->withApplicationPrefix($name));
+    }
+
+    public function chatHistoryIndex(string $name): HistoryIndex
+    {
+        return new HistoryIndex(
+            $name,
+            $this->elasticsearchConnection,
+            $this->embeddingsApi
+        );
     }
 
     public function indexUpsert(string $name, callable $builder): AliasedIndex

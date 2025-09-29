@@ -74,7 +74,7 @@ abstract class AbstractSearchBuilder implements SearchBuilder
     protected Aggs $facets;
 
     public function __construct(
-        protected ElasticsearchConnection $elasticsearchConnection,
+        public readonly ElasticsearchConnection $elasticsearchConnection,
     ) {
         $this->properties = new MappingsProperties();
 

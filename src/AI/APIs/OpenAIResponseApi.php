@@ -25,7 +25,7 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
     {
         $input = array_map(function ($message) {
             return [
-                'role' => $message['role']->value,
+                'role' => $message['role']->toOpenAI(),
                 'content' => $message['content']
             ];
         }, $prompt->messages());
@@ -49,7 +49,7 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
     {
         $input = array_map(function ($message) {
             return [
-                'role' => $message['role']->value,
+                'role' => $message['role']->toOpenAI(),
                 'content' => $message['content']
             ];
         }, $prompt->messages());

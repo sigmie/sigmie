@@ -75,7 +75,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     public function __construct(
         ElasticsearchConnection $elasticsearchConnection,
-        protected ?EmbeddingsApi $embeddingsApi = null
+        public readonly ?EmbeddingsApi $embeddingsApi = null
     ) {
 
         parent::__construct($elasticsearchConnection);

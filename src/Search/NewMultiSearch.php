@@ -19,37 +19,51 @@ class NewMultiSearch
     /** @var array Ordered list of all queries (MultiSearchable objects and raw arrays) */
     protected array $queries = [];
 
+    /** @var array Names associated with each query (by index) */
+    protected array $names = [];
+
     public function __construct(
         protected ElasticsearchConnection $elasticsearchConnection,
         protected ?EmbeddingsApi $embeddingsApi = null
     ) {}
 
-    public function newSearch(string $name): NewSearch
+    public function newSearch(string $index, ?string $name = null): NewSearch
     {
         $search = new NewSearch($this->elasticsearchConnection, $this->embeddingsApi);
-        $search->index($name);
+        $search->index($index);
 
         $this->queries[] = $search;
+        $this->names[count($this->queries) - 1] = $name ?? prefix_id('srch', 10);
 
         return $search;
     }
 
-    public function newQuery(string $index): NewQuery
+    public function add(NewSearch $search, ?string $name = null): NewSearch
+    {
+        $this->queries[] = $search;
+        $this->names[count($this->queries) - 1] = $name ?? prefix_id('srch', 10);
+
+        return $search;
+    }
+
+    public function newQuery(string $index, ?string $name = null): NewQuery
     {
         $query = new NewQuery($this->elasticsearchConnection);
         $query = $query->index($index);
 
         $this->queries[] = $query;
+        $this->names[count($this->queries) - 1] = $name ?? prefix_id('srch', 10);
 
         return $query;
     }
 
-    public function raw(string $index, array $query)
+    public function raw(string $index, array $query, ?string $name = null): static
     {
         $this->queries[] = [
             ['index' => $index],
             $query
         ];
+        $this->names[count($this->queries) - 1] = $name ?? prefix_id('srch', 10);
 
         return $this;
     }
@@ -98,19 +112,38 @@ class NewMultiSearch
         return $results;
     }
 
-    public function hits() {
-
+    public function hits(): array
+    {
         $results = $this->get();
 
-        $allHits = array_map(function($result) {
+        $allHits = array_map(function ($result) {
             // Handle raw query results (arrays) vs formatted results (objects with hits() method)
             if (is_array($result)) {
                 return $result['hits']['hits'] ?? [];
             }
             return $result->hits();
-
         }, $results);
 
         return array_merge(...$allHits);
+    }
+
+    /**
+     * Execute search and get hits grouped by name
+     */
+    public function groupedHits(): array
+    {
+        $results = $this->get();
+        $grouped = [];
+
+        foreach ($results as $index => $result) {
+            $name = $this->names[$index] ?? prefix_id('srch', 10);
+            $hits = is_array($result)
+                ? ($result['hits']['hits'] ?? [])
+                : $result->hits();
+
+            $grouped[$name] = $hits;
+        }
+
+        return $grouped;
     }
 }

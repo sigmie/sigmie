@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\AI;
 
-use Sigmie\Enums\MessageRole;
+use Sigmie\AI\Role;
 
 class Prompt
 {
@@ -13,7 +13,7 @@ class Prompt
     public function system(string $instruction): self
     {
         $this->messages[] = [
-            'role' => MessageRole::System,
+            'role' => Role::System,
             'content' => $instruction,
         ];
 
@@ -23,7 +23,7 @@ class Prompt
     public function user(string $instruction): self
     {
         $this->messages[] = [
-            'role' => MessageRole::User,
+            'role' => Role::User,
             'content' => $instruction,
         ];
 
@@ -33,7 +33,7 @@ class Prompt
     public function developer(string $instruction): self
     {
         $this->messages[] = [
-            'role' => MessageRole::Developer,
+            'role' => Role::System,
             'content' => $instruction,
         ];
 
@@ -43,7 +43,7 @@ class Prompt
     public function assistant(string $instruction): self
     {
         $this->messages[] = [
-            'role' => MessageRole::Assistant,
+            'role' => Role::Model,
             'content' => $instruction,
         ];
 

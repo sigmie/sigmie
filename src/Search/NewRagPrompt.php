@@ -10,9 +10,11 @@ class NewRagPrompt extends Prompt
 {
     protected array $contextFields = [];
 
-    public function __construct(protected array $hits)
-    {
-        parent::__construct([]);
+    public function __construct(
+        protected array $hits,
+        protected array $messages = []
+    ) {
+        parent::__construct($messages);
     }
 
     public function contextFields(array $contextFields): self
