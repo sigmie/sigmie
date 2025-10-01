@@ -367,11 +367,12 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $boolean = new Boolean;
 
-        $this->populateVectorPool();
-
-        // Build KNN queries independently before main query
-        $this->buildKnnQueries();
-        $this->handleKnn($search);
+        if ($this->embeddingsApi && $this->semanticSearch) {
+            $this->populateVectorPool();
+            // Build KNN queries independently before main query
+            $this->buildKnnQueries();
+            $this->handleKnn($search);
+        }
 
         $this->buildMainQuery($boolean);
 
@@ -499,7 +500,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $knnQueries = [];
         $semanticQueries = [];
-        
+
         $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries) {
             $raw = $query->toRaw();
             if (isset($raw['knn'])) {
@@ -653,7 +654,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this->formatRespones($searchResponse, $facetsResponse);
     }
 
-    
+
 
     public function promise(): Promise
     {

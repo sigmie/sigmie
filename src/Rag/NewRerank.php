@@ -8,6 +8,7 @@ use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Document\Hit;
 use Sigmie\Document\RerankedHit;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
+use Symfony\Component\Yaml\Yaml;
 
 class NewRerank
 {
@@ -46,7 +47,7 @@ class NewRerank
         }
 
         // Format hits for reranking
-        $textDocuments = $this->formatHitsForReranking($hits);
+        $textDocuments = $this->payload($hits);
 
         // Perform reranking
         $res = $this->reranker->rerank($textDocuments, $query, $this->topK) ?? [];
@@ -56,33 +57,23 @@ class NewRerank
         }, $res);
     }
 
-    protected function formatHitsForReranking(array $hits): array
+    public function payload(array $hits): array
     {
         $documents = [];
 
         /** @var Hit $hit */
         foreach ($hits as $hit) {
-            // Filter to specific fields and encode as JSON string
+            // Filter to specific fields and format as inline YAML string
             $filteredData = [];
             foreach ($this->fields as $field) {
                 if (isset($hit->_source[$field])) {
                     $filteredData[$field] = $hit->_source[$field];
                 }
             }
-            $documents[] = json_encode($filteredData);
+            // Format as inline YAML (e.g., "name: Value\ndescription: Another value")
+            $documents[] = Yaml::dump($filteredData, inline: 1);
         }
 
         return $documents;
-    }
-
-    protected function extractQueryFromResponse(SigmieSearchResponse $response): ?string
-    {
-        // Try to extract the query from the search context
-        $context = $response->getContext();
-        if ($context && isset($context->queryStrings[0])) {
-            return $context->queryStrings[0]->text();
-        }
-
-        return null;
     }
 }

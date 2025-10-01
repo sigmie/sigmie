@@ -142,8 +142,6 @@ class NewRag
             }, $historyHits)
         );
 
-        ray($messages, $historyHits, $this->conversationId)->green();
-
         // Create prompt with all hits
         $prompt = new NewRagPrompt($documentHits, $messages);
 
@@ -153,7 +151,6 @@ class NewRag
 
         // Set conversation context
         $conversationId = $this->conversationId ?: prefix_id('conv', 10);
-
 
         $answer = $this->llm->answer($prompt);
 
@@ -180,24 +177,6 @@ class NewRag
         );
 
         return $answer;
-    }
-
-    /**
-     * Create a summary from prompt messages
-     */
-    protected function createSummaryFromPrompt(NewRagPrompt $prompt): string
-    {
-        $messages = $prompt->getMessages();
-        $summary = '';
-
-        foreach ($messages as $message) {
-            if ($message['role'] === 'user') {
-                $content = substr($message['content'], 0, 100);
-                $summary .= "User: {$content}... ";
-            }
-        }
-
-        return trim($summary);
     }
 
     /**

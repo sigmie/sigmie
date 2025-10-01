@@ -74,7 +74,7 @@ class HistoryTest extends TestCase
             ->search($newSearch)
             ->historyIndex($historyIndex)
             ->prompt(function (NewRagPrompt $prompt) {
-                $prompt->system("You are a precise assistant. Answer strictly only using one word.");
+                $prompt->system("You are a precise assistant. Answer strictly only using one word, without any punctuation.");
                 $prompt->developer("Guardrails: Answer only from provided context.");
                 $prompt->user("My name is Nico, what\'s a good name for a dog? Pick only one.");
                 $prompt->contextFields(['text']);
@@ -89,7 +89,7 @@ class HistoryTest extends TestCase
             ->conversationId($answer->conversationId)
             ->historyIndex($historyIndex)
             ->prompt(function (NewRagPrompt $prompt) {
-                $prompt->system("You are a precise assistant. Answer strictly only using one word.");
+                $prompt->system("You are a precise assistant. Answer strictly only using one word, without any punctuation.");
                 $prompt->user("What did I say my name was ?");
             })
             ->answer();
@@ -102,6 +102,7 @@ class HistoryTest extends TestCase
             ->conversationId($answer->conversationId)
             ->historyIndex($historyIndex)
             ->prompt(function (NewRagPrompt $prompt) {
+                $prompt->system("You are a precise assistant. Answer strictly only using one word, without any punctuation.");
                 $prompt->user('And what name did you mention before ?');
             })
             ->answer();
