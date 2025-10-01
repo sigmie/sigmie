@@ -20,4 +20,6 @@ interface LLMApi
      * @return iterable Generator that yields response chunks in real-time
      */
     public function streamAnswer(Prompt $prompt): iterable;
+
+    public function jsonAnswer(Prompt $prompt): array;
 }

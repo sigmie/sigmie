@@ -27,6 +27,72 @@ class RagTest extends TestCase
     /**
      * @test
      */
+    public function rag_json()
+    {
+        $indexName = uniqid();
+        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
+        $llm = new OpenAIResponseApi(getenv('OPENAI_API_KEY'));
+
+        $sigmie = $this->sigmie->embedder($embeddings);
+
+        $props = new NewProperties;
+        $props->text('title')->semantic(accuracy: 1, dimensions: 256);
+        $props->text('text')->semantic(accuracy: 1, dimensions: 256);
+
+        $sigmie->newIndex($indexName)->properties($props)->create();
+
+        $collected = $sigmie->collect($indexName, true)->properties($props);
+
+        $collected->merge([
+            new Document([
+                'title' => 'Dog Names',
+                'text' => 'Dog names are important. Here are some good dog names: Max, Bella, Rocky, Luna, Charlie, Daisy, Buddy, Sadie.',
+            ]),
+            new Document([
+                'title' => 'Dog Breeds',
+                'text' => 'Dog breeds are important. Here are some good dog breeds: Labrador, German Shepherd, Golden Retriever, Bulldog, Poodle, Beagle.',
+            ]),
+        ]);
+
+        $newSearch = $sigmie->newSearch($indexName)
+            ->index($indexName)
+            ->properties($props)
+            ->semantic()
+            ->disableKeywordSearch()
+            ->retrieve(['text', 'title'])
+            ->queryString('What are good dog names?')
+            ->size(2);
+
+        $json = $sigmie
+            ->newRag($llm)
+            ->search($newSearch)
+            ->prompt(function (NewRagPrompt $prompt) {
+                $prompt->system("You are a helpful assistant. Extract dog names from the context.");
+                $prompt->user("List 3 good dog names from the context.");
+                $prompt->contextFields(['text']);
+                $prompt->answerJsonSchema(function (\Sigmie\AI\NewJsonSchema $schema) {
+                    $schema->array('dog_names', function (\Sigmie\AI\NewJsonSchema $items) {
+                        $items->string('name');
+                    });
+                });
+            })
+            ->json();
+
+        $this->assertIsArray($json);
+        $this->assertArrayHasKey('dog_names', $json);
+        $this->assertIsArray($json['dog_names']);
+        $this->assertCount(3, $json['dog_names']);
+
+        foreach ($json['dog_names'] as $dog) {
+            $this->assertArrayHasKey('name', $dog);
+            $this->assertIsString($dog['name']);
+            $this->assertNotEmpty($dog['name']);
+        }
+    }
+
+    /**
+     * @test
+     */
     public function rag_non_streaming()
     {
         $indexName = uniqid();

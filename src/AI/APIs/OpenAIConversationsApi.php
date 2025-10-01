@@ -95,6 +95,32 @@ class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
         return new OpenAIConversationAnswer($this->model, $options['json'], $data, $conversation);
     }
 
+    public function jsonAnswer(Prompt $prompt): array
+    {
+        $conversation = $this->conversation();
+
+        $input = array_map(fn($message) => [
+            'role' => $message['role']->value,
+            'content' => $message['content']
+        ], $prompt->messages());
+
+        $options = [
+            RequestOptions::JSON => [
+                'conversation' => $conversation,
+                'model' => $this->model,
+                'input' => $input,
+                'stream' => false,
+                'response_format' => $prompt->jsonSchema(),
+            ],
+        ];
+
+        $response = $this->client->post('/v1/responses', $options);
+
+        $data = json_decode($response->getBody()->getContents(), true);
+
+        return json_decode($data['output']['content'], true);
+    }
+
     public function streamAnswer(Prompt $prompt): iterable
     {
         $conversation = $this->conversation();

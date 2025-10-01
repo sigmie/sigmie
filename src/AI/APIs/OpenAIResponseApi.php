@@ -29,8 +29,6 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
             ];
         }, $prompt->messages());
 
-        ray($input);
-
         $options = [
             RequestOptions::JSON => [
                 'model' => $this->model,
@@ -62,6 +60,43 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
             $tags,
             $turns
         );
+    }
+
+    public function jsonAnswer(Prompt $prompt): array
+    {
+        $input = array_map(fn($message) => [
+            'role' => $message['role']->toOpenAI(),
+            'content' => $message['content']
+        ], $prompt->messages());
+
+        $options = [
+            RequestOptions::JSON => [
+                'model' => $this->model,
+                'input' => $input,
+                'stream' => false,
+                'text' => [
+                    'format' => [
+                        'name' => 'rag_answer',
+                        'type' => 'json_schema',
+                        'schema' => $prompt->jsonSchema(),
+                    ],
+                ]
+            ],
+        ];
+
+        $response = $this->client->post('/v1/responses', $options);
+
+        $data = json_decode($response->getBody()->getContents(), true);
+
+        // Find the message output in the response array
+        $messageOutput = array_filter($data['output'], function ($output) {
+            return $output['type'] === 'message';
+        });
+        $messageOutput = array_values($messageOutput)[0];
+
+        $content = $messageOutput['content'][0]['text'] ?? throw new \RuntimeException('No text content in response');
+
+        return json_decode($content, true);
     }
 
     public function streamAnswer(Prompt $prompt): iterable

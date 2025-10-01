@@ -8,7 +8,34 @@ use Sigmie\AI\Role;
 
 class Prompt
 {
+    protected ?NewJsonSchema $jsonSchemaBuilder = null;
+
     public function __construct(protected array $messages = []) {}
+
+    public function answerJsonSchema(callable $callback): self
+    {
+        $this->jsonSchemaBuilder = new NewJsonSchema();
+        $callback($this->jsonSchemaBuilder);
+
+        return $this;
+    }
+
+    public function jsonSchema(): array
+    {
+        if ($this->jsonSchemaBuilder) {
+            return $this->jsonSchemaBuilder->toArray();
+        }
+
+        // Default schema
+        return [
+            'type' => 'object',
+            'properties' => [
+                'answer' => ['type' => 'string'],
+            ],
+            'required' => ['answer'],
+            'additionalProperties' => false,
+        ];
+    }
 
     public function system(string $instruction): self
     {

@@ -89,12 +89,8 @@ class NewRag
         return $this;
     }
 
-    /**
-     * Get answer without streaming (returns complete response)
-     */
-    public function answer()
+    protected function preparePrompt(): NewRagPrompt
     {
-        // Execute search
         if (!$this->searchBuilder) {
             throw new RuntimeException('Search must be configured before calling answer()');
         }
@@ -120,12 +116,10 @@ class NewRag
             );
         }
 
-        // Get all hits grouped by name in a single HTTP call
         $groupedHits = $this->searchBuilder->groupedHits();
         $documentHits = $groupedHits['documents'] ?? [];
         $historyHits = $groupedHits['history'] ?? [];
 
-        // Apply reranking only to document hits
         if ($this->reranker && $this->rerankBuilder) {
             $documentHits = $this->rerankBuilder->rerank($documentHits);
         }
@@ -142,12 +136,31 @@ class NewRag
             }, $historyHits)
         );
 
-        // Create prompt with all hits
         $prompt = new NewRagPrompt($documentHits, $messages);
 
         if ($this->promptBuilder) {
             ($this->promptBuilder)($prompt);
         }
+
+        return $prompt;
+    }
+
+    /**
+     * Get JSON structured answer
+     */
+    public function json(): array
+    {
+        $prompt = $this->preparePrompt();
+
+        return $this->llm->jsonAnswer($prompt);
+    }
+
+    /**
+     * Get answer without streaming (returns complete response)
+     */
+    public function answer()
+    {
+        $prompt = $this->preparePrompt();
 
         // Set conversation context
         $conversationId = $this->conversationId ?: prefix_id('conv', 10);
