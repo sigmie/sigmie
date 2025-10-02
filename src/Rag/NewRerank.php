@@ -53,7 +53,20 @@ class NewRerank
         $res = $this->reranker->rerank($textDocuments, $query, $this->topK) ?? [];
 
         return array_map(function ($index) use ($hits) {
-            return new RerankedHit($hits[$index['index']], $index['score']);
+            $hit = $hits[$index['index']];
+
+            // Convert array to Hit object if needed
+            if (is_array($hit)) {
+                $hit = new \Sigmie\Document\Hit(
+                    $hit['_source'] ?? [],
+                    $hit['_id'] ?? '',
+                    $hit['_score'] ?? null,
+                    $hit['_index'] ?? null,
+                    $hit['sort'] ?? null
+                );
+            }
+
+            return new RerankedHit($hit, $index['score']);
         }, $res);
     }
 
@@ -61,13 +74,14 @@ class NewRerank
     {
         $documents = [];
 
-        /** @var Hit $hit */
         foreach ($hits as $hit) {
             // Filter to specific fields and format as inline YAML string
             $filteredData = [];
+            $source = is_array($hit) ? ($hit['_source'] ?? []) : $hit->_source;
+
             foreach ($this->fields as $field) {
-                if (isset($hit->_source[$field])) {
-                    $filteredData[$field] = $hit->_source[$field];
+                if (isset($source[$field])) {
+                    $filteredData[$field] = $source[$field];
                 }
             }
             // Format as inline YAML (e.g., "name: Value\ndescription: Another value")

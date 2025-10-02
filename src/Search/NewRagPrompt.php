@@ -34,15 +34,21 @@ class NewRagPrompt extends Prompt
         return $this;
     }
 
+    public function hits(): array
+    {
+        return $this->hits;
+    }
+
     private function createContext($fields)
     {
         $context = [];
 
-        /** @var Hit $hit */
         foreach ($this->hits as $hit) {
             $contextItem = [];
             foreach ($fields as $field) {
-                $contextItem[$field] = dot($hit->_source)->get($field);
+                $contextItem[$field] = is_array($hit)
+                    ? ($hit['_source'][$field] ?? null)
+                    : dot($hit->_source)->get($field);
             }
             $context[] = $contextItem;
         }

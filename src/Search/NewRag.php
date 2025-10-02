@@ -89,7 +89,7 @@ class NewRag
         return $this;
     }
 
-    protected function preparePrompt(): NewRagPrompt
+    protected function executeSearch(): array
     {
         if (!$this->searchBuilder) {
             throw new RuntimeException('Search must be configured before calling answer()');
@@ -101,29 +101,49 @@ class NewRag
                 $this->searchBuilder->embeddingsApi
             );
 
-            $multiSearch->add($this->searchBuilder, name: 'documents');
+            $multiSearch->add($this->searchBuilder);
 
             $this->searchBuilder = $multiSearch;
         }
 
+        $historySearchName = prefix_id('sgm_hist', 5);
+
         if ($this->historyIndex) {
             $this->searchBuilder->add(
                 $this->historyIndex->search(
-                    $this->conversationId ?? prefix_id('conv', 10),
+                    $this->conversationId ?: prefix_id('conv', 10),
                     $this->userToken
                 ),
-                name: 'history'
+                name: $historySearchName
             );
         }
 
         $groupedHits = $this->searchBuilder->groupedHits();
-        $documentHits = $groupedHits['documents'] ?? [];
-        $historyHits = $groupedHits['history'] ?? [];
 
-        if ($this->reranker && $this->rerankBuilder) {
-            $documentHits = $this->rerankBuilder->rerank($documentHits);
+        // Separate history from document searches
+        $historyHits = $groupedHits[$historySearchName] ?? [];
+        $documentHits = [];
+
+        foreach ($groupedHits as $key => $hits) {
+            if ($key !== $historySearchName ?? null) {
+                $documentHits = [...$documentHits, ...$hits];
+            }
         }
 
+        return ['documentHits' => $documentHits, 'historyHits' => $historyHits];
+    }
+
+    protected function executeRerank(array $documentHits): array
+    {
+        if (!$this->reranker || !$this->rerankBuilder) {
+            return $documentHits;
+        }
+
+        return $this->rerankBuilder->rerank($documentHits);
+    }
+
+    protected function buildPrompt(array $documentHits, array $historyHits): NewRagPrompt
+    {
         $messages = array_merge(
             ...array_map(function (Hit $hit) {
                 return array_map(
@@ -145,14 +165,58 @@ class NewRag
         return $prompt;
     }
 
+    protected function preparePrompt(): NewRagPrompt
+    {
+        $searchResult = $this->executeSearch();
+        $documentHits = $this->executeRerank($searchResult['documentHits']);
+
+        return $this->buildPrompt($documentHits, $searchResult['historyHits']);
+    }
+
+    protected function storeConversation(NewRagPrompt $prompt, string $answerContent, string $model, int $timestamp): void
+    {
+        if (!$this->historyIndex) {
+            return;
+        }
+
+        $conversationId = $this->conversationId ?: prefix_id('conv', 10);
+
+        $turn = [
+            ...array_filter(
+                $prompt->messages(),
+                fn($message) => $message['role'] === Role::User
+            ),
+            [
+                'role' => Role::Model,
+                'content' => $answerContent,
+            ]
+        ];
+
+        $this->historyIndex->store(
+            $conversationId,
+            $turn,
+            $model,
+            (string) $timestamp,
+            $this->userToken,
+        );
+    }
+
     /**
      * Get JSON structured answer
      */
-    public function json(): array
+    public function jsonAnswer()
     {
         $prompt = $this->preparePrompt();
 
-        return $this->llm->jsonAnswer($prompt);
+        $conversationId = $this->conversationId ?: prefix_id('conv', 10);
+
+        $answer = $this->llm->jsonAnswer($prompt);
+
+        $answer->conversation($conversationId);
+
+        $this->storeConversation($prompt, $answer->__toString(), $answer->model(), (int) $answer->timestamp);
+
+        return $answer;
     }
 
     /**
@@ -162,32 +226,13 @@ class NewRag
     {
         $prompt = $this->preparePrompt();
 
-        // Set conversation context
         $conversationId = $this->conversationId ?: prefix_id('conv', 10);
 
         $answer = $this->llm->answer($prompt);
 
         $answer->conversation($conversationId);
 
-        $turn = [
-            ...array_filter(
-                $prompt->messages(),
-                fn($message) => $message['role'] === Role::User
-            ),
-            [
-                'role' => Role::Model,
-                'content' => $answer->__toString(),
-            ]
-        ];
-
-        // The answer now contains all the conversation data
-        $this->historyIndex?->store(
-            $conversationId,
-            $turn,
-            $answer->model(),
-            $answer->timestamp,
-            $this->userToken,
-        );
+        $this->storeConversation($prompt, $answer->__toString(), $answer->model(), (int) $answer->timestamp);
 
         return $answer;
     }
@@ -197,69 +242,44 @@ class NewRag
      */
     public function streamAnswer(): iterable
     {
-        // Emit search_start event
         yield ['type' => 'search_start', 'timestamp' => microtime(true)];
 
-        // Execute search
-        if (!$this->searchBuilder) {
-            throw new RuntimeException('Search must be configured before calling streamAnswer()');
-        }
+        $searchResult = $this->executeSearch();
 
-        if ($this->searchBuilder instanceof NewSearch) {
-            $multiSearch = new NewMultiSearch(
-                $this->searchBuilder->elasticsearchConnection,
-                $this->searchBuilder->embeddingsApi
-            );
+        yield ['type' => 'search_complete', 'hits' => count($searchResult['documentHits']), 'timestamp' => microtime(true)];
 
-            $multiSearch->add($this->searchBuilder, name: 'documents');
-
-            $this->searchBuilder = $multiSearch;
-        }
-
-        if ($this->historyIndex) {
-            $this->searchBuilder->add($this->historyIndex->newSearch(), name: 'history');
-        }
-
-        // Get all hits grouped by name in a single HTTP call
-        $groupedHits = $this->searchBuilder->groupedHits();
-        $documentHits = $groupedHits['documents'] ?? [];
-        $historyHits = $groupedHits['history'] ?? [];
-
-        // For now, use document hits as primary hits
-        $hits = $documentHits;
-
-        // Emit search_complete event with hit count
-        yield ['type' => 'search_complete', 'hits' => count($hits), 'timestamp' => microtime(true)];
-
-        // Apply reranking if configured
         if ($this->reranker && $this->rerankBuilder) {
             yield ['type' => 'rerank_start', 'timestamp' => microtime(true)];
 
-            $hits = $this->rerankBuilder->rerank($hits);
+            $documentHits = $this->executeRerank($searchResult['documentHits']);
 
-            yield ['type' => 'rerank_complete', 'hits' => count($hits), 'timestamp' => microtime(true)];
+            yield ['type' => 'rerank_complete', 'hits' => count($documentHits), 'timestamp' => microtime(true)];
+        } else {
+            $documentHits = $searchResult['documentHits'];
         }
 
-        // Build prompt
         yield ['type' => 'prompt_start', 'timestamp' => microtime(true)];
 
-        $prompt = new NewRagPrompt($hits);
-
-        if ($this->promptBuilder) {
-            ($this->promptBuilder)($prompt);
-        }
+        $prompt = $this->buildPrompt($documentHits, $searchResult['historyHits']);
 
         yield ['type' => 'prompt_complete', 'timestamp' => microtime(true)];
 
-        // Start LLM streaming
         yield ['type' => 'llm_start', 'timestamp' => microtime(true)];
 
-        // Stream directly from OpenAI API response
+        $conversationId = $this->conversationId ?: prefix_id('conv', 10);
+        $fullAnswer = '';
+
         foreach ($this->llm->streamAnswer($prompt) as $chunk) {
+            $fullAnswer .= $chunk;
             yield ['type' => 'llm_chunk', 'content' => $chunk, 'timestamp' => microtime(true)];
         }
 
-        // Emit completion event
         yield ['type' => 'llm_complete', 'timestamp' => microtime(true)];
+
+        yield ['type' => 'turn_store_start', 'timestamp' => microtime(true)];
+
+        $this->storeConversation($prompt, $fullAnswer, $this->llm->model(), time());
+
+        yield ['type' => 'turn_store_complete', 'timestamp' => microtime(true)];
     }
 }

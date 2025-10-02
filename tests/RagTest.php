@@ -76,7 +76,9 @@ class RagTest extends TestCase
                     });
                 });
             })
-            ->json();
+            ->jsonAnswer();
+
+        $json = $json->json();
 
         $this->assertIsArray($json);
         $this->assertArrayHasKey('dog_names', $json);
@@ -166,7 +168,7 @@ class RagTest extends TestCase
                     'content' => 'You are a precise assistant. Answer in 2 sentences max.'
                 ],
                 [
-                    'role' => 'developer',
+                    'role' => 'system',
                     'content' => 'Guardrails: Answer only from provided context.'
                 ],
                 [
@@ -175,13 +177,12 @@ class RagTest extends TestCase
                 ],
                 [
                     'role' => 'system',
-                    'content' => 'Context: [{"text":"Patient privacy and confidentiality are essential for maintaining trust and respect in healthcare."}]'
-                ]
+                    'content' => 'Context: [{"text":"Patient privacy and confidentiality are essential for maintaining trust and respect in healthcare."}]' ]
             ],
             'stream' => false
         ], $answer->request);
 
-        $this->assertInstanceOf(OpenAIAnswer::class, $answer);
+        $this->assertInstanceOf(LLMAnswer::class, $answer);
         $this->assertEquals('gpt-5-nano', $answer->model());
     }
 
@@ -247,7 +248,9 @@ class RagTest extends TestCase
             'prompt_complete',
             'llm_start',
             'llm_chunk',  // There will be multiple llm_chunk events
-            'llm_complete'
+            'llm_complete',
+            'turn_store_start',
+            'turn_store_complete'
         ];
 
         $streamedEvents = [];
@@ -295,7 +298,7 @@ class RagTest extends TestCase
 
         // Assert all expected event types were fired (excluding duplicate llm_chunk events)
         $uniqueStreamedEvents = array_values(array_unique($streamedEvents));
-        
+
         // Check that all expected events are present
         foreach ($expectedEventTypes as $expectedType) {
             $this->assertContains($expectedType, $uniqueStreamedEvents, "Expected event '$expectedType' was not fired");
@@ -310,17 +313,22 @@ class RagTest extends TestCase
         $promptCompleteIndex = array_search('prompt_complete', $streamedEvents);
         $llmStartIndex = array_search('llm_start', $streamedEvents);
         $llmCompleteIndex = array_search('llm_complete', $streamedEvents);
+        $turnStoreStartIndex = array_search('turn_store_start', $streamedEvents);
+        $turnStoreCompleteIndex = array_search('turn_store_complete', $streamedEvents);
+
 
         // Assert proper ordering
         $this->assertLessThan($searchCompleteIndex, $searchStartIndex, 'search_start should come before search_complete');
         $this->assertLessThan($rerankCompleteIndex, $rerankStartIndex, 'rerank_start should come before rerank_complete');
         $this->assertLessThan($promptCompleteIndex, $promptStartIndex, 'prompt_start should come before prompt_complete');
         $this->assertLessThan($llmCompleteIndex, $llmStartIndex, 'llm_start should come before llm_complete');
+        $this->assertLessThan($turnStoreCompleteIndex, $turnStoreStartIndex, 'turn_store_start should come before turn_store_complete');
 
         // Assert sequential process order
         $this->assertLessThan($rerankStartIndex, $searchCompleteIndex, 'search should complete before rerank starts');
         $this->assertLessThan($promptStartIndex, $rerankCompleteIndex, 'rerank should complete before prompt starts');
         $this->assertLessThan($llmStartIndex, $promptCompleteIndex, 'prompt should complete before llm starts');
+        $this->assertLessThan($turnStoreStartIndex, $llmCompleteIndex, 'llm should complete before turn_store starts');
 
         // Verify that we received LLM content
         $this->assertNotEmpty($llmContent, 'Should have received LLM content chunks');

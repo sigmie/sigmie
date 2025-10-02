@@ -10,6 +10,7 @@ use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Prompt;
 use Sigmie\Rag\OpenAIRagAnswer;
 use Sigmie\Rag\LLMAnswer;
+use Sigmie\Rag\LLMJsonAnswer;
 
 class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
 {
@@ -62,7 +63,7 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
         );
     }
 
-    public function jsonAnswer(Prompt $prompt): array
+    public function jsonAnswer(Prompt $prompt): LLMJsonAnswer
     {
         $input = array_map(fn($message) => [
             'role' => $message['role']->toOpenAI(),
@@ -96,7 +97,12 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
 
         $content = $messageOutput['content'][0]['text'] ?? throw new \RuntimeException('No text content in response');
 
-        return json_decode($content, true);
+        return new LLMJsonAnswer(
+            $this->model,
+            $options['json'],
+            $data,
+            json_decode($content, true),
+        );
     }
 
     public function streamAnswer(Prompt $prompt): iterable

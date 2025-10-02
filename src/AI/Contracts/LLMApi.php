@@ -6,6 +6,7 @@ namespace Sigmie\AI\Contracts;
 
 use Sigmie\AI\Prompt;
 use Sigmie\Rag\LLMAnswer;
+use Sigmie\Rag\LLMJsonAnswer;
 
 interface LLMApi
 {
@@ -21,5 +22,7 @@ interface LLMApi
      */
     public function streamAnswer(Prompt $prompt): iterable;
 
-    public function jsonAnswer(Prompt $prompt): array;
+    public function jsonAnswer(Prompt $prompt): LLMJsonAnswer;
+
+    public function model(): string;
 }

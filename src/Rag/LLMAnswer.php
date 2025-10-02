@@ -17,8 +17,8 @@ abstract class LLMAnswer
 
     public function __construct(
         public readonly string $model,
-        protected array $request,
-        protected array $response,
+        public readonly array $request,
+        public readonly array $response,
     ) {
         $this->timestamp = (new DateTime('now'))->format('Y-m-d\TH:i:s.uP');
     }
