@@ -30,7 +30,23 @@ class DocumentEmbeddings
 
         $fields->each(function (Text $field, $name) use ($document, &$embeddings) {
 
-            $value = dot($document->_source)->get($field->name());
+            $fieldName = $field->name();
+
+            // Handle nested arrays (e.g., turns.content)
+            if (str_contains($fieldName, '.')) {
+                [$parent, $childField] = explode('.', $fieldName, 2);
+                $parentData = dot($document->_source)->get($parent);
+
+                if (!$parentData || !is_array($parentData)) {
+                    return;
+                }
+
+                // Extract values from nested array
+                $value = array_map(fn($item) => $item[$childField] ?? null, $parentData);
+                $value = array_filter($value, fn($v) => $v !== null);
+            } else {
+                $value = dot($document->_source)->get($fieldName);
+            }
 
             if (!$value) {
                 return;

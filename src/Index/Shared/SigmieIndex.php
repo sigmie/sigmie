@@ -39,9 +39,11 @@ trait SigmieIndex
             ->properties($this->properties());
     }
 
-    public function merge(array $documents, bool $refresh = false): AliveCollection {
+    public function merge(array $documents, bool $refresh = false): AliveCollection
+    {
         return $this->sigmie()
             ->collect($this->name(), refresh: $refresh)
+            ->populateEmbeddings()
             ->properties($this->properties())
             ->merge($documents);
     }

@@ -452,16 +452,11 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected function buildKnnQueries(): void
     {
-        if (!$this->semanticSearch) {
-            $this->knn = [];
-            $this->semanticQueries = [];
-            return;
-        }
-
         $allKnnQueries = [];
         $allSemanticQueries = [];
 
         foreach ($this->searchContext->queryStrings as $queryString) {
+
             if (trim($queryString->text()) === '') {
                 continue;
             }

@@ -109,11 +109,13 @@ class NewRag
         $historySearchName = prefix_id('sgm_hist', 5);
 
         if ($this->historyIndex) {
+            $search = $this->historyIndex->search(
+                $this->conversationId ?: prefix_id('conv', 10),
+                $this->userToken
+            );
+
             $this->searchBuilder->add(
-                $this->historyIndex->search(
-                    $this->conversationId ?: prefix_id('conv', 10),
-                    $this->userToken
-                ),
+                $search,
                 name: $historySearchName
             );
         }

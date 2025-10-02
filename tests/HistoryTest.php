@@ -9,6 +9,7 @@ use Sigmie\AI\APIs\OpenAIConversationsApi;
 use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 use Sigmie\AI\APIs\OpenAIResponseApi;
 use Sigmie\AI\APIs\VoyageRerankApi;
+use Sigmie\AI\History\Index;
 use Sigmie\AI\ProviderFactory;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
@@ -81,6 +82,10 @@ class HistoryTest extends TestCase
             })
             ->answer();
 
+        $stored = $historyIndex->collect(true)->count();
+
+        $this->assertEquals(1, $stored);
+
         $dogName = (string)$answer;
 
         $answer = $sigmie
@@ -108,5 +113,43 @@ class HistoryTest extends TestCase
             ->answer();
 
         $this->assertEquals($dogName, (string)$answer);
+    }
+
+    /**
+     * @test
+     */
+    public function embeddings_are_populated()
+    {
+        $indexName = uniqid();
+
+        $historyIndex = new Index(
+            $indexName,
+            $this->elasticsearchConnection,
+            new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'))
+        );
+
+        $historyIndex->create();
+
+        $collected = $historyIndex->collect(true);
+
+        $collected->merge([
+            new Document([
+                'conversation_id' => '1234',
+                'turns' => [
+                    [
+                        'text' => 'Hello World',
+                        'role' => 'user',
+                    ],
+                    [
+                        'text' => 'Hello World',
+                        'role' => 'model',
+                    ]
+                ],
+            ],),
+        ]);
+
+        $hits = $historyIndex->search('123')->hits();
+
+        $this->assertCount(1, $hits);
     }
 }

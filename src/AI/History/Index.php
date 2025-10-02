@@ -31,8 +31,8 @@ class Index extends SigmieIndex
         $properties->keyword('model');
 
         $properties->nested('turns', function (NewProperties $props) {
-            $props->text('role')->semantic(accuracy: 1, dimensions: 256);
             $props->text('content')->semantic(accuracy: 1, dimensions: 256);
+            $props->text('role')->semantic(accuracy: 1, dimensions: 256);
         });
 
         return $properties;
@@ -72,7 +72,7 @@ class Index extends SigmieIndex
 
         return $this->newSearch()
             ->semantic()
-            ->disableKeywordSearch()
-            ->filters($filters);
+            // ->filters($filters)
+            ->disableKeywordSearch();
     }
 }
