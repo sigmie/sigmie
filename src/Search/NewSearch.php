@@ -71,7 +71,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected SortParser $sortParser;
 
-    protected array $vectorPool = [];
+    protected ?VectorPool $vectorPool = null;
 
     public function __construct(
         ElasticsearchConnection $elasticsearchConnection,
@@ -391,26 +391,41 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected function populateVectorPool(): void
     {
-        $vectorFieldsFields = $this->properties->nestedSemanticFields()
+        if (!$this->embeddingsApi) {
+            return;
+        }
+
+        if (!$this->vectorPool) {
+            $this->vectorPool = new VectorPool($this->embeddingsApi);
+        }
+
+        // Collect all needed embeddings
+        $vectorFields = $this->properties->nestedSemanticFields()
             ->filter(fn(Text $field) => $field->isSemantic())
-            // Only fields that are in the fields array
             ->filter(fn(Text $field) => in_array($field->fullPath, $this->fields))
             ->map(fn(Text $field) => $field->vectorFields())
             ->flatten(1);
 
-        $dims = $vectorFieldsFields
+        $dims = $vectorFields
             ->map(fn(NestedVector|DenseVector|SigmieVector $field) => $field->dims())
             ->unique()
             ->toArray();
 
-        $pool = [];
-
-        foreach ($dims as $dim) {
-            $pool[$dim] ?? $pool[$dim] = [];
-            $pool[$dim] = array_map(fn(QueryString $queryString) => $this->embeddingsApi->promiseEmbed($queryString->text(), $dim), $this->searchContext->queryStrings);
+        // Build array of all text/dimension combinations
+        $items = [];
+        foreach ($this->searchContext->queryStrings as $queryString) {
+            foreach ($dims as $dim) {
+                $items[] = [
+                    'text' => $queryString->text(),
+                    'dims' => $dim
+                ];
+            }
         }
 
-        $this->vectorPool = $pool;
+        // Batch fetch all embeddings at once
+        if (!empty($items)) {
+            $this->vectorPool->getMany($items);
+        }
     }
 
     protected function onEmptyQueryString(): Query
@@ -530,7 +545,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     {
         return array_map(fn($dim) => [
             'dims' => $dim,
-            'vector' => $this->embeddingsApi->embed($queryString, $dim)
+            'vector' => $this->vectorPool->get($queryString, $dim)
         ], $dims);
     }
 
@@ -695,5 +710,37 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     public function hits()
     {
         return $this->get()->hits();
+    }
+
+    public function setVectorPool(VectorPool|array $pool): static
+    {
+        if ($pool instanceof VectorPool) {
+            $this->vectorPool = $pool;
+        } else {
+            // Legacy array format support
+            if (!$this->vectorPool && $this->embeddingsApi) {
+                $this->vectorPool = new VectorPool($this->embeddingsApi);
+            }
+            if ($this->vectorPool) {
+                $this->vectorPool->setPool($pool);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getVectorPool(): ?VectorPool
+    {
+        return $this->vectorPool;
+    }
+
+    public function queryStrings(): array
+    {
+        return $this->searchContext->queryStrings;
+    }
+
+    public function getProperties(): ?Properties
+    {
+        return $this->properties;
     }
 }
