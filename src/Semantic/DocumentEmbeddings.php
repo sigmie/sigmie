@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Semantic;
 
+use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Base\Http\Responses\Search;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
@@ -19,7 +20,7 @@ class DocumentEmbeddings
 {
     public function __construct(
         protected Properties $properties,
-        protected $aiProvider,
+        protected EmbeddingsApi $embeddingsApi,
     ) {}
 
     public function make(Document $document): Document
@@ -100,7 +101,7 @@ class DocumentEmbeddings
             $values = (new Collection($fieldVectors))->map(fn($item) => $item['vectors'])->flatten(1)->values();
 
             // Get embeddings from AI provider
-            $vectors = $this->aiProvider->batchEmbed($values);
+            $vectors = $this->embeddingsApi->batchEmbed($values);
 
             $vectors = new Collection($vectors);
 

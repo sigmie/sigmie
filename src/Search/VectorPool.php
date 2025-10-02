@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\Support\VectorNormalizer;
 
 class VectorPool
 {
     protected array $pool = [];
 
     public function __construct(
-        protected EmbeddingsApi $embeddingsApi
+        protected EmbeddingsApi $embeddingsApi,
+        protected bool $ensureNormalized = true
     ) {}
 
     public function get(string $text, int $dimensions): array
@@ -22,7 +24,14 @@ class VectorPool
                 $this->pool[$text] = [];
             }
 
-            $this->pool[$text][$dimensions] = $this->embeddingsApi->embed($text, $dimensions);
+            $vector = $this->embeddingsApi->embed($text, $dimensions);
+
+            // Ensure vector is normalized (critical for dot_product and max_inner_product)
+            if ($this->ensureNormalized && !VectorNormalizer::isNormalized($vector)) {
+                $vector = VectorNormalizer::normalize($vector);
+            }
+
+            $this->pool[$text][$dimensions] = $vector;
         }
 
         return $this->pool[$text][$dimensions];
@@ -46,6 +55,11 @@ class VectorPool
             $text = $result['text'];
             $dims = (int) $result['dims'];
             $vector = $result['vector'];
+
+            // Ensure vector is normalized (critical for dot_product and max_inner_product)
+            if ($this->ensureNormalized && !VectorNormalizer::isNormalized($vector)) {
+                $vector = VectorNormalizer::normalize($vector);
+            }
 
             if (!isset($this->pool[$text])) {
                 $this->pool[$text] = [];

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Enums;
 
+use Sigmie\Support\VectorNormalizer;
+
 enum VectorStrategy: string
 {
     // Low accuracy
@@ -58,7 +60,11 @@ enum VectorStrategy: string
                     }
                 }
 
-                return array_map(fn($total) => $total / $count, $sum);
+                $averaged = array_map(fn($total) => $total / $count, $sum);
+
+                // Normalize the averaged vector to ensure magnitude = 1.0
+                // This is critical for dot_product and max_inner_product similarity
+                return VectorNormalizer::normalize($averaged);
             },
             self::ScriptScore => function (array $embeddings) {
                 // For ScriptScore: create array of objects with embedding field

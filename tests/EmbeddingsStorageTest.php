@@ -1,0 +1,253 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Sigmie\Tests;
+
+use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
+use Sigmie\Document\Document;
+use Sigmie\Mappings\NewProperties;
+use Sigmie\Support\VectorNormalizer;
+use Sigmie\Testing\TestCase;
+
+class EmbeddingsStorageTest extends TestCase
+{
+    /**
+     * @test
+     */
+    public function embeddings_are_stored_and_retrieved_correctly_per_field()
+    {
+        $indexName = uniqid();
+        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
+
+        $sigmie = $this->sigmie->embedder($embeddings);
+
+        $props = new NewProperties;
+        $props->text('title')->semantic(accuracy: 1, dimensions: 256);
+        $props->text('description')->semantic(accuracy: 1, dimensions: 256);
+        $props->text('content')->semantic(accuracy: 1, dimensions: 512);
+        $props->nested('comments', function (NewProperties $props) {
+            $props->text('text')->semantic(accuracy: 1, dimensions: 256);
+            $props->text('author')->semantic(accuracy: 1, dimensions: 128);
+        });
+
+        $sigmie->newIndex($indexName)->properties($props)->create();
+
+        $collected = $sigmie->collect($indexName, true)->properties($props);
+
+        $collected->merge([
+            new Document([
+                'title' => 'Test Title',
+                'description' => 'Test Description',
+                'content' => 'Test Content',
+                'comments' => [
+                    ['text' => 'Comment 1', 'author' => 'Author 1'],
+                    ['text' => 'Comment 2', 'author' => 'Author 2'],
+                ],
+            ], _id: 'test-doc'),
+        ]);
+
+        // Retrieve the document
+        $doc = $collected->get('test-doc');
+
+        // Verify embeddings structure exists
+        $this->assertArrayHasKey('embeddings', $doc->_source);
+
+        // Verify each field has embeddings
+        $embeddings = $doc->_source['embeddings'];
+
+        // Title field (256 dims)
+        $this->assertArrayHasKey('title', $embeddings);
+        $titleEmbedding = $embeddings['title'];
+        $this->assertIsArray($titleEmbedding);
+        $titleKey = array_key_first($titleEmbedding);
+        $this->assertStringContainsString('dims256', $titleKey);
+        $this->assertCount(256, $titleEmbedding[$titleKey]);
+
+        // Description field (256 dims)
+        $this->assertArrayHasKey('description', $embeddings);
+        $descEmbedding = $embeddings['description'];
+        $this->assertIsArray($descEmbedding);
+        $descKey = array_key_first($descEmbedding);
+        $this->assertStringContainsString('dims256', $descKey);
+        $this->assertCount(256, $descEmbedding[$descKey]);
+
+        // Content field (512 dims)
+        $this->assertArrayHasKey('content', $embeddings);
+        $contentEmbedding = $embeddings['content'];
+        $this->assertIsArray($contentEmbedding);
+        $contentKey = array_key_first($contentEmbedding);
+        $this->assertStringContainsString('dims512', $contentKey);
+        $this->assertCount(512, $contentEmbedding[$contentKey]);
+
+        // Comments.text field (256 dims, concatenated)
+        $this->assertArrayHasKey('comments.text', $embeddings);
+        $commentTextEmbedding = $embeddings['comments.text'];
+        $this->assertIsArray($commentTextEmbedding);
+        $commentTextKey = array_key_first($commentTextEmbedding);
+        $this->assertStringContainsString('dims256', $commentTextKey);
+        $this->assertCount(256, $commentTextEmbedding[$commentTextKey]);
+
+        // Comments.author field (128 dims, concatenated)
+        $this->assertArrayHasKey('comments.author', $embeddings);
+        $commentAuthorEmbedding = $embeddings['comments.author'];
+        $this->assertIsArray($commentAuthorEmbedding);
+        $commentAuthorKey = array_key_first($commentAuthorEmbedding);
+        $this->assertStringContainsString('dims128', $commentAuthorKey);
+        $this->assertCount(128, $commentAuthorEmbedding[$commentAuthorKey]);
+    }
+
+    /**
+     * @test
+     */
+    public function embeddings_use_md5_keys_for_field_identification()
+    {
+        $indexName = uniqid();
+        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
+
+        $sigmie = $this->sigmie->embedder($embeddings);
+
+        $props = new NewProperties;
+        $props->text('title')->semantic(accuracy: 1, dimensions: 256);
+
+        $sigmie->newIndex($indexName)->properties($props)->create();
+
+        $collected = $sigmie->collect($indexName, true)->properties($props);
+
+        $collected->merge([
+            new Document([
+                'title' => 'Test Title',
+            ], _id: 'test-doc'),
+        ]);
+
+        // Retrieve the document
+        $doc = $collected->get('test-doc');
+
+        // Verify embeddings key uses MD5
+        $embeddings = $doc->_source['embeddings']['title'];
+        $key = array_key_first($embeddings);
+
+        // Key format should be: m{accuracy}_efc{efConstruction}_dims{dimensions}_{similarity}_{strategy}
+        // e.g., m16_efc80_dims256_cosine_concat
+        $this->assertMatchesRegularExpression('/^m\d+_efc\d+_dims\d+_\w+_\w+$/', $key);
+
+        // Verify the key is consistent (same input should produce same key)
+        $collected->merge([
+            new Document([
+                'title' => 'Test Title',
+            ], _id: 'test-doc-2'),
+        ]);
+
+        $doc2 = $collected->get('test-doc-2');
+        $embeddings2 = $doc2->_source['embeddings']['title'];
+        $key2 = array_key_first($embeddings2);
+
+        $this->assertEquals($key, $key2, 'Keys should be consistent for same configuration');
+    }
+
+    /**
+     * @test
+     */
+    public function stored_embeddings_are_normalized()
+    {
+        $indexName = uniqid();
+        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
+
+        $sigmie = $this->sigmie->embedder($embeddings);
+
+        $props = new NewProperties;
+        $props->text('title')->semantic(accuracy: 1, dimensions: 256);
+        $props->text('content')->semantic(accuracy: 1, dimensions: 512);
+
+        $sigmie->newIndex($indexName)->properties($props)->create();
+
+        $collected = $sigmie->collect($indexName, true)->properties($props);
+
+        $collected->merge([
+            new Document([
+                'title' => 'Test Title for Normalization',
+                'content' => 'This is test content to verify that embeddings are properly normalized when stored.',
+            ], _id: 'norm-test'),
+        ]);
+
+        // Retrieve the document
+        $doc = $collected->get('norm-test');
+
+        // Check title embedding (256 dims)
+        $titleEmbeddings = $doc->_source['embeddings']['title'];
+        $titleKey = array_key_first($titleEmbeddings);
+        $titleVector = $titleEmbeddings[$titleKey];
+
+        $this->assertTrue(
+            VectorNormalizer::isNormalized($titleVector),
+            'Title embedding vector should be normalized (magnitude ≈ 1.0)'
+        );
+
+        // Check content embedding (512 dims)
+        $contentEmbeddings = $doc->_source['embeddings']['content'];
+        $contentKey = array_key_first($contentEmbeddings);
+        $contentVector = $contentEmbeddings[$contentKey];
+
+        $this->assertTrue(
+            VectorNormalizer::isNormalized($contentVector),
+            'Content embedding vector should be normalized (magnitude ≈ 1.0)'
+        );
+
+        // Verify magnitude is actually close to 1.0
+        $titleMagnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $titleVector)));
+        $contentMagnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $contentVector)));
+
+        $this->assertEqualsWithDelta(1.0, $titleMagnitude, 0.01, 'Title vector magnitude should be ~1.0');
+        $this->assertEqualsWithDelta(1.0, $contentMagnitude, 0.01, 'Content vector magnitude should be ~1.0');
+    }
+
+    /**
+     * @test
+     */
+    public function average_strategy_produces_normalized_vectors_in_nested_fields()
+    {
+        $indexName = uniqid();
+        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
+
+        $sigmie = $this->sigmie->embedder($embeddings);
+
+        $props = new NewProperties;
+        // Use Average strategy for nested comments field (multiple items will be averaged)
+        $props->nested('comments', function (NewProperties $props) {
+            $props->text('text')->semantic(accuracy: 2, dimensions: 256); // accuracy 2 uses Average strategy
+        });
+
+        $sigmie->newIndex($indexName)->properties($props)->create();
+
+        $collected = $sigmie->collect($indexName, true)->properties($props);
+
+        // Create document with multiple comments (will trigger averaging)
+        $collected->merge([
+            new Document([
+                'comments' => [
+                    ['text' => 'First comment about the product'],
+                    ['text' => 'Second comment with different opinion'],
+                    ['text' => 'Third comment adding more context'],
+                ],
+            ], _id: 'avg-test'),
+        ]);
+
+        // Retrieve the document
+        $doc = $collected->get('avg-test');
+
+        // Check that the averaged embedding is normalized
+        $commentEmbeddings = $doc->_source['embeddings']['comments.text'];
+        $commentKey = array_key_first($commentEmbeddings);
+        $commentVector = $commentEmbeddings[$commentKey];
+
+        // Verify the vector is normalized after averaging
+        $this->assertTrue(
+            VectorNormalizer::isNormalized($commentVector),
+            'Averaged comment embedding should be normalized'
+        );
+
+        $magnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $commentVector)));
+        $this->assertEqualsWithDelta(1.0, $magnitude, 0.01,
+            'Averaged vector magnitude should be ~1.0, got: ' . $magnitude);
+    }
+}
