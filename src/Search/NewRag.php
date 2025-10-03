@@ -132,7 +132,7 @@ class NewRag
             }
         }
 
-        return ['documentHits' => $documentHits, 'historyHits' => $historyHits];
+        return [$documentHits, $historyHits];
     }
 
     protected function executeRerank(array $documentHits): array
@@ -169,10 +169,10 @@ class NewRag
 
     protected function preparePrompt(): NewRagPrompt
     {
-        $searchResult = $this->executeSearch();
-        $documentHits = $this->executeRerank($searchResult['documentHits']);
+        [$documentHits, $historyHits] = $this->executeSearch();
+        $documentHits = $this->executeRerank($documentHits);
 
-        return $this->buildPrompt($documentHits, $searchResult['historyHits']);
+        return $this->buildPrompt($documentHits, $historyHits);
     }
 
     protected function storeConversation(NewRagPrompt $prompt, string $answerContent, string $model, int $timestamp): void
@@ -246,29 +246,28 @@ class NewRag
     {
         yield ['type' => 'search_start', 'timestamp' => microtime(true)];
 
-        $searchResult = $this->executeSearch();
+        [$documentHits, $historyHits] = $this->executeSearch();
 
-        yield ['type' => 'search_complete', 'hits' => count($searchResult['documentHits']), 'timestamp' => microtime(true)];
+        yield ['type' => 'search_complete', 'hits' => count($documentHits), 'timestamp' => microtime(true)];
 
         if ($this->reranker && $this->rerankBuilder) {
             yield ['type' => 'rerank_start', 'timestamp' => microtime(true)];
 
-            $documentHits = $this->executeRerank($searchResult['documentHits']);
+            $documentHits = $this->executeRerank($documentHits);
 
             yield ['type' => 'rerank_complete', 'hits' => count($documentHits), 'timestamp' => microtime(true)];
         } else {
-            $documentHits = $searchResult['documentHits'];
+            $documentHits = $documentHits;
         }
 
         yield ['type' => 'prompt_start', 'timestamp' => microtime(true)];
 
-        $prompt = $this->buildPrompt($documentHits, $searchResult['historyHits']);
+        $prompt = $this->buildPrompt($documentHits, $historyHits);
 
         yield ['type' => 'prompt_complete', 'timestamp' => microtime(true)];
 
         yield ['type' => 'llm_start', 'timestamp' => microtime(true)];
 
-        $conversationId = $this->conversationId ?: prefix_id('conv', 10);
         $fullAnswer = '';
 
         foreach ($this->llm->streamAnswer($prompt) as $chunk) {

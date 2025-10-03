@@ -50,14 +50,129 @@ Try: `@api-architect "Design a new faceted search API"`
 
 ## Project Overview
 
-Sigmie provides a fluent, expressive interface for Elasticsearch operations with features including:
+Sigmie is a modern PHP library providing an expressive, Laravel-inspired fluent interface for Elasticsearch with advanced AI-powered search capabilities.
 
-- **Semantic Search**: Vector embeddings and AI-powered search capabilities
-- **Fluent Query Builder**: Laravel-inspired syntax for complex Elasticsearch queries  
-- **Advanced Analysis**: Custom analyzers, token filters, and multilingual support
-- **Index Management**: Aliased indices, mappings, and schema management
-- **Aggregations & Facets**: Complex data aggregation with intuitive builders
-- **Performance**: Optimized for high-performance search applications
+### Core Features
+
+#### 1. **AI-Powered RAG (Retrieval-Augmented Generation)**
+- **NewRag Class**: Complete RAG pipeline with search, rerank, and LLM integration
+- **Conversation History**: Automatic storage and retrieval of chat context across turns
+- **Multiple LLM Support**: OpenAI (GPT-4, GPT-3.5), with extensible LLM interface
+- **Reranking**: Voyage AI and other reranking providers for result optimization
+- **Streaming Support**: Real-time event streaming (search_start, rerank_complete, llm_chunk, etc.)
+- **JSON Schema Responses**: Structured LLM outputs with validation
+
+#### 2. **Vector Embeddings & Semantic Search**
+- **VectorPool**: Intelligent caching and batch processing of embeddings
+- **Multiple Dimensions**: Support for 128, 256, 512, 1536+ dimension vectors
+- **Multiple Strategies**:
+  - **Concatenate** (accuracy: 1) - Best for short strings, single embedding
+  - **Average** (accuracy: 2-6) - Averages multiple embeddings, normalized output
+  - **ScriptScore** (accuracy: 7) - Exact search with script-based scoring
+- **Similarity Metrics**: Cosine, L2_norm, dot_product, max_inner_product
+- **Vector Normalization**: Automatic L2 normalization for dot_product/max_inner_product compatibility
+- **Nested Field Support**: Embeddings for complex nested structures (e.g., comments.text, turns.content)
+
+#### 3. **Search Architecture**
+- **NewSearch**: Single index search with semantic and keyword capabilities
+- **NewMultiSearch**: Parallel multi-index searches with grouped results
+- **VectorPool**: Batch embedding generation to minimize API calls
+- **Semantic Fields**: Automatic vector field generation and indexing
+- **Query String Pooling**: Pre-populates embeddings for all queries before search execution
+
+#### 4. **Document Processing**
+- **DocumentEmbeddings**: Batch generation of embeddings during indexing
+- **Nested Arrays**: Proper handling of nested structures (e.g., multiple comments)
+- **Strategy-Based Formatting**: Automatic embedding combination based on accuracy level
+- **AliveCollection**: Dynamic document collections with embedding population
+
+#### 5. **Index Management**
+- **NewProperties**: Fluent property/mapping definition
+- **SigmieIndex**: Abstract base for custom index classes with automatic property handling
+- **Analysis**: Custom analyzers, normalizers, token filters
+- **Multilingual**: German, English, and extensible language support
+
+#### 6. **Performance Optimizations**
+- **Batch Embeddings**: `batchEmbed()` for multiple texts in single API call
+- **VectorPool Sharing**: Share embedding cache across multiple searches in RAG
+- **Promise-Free Design**: Simplified synchronous flow (removed promise complexity)
+- **Smart Normalization**: Only normalizes vectors when needed (via `isNormalized()` check)
+
+### Key Architectural Components
+
+#### VectorPool (`src/Search/VectorPool.php`)
+- Caches embeddings by text + dimensions
+- `get(text, dims)` - Single embedding with caching
+- `getMany([{text, dims}])` - Batch embedding generation
+- `setPool(pool)` - Merge existing embeddings
+- Optional normalization (`ensureNormalized` flag)
+
+#### NewRag (`src/Search/NewRag.php`)
+- `search(NewSearch|NewMultiSearch)` - Configure search
+- `rerank(closure)` - Optional reranking step
+- `prompt(closure)` - Configure LLM prompt with system/user/developer messages
+- `historyIndex(Index)` - Enable conversation history
+- `answer()` - Non-streaming response
+- `jsonAnswer()` - Structured JSON response
+- `streamAnswer()` - Event-based streaming
+
+#### VectorStrategy (`src/Enums/VectorStrategy.php`)
+- `prepare(values)` - Pre-processes text values
+- `format(embeddings)` - Post-processes embeddings (with normalization for Average)
+
+#### DocumentEmbeddings (`src/Semantic/DocumentEmbeddings.php`)
+- Generates embeddings for all semantic fields in document
+- Handles nested arrays (e.g., `turns.content` extracts content from array of turns)
+- Uses `batchEmbed()` for efficient generation
+- Applies VectorStrategy formatting
+
+### Vector Normalization Strategy
+
+**Critical for Similarity Metrics:**
+- `cosine` - Elasticsearch auto-normalizes (always safe)
+- `dot_product` - **Requires normalized vectors** (now handled ✅)
+- `max_inner_product` - **Requires normalized vectors** (now handled ✅)
+- `l2_norm` - No normalization needed
+
+**Implementation:**
+- Document vectors normalized via `VectorStrategy::Average::format()`
+- Query vectors normalized via `VectorPool::get()` and `getMany()`
+- Smart check: only normalizes if `!VectorNormalizer::isNormalized($vector)`
+
+### Common Patterns
+
+**Creating a semantic search:**
+```php
+$search = $sigmie->newSearch($indexName)
+    ->properties($props)
+    ->semantic()
+    ->disableKeywordSearch()
+    ->queryString('search query')
+    ->size(10);
+```
+
+**RAG with conversation history:**
+```php
+$answer = $sigmie->newRag($llm, $reranker)
+    ->search($multiSearch)
+    ->historyIndex($historyIndex)
+    ->conversationId($conversationId)
+    ->rerank(fn($r) => $r->topK(5)->query($query))
+    ->prompt(function($p) {
+        $p->system('You are helpful');
+        $p->user('Question here');
+        $p->contextFields(['text']);
+    })
+    ->answer();
+```
+
+**Nested field embeddings:**
+```php
+$props->nested('comments', function($p) {
+    $p->text('text')->semantic(accuracy: 1, dimensions: 256);
+    $p->text('author')->semantic(accuracy: 1, dimensions: 128);
+});
+```
 
 The library emphasizes readability and maintainability while providing full access to Elasticsearch's powerful features.
 
