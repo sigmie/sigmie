@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use DateTime;
 use RuntimeException;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Rag\NewRerank;
+use Sigmie\Rag\RagAnswer;
 use Sigmie\Rag\RagResponse;
 use Sigmie\Search\Contracts\MultiSearchResponse;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
@@ -31,6 +33,8 @@ class NewRag
     protected string $userToken = '';
 
     protected ?HistoryIndex $historyIndex = null;
+
+    protected array $documentHits = [];
 
     public function __construct(
         protected LLMApi $llm,
@@ -170,17 +174,18 @@ class NewRag
     protected function preparePrompt(): NewRagPrompt
     {
         [$documentHits, $historyHits] = $this->executeSearch();
-        $documentHits = $this->executeRerank($documentHits);
+        $this->documentHits = $this->executeRerank($documentHits);
 
-        return $this->buildPrompt($documentHits, $historyHits);
+        return $this->buildPrompt($this->documentHits, $historyHits);
     }
 
-    protected function storeConversation(NewRagPrompt $prompt, string $answerContent, string $model, int $timestamp): void
+    protected function storeConversation(NewRagPrompt $prompt, string $answerContent, string $model): void
     {
         if (!$this->historyIndex) {
             return;
         }
 
+        $timestamp = (new DateTime('now'))->format('Y-m-d\TH:i:s.uP');
         $conversationId = $this->conversationId ?: prefix_id('conv', 10);
 
         $turn = [
@@ -206,7 +211,7 @@ class NewRag
     /**
      * Get JSON structured answer
      */
-    public function jsonAnswer()
+    public function jsonAnswer(): RagAnswer
     {
         $prompt = $this->preparePrompt();
 
@@ -216,15 +221,15 @@ class NewRag
 
         $answer->conversation($conversationId);
 
-        $this->storeConversation($prompt, $answer->__toString(), $answer->model(), (int) $answer->timestamp);
+        $this->storeConversation($prompt, $answer->__toString(), $answer->model());
 
-        return $answer;
+        return new RagAnswer($this->documentHits, $answer);
     }
 
     /**
      * Get answer without streaming (returns complete response)
      */
-    public function answer()
+    public function answer(): RagAnswer
     {
         $prompt = $this->preparePrompt();
 
@@ -232,11 +237,9 @@ class NewRag
 
         $answer = $this->llm->answer($prompt);
 
-        $answer->conversation($conversationId);
+        $this->storeConversation($prompt, $answer->__toString(), $answer->model());
 
-        $this->storeConversation($prompt, $answer->__toString(), $answer->model(), (int) $answer->timestamp);
-
-        return $answer;
+        return new RagAnswer($this->documentHits, $answer, $conversationId);
     }
 
     /**
@@ -250,6 +253,8 @@ class NewRag
 
         yield ['type' => 'search_complete', 'hits' => count($documentHits), 'timestamp' => microtime(true)];
 
+        yield ['type' => 'search_hits', 'data' => $documentHits, 'timestamp' => microtime(true)];
+
         if ($this->reranker && $this->rerankBuilder) {
             yield ['type' => 'rerank_start', 'timestamp' => microtime(true)];
 
@@ -259,6 +264,10 @@ class NewRag
         } else {
             $documentHits = $documentHits;
         }
+
+        $this->documentHits = $documentHits;
+
+        yield ['type' => 'hits', 'data' => $this->documentHits, 'timestamp' => microtime(true)];
 
         yield ['type' => 'prompt_start', 'timestamp' => microtime(true)];
 

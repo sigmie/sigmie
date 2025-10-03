@@ -9,4 +9,6 @@ interface LLMAnswer
     public function model(): string;
 
     public function __toString(): string;
+
+    public function totalTokens(): int;
 }

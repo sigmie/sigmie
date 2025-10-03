@@ -9,12 +9,14 @@ use Sigmie\AI\APIs\OpenAIConversationsApi;
 use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 use Sigmie\AI\APIs\OpenAIResponseApi;
 use Sigmie\AI\APIs\VoyageRerankApi;
+use Sigmie\AI\Contracts\LLMAnswer as ContractsLLMAnswer;
 use Sigmie\AI\ProviderFactory;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Rag\NewRerank;
 use Sigmie\Rag\LLMAnswer;
+use Sigmie\Rag\RagAnswer;
 use Sigmie\Search\NewContextComposer;
 use Sigmie\Search\NewRag;
 use Sigmie\Search\NewRagPrompt;
@@ -63,7 +65,7 @@ class RagTest extends TestCase
             ->queryString('What are good dog names?')
             ->size(2);
 
-        $json = $sigmie
+        $ragAnswer = $sigmie
             ->newRag($llm)
             ->search($newSearch)
             ->prompt(function (NewRagPrompt $prompt) {
@@ -78,7 +80,7 @@ class RagTest extends TestCase
             })
             ->jsonAnswer();
 
-        $json = $json->json();
+        $json = $ragAnswer->llmAnswear->json();
 
         $this->assertIsArray($json);
         $this->assertArrayHasKey('dog_names', $json);
@@ -180,10 +182,11 @@ class RagTest extends TestCase
                     'content' => 'Context: [{"text":"Patient privacy and confidentiality are essential for maintaining trust and respect in healthcare."}]' ]
             ],
             'stream' => false
-        ], $answer->request);
+        ], $answer->llmAnswear->request);
 
-        $this->assertInstanceOf(LLMAnswer::class, $answer);
-        $this->assertEquals('gpt-5-nano', $answer->model());
+        $this->assertInstanceOf(RagAnswer::class, $answer);
+        $this->assertInstanceOf(ContractsLLMAnswer::class, $answer->llmAnswear);
+        $this->assertEquals('gpt-5-nano', $answer->llmAnswear->model());
     }
 
     /**
@@ -242,6 +245,7 @@ class RagTest extends TestCase
         $expectedEventTypes = [
             'search_start',
             'search_complete',
+            'search_hits',
             'rerank_start',
             'rerank_complete',
             'prompt_start',
@@ -255,6 +259,7 @@ class RagTest extends TestCase
 
         $streamedEvents = [];
         $llmContent = '';
+        $searchHits = null;
 
         // Stream answer and collect events
         $stream = $sigmie
@@ -276,21 +281,31 @@ class RagTest extends TestCase
         // Process stream and collect events
         foreach ($stream as $event) {
             $streamedEvents[] = $event['type'];
-            
+
             // Collect LLM content chunks
             if ($event['type'] === 'llm_chunk') {
                 $llmContent .= $event['content'];
             }
 
+            // Collect search hits
+            if ($event['type'] === 'search_hits') {
+                $searchHits = $event['data'];
+            }
+
             // Verify event has required fields
             $this->assertArrayHasKey('type', $event);
             $this->assertArrayHasKey('timestamp', $event);
-            
+
             // Verify event-specific fields
             if ($event['type'] === 'search_complete' || $event['type'] === 'rerank_complete') {
                 $this->assertArrayHasKey('hits', $event);
             }
-            
+
+            if ($event['type'] === 'search_hits') {
+                $this->assertArrayHasKey('data', $event);
+                $this->assertIsArray($event['data']);
+            }
+
             if ($event['type'] === 'llm_chunk') {
                 $this->assertArrayHasKey('content', $event);
             }
@@ -307,6 +322,7 @@ class RagTest extends TestCase
         // Verify event order
         $searchStartIndex = array_search('search_start', $streamedEvents);
         $searchCompleteIndex = array_search('search_complete', $streamedEvents);
+        $searchHitsIndex = array_search('search_hits', $streamedEvents);
         $rerankStartIndex = array_search('rerank_start', $streamedEvents);
         $rerankCompleteIndex = array_search('rerank_complete', $streamedEvents);
         $promptStartIndex = array_search('prompt_start', $streamedEvents);
@@ -319,13 +335,14 @@ class RagTest extends TestCase
 
         // Assert proper ordering
         $this->assertLessThan($searchCompleteIndex, $searchStartIndex, 'search_start should come before search_complete');
+        $this->assertLessThan($searchHitsIndex, $searchCompleteIndex, 'search_complete should come before search_hits');
         $this->assertLessThan($rerankCompleteIndex, $rerankStartIndex, 'rerank_start should come before rerank_complete');
         $this->assertLessThan($promptCompleteIndex, $promptStartIndex, 'prompt_start should come before prompt_complete');
         $this->assertLessThan($llmCompleteIndex, $llmStartIndex, 'llm_start should come before llm_complete');
         $this->assertLessThan($turnStoreCompleteIndex, $turnStoreStartIndex, 'turn_store_start should come before turn_store_complete');
 
         // Assert sequential process order
-        $this->assertLessThan($rerankStartIndex, $searchCompleteIndex, 'search should complete before rerank starts');
+        $this->assertLessThan($rerankStartIndex, $searchHitsIndex, 'search_hits should be emitted before rerank starts');
         $this->assertLessThan($promptStartIndex, $rerankCompleteIndex, 'rerank should complete before prompt starts');
         $this->assertLessThan($llmStartIndex, $promptCompleteIndex, 'prompt should complete before llm starts');
         $this->assertLessThan($turnStoreStartIndex, $llmCompleteIndex, 'llm should complete before turn_store starts');
@@ -336,8 +353,20 @@ class RagTest extends TestCase
         // Verify that llm_chunk events happened between llm_start and llm_complete
         $firstChunkIndex = array_search('llm_chunk', $streamedEvents);
         $lastChunkIndex = array_search('llm_chunk', array_reverse($streamedEvents, true));
-        
+
         $this->assertGreaterThan($llmStartIndex, $firstChunkIndex, 'First llm_chunk should come after llm_start');
         $this->assertLessThan($llmCompleteIndex, $lastChunkIndex, 'Last llm_chunk should come before llm_complete');
+
+        // Verify search hits were captured
+        $this->assertNotNull($searchHits, 'Search hits should be captured from search_hits event');
+        $this->assertIsArray($searchHits, 'Search hits should be an array');
+        $this->assertCount(2, $searchHits, 'Should have 2 search hits before reranking');
+
+        // Verify search hits structure
+        foreach ($searchHits as $hit) {
+            $this->assertInstanceOf(Hit::class, $hit, 'Each search hit should be a Hit instance');
+            $this->assertArrayHasKey('text', $hit->_source, 'Hit should have text field');
+            $this->assertArrayHasKey('title', $hit->_source, 'Hit should have title field');
+        }
     }
 }

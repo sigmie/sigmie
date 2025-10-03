@@ -20,7 +20,6 @@ abstract class LLMAnswer
         public readonly array $request,
         public readonly array $response,
     ) {
-        $this->timestamp = (new DateTime('now'))->format('Y-m-d\TH:i:s.uP');
     }
 
     public function model(): string
@@ -31,6 +30,11 @@ abstract class LLMAnswer
     public function conversation(string $conversationId)
     {
         $this->conversationId = $conversationId;
+    }
+
+    public function totalTokens(): int
+    {
+        return $this->response['usage']['total_tokens'] ?? 0;
     }
 
     abstract public function __toString(): string;

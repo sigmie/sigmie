@@ -19,6 +19,11 @@ class OpenAIAnswer implements LLMAnswerInterface
         return $this->model;
     }
 
+    public function totalTokens(): int
+    {
+        return $this->response['usage']['total_tokens'] ?? 0;
+    }
+
     public function __toString(): string
     {
         // Extract the output text from the response
