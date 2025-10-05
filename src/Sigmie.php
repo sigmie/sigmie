@@ -33,6 +33,7 @@ use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewTemplate;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\AI\History\Index as HistoryIndex;
+use Sigmie\Classification\NewClassification;
 
 class Sigmie
 {
@@ -132,6 +133,11 @@ class Sigmie
             $this->embeddingsApi,
             $refresh ? 'true' : 'false'
         );
+    }
+
+    public function newClassification(EmbeddingsApi $embeddingsApi): NewClassification
+    {
+        return new NewClassification($embeddingsApi);
     }
 
     public function rawQuery(
