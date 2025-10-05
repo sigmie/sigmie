@@ -11,7 +11,6 @@ use Sigmie\Enums\CohereInputType;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Semantic\Providers\Noop;
-use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
@@ -23,7 +22,9 @@ class SemanticTest extends TestCase
     public function nested_semantic_fields()
     {
         $indexName = uniqid();
-        $provider = new SigmieAI;
+
+        $embeddingApi = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
+        $sigmie = $this->sigmie->embedder($embeddingApi);
 
         $blueprint = new NewProperties();
         $blueprint->nested('charachter', function (NewProperties $blueprint) {
@@ -38,15 +39,13 @@ class SemanticTest extends TestCase
             });
         });
 
-        $this->sigmie->newIndex($indexName)
+        $sigmie->newIndex($indexName)
             ->properties($blueprint)
-            ->aiProvider($provider)
             ->create();
 
-        $this->sigmie
+        $sigmie
             ->collect($indexName, refresh: true)
             ->properties($blueprint)
-            ->aiProvider($provider)
             ->merge([
                 new Document([
                     'charachter' => [
@@ -76,7 +75,7 @@ class SemanticTest extends TestCase
                 ]),
             ]);
 
-        $search = $this->sigmie
+        $search = $sigmie
             ->newSearch($indexName)
             ->properties($blueprint)
             ->semantic()
@@ -86,12 +85,14 @@ class SemanticTest extends TestCase
 
         $nestedQuery = $search->makeSearch()->toRaw();
 
-        $response = $search->get();
-
         $this->assertArrayHasKey('knn', $nestedQuery);
         $this->assertEquals('embeddings.charachter.details.meta.extra.deep.deepnote.m32_efc200_dims256_cosine_avg', $nestedQuery['knn'][0]['field']);
 
-        $this->assertEquals('Queen', $response->json('hits.0._source.charachter.details.meta.extra.deep.deepnote')[0] ?? null);
+        $response = $search->get();
+
+        $hit = $response->json('hits.0._source');
+
+        $this->assertEquals('Queen', $hit['charachter']['details']['meta']['extra']['deep']['deepnote'][0] ?? null);
     }
 
     /**
