@@ -77,4 +77,78 @@ class ClassificationTest extends TestCase
         $this->assertEquals('sales', $result->label());
         $this->assertGreaterThan(0.7, $result->confidence());
     }
+
+    /**
+     * @test
+     */
+    public function kmeans_clustering()
+    {
+        $embeddingsApi = new CohereEmbeddingsApi(
+            getenv('COHERE_API_KEY'),
+            CohereInputType::Clustering
+        );
+
+        $texts = [
+            'The Lion King',
+            'Beauty and the Beast',
+            'Aladdin',
+            'Frozen',
+            'Moana',
+            'Mulan',
+            'The Little Mermaid',
+            'Tangled',
+            'Zootopia',
+            'Toy Story',
+        ];
+
+        $result = $this->sigmie->newClustering($embeddingsApi)
+            ->texts($texts)
+            ->algorithm('kmeans')
+            ->clusters(3)
+            ->fit();
+
+        $this->assertEquals(3, $result->clusterCount());
+        $this->assertCount(10, $result->assignments());
+
+        $clusters = $result->clusters();
+        $this->assertCount(3, $clusters);
+
+        // Each cluster should have at least one item
+        foreach ($clusters as $clusterId => $items) {
+            $this->assertGreaterThan(0, count($items));
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function hdbscan_clustering()
+    {
+        $embeddingsApi = new CohereEmbeddingsApi(
+            getenv('COHERE_API_KEY'),
+            CohereInputType::Clustering
+        );
+
+        $texts = [
+            'The Lion King',
+            'Beauty and the Beast',
+            'Aladdin',
+            'Frozen',
+            'Moana',
+            'Mulan',
+            'The Little Mermaid',
+            'Tangled',
+        ];
+
+        $result = $this->sigmie->newClustering($embeddingsApi)
+            ->texts($texts)
+            ->algorithm('hdbscan')
+            ->fit();
+
+        $this->assertGreaterThanOrEqual(0, $result->clusterCount());
+        $this->assertCount(8, $result->assignments());
+
+        $clusters = $result->clusters();
+        $this->assertGreaterThan(0, count($clusters));
+    }
 }

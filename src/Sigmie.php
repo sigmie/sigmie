@@ -34,6 +34,7 @@ use Sigmie\Search\NewTemplate;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\AI\History\Index as HistoryIndex;
 use Sigmie\Classification\NewClassification;
+use Sigmie\Clustering\NewClustering;
 
 class Sigmie
 {
@@ -138,6 +139,11 @@ class Sigmie
     public function newClassification(EmbeddingsApi $embeddingsApi): NewClassification
     {
         return new NewClassification($embeddingsApi);
+    }
+
+    public function newClustering(EmbeddingsApi $embeddingsApi): NewClustering
+    {
+        return new NewClustering($embeddingsApi);
     }
 
     public function rawQuery(
