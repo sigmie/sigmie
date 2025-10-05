@@ -16,7 +16,7 @@ Sigmie v2 introduces a modular API architecture that separates concerns and prov
 ### Core Interfaces
 
 - **`EmbeddingsApi`** - Interface for embedding operations
-- **`LLMApi`** - Interface for language model operations  
+- **`LLMApi`** - Interface for language model operations
 - **`RerankApi`** - Interface for reranking operations
 
 ### OpenAI API Classes
@@ -59,7 +59,7 @@ $llm = new OpenAIResponseApi('your-openai-api-key');
 $sigmie = $this->sigmie->embedder($embeddings);
 
 // Create a basic RAG query
-$responses = $sigmie
+$ragAnswer = $sigmie
     ->newRag($llm)
     ->search(
         $sigmie->newSearch('my-index')
@@ -78,9 +78,17 @@ $responses = $sigmie
     ->limits(maxTokens: 500, temperature: 0.1)
     ->answer();
 
-// Get the RagResponse object
-foreach ($responses as $ragResponse) {
-    echo $ragResponse->finalAnswer();
+// Access the answer
+echo $ragAnswer->__toString();
+
+// Access metadata
+echo "Total tokens used: " . $ragAnswer->totalTokens() . "\n";
+echo "Model: " . $ragAnswer->model() . "\n";
+echo "Conversation ID: " . $ragAnswer->conversationId . "\n";
+
+// Access search hits
+foreach ($ragAnswer->hits as $hit) {
+    echo "Source: {$hit['_source']['title']}\n";
 }
 ```
 
@@ -110,7 +118,7 @@ $llm = new OpenAIConversationsApi(
 
 $sigmie = $this->sigmie->embedder($embeddings);
 
-$answer = $sigmie
+$ragAnswer = $sigmie
     ->newRag($llm)
     ->search($searchBuilder)
     ->prompt(function (NewRagPrompt $prompt) {
@@ -118,18 +126,10 @@ $answer = $sigmie
         $prompt->contextFields(['text', 'title']);
     })
     ->instructions("Be concise and precise")
-    ->answer(stream: true);
+    ->answer();
 
-foreach ($answer as $chunk) {
-    if (is_array($chunk)) {
-        // Handle events
-        if ($chunk['type'] === 'conversation.created') {
-            echo "Conversation: {$chunk['conversation_id']}\n";
-        } elseif ($chunk['type'] === 'content.delta') {
-            echo $chunk['delta'];
-        }
-    }
-}
+echo $ragAnswer->__toString();
+echo "Conversation: {$ragAnswer->conversationId}\n";
 ```
 
 ### High-Quality Search with Voyage Embeddings and Reranking
@@ -146,7 +146,7 @@ $reranker = new VoyageRerankApi('your-voyage-api-key');
 
 $sigmie = $this->sigmie->embedder($embeddings);
 
-$answer = $sigmie
+$ragAnswer = $sigmie
     ->newRag($llm)
     ->reranker($reranker)
     ->search($searchBuilder)
@@ -159,28 +159,116 @@ $answer = $sigmie
         $prompt->question('What is the privacy policy?');
         $prompt->contextFields(['text', 'title']);
     })
-    ->answer(stream: false);
+    ->answer();
 
-foreach ($answer as $ragResponse) {
-    echo $ragResponse->finalAnswer();
+echo $ragAnswer->__toString();
+echo "Used {$ragAnswer->totalTokens()} tokens\n";
+```
+
+## RagAnswer Class
+
+The `RagAnswer` class wraps the complete RAG response, providing access to both the search hits and the LLM answer.
+
+### Properties
+
+```php
+class RagAnswer
+{
+    public readonly array $hits;                         // Array of \Sigmie\Document\Hit objects
+    public readonly LLMAnswer|LLMJsonAnswer $llmAnswear; // The LLM answer
+    public readonly ?string $conversationId;             // Optional conversation ID
 }
+```
+
+### Methods
+
+**`__toString(): string`**
+Returns the LLM answer as a string.
+
+```php
+$ragAnswer = $rag->answer();
+echo $ragAnswer; // Automatically calls __toString()
+```
+
+**`totalTokens(): int`**
+Returns the total number of tokens used in the LLM response.
+
+```php
+$ragAnswer = $rag->answer();
+echo "Tokens used: " . $ragAnswer->totalTokens();
+```
+
+**`model(): string`**
+Returns the name of the LLM model used.
+
+```php
+$ragAnswer = $rag->answer();
+echo "Model: " . $ragAnswer->model();
+```
+
+### Accessing Search Hits
+
+The `$hits` property contains all the search hits that were used to generate the answer:
+
+```php
+$ragAnswer = $rag->answer();
+
+// Iterate through hits
+foreach ($ragAnswer->hits as $hit) {
+    echo "Document ID: {$hit['_id']}\n";
+    echo "Score: {$hit['_score']}\n";
+    echo "Title: {$hit['_source']['title']}\n";
+    echo "Content: {$hit['_source']['content']}\n";
+}
+
+// Get hit count
+$hitCount = count($ragAnswer->hits);
+echo "Used {$hitCount} documents";
+```
+
+### Token Usage Tracking
+
+All RAG responses now include token usage information:
+
+```php
+$ragAnswer = $rag->answer();
+
+// Get total tokens
+$tokens = $ragAnswer->totalTokens();
+
+// Example: Calculate cost
+$costPerToken = 0.00002; // $0.02 per 1K tokens
+$cost = ($tokens / 1000) * $costPerToken;
+echo "Request cost: $" . number_format($cost, 4);
 ```
 
 ## Enhanced Streaming Events
 
 The new architecture provides fine-grained control over the RAG pipeline with detailed streaming events. Here are all the events in order:
 
-1. **`conversation.created`** - Conversation was created with ID (OpenAIConversationsApi only)
-2. **`search.started`** - Starting document search
-3. **`search.completed`** - Found X documents
-4. **`rerank.started`** - Starting reranking (if enabled)
-5. **`rerank.completed`** - Reranked to top K documents
-6. **`prompt.generated`** - RAG prompt created
-7. **`stream.start`** - Response streaming begins with context
-8. **`llm.request.started`** - LLM processing started
-9. **`llm.first_token`** - First response token received
-10. **`content.delta`** - Text chunks as they arrive
-11. **`stream.complete`** - Streaming finished
+1. **`search_start`** - Starting document search
+2. **`search_complete`** - Found X documents
+3. **`search_hits`** - Provides access to the document hits array
+4. **`rerank_start`** - Starting reranking (if enabled)
+5. **`rerank_complete`** - Reranked to top K documents
+6. **`prompt_generated`** - RAG prompt created
+7. **`llm_request_start`** - LLM processing started
+8. **`llm_chunk`** - Text chunks as they arrive
+9. **`llm_complete`** - LLM response finished
+
+### Event Details
+
+**`search_hits` Event**
+
+Emitted after `search_complete` and before `rerank_start`. Provides access to the document hits that were found.
+
+```php
+[
+    'type' => 'search_hits',
+    'data' => [...], // Array of \Sigmie\Document\Hit objects
+    'timestamp' => 1234567890.1234
+]
+```
 
 ### Event-Driven Example
 
@@ -192,135 +280,52 @@ $stream = $sigmie
         $prompt->question('What are renewable energy benefits?');
         $prompt->contextFields(['title', 'content']);
     })
-    ->answer(stream: true);
+    ->streamAnswer();
+
+$searchHits = [];
+$fullResponse = '';
 
 foreach ($stream as $event) {
-    if (is_array($event)) {
-        switch ($event['type']) {
-            case 'conversation.created':
-                echo "Created conversation: {$event['conversation_id']}\n";
-                break;
-            case 'search.started':
-                echo "Searching for documents...\n";
-                break;
-            case 'search.completed':
-                echo "Found {$event['metadata']['document_count']} documents\n";
-                break;
-            case 'rerank.started':
-                echo "Reranking documents...\n";
-                break;
-            case 'rerank.completed':
-                echo "Reranked to {$event['metadata']['reranked_count']} documents\n";
-                break;
-            case 'prompt.generated':
-                echo "Generated RAG prompt\n";
-                break;
-            case 'stream.start':
-                $context = $event['context'];
-                echo "Starting response with {$context['retrieved_count']} documents\n";
-                break;
-            case 'llm.request.started':
-                echo "Generating response...\n";
-                break;
-            case 'llm.first_token':
-                echo "Response stream started\n";
-                break;
-            case 'content.delta':
-                echo $event['delta'];
-                flush();
-                break;
-            case 'stream.complete':
-                echo "\nResponse complete!\n";
-                break;
-        }
+    switch ($event['type']) {
+        case 'search_start':
+            echo "Searching for documents...\n";
+            break;
+        case 'search_complete':
+            echo "Found {$event['hits']} documents\n";
+            break;
+        case 'search_hits':
+            // Access the document hits
+            $searchHits = $event['data'];
+            echo "Retrieved documents:\n";
+            foreach ($searchHits as $hit) {
+                echo "- {$hit['_source']['title']}\n";
+            }
+            break;
+        case 'rerank_start':
+            echo "Reranking documents...\n";
+            break;
+        case 'rerank_complete':
+            echo "Reranked to {$event['hits']} documents\n";
+            break;
+        case 'prompt_generated':
+            echo "Generated RAG prompt\n";
+            break;
+        case 'llm_request_start':
+            echo "Generating response...\n";
+            break;
+        case 'llm_chunk':
+            echo $event['data'];
+            $fullResponse .= $event['data'];
+            flush();
+            break;
+        case 'llm_complete':
+            echo "\nResponse complete!\n";
+            break;
     }
 }
-```
 
-## Enhanced RagResponse Object
-
-The `RagResponse` object has been enhanced to include conversation management:
-
-### New Methods
-
-```php
-$responses = $rag->answer(stream: false);
-
-foreach ($responses as $ragResponse) {
-    // Get conversation ID (when using OpenAIConversationsApi)
-    $conversationId = $ragResponse->conversationId();
-    
-    // Existing methods
-    $answer = $ragResponse->finalAnswer();
-    $retrievedDocs = $ragResponse->retrievedDocuments();
-    $rerankedDocs = $ragResponse->rerankedDocuments();
-    $hasReranking = $ragResponse->hasReranking();
-    $prompt = $ragResponse->prompt();
-    
-    // Enhanced context with conversation ID
-    $context = $ragResponse->context();
-    // Returns:
-    // [
-    //     'retrieved_count' => 5,
-    //     'reranked_count' => 3,
-    //     'has_reranking' => true,
-    //     'documents' => [...],
-    //     'conversation_id' => 'conv_abc123'
-    // ]
-    
-    // Enhanced toArray output
-    $array = $ragResponse->toArray();
-    // Includes conversation_id in output
-}
-```
-
-## Conversation Management
-
-The `OpenAIConversationsApi` provides methods for conversation management:
-
-### Creating and Reusing Conversations
-
-```php
-// Create new conversation
-$api = new OpenAIConversationsApi($apiKey);
-
-// Get current conversation ID
-$conversationId = $api->conversation();
-
-// Access metadata
-$metadata = $api->metadata(); // Returns ['conversation' => $id, 'model' => $model]
-
-// Reuse existing conversation
-$existingApi = new OpenAIConversationsApi(
-    apiKey: $apiKey,
-    conversationId: 'conv_existing_123'
-);
-```
-
-### Conversation Context in RAG
-
-```php
-$llm = new OpenAIConversationsApi($apiKey);
-
-$ragResponse = $sigmie
-    ->newRag($llm)
-    ->search($searchBuilder)
-    ->prompt(function (NewRagPrompt $prompt) {
-        $prompt->question('Follow-up question about previous topic');
-        $prompt->contextFields(['text']);
-    })
-    ->answer(stream: false);
-
-foreach ($ragResponse as $response) {
-    // Conversation ID is automatically included
-    $conversationId = $response->conversationId();
-    
-    // Use this ID for subsequent requests to maintain context
-    $followUpLlm = new OpenAIConversationsApi(
-        apiKey: $apiKey,
-        conversationId: $conversationId
-    );
-}
+// You now have access to both the hits and the full response
+echo "\n\nUsed " . count($searchHits) . " documents\n";
 ```
 
 ## Configuration Options
@@ -351,9 +356,9 @@ $rag->multiSearch(function ($multiSearch) {
         ->newSearch('articles')
         ->queryString('machine learning basics')
         ->size(3);
-        
+
     $multiSearch
-        ->newSearch('tutorials') 
+        ->newSearch('tutorials')
         ->queryString('ML getting started')
         ->size(2);
 });
@@ -384,27 +389,27 @@ Customize how the retrieved context is formatted into the LLM prompt:
 ```php
 $rag->prompt(function (NewRagPrompt $prompt) {
     $prompt->question('What are the benefits of renewable energy?');
-    
+
     // Specify which fields from search results to include
     $prompt->contextFields(['title', 'summary', 'key_points']);
-    
+
     // Add guardrails to guide the LLM's behavior
     $prompt->guardrails([
         'Answer only from provided context',
-        'Do not fabricate facts', 
+        'Do not fabricate facts',
         'Be concise and use bullet points when possible',
         'Cite sources as [^id]'
     ]);
-    
+
     // Use a custom prompt template
     $prompt->template('
         Question: {{question}}
-        
+
         Guidelines: {{guardrails}}
-        
+
         Relevant Information:
         {{context}}
-        
+
         Please provide a comprehensive answer:
     ');
 });
@@ -435,88 +440,114 @@ $rag->limits(
 
 ## Response Methods
 
-### answer() - Unified Streaming and Non-Streaming API
+### answer() - Non-Streaming Response
 
-The `answer()` method provides a unified interface for both streaming and non-streaming responses through the `stream` parameter:
-
-#### Non-Streaming Response (Default)
-
-Get complete RagResponse objects synchronously:
+Get a complete `RagAnswer` object synchronously:
 
 ```php
-$responses = $rag->answer(stream: false);
-// or simply: $responses = $rag->answer();
+$ragAnswer = $rag->answer();
 
-foreach ($responses as $ragResponse) {
-    // Access the final answer
-    $answer = $ragResponse->finalAnswer();
-    
-    // Get conversation ID (if using OpenAIConversationsApi)
-    $conversationId = $ragResponse->conversationId();
-    
-    // Get context information
-    $context = $ragResponse->context();
-    echo "Retrieved: {$context['retrieved_count']} documents\n";
-    
-    if ($context['has_reranking']) {
-        echo "Reranked to: {$context['reranked_count']} documents\n";
-    }
-    
-    // Access retrieved documents
-    foreach ($ragResponse->retrievedDocuments() as $doc) {
-        echo "Source: {$doc['title']}\n";
-    }
-    
-    echo "Answer: {$answer}\n";
+// Access the answer text
+echo $ragAnswer->__toString();
+// or simply:
+echo $ragAnswer;
+
+// Get token usage
+echo "Tokens: " . $ragAnswer->totalTokens() . "\n";
+
+// Get model name
+echo "Model: " . $ragAnswer->model() . "\n";
+
+// Get conversation ID
+echo "Conversation: " . $ragAnswer->conversationId . "\n";
+
+// Access search hits
+foreach ($ragAnswer->hits as $hit) {
+    echo "Source: {$hit['_source']['title']}\n";
 }
 ```
 
-#### Streaming Response
+### jsonAnswer() - Structured JSON Response
+
+Get a structured JSON response with schema validation:
+
+```php
+$ragAnswer = $rag
+    ->jsonSchema([
+        'type' => 'object',
+        'properties' => [
+            'answer' => ['type' => 'string'],
+            'confidence' => ['type' => 'number'],
+            'sources' => [
+                'type' => 'array',
+                'items' => ['type' => 'string']
+            ]
+        ],
+        'required' => ['answer', 'confidence']
+    ])
+    ->jsonAnswer();
+
+// Access the structured response
+$json = json_decode($ragAnswer->__toString(), true);
+echo "Answer: {$json['answer']}\n";
+echo "Confidence: {$json['confidence']}\n";
+
+// Still get token usage and hits
+echo "Tokens: " . $ragAnswer->totalTokens() . "\n";
+foreach ($ragAnswer->hits as $hit) {
+    echo "Source: {$hit['_id']}\n";
+}
+```
+
+### streamAnswer() - Real-Time Streaming
 
 Stream the answer in real-time with structured events:
 
 ```php
-$stream = $rag->answer(stream: true);
+$stream = $rag->streamAnswer();
 
 $fullResponse = '';
-$context = null;
-$conversationId = null;
+$searchHits = [];
 
-foreach ($stream as $chunk) {
-    if (is_array($chunk)) {
-        switch ($chunk['type']) {
-            case 'conversation.created':
-                $conversationId = $chunk['conversation_id'];
-                echo "Conversation: {$conversationId}\n";
-                break;
-            case 'search.completed':
-                echo "Found {$chunk['metadata']['document_count']} documents\n";
-                break;
-            case 'stream.start':
-                // Initial context with retrieved and reranked docs
-                $context = $chunk['context'];
-                echo "Processing {$context['retrieved_count']} documents...\n";
-                if ($context['has_reranking']) {
-                    echo "Reranked to {$context['reranked_count']} documents\n";
-                }
-                break;
-            case 'content.delta':
-                // Stream text chunks in real-time
-                echo $chunk['delta'];
-                $fullResponse .= $chunk['delta'];
-                flush();
-                break;
-            case 'stream.complete':
-                echo "\nComplete!\n";
-                break;
-        }
+foreach ($stream as $event) {
+    switch ($event['type']) {
+        case 'search_start':
+            echo "Searching...\n";
+            break;
+        case 'search_complete':
+            echo "Found {$event['hits']} documents\n";
+            break;
+        case 'search_hits':
+            // Store hits for later use
+            $searchHits = $event['data'];
+            echo "Retrieved:\n";
+            foreach ($searchHits as $hit) {
+                echo "- {$hit['_source']['title']}\n";
+            }
+            break;
+        case 'rerank_complete':
+            echo "Reranked to {$event['hits']} documents\n";
+            break;
+        case 'llm_chunk':
+            // Stream text chunks in real-time
+            echo $event['data'];
+            $fullResponse .= $event['data'];
+            flush();
+            break;
+        case 'llm_complete':
+            echo "\nComplete!\n";
+            break;
     }
 }
+
+// After streaming, you have both the full response and the hits
+echo "\nFull answer length: " . strlen($fullResponse) . " chars\n";
+echo "Based on " . count($searchHits) . " documents\n";
 ```
 
 ## Advanced Examples
 
-### Semantic Search with Streaming and Pipeline Inspection
+### Semantic Search with Token Tracking
 
 ```php
 use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
@@ -535,7 +566,7 @@ $props->text('content')->semantic(accuracy: 1, dimensions: 256);
 
 $sigmie = $this->sigmie->embedder($embeddings);
 
-$stream = $sigmie
+$ragAnswer = $sigmie
     ->newRag($llm)
     ->reranker($voyageReranker)
     ->search(
@@ -561,42 +592,87 @@ $stream = $sigmie
     })
     ->instructions('You are a biology teacher explaining complex topics clearly.')
     ->limits(maxTokens: 600, temperature: 0.2)
-    ->answer(stream: true);
+    ->answer();
 
-// Stream the response with detailed logging
-foreach ($stream as $chunk) {
-    if (is_array($chunk)) {
-        switch ($chunk['type']) {
-            case 'conversation.created':
-                echo "=== Conversation {$chunk['conversation_id']} ===\n";
-                break;
-            case 'stream.start':
-                $context = $chunk['context'];
-                echo "=== RAG Pipeline Started ===\n";
-                echo "Retrieved: {$context['retrieved_count']} documents\n";
-                echo "Reranked: {$context['reranked_count']} documents\n";
-                echo "Sources:\n";
-                foreach ($context['documents'] as $doc) {
-                    echo "- {$doc['title']}\n";
-                }
-                echo "\n=== Generating Answer ===\n";
-                break;
-            case 'content.delta':
-                echo $chunk['delta'];
-                flush();
-                break;
-            case 'stream.complete':
-                echo "\n\n=== Generation Complete ===\n";
-                break;
-        }
+// Display the answer
+echo $ragAnswer . "\n\n";
+
+// Display metadata
+echo "=== Metadata ===\n";
+echo "Model: {$ragAnswer->model()}\n";
+echo "Tokens: {$ragAnswer->totalTokens()}\n";
+echo "Conversation: {$ragAnswer->conversationId}\n";
+echo "Sources used: " . count($ragAnswer->hits) . "\n\n";
+
+// Display sources
+echo "=== Sources ===\n";
+foreach ($ragAnswer->hits as $hit) {
+    echo "- {$hit['_source']['title']} (score: {$hit['_score']})\n";
+}
+```
+
+### Streaming with Full Pipeline Inspection
+
+```php
+$stream = $sigmie
+    ->newRag($llm)
+    ->reranker($voyageReranker)
+    ->search($searchBuilder)
+    ->rerank(function ($rerank) {
+        $rerank->topK(3);
+    })
+    ->prompt(function ($prompt) {
+        $prompt->question('How does photosynthesis work?');
+        $prompt->contextFields(['title', 'content']);
+    })
+    ->streamAnswer();
+
+$searchHits = [];
+$fullAnswer = '';
+
+foreach ($stream as $event) {
+    switch ($event['type']) {
+        case 'search_start':
+            echo "=== Starting Search ===\n";
+            break;
+        case 'search_complete':
+            echo "Found {$event['hits']} documents\n";
+            break;
+        case 'search_hits':
+            $searchHits = $event['data'];
+            echo "\nRetrieved Documents:\n";
+            foreach ($searchHits as $i => $hit) {
+                echo ($i + 1) . ". {$hit['_source']['title']} (score: {$hit['_score']})\n";
+            }
+            echo "\n";
+            break;
+        case 'rerank_start':
+            echo "=== Reranking ===\n";
+            break;
+        case 'rerank_complete':
+            echo "Reranked to top {$event['hits']} documents\n\n";
+            break;
+        case 'llm_request_start':
+            echo "=== Generating Answer ===\n";
+            break;
+        case 'llm_chunk':
+            echo $event['data'];
+            $fullAnswer .= $event['data'];
+            flush();
+            break;
+        case 'llm_complete':
+            echo "\n\n=== Complete ===\n";
+            echo "Answer length: " . strlen($fullAnswer) . " characters\n";
+            echo "Based on " . count($searchHits) . " documents\n";
+            break;
     }
 }
 ```
 
-### Multi-Index Research with Full Context Access
+### Multi-Index Research with Token Optimization
 
 ```php
-$stream = $sigmie
+$ragAnswer = $sigmie
     ->newRag($llm)
     ->multiSearch(function ($multiSearch) {
         // Search academic papers
@@ -605,14 +681,14 @@ $stream = $sigmie
             ->queryString('climate change impacts')
             ->filters('peer_reviewed:true')
             ->size(3);
-            
-        // Search news articles  
+
+        // Search news articles
         $multiSearch
             ->newSearch('news')
             ->queryString('climate change 2024')
             ->filters('published_date:[2024-01-01 TO *]')
             ->size(2);
-            
+
         // Search government reports
         $multiSearch
             ->newSearch('reports')
@@ -629,18 +705,25 @@ $stream = $sigmie
             'Highlight consensus vs. conflicting information'
         ]);
     })
-    ->answer(stream: true);
+    ->limits(maxTokens: 1000)
+    ->answer();
 
-foreach ($stream as $chunk) {
-    if (is_array($chunk)) {
-        if ($chunk['type'] === 'stream.start') {
-            $context = $chunk['context'];
-            echo "Analyzed {$context['retrieved_count']} documents from multiple sources\n";
-        } elseif ($chunk['type'] === 'content.delta') {
-            echo $chunk['delta'];
-            flush();
-        }
-    }
+// Display comprehensive results
+echo $ragAnswer . "\n\n";
+
+echo "=== Research Summary ===\n";
+echo "Total sources: " . count($ragAnswer->hits) . "\n";
+echo "Tokens used: " . $ragAnswer->totalTokens() . "\n";
+echo "Model: " . $ragAnswer->model() . "\n\n";
+
+echo "=== Sources by Type ===\n";
+$byIndex = [];
+foreach ($ragAnswer->hits as $hit) {
+    $index = $hit['_index'];
+    $byIndex[$index] = ($byIndex[$index] ?? 0) + 1;
+}
+foreach ($byIndex as $index => $count) {
+    echo "{$index}: {$count} documents\n";
 }
 ```
 
@@ -672,10 +755,16 @@ $llm = new OpenAIResponseApi('your-openai-api-key');
 
 $sigmie = $this->sigmie->embedder($embeddings);
 
-$responses = $sigmie
+$ragAnswer = $sigmie
     ->newRag($llm)
     ->search($searchBuilder)
     ->answer();
+
+// New: Access to hits and metadata
+foreach ($ragAnswer->hits as $hit) {
+    echo "Source: {$hit['_source']['title']}\n";
+}
+echo "Tokens: " . $ragAnswer->totalTokens() . "\n";
 ```
 
 ### For Conversational RAG
@@ -688,6 +777,9 @@ $llm = new OpenAIConversationsApi(
     conversationId: null, // Creates new conversation
     metadata: ['project' => 'my-app']
 );
+
+$ragAnswer = $rag->answer();
+echo "Conversation ID: {$ragAnswer->conversationId}\n";
 ```
 
 ## Best Practices
@@ -736,6 +828,12 @@ $llm = new OpenAIConversationsApi(
 - **Higher temperature** (0.5-0.8) for creative or brainstorming tasks
 - **Set appropriate token limits** based on your use case (300-800 for summaries, 1000+ for detailed analysis)
 
+### Token Usage Optimization
+- **Monitor token usage** using `totalTokens()` to track costs
+- **Use shorter context fields** to reduce token consumption
+- **Limit search results** to only what's necessary (fewer hits = fewer tokens)
+- **Set maxTokens** appropriately to avoid unnecessarily long responses
+
 ### Performance Tips
 - **Use streaming** for long responses to improve perceived performance
 - **Cache frequent queries** at the application level
@@ -743,6 +841,7 @@ $llm = new OpenAIConversationsApi(
 - **Index optimization** - ensure your search indices are properly configured for your RAG queries
 
 ### Streaming Considerations
+- **Access search hits early** using the `search_hits` event to display sources before the answer completes
 - **Flush output buffers** regularly when displaying streaming content
 - **Handle connection timeouts** gracefully in web applications
 - **Process chunks immediately** to maintain streaming benefits
@@ -753,10 +852,9 @@ $llm = new OpenAIConversationsApi(
 ### Non-Streaming Error Handling
 ```php
 try {
-    $responses = $rag->answer(stream: false);
-    foreach ($responses as $ragResponse) {
-        echo $ragResponse->finalAnswer();
-    }
+    $ragAnswer = $rag->answer();
+    echo $ragAnswer;
+    echo "Tokens: " . $ragAnswer->totalTokens() . "\n";
 } catch (\RuntimeException $e) {
     if (str_contains($e->getMessage(), 'Search must be configured')) {
         echo "Please configure a search query first";
@@ -769,11 +867,11 @@ try {
 ### Streaming Error Handling
 ```php
 try {
-    $stream = $rag->answer(stream: true);
-    
-    foreach ($stream as $chunk) {
-        if (is_array($chunk) && $chunk['type'] === 'content.delta') {
-            echo $chunk['delta'];
+    $stream = $rag->streamAnswer();
+
+    foreach ($stream as $event) {
+        if ($event['type'] === 'llm_chunk') {
+            echo $event['data'];
             flush();
         }
     }
@@ -789,43 +887,83 @@ try {
 ## Integration with Web Applications
 
 ### Server-Sent Events Streaming
+
 ```php
 // Set headers for Server-Sent Events
 header('Content-Type: text/event-stream');
 header('Cache-Control: no-cache');
 header('Connection: keep-alive');
 
-$stream = $rag->answer(stream: true);
+$stream = $rag->streamAnswer();
 
-foreach ($stream as $chunk) {
-    if (is_array($chunk)) {
-        switch ($chunk['type']) {
-            case 'conversation.created':
-                echo "data: " . json_encode([
-                    'type' => 'conversation',
-                    'conversation_id' => $chunk['conversation_id']
-                ]) . "\n\n";
-                break;
-            case 'stream.start':
-                echo "data: " . json_encode([
-                    'type' => 'context',
-                    'retrieved_count' => $chunk['context']['retrieved_count'],
-                    'has_reranking' => $chunk['context']['has_reranking']
-                ]) . "\n\n";
-                break;
-            case 'content.delta':
-                echo "data: " . json_encode([
-                    'type' => 'delta',
-                    'content' => $chunk['delta']
-                ]) . "\n\n";
-                break;
-            case 'stream.complete':
-                echo "data: " . json_encode(['type' => 'done']) . "\n\n";
-                break;
-        }
-        flush();
+foreach ($stream as $event) {
+    switch ($event['type']) {
+        case 'search_complete':
+            echo "data: " . json_encode([
+                'type' => 'search',
+                'hits' => $event['hits']
+            ]) . "\n\n";
+            break;
+        case 'search_hits':
+            // Send hits to client
+            $hits = array_map(function($hit) {
+                return [
+                    'id' => $hit['_id'],
+                    'title' => $hit['_source']['title'],
+                    'score' => $hit['_score']
+                ];
+            }, $event['data']);
+            echo "data: " . json_encode([
+                'type' => 'sources',
+                'hits' => $hits
+            ]) . "\n\n";
+            break;
+        case 'rerank_complete':
+            echo "data: " . json_encode([
+                'type' => 'rerank',
+                'hits' => $event['hits']
+            ]) . "\n\n";
+            break;
+        case 'llm_chunk':
+            echo "data: " . json_encode([
+                'type' => 'delta',
+                'content' => $event['data']
+            ]) . "\n\n";
+            break;
+        case 'llm_complete':
+            echo "data: " . json_encode(['type' => 'done']) . "\n\n";
+            break;
     }
+    flush();
 }
+```
+
+### Token Usage Tracking for Billing
+
+```php
+// Track token usage for cost monitoring
+$ragAnswer = $rag->answer();
+
+$tokens = $ragAnswer->totalTokens();
+$model = $ragAnswer->model();
+
+// Example pricing (adjust for your actual costs)
+$pricing = [
+    'gpt-4' => ['input' => 0.03, 'output' => 0.06],
+    'gpt-3.5-turbo' => ['input' => 0.0005, 'output' => 0.0015],
+];
+
+$cost = ($tokens / 1000) * $pricing[$model]['output'];
+
+// Log for billing
+file_put_contents('usage.log', json_encode([
+    'timestamp' => time(),
+    'conversation_id' => $ragAnswer->conversationId,
+    'model' => $model,
+    'tokens' => $tokens,
+    'cost' => $cost,
+    'hits' => count($ragAnswer->hits)
+]) . "\n", FILE_APPEND);
 ```
 
 ### Security Considerations
@@ -834,6 +972,7 @@ foreach ($stream as $chunk) {
 - **Filter sensitive information** from context fields
 - **Use appropriate API key permissions** for your LLM and reranking services
 - **Monitor streaming connections** to prevent resource exhaustion
-- **Log RagResponse context** for audit trails while respecting privacy
+- **Track token usage** to prevent cost overruns
+- **Log conversations** for audit trails while respecting privacy
 
-This documentation covers the new modular API architecture where dedicated API classes handle specific responsibilities, providing developers with flexibility to choose the right combination of services for their RAG applications while maintaining full visibility into the pipeline through enhanced streaming events and the RagResponse object.
+This documentation covers the new modular API architecture where dedicated API classes handle specific responsibilities, providing developers with flexibility to choose the right combination of services for their RAG applications while maintaining full visibility into the pipeline through enhanced streaming events and the RagAnswer object.

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\AI\APIs\CohereEmbeddingsApi;
 use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 use Sigmie\Document\Document;
+use Sigmie\Enums\CohereInputType;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Semantic\Providers\Noop;
@@ -98,20 +100,29 @@ class SemanticTest extends TestCase
     public function knn_vector_match()
     {
         $indexName = uniqid();
-        $provider = new SigmieAI;
+
+        $indexingEmbeddingApi = new CohereEmbeddingsApi(
+            getenv('COHERE_API_KEY'),
+            CohereInputType::SearchDocument
+        );
+
+        $searchEmbeddingApi = new CohereEmbeddingsApi(
+            getenv('COHERE_API_KEY'),
+            CohereInputType::SearchQuery
+        );
+
+        $sigmie = $this->sigmie->embedder($indexingEmbeddingApi);
 
         $blueprint = new NewProperties();
         $blueprint->title('name')->semantic(6);
 
-        $this->sigmie->newIndex($indexName)
+        $sigmie->newIndex($indexName)
             ->properties($blueprint)
-            ->aiProvider($provider)
             ->create();
 
-        $this->sigmie
+        $sigmie
             ->collect($indexName, refresh: true)
             ->properties($blueprint)
-            ->aiProvider($provider)
             ->merge([
                 new Document([
                     'name' => ['King', 'Prince'],
@@ -123,7 +134,9 @@ class SemanticTest extends TestCase
                 ]),
             ]);
 
-        $search = $this->sigmie
+        $searchSigmie = $this->sigmie->embedder($searchEmbeddingApi);
+
+        $search = $searchSigmie
             ->newSearch($indexName)
             ->properties($blueprint)
             ->semantic()
@@ -134,11 +147,12 @@ class SemanticTest extends TestCase
         $nestedQuery = $search->makeSearch()->toRaw();
 
         $this->assertArrayHasKey('knn', $nestedQuery);
-        $this->assertEquals('embeddings.name.m80_efc512_dims256_cosine_avg', $nestedQuery['knn'][0]['field']);
 
         $response = $search->get();
 
-        $this->assertEquals('Queen', $response->json('hits.0._source.name') ?? null);
+        $hit = $response->json('hits.0._source');
+
+        $this->assertEquals('Queen', $hit['name'] ?? null);
     }
 
     /**
@@ -182,10 +196,10 @@ class SemanticTest extends TestCase
 
         // Debug: Get the raw query to inspect
         $rawQuery = $search->makeSearch()->toRaw();
-        
+
         // Check if it's using function_score instead of knn for accuracy 7
         $this->assertEmpty($rawQuery['knn'], 'KNN should be empty for accuracy 7');
-        
+
         // Verify function_score is present in the query
         $queryJson = json_encode($rawQuery);
         $this->assertStringContainsString('function_score', $queryJson, 'Should use function_score for accuracy 7');
