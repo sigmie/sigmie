@@ -18,7 +18,7 @@ use Sigmie\Mappings\Types\HTML;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\AI\Contracts\Embedder;
 use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\Semantic\DocumentEmbeddings;
+use Sigmie\Semantic\DocumentProcessor;
 use Traversable;
 use Sigmie\Shared\Collection;
 
@@ -139,8 +139,8 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     public function merge(array $docs): AliveCollection
     {
         if ($this->populateEmbeddings && $this->embeddingsApi) {
-            $documentEmbeddings = new DocumentEmbeddings($this->properties, $this->embeddingsApi);
-            $docs = array_map(fn(Document $doc) => $documentEmbeddings->make($doc), $docs);
+            $documentProcessor = new DocumentProcessor($this->properties, $this->embeddingsApi);
+            $docs = array_map(fn(Document $doc) => $documentProcessor->make($doc), $docs);
         }
 
         $collection = $this->upsertDocuments($this->name, $docs, $this->refresh);
@@ -154,9 +154,9 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
             return $document;
         }
 
-        $documentEmbeddings = new DocumentEmbeddings($this->properties, $this->embeddingsApi);
-        
-        return $documentEmbeddings->make($document);
+        $documentProcessor = new DocumentProcessor($this->properties, $this->embeddingsApi);
+
+        return $documentProcessor->make($document);
     }
 
     public function toArray(): array

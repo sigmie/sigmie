@@ -13,6 +13,7 @@ use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Boost;
 use Sigmie\Mappings\Types\Autocomplete;
+use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Date;
@@ -100,6 +101,15 @@ class NewProperties
     public function autocomplete(string $name = 'autocomplete'): Autocomplete
     {
         $field = new Autocomplete($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function combo(string $name, array $sourceFields): Combo
+    {
+        $field = new Combo($name, $sourceFields);
 
         $this->fields->add($field);
 

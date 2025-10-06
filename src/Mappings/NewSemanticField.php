@@ -92,12 +92,26 @@ class NewSemanticField
         }
 
         $this->strategy = match ($level) {
+            //   Concatenate (accuracy 1) is better for low accuracy because:
+            //   - Single embedding call - It concatenates all text chunks into one string and generates ONE embedding.
+            //     This is the fastest and cheapest approach.
+            //   - Good for short texts - When you have short content that fits within the model's token limit, concatenating everything
+            //     into a single embedding is efficient.
+            //   - Lower precision - Since it's treating all the text as one blob, you lose granularity. 
+            // .   But for accuracy level 1, that's acceptable - you're prioritizing speed/cost over precision.
             1 => VectorStrategy::Concatenate,
             2 => VectorStrategy::Concatenate,
+            //   Average (accuracy 2-6) generates multiple embeddings (one per text chunk) and then averages them. This:
+            //   - Costs more (multiple API calls)
+            //   - Handles longer texts better (splits content)
+            //   - Preserves more semantic information through averaging
             3 => VectorStrategy::Average,
             4 => VectorStrategy::Average,
             5 => VectorStrategy::Average,
             6 => VectorStrategy::Average,
+            //  ScriptScore (accuracy 7) is the most accurate 
+            //  - it searches across all individual embeddings without averaging, but it's
+            //    also the slowest and most expensive.
             7 => VectorStrategy::ScriptScore,
         };
 

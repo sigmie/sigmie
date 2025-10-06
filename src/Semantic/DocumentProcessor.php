@@ -10,13 +10,14 @@ use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Shared\Collection;
 
-class DocumentEmbeddings
+class DocumentProcessor
 {
     public function __construct(
         protected Properties $properties,
@@ -31,15 +32,36 @@ class DocumentEmbeddings
 
         $fields->each(function (Text $field, $name) use ($document, &$embeddings) {
 
-            $fieldName = $field->fullPath;
+            // Handle combo fields
+            if ($field instanceof Combo) {
+                $sourceValues = [];
+                foreach ($field->sourceFields() as $sourceField) {
+                    $sourceValue = dot($document->_source)->get($sourceField);
+                    if ($sourceValue) {
+                        if (is_array($sourceValue)) {
+                            $sourceValues = [...$sourceValues, ...$sourceValue];
+                        } else {
+                            $sourceValues[] = $sourceValue;
+                        }
+                    }
+                }
 
-            $value = dot($document->_source)->get($fieldName);
+                if (empty($sourceValues)) {
+                    return;
+                }
 
-            if (!$value) {
-                return;
+                $value = $sourceValues;
+            } else {
+                $fieldName = $field->fullPath;
+
+                $value = dot($document->_source)->get($fieldName);
+
+                if (!$value) {
+                    return;
+                }
+
+                $value = is_array($value) ? $value : [$value];
             }
-
-            $value = is_array($value) ? $value : [$value];
 
             if (count($value) === 0) {
                 return;

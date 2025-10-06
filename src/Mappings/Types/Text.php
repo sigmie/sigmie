@@ -83,7 +83,7 @@ class Text extends Type implements FromRaw
         $this->field(new Keyword('sortable'));
     }
 
-    public function newSemantic(Closure $closure): static
+    public function newSemantic(Closure $closure): NewSemanticField
     {
         $field = new NewSemanticField($this->name);
 
@@ -103,7 +103,7 @@ class Text extends Type implements FromRaw
 
         $this->vectors[] = $vector;
 
-        return $this;
+        return $field;
     }
 
     public function semantic(
@@ -113,7 +113,7 @@ class Text extends Type implements FromRaw
     ) {
         return $this->newSemantic(
             fn(NewSemanticField $semantic) =>
-                $semantic->accuracy($accuracy, $dimensions)
+            $semantic->accuracy($accuracy, $dimensions)
                 ->similarity($similarity)
         );
     }

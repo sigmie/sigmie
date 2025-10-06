@@ -15,6 +15,7 @@ use Sigmie\Mappings\Contracts\Type as ContractsType;
 use Sigmie\Mappings\Types\Autocomplete;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Boost;
+use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\GeoPoint;
@@ -264,6 +265,7 @@ class Properties extends Type implements ArrayAccess
     public function toRaw(): array
     {
         $fields = (new Collection($this->fields))
+            ->filter(fn(ContractsType $value) => !($value instanceof Combo))
             ->mapToDictionary(fn(ContractsType $value) => $value->toRaw())
             ->toArray();
 
