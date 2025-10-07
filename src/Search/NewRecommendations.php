@@ -9,6 +9,7 @@ use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
+use Sigmie\Query\Search;
 
 class NewRecommendations
 {
@@ -62,18 +63,44 @@ class NewRecommendations
         return $this;
     }
 
-    public function hits()
+    public function make(): Search
     {
         $newSearch = $this->search
             ->semantic()
             ->disableKeywordSearch();
 
+        $semanticFields = $this->properties->nestedSemanticFields()
+            ->filter(fn($field) => $field->isSemantic())
+            ->mapWithKeys(fn($field) => [$field->fullPath => $field])
+            ->toArray();
+
         foreach ($this->fields as $fieldConfig) {
-            $newSearch->queryString($fieldConfig['seed'], $fieldConfig['weight']);
+            $fieldName = $fieldConfig['name'];
+
+            // Skip if field is not semantic
+            if (!isset($semanticFields[$fieldName])) {
+                continue;
+            }
+
+            $newSearch->queryString($fieldConfig['seed'], $fieldConfig['weight'], [$fieldName]);
         }
 
         $newSearch->filters($this->filters);
 
-        return $this->search->get();
+        return $newSearch->makeSearch();
+    }
+
+    public function get()
+    {
+        $search = $this->make();
+
+        return $search->get();
+    }
+
+    public function hits()
+    {
+        $search = $this->make();
+
+        return $search->get()->hits();
     }
 }

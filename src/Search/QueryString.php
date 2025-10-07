@@ -10,17 +10,20 @@ class QueryString
     private float $weight;
     private ?int $dimension = null;
     private ?array $vector = null;
+    private ?array $fields = null;
 
     public function __construct(
         string $text,
         float $weight = 1.0,
         ?int $dimension = null,
-        ?array $vector = null
+        ?array $vector = null,
+        ?array $fields = null
     ) {
         $this->text = $text;
         $this->weight = $weight;
         $this->dimension = $dimension;
         $this->vector = $vector;
+        $this->fields = $fields;
     }
 
     public function text(): string
@@ -65,6 +68,16 @@ class QueryString
         return $this->dimension !== null;
     }
 
+    public function fields(): ?array
+    {
+        return $this->fields;
+    }
+
+    public function hasFields(): bool
+    {
+        return $this->fields !== null;
+    }
+
     public function toArray(): array
     {
         return [
@@ -72,6 +85,7 @@ class QueryString
             'weight' => $this->weight,
             'dimension' => $this->dimension,
             'vector' => $this->vector,
+            'fields' => $this->fields,
         ];
     }
 

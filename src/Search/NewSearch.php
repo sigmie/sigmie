@@ -94,9 +94,9 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this;
     }
 
-    public function queryString(string $query, float $weight = 1.0): static
+    public function queryString(string $query, float $weight = 1.0, ?array $fields = null): static
     {
-        $this->searchContext->queryStrings[] = new QueryString($query, $weight);
+        $this->searchContext->queryStrings[] = new QueryString($query, $weight, null, null, $fields);
 
         return $this;
     }
@@ -476,7 +476,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 continue;
             }
 
-            $result = $this->createVectorQuery($queryString->text(), $queryString->weight());
+            $result = $this->createVectorQuery($queryString->text(), $queryString->weight(), $queryString->fields());
             $allKnnQueries = array_merge($allKnnQueries, $result['knn']);
             $allSemanticQueries = array_merge($allSemanticQueries, $result['semantic']);
         }
@@ -494,9 +494,9 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this->createTextQuery($queryString, $queryBoost);
     }
 
-    protected function createVectorQuery(string $queryString, float $queryBoost = 1.0): array
+    protected function createVectorQuery(string $queryString, float $queryBoost = 1.0, ?array $scopedFields = null): array
     {
-        $vectorFields = $this->getVectorFields();
+        $vectorFields = $this->getVectorFields($scopedFields);
         $dims = $this->getVectorDimensions($vectorFields);
 
         if (empty($dims)) {
@@ -524,11 +524,13 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return ['knn' => $knnQueries, 'semantic' => $semanticQueries];
     }
 
-    protected function getVectorFields(): Collection
+    protected function getVectorFields(?array $scopedFields = null): Collection
     {
+        $fieldsToFilter = $scopedFields !== null ? $scopedFields : $this->fields;
+
         return $this->properties->nestedSemanticFields()
             ->filter(fn(Text $field) => $field->isSemantic())
-            ->filter(fn(Text $field) => in_array($field->fullPath, $this->fields))
+            ->filter(fn(Text $field) => in_array($field->fullPath, $fieldsToFilter))
             ->map(fn(Text $field) => $field->vectorFields())
             ->flatten(1);
     }
@@ -579,6 +581,9 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         if ($query instanceof QueriesNearestNeighbors) {
             $query->filter($this->filters->toRaw());
         }
+
+        // Apply the query boost/weight
+        $query->boost($queryBoost);
 
         return $query;
     }
