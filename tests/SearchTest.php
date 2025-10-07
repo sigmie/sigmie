@@ -16,22 +16,6 @@ use Sigmie\Testing\TestCase;
 
 class SearchTest extends TestCase
 {
-
-    /**
-     * @test
-     */
-    // public function v8_knn_search()
-    // {
-    //     // TODO
-    //     // This was failing because boost out of knn query
-    // }
-
-    /**
-     * @test
-     */
-    // public function search_template_with_query_weight() {}
-
-
     /**
      * @test
      */

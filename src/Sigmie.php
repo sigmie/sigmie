@@ -35,6 +35,7 @@ use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\AI\History\Index as HistoryIndex;
 use Sigmie\Classification\NewClassification;
 use Sigmie\Clustering\NewClustering;
+use Sigmie\Search\NewRecommendations;
 
 class Sigmie
 {
@@ -136,14 +137,21 @@ class Sigmie
         );
     }
 
-    public function newClassification(EmbeddingsApi $embeddingsApi): NewClassification
+    public function newClassification(?EmbeddingsApi $embeddingsApi = null): NewClassification
     {
-        return new NewClassification($embeddingsApi);
+        return new NewClassification($embeddingsApi ?? $this->embeddingsApi);
     }
 
-    public function newClustering(EmbeddingsApi $embeddingsApi): NewClustering
+    public function newClustering(?EmbeddingsApi $embeddingsApi = null): NewClustering
     {
         return new NewClustering($embeddingsApi);
+    }
+
+    public function newRecommend(string $index): NewRecommendations
+    {
+        $index = $this->withApplicationPrefix($index);
+
+        return new NewRecommendations($index, $this->elasticsearchConnection, $this->embeddingsApi);
     }
 
     public function rawQuery(
@@ -243,13 +251,13 @@ class Sigmie
     public static function create(
         array|string $hosts,
         array $config = [],
-        ?Embedder $embedder = null
+        ?EmbeddingsApi $embeddingsApi = null
     ): static {
         $hosts = (is_string($hosts)) ? explode(',', $hosts) : $hosts;
 
         $client = JSONClient::create($hosts, $config);
 
-        return new static(new HttpConnection($client), $embedder);
+        return new static(new HttpConnection($client), $embeddingsApi);
     }
 
     public function delete(string $index): bool

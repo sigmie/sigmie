@@ -137,7 +137,7 @@ class ClassificationTest extends TestCase
             'Moana',
             'Mulan',
             'The Little Mermaid',
-            'Tangled',
+            'Micheal Jackson'
         ];
 
         $result = $this->sigmie->newClustering($embeddingsApi)
@@ -149,6 +149,7 @@ class ClassificationTest extends TestCase
         $this->assertCount(8, $result->assignments());
 
         $clusters = $result->clusters();
+
         $this->assertGreaterThan(0, count($clusters));
     }
 }
