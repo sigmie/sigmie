@@ -253,26 +253,15 @@ class Search
     public function toRaw(): array
     {
         $result = [
-            // 'track_total_hits' => $this->trackTotalHits < 0 ? true : $this->trackTotalHits,
             '_source' => $this->fields,
             'query' => $this->query->toRaw(),
             'from' => $this->from,
             'size' => $this->size,
             'min_score' => $this->minScore,
-            // 'sort' => [...$this->sort],
             'knn' => $this->knn,
             'sort' => $this->sort,
-            // 'highlight' => [
-            //     // 'require_field_match' => false,
-            //     'force_source' => true,
-            //     'no_match_size' => 100,
-            //     'fields' => [
-            //         ...$this->highlight,
-            //     ],
-            // ],
             ...$this->raw,
         ];
-
 
         if ($this->highlight ?? false) {
             $result['highlight'] = $this->highlight;

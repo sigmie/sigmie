@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Sigmie\Enums\VectorStrategy;
-use Sigmie\Support\VectorNormalizer;
+use Sigmie\Support\VectorMath;
 use Sigmie\Testing\TestCase;
 
 class VectorStrategyNormalizationTest extends TestCase
@@ -22,8 +22,8 @@ class VectorStrategyNormalizationTest extends TestCase
         $vec2 = [0.8, 0.6, 0.0];
 
         // Verify inputs are normalized
-        $this->assertTrue(VectorNormalizer::isNormalized($vec1));
-        $this->assertTrue(VectorNormalizer::isNormalized($vec2));
+        $this->assertTrue(VectorMath::isNormalized($vec1));
+        $this->assertTrue(VectorMath::isNormalized($vec2));
 
         // Apply average strategy
         $result = $strategy->format([$vec1, $vec2]);
@@ -50,13 +50,13 @@ class VectorStrategyNormalizationTest extends TestCase
         // Single normalized vector
         $vec1 = [0.6, 0.8, 0.0];
 
-        $this->assertTrue(VectorNormalizer::isNormalized($vec1));
+        $this->assertTrue(VectorMath::isNormalized($vec1));
 
         // Apply concatenate strategy (just returns first vector)
         $result = $strategy->format([$vec1]);
 
         // Should remain normalized
-        $this->assertTrue(VectorNormalizer::isNormalized($result));
+        $this->assertTrue(VectorMath::isNormalized($result));
     }
 
     /**

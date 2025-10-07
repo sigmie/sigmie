@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Support\VectorNormalizer;
+use Sigmie\Support\VectorMath;
 use Sigmie\Testing\TestCase;
 
 class VectorNormalizationTest extends TestCase
@@ -15,7 +15,7 @@ class VectorNormalizationTest extends TestCase
     public function normalizes_vector_to_unit_length()
     {
         $vector = [3.0, 4.0, 0.0];
-        $normalized = VectorNormalizer::normalize($vector);
+        $normalized = VectorMath::normalize($vector);
 
         // Magnitude should be 1.0
         $magnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $normalized)));
@@ -33,7 +33,7 @@ class VectorNormalizationTest extends TestCase
     public function handles_already_normalized_vector()
     {
         $vector = [0.6, 0.8, 0.0];
-        $normalized = VectorNormalizer::normalize($vector);
+        $normalized = VectorMath::normalize($vector);
 
         // Should remain the same
         $this->assertEqualsWithDelta(0.6, $normalized[0], 0.0001);
@@ -46,7 +46,7 @@ class VectorNormalizationTest extends TestCase
     public function handles_zero_vector()
     {
         $vector = [0.0, 0.0, 0.0];
-        $normalized = VectorNormalizer::normalize($vector);
+        $normalized = VectorMath::normalize($vector);
 
         // Should return zero vector unchanged
         $this->assertEquals([0.0, 0.0, 0.0], $normalized);
@@ -58,10 +58,10 @@ class VectorNormalizationTest extends TestCase
     public function detects_normalized_vectors()
     {
         $normalized = [0.6, 0.8, 0.0];
-        $this->assertTrue(VectorNormalizer::isNormalized($normalized));
+        $this->assertTrue(VectorMath::isNormalized($normalized));
 
         $notNormalized = [3.0, 4.0, 0.0];
-        $this->assertFalse(VectorNormalizer::isNormalized($notNormalized));
+        $this->assertFalse(VectorMath::isNormalized($notNormalized));
     }
 
     /**
@@ -71,7 +71,7 @@ class VectorNormalizationTest extends TestCase
     {
         // Create a 256-dimensional vector
         $vector = array_fill(0, 256, 1.0);
-        $normalized = VectorNormalizer::normalize($vector);
+        $normalized = VectorMath::normalize($vector);
 
         // Magnitude should be 1.0
         $magnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $normalized)));

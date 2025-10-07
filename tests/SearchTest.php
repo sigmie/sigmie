@@ -1359,4 +1359,5 @@ class SearchTest extends TestCase
 
         $this->assertEquals(0, $response->total());
     }
+
 }

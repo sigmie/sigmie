@@ -7,7 +7,7 @@ namespace Sigmie\Tests;
 use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Support\VectorNormalizer;
+use Sigmie\Support\VectorMath;
 use Sigmie\Testing\TestCase;
 
 class EmbeddingsStorageTest extends TestCase
@@ -179,7 +179,7 @@ class EmbeddingsStorageTest extends TestCase
         $titleVector = $titleEmbeddings[$titleKey];
 
         $this->assertTrue(
-            VectorNormalizer::isNormalized($titleVector),
+            VectorMath::isNormalized($titleVector),
             'Title embedding vector should be normalized (magnitude ≈ 1.0)'
         );
 
@@ -189,7 +189,7 @@ class EmbeddingsStorageTest extends TestCase
         $contentVector = $contentEmbeddings[$contentKey];
 
         $this->assertTrue(
-            VectorNormalizer::isNormalized($contentVector),
+            VectorMath::isNormalized($contentVector),
             'Content embedding vector should be normalized (magnitude ≈ 1.0)'
         );
 
@@ -242,7 +242,7 @@ class EmbeddingsStorageTest extends TestCase
 
         // Verify the vector is normalized after averaging
         $this->assertTrue(
-            VectorNormalizer::isNormalized($commentVector),
+            VectorMath::isNormalized($commentVector),
             'Averaged comment embedding should be normalized'
         );
 

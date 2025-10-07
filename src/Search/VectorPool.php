@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\Support\VectorNormalizer;
+use Sigmie\Support\VectorMath;
 
 class VectorPool
 {
@@ -27,8 +27,8 @@ class VectorPool
             $vector = $this->embeddingsApi->embed($text, $dimensions);
 
             // Ensure vector is normalized (critical for dot_product and max_inner_product)
-            if ($this->ensureNormalized && !VectorNormalizer::isNormalized($vector)) {
-                $vector = VectorNormalizer::normalize($vector);
+            if ($this->ensureNormalized && !VectorMath::isNormalized($vector)) {
+                $vector = VectorMath::normalize($vector);
             }
 
             $this->pool[$text][$dimensions] = $vector;
@@ -57,8 +57,8 @@ class VectorPool
             $vector = $result['vector'];
 
             // Ensure vector is normalized (critical for dot_product and max_inner_product)
-            if ($this->ensureNormalized && !VectorNormalizer::isNormalized($vector)) {
-                $vector = VectorNormalizer::normalize($vector);
+            if ($this->ensureNormalized && !VectorMath::isNormalized($vector)) {
+                $vector = VectorMath::normalize($vector);
             }
 
             if (!isset($this->pool[$text])) {

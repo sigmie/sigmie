@@ -137,7 +137,7 @@ Sigmie is a modern PHP library providing an expressive, Laravel-inspired fluent 
 **Implementation:**
 - Document vectors normalized via `VectorStrategy::Average::format()`
 - Query vectors normalized via `VectorPool::get()` and `getMany()`
-- Smart check: only normalizes if `!VectorNormalizer::isNormalized($vector)`
+- Smart check: only normalizes if `!VectorMath::isNormalized($vector)`
 
 ### Common Patterns
 

@@ -6,7 +6,8 @@ namespace Sigmie\Document;
 
 class Hit extends Document
 {
-    public readonly null|float $_score; // @phpstan-ignore-line
+    //TODO make readonly
+    public null|float $_score; // @phpstan-ignore-line
     
     public readonly null|array $sort; // @phpstan-ignore-line
 

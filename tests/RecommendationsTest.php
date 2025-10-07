@@ -9,6 +9,7 @@ use Sigmie\AI\APIs\CohereEmbeddingsApi;
 use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 use Sigmie\Document\Document;
 use Sigmie\Enums\CohereInputType;
+use Sigmie\Enums\RecommendationStrategy;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\TestCase;
 
@@ -47,7 +48,8 @@ class RecommendationsTest extends TestCase
                 new Document([
                     'name' => 'Affordable Laptop',
                     'category' => 'Electronics',
-                    'price' => 800, ]),
+                    'price' => 800,
+                ]),
                 new Document([
                     'name' => 'Budget Laptop',
                     'category' => 'Electronics',
@@ -144,5 +146,78 @@ class RecommendationsTest extends TestCase
         $this->assertEquals(1.0, $searchRaw['knn'][1]['boost']);
 
         $this->assertEquals('Blender', $newRecommend->hits()[0]['name']);
+    }
+
+    /**
+     * @test
+     */
+    public function fusion()
+    {
+        $indexName = uniqid();
+
+        $embeddingApi = new CohereEmbeddingsApi(getenv('COHERE_API_KEY'), CohereInputType::SearchDocument);
+        $sigmie = $this->sigmie->embedder($embeddingApi);
+
+        $blueprint = new NewProperties();
+        $blueprint->text('name')->semantic();
+        $blueprint->text('category')->semantic(4);
+        $blueprint->number('price');
+        $blueprint->combo('searchable', ['name', 'category'])
+            ->semantic(accuracy: 1, dimensions: 256);
+
+        $sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'name' => 'Expensive Laptop',
+                    'category' => 'Electronics',
+                    'price' => 2000,
+                ]),
+                new Document([
+                    'name' => 'Affordable Laptop',
+                    'category' => 'Electronics',
+                    'price' => 800,
+                ]),
+                new Document([
+                    'name' => 'Budget Laptop',
+                    'category' => 'Electronics',
+                    'price' => 500,
+                ]),
+            ]);
+
+        $fuseHits = $sigmie->newRecommend($indexName)
+            ->properties($blueprint)
+            ->field(
+                fieldName: 'category',
+                seed: 'Kitchen',
+                weight: 2,
+            )
+            ->field(
+                fieldName: 'name',
+                seed: 'Yoga Mat',
+                weight: 1,
+            )
+            ->hits();
+
+        $centroidHits = $sigmie->newRecommend($indexName)
+            ->properties($blueprint)
+            ->rrf(60, 10)
+            ->field(
+                fieldName: 'category',
+                seed: 'Kitchen',
+                weight: 2,
+            )
+            ->field(
+                fieldName: 'name',
+                seed: 'Yoga Mat',
+                weight: 1,
+            )->hits();
+
+        $this->assertNotEquals($fuseHits[0]['name'], $centroidHits[0]['name']);
     }
 }
