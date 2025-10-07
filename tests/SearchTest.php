@@ -64,6 +64,43 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function field_scoped_query_string()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('name');
+        $blueprint->text('category');
+        $blueprint->text('description');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['name' => 'Laptop', 'category' => 'Electronics', 'description' => 'High-end device']),
+                new Document(['name' => 'Phone', 'category' => 'Electronics', 'description' => 'Mobile phone']),
+                new Document(['name' => 'Electronics', 'category' => 'Furniture', 'description' => 'Office desk']),
+            ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['name', 'category'])
+            ->queryString('Electronics', 1.0, ['category'])
+            ->makeSearch();
+
+        $hits = $search->get()->hits();
+
+        // Only two have category Electronics the third one
+        // has category Furniture, and Elactronies in name
+        $this->assertCount(2, $hits);
+    }
+
+    /**
+     * @test
+     */
     public function find_without_dash()
     {
         $indexName = uniqid();

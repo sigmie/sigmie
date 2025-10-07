@@ -32,9 +32,10 @@ class Search extends ElasticsearchResponse
     public function hits(): array
     {
         return array_map(fn($value) => new Hit(
-            $value['_source'],
-            $value['_id'],
-            $value['_score']
+            _source: $value['_source'],
+            _id: $value['_id'],
+            _score: $value['_score'],
+            _index: $value['_index'],
         ), $this->json('hits.hits') ?? []);
     }
 

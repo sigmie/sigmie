@@ -288,7 +288,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
             $queryStrings->each(function (QueryString $queryString) use ($boolean) {
 
-                $query = $this->createStringQueries($queryString->text(), $queryString->weight());
+                $query = $this->createStringQueries($queryString->text(), $queryString->weight(), $queryString->fields());
 
                 $boolean->should()->query($query);
             });
@@ -451,13 +451,13 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return ! in_array($field->fullPath, $this->typoTolerantAttributes) ? null : "AUTO:{$this->minCharsForOneTypo},{$this->minCharsForTwoTypo}";
     }
 
-    protected function createStringQueries(string $queryString, float $queryBoost = 1.0): Query
+    protected function createStringQueries(string $queryString, float $queryBoost = 1.0, ?array $scopedFields = null): Query
     {
         if ($queryString === '' && !$this->noResultsOnEmptySearch) {
             return $this->onEmptyQueryString();
         }
 
-        $keywordQuery = $this->buildKeywordQuery($queryString, $queryBoost);
+        $keywordQuery = $this->buildKeywordQuery($queryString, $queryBoost, $scopedFields);
 
         $boolean = new Boolean;
         $boolean->should()->query($keywordQuery);
@@ -485,13 +485,13 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $this->semanticQueries = $allSemanticQueries;
     }
 
-    protected function buildKeywordQuery(string $queryString, float $queryBoost): Query
+    protected function buildKeywordQuery(string $queryString, float $queryBoost, ?array $scopedFields = null): Query
     {
         if ($this->noKeywordSearch) {
             return new MatchNone;
         }
 
-        return $this->createTextQuery($queryString, $queryBoost);
+        return $this->createTextQuery($queryString, $queryBoost, $scopedFields);
     }
 
     protected function createVectorQuery(string $queryString, float $queryBoost = 1.0, ?array $scopedFields = null): array
@@ -588,12 +588,13 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $query;
     }
 
-    protected function createTextQuery(string $queryString, float $queryBoost = 1.0): Query
+    protected function createTextQuery(string $queryString, float $queryBoost = 1.0, ?array $scopedFields = null): Query
     {
         $keywordBoolean = new Boolean;
         $keywordBoolean->should()->query(new MatchNone);
 
-        $fields = new Collection($this->fields);
+        $fieldsToQuery = $scopedFields !== null ? $scopedFields : $this->fields;
+        $fields = new Collection($fieldsToQuery);
 
         $fields->each(function ($field) use ($keywordBoolean, $queryString, $queryBoost) {
             $field = $this->properties->get($field) ?? throw new PropertiesFieldNotFound($field);
