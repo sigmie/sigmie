@@ -326,59 +326,166 @@ See the [Semantic Search documentation](/docs/semantic-search.md) for more detai
 
 Understanding the internals helps you use recommendations effectively.
 
-### Query Generation
+### Vector Extraction from Seed Documents
 
-For each field specified, the recommendations API:
-
-1. Checks if the field is semantic (skips if not)
-2. Generates an embedding for the seed value
-3. Creates a KNN query scoped to that field's embedding path
-4. Applies the weight as the query's boost value
-
-**Example transformation:**
+The recommendations system uses actual document embeddings rather than generating new ones:
 
 ```php
-$sigmie->newRecommend($indexName)
-    ->properties($blueprint)
-    ->field(fieldName: 'category', seed: 'Kitchen', weight: 2.0)
-    ->field(fieldName: 'name', seed: 'Yoga Mat', weight: 1.0)
-    ->topK(5);
+$recommendations = $sigmie->newRecommend('products')
+    ->seedIds(['product-123', 'product-456'])
+    ->field('category', weight: 2.0)
+    ->field('description', weight: 1.0);
 ```
 
-**Generates this Elasticsearch query structure:**
+**What happens:**
 
-```json
-{
-  "knn": [
-    {
-      "field": "embeddings.category.m48_efc300_dims256_cosine_avg",
-      "query_vector": [0.123, 0.456, ...],
-      "boost": 2.0,
-      "k": 5,
-      "num_candidates": 50
-    },
-    {
-      "field": "embeddings.name.m32_efc200_dims256_cosine_avg",
-      "query_vector": [0.789, 0.012, ...],
-      "boost": 1.0,
-      "k": 5,
-      "num_candidates": 50
-    }
-  ],
-  "size": 5
-}
+1. **Retrieve Seed Documents**: Fetches documents with IDs `product-123` and `product-456`
+2. **Extract Vectors**: For each document and field, extracts vectors from `embeddings.{field}`:
+   ```php
+   $vectors = dot($doc->_source['embeddings'])->get('category');
+   // Returns all vector variants for that field (different dimensions/strategies)
+   ```
+3. **Multi-Search**: For each seed document, creates searches using the extracted vectors
+4. **Per-Field Queries**: Each field specified gets its own set of vector queries with the specified weight
+
+### Reciprocal Rank Fusion (RRF)
+
+RRF combines multiple ranked lists into a single ranked list. This is how results from multiple seed documents and fields are merged.
+
+**The RRF Formula:**
+
+For each document, the score is:
+```
+score = Σ (1 / (k + rank))
 ```
 
-### Field Scoping
+Where:
+- `k` is the rank constant (default: 60)
+- `rank` is the document's position in that particular result list
+- The sum is across all result lists where the document appears
 
-Each field gets its own KNN query, which means:
+**Example:**
 
-- Separate embeddings are generated for each seed value
-- Each field's similarity is calculated independently
-- The boost value controls how much each field contributes to the final score
-- Elasticsearch combines the scores to produce the final ranking
+If a document appears as:
+- Rank 1 in seed document A's results: `1 / (60 + 1) = 0.0164`
+- Rank 3 in seed document B's results: `1 / (60 + 3) = 0.0159`
+- Total RRF score: `0.0164 + 0.0159 = 0.0323`
 
-This is different from a single combined query and provides more control over multi-field recommendations.
+**Benefits:**
+- Documents appearing in multiple result sets get higher scores
+- Robust to outliers and varying score scales
+- No normalization required
+- Simple and effective
+
+**Configuration:**
+
+```php
+$recommendations->rrf(
+    rankConstant: 60,    // Higher = more forgiving of lower ranks
+    rankWindowSize: 10   // (Currently unused, reserved for future use)
+);
+```
+
+### Per-Field Processing
+
+When multiple fields are specified, the system processes each field independently:
+
+```php
+->field('category', weight: 3.0)
+->field('brand', weight: 2.0)
+```
+
+**Process:**
+
+1. **Separate Searches**: Each field gets its own searches across all seed documents
+2. **RRF per Field**: Results for each field are fused using RRF
+3. **MMR per Field (if enabled)**: Each field's fused results are diversified independently
+4. **Final RRF**: All per-field results are combined with a final RRF fusion
+
+This multi-stage approach ensures:
+- Field weights are properly respected
+- Each field contributes diverse results
+- Final results balance all fields according to weights
+
+### Maximal Marginal Relevance (MMR)
+
+MMR diversifies results to avoid showing too-similar items. Without MMR, you might get 10 slightly different variants of the same product. With MMR, you get a diverse set of relevant recommendations.
+
+**The MMR Algorithm:**
+
+For each position in the result list:
+1. Calculate **relevance**: Cosine similarity to query (seed document centroid)
+2. Calculate **diversity**: Maximum similarity to already-selected results
+3. Compute MMR score: `λ × relevance - (1-λ) × diversity`
+4. Select the document with highest MMR score
+5. Repeat until topK results are selected
+
+**The Lambda Parameter:**
+
+Controls the trade-off between relevance and diversity:
+
+```php
+// Pure relevance (no diversity) - might get very similar items
+$recommendations->mmr(lambda: 1.0);
+
+// Balanced (default) - good mix of relevance and variety
+$recommendations->mmr(lambda: 0.5);
+
+// Pure diversity - maximum variety, less relevant
+$recommendations->mmr(lambda: 0.0);
+```
+
+**When to Use MMR:**
+
+✅ **Good for:**
+- E-commerce product recommendations (avoid showing 10 similar products)
+- Content discovery (show diverse articles, not just slight variations)
+- Music/video recommendations (variety in playlists)
+- Any case where user wants to explore options
+
+❌ **Skip when:**
+- Precision is critical (medical, legal search)
+- Results need to be nearly identical (finding exact matches)
+- Small result sets (< 5 items)
+
+**Example:**
+
+```php
+// Without MMR - might return 10 nearly identical blue Nike shoes
+$recommendations = $sigmie->newRecommend('products')
+    ->seedIds(['blue-nike-running-shoe'])
+    ->field('category', weight: 2.0)
+    ->field('color', weight: 1.0)
+    ->topK(10)
+    ->hits();
+
+// With MMR - returns blue Nike shoes, but also other brands, styles, colors
+$recommendations = $sigmie->newRecommend('products')
+    ->seedIds(['blue-nike-running-shoe'])
+    ->field('category', weight: 2.0)
+    ->field('color', weight: 1.0)
+    ->mmr(lambda: 0.5)  // Balanced diversity
+    ->topK(10)
+    ->hits();
+```
+
+**Per-Field MMR:**
+
+When MMR is enabled, it's applied independently to each field's results before final fusion:
+
+1. Category field results → MMR diversification
+2. Brand field results → MMR diversification
+3. Description field results → MMR diversification
+4. All diversified lists → Final RRF fusion
+
+This ensures each field contributes diverse results, and the final output is well-balanced across all dimensions.
+
+**Performance Note:**
+
+MMR requires computing similarities between all candidates, which is O(n²). For optimal performance:
+- Use reasonable topK values (10-20)
+- Apply filters to reduce the candidate pool
+- The system automatically retrieves `topK × 10` candidates before MMR
 
 ## Recommendations vs NewSearch
 
@@ -386,27 +493,32 @@ Both APIs can perform semantic searches, but they serve different purposes:
 
 ### Use NewRecommendations When
 
-- You want to find items similar to a reference item
+- You want to find items similar to existing documents
+- You have document IDs to use as seeds
 - You need different weights for different fields
-- You're building "more like this" features
-- You want a simpler API for common recommendation patterns
+- You want result fusion from multiple seed documents (RRF)
+- You want diversity in results (MMR)
+- You're building "more like this" or "similar items" features
 
 **Example:**
 ```php
-// Find products similar to a specific product
+// Find products similar to what user is viewing
 $sigmie->newRecommend('products')
-    ->field('category', 'Kitchen Appliances', 2.0)
-    ->field('brand', 'KitchenAid', 1.5)
+    ->seedIds(['current-product-id'])
+    ->field('category', weight: 2.0)
+    ->field('brand', weight: 1.5)
+    ->mmr(lambda: 0.5)  // Add diversity
     ->topK(5)
     ->hits();
 ```
 
 ### Use NewSearch When
 
-- Users are entering search queries
+- Users are entering search queries (text input)
 - You need keyword search combined with semantic search
+- You're generating embeddings from user query text
 - You want more control over the query structure
-- You need advanced features like aggregations, highlighting, or complex filters
+- You need advanced features like aggregations, highlighting, or autocomplete
 
 **Example:**
 ```php
@@ -423,56 +535,59 @@ $sigmie->newSearch('products')
 
 | Feature | NewRecommendations | NewSearch |
 |---------|-------------------|-----------|
-| Primary use case | Similar items | User queries |
-| Query input | Field-level seeds | Combined query string |
+| Primary use case | Similar items from seeds | User text queries |
+| Input | Document IDs | Query string |
+| Embedding source | Existing document vectors | Generated from query text |
 | Semantic mode | Always enabled | Optional |
 | Keyword search | Disabled | Optional |
-| Field weights | Per-field via `field()` | Single query across fields |
-| KNN structure | One query per field | Single combined query |
-| API complexity | Simple | More flexible |
+| Field weights | Per-field weights | Global weighting |
+| Multi-document | RRF fusion | N/A |
+| Diversity | MMR support | No built-in diversity |
+| API complexity | Purpose-built | General-purpose |
 
 ## Complete Examples
 
 ### E-commerce Product Recommendations
 
 ```php
-use Sigmie\AI\APIs\CohereEmbeddingsApi;
-use Sigmie\Enums\CohereInputType;
+use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 use Sigmie\Mappings\NewProperties;
 
 // Set up
-$embeddingApi = new CohereEmbeddingsApi(
-    getenv('COHERE_API_KEY'),
-    CohereInputType::SearchDocument
-);
+$embeddingApi = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
 $sigmie = $sigmie->embedder($embeddingApi);
 
 // Define product properties
 $blueprint = new NewProperties();
 $blueprint->text('name')->semantic();
-$blueprint->text('category')->semantic(4);
-$blueprint->text('description')->semantic(1, 512);
+$blueprint->text('category')->semantic(accuracy: 4);
+$blueprint->text('description')->semantic(accuracy: 2, dimensions: 512);
 $blueprint->text('brand')->semantic();
 $blueprint->number('price');
 $blueprint->number('rating');
 $blueprint->bool('in_stock');
 
-// Get recommendations for similar products
+// User is viewing a MacBook Pro - get similar products with diversity
+$currentProductId = 'macbook-pro-16-2023';
+
 $recommendations = $sigmie->newRecommend('products')
     ->properties($blueprint)
-    ->field(fieldName: 'category', seed: 'Electronics', weight: 3.0)
-    ->field(fieldName: 'brand', seed: 'Apple', weight: 2.0)
-    ->field(fieldName: 'name', seed: 'MacBook Pro', weight: 1.5)
+    ->seedIds([$currentProductId])
+    ->field('category', weight: 3.0)
+    ->field('brand', weight: 2.0)
+    ->field('name', weight: 1.5)
+    ->field('description', weight: 1.0)
+    ->mmr(lambda: 0.6)  // Favor relevance slightly over diversity
     ->filter('in_stock:true AND price<=2000 AND rating>=4')
     ->topK(10)
     ->hits();
 
+echo "You might also like:\n\n";
 foreach ($recommendations as $hit) {
     $product = $hit['_source'];
-    echo "{$product['name']} - {$product['brand']}\n";
-    echo "Category: {$product['category']}\n";
-    echo "Price: \${$product['price']}\n";
-    echo "Similarity Score: {$hit['_score']}\n\n";
+    echo "• {$product['name']} - {$product['brand']}\n";
+    echo "  {$product['category']} | \${$product['price']}\n";
+    echo "  Rating: {$product['rating']}/5 | Score: {$hit['_score']}\n\n";
 }
 ```
 
@@ -484,25 +599,30 @@ $blueprint = new NewProperties();
 $blueprint->text('title')->semantic();
 $blueprint->text('content')->semantic(accuracy: 2, dimensions: 512);
 $blueprint->text('tags')->semantic();
-$blueprint->text('author')->semantic();
+$blueprint->text('author');
 $blueprint->date('published_at');
 $blueprint->number('views');
 
-// Find related articles
+// User just read an article about machine learning
+$currentArticleId = 'intro-to-deep-learning-2024';
+
+// Find related articles with good diversity
 $relatedArticles = $sigmie->newRecommend('articles')
     ->properties($blueprint)
-    ->field(fieldName: 'tags', seed: 'artificial intelligence, machine learning', weight: 3.0)
-    ->field(fieldName: 'title', seed: 'Introduction to Deep Learning', weight: 2.0)
-    ->field(fieldName: 'content', seed: 'neural networks training backpropagation', weight: 1.0)
-    ->filter('published_at>2023-01-01 AND views>100')
+    ->seedIds([$currentArticleId])
+    ->field('tags', weight: 3.0)
+    ->field('title', weight: 2.0)
+    ->field('content', weight: 1.0)
+    ->mmr(lambda: 0.5)  // Balanced diversity
+    ->filter('published_at>=2023-01-01 AND views>100')
     ->topK(6)
     ->hits();
 
-echo "Related Articles:\n";
+echo "Related Articles:\n\n";
 foreach ($relatedArticles as $hit) {
     $article = $hit['_source'];
-    echo "- {$article['title']}\n";
-    echo "  by {$article['author']} | {$article['views']} views\n";
+    echo "• {$article['title']}\n";
+    echo "  by {$article['author']} | {$article['views']} views\n\n";
 }
 ```
 
@@ -517,16 +637,27 @@ $blueprint->text('secondary_category')->semantic();
 $blueprint->text('tags')->semantic();
 $blueprint->number('price');
 
-// Recommend based on multiple category levels
+// User is viewing a yoga mat - recommend based on multiple category levels
+$currentProductId = 'premium-yoga-mat-purple';
+
+// The seed document has these values:
+// - primary_category: "Sports & Outdoors"
+// - secondary_category: "Yoga"
+// - tags: "fitness wellness exercise meditation"
+// - name: "Premium Yoga Mat"
+
 $recommendations = $sigmie->newRecommend('products')
     ->properties($blueprint)
-    ->field(fieldName: 'primary_category', seed: 'Sports & Outdoors', weight: 4.0)
-    ->field(fieldName: 'secondary_category', seed: 'Yoga', weight: 3.0)
-    ->field(fieldName: 'tags', seed: 'fitness wellness exercise', weight: 1.5)
-    ->field(fieldName: 'name', seed: 'Yoga Mat', weight: 1.0)
+    ->seedIds([$currentProductId])
+    ->field('primary_category', weight: 4.0)
+    ->field('secondary_category', weight: 3.0)
+    ->field('tags', weight: 1.5)
+    ->field('name', weight: 1.0)
     ->filter('price<=150')
     ->topK(8)
     ->hits();
+
+// Results: Similar products in yoga/fitness category with balanced weighting
 ```
 
 ### Recommendation Widget Implementation
@@ -538,37 +669,26 @@ $recommendations = $sigmie->newRecommend('products')
 function getProductRecommendations(
     Sigmie $sigmie,
     Properties $properties,
-    array $currentProduct,
+    string $currentProductId,
     int $limit = 4
 ): array {
     return $sigmie->newRecommend('products')
         ->properties($properties)
-        ->field(
-            fieldName: 'category',
-            seed: $currentProduct['category'],
-            weight: 3.0
-        )
-        ->field(
-            fieldName: 'name',
-            seed: $currentProduct['name'],
-            weight: 1.5
-        )
-        ->filter("in_stock:true AND id!={$currentProduct['id']}")
+        ->seedIds([$currentProductId])
+        ->field('category', weight: 3.0)
+        ->field('name', weight: 1.5)
+        ->filter('in_stock:true')
         ->topK($limit)
         ->hits();
 }
 
 // Usage
-$currentProduct = [
-    'id' => 123,
-    'name' => 'Wireless Headphones',
-    'category' => 'Audio',
-];
+$currentProductId = 'wireless-headphones-sony-wh1000xm5';
 
 $recommendations = getProductRecommendations(
     $sigmie,
     $productProperties,
-    $currentProduct,
+    $currentProductId,
     4
 );
 
@@ -624,7 +744,9 @@ Test different weight combinations to find the best balance for your use case.
 try {
     $recommendations = $sigmie->newRecommend('products')
         ->properties($blueprint)
-        ->field('category', 'Electronics', 2.0)
+        ->seedIds(['current-product-id'])
+        ->field('category', weight: 2.0)
+        ->field('name', weight: 1.0)
         ->topK(5)
         ->hits();
 
@@ -648,8 +770,9 @@ Use `make()` to see the generated Elasticsearch query:
 ```php
 $search = $sigmie->newRecommend('products')
     ->properties($blueprint)
-    ->field('category', 'Sports', 2.0)
-    ->field('name', 'Running Shoes', 1.0)
+    ->seedIds(['running-shoes-nike-pegasus'])
+    ->field('category', weight: 2.0)
+    ->field('name', weight: 1.0)
     ->topK(5)
     ->make();
 

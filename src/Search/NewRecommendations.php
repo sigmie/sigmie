@@ -183,11 +183,19 @@ class NewRecommendations
         $groupedHits = $multi->groupedHits();
         $rankedLists = array_values($groupedHits);
 
+        // Build weights array matching the order of rankedLists
+        // Each seed document creates one ranked list, weighted by sum of all field weights
+        $weights = [];
+        foreach ($this->docs as $doc) {
+            $totalWeight = array_sum(array_column($this->fields, 'weight'));
+            $weights[] = $totalWeight;
+        }
+
         // Apply per-field MMR if enabled
         if ($this->mmrEnabled) {
             // Fuse with larger pool for MMR
             $rrf = new RRF($this->rrfRankConstant, $this->topK * 10);
-            $fusedHits = $rrf->fuse($rankedLists);
+            $fusedHits = $rrf->fuse($rankedLists, $weights);
 
             $perFieldResults = [];
 
@@ -199,15 +207,16 @@ class NewRecommendations
                 $perFieldResults[] = $mmr->diversify($fusedHits, $this->docs, $fieldName, $this->topK * 2);
             }
 
-            // Final fusion: fuse all per-field reranked lists
+            // Final fusion: fuse all per-field reranked lists with field weights
             $finalRrf = new RRF($this->rrfRankConstant, $this->topK);
+            $fieldWeights = array_column($this->fields, 'weight');
 
-            return $finalRrf->fuse($perFieldResults);
+            return $finalRrf->fuse($perFieldResults, $fieldWeights);
         }
 
-        // No MMR: just fuse and return topK
+        // No MMR: just fuse and return topK with weights
         $rrf = new RRF($this->rrfRankConstant, $this->topK);
 
-        return $rrf->fuse($rankedLists);
+        return $rrf->fuse($rankedLists, $weights);
     }
 }

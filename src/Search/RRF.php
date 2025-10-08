@@ -17,14 +17,17 @@ class RRF
      * Fuse multiple search result arrays using Reciprocal Rank Fusion
      *
      * @param array $rankedLists Array of ranked lists (each list is an array of hits)
+     * @param array|null $weights Optional weights for each ranked list (same order as rankedLists)
      * @return array Fused and re-ranked results
      */
-    public function fuse(array $rankedLists): array
+    public function fuse(array $rankedLists, ?array $weights = null): array
     {
         $scores = [];
 
         // Calculate RRF score for each document across all ranked lists
-        foreach ($rankedLists as $rankedList) {
+        foreach ($rankedLists as $index => $rankedList) {
+            $weight = $weights[$index] ?? 1.0;
+
             foreach ($rankedList as $rank => $hit) {
                 $docId = is_array($hit) ? ($hit['_id'] ?? null) : ($hit->_id ?? null);
 
@@ -32,9 +35,9 @@ class RRF
                     continue;
                 }
 
-                // RRF formula: score = 1 / (k + rank)
+                // RRF formula with weight: score = weight * (1 / (k + rank))
                 // rank is 0-based, so we add 1
-                $rrfScore = 1.0 / ($this->rankConstant + $rank + 1);
+                $rrfScore = $weight * (1.0 / ($this->rankConstant + $rank + 1));
 
                 if (!isset($scores[$docId])) {
                     $scores[$docId] = [
