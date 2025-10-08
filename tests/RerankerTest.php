@@ -24,14 +24,14 @@ class RerankerTest extends TestCase
     public function rerank_threshold()
     {
         $indexName = uniqid();
-        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
-        $cohereReranker = new CohereRerankApi(getenv('COHERE_API_KEY'));
+        $embeddings = $this->embeddingApi; 
+        $cohereReranker = $this->rerankApi; 
 
         $sigmie = $this->sigmie->embedder($embeddings);
 
         $blueprint = new NewProperties();
-        $blueprint->longText('name')->semantic();
-        $blueprint->longText('description')->semantic();
+        $blueprint->longText('name')->semantic(dimensions: 384);
+        $blueprint->longText('description')->semantic(dimensions: 384);
 
         $sigmie->newIndex($indexName)
             ->properties($blueprint)

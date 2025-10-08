@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  embeddings:
+    image: michaelf34/infinity:latest
+    container_name: sigmie-embeddings
+    ports:
+      - "7997:7997"
+    environment:
+      - MODEL_ID=BAAI/bge-small-en-v1.5
+    volumes:
+      - ./data/embeddings:/app/.cache
+    command: v2 --model-id BAAI/bge-small-en-v1.5 --port 7997
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7997/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  reranker:
+    image: michaelf34/infinity:latest
+    container_name: sigmie-reranker
+    ports:
+      - "7998:7998"
+    environment:
+      - MODEL_ID=cross-encoder/ms-marco-MiniLM-L-6-v2
+    volumes:
+      - ./data/reranker:/app/.cache
+    command: v2 --model-id cross-encoder/ms-marco-MiniLM-L-6-v2 --port 7998
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7998/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

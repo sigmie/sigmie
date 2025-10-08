@@ -18,16 +18,14 @@ class RecommendationsTest extends TestCase
     {
         $indexName = uniqid();
 
-        // $embeddingApi = new CohereEmbeddingsApi(getenv('COHERE_API_KEY'), CohereInputType::SearchDocument);
-        $embeddingApi = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
-        $sigmie = $this->sigmie->embedder($embeddingApi);
+        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $blueprint = new NewProperties();
-        $blueprint->text('name')->semantic();
-        $blueprint->text('category')->semantic(4);
+        $blueprint->text('name')->semantic(dimensions: 384);
+        $blueprint->text('category')->semantic(4, dimensions: 384);
         $blueprint->number('price');
         $blueprint->combo('searchable', ['name', 'category'])
-            ->semantic(accuracy: 1, dimensions: 256);
+            ->semantic(accuracy: 1, dimensions: 384);
 
         $sigmie->newIndex($indexName)
             ->properties($blueprint)
