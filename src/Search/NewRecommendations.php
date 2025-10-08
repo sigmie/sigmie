@@ -51,11 +51,10 @@ class NewRecommendations
         return $this;
     }
 
-    public function field(string $fieldName, ?string $seed = null, float $weight = 1.0): static
+    public function field(string $fieldName, float $weight = 1.0): static
     {
         $this->fields[] = [
             'name' => $fieldName,
-            'seed' => $seed,
             'weight' => $weight,
             'vectors' => null,
         ];

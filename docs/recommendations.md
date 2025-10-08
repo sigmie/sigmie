@@ -2,7 +2,7 @@
 
 ## What are Recommendations?
 
-Recommendations allow you to build "similar items" queries using semantic search with field-level weighting. This feature is designed for use cases like:
+Recommendations allow you to build "similar items" queries by using the actual vector embeddings from seed documents. This feature is designed for use cases like:
 
 - "You might also like..." product suggestions
 - "Related content" article recommendations
@@ -10,16 +10,17 @@ Recommendations allow you to build "similar items" queries using semantic search
 - "Customers who viewed this also viewed..." patterns
 - Content discovery based on user interests
 
-The recommendations API provides a simplified, purpose-built interface for generating similarity-based results without the complexity of manual query construction.
+The recommendations API uses advanced techniques like **Reciprocal Rank Fusion (RRF)** and **Maximal Marginal Relevance (MMR)** to provide high-quality, diverse results.
 
 ## When to Use Recommendations
 
 Use the Recommendations API when you need to:
 
-- Find items similar to a seed item based on specific fields
-- Weight different fields differently (e.g., category matters more than name)
-- Build product recommendations or content discovery features
-- Create "more like this" functionality with semantic understanding
+- Find items similar to one or more seed documents
+- Use actual document embeddings rather than generating new ones from text
+- Combine results from multiple seed documents intelligently
+- Diversify results to avoid showing too-similar items (MMR)
+- Weight different semantic fields differently
 
 For general search queries where users are entering search terms, use `NewSearch` instead.
 
@@ -28,24 +29,34 @@ For general search queries where users are entering search terms, use `NewSearch
 ```php
 use Sigmie\Mappings\NewProperties;
 
-// Define your index properties
+// Define your index properties with semantic fields
 $blueprint = new NewProperties();
 $blueprint->text('name')->semantic();
 $blueprint->text('category')->semantic();
+$blueprint->text('description')->semantic();
 $blueprint->number('price');
 
-// Get recommendations
+// Get recommendations based on seed document(s)
 $recommendations = $sigmie->newRecommend($indexName)
     ->properties($blueprint)
-    ->field(fieldName: 'category', seed: 'Kitchen', weight: 2.0)
-    ->field(fieldName: 'name', seed: 'Yoga Mat', weight: 1.0)
+    ->seedIds(['product-123', 'product-456'])  // Use existing documents as seeds
+    ->field('category', weight: 2.0)            // Category matters most
+    ->field('name', weight: 1.0)                // Name matters less
     ->filter('price<=100')
     ->topK(5)
     ->hits();
 
-// Results: Items similar to "Kitchen" category (weight 2)
-// and "Yoga Mat" name (weight 1), under $100, top 5 results
+// Results: Items similar to the seed products, weighted by field importance
 ```
+
+### How It Works
+
+1. **Seed Documents**: You provide IDs of existing documents in your index
+2. **Vector Extraction**: The system extracts embeddings from those documents
+3. **Multi-Search**: For each seed document, a semantic search is performed
+4. **RRF Fusion**: Results from all searches are combined using Reciprocal Rank Fusion
+5. **Field Weighting**: Each field's importance is controlled by its weight
+6. **MMR (Optional)**: Diversify results to avoid redundancy
 
 ## Field Weighting System
 
@@ -53,22 +64,28 @@ The weighting system allows you to control how much each field influences the fi
 
 ### How Weights Work
 
-Each `field()` call creates a separate KNN (K-Nearest Neighbors) query for that semantic field with the specified weight as its boost value. Elasticsearch combines these queries, giving more importance to fields with higher weights.
+Each `field()` specifies a semantic field to use from the seed documents along with its weight. The system:
+
+1. Extracts vectors for that field from each seed document
+2. Creates semantic searches using those actual vectors (no new embeddings generated)
+3. Applies the weight as a multiplier when scoring results
+4. Combines results using RRF (Reciprocal Rank Fusion)
 
 ```php
 $sigmie->newRecommend($indexName)
     ->properties($blueprint)
-    ->field(fieldName: 'category', seed: 'Electronics', weight: 3.0)  // Most important
-    ->field(fieldName: 'brand', seed: 'Sony', weight: 2.0)            // Important
-    ->field(fieldName: 'description', seed: 'wireless', weight: 1.0)  // Least important
+    ->seedIds(['product-42'])
+    ->field('category', weight: 3.0)     // Most important
+    ->field('brand', weight: 2.0)        // Important
+    ->field('description', weight: 1.0)  // Least important
     ->topK(10)
     ->hits();
 ```
 
 In this example:
-- Items with similar categories will be prioritized 3x
-- Brand similarity is weighted 2x
-- Description similarity has standard weight
+- The category field from product-42 has 3x influence
+- The brand field has 2x influence
+- The description field has standard influence
 
 ### Weight Guidelines
 
@@ -82,11 +99,13 @@ In this example:
 **E-commerce Product Recommendations:**
 ```php
 // Recommend similar products where category matters most
+// Based on what a user is currently viewing
 $recommendations = $sigmie->newRecommend('products')
     ->properties($productProperties)
-    ->field(fieldName: 'category', seed: 'Running Shoes', weight: 3.0)
-    ->field(fieldName: 'brand', seed: 'Nike', weight: 2.0)
-    ->field(fieldName: 'color', seed: 'Black', weight: 1.0)
+    ->seedIds(['nike-running-shoe-123'])  // Product user is viewing
+    ->field('category', weight: 3.0)
+    ->field('brand', weight: 2.0)
+    ->field('color', weight: 1.0)
     ->filter('in_stock:true AND price<=200')
     ->topK(8)
     ->hits();
@@ -94,26 +113,31 @@ $recommendations = $sigmie->newRecommend('products')
 
 **Blog Article Recommendations:**
 ```php
-// Find similar articles based on content and tags
+// Find similar articles based on what user just read
 $recommendations = $sigmie->newRecommend('articles')
     ->properties($articleProperties)
-    ->field(fieldName: 'tags', seed: 'Machine Learning, AI', weight: 2.5)
-    ->field(fieldName: 'title', seed: 'Introduction to Neural Networks', weight: 1.5)
-    ->field(fieldName: 'content', seed: 'deep learning tutorial', weight: 1.0)
+    ->seedIds(['article-ml-intro-456'])
+    ->field('tags', weight: 2.5)
+    ->field('title', weight: 1.5)
+    ->field('content', weight: 1.0)
     ->filter('published:true')
     ->topK(5)
     ->hits();
 ```
 
-**Real Estate Property Recommendations:**
+**Multiple Seed Documents:**
 ```php
-// Find similar properties with location as priority
-$recommendations = $sigmie->newRecommend('properties')
-    ->properties($propertyProperties)
-    ->field(fieldName: 'location', seed: 'Downtown Manhattan', weight: 4.0)
-    ->field(fieldName: 'property_type', seed: 'Apartment', weight: 2.0)
-    ->field(fieldName: 'amenities', seed: 'gym, pool, parking', weight: 1.5)
-    ->filter('price>=500000 AND price<=1000000')
+// Recommend based on user's browsing history
+$recommendations = $sigmie->newRecommend('products')
+    ->properties($productProperties)
+    ->seedIds([
+        'product-last-viewed',
+        'product-previously-viewed-1',
+        'product-previously-viewed-2'
+    ])
+    ->field('category', weight: 3.0)
+    ->field('tags', weight: 2.0)
+    ->filter('in_stock:true')
     ->topK(10)
     ->hits();
 ```
@@ -134,19 +158,36 @@ $recommendations->properties($blueprint);
 
 Only fields marked as semantic can be used in recommendations.
 
-### `field(string $fieldName, string $seed, float $weight)`
+### `seedIds(array $documentIds)`
 
-Add a field with its seed value and weight. The seed value is the reference point for finding similar items.
+Specify the seed documents to base recommendations on. The system will extract embeddings from these documents.
+
+```php
+// Single seed document
+$recommendations->seedIds(['product-123']);
+
+// Multiple seed documents (RRF will fuse results)
+$recommendations->seedIds(['product-123', 'product-456', 'product-789']);
+```
+
+**Important:**
+- Documents must exist in the index
+- Documents must have the `embeddings` field populated
+- Use `retrieveEmbeddingsField()` when indexing to ensure embeddings are stored
+
+### `field(string $fieldName, float $weight = 1.0)`
+
+Specify which semantic field to use from the seed documents and its importance weight.
 
 ```php
 // Single field
-$recommendations->field(fieldName: 'category', seed: 'Sports', weight: 2.0);
+$recommendations->field('category', weight: 2.0);
 
 // Multiple fields
 $recommendations
-    ->field(fieldName: 'category', seed: 'Sports', weight: 2.0)
-    ->field(fieldName: 'brand', seed: 'Adidas', weight: 1.5)
-    ->field(fieldName: 'color', seed: 'Blue', weight: 1.0);
+    ->field('category', weight: 3.0)
+    ->field('brand', weight: 2.0)
+    ->field('description', weight: 1.0);
 ```
 
 **Important:** Only semantic fields will be used. Non-semantic fields are automatically skipped.
@@ -175,6 +216,42 @@ Set the number of results to return. Default is 10.
 ```php
 $recommendations->topK(5);  // Return top 5 recommendations
 ```
+
+### `rrf(int $rankConstant = 60, int $rankWindowSize = 10)`
+
+Configure Reciprocal Rank Fusion parameters for combining results from multiple searches.
+
+```php
+// Use default RRF settings
+$recommendations->rrf();
+
+// Custom RRF settings
+$recommendations->rrf(rankConstant: 60, rankWindowSize: 10);
+```
+
+The `rankConstant` parameter controls how quickly scores decrease with rank position. Higher values make the fusion more forgiving of lower-ranked results.
+
+### `mmr(float $lambda = 0.5)`
+
+Enable Maximal Marginal Relevance for result diversification.
+
+```php
+// Enable MMR with default lambda (0.5 - balanced relevance and diversity)
+$recommendations->mmr();
+
+// Favor relevance over diversity
+$recommendations->mmr(lambda: 0.8);
+
+// Favor diversity over relevance
+$recommendations->mmr(lambda: 0.2);
+```
+
+**Lambda parameter:**
+- `1.0` - Pure relevance (no diversity)
+- `0.5` - Balanced (default)
+- `0.0` - Pure diversity (maximum variety)
+
+See the [MMR section](#maximal-marginal-relevance-mmr) for detailed explanation.
 
 ### `make()`
 
