@@ -61,6 +61,8 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected float $semanticScoreMultiplier = 1.0;
 
+    protected bool $retrieveEmbeddingsField = false;
+
     protected ResponseFormater $formatter;
 
     protected SearchContext $searchContext;
@@ -94,9 +96,28 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this;
     }
 
-    public function queryString(string $query, float $weight = 1.0, ?array $fields = null): static
+    public function retrieveEmbeddingsField(bool $retrieve = true): static
     {
-        $this->searchContext->queryStrings[] = new QueryString($query, $weight, null, null, $fields);
+        $this->retrieveEmbeddingsField = $retrieve;
+
+        return $this;
+    }
+
+
+    public function queryString(
+        string $query,
+        float $weight = 1.0,
+        ?array $fields = null,
+        ?int $dimension = null,
+        ?array $vector = null,
+    ): static {
+        $this->searchContext->queryStrings[] = new QueryString(
+            text: $query,
+            weight: $weight,
+            dimension: $dimension,
+            vector: $vector,
+            fields: $fields,
+        );
 
         return $this;
     }
@@ -234,7 +255,10 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected function handleRetrievableFields(Search $search)
     {
-        $search->fields($this->retrieve ?? $this->properties->fieldNames());
+        $search->fields($this->retrieve ?? [
+            ...$this->properties->fieldNames(),
+            ...($this->retrieveEmbeddingsField ? ['embeddings'] : [])
+        ]);
     }
 
     protected function handleSize(Search $search)
@@ -414,6 +438,16 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         // Build array of all text/dimension combinations
         $items = [];
         foreach ($this->searchContext->queryStrings as $queryString) {
+            // Skip if already has a vector (passed directly via queryString())
+            if ($queryString->hasVector()) {
+                continue;
+            }
+
+            // Skip empty text
+            if (trim($queryString->text()) === '') {
+                continue;
+            }
+
             foreach ($dims as $dim) {
                 $items[] = [
                     'text' => $queryString->text(),
@@ -471,12 +505,12 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $allSemanticQueries = [];
 
         foreach ($this->searchContext->queryStrings as $queryString) {
-
-            if (trim($queryString->text()) === '') {
+            // Skip if no text and no vector
+            if (trim($queryString->text()) === '' && !$queryString->hasVector()) {
                 continue;
             }
 
-            $result = $this->createVectorQuery($queryString->text(), $queryString->weight(), $queryString->fields());
+            $result = $this->createVectorQuery($queryString);
             $allKnnQueries = array_merge($allKnnQueries, $result['knn']);
             $allSemanticQueries = array_merge($allSemanticQueries, $result['semantic']);
         }
@@ -494,19 +528,28 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this->createTextQuery($queryString, $queryBoost, $scopedFields);
     }
 
-    protected function createVectorQuery(string $queryString, float $queryBoost = 1.0, ?array $scopedFields = null): array
+    protected function createVectorQuery(QueryString $queryString): array
     {
-        $vectorFields = $this->getVectorFields($scopedFields);
+        $vectorFields = $this->getVectorFields($queryString->fields());
         $dims = $this->getVectorDimensions($vectorFields);
 
         if (empty($dims)) {
             return ['knn' => [], 'semantic' => []];
         }
 
-        $embeddings = $this->getEmbeddings($dims, $queryString);
-        $vectorByDims = $this->mapEmbeddingsByDimensions($embeddings);
+        // Check if vector was passed directly
+        if ($queryString->hasVector() && $queryString->hasDimension()) {
+            // Use the provided vector
+            $vectorByDims = new Collection([
+                $queryString->dimension() => $queryString->vector()
+            ]);
+        } else {
+            // Generate embeddings from text
+            $embeddings = $this->getEmbeddings($dims, $queryString->text());
+            $vectorByDims = $this->mapEmbeddingsByDimensions($embeddings);
+        }
 
-        $vectorQueries = $this->buildVectorQueries($vectorFields, $vectorByDims, $queryBoost);
+        $vectorQueries = $this->buildVectorQueries($vectorFields, $vectorByDims, $queryString->weight());
 
         $knnQueries = [];
         $semanticQueries = [];

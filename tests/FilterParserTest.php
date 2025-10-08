@@ -14,6 +14,8 @@ use Sigmie\Testing\TestCase;
 
 class FilterParserTest extends TestCase
 {
+    
+
     /**
      * @test
      */
@@ -2104,5 +2106,54 @@ class FilterParserTest extends TestCase
         $this->expectException(ParseException::class);
 
         $parser->parse("color:'red' color:'blue'");
+    }
+
+    /**
+     * @test
+     */
+    public function trim_quotes_from_id_filter()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document(['title' => 'Doc 1'], _id: 'abc123'),
+            new Document(['title' => 'Doc 2'], _id: 'def456'),
+            new Document(['title' => 'Doc 3'], _id: 'ghi789'),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        // Test with single quotes
+        $query = $parser->parse("_id:['abc123','def456']");
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(2, $res->json('hits.hits'));
+
+        // Test with double quotes
+        $query = $parser->parse('_id:["abc123","ghi789"]');
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(2, $res->json('hits.hits'));
+
+        // Test with mixed quotes
+        $query = $parser->parse("_id:['abc123',\"def456\"]");
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(2, $res->json('hits.hits'));
     }
 }

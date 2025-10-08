@@ -61,6 +61,11 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         return $this;
     }
 
+    public function getMany(array $ids): array
+    {
+        return $this->retrieveDocuments($this->name, $ids)->toArray();
+    }
+
     public function refresh()
     {
         $this->refreshIndex($this->name);

@@ -9,6 +9,7 @@ use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Base\APIs\Mget;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Document\AliveCollection;
+use Sigmie\Document\Document;
 use Sigmie\Enums\RecommendationStrategy;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
@@ -17,8 +18,6 @@ use Sigmie\Support\VectorMath;
 
 class NewRecommendations
 {
-    use Mget;
-
     protected Properties $properties;
     protected array $fields = [];
     protected int $topK = 10;
@@ -30,6 +29,9 @@ class NewRecommendations
     protected bool $excludeSeeds = true;
     protected array $seedDocumentIds = [];
     protected array $docs = [];
+    protected array $seedIds = [];
+    protected bool $mmrEnabled = false;
+    protected float $mmrLambda = 0.5;
 
     public function __construct(
         protected string $indexName,
@@ -61,52 +63,22 @@ class NewRecommendations
         return $this;
     }
 
-    /**
-     * Seed recommendations using document IDs. Extracts embeddings from the specified documents.
-     *
-     * @param array $documentIds Array of document IDs to use as seeds
-     * @param RecommendationStrategy|null $strategy Strategy to use (Centroid or Fusion). Default: Centroid
-     * @return static
-     */
-    public function seedDocs(array $documentIds, ?RecommendationStrategy $strategy = null): static
+    public function seedIds(array $documentIds): static
     {
         $collected = new AliveCollection($this->indexName, $this->elasticsearchConnection, $this->embeddingsApi);
 
-        $docs = [];
+        $docs = $collected->getMany($documentIds);
 
-        foreach ($documentIds as $_id) {
-            $docs[] = $collected->get($_id);
-        }
-
+        $this->seedIds = $documentIds;
         $this->docs = $docs;
 
         return $this;
-    }
-
-    /**
-     * Alias for seedDocs(). Seeds recommendations using document IDs.
-     *
-     * @param array $documentIds Array of document IDs to use as seeds
-     * @param RecommendationStrategy|null $strategy Strategy to use (Centroid or Fusion). Default: Centroid
-     * @return static
-     */
-    public function seedIds(array $documentIds, ?RecommendationStrategy $strategy = null): static
-    {
-        return $this->seedDocs($documentIds, $strategy);
     }
 
     public function topK(int $topK): static
     {
         $this->topK = $topK;
         $this->search->size($topK);
-
-        return $this;
-    }
-
-
-    public function excludeSeeds(bool $exclude = true): static
-    {
-        $this->excludeSeeds = $exclude;
 
         return $this;
     }
@@ -122,6 +94,7 @@ class NewRecommendations
     {
         $newSearch = $this->search
             ->semantic()
+            ->retrieveEmbeddingsField()
             ->disableKeywordSearch();
 
         foreach ($this->fields as $fieldConfig) {
@@ -131,19 +104,12 @@ class NewRecommendations
 
         $newSearch->filters($this->filters);
 
-        return $this->search->makeSearch();
+        return $newSearch->makeSearch();
     }
 
     public function hits(): array
     {
-        // Handle fusion strategy directly
-        if ($this->strategy === RecommendationStrategy::Fusion) {
-            return $this->getFusionResults();
-        }
-
-        $search = $this->make();
-
-        return $search->get()->hits();
+        return $this->getFusionResults();
     }
 
     public function rrf(int $rrfRankConstant = 60, int $rankWindowSize = 10)
@@ -155,34 +121,94 @@ class NewRecommendations
         return $this;
     }
 
+    /**
+     * Enable MMR (Maximal Marginal Relevance) for result diversification
+     *
+     * @param float $lambda Balance between relevance (1.0) and diversity (0.0). Default: 0.5
+     * @return static
+     */
+    public function mmr(float $lambda = 0.5): static
+    {
+        $this->mmrEnabled = true;
+        $this->mmrLambda = $lambda;
+
+        return $this;
+    }
+
     protected function getFusionResults(): array
     {
+        if (count($this->docs) === 0 || empty($this->fields)) {
+            return [];
+        }
+
+        $filterString = implode(' AND ', [
+            'NOT _id:[' . implode(',', array_map(fn($id) => "'$id'", $this->seedIds)) . ']',
+            ...($this->filters === '' ? [] : [$this->filters])
+        ]);
+
         // Use MultiSearch to execute all kNN queries
         $multi = new NewMultiSearch($this->elasticsearchConnection, $this->embeddingsApi);
 
-        foreach ($this->fields as $fieldConfig) {
+        /** @var Document $doc  */
+        foreach ($this->docs as $doc) {
 
             $newSearch = $multi
                 ->newSearch($this->indexName)
                 ->properties($this->properties)
                 ->semantic()
+                ->size($this->topK * 10)
+                ->retrieveEmbeddingsField()
                 ->disableKeywordSearch();
 
-            // $newSearch->queryString($fieldConfig['seed'], $fieldConfig['weight'], [$fieldConfig['name']]);
+            foreach ($this->fields as $field) {
 
-            // TODO
-            // $newSearch->filters(implode(' AND ', [
-            //     'NOT _id:(' . implode(',', array_map(fn($id) => "'$id'", $this->seedDocumentIds)) . ')',
-            //     $this->filters
-            // ]));
+                $fieldName = $field['name'];
+
+                $vectors = dot($doc->_source['embeddings'])->get($fieldName);
+
+                foreach ($vectors as $vectorName => $vector) {
+                    $newSearch->queryString(
+                        query: '',
+                        weight: $field['weight'],
+                        dimension: count($vector),
+                        vector: $vector,
+                        fields: [$fieldName],
+                    );
+                }
+            }
+
+            $newSearch->filters($filterString);
         }
 
-        // Execute all searches
-        $hits = $multi->hits();
+        // Execute all searches and get grouped hits
+        $groupedHits = $multi->groupedHits();
+        $rankedLists = array_values($groupedHits);
 
-        // Fuse results with RRF
-        $rrf = new RRF($hits);
+        // Apply per-field MMR if enabled
+        if ($this->mmrEnabled) {
+            // Fuse with larger pool for MMR
+            $rrf = new RRF($this->rrfRankConstant, $this->topK * 10);
+            $fusedHits = $rrf->fuse($rankedLists);
 
-        return $rrf->fuse($this->rrfRankConstant, $this->topK);
+            $perFieldResults = [];
+
+            // Loop over each field and apply MMR
+            foreach ($this->fields as $field) {
+                $fieldName = $field['name'];
+
+                $mmr = new MMR($this->mmrLambda);
+                $perFieldResults[] = $mmr->diversify($fusedHits, $this->docs, $fieldName, $this->topK * 2);
+            }
+
+            // Final fusion: fuse all per-field reranked lists
+            $finalRrf = new RRF($this->rrfRankConstant, $this->topK);
+
+            return $finalRrf->fuse($perFieldResults);
+        }
+
+        // No MMR: just fuse and return topK
+        $rrf = new RRF($this->rrfRankConstant, $this->topK);
+
+        return $rrf->fuse($rankedLists);
     }
 }

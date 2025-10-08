@@ -58,4 +58,36 @@ class VectorMath
         // Normalize the centroid
         return self::normalize($centroid);
     }
+
+    /**
+     * Calculate cosine similarity between two vectors
+     * Returns value between -1 and 1 (1 = identical, 0 = orthogonal, -1 = opposite)
+     */
+    public static function cosineSimilarity(array $vectorA, array $vectorB): float
+    {
+        if (empty($vectorA) || empty($vectorB) || count($vectorA) !== count($vectorB)) {
+            return 0.0;
+        }
+
+        $dotProduct = 0.0;
+        $magnitudeA = 0.0;
+        $magnitudeB = 0.0;
+
+        foreach ($vectorA as $i => $valueA) {
+            $valueB = $vectorB[$i];
+            $dotProduct += $valueA * $valueB;
+            $magnitudeA += $valueA * $valueA;
+            $magnitudeB += $valueB * $valueB;
+        }
+
+        $magnitudeA = sqrt($magnitudeA);
+        $magnitudeB = sqrt($magnitudeB);
+
+        // Avoid division by zero
+        if ($magnitudeA == 0 || $magnitudeB == 0) {
+            return 0.0;
+        }
+
+        return $dotProduct / ($magnitudeA * $magnitudeB);
+    }
 }

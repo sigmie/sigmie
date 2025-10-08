@@ -21,15 +21,6 @@ class RerankerTest extends TestCase
     /**
      * @test
      */
-    public function rerank_time_ms()
-    {
-        // TODO add rerank time
-        // test empty query string
-    }
-
-    /**
-     * @test
-     */
     public function rerank_threshold()
     {
         $indexName = uniqid();
