@@ -48,8 +48,6 @@ class LocalRerankApi implements RerankApi
 
         $data = $json['results'] ?? $json['data'] ?? [];
 
-        ray($data)->green();
-
         return array_map(fn($result) => [
             'index' => $result['index'],
             'score' => $result['relevance_score'] ?? $result['score']

@@ -9,6 +9,8 @@ jobs:
     env:
       ELASTICSEARCH_VERSION:
       ELASTICSEARCH_PLUGINS:
+      LOCAL_EMBEDDING_URL: http://localhost:7997
+      LOCAL_RERANK_URL: http://localhost:7998
 
     strategy:
       fail-fast: true
@@ -37,6 +39,38 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Start Embeddings Service
+        run: |
+          docker run -d --name embeddings \
+            -p 7997:7997 \
+            -e MODEL_ID=BAAI/bge-small-en-v1.5 \
+            michaelf34/infinity:latest \
+            v2 --model-id BAAI/bge-small-en-v1.5 --port 7997
+
+      - name: Start Reranker Service
+        run: |
+          docker run -d --name reranker \
+            -p 7998:7998 \
+            -e MODEL_ID=cross-encoder/ms-marco-MiniLM-L-6-v2 \
+            michaelf34/infinity:latest \
+            v2 --model-id cross-encoder/ms-marco-MiniLM-L-6-v2 --port 7998
+
+      - name: Wait for AI Services to Start
+        run: |
+          echo "Waiting for embeddings service..."
+          until curl -f http://localhost:7997/health 2>/dev/null; do
+            echo "Waiting for embeddings..."
+            sleep 5
+          done
+          echo "Embeddings service is ready!"
+
+          echo "Waiting for reranker service..."
+          until curl -f http://localhost:7998/health 2>/dev/null; do
+            echo "Waiting for reranker..."
+            sleep 5
+          done
+          echo "Reranker service is ready!"
 
       - name: Set Elasticsearch Version as GitHub Action ENV Vars
         run: |
