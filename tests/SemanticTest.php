@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\AI\APIs\CohereEmbeddingsApi;
-use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 use Sigmie\Document\Document;
-use Sigmie\Enums\CohereInputType;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Semantic\Providers\Noop;
@@ -23,8 +20,7 @@ class SemanticTest extends TestCase
     {
         $indexName = uniqid();
 
-        $embeddingApi = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
-        $sigmie = $this->sigmie->embedder($embeddingApi);
+        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $blueprint = new NewProperties();
         $blueprint->nested('charachter', function (NewProperties $blueprint) {
@@ -32,7 +28,7 @@ class SemanticTest extends TestCase
                 $blueprint->nested('meta', function (NewProperties $blueprint) {
                     $blueprint->nested('extra', function (NewProperties $blueprint) {
                         $blueprint->nested('deep', function (NewProperties $blueprint) {
-                            $blueprint->title('deepnote')->semantic(3);
+                            $blueprint->title('deepnote')->semantic(3, dimensions: 384);
                         });
                     });
                 });
@@ -86,7 +82,7 @@ class SemanticTest extends TestCase
         $nestedQuery = $search->makeSearch()->toRaw();
 
         $this->assertArrayHasKey('knn', $nestedQuery);
-        $this->assertEquals('embeddings.charachter.details.meta.extra.deep.deepnote.m32_efc200_dims256_cosine_avg', $nestedQuery['knn'][0]['field']);
+        $this->assertEquals('embeddings.charachter.details.meta.extra.deep.deepnote.m48_efc300_dims384_cosine_avg', $nestedQuery['knn'][0]['field']);
 
         $response = $search->get();
 
@@ -102,17 +98,7 @@ class SemanticTest extends TestCase
     {
         $indexName = uniqid();
 
-        $indexingEmbeddingApi = new CohereEmbeddingsApi(
-            getenv('COHERE_API_KEY'),
-            CohereInputType::SearchDocument
-        );
-
-        $searchEmbeddingApi = new CohereEmbeddingsApi(
-            getenv('COHERE_API_KEY'),
-            CohereInputType::SearchQuery
-        );
-
-        $sigmie = $this->sigmie->embedder($indexingEmbeddingApi);
+        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $blueprint = new NewProperties();
         $blueprint->title('name')->semantic(6);
@@ -135,9 +121,7 @@ class SemanticTest extends TestCase
                 ]),
             ]);
 
-        $searchSigmie = $this->sigmie->embedder($searchEmbeddingApi);
-
-        $search = $searchSigmie
+        $search = $sigmie
             ->newSearch($indexName)
             ->properties($blueprint)
             ->semantic()
@@ -162,13 +146,12 @@ class SemanticTest extends TestCase
     public function exact_vector_match()
     {
         $indexName = uniqid();
-        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
 
-        $sigmie = $this->sigmie->embedder($embeddings);
+        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 7, dimensions: 256);
-        $props->text('text')->semantic(accuracy: 7, dimensions: 256);
+        $props->text('title')->semantic(accuracy: 7, dimensions: 384);
+        $props->text('text')->semantic(accuracy: 7, dimensions: 384);
 
         $sigmie->newIndex($indexName)->properties($props)->create();
 

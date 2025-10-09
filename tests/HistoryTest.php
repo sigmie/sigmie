@@ -6,9 +6,7 @@ namespace Sigmie\Tests;
 
 use Sigmie\AI\Answers\OpenAIAnswer;
 use Sigmie\AI\APIs\OpenAIConversationsApi;
-use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 use Sigmie\AI\APIs\OpenAIResponseApi;
-use Sigmie\AI\APIs\VoyageRerankApi;
 use Sigmie\AI\History\Index;
 use Sigmie\AI\ProviderFactory;
 use Sigmie\Document\Document;
@@ -32,15 +30,13 @@ class HistoryTest extends TestCase
     public function history_store()
     {
         $indexName = uniqid();
-        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
         $llm = new OpenAIResponseApi(getenv('OPENAI_API_KEY'));
-        $reranker = new VoyageRerankApi(getenv('VOYAGE_API_KEY'));
 
-        $sigmie = $this->sigmie->embedder($embeddings);
+        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 1, dimensions: 256);
-        $props->text('text')->semantic(accuracy: 1, dimensions: 256);
+        $props->text('title')->semantic(accuracy: 1, dimensions: 384);
+        $props->text('text')->semantic(accuracy: 1, dimensions: 384);
 
         $sigmie->newIndex($indexName)->properties($props)->create();
 
@@ -125,7 +121,7 @@ class HistoryTest extends TestCase
         $historyIndex = new Index(
             $indexName,
             $this->elasticsearchConnection,
-            new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'))
+            $this->embeddingApi
         );
 
         $historyIndex->create();

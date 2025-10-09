@@ -6,9 +6,7 @@ namespace Sigmie\Tests;
 
 use Sigmie\AI\Answers\OpenAIAnswer;
 use Sigmie\AI\APIs\OpenAIConversationsApi;
-use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 use Sigmie\AI\APIs\OpenAIResponseApi;
-use Sigmie\AI\APIs\VoyageRerankApi;
 use Sigmie\AI\Contracts\LLMAnswer as ContractsLLMAnswer;
 use Sigmie\AI\ProviderFactory;
 use Sigmie\Document\Document;
@@ -32,14 +30,13 @@ class RagTest extends TestCase
     public function rag_json()
     {
         $indexName = uniqid();
-        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
         $llm = new OpenAIResponseApi(getenv('OPENAI_API_KEY'));
 
-        $sigmie = $this->sigmie->embedder($embeddings);
+        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 1, dimensions: 256);
-        $props->text('text')->semantic(accuracy: 1, dimensions: 256);
+        $props->text('title')->semantic(accuracy: 1, dimensions: 384);
+        $props->text('text')->semantic(accuracy: 1, dimensions: 384);
 
         $sigmie->newIndex($indexName)->properties($props)->create();
 
@@ -100,15 +97,13 @@ class RagTest extends TestCase
     public function rag_non_streaming()
     {
         $indexName = uniqid();
-        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
         $llm = new OpenAIResponseApi(getenv('OPENAI_API_KEY'));
-        $reranker = new VoyageRerankApi(getenv('VOYAGE_API_KEY'));
 
-        $sigmie = $this->sigmie->embedder($embeddings);
+        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 1, dimensions: 256);
-        $props->text('text')->semantic(accuracy: 1, dimensions: 256);
+        $props->text('title')->semantic(accuracy: 1, dimensions: 384);
+        $props->text('text')->semantic(accuracy: 1, dimensions: 384);
         $props->number('position');
         $props->category('language');
 
@@ -147,7 +142,7 @@ class RagTest extends TestCase
         $this->assertCount(2, $multiSearch->hits());
 
         $answer = $sigmie
-            ->newRag($llm, $reranker)
+            ->newRag($llm, $this->rerankApi)
             ->search($multiSearch)
             ->rerank(function (NewRerank $rerank) {
                 $rerank->fields(['text', 'title']);
@@ -195,15 +190,13 @@ class RagTest extends TestCase
     public function rag_streaming()
     {
         $indexName = uniqid();
-        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
         $llm = new OpenAIResponseApi(getenv('OPENAI_API_KEY'));
-        $reranker = new VoyageRerankApi(getenv('VOYAGE_API_KEY'));
 
-        $sigmie = $this->sigmie->embedder($embeddings);
+        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 1, dimensions: 256);
-        $props->text('text')->semantic(accuracy: 1, dimensions: 256);
+        $props->text('title')->semantic(accuracy: 1, dimensions: 384);
+        $props->text('text')->semantic(accuracy: 1, dimensions: 384);
         $props->number('position');
         $props->category('language');
 
@@ -263,7 +256,7 @@ class RagTest extends TestCase
 
         // Stream answer and collect events
         $stream = $sigmie
-            ->newRag($llm, $reranker)
+            ->newRag($llm, $this->rerankApi)
             ->search($multiSearch)
             ->rerank(function (NewRerank $rerank) {
                 $rerank->fields(['text', 'title']);

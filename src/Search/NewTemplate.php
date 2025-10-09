@@ -25,6 +25,9 @@ use Sigmie\Search\Contracts\SearchTemplateBuilder as SearchTemplateBuilderInterf
 use Sigmie\Shared\Collection;
 
 
+/**
+ * @deprecated This class is deprecated and will be removed in future versions.
+ */
 class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilderInterface
 {
     protected array $sort = ['_score'];

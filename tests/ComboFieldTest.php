@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\TestCase;
@@ -18,15 +17,14 @@ class ComboFieldTest extends TestCase
     {
         $indexName = uniqid();
 
-        $embeddingApi = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
-        $sigmie = $this->sigmie->embedder($embeddingApi);
+        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $blueprint = new NewProperties();
         $blueprint->text('name');
         $blueprint->text('category');
         $blueprint->text('brand');
         $blueprint->combo('fulltext', ['name', 'category', 'brand'])
-            ->semantic(accuracy: 1, dimensions: 256);
+            ->semantic(accuracy: 1, dimensions: 384);
 
         $sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -78,15 +76,14 @@ class ComboFieldTest extends TestCase
     {
         $indexName = uniqid();
 
-        $embeddingApi = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
-        $sigmie = $this->sigmie->embedder($embeddingApi);
+        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $blueprint = new NewProperties();
         $blueprint->text('title');
         $blueprint->text('tags');
         $blueprint->text('description');
         $blueprint->combo('searchable', ['title', 'tags', 'description'])
-            ->semantic(accuracy: 2, dimensions: 128);
+            ->semantic(accuracy: 2, dimensions: 384);
 
         $sigmie->newIndex($indexName)
             ->properties($blueprint)

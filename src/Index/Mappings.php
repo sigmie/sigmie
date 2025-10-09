@@ -18,6 +18,8 @@ use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\SigmieVector;
 use Sigmie\Mappings\Types\Text;
 
+use function PHPUnit\Framework\objectEquals;
+
 class Mappings implements MappingsInterface
 {
     public readonly Properties $properties;
@@ -78,12 +80,14 @@ class Mappings implements MappingsInterface
     {
         $embeddings = new Embeddings($this->properties);
 
+        $properties = [
+            ...$this->properties->toRaw(),
+            ...$embeddings->toRaw(),
+        ];
+
         $raw = [
-            'properties' => [
-                ...$this->properties->toRaw(),
-                ...$embeddings->toRaw(),
-            ],
-            '_meta' => $this->meta,
+            'properties' => (object) $properties,
+            '_meta' => (object) $this->meta,
         ];
 
         return $raw;

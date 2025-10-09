@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\AI\APIs\CohereEmbeddingsApi;
-use Sigmie\Enums\CohereInputType;
 use Sigmie\Testing\TestCase;
 
 class ClassificationTest extends TestCase
@@ -15,10 +13,9 @@ class ClassificationTest extends TestCase
      */
     public function centroid_based_classification()
     {
-        $embeddingsApi = new CohereEmbeddingsApi(
-            getenv('COHERE_API_KEY'),
-            CohereInputType::Classification
-        );
+        $this->markTestSkipped('Requires Cohere API with Classification InputType');
+
+        $embeddingsApi = $this->embeddingApi;
 
         $examples = [
             [
@@ -83,10 +80,9 @@ class ClassificationTest extends TestCase
      */
     public function kmeans_clustering()
     {
-        $embeddingsApi = new CohereEmbeddingsApi(
-            getenv('COHERE_API_KEY'),
-            CohereInputType::Clustering
-        );
+        $this->markTestSkipped('Requires Cohere API with Clustering InputType');
+
+        $embeddingsApi = $this->embeddingApi;
 
         $texts = [
             'The Lion King',
@@ -124,10 +120,9 @@ class ClassificationTest extends TestCase
      */
     public function hdbscan_clustering()
     {
-        $embeddingsApi = new CohereEmbeddingsApi(
-            getenv('COHERE_API_KEY'),
-            CohereInputType::Clustering
-        );
+        $this->markTestSkipped('Requires Cohere API with Clustering InputType');
+
+        $embeddingsApi = $this->embeddingApi;
 
         $texts = [
             'The Lion King',

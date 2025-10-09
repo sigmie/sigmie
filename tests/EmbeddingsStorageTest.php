@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Support\VectorMath;
@@ -18,17 +17,16 @@ class EmbeddingsStorageTest extends TestCase
     public function embeddings_are_stored_and_retrieved_correctly_per_field()
     {
         $indexName = uniqid();
-        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
 
-        $sigmie = $this->sigmie->embedder($embeddings);
+        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 1, dimensions: 256);
-        $props->text('description')->semantic(accuracy: 1, dimensions: 256);
-        $props->text('content')->semantic(accuracy: 1, dimensions: 512);
+        $props->text('title')->semantic(accuracy: 1, dimensions: 384);
+        $props->text('description')->semantic(accuracy: 1, dimensions: 384);
+        $props->text('content')->semantic(accuracy: 1, dimensions: 384);
         $props->nested('comments', function (NewProperties $props) {
-            $props->text('text')->semantic(accuracy: 1, dimensions: 256);
-            $props->text('author')->semantic(accuracy: 1, dimensions: 128);
+            $props->text('text')->semantic(accuracy: 1, dimensions: 384);
+            $props->text('author')->semantic(accuracy: 1, dimensions: 384);
         });
 
         $sigmie->newIndex($indexName)->properties($props)->create();
@@ -56,45 +54,45 @@ class EmbeddingsStorageTest extends TestCase
         // Verify each field has embeddings
         $embeddings = $doc->_source['embeddings'];
 
-        // Title field (256 dims)
+        // Title field (384 dims)
         $this->assertArrayHasKey('title', $embeddings);
         $titleEmbedding = $embeddings['title'];
         $this->assertIsArray($titleEmbedding);
         $titleKey = array_key_first($titleEmbedding);
-        $this->assertStringContainsString('dims256', $titleKey);
-        $this->assertCount(256, $titleEmbedding[$titleKey]);
+        $this->assertStringContainsString('dims384', $titleKey);
+        $this->assertCount(384, $titleEmbedding[$titleKey]);
 
-        // Description field (256 dims)
+        // Description field (384 dims)
         $this->assertArrayHasKey('description', $embeddings);
         $descEmbedding = $embeddings['description'];
         $this->assertIsArray($descEmbedding);
         $descKey = array_key_first($descEmbedding);
-        $this->assertStringContainsString('dims256', $descKey);
-        $this->assertCount(256, $descEmbedding[$descKey]);
+        $this->assertStringContainsString('dims384', $descKey);
+        $this->assertCount(384, $descEmbedding[$descKey]);
 
-        // Content field (512 dims)
+        // Content field (384 dims)
         $this->assertArrayHasKey('content', $embeddings);
         $contentEmbedding = $embeddings['content'];
         $this->assertIsArray($contentEmbedding);
         $contentKey = array_key_first($contentEmbedding);
-        $this->assertStringContainsString('dims512', $contentKey);
-        $this->assertCount(512, $contentEmbedding[$contentKey]);
+        $this->assertStringContainsString('dims384', $contentKey);
+        $this->assertCount(384, $contentEmbedding[$contentKey]);
 
-        // Comments.text field (256 dims, concatenated)
+        // Comments.text field (384 dims, concatenated)
         $this->assertArrayHasKey('comments.text', $embeddings);
         $commentTextEmbedding = $embeddings['comments.text'];
         $this->assertIsArray($commentTextEmbedding);
         $commentTextKey = array_key_first($commentTextEmbedding);
-        $this->assertStringContainsString('dims256', $commentTextKey);
-        $this->assertCount(256, $commentTextEmbedding[$commentTextKey]);
+        $this->assertStringContainsString('dims384', $commentTextKey);
+        $this->assertCount(384, $commentTextEmbedding[$commentTextKey]);
 
-        // Comments.author field (128 dims, concatenated)
+        // Comments.author field (384 dims, concatenated)
         $this->assertArrayHasKey('comments.author', $embeddings);
         $commentAuthorEmbedding = $embeddings['comments.author'];
         $this->assertIsArray($commentAuthorEmbedding);
         $commentAuthorKey = array_key_first($commentAuthorEmbedding);
-        $this->assertStringContainsString('dims128', $commentAuthorKey);
-        $this->assertCount(128, $commentAuthorEmbedding[$commentAuthorKey]);
+        $this->assertStringContainsString('dims384', $commentAuthorKey);
+        $this->assertCount(384, $commentAuthorEmbedding[$commentAuthorKey]);
     }
 
     /**
@@ -103,12 +101,11 @@ class EmbeddingsStorageTest extends TestCase
     public function embeddings_use_md5_keys_for_field_identification()
     {
         $indexName = uniqid();
-        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
 
-        $sigmie = $this->sigmie->embedder($embeddings);
+        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 1, dimensions: 256);
+        $props->text('title')->semantic(accuracy: 1, dimensions: 384);
 
         $sigmie->newIndex($indexName)->properties($props)->create();
 
@@ -151,13 +148,12 @@ class EmbeddingsStorageTest extends TestCase
     public function stored_embeddings_are_normalized()
     {
         $indexName = uniqid();
-        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
 
-        $sigmie = $this->sigmie->embedder($embeddings);
+        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 1, dimensions: 256);
-        $props->text('content')->semantic(accuracy: 1, dimensions: 512);
+        $props->text('title')->semantic(accuracy: 1, dimensions: 384);
+        $props->text('content')->semantic(accuracy: 1, dimensions: 384);
 
         $sigmie->newIndex($indexName)->properties($props)->create();
 
@@ -207,14 +203,13 @@ class EmbeddingsStorageTest extends TestCase
     public function average_strategy_produces_normalized_vectors_in_nested_fields()
     {
         $indexName = uniqid();
-        $embeddings = new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY'));
 
-        $sigmie = $this->sigmie->embedder($embeddings);
+        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $props = new NewProperties;
         // Use Average strategy for nested comments field (multiple items will be averaged)
         $props->nested('comments', function (NewProperties $props) {
-            $props->text('text')->semantic(accuracy: 2, dimensions: 256); // accuracy 2 uses Average strategy
+            $props->text('text')->semantic(accuracy: 2, dimensions: 384); // accuracy 2 uses Average strategy
         });
 
         $sigmie->newIndex($indexName)->properties($props)->create();
