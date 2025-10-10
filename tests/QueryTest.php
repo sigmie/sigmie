@@ -314,7 +314,7 @@ class QueryTest extends TestCase
             $boolean->mustNot->ids(['unqie']);
 
             $boolean->should->bool(fn(QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
-        })->sort('title.raw', 'asc')
+        })->sort(['title.raw' => 'asc'])
             ->fields(['title'])
             ->from(0)
             ->size(2)

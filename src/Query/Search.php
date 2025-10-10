@@ -163,18 +163,6 @@ class Search
         return $this;
     }
 
-    // public function sortString(string $sortString): self
-    // {
-    //     $parser = new SortParser($this->properties);
-
-    //     $this->sort = [
-    //         ...$this->sort,
-    //         ...$parser->parse($sortString),
-    //     ];
-
-    //     return $this;
-    // }
-
     public function sort(array $sort): self
     {
         $this->sort = $sort;

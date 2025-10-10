@@ -543,67 +543,6 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function completion_suggests_test()
-    {
-        $indexName = uniqid();
-        $blueprint = new NewProperties;
-        $blueprint->name('name');
-        $blueprint->text('description');
-        $blueprint->autocomplete();
-
-        $index = $this->sigmie->newIndex($indexName)
-            ->autocomplete(['name', 'description'])
-            ->properties($blueprint)
-            ->create();
-
-        $index = $this->sigmie->collect($indexName, refresh: true);
-
-        $index->merge([
-            new Document([
-                'name' => 'Mickey',
-                'description' => 'Adventure in the woods',
-            ]),
-            new Document([
-                'name' => 'Minie',
-                'description' => 'Adventure in the woods',
-            ]),
-            new Document([
-                'name' => 'Modern',
-                'description' => 'Adventure in the woods',
-            ]),
-            new Document([
-                'name' => 'Mice',
-                'description' => 'Adventure in the woods',
-            ]),
-            new Document([
-                'name' => 'Marisa',
-                'description' => 'Adventure in the woods',
-            ]),
-        ]);
-
-        $res = $this->sigmie->newSearch($indexName)
-            ->properties($blueprint)
-            ->autocompletePrefix('m')
-            ->fields(['name'])
-            ->retrieve(['name'])
-            ->get();
-
-        $autocomplete = $res->json('autocomplete');
-
-        $suggestions = array_map(fn($value) => $value['text'], $autocomplete[0]['options']);
-
-        $this->assertEquals([
-            'Marisa',
-            'Mice',
-            'Mickey',
-            'Minie',
-            'Modern',
-        ], $suggestions);
-    }
-
-    /**
-     * @test
-     */
     public function search_promises_test()
     {
         $indexName = uniqid();

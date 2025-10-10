@@ -68,7 +68,7 @@ class IndexUpdateTest extends TestCase
         $index = $this->sigmie->newIndex($alias)
             ->stopwords(['foo', 'bar'], 'demo')
             ->mapChars(['foo' => 'bar'], 'some_char_filter_name')
-            ->stripHTML()
+            ->stripHTML('html_strip')
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {

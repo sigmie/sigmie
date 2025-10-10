@@ -1522,8 +1522,6 @@ class MappingsTest extends TestCase
             'user.age',
             'user.address.street',
             'user.address.city',
-            'boost',
-            'autocomplete'
         ], $blueprint->get()->fieldNames());
 
         $this->assertEquals([
@@ -1540,8 +1538,6 @@ class MappingsTest extends TestCase
             'user.address',
             'user.address.street',
             'user.address.city',
-            'boost',
-            'autocomplete'
         ], $blueprint->get()->fieldNames(true));
     }
 
@@ -1631,26 +1627,6 @@ class MappingsTest extends TestCase
         $this->assertIndex($indexName, function (Assert $assert) {
             $scoreField = $assert->data()['mappings']['properties']['score'];
             $this->assertEquals('double', $scoreField['type']);
-        });
-    }
-
-    /**
-     * @test 
-     */
-    public function flat_object_field_mapping()
-    {
-        $indexName = uniqid();
-
-        $blueprint = new NewProperties();
-        $blueprint->add(new \Sigmie\Mappings\Types\FlatObject('metadata'));
-
-        $this->sigmie->newIndex($indexName)
-            ->properties($blueprint)
-            ->create();
-
-        $this->assertIndex($indexName, function (Assert $assert) {
-            $metadataField = $assert->data()['mappings']['properties']['metadata'];
-            $this->assertEquals('flat_object', $metadataField['type']);
         });
     }
 

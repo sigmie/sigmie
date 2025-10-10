@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\AI\APIs\LocalResponseApi;
 use Sigmie\AI\APIs\OpenAIResponseApi;
 use Sigmie\AI\NewJsonSchema;
 use Sigmie\AI\Prompt;
@@ -106,8 +107,9 @@ class PromptTest extends TestCase
             });
         });
 
-        $openai = new OpenAIResponseApi(getenv('OPENAI_API_KEY'));
-        $json = $openai->jsonAnswer($prompt);
+        $llm = $this->llmApi;
+        $answer = $llm->jsonAnswer($prompt);
+        $json = $answer->json();
 
         $this->assertIsArray($json);
         $this->assertArrayHasKey('products', $json);

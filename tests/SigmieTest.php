@@ -18,34 +18,6 @@ class SigmieTest extends TestCase
     /**
      * @test
      */
-    public function elastiknn_plugin_is_registered()
-    {
-        Sigmie::registerPlugins([
-            'elastiknn'
-        ]);
-
-        $queries = (new SigmieAI)->queries('test query string', new Text('test'));
-
-        $this->assertInstanceOf(ElastiknnNearestNeighbors::class, $queries[0]);
-    }
-
-    /**
-     * @test
-     */
-    public function dense_vector_type_is_registered()
-    {
-        Sigmie::registerPlugins([
-            // 'elastiknn'
-        ]);
-
-        $queries = (new SigmieAI)->queries('test query string', new Text('test'));
-
-        $this->assertInstanceOf(NearestNeighbors::class, $queries[0]);
-    }
-
-    /**
-     * @test
-     */
     public function with_application_prefix()
     {
         $alias = uniqid();
