@@ -214,7 +214,9 @@ class EmbeddingsStorageTest extends TestCase
 
         $sigmie->newIndex($indexName)->properties($props)->create();
 
-        $collected = $sigmie->collect($indexName, true)->properties($props);
+        $collected = $sigmie->collect($indexName, true)
+        ->populateEmbeddings()
+        ->properties($props);
 
         // Create document with multiple comments (will trigger averaging)
         $collected->merge([
@@ -230,8 +232,9 @@ class EmbeddingsStorageTest extends TestCase
         // Retrieve the document
         $doc = $collected->get('avg-test');
 
+        dump($doc->_source);
         // Check that the averaged embedding is normalized
-        $commentEmbeddings = $doc->_source['embeddings']['comments.text'];
+        $commentEmbeddings = $doc->_source['embeddings']['comments']['text'];
         $commentKey = array_key_first($commentEmbeddings);
         $commentVector = $commentEmbeddings[$commentKey];
 
