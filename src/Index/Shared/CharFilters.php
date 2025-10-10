@@ -12,6 +12,8 @@ use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\CharFilter;
 use Sigmie\Shared\Collection;
 
+use function Sigmie\Functions\random_name;
+
 trait CharFilters
 {
     private Collection $charFilters;
@@ -87,10 +89,10 @@ trait CharFilters
 
     private function createCharFilterName(string $name): string
     {
-        $suffixed = prefix_id($name);
+        $suffixed = random_name($name);
 
         while ($this->analysis()->hasCharFilter($suffixed)) {
-            $suffixed = prefix_id($name);
+            $suffixed = random_name($name);
         }
 
         return $suffixed;

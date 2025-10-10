@@ -228,7 +228,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             foreach ($field->names() as $name) {
                 $fields[$name] = [
                     'type' => 'plain',
-                    'force_source' => true,
                     'pre_tags' => [$this->highlightPrefix],
                     'post_tags' => [$this->highlightSuffix],
                     'fragment_size' => 150,
@@ -239,8 +238,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         });
 
         $search->highlight([
-            // 'require_field_match' => false,
-            'force_source' => true,
+            'require_field_match' => false,
             'no_match_size' => 100,
             'fields' => $fields
         ]);
@@ -379,7 +377,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $search->index($this->index);
 
-        // $this->handleHighlight($search);
+        $this->handleHighlight($search);
         $this->handleRetrievableFields($search);
         $this->handleSort($search);
         $this->handleAggs($search);

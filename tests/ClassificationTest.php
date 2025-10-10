@@ -13,8 +13,6 @@ class ClassificationTest extends TestCase
      */
     public function centroid_based_classification()
     {
-        $this->markTestSkipped('Requires Cohere API with Classification InputType');
-
         $embeddingsApi = $this->embeddingApi;
 
         $examples = [
@@ -80,8 +78,6 @@ class ClassificationTest extends TestCase
      */
     public function kmeans_clustering()
     {
-        $this->markTestSkipped('Requires Cohere API with Clustering InputType');
-
         $embeddingsApi = $this->embeddingApi;
 
         $texts = [
@@ -120,8 +116,6 @@ class ClassificationTest extends TestCase
      */
     public function hdbscan_clustering()
     {
-        $this->markTestSkipped('Requires Cohere API with Clustering InputType');
-
         $embeddingsApi = $this->embeddingApi;
 
         $texts = [

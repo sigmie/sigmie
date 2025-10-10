@@ -12,6 +12,8 @@ use Sigmie\Query\NewQuery;
 use Sigmie\Search\Contracts\MultiSearchable;
 use Sigmie\Search\MultiSearchResponse;
 
+use function Sigmie\Functions\random_name;
+
 class NewMultiSearch
 {
     use MSearch;
@@ -33,7 +35,7 @@ class NewMultiSearch
         $search->index($index);
 
         $this->queries[] = $search;
-        $this->names[count($this->queries) - 1] = $name ?? prefix_id('srch', 10);
+        $this->names[count($this->queries) - 1] = $name ?? random_name('srch', 10);
 
         return $search;
     }
@@ -41,7 +43,7 @@ class NewMultiSearch
     public function add(NewSearch $search, ?string $name = null): NewSearch
     {
         $this->queries[] = $search;
-        $this->names[count($this->queries) - 1] = $name ?? prefix_id('srch', 10);
+        $this->names[count($this->queries) - 1] = $name ?? random_name('srch', 10);
 
         return $search;
     }
@@ -52,7 +54,7 @@ class NewMultiSearch
         $query = $query->index($index);
 
         $this->queries[] = $query;
-        $this->names[count($this->queries) - 1] = $name ?? prefix_id('srch', 10);
+        $this->names[count($this->queries) - 1] = $name ?? random_name('srch', 10);
 
         return $query;
     }
@@ -63,7 +65,7 @@ class NewMultiSearch
             ['index' => $index],
             $query
         ];
-        $this->names[count($this->queries) - 1] = $name ?? prefix_id('srch', 10);
+        $this->names[count($this->queries) - 1] = $name ?? random_name('srch', 10);
 
         return $this;
     }
@@ -136,7 +138,7 @@ class NewMultiSearch
         $grouped = [];
 
         foreach ($results as $index => $result) {
-            $name = $this->names[$index] ?? prefix_id('srch', 10);
+            $name = $this->names[$index] ?? random_name('srch', 10);
             $hits = is_array($result)
                 ? ($result['hits']['hits'] ?? [])
                 : $result->hits();

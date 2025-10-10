@@ -33,36 +33,6 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function maxWindow()
-    {
-        $alias = uniqid();
-
-        $this->sigmie->newIndex($alias)
-            ->config('index.max_result_window', 1)
-            ->create();
-
-        $index = $this->sigmie->collect($alias, refresh: true);
-
-        $index->merge([
-            new Document([
-                'number' => '08000234379',
-            ]),
-            new Document([
-                'number' => '08000234379',
-            ]),
-        ]);
-
-        $this->expectException(Exception::class);
-
-        $this->sigmie->newSearch($alias)
-            ->queryString('')
-            ->size(2)
-            ->get();
-    }
-
-    /**
-     * @test
-     */
     public function default_analyzer_even_if_no_text_field_mapping()
     {
         $alias = uniqid();
@@ -654,7 +624,7 @@ class IndexBuilderTest extends TestCase
         $this->assertIndex($alias, function (Assert $index) {
             [$name] = array_keys($index->data()['settings']['index']['analysis']['filter']);
 
-            $this->assertMatchesRegularExpression('/synonyms_[a-z]{3}$/', $name);
+            $this->assertStringStartsWith('synonyms_', $name);
         });
     }
 

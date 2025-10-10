@@ -25,6 +25,8 @@ use Sigmie\Query\Queries\Term\Wildcard;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
 
+use function Sigmie\Functions\random_name;
+
 class NewQuery implements Queries, MultiSearchable
 {
     protected Search $search;
@@ -231,6 +233,6 @@ class NewQuery implements Queries, MultiSearchable
             return $this->searchName;
         }
 
-        return prefix_id('qr');
+        return random_name('qr');
     }
 }

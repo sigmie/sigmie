@@ -1130,7 +1130,7 @@ class SearchTest extends TestCase
 
         $hits = $res->hits();
 
-        $this->assertEquals('Mickey', $hits[0]['_source']['name']);
+        $this->assertEquals('Mickey', $hits[0]['name']);
         $this->assertEquals(2, $res->total());
     }
 

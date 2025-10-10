@@ -175,18 +175,12 @@ class Search
     //     return $this;
     // }
 
-    // public function sort(string $field, ?string $direction = null): self
-    // {
-    //     if ($field === '_score') {
-    //         $this->sort[] = $field;
+    public function sort(array $sort): self
+    {
+        $this->sort = $sort;
 
-    //         return $this;
-    //     }
-
-    //     $this->sort[] = [$field => $direction];
-
-    //     return $this;
-    // }
+        return $this;
+    }
 
     public function addRaw(string $key, mixed $value)
     {
@@ -194,19 +188,6 @@ class Search
 
         return $this;
     }
-
-    // public function highlight(string $field, string $preTag, string $postTag)
-    // {
-    //     $this->highlight[$field] = [
-    //         'type' => 'plain',
-    //         'force_source' => true,
-    //         'pre_tags' => [$preTag],
-    //         'post_tags' => [$postTag],
-    //         'fragment_size' => 150,
-    //         'number_of_fragments' => 3,
-    //         'no_match_size' => 150,
-    //     ];
-    // }
 
     public function response()
     {

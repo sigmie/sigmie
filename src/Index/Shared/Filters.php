@@ -22,6 +22,8 @@ use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\TokenFilter;
 use Sigmie\Shared\Collection;
 
+use function Sigmie\Functions\random_name;
+
 trait Filters
 {
     private Collection $filters;
@@ -202,6 +204,6 @@ trait Filters
 
     private function createFilterName(string $name): string
     {
-        return prefix_id($name);
+        return strtolower(random_name($name,5));
     }
 }

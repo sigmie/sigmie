@@ -18,6 +18,8 @@ use Sigmie\AI\History\Index as HistoryIndex;
 use Sigmie\AI\Role;
 use Sigmie\Document\Hit;
 
+use function Sigmie\Functions\random_name;
+
 class NewRag
 {
     protected null|NewMultiSearch|NewSearch $searchBuilder = null;
@@ -110,11 +112,11 @@ class NewRag
             $this->searchBuilder = $multiSearch;
         }
 
-        $historySearchName = prefix_id('sgm_hist', 5);
+        $historySearchName = random_name('sgm_hist', 5);
 
         if ($this->historyIndex) {
             $search = $this->historyIndex->search(
-                $this->conversationId ?: prefix_id('conv', 10),
+                $this->conversationId ?: random_name('conv', 10),
                 $this->userToken
             );
 
@@ -186,7 +188,7 @@ class NewRag
         }
 
         $timestamp = (new DateTime('now'))->format('Y-m-d\TH:i:s.uP');
-        $conversationId = $this->conversationId ?: prefix_id('conv', 10);
+        $conversationId = $this->conversationId ?: random_name('conv', 10);
 
         $turn = [
             ...array_filter(
@@ -215,7 +217,7 @@ class NewRag
     {
         $prompt = $this->preparePrompt();
 
-        $conversationId = $this->conversationId ?: prefix_id('conv', 10);
+        $conversationId = $this->conversationId ?: random_name('conv', 10);
 
         $answer = $this->llm->jsonAnswer($prompt);
 
@@ -233,7 +235,7 @@ class NewRag
     {
         $prompt = $this->preparePrompt();
 
-        $conversationId = $this->conversationId ?: prefix_id('conv', 10);
+        $conversationId = $this->conversationId ?: random_name('conv', 10);
 
         $answer = $this->llm->answer($prompt);
 
