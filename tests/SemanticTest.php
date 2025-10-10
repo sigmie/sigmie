@@ -101,7 +101,7 @@ class SemanticTest extends TestCase
         $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $blueprint = new NewProperties();
-        $blueprint->title('name')->semantic(6);
+        $blueprint->title('name')->semantic(6, dimensions: 384);
 
         $sigmie->newIndex($indexName)
             ->properties($blueprint)

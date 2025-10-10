@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings;
 
-use PHPUnit\Framework\Constraint\ObjectEquals;
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
-use Sigmie\Mappings\Contracts\Type as ContractsType;
 use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Boost;
-use Sigmie\Mappings\Types\Autocomplete;
 use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Category;
@@ -92,15 +89,6 @@ class NewProperties
     public function boost(string $name = 'boost'): Boost
     {
         $field = new Boost($name);
-
-        $this->fields->add($field);
-
-        return $field;
-    }
-
-    public function autocomplete(string $name = 'autocomplete'): Autocomplete
-    {
-        $field = new Autocomplete($name);
 
         $this->fields->add($field);
 

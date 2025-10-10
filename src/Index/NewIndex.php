@@ -30,7 +30,6 @@ use Sigmie\AI\Contracts\EmbeddingsApi;
 
 class NewIndex
 {
-    use Autocomplete;
     use CharFilters;
     use Filters;
     use SearchSynonyms;
@@ -167,12 +166,6 @@ class NewIndex
             analysis: $this->analysis,
             configs: $this->config
         );
-
-        if ($this->autocomplete && ($mappings->properties()->autocompleteField ?? false)) {
-            $pipeline = $this->createAutocompletePipeline($mappings);
-
-            $settings->defaultPipeline($pipeline->name);
-        }
 
         $name = $this->createIndexName();
 

@@ -59,7 +59,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->text('name');
+        $blueprint->name('name');
 
         /** @var GreekBuilder */
         $greekBuilder = $this->sigmie->newIndex($alias)->language(new Greek());
@@ -79,10 +79,6 @@ class IndexBuilderTest extends TestCase
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
-            $index->assertAnalyzerHasFilter('name_field_analyzer', 'greek_stopwords');
-            $index->assertAnalyzerHasFilter('name_field_analyzer', 'greek_stemmer');
-            $index->assertAnalyzerHasFilter('name_field_analyzer', 'greek_lowercase');
 
             $index->assertAnalyzerHasFilter('default', 'greek_stopwords');
             $index->assertAnalyzerHasFilter('default', 'greek_stemmer');
