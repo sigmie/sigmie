@@ -62,7 +62,7 @@ class EmbeddingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 256);
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384);
         $blueprint->category('color');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
@@ -70,8 +70,7 @@ class EmbeddingsTest extends TestCase
         $collected = $this->sigmie->collect($indexName, true)
             ->properties($blueprint);
 
-        $collected->aiProvider(new SigmieAI)
-            ->populateEmbeddings()
+        $collected->populateEmbeddings()
             ->merge([
                 new Document([
                     'title' => 'Queen',
@@ -83,7 +82,8 @@ class EmbeddingsTest extends TestCase
                 ],),
             ]);
 
-        $results = $this->sigmie->newSearch($indexName)
+        $results = $this->sigmie
+            ->newSearch($indexName)
             ->properties($blueprint)
             ->disableKeywordSearch()
             ->noResultsOnEmptySearch()
@@ -92,12 +92,12 @@ class EmbeddingsTest extends TestCase
             ->queryString('man')
             ->get();
 
-        $hit = $results->json('hits.0');
+        $hit = $results->hits()[0];
 
-        $this->assertEquals('Queen', $hit['_source']['title'] ?? null);
-        $this->assertEquals('red', $hit['_source']['color'] ?? null);
+        $this->assertEquals('Queen', $hit->get('title') ?? null);
+        $this->assertEquals('red', $hit->get('color') ?? null);
 
-        $this->assertNull($results->json()['hits'][1] ?? null);
+        $this->assertNull($results->hits()[1] ?? null);
     }
 
     /**
@@ -109,14 +109,14 @@ class EmbeddingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 256);
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384);
         $blueprint->category('color');
         $blueprint->nested('comments', function (NewProperties $props) {
-            $props->text('text')->semantic(accuracy: 1, dimensions: 256);
+            $props->text('text')->semantic(accuracy: 1, dimensions: 384);
             $props->object('user', function (NewProperties $props) {
-                $props->text('name')
-                    ->semantic(accuracy: 1, dimensions: 256)
-                    ->semantic(accuracy: 7, dimensions: 256);
+                $name = $props->text('name');
+                    $name->semantic(accuracy: 1, dimensions: 384);
+                    $name->semantic(accuracy: 7, dimensions: 384);
             });
         });
 
@@ -125,38 +125,40 @@ class EmbeddingsTest extends TestCase
         $collected = $this->sigmie->collect($indexName, true)
             ->properties($blueprint);
 
-        $collected->aiProvider(new SigmieAI)
-            ->populateEmbeddings()
+        $collected
             ->merge([
                 new Document([
                     'title' => 'Hello World',
                     'comments' => [
-                        'text' => 'Hello World',
-                        'user' => [
-                            'name' => 'John Doe',
-                        ],
+                        [
+                            'text' => 'Hello World',
+                            'user' => [
+                                'name' => 'John Doe',
+                            ],
+                        ]
                     ],
                 ],),
             ]);
 
-        $collected->aiProvider(new SigmieAI)
-            ->populateEmbeddings()
+        $collected
             ->merge([
                 new Document([
                     'title' => 'Queen',
                     'comments' => [
-                        'text' => 'Hello World',
-                        'user' => [
-                            'name' => 'John Doe',
-                        ],
+                        [
+                            'text' => 'Hello World',
+                            'user' => [
+                                'name' => 'John Doe',
+                            ],
+                        ]
                     ],
                 ], _id: '1234'),
             ]);
 
         $document = $collected->get('1234');
 
-        $this->assertCount(256, $document->_source['embeddings']['title']['m16_efc80_dims256_cosine_concat']);
-        $this->assertCount(256, $document->_source['embeddings']['comments.text']['m16_efc80_dims256_cosine_concat']);
-        $this->assertCount(256, $document->_source['embeddings']['comments.user.name']['m16_efc80_dims256_cosine_concat']);
+        $this->assertCount(384, $document['embeddings']['title']['m24_efc120_dims384_cosine_concat']);
+        $this->assertCount(384, $document['embeddings']['comments']['text']['m24_efc120_dims384_cosine_concat']);
+        $this->assertCount(384, $document['embeddings']['comments']['user']['name']['m24_efc120_dims384_cosine_concat']);
     }
 }

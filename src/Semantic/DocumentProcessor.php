@@ -17,7 +17,7 @@ class DocumentProcessor
 {
     public function __construct(
         protected Properties $properties,
-        protected EmbeddingsApi $embeddingsApi,
+        protected ?EmbeddingsApi $embeddingsApi = null,
     ) {}
 
     public function populateComboFields(Document $document): Document
@@ -38,6 +38,10 @@ class DocumentProcessor
 
     public function populateEmbeddings(Document $document): Document
     {
+        if (!$this->embeddingsApi) {
+            return $document;
+        }
+
         $embeddings = $this->properties
             ->nestedSemanticFields()
             ->mapWithKeys(fn(Text $field) => [
@@ -80,11 +84,34 @@ class DocumentProcessor
 
     protected function extractFieldValue(Text $field, Document $document): array
     {
-        if ($this->isNestedField($field)) {
-            return $this->extractNestedValue($field, $document);
+        $nestedAncestor = $this->findNestedAncestor($field);
+
+        if ($nestedAncestor) {
+            return $this->extractNestedValue($field, $document, $nestedAncestor);
         }
 
         return $this->extractSimpleValue($field, $document);
+    }
+
+    protected function findNestedAncestor(Text $field): ?string
+    {
+        if (!str_contains($field->fullPath, '.')) {
+            return null;
+        }
+
+        $parts = explode('.', $field->fullPath);
+
+        // Check each ancestor path to see if it's a nested field
+        for ($i = 1; $i < count($parts); $i++) {
+            $ancestorPath = implode('.', array_slice($parts, 0, $i));
+            $ancestorField = $this->properties->get($ancestorPath);
+
+            if ($ancestorField instanceof Nested) {
+                return $ancestorPath;
+            }
+        }
+
+        return null;
     }
 
     protected function isNestedField(Text $field): bool
@@ -92,18 +119,19 @@ class DocumentProcessor
         return $field->parentType === Nested::class && str_contains($field->fullPath, '.');
     }
 
-    protected function extractNestedValue(Text $field, Document $document): array
+    protected function extractNestedValue(Text $field, Document $document, string $nestedPath): array
     {
-        [$parentPath, $nestedFieldName] = $this->parseNestedPath($field->fullPath);
-
-        $parentArray = dot($document->_source)->get($parentPath);
+        $parentArray = dot($document->_source)->get($nestedPath);
 
         if (!$parentArray || !is_array($parentArray)) {
             return [];
         }
 
+        // Get the relative path from the nested field to this field
+        $relativePath = substr($field->fullPath, strlen($nestedPath) + 1);
+
         return (new Collection($parentArray))
-            ->map(fn($item) => $item[$nestedFieldName] ?? null)
+            ->map(fn($item) => dot($item)->get($relativePath))
             ->filter(fn($value) => $value !== null)
             ->toArray();
     }
