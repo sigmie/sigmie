@@ -143,25 +143,29 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function merge(array $docs): AliveCollection
     {
-        if ($this->populateEmbeddings && $this->embeddingsApi) {
-            $documentProcessor = new DocumentProcessor($this->properties, $this->embeddingsApi);
-            $docs = array_map(fn(Document $doc) => $documentProcessor->make($doc), $docs);
-        }
+        $docs = array_map(fn(Document $doc) => $this->processDocument($doc), $docs);
 
         $collection = $this->upsertDocuments($this->name, $docs, $this->refresh);
 
         return $this;
     }
 
-    private function documentEmbeddings(Document $document): Document
+    protected function processDocument(Document $document): Document
     {
-        if (!$this->populateEmbeddings || !$this->embeddingsApi) {
-            return $document;
-        }
-
         $documentProcessor = new DocumentProcessor($this->properties, $this->embeddingsApi);
 
-        return $documentProcessor->make($document);
+        $document = $documentProcessor->populateComboFields($document);
+
+        if ($this->populateEmbeddings && $this->embeddingsApi) {
+            $document = $documentProcessor->populateEmbeddings($document);
+        }
+
+        return $document;
+    }
+
+    private function documentEmbeddings(Document $document): Document
+    {
+        return $this->processDocument($document);
     }
 
     public function toArray(): array

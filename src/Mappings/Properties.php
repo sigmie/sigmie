@@ -329,7 +329,7 @@ class Properties extends Type implements ArrayAccess
     {
         return $this->textFields()
             ->filter(fn(Text $field) => $field->isSemantic())
-            ->mapWithKeys(fn(Text $field) => [$field->name() => $field]);
+            ->mapWithKeys(fn(Text $field) => [$field->fullPath => $field]);
     }
 
     public function nestedSemanticFields()

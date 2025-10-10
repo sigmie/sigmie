@@ -255,6 +255,23 @@ class Collection implements ArrayAccess, Countable
         return new static(array_unique($this->elements));
     }
 
+    public function flatMap(Closure $p): static
+    {
+        $result = [];
+
+        foreach ($this->elements as $key => $value) {
+            $mapped = $p($value, $key);
+
+            if (is_array($mapped)) {
+                $result = [...$result, ...$mapped];
+            } else {
+                $result[] = $mapped;
+            }
+        }
+
+        return new static($result);
+    }
+
     public function uniqueBy(string $key): static
     {
         $unique = [];

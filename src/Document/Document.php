@@ -26,6 +26,10 @@ class Document implements FromRaw, ArrayAccess
         }
     }
 
+    public function get(string $key) {
+       return dot($this->_source)->get($key);
+    }
+
     public function offsetExists(mixed $offset): bool
     {
         return isset($this->_source[$offset]);
@@ -33,7 +37,7 @@ class Document implements FromRaw, ArrayAccess
 
     public function offsetGet(mixed $offset): mixed
     {
-        return $this->_source[$offset];
+        return $this->_source[$offset] ?? dot($this->_source)[$offset];
     }
 
     public function offsetSet(mixed $offset, mixed $value): void

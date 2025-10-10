@@ -5,15 +5,11 @@ declare(strict_types=1);
 namespace Sigmie\Semantic;
 
 use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\Base\Http\Responses\Search;
 use Sigmie\Document\Document;
-use Sigmie\Document\Hit;
-use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Nested;
-use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Shared\Collection;
 
@@ -24,121 +20,208 @@ class DocumentProcessor
         protected EmbeddingsApi $embeddingsApi,
     ) {}
 
-    public function make(Document $document): Document
+    public function populateComboFields(Document $document): Document
     {
-        $fields = $this->properties->nestedSemanticFields();
+        $comboFields = $this->getComboFields();
 
-        $embeddings = [];
+        $comboFields->each(function (Combo $field) use ($document) {
+            $value = $this->buildComboValue($field, $document);
 
-        $fields->each(function (Text $field, $name) use ($document, &$embeddings) {
-
-            // Handle combo fields
-            if ($field instanceof Combo) {
-                $sourceValues = [];
-                foreach ($field->sourceFields() as $sourceField) {
-                    $sourceValue = dot($document->_source)->get($sourceField);
-                    if ($sourceValue) {
-                        if (is_array($sourceValue)) {
-                            $sourceValues = [...$sourceValues, ...$sourceValue];
-                        } else {
-                            $sourceValues[] = $sourceValue;
-                        }
-                    }
-                }
-
-                if (empty($sourceValues)) {
-                    return;
-                }
-
-                $value = $sourceValues;
-            } else {
-                $fieldName = $field->fullPath;
-
-                $value = dot($document->_source)->get($fieldName);
-
-                if (!$value) {
-                    return;
-                }
-
-                $value = is_array($value) ? $value : [$value];
+            if (!empty($value)) {
+                $combinedValue = implode(' ', $value);
+                $document->_source[$field->name()] = $combinedValue;
             }
-
-            if (count($value) === 0) {
-                return;
-            }
-
-            $fieldVectors = $field
-                ->vectorFields()
-                ->map(function (Nested|DenseVector $vector) use ($value) {
-
-                    // Name without parent eg. m36_efc192_dims384_cosine_concat
-                    // instead of name.m36_efc192_dims384_cosine_concat
-                    $name = $vector->name;
-
-                    if ($vector instanceof Nested) {
-                        $vector = $vector->properties['vector'];
-                    }
-
-                    return [
-                        array_map(fn($text) => [
-                            'name' => $name,
-                            'text' => $text,
-                            'strategy' => $vector->strategy(),
-                            'dims' => (string) $vector->dims(),
-                        ], $vector->strategy()->prepare($value)),
-                    ];
-                })
-                ->flatten(2)
-                ->groupBy('name')
-                ->mapWithKeys(fn($group, $groupName) => [
-                    $groupName => [
-                        'name' => $groupName,
-                        'strategy' => (new Collection($group))->map(fn($item) => $item['strategy'])->first(),
-                        'vectors' => (new Collection($group))->map(fn($item) => [
-                            'name' => $groupName,
-                            'text' => $item['text'],
-                            'dims' => $item['dims'],
-                            'vector' => [],
-                        ])->toArray(),
-                    ]
-                ])
-                ->toArray();
-
-            $nameStrategy = (new Collection($fieldVectors))->mapWithKeys(fn($item) => [$item['name'] => $item['strategy']]);
-
-            $values = (new Collection($fieldVectors))->map(fn($item) => $item['vectors'])->flatten(1)->values();
-
-            // Get embeddings from AI provider
-            $vectors = $this->embeddingsApi->batchEmbed($values);
-
-            $vectors = new Collection($vectors);
-
-            $vectors = $vectors
-                ->groupBy('name')
-                ->mapWithKeys(function ($group, $name) use ($nameStrategy) {
-
-                    /** @var VectorStrategy $strategy */
-                    $strategy = $nameStrategy->get($name);
-
-                    $vectors = (new Collection($group))->map(fn($item) => $item['vector'] ?? [])->toArray();
-
-                    return [$name => $strategy->format($vectors)];
-                })->toArray();
-
-            $embeddings = [...$embeddings, $name => $vectors];
         });
-
-        $document['embeddings'] = $embeddings;
 
         return $document;
     }
 
-    protected function createFieldEmbeddings(Text $field): array
+    public function populateEmbeddings(Document $document): Document
     {
-        $value = dot($this->document->_source)->get($field->name());
+        $embeddings = $this->properties
+            ->nestedSemanticFields()
+            ->mapWithKeys(fn(Text $field) => [
+                $field->fullPath => $this->processField($field, $document)
+            ])
+            ->filter(fn($vectors) => !empty($vectors))
+            ->toArray();
+
+        $document['embeddings'] = $this->buildNestedStructure($embeddings);
+
+        return $document;
+    }
+
+    protected function getComboFields(): Collection
+    {
+        return $this->properties
+            ->textFields()
+            ->filter(fn(Text $field) => $field instanceof Combo);
+    }
+
+    protected function buildComboValue(Combo $field, Document $document): array
+    {
+        return (new Collection($field->sourceFields()))
+            ->map(fn($sourceField) => $document->get($sourceField))
+            ->filter(fn($value) => $value !== null)
+            ->flatMap(fn($value) => is_array($value) ? $value : [$value])
+            ->toArray();
+    }
+
+    protected function processField(Text $field, Document $document): array
+    {
+        $value = $this->extractFieldValue($field, $document);
+
+        if (empty($value)) {
+            return [];
+        }
+
+        return $this->generateEmbeddings($field, $value);
+    }
+
+    protected function extractFieldValue(Text $field, Document $document): array
+    {
+        if ($this->isNestedField($field)) {
+            return $this->extractNestedValue($field, $document);
+        }
+
+        return $this->extractSimpleValue($field, $document);
+    }
+
+    protected function isNestedField(Text $field): bool
+    {
+        return $field->parentType === Nested::class && str_contains($field->fullPath, '.');
+    }
+
+    protected function extractNestedValue(Text $field, Document $document): array
+    {
+        [$parentPath, $nestedFieldName] = $this->parseNestedPath($field->fullPath);
+
+        $parentArray = dot($document->_source)->get($parentPath);
+
+        if (!$parentArray || !is_array($parentArray)) {
+            return [];
+        }
+
+        return (new Collection($parentArray))
+            ->map(fn($item) => $item[$nestedFieldName] ?? null)
+            ->filter(fn($value) => $value !== null)
+            ->toArray();
+    }
+
+    protected function parseNestedPath(string $fullPath): array
+    {
+        $parts = explode('.', $fullPath);
+        $nestedFieldName = array_pop($parts);
+        $parentPath = implode('.', $parts);
+
+        return [$parentPath, $nestedFieldName];
+    }
+
+    protected function extractSimpleValue(Text $field, Document $document): array
+    {
+        $value = dot($document->_source)->get($field->fullPath);
 
         if (!$value) {
             return [];
         }
+
+        return is_array($value) ? $value : [$value];
+    }
+
+    protected function generateEmbeddings(Text $field, array $value): array
+    {
+        $fieldVectors = $this->prepareVectorFields($field->vectorFields(), $value);
+
+        $vectorsCollection = new Collection($fieldVectors);
+
+        $nameStrategy = $vectorsCollection->mapWithKeys(fn($item) => [$item['name'] => $item['strategy']]);
+
+        $valuesToEmbed = $vectorsCollection
+            ->map(fn($item) => $item['vectors'])
+            ->flatten(1)
+            ->values();
+
+        $embeddedVectors = $this->embeddingsApi->batchEmbed($valuesToEmbed);
+
+        return $this->formatEmbeddedVectors($embeddedVectors, $nameStrategy);
+    }
+
+    protected function formatEmbeddedVectors(array $embeddedVectors, Collection $nameStrategy): array
+    {
+        return (new Collection($embeddedVectors))
+            ->groupBy('name')
+            ->mapWithKeys(function ($group, $name) use ($nameStrategy) {
+                $strategy = $nameStrategy->get($name);
+
+                $vectors = (new Collection($group))
+                    ->map(fn($item) => $item['vector'] ?? [])
+                    ->toArray();
+
+                return [$name => $strategy->format($vectors)];
+            })
+            ->toArray();
+    }
+
+    protected function prepareVectorFields(Collection $vectorFields, array $value): array
+    {
+        return $vectorFields
+            ->map(fn($vector) => $this->prepareVectorTexts($vector, $value))
+            ->flatten(2)
+            ->groupBy('name')
+            ->mapWithKeys(fn($group, $groupName) => $this->groupVectorsByName($group, $groupName))
+            ->toArray();
+    }
+
+    protected function prepareVectorTexts(Nested|DenseVector $vector, array $value): array
+    {
+        $name = $vector->name;
+
+        if ($vector instanceof Nested) {
+            $vector = $vector->properties['vector'];
+        }
+
+        $preparedTexts = $vector->strategy()->prepare($value);
+
+        return [
+            array_map(fn($text) => [
+                'name' => $name,
+                'text' => $text,
+                'strategy' => $vector->strategy(),
+                'dims' => (string) $vector->dims(),
+            ], $preparedTexts),
+        ];
+    }
+
+    protected function groupVectorsByName(array $group, string $groupName): array
+    {
+        $groupCollection = new Collection($group);
+
+        return [
+            $groupName => [
+                'name' => $groupName,
+                'strategy' => $groupCollection->first()['strategy'],
+                'vectors' => $groupCollection
+                    ->map(fn($item) => [
+                        'name' => $groupName,
+                        'text' => $item['text'],
+                        'dims' => $item['dims'],
+                        'vector' => [],
+                    ])
+                    ->toArray(),
+            ]
+        ];
+    }
+
+    protected function buildNestedStructure(array $flatEmbeddings): array
+    {
+        $result = [];
+
+        foreach ($flatEmbeddings as $path => $vectors) {
+            $dotHelper = dot($result);
+            $dotHelper->set($path, $vectors);
+            $result = $dotHelper->all();
+        }
+
+        return $result;
     }
 }

@@ -79,16 +79,17 @@ class EmbeddingsStorageTest extends TestCase
         $this->assertCount(384, $contentEmbedding[$contentKey]);
 
         // Comments.text field (384 dims, concatenated)
-        $this->assertArrayHasKey('comments.text', $embeddings);
-        $commentTextEmbedding = $embeddings['comments.text'];
+        $this->assertArrayHasKey('comments', $embeddings);
+        $this->assertArrayHasKey('text', $embeddings['comments']);
+        $commentTextEmbedding = $embeddings['comments']['text'];
         $this->assertIsArray($commentTextEmbedding);
         $commentTextKey = array_key_first($commentTextEmbedding);
         $this->assertStringContainsString('dims384', $commentTextKey);
         $this->assertCount(384, $commentTextEmbedding[$commentTextKey]);
 
         // Comments.author field (384 dims, concatenated)
-        $this->assertArrayHasKey('comments.author', $embeddings);
-        $commentAuthorEmbedding = $embeddings['comments.author'];
+        $this->assertArrayHasKey('author', $embeddings['comments']);
+        $commentAuthorEmbedding = $embeddings['comments']['author'];
         $this->assertIsArray($commentAuthorEmbedding);
         $commentAuthorKey = array_key_first($commentAuthorEmbedding);
         $this->assertStringContainsString('dims384', $commentAuthorKey);
@@ -232,7 +233,6 @@ class EmbeddingsStorageTest extends TestCase
         // Retrieve the document
         $doc = $collected->get('avg-test');
 
-        dump($doc->_source);
         // Check that the averaged embedding is normalized
         $commentEmbeddings = $doc->_source['embeddings']['comments']['text'];
         $commentKey = array_key_first($commentEmbeddings);
