@@ -1081,7 +1081,7 @@ class SearchTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->title('name')->semantic();
+        $blueprint->title('name')->semantic(dimensions: 384);
 
         $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -1110,6 +1110,7 @@ class SearchTest extends TestCase
             ->queryString('Woman')
             ->get();
 
+        ray($response);
         $this->assertEquals(0, $response->total());
 
         $response = $this->sigmie

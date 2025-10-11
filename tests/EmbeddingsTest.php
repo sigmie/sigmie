@@ -19,13 +19,13 @@ class EmbeddingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 128);
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 256);
         $blueprint->nested('comments', function (NewProperties $props) {
-            $props->text('text')->semantic(accuracy: 1, dimensions: 128);
+            $props->text('text')->semantic(accuracy: 1, dimensions: 256);
             $props->object('user', function (NewProperties $props) {
-                $props->text('name')
-                    ->semantic(accuracy: 1, dimensions: 128)
-                    ->semantic(accuracy: 7, dimensions: 256);
+                $text = $props->text('name');
+                $text->semantic(accuracy: 1, dimensions: 256);
+                $text->semantic(accuracy: 7, dimensions: 256);
             });
         });
 
@@ -48,9 +48,9 @@ class EmbeddingsTest extends TestCase
         $this->assertIsArray($text);
         $this->assertIsArray($title);
 
-        $this->assertEquals(128, $name[array_key_first($name)]['dims']);
-        $this->assertEquals(128, $text[array_key_first($text)]['dims']);
-        $this->assertEquals(128, $title[array_key_first($title)]['dims']);
+        $this->assertEquals(256, $name[array_key_first($name)]['dims']);
+        $this->assertEquals(256, $text[array_key_first($text)]['dims']);
+        $this->assertEquals(256, $title[array_key_first($title)]['dims']);
     }
 
     /**

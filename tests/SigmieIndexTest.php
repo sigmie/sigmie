@@ -41,8 +41,10 @@ class SigmieIndexTest extends TestCase
             ->queryString('iPhone')
             ->get();
 
+        $hits = $results->hits();
+
         $this->assertEquals(1, $results->total());
-        $this->assertEquals('iPhone', $results->hits()[0]['_source']['name']);
+        $this->assertEquals('iPhone', $hits[0]->get('name'));
     }
 
     /**

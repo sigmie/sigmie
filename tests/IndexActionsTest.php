@@ -6,6 +6,7 @@ namespace Sigmie\Tests;
 
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Index;
+use Sigmie\Index\ListedIndex;
 use Sigmie\Index\Mappings;
 use Sigmie\Index\Settings;
 use Sigmie\Shared\Collection;
@@ -103,13 +104,13 @@ class IndexActionsTest extends TestCase
         $this->createIndex($barIndexName, new Settings(), new Mappings());
 
         $list = new Collection($this->listIndices());
-        $array = $list->map(fn (Index $index) => $index->name)->toArray();
+        $array = $list->map(fn (ListedIndex $index) => $index->name)->toArray();
 
         $this->assertContains($fooIndexName, $array);
         $this->assertContains($barIndexName, $array);
 
         $this->assertInstanceOf(Collection::class, $list);
 
-        $list->each(fn ($index, $key) => $this->assertInstanceOf(Index::class, $index));
+        $list->each(fn ($index, $key) => $this->assertInstanceOf(ListedIndex::class, $index));
     }
 }
