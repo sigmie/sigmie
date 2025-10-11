@@ -11,6 +11,8 @@ jobs:
       ELASTICSEARCH_PLUGINS:
       LOCAL_EMBEDDING_URL: http://localhost:7997
       LOCAL_RERANK_URL: http://localhost:7998
+      LOCAL_LLM_URL: http://localhost:7999
+      OLLAMA_MODEL: tinyllama
 
     strategy:
       fail-fast: true
@@ -55,6 +57,21 @@ jobs:
             -e MODEL_ID=cross-encoder/ms-marco-MiniLM-L-6-v2 \
             michaelf34/infinity:latest \
             v2 --model-id cross-encoder/ms-marco-MiniLM-L-6-v2 --port 7998
+
+      - name: Start LLM Service
+        run: |
+          docker run -d --name llm \
+            -p 7999:11434 \
+            -v ollama:/root/.ollama \
+            ollama/ollama:latest
+
+          # Wait for Ollama to start
+          sleep 5
+
+          # Pull tinyllama model
+          docker exec llm ollama pull tinyllama
+
+          echo "LLM service is ready with tinyllama model!"
 
       - name: Wait for AI Services to Start
         run: |

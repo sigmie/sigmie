@@ -21,15 +21,15 @@ class LocalResponseApi implements LLMApi
 
     public function __construct(
         string $baseUrl = 'http://localhost:7999',
-        string $model = 'microsoft/Phi-3-mini-4k-instruct'
+        ?string $model = null
     ) {
-        $this->model = $model;
+        $this->model = $model ?? getenv('OLLAMA_MODEL') ?: 'tinyllama';
         $this->client = new Client([
             'base_uri' => $baseUrl,
             'headers' => [
                 'Content-Type' => 'application/json',
             ],
-            'timeout' => 120,
+            'timeout' => 180,
         ]);
     }
 
@@ -61,29 +61,40 @@ class LocalResponseApi implements LLMApi
         $messages = $this->convertMessages($prompt);
         $schema = $prompt->jsonSchema();
 
+        // Build a much more explicit instruction for smaller models
+        $schemaInstruction = "IMPORTANT: You must respond ONLY with valid JSON data (not the schema itself). ";
+        $schemaInstruction .= "Do not return the schema. Generate actual example data that matches this structure:\n\n";
+        $schemaInstruction .= $this->buildExampleFromSchema($schema);
+        $schemaInstruction .= "\n\nRespond with ONLY the JSON object, nothing else.";
+
         $options = [
             RequestOptions::JSON => [
                 'model' => $this->model,
-                'messages' => $messages,
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => $schemaInstruction
+                    ],
+                    ...$messages,
+                ],
                 'stream' => false,
-                'temperature' => 0.7,
+                'temperature' => 0.3,
                 'response_format' => [
                     'type' => 'json_object',
                 ],
             ],
         ];
 
-        // Add JSON schema instruction to system message
-        $schemaInstruction = "You must respond with valid JSON matching this schema: " . json_encode($schema);
-        $options[RequestOptions::JSON]['messages'][] = [
-            'role' => 'system',
-            'content' => $schemaInstruction
-        ];
-
         $response = $this->client->post('/v1/chat/completions', $options);
         $data = json_decode($response->getBody()->getContents(), true);
 
         $content = $data['choices'][0]['message']['content'] ?? '{}';
+
+        // Clean up the response - sometimes models wrap JSON in markdown
+        $content = preg_replace('/^```json\s*/m', '', $content);
+        $content = preg_replace('/\s*```$/m', '', $content);
+        $content = trim($content);
+
         $jsonData = json_decode($content, true) ?? [];
 
         return new LLMJsonAnswer(
@@ -92,6 +103,39 @@ class LocalResponseApi implements LLMApi
             $data,
             $jsonData,
         );
+    }
+
+    protected function buildExampleFromSchema(array $schema): string
+    {
+        $example = $this->generateExample($schema);
+        return json_encode($example, JSON_PRETTY_PRINT);
+    }
+
+    protected function generateExample(array $schema): mixed
+    {
+        $type = $schema['type'] ?? 'string';
+
+        return match ($type) {
+            'object' => $this->generateObjectExample($schema),
+            'array' => [$this->generateExample($schema['items'] ?? ['type' => 'string'])],
+            'string' => 'example',
+            'number' => 0,
+            'boolean' => true,
+            'null' => null,
+            default => null,
+        };
+    }
+
+    protected function generateObjectExample(array $schema): array
+    {
+        $example = [];
+        $properties = $schema['properties'] ?? [];
+
+        foreach ($properties as $key => $propSchema) {
+            $example[$key] = $this->generateExample($propSchema);
+        }
+
+        return $example;
     }
 
     public function streamAnswer(Prompt $prompt): iterable

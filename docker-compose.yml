@@ -36,28 +36,22 @@ services:
       retries: 3
 
   llm:
-    image: vllm/vllm-openai:latest
+    image: ollama/ollama:latest
     container_name: sigmie-llm
     ports:
-      - "7999:8000"
+      - "7999:11434"
     environment:
-      - HF_TOKEN=${HF_TOKEN:-}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-tinyllama}
     volumes:
-      - ./data/llm:/root/.cache/huggingface
-    command: --model microsoft/Phi-3-mini-4k-instruct --max-model-len 2048 --dtype float16
+      - ./data/llm:/root/.ollama
+      - ./scripts/ollama-entrypoint.sh:/entrypoint.sh
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
     restart: unless-stopped
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD-SHELL", "ollama list"]
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 10
       start_period: 60s
 
   elasticsearch:
