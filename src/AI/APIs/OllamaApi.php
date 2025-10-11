@@ -13,7 +13,7 @@ use Sigmie\AI\Contracts\LLMAnswer;
 use Sigmie\AI\Prompt;
 use Sigmie\Rag\LLMJsonAnswer;
 
-class LocalResponseApi implements LLMApi
+class OllamaApi implements LLMApi
 {
     protected Client $client;
 

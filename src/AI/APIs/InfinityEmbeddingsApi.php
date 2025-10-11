@@ -9,7 +9,7 @@ use GuzzleHttp\Promise\Promise;
 use GuzzleHttp\RequestOptions;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 
-class LocalEmbeddingsApi implements EmbeddingsApi
+class InfinityEmbeddingsApi implements EmbeddingsApi
 {
     protected Client $client;
 

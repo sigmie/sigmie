@@ -117,25 +117,26 @@ class NewSemanticField
         $this->index = $level < 7;
 
         // Base values for 256 dimensions
+        // These are calibrated to balance search quality vs indexing speed
         $base = [
-            1 => [16, 80],
-            2 => [24, 128],
-            3 => [32, 200],
-            4 => [48, 300],
-            5 => [64, 400],
-            6 => [80, 512],
+            1 => [12, 60],   // Minimal quality, maximum speed
+            2 => [16, 100],  // Low quality, good for small datasets
+            3 => [24, 150],  // Balanced for most use cases
+            4 => [32, 200],  // Good quality, moderate speed
+            5 => [40, 300],  // High quality, slower indexing
+            6 => [48, 400],  // Very high quality, significant indexing cost
         ];
 
         $this->dims = $dimensions;
 
-        // Scale factor relative to 256 dims
-
+        // Sublinear scaling: relationship between dimensions and optimal m is logarithmic, not linear
+        // This prevents extreme values at high dimensions (e.g., 1536, 3072)
         if ($level < 7) {
             [$baseM, $baseEf] = $base[$level];
-            $scale = $dimensions / 256;
+            $scale = sqrt($dimensions / 256);
 
-            $this->m = min((int) round($baseM * $scale), 128);
-            $this->efConstruction = min((int) round($baseEf * $scale), 1000);
+            $this->m = min((int) round($baseM * $scale), 64);
+            $this->efConstruction = min((int) round($baseEf * $scale), 500);
         } else {
             $this->m = null;
             $this->efConstruction = null;

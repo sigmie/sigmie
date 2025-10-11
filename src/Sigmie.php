@@ -104,15 +104,6 @@ class Sigmie
         return $this->getIndex($this->withApplicationPrefix($name));
     }
 
-    public function chatHistoryIndex(string $name): HistoryIndex
-    {
-        return new HistoryIndex(
-            $name,
-            $this->elasticsearchConnection,
-            $this->embeddingsApi
-        );
-    }
-
     public function indexUpsert(string $name, callable $builder): AliasedIndex
     {
         $existingIndex = $this->index($name);

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\AI\APIs\LocalResponseApi;
+use Sigmie\AI\APIs\OllamaApi;
 use Sigmie\AI\APIs\OpenAIResponseApi;
 use Sigmie\AI\NewJsonSchema;
 use Sigmie\AI\Prompt;

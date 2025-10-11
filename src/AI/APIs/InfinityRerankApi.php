@@ -8,7 +8,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\RequestOptions;
 use Sigmie\AI\Contracts\RerankApi;
 
-class LocalRerankApi implements RerankApi
+class InfinityRerankApi implements RerankApi
 {
     protected Client $client;
 

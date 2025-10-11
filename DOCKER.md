@@ -53,8 +53,8 @@ The TestCase class automatically initializes local API instances:
 
 ```php
 // In your test class that extends TestCase
-$this->embeddingApi  // LocalEmbeddingsApi instance
-$this->crossEncoderApi  // LocalRerankApi instance
+$this->embeddingApi  // InfinityEmbeddingsApi instance
+$this->rerankApi  // InfinityRerankApi instance
 ```
 
 ### Example: Using Local Embeddings

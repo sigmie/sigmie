@@ -1110,7 +1110,6 @@ class SearchTest extends TestCase
             ->queryString('Woman')
             ->get();
 
-        ray($response);
         $this->assertEquals(0, $response->total());
 
         $response = $this->sigmie

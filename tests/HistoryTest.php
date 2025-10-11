@@ -7,7 +7,7 @@ namespace Sigmie\Tests;
 use Sigmie\AI\Answers\OpenAIAnswer;
 use Sigmie\AI\APIs\OpenAIConversationsApi;
 use Sigmie\AI\APIs\OpenAIResponseApi;
-use Sigmie\AI\History\Index;
+use Sigmie\AI\History\Index as HistoryIndex;
 use Sigmie\AI\ProviderFactory;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
@@ -22,6 +22,8 @@ use Sigmie\Search\NewSearch;
 use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Testing\TestCase;
 
+use function Sigmie\Functions\random_name;
+
 class HistoryTest extends TestCase
 {
     /**
@@ -30,7 +32,7 @@ class HistoryTest extends TestCase
     public function history_store()
     {
         $indexName = uniqid();
-        $llm = new OpenAIResponseApi(getenv('OPENAI_API_KEY'));
+        $llm = $this->llmApi;
 
         $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
@@ -38,7 +40,7 @@ class HistoryTest extends TestCase
         $props->text('title')->semantic(accuracy: 1, dimensions: 384);
         $props->text('text')->semantic(accuracy: 1, dimensions: 384);
 
-        $sigmie->newIndex($indexName)->properties($props)->create();
+        $index = $sigmie->newIndex($indexName)->properties($props)->create();
 
         $collected = $sigmie->collect($indexName, true)->properties($props);
 
@@ -62,7 +64,22 @@ class HistoryTest extends TestCase
             ->queryString('My name is Nico, what\'s a good name for a dog?')
             ->size(2);
 
-        $historyIndex = $sigmie->chatHistoryIndex(uniqid('history'));
+        $historyIndex = new class(
+            random_name('hist'),
+            $this->elasticsearchConnection,
+            $this->embeddingApi
+        ) extends HistoryIndex {
+            public function properties(): NewProperties
+            {
+                $props = parent::properties();
+                $props->nested('turns', function (NewProperties $props) {
+                    $props->text('content')->semantic(accuracy: 1, dimensions: 384);
+                    $props->text('role')->semantic(accuracy: 1, dimensions: 384);
+                });
+
+                return $props;
+            }
+        };
 
         $historyIndex->create();
 
@@ -95,7 +112,11 @@ class HistoryTest extends TestCase
             })
             ->answer();
 
-        $this->assertEquals('Nico', (string)$answer);
+        $previousAnswer = (string) $answer;
+        $this->llmApi->assertAnswerWasCalledWithMessage(
+            'user',
+            'My name is Nico'
+        );
 
         $answer = $sigmie
             ->newRag($llm)
@@ -108,7 +129,14 @@ class HistoryTest extends TestCase
             })
             ->answer();
 
-        $this->assertEquals($dogName, (string)$answer);
+        $this->llmApi->assertAnswerWasCalledWithMessage(
+            'user',
+            'My name is Nico'
+        );
+        $this->llmApi->assertAnswerWasCalledWithMessage(
+            'model',
+            $previousAnswer
+        );
     }
 
     /**
@@ -118,11 +146,22 @@ class HistoryTest extends TestCase
     {
         $indexName = uniqid();
 
-        $historyIndex = new Index(
-            $indexName,
+        $historyIndex = new class(
+            random_name('hist'),
             $this->elasticsearchConnection,
             $this->embeddingApi
-        );
+        ) extends HistoryIndex {
+            public function properties(): NewProperties
+            {
+                $props = parent::properties();
+                $props->nested('turns', function (NewProperties $props) {
+                    $props->text('content')->semantic(accuracy: 1, dimensions: 384);
+                    $props->text('role')->semantic(accuracy: 1, dimensions: 384);
+                });
+
+                return $props;
+            }
+        };
 
         $historyIndex->create();
 
