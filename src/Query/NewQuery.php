@@ -64,8 +64,6 @@ class NewQuery implements Queries, MultiSearchable
     {
         $this->properties = $props instanceof NewProperties ? $props->get() : $props;
 
-        $this->search->properties($props);
-
         return $this;
     }
 
