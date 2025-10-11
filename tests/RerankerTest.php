@@ -73,6 +73,19 @@ class RerankerTest extends TestCase
 
         $rerankedHits = $newRerank->rerank($hits);
 
+        // Assert rerank API was called
+        $this->rerankApi->assertRerankWasCalled();
+        $this->rerankApi->assertRerankWasCalled(1);
+
+        // Assert rerank was called with correct query
+        $this->rerankApi->assertRerankWasCalledWith('web framework');
+
+        // Assert rerank was called with correct query and topK
+        $this->rerankApi->assertRerankWasCalledWith('web framework', 2);
+
+        // Assert rerank was called with correct number of documents
+        $this->rerankApi->assertRerankWasCalledWithDocumentCount(2);
+
         // Assert topK is respected (should return 2 hits)
         $this->assertCount(2, $rerankedHits);
 

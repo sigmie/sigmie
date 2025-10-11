@@ -27,7 +27,7 @@ class FakeRerankApi implements RerankApi
         return $this->realApi->rerank($documents, $query, $topK);
     }
 
-    public function assertRerankWasCalled(int $times = null): void
+    public function assertRerankWasCalled(?int $times = null): void
     {
         $actualCount = count($this->rerankCalls);
 
@@ -39,7 +39,7 @@ class FakeRerankApi implements RerankApi
         Assert::assertEquals($times, $actualCount, "rerank() was called {$actualCount} times, expected {$times} times");
     }
 
-    public function assertRerankWasCalledWith(string $query, int $topK = null): void
+    public function assertRerankWasCalledWith(string $query, ?int $topK = null): void
     {
         foreach ($this->rerankCalls as $call) {
             if ($call['query'] === $query && ($topK === null || $call['topK'] === $topK)) {
