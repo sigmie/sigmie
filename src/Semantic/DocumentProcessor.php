@@ -73,6 +73,23 @@ class DocumentProcessor
 
     protected function processField(Text $field, Document $document): array
     {
+        // Check if embeddings already exist for this field
+        $existingEmbeddings = dot($document->_source)->get("embeddings.{$field->fullPath}");
+
+        if ($existingEmbeddings && is_array($existingEmbeddings)) {
+            // Check if all required vector fields already have embeddings
+            $vectorFields = $field->vectorFields();
+            $allExist = $vectorFields->every(function ($vectorField) use ($existingEmbeddings) {
+                $name = $vectorField instanceof Nested ? $vectorField->name : $vectorField->name;
+                return isset($existingEmbeddings[$name]) && !empty($existingEmbeddings[$name]);
+            });
+
+            if ($allExist) {
+                // Return existing embeddings, no need to regenerate
+                return $existingEmbeddings;
+            }
+        }
+
         $value = $this->extractFieldValue($field, $document);
 
         if (empty($value)) {
@@ -130,6 +147,17 @@ class DocumentProcessor
         // Get the relative path from the nested field to this field
         $relativePath = substr($field->fullPath, strlen($nestedPath) + 1);
 
+        // Check if this is a single object (associative array) or array of objects (indexed array)
+        // Single object: ['key' => 'value'], Array of objects: [['key' => 'value'], ['key' => 'value']]
+        $isIndexedArray = array_keys($parentArray) === range(0, count($parentArray) - 1);
+
+        if (!$isIndexedArray) {
+            // Single object - extract value directly
+            $value = dot($parentArray)->get($relativePath);
+            return $value !== null ? (is_array($value) ? $value : [$value]) : [];
+        }
+
+        // Array of objects - map over each item
         return (new Collection($parentArray))
             ->map(fn($item) => dot($item)->get($relativePath))
             ->filter(fn($value) => $value !== null)

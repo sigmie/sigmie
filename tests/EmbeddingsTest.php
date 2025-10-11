@@ -19,13 +19,13 @@ class EmbeddingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 256);
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384);
         $blueprint->nested('comments', function (NewProperties $props) {
-            $props->text('text')->semantic(accuracy: 1, dimensions: 256);
+            $props->text('text')->semantic(accuracy: 1, dimensions: 384);
             $props->object('user', function (NewProperties $props) {
                 $text = $props->text('name');
-                $text->semantic(accuracy: 1, dimensions: 256);
-                $text->semantic(accuracy: 7, dimensions: 256);
+                $text->semantic(accuracy: 1, dimensions: 384);
+                $text->semantic(accuracy: 7, dimensions: 384);
             });
         });
 
@@ -48,9 +48,9 @@ class EmbeddingsTest extends TestCase
         $this->assertIsArray($text);
         $this->assertIsArray($title);
 
-        $this->assertEquals(256, $name[array_key_first($name)]['dims']);
-        $this->assertEquals(256, $text[array_key_first($text)]['dims']);
-        $this->assertEquals(256, $title[array_key_first($title)]['dims']);
+        $this->assertEquals(384, $name[array_key_first($name)]['dims']);
+        $this->assertEquals(384, $text[array_key_first($text)]['dims']);
+        $this->assertEquals(384, $title[array_key_first($title)]['dims']);
     }
 
     /**
@@ -97,12 +97,13 @@ class EmbeddingsTest extends TestCase
             ->queryString('man')
             ->get();
 
-        $hit = $results->hits()[0];
+        $hit = $results->hits()[0] ?? null;
+        $this->assertNotNull($hit);
 
         $this->assertEquals('Queen', $hit->get('title') ?? null);
         $this->assertEquals('red', $hit->get('color') ?? null);
 
-        $this->assertNull($results->hits()[1] ?? null);
+        $this->assertNull($results->hits()[1] ?? null, 'No more hits should be returned');
     }
 
     /**
@@ -120,8 +121,8 @@ class EmbeddingsTest extends TestCase
             $props->text('text')->semantic(accuracy: 1, dimensions: 384);
             $props->object('user', function (NewProperties $props) {
                 $name = $props->text('name');
-                    $name->semantic(accuracy: 1, dimensions: 384);
-                    $name->semantic(accuracy: 7, dimensions: 384);
+                $name->semantic(accuracy: 1, dimensions: 384);
+                $name->semantic(accuracy: 7, dimensions: 384);
             });
         });
 
@@ -170,9 +171,9 @@ class EmbeddingsTest extends TestCase
 
         $document = $collected->get('1234');
 
-        $this->assertCount(384, $document['embeddings']['title']['m24_efc120_dims384_cosine_concat']);
-        $this->assertCount(384, $document['embeddings']['comments']['text']['m24_efc120_dims384_cosine_concat']);
-        $this->assertCount(384, $document['embeddings']['comments']['user']['name']['m24_efc120_dims384_cosine_concat']);
+        $this->assertCount(384, $document['embeddings']['title']['m15_efc73_dims384_cosine_concat']);
+        $this->assertCount(384, $document['embeddings']['comments']['text']['m15_efc73_dims384_cosine_concat']);
+        $this->assertCount(384, $document['embeddings']['comments']['user']['name']['m15_efc73_dims384_cosine_concat']);
     }
 
     /**
@@ -194,10 +195,9 @@ class EmbeddingsTest extends TestCase
         // First merge: creates document with embeddings
         $collected->merge([
             new Document([
-                '_id' => 'test-doc-1',
                 'title' => 'Original Title',
                 'description' => 'Original Description',
-            ]),
+            ], _id: 'test-doc-1'),
         ]);
 
         // Record number of API calls after first merge
@@ -205,7 +205,8 @@ class EmbeddingsTest extends TestCase
         $this->assertGreaterThan(0, $callsAfterFirstMerge, 'Embeddings should be generated on first merge');
 
         // Get the document to verify it has embeddings
-        $doc = $collected->get('test-doc-1');
+        $doc = $collected->get('test-doc-1') ?? null;
+        $this->assertNotNull($doc);
         $this->assertArrayHasKey('embeddings', $doc);
         $this->assertArrayHasKey('title', $doc['embeddings']);
         $this->assertArrayHasKey('description', $doc['embeddings']);
@@ -217,10 +218,9 @@ class EmbeddingsTest extends TestCase
         // Since document already has embeddings for 384 dimensions, no new API calls should be made
         $collected->merge([
             new Document([
-                '_id' => 'test-doc-1',
                 'title' => 'Original Title',
                 'description' => 'Original Description',
-            ]),
+            ], _id: 'test-doc-1'),
         ]);
 
         // Assert no new embeddings were generated (embeddings already exist)
@@ -247,9 +247,8 @@ class EmbeddingsTest extends TestCase
         // Merge document with 384 dimensions
         $collected->merge([
             new Document([
-                '_id' => 'test-doc-1',
                 'title' => 'Test Title',
-            ]),
+            ], _id: 'test-doc-1'),
         ]);
 
         $callsAfter384 = count($this->embeddingApi->getBatchEmbedCalls());
@@ -257,7 +256,7 @@ class EmbeddingsTest extends TestCase
 
         // Now update the index to also support 256 dimensions
         $blueprint256 = new NewProperties;
-        $blueprint256->text('title')->semantic(accuracy: 1, dimensions: 256);
+        $blueprint256->text('title')->semantic(accuracy: 1, dimensions: 384);
 
         // Create a new index with different dimensions
         $indexName2 = uniqid();
@@ -269,9 +268,8 @@ class EmbeddingsTest extends TestCase
         // Merge same content but different dimensions needed
         $collected2->merge([
             new Document([
-                '_id' => 'test-doc-1',
                 'title' => 'Test Title',
-            ]),
+            ], _id: 'test-doc-1'),
         ]);
 
         $callsAfter256 = count($this->embeddingApi->getBatchEmbedCalls());

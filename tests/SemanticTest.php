@@ -82,7 +82,7 @@ class SemanticTest extends TestCase
         $nestedQuery = $search->makeSearch()->toRaw();
 
         $this->assertArrayHasKey('knn', $nestedQuery);
-        $this->assertEquals('embeddings.charachter.details.meta.extra.deep.deepnote.m48_efc300_dims384_cosine_avg', $nestedQuery['knn'][0]['field']);
+        $this->assertEquals('embeddings.charachter.details.meta.extra.deep.deepnote.m29_efc184_dims384_cosine_avg', $nestedQuery['knn'][0]['field']);
 
         $response = $search->get();
 
