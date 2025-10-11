@@ -84,7 +84,7 @@ class NewSemanticField
             2048,
             3072,
         ])) {
-            throw new Exception('Dimensions must be one of: 16, 24, 32, 48, 64, 80, 128, 200, 256, 300, 384, 400, 512, 1024, 1536, 2048, 3072');
+            throw new Exception('Dimensions must be one of: 128, 256, 384, 512, 1024, 1536, 2048, 3072');
         }
 
         if ($level < 1 || $level > 7) {
@@ -92,24 +92,23 @@ class NewSemanticField
         }
 
         $this->strategy = match ($level) {
-            //   Concatenate (accuracy 1) is better for low accuracy because:
+            //   Concatenate (accuracy 1) is fastest and cheapest because:
             //   - Single embedding call - It concatenates all text chunks into one string and generates ONE embedding.
-            //     This is the fastest and cheapest approach.
             //   - Good for short texts - When you have short content that fits within the model's token limit, concatenating everything
             //     into a single embedding is efficient.
-            //   - Lower precision - Since it's treating all the text as one blob, you lose granularity. 
-            // .   But for accuracy level 1, that's acceptable - you're prioritizing speed/cost over precision.
+            //   - Lower precision - Since it's treating all the text as one blob, you lose granularity.
+            //   But for accuracy level 1, that's acceptable - you're prioritizing speed/cost over precision.
             1 => VectorStrategy::Concatenate,
-            2 => VectorStrategy::Concatenate,
             //   Average (accuracy 2-6) generates multiple embeddings (one per text chunk) and then averages them. This:
             //   - Costs more (multiple API calls)
             //   - Handles longer texts better (splits content)
             //   - Preserves more semantic information through averaging
+            2 => VectorStrategy::Average,
             3 => VectorStrategy::Average,
             4 => VectorStrategy::Average,
             5 => VectorStrategy::Average,
             6 => VectorStrategy::Average,
-            //  ScriptScore (accuracy 7) is the most accurate 
+            //  ScriptScore (accuracy 7) is the most accurate
             //  - it searches across all individual embeddings without averaging, but it's
             //    also the slowest and most expensive.
             7 => VectorStrategy::ScriptScore,

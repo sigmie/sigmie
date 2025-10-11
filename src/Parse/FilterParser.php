@@ -271,8 +271,6 @@ class FilterParser extends Parser
             default => null
         };
 
-        ray($query);
-
         if ($query instanceof QueryClause) {
             return $query;
         }

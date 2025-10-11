@@ -1246,9 +1246,9 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m64_efc300_dims256_cosine'] ?? [];
+            $jobDescription = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_cosine_concat'];
 
-            $this->assertEquals('cosine', $field['similarity'] ?? null);
+            $this->assertEquals('cosine', $jobDescription['similarity'] ?? null);
         });
     }
 
@@ -1271,7 +1271,7 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m64_efc300_dims256_l2_norm'] ?? [];
+            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_l2_norm_concat'];
 
             $this->assertEquals('l2_norm', $field['similarity'] ?? null);
         });
@@ -1295,7 +1295,7 @@ class MappingsTest extends TestCase
             ->create();
 
         $this->assertIndex($indexName, function (Assert $assert) {
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m64_efc300_dims256_dot_product'] ?? [];
+            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_dot_product_concat'];
 
             $this->assertEquals('dot_product', $field['similarity'] ?? null);
         });
@@ -1319,7 +1319,8 @@ class MappingsTest extends TestCase
             ->create();
 
         $this->assertIndex($indexName, function (Assert $assert) {
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m64_efc300_dims256_max_inner_product'] ?? [];
+
+            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_max_inner_product_concat'];
 
             $this->assertEquals('max_inner_product', $field['similarity'] ?? null);
         });
@@ -1341,9 +1342,13 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.index_options.m', '16');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.index_options.ef_construction', '80');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.dims', '256');
+            $jobDescription = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties'];
+
+            $this->assertArrayHasKey('m16_efc80_dims256_cosine_concat', $jobDescription);
+            $this->assertEquals('cosine', $jobDescription['m16_efc80_dims256_cosine_concat']['similarity']);
+            $this->assertEquals('16', $jobDescription['m16_efc80_dims256_cosine_concat']['index_options']['m']);
+            $this->assertEquals('80', $jobDescription['m16_efc80_dims256_cosine_concat']['index_options']['ef_construction']);
+            $this->assertEquals('256', $jobDescription['m16_efc80_dims256_cosine_concat']['dims']);
         });
     }
 
@@ -1364,10 +1369,12 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.index_options.m', '16');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.index_options.ef_construction', '80');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.dims', '256');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.similarity', 'cosine');
+            $jobDescription = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties'];
+
+            $this->assertEquals('16', $jobDescription['m16_efc80_dims256_cosine_concat']['index_options']['m']);
+            $this->assertEquals('80', $jobDescription['m16_efc80_dims256_cosine_concat']['index_options']['ef_construction']);
+            $this->assertEquals('256', $jobDescription['m16_efc80_dims256_cosine_concat']['dims']);
+            $this->assertEquals('cosine', $jobDescription['m16_efc80_dims256_cosine_concat']['similarity']);
         });
     }
 
@@ -1387,9 +1394,12 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims512_cosine.index_options.m', '64');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims512_cosine.index_options.ef_construction', '400');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims512_cosine.dims', '512');
+            $jobDescription = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties'];
+
+            $this->assertEquals('64', $jobDescription['m64_efc400_dims512_cosine_avg']['index_options']['m']);
+            $this->assertEquals('400', $jobDescription['m64_efc400_dims512_cosine_avg']['index_options']['ef_construction']);
+            $this->assertEquals('512', $jobDescription['m64_efc400_dims512_cosine_avg']['dims']);
+            $this->assertEquals('cosine', $jobDescription['m64_efc400_dims512_cosine_avg']['similarity']);
         });
     }
 
@@ -1409,9 +1419,12 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims256_cosine.index_options.m', '64');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims256_cosine.index_options.ef_construction', '400');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims256_cosine.dims', '256');
+            $jobDescription = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties'];
+
+            $this->assertEquals('64', $jobDescription['m64_efc400_dims256_cosine_avg']['index_options']['m']);
+            $this->assertEquals('400', $jobDescription['m64_efc400_dims256_cosine_avg']['index_options']['ef_construction']);
+            $this->assertEquals('256', $jobDescription['m64_efc400_dims256_cosine_avg']['dims']);
+            $this->assertEquals('cosine', $jobDescription['m64_efc400_dims256_cosine_avg']['similarity']);
         });
     }
 
@@ -1423,9 +1436,10 @@ class MappingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->text('job_description')
-            ->semantic(accuracy: 3, dimensions: 512)
-            ->semantic(accuracy: 5, dimensions: 512, similarity: VectorSimilarity::Euclidean);
+        $jobDescription = $blueprint->text('job_description');
+
+        $jobDescription->semantic(accuracy: 3, dimensions: 512);
+        $jobDescription->semantic(accuracy: 5, dimensions: 512, similarity: VectorSimilarity::Euclidean);
 
         $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -1433,8 +1447,8 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $field0 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m64_efc400_dims512_cosine']['index_options'] ?? [];
-            $field1 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m128_efc800_dims512_l2_norm']['index_options'] ?? [];
+            $field0 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m64_efc400_dims512_cosine_avg']['index_options'] ?? [];
+            $field1 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m128_efc800_dims512_l2_norm_avg']['index_options'] ?? [];
 
             $assert->assertEquals(64, $field0['m'], 'm should be 64 for accuracy 3 and dimensions 512');
             $assert->assertEquals(128, $field1['m'], 'm should be 128 for accuracy 5 and dimensions 512');
@@ -1457,11 +1471,21 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $index = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_exact']['index'];
-            $indexOptions = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_exact']['index_options'] ?? null;
+            $jobDescription = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['exact_dims256_cosine_script'];
 
-            $this->assertFalse($index);
-            $this->assertNull($indexOptions);
+            ray($jobDescription);
+
+            $index = $jobDescription['properties']['vector'];
+
+            $this->assertEquals('nested', $jobDescription['type']);
+            $this->assertEquals('dense_vector', $index['type']);
+            $this->assertEquals(256, $index['dims']);
+            $this->assertTrue($index['index']);
+            $this->assertEquals('cosine', $index['similarity']);
+
+            $this->assertEquals('hnsw', $index['index_options']['type']);
+            $this->assertEquals(64, $index['index_options']['m']);
+            $this->assertEquals(300, $index['index_options']['ef_construction']);
         });
     }
 
@@ -1600,8 +1624,6 @@ class MappingsTest extends TestCase
         $index = $this->sigmie->index($indexName);
 
         $this->assertEquals([
-            'autocomplete',
-            'boost',
             'comments.comment_id',
             'comments.text',
             'comments.user.age',
@@ -1642,10 +1664,10 @@ class MappingsTest extends TestCase
         ];
 
         $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
-        
+
         // Test that double field type doesn't throw exception
         $properties = \Sigmie\Mappings\Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
-        
+
         $scoreField = $properties->get('score');
         $this->assertInstanceOf(\Sigmie\Mappings\Types\Number::class, $scoreField);
         $this->assertEquals('double', $scoreField->type());
@@ -1663,10 +1685,10 @@ class MappingsTest extends TestCase
         ];
 
         $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
-        
+
         // Test that flat_object field type doesn't throw exception
         $properties = \Sigmie\Mappings\Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
-        
+
         $metadataField = $properties->get('metadata');
         $this->assertInstanceOf(\Sigmie\Mappings\Types\FlatObject::class, $metadataField);
         $this->assertEquals('flat_object', $metadataField->type());
@@ -1751,9 +1773,9 @@ class MappingsTest extends TestCase
         ];
 
         $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
-        
+
         $properties = \Sigmie\Mappings\Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
-        
+
         $ageRange = $properties->get('age_range');
         $this->assertInstanceOf(\Sigmie\Mappings\Types\Range::class, $ageRange);
         $this->assertEquals('integer_range', $ageRange->type());

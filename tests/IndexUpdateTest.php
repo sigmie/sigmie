@@ -157,7 +157,7 @@ class IndexUpdateTest extends TestCase
         $index->update(function (Update $update) {
             $update->patternReplace('/foo/', 'bar', 'default_pattern_replace_filter');
             $update->mapChars(['foo' => 'bar'], 'default_mappings_filter');
-            $update->stripHTML();
+            $update->stripHTML('html_strip');
 
             return $update;
         });
