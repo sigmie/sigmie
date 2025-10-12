@@ -2,6 +2,10 @@ name: Test Opensearch
 
 on: push
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -18,7 +22,7 @@ jobs:
         php: ['8.1', 
         # '8.2', '8.3', '8.4'
         ]
-        opensearch_version: ['2.11.0', '2.12.0']
+        opensearch_version: ['3.2.0']
         stability: [prefer-stable]
         include:
           - php: '8.1'
@@ -84,19 +88,6 @@ jobs:
             sleep 5
           done
           echo "OpenSearch is ready!"
-
-      - name: Install Plugins
-        run: |
-          set -e 
-          curl -k -u admin:Koala\$193tree -X PUT "https://localhost:9200/_cluster/settings" -H "Content-Type: application/json" -d '{
-            "persistent": {
-              "action.destructive_requires_name": false
-            }
-          }'
-
-      - name: Verify Plugin Installation
-        run: |
-          curl -k -u admin:Koala\$193tree -X GET "https://localhost:9200/_cat/plugins?v"
 
       - name: Create .env file
         run: touch .env
