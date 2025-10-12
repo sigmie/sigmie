@@ -64,7 +64,12 @@ class NewRecommendations
 
     public function seedIds(array $documentIds): static
     {
-        $collected = new AliveCollection($this->indexName, $this->elasticsearchConnection, $this->embeddingsApi);
+        $collected = new AliveCollection(
+            $this->indexName,
+            $this->elasticsearchConnection,
+            $this->embeddingsApi,
+            'false'
+        );
 
         $docs = $collected->getMany($documentIds);
 

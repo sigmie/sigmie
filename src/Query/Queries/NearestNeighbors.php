@@ -40,19 +40,16 @@ class NearestNeighbors extends Query
 
     public function toRaw(): array
     {
-        return match (Sigmie::$version) {
-            Version::v7 => throw new \Exception('NearestNeighbors is not supported in Elasticsearch 7'),
-            Version::v8 => [
-                "knn" => [
-                    "field" => $this->field,
-                    "query_vector" => $this->queryVector,
-                    "k" => $this->k, // Needs to be same as size in search
-                    // "num_candidates" => $this->numCandidates,
-                    'filter' => $this->filter,
-                    "num_candidates" => 10000 ,
-                    'boost' => $this->boost,
-                ],
-            ]
-        };
+        return [
+            "knn" => [
+                "field" => $this->field,
+                "query_vector" => $this->queryVector,
+                "k" => $this->k, // Needs to be same as size in search
+                // "num_candidates" => $this->numCandidates,
+                'filter' => $this->filter,
+                "num_candidates" => 10000,
+                'boost' => $this->boost,
+            ],
+        ];
     }
 }

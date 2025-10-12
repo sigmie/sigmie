@@ -267,6 +267,10 @@ class Text extends Type implements FromRaw
         $this->analyzer = $analyzer;
         $this->type = 'search_as_you_type';
 
+        if ($analyzer) {
+            $this->searchAnalyzer = $analyzer->name();
+        }
+
         return $this;
     }
 
@@ -274,6 +278,10 @@ class Text extends Type implements FromRaw
     {
         $this->analyzer = $analyzer;
         $this->type = 'text';
+
+        if ($analyzer) {
+            $this->searchAnalyzer = $analyzer->name();
+        }
 
         return $this;
     }

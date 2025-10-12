@@ -30,7 +30,7 @@ class RagTest extends TestCase
     public function rag_json()
     {
         $indexName = uniqid();
-        $llm = new OpenAIResponseApi(getenv('OPENAI_API_KEY'));
+        $llm = $this->llmApi;
 
         $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
@@ -77,18 +77,34 @@ class RagTest extends TestCase
             })
             ->jsonAnswer();
 
-        $json = $ragAnswer->llmAnswear->json();
+        // Assert the LLM API was called correctly
+        $this->llmApi->assertJsonAnswerWasCalled(1);
 
-        $this->assertIsArray($json);
-        $this->assertArrayHasKey('dog_names', $json);
-        $this->assertIsArray($json['dog_names']);
-        $this->assertCount(3, $json['dog_names']);
+        // Verify the correct messages were sent to the LLM
+        $jsonCalls = $this->llmApi->getJsonAnswerCalls();
+        $this->assertCount(1, $jsonCalls);
 
-        foreach ($json['dog_names'] as $dog) {
-            $this->assertArrayHasKey('name', $dog);
-            $this->assertIsString($dog['name']);
-            $this->assertNotEmpty($dog['name']);
-        }
+        $messages = $jsonCalls[0]['messages'];
+
+        // Check system message
+        $systemMessages = array_filter($messages, fn($m) => $m['role']->value === 'system');
+        $this->assertGreaterThan(0, count($systemMessages));
+        $systemContent = implode(' ', array_column($systemMessages, 'content'));
+        $this->assertStringContainsString('helpful assistant', $systemContent);
+        $this->assertStringContainsString('Extract dog names', $systemContent);
+
+        // Check user message
+        $userMessages = array_filter($messages, fn($m) => $m['role']->value === 'user');
+        $this->assertGreaterThan(0, count($userMessages));
+        $userContent = implode(' ', array_column($userMessages, 'content'));
+        $this->assertStringContainsString('List 3 good dog names', $userContent);
+
+        // Check that context was included
+        $this->assertStringContainsString('Dog names are important', $systemContent);
+
+        // Verify JSON schema was provided
+        $this->assertArrayHasKey('schema', $jsonCalls[0]);
+        $this->assertNotNull($jsonCalls[0]['schema']);
     }
 
     /**
@@ -97,7 +113,7 @@ class RagTest extends TestCase
     public function rag_non_streaming()
     {
         $indexName = uniqid();
-        $llm = new OpenAIResponseApi(getenv('OPENAI_API_KEY'));
+        $llm = $this->llmApi;
 
         $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
@@ -157,31 +173,36 @@ class RagTest extends TestCase
             })
             ->answer();
 
-        $this->assertEquals([
-            'model' => 'gpt-5-nano',
-            'input' => [
-                [
-                    'role' => 'system',
-                    'content' => 'You are a precise assistant. Answer in 2 sentences max.'
-                ],
-                [
-                    'role' => 'system',
-                    'content' => 'Guardrails: Answer only from provided context.'
-                ],
-                [
-                    'role' => 'user',
-                    'content' => 'What is the privacy policy?'
-                ],
-                [
-                    'role' => 'system',
-                    'content' => 'Context: [{"text":"Patient privacy and confidentiality are essential for maintaining trust and respect in healthcare."}]' ]
-            ],
-            'stream' => false
-        ], $answer->llmAnswear->request);
+        // Assert the LLM API was called correctly
+        $this->llmApi->assertAnswerWasCalled(1);
+
+        // Verify the correct messages were sent to the LLM
+        $answerCalls = $this->llmApi->getAnswerCalls();
+        $this->assertCount(1, $answerCalls);
+
+        $messages = $answerCalls[0]['messages'];
+
+        // Check system messages
+        $systemMessages = array_filter($messages, fn($m) => $m['role']->value === 'system');
+        $this->assertGreaterThanOrEqual(2, count($systemMessages));
+        $systemContent = implode(' ', array_column($systemMessages, 'content'));
+
+        $this->assertStringContainsString('precise assistant', $systemContent);
+        $this->assertStringContainsString('Answer in 2 sentences max', $systemContent);
+        $this->assertStringContainsString('Guardrails: Answer only from provided context', $systemContent);
+
+        // Check that context from reranked results was included
+        $this->assertStringContainsString('Patient privacy and confidentiality', $systemContent);
+
+        // Check user message
+        $userMessages = array_filter($messages, fn($m) => $m['role']->value === 'user');
+        $this->assertGreaterThan(0, count($userMessages));
+        $userContent = implode(' ', array_column($userMessages, 'content'));
+        $this->assertStringContainsString('What is the privacy policy?', $userContent);
 
         $this->assertInstanceOf(RagAnswer::class, $answer);
         $this->assertInstanceOf(ContractsLLMAnswer::class, $answer->llmAnswear);
-        $this->assertEquals('gpt-5-nano', $answer->llmAnswear->model());
+        $this->assertNotEmpty($answer->llmAnswear->model());
     }
 
     /**
@@ -190,7 +211,7 @@ class RagTest extends TestCase
     public function rag_streaming()
     {
         $indexName = uniqid();
-        $llm = new OpenAIResponseApi(getenv('OPENAI_API_KEY'));
+        $llm = $this->llmApi;
 
         $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
@@ -251,7 +272,6 @@ class RagTest extends TestCase
         ];
 
         $streamedEvents = [];
-        $llmContent = '';
         $searchHits = null;
 
         // Stream answer and collect events
@@ -274,11 +294,6 @@ class RagTest extends TestCase
         // Process stream and collect events
         foreach ($stream as $event) {
             $streamedEvents[] = $event['type'];
-
-            // Collect LLM content chunks
-            if ($event['type'] === 'llm_chunk') {
-                $llmContent .= $event['content'];
-            }
 
             // Collect search hits
             if ($event['type'] === 'search_hits') {
@@ -340,8 +355,32 @@ class RagTest extends TestCase
         $this->assertLessThan($llmStartIndex, $promptCompleteIndex, 'prompt should complete before llm starts');
         $this->assertLessThan($turnStoreStartIndex, $llmCompleteIndex, 'llm should complete before turn_store starts');
 
-        // Verify that we received LLM content
-        $this->assertNotEmpty($llmContent, 'Should have received LLM content chunks');
+        // Assert the LLM API streamAnswer was called correctly
+        $this->llmApi->assertStreamAnswerWasCalled(1);
+
+        // Verify the correct messages were sent to the LLM
+        $streamCalls = $this->llmApi->getStreamAnswerCalls();
+        $this->assertCount(1, $streamCalls);
+
+        $messages = $streamCalls[0]['messages'];
+
+        // Check system messages
+        $systemMessages = array_filter($messages, fn($m) => $m['role']->value === 'system');
+        $this->assertGreaterThanOrEqual(2, count($systemMessages));
+        $systemContent = implode(' ', array_column($systemMessages, 'content'));
+
+        $this->assertStringContainsString('precise assistant', $systemContent);
+        $this->assertStringContainsString('Answer in 2 sentences max', $systemContent);
+        $this->assertStringContainsString('Guardrails: Answer only from provided context', $systemContent);
+
+        // Check that context from reranked results was included
+        $this->assertStringContainsString('Patient privacy and confidentiality', $systemContent);
+
+        // Check user message
+        $userMessages = array_filter($messages, fn($m) => $m['role']->value === 'user');
+        $this->assertGreaterThan(0, count($userMessages));
+        $userContent = implode(' ', array_column($userMessages, 'content'));
+        $this->assertStringContainsString('What is the privacy policy?', $userContent);
 
         // Verify that llm_chunk events happened between llm_start and llm_complete
         $firstChunkIndex = array_search('llm_chunk', $streamedEvents);

@@ -84,7 +84,7 @@ class RecommendationsTest extends TestCase
                     'name' => 'Wireless Earbuds 3',
                     'category' => 'Electronics',
                     'price' => 150,
-                ], _id: 'wireless-earbuds-4'),
+                ], _id: 'wireless-earbuds-3'),
                 new Document([
                     'name' => 'Wireless Earbuds 4',
                     'category' => 'Electronics',

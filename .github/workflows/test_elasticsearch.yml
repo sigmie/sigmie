@@ -2,9 +2,13 @@ name: Test Elasticsearch
 
 on: push
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     env:
       ELASTICSEARCH_VERSION:
@@ -20,7 +24,7 @@ jobs:
         php: ['8.1', 
         # '8.2', '8.3', '8.4'
         ]
-        elasticsearch_version: ['7.17.9', '8.17.3']
+        elasticsearch_version: ['9.1.3']
         stability: [prefer-stable]
         include:
           - php: '8.1'
@@ -108,36 +112,6 @@ jobs:
           done
           echo "Elasticsearch is ready!"
 
-      - name: Install Plugins
-        run: |
-          set -e 
-          curl -X PUT "http://localhost:9200/_cluster/settings" -H "Content-Type: application/json" -d '{
-            "persistent": {
-              "action.destructive_requires_name": false
-            }
-          }'
-          declare -a plugins
-          plugins+=("https://github.com/alexklibisz/elastiknn/releases/download/${{ matrix.elasticsearch_version }}.0/elastiknn-${{ matrix.elasticsearch_version }}.0.zip")
-          plugins+=("https://github.com/sigmie/elasticsearch-skroutz-greekstemmer/releases/download/${{ matrix.elasticsearch_version }}.0/elasticsearch-skroutz-greekstemmer-${{ matrix.elasticsearch_version }}.0.zip")
-          plugins+=("https://github.com/sigmie/elasticsearch-analysis-greeklish/releases/download/${{ matrix.elasticsearch_version }}.0/elasticsearch-analysis-greeklish-${{ matrix.elasticsearch_version }}.0.zip")
-
-          for plugin in "${plugins[@]}"; do
-            docker exec $(docker ps -q --filter ancestor=docker.elastic.co/elasticsearch/elasticsearch:${{ matrix.elasticsearch_version}}) elasticsearch-plugin install --batch $plugin
-          done
-          docker restart $(docker ps -q --filter ancestor=docker.elastic.co/elasticsearch/elasticsearch:${{ matrix.elasticsearch_version}})
-
-      - name: Wait for Elasticsearch to Restart
-        run: |
-          echo "Waiting for Elasticsearch to start..."
-          until curl -s http://localhost:9200 | grep "tagline"; do
-            sleep 5
-          done
-          echo "Elasticsearch is ready!"
-
-      - name: Verify Plugin Installation
-        run: |
-          curl -X GET "http://localhost:9200/_cat/plugins?v"
-
       - name: Create .env file
         run: touch .env
 
@@ -157,7 +131,7 @@ jobs:
           command: composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress ${{ matrix.flags }}
 
       - name: Tests
-        continue-on-error: ${{ matrix.php > 8 }}
+        # continue-on-error: ${{ matrix.elasticsearch_version < 9 }}
         run: vendor/bin/phpunit -c phpunit.xml
 
       - uses: codecov/codecov-action@v3

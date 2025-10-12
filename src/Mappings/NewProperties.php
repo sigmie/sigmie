@@ -244,17 +244,6 @@ class NewProperties
         return $field;
     }
 
-    public function properties(string $name, callable $callable)
-    {
-        $blueprint = new NewProperties;
-
-        $callable($blueprint);
-
-        $properties = $blueprint($name);
-
-        $this->fields->add($properties);
-    }
-
     public function date(string $name): Date
     {
         $field = new Date($name);

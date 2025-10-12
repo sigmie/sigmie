@@ -167,8 +167,6 @@ class NewIndex
             configs: $this->config
         );
 
-        ray($settings);
-
         $name = $this->createIndexName();
 
         $index = new Index($name, $settings, $mappings);
