@@ -596,6 +596,8 @@ class IndexUpdateTest extends TestCase
 
         $oldName = $initialIndex->name;
 
+        $index = $this->sigmie->index($alias);
+
         $this->assertIndex($alias, function (Assert $index) {
             $index->assertShards(1);
             $index->assertReplicas(0);

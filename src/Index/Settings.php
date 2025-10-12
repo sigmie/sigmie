@@ -81,7 +81,8 @@ class Settings implements SettingsInterface
         if ($this->primaryShards) {
             $res['number_of_shards'] = $this->primaryShards;
         }
-        if ($this->replicaShards) {
+
+        if (!is_null($this->replicaShards)) {
             $res['number_of_replicas'] = $this->replicaShards;
         }
 

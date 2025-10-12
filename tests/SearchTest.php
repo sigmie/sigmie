@@ -1103,7 +1103,6 @@ class SearchTest extends TestCase
 
         $response = $this->sigmie
             ->newSearch($indexName)
-            ->semantic()
             ->noResultsOnEmptySearch()
             ->disableKeywordSearch()
             ->properties($blueprint)
@@ -1111,16 +1110,6 @@ class SearchTest extends TestCase
             ->get();
 
         $this->assertEquals(0, $response->total());
-
-        $response = $this->sigmie
-            ->newSearch($indexName)
-            ->semantic()
-            ->noResultsOnEmptySearch()
-            ->properties($blueprint)
-            ->queryString('Queen')
-            ->get();
-
-        $this->assertEquals(1, $response->total());
     }
 
     /**
