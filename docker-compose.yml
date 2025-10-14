@@ -35,6 +35,23 @@ services:
       timeout: 10s
       retries: 3
 
+  image-embeddings:
+    image: michaelf34/infinity:latest
+    container_name: sigmie-clip
+    ports:
+      - "7996:7996"
+    environment:
+      - MODEL_ID=wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M
+    volumes:
+      - ./data/image-embeddings:/app/.cache
+    command: v2 --model-id wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M --port 7996 --engine torch
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7996/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   llm:
     image: ollama/ollama:latest
     container_name: sigmie-llm
