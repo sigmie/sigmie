@@ -70,7 +70,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
         $this->rerankApi = new FakeRerankApi(new InfinityRerankApi($rerankUrl));
         $this->llmApi = new FakeLLMApi(new OllamaApi($llmUrl));
 
-        $this->sigmie = new Sigmie($this->elasticsearchConnection, $this->embeddingApi);
+        $this->sigmie = new Sigmie($this->elasticsearchConnection);
 
         $this->sigmie->registerApi('test-embeddings', $this->embeddingApi);
         $this->sigmie->registerApi('test-rerank', $this->rerankApi);
