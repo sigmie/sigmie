@@ -44,9 +44,12 @@ use Sigmie\Search\Formatters\RawElasticsearchFormat;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
 use Sigmie\Search\QueryString;
 use Sigmie\Shared\Collection;
+use Sigmie\Shared\UsesApis;
 
 class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInterface, MultiSearchable
 {
+    use UsesApis;
+
     protected array $sort = ['_score'];
 
     protected array $embeddings = [];
@@ -73,11 +76,10 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected SortParser $sortParser;
 
-    protected ?VectorPool $vectorPool = null;
+    protected array $vectorPools = [];
 
     public function __construct(
-        ElasticsearchConnection $elasticsearchConnection,
-        public readonly ?EmbeddingsApi $embeddingsApi = null
+        ElasticsearchConnection $elasticsearchConnection
     ) {
 
         parent::__construct($elasticsearchConnection);
@@ -389,7 +391,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         $boolean = new Boolean;
 
-        if ($this->embeddingsApi && $this->semanticSearch) {
+        if ($this->semanticSearch && $this->hasSemanticFields()) {
             $this->populateVectorPool();
             // Build KNN queries independently before main query
             $this->buildKnnQueries();
@@ -411,52 +413,88 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $this->handleQueryStrings($boolean);
     }
 
+    protected function hasSemanticFields(): bool
+    {
+        if (!$this->properties) {
+            return false;
+        }
+
+        return $this->properties->nestedSemanticFields()
+            ->filter(fn(Text $field) => $field->isSemantic())
+            ->filter(fn(Text $field) => in_array($field->fullPath, $this->fields))
+            ->isNotEmpty();
+    }
+
     protected function populateVectorPool(): void
     {
-        if (!$this->embeddingsApi) {
+        // Get all unique APIs needed for semantic fields
+        $requiredApis = $this->getRequiredEmbeddingApis();
+
+        if (empty($requiredApis)) {
             return;
         }
 
-        if (!$this->vectorPool) {
-            $this->vectorPool = new VectorPool($this->embeddingsApi);
+        // Create VectorPools for each required API
+        foreach ($requiredApis as $apiName) {
+            if (!isset($this->vectorPools[$apiName])) {
+                $embeddingsApi = $this->getApi($apiName);
+                if ($embeddingsApi === null) {
+                    continue;
+                }
+                $this->vectorPools[$apiName] = new VectorPool($embeddingsApi);
+            }
         }
 
-        // Collect all needed embeddings
-        $vectorFields = $this->properties->nestedSemanticFields()
+        // Group fields by their API
+        $fieldsByApi = [];
+        $semanticFields = $this->properties->nestedSemanticFields()
             ->filter(fn(Text $field) => $field->isSemantic())
-            ->filter(fn(Text $field) => in_array($field->fullPath, $this->fields))
-            ->map(fn(Text $field) => $field->vectorFields())
-            ->flatten(1);
+            ->filter(fn(Text $field) => in_array($field->fullPath, $this->fields));
 
-        $dims = $vectorFields
-            ->map(fn(NestedVector|DenseVector|SigmieVector $field) => $field->dims())
-            ->unique()
-            ->toArray();
+        foreach ($semanticFields as $field) {
+            foreach ($field->vectorFields()->getIterator() as $vectorField) {
+                $apiName = $vectorField->apiName ?? null;
 
-        // Build array of all text/dimension combinations
-        $items = [];
-        foreach ($this->searchContext->queryStrings as $queryString) {
-            // Skip if already has a vector (passed directly via queryString())
-            if ($queryString->hasVector()) {
-                continue;
-            }
-
-            // Skip empty text
-            if (trim($queryString->text()) === '') {
-                continue;
-            }
-
-            foreach ($dims as $dim) {
-                $items[] = [
-                    'text' => $queryString->text(),
-                    'dims' => $dim
-                ];
+                if (!isset($fieldsByApi[$apiName])) {
+                    $fieldsByApi[$apiName] = [];
+                }
+                $fieldsByApi[$apiName][] = $vectorField;
             }
         }
 
-        // Batch fetch all embeddings at once
-        if (!empty($items)) {
-            $this->vectorPool->getMany($items);
+        // Populate each VectorPool with its required embeddings
+        foreach ($fieldsByApi as $apiName => $vectorFields) {
+            if (!isset($this->vectorPools[$apiName])) {
+                continue;
+            }
+
+            $dims = array_unique(array_map(fn($field) => $field->dims(), $vectorFields));
+
+            // Build array of all text/dimension combinations for this API
+            $items = [];
+            foreach ($this->searchContext->queryStrings as $queryString) {
+                // Skip if already has a vector (passed directly via queryString())
+                if ($queryString->hasVector()) {
+                    continue;
+                }
+
+                // Skip empty text
+                if (trim($queryString->text()) === '') {
+                    continue;
+                }
+
+                foreach ($dims as $dim) {
+                    $items[] = [
+                        'text' => $queryString->text(),
+                        'dims' => $dim
+                    ];
+                }
+            }
+
+            // Batch fetch all embeddings for this API
+            if (!empty($items)) {
+                $this->vectorPools[$apiName]->getMany($items);
+            }
         }
     }
 
@@ -529,38 +567,68 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     protected function createVectorQuery(QueryString $queryString): array
     {
         $vectorFields = $this->getVectorFields($queryString->fields());
-        $dims = $this->getVectorDimensions($vectorFields);
 
-        if (empty($dims)) {
+        if ($vectorFields->isEmpty()) {
             return ['knn' => [], 'semantic' => []];
         }
 
-        // Check if vector was passed directly
-        if ($queryString->hasVector() && $queryString->hasDimension()) {
-            // Use the provided vector
-            $vectorByDims = new Collection([
-                $queryString->dimension() => $queryString->vector()
-            ]);
-        } else {
-            // Generate embeddings from text
-            $embeddings = $this->getEmbeddings($dims, $queryString->text());
-            $vectorByDims = $this->mapEmbeddingsByDimensions($embeddings);
-        }
+        // Group fields by API and dimensions
+        $fieldsByApiAndDims = [];
+        foreach ($vectorFields as $field) {
+            $apiName = $field->apiName ?? null;
+            if (!$apiName) {
+                continue; // Skip fields without API configuration
+            }
 
-        $vectorQueries = $this->buildVectorQueries($vectorFields, $vectorByDims, $queryString->weight());
+            $dims = $field->dims();
+            $key = $apiName . '_' . $dims;
+
+            if (!isset($fieldsByApiAndDims[$key])) {
+                $fieldsByApiAndDims[$key] = [
+                    'apiName' => $apiName,
+                    'dims' => $dims,
+                    'fields' => []
+                ];
+            }
+            $fieldsByApiAndDims[$key]['fields'][] = $field;
+        }
 
         $knnQueries = [];
         $semanticQueries = [];
 
-        $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries) {
-            $raw = $query->toRaw();
-            if (isset($raw['knn'])) {
-                $knnQueries[] = $raw['knn'];
+        // Process each API/dimension combination
+        foreach ($fieldsByApiAndDims as $group) {
+            $apiName = $group['apiName'];
+            $dims = $group['dims'];
+            $fields = new Collection($group['fields']);
+
+            // Check if vector was passed directly
+            if ($queryString->hasVector() && $queryString->hasDimension() && $queryString->dimension() === $dims) {
+                // Use the provided vector
+                $vector = $queryString->vector();
             } else {
-                // This is a function_score or other non-KNN query
-                $semanticQueries[] = $query;
+                // Get embeddings from the appropriate VectorPool
+                if (!isset($this->vectorPools[$apiName])) {
+                    continue; // Skip if VectorPool for this API doesn't exist
+                }
+                $vector = $this->vectorPools[$apiName]->get($queryString->text(), $dims);
             }
-        });
+
+            $vectorByDims = new Collection([$dims => $vector]);
+
+            // Build queries for these fields
+            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryString->weight());
+
+            $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries) {
+                $raw = $query->toRaw();
+                if (isset($raw['knn'])) {
+                    $knnQueries[] = $raw['knn'];
+                } else {
+                    // This is a function_score or other non-KNN query
+                    $semanticQueries[] = $query;
+                }
+            });
+        }
 
         return ['knn' => $knnQueries, 'semantic' => $semanticQueries];
     }
@@ -584,18 +652,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             ->toArray();
     }
 
-    protected function getEmbeddings(array $dims, string $queryString): array
-    {
-        return array_map(fn($dim) => [
-            'dims' => $dim,
-            'vector' => $this->vectorPool->get($queryString, $dim)
-        ], $dims);
-    }
-
-    protected function mapEmbeddingsByDimensions(array $embeddings): Collection
-    {
-        return (new Collection($embeddings))->mapWithKeys(fn($item) => [$item['dims'] => $item['vector']]);
-    }
 
     protected function buildVectorQueries(Collection $vectorFields, Collection $vectorByDims, float $queryBoost): Collection
     {
@@ -759,26 +815,38 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this->get()->hits();
     }
 
-    public function setVectorPool(VectorPool|array $pool): static
+    public function setVectorPool(VectorPool|array $pool, ?string $apiName = null): static
     {
         if ($pool instanceof VectorPool) {
-            $this->vectorPool = $pool;
-        } else {
-            // Legacy array format support
-            if (!$this->vectorPool && $this->embeddingsApi) {
-                $this->vectorPool = new VectorPool($this->embeddingsApi);
+            if ($apiName === null) {
+                // If no API name specified, try to get the first one
+                $apis = $this->getRequiredEmbeddingApis();
+                $apiName = !empty($apis) ? reset($apis) : 'default';
             }
-            if ($this->vectorPool) {
-                $this->vectorPool->setPool($pool);
+            $this->vectorPools[$apiName] = $pool;
+        } else {
+            // Legacy array format support - set pool data for all existing VectorPools
+            foreach ($this->vectorPools as $vectorPool) {
+                $vectorPool->setPool($pool);
             }
         }
 
         return $this;
     }
 
-    public function getVectorPool(): ?VectorPool
+    public function getVectorPools(): array
     {
-        return $this->vectorPool;
+        return $this->vectorPools;
+    }
+
+    public function getVectorPool(?string $apiName = null): ?VectorPool
+    {
+        if ($apiName !== null) {
+            return $this->vectorPools[$apiName] ?? null;
+        }
+
+        // Return first VectorPool if no name specified
+        return !empty($this->vectorPools) ? reset($this->vectorPools) : null;
     }
 
     public function queryStrings(): array
@@ -789,5 +857,25 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     public function getProperties(): ?Properties
     {
         return $this->properties;
+    }
+
+    protected function getRequiredEmbeddingApis(): array
+    {
+        $apis = [];
+
+        $semanticFields = $this->properties->nestedSemanticFields()
+            ->filter(fn(Text $field) => $field->isSemantic())
+            ->filter(fn(Text $field) => in_array($field->fullPath, $this->fields));
+
+        foreach ($semanticFields as $field) {
+            foreach ($field->vectorFields()->getIterator() as $vectorField) {
+                if ($vectorField->apiName ?? false) {
+                    $apis[$vectorField->apiName] = true;
+                }
+            }
+        }
+
+
+        return array_keys($apis);
     }
 }

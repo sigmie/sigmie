@@ -46,6 +46,8 @@ class Sigmie
 
     protected string $application = '';
 
+    protected array $apis = [];
+
     public static Version $version = Version::v7;
 
     public static array $plugins = [];
@@ -58,17 +60,26 @@ class Sigmie
     }
 
     public function __construct(
-        Connection $httpConnection,
-        protected ?EmbeddingsApi $embeddingsApi = null
+        Connection $httpConnection
     ) {
         $this->elasticsearchConnection = $httpConnection;
     }
 
-    public function embedder(EmbeddingsApi $embedder): static
+    public function registerApi(string $name, EmbeddingsApi|LLMApi|RerankApi $api): static
     {
-        $this->embeddingsApi = $embedder;
+        $this->apis[$name] = $api;
 
         return $this;
+    }
+
+    public function api(string $name): EmbeddingsApi|LLMApi|RerankApi
+    {
+        return $this->apis[$name];
+    }
+
+    public function hasApi(string $name): bool
+    {
+        return isset($this->apis[$name]);
     }
 
     private function withApplicationPrefix(string $name): string
@@ -89,12 +100,8 @@ class Sigmie
 
     public function newIndex(string $name): NewIndex
     {
-        $newIndex = (new NewIndex($this->elasticsearchConnection, $this->embeddingsApi))
+        $newIndex = (new NewIndex($this->elasticsearchConnection))
             ->alias($this->withApplicationPrefix($name));
-
-        if ($this->embeddingsApi) {
-            $newIndex->meta(['embeddings_model' => $this->embeddingsApi->model()]);
-        }
 
         return $newIndex;
     }
@@ -120,20 +127,19 @@ class Sigmie
 
     public function collect(string $name, bool $refresh = false): AliveCollection
     {
-        return new AliveCollection(
+        return (new AliveCollection(
             $this->withApplicationPrefix($name),
             $this->elasticsearchConnection,
-            $this->embeddingsApi,
             $refresh ? 'true' : 'false'
-        );
+        ))->apis($this->apis);
     }
 
-    public function newClassification(?EmbeddingsApi $embeddingsApi = null): NewClassification
+    public function newClassification(EmbeddingsApi $embeddingsApi): NewClassification
     {
-        return new NewClassification($embeddingsApi ?? $this->embeddingsApi);
+        return new NewClassification($embeddingsApi);
     }
 
-    public function newClustering(?EmbeddingsApi $embeddingsApi = null): NewClustering
+    public function newClustering(EmbeddingsApi $embeddingsApi): NewClustering
     {
         return new NewClustering($embeddingsApi);
     }
@@ -142,7 +148,7 @@ class Sigmie
     {
         $index = $this->withApplicationPrefix($index);
 
-        return new NewRecommendations($index, $this->elasticsearchConnection, $this->embeddingsApi);
+        return new NewRecommendations($index, $this->elasticsearchConnection);
     }
 
     public function rawQuery(
@@ -177,11 +183,9 @@ class Sigmie
     {
         $index = $this->withApplicationPrefix($index);
 
-        return (new NewSearch(
-            $this->elasticsearchConnection,
-            $this->embeddingsApi
-        ))
-            ->index($index);
+        return (new NewSearch($this->elasticsearchConnection))
+            ->index($index)
+            ->apis($this->apis);
     }
 
     public function newRag(
@@ -196,14 +200,15 @@ class Sigmie
 
     public function newMultiSearch(): NewMultiSearch
     {
-        return new NewMultiSearch($this->elasticsearchConnection, $this->embeddingsApi);
+        return (new NewMultiSearch($this->elasticsearchConnection))
+            ->apis($this->apis);
     }
 
     public function newTemplate(string $id): NewTemplate
     {
         $id = $this->withApplicationPrefix($id);
 
-        return (new NewTemplate($this->elasticsearchConnection, $this->embeddingsApi))
+        return (new NewTemplate($this->elasticsearchConnection))
             ->id($id);
     }
 
@@ -241,14 +246,13 @@ class Sigmie
 
     public static function create(
         array|string $hosts,
-        array $config = [],
-        ?EmbeddingsApi $embeddingsApi = null
+        array $config = []
     ): static {
         $hosts = (is_string($hosts)) ? explode(',', $hosts) : $hosts;
 
         $client = JSONClient::create($hosts, $config);
 
-        return new static(new HttpConnection($client), $embeddingsApi);
+        return new static(new HttpConnection($client));
     }
 
     public function delete(string $index): bool

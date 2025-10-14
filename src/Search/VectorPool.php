@@ -11,10 +11,14 @@ class VectorPool
 {
     protected array $pool = [];
 
+    protected EmbeddingsApi $embeddingsApi;
+
     public function __construct(
-        protected EmbeddingsApi $embeddingsApi,
+        EmbeddingsApi $embeddingsApi,
         protected bool $ensureNormalized = true
-    ) {}
+    ) {
+        $this->embeddingsApi = $embeddingsApi;
+    }
 
     public function get(string $text, int $dimensions): array
     {

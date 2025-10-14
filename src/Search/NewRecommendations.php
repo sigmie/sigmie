@@ -35,10 +35,9 @@ class NewRecommendations
 
     public function __construct(
         protected string $indexName,
-        protected ElasticsearchConnection $elasticsearchConnection,
-        protected EmbeddingsApi $embeddingsApi
+        protected ElasticsearchConnection $elasticsearchConnection
     ) {
-        $this->search = new NewSearch($this->elasticsearchConnection, $this->embeddingsApi);
+        $this->search = new NewSearch($this->elasticsearchConnection);
         $this->search->index($this->indexName);
     }
 
@@ -67,7 +66,6 @@ class NewRecommendations
         $collected = new AliveCollection(
             $this->indexName,
             $this->elasticsearchConnection,
-            $this->embeddingsApi,
             'false'
         );
 
@@ -151,7 +149,7 @@ class NewRecommendations
         ]);
 
         // Use MultiSearch to execute all kNN queries
-        $multi = new NewMultiSearch($this->elasticsearchConnection, $this->embeddingsApi);
+        $multi = new NewMultiSearch($this->elasticsearchConnection);
 
         /** @var Document $doc  */
         foreach ($this->docs as $doc) {

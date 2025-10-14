@@ -21,6 +21,7 @@ use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Semantic\DocumentProcessor;
 use Traversable;
 use Sigmie\Shared\Collection;
+use Sigmie\Shared\UsesApis;
 
 class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 {
@@ -29,6 +30,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     use LazyEach;
     use Search;
     use Mappings;
+    use UsesApis;
 
     protected ?array $only = null;
 
@@ -39,19 +41,11 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     public function __construct(
         protected string $name,
         ElasticsearchConnection $connection,
-        protected ?EmbeddingsApi $embeddingsApi = null,
         protected string $refresh = 'false'
     ) {
         $this->setElasticsearchConnection($connection);
 
         $this->properties = new Properties();
-    }
-
-    public function withEmbedder(EmbeddingsApi $embedder): static
-    {
-        $this->embeddingsApi = $embedder;
-
-        return $this;
     }
 
     public function populateEmbeddings(bool $value = true)
@@ -152,11 +146,12 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     protected function processDocument(Document $document): Document
     {
-        $documentProcessor = new DocumentProcessor($this->properties, $this->embeddingsApi);
+        $documentProcessor = new DocumentProcessor($this->properties);
+        $documentProcessor->apis($this->apis);
 
         $document = $documentProcessor->populateComboFields($document);
 
-        if ($this->populateEmbeddings && $this->embeddingsApi) {
+        if ($this->populateEmbeddings) {
             $document = $documentProcessor->populateEmbeddings($document);
         }
 

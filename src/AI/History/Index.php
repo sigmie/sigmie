@@ -10,9 +10,18 @@ use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Search\NewSearch;
 use Sigmie\SigmieIndex;
+use Sigmie\Base\Contracts\ElasticsearchConnection;
 
 class Index extends SigmieIndex
 {
+    public function __construct(
+        string $name,
+        ElasticsearchConnection $connection,
+        public readonly string $embeddingsApi 
+    ) {
+        parent::__construct($name, $connection);
+    }
+
     public function properties(): NewProperties
     {
         $properties = new NewProperties();
@@ -24,15 +33,15 @@ class Index extends SigmieIndex
 
         $properties->shortText('instructions');
 
-        $properties->text('summary')->semantic(accuracy: 1, dimensions: 256);
+        $properties->text('summary')->semantic(api: $this->embeddingsApi, accuracy: 1, dimensions: 256);
 
-        $properties->tags('tags')->semantic(accuracy: 1, dimensions: 256);
+        $properties->tags('tags')->semantic(api: $this->embeddingsApi, accuracy: 1, dimensions: 256);
 
         $properties->keyword('model');
 
         $properties->nested('turns', function (NewProperties $props) {
-            $props->text('content')->semantic(accuracy: 1, dimensions: 256);
-            $props->text('role')->semantic(accuracy: 1, dimensions: 256);
+            $props->text('content')->semantic(api: $this->embeddingsApi, accuracy: 1, dimensions: 256);
+            $props->text('role')->semantic(api: $this->embeddingsApi, accuracy: 1, dimensions: 256);
         });
 
         return $properties;

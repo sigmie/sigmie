@@ -11,12 +11,14 @@ use Sigmie\Base\ElasticsearchException;
 use Sigmie\Query\NewQuery;
 use Sigmie\Search\Contracts\MultiSearchable;
 use Sigmie\Search\MultiSearchResponse;
+use Sigmie\Shared\UsesApis;
 
 use function Sigmie\Functions\random_name;
 
 class NewMultiSearch
 {
     use MSearch;
+    use UsesApis;
 
     /** @var array Ordered list of all queries (MultiSearchable objects and raw arrays) */
     protected array $queries = [];
@@ -25,14 +27,15 @@ class NewMultiSearch
     protected array $names = [];
 
     public function __construct(
-        protected ElasticsearchConnection $elasticsearchConnection,
-        protected ?EmbeddingsApi $embeddingsApi = null
-    ) {}
+        protected ElasticsearchConnection $elasticsearchConnection
+    ) {
+    }
 
     public function newSearch(string $index, ?string $name = null): NewSearch
     {
-        $search = new NewSearch($this->elasticsearchConnection, $this->embeddingsApi);
-        $search->index($index);
+        $search = (new NewSearch($this->elasticsearchConnection))
+            ->index($index)
+            ->apis($this->apis);
 
         $this->queries[] = $search;
         $this->names[count($this->queries) - 1] = $name ?? random_name('srch', 10);

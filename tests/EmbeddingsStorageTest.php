@@ -18,20 +18,18 @@ class EmbeddingsStorageTest extends TestCase
     {
         $indexName = uniqid();
 
-        $sigmie = $this->sigmie->embedder($this->embeddingApi);
-
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 1, dimensions: 384);
-        $props->text('description')->semantic(accuracy: 1, dimensions: 384);
-        $props->text('content')->semantic(accuracy: 1, dimensions: 384);
+        $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+        $props->text('description')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+        $props->text('content')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
         $props->nested('comments', function (NewProperties $props) {
-            $props->text('text')->semantic(accuracy: 1, dimensions: 384);
-            $props->text('author')->semantic(accuracy: 1, dimensions: 384);
+            $props->text('text')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+            $props->text('author')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
         });
 
-        $sigmie->newIndex($indexName)->properties($props)->create();
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
 
-        $collected = $sigmie->collect($indexName, true)->properties($props);
+        $collected = $this->sigmie->collect($indexName, true)->properties($props);
 
         $collected->merge([
             new Document([
@@ -103,14 +101,12 @@ class EmbeddingsStorageTest extends TestCase
     {
         $indexName = uniqid();
 
-        $sigmie = $this->sigmie->embedder($this->embeddingApi);
-
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 1, dimensions: 384);
+        $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
 
-        $sigmie->newIndex($indexName)->properties($props)->create();
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
 
-        $collected = $sigmie->collect($indexName, true)->properties($props);
+        $collected = $this->sigmie->collect($indexName, true)->properties($props);
 
         $collected->merge([
             new Document([
@@ -150,15 +146,14 @@ class EmbeddingsStorageTest extends TestCase
     {
         $indexName = uniqid();
 
-        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 1, dimensions: 384);
-        $props->text('content')->semantic(accuracy: 1, dimensions: 384);
+        $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+        $props->text('content')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
 
-        $sigmie->newIndex($indexName)->properties($props)->create();
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
 
-        $collected = $sigmie->collect($indexName, true)->properties($props);
+        $collected = $this->sigmie->collect($indexName, true)->properties($props);
 
         $collected->merge([
             new Document([
@@ -205,17 +200,15 @@ class EmbeddingsStorageTest extends TestCase
     {
         $indexName = uniqid();
 
-        $sigmie = $this->sigmie->embedder($this->embeddingApi);
-
         $props = new NewProperties;
         // Use Average strategy for nested comments field (multiple items will be averaged)
         $props->nested('comments', function (NewProperties $props) {
-            $props->text('text')->semantic(accuracy: 2, dimensions: 384); // accuracy 2 uses Average strategy
+            $props->text('text')->semantic(accuracy: 2, dimensions: 384, api: 'test-embeddings'); // accuracy 2 uses Average strategy
         });
 
-        $sigmie->newIndex($indexName)->properties($props)->create();
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
 
-        $collected = $sigmie->collect($indexName, true)
+        $collected = $this->sigmie->collect($indexName, true)
         ->populateEmbeddings()
         ->properties($props);
 

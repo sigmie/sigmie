@@ -72,6 +72,10 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
         $this->sigmie = new Sigmie($this->elasticsearchConnection, $this->embeddingApi);
 
+        $this->sigmie->registerApi('test-embeddings', $this->embeddingApi);
+        $this->sigmie->registerApi('test-rerank', $this->rerankApi);
+        $this->sigmie->registerApi('test-llm', $this->llmApi);
+
         // Always reset test now time
         // before running a new test
         Carbon::setTestNow();

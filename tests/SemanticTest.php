@@ -20,26 +20,24 @@ class SemanticTest extends TestCase
     {
         $indexName = uniqid();
 
-        $sigmie = $this->sigmie->embedder($this->embeddingApi);
-
         $blueprint = new NewProperties();
         $blueprint->nested('charachter', function (NewProperties $blueprint) {
             $blueprint->nested('details', function (NewProperties $blueprint) {
                 $blueprint->nested('meta', function (NewProperties $blueprint) {
                     $blueprint->nested('extra', function (NewProperties $blueprint) {
                         $blueprint->nested('deep', function (NewProperties $blueprint) {
-                            $blueprint->title('deepnote')->semantic(3, dimensions: 384);
+                            $blueprint->title('deepnote')->semantic(accuracy:3, dimensions: 384, api: 'test-embeddings');
                         });
                     });
                 });
             });
         });
 
-        $sigmie->newIndex($indexName)
+        $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
             ->create();
 
-        $sigmie
+        $this->sigmie
             ->collect($indexName, refresh: true)
             ->properties($blueprint)
             ->merge([
@@ -71,7 +69,7 @@ class SemanticTest extends TestCase
                 ]),
             ]);
 
-        $search = $sigmie
+        $search = $this->sigmie
             ->newSearch($indexName)
             ->properties($blueprint)
             ->semantic()
@@ -98,16 +96,14 @@ class SemanticTest extends TestCase
     {
         $indexName = uniqid();
 
-        $sigmie = $this->sigmie->embedder($this->embeddingApi);
-
         $blueprint = new NewProperties();
-        $blueprint->title('name')->semantic(6, dimensions: 384);
+        $blueprint->title('name')->semantic(accuracy: 6, dimensions: 384, api: 'test-embeddings');
 
-        $sigmie->newIndex($indexName)
+        $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
             ->create();
 
-        $sigmie
+        $this->sigmie
             ->collect($indexName, refresh: true)
             ->properties($blueprint)
             ->merge([
@@ -121,7 +117,7 @@ class SemanticTest extends TestCase
                 ]),
             ]);
 
-        $search = $sigmie
+        $search = $this->sigmie
             ->newSearch($indexName)
             ->properties($blueprint)
             ->semantic()
@@ -147,15 +143,14 @@ class SemanticTest extends TestCase
     {
         $indexName = uniqid();
 
-        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 7, dimensions: 384);
-        $props->text('text')->semantic(accuracy: 7, dimensions: 384);
+        $props->text('title')->semantic(accuracy: 7, dimensions: 384, api: 'test-embeddings');
+        $props->text('text')->semantic(accuracy: 7, dimensions: 384, api: 'test-embeddings');
 
-        $sigmie->newIndex($indexName)->properties($props)->create();
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
 
-        $collected = $sigmie->collect($indexName, true)->properties($props);
+        $collected = $this->sigmie->collect($indexName, true)->properties($props);
 
         $collected->merge([
             new Document([
@@ -168,7 +163,7 @@ class SemanticTest extends TestCase
             ]),
         ]);
 
-        $multiSearch = $sigmie->newMultiSearch();
+        $multiSearch = $this->sigmie->newMultiSearch();
         $search = $multiSearch->newSearch($indexName)
             ->index($indexName)
             ->properties($props)
@@ -189,7 +184,7 @@ class SemanticTest extends TestCase
         $this->assertStringContainsString('function_score', $queryJson, 'Should use function_score for accuracy 7');
         $this->assertStringContainsString('cosineSimilarity', $queryJson, 'Should use cosineSimilarity for accuracy 7');
 
-        $this->assertCount(2, $sigmie->collect($indexName, true));
+        $this->assertCount(2, $this->sigmie->collect($indexName, true));
         $this->assertCount(2, $multiSearch->hits());
     }
 }

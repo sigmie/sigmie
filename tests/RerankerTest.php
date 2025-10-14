@@ -27,17 +27,15 @@ class RerankerTest extends TestCase
         $embeddings = $this->embeddingApi; 
         $cohereReranker = $this->rerankApi; 
 
-        $sigmie = $this->sigmie->embedder($embeddings);
-
         $blueprint = new NewProperties();
-        $blueprint->longText('name')->semantic(dimensions: 384);
-        $blueprint->longText('description')->semantic(dimensions: 384);
+        $blueprint->longText('name')->semantic(dimensions: 384, api: 'test-embeddings');
+        $blueprint->longText('description')->semantic(dimensions: 384, api: 'test-embeddings');
 
-        $sigmie->newIndex($indexName)
+        $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
             ->create();
 
-        $index = $sigmie->collect($indexName, refresh: true);
+        $index = $this->sigmie->collect($indexName, refresh: true);
 
         $index->merge([
             new Document(['name' => 'PHP Framework', 'description' => 'Laravel is a PHP framework for web development']),
@@ -45,7 +43,7 @@ class RerankerTest extends TestCase
             new Document(['name' => 'Python Framework', 'description' => 'Django is a Python framework for web development']),
         ]);
 
-        $res = $sigmie->newSearch($indexName)
+        $res = $this->sigmie->newSearch($indexName)
             ->properties($blueprint)
             ->queryString('web framework')
             ->semantic()

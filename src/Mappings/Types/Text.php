@@ -107,14 +107,16 @@ class Text extends Type implements FromRaw
     }
 
     public function semantic(
+        string $api,
         int $accuracy = 3,
         int $dimensions = 256,
-        VectorSimilarity $similarity = VectorSimilarity::Cosine
+        VectorSimilarity $similarity = VectorSimilarity::Cosine,
     ) {
         return $this->newSemantic(
             fn(NewSemanticField $semantic) =>
             $semantic->accuracy($accuracy, $dimensions)
                 ->similarity($similarity)
+                ->api($api)
         );
     }
 

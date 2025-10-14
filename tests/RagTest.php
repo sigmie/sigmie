@@ -32,15 +32,14 @@ class RagTest extends TestCase
         $indexName = uniqid();
         $llm = $this->llmApi;
 
-        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 1, dimensions: 384);
-        $props->text('text')->semantic(accuracy: 1, dimensions: 384);
+        $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+        $props->text('text')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
 
-        $sigmie->newIndex($indexName)->properties($props)->create();
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
 
-        $collected = $sigmie->collect($indexName, true)->properties($props);
+        $collected = $this->sigmie->collect($indexName, true)->properties($props);
 
         $collected->merge([
             new Document([
@@ -53,7 +52,7 @@ class RagTest extends TestCase
             ]),
         ]);
 
-        $newSearch = $sigmie->newSearch($indexName)
+        $newSearch = $this->sigmie->newSearch($indexName)
             ->index($indexName)
             ->properties($props)
             ->semantic()
@@ -62,7 +61,7 @@ class RagTest extends TestCase
             ->queryString('What are good dog names?')
             ->size(2);
 
-        $ragAnswer = $sigmie
+        $ragAnswer = $this->sigmie
             ->newRag($llm)
             ->search($newSearch)
             ->prompt(function (NewRagPrompt $prompt) {
@@ -115,17 +114,16 @@ class RagTest extends TestCase
         $indexName = uniqid();
         $llm = $this->llmApi;
 
-        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 1, dimensions: 384);
-        $props->text('text')->semantic(accuracy: 1, dimensions: 384);
+        $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+        $props->text('text')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
         $props->number('position');
         $props->category('language');
 
-        $sigmie->newIndex($indexName)->properties($props)->create();
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
 
-        $collected = $sigmie->collect($indexName, true)->properties($props);
+        $collected = $this->sigmie->collect($indexName, true)->properties($props);
 
         $collected->merge([
             new Document([
@@ -142,7 +140,7 @@ class RagTest extends TestCase
             ]),
         ]);
 
-        $multiSearch = $sigmie->newMultiSearch();
+        $multiSearch = $this->sigmie->newMultiSearch();
         $multiSearch->newSearch($indexName)
             ->index($indexName)
             ->properties($props)
@@ -154,10 +152,10 @@ class RagTest extends TestCase
             ->sort('position:asc')
             ->size(2);
 
-        $this->assertCount(2, $sigmie->collect($indexName, true));
+        $this->assertCount(2, $this->sigmie->collect($indexName, true));
         $this->assertCount(2, $multiSearch->hits());
 
-        $answer = $sigmie
+        $answer = $this->sigmie
             ->newRag($llm, $this->rerankApi)
             ->search($multiSearch)
             ->rerank(function (NewRerank $rerank) {
@@ -213,17 +211,16 @@ class RagTest extends TestCase
         $indexName = uniqid();
         $llm = $this->llmApi;
 
-        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 1, dimensions: 384);
-        $props->text('text')->semantic(accuracy: 1, dimensions: 384);
+        $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+        $props->text('text')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
         $props->number('position');
         $props->category('language');
 
-        $sigmie->newIndex($indexName)->properties($props)->create();
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
 
-        $collected = $sigmie->collect($indexName, true)->properties($props);
+        $collected = $this->sigmie->collect($indexName, true)->properties($props);
 
         $collected->merge([
             new Document([
@@ -240,7 +237,7 @@ class RagTest extends TestCase
             ]),
         ]);
 
-        $multiSearch = $sigmie->newMultiSearch();
+        $multiSearch = $this->sigmie->newMultiSearch();
         $multiSearch->newSearch($indexName)
             ->index($indexName)
             ->properties($props)
@@ -252,7 +249,7 @@ class RagTest extends TestCase
             ->sort('position:asc')
             ->size(2);
 
-        $this->assertCount(2, $sigmie->collect($indexName, true));
+        $this->assertCount(2, $this->sigmie->collect($indexName, true));
         $this->assertCount(2, $multiSearch->hits());
 
         // Define expected event sequence
@@ -275,7 +272,7 @@ class RagTest extends TestCase
         $searchHits = null;
 
         // Stream answer and collect events
-        $stream = $sigmie
+        $stream = $this->sigmie
             ->newRag($llm, $this->rerankApi)
             ->search($multiSearch)
             ->rerank(function (NewRerank $rerank) {

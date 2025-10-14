@@ -1334,7 +1334,7 @@ class MappingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->text('job_description')->semantic(accuracy: 1);
+        $blueprint->text('job_description')->semantic(accuracy: 1, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
@@ -1361,7 +1361,7 @@ class MappingsTest extends TestCase
 
         $blueprint = new NewProperties();
         $blueprint->text('job_description')
-            ->semantic(accuracy: 1, similarity: VectorSimilarity::Cosine);
+            ->semantic(accuracy: 1, similarity: VectorSimilarity::Cosine, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
@@ -1386,7 +1386,7 @@ class MappingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->text('job_description')->semantic(accuracy: 3, dimensions: 512);
+        $blueprint->text('job_description')->semantic(accuracy: 3, dimensions: 512, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
@@ -1411,7 +1411,7 @@ class MappingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->text('job_description')->semantic(accuracy: 5);
+        $blueprint->text('job_description')->semantic(accuracy: 5, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
@@ -1438,8 +1438,8 @@ class MappingsTest extends TestCase
         $blueprint = new NewProperties();
         $jobDescription = $blueprint->text('job_description');
 
-        $jobDescription->semantic(accuracy: 3, dimensions: 512);
-        $jobDescription->semantic(accuracy: 5, dimensions: 512, similarity: VectorSimilarity::Euclidean);
+        $jobDescription->semantic(accuracy: 3, dimensions: 512, api: 'test-embeddings');
+        $jobDescription->semantic(accuracy: 5, dimensions: 512, similarity: VectorSimilarity::Euclidean, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -1463,7 +1463,7 @@ class MappingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->text('job_description')->semantic(accuracy: 7);
+        $blueprint->text('job_description')->semantic(accuracy: 7, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 

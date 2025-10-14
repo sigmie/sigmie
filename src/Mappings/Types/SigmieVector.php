@@ -17,6 +17,8 @@ class SigmieVector extends DenseVector
 {
     public ?string $textFieldName = null;
 
+    public ?string $apiName = null;
+
     public function __construct(
         public string $name,
         protected int $dims = 384,
@@ -28,8 +30,10 @@ class SigmieVector extends DenseVector
         protected ?int $efConstruction = 300,
         protected ?float $confidenceInterval = null,
         protected ?int $oversample = null,
+        ?string $apiName = null,
     ) {
         $this->type = 'dense_vector';
+        $this->apiName = $apiName;
     }
 
     public function toRaw(): array

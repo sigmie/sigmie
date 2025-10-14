@@ -17,20 +17,19 @@ class ComboFieldTest extends TestCase
     {
         $indexName = uniqid();
 
-        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $blueprint = new NewProperties();
         $blueprint->text('name');
         $blueprint->text('category');
         $blueprint->text('brand');
         $blueprint->combo('fulltext', ['name', 'category', 'brand'])
-            ->semantic(accuracy: 1, dimensions: 384);
+            ->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
 
-        $sigmie->newIndex($indexName)
+        $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
             ->create();
 
-        $sigmie
+        $this->sigmie
             ->collect($indexName, refresh: true)
             ->properties($blueprint)
             ->merge([
@@ -46,7 +45,7 @@ class ComboFieldTest extends TestCase
                 ]),
             ]);
 
-        $docs = iterator_to_array($sigmie->collect($indexName)->properties($blueprint)->all());
+        $docs = iterator_to_array($this->sigmie->collect($indexName)->properties($blueprint)->all());
 
         $this->assertCount(2, $docs);
 
@@ -56,7 +55,7 @@ class ComboFieldTest extends TestCase
         $this->assertArrayHasKey('fulltext', $firstDoc->_source['embeddings']);
 
         // Test semantic search on combo field
-        $search = $sigmie
+        $search = $this->sigmie
             ->newSearch($indexName)
             ->properties($blueprint)
             ->semantic()
@@ -76,20 +75,19 @@ class ComboFieldTest extends TestCase
     {
         $indexName = uniqid();
 
-        $sigmie = $this->sigmie->embedder($this->embeddingApi);
 
         $blueprint = new NewProperties();
         $blueprint->text('title');
         $blueprint->text('tags');
         $blueprint->text('description');
         $blueprint->combo('searchable', ['title', 'tags', 'description'])
-            ->semantic(accuracy: 2, dimensions: 384);
+            ->semantic(accuracy: 2, dimensions: 384, api: 'test-embeddings');
 
-        $sigmie->newIndex($indexName)
+        $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
             ->create();
 
-        $sigmie
+        $this->sigmie
             ->collect($indexName, refresh: true)
             ->properties($blueprint)
             ->merge([
@@ -100,7 +98,7 @@ class ComboFieldTest extends TestCase
                 ]),
             ]);
 
-        $docs = iterator_to_array($sigmie->collect($indexName)->properties($blueprint)->all());
+        $docs = iterator_to_array($this->sigmie->collect($indexName)->properties($blueprint)->all());
 
         $this->assertCount(1, $docs);
 
@@ -110,7 +108,7 @@ class ComboFieldTest extends TestCase
         $this->assertArrayHasKey('searchable', $firstDoc->_source['embeddings']);
 
         // Test semantic search
-        $search = $sigmie
+        $search = $this->sigmie
             ->newSearch($indexName)
             ->properties($blueprint)
             ->semantic()

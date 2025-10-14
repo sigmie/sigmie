@@ -5,13 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Sigmie\AI\Answers\OpenAIAnswer;
-use Sigmie\AI\APIs\OpenAIConversationsApi;
-use Sigmie\AI\APIs\OpenAIResponseApi;
 use Sigmie\AI\History\Index as HistoryIndex;
-use Sigmie\AI\ProviderFactory;
 use Sigmie\Document\Document;
-use Sigmie\Document\Hit;
-use Sigmie\Index\Analysis\TokenFilter\Unique;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Rag\NewRerank;
 use Sigmie\Rag\LLMAnswer;
@@ -34,15 +29,13 @@ class HistoryTest extends TestCase
         $indexName = uniqid();
         $llm = $this->llmApi;
 
-        $sigmie = $this->sigmie->embedder($this->embeddingApi);
-
         $props = new NewProperties;
-        $props->text('title')->semantic(accuracy: 1, dimensions: 384);
-        $props->text('text')->semantic(accuracy: 1, dimensions: 384);
+        $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+        $props->text('text')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
 
-        $index = $sigmie->newIndex($indexName)->properties($props)->create();
+        $index = $this->sigmie->newIndex($indexName)->properties($props)->create();
 
-        $collected = $sigmie->collect($indexName, true)->properties($props);
+        $collected = $this->sigmie->collect($indexName, true)->properties($props);
 
         $collected->merge([
             new Document([
@@ -55,7 +48,7 @@ class HistoryTest extends TestCase
             ]),
         ]);
 
-        $newSearch = $sigmie->newSearch($indexName)
+        $newSearch = $this->sigmie->newSearch($indexName)
             ->index($indexName)
             ->properties($props)
             ->semantic()
@@ -67,14 +60,14 @@ class HistoryTest extends TestCase
         $historyIndex = new class(
             random_name('hist'),
             $this->elasticsearchConnection,
-            $this->embeddingApi
+            'test-embeddings' 
         ) extends HistoryIndex {
             public function properties(): NewProperties
             {
                 $props = parent::properties();
                 $props->nested('turns', function (NewProperties $props) {
-                    $props->text('content')->semantic(accuracy: 1, dimensions: 384);
-                    $props->text('role')->semantic(accuracy: 1, dimensions: 384);
+                    $props->text('content')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+                    $props->text('role')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
                 });
 
                 return $props;
@@ -83,7 +76,7 @@ class HistoryTest extends TestCase
 
         $historyIndex->create();
 
-        $answer = $sigmie
+        $answer = $this->sigmie
             ->newRag($llm)
             ->search($newSearch)
             ->historyIndex($historyIndex)
@@ -101,7 +94,7 @@ class HistoryTest extends TestCase
 
         $dogName = (string)$answer;
 
-        $answer = $sigmie
+        $answer = $this->sigmie
             ->newRag($llm)
             ->search($newSearch)
             ->conversationId($answer->conversationId)
@@ -118,7 +111,7 @@ class HistoryTest extends TestCase
             'My name is Nico'
         );
 
-        $answer = $sigmie
+        $answer = $this->sigmie
             ->newRag($llm)
             ->search($newSearch)
             ->conversationId($answer->conversationId)
@@ -149,14 +142,14 @@ class HistoryTest extends TestCase
         $historyIndex = new class(
             random_name('hist'),
             $this->elasticsearchConnection,
-            $this->embeddingApi
+            'test-embeddings'
         ) extends HistoryIndex {
             public function properties(): NewProperties
             {
                 $props = parent::properties();
                 $props->nested('turns', function (NewProperties $props) {
-                    $props->text('content')->semantic(accuracy: 1, dimensions: 384);
-                    $props->text('role')->semantic(accuracy: 1, dimensions: 384);
+                    $props->text('content')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+                    $props->text('role')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
                 });
 
                 return $props;

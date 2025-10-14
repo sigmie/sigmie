@@ -18,20 +18,18 @@ class RecommendationsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $sigmie = $this->sigmie->embedder($this->embeddingApi);
-
         $blueprint = new NewProperties();
-        $blueprint->text('name')->semantic(dimensions: 384);
-        $blueprint->text('category')->semantic(4, dimensions: 384);
+        $blueprint->text('name')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+        $blueprint->text('category')->semantic(accuracy: 4, dimensions: 384, api: 'test-embeddings');
         $blueprint->number('price');
         $blueprint->combo('searchable', ['name', 'category'])
-            ->semantic(accuracy: 1, dimensions: 384);
+            ->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
 
-        $sigmie->newIndex($indexName)
+        $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
             ->create();
 
-        $sigmie
+        $this->sigmie
             ->collect($indexName, refresh: true)
             ->properties($blueprint)
             ->merge([
@@ -112,7 +110,7 @@ class RecommendationsTest extends TestCase
                 ], _id: 'standing-desk'),
             ]);
 
-        $hist = $sigmie->newRecommend($indexName)
+        $hist = $this->sigmie->newRecommend($indexName)
             ->properties($blueprint)
             ->rrf(rrfRankConstant: 60, rankWindowSize: 10)
             ->mmr(0.1)
@@ -143,7 +141,7 @@ class RecommendationsTest extends TestCase
         $this->assertLessThanOrEqual(1, $wirelessEarbudsCount);
 
 
-        $hist = $sigmie->newRecommend($indexName)
+        $hist = $this->sigmie->newRecommend($indexName)
             ->properties($blueprint)
             ->rrf(rrfRankConstant: 60, rankWindowSize: 10)
             // NOT ENABLED MMR

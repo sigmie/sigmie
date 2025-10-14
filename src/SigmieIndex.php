@@ -16,12 +16,11 @@ abstract class SigmieIndex
     public function __construct(
         public readonly string $name,
         public readonly ElasticsearchConnection $connection,
-        public readonly ?EmbeddingsApi $embeddingsApi = null
     ) {}
 
     public function sigmie(): Sigmie
     {
-        return new Sigmie($this->connection, $this->embeddingsApi);
+        return new Sigmie($this->connection);
     }
 
     public function name(): string

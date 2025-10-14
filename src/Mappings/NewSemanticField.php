@@ -28,6 +28,8 @@ class NewSemanticField
 
     protected VectorStrategy $strategy = VectorStrategy::Concatenate;
 
+    protected ?string $apiName = null;
+
     public string $name;
 
     public function __construct(string $name)
@@ -166,6 +168,13 @@ class NewSemanticField
         return $this;
     }
 
+    public function api(?string $apiName)
+    {
+        $this->apiName = $apiName;
+
+        return $this;
+    }
+
     public function make(): Type
     {
         $name = match ($this->index) {
@@ -174,7 +183,7 @@ class NewSemanticField
         };
 
         if (!$this->index) {
-            return new NestedVector($name, $this->dims);
+            return new NestedVector($name, $this->dims, $this->apiName);
         }
 
         $type = new SigmieVector(
@@ -185,6 +194,7 @@ class NewSemanticField
             similarity: $this->similarity,
             efConstruction: $this->efConstruction,
             m: $this->m,
+            apiName: $this->apiName,
         );
 
         return $type;

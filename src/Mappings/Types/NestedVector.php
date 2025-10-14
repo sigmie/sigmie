@@ -13,16 +13,22 @@ use Sigmie\Query\Queries\Text\Nested;
 
 class NestedVector extends TypesNested
 {
+    public ?string $apiName = null;
+
     public function __construct(
         public string $name,
         protected int $dims = 384,
+        ?string $apiName = null,
     ) {
+        $this->apiName = $apiName;
+
         $props = new NewProperties();
         $props->type(
             new SigmieVector(
                 name: 'vector',
                 dims: $this->dims,
                 strategy: VectorStrategy::ScriptScore,
+                apiName: $apiName,
             )
         );
 

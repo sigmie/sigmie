@@ -19,13 +19,13 @@ class EmbeddingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384);
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
         $blueprint->nested('comments', function (NewProperties $props) {
-            $props->text('text')->semantic(accuracy: 1, dimensions: 384);
+            $props->text('text')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
             $props->object('user', function (NewProperties $props) {
                 $text = $props->text('name');
-                $text->semantic(accuracy: 1, dimensions: 384);
-                $text->semantic(accuracy: 7, dimensions: 384);
+                $text->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+                $text->semantic(accuracy: 7, dimensions: 384, api: 'test-embeddings');
             });
         });
 
@@ -58,11 +58,10 @@ class EmbeddingsTest extends TestCase
      */
     public function knn_filter()
     {
-
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384);
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
         $blueprint->category('color');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
@@ -115,14 +114,14 @@ class EmbeddingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384);
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
         $blueprint->category('color');
         $blueprint->nested('comments', function (NewProperties $props) {
-            $props->text('text')->semantic(accuracy: 1, dimensions: 384);
+            $props->text('text')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
             $props->object('user', function (NewProperties $props) {
                 $name = $props->text('name');
-                $name->semantic(accuracy: 1, dimensions: 384);
-                $name->semantic(accuracy: 7, dimensions: 384);
+                $name->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+                $name->semantic(accuracy: 7, dimensions: 384, api: 'test-embeddings');
             });
         });
 

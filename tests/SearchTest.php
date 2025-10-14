@@ -1081,7 +1081,7 @@ class SearchTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->title('name')->semantic(dimensions: 384);
+        $blueprint->title('name')->semantic(dimensions: 384, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)
             ->properties($blueprint)

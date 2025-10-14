@@ -104,8 +104,8 @@ class NewRag
         if ($this->searchBuilder instanceof NewSearch) {
             $multiSearch = new NewMultiSearch(
                 $this->searchBuilder->elasticsearchConnection,
-                $this->searchBuilder->embeddingsApi
             );
+            $multiSearch->apis($this->searchBuilder->apis);
 
             $multiSearch->add($this->searchBuilder);
 

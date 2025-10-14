@@ -8,9 +8,10 @@ use ArrayAccess;
 use ArrayIterator;
 use Closure;
 use Countable;
+use IteratorAggregate;
 use Traversable;
 
-class Collection implements ArrayAccess, Countable
+class Collection implements ArrayAccess, Countable, IteratorAggregate
 {
     public function __construct(protected array $elements = []) {}
 
@@ -233,6 +234,11 @@ class Collection implements ArrayAccess, Countable
     public function isEmpty(): bool
     {
         return empty($this->elements);
+    }
+
+    public function isNotEmpty(): bool
+    {
+        return ! $this->isEmpty();
     }
 
     public function getIterator(): Traversable

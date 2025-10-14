@@ -12,12 +12,14 @@ use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Shared\Collection;
+use Sigmie\Shared\UsesApis;
 
 class DocumentProcessor
 {
+    use UsesApis;
+
     public function __construct(
-        protected Properties $properties,
-        protected ?EmbeddingsApi $embeddingsApi = null,
+        protected Properties $properties
     ) {}
 
     public function populateComboFields(Document $document): Document
@@ -38,7 +40,9 @@ class DocumentProcessor
 
     public function populateEmbeddings(Document $document): Document
     {
-        if (!$this->embeddingsApi) {
+        // Check if any embeddings API is registered
+        if (!$this->hasApi()) {
+            // No embeddings API registered, skip embeddings
             return $document;
         }
 
@@ -197,7 +201,10 @@ class DocumentProcessor
             ->flatten(1)
             ->values();
 
-        $embeddedVectors = $this->embeddingsApi->batchEmbed($valuesToEmbed);
+        // Get the appropriate API for this field
+        $embeddingsApi = $this->getEmbeddingsApiForField($field);
+
+        $embeddedVectors = $embeddingsApi->batchEmbed($valuesToEmbed);
 
         return $this->formatEmbeddedVectors($embeddedVectors, $nameStrategy);
     }
@@ -279,5 +286,16 @@ class DocumentProcessor
         }
 
         return $result;
+    }
+
+    protected function getEmbeddingsApiForField(Text $field): EmbeddingsApi
+    {
+        // Check if any vector field has a specific API configured
+        foreach ($field->vectorFields()->getIterator() as $vectorField) {
+
+            $api = $this->getApi($vectorField->apiName);
+
+            return $api;
+        }
     }
 }

@@ -17,14 +17,12 @@ class ApiAssertionsExampleTest extends TestCase
     {
         $indexName = uniqid();
 
-        $sigmie = $this->sigmie->embedder($this->embeddingApi);
-
         $blueprint = new NewProperties();
-        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384);
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
 
-        $sigmie->newIndex($indexName)->properties($blueprint)->create();
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
-        $sigmie->collect($indexName, true)
+        $this->sigmie->collect($indexName, true)
             ->properties($blueprint)
             ->merge([
                 new Document(['title' => 'Hello World']),
