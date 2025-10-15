@@ -124,6 +124,24 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this;
     }
 
+    public function queryImage(
+        string $imageUrl,
+        float $weight = 1.0,
+        ?array $fields = null,
+        ?int $dimension = null,
+        ?array $vector = null,
+    ): static {
+        $this->searchContext->queryImages[] = new QueryImage(
+            imageSource: $imageUrl,
+            weight: $weight,
+            dimension: $dimension,
+            vector: $vector,
+            fields: $fields,
+        );
+
+        return $this;
+    }
+
     public function autocompletePrefix(string $prefix): static
     {
         $this->searchContext->autocompletePrefixStrings[] = $prefix;
@@ -491,7 +509,20 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 }
             }
 
-            // Batch fetch all embeddings for this API
+            // Handle image queries - these use embed() instead of batchEmbed()
+            foreach ($this->searchContext->queryImages as $queryImage) {
+                // Skip if already has a vector
+                if ($queryImage->hasVector()) {
+                    continue;
+                }
+
+                // Pre-populate image embeddings using embed()
+                foreach ($dims as $dim) {
+                    $this->vectorPools[$apiName]->get($queryImage->imageSource(), $dim);
+                }
+            }
+
+            // Batch fetch all text embeddings for this API
             if (!empty($items)) {
                 $this->vectorPools[$apiName]->getMany($items);
             }
@@ -551,8 +582,88 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $allSemanticQueries = array_merge($allSemanticQueries, $result['semantic']);
         }
 
+        foreach ($this->searchContext->queryImages as $queryImage) {
+            // Skip if no image source and no vector
+            if (!$queryImage->hasVector() && trim($queryImage->imageSource()) === '') {
+                continue;
+            }
+
+            $result = $this->createVectorQueryFromImage($queryImage);
+            $allKnnQueries = array_merge($allKnnQueries, $result['knn']);
+            $allSemanticQueries = array_merge($allSemanticQueries, $result['semantic']);
+        }
+
         $this->knn = $allKnnQueries;
         $this->semanticQueries = $allSemanticQueries;
+    }
+
+    protected function createVectorQueryFromImage(QueryImage $queryImage): array
+    {
+        $vectorFields = $this->getVectorFields($queryImage->fields());
+
+        if ($vectorFields->isEmpty()) {
+            return ['knn' => [], 'semantic' => []];
+        }
+
+        // Group fields by API and dimensions
+        $fieldsByApiAndDims = [];
+        foreach ($vectorFields as $field) {
+            $apiName = $field->apiName ?? null;
+            if (!$apiName) {
+                continue; // Skip fields without API configuration
+            }
+
+            $dims = $field->dims();
+            $key = $apiName . '_' . $dims;
+
+            if (!isset($fieldsByApiAndDims[$key])) {
+                $fieldsByApiAndDims[$key] = [
+                    'apiName' => $apiName,
+                    'dims' => $dims,
+                    'fields' => []
+                ];
+            }
+            $fieldsByApiAndDims[$key]['fields'][] = $field;
+        }
+
+        $knnQueries = [];
+        $semanticQueries = [];
+
+        // Process each API/dimension combination
+        foreach ($fieldsByApiAndDims as $group) {
+            $apiName = $group['apiName'];
+            $dims = $group['dims'];
+            $fields = new Collection($group['fields']);
+
+            // Check if vector was passed directly
+            if ($queryImage->hasVector() && $queryImage->hasDimension() && $queryImage->dimension() === $dims) {
+                // Use the provided vector
+                $vector = $queryImage->vector();
+            } else {
+                // Get embeddings from the appropriate VectorPool
+                if (!isset($this->vectorPools[$apiName])) {
+                    continue; // Skip if VectorPool for this API doesn't exist
+                }
+                $vector = $this->vectorPools[$apiName]->get($queryImage->imageSource(), $dims);
+            }
+
+            $vectorByDims = new Collection([$dims => $vector]);
+
+            // Build queries for these fields
+            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryImage->weight());
+
+            $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries) {
+                $raw = $query->toRaw();
+                if (isset($raw['knn'])) {
+                    $knnQueries[] = $raw['knn'];
+                } else {
+                    // This is a function_score or other non-KNN query
+                    $semanticQueries[] = $query;
+                }
+            });
+        }
+
+        return ['knn' => $knnQueries, 'semantic' => $semanticQueries];
     }
 
     protected function buildKeywordQuery(string $queryString, float $queryBoost, ?array $scopedFields = null): Query

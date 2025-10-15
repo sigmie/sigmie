@@ -6,9 +6,11 @@ namespace Sigmie\Semantic;
 
 use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Document\Document;
+use Sigmie\Helpers\ImageHelper;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\DenseVector;
+use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Shared\Collection;
@@ -48,7 +50,7 @@ class DocumentProcessor
 
         $embeddings = $this->properties
             ->nestedSemanticFields()
-            ->mapWithKeys(fn(Text $field) => [
+            ->mapWithKeys(fn(Text|Image $field) => [
                 $field->fullPath => $this->processField($field, $document)
             ])
             ->filter(fn($vectors) => !empty($vectors))
@@ -75,7 +77,7 @@ class DocumentProcessor
             ->toArray();
     }
 
-    protected function processField(Text $field, Document $document): array
+    protected function processField(Text|Image $field, Document $document): array
     {
         // Check if embeddings already exist for this field
         $existingEmbeddings = dot($document->_source)->get("embeddings.{$field->fullPath}");
@@ -103,7 +105,7 @@ class DocumentProcessor
         return $this->generateEmbeddings($field, $value);
     }
 
-    protected function extractFieldValue(Text $field, Document $document): array
+    protected function extractFieldValue(Text|Image $field, Document $document): array
     {
         $nestedAncestor = $this->findNestedAncestor($field);
 
@@ -114,7 +116,7 @@ class DocumentProcessor
         return $this->extractSimpleValue($field, $document);
     }
 
-    protected function findNestedAncestor(Text $field): ?string
+    protected function findNestedAncestor(Text|Image $field): ?string
     {
         if (!str_contains($field->fullPath, '.')) {
             return null;
@@ -135,12 +137,12 @@ class DocumentProcessor
         return null;
     }
 
-    protected function isNestedField(Text $field): bool
+    protected function isNestedField(Text|Image $field): bool
     {
         return $field->parentType === Nested::class && str_contains($field->fullPath, '.');
     }
 
-    protected function extractNestedValue(Text $field, Document $document, string $nestedPath): array
+    protected function extractNestedValue(Text|Image $field, Document $document, string $nestedPath): array
     {
         $parentArray = dot($document->_source)->get($nestedPath);
 
@@ -177,7 +179,7 @@ class DocumentProcessor
         return [$parentPath, $nestedFieldName];
     }
 
-    protected function extractSimpleValue(Text $field, Document $document): array
+    protected function extractSimpleValue(Text|Image $field, Document $document): array
     {
         $value = dot($document->_source)->get($field->fullPath);
 
@@ -188,8 +190,17 @@ class DocumentProcessor
         return is_array($value) ? $value : [$value];
     }
 
-    protected function generateEmbeddings(Text $field, array $value): array
+    protected function generateEmbeddings(Text|Image $field, array $value): array
     {
+        // Get the appropriate API for this field
+        $embeddingsApi = $this->getEmbeddingsApiForField($field);
+
+        // Handle images separately from text
+        if ($field instanceof Image) {
+            return $this->generateImageEmbeddings($field, $value, $embeddingsApi);
+        }
+
+        // Original text processing
         $fieldVectors = $this->prepareVectorFields($field->vectorFields(), $value);
 
         $vectorsCollection = new Collection($fieldVectors);
@@ -201,12 +212,36 @@ class DocumentProcessor
             ->flatten(1)
             ->values();
 
-        // Get the appropriate API for this field
-        $embeddingsApi = $this->getEmbeddingsApiForField($field);
-
         $embeddedVectors = $embeddingsApi->batchEmbed($valuesToEmbed);
 
         return $this->formatEmbeddedVectors($embeddedVectors, $nameStrategy);
+    }
+
+    protected function generateImageEmbeddings(Image $field, array $imageUrls, EmbeddingsApi $embeddingsApi): array
+    {
+        $result = [];
+
+        foreach ($field->vectorFields() as $vectorField) {
+            $vector = $vectorField instanceof Nested ? $vectorField->properties['vector'] : $vectorField;
+            $name = $vectorField->name;
+            $dimensions = $vector->dims();
+            $strategy = $vector->strategy();
+
+            // Prepare image values using strategy
+            $preparedImages = $strategy->prepare($imageUrls);
+
+            // Embed each image individually using embed() method
+            $embeddings = [];
+            foreach ($preparedImages as $imageUrl) {
+                $embedding = $embeddingsApi->embed($imageUrl, $dimensions);
+                $embeddings[] = $embedding;
+            }
+
+            // Format embeddings according to strategy
+            $result[$name] = $strategy->format($embeddings);
+        }
+
+        return $result;
     }
 
     protected function formatEmbeddedVectors(array $embeddedVectors, Collection $nameStrategy): array
@@ -288,7 +323,7 @@ class DocumentProcessor
         return $result;
     }
 
-    protected function getEmbeddingsApiForField(Text $field): EmbeddingsApi
+    protected function getEmbeddingsApiForField(Text|Image $field): EmbeddingsApi
     {
         // Check if any vector field has a specific API configured
         foreach ($field->vectorFields()->getIterator() as $vectorField) {

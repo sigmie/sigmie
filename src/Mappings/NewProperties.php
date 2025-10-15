@@ -19,6 +19,7 @@ use Sigmie\Mappings\Types\Email;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\HTML;
 use Sigmie\Mappings\Types\Id;
+use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\LongText;
 use Sigmie\Mappings\Types\Name;
@@ -125,6 +126,15 @@ class NewProperties
         $this->fields->add($field);
 
         return $field->unstructuredText();
+    }
+
+    public function image(string $name): Image
+    {
+        $field = new Image($name);
+
+        $this->fields->add($field);
+
+        return $field;
     }
 
     public function geoPoint(string $name): GeoPoint

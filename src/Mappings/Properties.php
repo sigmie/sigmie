@@ -18,6 +18,7 @@ use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\GeoPoint;
+use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
@@ -90,6 +91,13 @@ class Properties extends Type implements ArrayAccess
         return $collection->filter(fn(ContractsType $type) => $type instanceof Text);
     }
 
+    public function imageFields(): Collection
+    {
+        $collection = new Collection($this->fields);
+
+        return $collection->filter(fn(ContractsType $type) => $type instanceof Image);
+    }
+
     public function deepFields(): Collection
     {
         $collection = new Collection($this->fields);
@@ -99,7 +107,10 @@ class Properties extends Type implements ArrayAccess
 
     public function embeddingsFields(): Collection
     {
-        return $this->textFields()->filter(fn(Text $text) => $text->isSemantic());
+        $textFields = $this->textFields()->filter(fn(Text $text) => $text->isSemantic());
+        $imageFields = $this->imageFields()->filter(fn(Image $image) => $image->isSemantic());
+
+        return $textFields->merge($imageFields);
     }
 
     public function completionFields(): Collection
@@ -327,14 +338,20 @@ class Properties extends Type implements ArrayAccess
 
     private function semanticFields()
     {
-        return $this->textFields()
+        $textFields = $this->textFields()
             ->filter(fn(Text $field) => $field->isSemantic())
             ->mapWithKeys(fn(Text $field) => [$field->fullPath => $field]);
+
+        $imageFields = $this->imageFields()
+            ->filter(fn(Image $field) => $field->isSemantic())
+            ->mapWithKeys(fn(Image $field) => [$field->fullPath => $field]);
+
+        return $textFields->merge($imageFields);
     }
 
     public function nestedSemanticFields()
     {
-        $textFields = $this->semanticFields();
+        $semanticFields = $this->semanticFields();
 
         $nestedFields = $this->deepFields()
             ->mapWithKeys(function (Object_|Nested $field) {
@@ -348,7 +365,7 @@ class Properties extends Type implements ArrayAccess
             });
 
         $res = [
-            ...$textFields->toArray(),
+            ...$semanticFields->toArray(),
             ...$nestedFields->toArray()
         ];
 

@@ -97,6 +97,33 @@ class FakeEmbeddingsApi implements EmbeddingsApi
         Assert::fail("batchEmbed() was never called with {$itemCount} items");
     }
 
+    public function assertBatchEmbedWasCalledWith(string $expectedText): void
+    {
+        $found = false;
+
+        // Check in batch embed calls
+        foreach ($this->batchEmbedCalls as $batch) {
+            foreach ($batch as $item) {
+                if (($item['text'] ?? '') === $expectedText) {
+                    $found = true;
+                    break 2;
+                }
+            }
+        }
+
+        // Also check in single embed calls
+        if (!$found) {
+            foreach ($this->embedCalls as $call) {
+                if (($call['text'] ?? '') === $expectedText) {
+                    $found = true;
+                    break;
+                }
+            }
+        }
+
+        Assert::assertTrue($found, "Text '{$expectedText}' was never embedded");
+    }
+
     public function getEmbedCalls(): array
     {
         return $this->embedCalls;
