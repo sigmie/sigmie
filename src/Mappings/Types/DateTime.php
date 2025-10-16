@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use DateTime;
+use DateTime as PHPDateTime;
 
-class Date extends Type
+class DateTime extends Type
 {
     protected string $type = 'date';
 
@@ -36,17 +36,24 @@ class Date extends Type
     public function validate(string $key, mixed $value): array
     {
         if (! is_string($value)) {
-            return [false, "The field {$key} mapped as date must be a date string"];
+            return [false, "The field {$key} mapped as datetime must be a datetime string"];
         }
 
-        $dateFormats = [
-            'Y-m-d',
+        $dateTimeFormats = [
+            'Y-m-d\TH:i:s.uP',
+            'Y-m-d\TH:i:s.u\Z',
+            'Y-m-d\TH:i:s.uO',
+            'Y-m-d\TH:i:s.u',
+            'Y-m-d\TH:i:sP',
+            'Y-m-d\TH:i:s\Z',
+            'Y-m-d\TH:i:sO',
+            'Y-m-d\TH:i:s',
         ];
 
         $isValid = false;
-        foreach ($dateFormats as $format) {
+        foreach ($dateTimeFormats as $format) {
 
-            $dateTime = DateTime::createFromFormat($format, $value);
+            $dateTime = PHPDateTime::createFromFormat($format, $value);
 
             if ($dateTime && $dateTime->format($format) === $value) {
 
@@ -57,7 +64,7 @@ class Date extends Type
         }
 
         if (! $isValid) {
-            return [false, "The field {$key} mapped as {$this->typeName()} must be a string in one of the following formats: ".implode(', ', $dateFormats)];
+            return [false, "The field {$key} mapped as {$this->typeName()} must be a string in one of the following formats: ".implode(', ', $dateTimeFormats)];
         }
 
         return [true, ''];

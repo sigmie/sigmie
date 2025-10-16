@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Semantic;
 
+use Carbon\Carbon;
+use DateTime as PHPDateTime;
 use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\Mappings\Types\Date;
+use Sigmie\Mappings\Types\DateTime;
 use Sigmie\Document\Document;
 use Sigmie\Helpers\ImageHelper;
 use Sigmie\Mappings\Properties;
@@ -13,6 +17,7 @@ use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\UsesApis;
 
@@ -57,6 +62,66 @@ class DocumentProcessor
             ->toArray();
 
         $document['embeddings'] = $this->buildNestedStructure($embeddings);
+
+        return $document;
+    }
+
+    public function formatDateTimeFields(Document $document): Document
+    {
+        $fieldNames = $this->properties->fieldNames(withParent: false);
+
+        foreach ($fieldNames as $fieldPath) {
+            $value = dot($document->_source)->get($fieldPath);
+
+            if ($value === null) {
+                continue;
+            }
+
+            $field = $this->properties->get($fieldPath);
+
+            if (!$field) {
+                continue;
+            }
+
+            $formattedValue = $this->formatDateTimeValue($value, $field);
+
+            if ($formattedValue !== $value) {
+                $dotHelper = dot($document->_source);
+                $dotHelper->set($fieldPath, $formattedValue);
+                $document->_source = $dotHelper->all();
+            }
+        }
+
+        return $document;
+    }
+
+    public function validateFields(Document $document): Document
+    {
+        $errors = [];
+
+        $fieldNames = $this->properties->fieldNames(withParent: false);
+
+        foreach ($fieldNames as $fieldPath) {
+            $value = dot($document->_source)->get($fieldPath);
+
+            if ($value === null) {
+                continue;
+            }
+
+            $field = $this->properties->get($fieldPath);
+
+            if (!$field) {
+                continue;
+            }
+
+            $this->validateFieldValue($fieldPath, $value, $field, $errors);
+        }
+
+        if (!empty($errors)) {
+            throw new \InvalidArgumentException(
+                'Document validation failed: ' . implode(', ', $errors)
+            );
+        }
 
         return $document;
     }
@@ -331,6 +396,42 @@ class DocumentProcessor
             $api = $this->getApi($vectorField->apiName);
 
             return $api;
+        }
+    }
+
+    protected function formatDateTimeValue(mixed $value, Type $field): mixed
+    {
+        if ($value instanceof PHPDateTime || $value instanceof Carbon) {
+            if ($field instanceof Date) {
+                return $value->format('Y-m-d');
+            }
+
+            if ($field instanceof DateTime) {
+                return $value->format('Y-m-d\TH:i:s.uP');
+            }
+        }
+
+        if (is_array($value)) {
+            return array_map(fn($item) => $this->formatDateTimeValue($item, $field), $value);
+        }
+
+        return $value;
+    }
+
+    protected function validateFieldValue(string $fieldPath, mixed $value, Type $field, array &$errors): void
+    {
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                $this->validateFieldValue($fieldPath, $item, $field, $errors);
+            }
+
+            return;
+        }
+
+        [$isValid, $errorMessage] = $field->validate($fieldPath, $value);
+
+        if (!$isValid) {
+            $errors[] = $errorMessage;
         }
     }
 }

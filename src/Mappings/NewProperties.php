@@ -14,6 +14,7 @@ use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Date;
+use Sigmie\Mappings\Types\DateTime;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Email;
 use Sigmie\Mappings\Types\GeoPoint;
@@ -257,6 +258,15 @@ class NewProperties
     public function date(string $name): Date
     {
         $field = new Date($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function datetime(string $name): DateTime
+    {
+        $field = new DateTime($name);
 
         $this->fields->add($field);
 

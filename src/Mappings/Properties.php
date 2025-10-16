@@ -16,6 +16,7 @@ use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Boost;
 use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\Date;
+use Sigmie\Mappings\Types\DateTime;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\Image;

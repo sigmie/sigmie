@@ -178,11 +178,11 @@ class MappingsTest extends TestCase
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29.000000Z');
 
-        $this->assertTrue($valid);
+        $this->assertFalse($valid);
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29');
 
-        $this->assertTrue($valid);
+        $this->assertFalse($valid);
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07');
 
@@ -190,15 +190,15 @@ class MappingsTest extends TestCase
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29.000000+02:00');
 
-        $this->assertTrue($valid);
+        $this->assertFalse($valid);
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29.000000-02:00');
 
-        $this->assertTrue($valid);
+        $this->assertFalse($valid);
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29.000000Z');
 
-        $this->assertTrue($valid);
+        $this->assertFalse($valid);
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29.000Z');
 
@@ -206,13 +206,106 @@ class MappingsTest extends TestCase
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29Z');
 
-        $this->assertTrue($valid);
+        $this->assertFalse($valid);
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29+02:00');
 
-        $this->assertTrue($valid);
+        $this->assertFalse($valid);
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29-02:00');
+
+        $this->assertFalse($valid);
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $this->sigmie->collect($indexName, true)->merge([
+            new Document([
+                'created_at' => '2023-04-07',
+            ]),
+            new Document([
+                'created_at' => '2023-04-08',
+            ]),
+            new Document([
+                'created_at' => '2023-04-09',
+            ]),
+        ]);
+
+        $res = $this->sigmie->newSearch($indexName)->properties($blueprint)->queryString('')->get();
+
+        // expect no exception when indexing date
+        $this->assertTrue(true);
+    }
+
+    /**
+     * @test
+     */
+    public function validate_datetime()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->datetime('updated_at');
+
+        $props = $blueprint->get();
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', 1);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', 'foo');
+
+        $this->isFalse($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', [
+            [
+                'lat' => 12.34,
+                'lon' => 56.78,
+            ],
+        ]);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', true);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29.000000Z');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07');
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29.000000+02:00');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29.000000-02:00');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29.000000Z');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29.000Z');
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29Z');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29+02:00');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29-02:00');
 
         $this->assertTrue($valid);
 
@@ -220,37 +313,34 @@ class MappingsTest extends TestCase
 
         $this->sigmie->collect($indexName, true)->merge([
             new Document([
-                'created_at' => '2023-04-07T12:38:29.000000Z',
+                'updated_at' => '2023-04-07T12:38:29.000000Z',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29.000000Z',
+                'updated_at' => '2023-04-07T12:38:29.000000Z',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29',
+                'updated_at' => '2023-04-07T12:38:29',
             ]),
             new Document([
-                'created_at' => '2023-04-07',
+                'updated_at' => '2023-04-07T12:38:29.000000+02:00',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29.000000+02:00',
+                'updated_at' => '2023-04-07T12:38:29.000000-02:00',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29.000000-02:00',
+                'updated_at' => '2023-04-07T12:38:29Z',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29Z',
+                'updated_at' => '2023-04-07T12:38:29+02:00',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29+02:00',
-            ]),
-            new Document([
-                'created_at' => '2023-04-07T12:38:29-02:00',
+                'updated_at' => '2023-04-07T12:38:29-02:00',
             ]),
         ]);
 
         $res = $this->sigmie->newSearch($indexName)->properties($blueprint)->queryString('')->get();
 
-        // expect no exception when indexing date
+        // expect no exception when indexing datetime
         $this->assertTrue(true);
     }
 

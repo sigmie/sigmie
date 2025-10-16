@@ -149,6 +149,8 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         $documentProcessor = new DocumentProcessor($this->properties);
         $documentProcessor->apis($this->apis);
 
+        $document = $documentProcessor->formatDateTimeFields($document);
+        $document = $documentProcessor->validateFields($document);
         $document = $documentProcessor->populateComboFields($document);
 
         if ($this->populateEmbeddings) {
