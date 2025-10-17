@@ -7,6 +7,7 @@ namespace Sigmie\Tests;
 use Exception;
 use OutOfBoundsException;
 use RachidLaasri\Travel\Travel;
+use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Document\Document;
 use Sigmie\Languages\English\Builder as EnglishBuilder;
 use Sigmie\Languages\English\English;
@@ -1001,5 +1002,24 @@ class IndexBuilderTest extends TestCase
         
         $this->assertArrayHasKey('custom_field', $raw['mappings']['_meta']);
         $this->assertEquals('custom_value', $raw['mappings']['_meta']['custom_field']);
+    }
+
+    /**
+     * @test
+     */
+    public function cannot_create_index_with_existing_alias()
+    {
+        $alias = uniqid();
+
+        // Create first index with the alias
+        $this->sigmie->newIndex($alias)->create();
+
+        $this->assertIndexExists($alias);
+
+        // Try to create another index with the same alias - should throw exception
+        $this->expectException(AliasAlreadyExists::class);
+        $this->expectExceptionMessage("An index with alias '{$alias}' already exists.");
+
+        $this->sigmie->newIndex($alias)->create();
     }
 }

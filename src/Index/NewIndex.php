@@ -10,6 +10,7 @@ use Sigmie\Languages\English\Filter\Lowercase;
 use Sigmie\Languages\English\Filter\Stemmer;
 use Sigmie\Languages\English\Filter\Stopwords;
 use Sigmie\Index\Actions as IndexActions;
+use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
@@ -116,6 +117,10 @@ class NewIndex
 
     public function create(): AliasedIndex
     {
+        if ($this->aliasExists($this->alias)) {
+            throw AliasAlreadyExists::forAlias($this->alias);
+        }
+
         $index = $this->make();
 
         $this->createIndex($index->name, $index->settings, $index->mappings);
