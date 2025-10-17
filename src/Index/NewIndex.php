@@ -133,6 +133,21 @@ class NewIndex
         return $index;
     }
 
+    public function createIfNotExists(): AliasedIndex
+    {
+        if ($this->aliasExists($this->alias)) {
+            $existingIndex = $this->getIndex($this->alias);
+
+            if ($existingIndex instanceof AliasedIndex) {
+                return $existingIndex;
+            }
+
+            throw new \RuntimeException("Index '{$this->alias}' exists but is not an aliased index");
+        }
+
+        return $this->create();
+    }
+
     public function save(string $name, array $patterns): IndexTemplate
     {
         $index = $this->make();

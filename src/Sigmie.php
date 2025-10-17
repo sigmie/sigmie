@@ -236,13 +236,17 @@ class Sigmie
 
     public function delete(string $index): bool
     {
-        $indices = $this->listIndices($index);
+        $indexNames = array_map('trim', explode(',', $index));
 
-        /** @var ListedIndex $listedIndex */
-        foreach ($indices as $listedIndex) {
-            // Check if the index name matches or if any of its aliases match
-            if ($listedIndex->name === $index || in_array($index, $listedIndex->aliases)) {
-                $this->deleteIndex($listedIndex->name);
+        foreach ($indexNames as $indexName) {
+            $indices = $this->listIndices($indexName);
+
+            /** @var ListedIndex $listedIndex */
+            foreach ($indices as $listedIndex) {
+                // Check if the index name matches or if any of its aliases match
+                if ($listedIndex->name === $indexName || in_array($indexName, $listedIndex->aliases)) {
+                    $this->deleteIndex($listedIndex->name);
+                }
             }
         }
 

@@ -9,6 +9,7 @@ use OutOfBoundsException;
 use RachidLaasri\Travel\Travel;
 use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Document\Document;
+use Sigmie\Index\AliasedIndex;
 use Sigmie\Languages\English\Builder as EnglishBuilder;
 use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\Builder as GermanBuilder;
@@ -1021,5 +1022,24 @@ class IndexBuilderTest extends TestCase
         $this->expectExceptionMessage("An index with alias '{$alias}' already exists.");
 
         $this->sigmie->newIndex($alias)->create();
+    }
+
+    /**
+     * @test
+     */
+    public function create_if_not_exists_returns_existing_index()
+    {
+        $alias = uniqid();
+
+        $firstIndex = $this->sigmie->newIndex($alias)->createIfNotExists();
+
+        $this->assertIndexExists($alias);
+        $this->assertInstanceOf(AliasedIndex::class, $firstIndex);
+
+        $secondIndex = $this->sigmie->newIndex($alias)->createIfNotExists();
+
+        $this->assertInstanceOf(AliasedIndex::class, $secondIndex);
+        $this->assertEquals($firstIndex->name, $secondIndex->name);
+        $this->assertEquals($alias, $secondIndex->alias);
     }
 }
