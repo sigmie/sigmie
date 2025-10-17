@@ -6,7 +6,9 @@ namespace Sigmie\Semantic;
 
 use Carbon\Carbon;
 use DateTime as PHPDateTime;
+use Exception;
 use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\DateTime;
 use Sigmie\Document\Document;
@@ -16,10 +18,13 @@ use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Nested;
+use Sigmie\Mappings\Types\Number;
+use Sigmie\Mappings\Types\SigmieVector;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\UsesApis;
+use Sigmie\Support\VectorMath;
 
 class DocumentProcessor
 {
@@ -150,10 +155,14 @@ class DocumentProcessor
         if ($existingEmbeddings && is_array($existingEmbeddings)) {
             // Check if all required vector fields already have embeddings
             $vectorFields = $field->vectorFields();
-            $allExist = $vectorFields->every(function ($vectorField) use ($existingEmbeddings) {
+            $allExist = true;
+            foreach ($vectorFields as $vectorField) {
                 $name = $vectorField instanceof Nested ? $vectorField->name : $vectorField->name;
-                return isset($existingEmbeddings[$name]) && !empty($existingEmbeddings[$name]);
-            });
+                if (!isset($existingEmbeddings[$name]) || empty($existingEmbeddings[$name])) {
+                    $allExist = false;
+                    break;
+                }
+            }
 
             if ($allExist) {
                 // Return existing embeddings, no need to regenerate
@@ -167,7 +176,7 @@ class DocumentProcessor
             return [];
         }
 
-        return $this->generateEmbeddings($field, $value);
+        return $this->generateEmbeddings($field, $value, $document);
     }
 
     protected function extractFieldValue(Text|Image $field, Document $document): array
@@ -255,14 +264,14 @@ class DocumentProcessor
         return is_array($value) ? $value : [$value];
     }
 
-    protected function generateEmbeddings(Text|Image $field, array $value): array
+    protected function generateEmbeddings(Text|Image $field, array $value, Document $document): array
     {
         // Get the appropriate API for this field
         $embeddingsApi = $this->getEmbeddingsApiForField($field);
 
         // Handle images separately from text
         if ($field instanceof Image) {
-            return $this->generateImageEmbeddings($field, $value, $embeddingsApi);
+            return $this->generateImageEmbeddings($field, $value, $embeddingsApi, $document);
         }
 
         // Original text processing
@@ -272,6 +281,17 @@ class DocumentProcessor
 
         $nameStrategy = $vectorsCollection->mapWithKeys(fn($item) => [$item['name'] => $item['strategy']]);
 
+        // Collect normalize settings for each vector
+        $normalizeSettings = [];
+        foreach ($field->vectorFields() as $vectorField) {
+            $vector = $vectorField instanceof Nested ? $vectorField->properties['vector'] : $vectorField;
+            if ($vector instanceof SigmieVector) {
+                $normalizeSettings[$vectorField->name] = $vector->autoNormalizeVector();
+            } else {
+                $normalizeSettings[$vectorField->name] = true; // Default to normalize
+            }
+        }
+
         $valuesToEmbed = $vectorsCollection
             ->map(fn($item) => $item['vectors'])
             ->flatten(1)
@@ -279,10 +299,13 @@ class DocumentProcessor
 
         $embeddedVectors = $embeddingsApi->batchEmbed($valuesToEmbed);
 
-        return $this->formatEmbeddedVectors($embeddedVectors, $nameStrategy);
+        $formattedVectors = $this->formatEmbeddedVectors($embeddedVectors, $nameStrategy, $normalizeSettings);
+
+        // Apply boost scaling if needed
+        return $this->applyBoostScaling($field, $formattedVectors, $document);
     }
 
-    protected function generateImageEmbeddings(Image $field, array $imageUrls, EmbeddingsApi $embeddingsApi): array
+    protected function generateImageEmbeddings(Image $field, array $imageUrls, EmbeddingsApi $embeddingsApi, Document $document): array
     {
         $result = [];
 
@@ -291,6 +314,12 @@ class DocumentProcessor
             $name = $vectorField->name;
             $dimensions = $vector->dims();
             $strategy = $vector->strategy();
+
+            // Determine if we should normalize
+            $normalize = true;
+            if ($vector instanceof SigmieVector) {
+                $normalize = $vector->autoNormalizeVector();
+            }
 
             // Prepare image values using strategy
             $preparedImages = $strategy->prepare($imageUrls);
@@ -303,24 +332,26 @@ class DocumentProcessor
             }
 
             // Format embeddings according to strategy
-            $result[$name] = $strategy->format($embeddings);
+            $result[$name] = $strategy->format($embeddings, $normalize);
         }
 
-        return $result;
+        // Apply boost scaling if needed
+        return $this->applyBoostScaling($field, $result, $document);
     }
 
-    protected function formatEmbeddedVectors(array $embeddedVectors, Collection $nameStrategy): array
+    protected function formatEmbeddedVectors(array $embeddedVectors, Collection $nameStrategy, array $normalizeSettings = []): array
     {
         return (new Collection($embeddedVectors))
             ->groupBy('name')
-            ->mapWithKeys(function ($group, $name) use ($nameStrategy) {
+            ->mapWithKeys(function ($group, $name) use ($nameStrategy, $normalizeSettings) {
                 $strategy = $nameStrategy->get($name);
+                $normalize = $normalizeSettings[$name] ?? true;
 
                 $vectors = (new Collection($group))
                     ->map(fn($item) => $item['vector'] ?? [])
                     ->toArray();
 
-                return [$name => $strategy->format($vectors)];
+                return [$name => $strategy->format($vectors, $normalize)];
             })
             ->toArray();
     }
@@ -432,6 +463,88 @@ class DocumentProcessor
 
         if (!$isValid) {
             $errors[] = $errorMessage;
+        }
+    }
+
+    protected function applyBoostScaling(Text|Image $field, array $formattedVectors, Document $document): array
+    {
+        foreach ($field->vectorFields() as $vectorField) {
+            $vector = $vectorField instanceof Nested ? $vectorField->properties['vector'] : $vectorField;
+
+            // Only SigmieVector has boost support
+            if (!($vector instanceof SigmieVector)) {
+                continue;
+            }
+
+            $boostedByField = $vector->boostedByField();
+
+            if ($boostedByField === null) {
+                continue;
+            }
+
+            // Validate boost field
+            $this->validateBoostField($field->fullPath, $boostedByField);
+
+            // Extract boost value from document
+            $boostValue = dot($document->_source)->get($boostedByField);
+
+            if ($boostValue === null) {
+                throw new Exception("Boost field '{$boostedByField}' is not present in document for semantic field '{$field->fullPath}'");
+            }
+
+            if (!is_numeric($boostValue) || $boostValue <= 0) {
+                throw new Exception("Boost field '{$boostedByField}' must be a positive number. Got: {$boostValue}");
+            }
+
+            // Get the vector name
+            $name = $vectorField->name;
+
+            // Scale the vector
+            $currentVector = $formattedVectors[$name] ?? null;
+
+            if ($currentVector === null || empty($currentVector)) {
+                continue;
+            }
+
+            // Handle nested vector structure (ScriptScore strategy)
+            if (isset($currentVector[0]['vector'])) {
+                // ScriptScore format: array of objects with 'vector' field
+                foreach ($currentVector as $index => $item) {
+                    $scaled = VectorMath::scale($item['vector'], (float) $boostValue);
+
+                    // Apply normalization if needed
+                    if ($vector->autoNormalizeVector()) {
+                        $scaled = VectorMath::normalize($scaled);
+                    }
+
+                    $formattedVectors[$name][$index]['vector'] = $scaled;
+                }
+            } else {
+                // Regular format: flat array of numbers
+                $scaled = VectorMath::scale($currentVector, (float) $boostValue);
+
+                // Apply normalization if needed
+                if ($vector->autoNormalizeVector()) {
+                    $scaled = VectorMath::normalize($scaled);
+                }
+
+                $formattedVectors[$name] = $scaled;
+            }
+        }
+
+        return $formattedVectors;
+    }
+
+    protected function validateBoostField(string $fieldPath, string $boostField): void
+    {
+        $field = $this->properties->get($boostField);
+
+        if ($field === null) {
+            throw new Exception("Boost field '{$boostField}' referenced by semantic field '{$fieldPath}' does not exist in properties");
+        }
+
+        if (!($field instanceof Number)) {
+            throw new Exception("Boost field '{$boostField}' must be a Number type (float/double/integer). Got: " . $field->typeName());
         }
     }
 }

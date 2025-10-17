@@ -112,7 +112,13 @@ class DenseVector extends AbstractType implements Type
             ];
         }
 
-        $source = "1.0+cosineSimilarity(params.query_vector, '{$field}')";
+        // For exact vector search, use function_score with dynamic similarity
+        $source = match ($this->similarity) {
+            VectorSimilarity::Cosine => "cosineSimilarity(params.query_vector, '{$field}') + 1.0",
+            VectorSimilarity::DotProduct => "dotProduct(params.query_vector, '{$field}')",
+            VectorSimilarity::Euclidean => "1 / (1 + l2norm(params.query_vector, '{$field}'))",
+            VectorSimilarity::MaxInnerProduct => "dotProduct(params.query_vector, '{$field}')",
+        };
 
         $query = [
             new Nested(

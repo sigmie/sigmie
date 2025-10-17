@@ -150,7 +150,7 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
         return [true, ''];
     }
 
-    protected function typeName(): string
+    public function typeName(): string
     {
         return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', (new \ReflectionClass($this))->getShortName()));
     }

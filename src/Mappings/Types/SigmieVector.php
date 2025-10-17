@@ -31,6 +31,8 @@ class SigmieVector extends DenseVector
         protected ?float $confidenceInterval = null,
         protected ?int $oversample = null,
         ?string $apiName = null,
+        protected ?string $boostedByField = null,
+        protected bool $autoNormalizeVector = true,
     ) {
         $this->type = 'dense_vector';
         $this->apiName = $apiName;
@@ -101,6 +103,21 @@ class SigmieVector extends DenseVector
         return "{$this->textFieldName}.{$this->name}";
     }
 
+    public function boostedByField(): ?string
+    {
+        return $this->boostedByField;
+    }
+
+    public function autoNormalizeVector(): bool
+    {
+        return $this->autoNormalizeVector;
+    }
+
+    public function similarity(): VectorSimilarity
+    {
+        return $this->similarity;
+    }
+
     public function queries(array|string $vector): array
     {
         if ($this->index) {
@@ -110,14 +127,19 @@ class SigmieVector extends DenseVector
                     $vector,
                     // // k: $this->dims,
                     // numCandidates: $this->efConstruction * 2
-                    // Should be >= K 
-                    numCandidates: 300 
+                    // Should be >= K
+                    numCandidates: 300
                 )
             ];
         }
 
-        // For exact vector search (accuracy 7), use function_score with cosineSimilarity
-        $source = "cosineSimilarity(params.query_vector, 'embeddings.{$this->fullPath}') + 1.0";
+        // For exact vector search (accuracy 7), use function_score with dynamic similarity
+        $source = match ($this->similarity) {
+            VectorSimilarity::Cosine => "cosineSimilarity(params.query_vector, 'embeddings.{$this->fullPath}') + 1.0",
+            VectorSimilarity::DotProduct => "dotProduct(params.query_vector, 'embeddings.{$this->fullPath}')",
+            VectorSimilarity::Euclidean => "1 / (1 + l2norm(params.query_vector, 'embeddings.{$this->fullPath}'))",
+            VectorSimilarity::MaxInnerProduct => "dotProduct(params.query_vector, 'embeddings.{$this->fullPath}')",
+        };
 
         $query = [
             new FunctionScore(

@@ -8,7 +8,6 @@ use Closure;
 use Exception;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Enums\FacetLogic;
-use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Analyzer;
@@ -89,19 +88,9 @@ class Text extends Type implements FromRaw
 
         $closure($field);
 
-        $vector = $field->make();
-
-        // Initialize the parent path for the vector field
-        if ($this->fullPath !== null && $this->fullPath !== '') {
-            $vector->parent($this->fullPath, static::class);
-        } elseif ($this->parentPath !== null) {
-            $vector->parent($this->parentPath, $this->parentType ?? static::class);
-        } else {
-            // If no parent context, set the parent to just this field's name
-            $vector->parent($this->name, static::class);
-        }
-
-        $this->vectors[] = $vector;
+        // Store the NewSemanticField instead of calling make() immediately
+        // This allows chained method calls to affect the final vector
+        $this->vectors[] = $field;
 
         return $field;
     }
@@ -110,12 +99,10 @@ class Text extends Type implements FromRaw
         string $api,
         int $accuracy = 3,
         int $dimensions = 256,
-        VectorSimilarity $similarity = VectorSimilarity::Cosine,
     ) {
         return $this->newSemantic(
             fn(NewSemanticField $semantic) =>
             $semantic->accuracy($accuracy, $dimensions)
-                ->similarity($similarity)
                 ->api($api)
         );
     }
@@ -430,7 +417,24 @@ class Text extends Type implements FromRaw
     public function vectorFields(): Collection
     {
         return (new Collection($this->vectors))
-            ->map(function (Nested|DenseVector $field) {
+            ->map(function (NewSemanticField|Nested|DenseVector $field) {
+                // If it's a NewSemanticField, call make() to get the actual vector
+                if ($field instanceof NewSemanticField) {
+                    $vector = $field->make();
+
+                    // Initialize the parent path for the vector field
+                    if ($this->fullPath !== null && $this->fullPath !== '') {
+                        $vector->parent($this->fullPath, static::class);
+                    } elseif ($this->parentPath !== null) {
+                        $vector->parent($this->parentPath, $this->parentType ?? static::class);
+                    } else {
+                        // If no parent context, set the parent to just this field's name
+                        $vector->parent($this->name, static::class);
+                    }
+
+                    return $vector;
+                }
+
                 return $field;
             });
     }

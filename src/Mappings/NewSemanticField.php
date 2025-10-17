@@ -30,6 +30,14 @@ class NewSemanticField
 
     protected ?string $apiName = null;
 
+    protected ?string $boostedBy = null;
+
+    protected bool $autoNormalizeVector = true;
+
+    protected string $fieldType = 'text';
+
+    protected ?Type $createdVector = null;
+
     public string $name;
 
     public function __construct(string $name)
@@ -175,15 +183,58 @@ class NewSemanticField
         return $this;
     }
 
+    public function boostedBy(string $fieldName): static
+    {
+        $this->boostedBy = $fieldName;
+
+        return $this;
+    }
+
+    public function normalizeVector(bool $value): static
+    {
+        $this->autoNormalizeVector = $value;
+
+        // Update the created vector if it exists
+        if ($this->createdVector instanceof SigmieVector) {
+            // We need to recreate the vector with the new setting
+            // Store the reference so Text can update its vectors array
+            $this->createdVector = null;
+        }
+
+        return $this;
+    }
+
+    public function fieldType(string $type): static
+    {
+        $this->fieldType = $type;
+
+        return $this;
+    }
+
     public function make(): Type
     {
+        // If we already created a vector and it's not invalidated, return it
+        if ($this->createdVector !== null) {
+            return $this->createdVector;
+        }
+
+        // Auto-determine similarity if not explicitly set
+        if ($this->similarity === VectorSimilarity::Cosine) {
+            if ($this->boostedBy !== null) {
+                $this->similarity = VectorSimilarity::DotProduct;
+            } elseif ($this->fieldType === 'image') {
+                $this->similarity = VectorSimilarity::Euclidean;
+            }
+        }
+
         $name = match ($this->index) {
             true => 'm' . $this->m . '_efc' . $this->efConstruction . '_dims' . $this->dims . '_' . $this->similarity->value . '_' . $this->strategy->suffix(),
             false => 'exact_dims' . $this->dims . '_' . $this->similarity->value . '_' . $this->strategy->suffix(),
         };
 
         if (!$this->index) {
-            return new NestedVector($name, $this->dims, $this->apiName);
+            $this->createdVector = new NestedVector($name, $this->dims, $this->apiName);
+            return $this->createdVector;
         }
 
         $type = new SigmieVector(
@@ -195,7 +246,11 @@ class NewSemanticField
             efConstruction: $this->efConstruction,
             m: $this->m,
             apiName: $this->apiName,
+            boostedByField: $this->boostedBy,
+            autoNormalizeVector: $this->autoNormalizeVector,
         );
+
+        $this->createdVector = $type;
 
         return $type;
     }

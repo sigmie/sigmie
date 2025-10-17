@@ -60,6 +60,14 @@ class VectorMath
     }
 
     /**
+     * Scale a vector by a factor
+     */
+    public static function scale(array $vector, float $factor): array
+    {
+        return array_map(fn($v) => $v * $factor, $vector);
+    }
+
+    /**
      * Calculate cosine similarity between two vectors
      * Returns value between -1 and 1 (1 = identical, 0 = orthogonal, -1 = opposite)
      */

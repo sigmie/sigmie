@@ -67,7 +67,12 @@ class AliasedIndex extends Index
         $newAlias = $update->getAlias();
         $update->replicas(0);
 
-        $newIndex = $update->create();
+        // Build the index structure without creating an alias yet
+        $index = $update->make();
+        $this->createIndex($index->name, $index->settings, $index->mappings);
+
+        $newIndex = new AliasedIndex($index->name, $newAlias);
+        $newIndex->setElasticsearchConnection($this->elasticsearchConnection);
 
         $this->disableWrite();
 
@@ -112,7 +117,12 @@ class AliasedIndex extends Index
         $newAlias = $update->getAlias();
         $update->replicas(0);
 
-        $newIndex = $update->create();
+        // Build the index structure without creating an alias yet
+        $index = $update->make();
+        $this->createIndex($index->name, $index->settings, $index->mappings);
+
+        $newIndex = new AliasedIndex($index->name, $newAlias);
+        $newIndex->setElasticsearchConnection($this->elasticsearchConnection);
 
         $this->disableWrite();
 

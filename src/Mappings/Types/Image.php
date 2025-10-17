@@ -87,6 +87,22 @@ class Image extends Text
     }
 
     /**
+     * Override semantic to mark as image field type for proper similarity handling
+     */
+    public function semantic(
+        string $api,
+        int $accuracy = 3,
+        int $dimensions = 256,
+    ) {
+        return $this->newSemantic(
+            fn($semantic) => $semantic
+                ->accuracy($accuracy, $dimensions)
+                ->api($api)
+                ->fieldType('image')
+        );
+    }
+
+    /**
      * No text-based queries for image fields (unless they have semantic embeddings)
      */
     public function queries(array|string $queryString): array
