@@ -82,15 +82,6 @@ class Sigmie
         return isset($this->apis[$name]);
     }
 
-    private function withApplicationPrefix(string $name): string
-    {
-        if ($this->application === '') {
-            return $name;
-        }
-
-        return $this->application . '-' . $name;
-    }
-
     public function application(string $application)
     {
         $this->application = $application;
@@ -101,14 +92,14 @@ class Sigmie
     public function newIndex(string $name): NewIndex
     {
         $newIndex = (new NewIndex($this->elasticsearchConnection))
-            ->alias($this->withApplicationPrefix($name));
+            ->alias($name);
 
         return $newIndex;
     }
 
     public function index(string $name): null|AliasedIndex|Index
     {
-        return $this->getIndex($this->withApplicationPrefix($name));
+        return $this->getIndex($name);
     }
 
     public function indexUpsert(string $name, callable $builder): AliasedIndex
@@ -128,7 +119,7 @@ class Sigmie
     public function collect(string $name, bool $refresh = false): AliveCollection
     {
         return (new AliveCollection(
-            $this->withApplicationPrefix($name),
+            $name,
             $this->elasticsearchConnection,
             $refresh ? 'true' : 'false'
         ))->apis($this->apis);
@@ -146,8 +137,6 @@ class Sigmie
 
     public function newRecommend(string $index): NewRecommendations
     {
-        $index = $this->withApplicationPrefix($index);
-
         return new NewRecommendations($index, $this->elasticsearchConnection);
     }
 
@@ -169,20 +158,16 @@ class Sigmie
 
         $search = $search->query($query)->aggs($aggs);
 
-        return $search->index($this->withApplicationPrefix($index));
+        return $search->index($index);
     }
 
     public function newQuery(string $index): NewQuery
     {
-        $index = $this->withApplicationPrefix($index);
-
         return new NewQuery($this->elasticsearchConnection, $index);
     }
 
     public function newSearch(string $index): NewSearch
     {
-        $index = $this->withApplicationPrefix($index);
-
         return (new NewSearch($this->elasticsearchConnection))
             ->index($index)
             ->apis($this->apis);
@@ -206,8 +191,6 @@ class Sigmie
 
     public function newTemplate(string $id): NewTemplate
     {
-        $id = $this->withApplicationPrefix($id);
-
         return (new NewTemplate($this->elasticsearchConnection))
             ->id($id);
     }
@@ -219,15 +202,11 @@ class Sigmie
 
     public function template(string $id): ExistingScript
     {
-        $id = $this->withApplicationPrefix($id);
-
         return new ExistingScript($id, $this->elasticsearchConnection);
     }
 
     public function indices(string $pattern = '*'): array
     {
-        $pattern = $this->withApplicationPrefix($pattern);
-
         return $this->listIndices($pattern);
     }
 
@@ -257,10 +236,6 @@ class Sigmie
 
     public function delete(string $index): bool
     {
-        if (! str_starts_with($index, $this->application)) {
-            $index = $this->withApplicationPrefix($index);
-        }
-
         $indices = $this->listIndices($index);
 
         /** @var ListedIndex $listedIndex */
