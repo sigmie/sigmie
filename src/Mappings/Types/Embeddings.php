@@ -18,15 +18,13 @@ class Embeddings extends Object_
         $newProperties->propertiesName('embeddings');
 
         foreach ($names as $name) {
+            $type = $properties->get($name);
 
-            $newProperties->object($name, function (NewProperties $props) use ($name, $properties) {
+            if (!$type instanceof Text || !$type->isSemantic()) {
+                continue;
+            }
 
-                $type = $properties->get($name);
-
-                if (!$type instanceof Text) {
-                    return;
-                }
-
+            $newProperties->object($name, function (NewProperties $props) use ($type) {
                 $type->vectorFields()
                     ->map(function (Type $vectorField) use ($props) {
                         $props->type($vectorField);
