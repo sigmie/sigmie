@@ -15,16 +15,6 @@ class Image extends Text
     }
 
     /**
-     * Mark this field as supporting multiple images (array)
-     */
-    public function multiple(): static
-    {
-        $this->multiple = true;
-
-        return $this;
-    }
-
-    /**
      * Check if this field supports multiple images
      */
     public function isMultiple(): bool
@@ -45,24 +35,6 @@ class Image extends Text
      */
     public function validate(string $key, mixed $value): array
     {
-        if ($this->multiple) {
-            if (!is_array($value)) {
-                return [false, "The field {$key} mapped as multiple images must be an array"];
-            }
-
-            foreach ($value as $item) {
-                if (!is_string($item)) {
-                    return [false, "Each item in the field {$key} must be a string (URL, base64, or file path)"];
-                }
-                // Validate each item is a valid image source when semantic is enabled
-                if ($this->isSemantic() && !$this->isValidImageSource($item)) {
-                    return [false, "The field {$key} contains an invalid image source: {$item}. Must be a URL, base64 string, or existing file path."];
-                }
-            }
-
-            return [true, ''];
-        }
-
         if (!is_string($value)) {
             return [false, "The field {$key} mapped as image must be a string (URL, base64, or file path)"];
         }

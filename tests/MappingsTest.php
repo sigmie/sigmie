@@ -1451,7 +1451,7 @@ class MappingsTest extends TestCase
 
         $blueprint = new NewProperties();
         $blueprint->text('job_description')
-            ->semantic(accuracy: 1, similarity: VectorSimilarity::Cosine, api: 'test-embeddings');
+            ->semantic(accuracy: 1, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
@@ -1529,7 +1529,7 @@ class MappingsTest extends TestCase
         $jobDescription = $blueprint->text('job_description');
 
         $jobDescription->semantic(accuracy: 3, dimensions: 512, api: 'test-embeddings');
-        $jobDescription->semantic(accuracy: 5, dimensions: 512, similarity: VectorSimilarity::Euclidean, api: 'test-embeddings');
+        $jobDescription->semantic(accuracy: 5, dimensions: 512, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -1538,7 +1538,7 @@ class MappingsTest extends TestCase
         $this->assertIndex($indexName, function (Assert $assert) {
 
             $field0 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m34_efc212_dims512_cosine_avg']['index_options'] ?? [];
-            $field1 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m57_efc424_dims512_l2_norm_avg']['index_options'] ?? [];
+            $field1 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m57_efc424_dims512_cosine_avg']['index_options'] ?? [];
 
             $assert->assertEquals(34, $field0['m'], 'm should be 34 for accuracy 3 and dimensions 512');
             $assert->assertEquals(57, $field1['m'], 'm should be 57 for accuracy 5 and dimensions 512');

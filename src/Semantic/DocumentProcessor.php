@@ -451,6 +451,18 @@ class DocumentProcessor
 
     protected function validateFieldValue(string $fieldPath, mixed $value, Type $field, array &$errors): void
     {
+        // For Range fields, the array IS the value (e.g., ['gt' => 10, 'lt' => 20])
+        // Don't iterate over it like we do for other field types
+        if ($field instanceof \Sigmie\Mappings\Types\Range) {
+            [$isValid, $errorMessage] = $field->validate($fieldPath, $value);
+
+            if (!$isValid) {
+                $errors[] = $errorMessage;
+            }
+
+            return;
+        }
+
         if (is_array($value)) {
             foreach ($value as $item) {
                 $this->validateFieldValue($fieldPath, $item, $field, $errors);

@@ -253,6 +253,36 @@ class Sigmie
         return true;
     }
 
+    public function deleteIfExists(string $index): bool
+    {
+        $indexNames = array_map('trim', explode(',', $index));
+
+        foreach ($indexNames as $indexName) {
+            try {
+                $indices = $this->listIndices($indexName);
+
+                /** @var ListedIndex $listedIndex */
+                foreach ($indices as $listedIndex) {
+                    if ($listedIndex->name === $indexName || in_array($indexName, $listedIndex->aliases)) {
+                        try {
+                            $this->deleteIndex($listedIndex->name);
+                        } catch (\Sigmie\Base\ElasticsearchException $e) {
+                            if ($e->json('type') !== 'index_not_found_exception') {
+                                throw $e;
+                            }
+                        }
+                    }
+                }
+            } catch (\Sigmie\Base\ElasticsearchException $e) {
+                if ($e->json('type') !== 'index_not_found_exception') {
+                    throw $e;
+                }
+            }
+        }
+
+        return true;
+    }
+
     public static function registerPlugins(array|string $plugins)
     {
         self::$plugins = array_merge(self::$plugins, (array) $plugins);

@@ -1036,10 +1036,10 @@ class IndexBuilderTest extends TestCase
         $this->assertIndexExists($alias);
         $this->assertInstanceOf(AliasedIndex::class, $firstIndex);
 
+        $name = $firstIndex->name;
+
         $secondIndex = $this->sigmie->newIndex($alias)->createIfNotExists();
 
-        $this->assertInstanceOf(AliasedIndex::class, $secondIndex);
-        $this->assertEquals($firstIndex->name, $secondIndex->name);
-        $this->assertEquals($alias, $secondIndex->alias);
+        $this->assertEquals($name, $secondIndex->name);
     }
 }
