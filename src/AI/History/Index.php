@@ -11,15 +11,21 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Search\NewSearch;
 use Sigmie\SigmieIndex;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Sigmie;
 
 class Index extends SigmieIndex
 {
     public function __construct(
-        string $name,
-        ElasticsearchConnection $connection,
-        public readonly string $embeddingsApi 
+        public readonly string $name,
+        Sigmie $sigmie,
+        public readonly string $embeddingsApi,
     ) {
-        parent::__construct($name, $connection);
+        parent::__construct($sigmie);
+    }
+
+    public function name(): string
+    {
+        return $this->name;
     }
 
     public function properties(): NewProperties
@@ -29,7 +35,7 @@ class Index extends SigmieIndex
         $properties->keyword('conversation_id');
         $properties->keyword('user_token');
 
-        $properties->date('timestamp');
+        $properties->datetime('timestamp');
 
         $properties->shortText('instructions');
 

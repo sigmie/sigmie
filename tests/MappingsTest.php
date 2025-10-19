@@ -30,7 +30,7 @@ use Sigmie\Mappings\Types\Path;
 use Sigmie\Mappings\Types\Price;
 use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\SearchableNumber;
-use Sigmie\Mappings\Types\Sentence;
+use Sigmie\Mappings\Types\Title;
 use Sigmie\Mappings\Types\Tags;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Query\Queries\Term\Prefix;
@@ -730,7 +730,7 @@ class MappingsTest extends TestCase
             $index->assertPropertyHasMeta('name', 'class', Name::class);
             $index->assertPropertyHasMeta('path', 'class', Path::class);
             $index->assertPropertyHasMeta('searchable_number', 'class', SearchableNumber::class);
-            $index->assertPropertyHasMeta('sentence', 'class', Sentence::class);
+            $index->assertPropertyHasMeta('sentence', 'class', Title::class);
             $index->assertPropertyHasMeta('tags', 'class', Tags::class);
             $index->assertPropertyHasMeta('price', 'class', Price::class);
         });
@@ -1338,7 +1338,13 @@ class MappingsTest extends TestCase
 
             $jobDescription = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_cosine_concat'];
 
-            $this->assertEquals('cosine', $jobDescription['similarity'] ?? null);
+            $this->forOpenSearch(function () use ($jobDescription) {
+                $this->assertEquals('cosinesimil', $jobDescription['method']['space_type']);
+            });
+
+            $this->forElasticsearch(function () use ($jobDescription) {
+                $this->assertEquals('cosine', $jobDescription['similarity'] ?? null);
+            });
         });
     }
 
@@ -1363,7 +1369,13 @@ class MappingsTest extends TestCase
 
             $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_l2_norm_concat'];
 
-            $this->assertEquals('l2_norm', $field['similarity'] ?? null);
+            $this->forOpenSearch(function () use ($field) {
+                $this->assertEquals('l2', $field['method']['space_type']);
+            });
+
+            $this->forElasticsearch(function () use ($field) {
+                $this->assertEquals('l2_norm', $field['similarity'] ?? null);
+            });
         });
     }
 
@@ -1387,7 +1399,13 @@ class MappingsTest extends TestCase
         $this->assertIndex($indexName, function (Assert $assert) {
             $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_dot_product_concat'];
 
-            $this->assertEquals('dot_product', $field['similarity'] ?? null);
+            $this->forOpenSearch(function () use ($field) {
+                $this->assertEquals('innerproduct', $field['method']['space_type']);
+            });
+
+            $this->forElasticsearch(function () use ($field) {
+                $this->assertEquals('dot_product', $field['similarity'] ?? null);
+            });
         });
     }
 
@@ -1412,7 +1430,13 @@ class MappingsTest extends TestCase
 
             $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_max_inner_product_concat'];
 
-            $this->assertEquals('max_inner_product', $field['similarity'] ?? null);
+            $this->forOpenSearch(function () use ($field) {
+                $this->assertEquals('innerproduct', $field['method']['space_type']);
+            });
+
+            $this->forElasticsearch(function () use ($field) {
+                $this->assertEquals('max_inner_product', $field['similarity'] ?? null);
+            });
         });
     }
 
@@ -1435,10 +1459,20 @@ class MappingsTest extends TestCase
             $jobDescription = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties'];
 
             $this->assertArrayHasKey('m12_efc60_dims256_cosine_concat', $jobDescription);
-            $this->assertEquals('cosine', $jobDescription['m12_efc60_dims256_cosine_concat']['similarity']);
-            $this->assertEquals('12', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['m']);
-            $this->assertEquals('60', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['ef_construction']);
-            $this->assertEquals('256', $jobDescription['m12_efc60_dims256_cosine_concat']['dims']);
+
+            $this->forOpenSearch(function () use ($jobDescription) {
+                $this->assertEquals('cosinesimil', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['space_type']);
+                $this->assertEquals('12', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['parameters']['m']);
+                $this->assertEquals('60', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['parameters']['ef_construction']);
+                $this->assertEquals('256', $jobDescription['m12_efc60_dims256_cosine_concat']['dimension']);
+            });
+
+            $this->forElasticsearch(function () use ($jobDescription) {
+                $this->assertEquals('cosine', $jobDescription['m12_efc60_dims256_cosine_concat']['similarity']);
+                $this->assertEquals('12', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['m']);
+                $this->assertEquals('60', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['ef_construction']);
+                $this->assertEquals('256', $jobDescription['m12_efc60_dims256_cosine_concat']['dims']);
+            });
         });
     }
 
@@ -1461,10 +1495,19 @@ class MappingsTest extends TestCase
 
             $jobDescription = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties'];
 
-            $this->assertEquals('12', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['m']);
-            $this->assertEquals('60', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['ef_construction']);
-            $this->assertEquals('256', $jobDescription['m12_efc60_dims256_cosine_concat']['dims']);
-            $this->assertEquals('cosine', $jobDescription['m12_efc60_dims256_cosine_concat']['similarity']);
+            $this->forOpenSearch(function () use ($jobDescription) {
+                $this->assertEquals('12', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['parameters']['m']);
+                $this->assertEquals('60', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['parameters']['ef_construction']);
+                $this->assertEquals('256', $jobDescription['m12_efc60_dims256_cosine_concat']['dimension']);
+                $this->assertEquals('cosinesimil', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['space_type']);
+            });
+
+            $this->forElasticsearch(function () use ($jobDescription) {
+                $this->assertEquals('12', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['m']);
+                $this->assertEquals('60', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['ef_construction']);
+                $this->assertEquals('256', $jobDescription['m12_efc60_dims256_cosine_concat']['dims']);
+                $this->assertEquals('cosine', $jobDescription['m12_efc60_dims256_cosine_concat']['similarity']);
+            });
         });
     }
 
@@ -1486,10 +1529,19 @@ class MappingsTest extends TestCase
 
             $jobDescription = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties'];
 
-            $this->assertEquals('34', $jobDescription['m34_efc212_dims512_cosine_avg']['index_options']['m']);
-            $this->assertEquals('212', $jobDescription['m34_efc212_dims512_cosine_avg']['index_options']['ef_construction']);
-            $this->assertEquals('512', $jobDescription['m34_efc212_dims512_cosine_avg']['dims']);
-            $this->assertEquals('cosine', $jobDescription['m34_efc212_dims512_cosine_avg']['similarity']);
+            $this->forOpenSearch(function () use ($jobDescription) {
+                $this->assertEquals('34', $jobDescription['m34_efc212_dims512_cosine_avg']['method']['parameters']['m']);
+                $this->assertEquals('212', $jobDescription['m34_efc212_dims512_cosine_avg']['method']['parameters']['ef_construction']);
+                $this->assertEquals('512', $jobDescription['m34_efc212_dims512_cosine_avg']['dimension']);
+                $this->assertEquals('cosinesimil', $jobDescription['m34_efc212_dims512_cosine_avg']['method']['space_type']);
+            });
+
+            $this->forElasticsearch(function () use ($jobDescription) {
+                $this->assertEquals('34', $jobDescription['m34_efc212_dims512_cosine_avg']['index_options']['m']);
+                $this->assertEquals('212', $jobDescription['m34_efc212_dims512_cosine_avg']['index_options']['ef_construction']);
+                $this->assertEquals('512', $jobDescription['m34_efc212_dims512_cosine_avg']['dims']);
+                $this->assertEquals('cosine', $jobDescription['m34_efc212_dims512_cosine_avg']['similarity']);
+            });
         });
     }
 
@@ -1511,10 +1563,19 @@ class MappingsTest extends TestCase
 
             $jobDescription = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties'];
 
-            $this->assertEquals('40', $jobDescription['m40_efc300_dims256_cosine_avg']['index_options']['m']);
-            $this->assertEquals('300', $jobDescription['m40_efc300_dims256_cosine_avg']['index_options']['ef_construction']);
-            $this->assertEquals('256', $jobDescription['m40_efc300_dims256_cosine_avg']['dims']);
-            $this->assertEquals('cosine', $jobDescription['m40_efc300_dims256_cosine_avg']['similarity']);
+            $this->forOpenSearch(function () use ($jobDescription) {
+                $this->assertEquals('40', $jobDescription['m40_efc300_dims256_cosine_avg']['method']['parameters']['m']);
+                $this->assertEquals('300', $jobDescription['m40_efc300_dims256_cosine_avg']['method']['parameters']['ef_construction']);
+                $this->assertEquals('256', $jobDescription['m40_efc300_dims256_cosine_avg']['dimension']);
+                $this->assertEquals('cosinesimil', $jobDescription['m40_efc300_dims256_cosine_avg']['method']['space_type']);
+            });
+
+            $this->forElasticsearch(function () use ($jobDescription) {
+                $this->assertEquals('40', $jobDescription['m40_efc300_dims256_cosine_avg']['index_options']['m']);
+                $this->assertEquals('300', $jobDescription['m40_efc300_dims256_cosine_avg']['index_options']['ef_construction']);
+                $this->assertEquals('256', $jobDescription['m40_efc300_dims256_cosine_avg']['dims']);
+                $this->assertEquals('cosine', $jobDescription['m40_efc300_dims256_cosine_avg']['similarity']);
+            });
         });
     }
 
@@ -1537,11 +1598,21 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $field0 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m34_efc212_dims512_cosine_avg']['index_options'] ?? [];
-            $field1 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m57_efc424_dims512_cosine_avg']['index_options'] ?? [];
+            $this->forOpenSearch(function () use ($assert) {
+                $field0 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m34_efc212_dims512_cosine_avg']['method']['parameters'] ?? [];
+                $field1 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m57_efc424_dims512_cosine_avg']['method']['parameters'] ?? [];
 
-            $assert->assertEquals(34, $field0['m'], 'm should be 34 for accuracy 3 and dimensions 512');
-            $assert->assertEquals(57, $field1['m'], 'm should be 57 for accuracy 5 and dimensions 512');
+                $assert->assertEquals(34, $field0['m'], 'm should be 34 for accuracy 3 and dimensions 512');
+                $assert->assertEquals(57, $field1['m'], 'm should be 57 for accuracy 5 and dimensions 512');
+            });
+
+            $this->forElasticsearch(function () use ($assert) {
+                $field0 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m34_efc212_dims512_cosine_avg']['index_options'] ?? [];
+                $field1 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description']['properties']['m57_efc424_dims512_cosine_avg']['index_options'] ?? [];
+
+                $assert->assertEquals(34, $field0['m'], 'm should be 34 for accuracy 3 and dimensions 512');
+                $assert->assertEquals(57, $field1['m'], 'm should be 57 for accuracy 5 and dimensions 512');
+            });
         });
     }
 
@@ -1565,17 +1636,28 @@ class MappingsTest extends TestCase
 
             ray($jobDescription);
 
-            $index = $jobDescription['properties']['vector'];
+            $vectorField = $jobDescription['properties']['vector'];
 
             $this->assertEquals('nested', $jobDescription['type']);
-            $this->assertEquals('dense_vector', $index['type']);
-            $this->assertEquals(256, $index['dims']);
-            $this->assertTrue($index['index']);
-            $this->assertEquals('cosine', $index['similarity']);
 
-            $this->assertEquals('hnsw', $index['index_options']['type']);
-            $this->assertEquals(64, $index['index_options']['m']);
-            $this->assertEquals(300, $index['index_options']['ef_construction']);
+            $this->forOpenSearch(function () use ($vectorField) {
+                $this->assertEquals('knn_vector', $vectorField['type']);
+                $this->assertEquals(256, $vectorField['dimension']);
+                $this->assertEquals('cosinesimil', $vectorField['method']['space_type']);
+                $this->assertEquals('hnsw', $vectorField['method']['name']);
+                $this->assertEquals(64, $vectorField['method']['parameters']['m']);
+                $this->assertEquals(300, $vectorField['method']['parameters']['ef_construction']);
+            });
+
+            $this->forElasticsearch(function () use ($vectorField) {
+                $this->assertEquals('dense_vector', $vectorField['type']);
+                $this->assertEquals(256, $vectorField['dims']);
+                $this->assertTrue($vectorField['index']);
+                $this->assertEquals('cosine', $vectorField['similarity']);
+                $this->assertEquals('hnsw', $vectorField['index_options']['type']);
+                $this->assertEquals(64, $vectorField['index_options']['m']);
+                $this->assertEquals(300, $vectorField['index_options']['ef_construction']);
+            });
         });
     }
 

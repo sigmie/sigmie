@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Testing;
 
 use Carbon\Carbon;
+use Closure;
 use Sigmie\AI\APIs\InfinityClipApi;
 use Sigmie\AI\APIs\InfinityEmbeddingsApi;
 use Sigmie\AI\APIs\InfinityRerankApi;
@@ -12,11 +13,13 @@ use Sigmie\AI\APIs\OllamaApi;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\AI\Contracts\RerankApi;
+use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\APIs\Analyze;
 use Sigmie\Base\APIs\Explain;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Document\Actions as DocumentActions;
 use Sigmie\Enums\ElasticsearchVersion;
+use Sigmie\Enums\SearchEngine;
 use Sigmie\Http\JSONClient;
 use Sigmie\Index\Actions as IndexAction;
 use Sigmie\Sigmie;
@@ -56,9 +59,19 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
         Sigmie::$version = getenv('ELASTICSEARCH_VERSION') ? ElasticsearchVersion::from(getenv('ELASTICSEARCH_VERSION')) : ElasticsearchVersion::v7;
 
-        $this->jsonClient = JSONClient::create(['localhost:9200']);
+        $this->jsonClient = JSONClient::createWithBasic(
+            ['https://localhost:9200'],
+            'admin',
+            'MyStrongPass123!@#',
+            config: [
+                'verify' => false,
+            ]
+        );
 
         $this->elasticsearchConnection = new ElasticsearchConnection($this->jsonClient);
+
+        // Detect search engine (Elasticsearch vs OpenSearch)
+        $this->detectSearchEngine();
 
         $this->clearElasticsearch($this->elasticsearchConnection);
 
@@ -101,6 +114,36 @@ class TestCase extends \PHPUnit\Framework\TestCase
         $dotenv->loadEnv($GLOBALS['_composer_bin_dir'] . '/../../.env', overrideExistingVars: true);
     }
 
+    public function forOpensearch(Closure $callback)
+    {
+        if (Sigmie::$engine === SearchEngine::OpenSearch) {
+            $callback();
+        }
+    }
+
+    public function forElasticsearch(Closure $callback)
+    {
+        if (Sigmie::$engine === SearchEngine::Elasticsearch) {
+            $callback();
+        }
+    }
+
+    protected function detectSearchEngine(): void
+    {
+        try {
+            $request = new \Sigmie\Base\Http\ElasticsearchRequest('GET', new Uri());
+            $response = ($this->elasticsearchConnection)($request);
+            $body = $response->json();
+
+            // Check if it's OpenSearch by looking at the version.distribution field
+            $isOpenSearch = isset($body['version']['distribution']) && $body['version']['distribution'] === 'opensearch';
+
+            Sigmie::$engine = $isOpenSearch ? SearchEngine::OpenSearch : SearchEngine::Elasticsearch;
+        } catch (\Exception $e) {
+            // Default to Elasticsearch if detection fails
+            Sigmie::$engine = SearchEngine::Elasticsearch;
+        }
+    }
 
     public function tearDown(): void
     {

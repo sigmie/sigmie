@@ -178,14 +178,13 @@ class IndexBuilderTest extends TestCase
             ->language(new English());
 
         $englishBuilder
-
             ->englishStemmer()
-            ->englishPorter2Stemmer()
-            ->englishLovinsStemmer()
+            ->englishPorter2Stemmer();
+
+        $englishBuilder
             ->englishLightStemmer()
             ->englishPossessiveStemming()
             ->englishMinimalStemmer()
-
             ->englishStopwords()
             ->englishLowercase()
             ->create();
@@ -198,7 +197,7 @@ class IndexBuilderTest extends TestCase
             $index->assertAnalyzerHasFilter('default', 'english_stemmer');
             $index->assertAnalyzerHasFilter('default', 'english_stemmer_porter_2');
             $index->assertAnalyzerHasFilter('default', 'english_stemmer_minimal');
-            $index->assertAnalyzerHasFilter('default', 'english_stemmer_lovins');
+
             $index->assertAnalyzerHasFilter('default', 'english_stemmer_light');
             $index->assertAnalyzerHasFilter('default', 'english_stemmer_possessive');
             $index->assertAnalyzerHasFilter('default', 'english_stopwords');
@@ -219,14 +218,6 @@ class IndexBuilderTest extends TestCase
                 [
                     'type' => 'stemmer',
                     'language' => 'minimal_english',
-                ]
-            );
-
-            $index->assertFilterEquals(
-                'english_stemmer_lovins',
-                [
-                    'type' => 'stemmer',
-                    'language' => 'lovins',
                 ]
             );
 

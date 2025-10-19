@@ -11,7 +11,9 @@ use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Base\ElasticsearchException;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as ResponsesSearch;
+use Sigmie\Enums\SearchEngine;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Sigmie;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\DenseVector;
@@ -655,7 +657,13 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries) {
                 $raw = $query->toRaw();
                 if (isset($raw['knn'])) {
-                    $knnQueries[] = $raw['knn'];
+                    // For OpenSearch, keep knn queries as Query objects to add to boolean query
+                    // For Elasticsearch, extract the knn part for top-level knn parameter
+                    if (Sigmie::$engine === SearchEngine::OpenSearch) {
+                        $semanticQueries[] = $query;
+                    } else {
+                        $knnQueries[] = $raw['knn'];
+                    }
                 } else {
                     // This is a function_score or other non-KNN query
                     $semanticQueries[] = $query;
@@ -733,7 +741,13 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries) {
                 $raw = $query->toRaw();
                 if (isset($raw['knn'])) {
-                    $knnQueries[] = $raw['knn'];
+                    // For OpenSearch, keep knn queries as Query objects to add to boolean query
+                    // For Elasticsearch, extract the knn part for top-level knn parameter
+                    if (Sigmie::$engine === SearchEngine::OpenSearch) {
+                        $semanticQueries[] = $query;
+                    } else {
+                        $knnQueries[] = $raw['knn'];
+                    }
                 } else {
                     // This is a function_score or other non-KNN query
                     $semanticQueries[] = $query;
@@ -782,11 +796,8 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected function configureVectorQuery(Query $query, float $queryBoost): Query
     {
-        if ($query instanceof NearestNeighbors || $query instanceof QueriesNearestNeighbors) {
-            $query->k($this->searchContext->size);
-        }
-
         if ($query instanceof QueriesNearestNeighbors) {
+            $query->k($this->searchContext->size);
             $query->filter($this->filters->toRaw());
         }
 

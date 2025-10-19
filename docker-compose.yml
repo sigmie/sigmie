@@ -89,3 +89,22 @@ services:
       timeout: 10s
       retries: 5
       start_period: 40s
+
+  opensearch:
+    image: opensearchproject/opensearch:latest
+    container_name: sigmie-opensearch
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    environment:
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=MyStrongPass123!@#
+      - discovery.type=single-node
+    volumes:
+      - ./data/opensearch:/usr/share/opensearch/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f https://localhost:9200/_cluster/health -u admin:MyStrongPass123!@# -k || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s

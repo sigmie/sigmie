@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Parse;
 
+use Sigmie\Enums\SearchEngine;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\Nested;
+use Sigmie\Sigmie;
 
 class SortParser extends Parser
 {
@@ -21,6 +23,7 @@ class SortParser extends Parser
 
         $sorts = explode(' ', $string);
         $sort = [];
+        $hasGeoDistance = false;
 
         foreach ($sorts as $match) {
             if (in_array($match, ['_score', '_doc'])) {
@@ -77,31 +80,52 @@ class SortParser extends Parser
                     continue;
                 }
 
-                if ($fieldType->parentPath && $fieldType->parentType === Nested::class) {
-                    $sort[] = [
-                        '_geo_distance' => [
-                            'nested' => [
-                                'path' => $fieldType->parentPath,
-                            ],
-                            $field => [
-                                'lat' => $latitude,
-                                'lon' => $longitude,
-                            ],
-                            'order' => $order,
-                            'unit' => $unit,
-                        ],
-                    ];
-                } else {
-                    $sort[] = [
-                        '_geo_distance' => [
-                            $field => [
-                                'lat' => $latitude,
-                                'lon' => $longitude,
-                            ],
-                            'order' => $order,
-                            'unit' => $unit,
+                $hasGeoDistance = true;
 
-                        ],
+                if ($fieldType->parentPath && $fieldType->parentType === Nested::class) {
+                    if (Sigmie::$engine === SearchEngine::OpenSearch) {
+                        // OpenSearch uses nested_path at the sort level
+                        $sort[] = [
+                            '_geo_distance' => [
+                                $field => [
+                                    'lat' => $latitude,
+                                    'lon' => $longitude,
+                                ],
+                                'order' => $order,
+                                'unit' => $unit,
+                                'nested_path' => $fieldType->parentPath,
+                            ],
+                        ];
+                    } else {
+                        // Elasticsearch uses nested object
+                        $sort[] = [
+                            '_geo_distance' => [
+                                'nested' => [
+                                    'path' => $fieldType->parentPath,
+                                ],
+                                $field => [
+                                    'lat' => $latitude,
+                                    'lon' => $longitude,
+                                ],
+                                'order' => $order,
+                                'unit' => $unit,
+                            ],
+                        ];
+                    }
+                } else {
+                    // $sort[] = ['name' => 'asc'];
+                    $sort[] = [
+                        '_geo_distance' => [
+                            // $field => [
+                            'contact' => [
+                                'lat' => (float) $latitude,
+                                'lon' => (float) $longitude,
+                            ],
+                            'order' => $order,
+                            'unit' => $unit,
+                            "ignore_unmapped" => true,
+                            // "unmapped_type" => "geo_point"
+                        ]
                     ];
                 }
 
@@ -137,6 +161,11 @@ class SortParser extends Parser
                 $sort[] = [$sortableName => $direction];
             }
         }
+
+        // // OpenSearch requires _score before _geo_distance
+        // if ($hasGeoDistance && Sigmie::$engine === SearchEngine::OpenSearch) {
+        //     array_unshift($sort, ['_score' => ['order' => 'desc']]);
+        // }
 
         return $sort;
     }

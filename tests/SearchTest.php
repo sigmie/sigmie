@@ -337,15 +337,15 @@ class SearchTest extends TestCase
         $response = $this->sigmie->newSearch($indexName)
             ->properties($blueprint)
             ->weight([
-                'title' => 5,
+                'title' => 10,
             ])
             ->minScore(2)
             ->queryString('Mickey')
             ->get();
 
-        $hits = $response->json('hits');
+        $hits = $response->hits();
 
-        $this->assertGreaterThan(2, $hits[0]['_score']);
+        $this->assertGreaterThan(2, $hits[0]->_score ?? 0);
     }
 
     /**

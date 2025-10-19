@@ -48,9 +48,17 @@ class EmbeddingsTest extends TestCase
         $this->assertIsArray($text);
         $this->assertIsArray($title);
 
-        $this->assertEquals(384, $name[array_key_first($name)]['dims']);
-        $this->assertEquals(384, $text[array_key_first($text)]['dims']);
-        $this->assertEquals(384, $title[array_key_first($title)]['dims']);
+        $this->forOpenSearch(function () use ($name, $text, $title) {
+            $this->assertEquals(384, $name[array_key_first($name)]['dimension']);
+            $this->assertEquals(384, $text[array_key_first($text)]['dimension']);
+            $this->assertEquals(384, $title[array_key_first($title)]['dimension']);
+        });
+
+        $this->forElasticsearch(function () use ($name, $text, $title) {
+            $this->assertEquals(384, $name[array_key_first($name)]['dims']);
+            $this->assertEquals(384, $text[array_key_first($text)]['dims']);
+            $this->assertEquals(384, $title[array_key_first($title)]['dims']);
+        });
     }
 
     /**

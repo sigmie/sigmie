@@ -8,9 +8,11 @@ use Http\Promise\Promise;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
+use Sigmie\Enums\SearchEngine;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\MatchAll;
+use Sigmie\Sigmie;
 
 class Search
 {
@@ -96,7 +98,8 @@ class Search
     //     return $this;
     // }
 
-    public function suggest(Suggest $suggest): self {
+    public function suggest(Suggest $suggest): self
+    {
 
         $this->suggest = $suggest;
 
@@ -227,10 +230,13 @@ class Search
             'from' => $this->from,
             'size' => $this->size,
             'min_score' => $this->minScore,
-            'knn' => $this->knn,
             'sort' => $this->sort,
             ...$this->raw,
         ];
+
+        if (!empty($this->knn)) {
+            $result['knn'] = $this->knn;
+        }
 
         if ($this->highlight ?? false) {
             $result['highlight'] = $this->highlight;
@@ -250,6 +256,8 @@ class Search
                 $result['aggs'] = $aggsRaw;
             }
         }
+
+        ray($result);
 
         return $result;
     }

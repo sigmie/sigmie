@@ -9,7 +9,7 @@ use Sigmie\Mappings\Contracts\Analyze;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
 
-class Sentence extends Text implements Analyze
+class Title extends Text implements Analyze
 {
     public function analyze(NewAnalyzer $newAnalyzer): void
     {

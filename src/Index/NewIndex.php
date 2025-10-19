@@ -28,6 +28,8 @@ use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
 use Sigmie\AI\Contracts\Embedder;
 use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\Enums\SearchEngine;
+use Sigmie\Sigmie;
 
 class NewIndex
 {
@@ -180,6 +182,11 @@ class NewIndex
             $this->analysis()->addAnalyzer($this->makeSearchSynonymsAnalyzer());
         }
 
+        // For OpenSearch, enable knn if there are semantic fields
+        if (Sigmie::$engine === SearchEngine::OpenSearch && $this->hasSemanticFields($mappings)) {
+            $this->config['index.knn'] = true;
+        }
+
         $settings = new Settings(
             primaryShards: $this->serverless ? null : $this->shards,
             replicaShards: $this->serverless ? null : $this->replicas,
@@ -199,5 +206,14 @@ class NewIndex
         $timestamp = Carbon::now()->format('YmdHisu');
 
         return "{$this->alias}_{$timestamp}";
+    }
+
+    protected function hasSemanticFields($mappings): bool
+    {
+        $raw = $mappings->toRaw();
+
+        // toRaw() returns an array where 'properties' is a stdClass object
+        // Check if there are embeddings in the properties
+        return isset($raw['properties']->embeddings);
     }
 }

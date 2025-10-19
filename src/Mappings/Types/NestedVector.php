@@ -42,7 +42,12 @@ class NestedVector extends TypesNested
 
     public function queries(array|string $vector): array
     {
-        $source = "cosineSimilarity(params.query_vector, 'embeddings.{$this->fullPath}.vector') + 1.0";
+        // OpenSearch uses doc['field'] syntax, Elasticsearch uses 'field' string syntax
+        if (\Sigmie\Sigmie::$engine === \Sigmie\Enums\SearchEngine::OpenSearch) {
+            $source = "cosineSimilarity(params.query_vector, doc['embeddings.{$this->fullPath}.vector']) + 1.0";
+        } else {
+            $source = "cosineSimilarity(params.query_vector, 'embeddings.{$this->fullPath}.vector') + 1.0";
+        }
 
         return  [
             new Nested(

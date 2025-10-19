@@ -6,20 +6,10 @@ namespace Sigmie\Mappings\Types;
 
 class Image extends Text
 {
-    protected bool $multiple = false;
-
     public function configure(): void
     {
         // Images are stored as text (URL, base64, or file path)
         $this->unstructuredText();
-    }
-
-    /**
-     * Check if this field supports multiple images
-     */
-    public function isMultiple(): bool
-    {
-        return $this->multiple;
     }
 
     /**
@@ -35,6 +25,20 @@ class Image extends Text
      */
     public function validate(string $key, mixed $value): array
     {
+        // Handle multiple images (array)
+        if (is_array($value)) {
+            foreach ($value as $imageSource) {
+                if (!is_string($imageSource)) {
+                    return [false, "The field {$key} contains a non-string value in the array"];
+                }
+
+                if ($this->isSemantic() && !$this->isValidImageSource($imageSource)) {
+                    return [false, "The field {$key} contains an invalid image source: {$imageSource}. Must be a URL, base64 string, or existing file path."];
+                }
+            }
+            return [true, ''];
+        }
+
         if (!is_string($value)) {
             return [false, "The field {$key} mapped as image must be a string (URL, base64, or file path)"];
         }

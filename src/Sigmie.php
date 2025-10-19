@@ -14,6 +14,7 @@ use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Enums\ElasticsearchVersion as Version;
+use Sigmie\Enums\SearchEngine;
 use Sigmie\Http\JSONClient;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\AliasedIndex;
@@ -50,11 +51,20 @@ class Sigmie
 
     public static Version $version = Version::v7;
 
+    public static SearchEngine $engine = SearchEngine::Elasticsearch;
+
     public static array $plugins = [];
 
     public function version(Version $version)
     {
         self::$version = $version;
+
+        return $this;
+    }
+
+    public function searchEngine(SearchEngine $engine)
+    {
+        self::$engine = $engine;
 
         return $this;
     }

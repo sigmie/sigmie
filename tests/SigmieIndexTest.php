@@ -7,6 +7,7 @@ namespace Sigmie\Tests;
 use Sigmie\Document\Document;
 use Sigmie\Index\NewIndex;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 use Sigmie\SigmieIndex;
 
@@ -17,7 +18,22 @@ class SigmieIndexTest extends TestCase
      */
     public function properties_are_automatically_passed_to_searches()
     {
-        $productIndex = new class(uniqid(), $this->getElasticsearchConnection()) extends SigmieIndex {
+        $productIndex = new class($this->sigmie) extends SigmieIndex {
+
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
             public function properties(): NewProperties
             {
                 $blueprint = new NewProperties();
@@ -52,16 +68,29 @@ class SigmieIndexTest extends TestCase
      */
     public function name_method_returns_index_name()
     {
-        $indexName = uniqid();
+        $index = new class($this->sigmie) extends SigmieIndex {
 
-        $index = new class($indexName, $this->getElasticsearchConnection()) extends SigmieIndex {
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
             public function properties(): NewProperties
             {
                 return new NewProperties();
             }
         };
 
-        $this->assertEquals($indexName, $index->name());
+        $this->assertEquals($index->name(), $index->name());
     }
 
     /**
@@ -69,7 +98,21 @@ class SigmieIndexTest extends TestCase
      */
     public function properties_method_returns_blueprint()
     {
-        $index = new class(uniqid(), $this->getElasticsearchConnection()) extends SigmieIndex {
+        $index = new class($this->sigmie) extends SigmieIndex {
+
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
 
             public function properties(): NewProperties
             {
@@ -90,9 +133,22 @@ class SigmieIndexTest extends TestCase
      */
     public function create_and_delete_index()
     {
-        $indexName = uniqid();
+        $index = new class($this->sigmie) extends SigmieIndex {
 
-        $index = new class($indexName, $this->getElasticsearchConnection()) extends SigmieIndex {
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
             public function properties(): NewProperties
             {
                 $blueprint = new NewProperties();
@@ -119,7 +175,22 @@ class SigmieIndexTest extends TestCase
      */
     public function to_documents_converts_arrays_to_documents()
     {
-        $index = new class(uniqid(), $this->getElasticsearchConnection()) extends SigmieIndex {
+        $index = new class($this->sigmie) extends SigmieIndex {
+
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
             public function properties(): NewProperties
             {
                 return new NewProperties();
@@ -141,9 +212,22 @@ class SigmieIndexTest extends TestCase
      */
     public function collect_uses_properties_automatically()
     {
-        $indexName = uniqid();
+        $index = new class($this->sigmie) extends SigmieIndex {
 
-        $index = new class($indexName, $this->getElasticsearchConnection()) extends SigmieIndex {
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
             public function properties(): NewProperties
             {
                 $blueprint = new NewProperties();
@@ -174,7 +258,22 @@ class SigmieIndexTest extends TestCase
      */
     public function custom_index_builder_configuration()
     {
-        $index = new class(uniqid(), $this->getElasticsearchConnection()) extends SigmieIndex {
+        $index = new class($this->sigmie) extends SigmieIndex {
+
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
             public function properties(): NewProperties
             {
                 $blueprint = new NewProperties();

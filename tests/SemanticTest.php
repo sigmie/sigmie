@@ -7,6 +7,7 @@ namespace Sigmie\Tests;
 use Sigmie\Document\Document;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Search\Formatters\SigmieSearchResponse;
 use Sigmie\Semantic\Providers\Noop;
 use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
@@ -19,8 +20,9 @@ class SemanticTest extends TestCase
     public function nested_semantic_fields()
     {
         $indexName = uniqid();
-
         $blueprint = new NewProperties();
+        $blueprint->bool('active');
+        $blueprint->title('title');
         $blueprint->nested('charachter', function (NewProperties $blueprint) {
             $blueprint->nested('details', function (NewProperties $blueprint) {
                 $blueprint->nested('meta', function (NewProperties $blueprint) {
@@ -42,6 +44,8 @@ class SemanticTest extends TestCase
             ->properties($blueprint)
             ->merge([
                 new Document([
+                    'active' => true,
+                    'title' => 'King',
                     'charachter' => [
                         'details' => [
                             'meta' => [
@@ -55,12 +59,44 @@ class SemanticTest extends TestCase
                     ],
                 ]),
                 new Document([
+                    'active' => true,
+                    'title' => 'Queen',
                     'charachter' => [
                         'details' => [
                             'meta' => [
                                 'extra' => [
                                     'deep' => [
                                         'deepnote' => ['Queen'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ]),
+                new Document([
+                    'active' => false,  // ← Inactive document
+                    'title' => 'Princess',
+                    'charachter' => [
+                        'details' => [
+                            'meta' => [
+                                'extra' => [
+                                    'deep' => [
+                                        'deepnote' => ['Princess'],  // ← Very relevant to "woman" and "lady"
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ]),
+                new Document([
+                    'active' => false,  // ← Another inactive document
+                    'title' => 'Lady',
+                    'charachter' => [
+                        'details' => [
+                            'meta' => [
+                                'extra' => [
+                                    'deep' => [
+                                        'deepnote' => ['Lady'],  // ← Exact match to query
                                     ],
                                 ],
                             ],
@@ -75,18 +111,41 @@ class SemanticTest extends TestCase
             ->semantic()
             ->noResultsOnEmptySearch()
             ->disableKeywordSearch()
-            ->queryString('woman');
+            ->filters('active:true')
+            ->queryString('woman')
+            ->size(2);
 
-        $nestedQuery = $search->makeSearch()->toRaw();
+        /** @var SigmieSearchResponse $res  */
+        $res = $search->get();
 
-        $this->assertArrayHasKey('knn', $nestedQuery);
-        $this->assertEquals('embeddings.charachter.details.meta.extra.deep.deepnote.m29_efc184_dims384_cosine_avg', $nestedQuery['knn'][0]['field']);
+        // Verify results
+        $hits = $res->hits();
+        $totalHits = $res->total();
 
-        $response = $search->get();
+        // Should only return 2 results (King and Queen), not 1
+        $this->assertEquals(2, $totalHits, '');
 
-        $hit = $response->json('hits.0._source');
+        // Verify all returned documents have active:true
+        foreach ($hits as $hit) {
+            $this->assertTrue(
+                $hit->_source['active'],
+                'All returned documents must have active:true'
+            );
+        }
 
-        $this->assertEquals('Queen', $hit['charachter']['details']['meta']['extra']['deep']['deepnote'][0] ?? null);
+        // Verify we get Queen as top result (most relevant to "woman" and "lady")
+        $topHit = $res->hits()[0]->_source;
+        $this->assertEquals(
+            'Queen',
+            $topHit['charachter']['details']['meta']['extra']['deep']['deepnote'][0] ?? null,
+            'Queen should be the top result for "woman" and "lady" query'
+        );
+
+        $this->assertEquals(
+            'King',
+            $res->hits()[1]->_source['title'] ?? null,
+            'King should be the second because it\'s active compared to lady'
+        );
     }
 
     /**
@@ -127,7 +186,9 @@ class SemanticTest extends TestCase
 
         $nestedQuery = $search->makeSearch()->toRaw();
 
-        $this->assertArrayHasKey('knn', $nestedQuery);
+        $this->forElasticsearch(function () use ($nestedQuery) {
+            $this->assertArrayHasKey('knn', $nestedQuery);
+        });
 
         $response = $search->get();
 
@@ -176,10 +237,12 @@ class SemanticTest extends TestCase
         // Debug: Get the raw query to inspect
         $rawQuery = $search->makeSearch()->toRaw();
 
-        // Check if it's using function_score instead of knn for accuracy 7
-        $this->assertEmpty($rawQuery['knn'], 'KNN should be empty for accuracy 7');
+        $this->forElasticsearch(function () use ($rawQuery) {
+            // Elasticsearch uses top-level knn parameter which should be empty for accuracy 7
+            $this->assertEmpty($rawQuery['knn'], 'KNN should be empty for accuracy 7 in Elasticsearch');
+        });
 
-        // Verify function_score is present in the query
+        // Verify function_score is present in the query for both engines
         $queryJson = json_encode($rawQuery);
         $this->assertStringContainsString('function_score', $queryJson, 'Should use function_score for accuracy 7');
         $this->assertStringContainsString('cosineSimilarity', $queryJson, 'Should use cosineSimilarity for accuracy 7');
@@ -207,12 +270,24 @@ class SemanticTest extends TestCase
 
         // Find the vector field with dot_product similarity
         $foundDotProduct = false;
-        foreach ($mappings as $fieldName => $field) {
-            if (isset($field['similarity']) && $field['similarity'] === 'dot_product') {
-                $foundDotProduct = true;
-                break;
+
+        $this->forOpenSearch(function () use ($mappings, &$foundDotProduct) {
+            foreach ($mappings as $fieldName => $field) {
+                if (isset($field['method']['space_type']) && $field['method']['space_type'] === 'innerproduct') {
+                    $foundDotProduct = true;
+                    break;
+                }
             }
-        }
+        });
+
+        $this->forElasticsearch(function () use ($mappings, &$foundDotProduct) {
+            foreach ($mappings as $fieldName => $field) {
+                if (isset($field['similarity']) && $field['similarity'] === 'dot_product') {
+                    $foundDotProduct = true;
+                    break;
+                }
+            }
+        });
 
         $this->assertTrue($foundDotProduct, 'Boosted field should use dot_product similarity');
     }
@@ -235,12 +310,24 @@ class SemanticTest extends TestCase
 
         // Find the vector field with l2_norm similarity
         $foundL2Norm = false;
-        foreach ($mappings as $fieldName => $field) {
-            if (isset($field['similarity']) && $field['similarity'] === 'l2_norm') {
-                $foundL2Norm = true;
-                break;
+
+        $this->forOpenSearch(function () use ($mappings, &$foundL2Norm) {
+            foreach ($mappings as $fieldName => $field) {
+                if (isset($field['method']['space_type']) && $field['method']['space_type'] === 'l2') {
+                    $foundL2Norm = true;
+                    break;
+                }
             }
-        }
+        });
+
+        $this->forElasticsearch(function () use ($mappings, &$foundL2Norm) {
+            foreach ($mappings as $fieldName => $field) {
+                if (isset($field['similarity']) && $field['similarity'] === 'l2_norm') {
+                    $foundL2Norm = true;
+                    break;
+                }
+            }
+        });
 
         $this->assertTrue($foundL2Norm, 'Image field should use l2_norm similarity');
     }
@@ -263,12 +350,24 @@ class SemanticTest extends TestCase
 
         // Find the vector field with cosine similarity
         $foundCosine = false;
-        foreach ($mappings as $fieldName => $field) {
-            if (isset($field['similarity']) && $field['similarity'] === 'cosine') {
-                $foundCosine = true;
-                break;
+
+        $this->forOpenSearch(function () use ($mappings, &$foundCosine) {
+            foreach ($mappings as $fieldName => $field) {
+                if (isset($field['method']['space_type']) && $field['method']['space_type'] === 'cosinesimil') {
+                    $foundCosine = true;
+                    break;
+                }
             }
-        }
+        });
+
+        $this->forElasticsearch(function () use ($mappings, &$foundCosine) {
+            foreach ($mappings as $fieldName => $field) {
+                if (isset($field['similarity']) && $field['similarity'] === 'cosine') {
+                    $foundCosine = true;
+                    break;
+                }
+            }
+        });
 
         $this->assertTrue($foundCosine, 'Regular text field should use cosine similarity');
     }

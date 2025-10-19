@@ -59,9 +59,10 @@ class HistoryTest extends TestCase
 
         $historyIndex = new class(
             random_name('hist'),
-            $this->elasticsearchConnection,
-            'test-embeddings' 
+            $this->sigmie,
+            'test-embeddings'
         ) extends HistoryIndex {
+
             public function properties(): NewProperties
             {
                 $props = parent::properties();
@@ -141,7 +142,7 @@ class HistoryTest extends TestCase
 
         $historyIndex = new class(
             random_name('hist'),
-            $this->elasticsearchConnection,
+            $this->sigmie,
             'test-embeddings'
         ) extends HistoryIndex {
             public function properties(): NewProperties

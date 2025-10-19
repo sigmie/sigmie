@@ -243,7 +243,7 @@ class ImageSearchTest extends TestCase
 
         $props = new NewProperties;
         $props->text('title');
-        $props->image('gallery')->multiple()->semantic(accuracy: 2, dimensions: 512, api: 'test-clip');
+        $props->image('gallery')->semantic(accuracy: 2, dimensions: 512, api: 'test-clip');
 
         $this->sigmie->newIndex($indexName)->properties($props)->create();
 
@@ -412,7 +412,8 @@ class ImageSearchTest extends TestCase
     public function error_handling_for_invalid_image_sources()
     {
         $indexName = uniqid();
-        $this->expectException('The field image contains an invalid image source');
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('The field image contains an invalid image source');
 
         $props = new NewProperties;
         $props->image('image')->semantic(accuracy: 1, dimensions: 512, api: 'test-clip');

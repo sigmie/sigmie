@@ -6,6 +6,7 @@ namespace Sigmie\Query\Queries;
 
 use Sigmie\Query\Queries\Query;
 use Sigmie\Enums\ElasticsearchVersion as Version;
+use Sigmie\Enums\SearchEngine;
 use Sigmie\Sigmie;
 
 class NearestNeighbors extends Query
@@ -40,15 +41,42 @@ class NearestNeighbors extends Query
 
     public function toRaw(): array
     {
+        $res = match (Sigmie::$engine) {
+            SearchEngine::OpenSearch => $this->toOpenSearchRaw(),
+            SearchEngine::Elasticsearch => $this->toElasticsearchRaw(),
+        };
+
+        return $res;
+    }
+
+    protected function toElasticsearchRaw(): array
+    {
         return [
             "knn" => [
                 "field" => $this->field,
                 "query_vector" => $this->queryVector,
-                "k" => $this->k, // Needs to be same as size in search
-                // "num_candidates" => $this->numCandidates,
+                "k" => $this->k,
                 'filter' => $this->filter,
-                "num_candidates" => 10000,
+                "num_candidates" => $this->k * 10,
                 'boost' => $this->boost,
+            ],
+        ];
+    }
+
+    protected function toOpenSearchRaw(): array
+    {
+        // OpenSearch uses a different kNN syntax
+        // The kNN query goes in the "query" section, not as a top-level "knn"
+        return [
+            "knn" => [
+                $this->field => [
+                    "vector" => $this->queryVector,
+                    "k" => $this->k,
+                    "filter" => $this->filter,
+                    // Not supported in OpeanSearhc
+                    // "num_candidates" => 10000,
+                    'boost' => $this->boost,
+                ],
             ],
         ];
     }

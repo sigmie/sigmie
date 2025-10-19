@@ -32,9 +32,18 @@ class SigmieTest extends TestCase
 
         $indices = $this->sigmie->indices();
 
-        $this->assertInstanceOf(ListedIndex::class, $indices[0]);
-        $this->assertEquals(1, $indices[0]->documentsCount);
+        // Find the index with our alias
+        $foundIndex = null;
+        foreach ($indices as $index) {
+            if (in_array($alias, $index->aliases)) {
+                $foundIndex = $index;
+                break;
+            }
+        }
 
-        $this->assertTrue(in_array($alias, $indices[0]->aliases));
+        $this->assertNotNull($foundIndex, "Index with alias '{$alias}' not found");
+        $this->assertInstanceOf(ListedIndex::class, $foundIndex);
+        $this->assertEquals(1, $foundIndex->documentsCount);
+        $this->assertTrue(in_array($alias, $foundIndex->aliases));
     }
 }

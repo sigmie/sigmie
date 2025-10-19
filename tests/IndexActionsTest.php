@@ -87,7 +87,7 @@ class IndexActionsTest extends TestCase
 
         $collection = new Collection($indices);
 
-        $array = $collection->map(fn (Index $index) => $index->name)->toArray();
+        $array = $collection->map(fn (ListedIndex $index) => $index->name)->toArray();
 
         $this->assertNotContains($indexName, $array);
     }

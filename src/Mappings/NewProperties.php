@@ -31,7 +31,7 @@ use Sigmie\Mappings\Types\Path;
 use Sigmie\Mappings\Types\Price;
 use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\SearchableNumber;
-use Sigmie\Mappings\Types\Sentence;
+use Sigmie\Mappings\Types\Title;
 use Sigmie\Mappings\Types\ShortText;
 use Sigmie\Mappings\Types\Tags;
 use Sigmie\Mappings\Types\Text;
@@ -176,7 +176,7 @@ class NewProperties
 
     public function title(string $name = 'title'): Text
     {
-        $field = new Sentence($name);
+        $field = new Title($name);
 
         $this->fields->add($field);
 

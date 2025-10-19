@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Enums\SearchEngine;
 use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Contracts\Type;
@@ -12,6 +13,7 @@ use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\NearestNeighbors;
 use Sigmie\Query\Queries\Text\Nested;
+use Sigmie\Sigmie;
 
 class SigmieVector extends DenseVector
 {
@@ -40,6 +42,15 @@ class SigmieVector extends DenseVector
 
     public function toRaw(): array
     {
+        if (Sigmie::$engine === SearchEngine::OpenSearch) {
+            return $this->toOpenSearchRaw();
+        }
+
+        return $this->toElasticsearchRaw();
+    }
+
+    protected function toElasticsearchRaw(): array
+    {
         $raw = [
             $this->name => [
                 'type' => $this->type,
@@ -64,6 +75,38 @@ class SigmieVector extends DenseVector
         if ($this->oversample !== null) {
             $raw['index_options']['rescore_vector'] = [
                 'oversample' => $this->oversample,
+            ];
+        }
+
+        return $raw;
+    }
+
+    protected function toOpenSearchRaw(): array
+    {
+        $raw = [
+            $this->name => [
+                'type' => 'knn_vector',
+                'dimension' => $this->dims,
+            ]
+        ];
+
+        if ($this->index) {
+            // Map Elasticsearch similarity to OpenSearch space_type
+            $spaceType = match ($this->similarity) {
+                VectorSimilarity::Cosine => 'cosinesimil',
+                VectorSimilarity::Euclidean => 'l2',
+                VectorSimilarity::DotProduct => 'innerproduct',
+                VectorSimilarity::MaxInnerProduct => 'innerproduct',
+            };
+
+            $raw[$this->name]['method'] = [
+                'name' => 'hnsw',
+                'space_type' => $spaceType,
+                'engine' => 'lucene',
+                'parameters' => [
+                    'm' => $this->m,
+                    'ef_construction' => $this->efConstruction,
+                ],
             ];
         }
 
