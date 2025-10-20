@@ -160,6 +160,8 @@ jobs:
 
     env:
       SEARCH_ENGINE: opensearch
+      OPENSEARCH_USER: admin
+      OPENSEARCH_PASSWORD: Koala$193tree
       LOCAL_EMBEDDING_URL: http://localhost:7997
       LOCAL_RERANK_URL: http://localhost:7998
 

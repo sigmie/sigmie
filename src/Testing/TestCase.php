@@ -59,10 +59,13 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
         Sigmie::$version = getenv('ELASTICSEARCH_VERSION') ? ElasticsearchVersion::from(getenv('ELASTICSEARCH_VERSION')) : ElasticsearchVersion::v7;
 
+        $username = getenv('OPENSEARCH_USER') ?: 'admin';
+        $password = getenv('OPENSEARCH_PASSWORD') ?: 'MyStrongPass123!@#';
+
         $this->jsonClient = JSONClient::createWithBasic(
             ['https://localhost:9200'],
-            'admin',
-            'MyStrongPass123!@#',
+            $username,
+            $password,
             config: [
                 'verify' => false,
             ]
