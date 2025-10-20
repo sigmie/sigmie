@@ -30,6 +30,8 @@ jobs:
         options: >-
           -e="discovery.type=single-node"
           -e="xpack.security.enabled=false"
+          -e="cluster.routing.allocation.disk.threshold_enabled=false"
+          -e="ES_JAVA_OPTS=-Xms512m -Xmx512m"
           --health-cmd="curl http://localhost:9200/_cluster/health"
           --health-interval=10s
           --health-timeout=5s
