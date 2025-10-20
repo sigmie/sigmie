@@ -7,5 +7,6 @@ namespace Sigmie\Enums;
 enum SearchEngine: string
 {
     case Elasticsearch = 'elasticsearch';
+
     case OpenSearch = 'opensearch';
 }

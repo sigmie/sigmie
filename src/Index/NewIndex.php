@@ -6,6 +6,7 @@ namespace Sigmie\Index;
 
 use Carbon\Carbon;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Base\Contracts\SearchEngineDriver;
 use Sigmie\Languages\English\Filter\Lowercase;
 use Sigmie\Languages\English\Filter\Stemmer;
 use Sigmie\Languages\English\Filter\Stopwords;
@@ -182,10 +183,11 @@ class NewIndex
             $this->analysis()->addAnalyzer($this->makeSearchSynonymsAnalyzer());
         }
 
-        // For OpenSearch, enable knn if there are semantic fields
-        if (Sigmie::$engine === SearchEngine::OpenSearch && $this->hasSemanticFields($mappings)) {
-            $this->config['index.knn'] = true;
-        }
+        // Apply engine-specific index settings for semantic fields
+        $driver = $this->elasticsearchConnection->driver();
+        $hasSemanticFields = $this->hasSemanticFields($mappings, $driver);
+        $engineSettings = $driver->indexSettings($hasSemanticFields);
+        $this->config = [...$this->config, ...$engineSettings];
 
         $settings = new Settings(
             primaryShards: $this->serverless ? null : $this->shards,
@@ -208,9 +210,9 @@ class NewIndex
         return "{$this->alias}_{$timestamp}";
     }
 
-    protected function hasSemanticFields($mappings): bool
+    protected function hasSemanticFields($mappings, SearchEngineDriver $driver): bool
     {
-        $raw = $mappings->toRaw();
+        $raw = $mappings->toRaw($driver);
 
         // toRaw() returns an array where 'properties' is a stdClass object
         // Check if there are embeddings in the properties

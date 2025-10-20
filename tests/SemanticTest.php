@@ -17,6 +17,140 @@ class SemanticTest extends TestCase
     /**
      * @test
      */
+    public function brute_force_nested_semantic_fields_filters()
+    {
+        $indexName = uniqid();
+        $blueprint = new NewProperties();
+        $blueprint->bool('active');
+        $blueprint->title('title');
+        $blueprint->nested('charachter', function (NewProperties $blueprint) {
+            $blueprint->nested('details', function (NewProperties $blueprint) {
+                $blueprint->nested('meta', function (NewProperties $blueprint) {
+                    $blueprint->nested('extra', function (NewProperties $blueprint) {
+                        $blueprint->nested('deep', function (NewProperties $blueprint) {
+                            $blueprint->title('deepnote')->semantic(accuracy: 7, dimensions: 384, api: 'test-embeddings');
+                        });
+                    });
+                });
+            });
+        });
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'active' => true,
+                    'title' => 'King',
+                    'charachter' => [
+                        'details' => [
+                            'meta' => [
+                                'extra' => [
+                                    'deep' => [
+                                        'deepnote' => ['King'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ]),
+                new Document([
+                    'active' => true,
+                    'title' => 'Queen',
+                    'charachter' => [
+                        'details' => [
+                            'meta' => [
+                                'extra' => [
+                                    'deep' => [
+                                        'deepnote' => ['Queen'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ]),
+                new Document([
+                    'active' => false,  // ← Inactive document
+                    'title' => 'Princess',
+                    'charachter' => [
+                        'details' => [
+                            'meta' => [
+                                'extra' => [
+                                    'deep' => [
+                                        'deepnote' => ['Princess'],  // ← Very relevant to "woman" and "lady"
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ]),
+                new Document([
+                    'active' => false,  // ← Another inactive document
+                    'title' => 'Lady',
+                    'charachter' => [
+                        'details' => [
+                            'meta' => [
+                                'extra' => [
+                                    'deep' => [
+                                        'deepnote' => ['Lady'],  // ← Exact match to query
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ]),
+            ]);
+
+        $search = $this->sigmie
+            ->newSearch($indexName)
+            ->properties($blueprint)
+            ->semantic()
+            ->noResultsOnEmptySearch()
+            ->disableKeywordSearch()
+            ->filters('active:true')
+            ->queryString('woman')
+            ->size(2);
+
+        /** @var SigmieSearchResponse $res  */
+        $res = $search->get();
+
+        // Verify results
+        $hits = $res->hits();
+        $totalHits = $res->total();
+
+        // Should only return 2 results (King and Queen), not 1
+        $this->assertEquals(2, $totalHits, '');
+
+        // Verify all returned documents have active:true
+        foreach ($hits as $hit) {
+            $this->assertTrue(
+                $hit->_source['active'],
+                'All returned documents must have active:true'
+            );
+        }
+
+        // Verify we get Queen as top result (most relevant to "woman" and "lady")
+        $topHit = $res->hits()[0]->_source;
+        $this->assertEquals(
+            'Queen',
+            $topHit['charachter']['details']['meta']['extra']['deep']['deepnote'][0] ?? null,
+            'Queen should be the top result for "woman" and "lady" query'
+        );
+
+        $this->assertEquals(
+            'King',
+            $res->hits()[1]->_source['title'] ?? null,
+            'King should be the second because it\'s active compared to lady'
+        );
+    }
+
+    /**
+     * @test
+     */
     public function nested_semantic_fields()
     {
         $indexName = uniqid();

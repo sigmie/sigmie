@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Index;
 
+use Sigmie\Base\Contracts\SearchEngineDriver;
+use Sigmie\Base\Drivers\ElasticsearchDriver;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Contracts\CustomAnalyzer;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
@@ -28,14 +30,18 @@ class Mappings implements MappingsInterface
 
     protected readonly array $meta;
 
+    protected ?SearchEngineDriver $driver;
+
     public function __construct(
         ?CustomAnalyzer $defaultAnalyzer = null,
         ?Properties $properties = null,
-        ?array $meta = null
+        ?array $meta = null,
+        ?SearchEngineDriver $driver = new ElasticsearchDriver
     ) {
         $this->defaultAnalyzer = $defaultAnalyzer ?: new DefaultAnalyzer();
         $this->properties = $properties ?: new Properties(name: 'mappings');
         $this->meta = $meta ?? [];
+        $this->driver = $driver;
     }
 
     public function meta(): array
@@ -76,13 +82,16 @@ class Mappings implements MappingsInterface
         return $result->add($this->defaultAnalyzer)->toArray();
     }
 
-    public function toRaw(): array
+    public function toRaw(?SearchEngineDriver $driver = null): array
     {
-        $embeddings = new Embeddings($this->properties);
+        $driver = $driver ?? $this->driver ?? throw new \InvalidArgumentException('SearchEngineDriver is required for mappings formatting');
+
+        // Generate and format embeddings
+        $embeddingsRaw = (new Embeddings($this->properties, $driver))->toRaw();
 
         $properties = [
             ...$this->properties->toRaw(),
-            ...$embeddings->toRaw(),
+            ...$embeddingsRaw,
         ];
 
         $raw = [
@@ -90,8 +99,11 @@ class Mappings implements MappingsInterface
             '_meta' => (object) $this->meta,
         ];
 
+        ray($raw);
+
         return $raw;
     }
+
 
     public static function create(array $data, array $analyzers): static
     {

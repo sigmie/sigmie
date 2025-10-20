@@ -652,14 +652,16 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $vectorByDims = new Collection([$dims => $vector]);
 
             // Build queries for these fields
-            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryImage->weight());
+            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryImage->weight(), $this->filters->toRaw());
 
             $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries) {
+
                 $raw = $query->toRaw();
+
                 if (isset($raw['knn'])) {
                     // For OpenSearch, keep knn queries as Query objects to add to boolean query
                     // For Elasticsearch, extract the knn part for top-level knn parameter
-                    if (Sigmie::$engine === SearchEngine::OpenSearch) {
+                    if ($this->elasticsearchConnection->driver()->engine() === SearchEngine::OpenSearch) {
                         $semanticQueries[] = $query;
                     } else {
                         $knnQueries[] = $raw['knn'];
@@ -736,14 +738,14 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $vectorByDims = new Collection([$dims => $vector]);
 
             // Build queries for these fields
-            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryString->weight());
+            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryString->weight(), $this->filters->toRaw());
 
             $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries) {
                 $raw = $query->toRaw();
                 if (isset($raw['knn'])) {
                     // For OpenSearch, keep knn queries as Query objects to add to boolean query
                     // For Elasticsearch, extract the knn part for top-level knn parameter
-                    if (Sigmie::$engine === SearchEngine::OpenSearch) {
+                    if ($this->elasticsearchConnection->driver()->engine() === SearchEngine::OpenSearch) {
                         $semanticQueries[] = $query;
                     } else {
                         $knnQueries[] = $raw['knn'];
@@ -778,14 +780,16 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     }
 
 
-    protected function buildVectorQueries(Collection $vectorFields, Collection $vectorByDims, float $queryBoost): Collection
+    protected function buildVectorQueries(Collection $vectorFields, Collection $vectorByDims, float $queryBoost, array $filter = []): Collection
     {
         return $vectorFields
-            ->map(function (TypesNested|DenseVector $field) use ($vectorByDims) {
+            ->map(function (TypesNested|DenseVector $field) use ($vectorByDims, $filter) {
 
                 $vectors = $vectorByDims->get($field->dims());
 
-                return $field->queries($vectors);
+                // Don't pass filters to nested vector fields - they'll be handled at the top level
+                $fieldFilter = ($field instanceof TypesNested || $field instanceof NestedVector) ? [] : $filter;
+                return $field->queries($vectors, $this->elasticsearchConnection->driver(), $fieldFilter);
             })
             ->flatten(1)
             ->map(function (Query $query) use ($queryBoost) {

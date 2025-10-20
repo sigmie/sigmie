@@ -126,7 +126,6 @@ class EmbeddingsTest extends TestCase
      */
     public function vectorize_documents()
     {
-
         $indexName = uniqid();
 
         $blueprint = new NewProperties;

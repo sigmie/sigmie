@@ -15,24 +15,18 @@ class NestedVector extends TypesNested
 {
     public ?string $apiName = null;
 
+    protected int $dims;
+
     public function __construct(
-        public string $name,
-        protected int $dims = 384,
+        string $name,
+        NewProperties $properties,
+        int $dims = 384,
         ?string $apiName = null,
     ) {
+        parent::__construct($name, $properties);
+
+        $this->dims = $dims;
         $this->apiName = $apiName;
-
-        $props = new NewProperties();
-        $props->type(
-            new SigmieVector(
-                name: 'vector',
-                dims: $this->dims,
-                strategy: VectorStrategy::ScriptScore,
-                apiName: $apiName,
-            )
-        );
-
-        parent::__construct($name, $props);
     }
 
     public function dims(): int
@@ -40,20 +34,24 @@ class NestedVector extends TypesNested
         return $this->dims;
     }
 
-    public function queries(array|string $vector): array
+    public function queries(array|string $vector, ?\Sigmie\Base\Contracts\SearchEngineDriver $driver = null, array $filter = []): array
     {
         // OpenSearch uses doc['field'] syntax, Elasticsearch uses 'field' string syntax
-        if (\Sigmie\Sigmie::$engine === \Sigmie\Enums\SearchEngine::OpenSearch) {
+        if ($driver && $driver->engine() === \Sigmie\Enums\SearchEngine::OpenSearch) {
             $source = "cosineSimilarity(params.query_vector, doc['embeddings.{$this->fullPath}.vector']) + 1.0";
         } else {
             $source = "cosineSimilarity(params.query_vector, 'embeddings.{$this->fullPath}.vector') + 1.0";
         }
 
+        // For nested queries, don't apply root-level filters inside the nested query
+        // Filters will be handled at the top level of the search
+        $baseQuery = new MatchAll();
+
         return  [
             new Nested(
                 "embeddings.{$this->fullPath}",
                 new FunctionScore(
-                    query: new MatchAll(),
+                    query: $baseQuery,
                     source: $source,
                     boostMode: 'replace',
                     params: [

@@ -7,7 +7,7 @@ namespace Sigmie\Mappings\Types;
 use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 
-class DenseVector extends SigmieVector
+class KnnVector extends SigmieVector
 {
     public function __construct(
         public string $name,
@@ -40,6 +40,40 @@ class DenseVector extends SigmieVector
             autoNormalizeVector: $autoNormalizeVector,
         );
 
-        $this->type = 'dense_vector';
+        $this->type = 'knn_vector';
+    }
+
+    public function toRaw(): array
+    {
+        $raw = [
+            $this->name => [
+                'type' => $this->type,
+                'dimension' => $this->dims,
+            ]
+        ];
+
+        if ($this->index) {
+            $raw[$this->name]['method'] = [
+                'name' => 'hnsw',
+                'space_type' => $this->mapSimilarity($this->similarity),
+                'engine' => 'lucene',  // Changed from 'nmslib' to 'lucene' for OpenSearch 3.0+
+                'parameters' => [
+                    'm' => $this->m,
+                    'ef_construction' => $this->efConstruction,
+                ],
+            ];
+        }
+
+        return $raw;
+    }
+
+    protected function mapSimilarity(VectorSimilarity $similarity): string
+    {
+        return match ($similarity) {
+            VectorSimilarity::Cosine => 'cosinesimil',
+            VectorSimilarity::DotProduct => 'innerproduct',
+            VectorSimilarity::Euclidean => 'l2',
+            VectorSimilarity::MaxInnerProduct => 'innerproduct',
+        };
     }
 }

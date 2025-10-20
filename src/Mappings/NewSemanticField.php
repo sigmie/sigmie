@@ -233,11 +233,21 @@ class NewSemanticField
         };
 
         if (!$this->index) {
-            $this->createdVector = new NestedVector($name, $this->dims, $this->apiName);
+            // Create a nested vector with proper properties for brute-force search
+            $props = new NewProperties();
+            $props->type(
+                new DenseVector(
+                    name: 'vector',
+                    dims: $this->dims,
+                    strategy: VectorStrategy::ScriptScore,
+                    apiName: $this->apiName,
+                )
+            );
+            $this->createdVector = new NestedVector($name, $props, $this->dims, $this->apiName);
             return $this->createdVector;
         }
 
-        $type = new SigmieVector(
+        $type = new DenseVector(
             name: $name,
             dims: $this->dims,
             strategy: $this->strategy,

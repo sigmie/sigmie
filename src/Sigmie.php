@@ -10,6 +10,8 @@ use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
+use Sigmie\Base\Drivers\ElasticsearchDriver;
+use Sigmie\Base\Drivers\OpenSearchDriver;
 use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Document\AliveCollection;
@@ -49,25 +51,7 @@ class Sigmie
 
     protected array $apis = [];
 
-    public static Version $version = Version::v7;
-
-    public static SearchEngine $engine = SearchEngine::Elasticsearch;
-
     public static array $plugins = [];
-
-    public function version(Version $version)
-    {
-        self::$version = $version;
-
-        return $this;
-    }
-
-    public function searchEngine(SearchEngine $engine)
-    {
-        self::$engine = $engine;
-
-        return $this;
-    }
 
     public function __construct(
         Connection $httpConnection
@@ -235,13 +219,19 @@ class Sigmie
 
     public static function create(
         array|string $hosts,
+        SearchEngine $engine = SearchEngine::Elasticsearch,
         array $config = []
     ): static {
         $hosts = (is_string($hosts)) ? explode(',', $hosts) : $hosts;
 
         $client = JSONClient::create($hosts, $config);
 
-        return new static(new HttpConnection($client));
+        $driver = match ($engine) {
+            SearchEngine::Elasticsearch => new \Sigmie\Base\Drivers\ElasticsearchDriver(),
+            SearchEngine::OpenSearch => new \Sigmie\Base\Drivers\OpenSearchDriver(),
+        };
+
+        return new static(new HttpConnection($client, $driver));
     }
 
     public function delete(string $index): bool

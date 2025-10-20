@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use Sigmie\Enums\SearchEngine;
 use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Contracts\Type;
@@ -15,7 +14,7 @@ use Sigmie\Query\Queries\NearestNeighbors;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Sigmie;
 
-class SigmieVector extends DenseVector
+class SigmieVector extends AbstractType implements Type
 {
     public ?string $textFieldName = null;
 
@@ -36,21 +35,12 @@ class SigmieVector extends DenseVector
         protected ?string $boostedByField = null,
         protected bool $autoNormalizeVector = true,
     ) {
-        $this->type = 'dense_vector';
         $this->apiName = $apiName;
     }
 
     public function toRaw(): array
     {
-        if (Sigmie::$engine === SearchEngine::OpenSearch) {
-            return $this->toOpenSearchRaw();
-        }
-
-        return $this->toElasticsearchRaw();
-    }
-
-    protected function toElasticsearchRaw(): array
-    {
+        // Return generic structure - driver will format using vectorField() strategy
         $raw = [
             $this->name => [
                 'type' => $this->type,
@@ -66,48 +56,16 @@ class SigmieVector extends DenseVector
                 'm' => $this->m,
                 'ef_construction' => $this->efConstruction,
             ];
-        }
 
-        if ($this->confidenceInterval !== null) {
-            $raw['index_options']['confidence_interval'] = $this->confidenceInterval;
-        }
+            if ($this->confidenceInterval !== null) {
+                $raw[$this->name]['index_options']['confidence_interval'] = $this->confidenceInterval;
+            }
 
-        if ($this->oversample !== null) {
-            $raw['index_options']['rescore_vector'] = [
-                'oversample' => $this->oversample,
-            ];
-        }
-
-        return $raw;
-    }
-
-    protected function toOpenSearchRaw(): array
-    {
-        $raw = [
-            $this->name => [
-                'type' => 'knn_vector',
-                'dimension' => $this->dims,
-            ]
-        ];
-
-        if ($this->index) {
-            // Map Elasticsearch similarity to OpenSearch space_type
-            $spaceType = match ($this->similarity) {
-                VectorSimilarity::Cosine => 'cosinesimil',
-                VectorSimilarity::Euclidean => 'l2',
-                VectorSimilarity::DotProduct => 'innerproduct',
-                VectorSimilarity::MaxInnerProduct => 'innerproduct',
-            };
-
-            $raw[$this->name]['method'] = [
-                'name' => 'hnsw',
-                'space_type' => $spaceType,
-                'engine' => 'lucene',
-                'parameters' => [
-                    'm' => $this->m,
-                    'ef_construction' => $this->efConstruction,
-                ],
-            ];
+            if ($this->oversample !== null) {
+                $raw[$this->name]['index_options']['rescore_vector'] = [
+                    'oversample' => $this->oversample,
+                ];
+            }
         }
 
         return $raw;
@@ -121,6 +79,41 @@ class SigmieVector extends DenseVector
     public function dims(): int
     {
         return $this->dims;
+    }
+
+    public function isIndexed(): bool
+    {
+        return $this->index;
+    }
+
+    public function similarity(): VectorSimilarity
+    {
+        return $this->similarity;
+    }
+
+    public function indexType(): string
+    {
+        return $this->indexType;
+    }
+
+    public function m(): ?int
+    {
+        return $this->m;
+    }
+
+    public function efConstruction(): ?int
+    {
+        return $this->efConstruction;
+    }
+
+    public function confidenceInterval(): ?float
+    {
+        return $this->confidenceInterval;
+    }
+
+    public function oversample(): ?int
+    {
+        return $this->oversample;
     }
 
     public function createSuffix(): string
@@ -156,24 +149,22 @@ class SigmieVector extends DenseVector
         return $this->autoNormalizeVector;
     }
 
-    public function similarity(): VectorSimilarity
+    public function queries(array|string $vector, ?\Sigmie\Base\Contracts\SearchEngineDriver $driver = null, array $filter = []): array
     {
-        return $this->similarity;
-    }
-
-    public function queries(array|string $vector): array
-    {
-        if ($this->index) {
+        if ($this->index && $driver) {
             return [
-                new NearestNeighbors(
-                    "embeddings." . $this->fullPath,
-                    $vector,
-                    // // k: $this->dims,
-                    // numCandidates: $this->efConstruction * 2
-                    // Should be >= K
-                    numCandidates: 300
+                $driver->knnQuery(
+                    field: "embeddings." . $this->fullPath,
+                    queryVector: $vector,
+                    k: $this->dims,
+                    numCandidates: 300,
+                    filter: $filter
                 )
             ];
+        }
+
+        if ($this->index) {
+            throw new \Exception('Driver is required for indexed vector queries');
         }
 
         // For exact vector search (accuracy 7), use function_score with dynamic similarity
@@ -184,9 +175,17 @@ class SigmieVector extends DenseVector
             VectorSimilarity::MaxInnerProduct => "dotProduct(params.query_vector, 'embeddings.{$this->fullPath}')",
         };
 
+        // Use bool query with filters if provided, otherwise use MatchAll
+        if (!empty($filter)) {
+            $baseQuery = new \Sigmie\Query\Queries\Compound\Boolean();
+            $baseQuery->addRaw('filter', $filter);
+        } else {
+            $baseQuery = new MatchAll();
+        }
+
         $query = [
             new FunctionScore(
-                query: new MatchAll(),
+                query: $baseQuery,
                 source: $source,
                 boostMode: 'replace',
                 params: [

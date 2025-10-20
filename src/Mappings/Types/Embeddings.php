@@ -4,14 +4,23 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Base\Contracts\SearchEngineDriver;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 
 class Embeddings extends Object_
 {
+    protected SearchEngineDriver $driver;
+
+    protected Properties $sourceProperties;
+
     public function __construct(
-        Properties $properties
+        Properties $properties,
+        SearchEngineDriver $driver
     ) {
+        $this->driver = $driver ?? throw new \InvalidArgumentException('SearchEngineDriver is required');
+        $this->sourceProperties = $properties;
+
         $names = $properties->fieldNames();
 
         $newProperties = new NewProperties();
@@ -27,7 +36,17 @@ class Embeddings extends Object_
             $newProperties->object($name, function (NewProperties $props) use ($type) {
                 $type->vectorFields()
                     ->map(function (Type $vectorField) use ($props) {
-                        $props->type($vectorField);
+                        // Use driver conversion for vector types
+                        if ($vectorField instanceof SigmieVector) {
+                            $field = $this->driver->vectorField($vectorField);
+                            $props->type($field);
+                        } elseif ($vectorField instanceof NestedVector) {
+                            $field = $this->driver->nestedVectorField($vectorField);
+                            $props->type($field);
+                        } else {
+                            // For other types, use directly
+                            $props->type($vectorField);
+                        }
                     });
             });
         }

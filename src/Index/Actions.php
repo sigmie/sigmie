@@ -27,10 +27,12 @@ trait Actions
         SettingsInterface $settings,
         MappingsInterface $mappings
     ) {
+        $driver = $this->elasticsearchConnection->driver();
+
         $body = [
             'index_patterns' => $patterns,
             'settings' => $settings->toRaw(),
-            'mappings' => $mappings->toRaw(),
+            'mappings' => $mappings->toRaw($driver),
         ];
 
         $this->templateAPICall($name, 'PUT', $body);
@@ -40,9 +42,11 @@ trait Actions
 
     protected function createIndex(string $indexName, SettingsInterface $settings, MappingsInterface $mappings)
     {
+        $driver = $this->elasticsearchConnection->driver();
+
         $body = [
             'settings' => $settings->toRaw(),
-            'mappings' => $mappings->toRaw(),
+            'mappings' => $mappings->toRaw($driver),
         ];
 
         $this->indexAPICall("{$indexName}", 'PUT', $body);

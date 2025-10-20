@@ -63,6 +63,7 @@ trait Mappings
             defaultAnalyzer: $defaultAnalyzer,
             properties: $this->properties,
             meta: [...$defaultMeta, ...$this->customMeta],
+            driver: $this->elasticsearchConnection->driver(),
         );
     }
 }
