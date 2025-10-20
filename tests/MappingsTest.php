@@ -1634,8 +1634,6 @@ class MappingsTest extends TestCase
 
             $jobDescription = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['exact_dims256_cosine_script'];
 
-            ray($jobDescription);
-
             $vectorField = $jobDescription['properties']['vector'];
 
             $this->assertEquals('nested', $jobDescription['type']);

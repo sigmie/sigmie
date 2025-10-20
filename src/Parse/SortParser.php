@@ -142,13 +142,6 @@ class SortParser extends Parser
             }
         }
 
-        // // OpenSearch requires _score before _geo_distance
-        // if ($hasGeoDistance && Sigmie::$engine === SearchEngine::OpenSearch) {
-        //     array_unshift($sort, ['_score' => ['order' => 'desc']]);
-        // }
-
-        ray($sort);
-
         return $sort;
     }
 }

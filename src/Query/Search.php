@@ -257,8 +257,6 @@ class Search
             }
         }
 
-        ray($result);
-
         return $result;
     }
 }
