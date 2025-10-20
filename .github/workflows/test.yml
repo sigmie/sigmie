@@ -41,6 +41,7 @@ jobs:
       SEARCH_ENGINE: elasticsearch
       LOCAL_EMBEDDING_URL: http://localhost:7997
       LOCAL_RERANK_URL: http://localhost:7998
+      LOCAL_CLIP_URL: http://localhost:7996
       LOCAL_LLM_URL: http://localhost:7999
       OLLAMA_MODEL: tinyllama
 
@@ -63,6 +64,14 @@ jobs:
             -e MODEL_ID=cross-encoder/ms-marco-MiniLM-L-6-v2 \
             michaelf34/infinity:latest \
             v2 --model-id cross-encoder/ms-marco-MiniLM-L-6-v2 --port 7998
+
+      - name: Start CLIP Service
+        run: |
+          docker run -d --name clip \
+            -p 7996:7996 \
+            -e MODEL_ID=wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M \
+            michaelf34/infinity:latest \
+            v2 --model-id wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M --port 7996 --engine torch
 
       - name: Start LLM Service
         run: |
@@ -94,6 +103,13 @@ jobs:
             sleep 5
           done
           echo "Reranker service is ready!"
+
+          echo "Waiting for CLIP service..."
+          until curl -f http://localhost:7996/health 2>/dev/null; do
+            echo "Waiting for CLIP..."
+            sleep 5
+          done
+          echo "CLIP service is ready!"
 
       - name: Wait for Elasticsearch
         run: |
@@ -155,6 +171,8 @@ jobs:
         options: >-
           -e="OPENSEARCH_INITIAL_ADMIN_PASSWORD=Koala$193tree"
           -e="discovery.type=single-node"
+          -e="cluster.routing.allocation.disk.threshold_enabled=false"
+          -e="OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
           --health-cmd="curl -k -u admin:Koala$193tree https://localhost:9200/_cluster/health"
           --health-interval=10s
           --health-timeout=5s
@@ -166,6 +184,7 @@ jobs:
       OPENSEARCH_PASSWORD: Koala$193tree
       LOCAL_EMBEDDING_URL: http://localhost:7997
       LOCAL_RERANK_URL: http://localhost:7998
+      LOCAL_CLIP_URL: http://localhost:7996
       LOCAL_LLM_URL: http://localhost:7999
       OLLAMA_MODEL: tinyllama
 
@@ -188,6 +207,14 @@ jobs:
             -e MODEL_ID=cross-encoder/ms-marco-MiniLM-L-6-v2 \
             michaelf34/infinity:latest \
             v2 --model-id cross-encoder/ms-marco-MiniLM-L-6-v2 --port 7998
+
+      - name: Start CLIP Service
+        run: |
+          docker run -d --name clip \
+            -p 7996:7996 \
+            -e MODEL_ID=wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M \
+            michaelf34/infinity:latest \
+            v2 --model-id wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M --port 7996 --engine torch
 
       - name: Start LLM Service
         run: |
@@ -219,6 +246,13 @@ jobs:
             sleep 5
           done
           echo "Reranker service is ready!"
+
+          echo "Waiting for CLIP service..."
+          until curl -f http://localhost:7996/health 2>/dev/null; do
+            echo "Waiting for CLIP..."
+            sleep 5
+          done
+          echo "CLIP service is ready!"
 
       - name: Wait for OpenSearch
         run: |
