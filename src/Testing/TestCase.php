@@ -59,17 +59,26 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
         Sigmie::$version = getenv('ELASTICSEARCH_VERSION') ? ElasticsearchVersion::from(getenv('ELASTICSEARCH_VERSION')) : ElasticsearchVersion::v7;
 
-        $username = getenv('OPENSEARCH_USER') ?: 'admin';
-        $password = getenv('OPENSEARCH_PASSWORD') ?: 'MyStrongPass123!@#';
+        // Detect search engine from environment first
+        $searchEngine = getenv('SEARCH_ENGINE');
 
-        $this->jsonClient = JSONClient::createWithBasic(
-            ['https://localhost:9200'],
-            $username,
-            $password,
-            config: [
-                'verify' => false,
-            ]
-        );
+        if ($searchEngine === 'opensearch') {
+            // OpenSearch: HTTPS with authentication
+            $username = getenv('OPENSEARCH_USER') ?: 'admin';
+            $password = getenv('OPENSEARCH_PASSWORD') ?: 'MyStrongPass123!@#';
+
+            $this->jsonClient = JSONClient::createWithBasic(
+                ['https://localhost:9200'],
+                $username,
+                $password,
+                config: [
+                    'verify' => false,
+                ]
+            );
+        } else {
+            // Elasticsearch: HTTP without authentication
+            $this->jsonClient = JSONClient::create(['http://localhost:9200']);
+        }
 
         $this->elasticsearchConnection = new ElasticsearchConnection($this->jsonClient);
 
