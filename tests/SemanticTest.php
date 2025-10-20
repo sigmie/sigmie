@@ -239,7 +239,7 @@ class SemanticTest extends TestCase
 
         $this->forElasticsearch(function () use ($rawQuery) {
             // Elasticsearch uses top-level knn parameter which should be empty for accuracy 7
-            $this->assertEmpty($rawQuery['knn'], 'KNN should be empty for accuracy 7 in Elasticsearch');
+            $this->assertEmpty($rawQuery['knn'] ?? [], 'KNN should be empty for accuracy 7 in Elasticsearch');
         });
 
         // Verify function_score is present in the query for both engines
