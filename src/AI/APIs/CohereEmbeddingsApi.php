@@ -51,7 +51,7 @@ class CohereEmbeddingsApi implements EmbeddingsApi
 
         $data = json_decode($response->getBody()->getContents(), true);
 
-        $embedding = $data['embeddings']['float'][0];
+        $embedding = $data['_embeddings']['float'][0];
 
         if ($dimensions > 0 && count($embedding) !== $dimensions) {
             if (count($embedding) > $dimensions) {
@@ -85,7 +85,7 @@ class CohereEmbeddingsApi implements EmbeddingsApi
 
         $data = json_decode($response->getBody()->getContents(), true);
 
-        foreach ($data['embeddings']['float'] as $index => $embedding) {
+        foreach ($data['_embeddings']['float'] as $index => $embedding) {
             if ($dimensions > 0 && count($embedding) !== $dimensions) {
                 if (count($embedding) > $dimensions) {
                     $embedding = array_slice($embedding, 0, $dimensions);

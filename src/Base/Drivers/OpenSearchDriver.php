@@ -49,10 +49,9 @@ class OpenSearchDriver implements SearchEngineDriver
         );
     }
 
-    public function indexSettings(bool $hasSemanticFields): array
+    public function indexSettings(): array
     {
-        // OpenSearch requires 'index.knn' setting enabled for vector fields
-        return $hasSemanticFields ? ['index.knn' => true] : [];
+        return  ['index.knn' => true];
     }
 
     protected function mapSimilarity(VectorSimilarity $similarity): string

@@ -154,7 +154,7 @@ class SigmieVector extends AbstractType implements Type
         if ($this->index && $driver) {
             return [
                 $driver->knnQuery(
-                    field: "embeddings." . $this->fullPath,
+                    field: "_embeddings." . $this->fullPath,
                     queryVector: $vector,
                     k: $this->dims,
                     numCandidates: 300,
@@ -169,10 +169,10 @@ class SigmieVector extends AbstractType implements Type
 
         // For exact vector search (accuracy 7), use function_score with dynamic similarity
         $source = match ($this->similarity) {
-            VectorSimilarity::Cosine => "cosineSimilarity(params.query_vector, 'embeddings.{$this->fullPath}') + 1.0",
-            VectorSimilarity::DotProduct => "dotProduct(params.query_vector, 'embeddings.{$this->fullPath}')",
-            VectorSimilarity::Euclidean => "1 / (1 + l2norm(params.query_vector, 'embeddings.{$this->fullPath}'))",
-            VectorSimilarity::MaxInnerProduct => "dotProduct(params.query_vector, 'embeddings.{$this->fullPath}')",
+            VectorSimilarity::Cosine => "cosineSimilarity(params.query_vector, '_embeddings.{$this->fullPath}') + 1.0",
+            VectorSimilarity::DotProduct => "dotProduct(params.query_vector, '_embeddings.{$this->fullPath}')",
+            VectorSimilarity::Euclidean => "1 / (1 + l2norm(params.query_vector, '_embeddings.{$this->fullPath}'))",
+            VectorSimilarity::MaxInnerProduct => "dotProduct(params.query_vector, '_embeddings.{$this->fullPath}')",
         };
 
         // Use bool query with filters if provided, otherwise use MatchAll

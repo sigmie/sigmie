@@ -24,7 +24,7 @@ class Embeddings extends Object_
         $names = $properties->fieldNames();
 
         $newProperties = new NewProperties();
-        $newProperties->propertiesName('embeddings');
+        $newProperties->propertiesName('_embeddings');
 
         foreach ($names as $name) {
             $type = $properties->get($name);
@@ -54,9 +54,9 @@ class Embeddings extends Object_
         $props = $newProperties->get();
 
         parent::__construct(
-            'embeddings',
+            '_embeddings',
             $props,
-            fullPath: 'embeddings'
+            fullPath: '_embeddings'
         );
     }
 }

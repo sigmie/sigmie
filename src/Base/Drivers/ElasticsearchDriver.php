@@ -48,7 +48,7 @@ class ElasticsearchDriver implements SearchEngineDriver
         );
     }
 
-    public function indexSettings(bool $hasSemanticFields): array
+    public function indexSettings(): array
     {
         return [];
     }

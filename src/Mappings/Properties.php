@@ -303,7 +303,7 @@ class Properties extends Type implements ArrayAccess
             ->mapToDictionary(fn(ContractsType $value) => $value->toRaw())
             ->toArray();
 
-        // if (in_array($this->name, ['mappings', 'embeddings'])) {
+        // if (in_array($this->name, ['mappings', '_embeddings'])) {
         return $fields;
         // } else {
         //     return [$this->name() => ['properties' => $fields]];

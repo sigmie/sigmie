@@ -38,9 +38,9 @@ class NestedVector extends TypesNested
     {
         // OpenSearch uses doc['field'] syntax, Elasticsearch uses 'field' string syntax
         if ($driver && $driver->engine() === \Sigmie\Enums\SearchEngine::OpenSearch) {
-            $source = "cosineSimilarity(params.query_vector, doc['embeddings.{$this->fullPath}.vector']) + 1.0";
+            $source = "cosineSimilarity(params.query_vector, doc['_embeddings.{$this->fullPath}.vector']) + 1.0";
         } else {
-            $source = "cosineSimilarity(params.query_vector, 'embeddings.{$this->fullPath}.vector') + 1.0";
+            $source = "cosineSimilarity(params.query_vector, '_embeddings.{$this->fullPath}.vector') + 1.0";
         }
 
         // For nested queries, don't apply root-level filters inside the nested query
@@ -49,7 +49,7 @@ class NestedVector extends TypesNested
 
         return  [
             new Nested(
-                "embeddings.{$this->fullPath}",
+                "_embeddings.{$this->fullPath}",
                 new FunctionScore(
                     query: $baseQuery,
                     source: $source,

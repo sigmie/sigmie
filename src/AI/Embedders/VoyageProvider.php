@@ -98,9 +98,9 @@ class VoyageProvider implements Embedder
                         $data = json_decode($response->getBody()->getContents(), true);
                         $embeddings = $data['data'][0]['embedding'];
                         if ($onFulfilled) {
-                            return $onFulfilled(['embeddings' => $embeddings]);
+                            return $onFulfilled(['_embeddings' => $embeddings]);
                         }
-                        return ['embeddings' => $embeddings];
+                        return ['_embeddings' => $embeddings];
                     },
                     $onRejected
                 );
@@ -115,7 +115,7 @@ class VoyageProvider implements Embedder
             {
                 $response = $this->promise->wait($unwrap);
                 $data = json_decode($response->getBody()->getContents(), true);
-                return ['embeddings' => $data['data'][0]['embedding']];
+                return ['_embeddings' => $data['data'][0]['embedding']];
             }
         };
     }

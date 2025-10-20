@@ -27,7 +27,7 @@ interface SearchEngineDriver
     /**
      * Return engine-specific index settings for semantic/vector fields
      */
-    public function indexSettings(bool $hasSemanticFields): array;
+    public function indexSettings(): array;
 
     /**
      * Create an engine-specific KNN query

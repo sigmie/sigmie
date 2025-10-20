@@ -66,7 +66,7 @@ class DocumentProcessor
             ->filter(fn($vectors) => !empty($vectors))
             ->toArray();
 
-        $document['embeddings'] = $this->buildNestedStructure($embeddings);
+        $document['_embeddings'] = $this->buildNestedStructure($embeddings);
 
         return $document;
     }
@@ -150,7 +150,7 @@ class DocumentProcessor
     protected function processField(Text|Image $field, Document $document): array
     {
         // Check if embeddings already exist for this field
-        $existingEmbeddings = dot($document->_source)->get("embeddings.{$field->fullPath}");
+        $existingEmbeddings = dot($document->_source)->get("_embeddings.{$field->fullPath}");
 
         if ($existingEmbeddings && is_array($existingEmbeddings)) {
             // Check if all required vector fields already have embeddings

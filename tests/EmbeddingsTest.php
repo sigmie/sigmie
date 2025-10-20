@@ -33,16 +33,16 @@ class EmbeddingsTest extends TestCase
 
         $index = $this->sigmie->index($indexName)->raw;
 
-        $this->assertArrayHasKey('embeddings', $index['mappings']['properties']);
-        $this->assertArrayHasKey('title', $index['mappings']['properties']['embeddings']['properties']);
-        $this->assertArrayHasKey('comments', $index['mappings']['properties']['embeddings']['properties']);
-        $this->assertArrayHasKey('user', $index['mappings']['properties']['embeddings']['properties']['comments']['properties']);
-        $this->assertArrayHasKey('name', $index['mappings']['properties']['embeddings']['properties']['comments']['properties']['user']['properties']);
-        $this->assertArrayHasKey('text', $index['mappings']['properties']['embeddings']['properties']['comments']['properties']);
+        $this->assertArrayHasKey('_embeddings', $index['mappings']['properties']);
+        $this->assertArrayHasKey('title', $index['mappings']['properties']['_embeddings']['properties']);
+        $this->assertArrayHasKey('comments', $index['mappings']['properties']['_embeddings']['properties']);
+        $this->assertArrayHasKey('user', $index['mappings']['properties']['_embeddings']['properties']['comments']['properties']);
+        $this->assertArrayHasKey('name', $index['mappings']['properties']['_embeddings']['properties']['comments']['properties']['user']['properties']);
+        $this->assertArrayHasKey('text', $index['mappings']['properties']['_embeddings']['properties']['comments']['properties']);
 
-        $name = $index['mappings']['properties']['embeddings']['properties']['title']['properties'];
-        $text = $index['mappings']['properties']['embeddings']['properties']['comments']['properties']['text']['properties'];
-        $title = $index['mappings']['properties']['embeddings']['properties']['title']['properties'];
+        $name = $index['mappings']['properties']['_embeddings']['properties']['title']['properties'];
+        $text = $index['mappings']['properties']['_embeddings']['properties']['comments']['properties']['text']['properties'];
+        $title = $index['mappings']['properties']['_embeddings']['properties']['title']['properties'];
 
         $this->assertIsArray($name);
         $this->assertIsArray($text);
@@ -77,10 +77,10 @@ class EmbeddingsTest extends TestCase
         $index = $this->sigmie->index($indexName)->raw;
 
         // Assert semantic field exists in embeddings
-        $this->assertArrayHasKey('title', $index['mappings']['properties']['embeddings']['properties']);
+        $this->assertArrayHasKey('title', $index['mappings']['properties']['_embeddings']['properties']);
 
         // Assert non-semantic field does NOT exist in embeddings
-        $this->assertArrayNotHasKey('color', $index['mappings']['properties']['embeddings']['properties']);
+        $this->assertArrayNotHasKey('color', $index['mappings']['properties']['_embeddings']['properties']);
 
         $collected = $this->sigmie->collect($indexName, true)
             ->properties($blueprint);
@@ -145,11 +145,11 @@ class EmbeddingsTest extends TestCase
         $index = $this->sigmie->index($indexName)->raw;
 
         // Assert semantic fields exist in embeddings
-        $this->assertArrayHasKey('title', $index['mappings']['properties']['embeddings']['properties']);
-        $this->assertArrayHasKey('comments', $index['mappings']['properties']['embeddings']['properties']);
+        $this->assertArrayHasKey('title', $index['mappings']['properties']['_embeddings']['properties']);
+        $this->assertArrayHasKey('comments', $index['mappings']['properties']['_embeddings']['properties']);
 
         // Assert non-semantic field does NOT exist in embeddings
-        $this->assertArrayNotHasKey('color', $index['mappings']['properties']['embeddings']['properties']);
+        $this->assertArrayNotHasKey('color', $index['mappings']['properties']['_embeddings']['properties']);
 
         $collected = $this->sigmie->collect($indexName, true)
             ->properties($blueprint);
@@ -194,9 +194,9 @@ class EmbeddingsTest extends TestCase
 
         $document = $collected->get('1234');
 
-        $this->assertCount(384, $document['embeddings']['title']['m15_efc73_dims384_cosine_concat']);
-        $this->assertCount(384, $document['embeddings']['comments']['text']['m15_efc73_dims384_cosine_concat']);
-        $this->assertCount(384, $document['embeddings']['comments']['user']['name']['m15_efc73_dims384_cosine_concat']);
+        $this->assertCount(384, $document['_embeddings']['title']['m15_efc73_dims384_cosine_concat']);
+        $this->assertCount(384, $document['_embeddings']['comments']['text']['m15_efc73_dims384_cosine_concat']);
+        $this->assertCount(384, $document['_embeddings']['comments']['user']['name']['m15_efc73_dims384_cosine_concat']);
     }
 
     /**
@@ -223,7 +223,7 @@ class EmbeddingsTest extends TestCase
 
         $index = $this->sigmie->index($indexName)->raw;
 
-        $embeddingsProperties = $index['mappings']['properties']['embeddings']['properties'];
+        $embeddingsProperties = $index['mappings']['properties']['_embeddings']['properties'];
 
         // Assert semantic fields ARE in embeddings
         $this->assertArrayHasKey('semantic_title', $embeddingsProperties);

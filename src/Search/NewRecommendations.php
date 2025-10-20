@@ -166,7 +166,7 @@ class NewRecommendations
 
                 $fieldName = $field['name'];
 
-                $vectors = dot($doc->_source['embeddings'])->get($fieldName);
+                $vectors = dot($doc->_source['_embeddings'])->get($fieldName);
 
                 foreach ($vectors as $vectorName => $vector) {
                     $newSearch->queryString(

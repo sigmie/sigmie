@@ -401,7 +401,7 @@ class Text extends Type implements FromRaw
 
     public function embeddingsName(): string
     {
-        return "embeddings.{$this->name()}";
+        return "_embeddings.{$this->name()}";
     }
 
     public function embeddingsType(): string

@@ -185,8 +185,7 @@ class NewIndex
 
         // Apply engine-specific index settings for semantic fields
         $driver = $this->elasticsearchConnection->driver();
-        $hasSemanticFields = $this->hasSemanticFields($mappings, $driver);
-        $engineSettings = $driver->indexSettings($hasSemanticFields);
+        $engineSettings = $driver->indexSettings();
         $this->config = [...$this->config, ...$engineSettings];
 
         $settings = new Settings(
@@ -208,14 +207,5 @@ class NewIndex
         $timestamp = Carbon::now()->format('YmdHisu');
 
         return "{$this->alias}_{$timestamp}";
-    }
-
-    protected function hasSemanticFields($mappings, SearchEngineDriver $driver): bool
-    {
-        $raw = $mappings->toRaw($driver);
-
-        // toRaw() returns an array where 'properties' is a stdClass object
-        // Check if there are embeddings in the properties
-        return isset($raw['properties']->embeddings);
     }
 }

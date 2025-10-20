@@ -27,7 +27,7 @@ class ImageSearchTest extends TestCase
 
         // Assert index was created with correct mappings
         $this->assertIndex($indexName, function (Assert $assert) {
-            $assert->assertPropertyExists('embeddings');
+            $assert->assertPropertyExists('_embeddings');
             $assert->assertPropertyExists('product_image');
 
             // The image field should have the semantic configuration
@@ -265,13 +265,13 @@ class ImageSearchTest extends TestCase
         $doc = $this->sigmie->collect($indexName)->get('collection');
 
         // Verify that the gallery embeddings exist
-        $this->assertArrayHasKey('embeddings', $doc->_source);
-        $this->assertArrayHasKey('gallery', $doc->_source['embeddings']);
+        $this->assertArrayHasKey('_embeddings', $doc->_source);
+        $this->assertArrayHasKey('gallery', $doc->_source['_embeddings']);
 
         // With accuracy: 2 (average strategy), the vectors should be averaged
         // The FakeClipApi returns random vectors, so we can't verify the actual averaging
         // But we can verify that a single vector was stored (the average)
-        $galleryEmbeddings = $doc->_source['embeddings']['gallery'];
+        $galleryEmbeddings = $doc->_source['_embeddings']['gallery'];
         $this->assertIsArray($galleryEmbeddings);
 
         // The averaged vector should be a single array (not an array of arrays)
@@ -436,8 +436,8 @@ class ImageSearchTest extends TestCase
         $this->assertEquals('not-a-valid-url-or-path', $doc->_source['image']);
 
         // And embeddings were still generated (as text)
-        $this->assertArrayHasKey('embeddings', $doc->_source);
-        $this->assertArrayHasKey('image', $doc->_source['embeddings']);
+        $this->assertArrayHasKey('_embeddings', $doc->_source);
+        $this->assertArrayHasKey('image', $doc->_source['_embeddings']);
     }
 
     /**
@@ -468,9 +468,9 @@ class ImageSearchTest extends TestCase
         // Verify raw value is stored
         $doc = $this->sigmie->collect($indexName)->get('mixed');
         $this->assertEquals('https://example.com/thumb.jpg', $doc->_source['thumbnail']);
-        $this->assertArrayHasKey('embeddings', $doc->_source);
-        $this->assertArrayHasKey('preview', $doc->_source['embeddings']);
-        $this->assertArrayNotHasKey('thumbnail', $doc->_source['embeddings']);
+        $this->assertArrayHasKey('_embeddings', $doc->_source);
+        $this->assertArrayHasKey('preview', $doc->_source['_embeddings']);
+        $this->assertArrayNotHasKey('thumbnail', $doc->_source['_embeddings']);
     }
 
     /**
@@ -592,7 +592,7 @@ class ImageSearchTest extends TestCase
 
         // Verify all embeddings were generated
         $doc = $this->sigmie->collect($indexName)->get('playset');
-        $embeddings = $doc->_source['embeddings'];
+        $embeddings = $doc->_source['_embeddings'];
         $this->assertArrayHasKey('name', $embeddings);
         $this->assertArrayHasKey('description', $embeddings);
         $this->assertArrayHasKey('main_image', $embeddings);

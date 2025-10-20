@@ -400,7 +400,7 @@ class SemanticTest extends TestCase
 
         $response = $this->sigmie->indexAPICall($indexName, 'GET')->json();
         $key = array_key_first($response);
-        $mappings = $response[$key]['mappings']['properties']['embeddings']['properties']['title']['properties'] ?? [];
+        $mappings = $response[$key]['mappings']['properties']['_embeddings']['properties']['title']['properties'] ?? [];
 
         // Find the vector field with dot_product similarity
         $foundDotProduct = false;
@@ -440,7 +440,7 @@ class SemanticTest extends TestCase
 
         $response = $this->sigmie->indexAPICall($indexName, 'GET')->json();
         $key = array_key_first($response);
-        $mappings = $response[$key]['mappings']['properties']['embeddings']['properties']['photo']['properties'] ?? [];
+        $mappings = $response[$key]['mappings']['properties']['_embeddings']['properties']['photo']['properties'] ?? [];
 
         // Find the vector field with l2_norm similarity
         $foundL2Norm = false;
@@ -480,7 +480,7 @@ class SemanticTest extends TestCase
 
         $response = $this->sigmie->indexAPICall($indexName, 'GET')->json();
         $key = array_key_first($response);
-        $mappings = $response[$key]['mappings']['properties']['embeddings']['properties']['title']['properties'] ?? [];
+        $mappings = $response[$key]['mappings']['properties']['_embeddings']['properties']['title']['properties'] ?? [];
 
         // Find the vector field with cosine similarity
         $foundCosine = false;
@@ -548,8 +548,8 @@ class SemanticTest extends TestCase
         $doc2 = $docs[1];
 
         // Get embeddings from both documents
-        $embeddings1 = $doc1->_source['embeddings'];
-        $embeddings2 = $doc2->_source['embeddings'];
+        $embeddings1 = $doc1->_source['_embeddings'];
+        $embeddings2 = $doc2->_source['_embeddings'];
 
         // Get the vector field name
         $vectorFieldName = array_keys($embeddings1['title'])[0];
@@ -721,8 +721,8 @@ class SemanticTest extends TestCase
         $docsWithNorm = $this->sigmie->collect($indexWithNorm, true)->take(1);
         $docsWithoutNorm = $this->sigmie->collect($indexWithoutNorm, true)->take(1);
 
-        $embeddingsWithNorm = $docsWithNorm[0]->_source['embeddings']['title'];
-        $embeddingsWithoutNorm = $docsWithoutNorm[0]->_source['embeddings']['title'];
+        $embeddingsWithNorm = $docsWithNorm[0]->_source['_embeddings']['title'];
+        $embeddingsWithoutNorm = $docsWithoutNorm[0]->_source['_embeddings']['title'];
 
         $vectorFieldName = array_keys($embeddingsWithNorm)[0];
         $vectorWithNorm = $embeddingsWithNorm[$vectorFieldName];

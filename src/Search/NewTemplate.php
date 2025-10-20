@@ -136,7 +136,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             $vectorQueries = $this->properties->nestedSemanticFields()
                 ->map(function (Text $field) use ($defaultEmbeddings, &$embeddingsTags) {
 
-                    $tag = 'embeddings_' . str_replace('.', '', $field->name());
+                    $tag = '_embeddings_' . str_replace('.', '', $field->name());
                     $embeddingsTags[] = $tag;
 
                     return $field->queries(

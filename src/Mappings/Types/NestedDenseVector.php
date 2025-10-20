@@ -87,7 +87,7 @@ class NestedDenseVector extends AbstractType implements Type
         if ($this->index) {
             return [
                 new NearestNeighbors(
-                    "embeddings.name.{$this->name}",
+                    "_embeddings.name.{$this->name}",
                     $vector,
                     // // k: $this->dims,
                     numCandidates: $this->efConstruction * 2
@@ -97,8 +97,8 @@ class NestedDenseVector extends AbstractType implements Type
 
         $source = "";
         $source .= "double maxSim = 0;";
-        $source .= "for (int i = 0; i < doc['embeddings.name.{$this->name}'].length; i++) {";
-        $source .= "  double sim = cosineSimilarity(params.query_vector, doc['embeddings.name.{$this->name}'][i]);";
+        $source .= "for (int i = 0; i < doc['_embeddings.name.{$this->name}'].length; i++) {";
+        $source .= "  double sim = cosineSimilarity(params.query_vector, doc['_embeddings.name.{$this->name}'][i]);";
         $source .= "  if (sim > maxSim) maxSim = sim;";
         $source .= "}";
         $source .= "return maxSim;";

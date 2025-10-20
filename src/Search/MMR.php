@@ -109,12 +109,12 @@ class MMR
         foreach ($seedDocs as $doc) {
             $source = is_array($doc) ? ($doc['_source'] ?? null) : ($doc->_source ?? null);
 
-            if (!$source || !isset($source['embeddings'])) {
+            if (!$source || !isset($source['_embeddings'])) {
                 continue;
             }
 
             // Get all vectors for the field using dot notation
-            $vectors = dot($source['embeddings'])->get($fieldName);
+            $vectors = dot($source['_embeddings'])->get($fieldName);
 
             if (!$vectors || !is_array($vectors)) {
                 continue;
@@ -141,12 +141,12 @@ class MMR
     {
         $source = is_array($hit) ? ($hit['_source'] ?? null) : ($hit->_source ?? null);
 
-        if (!$source || !isset($source['embeddings'])) {
+        if (!$source || !isset($source['_embeddings'])) {
             return null;
         }
 
         // Get all vectors for the field using dot notation (same as NewRecommendations)
-        $vectors = dot($source['embeddings'])->get($fieldName);
+        $vectors = dot($source['_embeddings'])->get($fieldName);
 
         if (!$vectors || !is_array($vectors)) {
             return null;

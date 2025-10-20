@@ -277,7 +277,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     {
         $search->fields($this->retrieve ?? [
             ...$this->properties->fieldNames(),
-            ...($this->retrieveEmbeddingsField ? ['embeddings'] : [])
+            ...($this->retrieveEmbeddingsField ? ['_embeddings'] : [])
         ]);
     }
 
