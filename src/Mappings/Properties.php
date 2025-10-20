@@ -228,9 +228,39 @@ class Properties extends Type implements ArrayAccess
                 $value['type'] === 'date' => new Date($fieldName),
                 $value['type'] === 'object' => new Object_($fieldName),
                 $value['type'] === 'flat_object' => new FlatObject($fieldName),
-                $value['type'] === 'elastiknn_dense_float_vector' => new DenseFloatVector($fieldName, $value['elastiknn']['dims']),
-                $value['type'] === 'dense_vector' => new DenseVector($fieldName, $value['dims']),
-                $value['type'] === 'knn_vector' => new DenseFloatVector($fieldName, $value['dimension']),
+                $value['type'] === 'dense_vector' => (function () use ($fieldName, $value) {
+                    return new DenseVector(
+                        name: $fieldName,
+                        dims: $value['dims'] ?? 384,
+                        index: $value['index'] ?? true,
+                        similarity: isset($value['similarity'])
+                            ? \Sigmie\Enums\VectorSimilarity::from($value['similarity'])
+                            : \Sigmie\Enums\VectorSimilarity::Cosine,
+                        indexType: $value['index_options']['type'] ?? 'hnsw',
+                        m: $value['index_options']['m'] ?? 64,
+                        efConstruction: $value['index_options']['ef_construction'] ?? 300,
+                    );
+                })(),
+                $value['type'] === 'knn_vector' => (function () use ($fieldName, $value) {
+                    // Map OpenSearch space_type to VectorSimilarity enum
+                    $spaceType = $value['method']['space_type'] ?? 'cosinesimil';
+                    $similarity = match ($spaceType) {
+                        'cosinesimil' => \Sigmie\Enums\VectorSimilarity::Cosine,
+                        'l2' => \Sigmie\Enums\VectorSimilarity::Euclidean,
+                        'innerproduct' => \Sigmie\Enums\VectorSimilarity::DotProduct,
+                        default => \Sigmie\Enums\VectorSimilarity::Cosine,
+                    };
+
+                    return new DenseVector(
+                        name: $fieldName,
+                        dims: $value['dimension'] ?? 384,
+                        index: true, // OpenSearch knn_vector is always indexed
+                        similarity: $similarity,
+                        indexType: $value['method']['name'] ?? 'hnsw',
+                        m: $value['method']['parameters']['m'] ?? 64,
+                        efConstruction: $value['method']['parameters']['ef_construction'] ?? 300,
+                    );
+                })(),
                 $value['type'] === 'integer_range' => (new Range($fieldName))->integer(),
                 $value['type'] === 'float_range' => (new Range($fieldName))->float(),
                 $value['type'] === 'long_range' => (new Range($fieldName))->long(),

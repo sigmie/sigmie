@@ -1,4 +1,4 @@
-name: Test Elasticsearch 
+name: Tests
 
 on: push
 
@@ -10,37 +10,54 @@ jobs:
   tests:
     runs-on: ubuntu-latest
 
-    env:
-      ELASTICSEARCH_VERSION:
-      ELASTICSEARCH_PLUGINS:
-      LOCAL_EMBEDDING_URL: http://localhost:7997
-      LOCAL_RERANK_URL: http://localhost:7998
-      LOCAL_LLM_URL: http://localhost:7999
-      OLLAMA_MODEL: tinyllama
-
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
-        php: ['8.1', 
-        # '8.2', '8.3', '8.4'
-        ]
-        elasticsearch_version: ['9.1.3']
+        php: ['8.1']
         stability: [prefer-stable]
+        search-engine:
+          - name: elasticsearch
+            version: '9.1.3'
+            image: docker.elastic.co/elasticsearch/elasticsearch
+            port: 9200
+            auth: false
+            health_check: 'curl http://localhost:9200/_cluster/health'
+            plugins: 'elastiknn'
+          - name: opensearch
+            version: '3.2.0'
+            image: opensearchproject/opensearch
+            port: 9200
+            auth: true
+            auth_user: admin
+            auth_pass: 'Koala$193tree'
+            health_check: 'curl -k -u admin:Koala$193tree https://localhost:9200/_cluster/health'
+            plugins: ''
         include:
           - php: '8.1'
             flags: "--ignore-platform-req=php"
             stability: prefer-stable
 
-    services:
-      es:
-        image: docker.elastic.co/elasticsearch/elasticsearch:${{ matrix.elasticsearch_version }}
-        ports:
-        - 9200:9200
-        options: -e="discovery.type=single-node" -e="xpack.security.enabled=false" --health-cmd="curl http://localhost:9200/_cluster/health" --health-interval=10s --health-timeout=5s --health-retries=10
-        env:
-          ELASTICSEARCH_PLUGINS: "elastiknn"
+    name: PHP ${{ matrix.php }} - ${{ matrix.search-engine.name }} ${{ matrix.search-engine.version }}
 
-    name: PHP ${{ matrix.php }} - Elasticsearch ${{ matrix.elasticsearch_version }}
+    services:
+      search:
+        image: ${{ matrix.search-engine.image }}:${{ matrix.search-engine.version }}
+        ports:
+          - 9200:9200
+        options: >-
+          -e="discovery.type=single-node"
+          ${{ matrix.search-engine.auth && format('-e="OPENSEARCH_INITIAL_ADMIN_PASSWORD={0}"', matrix.search-engine.auth_pass) || '-e="xpack.security.enabled=false"' }}
+          --health-cmd="${{ matrix.search-engine.health_check }}"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      SEARCH_ENGINE: ${{ matrix.search-engine.name }}
+      LOCAL_EMBEDDING_URL: http://localhost:7997
+      LOCAL_RERANK_URL: http://localhost:7998
+      LOCAL_LLM_URL: http://localhost:7999
+      OLLAMA_MODEL: tinyllama
 
     steps:
       - name: Checkout code
@@ -62,7 +79,8 @@ jobs:
             michaelf34/infinity:latest \
             v2 --model-id cross-encoder/ms-marco-MiniLM-L-6-v2 --port 7998
 
-      - name: Start LLM Service
+      - name: Start LLM Service (Elasticsearch only)
+        if: matrix.search-engine.name == 'elasticsearch'
         run: |
           docker run -d --name llm \
             -p 7999:11434 \
@@ -77,7 +95,7 @@ jobs:
 
           echo "LLM service is ready with tinyllama model!"
 
-      - name: Wait for AI Services to Start
+      - name: Wait for AI Services
         run: |
           echo "Waiting for embeddings service..."
           until curl -f http://localhost:7997/health 2>/dev/null; do
@@ -93,24 +111,19 @@ jobs:
           done
           echo "Reranker service is ready!"
 
-      - name: Set Elasticsearch Version as GitHub Action ENV Vars
+      - name: Wait for Search Engine
         run: |
-          set -e 
-          if [[ "${{ matrix.elasticsearch_version }}" == 7* ]]; then
-            echo "ELASTICSEARCH_VERSION=7.x" >> $GITHUB_ENV
-            echo "ELASTICSEARCH_PLUGINS=elastiknn,elasticsearch-skroutz-greekstemmer,elasticsearch-analysis-greeklish" >> $GITHUB_ENV
-          elif [[ "${{ matrix.elasticsearch_version }}" == 8* ]]; then
-            echo "ELASTICSEARCH_VERSION=8.x" >> $GITHUB_ENV
-            echo "ELASTICSEARCH_PLUGINS=elastiknn" >> $GITHUB_ENV
+          echo "Waiting for ${{ matrix.search-engine.name }} to start..."
+          if [[ "${{ matrix.search-engine.name }}" == "elasticsearch" ]]; then
+            until curl -s http://localhost:9200 | grep "tagline"; do
+              sleep 5
+            done
+          else
+            until curl -k -u admin:Koala\$193tree -s https://localhost:9200 | grep "cluster_name"; do
+              sleep 5
+            done
           fi
-
-      - name: Wait for Elasticsearch to Start
-        run: |
-          echo "Waiting for Elasticsearch to start..."
-          until curl -s http://localhost:9200 | grep "tagline"; do
-            sleep 5
-          done
-          echo "Elasticsearch is ready!"
+          echo "${{ matrix.search-engine.name }} is ready!"
 
       - name: Create .env file
         run: touch .env
@@ -119,7 +132,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: curl, libxml, mbstring, zip, pcntl, gd,
+          extensions: curl, libxml, mbstring, zip, pcntl, gd
           tools: composer:v2
           coverage: xdebug
 
@@ -131,12 +144,11 @@ jobs:
           command: composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress ${{ matrix.flags }}
 
       - name: Tests
-        # continue-on-error: ${{ matrix.elasticsearch_version < 9 }}
         run: vendor/bin/phpunit -c phpunit.xml
 
-      - uses: codecov/codecov-action@v3
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
         with:
           files: coverage.xml
-
-      # - name: Static analysis
-      #   run: vendor/bin/phpstan analyse --memory-limit=-1
+          flags: ${{ matrix.search-engine.name }}
+          name: ${{ matrix.search-engine.name }}-${{ matrix.search-engine.version }}

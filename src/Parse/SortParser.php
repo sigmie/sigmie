@@ -83,48 +83,28 @@ class SortParser extends Parser
                 $hasGeoDistance = true;
 
                 if ($fieldType->parentPath && $fieldType->parentType === Nested::class) {
-                    if (Sigmie::$engine === SearchEngine::OpenSearch) {
-                        // OpenSearch uses nested_path at the sort level
-                        $sort[] = [
-                            '_geo_distance' => [
-                                $field => [
-                                    'lat' => $latitude,
-                                    'lon' => $longitude,
-                                ],
-                                'order' => $order,
-                                'unit' => $unit,
-                                'nested_path' => $fieldType->parentPath,
-                            ],
-                        ];
-                    } else {
-                        // Elasticsearch uses nested object
-                        $sort[] = [
-                            '_geo_distance' => [
-                                'nested' => [
-                                    'path' => $fieldType->parentPath,
-                                ],
-                                $field => [
-                                    'lat' => $latitude,
-                                    'lon' => $longitude,
-                                ],
-                                'order' => $order,
-                                'unit' => $unit,
-                            ],
-                        ];
-                    }
-                } else {
-                    // $sort[] = ['name' => 'asc'];
                     $sort[] = [
                         '_geo_distance' => [
-                            // $field => [
-                            'contact' => [
+                            'nested' => [
+                                'path' => $fieldType->parentPath,
+                            ],
+                            $field => [
                                 'lat' => (float) $latitude,
                                 'lon' => (float) $longitude,
                             ],
                             'order' => $order,
                             'unit' => $unit,
-                            "ignore_unmapped" => true,
-                            // "unmapped_type" => "geo_point"
+                        ],
+                    ];
+                } else {
+                    $sort[] = [
+                        '_geo_distance' => [
+                            $field => [
+                                'lat' => (float) $latitude,
+                                'lon' => (float) $longitude,
+                            ],
+                            'order' => $order,
+                            'unit' => $unit,
                         ]
                     ];
                 }
@@ -166,6 +146,8 @@ class SortParser extends Parser
         // if ($hasGeoDistance && Sigmie::$engine === SearchEngine::OpenSearch) {
         //     array_unshift($sort, ['_score' => ['order' => 'desc']]);
         // }
+
+        ray($sort);
 
         return $sort;
     }

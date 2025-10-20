@@ -123,9 +123,6 @@ class SortParserTest extends TestCase
      */
     public function object_geo_distance_sort()
     {
-        //Cannot invoke \"String.endsWith(String)\" because \"field\" is null
-        $this->markTestSkipped('OpenSearch throwing an exception when soring unit is anything else that `m`.');
-
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
@@ -175,14 +172,12 @@ class SortParserTest extends TestCase
 
         $index->merge($docs);
 
-        $sort = $parser->parse('contact.location[52.49,13.77]:km:asc');
+        $sort = $parser->parse('contact.location[52.49,13.77]:m:asc');
 
         $res = $this->sigmie
             ->query($indexName)
             ->sort($sort)
             ->get();
-
-        ray($res->hits())->die();
 
         $hits = $res->json('hits.hits');
 
@@ -190,7 +185,7 @@ class SortParserTest extends TestCase
         $this->assertTrue($hits[1]['_source']['contact']['location']['lat'] === 53.49);
         $this->assertTrue($hits[2]['_source']['contact']['location']['lat'] === 54.49);
 
-        $sort = $parser->parse('contact.location[52.49,13.77]:km:desc');
+        $sort = $parser->parse('contact.location[52.49,13.77]:m:desc');
 
         $res = $this->sigmie->query($indexName)
             ->sort($sort)
@@ -337,6 +332,7 @@ class SortParserTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
+        $blueprint->geoPoint('location');
         $blueprint->nested('contact', function (NewProperties $props) {
             $props->geoPoint('location');
         });
@@ -379,7 +375,7 @@ class SortParserTest extends TestCase
 
         $index->merge($docs);
 
-        $query = $parser->parse('contact.location[52.49,13.77]:km:asc');
+        $query = $parser->parse('contact.location[52.49,13.77]:m:asc');
 
         $res = $this->sigmie->query($indexName)
             ->sort($query)
@@ -391,7 +387,7 @@ class SortParserTest extends TestCase
         $this->assertTrue($hits[1]['_source']['contact']['location']['lat'] === 53.49);
         $this->assertTrue($hits[2]['_source']['contact']['location']['lat'] === 54.49);
 
-        $query = $parser->parse('contact.location[52.49,13.77]:km:desc');
+        $query = $parser->parse('contact.location[52.49,13.77]:m:desc');
 
         $res = $this->sigmie->query($indexName)
             ->sort($query)
@@ -446,7 +442,7 @@ class SortParserTest extends TestCase
 
         $index->merge($docs);
 
-        $query = $parser->parse('location[52.49,13.77]:km:asc');
+        $query = $parser->parse('location[52.49,13.77]:m:asc');
 
         $res = $this->sigmie->query($indexName)
             ->sort($query)
@@ -458,7 +454,7 @@ class SortParserTest extends TestCase
         $this->assertTrue($hits[1]['_source']['location']['lat'] === 53.49);
         $this->assertTrue($hits[2]['_source']['location']['lat'] === 54.49);
 
-        $query = $parser->parse('location[52.49,13.77]:km:desc');
+        $query = $parser->parse('location[52.49,13.77]:m:desc');
 
         $res = $this->sigmie->query($indexName)
             ->sort($query)

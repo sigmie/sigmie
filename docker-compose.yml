@@ -91,7 +91,7 @@ services:
       start_period: 40s
 
   opensearch:
-    image: opensearchproject/opensearch:latest
+    image: opensearchproject/opensearch:3
     container_name: sigmie-opensearch
     ports:
       - "9200:9200"

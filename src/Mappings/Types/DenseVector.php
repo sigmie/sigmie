@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Enums\SearchEngine;
 use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Contracts\Type;
@@ -12,6 +13,7 @@ use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\NearestNeighbors;
 use Sigmie\Query\Queries\Text\Nested;
+use Sigmie\Sigmie;
 
 class DenseVector extends AbstractType implements Type
 {
@@ -29,7 +31,11 @@ class DenseVector extends AbstractType implements Type
         protected ?float $confidenceInterval = null,
         protected ?int $oversample = null,
     ) {
-        $this->type = 'dense_vector';
+
+        $this->type = match (Sigmie::$engine) {
+            SearchEngine::Elasticsearch => 'dense_vector',
+            SearchEngine::OpenSearch => 'knn_vector',
+        };
     }
 
     public function toRaw(): array
