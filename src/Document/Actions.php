@@ -81,7 +81,10 @@ trait Actions
             return $documents;
         }
 
+        ray($body);
+
         $res = $this->bulkAPICall($indexName, $body, $refresh);
+
 
         foreach ($res->json('items') as $index => $value) {
             $action = array_key_first($value);

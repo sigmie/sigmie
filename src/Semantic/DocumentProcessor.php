@@ -9,6 +9,7 @@ use DateTime as PHPDateTime;
 use Exception;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Enums\VectorSimilarity;
+use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\DateTime;
 use Sigmie\Document\Document;
@@ -20,6 +21,7 @@ use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\BaseVector;
+use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
@@ -351,7 +353,9 @@ class DocumentProcessor
                     ->map(fn($item) => $item['vector'] ?? [])
                     ->toArray();
 
-                return [$name => $strategy->format($vectors, $normalize)];
+                $formatted = $strategy->format($vectors, $normalize);
+
+                return [$name => $formatted];
             })
             ->toArray();
     }
@@ -366,11 +370,11 @@ class DocumentProcessor
             ->toArray();
     }
 
-    protected function prepareVectorTexts(Nested|DenseVector $vector, array $value): array
+    protected function prepareVectorTexts(BaseVector|NestedVector $vector, array $value): array
     {
         $name = $vector->name;
 
-        if ($vector instanceof Nested) {
+        if ($vector instanceof NestedVector) {
             $vector = $vector->properties['vector'];
         }
 

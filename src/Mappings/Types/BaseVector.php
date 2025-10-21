@@ -6,7 +6,6 @@ namespace Sigmie\Mappings\Types;
 
 use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
-use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\Type as AbstractType;
 use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\MatchAll;
@@ -14,7 +13,7 @@ use Sigmie\Query\Queries\NearestNeighbors;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Sigmie;
 
-class BaseVector extends AbstractType implements Type
+class BaseVector extends AbstractType
 {
     public ?string $textFieldName = null;
 
@@ -36,39 +35,6 @@ class BaseVector extends AbstractType implements Type
         protected bool $autoNormalizeVector = true,
     ) {
         $this->apiName = $apiName;
-    }
-
-    public function toRaw(): array
-    {
-        // Return generic structure - driver will format using vectorField() strategy
-        $raw = [
-            $this->name => [
-                'type' => $this->type,
-                'dims' => $this->dims,
-                'index' => $this->index,
-            ]
-        ];
-
-        if ($this->index) {
-            $raw[$this->name]['similarity'] = $this->similarity->value;
-            $raw[$this->name]['index_options'] = [
-                'type' => $this->indexType,
-                'm' => $this->m,
-                'ef_construction' => $this->efConstruction,
-            ];
-
-            if ($this->confidenceInterval !== null) {
-                $raw[$this->name]['index_options']['confidence_interval'] = $this->confidenceInterval;
-            }
-
-            if ($this->oversample !== null) {
-                $raw[$this->name]['index_options']['rescore_vector'] = [
-                    'oversample' => $this->oversample,
-                ];
-            }
-        }
-
-        return $raw;
     }
 
     public function strategy(): VectorStrategy

@@ -783,13 +783,19 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     protected function buildVectorQueries(Collection $vectorFields, Collection $vectorByDims, float $queryBoost, array $filter = []): Collection
     {
         return $vectorFields
-            ->map(function (TypesNested|DenseVector $field) use ($vectorByDims, $filter) {
+            ->map(function (TypesNested|BaseVector $field) use ($vectorByDims, $filter) {
 
                 $vectors = $vectorByDims->get($field->dims());
 
-                // Don't pass filters to nested vector fields - they'll be handled at the top level
-                $fieldFilter = ($field instanceof TypesNested || $field instanceof NestedVector) ? [] : $filter;
-                return $field->queries($vectors, $this->elasticsearchConnection->driver(), $fieldFilter);
+                if ($field instanceof NestedVector) {
+                    $queries = $this->elasticsearchConnection->driver()->nestedVectorField($field)->queries($vectors, $filter);
+                }
+
+                if ($field instanceof BaseVector) {
+                    $queries = $this->elasticsearchConnection->driver()->vectorField($field)->queries($vectors, $filter);
+                }
+
+                return $queries;
             })
             ->flatten(1)
             ->map(function (Query $query) use ($queryBoost) {

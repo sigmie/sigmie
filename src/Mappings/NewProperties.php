@@ -8,6 +8,7 @@ use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Mappings\Types\Address;
+use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Boost;
 use Sigmie\Mappings\Types\Combo;
@@ -106,9 +107,9 @@ class NewProperties
         return $field;
     }
 
-    public function denseVector(string $name, int $dims = 384): DenseVector
+    public function vector(string $name, int $dims = 384): BaseVector
     {
-        $field = new DenseVector($name, $dims);
+        $field = new BaseVector($name, $dims);
 
         $this->fields->add($field);
 

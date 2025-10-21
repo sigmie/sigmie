@@ -11,22 +11,28 @@ use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Text\Nested;
 
+/**
+ * Utility helper for vector fields in nested structures
+ * Not instantiated directly - use ElasticsearchNestedVector or OpenSearchNestedVector instead
+ */
 class NestedVector extends TypesNested
 {
-    public ?string $apiName = null;
-
-    protected int $dims;
-
     public function __construct(
         string $name,
-        NewProperties $properties,
-        int $dims = 384,
-        ?string $apiName = null,
+        public readonly int $dims,
+        public readonly string $apiName,
+        public readonly VectorStrategy $strategy = VectorStrategy::Concatenate,
     ) {
-        parent::__construct($name, $properties);
+        $props = new NewProperties();
+        $props->type(
+            new BaseVector(
+                name: 'vector',
+                dims: $dims,
+                strategy: $strategy,
+            )
+        );
 
-        $this->dims = $dims;
-        $this->apiName = $apiName;
+        parent::__construct($name, $props);
     }
 
     public function dims(): int

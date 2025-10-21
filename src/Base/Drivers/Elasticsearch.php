@@ -6,6 +6,7 @@ namespace Sigmie\Base\Drivers;
 
 use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Enums\SearchEngineType;
+use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\ElasticsearchNestedVector;
 use Sigmie\Mappings\Types\NestedVector;
@@ -20,26 +21,30 @@ class Elasticsearch implements SearchEngine
         return SearchEngineType::Elasticsearch;
     }
 
-    public function vectorField(BaseVector $field): BaseVector
+    public function vectorField(BaseVector $field): Type
     {
-        return new DenseVector(
+        $vector = new DenseVector(
             name: $field->name,
             dims: $field->dims(),
             index: $field->isIndexed(),
             similarity: $field->similarity(),
-            strategy: $field->strategy(),
             indexType: $field->indexType(),
             m: $field->m(),
             efConstruction: $field->efConstruction(),
             confidenceInterval: $field->confidenceInterval(),
             oversample: $field->oversample(),
-            apiName: $field->apiName,
-            boostedByField: $field->boostedByField(),
-            autoNormalizeVector: $field->autoNormalizeVector(),
         );
+
+        $vector->fullPath = $field->fullPath;
+        $vector->textFieldName = $field->textFieldName;
+        $vector->apiName = $field->apiName ?? null;
+        $vector->boostedByField = $field->boostedByField();
+        $vector->autoNormalizeVector = $field->autoNormalizeVector();
+
+        return $vector;
     }
 
-    public function nestedVectorField(NestedVector $field): NestedVector
+    public function nestedVectorField(NestedVector $field): Type
     {
         return new ElasticsearchNestedVector(
             name: $field->name,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Base\Contracts;
 
 use Sigmie\Enums\SearchEngineType;
+use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\BaseVector;
@@ -17,12 +18,12 @@ interface SearchEngine
     /**
      * Format a SigmieVector field using engine-specific structure
      */
-    public function vectorField(BaseVector $field): BaseVector;
+    public function vectorField(BaseVector $field): Type;
 
     /**
      * Format a NestedVector field using engine-specific structure
      */
-    public function nestedVectorField(NestedVector $field): NestedVector;
+    public function nestedVectorField(NestedVector $field): Type;
 
     /**
      * Return engine-specific index settings for semantic/vector fields

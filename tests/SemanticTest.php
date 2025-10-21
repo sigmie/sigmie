@@ -252,6 +252,7 @@ class SemanticTest extends TestCase
         /** @var SigmieSearchResponse $res  */
         $res = $search->get();
 
+
         // Verify results
         $hits = $res->hits();
         $totalHits = $res->total();

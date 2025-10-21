@@ -47,10 +47,10 @@ class EmbeddingsStorageTest extends TestCase
         $doc = $collected->get('test-doc');
 
         // Verify embeddings structure exists
-        $this->assertArrayHasKey('embeddings', $doc->_source);
+        $this->assertArrayHasKey('_embeddings', $doc->_source);
 
         // Verify each field has embeddings
-        $embeddings = $doc->_source['embeddings'];
+        $embeddings = $doc->_source['_embeddings'];
 
         // Title field (384 dims)
         $this->assertArrayHasKey('title', $embeddings);
@@ -118,7 +118,7 @@ class EmbeddingsStorageTest extends TestCase
         $doc = $collected->get('test-doc');
 
         // Verify embeddings key uses MD5
-        $embeddings = $doc->_source['embeddings']['title'];
+        $embeddings = $doc->_source['_embeddings']['title'];
         $key = array_key_first($embeddings);
 
         // Key format should be: m{accuracy}_efc{efConstruction}_dims{dimensions}_{similarity}_{strategy}
@@ -133,7 +133,7 @@ class EmbeddingsStorageTest extends TestCase
         ]);
 
         $doc2 = $collected->get('test-doc-2');
-        $embeddings2 = $doc2->_source['embeddings']['title'];
+        $embeddings2 = $doc2->_source['_embeddings']['title'];
         $key2 = array_key_first($embeddings2);
 
         $this->assertEquals($key, $key2, 'Keys should be consistent for same configuration');
@@ -166,7 +166,7 @@ class EmbeddingsStorageTest extends TestCase
         $doc = $collected->get('norm-test');
 
         // Check title embedding (256 dims)
-        $titleEmbeddings = $doc->_source['embeddings']['title'];
+        $titleEmbeddings = $doc->_source['_embeddings']['title'];
         $titleKey = array_key_first($titleEmbeddings);
         $titleVector = $titleEmbeddings[$titleKey];
 
@@ -176,7 +176,7 @@ class EmbeddingsStorageTest extends TestCase
         );
 
         // Check content embedding (512 dims)
-        $contentEmbeddings = $doc->_source['embeddings']['content'];
+        $contentEmbeddings = $doc->_source['_embeddings']['content'];
         $contentKey = array_key_first($contentEmbeddings);
         $contentVector = $contentEmbeddings[$contentKey];
 
@@ -227,7 +227,7 @@ class EmbeddingsStorageTest extends TestCase
         $doc = $collected->get('avg-test');
 
         // Check that the averaged embedding is normalized
-        $commentEmbeddings = $doc->_source['embeddings']['comments']['text'];
+        $commentEmbeddings = $doc->_source['_embeddings']['comments']['text'];
         $commentKey = array_key_first($commentEmbeddings);
         $commentVector = $commentEmbeddings[$commentKey];
 

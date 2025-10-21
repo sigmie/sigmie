@@ -7,7 +7,7 @@ namespace Sigmie\Query\Queries;
 use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Query\Queries\Query;
 
-abstract class NearestNeighbors extends Query
+class NearestNeighbors extends Query
 {
     protected ?SearchEngine $driver = null;
 
@@ -38,5 +38,23 @@ abstract class NearestNeighbors extends Query
         $this->filter = $filter;
 
         return $this;
+    }
+
+    public function toRaw(): array
+    {
+        // OpenSearch uses a different kNN syntax
+        // The kNN query goes in the "query" section, not as a top-level "knn"
+        return [
+            "knn" => [
+                $this->field => [
+                    "vector" => $this->queryVector,
+                    "k" => $this->k,
+                    "filter" => $this->filter,
+                    // Not supported in OpeanSearhc
+                    // "num_candidates" => 10000,
+                    'boost' => $this->boost,
+                ],
+            ],
+        ];
     }
 }

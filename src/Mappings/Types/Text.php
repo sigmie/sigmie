@@ -417,7 +417,7 @@ class Text extends Type implements FromRaw
     public function vectorFields(): Collection
     {
         return (new Collection($this->vectors))
-            ->map(function (NewSemanticField|Nested|DenseVector $field) {
+            ->map(function (NewSemanticField|BaseVector|NestedVector $field) {
                 // If it's a NewSemanticField, call make() to get the actual vector
                 if ($field instanceof NewSemanticField) {
                     $vector = $field->make();

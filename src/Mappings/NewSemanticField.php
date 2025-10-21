@@ -36,8 +36,6 @@ class NewSemanticField
 
     protected string $fieldType = 'text';
 
-    protected ?Type $createdVector = null;
-
     public string $name;
 
     public function __construct(string $name)
@@ -194,13 +192,6 @@ class NewSemanticField
     {
         $this->autoNormalizeVector = $value;
 
-        // Update the created vector if it exists
-        if ($this->createdVector instanceof BaseVector) {
-            // We need to recreate the vector with the new setting
-            // Store the reference so Text can update its vectors array
-            $this->createdVector = null;
-        }
-
         return $this;
     }
 
@@ -211,13 +202,8 @@ class NewSemanticField
         return $this;
     }
 
-    public function make(): Type
+    public function make(): BaseVector|NestedVector
     {
-        // If we already created a vector and it's not invalidated, return it
-        if ($this->createdVector !== null) {
-            return $this->createdVector;
-        }
-
         // Auto-determine similarity if not explicitly set
         if ($this->similarity === VectorSimilarity::Cosine) {
             if ($this->boostedBy !== null) {
@@ -233,35 +219,23 @@ class NewSemanticField
         };
 
         if (!$this->index) {
-            // Create a nested vector with proper properties for brute-force search
-            $props = new NewProperties();
-            $props->type(
-                new DenseVector(
-                    name: 'vector',
-                    dims: $this->dims,
-                    strategy: VectorStrategy::ScriptScore,
-                    apiName: $this->apiName,
-                )
-            );
-            $this->createdVector = new NestedVector($name, $props, $this->dims, $this->apiName);
-            return $this->createdVector;
+            return new NestedVector($name, $this->dims, $this->apiName, $this->strategy);
         }
 
-        $type = new DenseVector(
+        $vector = new BaseVector(
             name: $name,
             dims: $this->dims,
-            strategy: $this->strategy,
             index: $this->index,
             similarity: $this->similarity,
-            efConstruction: $this->efConstruction,
+            strategy: $this->strategy,
+            indexType: 'hnsw',
             m: $this->m,
+            efConstruction: $this->efConstruction,
             apiName: $this->apiName,
             boostedByField: $this->boostedBy,
             autoNormalizeVector: $this->autoNormalizeVector,
         );
 
-        $this->createdVector = $type;
-
-        return $type;
+        return $vector;
     }
 }
