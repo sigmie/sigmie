@@ -12,7 +12,7 @@ use Sigmie\Mappings\Types\KnnVector;
 use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\OpenSearchNestedVector;
 use Sigmie\Mappings\Types\BaseVector;
-use Sigmie\Query\Queries\NearestNeighbors;
+use Sigmie\Query\Queries\KnnVectorQuery;
 use Sigmie\Query\Queries\OpenSearchKnn;
 
 class Opensearch implements SearchEngine
@@ -34,7 +34,6 @@ class Opensearch implements SearchEngine
         );
 
         $vector->fullPath = $field->fullPath;
-        $vector->textFieldName = $field->textFieldName;
         $vector->apiName = $field->apiName ?? null;
         $vector->boostedByField = $field->boostedByField();
         $vector->autoNormalizeVector = $field->autoNormalizeVector();
@@ -46,7 +45,7 @@ class Opensearch implements SearchEngine
     {
         $nestedVector = new OpenSearchNestedVector(
             name: $field->name,
-            dims: $field->dims(),
+            dims: $field->dims,
             apiName: $field->apiName,
         );
 
@@ -77,7 +76,7 @@ class Opensearch implements SearchEngine
         int $numCandidates = 1000,
         array $filter = [],
         float $boost = 1.0
-    ): NearestNeighbors {
+    ): KnnVectorQuery {
         return new OpenSearchKnn(
             field: $field,
             queryVector: $queryVector,

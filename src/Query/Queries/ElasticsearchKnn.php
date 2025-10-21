@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Queries;
 
-class ElasticsearchKnn extends NearestNeighbors
+class ElasticsearchKnn extends KnnVectorQuery
 {
     public function toRaw(): array
     {

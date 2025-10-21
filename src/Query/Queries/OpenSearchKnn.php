@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Queries;
 
-class OpenSearchKnn extends NearestNeighbors
+class OpenSearchKnn extends KnnVectorQuery
 {
     public function toRaw(): array
     {

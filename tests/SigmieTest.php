@@ -8,7 +8,7 @@ use Sigmie\Index\ListedIndex;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Plugins\Elastiknn\NearestNeighbors as ElastiknnNearestNeighbors;
-use Sigmie\Query\Queries\NearestNeighbors;
+use Sigmie\Query\Queries\KnnVectorQuery;
 use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;

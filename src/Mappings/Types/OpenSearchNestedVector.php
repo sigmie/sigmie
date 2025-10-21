@@ -42,7 +42,7 @@ class OpenSearchNestedVector extends TypesNested implements Type
         return $this->dims;
     }
 
-    public function queries(array|string $vector, array $filter = []): array
+    public function vectorQueries(array $vector, int $k, array $filter = []): array
     {
         // OpenSearch uses doc['field'] syntax
         $source = "cosineSimilarity(params.query_vector, doc['_embeddings.{$this->fullPath}.vector']) + 1.0";

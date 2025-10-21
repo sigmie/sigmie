@@ -51,8 +51,8 @@ class ComboFieldTest extends TestCase
 
         $firstDoc = array_values($docs)[0];
 
-        $this->assertArrayHasKey('embeddings', $firstDoc->_source);
-        $this->assertArrayHasKey('fulltext', $firstDoc->_source['embeddings']);
+        $this->assertArrayHasKey('_embeddings', $firstDoc->_source);
+        $this->assertArrayHasKey('fulltext', $firstDoc->_source['_embeddings']);
 
         // Test semantic search on combo field
         $search = $this->sigmie
@@ -75,7 +75,6 @@ class ComboFieldTest extends TestCase
     {
         $indexName = uniqid();
 
-
         $blueprint = new NewProperties();
         $blueprint->text('title');
         $blueprint->text('tags');
@@ -86,6 +85,8 @@ class ComboFieldTest extends TestCase
         $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
             ->create();
+
+        $raw = $this->sigmie->index($indexName)->raw;
 
         $this->sigmie
             ->collect($indexName, refresh: true)
@@ -104,8 +105,8 @@ class ComboFieldTest extends TestCase
 
         $firstDoc = array_values($docs)[0];
 
-        $this->assertArrayHasKey('embeddings', $firstDoc->_source);
-        $this->assertArrayHasKey('searchable', $firstDoc->_source['embeddings']);
+        $this->assertArrayHasKey('_embeddings', $firstDoc->_source);
+        $this->assertArrayHasKey('searchable', $firstDoc->_source['_embeddings']);
 
         // Test semantic search
         $search = $this->sigmie

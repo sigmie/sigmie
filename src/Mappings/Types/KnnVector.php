@@ -8,7 +8,7 @@ use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\Type as AbstractType;
-use Sigmie\Query\Queries\NearestNeighbors;
+use Sigmie\Query\Queries\KnnVectorQuery as KnnVectorQuery;
 
 class KnnVector extends AbstractType implements Type
 {
@@ -141,14 +141,12 @@ class KnnVector extends AbstractType implements Type
         return $this->autoNormalizeVector;
     }
 
-    public function queries(array|string $vector,  array $filter = []): array
-    {
+    public function vectorQueries(array $vector, int $k, array $filter = []): array {
         return [
-            new NearestNeighbors(
+            new KnnVectorQuery(
                 field: '_embeddings.'.$this->fullPath,
                 queryVector: $vector,
-                k: $this->dims,
-                numCandidates: $this->efConstruction * 2,
+                k: $k,
                 filter: $filter,
                 boost: 1.0,
             )

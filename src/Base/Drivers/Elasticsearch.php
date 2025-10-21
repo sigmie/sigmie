@@ -12,7 +12,7 @@ use Sigmie\Mappings\Types\ElasticsearchNestedVector;
 use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Query\Queries\ElasticsearchKnn;
-use Sigmie\Query\Queries\NearestNeighbors;
+use Sigmie\Query\Queries\KnnVectorQuery;
 
 class Elasticsearch implements SearchEngine
 {
@@ -36,7 +36,6 @@ class Elasticsearch implements SearchEngine
         );
 
         $vector->fullPath = $field->fullPath;
-        $vector->textFieldName = $field->textFieldName;
         $vector->apiName = $field->apiName ?? null;
         $vector->boostedByField = $field->boostedByField();
         $vector->autoNormalizeVector = $field->autoNormalizeVector();
@@ -46,11 +45,15 @@ class Elasticsearch implements SearchEngine
 
     public function nestedVectorField(NestedVector $field): Type
     {
-        return new ElasticsearchNestedVector(
+        $nestedVector = new ElasticsearchNestedVector(
             name: $field->name,
-            dims: $field->dims(),
+            dims: $field->dims,
             apiName: $field->apiName,
         );
+
+        $nestedVector->fullPath = $field->fullPath;
+
+        return $nestedVector;
     }
 
     public function indexSettings(): array
@@ -65,7 +68,7 @@ class Elasticsearch implements SearchEngine
         int $numCandidates = 1000,
         array $filter = [],
         float $boost = 1.0
-    ): NearestNeighbors {
+    ): KnnVectorQuery {
         return new ElasticsearchKnn(
             field: $field,
             queryVector: $queryVector,

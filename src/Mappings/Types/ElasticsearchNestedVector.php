@@ -25,7 +25,7 @@ class ElasticsearchNestedVector extends TypesNested implements Type
     ) {
         $props = new NewProperties();
         $props->type(
-            new BaseVector(
+            new DenseVector(
                 name: 'vector',
                 dims: $dims,
             )
@@ -42,7 +42,7 @@ class ElasticsearchNestedVector extends TypesNested implements Type
         return $this->dims;
     }
 
-    public function queries(array|string $vector, array $filter = []): array
+    public function vectorQueries(array $vector, int $k, array $filter = []): array
     {
         // Elasticsearch uses 'field' string syntax
         $source = "cosineSimilarity(params.query_vector, '_embeddings.{$this->fullPath}.vector') + 1.0";

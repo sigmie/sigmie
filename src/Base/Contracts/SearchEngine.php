@@ -9,7 +9,7 @@ use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\BaseVector;
-use Sigmie\Query\Queries\NearestNeighbors;
+use Sigmie\Query\Queries\KnnVectorQuery;
 
 interface SearchEngine
 {
@@ -40,5 +40,5 @@ interface SearchEngine
         int $numCandidates = 1000,
         array $filter = [],
         float $boost = 1.0
-    ): NearestNeighbors;
+    ): KnnVectorQuery;
 }

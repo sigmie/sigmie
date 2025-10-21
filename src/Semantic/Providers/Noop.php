@@ -13,7 +13,7 @@ use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Plugins\Elastiknn\DenseFloatVector;
-use Sigmie\Query\Queries\NearestNeighbors;
+use Sigmie\Query\Queries\KnnVectorQuery;
 use Sigmie\Semantic\Contracts\AIProvider;
 use Sigmie\Sigmie;
 

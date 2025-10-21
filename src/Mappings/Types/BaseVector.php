@@ -9,32 +9,27 @@ use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Types\Type as AbstractType;
 use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\MatchAll;
-use Sigmie\Query\Queries\NearestNeighbors;
+use Sigmie\Query\Queries\KnnVectorQuery;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Sigmie;
 
 class BaseVector extends AbstractType
 {
-    public ?string $textFieldName = null;
-
-    public ?string $apiName = null;
-
     public function __construct(
         public string $name,
-        protected int $dims = 384,
-        protected bool $index = true,
-        protected VectorSimilarity $similarity = VectorSimilarity::Cosine,
-        protected VectorStrategy $strategy = VectorStrategy::Concatenate,
-        protected string $indexType = 'hnsw',
-        protected ?int $m = 64,
-        protected ?int $efConstruction = 300,
-        protected ?float $confidenceInterval = null,
-        protected ?int $oversample = null,
-        ?string $apiName = null,
-        protected ?string $boostedByField = null,
-        protected bool $autoNormalizeVector = true,
+        public readonly int $dims = 384,
+        public readonly bool $index = true,
+        public readonly VectorSimilarity $similarity = VectorSimilarity::Cosine,
+        public readonly VectorStrategy $strategy = VectorStrategy::Concatenate,
+        public readonly string $indexType = 'hnsw',
+        public readonly ?int $m = 64,
+        public readonly ?int $efConstruction = 300,
+        public readonly ?float $confidenceInterval = null,
+        public readonly ?int $oversample = null,
+        public readonly ?string $apiName = null,
+        public readonly ?string $boostedByField = null,
+        public readonly bool $autoNormalizeVector = true,
     ) {
-        $this->apiName = $apiName;
     }
 
     public function strategy(): VectorStrategy

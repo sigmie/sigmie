@@ -81,8 +81,6 @@ trait Actions
             return $documents;
         }
 
-        ray($body);
-
         $res = $this->bulkAPICall($indexName, $body, $refresh);
 
 

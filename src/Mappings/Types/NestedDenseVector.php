@@ -10,7 +10,7 @@ use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\Type as AbstractType;
 use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\MatchAll;
-use Sigmie\Query\Queries\NearestNeighbors;
+use Sigmie\Query\Queries\KnnVectorQuery;
 
 class NestedDenseVector extends AbstractType implements Type
 {
@@ -86,7 +86,7 @@ class NestedDenseVector extends AbstractType implements Type
     {
         if ($this->index) {
             return [
-                new NearestNeighbors(
+                new KnnVectorQuery(
                     "_embeddings.name.{$this->name}",
                     $vector,
                     // // k: $this->dims,

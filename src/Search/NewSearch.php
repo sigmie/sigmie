@@ -34,7 +34,7 @@ use Sigmie\Query\Queries\MatchNone;
 // use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Facets;
-use Sigmie\Query\Queries\NearestNeighbors as QueriesNearestNeighbors;
+use Sigmie\Query\Queries\KnnVectorQuery as QueriesNearestNeighbors;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
@@ -488,7 +488,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 continue;
             }
 
-            $dims = array_unique(array_map(fn($field) => $field->dims(), $vectorFields));
+            $dims = array_unique(array_map(fn($field) => $field->dims, $vectorFields));
 
             // Build array of all text/dimension combinations for this API
             $items = [];
@@ -701,7 +701,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 continue; // Skip fields without API configuration
             }
 
-            $dims = $field->dims();
+            $dims = $field->dims;
             $key = $apiName . '_' . $dims;
 
             if (!isset($fieldsByApiAndDims[$key])) {
@@ -785,14 +785,24 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $vectorFields
             ->map(function (TypesNested|BaseVector $field) use ($vectorByDims, $filter) {
 
-                $vectors = $vectorByDims->get($field->dims());
+                $vector = $vectorByDims->get($field->dims);
+
+                $driver = $this->elasticsearchConnection->driver();
 
                 if ($field instanceof NestedVector) {
-                    $queries = $this->elasticsearchConnection->driver()->nestedVectorField($field)->queries($vectors, $filter);
+                    $queries = $driver->nestedVectorField($field)->vectorQueries(
+                        vector: $vector,
+                        k: $this->searchContext->size,
+                        filter: $filter
+                    );
                 }
 
                 if ($field instanceof BaseVector) {
-                    $queries = $this->elasticsearchConnection->driver()->vectorField($field)->queries($vectors, $filter);
+                    $queries = $driver->vectorField($field)->vectorQueries(
+                        vector: $vector,
+                        k: $this->searchContext->size,
+                        filter: $filter
+                    );
                 }
 
                 return $queries;
@@ -806,11 +816,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected function configureVectorQuery(Query $query, float $queryBoost): Query
     {
-        if ($query instanceof QueriesNearestNeighbors) {
-            $query->k($this->searchContext->size);
-            $query->filter($this->filters->toRaw());
-        }
-
         // Apply the query boost/weight
         $query->boost($queryBoost);
 
