@@ -9,28 +9,32 @@ use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\Type as AbstractType;
 use Sigmie\Query\FunctionScore;
-use Sigmie\Query\Queries\MatchAll;
-use Sigmie\Query\Queries\NearestNeighbors;
-use Sigmie\Query\Queries\Text\Nested;
+use Sigmie\Query\Queries\DenseVectorQuery;
+use Sigmie\Query\Queries\KnnVectorQuery;
 
 class DenseVector extends AbstractType implements Type
 {
+    public string $type = 'dense_vector';
+
     public ?string $textFieldName = null;
+
+    public ?string $apiName = null;
+
+    public ?string $boostedByField = null;
+
+    public bool $autoNormalizeVector = true;
 
     public function __construct(
         public string $name,
         protected int $dims = 384,
         protected bool $index = true,
         protected VectorSimilarity $similarity = VectorSimilarity::Cosine,
-        protected VectorStrategy $strategy = VectorStrategy::Concatenate,
         protected string $indexType = 'hnsw',
         protected ?int $m = 64,
         protected ?int $efConstruction = 300,
         protected ?float $confidenceInterval = null,
         protected ?int $oversample = null,
-    ) {
-        $this->type = 'dense_vector';
-    }
+    ) {}
 
     public function toRaw(): array
     {
@@ -49,16 +53,16 @@ class DenseVector extends AbstractType implements Type
                 'm' => $this->m,
                 'ef_construction' => $this->efConstruction,
             ];
-        }
 
-        if ($this->confidenceInterval !== null) {
-            $raw['index_options']['confidence_interval'] = $this->confidenceInterval;
-        }
+            if ($this->confidenceInterval !== null) {
+                $raw[$this->name]['index_options']['confidence_interval'] = $this->confidenceInterval;
+            }
 
-        if ($this->oversample !== null) {
-            $raw['index_options']['rescore_vector'] = [
-                'oversample' => $this->oversample,
-            ];
+            if ($this->oversample !== null) {
+                $raw[$this->name]['index_options']['rescore_vector'] = [
+                    'oversample' => $this->oversample,
+                ];
+            }
         }
 
         return $raw;
@@ -66,7 +70,7 @@ class DenseVector extends AbstractType implements Type
 
     public function strategy(): VectorStrategy
     {
-        return $this->strategy;
+        return VectorStrategy::Concatenate;
     }
 
     public function dims(): int
@@ -74,15 +78,48 @@ class DenseVector extends AbstractType implements Type
         return $this->dims;
     }
 
+    public function isIndexed(): bool
+    {
+        return $this->index;
+    }
+
+    public function similarity(): VectorSimilarity
+    {
+        return $this->similarity;
+    }
+
+    public function indexType(): string
+    {
+        return $this->indexType;
+    }
+
+    public function m(): ?int
+    {
+        return $this->m;
+    }
+
+    public function efConstruction(): ?int
+    {
+        return $this->efConstruction;
+    }
+
+    public function confidenceInterval(): ?float
+    {
+        return $this->confidenceInterval;
+    }
+
+    public function oversample(): ?int
+    {
+        return $this->oversample;
+    }
+
     public function createSuffix(): string
     {
         if (!$this->index) {
-            return 'exact';
+            return 'exact_dims' . $this->dims . '_' . $this->similarity->value . '_' . VectorStrategy::Concatenate->value;
         }
 
-        $suffix = 'm' . $this->m . '_efc' . $this->efConstruction . '_dims' . $this->dims . '_' . $this->similarity->value;
-
-        return $suffix;
+        return 'm' . $this->m . '_efc' . $this->efConstruction . '_dims' . $this->dims . '_' . $this->similarity->value . '_' . VectorStrategy::Concatenate->value;
     }
 
     public function textFieldName(string $name): static
@@ -97,39 +134,32 @@ class DenseVector extends AbstractType implements Type
         return "{$this->textFieldName}.{$this->name}";
     }
 
-    public function queries(array|string $vector): array
+    public function boostedByField(): ?string
     {
-        $field = $this->name();
+        return $this->boostedByField;
+    }
 
-        dump($field);
+    public function autoNormalizeVector(): bool
+    {
+        return $this->autoNormalizeVector;
+    }
 
-        if ($this->index) {
-            return [
-                new NearestNeighbors(
-                    $field,
-                    $vector,
-                    // // k: $this->dims,
-                    numCandidates: $this->efConstruction * 2
-                )
-            ];
-        }
-
-        $source = "1.0+cosineSimilarity(params.query_vector, '{$field}')";
-
-        $query = [
-            new Nested(
-                $field,
-                new FunctionScore(
-                    query: new MatchAll(),
-                    source: $source,
-                    boostMode: 'replace',
-                    params: [
-                        'query_vector' => $vector
-                    ]
-                )
+    public function vectorQueries(array $vector, int $k, array $filter = []): array
+    {
+        return [
+            new DenseVectorQuery(
+                field: '_embeddings.' . $this->fullPath,
+                queryVector: $vector,
+                k: $k,
+                numCandidates: $k * 100,
+                filter: $filter,
+                boost: 1.0,
             )
         ];
+    }
 
-        return $query;
+    public function queries(array|string $vector, array $filter = []): array
+    {
+        return [];
     }
 }

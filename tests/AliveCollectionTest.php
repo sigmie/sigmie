@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use ArrayAccess;
+use Carbon\Carbon;
 use Countable;
+use DateTime;
+use InvalidArgumentException;
 use IteratorAggregate;
 use Sigmie\Document\Document;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\TestCase;
 
 class AliveCollectionTest extends TestCase
@@ -483,6 +487,141 @@ class AliveCollectionTest extends TestCase
         $this->assertArrayNotHasKey('foo', $all['89']->_source);
         $this->assertArrayNotHasKey('foo', $all['2']->_source);
         $this->assertArrayHasKey('baz', $all['2']->_source);
+    }
+
+    /**
+     * @test
+     */
+    public function auto_format_datetime_to_datetime_string()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->datetime('created_at');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $index = $this->sigmie->collect($indexName, true)->properties($blueprint);
+
+        $carbonDate = Carbon::create(2023, 4, 7, 12, 38, 29, 'UTC');
+        $phpDate = new DateTime('2023-04-08 15:20:10+02:00');
+
+        $index->add(new Document(['title' => 'Test Carbon', 'created_at' => $carbonDate]));
+        $index->add(new Document(['title' => 'Test DateTime', 'created_at' => $phpDate]));
+
+        $docs = $index->take(2);
+
+        $this->assertCount(2, $docs);
+
+        $doc1 = $docs[0];
+        $doc2 = $docs[1];
+
+        $this->assertIsString($doc1->created_at);
+        $this->assertIsString($doc2->created_at);
+
+        $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[+-]\d{2}:\d{2}$/', $doc1->created_at);
+        $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[+-]\d{2}:\d{2}$/', $doc2->created_at);
+    }
+
+    /**
+     * @test
+     */
+    public function auto_format_datetime_to_date_string()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->date('birth_date');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $index = $this->sigmie->collect($indexName, true)->properties($blueprint);
+
+        $carbonDate = Carbon::create(2023, 4, 7, 12, 38, 29, 'UTC');
+        $phpDate = new DateTime('2023-04-08 15:20:10+02:00');
+
+        $index->add(new Document(['title' => 'Test Carbon', 'birth_date' => $carbonDate]));
+        $index->add(new Document(['title' => 'Test DateTime', 'birth_date' => $phpDate]));
+
+        $docs = $index->take(2);
+
+        $this->assertCount(2, $docs);
+
+        $doc1 = $docs[0];
+        $doc2 = $docs[1];
+
+        $this->assertIsString($doc1->birth_date);
+        $this->assertIsString($doc2->birth_date);
+
+        $this->assertEquals('2023-04-07', $doc1->birth_date);
+        $this->assertEquals('2023-04-08', $doc2->birth_date);
+    }
+
+    /**
+     * @test
+     */
+    public function validation_fails_for_invalid_datetime()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->datetime('created_at');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $index = $this->sigmie->collect($indexName, true)->properties($blueprint);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $index->add(new Document(['title' => 'Test', 'created_at' => '2023-04-07']));
+    }
+
+    /**
+     * @test
+     */
+    public function validation_fails_for_invalid_date()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->date('birth_date');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $index = $this->sigmie->collect($indexName, true)->properties($blueprint);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $index->add(new Document(['title' => 'Test', 'birth_date' => '2023-04-07T12:38:29.000000Z']));
+    }
+
+    /**
+     * @test
+     */
+    public function validation_passes_for_correct_formats()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->date('birth_date');
+        $blueprint->datetime('created_at');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $index = $this->sigmie->collect($indexName, true)->properties($blueprint);
+
+        $index->add(new Document([
+            'title' => 'Test',
+            'birth_date' => '2023-04-07',
+            'created_at' => '2023-04-07T12:38:29.000000Z'
+        ]));
+
+        $this->assertCount(1, $index);
     }
 
 }

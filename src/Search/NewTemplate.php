@@ -22,16 +22,19 @@ use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
 use Sigmie\Search\Contracts\EmbeddingsQueries;
 use Sigmie\Search\Contracts\SearchTemplateBuilder as SearchTemplateBuilderInterface;
-use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Shared\Collection;
-use Sigmie\Shared\EmbeddingsProvider;
 
 
+/**
+ * @deprecated This class is deprecated and will be removed in future versions.
+ */
 class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilderInterface
 {
     protected array $sort = ['_score'];
 
     protected string $id;
+
+    protected float $semanticThreshold = 0.01;
 
     public function id(string $id)
     {
@@ -63,6 +66,13 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
         $parser = new SortParser($this->properties);
 
         $this->sort = $parser->parse($sort);
+
+        return $this;
+    }
+
+    public function semanticThreshold(float $threshold): static
+    {
+        $this->semanticThreshold = $threshold;
 
         return $this;
     }
@@ -126,12 +136,11 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             $vectorQueries = $this->properties->nestedSemanticFields()
                 ->map(function (Text $field) use ($defaultEmbeddings, &$embeddingsTags) {
 
-                    $tag = 'embeddings_' . str_replace('.', '', $field->name());
+                    $tag = '_embeddings_' . str_replace('.', '', $field->name());
                     $embeddingsTags[] = $tag;
 
-                    return $this->aiProvider->queries(
-                        "@{$tag}({$defaultEmbeddings})@end{$tag}",
-                        $field
+                    return $field->queries(
+                        "@{$tag}({$defaultEmbeddings})@end{$tag}"
                     );
                 })
                 ->flatten(1);

@@ -8,7 +8,6 @@ use Closure;
 use Exception;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Enums\FacetLogic;
-use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Analyzer;
@@ -18,10 +17,8 @@ use Sigmie\Mappings\NewSemanticField;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
-use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\Contracts\FromRaw;
-use Sigmie\Semantic\Providers\SigmieAI as SigmieEmbeddings;
 
 use function Sigmie\Functions\name_configs;
 
@@ -85,28 +82,28 @@ class Text extends Type implements FromRaw
         $this->field(new Keyword('sortable'));
     }
 
-    public function newSemantic(Closure $closure): static
+    public function newSemantic(Closure $closure): NewSemanticField
     {
         $field = new NewSemanticField($this->name);
 
         $closure($field);
 
-        $vector = $field->make();
+        // Store the NewSemanticField instead of calling make() immediately
+        // This allows chained method calls to affect the final vector
+        $this->vectors[] = $field;
 
-        $this->vectors[] = $vector;
-
-        return $this;
+        return $field;
     }
 
     public function semantic(
+        string $api,
         int $accuracy = 3,
         int $dimensions = 256,
-        VectorSimilarity $similarity = VectorSimilarity::Cosine
     ) {
         return $this->newSemantic(
             fn(NewSemanticField $semantic) =>
-                $semantic->accuracy($accuracy, $dimensions)
-                ->similarity($similarity)
+            $semantic->accuracy($accuracy, $dimensions)
+                ->api($api)
         );
     }
 
@@ -259,6 +256,10 @@ class Text extends Type implements FromRaw
         $this->analyzer = $analyzer;
         $this->type = 'search_as_you_type';
 
+        if ($analyzer) {
+            $this->searchAnalyzer = $analyzer->name();
+        }
+
         return $this;
     }
 
@@ -266,6 +267,10 @@ class Text extends Type implements FromRaw
     {
         $this->analyzer = $analyzer;
         $this->type = 'text';
+
+        if ($analyzer) {
+            $this->searchAnalyzer = $analyzer->name();
+        }
 
         return $this;
     }
@@ -309,11 +314,6 @@ class Text extends Type implements FromRaw
     public function analyzer(): ?Analyzer
     {
         return $this->analyzer;
-    }
-
-    public function toVectorRaw(): array
-    {
-        return (new SigmieEmbeddings())->type($this->name)->toRaw();
     }
 
     public function toRaw(): array
@@ -401,7 +401,7 @@ class Text extends Type implements FromRaw
 
     public function embeddingsName(): string
     {
-        return "embeddings.{$this->name()}";
+        return "_embeddings.{$this->name()}";
     }
 
     public function embeddingsType(): string
@@ -417,7 +417,24 @@ class Text extends Type implements FromRaw
     public function vectorFields(): Collection
     {
         return (new Collection($this->vectors))
-            ->map(function (Nested|DenseVector $field) {
+            ->map(function (NewSemanticField|BaseVector|NestedVector $field) {
+                // If it's a NewSemanticField, call make() to get the actual vector
+                if ($field instanceof NewSemanticField) {
+                    $vector = $field->make();
+
+                    // Initialize the parent path for the vector field
+                    if ($this->fullPath !== null && $this->fullPath !== '') {
+                        $vector->parent($this->fullPath, static::class);
+                    } elseif ($this->parentPath !== null) {
+                        $vector->parent($this->parentPath, $this->parentType ?? static::class);
+                    } else {
+                        // If no parent context, set the parent to just this field's name
+                        $vector->parent($this->name, static::class);
+                    }
+
+                    return $vector;
+                }
+
                 return $field;
             });
     }

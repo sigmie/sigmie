@@ -68,7 +68,7 @@ class IndexUpdateTest extends TestCase
         $index = $this->sigmie->newIndex($alias)
             ->stopwords(['foo', 'bar'], 'demo')
             ->mapChars(['foo' => 'bar'], 'some_char_filter_name')
-            ->stripHTML()
+            ->stripHTML('html_strip')
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
@@ -157,7 +157,7 @@ class IndexUpdateTest extends TestCase
         $index->update(function (Update $update) {
             $update->patternReplace('/foo/', 'bar', 'default_pattern_replace_filter');
             $update->mapChars(['foo' => 'bar'], 'default_mappings_filter');
-            $update->stripHTML();
+            $update->stripHTML('html_strip');
 
             return $update;
         });
@@ -557,5 +557,67 @@ class IndexUpdateTest extends TestCase
         $newName = $this->sigmie->index($alias)->raw['settings']['index']['provided_name'];
 
         $this->assertNotEquals($oldName, $newName);
+    }
+
+    /**
+     * @test
+     */
+    public function index_upsert_creates_new_index_when_none_exists()
+    {
+        $alias = uniqid();
+
+        // Ensure index doesn't exist
+        $this->assertNull($this->sigmie->index($alias));
+
+        $index = $this->sigmie->indexUpsert($alias, function ($builder) {
+            return $builder->shards(2)->replicas(1);
+        });
+
+        $this->assertInstanceOf(AliasedIndex::class, $index);
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertShards(2);
+            $index->assertReplicas(1);
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function index_upsert_updates_existing_index()
+    {
+        $alias = uniqid();
+
+        // Create initial index
+        $initialIndex = $this->sigmie->newIndex($alias)
+            ->shards(1)
+            ->replicas(0)
+            ->stopwords(['old', 'words'], 'test_stopwords')
+            ->create();
+
+        $oldName = $initialIndex->name;
+
+        $index = $this->sigmie->index($alias);
+
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertShards(1);
+            $index->assertReplicas(0);
+            $index->assertFilterHasStopwords('test_stopwords', ['old', 'words']);
+        });
+
+        // Update through upsert
+        $updatedIndex = $this->sigmie->indexUpsert($alias, function ($builder) {
+            return $builder->shards(2)
+                ->replicas(1)
+                ->stopwords(['new', 'words'], 'test_stopwords');
+        });
+
+        $this->assertInstanceOf(AliasedIndex::class, $updatedIndex);
+        $this->assertNotEquals($oldName, $updatedIndex->name);
+
+        $this->assertIndex($alias, function (Assert $index) {
+            $index->assertShards(2);
+            $index->assertReplicas(1);
+            $index->assertFilterHasStopwords('test_stopwords', ['new', 'words']);
+        });
     }
 }

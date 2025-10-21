@@ -3,7 +3,7 @@
 <p align="center">
 
 <a href="https://github.com/sigmie/sigmie/actions">
-<img src="https://github.com/sigmie/sigmie/actions/workflows/tests.yml/badge.svg" alt="Build Status">
+<img src="https://github.com/sigmie/sigmie/actions/workflows/test.yml/badge.svg" alt="Build Status">
 </a>
 
 <a href="https://packagist.org/packages/sigmie/sigmie">

@@ -4,23 +4,24 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings;
 
-use PHPUnit\Framework\Constraint\ObjectEquals;
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
-use Sigmie\Mappings\Contracts\Type as ContractsType;
 use Sigmie\Mappings\Types\Address;
+use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Boost;
-use Sigmie\Mappings\Types\Autocomplete;
+use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Date;
+use Sigmie\Mappings\Types\DateTime;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Email;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\HTML;
 use Sigmie\Mappings\Types\Id;
+use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\LongText;
 use Sigmie\Mappings\Types\Name;
@@ -29,8 +30,9 @@ use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Path;
 use Sigmie\Mappings\Types\Price;
+use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\SearchableNumber;
-use Sigmie\Mappings\Types\Sentence;
+use Sigmie\Mappings\Types\Title;
 use Sigmie\Mappings\Types\ShortText;
 use Sigmie\Mappings\Types\Tags;
 use Sigmie\Mappings\Types\Text;
@@ -71,7 +73,10 @@ class NewProperties
 
         $fields = $this->fields
             ->mapToDictionary(function (Type $type) {
-
+                // Initialize the parent path for each field based on current context
+                if ($this->fullPath !== '') {
+                    $type->parent($this->fullPath, $this->parentType);
+                }
                 return [$type->name => $type];
             })->toArray();
 
@@ -93,18 +98,18 @@ class NewProperties
         return $field;
     }
 
-    public function autocomplete(string $name = 'autocomplete'): Autocomplete
+    public function combo(string $name, array $sourceFields): Combo
     {
-        $field = new Autocomplete($name);
+        $field = new Combo($name, $sourceFields);
 
         $this->fields->add($field);
 
         return $field;
     }
 
-    public function denseVector(string $name, int $dims = 384): DenseVector
+    public function vector(string $name, int $dims = 384): BaseVector
     {
-        $field = new DenseVector($name, $dims);
+        $field = new BaseVector($name, $dims);
 
         $this->fields->add($field);
 
@@ -123,6 +128,15 @@ class NewProperties
         $this->fields->add($field);
 
         return $field->unstructuredText();
+    }
+
+    public function image(string $name): Image
+    {
+        $field = new Image($name);
+
+        $this->fields->add($field);
+
+        return $field;
     }
 
     public function geoPoint(string $name): GeoPoint
@@ -163,7 +177,7 @@ class NewProperties
 
     public function title(string $name = 'title'): Text
     {
-        $field = new Sentence($name);
+        $field = new Title($name);
 
         $this->fields->add($field);
 
@@ -233,20 +247,27 @@ class NewProperties
         return $field;
     }
 
-    public function properties(string $name, callable $callable)
+    public function range(string $name): Range
     {
-        $blueprint = new NewProperties;
+        $field = new Range($name);
 
-        $callable($blueprint);
+        $this->fields->add($field);
 
-        $properties = $blueprint($name);
-
-        $this->fields->add($properties);
+        return $field;
     }
 
     public function date(string $name): Date
     {
         $field = new Date($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function datetime(string $name): DateTime
+    {
+        $field = new DateTime($name);
 
         $this->fields->add($field);
 
@@ -313,6 +334,13 @@ class NewProperties
     }
 
     public function type(Type $field): self
+    {
+        $this->fields->add($field);
+
+        return $this;
+    }
+
+    public function add(Type $field): self
     {
         $this->fields->add($field);
 

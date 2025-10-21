@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Index;
 
+use Sigmie\Base\Contracts\SearchEngine;
+use Sigmie\Base\Drivers\Elasticsearch;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Contracts\CustomAnalyzer;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
@@ -15,15 +17,13 @@ use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Embeddings;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Object_;
-use Sigmie\Mappings\Types\SigmieVector;
+use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Text;
-use Sigmie\Semantic\Providers\SigmieAI as SigmieEmbeddings;
-use Sigmie\Shared\EmbeddingsProvider;
+
+use function PHPUnit\Framework\objectEquals;
 
 class Mappings implements MappingsInterface
 {
-    use EmbeddingsProvider;
-
     public readonly Properties $properties;
 
     protected CustomAnalyzer $defaultAnalyzer;
@@ -78,20 +78,24 @@ class Mappings implements MappingsInterface
         return $result->add($this->defaultAnalyzer)->toArray();
     }
 
-    public function toRaw(): array
+    public function toRaw(SearchEngine $driver): array
     {
-        //$embeddings = new Embeddings($this->properties);
+        // Generate and format embeddings
+        $embeddingsRaw = (new Embeddings($this->properties, $driver))->toRaw();
+
+        $properties = [
+            ...$this->properties->toRaw(),
+            ...$embeddingsRaw,
+        ];
 
         $raw = [
-            'properties' => [
-                ...$this->properties->toRaw(),
-                //...$embeddings->toRaw(),
-            ],
-            '_meta' => $this->meta,
+            'properties' => (object) $properties,
+            '_meta' => (object) $this->meta,
         ];
 
         return $raw;
     }
+
 
     public static function create(array $data, array $analyzers): static
     {

@@ -83,6 +83,7 @@ trait Actions
 
         $res = $this->bulkAPICall($indexName, $body, $refresh);
 
+
         foreach ($res->json('items') as $index => $value) {
             $action = array_key_first($value);
             $response = $value[$action];
@@ -161,6 +162,30 @@ trait Actions
         $response = $this->mgetAPICall($indexName, $payload, $query);
 
         return $response->first();
+    }
+
+    protected function retrieveDocuments(
+        string $indexName,
+        array $ids,
+    ): Collection {
+
+        $payload = [
+            'docs' => array_map(fn(string $id) => ['_id' => $id], $ids),
+        ];
+
+        $query = [];
+
+        if ($this->only) {
+            $query['_source_includes'] = implode($this->only);
+        }
+
+        if ($this->except) {
+            $query['_source_excludes'] = implode($this->except);
+        }
+
+        $response = $this->mgetAPICall($indexName, $payload, $query);
+
+        return new Collection($response->docs());
     }
 
     protected function listDocuments(

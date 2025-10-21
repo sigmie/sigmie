@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Parse;
 
+use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\Nested;
+use Sigmie\Sigmie;
 
 class SortParser extends Parser
 {
@@ -21,6 +23,7 @@ class SortParser extends Parser
 
         $sorts = explode(' ', $string);
         $sort = [];
+        $hasGeoDistance = false;
 
         foreach ($sorts as $match) {
             if (in_array($match, ['_score', '_doc'])) {
@@ -77,6 +80,8 @@ class SortParser extends Parser
                     continue;
                 }
 
+                $hasGeoDistance = true;
+
                 if ($fieldType->parentPath && $fieldType->parentType === Nested::class) {
                     $sort[] = [
                         '_geo_distance' => [
@@ -84,8 +89,8 @@ class SortParser extends Parser
                                 'path' => $fieldType->parentPath,
                             ],
                             $field => [
-                                'lat' => $latitude,
-                                'lon' => $longitude,
+                                'lat' => (float) $latitude,
+                                'lon' => (float) $longitude,
                             ],
                             'order' => $order,
                             'unit' => $unit,
@@ -95,13 +100,12 @@ class SortParser extends Parser
                     $sort[] = [
                         '_geo_distance' => [
                             $field => [
-                                'lat' => $latitude,
-                                'lon' => $longitude,
+                                'lat' => (float) $latitude,
+                                'lon' => (float) $longitude,
                             ],
                             'order' => $order,
                             'unit' => $unit,
-
-                        ],
+                        ]
                     ];
                 }
 

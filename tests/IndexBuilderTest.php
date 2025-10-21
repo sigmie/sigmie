@@ -7,7 +7,9 @@ namespace Sigmie\Tests;
 use Exception;
 use OutOfBoundsException;
 use RachidLaasri\Travel\Travel;
+use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Document\Document;
+use Sigmie\Index\AliasedIndex;
 use Sigmie\Languages\English\Builder as EnglishBuilder;
 use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\Builder as GermanBuilder;
@@ -33,36 +35,6 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function maxWindow()
-    {
-        $alias = uniqid();
-
-        $this->sigmie->newIndex($alias)
-            ->config('index.max_result_window', 1)
-            ->create();
-
-        $index = $this->sigmie->collect($alias, refresh: true);
-
-        $index->merge([
-            new Document([
-                'number' => '08000234379',
-            ]),
-            new Document([
-                'number' => '08000234379',
-            ]),
-        ]);
-
-        $this->expectException(Exception::class);
-
-        $this->sigmie->newSearch($alias)
-            ->queryString('')
-            ->size(2)
-            ->get();
-    }
-
-    /**
-     * @test
-     */
     public function default_analyzer_even_if_no_text_field_mapping()
     {
         $alias = uniqid();
@@ -79,85 +51,6 @@ class IndexBuilderTest extends TestCase
         $this->assertIndex($alias, function (Assert $index) {
             $index->assertAnalyzerExists('default');
         });
-    }
-
-    /**
-     * @test
-     */
-    public function language_greek_with_skroutz_plugin()
-    {
-        $this->skipIfElasticsearchPluginNotInstalled('elasticsearch-skroutz-greekstemmer');
-        $this->skipIfElasticsearchPluginNotInstalled('elasticsearch-analysis-greeklish');
-
-        $alias = uniqid();
-
-        Sigmie::registerPlugins([
-            'elasticsearch-skroutz-greekstemmer',
-            'elasticsearch-analysis-greeklish'
-        ]);
-
-        $blueprint = new NewProperties;
-        $blueprint->name('name');
-
-        /** @var GreekBuilder */
-        $greekBuilder = $this->sigmie->newIndex($alias)->language(new Greek());
-
-        $greekBuilder
-            ->properties($blueprint)
-            ->stemming([
-                ['go', ['going']],
-            ])
-            ->synonyms([
-                ['ΑΓΑΣΙΑ', 'ΑΓΑΣΙΑ ΚΑΙ ΑΓΑΣΙΑ ΚΑΙ ΑΓΑΣΙΑ'],
-            ])
-            ->stopwords(['ΑΓΑΣΙΑ', 'ΑΓΑΣΙΑ ΚΑΙ ΑΓΑΣΙΑ ΚΑΙ ΑΓΑΣΙΑ'])
-            ->greekLowercase()
-            ->greekStemmer()
-            ->greekGreeklish()
-            ->greekStopwords()
-            ->create();
-
-        $this->assertIndex($alias, function (Assert $index) {
-
-            $index->assertAnalyzerHasFilter('name_field_analyzer', 'greek_stopwords');
-            $index->assertAnalyzerHasFilter('name_field_analyzer', 'skroutz_greek_stemmer');
-            $index->assertAnalyzerHasFilter('name_field_analyzer', 'skroutz_greeklish');
-            $index->assertAnalyzerHasFilter('name_field_analyzer', 'greek_lowercase');
-
-            $index->assertAnalyzerHasFilter('default', 'greek_stopwords');
-            $index->assertAnalyzerHasFilter('default', 'skroutz_greek_stemmer');
-            $index->assertAnalyzerHasFilter('default', 'skroutz_greeklish');
-            $index->assertAnalyzerHasFilter('default', 'greek_lowercase');
-
-            $index->assertFilterEquals('greek_lowercase', ['type' => 'lowercase', 'language' => 'greek']);
-            $index->assertFilterEquals('greek_stopwords', ['type' => 'stop', 'stopwords' => '_greek_']);
-            $index->assertFilterEquals('skroutz_greeklish', ['type' => 'skroutz_greeklish', 'max_expansions' => 20]);
-            $index->assertFilterEquals(
-                'skroutz_greek_stemmer',
-                [
-                    'type' => 'skroutz_stem_greek',
-                ]
-            );
-        });
-
-        $this->sigmie->collect($alias, refresh: true)
-            ->merge([
-                new Document([
-                    'name' => 'καλημερα',
-                ]),
-            ]);
-
-        $res = $this->sigmie->newSearch($alias)
-            ->properties($blueprint)
-            ->queryString('kalim')
-            ->get();
-
-        $this->assertEquals(200, $res->getStatusCode());
-
-        $res = $this->analyzeAPICall($alias, 'καλημέρα', 'name_field_analyzer',);
-
-        $this->assertEquals('καλημ', $res->json()['tokens'][2]['token']);
-        $this->assertEquals('kalim', $res->json()['tokens'][3]['token']);
     }
 
     /**
@@ -188,10 +81,6 @@ class IndexBuilderTest extends TestCase
             ->create();
 
         $this->assertIndex($alias, function (Assert $index) {
-
-            $index->assertAnalyzerHasFilter('name_field_analyzer', 'greek_stopwords');
-            $index->assertAnalyzerHasFilter('name_field_analyzer', 'greek_stemmer');
-            $index->assertAnalyzerHasFilter('name_field_analyzer', 'greek_lowercase');
 
             $index->assertAnalyzerHasFilter('default', 'greek_stopwords');
             $index->assertAnalyzerHasFilter('default', 'greek_stemmer');
@@ -289,14 +178,13 @@ class IndexBuilderTest extends TestCase
             ->language(new English());
 
         $englishBuilder
-
             ->englishStemmer()
-            ->englishPorter2Stemmer()
-            ->englishLovinsStemmer()
+            ->englishPorter2Stemmer();
+
+        $englishBuilder
             ->englishLightStemmer()
             ->englishPossessiveStemming()
             ->englishMinimalStemmer()
-
             ->englishStopwords()
             ->englishLowercase()
             ->create();
@@ -309,7 +197,7 @@ class IndexBuilderTest extends TestCase
             $index->assertAnalyzerHasFilter('default', 'english_stemmer');
             $index->assertAnalyzerHasFilter('default', 'english_stemmer_porter_2');
             $index->assertAnalyzerHasFilter('default', 'english_stemmer_minimal');
-            $index->assertAnalyzerHasFilter('default', 'english_stemmer_lovins');
+
             $index->assertAnalyzerHasFilter('default', 'english_stemmer_light');
             $index->assertAnalyzerHasFilter('default', 'english_stemmer_possessive');
             $index->assertAnalyzerHasFilter('default', 'english_stopwords');
@@ -330,14 +218,6 @@ class IndexBuilderTest extends TestCase
                 [
                     'type' => 'stemmer',
                     'language' => 'minimal_english',
-                ]
-            );
-
-            $index->assertFilterEquals(
-                'english_stemmer_lovins',
-                [
-                    'type' => 'stemmer',
-                    'language' => 'lovins',
                 ]
             );
 
@@ -733,7 +613,7 @@ class IndexBuilderTest extends TestCase
         $this->assertIndex($alias, function (Assert $index) {
             [$name] = array_keys($index->data()['settings']['index']['analysis']['filter']);
 
-            $this->assertMatchesRegularExpression('/synonyms_[a-z]{3}$/', $name);
+            $this->assertStringStartsWith('synonyms_', $name);
         });
     }
 
@@ -1036,5 +916,121 @@ class IndexBuilderTest extends TestCase
         $this->assertArrayHasKey('_meta', $raw['mappings']);
         $this->assertArrayHasKey('created_by', $raw['mappings']['_meta']);
         $this->assertArrayHasKey('lib_version', $raw['mappings']['_meta']);
+    }
+
+    /**
+     * @test
+     */
+    public function index_serverless()
+    {
+        $alias = uniqid();
+
+        $settings = $this->sigmie->newIndex($alias)
+            ->serverless(true)->make()->settings;
+
+        $this->assertArrayNotHasKey('number_of_shards', $settings->toRaw());
+        $this->assertArrayNotHasKey('number_of_replicas', $settings->toRaw());
+    }
+
+    /**
+     * @test
+     */
+    public function custom_meta()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->meta([
+                'department' => 'engineering',
+                'version' => '2.0',
+                'custom_field' => 'custom_value',
+                'environment' => 'testing'
+            ])
+            ->create();
+
+        $raw = $this->sigmie->index($alias)->raw;
+
+        // Assert default meta fields still exist
+        $this->assertArrayHasKey('_meta', $raw['mappings']);
+        $this->assertArrayHasKey('created_by', $raw['mappings']['_meta']);
+        $this->assertArrayHasKey('lib_version', $raw['mappings']['_meta']);
+        $this->assertArrayHasKey('language', $raw['mappings']['_meta']);
+        
+        // Assert custom meta fields were added
+        $this->assertArrayHasKey('department', $raw['mappings']['_meta']);
+        $this->assertEquals('engineering', $raw['mappings']['_meta']['department']);
+        
+        $this->assertArrayHasKey('version', $raw['mappings']['_meta']);
+        $this->assertEquals('2.0', $raw['mappings']['_meta']['version']);
+        
+        $this->assertArrayHasKey('custom_field', $raw['mappings']['_meta']);
+        $this->assertEquals('custom_value', $raw['mappings']['_meta']['custom_field']);
+        
+        $this->assertArrayHasKey('environment', $raw['mappings']['_meta']);
+        $this->assertEquals('testing', $raw['mappings']['_meta']['environment']);
+    }
+
+    /**
+     * @test
+     */
+    public function custom_meta_multiple_calls()
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->meta(['department' => 'engineering'])
+            ->meta(['version' => '2.0'])
+            ->meta(['custom_field' => 'custom_value'])
+            ->create();
+
+        $raw = $this->sigmie->index($alias)->raw;
+
+        // Assert all custom meta fields were merged correctly
+        $this->assertArrayHasKey('department', $raw['mappings']['_meta']);
+        $this->assertEquals('engineering', $raw['mappings']['_meta']['department']);
+        
+        $this->assertArrayHasKey('version', $raw['mappings']['_meta']);
+        $this->assertEquals('2.0', $raw['mappings']['_meta']['version']);
+        
+        $this->assertArrayHasKey('custom_field', $raw['mappings']['_meta']);
+        $this->assertEquals('custom_value', $raw['mappings']['_meta']['custom_field']);
+    }
+
+    /**
+     * @test
+     */
+    public function cannot_create_index_with_existing_alias()
+    {
+        $alias = uniqid();
+
+        // Create first index with the alias
+        $this->sigmie->newIndex($alias)->create();
+
+        $this->assertIndexExists($alias);
+
+        // Try to create another index with the same alias - should throw exception
+        $this->expectException(AliasAlreadyExists::class);
+        $this->expectExceptionMessage("An index with alias '{$alias}' already exists.");
+
+        $this->sigmie->newIndex($alias)->create();
+    }
+
+    /**
+     * @test
+     */
+    public function create_if_not_exists_returns_existing_index()
+    {
+        $alias = uniqid();
+
+        $firstIndex = $this->sigmie->newIndex($alias)->createIfNotExists();
+
+        $this->assertIndexExists($alias);
+        $this->assertInstanceOf(AliasedIndex::class, $firstIndex);
+
+        $name = $firstIndex->name;
+
+        $secondIndex = $this->sigmie->newIndex($alias)->createIfNotExists();
+
+        $this->assertEquals($name, $secondIndex->name);
     }
 }

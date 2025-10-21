@@ -6,16 +6,22 @@ namespace Sigmie;
 
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
+use Sigmie\AI\Contracts\LLMApi;
+use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
+use Sigmie\Base\Drivers\Elasticsearch;
+use Sigmie\Base\Drivers\Opensearch;
 use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Enums\ElasticsearchVersion as Version;
+use Sigmie\Enums\SearchEngineType;
 use Sigmie\Http\JSONClient;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Index;
+use Sigmie\Index\ListedIndex;
 use Sigmie\Index\NewIndex;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
@@ -24,48 +30,50 @@ use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Search;
 use Sigmie\Search\ExistingScript;
-use Sigmie\Search\NewFacetSearch;
+use Sigmie\Search\NewMultiSearch;
+use Sigmie\Search\NewRag;
 use Sigmie\Search\NewSearch;
-use Sigmie\Search\NewSemanticSearch;
 use Sigmie\Search\NewTemplate;
-use Sigmie\Shared\EmbeddingsProvider;
-use Sigmie\Semantic\Providers\SigmieAI as DefaultEmbeddingsProvider;
+use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\AI\History\Index as HistoryIndex;
+use Sigmie\Classification\NewClassification;
+use Sigmie\Clustering\NewClustering;
+use Sigmie\Search\NewRecommendations;
 
 class Sigmie
 {
     use IndexActions;
-    use APIsSearch; 
-
-    use EmbeddingsProvider;
+    use APIsSearch;
 
     public const DATE_FORMAT = 'Y-m-d H:i:s.u';
 
     protected string $application = '';
 
-    public static Version $version = Version::v7;
+    protected array $apis = [];
 
     public static array $plugins = [];
 
-    public function version(Version $version)
+    public function __construct(
+        Connection $httpConnection
+    ) {
+        $this->elasticsearchConnection = $httpConnection;
+    }
+
+    public function registerApi(string $name, EmbeddingsApi|LLMApi|RerankApi $api): static
     {
-        self::$version = $version;
+        $this->apis[$name] = $api;
 
         return $this;
     }
 
-    public function __construct(Connection $httpConnection)
+    public function api(string $name): EmbeddingsApi|LLMApi|RerankApi
     {
-        $this->elasticsearchConnection = $httpConnection;
-        $this->aiProvider = new DefaultEmbeddingsProvider();
+        return $this->apis[$name];
     }
 
-    private function withApplicationPrefix(string $name): string
+    public function hasApi(string $name): bool
     {
-        if ($this->application === '') {
-            return $name;
-        }
-
-        return $this->application . '-' . $name;
+        return isset($this->apis[$name]);
     }
 
     public function application(string $application)
@@ -77,23 +85,53 @@ class Sigmie
 
     public function newIndex(string $name): NewIndex
     {
-        $builder = new NewIndex($this->elasticsearchConnection);
-        $builder->aiProvider($this->aiProvider);
+        $newIndex = (new NewIndex($this->elasticsearchConnection))
+            ->alias($name);
 
-        return $builder->alias($this->withApplicationPrefix($name));
+        return $newIndex;
     }
 
     public function index(string $name): null|AliasedIndex|Index
     {
-        return $this->getIndex($this->withApplicationPrefix($name));
+        return $this->getIndex($name);
+    }
+
+    public function indexUpsert(string $name, callable $builder): AliasedIndex
+    {
+        $existingIndex = $this->index($name);
+
+        if ($existingIndex instanceof AliasedIndex) {
+            return $existingIndex->update($builder);
+        }
+
+        $newIndex = $this->newIndex($name);
+        $newIndex = $builder($newIndex);
+
+        return $newIndex->create();
     }
 
     public function collect(string $name, bool $refresh = false): AliveCollection
     {
-        $aliveIndex = new AliveCollection($this->withApplicationPrefix($name), $this->elasticsearchConnection, $refresh ? 'true' : 'false');
-        $aliveIndex->aiProvider($this->aiProvider);
+        return (new AliveCollection(
+            $name,
+            $this->elasticsearchConnection,
+            $refresh ? 'true' : 'false'
+        ))->apis($this->apis);
+    }
 
-        return $aliveIndex;
+    public function newClassification(EmbeddingsApi $embeddingsApi): NewClassification
+    {
+        return new NewClassification($embeddingsApi);
+    }
+
+    public function newClustering(EmbeddingsApi $embeddingsApi): NewClustering
+    {
+        return new NewClustering($embeddingsApi);
+    }
+
+    public function newRecommend(string $index): NewRecommendations
+    {
+        return new NewRecommendations($index, $this->elasticsearchConnection);
     }
 
     public function rawQuery(
@@ -110,40 +148,45 @@ class Sigmie
         Query $query = new MatchAll(),
         AggsInterface $aggs = new Aggs()
     ) {
-        $search = new Search($query, $aggs);
+        $search = new Search($this->elasticsearchConnection);
 
-        $search->setElasticsearchConnection($this->elasticsearchConnection);
+        $search = $search->query($query)->aggs($aggs);
 
-        return $search->index($this->withApplicationPrefix($index));
+        return $search->index($index);
     }
 
     public function newQuery(string $index): NewQuery
     {
-        $index = $this->withApplicationPrefix($index);
-
         return new NewQuery($this->elasticsearchConnection, $index);
     }
 
     public function newSearch(string $index): NewSearch
     {
-        $index = $this->withApplicationPrefix($index);
+        return (new NewSearch($this->elasticsearchConnection))
+            ->index($index)
+            ->apis($this->apis);
+    }
 
-        $search = new NewSearch($this->elasticsearchConnection);
-        $search->aiProvider($this->aiProvider);
+    public function newRag(
+        LLMApi $llm,
+        ?RerankApi $reranker = null
+    ): NewRag {
 
-        return $search->index($index);
+        $rag = new NewRag($llm, $reranker);
+
+        return $rag;
+    }
+
+    public function newMultiSearch(): NewMultiSearch
+    {
+        return (new NewMultiSearch($this->elasticsearchConnection))
+            ->apis($this->apis);
     }
 
     public function newTemplate(string $id): NewTemplate
     {
-        $id = $this->withApplicationPrefix($id);
-
-        $builder = new NewTemplate(
-            $this->elasticsearchConnection,
-        );
-        $builder->aiProvider($this->aiProvider);
-
-        return $builder->id($id);
+        return (new NewTemplate($this->elasticsearchConnection))
+            ->id($id);
     }
 
     public function refresh(string $indexName)
@@ -153,15 +196,11 @@ class Sigmie
 
     public function template(string $id): ExistingScript
     {
-        $id = $this->withApplicationPrefix($id);
-
         return new ExistingScript($id, $this->elasticsearchConnection);
     }
 
     public function indices(string $pattern = '*'): array
     {
-        $pattern = $this->withApplicationPrefix($pattern);
-
         return $this->listIndices($pattern);
     }
 
@@ -178,22 +217,70 @@ class Sigmie
         }
     }
 
-    public static function create(array|string $hosts, array $config = []): static
-    {
+    public static function create(
+        array|string $hosts,
+        SearchEngineType $engine = SearchEngineType::Elasticsearch,
+        array $config = []
+    ): static {
         $hosts = (is_string($hosts)) ? explode(',', $hosts) : $hosts;
 
         $client = JSONClient::create($hosts, $config);
 
-        return new static(new HttpConnection($client));
+        $driver = match ($engine) {
+            SearchEngineType::Elasticsearch => new \Sigmie\Base\Drivers\Elasticsearch(),
+            SearchEngineType::OpenSearch => new \Sigmie\Base\Drivers\Opensearch(),
+        };
+
+        return new static(new HttpConnection($client, $driver));
     }
 
     public function delete(string $index): bool
     {
-        if (! str_starts_with($index, $this->application)) {
-            $index = $this->withApplicationPrefix($index);
+        $indexNames = array_map('trim', explode(',', $index));
+
+        foreach ($indexNames as $indexName) {
+            $indices = $this->listIndices($indexName);
+
+            /** @var ListedIndex $listedIndex */
+            foreach ($indices as $listedIndex) {
+                // Check if the index name matches or if any of its aliases match
+                if ($listedIndex->name === $indexName || in_array($indexName, $listedIndex->aliases)) {
+                    $this->deleteIndex($listedIndex->name);
+                }
+            }
         }
 
-        return $this->deleteIndex($index);
+        return true;
+    }
+
+    public function deleteIfExists(string $index): bool
+    {
+        $indexNames = array_map('trim', explode(',', $index));
+
+        foreach ($indexNames as $indexName) {
+            try {
+                $indices = $this->listIndices($indexName);
+
+                /** @var ListedIndex $listedIndex */
+                foreach ($indices as $listedIndex) {
+                    if ($listedIndex->name === $indexName || in_array($indexName, $listedIndex->aliases)) {
+                        try {
+                            $this->deleteIndex($listedIndex->name);
+                        } catch (\Sigmie\Base\ElasticsearchException $e) {
+                            if ($e->json('type') !== 'index_not_found_exception') {
+                                throw $e;
+                            }
+                        }
+                    }
+                }
+            } catch (\Sigmie\Base\ElasticsearchException $e) {
+                if ($e->json('type') !== 'index_not_found_exception') {
+                    throw $e;
+                }
+            }
+        }
+
+        return true;
     }
 
     public static function registerPlugins(array|string $plugins)

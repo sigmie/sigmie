@@ -14,6 +14,8 @@ use Sigmie\Testing\TestCase;
 
 class FilterParserTest extends TestCase
 {
+    
+
     /**
      * @test
      */
@@ -47,13 +49,13 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
 
         $query = $parser->parse("number:'2353*'");
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(2, $res->json('hits'));
+        $this->assertCount(2, $res->json('hits.hits'));
     }
 
     /**
@@ -88,7 +90,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
     }
 
     /**
@@ -123,7 +125,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
     }
 
     /**
@@ -176,14 +178,13 @@ class FilterParserTest extends TestCase
 
         $index->merge($docs);
 
-
         $parser = new FilterParser($props, false);
 
         $query = $parser->parse("(user: { id:'465'} ) AND system_id:'26'");
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
     }
 
 
@@ -266,7 +267,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
     }
 
     /**
@@ -331,7 +332,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
     }
 
     /**
@@ -388,7 +389,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
     }
 
     /**
@@ -456,7 +457,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
     }
 
     /**
@@ -504,7 +505,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
     }
 
     /**
@@ -542,7 +543,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(0, $res->json('hits'));
+        $this->assertCount(0, $res->json('hits.hits'));
     }
 
     /**
@@ -580,7 +581,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
     }
 
     /**
@@ -657,7 +658,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $boolean)->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertCount(1, $hits);
     }
@@ -700,7 +701,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $boolean)->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertCount(2, $hits);
     }
@@ -757,7 +758,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(2, $res->json('hits'));
+        $this->assertCount(2, $res->json('hits.hits'));
 
         $this->expectException(ParseException::class);
 
@@ -811,7 +812,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(2, $res->json('hits'));
+        $this->assertCount(2, $res->json('hits.hits'));
 
         $parser = new FilterParser($props);
 
@@ -819,7 +820,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(3, $res->json('hits'));
+        $this->assertCount(3, $res->json('hits.hits'));
     }
 
     /**
@@ -865,7 +866,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(0, $res->json('hits'));
+        $this->assertCount(0, $res->json('hits.hits'));
     }
 
     /**
@@ -911,7 +912,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(3, $res->json('hits'));
+        $this->assertCount(3, $res->json('hits.hits'));
     }
 
     /**
@@ -953,7 +954,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
     }
 
     /**
@@ -993,7 +994,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
     }
 
     /**
@@ -1057,7 +1058,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(0, $res->json('hits'));
+        $this->assertCount(0, $res->json('hits.hits'));
     }
 
     /**
@@ -1213,43 +1214,43 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(2, $res->json('hits'));
+        $this->assertCount(2, $res->json('hits.hits'));
 
         $query = $parser->parse("active:true AND NOT category:'drama'");
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(3, $res->json('hits'));
+        $this->assertCount(3, $res->json('hits.hits'));
 
         $query = $parser->parse('active:true AND stock>0');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(3, $res->json('hits'));
+        $this->assertCount(3, $res->json('hits.hits'));
 
         $query = $parser->parse('active:true');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(4, $res->json('hits'));
+        $this->assertCount(4, $res->json('hits.hits'));
 
         $query = $parser->parse('active:true AND stock>0 AND (category:"action" OR category:"horror")');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
 
         $query = $parser->parse('(category:"action" OR category:"horror") AND active:true AND stock>0');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
 
         $query = $parser->parse('active:true AND (category:"action" OR category:"horror") AND stock>0');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
     }
 
     /**
@@ -1291,7 +1292,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $boolean)->get();
 
-        foreach ($res->json('hits') as $index => $data) {
+        foreach ($res->json('hits.hits') as $index => $data) {
             $source = $data['_source'];
             $this->assertTrue($source['category'] === 'crime & drama');
         }
@@ -1336,7 +1337,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $boolean)->get();
 
-        foreach ($res->json('hits') as $index => $data) {
+        foreach ($res->json('hits.hits') as $index => $data) {
             $source = $data['_source'];
             $this->assertTrue($source['category'] === 'crime & drama');
         }
@@ -1384,7 +1385,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $boolean)->get();
 
-        foreach ($res->json('hits') as $index => $data) {
+        foreach ($res->json('hits.hits') as $index => $data) {
             $source = $data['_source'];
             $this->assertTrue($source['name'] !== 'Adidas');
             $this->assertTrue($source['category'] === 'sports');
@@ -1440,7 +1441,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $boolean)->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertCount(1, $hits);
         $this->assertFalse($hits[0]['_source']['active']);
@@ -1492,7 +1493,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $boolean)->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertCount(2, $hits);
         $this->assertTrue($hits[0]['_source']['active']);
@@ -1540,7 +1541,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $boolean)->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertCount(2, $hits);
     }
@@ -1586,7 +1587,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $boolean)->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertCount(2, $hits);
     }
@@ -1629,7 +1630,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $boolean)->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertCount(2, $hits);
         $this->assertNotEquals('Sports', $hits[0]['_source']['category']);
@@ -1685,7 +1686,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertCount(2, $hits);
         $this->assertTrue($hits[0]['_source']['contact']['is_active']);
@@ -1741,7 +1742,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertCount(1, $hits);
         $this->assertFalse($hits[0]['_source']['contact']['is_active']);
@@ -1863,7 +1864,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertCount(1, $hits);
         $this->assertEquals(true, $hits[0]['_source']['contact']['is_active']);
@@ -1967,13 +1968,13 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(2, $res->json('hits'));
+        $this->assertCount(2, $res->json('hits.hits'));
 
         $query = $parser->parse("price:100..200");
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(3, $res->json('hits'));
+        $this->assertCount(3, $res->json('hits.hits'));
     }
 
     /**
@@ -2010,13 +2011,13 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(3, $res->json('hits'));
+        $this->assertCount(3, $res->json('hits.hits'));
 
         $query = $parser->parse("last_activity:2090-01-01T00:00:00.000000+00:00..2100-12-31T23:59:59.999999+00:00");
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
-        $this->assertCount(1, $res->json('hits'));
+        $this->assertCount(1, $res->json('hits.hits'));
     }
 
     /**
@@ -2062,7 +2063,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $boolean)->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertCount(1, $hits);
     }
@@ -2105,5 +2106,54 @@ class FilterParserTest extends TestCase
         $this->expectException(ParseException::class);
 
         $parser->parse("color:'red' color:'blue'");
+    }
+
+    /**
+     * @test
+     */
+    public function trim_quotes_from_id_filter()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document(['title' => 'Doc 1'], _id: 'abc123'),
+            new Document(['title' => 'Doc 2'], _id: 'def456'),
+            new Document(['title' => 'Doc 3'], _id: 'ghi789'),
+        ];
+
+        $index->merge($docs);
+
+        $props = $blueprint();
+
+        $parser = new FilterParser($props);
+
+        // Test with single quotes
+        $query = $parser->parse("_id:['abc123','def456']");
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(2, $res->json('hits.hits'));
+
+        // Test with double quotes
+        $query = $parser->parse('_id:["abc123","ghi789"]');
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(2, $res->json('hits.hits'));
+
+        // Test with mixed quotes
+        $query = $parser->parse("_id:['abc123',\"def456\"]");
+
+        $res = $this->sigmie->query($indexName, $query)->get();
+
+        $this->assertCount(2, $res->json('hits.hits'));
     }
 }

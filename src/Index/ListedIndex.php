@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Index;
 
-use Sigmie\Index\Contracts\Mappings as MappingsInterface;
-use Sigmie\Index\Contracts\Settings as SettingsInterface;
-
 class ListedIndex
 {
     public function __construct(
@@ -21,13 +18,13 @@ class ListedIndex
         public readonly string $storeSize,
         public readonly string $primaryStoreSize,
         public readonly string $datasetSize,
-        public readonly ?array $raw = null
+        public readonly array $aliases = []
     ) {}
 
-    public static function fromRaw(string $name, array $raw): static
+    public static function fromRaw(array $raw, array $aliases = []): static
     {
         $index = new static(
-            $name,
+            $raw['index'],
             health: $raw['health'],
             status: $raw['status'],
             uuid: $raw['uuid'],
@@ -38,6 +35,7 @@ class ListedIndex
             storeSize: (string) $raw['store.size'],
             primaryStoreSize: (string) $raw['pri.store.size'],
             datasetSize: (string) $raw['pri.store.size'],
+            aliases: $aliases,
         );
 
         return $index;

@@ -8,9 +8,10 @@ use ArrayAccess;
 use ArrayIterator;
 use Closure;
 use Countable;
+use IteratorAggregate;
 use Traversable;
 
-class Collection implements ArrayAccess, Countable
+class Collection implements ArrayAccess, Countable, IteratorAggregate
 {
     public function __construct(protected array $elements = []) {}
 
@@ -235,6 +236,11 @@ class Collection implements ArrayAccess, Countable
         return empty($this->elements);
     }
 
+    public function isNotEmpty(): bool
+    {
+        return ! $this->isEmpty();
+    }
+
     public function getIterator(): Traversable
     {
         return new ArrayIterator($this->elements);
@@ -253,6 +259,23 @@ class Collection implements ArrayAccess, Countable
     public function unique(): static
     {
         return new static(array_unique($this->elements));
+    }
+
+    public function flatMap(Closure $p): static
+    {
+        $result = [];
+
+        foreach ($this->elements as $key => $value) {
+            $mapped = $p($value, $key);
+
+            if (is_array($mapped)) {
+                $result = [...$result, ...$mapped];
+            } else {
+                $result[] = $mapped;
+            }
+        }
+
+        return new static($result);
     }
 
     public function uniqueBy(string $key): static

@@ -52,13 +52,14 @@ class SortParserTest extends TestCase
 
         $res = $this->sigmie
             ->query($indexName)
-            ->properties($blueprint)
-            ->addRaw('sort', $query)
+            ->sort($query)
             ->get();
 
-        $this->assertTrue($res->json('hits')[0]['_source']['id'] === 10);
-        $this->assertTrue($res->json('hits')[1]['_source']['id'] === 2);
-        $this->assertTrue($res->json('hits')[2]['_source']['id'] === 1);
+        $hits = $res->json('hits.hits');
+
+        $this->assertTrue($hits[0]['_source']['id'] === 10);
+        $this->assertTrue($hits[1]['_source']['id'] === 2);
+        $this->assertTrue($hits[2]['_source']['id'] === 1);
     }
 
     /**
@@ -125,9 +126,13 @@ class SortParserTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
+        $blueprint->keyword('name');
         $blueprint->object('contact', function (NewProperties $props) {
             $props->geoPoint('location');
         });
+
+        $props = $blueprint();
+        $parser = new SortParser($props);
 
         $index = $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -137,6 +142,7 @@ class SortParserTest extends TestCase
 
         $docs = [
             new Document([
+                'name' => 'test',
                 'contact' => [
                     'location' => [
                         'lat' => 52.49,
@@ -145,6 +151,7 @@ class SortParserTest extends TestCase
                 ],
             ]),
             new Document([
+                'name' => 'test1',
                 'contact' => [
                     'location' => [
                         'lat' => 53.49,
@@ -153,6 +160,7 @@ class SortParserTest extends TestCase
                 ],
             ]),
             new Document([
+                'name' => 'test2',
                 'contact' => [
                     'location' => [
                         'lat' => 54.49,
@@ -164,31 +172,30 @@ class SortParserTest extends TestCase
 
         $index->merge($docs);
 
-        $props = $blueprint();
+        $sort = $parser->parse('contact.location[52.49,13.77]:m:asc');
 
-        $parser = new SortParser($props);
-
-        $query = $parser->parse('contact.location[52.49,13.77]:km:asc');
-
-        $res = $this->sigmie->query($indexName)
-            ->addRaw('sort', $query)
+        $res = $this->sigmie
+            ->query($indexName)
+            ->sort($sort)
             ->get();
 
-        $this->assertTrue($res->json('hits')[0]['_source']['contact']['location']['lat'] === 52.49);
-        $this->assertTrue($res->json('hits')[1]['_source']['contact']['location']['lat'] === 53.49);
-        $this->assertTrue($res->json('hits')[2]['_source']['contact']['location']['lat'] === 54.49);
+        $hits = $res->json('hits.hits');
 
-        $parser = new SortParser($props);
+        $this->assertTrue($hits[0]['_source']['contact']['location']['lat'] === 52.49);
+        $this->assertTrue($hits[1]['_source']['contact']['location']['lat'] === 53.49);
+        $this->assertTrue($hits[2]['_source']['contact']['location']['lat'] === 54.49);
 
-        $query = $parser->parse('contact.location[52.49,13.77]:km:desc');
+        $sort = $parser->parse('contact.location[52.49,13.77]:m:desc');
 
         $res = $this->sigmie->query($indexName)
-            ->addRaw('sort', $query)
+            ->sort($sort)
             ->get();
 
-        $this->assertTrue($res->json('hits')[0]['_source']['contact']['location']['lat'] === 54.49);
-        $this->assertTrue($res->json('hits')[1]['_source']['contact']['location']['lat'] === 53.49);
-        $this->assertTrue($res->json('hits')[2]['_source']['contact']['location']['lat'] === 52.49);
+        $hits = $res->json('hits.hits');
+
+        $this->assertTrue($hits[0]['_source']['contact']['location']['lat'] === 54.49);
+        $this->assertTrue($hits[1]['_source']['contact']['location']['lat'] === 53.49);
+        $this->assertTrue($hits[2]['_source']['contact']['location']['lat'] === 52.49);
     }
 
     /**
@@ -249,10 +256,10 @@ class SortParserTest extends TestCase
         $index->merge($docs);
 
         $res = $this->sigmie->query($indexName)
-            ->addRaw('sort', $sorts)
+            ->sort($sorts)
             ->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertTrue($hits[0]['_source']['contact']['name'] === 'Arthur');
     }
@@ -325,9 +332,13 @@ class SortParserTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
+        $blueprint->geoPoint('location');
         $blueprint->nested('contact', function (NewProperties $props) {
             $props->geoPoint('location');
         });
+
+        $props = $blueprint();
+        $parser = new SortParser($props);
 
         $index = $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -364,31 +375,29 @@ class SortParserTest extends TestCase
 
         $index->merge($docs);
 
-        $props = $blueprint();
-
-        $parser = new SortParser($props);
-
-        $query = $parser->parse('contact.location[52.49,13.77]:km:asc');
+        $query = $parser->parse('contact.location[52.49,13.77]:m:asc');
 
         $res = $this->sigmie->query($indexName)
-            ->addRaw('sort', $query)
+            ->sort($query)
             ->get();
 
-        $this->assertTrue($res->json('hits')[0]['_source']['contact']['location']['lat'] === 52.49);
-        $this->assertTrue($res->json('hits')[1]['_source']['contact']['location']['lat'] === 53.49);
-        $this->assertTrue($res->json('hits')[2]['_source']['contact']['location']['lat'] === 54.49);
+        $hits = $res->json('hits.hits');
 
-        $parser = new SortParser($props);
+        $this->assertTrue($hits[0]['_source']['contact']['location']['lat'] === 52.49);
+        $this->assertTrue($hits[1]['_source']['contact']['location']['lat'] === 53.49);
+        $this->assertTrue($hits[2]['_source']['contact']['location']['lat'] === 54.49);
 
-        $query = $parser->parse('contact.location[52.49,13.77]:km:desc');
+        $query = $parser->parse('contact.location[52.49,13.77]:m:desc');
 
         $res = $this->sigmie->query($indexName)
-            ->addRaw('sort', $query)
+            ->sort($query)
             ->get();
 
-        $this->assertTrue($res->json('hits')[0]['_source']['contact']['location']['lat'] === 54.49);
-        $this->assertTrue($res->json('hits')[1]['_source']['contact']['location']['lat'] === 53.49);
-        $this->assertTrue($res->json('hits')[2]['_source']['contact']['location']['lat'] === 52.49);
+        $hits = $res->json('hits.hits');
+
+        $this->assertTrue($hits[0]['_source']['contact']['location']['lat'] === 54.49);
+        $this->assertTrue($hits[1]['_source']['contact']['location']['lat'] === 53.49);
+        $this->assertTrue($hits[2]['_source']['contact']['location']['lat'] === 52.49);
     }
 
     /**
@@ -400,6 +409,9 @@ class SortParserTest extends TestCase
 
         $blueprint = new NewProperties;
         $blueprint->geoPoint('location');
+
+        $props = $blueprint();
+        $parser = new SortParser($props);
 
         $index = $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -430,31 +442,29 @@ class SortParserTest extends TestCase
 
         $index->merge($docs);
 
-        $props = $blueprint();
-
-        $parser = new SortParser($props);
-
-        $query = $parser->parse('location[52.49,13.77]:km:asc');
+        $query = $parser->parse('location[52.49,13.77]:m:asc');
 
         $res = $this->sigmie->query($indexName)
-            ->addRaw('sort', $query)
+            ->sort($query)
             ->get();
 
-        $this->assertTrue($res->json('hits')[0]['_source']['location']['lat'] === 52.49);
-        $this->assertTrue($res->json('hits')[1]['_source']['location']['lat'] === 53.49);
-        $this->assertTrue($res->json('hits')[2]['_source']['location']['lat'] === 54.49);
+        $hits = $res->json('hits.hits');
 
-        $parser = new SortParser($props);
+        $this->assertTrue($hits[0]['_source']['location']['lat'] === 52.49);
+        $this->assertTrue($hits[1]['_source']['location']['lat'] === 53.49);
+        $this->assertTrue($hits[2]['_source']['location']['lat'] === 54.49);
 
-        $query = $parser->parse('location[52.49,13.77]:km:desc');
+        $query = $parser->parse('location[52.49,13.77]:m:desc');
 
         $res = $this->sigmie->query($indexName)
-            ->addRaw('sort', $query)
+            ->sort($query)
             ->get();
 
-        $this->assertTrue($res->json('hits')[0]['_source']['location']['lat'] === 54.49);
-        $this->assertTrue($res->json('hits')[1]['_source']['location']['lat'] === 53.49);
-        $this->assertTrue($res->json('hits')[2]['_source']['location']['lat'] === 52.49);
+        $hits = $res->json('hits.hits');
+
+        $this->assertTrue($hits[0]['_source']['location']['lat'] === 54.49);
+        $this->assertTrue($hits[1]['_source']['location']['lat'] === 53.49);
+        $this->assertTrue($hits[2]['_source']['location']['lat'] === 52.49);
     }
 
     /**
@@ -525,10 +535,10 @@ class SortParserTest extends TestCase
         $index->merge($docs);
 
         $res = $this->sigmie->query($indexName)
-            ->addRaw('sort', $sorts)
+            ->sort($sorts)
             ->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertTrue($hits[0]['_source']['name'] === 'Arthur');
     }
@@ -583,10 +593,10 @@ class SortParserTest extends TestCase
         $index->merge($docs);
 
         $res = $this->sigmie->query($indexName)
-            ->addRaw('sort', $sorts)
+            ->sort($sorts)
             ->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertTrue($hits[0]['_source']['name'] === 'Zoro');
     }
@@ -628,10 +638,10 @@ class SortParserTest extends TestCase
 
         $sorts = $parser->parse('created_at:desc');
         $res = $this->sigmie->query($indexName)
-            ->addRaw('sort', $sorts)
+            ->sort($sorts)
             ->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertTrue($hits[0]['_source']['created_at'] === '2023-06-07T12:38:29.000000Z');
         $this->assertTrue($hits[1]['_source']['created_at'] === '2023-05-07T12:38:29.000000Z');
@@ -678,7 +688,7 @@ class SortParserTest extends TestCase
             ->addRaw('sort', $sorts)
             ->get();
 
-        $hits = $res->json('hits');
+        $hits = $res->json('hits.hits');
 
         $this->assertTrue($hits[0]['_source']['created_at'] === '2023-04-07T12:38:29.000000Z');
         $this->assertTrue($hits[1]['_source']['created_at'] === '2023-05-07T12:38:29.000000Z');

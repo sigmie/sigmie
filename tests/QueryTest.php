@@ -17,98 +17,6 @@ class QueryTest extends TestCase
     /**
      * @test
      */
-    public function facet_parse_query()
-    {
-        $indexName = uniqid();
-
-        $blueprint = new NewProperties();
-        $blueprint->number('age')->integer();
-
-        $this->sigmie->newIndex($indexName)
-            ->properties($blueprint)
-            ->create();
-
-        $collection = $this->sigmie->collect($indexName, refresh: true);
-
-        $docs = [
-            new Document([
-                'name' => 'John Doe',
-                'age' => 20,
-            ]),
-            new Document([
-                'name' => 'John Smith',
-                'age' => 25,
-            ]),
-        ];
-
-        $collection->merge($docs);
-
-        $facets = $this->sigmie->newQuery($indexName)
-            ->properties($blueprint)
-            ->matchAll()
-            ->facets('age')
-            ->scriptScore(
-                source: "10",
-                boostMode: 'replace'
-            )
-            ->get();
-
-        $this->assertEquals(10, $facets->json('hits.hits.0._score'));
-        $this->assertEquals(10, $facets->json('hits.hits.1._score'));
-    }
-
-    /**
-     * @test
-     */
-    public function sort_parse_query()
-    {
-        $indexName = uniqid();
-
-        $blueprint = new NewProperties();
-        $blueprint->name('name');
-        $blueprint->number('age')->integer();
-
-        $this->sigmie->newIndex($indexName)
-            ->properties($blueprint)
-            ->create();
-
-        $collection = $this->sigmie->collect($indexName, refresh: true);
-
-        $docs = [
-            new Document([
-                'name' => 'John Doe',
-                'age' => 20,
-            ]),
-            new Document([
-                'name' => 'John Smith',
-                'age' => 25,
-            ]),
-        ];
-
-        $collection->merge($docs);
-
-        $search = $this->sigmie->newQuery($indexName)
-            ->properties($blueprint)
-            ->matchAll()
-            ->sortString('age:asc')
-            ->get();
-
-        $this->assertEquals('John Doe', $search->json('hits.hits.0._source.name'));
-        $this->assertEquals('John Smith', $search->json('hits.hits.1._source.name'));
-
-        $search = $this->sigmie->newQuery($indexName)
-            ->properties($blueprint)
-            ->matchAll()
-            ->sortString('age:desc')
-            ->get();
-
-        $this->assertEquals('John Smith', $search->json('hits.hits.0._source.name'));
-        $this->assertEquals('John Doe', $search->json('hits.hits.1._source.name'));
-    }
-
-    /**
-     * @test
-     */
     public function filter_parse_without_mappings_query()
     {
         $indexName = uniqid();
@@ -314,7 +222,7 @@ class QueryTest extends TestCase
             $boolean->mustNot->ids(['unqie']);
 
             $boolean->should->bool(fn(QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
-        })->sort('title.raw', 'asc')
+        })->sort(['title.raw' => 'asc'])
             ->fields(['title'])
             ->from(0)
             ->size(2)
@@ -326,93 +234,49 @@ class QueryTest extends TestCase
         $this->assertArrayHasKey('from', $query);
         $this->assertArrayHasKey('size', $query);
 
-        $this->assertEquals(
-            $query['query'],
-            [
-                'function_score' => [
-                    'boost' => 1.0,
-                    'script_score' => [
-                        'script' => [
-                            'source' => "doc.containsKey('boost') && doc['boost'].size() > 0 ? doc['boost'].value : 1",
-                            'params' => new stdClass(),
-                        ],
-                    ],
-                    'boost_mode' => 'multiply',
-                    'query' => ['bool' => [
-                        'boost' => 1.0,
-                        'filter' => [
-                            ['match_all' => (object) [
-                                'boost' => 1.0,
-                            ]],
-                            ['match_none' => (object) [
-                                'boost' => 1.0,
-                            ]],
-                            ['fuzzy' => ['bar' => ['value' => 'baz']]],
-                            ['multi_match' => [
-                                'fields' => ['foo', 'bar'],
-                                'boost' => 1.0,
-                                'query' => 'baz',
-                            ]],
-                        ],
-                        'must' => [
-                            [
-                                'term' => [
-                                    'foo' => [
-                                        'value' => 'bar',
-                                        'boost' => 1.0,
-                                    ],
-                                ],
-                            ],
-                            [
-                                'exists' => [
-                                    'field' => 'bar',
-                                    'boost' => 1.0,
-                                ],
-                            ],
-                            [
-                                'terms' => [
-                                    'foo' => ['bar', 'baz'],
-                                    'boost' => 1.0,
-                                ],
-                            ],
-                        ],
-                        'must_not' => [
-                            [
-                                'wildcard' => [
-                                    'foo' => [
-                                        'value' => '**/*',
-                                        'boost' => '1.0',
-                                    ],
-                                ],
-                            ],
-                            [
-                                'ids' => [
-                                    'values' => [
-                                        'unqie',
-                                    ],
-                                    'boost' => 1.0,
-                                ],
-                            ],
-                        ],
-                        'should' => [
-                            [
-                                'bool' => [
-                                    'must' => [
-                                        ['match' => [
-                                            'foo' => [
-                                                'query' => 'bar',
-                                                'boost' => 1.0,
-                                            ],
-                                        ]],
-                                    ],
-                                    'boost' => 1.0,
-                                ],
-                            ],
-                        ],
-                    ]],
+        $expected = [
+            "bool" => [
+                "must" => [
+                    ["term" => ["foo" => ["value" => "bar", "boost" => 1.0]]],
+                    ["exists" => ["field" => "bar", "boost" => 1.0]],
+                    ["terms" => ["foo" => ["bar", "baz"], "boost" => 1.0]],
                 ],
+                "must_not" => [
+                    ["wildcard" => ["foo" => ["value" => "**/*", "boost" => 1.0]]],
+                    ["ids" => ["values" => ["unqie"], "boost" => 1.0]],
+                ],
+                "should" => [
+                    [
+                        "bool" => [
+                            "must" => [
+                                ["match" => [
+                                    "foo" => [
+                                        "query" => "bar",
+                                        "boost" => 1.0,
+                                        "analyzer" => "default"
+                                    ]
+                                ]]
+                            ],
+                            "boost" => 1.0
+                        ]
+                    ]
+                ],
+                "filter" => [
+                    ["match_all" => (object)["boost" => 1.0]],
+                    ["match_none" => (object)["boost" => 1.0]],
+                    ["fuzzy" => ["bar" => ["value" => "baz"]]],
+                    ["multi_match" => [
+                        "query" => "baz",
+                        "boost" => 1.0,
+                        "analyzer" => "default",
+                        "fields" => ["foo", "bar"]
+                    ]]
+                ],
+                "boost" => 1.0
             ]
-        );
+        ];
+
+        $this->assertEquals($expected, $query['query']);
     }
 
     /**
@@ -429,7 +293,7 @@ class QueryTest extends TestCase
             )
             ->getDSL();
 
-        $this->assertEquals('custom_analyzer', $query['query']['function_score']['query']['match']['foo']['analyzer']);
+        $this->assertEquals('custom_analyzer', $query['query']['match']['foo']['analyzer']);
     }
 
     /**

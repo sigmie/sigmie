@@ -27,10 +27,12 @@ trait Actions
         SettingsInterface $settings,
         MappingsInterface $mappings
     ) {
+        $driver = $this->elasticsearchConnection->driver();
+
         $body = [
             'index_patterns' => $patterns,
             'settings' => $settings->toRaw(),
-            'mappings' => $mappings->toRaw(),
+            'mappings' => $mappings->toRaw($driver),
         ];
 
         $this->templateAPICall($name, 'PUT', $body);
@@ -40,9 +42,11 @@ trait Actions
 
     protected function createIndex(string $indexName, SettingsInterface $settings, MappingsInterface $mappings)
     {
+        $driver = $this->elasticsearchConnection->driver();
+
         $body = [
             'settings' => $settings->toRaw(),
-            'mappings' => $mappings->toRaw(),
+            'mappings' => $mappings->toRaw($driver),
         ];
 
         $this->indexAPICall("{$indexName}", 'PUT', $body);
@@ -74,7 +78,7 @@ trait Actions
         }
 
         $data = array_values($res->json())[0];
-        $name = $data['settings']['index']['provided_name'];
+        $name = $data['settings']['index']['provided_name'] ?? $this->indexAPICall("_resolve/index/{$alias}", 'GET')->json('indices.0.name');
 
         $settings = Settings::fromRaw($data['settings']);
         $analyzers = $settings->analysis()->analyzers();
@@ -94,10 +98,26 @@ trait Actions
 
     protected function listIndices(string $pattern = '*'): array
     {
-        $catResponse = $this->catAPICall("indices/{$pattern}", 'GET');
+        $catResponse = $this->catAPICall("indices/{$pattern}?h=index,health,status,uuid,pri,rep,docs.count,docs.deleted,store.size,pri.store.size,creation.date.string", 'GET');
+        $aliasesResponse = $this->catAPICall("aliases", 'GET');
 
-        return array_map(function ($values) {
-            $index = ListedIndex::fromRaw($values['index'], $values);
+        $aliasesData = $aliasesResponse->json();
+
+        $aliasesByIndex = [];
+        foreach ($aliasesData as $aliasInfo) {
+            $indexName = $aliasInfo['index'];
+            $aliasName = $aliasInfo['alias'];
+
+            if (!isset($aliasesByIndex[$indexName])) {
+                $aliasesByIndex[$indexName] = [];
+            }
+            $aliasesByIndex[$indexName][] = $aliasName;
+        }
+
+        return array_map(function ($values) use ($aliasesByIndex) {
+            $aliases = $aliasesByIndex[$values['index']] ?? [];
+
+            $index = ListedIndex::fromRaw($values, $aliases);
 
             return $index;
         }, $catResponse->json());

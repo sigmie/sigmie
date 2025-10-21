@@ -10,17 +10,17 @@ use Sigmie\Index\Contracts\Settings as SettingsInterface;
 
 class Settings implements SettingsInterface
 {
-    public readonly int $primaryShards;
+    public readonly ?int $primaryShards;
 
-    public readonly int $replicaShards;
+    public readonly ?int $replicaShards;
 
     protected AnalysisInterface $analysis;
 
     protected string $defaultPipeline;
 
     public function __construct(
-        int $primaryShards = 1,
-        int $replicaShards = 2,
+        ?int $primaryShards = null,
+        ?int $replicaShards = null,
         AnalysisInterface $analysis = new Analysis(),
         protected array $configs = []
     ) {
@@ -48,12 +48,12 @@ class Settings implements SettingsInterface
         return $this;
     }
 
-    public function primaryShards(): int
+    public function primaryShards(): ?int
     {
         return $this->primaryShards;
     }
 
-    public function replicaShards(): int
+    public function replicaShards(): ?int
     {
         return $this->replicaShards;
     }
@@ -66,8 +66,8 @@ class Settings implements SettingsInterface
             ? Analysis::fromRaw($settings['analysis']) : new Analysis();
 
         return new static(
-            (int) $settings['number_of_shards'],
-            (int) $settings['number_of_replicas'],
+            (isset($settings['number_of_shards']) ? (int)$settings['number_of_shards'] : null),
+            (isset($settings['number_of_replicas']) ? (int)$settings['number_of_replicas'] : null),
             $analysis
         );
     }
@@ -75,10 +75,16 @@ class Settings implements SettingsInterface
     public function toRaw(): array
     {
         $res = array_merge([
-            'number_of_shards' => $this->primaryShards,
-            'number_of_replicas' => $this->replicaShards,
             'analysis' => $this->analysis()->toRaw(),
         ], $this->configs);
+
+        if ($this->primaryShards) {
+            $res['number_of_shards'] = $this->primaryShards;
+        }
+
+        if (!is_null($this->replicaShards)) {
+            $res['number_of_replicas'] = $this->replicaShards;
+        }
 
         if ($this->defaultPipeline ?? false) {
             $res['default_pipeline'] = $this->defaultPipeline;

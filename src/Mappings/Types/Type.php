@@ -10,6 +10,7 @@ use Sigmie\Enums\FacetLogic;
 use Sigmie\Mappings\Contracts\Type as TypeInterface;
 use Sigmie\Query\Aggs;
 use Sigmie\Search\Contracts\TextQueries;
+use Sigmie\Shared\Collection;
 use Sigmie\Shared\Contracts\Name;
 use Sigmie\Shared\Contracts\ToRaw;
 
@@ -47,6 +48,15 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
     public function queries(array|string $queryString): array
     {
         return [];
+    }
+
+    public function queryStringQueries(array|string $queryString): array
+    {
+        if ($this->hasQueriesCallback) {
+            return $this->queriesFromCallback($queryString);
+        }
+        
+        return $this->queries($queryString);
     }
 
     public function meta(array $meta): void
@@ -140,7 +150,7 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
         return [true, ''];
     }
 
-    protected function typeName(): string
+    public function typeName(): string
     {
         return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', (new \ReflectionClass($this))->getShortName()));
     }
@@ -164,5 +174,13 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
         $this->facetLogic = FacetLogic::Disjunctive;
 
         return $this;
+    }
+
+    public function vectorFields() 
+    {
+        return (new Collection([]))
+            ->map(function (Nested|DenseVector $field) {
+                return $field;
+            });
     }
 }

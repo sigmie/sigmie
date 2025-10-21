@@ -8,14 +8,17 @@ use Http\Promise\Promise;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
+use Sigmie\Enums\SearchEngineType;
+use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\MatchAll;
+use Sigmie\Sigmie;
 
 class Search
 {
     use APIsSearch;
 
-    protected string $index;
+    public string $index;
 
     protected bool|int $trackTotalHits;
 
@@ -30,6 +33,8 @@ class Search
     protected array $raw = [];
 
     protected array $sort = [];
+
+    protected array $knn = [];
 
     protected array $highlight;
 
@@ -50,6 +55,7 @@ class Search
         $this->setElasticsearchConnection($connection);
 
         $this->query = new MatchAll();
+        $this->aggs = new Aggs();
     }
 
     // public function properties(NewProperties|Properties $props): self
@@ -59,12 +65,12 @@ class Search
     //     return $this;
     // }
 
-    // public function aggregate(callable $callable)
-    // {
-    //     $callable($this->aggs);
+    public function aggregate(callable $callable)
+    {
+        $callable($this->aggs);
 
-    //     return $this;
-    // }
+        return $this;
+    }
 
     // public function facets(string $string)
     // {
@@ -92,9 +98,17 @@ class Search
     //     return $this;
     // }
 
-    public function suggest(Suggest $suggest): self {
+    public function suggest(Suggest $suggest): self
+    {
 
         $this->suggest = $suggest;
+
+        return $this;
+    }
+
+    public function knn(array $knn): self
+    {
+        $this->knn = $knn;
 
         return $this;
     }
@@ -152,30 +166,12 @@ class Search
         return $this;
     }
 
-    // public function sortString(string $sortString): self
-    // {
-    //     $parser = new SortParser($this->properties);
+    public function sort(array $sort): self
+    {
+        $this->sort = $sort;
 
-    //     $this->sort = [
-    //         ...$this->sort,
-    //         ...$parser->parse($sortString),
-    //     ];
-
-    //     return $this;
-    // }
-
-    // public function sort(string $field, ?string $direction = null): self
-    // {
-    //     if ($field === '_score') {
-    //         $this->sort[] = $field;
-
-    //         return $this;
-    //     }
-
-    //     $this->sort[] = [$field => $direction];
-
-    //     return $this;
-    // }
+        return $this;
+    }
 
     public function addRaw(string $key, mixed $value)
     {
@@ -183,19 +179,6 @@ class Search
 
         return $this;
     }
-
-    // public function highlight(string $field, string $preTag, string $postTag)
-    // {
-    //     $this->highlight[$field] = [
-    //         'type' => 'plain',
-    //         'force_source' => true,
-    //         'pre_tags' => [$preTag],
-    //         'post_tags' => [$postTag],
-    //         'fragment_size' => 150,
-    //         'number_of_fragments' => 3,
-    //         'no_match_size' => 150,
-    //     ];
-    // }
 
     public function response()
     {
@@ -242,25 +225,18 @@ class Search
     public function toRaw(): array
     {
         $result = [
-            // 'track_total_hits' => $this->trackTotalHits < 0 ? true : $this->trackTotalHits,
             '_source' => $this->fields,
             'query' => $this->query->toRaw(),
             'from' => $this->from,
             'size' => $this->size,
             'min_score' => $this->minScore,
-            // 'sort' => [...$this->sort],
             'sort' => $this->sort,
-            // 'highlight' => [
-            //     // 'require_field_match' => false,
-            //     'force_source' => true,
-            //     'no_match_size' => 100,
-            //     'fields' => [
-            //         ...$this->highlight,
-            //     ],
-            // ],
             ...$this->raw,
         ];
 
+        if (!empty($this->knn)) {
+            $result['knn'] = $this->knn;
+        }
 
         if ($this->highlight ?? false) {
             $result['highlight'] = $this->highlight;
@@ -274,11 +250,12 @@ class Search
             $result['suggest'] = $this->suggest->toRaw();
         }
 
-        if ($this->aggs ?? false) {
-            $result['aggs'] = $this->aggs->toRaw();
+        if (isset($this->aggs)) {
+            $aggsRaw = $this->aggs->toRaw();
+            if (!empty($aggsRaw)) {
+                $result['aggs'] = $aggsRaw;
+            }
         }
-
-        ray($result);
 
         return $result;
     }

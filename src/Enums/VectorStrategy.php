@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Enums;
 
+use Sigmie\Support\VectorMath;
+
 enum VectorStrategy: string
 {
     // Low accuracy
@@ -35,37 +37,41 @@ enum VectorStrategy: string
         };
     }
 
-    public function format(array $embeddings): array
+    public function format(array $embeddings, bool $normalize = true): array
     {
         return (match ($this) {
-            self::Concatenate => function ($embeddings) {
+            self::Concatenate => function ($embeddings, $normalize) {
                 return $embeddings[0] ?? [];
             },
-            self::Average => function ($embeddings) {
+            self::Average => function ($embeddings, $normalize) {
 
                 $count = count($embeddings);
 
                 if ($count === 1) {
-                    return $embeddings[0];
-                }
+                    $result = $embeddings[0];
+                } else {
+                    $dimensions = count($embeddings[0]);
+                    $sum = array_fill(0, $dimensions, 0.0);
 
-                $dimensions = count($embeddings[0]);
-                $sum = array_fill(0, $dimensions, 0.0);
-
-                foreach ($embeddings as $vector) {
-                    foreach ($vector as $i => $val) {
-                        $sum[$i] += $val;
+                    foreach ($embeddings as $vector) {
+                        foreach ($vector as $i => $val) {
+                            $sum[$i] += $val;
+                        }
                     }
+
+                    $result = array_map(fn($total) => $total / $count, $sum);
                 }
 
-                return array_map(fn($total) => $total / $count, $sum);
+                // Always normalize if requested, even for single embeddings
+                // (The API may return normalized vectors, but we honor the normalize flag)
+                return $normalize ? VectorMath::normalize($result) : $result;
             },
-            self::ScriptScore => function (array $embeddings) {
+            self::ScriptScore => function (array $embeddings, $normalize) {
                 // For ScriptScore: create array of objects with embedding field
                 return array_map(function ($embedding) {
                     return ['vector' => $embedding];
                 }, $embeddings);
             },
-        })($embeddings);
+        })($embeddings, $normalize);
     }
 }

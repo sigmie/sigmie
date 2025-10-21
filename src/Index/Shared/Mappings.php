@@ -19,6 +19,8 @@ trait Mappings
 
     protected Properties $properties;
 
+    protected array $customMeta = [];
+
     public function analysis(): Analysis
     {
         return $this->analysis ?? new AnalysisAnalysis();
@@ -42,16 +44,25 @@ trait Mappings
         return $this;
     }
 
+    public function meta(array $meta): static
+    {
+        $this->customMeta = [...$this->customMeta, ...$meta];
+
+        return $this;
+    }
+
     protected function createMappings(DefaultAnalyzer $defaultAnalyzer): MappingsInterface
     {
+        $defaultMeta = [
+            "created_by" => "sigmie",
+            "lib_version" => InstalledVersions::getVersion('sigmie/sigmie'),
+            "language" => $this->language,
+        ];
+
         return new IndexMappings(
             defaultAnalyzer: $defaultAnalyzer,
             properties: $this->properties,
-            meta: [
-                "created_by" => "sigmie",
-                "lib_version" => InstalledVersions::getVersion('sigmie/sigmie'),
-                "language" => $this->language,
-            ],
+            meta: [...$defaultMeta, ...$this->customMeta],
         );
     }
 }

@@ -6,11 +6,6 @@ class GeoPoint extends Type
 {
     protected string $type = 'geo_point';
 
-    public function queries(array|string $queryString): array
-    {
-        return [];
-    }
-
     public function validate(string $key, mixed $value): array
     {
         if (isset($value['lat']) && isset($value['lon'])) {

@@ -59,8 +59,9 @@ class AnalysisTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->stripHTML()
+            ->stripHTML('html_strip')
             ->create();
+
 
         $this->assertIndex($alias, function (Assert $index) {
             $index->assertAnalyzerHasCharFilter('default', 'html_strip');

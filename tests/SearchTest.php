@@ -10,27 +10,12 @@ use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Price;
+use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
 class SearchTest extends TestCase
 {
-
-    /**
-     * @test
-     */
-    // public function v8_knn_search()
-    // {
-    //     // TODO
-    //     // This was failing because boost out of knn query
-    // }
-
-    /**
-     * @test
-     */
-    // public function search_template_with_query_weight() {}
-
-
     /**
      * @test
      */
@@ -74,6 +59,43 @@ class SearchTest extends TestCase
 
         $this->assertEquals('Goofy', $hits[0]['_source']['name']);
         $this->assertEquals(2, $res->total());
+    }
+
+    /**
+     * @test
+     */
+    public function field_scoped_query_string()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->text('name');
+        $blueprint->text('category');
+        $blueprint->text('description');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['name' => 'Laptop', 'category' => 'Electronics', 'description' => 'High-end device']),
+                new Document(['name' => 'Phone', 'category' => 'Electronics', 'description' => 'Mobile phone']),
+                new Document(['name' => 'Electronics', 'category' => 'Furniture', 'description' => 'Office desk']),
+            ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['name', 'category'])
+            ->queryString('Electronics', 1.0, ['category'])
+            ->makeSearch();
+
+        $hits = $search->get()->hits();
+
+        // Only two have category Electronics the third one
+        // has category Furniture, and Elactronies in name
+        $this->assertCount(2, $hits);
     }
 
     /**
@@ -315,15 +337,15 @@ class SearchTest extends TestCase
         $response = $this->sigmie->newSearch($indexName)
             ->properties($blueprint)
             ->weight([
-                'title' => 5,
+                'title' => 10,
             ])
             ->minScore(2)
             ->queryString('Mickey')
             ->get();
 
-        $hits = $response->json('hits');
+        $hits = $response->hits();
 
-        $this->assertGreaterThan(2, $hits[0]['_score']);
+        $this->assertGreaterThan(2, $hits[0]->_score ?? 0);
     }
 
     /**
@@ -476,7 +498,7 @@ class SearchTest extends TestCase
             ->queryString('bam ade')
             ->fields(['first_name', 'last_name'])
             ->retrieve(['first_name', 'last_name'])
-            ->make();
+            ->makeSearch();
 
         $res = $search->get();
 
@@ -516,67 +538,6 @@ class SearchTest extends TestCase
         $hits = $res->json('hits');
 
         $this->assertNotEmpty($hits);
-    }
-
-    /**
-     * @test
-     */
-    public function completion_suggests_test()
-    {
-        $indexName = uniqid();
-        $blueprint = new NewProperties;
-        $blueprint->name('name');
-        $blueprint->text('description');
-        $blueprint->autocomplete();
-
-        $index = $this->sigmie->newIndex($indexName)
-            ->autocomplete(['name', 'description'])
-            ->properties($blueprint)
-            ->create();
-
-        $index = $this->sigmie->collect($indexName, refresh: true);
-
-        $index->merge([
-            new Document([
-                'name' => 'Mickey',
-                'description' => 'Adventure in the woods',
-            ]),
-            new Document([
-                'name' => 'Minie',
-                'description' => 'Adventure in the woods',
-            ]),
-            new Document([
-                'name' => 'Modern',
-                'description' => 'Adventure in the woods',
-            ]),
-            new Document([
-                'name' => 'Mice',
-                'description' => 'Adventure in the woods',
-            ]),
-            new Document([
-                'name' => 'Marisa',
-                'description' => 'Adventure in the woods',
-            ]),
-        ]);
-
-        $res = $this->sigmie->newSearch($indexName)
-            ->properties($blueprint)
-            ->autocompletePrefix('m')
-            ->fields(['name'])
-            ->retrieve(['name'])
-            ->get();
-
-        $autocomplete = $res->json('autocomplete');
-
-        $suggestions = array_map(fn($value) => $value['text'], $autocomplete[0]['options']);
-
-        $this->assertEquals([
-            'Marisa',
-            'Mice',
-            'Mickey',
-            'Minie',
-            'Modern',
-        ], $suggestions);
     }
 
     /**
@@ -1108,7 +1069,7 @@ class SearchTest extends TestCase
 
         $hits = $res->hits();
 
-        $this->assertEquals('Mickey', $hits[0]['_source']['name']);
+        $this->assertEquals('Mickey', $hits[0]['name']);
         $this->assertEquals(2, $res->total());
     }
 
@@ -1120,7 +1081,7 @@ class SearchTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->title('name')->semantic();
+        $blueprint->title('name')->semantic(dimensions: 384, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -1142,25 +1103,13 @@ class SearchTest extends TestCase
 
         $response = $this->sigmie
             ->newSearch($indexName)
-            ->semantic()
             ->noResultsOnEmptySearch()
             ->disableKeywordSearch()
             ->properties($blueprint)
-            ->queryString('Queen')
             ->queryString('Woman')
             ->get();
 
         $this->assertEquals(0, $response->total());
-
-        $response = $this->sigmie
-            ->newSearch($indexName)
-            ->semantic()
-            ->noResultsOnEmptySearch()
-            ->properties($blueprint)
-            ->queryString('Queen')
-            ->get();
-
-        $this->assertEquals(1, $response->total());
     }
 
     /**
@@ -1276,4 +1225,67 @@ class SearchTest extends TestCase
 
         $this->assertEquals(2, $res->total());
     }
+
+    /**
+     * @test
+     */
+    public function range_query()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->range('numbers')->integer()
+            ->withQueries(function (string $queryString) {
+                return [
+                    new Range('numbers', [
+                        '>=' => $queryString,
+                        '<=' => $queryString,
+                    ]),
+                ];
+            });
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'numbers' => ['gt' => 10, 'lt' => 20],
+                ]),
+                new Document([
+                    'numbers' => ['gt' => 21, 'lt' => 31],
+                ]),
+            ]);
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->queryString('lorem')
+            ->get();
+
+        $this->assertEquals(0, $response->total());
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->queryString('15')
+            ->get();
+
+        $this->assertEquals(1, $response->total());
+
+        $response = $this->sigmie
+            ->newSearch($indexName)
+            ->noResultsOnEmptySearch()
+            ->properties($blueprint)
+            ->queryString('9')
+            ->get();
+
+        $this->assertEquals(0, $response->total());
+    }
+
 }

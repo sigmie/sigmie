@@ -26,6 +26,11 @@ namespace Sigmie\Functions {
     //     return "AUTO:{$oneTypoChars},{$twoTypoChars}";
     // }
 
+    function random_name(string $name): string
+    {
+        return strtolower(prefix_id($name,5));
+    }
+
     function name_configs(array $values): array
     {
         if (count($values) > 1) {

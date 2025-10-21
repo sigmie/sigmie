@@ -399,6 +399,8 @@ class FilterParser extends Parser
         });
 
         $values = array_map(fn($value) => trim($value, ' '), $values);
+        $values = array_map(fn($value) => trim($value, '\''), $values);
+        $values = array_map(fn($value) => trim($value, '"'), $values);
 
         return new IDs($values);
     }

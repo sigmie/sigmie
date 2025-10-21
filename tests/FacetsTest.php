@@ -26,9 +26,7 @@ class FacetsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties;
-        $blueprint->nested('shirt', function (NewProperties $blueprint) {
-            $blueprint->nested('red', function (NewProperties $blueprint) {
+        $blueprint = new NewProperties; $blueprint->nested('shirt', function (NewProperties $blueprint) { $blueprint->nested('red', function (NewProperties $blueprint) {
                 $blueprint->price();
             });
         });

@@ -11,4 +11,6 @@ interface ElasticsearchConnection
     public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse;
 
     public function promise(ElasticsearchRequest $request): Promise;
+
+    public function driver(): SearchEngine;
 }

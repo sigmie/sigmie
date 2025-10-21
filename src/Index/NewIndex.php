@@ -6,10 +6,12 @@ namespace Sigmie\Index;
 
 use Carbon\Carbon;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Languages\English\Filter\Lowercase;
 use Sigmie\Languages\English\Filter\Stemmer;
 use Sigmie\Languages\English\Filter\Stopwords;
 use Sigmie\Index\Actions as IndexActions;
+use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
@@ -25,13 +27,13 @@ use Sigmie\Index\Shared\Shards;
 use Sigmie\Index\Shared\Tokenizer;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
-use Sigmie\Semantic\Contracts\AIProvider;
-use Sigmie\Semantic\Providers\SigmieAI as DefaultEmbeddingsProvider;
-use Sigmie\Shared\EmbeddingsProvider;
+use Sigmie\AI\Contracts\Embedder;
+use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\Enums\SearchEngineType;
+use Sigmie\Sigmie;
 
 class NewIndex
 {
-    use Autocomplete;
     use CharFilters;
     use Filters;
     use SearchSynonyms;
@@ -40,7 +42,6 @@ class NewIndex
     use Replicas;
     use Shards;
     use Tokenizer;
-    use EmbeddingsProvider;
 
     protected string $language = 'no_lang';
 
@@ -63,8 +64,9 @@ class NewIndex
         ];
     }
 
-    public function __construct(ElasticsearchConnection $connection)
-    {
+    public function __construct(
+        ElasticsearchConnection $connection,
+    ) {
         $this->setElasticsearchConnection($connection);
 
         $this->tokenizer = new WordBoundaries();
@@ -72,8 +74,6 @@ class NewIndex
         $this->analysis = new Analysis();
 
         $this->properties = new MappingsProperties;
-
-        $this->aiProvider = new DefaultEmbeddingsProvider();
     }
 
     public function getAlias(): string
@@ -120,6 +120,10 @@ class NewIndex
 
     public function create(): AliasedIndex
     {
+        if ($this->aliasExists($this->alias)) {
+            throw AliasAlreadyExists::forAlias($this->alias);
+        }
+
         $index = $this->make();
 
         $this->createIndex($index->name, $index->settings, $index->mappings);
@@ -130,6 +134,21 @@ class NewIndex
         $index->setElasticsearchConnection($this->elasticsearchConnection);
 
         return $index;
+    }
+
+    public function createIfNotExists(): AliasedIndex
+    {
+        if ($this->aliasExists($this->alias)) {
+            $existingIndex = $this->getIndex($this->alias);
+
+            if ($existingIndex instanceof AliasedIndex) {
+                return $existingIndex;
+            }
+
+            throw new \RuntimeException("Index '{$this->alias}' exists but is not an aliased index");
+        }
+
+        return $this->create();
     }
 
     public function save(string $name, array $patterns): IndexTemplate
@@ -155,7 +174,6 @@ class NewIndex
 
         /** @var IndexMappings $mappings */
         $mappings = $this->createMappings($defaultAnalyzer);
-        $mappings->aiProvider($this->aiProvider);
 
         $analyzers = $mappings->analyzers();
 
@@ -165,18 +183,17 @@ class NewIndex
             $this->analysis()->addAnalyzer($this->makeSearchSynonymsAnalyzer());
         }
 
+        // Apply engine-specific index settings for semantic fields
+        $driver = $this->elasticsearchConnection->driver();
+        $engineSettings = $driver->indexSettings();
+        $this->config = [...$this->config, ...$engineSettings];
+
         $settings = new Settings(
-            primaryShards: $this->shards,
-            replicaShards: $this->replicas,
+            primaryShards: $this->serverless ? null : $this->shards,
+            replicaShards: $this->serverless ? null : $this->replicas,
             analysis: $this->analysis,
             configs: $this->config
         );
-
-        if ($this->autocomplete && ($mappings->properties()->autocompleteField ?? false)) {
-            $pipeline = $this->createAutocompletePipeline($mappings);
-
-            $settings->defaultPipeline($pipeline->name);
-        }
 
         $name = $this->createIndexName();
 
@@ -185,8 +202,8 @@ class NewIndex
         return $index;
     }
 
-    protected function createIndexName() {
-
+    protected function createIndexName()
+    {
         $timestamp = Carbon::now()->format('YmdHisu');
 
         return "{$this->alias}_{$timestamp}";

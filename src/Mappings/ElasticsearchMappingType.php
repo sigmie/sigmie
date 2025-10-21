@@ -15,6 +15,14 @@ enum ElasticsearchMappingType: string
     case TEXT = 'text';
     case SEARCH_AS_YOU_TYPE = 'search_as_you_type';
     case COMPLETION = 'completion';
+    case DOUBLE = 'double';
+    case FLAT_OBJECT = 'flat_object';
+    case INTEGER_RANGE = 'integer_range';
+    case FLOAT_RANGE = 'float_range';
+    case LONG_RANGE = 'long_range';
+    case DOUBLE_RANGE = 'double_range';
+    case DATE_RANGE = 'date_range';
+    case IP_RANGE = 'ip_range';
 
     public function isKeyword(string $type)
     {

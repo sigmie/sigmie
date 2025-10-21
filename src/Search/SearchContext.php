@@ -8,6 +8,7 @@ class SearchContext
 {
     public function __construct(
         public array $queryStrings = [],
+        public array $queryImages = [],
         public string $filterString = '',
         public string $facetFilterString = '',
         public string $sortString = '',

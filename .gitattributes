@@ -4,6 +4,7 @@
 /.gitignore          export-ignore
 /build               export-ignore
 /tests               export-ignore
+/src/Testing         export-ignore
 /phpunit.xml         export-ignore
 /phpstan.neon        export-ignore
 /Dockerfile          export-ignore

@@ -28,8 +28,9 @@ use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Path;
 use Sigmie\Mappings\Types\Price;
+use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\SearchableNumber;
-use Sigmie\Mappings\Types\Sentence;
+use Sigmie\Mappings\Types\Title;
 use Sigmie\Mappings\Types\Tags;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Query\Queries\Term\Prefix;
@@ -177,11 +178,11 @@ class MappingsTest extends TestCase
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29.000000Z');
 
-        $this->assertTrue($valid);
+        $this->assertFalse($valid);
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29');
 
-        $this->assertTrue($valid);
+        $this->assertFalse($valid);
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07');
 
@@ -189,15 +190,15 @@ class MappingsTest extends TestCase
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29.000000+02:00');
 
-        $this->assertTrue($valid);
+        $this->assertFalse($valid);
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29.000000-02:00');
 
-        $this->assertTrue($valid);
+        $this->assertFalse($valid);
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29.000000Z');
 
-        $this->assertTrue($valid);
+        $this->assertFalse($valid);
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29.000Z');
 
@@ -205,13 +206,106 @@ class MappingsTest extends TestCase
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29Z');
 
-        $this->assertTrue($valid);
+        $this->assertFalse($valid);
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29+02:00');
 
-        $this->assertTrue($valid);
+        $this->assertFalse($valid);
 
         [$valid, $message] = $props['created_at']->validate('created_at', '2023-04-07T12:38:29-02:00');
+
+        $this->assertFalse($valid);
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $this->sigmie->collect($indexName, true)->merge([
+            new Document([
+                'created_at' => '2023-04-07',
+            ]),
+            new Document([
+                'created_at' => '2023-04-08',
+            ]),
+            new Document([
+                'created_at' => '2023-04-09',
+            ]),
+        ]);
+
+        $res = $this->sigmie->newSearch($indexName)->properties($blueprint)->queryString('')->get();
+
+        // expect no exception when indexing date
+        $this->assertTrue(true);
+    }
+
+    /**
+     * @test
+     */
+    public function validate_datetime()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->datetime('updated_at');
+
+        $props = $blueprint->get();
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', 1);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', 'foo');
+
+        $this->isFalse($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', [
+            [
+                'lat' => 12.34,
+                'lon' => 56.78,
+            ],
+        ]);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', true);
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29.000000Z');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07');
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29.000000+02:00');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29.000000-02:00');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29.000000Z');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29.000Z');
+
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29Z');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29+02:00');
+
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29-02:00');
 
         $this->assertTrue($valid);
 
@@ -219,37 +313,34 @@ class MappingsTest extends TestCase
 
         $this->sigmie->collect($indexName, true)->merge([
             new Document([
-                'created_at' => '2023-04-07T12:38:29.000000Z',
+                'updated_at' => '2023-04-07T12:38:29.000000Z',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29.000000Z',
+                'updated_at' => '2023-04-07T12:38:29.000000Z',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29',
+                'updated_at' => '2023-04-07T12:38:29',
             ]),
             new Document([
-                'created_at' => '2023-04-07',
+                'updated_at' => '2023-04-07T12:38:29.000000+02:00',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29.000000+02:00',
+                'updated_at' => '2023-04-07T12:38:29.000000-02:00',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29.000000-02:00',
+                'updated_at' => '2023-04-07T12:38:29Z',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29Z',
+                'updated_at' => '2023-04-07T12:38:29+02:00',
             ]),
             new Document([
-                'created_at' => '2023-04-07T12:38:29+02:00',
-            ]),
-            new Document([
-                'created_at' => '2023-04-07T12:38:29-02:00',
+                'updated_at' => '2023-04-07T12:38:29-02:00',
             ]),
         ]);
 
         $res = $this->sigmie->newSearch($indexName)->properties($blueprint)->queryString('')->get();
 
-        // expect no exception when indexing date
+        // expect no exception when indexing datetime
         $this->assertTrue(true);
     }
 
@@ -639,7 +730,7 @@ class MappingsTest extends TestCase
             $index->assertPropertyHasMeta('name', 'class', Name::class);
             $index->assertPropertyHasMeta('path', 'class', Path::class);
             $index->assertPropertyHasMeta('searchable_number', 'class', SearchableNumber::class);
-            $index->assertPropertyHasMeta('sentence', 'class', Sentence::class);
+            $index->assertPropertyHasMeta('sentence', 'class', Title::class);
             $index->assertPropertyHasMeta('tags', 'class', Tags::class);
             $index->assertPropertyHasMeta('price', 'class', Price::class);
         });
@@ -1245,9 +1336,15 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m64_efc300_dims256_cosine'] ?? [];
+            $jobDescription = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_cosine_concat'];
 
-            $this->assertEquals('cosine', $field['similarity'] ?? null);
+            $this->forOpenSearch(function () use ($jobDescription) {
+                $this->assertEquals('cosinesimil', $jobDescription['method']['space_type']);
+            });
+
+            $this->forElasticsearch(function () use ($jobDescription) {
+                $this->assertEquals('cosine', $jobDescription['similarity'] ?? null);
+            });
         });
     }
 
@@ -1270,9 +1367,15 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m64_efc300_dims256_l2_norm'] ?? [];
+            $field = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_l2_norm_concat'];
 
-            $this->assertEquals('l2_norm', $field['similarity'] ?? null);
+            $this->forOpenSearch(function () use ($field) {
+                $this->assertEquals('l2', $field['method']['space_type']);
+            });
+
+            $this->forElasticsearch(function () use ($field) {
+                $this->assertEquals('l2_norm', $field['similarity'] ?? null);
+            });
         });
     }
 
@@ -1294,9 +1397,15 @@ class MappingsTest extends TestCase
             ->create();
 
         $this->assertIndex($indexName, function (Assert $assert) {
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m64_efc300_dims256_dot_product'] ?? [];
+            $field = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_dot_product_concat'];
 
-            $this->assertEquals('dot_product', $field['similarity'] ?? null);
+            $this->forOpenSearch(function () use ($field) {
+                $this->assertEquals('innerproduct', $field['method']['space_type']);
+            });
+
+            $this->forElasticsearch(function () use ($field) {
+                $this->assertEquals('dot_product', $field['similarity'] ?? null);
+            });
         });
     }
 
@@ -1318,9 +1427,16 @@ class MappingsTest extends TestCase
             ->create();
 
         $this->assertIndex($indexName, function (Assert $assert) {
-            $field = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m64_efc300_dims256_max_inner_product'] ?? [];
 
-            $this->assertEquals('max_inner_product', $field['similarity'] ?? null);
+            $field = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_max_inner_product_concat'];
+
+            $this->forOpenSearch(function () use ($field) {
+                $this->assertEquals('innerproduct', $field['method']['space_type']);
+            });
+
+            $this->forElasticsearch(function () use ($field) {
+                $this->assertEquals('max_inner_product', $field['similarity'] ?? null);
+            });
         });
     }
 
@@ -1332,7 +1448,7 @@ class MappingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->text('job_description')->semantic(accuracy: 1);
+        $blueprint->text('job_description')->semantic(accuracy: 1, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
@@ -1340,9 +1456,23 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.index_options.m', '16');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.index_options.ef_construction', '80');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.dims', '256');
+            $jobDescription = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties'];
+
+            $this->assertArrayHasKey('m12_efc60_dims256_cosine_concat', $jobDescription);
+
+            $this->forOpenSearch(function () use ($jobDescription) {
+                $this->assertEquals('cosinesimil', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['space_type']);
+                $this->assertEquals('12', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['parameters']['m']);
+                $this->assertEquals('60', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['parameters']['ef_construction']);
+                $this->assertEquals('256', $jobDescription['m12_efc60_dims256_cosine_concat']['dimension']);
+            });
+
+            $this->forElasticsearch(function () use ($jobDescription) {
+                $this->assertEquals('cosine', $jobDescription['m12_efc60_dims256_cosine_concat']['similarity']);
+                $this->assertEquals('12', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['m']);
+                $this->assertEquals('60', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['ef_construction']);
+                $this->assertEquals('256', $jobDescription['m12_efc60_dims256_cosine_concat']['dims']);
+            });
         });
     }
 
@@ -1355,7 +1485,7 @@ class MappingsTest extends TestCase
 
         $blueprint = new NewProperties();
         $blueprint->text('job_description')
-            ->semantic(accuracy: 1, similarity: VectorSimilarity::Cosine);
+            ->semantic(accuracy: 1, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
@@ -1363,10 +1493,21 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.index_options.m', '16');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.index_options.ef_construction', '80');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.dims', '256');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m16_efc80_dims256_cosine.similarity', 'cosine');
+            $jobDescription = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties'];
+
+            $this->forOpenSearch(function () use ($jobDescription) {
+                $this->assertEquals('12', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['parameters']['m']);
+                $this->assertEquals('60', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['parameters']['ef_construction']);
+                $this->assertEquals('256', $jobDescription['m12_efc60_dims256_cosine_concat']['dimension']);
+                $this->assertEquals('cosinesimil', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['space_type']);
+            });
+
+            $this->forElasticsearch(function () use ($jobDescription) {
+                $this->assertEquals('12', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['m']);
+                $this->assertEquals('60', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['ef_construction']);
+                $this->assertEquals('256', $jobDescription['m12_efc60_dims256_cosine_concat']['dims']);
+                $this->assertEquals('cosine', $jobDescription['m12_efc60_dims256_cosine_concat']['similarity']);
+            });
         });
     }
 
@@ -1378,7 +1519,7 @@ class MappingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->text('job_description')->semantic(accuracy: 3, dimensions: 512);
+        $blueprint->text('job_description')->semantic(accuracy: 3, dimensions: 512, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
@@ -1386,9 +1527,21 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims512_cosine.index_options.m', '64');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims512_cosine.index_options.ef_construction', '400');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims512_cosine.dims', '512');
+            $jobDescription = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties'];
+
+            $this->forOpenSearch(function () use ($jobDescription) {
+                $this->assertEquals('34', $jobDescription['m34_efc212_dims512_cosine_avg']['method']['parameters']['m']);
+                $this->assertEquals('212', $jobDescription['m34_efc212_dims512_cosine_avg']['method']['parameters']['ef_construction']);
+                $this->assertEquals('512', $jobDescription['m34_efc212_dims512_cosine_avg']['dimension']);
+                $this->assertEquals('cosinesimil', $jobDescription['m34_efc212_dims512_cosine_avg']['method']['space_type']);
+            });
+
+            $this->forElasticsearch(function () use ($jobDescription) {
+                $this->assertEquals('34', $jobDescription['m34_efc212_dims512_cosine_avg']['index_options']['m']);
+                $this->assertEquals('212', $jobDescription['m34_efc212_dims512_cosine_avg']['index_options']['ef_construction']);
+                $this->assertEquals('512', $jobDescription['m34_efc212_dims512_cosine_avg']['dims']);
+                $this->assertEquals('cosine', $jobDescription['m34_efc212_dims512_cosine_avg']['similarity']);
+            });
         });
     }
 
@@ -1400,7 +1553,7 @@ class MappingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->text('job_description')->semantic(accuracy: 5);
+        $blueprint->text('job_description')->semantic(accuracy: 5, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
@@ -1408,9 +1561,21 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims256_cosine.index_options.m', '64');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims256_cosine.index_options.ef_construction', '400');
-            $assert->assertEmbeddingsPropertyEquals('job_description_m64_efc400_dims256_cosine.dims', '256');
+            $jobDescription = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties'];
+
+            $this->forOpenSearch(function () use ($jobDescription) {
+                $this->assertEquals('40', $jobDescription['m40_efc300_dims256_cosine_avg']['method']['parameters']['m']);
+                $this->assertEquals('300', $jobDescription['m40_efc300_dims256_cosine_avg']['method']['parameters']['ef_construction']);
+                $this->assertEquals('256', $jobDescription['m40_efc300_dims256_cosine_avg']['dimension']);
+                $this->assertEquals('cosinesimil', $jobDescription['m40_efc300_dims256_cosine_avg']['method']['space_type']);
+            });
+
+            $this->forElasticsearch(function () use ($jobDescription) {
+                $this->assertEquals('40', $jobDescription['m40_efc300_dims256_cosine_avg']['index_options']['m']);
+                $this->assertEquals('300', $jobDescription['m40_efc300_dims256_cosine_avg']['index_options']['ef_construction']);
+                $this->assertEquals('256', $jobDescription['m40_efc300_dims256_cosine_avg']['dims']);
+                $this->assertEquals('cosine', $jobDescription['m40_efc300_dims256_cosine_avg']['similarity']);
+            });
         });
     }
 
@@ -1422,9 +1587,10 @@ class MappingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->text('job_description')
-            ->semantic(accuracy: 3, dimensions: 512)
-            ->semantic(accuracy: 5, dimensions: 512, similarity: VectorSimilarity::Euclidean);
+        $jobDescription = $blueprint->text('job_description');
+
+        $jobDescription->semantic(accuracy: 3, dimensions: 512, api: 'test-embeddings');
+        $jobDescription->semantic(accuracy: 5, dimensions: 512, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -1432,11 +1598,21 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $field0 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m64_efc400_dims512_cosine']['index_options'] ?? [];
-            $field1 = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_m128_efc800_dims512_l2_norm']['index_options'] ?? [];
+            $this->forOpenSearch(function () use ($assert) {
+                $field0 = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m34_efc212_dims512_cosine_avg']['method']['parameters'] ?? [];
+                $field1 = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m57_efc424_dims512_cosine_avg']['method']['parameters'] ?? [];
 
-            $assert->assertEquals(64, $field0['m'], 'm should be 64 for accuracy 3 and dimensions 512');
-            $assert->assertEquals(128, $field1['m'], 'm should be 128 for accuracy 5 and dimensions 512');
+                $assert->assertEquals(34, $field0['m'], 'm should be 34 for accuracy 3 and dimensions 512');
+                $assert->assertEquals(57, $field1['m'], 'm should be 57 for accuracy 5 and dimensions 512');
+            });
+
+            $this->forElasticsearch(function () use ($assert) {
+                $field0 = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m34_efc212_dims512_cosine_avg']['index_options'] ?? [];
+                $field1 = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m57_efc424_dims512_cosine_avg']['index_options'] ?? [];
+
+                $assert->assertEquals(34, $field0['m'], 'm should be 34 for accuracy 3 and dimensions 512');
+                $assert->assertEquals(57, $field1['m'], 'm should be 57 for accuracy 5 and dimensions 512');
+            });
         });
     }
 
@@ -1448,7 +1624,7 @@ class MappingsTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
-        $blueprint->text('job_description')->semantic(accuracy: 7);
+        $blueprint->text('job_description')->semantic(accuracy: 7, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
@@ -1456,11 +1632,30 @@ class MappingsTest extends TestCase
 
         $this->assertIndex($indexName, function (Assert $assert) {
 
-            $index = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_exact']['index'];
-            $indexOptions = $assert->data()['mappings']['properties']['embeddings']['properties']['job_description_exact']['index_options'] ?? null;
+            $jobDescription = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['exact_dims256_cosine_script'];
 
-            $this->assertFalse($index);
-            $this->assertNull($indexOptions);
+            $vectorField = $jobDescription['properties']['vector'];
+
+            $this->assertEquals('nested', $jobDescription['type']);
+
+            $this->forOpenSearch(function () use ($vectorField) {
+                $this->assertEquals('knn_vector', $vectorField['type']);
+                $this->assertEquals(256, $vectorField['dimension']);
+                $this->assertEquals('cosinesimil', $vectorField['method']['space_type']);
+                $this->assertEquals('hnsw', $vectorField['method']['name']);
+                $this->assertEquals(64, $vectorField['method']['parameters']['m']);
+                $this->assertEquals(300, $vectorField['method']['parameters']['ef_construction']);
+            });
+
+            $this->forElasticsearch(function () use ($vectorField) {
+                $this->assertEquals('dense_vector', $vectorField['type']);
+                $this->assertEquals(256, $vectorField['dims']);
+                $this->assertTrue($vectorField['index']);
+                $this->assertEquals('cosine', $vectorField['similarity']);
+                $this->assertEquals('hnsw', $vectorField['index_options']['type']);
+                $this->assertEquals(64, $vectorField['index_options']['m']);
+                $this->assertEquals(300, $vectorField['index_options']['ef_construction']);
+            });
         });
     }
 
@@ -1521,8 +1716,6 @@ class MappingsTest extends TestCase
             'user.age',
             'user.address.street',
             'user.address.city',
-            'boost',
-            'autocomplete'
         ], $blueprint->get()->fieldNames());
 
         $this->assertEquals([
@@ -1539,8 +1732,6 @@ class MappingsTest extends TestCase
             'user.address',
             'user.address.street',
             'user.address.city',
-            'boost',
-            'autocomplete'
         ], $blueprint->get()->fieldNames(true));
     }
 
@@ -1603,13 +1794,172 @@ class MappingsTest extends TestCase
         $index = $this->sigmie->index($indexName);
 
         $this->assertEquals([
-            'autocomplete',
-            'boost',
             'comments.comment_id',
             'comments.text',
             'comments.user.age',
             'comments.user.name',
             'title',
         ], $index->mappings->properties()->fieldNames());
+    }
+
+    /**
+     * @test
+     */
+    public function double_field_mapping()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->number('score')->double();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->assertIndex($indexName, function (Assert $assert) {
+            $scoreField = $assert->data()['mappings']['properties']['score'];
+            $this->assertEquals('double', $scoreField['type']);
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function field_mapping_from_raw_double()
+    {
+        $rawMapping = [
+            'score' => [
+                'type' => 'double'
+            ]
+        ];
+
+        $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
+
+        // Test that double field type doesn't throw exception
+        $properties = \Sigmie\Mappings\Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
+
+        $scoreField = $properties->get('score');
+        $this->assertInstanceOf(\Sigmie\Mappings\Types\Number::class, $scoreField);
+        $this->assertEquals('double', $scoreField->type());
+    }
+
+    /**
+     * @test
+     */
+    public function field_mapping_from_raw_flat_object()
+    {
+        $rawMapping = [
+            'metadata' => [
+                'type' => 'flat_object'
+            ]
+        ];
+
+        $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
+
+        // Test that flat_object field type doesn't throw exception
+        $properties = \Sigmie\Mappings\Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
+
+        $metadataField = $properties->get('metadata');
+        $this->assertInstanceOf(\Sigmie\Mappings\Types\FlatObject::class, $metadataField);
+        $this->assertEquals('flat_object', $metadataField->type());
+    }
+
+    /**
+     * @test
+     */
+    public function validate_range()
+    {
+        $blueprint = new NewProperties;
+        $blueprint->range('age_range');
+
+        $props = $blueprint->get();
+
+        [$valid, $message] = $props['age_range']->validate('age_range', ['gte' => 18, 'lte' => 65]);
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['age_range']->validate('age_range', ['gt' => 18, 'lt' => 65]);
+        $this->assertTrue($valid);
+
+        [$valid, $message] = $props['age_range']->validate('age_range', 'invalid');
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['age_range']->validate('age_range', []);
+        $this->assertFalse($valid);
+
+        [$valid, $message] = $props['age_range']->validate('age_range', ['invalid_key' => 18]);
+        $this->assertFalse($valid);
+    }
+
+    /**
+     * @test
+     */
+    public function range_field_types()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties();
+        $blueprint->range('integer_range')->integer();
+        $blueprint->range('float_range')->float();
+        $blueprint->range('long_range')->long();
+        $blueprint->range('double_range')->double();
+        $blueprint->range('date_range')->date();
+        $blueprint->range('ip_range')->ip();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->assertIndex($indexName, function (Assert $assert) {
+            $integerRange = $assert->data()['mappings']['properties']['integer_range'];
+            $this->assertEquals('integer_range', $integerRange['type']);
+
+            $floatRange = $assert->data()['mappings']['properties']['float_range'];
+            $this->assertEquals('float_range', $floatRange['type']);
+
+            $longRange = $assert->data()['mappings']['properties']['long_range'];
+            $this->assertEquals('long_range', $longRange['type']);
+
+            $doubleRange = $assert->data()['mappings']['properties']['double_range'];
+            $this->assertEquals('double_range', $doubleRange['type']);
+
+            $dateRange = $assert->data()['mappings']['properties']['date_range'];
+            $this->assertEquals('date_range', $dateRange['type']);
+
+            $ipRange = $assert->data()['mappings']['properties']['ip_range'];
+            $this->assertEquals('ip_range', $ipRange['type']);
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function range_field_mapping_from_raw()
+    {
+        $rawMapping = [
+            'age_range' => ['type' => 'integer_range'],
+            'price_range' => ['type' => 'double_range'],
+            'date_range' => ['type' => 'date_range'],
+            'ip_range' => ['type' => 'ip_range'],
+        ];
+
+        $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
+
+        $properties = \Sigmie\Mappings\Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
+
+        $ageRange = $properties->get('age_range');
+        $this->assertInstanceOf(\Sigmie\Mappings\Types\Range::class, $ageRange);
+        $this->assertEquals('integer_range', $ageRange->type());
+
+        $priceRange = $properties->get('price_range');
+        $this->assertInstanceOf(\Sigmie\Mappings\Types\Range::class, $priceRange);
+        $this->assertEquals('double_range', $priceRange->type());
+
+        $dateRange = $properties->get('date_range');
+        $this->assertInstanceOf(\Sigmie\Mappings\Types\Range::class, $dateRange);
+        $this->assertEquals('date_range', $dateRange->type());
+
+        $ipRange = $properties->get('ip_range');
+        $this->assertInstanceOf(\Sigmie\Mappings\Types\Range::class, $ipRange);
+        $this->assertEquals('ip_range', $ipRange->type());
     }
 }

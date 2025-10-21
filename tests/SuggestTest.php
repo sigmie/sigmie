@@ -56,20 +56,23 @@ class SuggestTest extends TestCase
 
         $collection->merge($docs);
 
+        $suggest = new Suggest();
+        $suggest->term(name: 'my-term')
+            ->field('title-text')
+            ->text('stary');
+
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->suggest(function (Suggest $suggest) {
-                $suggest->phrase(name: 'my-term')
-                    ->field('title-text')
-                    ->text('stary');
-            })
+            ->suggest(
+                $suggest
+            )
             ->get();
 
-        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.my-term.0.options'));
+        $suggestions = array_map(fn($value) => $value['text'], $res->json('suggest.my-term.0.options'));
 
         $this->assertEquals([
-            'star',
             'starry',
+            'star',
         ], $suggestions);
     }
 
@@ -112,20 +115,23 @@ class SuggestTest extends TestCase
 
         $collection->merge($docs);
 
+        $suggest = new Suggest();
+        $suggest->phrase(name: 'my-phrase')
+            ->field('title-phrase')
+            ->highlight('<em>', '</em>')
+            ->size(3)
+            ->ngramSize(3)
+            ->text('noble garden');
+
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->suggest(function (Suggest $suggest) {
-                $suggest->phrase(name: 'my-phrase')
-                    ->field('title-phrase')
-                    ->highlight('<em>', '</em>')
-                    ->size(3)
-                    ->ngramSize(3)
-                    ->text('noble garden');
-            })
+            ->suggest(
+                $suggest
+            )
             ->get();
 
-        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.my-phrase.0.options'));
-        $highlighted = array_map(fn ($value) => $value['highlighted'], $res->json('suggest.my-phrase.0.options'));
+        $suggestions = array_map(fn($value) => $value['text'], $res->json('suggest.my-phrase.0.options'));
+        $highlighted = array_map(fn($value) => $value['highlighted'], $res->json('suggest.my-phrase.0.options'));
 
         $this->assertEquals([
             '<em>nobel</em> garden',
@@ -170,16 +176,19 @@ class SuggestTest extends TestCase
 
         $collection->merge($docs);
 
+        $suggest = new Suggest();
+        $suggest->completion(name: 'my-completion')
+            ->field('title-completion')
+            ->prefix('st');
+
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->suggest(function (Suggest $suggest) {
-                $suggest->completion(name: 'my-completion')
-                    ->field('title-completion')
-                    ->prefix('st');
-            })
+            ->suggest(
+                $suggest
+            )
             ->get();
 
-        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.my-completion.0.options'));
+        $suggestions = array_map(fn($value) => $value['text'], $res->json('suggest.my-completion.0.options'));
 
         $this->assertEquals([
             'Star Trek',

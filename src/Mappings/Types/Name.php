@@ -12,6 +12,8 @@ use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MatchBoolPrefix;
 use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
 
+use function Sigmie\Functions\random_name;
+
 class Name extends Text implements Analyze
 {
     protected string $prefixAnalyzer = 'name_text_field_analyzer';
@@ -47,7 +49,7 @@ class Name extends Text implements Analyze
         $newAnalyzer
             ->tokenizeOnWhitespaces()
             ->name($this->ngramAnalyzer)
-            ->tokenFilter(new Ngram(prefix_id('ngram'), $this->minGrams, $this->maxGrams))
+            ->tokenFilter(new Ngram(random_name('ngram'), $this->minGrams, $this->maxGrams))
             // ->truncate($this->maxGramms)
             ->lowercase();
 
