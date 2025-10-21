@@ -12,7 +12,7 @@ use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\Object_;
-use Sigmie\Mappings\Types\SigmieVector;
+use Sigmie\Mappings\Types\BaseVector;
 
 class NewSemanticField
 {
@@ -195,7 +195,7 @@ class NewSemanticField
         $this->autoNormalizeVector = $value;
 
         // Update the created vector if it exists
-        if ($this->createdVector instanceof SigmieVector) {
+        if ($this->createdVector instanceof BaseVector) {
             // We need to recreate the vector with the new setting
             // Store the reference so Text can update its vectors array
             $this->createdVector = null;

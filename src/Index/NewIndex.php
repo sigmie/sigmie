@@ -6,7 +6,7 @@ namespace Sigmie\Index;
 
 use Carbon\Carbon;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
-use Sigmie\Base\Contracts\SearchEngineDriver;
+use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Languages\English\Filter\Lowercase;
 use Sigmie\Languages\English\Filter\Stemmer;
 use Sigmie\Languages\English\Filter\Stopwords;
@@ -29,7 +29,7 @@ use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
 use Sigmie\AI\Contracts\Embedder;
 use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\Enums\SearchEngine;
+use Sigmie\Enums\SearchEngineType;
 use Sigmie\Sigmie;
 
 class NewIndex

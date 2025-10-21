@@ -10,13 +10,13 @@ use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
-use Sigmie\Base\Drivers\ElasticsearchDriver;
-use Sigmie\Base\Drivers\OpenSearchDriver;
+use Sigmie\Base\Drivers\Elasticsearch;
+use Sigmie\Base\Drivers\Opensearch;
 use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Enums\ElasticsearchVersion as Version;
-use Sigmie\Enums\SearchEngine;
+use Sigmie\Enums\SearchEngineType;
 use Sigmie\Http\JSONClient;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\AliasedIndex;
@@ -219,7 +219,7 @@ class Sigmie
 
     public static function create(
         array|string $hosts,
-        SearchEngine $engine = SearchEngine::Elasticsearch,
+        SearchEngineType $engine = SearchEngineType::Elasticsearch,
         array $config = []
     ): static {
         $hosts = (is_string($hosts)) ? explode(',', $hosts) : $hosts;
@@ -227,8 +227,8 @@ class Sigmie
         $client = JSONClient::create($hosts, $config);
 
         $driver = match ($engine) {
-            SearchEngine::Elasticsearch => new \Sigmie\Base\Drivers\ElasticsearchDriver(),
-            SearchEngine::OpenSearch => new \Sigmie\Base\Drivers\OpenSearchDriver(),
+            SearchEngineType::Elasticsearch => new \Sigmie\Base\Drivers\Elasticsearch(),
+            SearchEngineType::OpenSearch => new \Sigmie\Base\Drivers\Opensearch(),
         };
 
         return new static(new HttpConnection($client, $driver));

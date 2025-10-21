@@ -12,5 +12,5 @@ interface ElasticsearchConnection
 
     public function promise(ElasticsearchRequest $request): Promise;
 
-    public function driver(): SearchEngineDriver;
+    public function driver(): SearchEngine;
 }

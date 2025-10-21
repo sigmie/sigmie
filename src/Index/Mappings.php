@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Index;
 
-use Sigmie\Base\Contracts\SearchEngineDriver;
-use Sigmie\Base\Drivers\ElasticsearchDriver;
+use Sigmie\Base\Contracts\SearchEngine;
+use Sigmie\Base\Drivers\Elasticsearch;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Contracts\CustomAnalyzer;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
@@ -17,7 +17,7 @@ use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Embeddings;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Object_;
-use Sigmie\Mappings\Types\SigmieVector;
+use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Text;
 
 use function PHPUnit\Framework\objectEquals;
@@ -78,7 +78,7 @@ class Mappings implements MappingsInterface
         return $result->add($this->defaultAnalyzer)->toArray();
     }
 
-    public function toRaw(SearchEngineDriver $driver): array
+    public function toRaw(SearchEngine $driver): array
     {
         // Generate and format embeddings
         $embeddingsRaw = (new Embeddings($this->properties, $driver))->toRaw();

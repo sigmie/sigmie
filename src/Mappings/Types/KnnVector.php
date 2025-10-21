@@ -7,7 +7,7 @@ namespace Sigmie\Mappings\Types;
 use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 
-class KnnVector extends SigmieVector
+class KnnVector extends BaseVector
 {
     public function __construct(
         public string $name,

@@ -14,7 +14,7 @@ use Sigmie\Query\Queries\NearestNeighbors;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Sigmie;
 
-class SigmieVector extends AbstractType implements Type
+class BaseVector extends AbstractType implements Type
 {
     public ?string $textFieldName = null;
 
@@ -149,7 +149,7 @@ class SigmieVector extends AbstractType implements Type
         return $this->autoNormalizeVector;
     }
 
-    public function queries(array|string $vector, ?\Sigmie\Base\Contracts\SearchEngineDriver $driver = null, array $filter = []): array
+    public function queries(array|string $vector, ?\Sigmie\Base\Contracts\SearchEngine $driver = null, array $filter = []): array
     {
         if ($this->index && $driver) {
             return [

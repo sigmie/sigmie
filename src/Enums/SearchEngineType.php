@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Enums;
 
-enum SearchEngine: string
+enum SearchEngineType: string
 {
     case Elasticsearch = 'elasticsearch';
 

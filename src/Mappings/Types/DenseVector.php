@@ -7,7 +7,7 @@ namespace Sigmie\Mappings\Types;
 use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 
-class DenseVector extends SigmieVector
+class DenseVector extends BaseVector
 {
     public function __construct(
         public string $name,

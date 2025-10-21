@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Contracts;
 
-use Sigmie\Enums\SearchEngine;
+use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\NestedVector;
-use Sigmie\Mappings\Types\SigmieVector;
+use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Query\Queries\NearestNeighbors;
 
-interface SearchEngineDriver
+interface SearchEngine
 {
-    public function engine(): SearchEngine;
+    public function engine(): SearchEngineType;
 
     /**
      * Format a SigmieVector field using engine-specific structure
      */
-    public function vectorField(SigmieVector $field): SigmieVector;
+    public function vectorField(BaseVector $field): BaseVector;
 
     /**
      * Format a NestedVector field using engine-specific structure

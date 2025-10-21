@@ -19,7 +19,7 @@ use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
-use Sigmie\Mappings\Types\SigmieVector;
+use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
@@ -285,7 +285,7 @@ class DocumentProcessor
         $normalizeSettings = [];
         foreach ($field->vectorFields() as $vectorField) {
             $vector = $vectorField instanceof Nested ? $vectorField->properties['vector'] : $vectorField;
-            if ($vector instanceof SigmieVector) {
+            if ($vector instanceof BaseVector) {
                 $normalizeSettings[$vectorField->name] = $vector->autoNormalizeVector();
             } else {
                 $normalizeSettings[$vectorField->name] = true; // Default to normalize
@@ -317,7 +317,7 @@ class DocumentProcessor
 
             // Determine if we should normalize
             $normalize = true;
-            if ($vector instanceof SigmieVector) {
+            if ($vector instanceof BaseVector) {
                 $normalize = $vector->autoNormalizeVector();
             }
 
@@ -484,7 +484,7 @@ class DocumentProcessor
             $vector = $vectorField instanceof Nested ? $vectorField->properties['vector'] : $vectorField;
 
             // Only SigmieVector has boost support
-            if (!($vector instanceof SigmieVector)) {
+            if (!($vector instanceof BaseVector)) {
                 continue;
             }
 

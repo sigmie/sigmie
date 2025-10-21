@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Parse;
 
-use Sigmie\Enums\SearchEngine;
+use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Sigmie;

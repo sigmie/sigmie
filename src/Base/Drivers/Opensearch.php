@@ -4,25 +4,26 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Drivers;
 
-use Sigmie\Base\Contracts\SearchEngineDriver;
-use Sigmie\Enums\SearchEngine;
-use Sigmie\Mappings\Types\DenseVector;
-use Sigmie\Mappings\Types\ElasticsearchNestedVector;
+use Sigmie\Base\Contracts\SearchEngine;
+use Sigmie\Enums\SearchEngineType;
+use Sigmie\Enums\VectorSimilarity;
+use Sigmie\Mappings\Types\KnnVector;
 use Sigmie\Mappings\Types\NestedVector;
-use Sigmie\Mappings\Types\SigmieVector;
-use Sigmie\Query\Queries\ElasticsearchKnn;
+use Sigmie\Mappings\Types\OpenSearchNestedVector;
+use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Query\Queries\NearestNeighbors;
+use Sigmie\Query\Queries\OpenSearchKnn;
 
-class ElasticsearchDriver implements SearchEngineDriver
+class Opensearch implements SearchEngine
 {
-    public function engine(): SearchEngine
+    public function engine(): SearchEngineType
     {
-        return SearchEngine::Elasticsearch;
+        return SearchEngineType::OpenSearch;
     }
 
-    public function vectorField(SigmieVector $field): SigmieVector
+    public function vectorField(BaseVector $field): BaseVector
     {
-        return new DenseVector(
+        return new KnnVector(
             name: $field->name,
             dims: $field->dims(),
             index: $field->isIndexed(),
@@ -41,7 +42,7 @@ class ElasticsearchDriver implements SearchEngineDriver
 
     public function nestedVectorField(NestedVector $field): NestedVector
     {
-        return new ElasticsearchNestedVector(
+        return new OpenSearchNestedVector(
             name: $field->name,
             dims: $field->dims(),
             apiName: $field->apiName,
@@ -50,7 +51,17 @@ class ElasticsearchDriver implements SearchEngineDriver
 
     public function indexSettings(): array
     {
-        return [];
+        return  ['index.knn' => true];
+    }
+
+    protected function mapSimilarity(VectorSimilarity $similarity): string
+    {
+        return match ($similarity) {
+            VectorSimilarity::Cosine => 'cosinesimil',
+            VectorSimilarity::DotProduct => 'innerproduct',
+            VectorSimilarity::Euclidean => 'l2',
+            VectorSimilarity::MaxInnerProduct => 'innerproduct',
+        };
     }
 
     public function knnQuery(
@@ -61,7 +72,7 @@ class ElasticsearchDriver implements SearchEngineDriver
         array $filter = [],
         float $boost = 1.0
     ): NearestNeighbors {
-        return new ElasticsearchKnn(
+        return new OpenSearchKnn(
             field: $field,
             queryVector: $queryVector,
             k: $k,

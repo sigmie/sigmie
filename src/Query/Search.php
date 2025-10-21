@@ -8,7 +8,7 @@ use Http\Promise\Promise;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
-use Sigmie\Enums\SearchEngine;
+use Sigmie\Enums\SearchEngineType;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\MatchAll;

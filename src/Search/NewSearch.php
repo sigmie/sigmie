@@ -11,7 +11,7 @@ use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Base\ElasticsearchException;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as ResponsesSearch;
-use Sigmie\Enums\SearchEngine;
+use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Sigmie;
 use Sigmie\Mappings\Properties;
@@ -19,7 +19,7 @@ use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Mappings\Types\NestedVector;
-use Sigmie\Mappings\Types\SigmieVector;
+use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Parse\FacetParser;
@@ -661,7 +661,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 if (isset($raw['knn'])) {
                     // For OpenSearch, keep knn queries as Query objects to add to boolean query
                     // For Elasticsearch, extract the knn part for top-level knn parameter
-                    if ($this->elasticsearchConnection->driver()->engine() === SearchEngine::OpenSearch) {
+                    if ($this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch) {
                         $semanticQueries[] = $query;
                     } else {
                         $knnQueries[] = $raw['knn'];
@@ -745,7 +745,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 if (isset($raw['knn'])) {
                     // For OpenSearch, keep knn queries as Query objects to add to boolean query
                     // For Elasticsearch, extract the knn part for top-level knn parameter
-                    if ($this->elasticsearchConnection->driver()->engine() === SearchEngine::OpenSearch) {
+                    if ($this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch) {
                         $semanticQueries[] = $query;
                     } else {
                         $knnQueries[] = $raw['knn'];
@@ -774,7 +774,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     protected function getVectorDimensions(Collection $vectorFields): array
     {
         return $vectorFields
-            ->map(fn(NestedVector|DenseVector|SigmieVector $field) => $field->dims())
+            ->map(fn(NestedVector|DenseVector|BaseVector $field) => $field->dims())
             ->unique()
             ->toArray();
     }

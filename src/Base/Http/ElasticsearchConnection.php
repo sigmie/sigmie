@@ -8,8 +8,8 @@ use Http\Promise\Promise;
 use Sigmie\Base\Contracts\ElasticsearchConnection as ElasticsearchConnectionInterface;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
-use Sigmie\Base\Contracts\SearchEngineDriver;
-use Sigmie\Base\Drivers\ElasticsearchDriver;
+use Sigmie\Base\Contracts\SearchEngine;
+use Sigmie\Base\Drivers\Elasticsearch;
 use Sigmie\Http\Contracts\JSONClient as JSONClientInterface;
 use Sigmie\Http\Contracts\JSONResponse;
 
@@ -17,17 +17,17 @@ class ElasticsearchConnection implements ElasticsearchConnectionInterface
 {
     protected JSONClientInterface $http;
 
-    protected SearchEngineDriver $driver;
+    protected SearchEngine $driver;
 
     public function __construct(
         JsonClientInterface $http,
-        SearchEngineDriver $driver = new ElasticsearchDriver()
+        SearchEngine $driver = new Elasticsearch()
     ) {
         $this->http = $http;
         $this->driver = $driver;
     }
 
-    public function driver(): SearchEngineDriver
+    public function driver(): SearchEngine
     {
         return $this->driver;
     }

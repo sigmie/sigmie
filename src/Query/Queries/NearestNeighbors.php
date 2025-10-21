@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Queries;
 
-use Sigmie\Base\Contracts\SearchEngineDriver;
+use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Query\Queries\Query;
 
 abstract class NearestNeighbors extends Query
 {
-    protected ?SearchEngineDriver $driver = null;
+    protected ?SearchEngine $driver = null;
 
     public function __construct(
         protected string $field,

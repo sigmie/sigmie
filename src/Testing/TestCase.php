@@ -17,12 +17,12 @@ use Sigmie\AI\Contracts\RerankApi;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\APIs\Analyze;
 use Sigmie\Base\APIs\Explain;
-use Sigmie\Base\Drivers\ElasticsearchDriver;
-use Sigmie\Base\Drivers\OpenSearchDriver;
+use Sigmie\Base\Drivers\Elasticsearch;
+use Sigmie\Base\Drivers\Opensearch;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Document\Actions as DocumentActions;
 use Sigmie\Enums\ElasticsearchVersion;
-use Sigmie\Enums\SearchEngine;
+use Sigmie\Enums\SearchEngineType;
 use Sigmie\Http\JSONClient;
 use Sigmie\Index\Actions as IndexAction;
 use Sigmie\Sigmie;
@@ -76,13 +76,13 @@ class TestCase extends \PHPUnit\Framework\TestCase
                     config: ['verify' => false,]
                 );
 
-                return new ElasticsearchConnection($this->jsonClient, new OpenSearchDriver());
+                return new ElasticsearchConnection($this->jsonClient, new Opensearch());
             })(),
             'elasticsearch' => (function () use (&$engine, &$driver) {
                 // Elasticsearch: HTTP without authentication
                 $this->jsonClient = JSONClient::create(['http://localhost:9200']);
 
-                return new ElasticsearchConnection($this->jsonClient, new ElasticsearchDriver());
+                return new ElasticsearchConnection($this->jsonClient, new Elasticsearch());
             })(),
             default => throw new Exception("Invalid search engine: {$searchEngine}"),
         };
@@ -132,14 +132,14 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
     public function forOpensearch(Closure $callback)
     {
-        if ($this->elasticsearchConnection->driver()->engine() === SearchEngine::OpenSearch) {
+        if ($this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch) {
             $callback();
         }
     }
 
     public function forElasticsearch(Closure $callback)
     {
-        if ($this->elasticsearchConnection->driver()->engine() === SearchEngine::Elasticsearch) {
+        if ($this->elasticsearchConnection->driver()->engine() === SearchEngineType::Elasticsearch) {
             $callback();
         }
     }

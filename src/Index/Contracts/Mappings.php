@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Contracts;
 
-use Sigmie\Base\Contracts\SearchEngineDriver;
+use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Mappings\Properties;
 use Sigmie\Shared\Contracts\ToRaw;
 
@@ -16,5 +16,5 @@ interface Mappings
 
     public function properties(): Properties;
 
-    public function toRaw(SearchEngineDriver $driver): array;
+    public function toRaw(SearchEngine $driver): array;
 }

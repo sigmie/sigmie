@@ -34,10 +34,10 @@ class NestedVector extends TypesNested
         return $this->dims;
     }
 
-    public function queries(array|string $vector, ?\Sigmie\Base\Contracts\SearchEngineDriver $driver = null, array $filter = []): array
+    public function queries(array|string $vector, ?\Sigmie\Base\Contracts\SearchEngine $driver = null, array $filter = []): array
     {
         // OpenSearch uses doc['field'] syntax, Elasticsearch uses 'field' string syntax
-        if ($driver && $driver->engine() === \Sigmie\Enums\SearchEngine::OpenSearch) {
+        if ($driver && $driver->engine() === \Sigmie\Enums\SearchEngineType::OpenSearch) {
             $source = "cosineSimilarity(params.query_vector, doc['_embeddings.{$this->fullPath}.vector']) + 1.0";
         } else {
             $source = "cosineSimilarity(params.query_vector, '_embeddings.{$this->fullPath}.vector') + 1.0";
