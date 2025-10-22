@@ -34,4 +34,8 @@ class NestedVector extends TypesNested
 
         parent::__construct($name, $props);
     }
+
+    public function dims(): int {
+        return $this->dims;
+    }
 }

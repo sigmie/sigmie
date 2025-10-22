@@ -339,7 +339,6 @@ class SemanticTest extends TestCase
     {
         $indexName = uniqid();
 
-
         $props = new NewProperties;
         $props->text('title')->semantic(accuracy: 7, dimensions: 384, api: 'test-embeddings');
         $props->text('text')->semantic(accuracy: 7, dimensions: 384, api: 'test-embeddings');
