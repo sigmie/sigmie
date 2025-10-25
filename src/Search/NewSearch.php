@@ -4,51 +4,41 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use GuzzleHttp\Promise\Utils;
 use Http\Promise\Promise;
-use Sigmie\AI\Contracts\Embedder;
-use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\Base\ElasticsearchException;
 use Sigmie\Base\Http\ElasticsearchConnection;
-use Sigmie\Base\Http\Responses\Search as ResponsesSearch;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Sigmie;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\PropertiesFieldNotFound;
+use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Mappings\Types\NestedVector;
-use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
-use Sigmie\Plugins\Elastiknn\NearestNeighbors;
 use Sigmie\Query\Contracts\FuzzyQuery;
+use Sigmie\Query\Contracts\QueryClause as Query;
+use Sigmie\Query\Facets;
 use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
-use Sigmie\Query\Queries\MatchNone;
 // use Sigmie\Query\Queries\Query;
-use Sigmie\Query\Contracts\QueryClause as Query;
-use Sigmie\Query\Facets;
-use Sigmie\Query\Queries\KnnVectorQuery as QueriesNearestNeighbors;
+use Sigmie\Query\Queries\MatchNone;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
-use Sigmie\Search\Contracts\EmbeddingsQueries;
 use Sigmie\Search\Contracts\MultiSearchable;
 use Sigmie\Search\Contracts\ResponseFormater;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
-use Sigmie\Search\Formatters\RawElasticsearchFormat;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
-use Sigmie\Search\QueryString;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\UsesApis;
+use Sigmie\Sigmie;
 
-class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInterface, MultiSearchable
+class NewSearch extends AbstractSearchBuilder implements MultiSearchable, SearchQueryBuilderInterface
 {
     use UsesApis;
 
@@ -86,7 +76,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         parent::__construct($elasticsearchConnection);
 
-        $this->searchContext = new SearchContext();
+        $this->searchContext = new SearchContext;
         $this->filterParser = new FilterParser($this->properties, false);
         $this->facetParser = new FacetParser($this->properties, false);
         $this->sortParser = new SortParser($this->properties, false);
@@ -106,7 +96,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         return $this;
     }
-
 
     public function queryString(
         string $query,
@@ -178,7 +167,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             array_filter([
                 "({$this->searchContext->filterString})",
                 "({$this->searchContext->facetFilterString})",
-            ], fn($filter) => !empty(trim($filter, '()')))
+            ], fn ($filter) => ! empty(trim($filter, '()')))
         );
 
         $this->globalFilters = $this->filterParser->parse($this->searchContext->filterString);
@@ -217,7 +206,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             array_filter([
                 "({$this->searchContext->filterString})",
                 "({$this->searchContext->facetFilterString})",
-            ], fn($filter) => !empty(trim($filter, '()')))
+            ], fn ($filter) => ! empty(trim($filter, '()')))
         );
 
         $this->filters = $this->filterParser->parse($allFilters);
@@ -235,7 +224,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         return $this;
     }
-
 
     protected function handleHighlight(Search $search)
     {
@@ -262,7 +250,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $search->highlight([
             'require_field_match' => false,
             'no_match_size' => 100,
-            'fields' => $fields
+            'fields' => $fields,
         ]);
     }
 
@@ -277,7 +265,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     {
         $search->fields($this->retrieve ?? [
             ...$this->properties->fieldNames(),
-            ...($this->retrieveEmbeddingsField ? ['_embeddings'] : [])
+            ...($this->retrieveEmbeddingsField ? ['_embeddings'] : []),
         ]);
     }
 
@@ -293,7 +281,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected function handleKnn(Search $search)
     {
-        if (!empty($this->knn)) {
+        if (! empty($this->knn)) {
             $search->knn($this->knn);
         }
     }
@@ -318,7 +306,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     protected function handleFiltersQuery(Boolean $boolean)
     {
         $boolean->must()->bool(
-            fn(Boolean $boolean) => $boolean->filter()->query(
+            fn (Boolean $boolean) => $boolean->filter()->query(
                 $this->filters
             )
         );
@@ -435,13 +423,13 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected function hasSemanticFields(): bool
     {
-        if (!$this->properties) {
+        if (! $this->properties) {
             return false;
         }
 
         return $this->properties->nestedSemanticFields()
-            ->filter(fn(Text $field) => $field->isSemantic())
-            ->filter(fn(Text $field) => in_array($field->fullPath, $this->fields))
+            ->filter(fn (Text $field) => $field->isSemantic())
+            ->filter(fn (Text $field) => in_array($field->fullPath, $this->fields))
             ->isNotEmpty();
     }
 
@@ -456,7 +444,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         // Create VectorPools for each required API
         foreach ($requiredApis as $apiName) {
-            if (!isset($this->vectorPools[$apiName])) {
+            if (! isset($this->vectorPools[$apiName])) {
                 $embeddingsApi = $this->getApi($apiName);
                 if ($embeddingsApi === null) {
                     continue;
@@ -468,14 +456,14 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         // Group fields by their API
         $fieldsByApi = [];
         $semanticFields = $this->properties->nestedSemanticFields()
-            ->filter(fn(Text $field) => $field->isSemantic())
-            ->filter(fn(Text $field) => in_array($field->fullPath, $this->fields));
+            ->filter(fn (Text $field) => $field->isSemantic())
+            ->filter(fn (Text $field) => in_array($field->fullPath, $this->fields));
 
         foreach ($semanticFields as $field) {
             foreach ($field->vectorFields()->getIterator() as $vectorField) {
                 $apiName = $vectorField->apiName ?? null;
 
-                if (!isset($fieldsByApi[$apiName])) {
+                if (! isset($fieldsByApi[$apiName])) {
                     $fieldsByApi[$apiName] = [];
                 }
                 $fieldsByApi[$apiName][] = $vectorField;
@@ -484,11 +472,11 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         // Populate each VectorPool with its required embeddings
         foreach ($fieldsByApi as $apiName => $vectorFields) {
-            if (!isset($this->vectorPools[$apiName])) {
+            if (! isset($this->vectorPools[$apiName])) {
                 continue;
             }
 
-            $dims = array_unique(array_map(fn($field) => $field->dims, $vectorFields));
+            $dims = array_unique(array_map(fn ($field) => $field->dims, $vectorFields));
 
             // Build array of all text/dimension combinations for this API
             $items = [];
@@ -506,7 +494,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 foreach ($dims as $dim) {
                     $items[] = [
                         'text' => $queryString->text(),
-                        'dims' => $dim
+                        'dims' => $dim,
                     ];
                 }
             }
@@ -525,7 +513,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             }
 
             // Batch fetch all text embeddings for this API
-            if (!empty($items)) {
+            if (! empty($items)) {
                 $this->vectorPools[$apiName]->getMany($items);
             }
         }
@@ -556,7 +544,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
     protected function createStringQueries(string $queryString, float $queryBoost = 1.0, ?array $scopedFields = null): Query
     {
-        if ($queryString === '' && !$this->noResultsOnEmptySearch) {
+        if ($queryString === '' && ! $this->noResultsOnEmptySearch) {
             return $this->onEmptyQueryString();
         }
 
@@ -575,7 +563,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         foreach ($this->searchContext->queryStrings as $queryString) {
             // Skip if no text and no vector
-            if (trim($queryString->text()) === '' && !$queryString->hasVector()) {
+            if (trim($queryString->text()) === '' && ! $queryString->hasVector()) {
                 continue;
             }
 
@@ -586,7 +574,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
 
         foreach ($this->searchContext->queryImages as $queryImage) {
             // Skip if no image source and no vector
-            if (!$queryImage->hasVector() && trim($queryImage->imageSource()) === '') {
+            if (! $queryImage->hasVector() && trim($queryImage->imageSource()) === '') {
                 continue;
             }
 
@@ -611,18 +599,18 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $fieldsByApiAndDims = [];
         foreach ($vectorFields as $field) {
             $apiName = $field->apiName ?? null;
-            if (!$apiName) {
+            if (! $apiName) {
                 continue; // Skip fields without API configuration
             }
 
             $dims = $field->dims();
-            $key = $apiName . '_' . $dims;
+            $key = $apiName.'_'.$dims;
 
-            if (!isset($fieldsByApiAndDims[$key])) {
+            if (! isset($fieldsByApiAndDims[$key])) {
                 $fieldsByApiAndDims[$key] = [
                     'apiName' => $apiName,
                     'dims' => $dims,
-                    'fields' => []
+                    'fields' => [],
                 ];
             }
             $fieldsByApiAndDims[$key]['fields'][] = $field;
@@ -643,7 +631,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 $vector = $queryImage->vector();
             } else {
                 // Get embeddings from the appropriate VectorPool
-                if (!isset($this->vectorPools[$apiName])) {
+                if (! isset($this->vectorPools[$apiName])) {
                     continue; // Skip if VectorPool for this API doesn't exist
                 }
                 $vector = $this->vectorPools[$apiName]->get($queryImage->imageSource(), $dims);
@@ -652,7 +640,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $vectorByDims = new Collection([$dims => $vector]);
 
             // Build queries for these fields
-            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryImage->weight(), $this->filters->toRaw());
+            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryImage->weight(), $this->filters);
 
             $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries) {
 
@@ -697,18 +685,18 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $fieldsByApiAndDims = [];
         foreach ($vectorFields as $field) {
             $apiName = $field->apiName ?? null;
-            if (!$apiName) {
+            if (! $apiName) {
                 continue; // Skip fields without API configuration
             }
 
             $dims = $field->dims;
-            $key = $apiName . '_' . $dims;
+            $key = $apiName.'_'.$dims;
 
-            if (!isset($fieldsByApiAndDims[$key])) {
+            if (! isset($fieldsByApiAndDims[$key])) {
                 $fieldsByApiAndDims[$key] = [
                     'apiName' => $apiName,
                     'dims' => $dims,
-                    'fields' => []
+                    'fields' => [],
                 ];
             }
             $fieldsByApiAndDims[$key]['fields'][] = $field;
@@ -729,7 +717,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 $vector = $queryString->vector();
             } else {
                 // Get embeddings from the appropriate VectorPool
-                if (!isset($this->vectorPools[$apiName])) {
+                if (! isset($this->vectorPools[$apiName])) {
                     continue; // Skip if VectorPool for this API doesn't exist
                 }
                 $vector = $this->vectorPools[$apiName]->get($queryString->text(), $dims);
@@ -738,7 +726,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $vectorByDims = new Collection([$dims => $vector]);
 
             // Build queries for these fields
-            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryString->weight(), $this->filters->toRaw());
+            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryString->weight(), $this->filters);
 
             $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries) {
                 $raw = $query->toRaw();
@@ -765,22 +753,21 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $fieldsToFilter = $scopedFields !== null ? $scopedFields : $this->fields;
 
         return $this->properties->nestedSemanticFields()
-            ->filter(fn(Text $field) => $field->isSemantic())
-            ->filter(fn(Text $field) => in_array($field->fullPath, $fieldsToFilter))
-            ->map(fn(Text $field) => $field->vectorFields())
+            ->filter(fn (Text $field) => $field->isSemantic())
+            ->filter(fn (Text $field) => in_array($field->fullPath, $fieldsToFilter))
+            ->map(fn (Text $field) => $field->vectorFields())
             ->flatten(1);
     }
 
     protected function getVectorDimensions(Collection $vectorFields): array
     {
         return $vectorFields
-            ->map(fn(NestedVector|DenseVector|BaseVector $field) => $field->dims())
+            ->map(fn (NestedVector|DenseVector|BaseVector $field) => $field->dims())
             ->unique()
             ->toArray();
     }
 
-
-    protected function buildVectorQueries(Collection $vectorFields, Collection $vectorByDims, float $queryBoost, array $filter = []): Collection
+    protected function buildVectorQueries(Collection $vectorFields, Collection $vectorByDims, float $queryBoost, Boolean $filter): Collection
     {
         return $vectorFields
             ->map(function (TypesNested|BaseVector $field) use ($vectorByDims, $filter) {
@@ -836,13 +823,13 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $queries = $this->buildFieldQueries($field, $queryString);
             $queries = new Collection($queries);
 
-            $queries->map(function (Query $queryClause) use ($keywordBoolean, $queryBoost, $field) {
+            $queries->map(function (Query $queryClause) use ($queryBoost, $field) {
 
                 $queryClause = $this->configureQueryClause($queryClause, $field, $queryBoost);
 
                 return $this->wrapNestedQuery($queryClause, $field);
 
-            })->each(fn(Query $query) => $keywordBoolean->should()->query($query));
+            })->each(fn (Query $query) => $keywordBoolean->should()->query($query));
         });
 
         return $this->applyTextScoring($keywordBoolean);
@@ -861,6 +848,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         }
 
         $boost = $this->queryBoost($field, $queryBoost);
+
         return $queryClause->boost($boost);
     }
 
@@ -869,6 +857,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         if (($field->parentPath ?? false) && $field->parentType === TypesNested::class) {
             return new Nested($field->parentPath, $queryClause);
         }
+
         return $queryClause;
     }
 
@@ -907,8 +896,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         return $this->formatRespones($searchResponse, $facetsResponse);
     }
 
-
-
     public function promise(): Promise
     {
         return $this->makeSearch()->promise();
@@ -927,13 +914,13 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
     {
         return [
             [
-                'index' => $this->index
+                'index' => $this->index,
             ],
             $this->makeSearch()->toRaw(),
             [
-                'index' => $this->index
+                'index' => $this->index,
             ],
-            $this->makeFacetSearch()->toRaw()
+            $this->makeFacetSearch()->toRaw(),
         ];
     }
 
@@ -961,7 +948,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             if ($apiName === null) {
                 // If no API name specified, try to get the first one
                 $apis = $this->getRequiredEmbeddingApis();
-                $apiName = !empty($apis) ? reset($apis) : 'default';
+                $apiName = ! empty($apis) ? reset($apis) : 'default';
             }
             $this->vectorPools[$apiName] = $pool;
         } else {
@@ -986,7 +973,7 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         }
 
         // Return first VectorPool if no name specified
-        return !empty($this->vectorPools) ? reset($this->vectorPools) : null;
+        return ! empty($this->vectorPools) ? reset($this->vectorPools) : null;
     }
 
     public function queryStrings(): array
@@ -1004,8 +991,8 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
         $apis = [];
 
         $semanticFields = $this->properties->nestedSemanticFields()
-            ->filter(fn(Text $field) => $field->isSemantic())
-            ->filter(fn(Text $field) => in_array($field->fullPath, $this->fields));
+            ->filter(fn (Text $field) => $field->isSemantic())
+            ->filter(fn (Text $field) => in_array($field->fullPath, $this->fields));
 
         foreach ($semanticFields as $field) {
             foreach ($field->vectorFields()->getIterator() as $vectorField) {
@@ -1014,7 +1001,6 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
                 }
             }
         }
-
 
         return array_keys($apis);
     }

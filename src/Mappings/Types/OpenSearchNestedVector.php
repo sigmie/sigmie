@@ -9,7 +9,7 @@ use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Query\FunctionScore;
-use Sigmie\Query\Queries\MatchAll;
+use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\Text\Nested;
 
 class OpenSearchNestedVector extends TypesNested implements Type
@@ -57,19 +57,15 @@ class OpenSearchNestedVector extends TypesNested implements Type
         };
     }
 
-    public function vectorQueries(array $vector, int $k, array $filter = []): array
+    public function vectorQueries(array $vector, int $k, Boolean $filter): array
     {
         $source = $this->mapSimilarityToScript($this->similarity);
-
-        // For nested queries, don't apply root-level filters inside the nested query
-        // Filters will be handled at the top level of the search
-        $baseQuery = new MatchAll;
 
         return [
             new Nested(
                 "_embeddings.{$this->fullPath}",
                 new FunctionScore(
-                    query: $baseQuery,
+                    query: $filter,
                     source: $source,
                     boostMode: 'replace',
                     params: [

@@ -8,6 +8,7 @@ use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\Type as AbstractType;
+use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\OpenSearchKnn;
 
 class KnnVector extends AbstractType implements Type
@@ -141,7 +142,7 @@ class KnnVector extends AbstractType implements Type
         return $this->autoNormalizeVector;
     }
 
-    public function vectorQueries(array $vector, int $k, array $filter = []): array
+    public function vectorQueries(array $vector, int $k, Boolean $filter): array
     {
         return [
             new OpenSearchKnn(
@@ -149,7 +150,7 @@ class KnnVector extends AbstractType implements Type
                 queryVector: $vector,
                 k: $k,
                 numCandidates: 0, // OpenSearch doesn't use numCandidates
-                filter: $filter,
+                filter: $filter->toRaw(),
                 boost: 1.0
             ),
         ];
