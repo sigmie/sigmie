@@ -26,6 +26,7 @@ class BaseVector extends AbstractType
         public readonly ?string $apiName = null,
         public readonly ?string $boostedByField = null,
         public readonly bool $autoNormalizeVector = true,
+        public readonly ?string $queryApiName = null,
     ) {}
 
     public function strategy(): VectorStrategy

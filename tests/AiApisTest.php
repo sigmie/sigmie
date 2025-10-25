@@ -153,4 +153,85 @@ class AiApisTest extends TestCase
         $this->assertContains('Product Summary', $cohereTexts, 'Cohere should process the summary');
         $this->assertContains('positive neutral', $cohereTexts, 'Cohere should process concatenated sentiments');
     }
+
+    /**
+     * @test
+     */
+    public function separate_api_for_indexing_and_searching()
+    {
+        $indexName = uniqid();
+
+        // Create two separate fake APIs
+        $embeddingUrl = getenv('LOCAL_EMBEDDING_URL') ?: 'http://localhost:7997';
+        $indexApi = new FakeEmbeddingsApi(new \Sigmie\AI\APIs\InfinityEmbeddingsApi($embeddingUrl));
+        $searchApi = new FakeEmbeddingsApi(new \Sigmie\AI\APIs\InfinityEmbeddingsApi($embeddingUrl));
+
+        // Register both APIs
+        $this->sigmie->registerApi('index-api', $indexApi);
+        $this->sigmie->registerApi('search-api', $searchApi);
+
+        // Create properties with api for indexing and searchApi for searching
+        $props = new NewProperties;
+        $props->text('title')
+            ->semantic(accuracy: 1, dimensions: 384, api: 'index-api')
+            ->searchApi('search-api');
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        // Reset call tracking before indexing
+        $indexApi->reset();
+        $searchApi->reset();
+
+        // Index a document - should use index-api
+        $this->sigmie->collect($indexName, true)
+            ->properties($props)
+            ->merge([
+                new Document(['title' => 'Test Product'], _id: 'doc1'),
+            ]);
+
+        // Assert index-api was called during indexing
+        $indexApi->assertBatchEmbedWasCalled();
+        $indexApiCalls = $indexApi->getBatchEmbedCalls();
+        $indexTexts = [];
+
+        foreach ($indexApiCalls as $payload) {
+            foreach ($payload as $item) {
+                $indexTexts[] = $item['text'] ?? '';
+            }
+        }
+
+        $this->assertContains('Test Product', $indexTexts, 'index-api should be called during document indexing');
+
+        // Assert search-api was NOT called during indexing
+        $this->assertCount(0, $searchApi->getBatchEmbedCalls(), 'search-api should NOT be called during indexing');
+
+        // Reset call tracking before searching
+        $indexApi->reset();
+        $searchApi->reset();
+
+        // Perform search - should use search-api
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->queryString('test query')
+            ->disableKeywordSearch();
+
+        $search->get();
+
+        // Assert search-api was called during search
+        $searchApi->assertBatchEmbedWasCalled();
+        $searchApiCalls = $searchApi->getBatchEmbedCalls();
+        $searchTexts = [];
+
+        foreach ($searchApiCalls as $payload) {
+            foreach ($payload as $item) {
+                $searchTexts[] = $item['text'] ?? '';
+            }
+        }
+
+        $this->assertContains('test query', $searchTexts, 'search-api should be called during search');
+
+        // Assert index-api was NOT called during search
+        $this->assertCount(0, $indexApi->getBatchEmbedCalls(), 'index-api should NOT be called during search');
+    }
 }
