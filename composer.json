@@ -32,7 +32,8 @@
         "brianium/paratest": "^6.3",
         "rachidlaasri/travel": "^1.06",
         "symfony/dotenv": "^7.0",
-        "rector/rector": "^1.2"
+        "rector/rector": "^1.2",
+        "laravel/pint": "^1.25"
     },
     "autoload": {
         "psr-4": {
