@@ -7,7 +7,9 @@ namespace Sigmie\AI;
 class NewJsonSchema
 {
     protected array $properties = [];
+
     protected array $required = [];
+
     protected string $name = 'response';
 
     public function name(string $name): self
@@ -79,7 +81,7 @@ class NewJsonSchema
             'additionalProperties' => false,
         ];
 
-        if (!empty($this->required)) {
+        if ($this->required !== []) {
             $schema['required'] = $this->required;
         }
 
@@ -99,7 +101,7 @@ class NewJsonSchema
             'additionalProperties' => false,
         ];
 
-        if (!empty($this->required)) {
+        if ($this->required !== []) {
             $schema['required'] = $this->required;
         }
 

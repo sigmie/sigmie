@@ -4,17 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\AI\Answers\OpenAIAnswer;
 use Sigmie\AI\History\Index as HistoryIndex;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Rag\NewRerank;
-use Sigmie\Rag\LLMAnswer;
-use Sigmie\Search\NewContextComposer;
-use Sigmie\Search\NewRag;
 use Sigmie\Search\NewRagPrompt;
-use Sigmie\Search\NewSearch;
-use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Testing\TestCase;
 
 use function Sigmie\Functions\random_name;
@@ -24,7 +17,7 @@ class HistoryTest extends TestCase
     /**
      * @test
      */
-    public function history_store()
+    public function history_store(): void
     {
         $indexName = uniqid();
         $llm = $this->llmApi;
@@ -33,7 +26,7 @@ class HistoryTest extends TestCase
         $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
         $props->text('text')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
 
-        $index = $this->sigmie->newIndex($indexName)->properties($props)->create();
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
 
         $collected = $this->sigmie->collect($indexName, true)->properties($props);
 
@@ -54,7 +47,7 @@ class HistoryTest extends TestCase
             ->semantic()
             ->disableKeywordSearch()
             ->retrieve(['text', 'title'])
-            ->queryString('My name is Nico, what\'s a good name for a dog?')
+            ->queryString("My name is Nico, what's a good name for a dog?")
             ->size(2);
 
         $historyIndex = new class(
@@ -66,7 +59,7 @@ class HistoryTest extends TestCase
             public function properties(): NewProperties
             {
                 $props = parent::properties();
-                $props->nested('turns', function (NewProperties $props) {
+                $props->nested('turns', function (NewProperties $props): void {
                     $props->text('content')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
                     $props->text('role')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
                 });
@@ -81,7 +74,7 @@ class HistoryTest extends TestCase
             ->newRag($llm)
             ->search($newSearch)
             ->historyIndex($historyIndex)
-            ->prompt(function (NewRagPrompt $prompt) {
+            ->prompt(function (NewRagPrompt $prompt): void {
                 $prompt->system("You are a precise assistant. Answer strictly only using one word, without any punctuation.");
                 $prompt->developer("Guardrails: Answer only from provided context.");
                 $prompt->user("My name is Nico, what\'s a good name for a dog? Pick only one.");
@@ -93,14 +86,12 @@ class HistoryTest extends TestCase
 
         $this->assertEquals(1, $stored);
 
-        $dogName = (string)$answer;
-
         $answer = $this->sigmie
             ->newRag($llm)
             ->search($newSearch)
             ->conversationId($answer->conversationId)
             ->historyIndex($historyIndex)
-            ->prompt(function (NewRagPrompt $prompt) {
+            ->prompt(function (NewRagPrompt $prompt): void {
                 $prompt->system("You are a precise assistant. Answer strictly only using one word, without any punctuation.");
                 $prompt->user("What did I say my name was ?");
             })
@@ -112,12 +103,12 @@ class HistoryTest extends TestCase
             'My name is Nico'
         );
 
-        $answer = $this->sigmie
+        $this->sigmie
             ->newRag($llm)
             ->search($newSearch)
             ->conversationId($answer->conversationId)
             ->historyIndex($historyIndex)
-            ->prompt(function (NewRagPrompt $prompt) {
+            ->prompt(function (NewRagPrompt $prompt): void {
                 $prompt->system("You are a precise assistant. Answer strictly only using one word, without any punctuation.");
                 $prompt->user('And what name did you mention before ?');
             })
@@ -136,9 +127,9 @@ class HistoryTest extends TestCase
     /**
      * @test
      */
-    public function embeddings_are_populated()
+    public function embeddings_are_populated(): void
     {
-        $indexName = uniqid();
+        uniqid();
 
         $historyIndex = new class(
             random_name('hist'),
@@ -148,7 +139,7 @@ class HistoryTest extends TestCase
             public function properties(): NewProperties
             {
                 $props = parent::properties();
-                $props->nested('turns', function (NewProperties $props) {
+                $props->nested('turns', function (NewProperties $props): void {
                     $props->text('content')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
                     $props->text('role')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
                 });

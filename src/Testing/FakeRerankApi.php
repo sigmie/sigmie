@@ -36,7 +36,7 @@ class FakeRerankApi implements RerankApi
             return;
         }
 
-        Assert::assertEquals($times, $actualCount, "rerank() was called {$actualCount} times, expected {$times} times");
+        Assert::assertEquals($times, $actualCount, sprintf('rerank() was called %d times, expected %d times', $actualCount, $times));
     }
 
     public function assertRerankWasCalledWith(string $query, ?int $topK = null): void
@@ -49,8 +49,8 @@ class FakeRerankApi implements RerankApi
         }
 
         $message = $topK === null
-            ? "rerank() was never called with query: \"{$query}\""
-            : "rerank() was never called with query: \"{$query}\" and topK: {$topK}";
+            ? sprintf('rerank() was never called with query: "%s"', $query)
+            : sprintf('rerank() was never called with query: "%s" and topK: %d', $query, $topK);
 
         Assert::fail($message);
     }
@@ -64,7 +64,7 @@ class FakeRerankApi implements RerankApi
             }
         }
 
-        Assert::fail("rerank() was never called with {$count} documents");
+        Assert::fail(sprintf('rerank() was never called with %d documents', $count));
     }
 
     public function getRerankCalls(): array

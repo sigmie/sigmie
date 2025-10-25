@@ -16,7 +16,7 @@ class Search extends ElasticsearchResponse
 
     public function aggregation(string $dot): mixed
     {
-        return $this->json("aggregations.{$dot}");
+        return $this->json('aggregations.' . $dot);
     }
 
     public function get(): array
@@ -31,7 +31,7 @@ class Search extends ElasticsearchResponse
 
     public function hits(): array
     {
-        return array_map(fn($value) => new Hit(
+        return array_map(fn($value): Hit => new Hit(
             _source: $value['_source'],
             _id: $value['_id'],
             _score: $value['_score'],

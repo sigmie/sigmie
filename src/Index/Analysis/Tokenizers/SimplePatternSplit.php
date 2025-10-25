@@ -26,13 +26,11 @@ class SimplePatternSplit extends Tokenizer
 
     public function toRaw(): array
     {
-        $res = [
+        return [
             $this->name => [
                 'type' => 'simple_pattern_split',
                 'pattern' => $this->pattern,
             ],
         ];
-
-        return $res;
     }
 }

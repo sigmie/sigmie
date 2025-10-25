@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie;
 
+use Sigmie\Base\ElasticsearchException;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\AI\Contracts\LLMApi;
@@ -15,7 +16,6 @@ use Sigmie\Base\Drivers\Opensearch;
 use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Document\AliveCollection;
-use Sigmie\Enums\ElasticsearchVersion as Version;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Http\JSONClient;
 use Sigmie\Index\Actions as IndexActions;
@@ -35,7 +35,6 @@ use Sigmie\Search\NewRag;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewTemplate;
 use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\AI\History\Index as HistoryIndex;
 use Sigmie\Classification\NewClassification;
 use Sigmie\Clustering\NewClustering;
 use Sigmie\Search\NewRecommendations;
@@ -76,7 +75,7 @@ class Sigmie
         return isset($this->apis[$name]);
     }
 
-    public function application(string $application)
+    public function application(string $application): static
     {
         $this->application = $application;
 
@@ -85,10 +84,8 @@ class Sigmie
 
     public function newIndex(string $name): NewIndex
     {
-        $newIndex = (new NewIndex($this->elasticsearchConnection))
+        return (new NewIndex($this->elasticsearchConnection))
             ->alias($name);
-
-        return $newIndex;
     }
 
     public function index(string $name): null|AliasedIndex|Index
@@ -137,17 +134,15 @@ class Sigmie
     public function rawQuery(
         string $index,
         array $query
-    ) {
-        $res = $this->searchAPICall($index, $query);
-
-        return $res;
+    ): \Sigmie\Base\Http\Responses\Search {
+        return $this->searchAPICall($index, $query);
     }
 
     public function query(
         string $index,
         Query $query = new MatchAll(),
         AggsInterface $aggs = new Aggs()
-    ) {
+    ): \Sigmie\Query\Search {
         $search = new Search($this->elasticsearchConnection);
 
         $search = $search->query($query)->aggs($aggs);
@@ -172,9 +167,7 @@ class Sigmie
         ?RerankApi $reranker = null
     ): NewRag {
 
-        $rag = new NewRag($llm, $reranker);
-
-        return $rag;
+        return new NewRag($llm, $reranker);
     }
 
     public function newMultiSearch(): NewMultiSearch
@@ -189,7 +182,7 @@ class Sigmie
             ->id($id);
     }
 
-    public function refresh(string $indexName)
+    public function refresh(string $indexName): void
     {
         $this->refreshIndex($indexName);
     }
@@ -227,8 +220,8 @@ class Sigmie
         $client = JSONClient::create($hosts, $config);
 
         $driver = match ($engine) {
-            SearchEngineType::Elasticsearch => new \Sigmie\Base\Drivers\Elasticsearch(),
-            SearchEngineType::OpenSearch => new \Sigmie\Base\Drivers\Opensearch(),
+            SearchEngineType::Elasticsearch => new Elasticsearch(),
+            SearchEngineType::OpenSearch => new Opensearch(),
         };
 
         return new static(new HttpConnection($client, $driver));
@@ -266,14 +259,14 @@ class Sigmie
                     if ($listedIndex->name === $indexName || in_array($indexName, $listedIndex->aliases)) {
                         try {
                             $this->deleteIndex($listedIndex->name);
-                        } catch (\Sigmie\Base\ElasticsearchException $e) {
+                        } catch (ElasticsearchException $e) {
                             if ($e->json('type') !== 'index_not_found_exception') {
                                 throw $e;
                             }
                         }
                     }
                 }
-            } catch (\Sigmie\Base\ElasticsearchException $e) {
+            } catch (ElasticsearchException $e) {
                 if ($e->json('type') !== 'index_not_found_exception') {
                     throw $e;
                 }
@@ -283,12 +276,12 @@ class Sigmie
         return true;
     }
 
-    public static function registerPlugins(array|string $plugins)
+    public static function registerPlugins(array|string $plugins): void
     {
         self::$plugins = array_merge(self::$plugins, (array) $plugins);
     }
 
-    public static function isPluginRegistered(string $plugin)
+    public static function isPluginRegistered(string $plugin): bool
     {
         return in_array($plugin, self::$plugins);
     }

@@ -11,11 +11,10 @@ abstract class Suggester implements ToRaw
 {
     protected string $field;
 
-    protected int $size;
+    protected int $size = 5;
 
     public function __construct(protected string $name)
     {
-        $this->size = 5;
     }
 
     abstract public function type(): SuggesterType;
@@ -36,7 +35,7 @@ abstract class Suggester implements ToRaw
 
     public function toRaw(): array
     {
-        $res = [
+        return [
             $this->name => [
                 $this->type()->value => [
                     'field' => $this->field,
@@ -44,7 +43,5 @@ abstract class Suggester implements ToRaw
                 ],
             ],
         ];
-
-        return $res;
     }
 }

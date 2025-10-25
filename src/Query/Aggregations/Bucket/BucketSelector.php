@@ -14,7 +14,7 @@ class BucketSelector extends Bucket
         parent::__construct($name);
     }
 
-    public function value(): array
+    protected function value(): array
     {
         return [
             'bucket_selector' => [

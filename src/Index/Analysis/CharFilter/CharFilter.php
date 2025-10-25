@@ -34,6 +34,6 @@ abstract class CharFilter implements CharFilterInterface
             return $class::fromRaw($raw);
         }
 
-        throw new Exception("Char filter of type '{$config['type']}' doesn't exists.");
+        throw new Exception(sprintf("Char filter of type '%s' doesn't exists.", $config['type']));
     }
 }

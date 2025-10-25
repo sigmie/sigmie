@@ -227,7 +227,7 @@ class NewQuery implements Queries, MultiSearchable
 
     public function getName(): string
     {
-        if (!empty($this->searchName)) {
+        if ($this->searchName !== '' && $this->searchName !== '0') {
             return $this->searchName;
         }
 

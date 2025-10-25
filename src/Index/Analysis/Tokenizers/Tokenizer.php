@@ -40,6 +40,6 @@ abstract class Tokenizer implements TokenizerInterface
             return $class::fromRaw($raw);
         }
 
-        throw new Exception("Tokenizer of type '{$config['type']}' doesn't exists.");
+        throw new Exception(sprintf("Tokenizer of type '%s' doesn't exists.", $config['type']));
     }
 }

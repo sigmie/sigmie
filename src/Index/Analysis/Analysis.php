@@ -37,27 +37,27 @@ class Analysis implements AnalysisInterface
         $this->normalizers = new Collection($normalizers);
 
         $this->filters = $this->analyzers
-            ->filter(fn(AnalyzerInterface $analyzer) => $analyzer instanceof CustomAnalyzerInterface)
-            ->map(fn(CustomAnalyzerInterface $analyzer) => $analyzer->filters())
+            ->filter(fn(AnalyzerInterface $analyzer): bool => $analyzer instanceof CustomAnalyzerInterface)
+            ->map(fn(CustomAnalyzerInterface $analyzer): array => $analyzer->filters())
             ->flatten()
             ->mapToDictionary(fn(TokenFilterInterface $filter) => [$filter->name() => $filter]);
 
         $this->charFilters = $this->analyzers
-            ->filter(fn(AnalyzerInterface $analyzer) => $analyzer instanceof CustomAnalyzerInterface)
-            ->map(fn(CustomAnalyzerInterface $analyzer) => $analyzer->charFilters())
+            ->filter(fn(AnalyzerInterface $analyzer): bool => $analyzer instanceof CustomAnalyzerInterface)
+            ->map(fn(CustomAnalyzerInterface $analyzer): array => $analyzer->charFilters())
             ->flatten()
             ->mapToDictionary(fn(CharFIlterInterface $filter) => [$filter->name() => $filter]);
 
         $this->charFilters = $this->normalizers
-            ->map(fn(Normalizer $analyzer) => $analyzer->charFilters())
+            ->map(fn(Normalizer $analyzer): array => $analyzer->charFilters())
             ->flatten()
             ->mapToDictionary(fn(CharFIlterInterface $filter) => [$filter->name() => $filter])
             ->merge($this->charFilters);
 
         $this->tokenizers = $this->analyzers
-            ->filter(fn(AnalyzerInterface $analyzer) => $analyzer instanceof CustomAnalyzerInterface)
-            ->map(fn(CustomAnalyzerInterface $analyzer) => $analyzer->tokenizer())
-            ->filter(fn($tokenizer) => ! is_null($tokenizer))
+            ->filter(fn(AnalyzerInterface $analyzer): bool => $analyzer instanceof CustomAnalyzerInterface)
+            ->map(fn(CustomAnalyzerInterface $analyzer): ?\Sigmie\Index\Contracts\Tokenizer => $analyzer->tokenizer())
+            ->filter(fn($tokenizer): bool => ! is_null($tokenizer))
             ->mapToDictionary(fn(TokenizerInterface $tokenizer) => [$tokenizer->name() => $tokenizer]);
     }
 
@@ -127,7 +127,7 @@ class Analysis implements AnalysisInterface
     {
         $newAnalyzers = new Collection($analyzers);
 
-        $newAnalyzers->each(function (AnalyzerInterface $analyzer) {
+        $newAnalyzers->each(function (AnalyzerInterface $analyzer): void {
             $this->addAnalyzer($analyzer);
         });
     }
@@ -194,33 +194,31 @@ class Analysis implements AnalysisInterface
     {
         $filter = $this->filters
             ->mapToDictionary(
-                fn(TokenFilterInterface $tokenFilter) => $tokenFilter->toRaw()
+                fn(TokenFilterInterface $tokenFilter): array => $tokenFilter->toRaw()
             )->toArray();
 
         $charFilters = $this->charFilters
-            ->mapToDictionary(fn(CharFIlterInterface $charFilter) => $charFilter->toRaw())
+            ->mapToDictionary(fn(CharFIlterInterface $charFilter): array => $charFilter->toRaw())
             ->toArray();
 
         $tokenizer = $this->tokenizers
-            ->mapToDictionary(fn(TokenizerInterface $tokenizer) => $tokenizer->toRaw())
+            ->mapToDictionary(fn(TokenizerInterface $tokenizer): array => $tokenizer->toRaw())
             ->toArray();
 
         $analyzers = $this->analyzers
-            ->mapToDictionary(fn(AnalyzerInterface $analyzer) => $analyzer->toRaw())
+            ->mapToDictionary(fn(AnalyzerInterface $analyzer): array => $analyzer->toRaw())
             ->toArray();
 
         $normalizers = $this->normalizers
-            ->mapToDictionary(fn(NormalizerInterface $normalizer) => $normalizer->toRaw())
+            ->mapToDictionary(fn(NormalizerInterface $normalizer): array => $normalizer->toRaw())
             ->toArray();
 
-        $res = [
+        return [
             'analyzer' => $analyzers,
             'filter' => $filter,
             'char_filter' => $charFilters,
             'tokenizer' => $tokenizer,
             'normalizer' => $normalizers,
         ];
-
-        return $res;
     }
 }

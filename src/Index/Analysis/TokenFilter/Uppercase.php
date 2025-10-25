@@ -23,9 +23,7 @@ class Uppercase extends TokenFilter
     {
         [$name, $configs] = name_configs($raw);
 
-        $instance = new static($name);
-
-        return $instance;
+        return new static($name);
     }
 
     protected function getValues(): array

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Carbon\Carbon;
 use Sigmie\Document\Document;
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
@@ -18,7 +17,7 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function async_update()
+    public function async_update(): void
     {
         $alias = uniqid();
 
@@ -36,7 +35,7 @@ class IndexUpdateTest extends TestCase
         $collection = $this->sigmie->collect($alias, true);
         $collection->merge($docs);
 
-        $indexUpdateTask = $index->asyncUpdate(function (Update $update) {
+        $indexUpdateTask = $index->asyncUpdate(function (Update $update): Update {
             $update->stopwords(['foo', 'bar'], 'demo');
 
             return $update;
@@ -48,11 +47,12 @@ class IndexUpdateTest extends TestCase
                 $indexUpdateTask->finish();
                 break;
             }
+
             // Sleep for a short interval before checking the condition again
             usleep(100000); // 100 milliseconds
         }
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasNotCharFilter('default', 'html_strip');
             $index->assertAnalyzerHasNotCharFilter('default', 'some_char_filter_name');
         });
@@ -61,7 +61,7 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function analyzer_remove_html_char_filters()
+    public function analyzer_remove_html_char_filters(): void
     {
         $alias = uniqid();
 
@@ -71,20 +71,20 @@ class IndexUpdateTest extends TestCase
             ->stripHTML('html_strip')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasFilter('default', 'demo');
             $index->assertFilterHasStopwords('demo', ['foo', 'bar']);
             $index->assertAnalyzerHasCharFilter('default', 'html_strip');
             $index->assertAnalyzerHasCharFilter('default', 'some_char_filter_name');
         });
 
-        $index->update(function (Update $update) {
+        $index->update(function (Update $update): Update {
             $update->stopwords(['foo', 'bar'], 'demo');
 
             return $update;
         });
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasNotCharFilter('default', 'html_strip');
             $index->assertAnalyzerHasNotCharFilter('default', 'some_char_filter_name');
         });
@@ -93,7 +93,7 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function update_char_filter()
+    public function update_char_filter(): void
     {
         $alias = uniqid();
 
@@ -102,7 +102,7 @@ class IndexUpdateTest extends TestCase
             ->patternReplace('/bar/', 'foo', 'pattern_replace_char_filter')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasCharFilter('default', 'map_chars_char_filter');
             $index->assertCharFilterEquals('map_chars_char_filter', [
                 'type' => 'mapping',
@@ -117,14 +117,14 @@ class IndexUpdateTest extends TestCase
             ]);
         });
 
-        $index->update(function (Update $update) {
+        $index->update(function (Update $update): Update {
             $update->mapChars(['baz' => 'foo'], 'map_chars_char_filter');
             $update->patternReplace('/doe/', 'john', 'pattern_replace_char_filter');
 
             return $update;
         });
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasCharFilter('default', 'map_chars_char_filter');
             $index->assertCharFilterEquals('map_chars_char_filter', [
                 'type' => 'mapping',
@@ -143,18 +143,18 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function default_char_filter()
+    public function default_char_filter(): void
     {
         $alias = uniqid();
 
         $index = $this->sigmie->newIndex($alias)
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerCharFilterIsEmpty('default');
         });
 
-        $index->update(function (Update $update) {
+        $index->update(function (Update $update): Update {
             $update->patternReplace('/foo/', 'bar', 'default_pattern_replace_filter');
             $update->mapChars(['foo' => 'bar'], 'default_mappings_filter');
             $update->stripHTML('html_strip');
@@ -162,7 +162,7 @@ class IndexUpdateTest extends TestCase
             return $update;
         });
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasCharFilter('default', 'default_pattern_replace_filter');
             $index->assertAnalyzerHasCharFilter('default', 'default_mappings_filter');
             $index->assertAnalyzerHasCharFilter('default', 'html_strip');
@@ -172,25 +172,25 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function default_tokenizer_configurable()
+    public function default_tokenizer_configurable(): void
     {
         $alias = uniqid();
 
         $index = $this->sigmie->newIndex($alias)
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerCharFilterIsEmpty('default');
             $index->assertAnalyzerHasTokenizer('default', 'standard');
         });
 
-        $index->update(function (Update $update) {
+        $index->update(function (Update $update): Update {
             $update->tokenizeOnPattern('/foo/', name: 'default_analyzer_pattern_tokenizer');
 
             return $update;
         });
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasTokenizer('default', 'default_analyzer_pattern_tokenizer');
             $index->assertTokenizerEquals('default_analyzer_pattern_tokenizer', [
                 'pattern' => '/foo/',
@@ -202,7 +202,7 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function default_tokenizer()
+    public function default_tokenizer(): void
     {
         $alias = uniqid();
 
@@ -210,17 +210,17 @@ class IndexUpdateTest extends TestCase
             ->tokenizer(new Whitespace())
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerTokenizerIsWhitespaces('default');
         });
 
-        $index->update(function (Update $update) {
+        $index->update(function (Update $update): Update {
             $update->tokenizeOnWordBoundaries('foo_tokenizer');
 
             return $update;
         });
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasTokenizer('default', 'foo_tokenizer');
         });
     }
@@ -228,7 +228,7 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function update_index_one_way_synonyms()
+    public function update_index_one_way_synonyms(): void
     {
         $alias = uniqid();
 
@@ -238,14 +238,14 @@ class IndexUpdateTest extends TestCase
             ], 'bar_name')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterExists('bar_name');
             $index->assertFilterHasSynonyms('bar_name', [
                 'i-pod, i pod => ipod',
             ]);
         });
 
-        $index->update(function (Update $update) {
+        $index->update(function (Update $update): Update {
             $update->oneWaySynonyms([
                 ['mickey', ['mouse', 'goofy']],
             ], 'bar_name');
@@ -253,7 +253,7 @@ class IndexUpdateTest extends TestCase
             return $update;
         });
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterExists('bar_name');
             $index->assertFilterHasSynonyms('bar_name', [
                 'mouse, goofy => mickey',
@@ -264,7 +264,7 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function update_index_stemming()
+    public function update_index_stemming(): void
     {
         $alias = uniqid();
 
@@ -276,7 +276,7 @@ class IndexUpdateTest extends TestCase
             ], 'bar_name')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterExists('bar_name');
             $index->assertFilterHasStemming('bar_name', [
                 'be, are => am',
@@ -285,7 +285,7 @@ class IndexUpdateTest extends TestCase
             ]);
         });
 
-        $index->update(function (Update $update) {
+        $index->update(function (Update $update): Update {
             $update->stemming([[
                 'mickey', ['mouse', 'goofy'],
             ]], 'bar_name');
@@ -293,7 +293,7 @@ class IndexUpdateTest extends TestCase
             return $update;
         });
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterExists('bar_name');
             $index->assertFilterHasStemming('bar_name', [
                 'mouse, goofy => mickey',
@@ -304,7 +304,7 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function update_index_synonyms()
+    public function update_index_synonyms(): void
     {
         $alias = uniqid();
 
@@ -315,7 +315,7 @@ class IndexUpdateTest extends TestCase
             ], 'foo_two_way_synonyms', )
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterExists('foo_two_way_synonyms');
             $index->assertFilterHasSynonyms('foo_two_way_synonyms', [
                 'treasure, gem, gold, price',
@@ -323,13 +323,13 @@ class IndexUpdateTest extends TestCase
             ]);
         });
 
-        $index->update(function (Update $update) {
+        $index->update(function (Update $update): Update {
             $update->twoWaySynonyms([['john', 'doe']], 'foo_two_way_synonyms');
 
             return $update;
         });
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterHasSynonyms('foo_two_way_synonyms', [
                 'john, doe',
             ]);
@@ -339,7 +339,7 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function update_index_stopwords()
+    public function update_index_stopwords(): void
     {
         $alias = uniqid();
 
@@ -347,18 +347,18 @@ class IndexUpdateTest extends TestCase
             ->stopwords(['foo', 'bar', 'baz'], 'foo_stopwords')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterExists('foo_stopwords');
             $index->assertFilterHasStopwords('foo_stopwords', ['foo', 'bar', 'baz']);
         });
 
-        $index->update(function (Update $update) {
+        $index->update(function (Update $update): Update {
             $update->stopwords(['john', 'doe'], 'foo_stopwords');
 
             return $update;
         });
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterExists('foo_stopwords');
             $index->assertFilterHasStopwords('foo_stopwords', ['john', 'doe']);
         });
@@ -367,12 +367,12 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function mappings()
+    public function mappings(): void
     {
         $alias = uniqid();
 
         $index = $this->sigmie->newIndex($alias)
-            ->mapping(function (NewProperties $blueprint) {
+            ->mapping(function (NewProperties $blueprint): NewProperties {
                 $blueprint->text('bar')->searchAsYouType();
                 $blueprint->text('created_at')->unstructuredText();
 
@@ -380,12 +380,12 @@ class IndexUpdateTest extends TestCase
             })
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertPropertyIsUnstructuredText('created_at');
         });
 
-        $index->update(function (Update $update) {
-            $update->mapping(function (NewProperties $blueprint) {
+        $index->update(function (Update $update): Update {
+            $update->mapping(function (NewProperties $blueprint): NewProperties {
                 $blueprint->date('created_at');
                 $blueprint->number('count')->float();
 
@@ -395,7 +395,7 @@ class IndexUpdateTest extends TestCase
             return $update;
         });
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertPropertyExists('count');
             $index->assertPropertyExists('created_at');
             $index->assertPropertyIsDate('created_at');
@@ -405,7 +405,7 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function reindex_docs()
+    public function reindex_docs(): void
     {
         $alias = uniqid();
 
@@ -424,7 +424,7 @@ class IndexUpdateTest extends TestCase
 
         $this->assertCount(10, $collection);
 
-        $updatedIndex = $index->update(function (Update $update) {
+        $updatedIndex = $index->update(function (Update $update): Update {
             $update->replicas(3);
 
             return $update;
@@ -439,7 +439,7 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function delete_old_index()
+    public function delete_old_index(): void
     {
         $alias = uniqid();
 
@@ -448,9 +448,7 @@ class IndexUpdateTest extends TestCase
 
         $oldIndexName = $index->name;
 
-        $index = $index->update(function (Update $update) {
-            return $update;
-        });
+        $index = $index->update(fn(Update $update): Update => $update);
 
         $this->assertIndexNotExists($oldIndexName);
         $this->assertNotEquals($oldIndexName, $index->name);
@@ -459,7 +457,7 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function index_name()
+    public function index_name(): void
     {
         $alias = uniqid();
 
@@ -468,9 +466,7 @@ class IndexUpdateTest extends TestCase
 
         $oldIndexName = $index->name;
 
-        $index = $index->update(function (Update $update) {
-            return $update;
-        });
+        $index = $index->update(fn(Update $update): Update => $update);
 
         $this->assertIndexExists($index->name);
         $this->assertIndexNotExists($oldIndexName);
@@ -480,7 +476,7 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function change_index_alias()
+    public function change_index_alias(): void
     {
         $oldAlias = uniqid();
         $newAlias = uniqid();
@@ -490,13 +486,13 @@ class IndexUpdateTest extends TestCase
 
         $this->assertInstanceOf(AliasedIndex::class, $index);
 
-        $index->update(function (Update $update) use ($newAlias) {
+        $index->update(function (Update $update) use ($newAlias): Update {
             $update->alias($newAlias);
 
             return $update;
         });
 
-        $index = $this->sigmie->index($newAlias);
+        $this->sigmie->index($newAlias);
 
         $oldIndex = $this->sigmie->index($oldAlias);
 
@@ -506,7 +502,7 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function index_shards_and_replicas()
+    public function index_shards_and_replicas(): void
     {
         $alias = uniqid();
 
@@ -515,18 +511,18 @@ class IndexUpdateTest extends TestCase
             ->replicas(1)
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertShards(1);
             $index->assertReplicas(1);
         });
 
-        $index->update(function (Update $update) {
+        $index->update(function (Update $update): Update {
             $update->replicas(2)->shards(2);
 
             return $update;
         });
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertShards(2);
             $index->assertReplicas(2);
         });
@@ -535,7 +531,7 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function update_index_wait_and_finish()
+    public function update_index_wait_and_finish(): void
     {
         $alias = uniqid();
 
@@ -546,7 +542,7 @@ class IndexUpdateTest extends TestCase
 
         $oldName = $this->sigmie->index($alias)->raw['settings']['index']['provided_name'];
 
-        $task = $index->asyncUpdate(function (Update $update) {
+        $task = $index->asyncUpdate(function (Update $update): Update {
             $update->replicas(2)->shards(2);
 
             return $update;
@@ -562,19 +558,17 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function index_upsert_creates_new_index_when_none_exists()
+    public function index_upsert_creates_new_index_when_none_exists(): void
     {
         $alias = uniqid();
 
         // Ensure index doesn't exist
         $this->assertNull($this->sigmie->index($alias));
 
-        $index = $this->sigmie->indexUpsert($alias, function ($builder) {
-            return $builder->shards(2)->replicas(1);
-        });
+        $index = $this->sigmie->indexUpsert($alias, fn($builder) => $builder->shards(2)->replicas(1));
 
         $this->assertInstanceOf(AliasedIndex::class, $index);
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertShards(2);
             $index->assertReplicas(1);
         });
@@ -583,7 +577,7 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
-    public function index_upsert_updates_existing_index()
+    public function index_upsert_updates_existing_index(): void
     {
         $alias = uniqid();
 
@@ -598,23 +592,21 @@ class IndexUpdateTest extends TestCase
 
         $index = $this->sigmie->index($alias);
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertShards(1);
             $index->assertReplicas(0);
             $index->assertFilterHasStopwords('test_stopwords', ['old', 'words']);
         });
 
         // Update through upsert
-        $updatedIndex = $this->sigmie->indexUpsert($alias, function ($builder) {
-            return $builder->shards(2)
-                ->replicas(1)
-                ->stopwords(['new', 'words'], 'test_stopwords');
-        });
+        $updatedIndex = $this->sigmie->indexUpsert($alias, fn($builder) => $builder->shards(2)
+            ->replicas(1)
+            ->stopwords(['new', 'words'], 'test_stopwords'));
 
         $this->assertInstanceOf(AliasedIndex::class, $updatedIndex);
         $this->assertNotEquals($oldName, $updatedIndex->name);
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertShards(2);
             $index->assertReplicas(1);
             $index->assertFilterHasStopwords('test_stopwords', ['new', 'words']);

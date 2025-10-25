@@ -14,7 +14,7 @@ trait Script
 
     protected function scriptAPICall(string $method, string $id, ?array $body = null): ElasticsearchResponse
     {
-        $uri = new Uri("/_scripts/{$id}");
+        $uri = new Uri('/_scripts/' . $id);
 
         $esRequest = new ElasticsearchRequest($method, $uri, $body);
 

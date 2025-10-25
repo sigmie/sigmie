@@ -10,7 +10,7 @@ class SuggestionTypeBuilder
 
     protected string $type;
 
-    public function name(string $name)
+    public function name(string $name): static
     {
         $this->name = $name;
 

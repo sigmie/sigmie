@@ -33,9 +33,7 @@ class SynonymGraph extends TokenFilter
             $settings[] = $value;
         }
 
-        $instance = new static($name, $settings);
-
-        return $instance;
+        return new static($name, $settings);
     }
 
     public function toRaw(): array

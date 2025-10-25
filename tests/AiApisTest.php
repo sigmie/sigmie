@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\AI\APIs\InfinityEmbeddingsApi;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\TestCase;
@@ -15,14 +15,14 @@ class AiApisTest extends TestCase
     /**
      * @test
      */
-    public function multiple_apis_are_isolated_in_search()
+    public function multiple_apis_are_isolated_in_search(): void
     {
         $indexName = uniqid();
 
         // Create fake APIs using the existing FakeEmbeddingsApi wrapper
         $embeddingUrl = getenv('LOCAL_EMBEDDING_URL') ?: 'http://localhost:7997';
-        $api1 = new FakeEmbeddingsApi(new \Sigmie\AI\APIs\InfinityEmbeddingsApi($embeddingUrl));
-        $api2 = new FakeEmbeddingsApi(new \Sigmie\AI\APIs\InfinityEmbeddingsApi($embeddingUrl));
+        $api1 = new FakeEmbeddingsApi(new InfinityEmbeddingsApi($embeddingUrl));
+        $api2 = new FakeEmbeddingsApi(new InfinityEmbeddingsApi($embeddingUrl));
 
         // Register both APIs
         $this->sigmie->registerApi('api1', $api1);
@@ -85,14 +85,14 @@ class AiApisTest extends TestCase
     /**
      * @test
      */
-    public function document_processor_uses_correct_apis_for_each_field()
+    public function document_processor_uses_correct_apis_for_each_field(): void
     {
         $indexName = uniqid();
 
         // Create fake APIs
         $embeddingUrl = getenv('LOCAL_EMBEDDING_URL') ?: 'http://localhost:7997';
-        $openaiApi = new FakeEmbeddingsApi(new \Sigmie\AI\APIs\InfinityEmbeddingsApi($embeddingUrl));
-        $cohereApi = new FakeEmbeddingsApi(new \Sigmie\AI\APIs\InfinityEmbeddingsApi($embeddingUrl));
+        $openaiApi = new FakeEmbeddingsApi(new InfinityEmbeddingsApi($embeddingUrl));
+        $cohereApi = new FakeEmbeddingsApi(new InfinityEmbeddingsApi($embeddingUrl));
 
         // Register APIs
         $this->sigmie->registerApi('openai-embeddings', $openaiApi);
@@ -102,7 +102,7 @@ class AiApisTest extends TestCase
         $props = new NewProperties;
         $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'openai-embeddings');
         $props->text('summary')->semantic(accuracy: 1, dimensions: 384, api: 'cohere-embeddings');
-        $props->nested('reviews', function (NewProperties $props) {
+        $props->nested('reviews', function (NewProperties $props): void {
             $props->text('comment')->semantic(accuracy: 1, dimensions: 384, api: 'openai-embeddings');
             $props->text('sentiment')->semantic(accuracy: 1, dimensions: 384, api: 'cohere-embeddings');
         });
@@ -157,14 +157,14 @@ class AiApisTest extends TestCase
     /**
      * @test
      */
-    public function separate_api_for_indexing_and_searching()
+    public function separate_api_for_indexing_and_searching(): void
     {
         $indexName = uniqid();
 
         // Create two separate fake APIs
         $embeddingUrl = getenv('LOCAL_EMBEDDING_URL') ?: 'http://localhost:7997';
-        $indexApi = new FakeEmbeddingsApi(new \Sigmie\AI\APIs\InfinityEmbeddingsApi($embeddingUrl));
-        $searchApi = new FakeEmbeddingsApi(new \Sigmie\AI\APIs\InfinityEmbeddingsApi($embeddingUrl));
+        $indexApi = new FakeEmbeddingsApi(new InfinityEmbeddingsApi($embeddingUrl));
+        $searchApi = new FakeEmbeddingsApi(new InfinityEmbeddingsApi($embeddingUrl));
 
         // Register both APIs
         $this->sigmie->registerApi('index-api', $indexApi);

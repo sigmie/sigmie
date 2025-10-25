@@ -8,9 +8,6 @@ use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Nested as TypesNested;
-use Sigmie\Query\FunctionScore;
-use Sigmie\Query\Queries\MatchAll;
-use Sigmie\Query\Queries\Text\Nested;
 
 /**
  * Utility helper for vector fields in nested structures

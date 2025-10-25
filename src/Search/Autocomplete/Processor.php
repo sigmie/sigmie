@@ -14,10 +14,8 @@ abstract class Processor implements ToRaw
 
     public function toRaw(): array
     {
-        $res = [
+        return [
             $this->type() => $this->values(),
         ];
-
-        return $res;
     }
 }

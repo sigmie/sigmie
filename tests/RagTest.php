@@ -4,22 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\AI\Answers\OpenAIAnswer;
-use Sigmie\AI\APIs\OpenAIConversationsApi;
-use Sigmie\AI\APIs\OpenAIResponseApi;
+use Sigmie\AI\NewJsonSchema;
 use Sigmie\AI\Contracts\LLMAnswer as ContractsLLMAnswer;
-use Sigmie\AI\ProviderFactory;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Rag\NewRerank;
-use Sigmie\Rag\LLMAnswer;
 use Sigmie\Rag\RagAnswer;
-use Sigmie\Search\NewContextComposer;
-use Sigmie\Search\NewRag;
 use Sigmie\Search\NewRagPrompt;
-use Sigmie\Search\NewSearch;
-use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Testing\TestCase;
 
 class RagTest extends TestCase
@@ -27,7 +19,7 @@ class RagTest extends TestCase
     /**
      * @test
      */
-    public function rag_json()
+    public function rag_json(): void
     {
         $indexName = uniqid();
         $llm = $this->llmApi;
@@ -61,15 +53,15 @@ class RagTest extends TestCase
             ->queryString('What are good dog names?')
             ->size(2);
 
-        $ragAnswer = $this->sigmie
+        $this->sigmie
             ->newRag($llm)
             ->search($newSearch)
-            ->prompt(function (NewRagPrompt $prompt) {
+            ->prompt(function (NewRagPrompt $prompt): void {
                 $prompt->system("You are a helpful assistant. Extract dog names from the context.");
                 $prompt->user("List 3 good dog names from the context.");
                 $prompt->contextFields(['text']);
-                $prompt->answerJsonSchema(function (\Sigmie\AI\NewJsonSchema $schema) {
-                    $schema->array('dog_names', function (\Sigmie\AI\NewJsonSchema $items) {
+                $prompt->answerJsonSchema(function (NewJsonSchema $schema): void {
+                    $schema->array('dog_names', function (NewJsonSchema $items): void {
                         $items->string('name');
                     });
                 });
@@ -86,14 +78,14 @@ class RagTest extends TestCase
         $messages = $jsonCalls[0]['messages'];
 
         // Check system message
-        $systemMessages = array_filter($messages, fn($m) => $m['role']->value === 'system');
+        $systemMessages = array_filter($messages, fn($m): bool => $m['role']->value === 'system');
         $this->assertGreaterThan(0, count($systemMessages));
         $systemContent = implode(' ', array_column($systemMessages, 'content'));
         $this->assertStringContainsString('helpful assistant', $systemContent);
         $this->assertStringContainsString('Extract dog names', $systemContent);
 
         // Check user message
-        $userMessages = array_filter($messages, fn($m) => $m['role']->value === 'user');
+        $userMessages = array_filter($messages, fn($m): bool => $m['role']->value === 'user');
         $this->assertGreaterThan(0, count($userMessages));
         $userContent = implode(' ', array_column($userMessages, 'content'));
         $this->assertStringContainsString('List 3 good dog names', $userContent);
@@ -109,7 +101,7 @@ class RagTest extends TestCase
     /**
      * @test
      */
-    public function rag_non_streaming()
+    public function rag_non_streaming(): void
     {
         $indexName = uniqid();
         $llm = $this->llmApi;
@@ -158,12 +150,12 @@ class RagTest extends TestCase
         $answer = $this->sigmie
             ->newRag($llm, $this->rerankApi)
             ->search($multiSearch)
-            ->rerank(function (NewRerank $rerank) {
+            ->rerank(function (NewRerank $rerank): void {
                 $rerank->fields(['text', 'title']);
                 $rerank->topK(1);
                 $rerank->query('What is the privacy policy?');
             })
-            ->prompt(function (NewRagPrompt $prompt) {
+            ->prompt(function (NewRagPrompt $prompt): void {
                 $prompt->system("You are a precise assistant. Answer in 2 sentences max.");
                 $prompt->developer("Guardrails: Answer only from provided context.");
                 $prompt->user("What is the privacy policy?");
@@ -181,7 +173,7 @@ class RagTest extends TestCase
         $messages = $answerCalls[0]['messages'];
 
         // Check system messages
-        $systemMessages = array_filter($messages, fn($m) => $m['role']->value === 'system');
+        $systemMessages = array_filter($messages, fn($m): bool => $m['role']->value === 'system');
         $this->assertGreaterThanOrEqual(2, count($systemMessages));
         $systemContent = implode(' ', array_column($systemMessages, 'content'));
 
@@ -193,7 +185,7 @@ class RagTest extends TestCase
         $this->assertStringContainsString('Patient privacy and confidentiality', $systemContent);
 
         // Check user message
-        $userMessages = array_filter($messages, fn($m) => $m['role']->value === 'user');
+        $userMessages = array_filter($messages, fn($m): bool => $m['role']->value === 'user');
         $this->assertGreaterThan(0, count($userMessages));
         $userContent = implode(' ', array_column($userMessages, 'content'));
         $this->assertStringContainsString('What is the privacy policy?', $userContent);
@@ -206,7 +198,7 @@ class RagTest extends TestCase
     /**
      * @test
      */
-    public function rag_streaming()
+    public function rag_streaming(): void
     {
         $indexName = uniqid();
         $llm = $this->llmApi;
@@ -275,12 +267,12 @@ class RagTest extends TestCase
         $stream = $this->sigmie
             ->newRag($llm, $this->rerankApi)
             ->search($multiSearch)
-            ->rerank(function (NewRerank $rerank) {
+            ->rerank(function (NewRerank $rerank): void {
                 $rerank->fields(['text', 'title']);
                 $rerank->topK(1);
                 $rerank->query('What is the privacy policy?');
             })
-            ->prompt(function (NewRagPrompt $prompt) {
+            ->prompt(function (NewRagPrompt $prompt): void {
                 $prompt->system("You are a precise assistant. Answer in 2 sentences max.");
                 $prompt->developer("Guardrails: Answer only from provided context.");
                 $prompt->user("What is the privacy policy?");
@@ -321,21 +313,21 @@ class RagTest extends TestCase
 
         // Check that all expected events are present
         foreach ($expectedEventTypes as $expectedType) {
-            $this->assertContains($expectedType, $uniqueStreamedEvents, "Expected event '$expectedType' was not fired");
+            $this->assertContains($expectedType, $uniqueStreamedEvents, sprintf("Expected event '%s' was not fired", $expectedType));
         }
 
         // Verify event order
-        $searchStartIndex = array_search('search_start', $streamedEvents);
-        $searchCompleteIndex = array_search('search_complete', $streamedEvents);
-        $searchHitsIndex = array_search('search_hits', $streamedEvents);
-        $rerankStartIndex = array_search('rerank_start', $streamedEvents);
-        $rerankCompleteIndex = array_search('rerank_complete', $streamedEvents);
-        $promptStartIndex = array_search('prompt_start', $streamedEvents);
-        $promptCompleteIndex = array_search('prompt_complete', $streamedEvents);
-        $llmStartIndex = array_search('llm_start', $streamedEvents);
-        $llmCompleteIndex = array_search('llm_complete', $streamedEvents);
-        $turnStoreStartIndex = array_search('turn_store_start', $streamedEvents);
-        $turnStoreCompleteIndex = array_search('turn_store_complete', $streamedEvents);
+        $searchStartIndex = array_search('search_start', $streamedEvents, true);
+        $searchCompleteIndex = array_search('search_complete', $streamedEvents, true);
+        $searchHitsIndex = array_search('search_hits', $streamedEvents, true);
+        $rerankStartIndex = array_search('rerank_start', $streamedEvents, true);
+        $rerankCompleteIndex = array_search('rerank_complete', $streamedEvents, true);
+        $promptStartIndex = array_search('prompt_start', $streamedEvents, true);
+        $promptCompleteIndex = array_search('prompt_complete', $streamedEvents, true);
+        $llmStartIndex = array_search('llm_start', $streamedEvents, true);
+        $llmCompleteIndex = array_search('llm_complete', $streamedEvents, true);
+        $turnStoreStartIndex = array_search('turn_store_start', $streamedEvents, true);
+        $turnStoreCompleteIndex = array_search('turn_store_complete', $streamedEvents, true);
 
 
         // Assert proper ordering
@@ -362,7 +354,7 @@ class RagTest extends TestCase
         $messages = $streamCalls[0]['messages'];
 
         // Check system messages
-        $systemMessages = array_filter($messages, fn($m) => $m['role']->value === 'system');
+        $systemMessages = array_filter($messages, fn($m): bool => $m['role']->value === 'system');
         $this->assertGreaterThanOrEqual(2, count($systemMessages));
         $systemContent = implode(' ', array_column($systemMessages, 'content'));
 
@@ -374,14 +366,14 @@ class RagTest extends TestCase
         $this->assertStringContainsString('Patient privacy and confidentiality', $systemContent);
 
         // Check user message
-        $userMessages = array_filter($messages, fn($m) => $m['role']->value === 'user');
+        $userMessages = array_filter($messages, fn($m): bool => $m['role']->value === 'user');
         $this->assertGreaterThan(0, count($userMessages));
         $userContent = implode(' ', array_column($userMessages, 'content'));
         $this->assertStringContainsString('What is the privacy policy?', $userContent);
 
         // Verify that llm_chunk events happened between llm_start and llm_complete
-        $firstChunkIndex = array_search('llm_chunk', $streamedEvents);
-        $lastChunkIndex = array_search('llm_chunk', array_reverse($streamedEvents, true));
+        $firstChunkIndex = array_search('llm_chunk', $streamedEvents, true);
+        $lastChunkIndex = array_search('llm_chunk', array_reverse($streamedEvents, true), true);
 
         $this->assertGreaterThan($llmStartIndex, $firstChunkIndex, 'First llm_chunk should come after llm_start');
         $this->assertLessThan($llmCompleteIndex, $lastChunkIndex, 'Last llm_chunk should come before llm_complete');

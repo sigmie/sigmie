@@ -24,7 +24,7 @@ class Boolean extends Type
     public function validate(string $key, mixed $value): array
     {
         if (! is_bool($value)) {
-            return [false, "The field {$key} mapped as {$this->typeName()} must be a boolean"];
+            return [false, sprintf('The field %s mapped as %s must be a boolean', $key, $this->typeName())];
         }
 
         return [true, ''];

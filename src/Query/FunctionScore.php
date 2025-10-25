@@ -3,7 +3,6 @@
 namespace Sigmie\Query;
 
 use Sigmie\Query\Contracts\QueryClause;
-use Sigmie\Query\Queries\Query;
 
 class FunctionScore implements QueryClause
 {

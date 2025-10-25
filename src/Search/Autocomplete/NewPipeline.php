@@ -28,7 +28,7 @@ class NewPipeline implements ToRaw
     public function toRaw(): array
     {
         $res = [
-            'processors' => array_map(fn (Processor $processor) => $processor->toRaw(), $this->processors),
+            'processors' => array_map(fn (Processor $processor): array => $processor->toRaw(), $this->processors),
         ];
 
         if ($this->description ?? false) {
@@ -38,14 +38,14 @@ class NewPipeline implements ToRaw
         return $res;
     }
 
-    public function description(string $description)
+    public function description(string $description): static
     {
         $this->description = $description;
 
         return $this;
     }
 
-    public function addPocessor(Processor $processor)
+    public function addPocessor(Processor $processor): static
     {
         $this->processors[] = $processor;
 

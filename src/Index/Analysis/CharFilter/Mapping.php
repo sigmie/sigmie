@@ -39,7 +39,7 @@ class Mapping extends ConfigurableCharFilter
         $mappings = [];
 
         foreach ($this->mappings as $key => $value) {
-            $mappings[] = "{$key} => {$value}";
+            $mappings[] = sprintf('%s => %s', $key, $value);
         }
 
         return [

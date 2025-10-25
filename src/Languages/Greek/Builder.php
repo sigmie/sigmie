@@ -9,7 +9,6 @@ use Sigmie\Languages\Greek\Filter\Stemmer as GreekStemmer;
 use Sigmie\Languages\Greek\Filter\Stopwords as GreekStopwords;
 use Sigmie\Index\Contracts\LanguageBuilder;
 use Sigmie\Index\NewIndex as IndexBuilder;
-use Sigmie\Sigmie;
 
 class Builder extends IndexBuilder implements LanguageBuilder
 {

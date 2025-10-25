@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\AI\APIs\OllamaApi;
-use Sigmie\AI\APIs\OpenAIResponseApi;
 use Sigmie\AI\NewJsonSchema;
 use Sigmie\AI\Prompt;
 use Sigmie\Testing\TestCase;
@@ -15,16 +13,16 @@ class PromptTest extends TestCase
     /**
      * @test
      */
-    public function json_schema()
+    public function json_schema(): void
     {
         $prompt = new Prompt();
 
-        $prompt->answerJsonSchema(function (NewJsonSchema $schema) {
+        $prompt->answerJsonSchema(function (NewJsonSchema $schema): void {
             $schema->name('catalog');
-            $schema->array('products', function (NewJsonSchema $items) {
+            $schema->array('products', function (NewJsonSchema $items): void {
                 $items->string('name');
                 $items->number('price');
-                $items->object('manufacturer', function (NewJsonSchema $obj) {
+                $items->object('manufacturer', function (NewJsonSchema $obj): void {
                     $obj->string('company');
                     $obj->string('country');
                 });
@@ -69,7 +67,7 @@ class PromptTest extends TestCase
     /**
      * @test
      */
-    public function default_json_schema()
+    public function default_json_schema(): void
     {
         $prompt = new Prompt();
 
@@ -90,17 +88,17 @@ class PromptTest extends TestCase
     /**
      * @test
      */
-    public function opeanai_response()
+    public function opeanai_response(): void
     {
         $prompt = new Prompt();
 
         $prompt->user('populate the catalog with 1 product');
-        $prompt->answerJsonSchema(function (NewJsonSchema $schema) {
+        $prompt->answerJsonSchema(function (NewJsonSchema $schema): void {
             $schema->name('catalog');
-            $schema->array('products', function (NewJsonSchema $items) {
+            $schema->array('products', function (NewJsonSchema $items): void {
                 $items->string('name');
                 $items->number('price');
-                $items->object('manufacturer', function (NewJsonSchema $obj) {
+                $items->object('manufacturer', function (NewJsonSchema $obj): void {
                     $obj->string('company');
                     $obj->string('country');
                 });

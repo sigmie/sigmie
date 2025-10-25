@@ -7,11 +7,7 @@ namespace Sigmie\Mappings;
 use Exception;
 use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
-use Sigmie\Mappings\Contracts\Type;
-use Sigmie\Mappings\Types\DenseVector;
-use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\NestedVector;
-use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\BaseVector;
 
 class NewSemanticField
@@ -38,51 +34,48 @@ class NewSemanticField
 
     protected string $fieldType = 'text';
 
-    public string $name;
-
-    public function __construct(string $name)
+    public function __construct(public string $name)
     {
-        $this->name = $name;
     }
 
-    public function cosineSimilarity()
+    public function cosineSimilarity(): static
     {
         $this->similarity = VectorSimilarity::Cosine;
 
         return $this;
     }
 
-    public function euclideanSimilarity()
+    public function euclideanSimilarity(): static
     {
         $this->similarity = VectorSimilarity::Euclidean;
 
         return $this;
     }
 
-    public function dotProductSimilarity()
+    public function dotProductSimilarity(): static
     {
         $this->similarity = VectorSimilarity::DotProduct;
 
         return $this;
     }
 
-    public function maxInnerProductSimilarity()
+    public function maxInnerProductSimilarity(): static
     {
         $this->similarity = VectorSimilarity::MaxInnerProduct;
 
         return $this;
     }
 
-    public function similarity(VectorSimilarity $similarity)
+    public function similarity(VectorSimilarity $similarity): static
     {
         $this->similarity = $similarity;
 
         return $this;
     }
 
-    public function accuracy(int $level, ?int $dimensions = null)
+    public function accuracy(int $level, ?int $dimensions = null): static
     {
-        $dimensions = $dimensions ?? $this->dims;
+        $dimensions ??= $this->dims;
 
         if (!in_array($dimensions, [
             128,
@@ -155,35 +148,35 @@ class NewSemanticField
         return $this;
     }
 
-    public function efConstruction(int $efConstruction)
+    public function efConstruction(int $efConstruction): static
     {
         $this->efConstruction = $efConstruction;
 
         return $this;
     }
 
-    public function m(int $m)
+    public function m(int $m): static
     {
         $this->m = $m;
 
         return $this;
     }
 
-    public function dimensions(int $dims)
+    public function dimensions(int $dims): static
     {
         $this->dims = $dims;
 
         return $this;
     }
 
-    public function api(?string $apiName)
+    public function api(?string $apiName): static
     {
         $this->apiName = $apiName;
 
         return $this;
     }
 
-    public function searchApi(?string $queryApiName)
+    public function searchApi(?string $queryApiName): static
     {
         $this->queryApiName = $queryApiName;
 
@@ -231,7 +224,7 @@ class NewSemanticField
             return new NestedVector($name, $this->dims, $this->apiName, $this->strategy, $this->similarity, $this->queryApiName);
         }
 
-        $vector = new BaseVector(
+        return new BaseVector(
             name: $name,
             dims: $this->dims,
             index: $this->index,
@@ -245,7 +238,5 @@ class NewSemanticField
             autoNormalizeVector: $this->autoNormalizeVector,
             queryApiName: $this->queryApiName,
         );
-
-        return $vector;
     }
 }

@@ -17,9 +17,7 @@ class Keywords extends TokenFilter
     {
         [$name, $configs] = name_configs($raw);
 
-        $instance = new static($name, $configs['keywords']);
-
-        return $instance;
+        return new static($name, $configs['keywords']);
     }
 
     protected function getValues(): array

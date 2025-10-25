@@ -35,7 +35,7 @@ class Synonyms extends TokenFilter
 
                 $to = explode(', ', $to);
                 $from = trim($from);
-                $to = array_map(fn ($value) => trim($value), $to);
+                $to = array_map(fn ($value): string => trim($value), $to);
 
                 $settings[] = [$from => $to];
 
@@ -43,14 +43,12 @@ class Synonyms extends TokenFilter
             }
 
             $value = explode(',', $value);
-            $value = array_map(fn ($value) => trim($value), $value);
+            $value = array_map(fn ($value): string => trim($value), $value);
 
             $settings[] = $value;
         }
 
-        $instance = new static($name, $settings);
-
-        return $instance;
+        return new static($name, $settings);
     }
 
     protected function getValues(): array
@@ -61,7 +59,7 @@ class Synonyms extends TokenFilter
             [$first, $value] = $values;
             if (is_array($value)) {
                 $from = implode(', ', $value);
-                $res[] = "{$from} => {$first}";
+                $res[] = sprintf('%s => %s', $from, $first);
             } else {
                 $res[] = implode(', ', $values);
             }

@@ -11,7 +11,6 @@ use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Price;
 use Sigmie\Query\Queries\Term\Range;
-use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
 class SearchTest extends TestCase
@@ -19,7 +18,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function weighted_query_string()
+    public function weighted_query_string(): void
     {
         $indexName = uniqid();
 
@@ -64,7 +63,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function field_scoped_query_string()
+    public function field_scoped_query_string(): void
     {
         $indexName = uniqid();
 
@@ -101,7 +100,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function find_without_dash()
+    public function find_without_dash(): void
     {
         $indexName = uniqid();
 
@@ -132,7 +131,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function handle_boost_missing_gracefully()
+    public function handle_boost_missing_gracefully(): void
     {
         $indexName = uniqid();
 
@@ -147,7 +146,7 @@ class SearchTest extends TestCase
             ]),
         ]);
 
-        $res = $this->sigmie->newSearch($indexName)
+        $this->sigmie->newSearch($indexName)
             ->properties($blueprint)
             ->sort('_score')
             ->queryString('')
@@ -159,7 +158,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function empty_on_non_queriable_field()
+    public function empty_on_non_queriable_field(): void
     {
         $indexName = uniqid();
 
@@ -191,7 +190,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function id_search()
+    public function id_search(): void
     {
         $indexName = uniqid();
 
@@ -223,15 +222,15 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function nested_retrieve()
+    public function nested_retrieve(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
         $blueprint->name('name');
-        $blueprint->nested('contact', function (NewProperties $blueprint) {
+        $blueprint->nested('contact', function (NewProperties $blueprint): void {
             $blueprint->name('name');
-            $blueprint->nested('dog', function (NewProperties $blueprint) {
+            $blueprint->nested('dog', function (NewProperties $blueprint): void {
                 $blueprint->name('name');
             });
         });
@@ -271,15 +270,15 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function nested_name_property()
+    public function nested_name_property(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
         $blueprint->name('name');
-        $blueprint->nested('contact', function (NewProperties $blueprint) {
+        $blueprint->nested('contact', function (NewProperties $blueprint): void {
             $blueprint->name('name');
-            $blueprint->nested('dog', function (NewProperties $blueprint) {
+            $blueprint->nested('dog', function (NewProperties $blueprint): void {
                 $blueprint->name('name');
             });
         });
@@ -315,7 +314,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function min_score()
+    public function min_score(): void
     {
         $indexName = uniqid();
 
@@ -351,7 +350,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function price_facet()
+    public function price_facet(): void
     {
 
         $indexName = uniqid();
@@ -365,7 +364,7 @@ class SearchTest extends TestCase
 
         $res = $this->indexAPICall($indexName, 'GET');
 
-        $this->assertEquals(Price::class, $res->json("{$index->name}.mappings.properties.price.meta.class"));
+        $this->assertEquals(Price::class, $res->json($index->name . '.mappings.properties.price.meta.class'));
 
         $index = $this->sigmie->collect($indexName, refresh: true);
 
@@ -394,7 +393,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function empty_results_on_empty_string()
+    public function empty_results_on_empty_string(): void
     {
         $indexName = uniqid();
         $blueprint = new NewProperties;
@@ -437,7 +436,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function name_prefix_search_test()
+    public function name_prefix_search_test(): void
     {
         $indexName = uniqid();
         $blueprint = new NewProperties;
@@ -462,7 +461,7 @@ class SearchTest extends TestCase
             ->retrieve(['name'])
             ->get();
 
-        $index = $this->sigmie->index($indexName)->raw;
+        $this->sigmie->index($indexName)->raw;
 
         $hits = $res->json('hits');
 
@@ -472,7 +471,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function name_two_words_search_test()
+    public function name_two_words_search_test(): void
     {
         $documentId = uniqid();
         $indexName = uniqid();
@@ -510,7 +509,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function name_search_test()
+    public function name_search_test(): void
     {
         $indexName = uniqid();
         $blueprint = new NewProperties;
@@ -543,7 +542,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function search_promises_test()
+    public function search_promises_test(): void
     {
         $indexName = uniqid();
         $blueprint = new NewProperties;
@@ -587,7 +586,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function with_weight()
+    public function with_weight(): void
     {
         $indexName = uniqid();
 
@@ -653,7 +652,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function typo_tolerance_with_one_typo()
+    public function typo_tolerance_with_one_typo(): void
     {
         $indexName = uniqid();
 
@@ -692,7 +691,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function typo_tolerance_without_typo()
+    public function typo_tolerance_without_typo(): void
     {
         $indexName = uniqid();
 
@@ -725,7 +724,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function source()
+    public function source(): void
     {
         $indexName = uniqid();
 
@@ -773,7 +772,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function highlight()
+    public function highlight(): void
     {
         $indexName = uniqid();
 
@@ -808,7 +807,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function sort()
+    public function sort(): void
     {
         $indexName = uniqid();
 
@@ -844,7 +843,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function filter()
+    public function filter(): void
     {
         $indexName = uniqid();
 
@@ -878,7 +877,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function size()
+    public function size(): void
     {
         $indexName = uniqid();
 
@@ -912,7 +911,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function query()
+    public function query(): void
     {
         $indexName = uniqid();
 
@@ -956,7 +955,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function matches_all_on_empty_string()
+    public function matches_all_on_empty_string(): void
     {
         $indexName = uniqid();
 
@@ -999,7 +998,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function search_test()
+    public function search_test(): void
     {
         $indexName = uniqid();
         $properties = new NewProperties;
@@ -1042,7 +1041,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function hits()
+    public function hits(): void
     {
         $indexName = uniqid();
 
@@ -1076,7 +1075,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function no_keyword_search_flag()
+    public function no_keyword_search_flag(): void
     {
         $indexName = uniqid();
 
@@ -1115,7 +1114,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function boost_field_search_test()
+    public function boost_field_search_test(): void
     {
         $indexName = uniqid();
         $blueprint = new NewProperties;
@@ -1149,7 +1148,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function no_boost_field_search_test()
+    public function no_boost_field_search_test(): void
     {
         $indexName = uniqid();
         $blueprint = new NewProperties;
@@ -1183,7 +1182,7 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function multi_lang_search()
+    public function multi_lang_search(): void
     {
         $deIndexName = uniqid('de');
         $enIndexName = uniqid('en');
@@ -1218,7 +1217,7 @@ class SearchTest extends TestCase
         $this->sigmie->collect($deIndexName, refresh: true)->merge($deDocs);
         $this->sigmie->collect($enIndexName, refresh: true)->merge($enDocs);
 
-        $res = $this->sigmie->newSearch("$deIndexName,$enIndexName")
+        $res = $this->sigmie->newSearch(sprintf('%s,%s', $deIndexName, $enIndexName))
             ->properties($blueprint)
             ->queryString('door tur')
             ->get();
@@ -1229,20 +1228,18 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function range_query()
+    public function range_query(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
         $blueprint->range('numbers')->integer()
-            ->withQueries(function (string $queryString) {
-                return [
-                    new Range('numbers', [
-                        '>=' => $queryString,
-                        '<=' => $queryString,
-                    ]),
-                ];
-            });
+            ->withQueries(fn(string $queryString): array => [
+                new Range('numbers', [
+                    '>=' => $queryString,
+                    '<=' => $queryString,
+                ]),
+            ]);
 
         $this->sigmie->newIndex($indexName)
             ->properties($blueprint)

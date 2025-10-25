@@ -22,12 +22,12 @@ class SuggestTest extends TestCase
     /**
      * @test
      */
-    public function term()
+    public function term(): void
     {
         $name = uniqid();
 
         $this->sigmie->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {
+            ->mapping(function (NewProperties $blueprint): void {
                 $blueprint->text('title-text');
             })
             ->lowercase()
@@ -79,13 +79,13 @@ class SuggestTest extends TestCase
     /**
      * @test
      */
-    public function phrase()
+    public function phrase(): void
     {
         $name = uniqid();
 
         $this->sigmie->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {
-                $blueprint->text('title-phrase')->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
+            ->mapping(function (NewProperties $blueprint): void {
+                $blueprint->text('title-phrase')->withNewAnalyzer(function (NewAnalyzer $newAnalyzer): void {
                     $newAnalyzer
                         ->lowercase()
                         ->shingle(2, 3);
@@ -144,12 +144,12 @@ class SuggestTest extends TestCase
     /**
      * @test
      */
-    public function completion()
+    public function completion(): void
     {
         $name = uniqid();
 
         $this->sigmie->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {
+            ->mapping(function (NewProperties $blueprint): void {
                 $blueprint->text('title-completion')->completion();
             })
             ->create();

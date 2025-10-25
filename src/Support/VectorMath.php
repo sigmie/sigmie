@@ -11,14 +11,14 @@ class VectorMath
      */
     public static function normalize(array $vector): array
     {
-        $magnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $vector)));
+        $magnitude = sqrt(array_sum(array_map(fn($v): int|float => $v * $v, $vector)));
 
         // Avoid division by zero
         if ($magnitude == 0) {
             return $vector;
         }
 
-        return array_map(fn($v) => $v / $magnitude, $vector);
+        return array_map(fn($v): float => $v / $magnitude, $vector);
     }
 
     /**
@@ -26,7 +26,7 @@ class VectorMath
      */
     public static function isNormalized(array $vector, float $tolerance = 0.0001): bool
     {
-        $magnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $vector)));
+        $magnitude = sqrt(array_sum(array_map(fn($v): int|float => $v * $v, $vector)));
 
         return abs($magnitude - 1.0) < $tolerance;
     }
@@ -37,7 +37,7 @@ class VectorMath
      */
     public static function centroid(array $vectors): array
     {
-        if (empty($vectors)) {
+        if ($vectors === []) {
             return [];
         }
 
@@ -53,7 +53,7 @@ class VectorMath
         }
 
         // Average each dimension
-        $centroid = array_map(fn($sum) => $sum / $numVectors, $centroid);
+        $centroid = array_map(fn($sum): float => $sum / $numVectors, $centroid);
 
         // Normalize the centroid
         return self::normalize($centroid);
@@ -64,7 +64,7 @@ class VectorMath
      */
     public static function scale(array $vector, float $factor): array
     {
-        return array_map(fn($v) => $v * $factor, $vector);
+        return array_map(fn($v): float => $v * $factor, $vector);
     }
 
     /**
@@ -73,7 +73,7 @@ class VectorMath
      */
     public static function cosineSimilarity(array $vectorA, array $vectorB): float
     {
-        if (empty($vectorA) || empty($vectorB) || count($vectorA) !== count($vectorB)) {
+        if ($vectorA === [] || $vectorB === [] || count($vectorA) !== count($vectorB)) {
             return 0.0;
         }
 

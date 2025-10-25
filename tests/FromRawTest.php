@@ -24,7 +24,7 @@ class FromRawTest extends TestCase
     /**
      * @test
      */
-    public function char_filters()
+    public function char_filters(): void
     {
         $alias = uniqid();
 
@@ -47,7 +47,7 @@ class FromRawTest extends TestCase
     /**
      * @test
      */
-    public function whitespace_tokenizer()
+    public function whitespace_tokenizer(): void
     {
         $alias = uniqid();
 
@@ -65,7 +65,7 @@ class FromRawTest extends TestCase
     /**
      * @test
      */
-    public function analysis_from_raw()
+    public function analysis_from_raw(): void
     {
         $alias = uniqid();
 
@@ -82,7 +82,7 @@ class FromRawTest extends TestCase
     /**
      * @test
      */
-    public function pattern_tokenizer()
+    public function pattern_tokenizer(): void
     {
         $alias = uniqid();
 
@@ -101,14 +101,14 @@ class FromRawTest extends TestCase
     /**
      * @test
      */
-    public function text_properties_analyzers()
+    public function text_properties_analyzers(): void
     {
         $alias = uniqid();
 
         $customFieldAnalyzer = new Analyzer('custom', new Whitespace());
 
         $this->sigmie->newIndex($alias)
-            ->mapping(function (NewProperties $blueprint) use ($customFieldAnalyzer) {
+            ->mapping(function (NewProperties $blueprint) use ($customFieldAnalyzer): NewProperties {
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText($customFieldAnalyzer);
 
@@ -141,12 +141,12 @@ class FromRawTest extends TestCase
     /**
      * @test
      */
-    public function mapping_properties()
+    public function mapping_properties(): void
     {
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->mapping(function (NewProperties $blueprint) {
+            ->mapping(function (NewProperties $blueprint): NewProperties {
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText();
                 $blueprint->number('adults')->integer();
@@ -154,7 +154,7 @@ class FromRawTest extends TestCase
                 $blueprint->date('created_at');
                 $blueprint->bool('is_valid');
 
-                $blueprint->object('user', function (NewProperties $blueprint) {
+                $blueprint->object('user', function (NewProperties $blueprint): void {
                     $blueprint->text('name')->searchAsYouType();
                 });
 
@@ -217,12 +217,12 @@ class FromRawTest extends TestCase
     /**
      * @test
      */
-    public function mappings()
+    public function mappings(): void
     {
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->mapping(function (NewProperties $blueprint) {
+            ->mapping(function (NewProperties $blueprint): NewProperties {
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText();
                 $blueprint->number('adults')->integer();
@@ -244,7 +244,7 @@ class FromRawTest extends TestCase
     /**
      * @test
      */
-    public function analysis_tokenizer()
+    public function analysis_tokenizer(): void
     {
         $alias = uniqid();
 
@@ -270,7 +270,7 @@ class FromRawTest extends TestCase
     /**
      * @test
      */
-    public function analysis_default_analyzer()
+    public function analysis_default_analyzer(): void
     {
         $alias = uniqid();
 
@@ -291,7 +291,7 @@ class FromRawTest extends TestCase
     /**
      * @test
      */
-    public function settings()
+    public function settings(): void
     {
         $alias = uniqid();
 

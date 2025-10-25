@@ -22,23 +22,21 @@ class Stemmer extends TokenFilter
             [$to, $from] = explode('=>', $value);
             $to = explode(', ', $to);
             $from = trim($from);
-            $to = array_map(fn ($value) => trim($value), $to);
+            $to = array_map(fn ($value): string => trim($value), $to);
 
             $settings[$from] = $to;
         }
 
-        $instance = new static($name, $settings);
-
-        return $instance;
+        return new static($name, $settings);
     }
 
     protected function getValues(): array
     {
         $rules = [];
 
-        foreach ($this->settings as $index => [$to, $from]) {
+        foreach ($this->settings as [$to, $from]) {
             $from = implode(', ', $from);
-            $rules[] = "{$from} => {$to}";
+            $rules[] = sprintf('%s => %s', $from, $to);
             // foreach ($from as $word) {
             //     $rules[] = "{$word} => {$to}";
             // }

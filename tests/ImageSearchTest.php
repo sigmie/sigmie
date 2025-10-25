@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\Testing\FakeClipApi;
+use Sigmie\AI\APIs\InfinityClipApi;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\Assert;
@@ -14,7 +16,7 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function define_image_field_with_semantic_embeddings()
+    public function define_image_field_with_semantic_embeddings(): void
     {
         $indexName = uniqid();
 
@@ -26,7 +28,7 @@ class ImageSearchTest extends TestCase
         $this->sigmie->newIndex($indexName)->properties($props)->create();
 
         // Assert index was created with correct mappings
-        $this->assertIndex($indexName, function (Assert $assert) {
+        $this->assertIndex($indexName, function (Assert $assert): void {
             $assert->assertPropertyExists('_embeddings');
             $assert->assertPropertyExists('product_image');
 
@@ -38,7 +40,7 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function index_documents_with_image_urls()
+    public function index_documents_with_image_urls(): void
     {
         $indexName = uniqid();
 
@@ -75,7 +77,7 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function index_documents_with_base64_images()
+    public function index_documents_with_base64_images(): void
     {
         $indexName = uniqid();
 
@@ -130,7 +132,7 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function local_image_path()
+    public function local_image_path(): void
     {
         // Remove the feature also from internal
         $this->assertTrue(true, 'Feature removed - local paths are now converted to base64 internally');
@@ -139,7 +141,7 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function image_preprocessing_resizes_to_224px()
+    public function image_preprocessing_resizes_to_224px(): void
     {
         // Remove the feature also from internal 
         $this->assertTrue(true, 'Image resizing is handled by ImageHelper');
@@ -148,7 +150,7 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function image_to_image_search_using_query_string()
+    public function image_to_image_search_using_query_string(): void
     {
         $indexName = uniqid();
 
@@ -190,7 +192,7 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function text_to_image_search_with_clip()
+    public function text_to_image_search_with_clip(): void
     {
         $indexName = uniqid();
 
@@ -237,7 +239,7 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function multiple_images_field_gallery()
+    public function multiple_images_field_gallery(): void
     {
         $indexName = uniqid();
 
@@ -275,8 +277,8 @@ class ImageSearchTest extends TestCase
         $this->assertIsArray($galleryEmbeddings);
 
         // The averaged vector should be a single array (not an array of arrays)
-        foreach ($galleryEmbeddings as $embeddingName => $vector) {
-            if (is_array($vector) && !empty($vector)) {
+        foreach ($galleryEmbeddings as $vector) {
+            if (is_array($vector) && $vector !== []) {
                 // Check that it's a flat array of numbers (the averaged vector)
                 $this->assertIsNumeric($vector[0] ?? null, 'Vector should contain numeric values');
             }
@@ -286,13 +288,13 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function nested_image_fields()
+    public function nested_image_fields(): void
     {
         $indexName = uniqid();
 
         $props = new NewProperties;
         $props->text('title');
-        $props->nested('products', function (NewProperties $props) {
+        $props->nested('products', function (NewProperties $props): void {
             $props->text('name');
             $props->image('thumbnail')->semantic(accuracy: 1, dimensions: 512, api: 'test-clip');
             $props->number('price');
@@ -335,7 +337,7 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function mixed_text_and_image_semantic_fields()
+    public function mixed_text_and_image_semantic_fields(): void
     {
         $indexName = uniqid();
 
@@ -369,13 +371,13 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function api_isolation_different_apis_for_text_vs_image()
+    public function api_isolation_different_apis_for_text_vs_image(): void
     {
         $indexName = uniqid();
 
         // Create a second clip API for testing isolation
         $clipUrl = getenv('LOCAL_CLIP_URL') ?: 'http://localhost:7996';
-        $alternativeClipApi = new \Sigmie\Testing\FakeClipApi(new \Sigmie\AI\APIs\InfinityClipApi($clipUrl));
+        $alternativeClipApi = new FakeClipApi(new InfinityClipApi($clipUrl));
         $this->sigmie->registerApi('alt-clip', $alternativeClipApi);
 
         $props = new NewProperties;
@@ -409,7 +411,7 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function error_handling_for_invalid_image_sources()
+    public function error_handling_for_invalid_image_sources(): void
     {
         $indexName = uniqid();
         $this->expectException(\Exception::class);
@@ -443,7 +445,7 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function image_field_without_semantic_stores_raw_value()
+    public function image_field_without_semantic_stores_raw_value(): void
     {
         $indexName = uniqid();
 
@@ -476,7 +478,7 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function comprehensive_text_to_image_search()
+    public function comprehensive_text_to_image_search(): void
     {
         $indexName = uniqid();
 
@@ -551,7 +553,7 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function multimodal_document_with_text_and_images()
+    public function multimodal_document_with_text_and_images(): void
     {
         $indexName = uniqid();
 
@@ -603,7 +605,7 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function ecommerce_product_search_with_text_to_image()
+    public function ecommerce_product_search_with_text_to_image(): void
     {
         $indexName = uniqid();
 

@@ -17,7 +17,7 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
-    public function id_sort()
+    public function id_sort(): void
     {
         $indexName = uniqid();
 
@@ -65,12 +65,12 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
-    public function non_existing_field()
+    public function non_existing_field(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->object('contact', function (NewProperties $props) {
+        $blueprint->object('contact', function (NewProperties $props): void {
             $props->geoPoint('location');
         });
 
@@ -121,13 +121,13 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
-    public function object_geo_distance_sort()
+    public function object_geo_distance_sort(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->keyword('name');
-        $blueprint->object('contact', function (NewProperties $props) {
+        $blueprint->object('contact', function (NewProperties $props): void {
             $props->geoPoint('location');
         });
 
@@ -201,10 +201,10 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
-    public function nested_text_asc_filter()
+    public function nested_text_asc_filter(): void
     {
         $blueprint = new NewProperties;
-        $blueprint->nested('contact', function (NewProperties $props) {
+        $blueprint->nested('contact', function (NewProperties $props): void {
             $props->bool('active');
             $props->text('name')->keyword()->makeSortable();
             $props->text('category');
@@ -267,7 +267,7 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
-    public function geo_distance_sort_with_valid_unit()
+    public function geo_distance_sort_with_valid_unit(): void
     {
         $indexName = uniqid();
 
@@ -307,33 +307,33 @@ class SortParserTest extends TestCase
 
         $parser = new SortParser($props);
 
-        $this->expectException(ParseException::class, "Invalid unit 'ieow' for geo distance sort.");
+        $this->expectException(ParseException::class);
 
         $query = $parser->parse('location[52.49,13.77]:ieow:asc');
 
-        $this->expectException(ParseException::class, "Invalid order 'foo' for geo distance sort.");
+        $this->expectException(ParseException::class);
 
         $query = $parser->parse('location[52.49,13.77]:km:foo');
 
-        $this->expectException(ParseException::class, 'Invalid latitude or longitude for geo distance sort.');
+        $this->expectException(ParseException::class);
 
         $query = $parser->parse('location[foo,13.77]:km:asc');
 
-        $this->expectException(ParseException::class, 'Invalid latitude or longitude for geo distance sort.');
+        $this->expectException(ParseException::class);
 
-        $query = $parser->parse('location[91,13.77]:km:asc');
+        $parser->parse('location[91,13.77]:km:asc');
     }
 
     /**
      * @test
      */
-    public function nested_geo_distance_sort()
+    public function nested_geo_distance_sort(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->geoPoint('location');
-        $blueprint->nested('contact', function (NewProperties $props) {
+        $blueprint->nested('contact', function (NewProperties $props): void {
             $props->geoPoint('location');
         });
 
@@ -403,7 +403,7 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
-    public function geo_distance_sort()
+    public function geo_distance_sort(): void
     {
         $indexName = uniqid();
 
@@ -470,9 +470,9 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
-    public function exceptions()
+    public function exceptions(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
 
@@ -482,15 +482,15 @@ class SortParserTest extends TestCase
 
         $parser = new SortParser($props);
 
-        $sort = $parser->parse('name:asc _score');
+        $parser->parse('name:asc _score');
     }
 
     /**
      * @test
      */
-    public function text_asc_filter()
+    public function text_asc_filter(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->bool('active');
@@ -546,9 +546,9 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
-    public function text_desc_filter()
+    public function text_desc_filter(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->bool('active');
@@ -604,9 +604,9 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
-    public function date_desc()
+    public function date_desc(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->date('created_at');
@@ -651,9 +651,9 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
-    public function date_asc()
+    public function date_asc(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->date('created_at');

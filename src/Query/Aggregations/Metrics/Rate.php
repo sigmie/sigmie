@@ -13,12 +13,10 @@ class Rate extends Metric
 
     protected function value(): array
     {
-        $value = [
+        return [
             'rate' => [
                 'unit' => 'year',
             ],
         ];
-
-        return $value;
     }
 }

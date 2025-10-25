@@ -16,7 +16,7 @@ class Filter extends Bucket
         $this->aggs = new Aggs;
     }
 
-    public function value(): array
+    protected function value(): array
     {
         return [
             'filter' => [

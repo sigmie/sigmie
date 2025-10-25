@@ -30,7 +30,7 @@ class Completion extends Suggester
         return $this;
     }
 
-    public function fuzzyPrefixLenght($lenght = 1): static
+    public function fuzzyPrefixLenght(int $lenght = 1): static
     {
         $this->fuzzyPrefixLenght = $lenght;
 

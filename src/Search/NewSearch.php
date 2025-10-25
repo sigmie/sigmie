@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use Sigmie\Query\BooleanQueryBuilder;
+use Sigmie\AI\Contracts\EmbeddingsApi;
 use Http\Promise\Promise;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Enums\SearchEngineType;
@@ -21,7 +23,6 @@ use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
 use Sigmie\Query\Contracts\FuzzyQuery;
 use Sigmie\Query\Contracts\QueryClause as Query;
-use Sigmie\Query\Facets;
 use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
@@ -36,7 +37,6 @@ use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\UsesApis;
-use Sigmie\Sigmie;
 
 class NewSearch extends AbstractSearchBuilder implements MultiSearchable, SearchQueryBuilderInterface
 {
@@ -165,9 +165,9 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         $filters = implode(
             ' AND ',
             array_filter([
-                "({$this->searchContext->filterString})",
-                "({$this->searchContext->facetFilterString})",
-            ], fn ($filter) => ! empty(trim($filter, '()')))
+                sprintf('(%s)', $this->searchContext->filterString),
+                sprintf('(%s)', $this->searchContext->facetFilterString),
+            ], fn ($filter): bool => !in_array(trim($filter, '()'), ['', '0'], true))
         );
 
         $this->globalFilters = $this->filterParser->parse($this->searchContext->filterString);
@@ -204,9 +204,9 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         $allFilters = implode(
             ' AND ',
             array_filter([
-                "({$this->searchContext->filterString})",
-                "({$this->searchContext->facetFilterString})",
-            ], fn ($filter) => ! empty(trim($filter, '()')))
+                sprintf('(%s)', $this->searchContext->filterString),
+                sprintf('(%s)', $this->searchContext->facetFilterString),
+            ], fn ($filter): bool => !in_array(trim($filter, '()'), ['', '0'], true))
         );
 
         $this->filters = $this->filterParser->parse($allFilters);
@@ -230,7 +230,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         $highlight = new Collection($this->highlight);
 
         $fields = [];
-        $highlight->each(function (string $field) use (&$fields) {
+        $highlight->each(function (string $field) use (&$fields): void {
             $properties = $this->properties;
 
             $field = $properties->get($field);
@@ -281,7 +281,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
 
     protected function handleKnn(Search $search)
     {
-        if (! empty($this->knn)) {
+        if ($this->knn !== []) {
             $search->knn($this->knn);
         }
     }
@@ -306,7 +306,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
     protected function handleFiltersQuery(Boolean $boolean)
     {
         $boolean->must()->bool(
-            fn (Boolean $boolean) => $boolean->filter()->query(
+            fn (Boolean $boolean): BooleanQueryBuilder => $boolean->filter()->query(
                 $this->filters
             )
         );
@@ -314,11 +314,11 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
 
     protected function handleQueryStrings(Boolean $boolean): void
     {
-        $boolean->must()->bool(function (Boolean $boolean) {
+        $boolean->must()->bool(function (Boolean $boolean): void {
 
             $queryStrings = new Collection($this->searchContext->queryStrings);
 
-            $queryStrings->each(function (QueryString $queryString) use ($boolean) {
+            $queryStrings->each(function (QueryString $queryString) use ($boolean): void {
 
                 $query = $this->createStringQueries($queryString->text(), $queryString->weight(), $queryString->fields());
 
@@ -357,7 +357,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         $search->trackTotalHits();
     }
 
-    protected function handleBoostField(Query $query)
+    protected function handleBoostField(Query $query): FunctionScore|Query
     {
         if ($this->properties->boostField ?? false) {
             return new FunctionScore(
@@ -428,8 +428,8 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         }
 
         return $this->properties->nestedSemanticFields()
-            ->filter(fn (Text $field) => $field->isSemantic())
-            ->filter(fn (Text $field) => in_array($field->fullPath, $this->fields))
+            ->filter(fn (Text $field): bool => $field->isSemantic())
+            ->filter(fn (Text $field): bool => in_array($field->fullPath, $this->fields))
             ->isNotEmpty();
     }
 
@@ -438,7 +438,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         // Get all unique APIs needed for semantic fields
         $requiredApis = $this->getRequiredEmbeddingApis();
 
-        if (empty($requiredApis)) {
+        if ($requiredApis === []) {
             return;
         }
 
@@ -446,9 +446,10 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         foreach ($requiredApis as $apiName) {
             if (! isset($this->vectorPools[$apiName])) {
                 $embeddingsApi = $this->getApi($apiName);
-                if ($embeddingsApi === null) {
+                if (!$embeddingsApi instanceof EmbeddingsApi) {
                     continue;
                 }
+
                 $this->vectorPools[$apiName] = new VectorPool($embeddingsApi);
             }
         }
@@ -456,8 +457,8 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         // Group fields by their API
         $fieldsByApi = [];
         $semanticFields = $this->properties->nestedSemanticFields()
-            ->filter(fn (Text $field) => $field->isSemantic())
-            ->filter(fn (Text $field) => in_array($field->fullPath, $this->fields));
+            ->filter(fn (Text $field): bool => $field->isSemantic())
+            ->filter(fn (Text $field): bool => in_array($field->fullPath, $this->fields));
 
         foreach ($semanticFields as $field) {
             foreach ($field->vectorFields()->getIterator() as $vectorField) {
@@ -467,6 +468,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
                 if (! isset($fieldsByApi[$apiName])) {
                     $fieldsByApi[$apiName] = [];
                 }
+
                 $fieldsByApi[$apiName][] = $vectorField;
             }
         }
@@ -514,7 +516,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
             }
 
             // Batch fetch all text embeddings for this API
-            if (! empty($items)) {
+            if ($items !== []) {
                 $this->vectorPools[$apiName]->getMany($items);
             }
         }
@@ -533,14 +535,12 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
     {
         $fieldWeight = $this->weight[$field->fullPath] ?? 1;
 
-        $boost = array_key_exists($field->fullPath, $this->weight) ? $fieldWeight * $queryWeight : $queryWeight;
-
-        return $boost;
+        return array_key_exists($field->fullPath, $this->weight) ? $fieldWeight * $queryWeight : $queryWeight;
     }
 
     protected function queryFuzziness(Text $field): ?string
     {
-        return ! in_array($field->fullPath, $this->typoTolerantAttributes) ? null : "AUTO:{$this->minCharsForOneTypo},{$this->minCharsForTwoTypo}";
+        return in_array($field->fullPath, $this->typoTolerantAttributes) ? sprintf('AUTO:%d,%d', $this->minCharsForOneTypo, $this->minCharsForTwoTypo) : null;
     }
 
     protected function createStringQueries(string $queryString, float $queryBoost = 1.0, ?array $scopedFields = null): Query
@@ -615,6 +615,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
                     'fields' => [],
                 ];
             }
+
             $fieldsByApiAndDims[$key]['fields'][] = $field;
         }
 
@@ -636,6 +637,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
                 if (! isset($this->vectorPools[$apiName])) {
                     continue; // Skip if VectorPool for this API doesn't exist
                 }
+
                 $vector = $this->vectorPools[$apiName]->get($queryImage->imageSource(), $dims);
             }
 
@@ -644,7 +646,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
             // Build queries for these fields
             $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryImage->weight(), $this->filters);
 
-            $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries) {
+            $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries): void {
 
                 $raw = $query->toRaw();
 
@@ -702,6 +704,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
                     'fields' => [],
                 ];
             }
+
             $fieldsByApiAndDims[$key]['fields'][] = $field;
         }
 
@@ -723,6 +726,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
                 if (! isset($this->vectorPools[$apiName])) {
                     continue; // Skip if VectorPool for this API doesn't exist
                 }
+
                 $vector = $this->vectorPools[$apiName]->get($queryString->text(), $dims);
             }
 
@@ -731,7 +735,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
             // Build queries for these fields
             $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryString->weight(), $this->filters);
 
-            $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries) {
+            $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries): void {
                 $raw = $query->toRaw();
                 if (isset($raw['knn'])) {
                     // For OpenSearch, keep knn queries as Query objects to add to boolean query
@@ -753,19 +757,19 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
 
     protected function getVectorFields(?array $scopedFields = null): Collection
     {
-        $fieldsToFilter = $scopedFields !== null ? $scopedFields : $this->fields;
+        $fieldsToFilter = $scopedFields ?? $this->fields;
 
         return $this->properties->nestedSemanticFields()
-            ->filter(fn (Text $field) => $field->isSemantic())
-            ->filter(fn (Text $field) => in_array($field->fullPath, $fieldsToFilter))
-            ->map(fn (Text $field) => $field->vectorFields())
+            ->filter(fn (Text $field): bool => $field->isSemantic())
+            ->filter(fn (Text $field): bool => in_array($field->fullPath, $fieldsToFilter))
+            ->map(fn (Text $field): Collection => $field->vectorFields())
             ->flatten(1);
     }
 
     protected function getVectorDimensions(Collection $vectorFields): array
     {
         return $vectorFields
-            ->map(fn (NestedVector|DenseVector|BaseVector $field) => $field->dims())
+            ->map(fn (NestedVector|DenseVector|BaseVector $field): int => $field->dims())
             ->unique()
             ->toArray();
     }
@@ -788,7 +792,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
                 }
 
                 if ($field instanceof BaseVector) {
-                    $queries = $driver->vectorField($field)->vectorQueries(
+                    return $driver->vectorField($field)->vectorQueries(
                         vector: $vector,
                         k: $this->searchContext->size,
                         filter: $filter
@@ -798,10 +802,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
                 return $queries;
             })
             ->flatten(1)
-            ->map(function (Query $query) use ($queryBoost) {
-
-                return $this->configureVectorQuery($query, $queryBoost);
-            });
+            ->map(fn(Query $query): Query => $this->configureVectorQuery($query, $queryBoost));
     }
 
     protected function configureVectorQuery(Query $query, float $queryBoost): Query
@@ -817,22 +818,22 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         $keywordBoolean = new Boolean;
         $keywordBoolean->should()->query(new MatchNone);
 
-        $fieldsToQuery = $scopedFields !== null ? $scopedFields : $this->fields;
+        $fieldsToQuery = $scopedFields ?? $this->fields;
         $fields = new Collection($fieldsToQuery);
 
-        $fields->each(function ($field) use ($keywordBoolean, $queryString, $queryBoost) {
+        $fields->each(function ($field) use ($keywordBoolean, $queryString, $queryBoost): void {
             $field = $this->properties->get($field) ?? throw new PropertiesFieldNotFound($field);
 
             $queries = $this->buildFieldQueries($field, $queryString);
             $queries = new Collection($queries);
 
-            $queries->map(function (Query $queryClause) use ($queryBoost, $field) {
+            $queries->map(function (Query $queryClause) use ($queryBoost, $field): Query {
 
                 $queryClause = $this->configureQueryClause($queryClause, $field, $queryBoost);
 
                 return $this->wrapNestedQuery($queryClause, $field);
 
-            })->each(fn (Query $query) => $keywordBoolean->should()->query($query));
+            })->each(fn (Query $query): BooleanQueryBuilder => $keywordBoolean->should()->query($query));
         });
 
         return $this->applyTextScoring($keywordBoolean);
@@ -843,7 +844,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         return $field->queryStringQueries($queryString);
     }
 
-    protected function configureQueryClause(Query $queryClause, $field, float $queryBoost): Query
+    protected function configureQueryClause(Query $queryClause, Text|Type $field, float $queryBoost): Query
     {
         if ($queryClause instanceof FuzzyQuery) {
             $fuzziness = $this->queryFuzziness($field);
@@ -871,7 +872,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         return $this;
     }
 
-    public function formatRespones($searchResponse, $facetsResponse)
+    public function formatRespones(array $searchResponse, array $facetsResponse)
     {
         $formatter = $this->formatter ?? new SigmieSearchResponse($this->properties, $this->semanticSearch);
 
@@ -908,7 +909,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
     {
         return new FunctionScore(
             $query,
-            source: "return _score * {$this->textScoreMultiplier};",
+            source: sprintf('return _score * %s;', $this->textScoreMultiplier),
             boostMode: 'replace'
         );
     }
@@ -951,8 +952,9 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
             if ($apiName === null) {
                 // If no API name specified, try to get the first one
                 $apis = $this->getRequiredEmbeddingApis();
-                $apiName = ! empty($apis) ? reset($apis) : 'default';
+                $apiName = $apis === [] ? 'default' : reset($apis);
             }
+
             $this->vectorPools[$apiName] = $pool;
         } else {
             // Legacy array format support - set pool data for all existing VectorPools
@@ -976,7 +978,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         }
 
         // Return first VectorPool if no name specified
-        return ! empty($this->vectorPools) ? reset($this->vectorPools) : null;
+        return $this->vectorPools === [] ? null : reset($this->vectorPools);
     }
 
     public function queryStrings(): array
@@ -994,8 +996,8 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         $apis = [];
 
         $semanticFields = $this->properties->nestedSemanticFields()
-            ->filter(fn (Text $field) => $field->isSemantic())
-            ->filter(fn (Text $field) => in_array($field->fullPath, $this->fields));
+            ->filter(fn (Text $field): bool => $field->isSemantic())
+            ->filter(fn (Text $field): bool => in_array($field->fullPath, $this->fields));
 
         foreach ($semanticFields as $field) {
             foreach ($field->vectorFields()->getIterator() as $vectorField) {

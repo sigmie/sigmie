@@ -107,7 +107,7 @@ class KnnVector extends AbstractType implements Type
 
     public function embeddingsName(): string
     {
-        return "{$this->textFieldName}.{$this->name}";
+        return sprintf('%s.%s', $this->textFieldName, $this->name);
     }
 
     public function vectorQueries(array $vector, int $k, Boolean $filter): array

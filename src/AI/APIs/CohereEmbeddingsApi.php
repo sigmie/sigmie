@@ -13,16 +13,12 @@ use Sigmie\Enums\CohereInputType;
 class CohereEmbeddingsApi implements EmbeddingsApi
 {
     protected Client $client;
-    protected string $model;
-    protected CohereInputType $inputType;
 
     public function __construct(
         string $apiKey,
-        CohereInputType $inputType,
-        string $model = 'embed-english-v3.0'
+        protected CohereInputType $inputType,
+        protected string $model = 'embed-english-v3.0'
     ) {
-        $this->model = $model;
-        $this->inputType = $inputType;
         $this->client = new Client([
             'base_uri' => 'https://api.cohere.ai',
             'headers' => [
@@ -66,7 +62,7 @@ class CohereEmbeddingsApi implements EmbeddingsApi
 
     public function batchEmbed(array $payload): array
     {
-        if (count($payload) === 0) {
+        if ($payload === []) {
             return [];
         }
 

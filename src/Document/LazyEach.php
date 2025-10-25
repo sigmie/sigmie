@@ -61,7 +61,7 @@ trait LazyEach
             }
         }
 
-        $response = $this->searchAPICall(index: "$this->name", query: $body, scroll: '1m');
+        $response = $this->searchAPICall(index: $this->name, query: $body, scroll: '1m');
 
         $scrollId = $response->json('_scroll_id');
 

@@ -34,7 +34,7 @@ class Script extends Processor
         return $this;
     }
 
-    public function params(array $params = [])
+    public function params(array $params = []): static
     {
         $this->params = $params;
 

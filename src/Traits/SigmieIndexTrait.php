@@ -18,7 +18,9 @@ use Sigmie\Sigmie;
 trait SigmieIndexTrait
 {
     protected Sigmie $sigmie;
+
     protected string $indexName;
+
     protected NewProperties $blueprint;
 
     /**
@@ -79,7 +81,7 @@ trait SigmieIndexTrait
     public function toDocuments(array $data): array
     {
         $documents = [];
-        
+
         foreach ($data as $item) {
             if ($item instanceof Document) {
                 $documents[] = $item;
@@ -89,7 +91,7 @@ trait SigmieIndexTrait
                 throw new \InvalidArgumentException('Data must be an array or Document instance');
             }
         }
-        
+
         return $documents;
     }
 
@@ -125,17 +127,10 @@ trait SigmieIndexTrait
     public function newMultiSearch(): NewMultiSearch
     {
         $multiSearch = $this->sigmie->newMultiSearch();
-        
-        return new class($multiSearch, $this->blueprint, $this->indexName) {
-            private NewMultiSearch $multiSearch;
-            private NewProperties $properties;
-            private string $defaultIndex;
 
-            public function __construct(NewMultiSearch $multiSearch, NewProperties $properties, string $defaultIndex)
+        return new class($multiSearch, $this->blueprint, $this->indexName) {
+            public function __construct(private NewMultiSearch $multiSearch, private NewProperties $properties, private string $defaultIndex)
             {
-                $this->multiSearch = $multiSearch;
-                $this->properties = $properties;
-                $this->defaultIndex = $defaultIndex;
             }
 
             public function newSearch(string $indexName = null): NewSearch
@@ -150,7 +145,7 @@ trait SigmieIndexTrait
                 return $this->multiSearch->newQuery($index);
             }
 
-            public function raw(string $indexName, array $query)
+            public function raw(string $indexName, array $query): NewMultiSearch
             {
                 return $this->multiSearch->raw($indexName, $query);
             }

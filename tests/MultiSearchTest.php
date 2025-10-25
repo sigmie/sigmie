@@ -14,7 +14,7 @@ class MultiSearchTest extends TestCase
     /**
      * @test
      */
-    public function weighted_query_string()
+    public function weighted_query_string(): void
     {
         $indexName1 = uniqid();
         $indexName2 = uniqid();
@@ -57,7 +57,7 @@ class MultiSearchTest extends TestCase
         //Calling the query get method should affect the results
         $res = $multisearch->newQuery($indexName1)->matchAll()->get();
 
-        $res = $multisearch->raw($indexName1, $multisearch->newQuery($indexName1)->matchNone()->toRaw());
+        $multisearch->raw($indexName1, $multisearch->newQuery($indexName1)->matchNone()->toRaw());
 
         [$search1Res, $search2Res, $newQueryRes, $rawRes] = $multisearch->get();
 

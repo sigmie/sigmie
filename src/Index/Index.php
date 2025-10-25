@@ -29,8 +29,6 @@ class Index
         $analyzers = $settings->analysis()->analyzers();
         $mappings = Mappings::create($raw['mappings'], $analyzers);
 
-        $index = new static($name, $settings, $mappings);
-
-        return $index;
+        return new static($name, $settings, $mappings);
     }
 }

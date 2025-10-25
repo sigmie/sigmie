@@ -14,7 +14,7 @@ trait Update
 
     protected function updateAPICall(string $indexName, string $id, array $data): ElasticsearchResponse
     {
-        $uri = Uri::withQueryValue(new Uri("/{$indexName}/_update/{$id}"), 'format', 'json');
+        $uri = Uri::withQueryValue(new Uri(sprintf('/%s/_update/%s', $indexName, $id)), 'format', 'json');
 
         $esRequest = new ElasticsearchRequest('POST', $uri);
 

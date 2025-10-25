@@ -39,7 +39,7 @@ class Boolean extends Query
         return $this->mustNot;
     }
 
-    public function addRaw(string $key, mixed $value)
+    public function addRaw(string $key, mixed $value): void
     {
         $this->raw[$key] = $value;
     }

@@ -9,8 +9,11 @@ use Sigmie\AI\Contracts\EmbeddingsApi;
 class NewClassification
 {
     protected array $labels = [];
+
     protected array $examples = [];
+
     protected ?string $input = null;
+
     protected array $centroids = [];
 
     public function __construct(
@@ -71,7 +74,7 @@ class NewClassification
         }
 
         foreach ($groupedExamples as $label => $texts) {
-            $payload = array_map(fn($text, $index) => [
+            $payload = array_map(fn($text, $index): array => [
                 'text' => $text,
                 'dims' => 1024,
             ], $texts, array_keys($texts));
@@ -86,7 +89,7 @@ class NewClassification
 
     protected function calculateCentroid(array $vectors): array
     {
-        if (count($vectors) === 0) {
+        if ($vectors === []) {
             return [];
         }
 
@@ -112,8 +115,9 @@ class NewClassification
         $dotProduct = 0.0;
         $magnitudeA = 0.0;
         $magnitudeB = 0.0;
+        $counter = count($vectorA);
 
-        for ($i = 0; $i < count($vectorA); $i++) {
+        for ($i = 0; $i < $counter; $i++) {
             $dotProduct += $vectorA[$i] * $vectorB[$i];
             $magnitudeA += $vectorA[$i] * $vectorA[$i];
             $magnitudeB += $vectorB[$i] * $vectorB[$i];

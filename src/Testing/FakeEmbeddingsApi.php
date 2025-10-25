@@ -54,7 +54,7 @@ class FakeEmbeddingsApi implements EmbeddingsApi
             return;
         }
 
-        Assert::assertEquals($times, $actualCount, "embed() was called {$actualCount} times, expected {$times} times");
+        Assert::assertEquals($times, $actualCount, sprintf('embed() was called %d times, expected %d times', $actualCount, $times));
     }
 
     public function assertEmbedWasCalledWith(string $text, int $dimensions = null): void
@@ -67,8 +67,8 @@ class FakeEmbeddingsApi implements EmbeddingsApi
         }
 
         $message = $dimensions === null
-            ? "embed() was never called with text: \"{$text}\""
-            : "embed() was never called with text: \"{$text}\" and dimensions: {$dimensions}";
+            ? sprintf('embed() was never called with text: "%s"', $text)
+            : sprintf('embed() was never called with text: "%s" and dimensions: %d', $text, $dimensions);
 
         Assert::fail($message);
     }
@@ -82,7 +82,7 @@ class FakeEmbeddingsApi implements EmbeddingsApi
             return;
         }
 
-        Assert::assertEquals($times, $actualCount, "batchEmbed() was called {$actualCount} times, expected {$times} times");
+        Assert::assertEquals($times, $actualCount, sprintf('batchEmbed() was called %d times, expected %d times', $actualCount, $times));
     }
 
     public function assertBatchEmbedWasCalledWithCount(int $itemCount): void
@@ -94,7 +94,7 @@ class FakeEmbeddingsApi implements EmbeddingsApi
             }
         }
 
-        Assert::fail("batchEmbed() was never called with {$itemCount} items");
+        Assert::fail(sprintf('batchEmbed() was never called with %d items', $itemCount));
     }
 
     public function assertBatchEmbedWasCalledWith(string $expectedText): void
@@ -121,7 +121,7 @@ class FakeEmbeddingsApi implements EmbeddingsApi
             }
         }
 
-        Assert::assertTrue($found, "Text '{$expectedText}' was never embedded");
+        Assert::assertTrue($found, sprintf("Text '%s' was never embedded", $expectedText));
     }
 
     public function getEmbedCalls(): array

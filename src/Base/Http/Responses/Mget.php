@@ -12,13 +12,13 @@ class Mget extends ElasticsearchResponse
 {
     protected Collection $collection;
 
-    private function createCollection()
+    private function createCollection(): void
     {
         $collection = new Collection($this->json('docs') ?? []);
 
         $this->collection = $collection
             ->filter(fn ($value) => $value['found'] ?? false)
-            ->map(fn ($values) => Document::fromRaw($values));
+            ->map(fn ($values): Document => Document::fromRaw($values));
     }
 
     public function docs(): array

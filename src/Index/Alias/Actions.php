@@ -26,14 +26,14 @@ trait Actions
 
     protected function createAlias(string $index, string $alias): void
     {
-        $path = "{$index}/_alias/{$alias}";
+        $path = sprintf('%s/_alias/%s', $index, $alias);
 
         $this->indexAPICall($path, 'PUT');
     }
 
     protected function aliasExists(string $alias): bool
     {
-        $path = "_alias/{$alias}";
+        $path = '_alias/' . $alias;
 
         $res = $this->indexAPICall($path, 'HEAD');
 
@@ -42,7 +42,7 @@ trait Actions
 
     protected function deleteAlias(string $index, string $alias): bool
     {
-        $path = "{$index}/_alias/{$alias}";
+        $path = sprintf('%s/_alias/%s', $index, $alias);
 
         $response = $this->indexAPICall($path, 'DELETE');
 

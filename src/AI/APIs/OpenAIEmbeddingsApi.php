@@ -34,13 +34,11 @@ class OpenAIEmbeddingsApi extends AbstractOpenAIApi implements EmbeddingsApi
 
     public function batchEmbed(array $payload): array
     {
-        if (count($payload) === 0) {
+        if ($payload === []) {
             return [];
         }
 
-        $texts = array_map(function ($item) {
-            return $item['text'] ?? '';
-        }, $payload);
+        $texts = array_map(fn($item) => $item['text'] ?? '', $payload);
 
         $dimensions = $payload[0]['dims'] ?? 1536;
 

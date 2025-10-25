@@ -9,8 +9,8 @@ use Sigmie\Query\Shared\Missing;
 
 class Min extends Metric
 {
-    use Meta, Missing;
-
+    use Meta;
+    use Missing;
     protected function value(): array
     {
         $value = [

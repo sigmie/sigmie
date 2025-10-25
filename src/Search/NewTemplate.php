@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use Sigmie\Query\BooleanQueryBuilder;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Mappings\Types\Text;
@@ -20,7 +21,6 @@ use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
-use Sigmie\Search\Contracts\EmbeddingsQueries;
 use Sigmie\Search\Contracts\SearchTemplateBuilder as SearchTemplateBuilderInterface;
 use Sigmie\Shared\Collection;
 
@@ -36,7 +36,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
     protected float $semanticThreshold = 0.01;
 
-    public function id(string $id)
+    public function id(string $id): static
     {
         $this->id = $id;
 
@@ -97,33 +97,33 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
         $search = new Search($boolean);
         $highlight = new Collection($this->highlight);
 
-        $highlight->each(fn(string $field) => $search->highlight($field, $this->highlightPrefix, $this->highlightSuffix));
+        $highlight->each(fn(string $field): Search => $search->highlight($field));
 
         $search->fields($this->retrieve ?? $this->properties->fieldNames());
 
         $defaultFilters = json_encode($this->filters->toRaw());
 
-        $boolean->must()->bool(fn(Boolean $boolean) => $boolean->addRaw('filter', "@filters($defaultFilters)@endfilters"));
+        $boolean->must()->bool(fn(Boolean $boolean) => $boolean->addRaw('filter', sprintf('@filters(%s)@endfilters', $defaultFilters)));
 
         $defaultSorts = json_encode($this->sort);
 
-        $search->addRaw('sort', "@sort($defaultSorts)@endsort");
+        $search->addRaw('sort', sprintf('@sort(%s)@endsort', $defaultSorts));
 
         $defaultAggs = json_encode($this->facets->toRaw());
 
-        $search->addRaw('aggs', "@facets($defaultAggs)@endfacets");
+        $search->addRaw('aggs', sprintf('@facets(%s)@endfacets', $defaultAggs));
 
-        $search->size("@size({$this->size})@endsize");
+        $search->size(sprintf('@size(%d)@endsize', $this->size));
 
-        $search->from("@from({$this->from})@endfrom");
+        $search->from(sprintf('@from(%d)@endfrom', $this->from));
 
         $minScore = $this->semanticSearch && $this->minScore == 0 ? 0.01 : $this->minScore;
 
-        $search->minScore("@minscore({$minScore})@endminscore");
+        $search->minScore(sprintf('@minscore(%s)@endminscore', $minScore));
 
         $embeddingsTags = [];
 
-        $boolean->must()->bool(function (Boolean $boolean) use (&$embeddingsTags) {
+        $boolean->must()->bool(function (Boolean $boolean) use (&$embeddingsTags): void {
             $queryBoolean = new Boolean;
 
             $fields = new Collection($this->fields);
@@ -134,13 +134,13 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
             // Vector queries
             $vectorQueries = $this->properties->nestedSemanticFields()
-                ->map(function (Text $field) use ($defaultEmbeddings, &$embeddingsTags) {
+                ->map(function (Text $field) use ($defaultEmbeddings, &$embeddingsTags): array {
 
                     $tag = '_embeddings_' . str_replace('.', '', $field->name());
                     $embeddingsTags[] = $tag;
 
                     return $field->queries(
-                        "@{$tag}({$defaultEmbeddings})@end{$tag}"
+                        sprintf('@%s(%s)@end%s', $tag, $defaultEmbeddings, $tag)
                     );
                 })
                 ->flatten(1);
@@ -148,11 +148,11 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             if ($this->semanticSearch) {
                 $vectorBool = new Boolean;
                 $vectorQueries
-                    ->each(fn(Query $query) => $vectorBool->should()->query($query));
+                    ->each(fn(Query $query): BooleanQueryBuilder => $vectorBool->should()->query($query));
 
                 $functionScore = new FunctionScore(
                     $vectorBool,
-                    source: "return _score > {$this->semanticThreshold} ? _score : 0;",
+                    source: sprintf('return _score > %s ? _score : 0;', $this->semanticThreshold),
                     boostMode: 'replace'
                 );
 
@@ -160,12 +160,12 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             }
 
 
-            $fields->each(function ($field) use (&$shouldClauses) {
+            $fields->each(function ($field) use (&$shouldClauses): void {
                 $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
 
                 $field = $this->properties->get($field) ?? throw new PropertiesFieldNotFound($field);
 
-                $fuzziness = ! in_array($field->name(), $this->typoTolerantAttributes) ? null : "AUTO:{$this->minCharsForOneTypo},{$this->minCharsForTwoTypo}";
+                $fuzziness = in_array($field->name(), $this->typoTolerantAttributes) ? sprintf('AUTO:%d,%d', $this->minCharsForOneTypo, $this->minCharsForTwoTypo) : null;
 
                 $queries = match (true) {
                     $field->hasQueriesCallback => $field->queriesFromCallback('{{query_string}}'),
@@ -174,10 +174,11 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
                 $queries = new Collection($queries);
 
-                $queries->map(function (QueryClause $queryClause) use ($boost, $fuzziness, $field, &$shouldClauses) {
+                $queries->map(function (QueryClause $queryClause) use ($boost, $fuzziness, $field, &$shouldClauses): void {
                     if ($queryClause instanceof FuzzyQuery) {
                         $queryClause->fuzziness($fuzziness);
                     }
+
                     if ($field->parentPath && $field->parentType === TypesNested::class) {
                         $queryClause = new Nested($field->parentPath, $queryClause);
                     }
@@ -191,17 +192,17 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             if ($shouldClauses->isEmpty()) {
                 $queryBoolean->should()->query(new MatchNone);
             } else {
-                $shouldClauses->each(fn(QueryClause $queryClase) => $queryBoolean->should()->query($queryClase));
+                $shouldClauses->each(fn(QueryClause $queryClase): BooleanQueryBuilder => $queryBoolean->should()->query($queryClase));
             }
 
             $query = json_encode($queryBoolean->toRaw()['bool']['should'] ?? (new MatchAll)->toRaw());
 
-            $boolean->addRaw('should', "@query_string($query)@endquery_string");
+            $boolean->addRaw('should', sprintf('@query_string(%s)@endquery_string', $query));
         });
 
         if ($this->autocompletion) {
 
-            $search->suggest(function (Suggest $suggest) {
+            $search->suggest(function (Suggest $suggest): void {
 
                 $suggest->completion(name: 'autocompletion')
                     ->field('autocomplete')

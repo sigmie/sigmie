@@ -18,7 +18,7 @@ trait SearchSynonyms
         return $this;
     }
 
-    protected function makeSearchSynonymsAnalyzer()
+    protected function makeSearchSynonymsAnalyzer(): Analyzer
     {
         $analyzer = new Analyzer(
             name: 'default_with_synonyms',

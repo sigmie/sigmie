@@ -11,7 +11,7 @@ class Missing extends Bucket
         protected string $field
     ) {}
 
-    public function value(): array
+    protected function value(): array
     {
         return [
             'missing' => [

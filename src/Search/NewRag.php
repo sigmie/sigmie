@@ -10,10 +10,6 @@ use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Rag\NewRerank;
 use Sigmie\Rag\RagAnswer;
-use Sigmie\Rag\RagResponse;
-use Sigmie\Search\Contracts\MultiSearchResponse;
-use Sigmie\Search\Formatters\SigmieSearchResponse;
-use Sigmie\AI\Contracts\LLMAnswer;
 use Sigmie\AI\History\Index as HistoryIndex;
 use Sigmie\AI\Role;
 use Sigmie\Document\Hit;
@@ -74,21 +70,21 @@ class NewRag
         return $this;
     }
 
-    public function historyIndex(HistoryIndex $index)
+    public function historyIndex(HistoryIndex $index): static
     {
         $this->historyIndex = $index;
 
         return $this;
     }
 
-    public function conversationId(string $conversationId)
+    public function conversationId(string $conversationId): static
     {
         $this->conversationId = $conversationId;
 
         return $this;
     }
 
-    public function userToken(string $userToken)
+    public function userToken(string $userToken): static
     {
         $this->userToken = $userToken;
 
@@ -97,7 +93,7 @@ class NewRag
 
     protected function executeSearch(): array
     {
-        if (!$this->searchBuilder) {
+        if ($this->searchBuilder === null) {
             throw new RuntimeException('Search must be configured before calling answer()');
         }
 
@@ -112,11 +108,11 @@ class NewRag
             $this->searchBuilder = $multiSearch;
         }
 
-        $historySearchName = random_name('sgm_hist', 5);
+        $historySearchName = random_name('sgm_hist');
 
-        if ($this->historyIndex) {
+        if ($this->historyIndex instanceof HistoryIndex) {
             $search = $this->historyIndex->search(
-                $this->conversationId ?: random_name('conv', 10),
+                $this->conversationId ?: random_name('conv'),
                 $this->userToken
             );
 
@@ -143,7 +139,7 @@ class NewRag
 
     protected function executeRerank(array $documentHits): array
     {
-        if (!$this->reranker || !$this->rerankBuilder) {
+        if (!$this->reranker instanceof RerankApi || !$this->rerankBuilder instanceof NewRerank) {
             return $documentHits;
         }
 
@@ -153,20 +149,18 @@ class NewRag
     protected function buildPrompt(array $documentHits, array $historyHits): NewRagPrompt
     {
         $messages = array_merge(
-            ...array_map(function (Hit $hit) {
-                return array_map(
-                    fn(array $turn) => [
-                        'role'    => Role::from($turn['role']),
-                        'content' => $turn['content'],
-                    ],
-                    $hit->_source['turns']
-                );
-            }, $historyHits)
+            ...array_map(fn(Hit $hit): array => array_map(
+                fn(array $turn): array => [
+                    'role'    => Role::from($turn['role']),
+                    'content' => $turn['content'],
+                ],
+                $hit->_source['turns']
+            ), $historyHits)
         );
 
         $prompt = new NewRagPrompt($documentHits, $messages);
 
-        if ($this->promptBuilder) {
+        if ($this->promptBuilder instanceof \Closure) {
             ($this->promptBuilder)($prompt);
         }
 
@@ -183,17 +177,17 @@ class NewRag
 
     protected function storeConversation(NewRagPrompt $prompt, string $answerContent, string $model): void
     {
-        if (!$this->historyIndex) {
+        if (!$this->historyIndex instanceof HistoryIndex) {
             return;
         }
 
         $timestamp = (new DateTime('now'))->format('Y-m-d\TH:i:s.uP');
-        $conversationId = $this->conversationId ?: random_name('conv', 10);
+        $conversationId = $this->conversationId ?: random_name('conv');
 
         $turn = [
             ...array_filter(
                 $prompt->messages(),
-                fn($message) => $message['role'] === Role::User
+                fn($message): bool => $message['role'] === Role::User
             ),
             [
                 'role' => Role::Model,
@@ -217,7 +211,7 @@ class NewRag
     {
         $prompt = $this->preparePrompt();
 
-        $conversationId = $this->conversationId ?: random_name('conv', 10);
+        $conversationId = $this->conversationId ?: random_name('conv');
 
         $answer = $this->llm->jsonAnswer($prompt);
 
@@ -235,7 +229,7 @@ class NewRag
     {
         $prompt = $this->preparePrompt();
 
-        $conversationId = $this->conversationId ?: random_name('conv', 10);
+        $conversationId = $this->conversationId ?: random_name('conv');
 
         $answer = $this->llm->answer($prompt);
 
@@ -257,14 +251,13 @@ class NewRag
 
         yield ['type' => 'search_hits', 'data' => $documentHits, 'timestamp' => microtime(true)];
 
-        if ($this->reranker && $this->rerankBuilder) {
+        if ($this->reranker instanceof RerankApi && $this->rerankBuilder instanceof NewRerank) {
             yield ['type' => 'rerank_start', 'timestamp' => microtime(true)];
 
             $documentHits = $this->executeRerank($documentHits);
 
             yield ['type' => 'rerank_complete', 'hits' => count($documentHits), 'timestamp' => microtime(true)];
         } else {
-            $documentHits = $documentHits;
         }
 
         $this->documentHits = $documentHits;
@@ -290,7 +283,7 @@ class NewRag
 
         yield ['type' => 'turn_store_start', 'timestamp' => microtime(true)];
 
-        $this->storeConversation($prompt, $fullAnswer, $this->llm->model(), time());
+        $this->storeConversation($prompt, $fullAnswer, $this->llm->model());
 
         yield ['type' => 'turn_store_complete', 'timestamp' => microtime(true)];
     }

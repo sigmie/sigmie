@@ -8,7 +8,6 @@ use Http\Promise\Promise;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
-use Sigmie\Enums\SearchEngineType;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\MatchAll;
@@ -65,7 +64,7 @@ class Search
     //     return $this;
     // }
 
-    public function aggregate(callable $callable)
+    public function aggregate(callable $callable): static
     {
         $callable($this->aggs);
 
@@ -124,7 +123,7 @@ class Search
     //     return $this;
     // }
 
-    public function trackTotalHits(bool|int $trackTotalHits = true)
+    public function trackTotalHits(bool|int $trackTotalHits = true): static
     {
         $this->trackTotalHits = $trackTotalHits;
 
@@ -173,14 +172,14 @@ class Search
         return $this;
     }
 
-    public function addRaw(string $key, mixed $value)
+    public function addRaw(string $key, mixed $value): static
     {
         $this->raw[$key] = $value;
 
         return $this;
     }
 
-    public function response()
+    public function response(): \Sigmie\Base\Http\Responses\Search
     {
         $raw = $this->toRaw();
 
@@ -208,14 +207,14 @@ class Search
         return $this->toRaw();
     }
 
-    public function query(Query $query)
+    public function query(Query $query): static
     {
         $this->query = $query;
 
         return $this;
     }
 
-    public function aggs(Aggs $aggs)
+    public function aggs(Aggs $aggs): static
     {
         $this->aggs = $aggs;
 
@@ -234,7 +233,7 @@ class Search
             ...$this->raw,
         ];
 
-        if (!empty($this->knn)) {
+        if ($this->knn !== []) {
             $result['knn'] = $this->knn;
         }
 
@@ -252,7 +251,7 @@ class Search
 
         if (isset($this->aggs)) {
             $aggsRaw = $this->aggs->toRaw();
-            if (!empty($aggsRaw)) {
+            if ($aggsRaw !== []) {
                 $result['aggs'] = $aggsRaw;
             }
         }

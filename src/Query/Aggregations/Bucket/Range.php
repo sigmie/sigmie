@@ -12,7 +12,7 @@ class Range extends Bucket
         protected array $ranges
     ) {}
 
-    public function value(): array
+    protected function value(): array
     {
         return [
             'range' => [

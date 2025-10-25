@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Parse;
 
-use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\Nested;
-use Sigmie\Sigmie;
 
 class SortParser extends Parser
 {
@@ -31,46 +29,39 @@ class SortParser extends Parser
 
                 continue;
             }
-
             if (preg_match(
                 '/(?P<field>\w+(\.\w+)*(\.\w+)*)\[(?P<latitude>-?\d+(\.\d+)?),(?P<longitude>-?\d+(\.\d+)?)\]:(?P<unit>\w+):(?P<order>\w+)/',
                 $match,
                 $matches
             )) {
-
                 $fieldType = $this->properties->get($matches['field']);
-
                 if (! $fieldType instanceof GeoPoint) {
 
-                    $this->handleError("Field {$matches['field']} is not a geo point.", [
+                    $this->handleError(sprintf('Field %s is not a geo point.', $matches['field']), [
                         'field' => $matches['field'],
                     ]);
 
                     continue;
                 }
-
                 $field = $matches['field'];
                 $unit = $matches['unit'];
                 $order = $matches['order'];
                 $latitude = $matches['latitude'];
                 $longitude = $matches['longitude'];
-
                 if (! in_array($unit, ['km', 'm', 'cm', 'mm', 'mi', 'yd', 'ft', 'in', 'nmi'])) {
-                    $this->handleError("Invalid unit '{$unit}' for geo distance sort.", [
+                    $this->handleError(sprintf("Invalid unit '%s' for geo distance sort.", $unit), [
                         'unit' => $unit,
                     ]);
 
                     continue;
                 }
-
                 if (! in_array($order, ['asc', 'desc'])) {
-                    $this->handleError("Invalid order '{$order}' for geo distance sort.", [
+                    $this->handleError(sprintf("Invalid order '%s' for geo distance sort.", $order), [
                         'order' => $order,
                     ]);
 
                     continue;
                 }
-
                 if (! is_numeric($latitude) || ! is_numeric($longitude) || $latitude < -90 || $latitude > 90 || $longitude < -180 || $longitude > 180) {
                     $this->handleError('Invalid latitude or longitude for geo distance sort.', [
                         'latitude' => $latitude,
@@ -79,9 +70,7 @@ class SortParser extends Parser
 
                     continue;
                 }
-
                 $hasGeoDistance = true;
-
                 if ($fieldType->parentPath && $fieldType->parentType === Nested::class) {
                     $sort[] = [
                         '_geo_distance' => [
@@ -108,12 +97,13 @@ class SortParser extends Parser
                         ]
                     ];
                 }
-
                 continue;
-            } elseif (str_contains($match, ':')) {
+            }
 
+            if (str_contains($match, ':')) {
                 [$field, $direction] = explode(':', $match);
-            } else {
+            }
+            else {
 
                 $field = $match;
                 $direction = 'asc';

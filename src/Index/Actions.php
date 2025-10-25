@@ -26,7 +26,7 @@ trait Actions
         array $patterns,
         SettingsInterface $settings,
         MappingsInterface $mappings
-    ) {
+    ): IndexTemplate {
         $driver = $this->elasticsearchConnection->driver();
 
         $body = [
@@ -49,12 +49,12 @@ trait Actions
             'mappings' => $mappings->toRaw($driver),
         ];
 
-        $this->indexAPICall("{$indexName}", 'PUT', $body);
+        $this->indexAPICall($indexName, 'PUT', $body);
     }
 
     protected function indexExists(string $index): bool
     {
-        $res = $this->indexAPICall("{$index}", 'HEAD');
+        $res = $this->indexAPICall($index, 'HEAD');
 
         return $res->code() === 200;
     }
@@ -62,15 +62,15 @@ trait Actions
     protected function getIndex(string $alias): BaseIndex|AliasedIndex|null
     {
         try {
-            $res = $this->indexAPICall("{$alias}", 'GET');
-        } catch (ElasticsearchException $e) {
-            $type = $e->json('type');
+            $res = $this->indexAPICall($alias, 'GET');
+        } catch (ElasticsearchException $elasticsearchException) {
+            $type = $elasticsearchException->json('type');
 
             if ($type === 'index_not_found_exception') {
                 return null;
             }
 
-            throw $e;
+            throw $elasticsearchException;
         }
 
         if (count($res->json()) > 1) {
@@ -78,7 +78,7 @@ trait Actions
         }
 
         $data = array_values($res->json())[0];
-        $name = $data['settings']['index']['provided_name'] ?? $this->indexAPICall("_resolve/index/{$alias}", 'GET')->json('indices.0.name');
+        $name = $data['settings']['index']['provided_name'] ?? $this->indexAPICall('_resolve/index/' . $alias, 'GET')->json('indices.0.name');
 
         $settings = Settings::fromRaw($data['settings']);
         $analyzers = $settings->analysis()->analyzers();
@@ -91,14 +91,12 @@ trait Actions
             return $index;
         }
 
-        $index = new BaseIndex($name, $settings, $mappings, $data);
-
-        return $index;
+        return new BaseIndex($name, $settings, $mappings, $data);
     }
 
     protected function listIndices(string $pattern = '*'): array
     {
-        $catResponse = $this->catAPICall("indices/{$pattern}?h=index,health,status,uuid,pri,rep,docs.count,docs.deleted,store.size,pri.store.size,creation.date.string", 'GET');
+        $catResponse = $this->catAPICall(sprintf('indices/%s?h=index,health,status,uuid,pri,rep,docs.count,docs.deleted,store.size,pri.store.size,creation.date.string', $pattern), 'GET');
         $aliasesResponse = $this->catAPICall("aliases", 'GET');
 
         $aliasesData = $aliasesResponse->json();
@@ -111,21 +109,20 @@ trait Actions
             if (!isset($aliasesByIndex[$indexName])) {
                 $aliasesByIndex[$indexName] = [];
             }
+
             $aliasesByIndex[$indexName][] = $aliasName;
         }
 
-        return array_map(function ($values) use ($aliasesByIndex) {
+        return array_map(function (array $values) use ($aliasesByIndex): ListedIndex {
             $aliases = $aliasesByIndex[$values['index']] ?? [];
 
-            $index = ListedIndex::fromRaw($values, $aliases);
-
-            return $index;
+            return ListedIndex::fromRaw($values, $aliases);
         }, $catResponse->json());
     }
 
     protected function deleteIndex(string $name): bool
     {
-        $response = $this->indexAPICall("{$name}", 'DELETE');
+        $response = $this->indexAPICall($name, 'DELETE');
 
         return $response->json('acknowledged');
     }
@@ -133,6 +130,6 @@ trait Actions
     protected function refreshIndex(string $name): void
     {
         // {"_shards":{"total":3,"successful":1,"failed":0}}
-        $this->indexAPICall("{$name}/_refresh", 'POST');
+        $this->indexAPICall($name . '/_refresh', 'POST');
     }
 }

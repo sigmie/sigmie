@@ -7,7 +7,6 @@ namespace Sigmie\Rag;
 use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Document\Hit;
 use Sigmie\Document\RerankedHit;
-use Sigmie\Search\Formatters\SigmieSearchResponse;
 use Symfony\Component\Yaml\Yaml;
 
 class NewRerank
@@ -42,7 +41,7 @@ class NewRerank
     {
         $query = $this->query;
 
-        if (empty($hits) || !$query) {
+        if ($hits === [] || !$query) {
             return $hits;
         }
 
@@ -52,12 +51,12 @@ class NewRerank
         // Perform reranking
         $res = $this->reranker->rerank($textDocuments, $query, $this->topK) ?? [];
 
-        return array_map(function ($index) use ($hits) {
+        return array_map(function (array $index) use ($hits): RerankedHit {
             $hit = $hits[$index['index']];
 
             // Convert array to Hit object if needed
             if (is_array($hit)) {
-                $hit = new \Sigmie\Document\Hit(
+                $hit = new Hit(
                     $hit['_source'] ?? [],
                     $hit['_id'] ?? '',
                     $hit['_score'] ?? null,
@@ -84,6 +83,7 @@ class NewRerank
                     $filteredData[$field] = $source[$field];
                 }
             }
+
             // Format as inline YAML (e.g., "name: Value\ndescription: Another value")
             $documents[] = Yaml::dump($filteredData, inline: 1);
         }

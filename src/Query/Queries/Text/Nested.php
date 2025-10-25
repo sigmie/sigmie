@@ -17,7 +17,7 @@ class Nested extends Query
 
     public function toRaw(): array
     {
-        $raw = [
+        return [
             'nested' => [
                 'path' => $this->path,
                 'score_mode' => $this->scoreMode,
@@ -25,7 +25,5 @@ class Nested extends Query
                 'boost' => $this->boost,
             ],
         ];
-
-        return $raw;
     }
 }

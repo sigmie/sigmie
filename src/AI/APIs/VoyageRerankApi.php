@@ -11,13 +11,11 @@ use Sigmie\AI\Contracts\RerankApi;
 class VoyageRerankApi implements RerankApi
 {
     protected Client $client;
-    protected string $model;
 
     public function __construct(
         string $apiKey,
-        string $model = 'rerank-2.5-lite'
+        protected string $model = 'rerank-2.5-lite'
     ) {
-        $this->model = $model;
         $this->client = new Client([
             'base_uri' => 'https://api.voyageai.com',
             'headers' => [
@@ -55,12 +53,10 @@ class VoyageRerankApi implements RerankApi
         $data = $json['data'];
 
         // Reorder documents based on reranking results using array_map
-        $newIndexes = array_map(function ($result) use ($newIndexes) {
-            return [
-                'index' => $result['index'],
-                'score' => $result['relevance_score']
-            ];
-        }, $data);
+        $newIndexes = array_map(fn($result): array => [
+            'index' => $result['index'],
+            'score' => $result['relevance_score']
+        ], $data);
 
         return $newIndexes;
     }
