@@ -461,7 +461,8 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
 
         foreach ($semanticFields as $field) {
             foreach ($field->vectorFields()->getIterator() as $vectorField) {
-                $apiName = $vectorField->apiName ?? null;
+                // Use queryApiName if set, otherwise fall back to apiName
+                $apiName = $vectorField->queryApiName ?? $vectorField->apiName ?? null;
 
                 if (! isset($fieldsByApi[$apiName])) {
                     $fieldsByApi[$apiName] = [];
@@ -598,7 +599,8 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         // Group fields by API and dimensions
         $fieldsByApiAndDims = [];
         foreach ($vectorFields as $field) {
-            $apiName = $field->apiName ?? null;
+            // Use queryApiName if set, otherwise fall back to apiName
+            $apiName = $field->queryApiName ?? $field->apiName ?? null;
             if (! $apiName) {
                 continue; // Skip fields without API configuration
             }
@@ -684,7 +686,8 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         // Group fields by API and dimensions
         $fieldsByApiAndDims = [];
         foreach ($vectorFields as $field) {
-            $apiName = $field->apiName ?? null;
+            // Use queryApiName if set, otherwise fall back to apiName
+            $apiName = $field->queryApiName ?? $field->apiName ?? null;
             if (! $apiName) {
                 continue; // Skip fields without API configuration
             }
@@ -996,8 +999,10 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
 
         foreach ($semanticFields as $field) {
             foreach ($field->vectorFields()->getIterator() as $vectorField) {
-                if ($vectorField->apiName ?? false) {
-                    $apis[$vectorField->apiName] = true;
+                // Use queryApiName if set, otherwise fall back to apiName
+                $apiName = $vectorField->queryApiName ?? $vectorField->apiName ?? null;
+                if ($apiName) {
+                    $apis[$apiName] = true;
                 }
             }
         }

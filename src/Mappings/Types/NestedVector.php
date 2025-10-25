@@ -24,6 +24,7 @@ class NestedVector extends TypesNested
         public readonly string $apiName,
         public readonly VectorStrategy $strategy = VectorStrategy::Concatenate,
         public readonly VectorSimilarity $similarity = VectorSimilarity::Cosine,
+        public readonly ?string $queryApiName = null,
     ) {
         $props = new NewProperties();
         $props->type(

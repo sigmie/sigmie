@@ -30,6 +30,8 @@ class NewSemanticField
 
     protected ?string $apiName = null;
 
+    protected ?string $queryApiName = null;
+
     protected ?string $boostedBy = null;
 
     protected bool $autoNormalizeVector = true;
@@ -181,6 +183,13 @@ class NewSemanticField
         return $this;
     }
 
+    public function searchApi(?string $queryApiName)
+    {
+        $this->queryApiName = $queryApiName;
+
+        return $this;
+    }
+
     public function boostedBy(string $fieldName): static
     {
         $this->boostedBy = $fieldName;
@@ -219,7 +228,7 @@ class NewSemanticField
         };
 
         if (!$this->index) {
-            return new NestedVector($name, $this->dims, $this->apiName, $this->strategy, $this->similarity);
+            return new NestedVector($name, $this->dims, $this->apiName, $this->strategy, $this->similarity, $this->queryApiName);
         }
 
         $vector = new BaseVector(
@@ -234,6 +243,7 @@ class NewSemanticField
             apiName: $this->apiName,
             boostedByField: $this->boostedBy,
             autoNormalizeVector: $this->autoNormalizeVector,
+            queryApiName: $this->queryApiName,
         );
 
         return $vector;
