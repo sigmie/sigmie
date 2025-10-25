@@ -57,7 +57,7 @@ trait Actions
         $documents = new Collection($documents);
         $documents->each(function (Doc $document, $index) use (&$body): void {
 
-            //Upsert docs with id
+            // Upsert docs with id
             if (isset($document->_id)) {
                 $body = [
                     ...$body,
@@ -68,9 +68,9 @@ trait Actions
                 return;
             }
 
-            //or
+            // or
 
-            //create docs without id
+            // create docs without id
             $body = [
                 ...$body,
                 ['create' => (object) []],
@@ -83,7 +83,6 @@ trait Actions
         }
 
         $res = $this->bulkAPICall($indexName, $body, $refresh);
-
 
         foreach ($res->json('items') as $index => $value) {
             $action = array_key_first($value);
@@ -147,7 +146,7 @@ trait Actions
     protected function getDocument(string $indexName, string $identifier): ?Doc
     {
         $payload = [
-            'docs' => [['_id' => $identifier],]
+            'docs' => [['_id' => $identifier]],
         ];
 
         $query = [];
@@ -171,7 +170,7 @@ trait Actions
     ): Collection {
 
         $payload = [
-            'docs' => array_map(fn(string $id): array => ['_id' => $id], $ids),
+            'docs' => array_map(fn (string $id): array => ['_id' => $id], $ids),
         ];
 
         $query = [];
@@ -216,12 +215,11 @@ trait Actions
             }
         }
 
-
         $response = $this->searchAPICall($indexName, [
-            ...$payload
+            ...$payload,
         ]);
 
-        $collection = new Collection();
+        $collection = new Collection;
 
         $values = $response->json('hits')['hits'];
 

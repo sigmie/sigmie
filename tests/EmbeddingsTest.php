@@ -89,11 +89,11 @@ class EmbeddingsTest extends TestCase
                 new Document([
                     'title' => 'Queen',
                     'color' => 'red',
-                ],),
+                ], ),
                 new Document([
                     'title' => 'King',
                     'color' => 'blue',
-                ],),
+                ], ),
             ]);
 
         // Assert embeddings were generated for the 2 documents
@@ -163,9 +163,9 @@ class EmbeddingsTest extends TestCase
                             'user' => [
                                 'name' => 'John Doe',
                             ],
-                        ]
+                        ],
                     ],
-                ],),
+                ], ),
             ]);
 
         // Assert embeddings were generated for first document
@@ -182,7 +182,7 @@ class EmbeddingsTest extends TestCase
                             'user' => [
                                 'name' => 'John Doe',
                             ],
-                        ]
+                        ],
                     ],
                 ], _id: '1234'),
             ]);

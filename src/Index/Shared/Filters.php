@@ -192,7 +192,7 @@ trait Filters
 
     private function initFilters(): void
     {
-        $this->filters ??= new Collection();
+        $this->filters ??= new Collection;
     }
 
     private function ensureFilterNameIsAvailable(string $name): void

@@ -31,7 +31,7 @@ class ElasticsearchNestedVector extends TypesNested implements Type
                 name: 'vector',
                 dims: $dims,
                 similarity: $similarity,
-                fullPath: $fullPath ? $fullPath . '.vector' : 'vector',
+                fullPath: $fullPath ? $fullPath.'.vector' : 'vector',
             )
         );
 
@@ -67,9 +67,9 @@ class ElasticsearchNestedVector extends TypesNested implements Type
         // that wraps these nested vector queries.
         return [
             new Nested(
-                '_embeddings.' . $this->fullPath,
+                '_embeddings.'.$this->fullPath,
                 new FunctionScore(
-                    query: new MatchAll(),
+                    query: new MatchAll,
                     source: $source,
                     boostMode: 'replace',
                     params: [

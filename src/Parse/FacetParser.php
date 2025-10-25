@@ -40,7 +40,7 @@ class FacetParser extends Parser
             // Match field name
             $field = preg_match('/^([\w\.]+)[:<=](.*)$/', $filter, $matches) ? $matches[1] : $filter;
 
-            if (!isset($fields[$field])) {
+            if (! isset($fields[$field])) {
                 $fields[$field] = [];
             }
 
@@ -98,10 +98,8 @@ class FacetParser extends Parser
                 continue;
             }
 
-
             /** @var Type $field */
             $field = $this->properties->get($field);
-
 
             if (! $field->isFacetable()) {
                 $this->handleError(sprintf("The field '%s' does not support facets.", $field->name()), [

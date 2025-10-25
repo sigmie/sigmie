@@ -7,8 +7,8 @@ namespace Sigmie\AI\History;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Search\NewSearch;
-use Sigmie\SigmieIndex;
 use Sigmie\Sigmie;
+use Sigmie\SigmieIndex;
 
 class Index extends SigmieIndex
 {
@@ -27,7 +27,7 @@ class Index extends SigmieIndex
 
     public function properties(): NewProperties
     {
-        $properties = new NewProperties();
+        $properties = new NewProperties;
 
         $properties->keyword('conversation_id');
         $properties->keyword('user_token');
@@ -62,14 +62,14 @@ class Index extends SigmieIndex
             'user_token' => $userToken,
             'timestamp' => $timestamp,
             'model' => $model,
-            'turns' => array_map(fn($turn): array => [
+            'turns' => array_map(fn ($turn): array => [
                 'role' => $turn['role']->value,
                 'content' => $turn['content'],
-            ], $turns)
+            ], $turns),
         ]);
 
         $this->merge([
-            $doc
+            $doc,
         ], true);
     }
 

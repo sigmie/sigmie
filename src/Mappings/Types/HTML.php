@@ -16,7 +16,7 @@ class HTML extends Text
 
         $this->unstructuredText();
 
-        $this->newAnalyzer(function (NewAnalyzer $newAnalyzer) use ($name): void {
+        $this->newAnalyzer(function (NewAnalyzer $newAnalyzer): void {
             $newAnalyzer->tokenizeOnWordBoundaries();
             $newAnalyzer->stripHTML();
             $newAnalyzer->trim();

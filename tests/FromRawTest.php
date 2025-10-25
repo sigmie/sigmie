@@ -52,7 +52,7 @@ class FromRawTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->tokenizer(new Whitespace())
+            ->tokenizer(new Whitespace)
             ->create();
 
         $index = $this->getIndex($alias);
@@ -105,7 +105,7 @@ class FromRawTest extends TestCase
     {
         $alias = uniqid();
 
-        $customFieldAnalyzer = new Analyzer('custom', new Whitespace());
+        $customFieldAnalyzer = new Analyzer('custom', new Whitespace);
 
         $this->sigmie->newIndex($alias)
             ->mapping(function (NewProperties $blueprint) use ($customFieldAnalyzer): NewProperties {

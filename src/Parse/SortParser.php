@@ -29,6 +29,7 @@ class SortParser extends Parser
 
                 continue;
             }
+
             if (preg_match(
                 '/(?P<field>\w+(\.\w+)*(\.\w+)*)\[(?P<latitude>-?\d+(\.\d+)?),(?P<longitude>-?\d+(\.\d+)?)\]:(?P<unit>\w+):(?P<order>\w+)/',
                 $match,
@@ -43,6 +44,7 @@ class SortParser extends Parser
 
                     continue;
                 }
+
                 $field = $matches['field'];
                 $unit = $matches['unit'];
                 $order = $matches['order'];
@@ -55,6 +57,7 @@ class SortParser extends Parser
 
                     continue;
                 }
+
                 if (! in_array($order, ['asc', 'desc'])) {
                     $this->handleError(sprintf("Invalid order '%s' for geo distance sort.", $order), [
                         'order' => $order,
@@ -62,6 +65,7 @@ class SortParser extends Parser
 
                     continue;
                 }
+
                 if (! is_numeric($latitude) || ! is_numeric($longitude) || $latitude < -90 || $latitude > 90 || $longitude < -180 || $longitude > 180) {
                     $this->handleError('Invalid latitude or longitude for geo distance sort.', [
                         'latitude' => $latitude,
@@ -70,6 +74,7 @@ class SortParser extends Parser
 
                     continue;
                 }
+
                 $hasGeoDistance = true;
                 if ($fieldType->parentPath && $fieldType->parentType === Nested::class) {
                     $sort[] = [
@@ -94,16 +99,16 @@ class SortParser extends Parser
                             ],
                             'order' => $order,
                             'unit' => $unit,
-                        ]
+                        ],
                     ];
                 }
+
                 continue;
             }
 
             if (str_contains($match, ':')) {
                 [$field, $direction] = explode(':', $match);
-            }
-            else {
+            } else {
 
                 $field = $match;
                 $direction = 'asc';

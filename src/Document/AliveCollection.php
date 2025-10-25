@@ -14,17 +14,17 @@ use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Shared\Mappings;
 use Sigmie\Mappings\Properties;
 use Sigmie\Semantic\DocumentProcessor;
-use Traversable;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\UsesApis;
+use Traversable;
 
 class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 {
     use DocumentActions;
     use IndexActions;
     use LazyEach;
-    use Search;
     use Mappings;
+    use Search;
     use UsesApis;
 
     protected ?array $only = null;
@@ -40,7 +40,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     ) {
         $this->setElasticsearchConnection($connection);
 
-        $this->properties = new Properties();
+        $this->properties = new Properties;
     }
 
     public function populateEmbeddings(bool $value = true): static
@@ -93,7 +93,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
             ],
         ]);
 
-        $collection = new Collection();
+        $collection = new Collection;
 
         $values = $response->json('hits')['hits'];
 
@@ -130,7 +130,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function merge(array $docs): AliveCollection
     {
-        $docs = array_map(fn(Document $doc): Document => $this->processDocument($doc), $docs);
+        $docs = array_map(fn (Document $doc): Document => $this->processDocument($doc), $docs);
 
         $this->upsertDocuments($this->name, $docs, $this->refresh);
 

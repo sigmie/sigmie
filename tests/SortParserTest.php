@@ -317,7 +317,7 @@ class SortParserTest extends TestCase
 
         $this->expectException(ParseException::class);
 
-        $query = $parser->parse('location[foo,13.77]:km:asc');
+        $parser->parse('location[foo,13.77]:km:asc');
 
         $this->expectException(ParseException::class);
 
@@ -472,7 +472,7 @@ class SortParserTest extends TestCase
      */
     public function exceptions(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
 
@@ -490,7 +490,7 @@ class SortParserTest extends TestCase
      */
     public function text_asc_filter(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->bool('active');
@@ -548,7 +548,7 @@ class SortParserTest extends TestCase
      */
     public function text_desc_filter(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->bool('active');
@@ -606,7 +606,7 @@ class SortParserTest extends TestCase
      */
     public function date_desc(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->date('created_at');
@@ -653,7 +653,7 @@ class SortParserTest extends TestCase
      */
     public function date_asc(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->date('created_at');

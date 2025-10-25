@@ -23,7 +23,7 @@ trait SearchSynonyms
         $analyzer = new Analyzer(
             name: 'default_with_synonyms',
         );
-        
+
         $graph = new SynonymGraph('search_synonyms', $this->searchSynonyms);
 
         $analyzer->addFilters([$graph]);

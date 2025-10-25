@@ -40,7 +40,7 @@ abstract class Bucket implements Aggregation
 
     public function aggregate(callable $callable)
     {
-        $this->aggs = new Aggs();
+        $this->aggs = new Aggs;
 
         $callable($this->aggs);
 

@@ -68,7 +68,6 @@ class AggregationTest extends TestCase
         $this->assertCount(2, $value['buckets']);
     }
 
-
     /**
      * @test
      */

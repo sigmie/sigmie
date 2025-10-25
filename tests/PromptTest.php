@@ -15,7 +15,7 @@ class PromptTest extends TestCase
      */
     public function json_schema(): void
     {
-        $prompt = new Prompt();
+        $prompt = new Prompt;
 
         $prompt->answerJsonSchema(function (NewJsonSchema $schema): void {
             $schema->name('catalog');
@@ -69,7 +69,7 @@ class PromptTest extends TestCase
      */
     public function default_json_schema(): void
     {
-        $prompt = new Prompt();
+        $prompt = new Prompt;
 
         $result = $prompt->jsonSchema();
 
@@ -90,7 +90,7 @@ class PromptTest extends TestCase
      */
     public function opeanai_response(): void
     {
-        $prompt = new Prompt();
+        $prompt = new Prompt;
 
         $prompt->user('populate the catalog with 1 product');
         $prompt->answerJsonSchema(function (NewJsonSchema $schema): void {

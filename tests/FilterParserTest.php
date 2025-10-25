@@ -14,8 +14,6 @@ use Sigmie\Testing\TestCase;
 
 class FilterParserTest extends TestCase
 {
-    
-
     /**
      * @test
      */
@@ -23,7 +21,7 @@ class FilterParserTest extends TestCase
     {
         $indexName = uniqid();
 
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->searchableNumber('number');
 
         $index = $this->sigmie->newIndex($indexName)
@@ -65,7 +63,7 @@ class FilterParserTest extends TestCase
     {
         $indexName = uniqid();
 
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->id('id');
         $props->caseSensitiveKeyword('status');
 
@@ -100,7 +98,7 @@ class FilterParserTest extends TestCase
     {
         $indexName = uniqid();
 
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->id('id');
         $props->caseSensitiveKeyword('status');
 
@@ -135,7 +133,7 @@ class FilterParserTest extends TestCase
     {
         $indexName = uniqid();
 
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->id('id');
         $props->id('system_id');
         $props->caseSensitiveKeyword('interval');
@@ -187,7 +185,6 @@ class FilterParserTest extends TestCase
         $this->assertCount(1, $res->json('hits.hits'));
     }
 
-
     /**
      * @test
      */
@@ -225,7 +222,7 @@ class FilterParserTest extends TestCase
 
         $query = $parser->parse('subject_service:{id:"23"}');
 
-        $res = $this->sigmie->query($indexName, $query)->get();
+        $this->sigmie->query($indexName, $query)->get();
 
         $this->assertNotEmpty($parser->errors());
 
@@ -604,7 +601,7 @@ class FilterParserTest extends TestCase
             'location:3in[41.9028,12.4964]',
         ];
 
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->geoPoint('location');
@@ -625,7 +622,7 @@ class FilterParserTest extends TestCase
     public function has_not_filter(): void
     {
 
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->text('name')->unstructuredText();
@@ -668,7 +665,7 @@ class FilterParserTest extends TestCase
      */
     public function has_filter(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->text('name')->unstructuredText();
@@ -1163,7 +1160,7 @@ class FilterParserTest extends TestCase
      */
     public function exceptions(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
 
@@ -1258,7 +1255,7 @@ class FilterParserTest extends TestCase
      */
     public function term_long_string_filter_with_single_quotes(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->text('name')->unstructuredText()->keyword();
@@ -1303,7 +1300,7 @@ class FilterParserTest extends TestCase
      */
     public function term_long_string_filter(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->text('name')->unstructuredText()->keyword();
@@ -1348,7 +1345,7 @@ class FilterParserTest extends TestCase
      */
     public function term_filter(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->text('name')->unstructuredText()->keyword();
@@ -1397,7 +1394,7 @@ class FilterParserTest extends TestCase
      */
     public function is_not_filter(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->bool('active');
@@ -1452,7 +1449,7 @@ class FilterParserTest extends TestCase
      */
     public function is_filter(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->bool('active');
@@ -1505,7 +1502,7 @@ class FilterParserTest extends TestCase
      */
     public function date_single_quotes_range(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->date('created_at');
@@ -1551,7 +1548,7 @@ class FilterParserTest extends TestCase
      */
     public function date_double_quotes_range(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->date('created_at');
@@ -1597,7 +1594,7 @@ class FilterParserTest extends TestCase
      */
     public function not(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->category('category');
@@ -1938,7 +1935,7 @@ class FilterParserTest extends TestCase
     {
         $indexName = uniqid();
 
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->number('price');
 
         $index = $this->sigmie->newIndex($indexName)
@@ -1963,13 +1960,13 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props, false);
 
-        $query = $parser->parse("price:100..180");
+        $query = $parser->parse('price:100..180');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
         $this->assertCount(2, $res->json('hits.hits'));
 
-        $query = $parser->parse("price:100..200");
+        $query = $parser->parse('price:100..200');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
@@ -2006,13 +2003,13 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse("last_activity:2001-01-01T00:00:00.000000+00:00..2100-12-31T23:59:59.999999+00:00");
+        $query = $parser->parse('last_activity:2001-01-01T00:00:00.000000+00:00..2100-12-31T23:59:59.999999+00:00');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
         $this->assertCount(3, $res->json('hits.hits'));
 
-        $query = $parser->parse("last_activity:2090-01-01T00:00:00.000000+00:00..2100-12-31T23:59:59.999999+00:00");
+        $query = $parser->parse('last_activity:2090-01-01T00:00:00.000000+00:00..2100-12-31T23:59:59.999999+00:00');
 
         $res = $this->sigmie->query($indexName, $query)->get();
 
@@ -2024,7 +2021,7 @@ class FilterParserTest extends TestCase
      */
     public function handle_numbers_without_quotes(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->price();
@@ -2058,7 +2055,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $boolean = $parser->parse("price:100");
+        $boolean = $parser->parse('price:100');
 
         $res = $this->sigmie->query($indexName, $boolean)->get();
 
@@ -2072,7 +2069,7 @@ class FilterParserTest extends TestCase
      */
     public function filter_syntax_exception(): void
     {
-        new Properties();
+        new Properties;
 
         $blueprint = new NewProperties;
         $blueprint->category('color');

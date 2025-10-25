@@ -13,11 +13,11 @@ use Sigmie\Document\Document as ElasticsearchDocument;
 
 trait Document
 {
-    use Search;
     use Count;
-    use Mget;
-    use Index;
     use Doc;
+    use Index;
+    use Mget;
+    use Search;
 
     private string $name;
 

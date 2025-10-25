@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Mappings\Properties;
-use Sigmie\Mappings\Types\Number;
-use Sigmie\Mappings\Types\FlatObject;
 use DateTime;
 use Sigmie\Document\Document;
 use Sigmie\Index\Analysis\Analyzer;
@@ -16,24 +13,27 @@ use Sigmie\Index\Mappings;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\NewSemanticField;
+use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Email;
+use Sigmie\Mappings\Types\FlatObject;
 use Sigmie\Mappings\Types\HTML;
 use Sigmie\Mappings\Types\Id;
 use Sigmie\Mappings\Types\LongText;
 use Sigmie\Mappings\Types\Name;
 use Sigmie\Mappings\Types\Nested;
+use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Path;
 use Sigmie\Mappings\Types\Price;
 use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\SearchableNumber;
-use Sigmie\Mappings\Types\Title;
 use Sigmie\Mappings\Types\Tags;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\Mappings\Types\Title;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
@@ -830,7 +830,7 @@ class MappingsTest extends TestCase
         $blueprint = new NewProperties;
         $blueprint->address();
 
-        $index = $this->sigmie
+        $this->sigmie
             ->newIndex($indexName)
             ->properties($blueprint)
             ->create();
@@ -839,7 +839,7 @@ class MappingsTest extends TestCase
 
         $res = $this->analyzeAPICall($indexName, 'Hohn Doe 28, 58511', 'address_field_analyzer');
 
-        $tokens = array_map(fn($token) => $token['token'], $res->json('tokens'));
+        $tokens = array_map(fn ($token) => $token['token'], $res->json('tokens'));
 
         $this->assertEquals(['hohn', 'doe', '28', '58511'], $tokens);
     }
@@ -866,7 +866,7 @@ class MappingsTest extends TestCase
                 ['created_at' => '2023-04-07T12:38:29.000000Z'],
             ),
             new Document(
-                ['created_at' => (new DateTime())->format('Y-m-d\TH:i:s.uP')],
+                ['created_at' => (new DateTime)->format('Y-m-d\TH:i:s.uP')],
             ),
         ]);
 
@@ -912,7 +912,7 @@ class MappingsTest extends TestCase
 
         $hits = $search->json('hits');
 
-        $res = array_map(fn($hit) => $hit['_source']['title'], $hits);
+        $res = array_map(fn ($hit) => $hit['_source']['title'], $hits);
 
         $this->assertEquals('Alpha', $res[0]);
         $this->assertEquals('beta', $res[1]);
@@ -1052,7 +1052,7 @@ class MappingsTest extends TestCase
             ->withNewAnalyzer(function (NewAnalyzer $newAnalyzer): void {
                 $newAnalyzer->tokenizeOnPattern('(@|\.)');
                 $newAnalyzer->lowercase();
-            })->withQueries(fn(string $queryString): array => [new Match_('email', $queryString), new Prefix('email', $queryString), new Term('email.keyword', $queryString)]);
+            })->withQueries(fn (string $queryString): array => [new Match_('email', $queryString), new Prefix('email', $queryString), new Term('email.keyword', $queryString)]);
 
         $index = $this->sigmie
             ->newIndex($indexName)
@@ -1251,7 +1251,7 @@ class MappingsTest extends TestCase
 
         $res = $this->analyzeAPICall($indexName, 'john.doe@gmail.com', 'default');
 
-        array_map(fn($token) => $token['token'], $res->json('tokens'));
+        array_map(fn ($token) => $token['token'], $res->json('tokens'));
 
         $this->indexAPICall($indexName, 'GET');
 
@@ -1286,9 +1286,9 @@ class MappingsTest extends TestCase
      */
     public function analyzers_collection(): void
     {
-        $blueprint = new NewProperties();
-        $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
-        $analyzer = new Analyzer('bar', new WordBoundaries());
+        $blueprint = new NewProperties;
+        $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries);
+        $analyzer = new Analyzer('bar', new WordBoundaries);
 
         $blueprint->text('title')->searchAsYouType();
         $blueprint->text('content')->unstructuredText($analyzer);
@@ -1313,7 +1313,7 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('job_description')
             ->newSemantic(function (NewSemanticField $semantic): void {
                 $semantic->cosineSimilarity();
@@ -1344,7 +1344,7 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('job_description')
             ->newSemantic(function (NewSemanticField $semantic): void {
                 $semantic->euclideanSimilarity();
@@ -1375,7 +1375,7 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('job_description')
             ->newSemantic(function (NewSemanticField $semantic): void {
                 $semantic->dotProductSimilarity();
@@ -1405,7 +1405,7 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('job_description')
             ->newSemantic(function (NewSemanticField $semantic): void {
                 $semantic->maxInnerProductSimilarity();
@@ -1436,7 +1436,7 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('job_description')->semantic(accuracy: 1, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
@@ -1472,7 +1472,7 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('job_description')
             ->semantic(accuracy: 1, api: 'test-embeddings');
 
@@ -1507,7 +1507,7 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('job_description')->semantic(accuracy: 3, dimensions: 512, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
@@ -1541,7 +1541,7 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('job_description')->semantic(accuracy: 5, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
@@ -1575,7 +1575,7 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $jobDescription = $blueprint->text('job_description');
 
         $jobDescription->semantic(accuracy: 3, dimensions: 512, api: 'test-embeddings');
@@ -1612,7 +1612,7 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('job_description')->semantic(accuracy: 7, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
@@ -1744,7 +1744,7 @@ class MappingsTest extends TestCase
                         'age' => 30,
                     ],
                 ],
-            ])
+            ]),
         ]);
 
         $index = $this->sigmie->index($indexName);
@@ -1776,7 +1776,6 @@ class MappingsTest extends TestCase
             });
         });
 
-
         $index = $this->sigmie->newIndex($indexName)
             ->properties($blueprint)->create();
 
@@ -1798,7 +1797,7 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->number('score')->double();
 
         $this->sigmie->newIndex($indexName)
@@ -1818,11 +1817,11 @@ class MappingsTest extends TestCase
     {
         $rawMapping = [
             'score' => [
-                'type' => 'double'
-            ]
+                'type' => 'double',
+            ],
         ];
 
-        $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
+        $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries);
 
         // Test that double field type doesn't throw exception
         $properties = Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
@@ -1839,11 +1838,11 @@ class MappingsTest extends TestCase
     {
         $rawMapping = [
             'metadata' => [
-                'type' => 'flat_object'
-            ]
+                'type' => 'flat_object',
+            ],
         ];
 
-        $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
+        $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries);
 
         // Test that flat_object field type doesn't throw exception
         $properties = Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
@@ -1886,7 +1885,7 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->range('integer_range')->integer();
         $blueprint->range('float_range')->float();
         $blueprint->range('long_range')->long();
@@ -1931,7 +1930,7 @@ class MappingsTest extends TestCase
             'ip_range' => ['type' => 'ip_range'],
         ];
 
-        $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
+        $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries);
 
         $properties = Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
 

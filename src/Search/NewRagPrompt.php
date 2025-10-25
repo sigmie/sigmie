@@ -35,7 +35,7 @@ class NewRagPrompt extends Prompt
 
         $context = $this->createContext($this->contextFields);
 
-        $this->system('Context: ' . json_encode($context));
+        $this->system('Context: '.json_encode($context));
 
         return $this;
     }

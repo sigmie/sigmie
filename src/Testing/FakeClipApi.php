@@ -78,6 +78,7 @@ class FakeClipApi extends FakeEmbeddingsApi
 
         if ($times === null) {
             Assert::assertGreaterThan(0, $actualCount, 'embedImage() was never called');
+
             return;
         }
 
@@ -87,12 +88,13 @@ class FakeClipApi extends FakeEmbeddingsApi
     /**
      * Assert that text embedding was called
      */
-    public function assertTextEmbedWasCalled(int $times = null): void
+    public function assertTextEmbedWasCalled(?int $times = null): void
     {
         $actualCount = count($this->textEmbedCalls);
 
         if ($times === null) {
             Assert::assertGreaterThan(0, $actualCount, 'embedText() was never called');
+
             return;
         }
 
@@ -117,7 +119,7 @@ class FakeClipApi extends FakeEmbeddingsApi
         }
 
         // Also check in text embed calls (single embeds)
-        if (!$found) {
+        if (! $found) {
             foreach ($this->textEmbedCalls as $call) {
                 if (($call['text'] ?? '') === $expectedText) {
                     $found = true;
@@ -137,6 +139,7 @@ class FakeClipApi extends FakeEmbeddingsApi
         foreach ($this->mixedBatchCalls as $call) {
             if ($call['images'] === $images && $call['texts'] === $texts) {
                 Assert::assertTrue(true);
+
                 return;
             }
         }
@@ -152,6 +155,7 @@ class FakeClipApi extends FakeEmbeddingsApi
         foreach ($this->imageEmbedCalls as $call) {
             if ($call['source'] === $source) {
                 Assert::assertTrue(true);
+
                 return;
             }
         }
@@ -161,6 +165,7 @@ class FakeClipApi extends FakeEmbeddingsApi
             foreach ($batch['items'] as $item) {
                 if (($item['text'] ?? '') === $source && $this->isImageSource($source)) {
                     Assert::assertTrue(true);
+
                     return;
                 }
             }
@@ -212,9 +217,11 @@ class FakeClipApi extends FakeEmbeddingsApi
         if (ImageHelper::isUrl($text)) {
             return true;
         }
+
         if (ImageHelper::isBase64($text)) {
             return true;
         }
+
         return ImageHelper::isFilePath($text);
     }
 }

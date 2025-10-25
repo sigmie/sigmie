@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Clustering;
 
+use InvalidArgumentException;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 
 class NewClustering
@@ -55,20 +56,20 @@ class NewClustering
         return match ($this->algorithm) {
             'kmeans' => $this->kMeans($embeddings),
             'hdbscan' => $this->hdbscan($embeddings),
-            default => throw new \InvalidArgumentException('Unsupported algorithm: ' . $this->algorithm)
+            default => throw new InvalidArgumentException('Unsupported algorithm: '.$this->algorithm)
         };
     }
 
     protected function getEmbeddings(): array
     {
-        $payload = array_map(fn($text, $index): array => [
+        $payload = array_map(fn ($text, $index): array => [
             'text' => $text,
             'dims' => 1024,
         ], $this->texts, array_keys($this->texts));
 
         $result = $this->embeddingsApi->batchEmbed($payload);
 
-        return array_map(fn($item) => $item['vector'], $result);
+        return array_map(fn ($item) => $item['vector'], $result);
     }
 
     protected function kMeans(array $embeddings): ClusteringResult
@@ -78,11 +79,11 @@ class NewClustering
 
         // Initialize centroids randomly
         $centroidIndices = array_rand($embeddings, min($k, $n));
-        if (!is_array($centroidIndices)) {
+        if (! is_array($centroidIndices)) {
             $centroidIndices = [$centroidIndices];
         }
 
-        $centroids = array_map(fn($idx) => $embeddings[$idx], $centroidIndices);
+        $centroids = array_map(fn ($idx) => $embeddings[$idx], $centroidIndices);
 
         $assignments = array_fill(0, $n, 0);
 
@@ -108,7 +109,7 @@ class NewClustering
                 }
             }
 
-            if (!$changed) {
+            if (! $changed) {
                 break;
             }
 
@@ -254,7 +255,7 @@ class NewClustering
 
             $processed[$current] = true;
 
-            if (!$visited[$current]) {
+            if (! $visited[$current]) {
                 $visited[$current] = true;
 
                 // Find neighbors of current point
@@ -267,7 +268,7 @@ class NewClustering
 
                 if (count($currentNeighbors) >= $minClusterSize - 1) {
                     foreach ($currentNeighbors as $neighbor) {
-                        if (!isset($processed[$neighbor])) {
+                        if (! isset($processed[$neighbor])) {
                             $queue[] = $neighbor;
                         }
                     }

@@ -100,8 +100,8 @@ class IndexActionsTest extends TestCase
         $fooIndexName = uniqid();
         $barIndexName = uniqid();
 
-        $this->createIndex($fooIndexName, new Settings(), new Mappings());
-        $this->createIndex($barIndexName, new Settings(), new Mappings());
+        $this->createIndex($fooIndexName, new Settings, new Mappings);
+        $this->createIndex($barIndexName, new Settings, new Mappings);
 
         $list = new Collection($this->listIndices());
         $array = $list->map(fn (ListedIndex $index): string => $index->name)->toArray();

@@ -14,7 +14,7 @@ trait Ingest
 
     protected function ingestAPICall(string $name, string $method, ?array $body = null): ElasticsearchResponse
     {
-        $uri = new Uri('/_ingest/pipeline/' . $name);
+        $uri = new Uri('/_ingest/pipeline/'.$name);
 
         $esRequest = new ElasticsearchRequest($method, $uri, $body);
 

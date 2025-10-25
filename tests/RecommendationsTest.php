@@ -17,7 +17,7 @@ class RecommendationsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('name')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
         $blueprint->text('category')->semantic(accuracy: 4, dimensions: 384, api: 'test-embeddings');
         $blueprint->number('price');
@@ -139,7 +139,6 @@ class RecommendationsTest extends TestCase
         }
 
         $this->assertLessThanOrEqual(1, $wirelessEarbudsCount);
-
 
         $hist = $this->sigmie->newRecommend($indexName)
             ->properties($blueprint)

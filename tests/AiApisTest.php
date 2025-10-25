@@ -7,8 +7,8 @@ namespace Sigmie\Tests;
 use Sigmie\AI\APIs\InfinityEmbeddingsApi;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Testing\TestCase;
 use Sigmie\Testing\FakeEmbeddingsApi;
+use Sigmie\Testing\TestCase;
 
 class AiApisTest extends TestCase
 {

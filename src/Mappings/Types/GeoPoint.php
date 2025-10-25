@@ -11,6 +11,7 @@ class GeoPoint extends Type
         if (isset($value['lat']) && isset($value['lon'])) {
             return [true, ''];
         }
+
         if (is_array($value)) {
             foreach ($value as $geoPoint) {
 
@@ -19,11 +20,10 @@ class GeoPoint extends Type
 
                 }
             }
+
             return [true, ''];
         }
-        else {
 
-            return [false, sprintf('The field %s mapped as %s must have lat and lon keys.', $key, $this->typeName())];
-        }
+        return [false, sprintf('The field %s mapped as %s must have lat and lon keys.', $key, $this->typeName())];
     }
 }

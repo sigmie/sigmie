@@ -13,6 +13,7 @@ class Bulk extends ElasticsearchResponse
         if (parent::failed()) {
             return true;
         }
+
         return $this->code() === 400;
     }
 

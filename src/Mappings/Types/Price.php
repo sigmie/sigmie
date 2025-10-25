@@ -39,21 +39,21 @@ class Price extends Type
         [$interval] = explode(',', $param);
 
         $aggs->histogram(
-            $this->name() . '_histogram',
+            $this->name().'_histogram',
             $this->name(),
             interval: (int) $interval
         );
 
-        $aggs->min($this->name() . '_min', $this->name());
-        $aggs->max($this->name() . '_max', $this->name());
+        $aggs->min($this->name().'_min', $this->name());
+        $aggs->max($this->name().'_max', $this->name());
     }
 
     public function facets(array $aggregation): ?array
     {
-        $originalBuckets = $aggregation[$this->name()][$this->name()][$this->name() . '_histogram']['buckets'] ?? $aggregation[$this->name()][$this->name() . '_histogram']['buckets'] ?? [];
+        $originalBuckets = $aggregation[$this->name()][$this->name()][$this->name().'_histogram']['buckets'] ?? $aggregation[$this->name()][$this->name().'_histogram']['buckets'] ?? [];
 
-        $min = $aggregation[$this->name()][$this->name()][$this->name() . '_min']['value'] ?? $aggregation[$this->name()][$this->name() . '_min']['value'] ?? 0;
-        $max = $aggregation[$this->name()][$this->name()][$this->name() . '_max']['value'] ?? $aggregation[$this->name()][$this->name() . '_max']['value'] ?? 0;
+        $min = $aggregation[$this->name()][$this->name()][$this->name().'_min']['value'] ?? $aggregation[$this->name()][$this->name().'_min']['value'] ?? 0;
+        $max = $aggregation[$this->name()][$this->name()][$this->name().'_max']['value'] ?? $aggregation[$this->name()][$this->name().'_max']['value'] ?? 0;
 
         $histogram = array_column($originalBuckets, 'doc_count', 'key');
 

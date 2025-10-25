@@ -207,7 +207,7 @@ class IndexUpdateTest extends TestCase
         $alias = uniqid();
 
         $index = $this->sigmie->newIndex($alias)
-            ->tokenizer(new Whitespace())
+            ->tokenizer(new Whitespace)
             ->create();
 
         $this->assertIndex($alias, function (Assert $index): void {
@@ -448,7 +448,7 @@ class IndexUpdateTest extends TestCase
 
         $oldIndexName = $index->name;
 
-        $index = $index->update(fn(Update $update): Update => $update);
+        $index = $index->update(fn (Update $update): Update => $update);
 
         $this->assertIndexNotExists($oldIndexName);
         $this->assertNotEquals($oldIndexName, $index->name);
@@ -466,7 +466,7 @@ class IndexUpdateTest extends TestCase
 
         $oldIndexName = $index->name;
 
-        $index = $index->update(fn(Update $update): Update => $update);
+        $index = $index->update(fn (Update $update): Update => $update);
 
         $this->assertIndexExists($index->name);
         $this->assertIndexNotExists($oldIndexName);
@@ -565,7 +565,7 @@ class IndexUpdateTest extends TestCase
         // Ensure index doesn't exist
         $this->assertNull($this->sigmie->index($alias));
 
-        $index = $this->sigmie->indexUpsert($alias, fn($builder) => $builder->shards(2)->replicas(1));
+        $index = $this->sigmie->indexUpsert($alias, fn ($builder) => $builder->shards(2)->replicas(1));
 
         $this->assertInstanceOf(AliasedIndex::class, $index);
         $this->assertIndex($alias, function (Assert $index): void {
@@ -599,7 +599,7 @@ class IndexUpdateTest extends TestCase
         });
 
         // Update through upsert
-        $updatedIndex = $this->sigmie->indexUpsert($alias, fn($builder) => $builder->shards(2)
+        $updatedIndex = $this->sigmie->indexUpsert($alias, fn ($builder) => $builder->shards(2)
             ->replicas(1)
             ->stopwords(['new', 'words'], 'test_stopwords'));
 

@@ -18,7 +18,6 @@ class DateTime extends Type
         parent::__construct($name);
     }
 
-
     public function format(string $format): void
     {
         $this->formats[] = $format;

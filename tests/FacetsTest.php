@@ -25,7 +25,9 @@ class FacetsTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties; $blueprint->nested('shirt', function (NewProperties $blueprint): void { $blueprint->nested('red', function (NewProperties $blueprint): void {
+        $blueprint = new NewProperties;
+        $blueprint->nested('shirt', function (NewProperties $blueprint): void {
+            $blueprint->nested('red', function (NewProperties $blueprint): void {
                 $blueprint->price();
             });
         });
@@ -661,7 +663,7 @@ class FacetsTest extends TestCase
         $searchResponse = $this->sigmie->newSearch($indexName)
             ->properties($blueprint())
             ->queryString('')
-            ->facets('price', "(price:100..200)")
+            ->facets('price', '(price:100..200)')
             ->get();
 
         $this->assertNotEmpty($searchResponse->json('errors'));

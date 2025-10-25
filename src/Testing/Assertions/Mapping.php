@@ -42,7 +42,7 @@ trait Mapping
 
     public function assertEmbeddingsPropertyEquals(string $property, string $value): void
     {
-        $field = dot($this->data)->get('mappings.properties.embeddings.properties.' . $property, null);
+        $field = dot($this->data)->get('mappings.properties.embeddings.properties.'.$property, null);
 
         $this->assertEquals($value, $field, sprintf("Failed to assert that mappings.properties.embeddings.properties.%s has value '%s' in index %s.", $property, $value, $this->name));
     }

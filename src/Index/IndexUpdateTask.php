@@ -70,7 +70,7 @@ class IndexUpdateTask
 
     public function finish()
     {
-        $this->indexAPICall($this->dest . '/_settings', 'PUT', [
+        $this->indexAPICall($this->dest.'/_settings', 'PUT', [
             'number_of_replicas' => $this->requestedReplicas,
             'refresh_interval' => '1s',
         ]);
@@ -115,7 +115,7 @@ class IndexUpdateTask
             $tries++;
 
             if ($tries > $maxTries) {
-                throw new RuntimeException('Index update is not completed. Tried ' . $tries . ' times.');
+                throw new RuntimeException('Index update is not completed. Tried '.$tries.' times.');
             }
         }
     }

@@ -8,10 +8,8 @@ use Http\Promise\Promise;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
-use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\MatchAll;
-use Sigmie\Sigmie;
 
 class Search
 {
@@ -53,8 +51,8 @@ class Search
     {
         $this->setElasticsearchConnection($connection);
 
-        $this->query = new MatchAll();
-        $this->aggs = new Aggs();
+        $this->query = new MatchAll;
+        $this->aggs = new Aggs;
     }
 
     // public function properties(NewProperties|Properties $props): self
@@ -179,7 +177,7 @@ class Search
         return $this;
     }
 
-    public function response(): \Sigmie\Base\Http\Responses\Search
+    public function response(): SearchResponse
     {
         $raw = $this->toRaw();
 

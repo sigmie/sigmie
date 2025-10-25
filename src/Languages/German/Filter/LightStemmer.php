@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Languages\German\Filter;
 
-use function Sigmie\Functions\name_configs;
 use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
+
+use function Sigmie\Functions\name_configs;
 
 /**
  * @see https://dl.acm.org/doi/10.1145/1141277.1141523

@@ -17,9 +17,11 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
         if ($this->serverError()) {
             return true;
         }
+
         if ($this->clientError()) {
             return true;
         }
+
         return $this->hasErrorKey();
     }
 

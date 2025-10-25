@@ -19,7 +19,7 @@ abstract class AbstractOpenAIApi
         $this->client = new Client([
             'base_uri' => $baseUri,
             'headers' => [
-                'Authorization' => 'Bearer ' . $apiKey,
+                'Authorization' => 'Bearer '.$apiKey,
                 'Content-Type' => 'application/json',
             ],
             'timeout' => $timeout,

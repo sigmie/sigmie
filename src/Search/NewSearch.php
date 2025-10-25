@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Sigmie\Query\BooleanQueryBuilder;
-use Sigmie\AI\Contracts\EmbeddingsApi;
 use Http\Promise\Promise;
+use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\NewProperties;
@@ -21,6 +20,7 @@ use Sigmie\Mappings\Types\Type;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
+use Sigmie\Query\BooleanQueryBuilder;
 use Sigmie\Query\Contracts\FuzzyQuery;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\FunctionScore;
@@ -167,7 +167,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
             array_filter([
                 sprintf('(%s)', $this->searchContext->filterString),
                 sprintf('(%s)', $this->searchContext->facetFilterString),
-            ], fn ($filter): bool => !in_array(trim($filter, '()'), ['', '0'], true))
+            ], fn ($filter): bool => ! in_array(trim($filter, '()'), ['', '0'], true))
         );
 
         $this->globalFilters = $this->filterParser->parse($this->searchContext->filterString);
@@ -206,7 +206,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
             array_filter([
                 sprintf('(%s)', $this->searchContext->filterString),
                 sprintf('(%s)', $this->searchContext->facetFilterString),
-            ], fn ($filter): bool => !in_array(trim($filter, '()'), ['', '0'], true))
+            ], fn ($filter): bool => ! in_array(trim($filter, '()'), ['', '0'], true))
         );
 
         $this->filters = $this->filterParser->parse($allFilters);
@@ -446,7 +446,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         foreach ($requiredApis as $apiName) {
             if (! isset($this->vectorPools[$apiName])) {
                 $embeddingsApi = $this->getApi($apiName);
-                if (!$embeddingsApi instanceof EmbeddingsApi) {
+                if (! $embeddingsApi instanceof EmbeddingsApi) {
                     continue;
                 }
 
@@ -802,7 +802,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
                 return $queries;
             })
             ->flatten(1)
-            ->map(fn(Query $query): Query => $this->configureVectorQuery($query, $queryBoost));
+            ->map(fn (Query $query): Query => $this->configureVectorQuery($query, $queryBoost));
     }
 
     protected function configureVectorQuery(Query $query, float $queryBoost): Query

@@ -18,15 +18,15 @@ class ClassificationTest extends TestCase
         $examples = [
             [
                 'text' => 'Certified Public Accountant with 5 years experience in financial reporting, tax preparation, and audit. Expert in GAAP, financial analysis, and QuickBooks.',
-                'label' => 'accountant'
+                'label' => 'accountant',
             ],
             [
                 'text' => 'Senior Accountant specializing in general ledger management, reconciliations, and month-end close. Proficient in SAP and financial statement preparation.',
-                'label' => 'accountant'
+                'label' => 'accountant',
             ],
             [
                 'text' => 'Account Executive specializing in enterprise sales, contract negotiations, and client retention. 5 years in SaaS industry.',
-                'label' => 'sales'
+                'label' => 'sales',
             ],
             ['text' => 'Sales Manager leading team of 10 reps, developing sales strategies, and achieving revenue targets. Strong in pipeline management.', 'label' => 'sales'],
             ['text' => 'Business Development Representative focused on lead generation, cold calling, and qualifying prospects. Excellent communication skills.', 'label' => 'sales'],
@@ -126,7 +126,7 @@ class ClassificationTest extends TestCase
             'Moana',
             'Mulan',
             'The Little Mermaid',
-            'Micheal Jackson'
+            'Micheal Jackson',
         ];
 
         $result = $this->sigmie->newClustering($embeddingsApi)

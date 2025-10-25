@@ -11,6 +11,7 @@ class Min extends Metric
 {
     use Meta;
     use Missing;
+
     protected function value(): array
     {
         $value = [

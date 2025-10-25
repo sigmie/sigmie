@@ -18,7 +18,7 @@ class VectorNormalizationTest extends TestCase
         $normalized = VectorMath::normalize($vector);
 
         // Magnitude should be 1.0
-        $magnitude = sqrt(array_sum(array_map(fn($v): int|float => $v * $v, $normalized)));
+        $magnitude = sqrt(array_sum(array_map(fn ($v): int|float => $v * $v, $normalized)));
         $this->assertEqualsWithDelta(1.0, $magnitude, 0.0001);
 
         // Values should be scaled correctly
@@ -74,7 +74,7 @@ class VectorNormalizationTest extends TestCase
         $normalized = VectorMath::normalize($vector);
 
         // Magnitude should be 1.0
-        $magnitude = sqrt(array_sum(array_map(fn($v): int|float => $v * $v, $normalized)));
+        $magnitude = sqrt(array_sum(array_map(fn ($v): int|float => $v * $v, $normalized)));
         $this->assertEqualsWithDelta(1.0, $magnitude, 0.0001);
 
         // Each component should be 1/sqrt(256) = 1/16 = 0.0625

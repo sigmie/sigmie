@@ -38,16 +38,16 @@ class InfinityRerankApi implements RerankApi
         }
 
         $response = $this->client->post('/rerank', [
-            RequestOptions::JSON => $payload
+            RequestOptions::JSON => $payload,
         ]);
 
         $json = json_decode($response->getBody()->getContents(), true);
 
         $data = $json['results'] ?? $json['data'] ?? [];
 
-        return array_map(fn($result): array => [
+        return array_map(fn ($result): array => [
             'index' => $result['index'],
-            'score' => $result['relevance_score'] ?? $result['score']
+            'score' => $result['relevance_score'] ?? $result['score'],
         ], $data);
     }
 }

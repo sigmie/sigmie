@@ -79,7 +79,7 @@ class InfinityClipApi implements EmbeddingsApi
                 'model' => $this->model,
                 'input' => $inputs,
                 'modality' => $modality,
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -104,7 +104,7 @@ class InfinityClipApi implements EmbeddingsApi
                 'model' => $this->model,
                 'input' => $text,
                 'modality' => $modality,
-            ]
+            ],
         ]);
     }
 
@@ -123,7 +123,7 @@ class InfinityClipApi implements EmbeddingsApi
                 'model' => $this->model,
                 'input' => $text,
                 'modality' => 'text',
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -145,7 +145,7 @@ class InfinityClipApi implements EmbeddingsApi
                 'model' => $this->model,
                 'input' => $imageSource,
                 'modality' => 'image',
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -161,9 +161,11 @@ class InfinityClipApi implements EmbeddingsApi
         if (ImageHelper::isUrl($text)) {
             return true;
         }
+
         if (ImageHelper::isBase64($text)) {
             return true;
         }
+
         return ImageHelper::isFilePath($text);
     }
 }

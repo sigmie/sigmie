@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Parse;
 
-use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\GeoDistance;
+use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\MatchNone;
 use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Queries\Term\Exists;
@@ -39,7 +39,7 @@ class FilterParser extends Parser
 
     private function fieldName(string $field): string
     {
-        return $this->parentPath ? $this->parentPath . '.' . $field : $field;
+        return $this->parentPath ? $this->parentPath.'.'.$field : $field;
     }
 
     protected function handleNesting()
@@ -47,13 +47,13 @@ class FilterParser extends Parser
         $this->nestingLevel++;
 
         if ($this->nestingLevel > self::$maxNestingLevel) {
-            throw new ParseException("Nesting level exceeded. Max nesting level is " . self::$maxNestingLevel . ".");
+            throw new ParseException('Nesting level exceeded. Max nesting level is '.self::$maxNestingLevel.'.');
         }
     }
 
     protected function parseString(string $query): array
     {
-        //TODO hanlde throw error is passed eg. color:red price:100 (without logical operator)
+        // TODO hanlde throw error is passed eg. color:red price:100 (without logical operator)
         $this->handleNesting();
 
         // Replace breaks with spaces
@@ -77,7 +77,7 @@ class FilterParser extends Parser
         // for example the ((emails_sent_count>0) AND (last_activity_label:'click_time'))
         // will change to (emails_sent_count>0 AND last_activity_label:'click_time')
         // $query = preg_replace("/\(([^()]*)\)/", '$1', $query);
-        $query = preg_replace_callback('/\(([^()]*?)\)(?=(?:[^"\'"]*["\'][^"\'"]*["\'])*[^"\'"]*$)/', function ($matches): string {
+        $query = preg_replace_callback('/\(([^()]*?)\)(?=(?:[^"\'"]*["\'][^"\'"]*["\'])*[^"\'"]*$)/', function (array $matches): string {
             // Check if the match contains OR, AND, or AND NOT, indicating it's not a single item
             if (str_contains($matches[1], ' OR ') || str_contains($matches[1], ' AND ') || str_contains($matches[1], ' AND NOT ')) {
                 return $matches[0]; // Return the original match with parentheses
@@ -94,36 +94,36 @@ class FilterParser extends Parser
 
             $matchWithParentheses = $matches[0][0];
 
-            //Remove outer parenthesis
+            // Remove outer parenthesis
             $matchWithoutParentheses = preg_replace('/^\((.+)\)$/', '$1', $matchWithParentheses);
 
-            //Remove the parenthetic expresion from the query
+            // Remove the parenthetic expresion from the query
             $query = preg_replace(sprintf("/((\\b(?:AND NOT|AND|OR)?\\b(?=(?:(?:[^'\"]*['\"]){2})*[^'\"]*\$)) )?\\Q(%s)\\E/", $matchWithoutParentheses), '', $query);
 
-            //Trim leading and trailing spaces
+            // Trim leading and trailing spaces
             $query = trim($query);
 
-            //Create filter from parentheses match
+            // Create filter from parentheses match
             $filter = $this->parseString($matchWithoutParentheses);
         } else {
             // Split on the first AND NOT, AND or OR operator that is not in quotes and not in nested curly braces
             [$filter] = preg_split('/\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^\'"\{\}]*[\'"\{\}]){2})*[^\'"\{\}]*$)(?=(?:(?:[^\{\}]*\{[^\{\}]*\})*[^\{\}]*$))/', $query, limit: 2);
 
-            //Remove white spaces
+            // Remove white spaces
             $filter = trim($filter);
         }
 
         // A nested filter like (inStock = 1 AND active = true) is
         // returned as an array from the `parseString` method.
-        //If it's a string filter like inStock = 1 and not
-        //a subquery like (inStock = 1 AND active = true).
+        // If it's a string filter like inStock = 1 and not
+        // a subquery like (inStock = 1 AND active = true).
         if (is_string($filter)) {
 
             // Remove spaces that are not in quotes
             // eg. {user: { id:'465'}} becomes {user:{id:'465'}}
-            $filter = preg_replace_callback('/\s*(\{|\}|:|,)\s*/', fn($matches) => $matches[1], $filter);
+            $filter = preg_replace_callback('/\s*(\{|\}|:|,)\s*/', fn ($matches): string => $matches[1], $filter);
 
-            $query = preg_replace('/' . preg_quote($filter, '/') . '/', '', $query, 1);
+            $query = preg_replace('/'.preg_quote($filter, '/').'/', '', $query, 1);
             $query = trim($query);
             $filter = trim($filter);
         }
@@ -132,7 +132,7 @@ class FilterParser extends Parser
 
         if (preg_match('/^(?P<operator>AND NOT|AND|OR)/', $query, $matchWithoutParentheses)) {
             $operator = $matchWithoutParentheses['operator'];
-            //Remove operator from the query string
+            // Remove operator from the query string
             $query = preg_replace(sprintf('/^%s/', $operator), '', $query);
             $query = trim($query);
 
@@ -186,7 +186,7 @@ class FilterParser extends Parser
                     // • {...} blocks (non-nested or shallowly nested)
                     preg_replace_callback(
                         '/(["\'])(?:\\\\.|[^\\\\])*?\1|{(?:[^{}]|(?R))*}/',
-                        fn($m): string => str_repeat('_', strlen($m[0])),
+                        fn ($m): string => str_repeat('_', strlen($m[0])),
                         $filter
                     )
                 )
@@ -202,8 +202,8 @@ class FilterParser extends Parser
         match ($operator) {
             'AND' => $boolean->must()->query($query1),
             'NOT' => $boolean->mustNot()->query($query1),
-            //Using must here is correct, trust me!
-            //The `NOT` is handled in the second query
+            // Using must here is correct, trust me!
+            // The `NOT` is handled in the second query
             'AND NOT' => $boolean->must()->query($query1),
             'OR' => $boolean->should()->query($query1),
             default => throw new ParseException(sprintf("Unmatched filter operator '%s'", $operator))
@@ -214,8 +214,8 @@ class FilterParser extends Parser
 
             match ($operator) {
                 'AND' => $boolean->must()->query($query2),
-                //Using must here is correct, trust me!
-                //The `NOT` is handled in the first query
+                // Using must here is correct, trust me!
+                // The `NOT` is handled in the first query
                 'NOT' => $boolean->must()->query($query2),
                 'AND NOT' => $boolean->mustNot()->query($query2),
                 'OR' => $boolean->should()->query($query2),
@@ -274,7 +274,7 @@ class FilterParser extends Parser
         return new MatchNone;
     }
 
-    public function handleNested(string $string): MatchNone|\Sigmie\Query\Queries\Text\Nested
+    public function handleNested(string $string): MatchNone|Nested
     {
         preg_match(
             '/(?P<field>[\w\.]+):\{(?P<filters>.*)\}/',
@@ -293,7 +293,7 @@ class FilterParser extends Parser
 
         $filters = trim($filters);
 
-        $parentPath = $this->parentPath ? $this->parentPath . '.' . $field : $field;
+        $parentPath = $this->parentPath ? $this->parentPath.'.'.$field : $field;
 
         // If the type is not nested and  we don't throw on error, we return a MatchNone
         if (is_null($type)) {
@@ -353,7 +353,7 @@ class FilterParser extends Parser
             $field,
             new Range($this->fieldName($realFieldName), [
                 '>=' => $min,
-                '<=' => $max
+                '<=' => $max,
             ])
         );
     }
@@ -388,11 +388,11 @@ class FilterParser extends Parser
         $value = trim($value, '[]');
         $values = explode(',', $value);
 
-        $values = array_filter($values, fn($value): bool => $value !== '');
+        $values = array_filter($values, fn ($value): bool => $value !== '');
 
-        $values = array_map(fn($value): string => trim($value, ' '), $values);
-        $values = array_map(fn($value): string => trim($value, "'"), $values);
-        $values = array_map(fn($value): string => trim($value, '"'), $values);
+        $values = array_map(fn ($value): string => trim($value, ' '), $values);
+        $values = array_map(fn ($value): string => trim($value, "'"), $values);
+        $values = array_map(fn ($value): string => trim($value, '"'), $values);
 
         return new IDs($values);
     }
@@ -444,14 +444,14 @@ class FilterParser extends Parser
         $value = trim($value, '[]');
         $values = explode(',', $value);
 
-        $values = array_filter($values, fn($value): bool => $value !== '');
+        $values = array_filter($values, fn ($value): bool => $value !== '');
 
         // Remove whitespaces from values
-        $values = array_map(fn($value): string => trim($value, ' '), $values);
+        $values = array_map(fn ($value): string => trim($value, ' '), $values);
         // Remove doublue quotes from values
-        $values = array_map(fn($value): string => trim($value, "'"), $values);
+        $values = array_map(fn ($value): string => trim($value, "'"), $values);
         // Remove single quotes from values
-        $values = array_map(fn($value): string => trim($value, '"'), $values);
+        $values = array_map(fn ($value): string => trim($value, '"'), $values);
 
         $realFieldName = $this->handleFieldName($field);
 

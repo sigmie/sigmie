@@ -17,8 +17,7 @@ class ComboFieldTest extends TestCase
     {
         $indexName = uniqid();
 
-
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('name');
         $blueprint->text('category');
         $blueprint->text('brand');
@@ -75,7 +74,7 @@ class ComboFieldTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('title');
         $blueprint->text('tags');
         $blueprint->text('description');

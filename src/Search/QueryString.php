@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-class QueryString implements \Stringable
+use Stringable;
+
+class QueryString implements Stringable
 {
-    public function __construct(private string $text, private float $weight = 1.0, private ?int $dimension = null, private ?array $vector = null, private ?array $fields = null)
-    {
-    }
+    public function __construct(private string $text, private float $weight = 1.0, private ?int $dimension = null, private ?array $vector = null, private ?array $fields = null) {}
 
     public function text(): string
     {
@@ -33,12 +33,14 @@ class QueryString implements \Stringable
     public function setDimension(int $dimension): self
     {
         $this->dimension = $dimension;
+
         return $this;
     }
 
     public function setVector(array $vector): self
     {
         $this->vector = $vector;
+
         return $this;
     }
 

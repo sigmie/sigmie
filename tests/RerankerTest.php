@@ -18,10 +18,10 @@ class RerankerTest extends TestCase
      */
     public function rerank_threshold(): void
     {
-        $indexName = uniqid(); 
-        $cohereReranker = $this->rerankApi; 
+        $indexName = uniqid();
+        $cohereReranker = $this->rerankApi;
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->longText('name')->semantic(dimensions: 384, api: 'test-embeddings');
         $blueprint->longText('description')->semantic(dimensions: 384, api: 'test-embeddings');
 
@@ -88,4 +88,3 @@ class RerankerTest extends TestCase
         }
     }
 }
-

@@ -32,7 +32,7 @@ class InfinityEmbeddingsApi implements EmbeddingsApi
             RequestOptions::JSON => [
                 'model' => $this->model,
                 'input' => $text,
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -46,13 +46,13 @@ class InfinityEmbeddingsApi implements EmbeddingsApi
             return [];
         }
 
-        $texts = array_map(fn($item) => $item['text'] ?? '', $payload);
+        $texts = array_map(fn ($item) => $item['text'] ?? '', $payload);
 
         $response = $this->client->post('/embeddings', [
             RequestOptions::JSON => [
                 'model' => $this->model,
                 'input' => $texts,
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -70,7 +70,7 @@ class InfinityEmbeddingsApi implements EmbeddingsApi
             RequestOptions::JSON => [
                 'model' => $this->model,
                 'input' => $text,
-            ]
+            ],
         ]);
     }
 

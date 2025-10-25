@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Testing;
 
 use GuzzleHttp\Promise\Promise;
-use Sigmie\AI\Contracts\EmbeddingsApi;
 use PHPUnit\Framework\Assert;
+use Sigmie\AI\Contracts\EmbeddingsApi;
 
 class FakeEmbeddingsApi implements EmbeddingsApi
 {
@@ -45,23 +45,25 @@ class FakeEmbeddingsApi implements EmbeddingsApi
         return $this->realApi->model();
     }
 
-    public function assertEmbedWasCalled(int $times = null): void
+    public function assertEmbedWasCalled(?int $times = null): void
     {
         $actualCount = count($this->embedCalls);
 
         if ($times === null) {
             Assert::assertGreaterThan(0, $actualCount, 'embed() was never called');
+
             return;
         }
 
         Assert::assertEquals($times, $actualCount, sprintf('embed() was called %d times, expected %d times', $actualCount, $times));
     }
 
-    public function assertEmbedWasCalledWith(string $text, int $dimensions = null): void
+    public function assertEmbedWasCalledWith(string $text, ?int $dimensions = null): void
     {
         foreach ($this->embedCalls as $call) {
             if ($call['text'] === $text && ($dimensions === null || $call['dimensions'] === $dimensions)) {
                 Assert::assertTrue(true);
+
                 return;
             }
         }
@@ -73,12 +75,13 @@ class FakeEmbeddingsApi implements EmbeddingsApi
         Assert::fail($message);
     }
 
-    public function assertBatchEmbedWasCalled(int $times = null): void
+    public function assertBatchEmbedWasCalled(?int $times = null): void
     {
         $actualCount = count($this->batchEmbedCalls);
 
         if ($times === null) {
             Assert::assertGreaterThan(0, $actualCount, 'batchEmbed() was never called');
+
             return;
         }
 
@@ -90,6 +93,7 @@ class FakeEmbeddingsApi implements EmbeddingsApi
         foreach ($this->batchEmbedCalls as $call) {
             if (count($call) === $itemCount) {
                 Assert::assertTrue(true);
+
                 return;
             }
         }
@@ -112,7 +116,7 @@ class FakeEmbeddingsApi implements EmbeddingsApi
         }
 
         // Also check in single embed calls
-        if (!$found) {
+        if (! $found) {
             foreach ($this->embedCalls as $call) {
                 if (($call['text'] ?? '') === $expectedText) {
                     $found = true;

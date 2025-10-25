@@ -11,9 +11,9 @@ class Hit extends Document
     public function __construct(
         array $_source,
         string $_id,
-        public null|float $_score,
+        public ?float $_score,
         ?string $_index = null,
-        public readonly null|array $sort = null,
+        public readonly ?array $sort = null,
     ) {
         parent::__construct($_source, $_id);
 

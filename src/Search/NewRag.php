@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use Closure;
 use DateTime;
+use InvalidArgumentException;
 use RuntimeException;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Contracts\RerankApi;
-use Sigmie\Rag\NewRerank;
-use Sigmie\Rag\RagAnswer;
 use Sigmie\AI\History\Index as HistoryIndex;
 use Sigmie\AI\Role;
 use Sigmie\Document\Hit;
+use Sigmie\Rag\NewRerank;
+use Sigmie\Rag\RagAnswer;
 
 use function Sigmie\Functions\random_name;
 
@@ -22,7 +24,7 @@ class NewRag
 
     protected ?NewRerank $rerankBuilder = null;
 
-    protected ?\Closure $promptBuilder = null;
+    protected ?Closure $promptBuilder = null;
 
     protected string $instructions = '';
 
@@ -46,7 +48,7 @@ class NewRag
         return $this;
     }
 
-    public function rerank(\Closure $callback): self
+    public function rerank(Closure $callback): self
     {
         $this->rerankBuilder = new NewRerank($this->reranker);
 
@@ -57,12 +59,13 @@ class NewRag
 
     /**
      * Configure the prompt builder
-     * @param \Closure $callback Callback that receives NewRagPrompt
+     *
+     * @param  Closure  $callback  Callback that receives NewRagPrompt
      */
-    public function prompt(\Closure $callback): self
+    public function prompt(Closure $callback): self
     {
-        if (!is_callable($callback)) {
-            throw new \InvalidArgumentException('Prompt callback must be callable');
+        if (! is_callable($callback)) {
+            throw new InvalidArgumentException('Prompt callback must be callable');
         }
 
         $this->promptBuilder = $callback;
@@ -139,7 +142,7 @@ class NewRag
 
     protected function executeRerank(array $documentHits): array
     {
-        if (!$this->reranker instanceof RerankApi || !$this->rerankBuilder instanceof NewRerank) {
+        if (! $this->reranker instanceof RerankApi || ! $this->rerankBuilder instanceof NewRerank) {
             return $documentHits;
         }
 
@@ -149,9 +152,9 @@ class NewRag
     protected function buildPrompt(array $documentHits, array $historyHits): NewRagPrompt
     {
         $messages = array_merge(
-            ...array_map(fn(Hit $hit): array => array_map(
-                fn(array $turn): array => [
-                    'role'    => Role::from($turn['role']),
+            ...array_map(fn (Hit $hit): array => array_map(
+                fn (array $turn): array => [
+                    'role' => Role::from($turn['role']),
                     'content' => $turn['content'],
                 ],
                 $hit->_source['turns']
@@ -160,7 +163,7 @@ class NewRag
 
         $prompt = new NewRagPrompt($documentHits, $messages);
 
-        if ($this->promptBuilder instanceof \Closure) {
+        if ($this->promptBuilder instanceof Closure) {
             ($this->promptBuilder)($prompt);
         }
 
@@ -177,7 +180,7 @@ class NewRag
 
     protected function storeConversation(NewRagPrompt $prompt, string $answerContent, string $model): void
     {
-        if (!$this->historyIndex instanceof HistoryIndex) {
+        if (! $this->historyIndex instanceof HistoryIndex) {
             return;
         }
 
@@ -187,12 +190,12 @@ class NewRag
         $turn = [
             ...array_filter(
                 $prompt->messages(),
-                fn($message): bool => $message['role'] === Role::User
+                fn ($message): bool => $message['role'] === Role::User
             ),
             [
                 'role' => Role::Model,
                 'content' => $answerContent,
-            ]
+            ],
         ];
 
         $this->historyIndex->store(

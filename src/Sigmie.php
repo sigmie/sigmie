@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace Sigmie;
 
-use Sigmie\Base\ElasticsearchException;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
+use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
 use Sigmie\Base\Drivers\Elasticsearch;
 use Sigmie\Base\Drivers\Opensearch;
+use Sigmie\Base\ElasticsearchException;
 use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
+use Sigmie\Classification\NewClassification;
+use Sigmie\Clustering\NewClustering;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Http\JSONClient;
@@ -32,17 +35,14 @@ use Sigmie\Query\Search;
 use Sigmie\Search\ExistingScript;
 use Sigmie\Search\NewMultiSearch;
 use Sigmie\Search\NewRag;
+use Sigmie\Search\NewRecommendations;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewTemplate;
-use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\Classification\NewClassification;
-use Sigmie\Clustering\NewClustering;
-use Sigmie\Search\NewRecommendations;
 
 class Sigmie
 {
-    use IndexActions;
     use APIsSearch;
+    use IndexActions;
 
     public const DATE_FORMAT = 'Y-m-d H:i:s.u';
 
@@ -134,15 +134,15 @@ class Sigmie
     public function rawQuery(
         string $index,
         array $query
-    ): \Sigmie\Base\Http\Responses\Search {
+    ): Base\Http\Responses\Search {
         return $this->searchAPICall($index, $query);
     }
 
     public function query(
         string $index,
-        Query $query = new MatchAll(),
-        AggsInterface $aggs = new Aggs()
-    ): \Sigmie\Query\Search {
+        Query $query = new MatchAll,
+        AggsInterface $aggs = new Aggs
+    ): Search {
         $search = new Search($this->elasticsearchConnection);
 
         $search = $search->query($query)->aggs($aggs);
@@ -200,7 +200,7 @@ class Sigmie
     public function isConnected(): bool
     {
         try {
-            $request = new ElasticsearchRequest('GET', new Uri());
+            $request = new ElasticsearchRequest('GET', new Uri);
 
             $res = ($this->elasticsearchConnection)($request);
 
@@ -220,8 +220,8 @@ class Sigmie
         $client = JSONClient::create($hosts, $config);
 
         $driver = match ($engine) {
-            SearchEngineType::Elasticsearch => new Elasticsearch(),
-            SearchEngineType::OpenSearch => new Opensearch(),
+            SearchEngineType::Elasticsearch => new Elasticsearch,
+            SearchEngineType::OpenSearch => new Opensearch,
         };
 
         return new static(new HttpConnection($client, $driver));

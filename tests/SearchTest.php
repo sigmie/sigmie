@@ -22,7 +22,7 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('name');
 
         $this->sigmie->newIndex($indexName)
@@ -67,7 +67,7 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('name');
         $blueprint->text('category');
         $blueprint->text('description');
@@ -104,7 +104,7 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->searchableNumber('number');
 
         $this->sigmie->newIndex($indexName)
@@ -124,7 +124,6 @@ class SearchTest extends TestCase
             ->queryString('0800-0234379')
             ->get();
 
-
         $this->assertNotEmpty($res->hits());
     }
 
@@ -135,7 +134,7 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->date('date');
 
         $index = $this->sigmie->collect($indexName, refresh: true);
@@ -162,7 +161,7 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->date('date');
 
         $index = $this->sigmie->newIndex($indexName)
@@ -194,7 +193,7 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->id('id');
 
         $index = $this->sigmie->newIndex($indexName)
@@ -226,7 +225,7 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->name('name');
         $blueprint->nested('contact', function (NewProperties $blueprint): void {
             $blueprint->name('name');
@@ -274,7 +273,7 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->name('name');
         $blueprint->nested('contact', function (NewProperties $blueprint): void {
             $blueprint->name('name');
@@ -318,7 +317,7 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->title();
 
         $index = $this->sigmie->newIndex($indexName)
@@ -364,7 +363,7 @@ class SearchTest extends TestCase
 
         $res = $this->indexAPICall($indexName, 'GET');
 
-        $this->assertEquals(Price::class, $res->json($index->name . '.mappings.properties.price.meta.class'));
+        $this->assertEquals(Price::class, $res->json($index->name.'.mappings.properties.price.meta.class'));
 
         $index = $this->sigmie->collect($indexName, refresh: true);
 
@@ -1045,7 +1044,7 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('name');
 
         $this->sigmie->newIndex($indexName)
@@ -1079,7 +1078,7 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->title('name')->semantic(dimensions: 384, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)
@@ -1193,7 +1192,7 @@ class SearchTest extends TestCase
         $this->sigmie->newIndex($deIndexName)
             ->properties($blueprint)
             ->language(new German)
-            //without normalize it's not found
+            // without normalize it's not found
             ->germanNormalize()
             ->create();
 
@@ -1204,13 +1203,13 @@ class SearchTest extends TestCase
 
         $deDocs = [
             new Document([
-                'name' => 'tür'
+                'name' => 'tür',
             ]),
         ];
 
         $enDocs = [
             new Document([
-                'name' => 'door'
+                'name' => 'door',
             ]),
         ];
 
@@ -1232,9 +1231,9 @@ class SearchTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->range('numbers')->integer()
-            ->withQueries(fn(string $queryString): array => [
+            ->withQueries(fn (string $queryString): array => [
                 new Range('numbers', [
                     '>=' => $queryString,
                     '<=' => $queryString,
@@ -1284,5 +1283,4 @@ class SearchTest extends TestCase
 
         $this->assertEquals(0, $response->total());
     }
-
 }

@@ -18,7 +18,7 @@ class ApiAssertionsExampleTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
@@ -43,7 +43,7 @@ class ApiAssertionsExampleTest extends TestCase
      */
     public function example_llm_assertions(): void
     {
-        $prompt = new Prompt();
+        $prompt = new Prompt;
         $prompt->user('Tell me a joke');
 
         $this->llmApi->jsonAnswer($prompt);
@@ -58,5 +58,4 @@ class ApiAssertionsExampleTest extends TestCase
         $calls = $this->llmApi->getJsonAnswerCalls();
         $this->assertCount(1, $calls);
     }
-
 }

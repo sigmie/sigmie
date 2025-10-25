@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\AI\Embedders;
 
-use Http\Promise\Promise;
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise\PromiseInterface;
+use Http\Promise\Promise;
 use Sigmie\AI\Contracts\Embedder;
 
 class OpenAIProvider implements Embedder
@@ -18,9 +18,9 @@ class OpenAIProvider implements Embedder
         $this->client = new Client([
             'base_uri' => 'https://api.openai.com',
             'headers' => [
-                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Authorization' => 'Bearer '.$this->apiKey,
                 'Content-Type' => 'application/json',
-            ]
+            ],
         ]);
     }
 
@@ -31,10 +31,11 @@ class OpenAIProvider implements Embedder
                 'model' => $this->model,
                 'input' => $text,
                 'dimensions' => $dimensions,
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
+
         return $data['data'][0]['embedding'];
     }
 
@@ -45,18 +46,18 @@ class OpenAIProvider implements Embedder
         }
 
         $texts = array_column($payload, 'text');
-        $dimensions = isset($payload[0]['dims']) ? (int)$payload[0]['dims'] : 1536;
+        $dimensions = isset($payload[0]['dims']) ? (int) $payload[0]['dims'] : 1536;
 
         $response = $this->client->post('/v1/embeddings', [
             'json' => [
                 'model' => $this->model,
                 'input' => $texts,
                 'dimensions' => $dimensions,
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
-        
+
         foreach ($data['data'] as $index => $embedding) {
             $payload[$index]['vector'] = $embedding['embedding'];
         }
@@ -71,15 +72,14 @@ class OpenAIProvider implements Embedder
                 'model' => $this->model,
                 'input' => $text,
                 'dimensions' => $dimensions,
-            ]
+            ],
         ]);
 
-        return new class($promise) implements Promise {
-            public function __construct(private PromiseInterface $promise)
-            {
-            }
+        return new class($promise) implements Promise
+        {
+            public function __construct(private PromiseInterface $promise) {}
 
-            public function then(callable $onFulfilled = null, callable $onRejected = null)
+            public function then(?callable $onFulfilled = null, ?callable $onRejected = null)
             {
                 return $this->promise->then(
                     function ($response) use ($onFulfilled) {
@@ -104,6 +104,7 @@ class OpenAIProvider implements Embedder
             {
                 $response = $this->promise->wait($unwrap);
                 $data = json_decode($response->getBody()->getContents(), true);
+
                 return ['_embeddings' => $data['data'][0]['embedding']];
             }
         };

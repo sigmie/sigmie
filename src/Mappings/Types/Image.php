@@ -31,11 +31,11 @@ class Image extends Text
         // Handle multiple images (array)
         if (is_array($value)) {
             foreach ($value as $imageSource) {
-                if (!is_string($imageSource)) {
+                if (! is_string($imageSource)) {
                     return [false, sprintf('The field %s contains a non-string value in the array', $key)];
                 }
 
-                if ($this->isSemantic() && !$this->isValidImageSource($imageSource)) {
+                if ($this->isSemantic() && ! $this->isValidImageSource($imageSource)) {
                     return [false, sprintf('The field %s contains an invalid image source: %s. Must be a URL, base64 string, or existing file path.', $key, $imageSource)];
                 }
             }
@@ -43,12 +43,12 @@ class Image extends Text
             return [true, ''];
         }
 
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             return [false, sprintf('The field %s mapped as image must be a string (URL, base64, or file path)', $key)];
         }
 
         // Validate it's a valid image source when semantic is enabled
-        if ($this->isSemantic() && !$this->isValidImageSource($value)) {
+        if ($this->isSemantic() && ! $this->isValidImageSource($value)) {
             return [false, sprintf('The field %s contains an invalid image source: %s. Must be a URL, base64 string, or existing file path.', $key, $value)];
         }
 
@@ -64,9 +64,11 @@ class Image extends Text
         if (ImageHelper::isUrl($value)) {
             return true;
         }
+
         if (ImageHelper::isBase64($value)) {
             return true;
         }
+
         return ImageHelper::isFilePath($value);
     }
 
@@ -79,7 +81,7 @@ class Image extends Text
         int $dimensions = 256,
     ): NewSemanticField {
         return $this->newSemantic(
-            fn($semantic) => $semantic
+            fn ($semantic) => $semantic
                 ->accuracy($accuracy, $dimensions)
                 ->api($api)
                 ->fieldType('image')

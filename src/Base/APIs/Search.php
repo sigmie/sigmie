@@ -21,7 +21,7 @@ trait Search
 
     protected function scrollAPICall(string $scrollId, string $scroll): SearchResponse
     {
-        $uri = new Uri("/_search/scroll");
+        $uri = new Uri('/_search/scroll');
 
         return $this->elasticsearchCall(new SearchRequest('POST', $uri, [
             'scroll' => $scroll,
@@ -34,7 +34,7 @@ trait Search
         $uri = new Uri(sprintf('/%s/_search', $index));
 
         if ($scroll) {
-            $uri = $uri->withQuery('scroll=' . $scroll);
+            $uri = $uri->withQuery('scroll='.$scroll);
         }
 
         return new SearchRequest('POST', $uri, $query);

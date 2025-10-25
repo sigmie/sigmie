@@ -19,8 +19,8 @@ class Index
         ?MappingsInterface $mappings = null,
         public readonly ?array $raw = null
     ) {
-        $this->settings = $settings ?: new Settings();
-        $this->mappings = $mappings ?: new Mappings();
+        $this->settings = $settings ?: new Settings;
+        $this->mappings = $mappings ?: new Mappings;
     }
 
     public static function fromRaw(string $name, array $raw): static

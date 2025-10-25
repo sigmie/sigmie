@@ -23,7 +23,7 @@ class NestedVector extends TypesNested
         public readonly VectorSimilarity $similarity = VectorSimilarity::Cosine,
         public readonly ?string $queryApiName = null,
     ) {
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->type(
             new BaseVector(
                 name: 'vector',
@@ -35,7 +35,8 @@ class NestedVector extends TypesNested
         parent::__construct($name, $props);
     }
 
-    public function dims(): int {
+    public function dims(): int
+    {
         return $this->dims;
     }
 }

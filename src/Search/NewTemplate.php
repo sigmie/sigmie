@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Sigmie\Query\BooleanQueryBuilder;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
+use Sigmie\Query\BooleanQueryBuilder;
 use Sigmie\Query\Contracts\FuzzyQuery;
 use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\FunctionScore;
@@ -23,7 +23,6 @@ use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
 use Sigmie\Search\Contracts\SearchTemplateBuilder as SearchTemplateBuilderInterface;
 use Sigmie\Shared\Collection;
-
 
 /**
  * @deprecated This class is deprecated and will be removed in future versions.
@@ -97,13 +96,13 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
         $search = new Search($boolean);
         $highlight = new Collection($this->highlight);
 
-        $highlight->each(fn(string $field): Search => $search->highlight($field));
+        $highlight->each(fn (string $field): Search => $search->highlight($field));
 
         $search->fields($this->retrieve ?? $this->properties->fieldNames());
 
         $defaultFilters = json_encode($this->filters->toRaw());
 
-        $boolean->must()->bool(fn(Boolean $boolean) => $boolean->addRaw('filter', sprintf('@filters(%s)@endfilters', $defaultFilters)));
+        $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('filter', sprintf('@filters(%s)@endfilters', $defaultFilters)));
 
         $defaultSorts = json_encode($this->sort);
 
@@ -128,7 +127,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
             $fields = new Collection($this->fields);
 
-            $shouldClauses = new Collection();
+            $shouldClauses = new Collection;
 
             $defaultEmbeddings = json_encode([]);
 
@@ -136,7 +135,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             $vectorQueries = $this->properties->nestedSemanticFields()
                 ->map(function (Text $field) use ($defaultEmbeddings, &$embeddingsTags): array {
 
-                    $tag = '_embeddings_' . str_replace('.', '', $field->name());
+                    $tag = '_embeddings_'.str_replace('.', '', $field->name());
                     $embeddingsTags[] = $tag;
 
                     return $field->queries(
@@ -148,7 +147,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             if ($this->semanticSearch) {
                 $vectorBool = new Boolean;
                 $vectorQueries
-                    ->each(fn(Query $query): BooleanQueryBuilder => $vectorBool->should()->query($query));
+                    ->each(fn (Query $query): BooleanQueryBuilder => $vectorBool->should()->query($query));
 
                 $functionScore = new FunctionScore(
                     $vectorBool,
@@ -158,7 +157,6 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
                 $shouldClauses->add($functionScore);
             }
-
 
             $fields->each(function ($field) use (&$shouldClauses): void {
                 $boost = array_key_exists($field, $this->weight) ? $this->weight[$field] : 1;
@@ -192,7 +190,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             if ($shouldClauses->isEmpty()) {
                 $queryBoolean->should()->query(new MatchNone);
             } else {
-                $shouldClauses->each(fn(QueryClause $queryClase): BooleanQueryBuilder => $queryBoolean->should()->query($queryClase));
+                $shouldClauses->each(fn (QueryClause $queryClase): BooleanQueryBuilder => $queryBoolean->should()->query($queryClase));
             }
 
             $query = json_encode($queryBoolean->toRaw()['bool']['should'] ?? (new MatchAll)->toRaw());

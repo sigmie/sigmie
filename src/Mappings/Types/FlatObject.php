@@ -15,7 +15,6 @@ class FlatObject extends Type
         $this->type = ElasticsearchMappingType::FLAT_OBJECT->value;
     }
 
-
     public function validate(string $key, mixed $value): array
     {
         if (! is_array($value) && ! is_object($value)) {

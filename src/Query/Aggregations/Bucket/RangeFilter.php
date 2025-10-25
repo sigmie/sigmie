@@ -25,7 +25,7 @@ class RangeFilter extends Bucket
         ];
 
         foreach ($this->ranges as $operator => $value) {
-            $operator = (new RangeOperatorParser())->parse($operator);
+            $operator = (new RangeOperatorParser)->parse($operator);
 
             $res['filter']['range'][$this->field][$operator] = $value;
         }

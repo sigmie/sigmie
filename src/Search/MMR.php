@@ -15,10 +15,10 @@ class MMR
     /**
      * Apply Maximal Marginal Relevance to diversify results
      *
-     * @param array $hits Array of hits with their vectors
-     * @param array $seedDocs Seed documents to extract query vectors from
-     * @param string $fieldName Field name containing vectors in embeddings
-     * @param int $topK Number of diversified results to return
+     * @param  array  $hits  Array of hits with their vectors
+     * @param  array  $seedDocs  Seed documents to extract query vectors from
+     * @param  string  $fieldName  Field name containing vectors in embeddings
+     * @param  int  $topK  Number of diversified results to return
      * @return array Diversified results
      */
     public function diversify(array $hits, array $seedDocs, string $fieldName, int $topK): array
@@ -107,19 +107,21 @@ class MMR
 
         foreach ($seedDocs as $doc) {
             $source = is_array($doc) ? ($doc['_source'] ?? null) : ($doc->_source ?? null);
-            if (!$source) {
+            if (! $source) {
                 continue;
             }
-            if (!isset($source['_embeddings'])) {
+
+            if (! isset($source['_embeddings'])) {
                 continue;
             }
 
             // Get all vectors for the field using dot notation
             $vectors = dot($source['_embeddings'])->get($fieldName);
-            if (!$vectors) {
+            if (! $vectors) {
                 continue;
             }
-            if (!is_array($vectors)) {
+
+            if (! is_array($vectors)) {
                 continue;
             }
 
@@ -144,25 +146,27 @@ class MMR
     {
         $source = is_array($hit) ? ($hit['_source'] ?? null) : ($hit->_source ?? null);
 
-        if (!$source || !isset($source['_embeddings'])) {
+        if (! $source || ! isset($source['_embeddings'])) {
             return null;
         }
 
         // Get all vectors for the field using dot notation (same as NewRecommendations)
         $vectors = dot($source['_embeddings'])->get($fieldName);
 
-        if (!$vectors || !is_array($vectors)) {
+        if (! $vectors || ! is_array($vectors)) {
             return null;
         }
 
         // Get the first valid vector (should be consistent across all documents)
         foreach ($vectors as $vectorData) {
-            if (!is_array($vectorData)) {
+            if (! is_array($vectorData)) {
                 continue;
             }
-            if (empty($vectorData)) {
+
+            if ($vectorData === []) {
                 continue;
             }
+
             // Check if it's a numeric vector array
             $firstElement = reset($vectorData);
             if (is_numeric($firstElement)) {

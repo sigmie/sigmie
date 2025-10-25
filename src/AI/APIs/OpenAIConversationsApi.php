@@ -7,9 +7,9 @@ namespace Sigmie\AI\APIs;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
 use Sigmie\AI\Answers\OpenAIConversationAnswer;
+use Sigmie\AI\Contracts\LLMAnswer;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Prompt;
-use Sigmie\AI\Contracts\LLMAnswer;
 
 class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
 {
@@ -29,16 +29,16 @@ class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
     {
         // Create conversation with initial message
         $conversationPayload = [
-            //['metadata' => $this->metadata],
+            // ['metadata' => $this->metadata],
             'items' => [
                 [
                     'type' => 'message',
                     'role' => 'user',
                     'content' => [
-                        ['type' => 'input_text', 'text' => $input]
-                    ]
-                ]
-            ]
+                        ['type' => 'input_text', 'text' => $input],
+                    ],
+                ],
+            ],
         ];
 
         $conversationResponse = $this->client->post('/v1/conversations', [
@@ -67,9 +67,9 @@ class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
     {
         $conversation = $this->conversation();
 
-        $input = array_map(fn($message): array => [
+        $input = array_map(fn ($message): array => [
             'role' => $message['role']->value,
-            'content' => $message['content']
+            'content' => $message['content'],
         ], $prompt->messages());
 
         $options = [
@@ -92,9 +92,9 @@ class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
     {
         $conversation = $this->conversation();
 
-        $input = array_map(fn($message): array => [
+        $input = array_map(fn ($message): array => [
             'role' => $message['role']->value,
-            'content' => $message['content']
+            'content' => $message['content'],
         ], $prompt->messages());
 
         $options = [
@@ -120,9 +120,9 @@ class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
 
         yield ['type' => 'conversation.created', 'conversation_id' => $conversation];
 
-        $input = array_map(fn($message): array => [
+        $input = array_map(fn ($message): array => [
             'role' => $message['role']->value,
-            'content' => $message['content']
+            'content' => $message['content'],
         ], $prompt->messages());
 
         $options = [
@@ -146,7 +146,7 @@ class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
         $stream = $response->getBody();
         $buffer = '';
 
-        while (!$stream->eof()) {
+        while (! $stream->eof()) {
             // Read smaller chunks for faster yielding
             $chunk = $stream->read(256);
             if ($chunk === '') {

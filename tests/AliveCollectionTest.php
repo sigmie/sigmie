@@ -449,7 +449,7 @@ class AliveCollectionTest extends TestCase
         $this->assertEmpty($doc->_source);
 
         $docs = $index->take(3);
-        
+
         $firstDoc = null;
         foreach ($docs as $doc) {
             if ($doc->_id === '2') {
@@ -618,10 +618,9 @@ class AliveCollectionTest extends TestCase
         $index->add(new Document([
             'title' => 'Test',
             'birth_date' => '2023-04-07',
-            'created_at' => '2023-04-07T12:38:29.000000Z'
+            'created_at' => '2023-04-07T12:38:29.000000Z',
         ]));
 
         $this->assertCount(1, $index);
     }
-
 }

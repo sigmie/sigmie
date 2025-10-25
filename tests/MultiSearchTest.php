@@ -19,7 +19,7 @@ class MultiSearchTest extends TestCase
         $indexName1 = uniqid();
         $indexName2 = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('name');
 
         $this->sigmie->newIndex($indexName1)
@@ -54,8 +54,8 @@ class MultiSearchTest extends TestCase
             ->properties($blueprint)
             ->queryString('Goofy');
 
-        //Calling the query get method should affect the results
-        $res = $multisearch->newQuery($indexName1)->matchAll()->get();
+        // Calling the query get method should affect the results
+        $multisearch->newQuery($indexName1)->matchAll()->get();
 
         $multisearch->raw($indexName1, $multisearch->newQuery($indexName1)->matchNone()->toRaw());
 

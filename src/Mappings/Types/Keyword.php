@@ -32,7 +32,7 @@ class Keyword extends Type
     public function normalizer(): ?NormalizerInterface
     {
         return new Normalizer(
-            $this->name . '_field_normalizer',
+            $this->name.'_field_normalizer',
             filters: [new Lowercase]
         );
     }

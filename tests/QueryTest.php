@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Query\BooleanQueryBuilder;
 use Exception;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Query\BooleanQueryBuilder;
 use Sigmie\Query\Queries\Compound\Boolean as QueriesCompoundBoolean;
 use Sigmie\Testing\TestCase;
 
@@ -21,7 +21,7 @@ class QueryTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
 
         $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -56,7 +56,7 @@ class QueryTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->name('name');
         $blueprint->number('age')->integer();
 
@@ -91,7 +91,7 @@ class QueryTest extends TestCase
         $search = $this->sigmie->newQuery($indexName)
             ->properties($blueprint)
             ->bool(
-                fn(QueriesCompoundBoolean $bool) => $bool->must()->parse('name:"John Doe" AND age<21')
+                fn (QueriesCompoundBoolean $bool) => $bool->must()->parse('name:"John Doe" AND age<21')
             )
             ->get();
 
@@ -107,7 +107,7 @@ class QueryTest extends TestCase
     {
         $name = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->name('name');
 
         $this->sigmie->newIndex($name)
@@ -194,7 +194,7 @@ class QueryTest extends TestCase
             $boolean->mustNot->wildcard('foo', '**/*');
             $boolean->mustNot->ids(['unqie']);
 
-            $boolean->should->bool(fn(QueriesCompoundBoolean $boolean): BooleanQueryBuilder => $boolean->must->match('foo', 'bar'));
+            $boolean->should->bool(fn (QueriesCompoundBoolean $boolean): BooleanQueryBuilder => $boolean->must->match('foo', 'bar'));
         })
             ->from(0)
             ->size(2)
@@ -221,7 +221,7 @@ class QueryTest extends TestCase
             $boolean->mustNot->wildcard('foo', '**/*');
             $boolean->mustNot->ids(['unqie']);
 
-            $boolean->should->bool(fn(QueriesCompoundBoolean $boolean): BooleanQueryBuilder => $boolean->must->match('foo', 'bar'));
+            $boolean->should->bool(fn (QueriesCompoundBoolean $boolean): BooleanQueryBuilder => $boolean->must->match('foo', 'bar'));
         })->sort(['title.raw' => 'asc'])
             ->fields(['title'])
             ->from(0)
@@ -235,45 +235,45 @@ class QueryTest extends TestCase
         $this->assertArrayHasKey('size', $query);
 
         $expected = [
-            "bool" => [
-                "must" => [
-                    ["term" => ["foo" => ["value" => "bar", "boost" => 1.0]]],
-                    ["exists" => ["field" => "bar", "boost" => 1.0]],
-                    ["terms" => ["foo" => ["bar", "baz"], "boost" => 1.0]],
+            'bool' => [
+                'must' => [
+                    ['term' => ['foo' => ['value' => 'bar', 'boost' => 1.0]]],
+                    ['exists' => ['field' => 'bar', 'boost' => 1.0]],
+                    ['terms' => ['foo' => ['bar', 'baz'], 'boost' => 1.0]],
                 ],
-                "must_not" => [
-                    ["wildcard" => ["foo" => ["value" => "**/*", "boost" => 1.0]]],
-                    ["ids" => ["values" => ["unqie"], "boost" => 1.0]],
+                'must_not' => [
+                    ['wildcard' => ['foo' => ['value' => '**/*', 'boost' => 1.0]]],
+                    ['ids' => ['values' => ['unqie'], 'boost' => 1.0]],
                 ],
-                "should" => [
+                'should' => [
                     [
-                        "bool" => [
-                            "must" => [
-                                ["match" => [
-                                    "foo" => [
-                                        "query" => "bar",
-                                        "boost" => 1.0,
-                                        "analyzer" => "default"
-                                    ]
-                                ]]
+                        'bool' => [
+                            'must' => [
+                                ['match' => [
+                                    'foo' => [
+                                        'query' => 'bar',
+                                        'boost' => 1.0,
+                                        'analyzer' => 'default',
+                                    ],
+                                ]],
                             ],
-                            "boost" => 1.0
-                        ]
-                    ]
+                            'boost' => 1.0,
+                        ],
+                    ],
                 ],
-                "filter" => [
-                    ["match_all" => (object)["boost" => 1.0]],
-                    ["match_none" => (object)["boost" => 1.0]],
-                    ["fuzzy" => ["bar" => ["value" => "baz"]]],
-                    ["multi_match" => [
-                        "query" => "baz",
-                        "boost" => 1.0,
-                        "analyzer" => "default",
-                        "fields" => ["foo", "bar"]
-                    ]]
+                'filter' => [
+                    ['match_all' => (object) ['boost' => 1.0]],
+                    ['match_none' => (object) ['boost' => 1.0]],
+                    ['fuzzy' => ['bar' => ['value' => 'baz']]],
+                    ['multi_match' => [
+                        'query' => 'baz',
+                        'boost' => 1.0,
+                        'analyzer' => 'default',
+                        'fields' => ['foo', 'bar'],
+                    ]],
                 ],
-                "boost" => 1.0
-            ]
+                'boost' => 1.0,
+            ],
         ];
 
         $this->assertEquals($expected, $query['query']);

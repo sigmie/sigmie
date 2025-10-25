@@ -15,7 +15,6 @@ use Sigmie\Search\Contracts\SearchBuilder;
 
 abstract class AbstractSearchBuilder implements SearchBuilder
 {
-
     protected Properties $properties;
 
     protected string $highlightSuffix;
@@ -30,7 +29,7 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected array $fields = [];
 
-    protected null|array $retrieve = null;
+    protected ?array $retrieve = null;
 
     protected array $typoTolerantAttributes = [];
 
@@ -75,7 +74,7 @@ abstract class AbstractSearchBuilder implements SearchBuilder
     public function __construct(
         public readonly ElasticsearchConnection $elasticsearchConnection,
     ) {
-        $this->properties = new MappingsProperties();
+        $this->properties = new MappingsProperties;
 
         $this->facets = new FacetAggs;
 
@@ -153,7 +152,6 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
         return $this;
     }
-
 
     public function autocomplete(
         bool $enabled = true,

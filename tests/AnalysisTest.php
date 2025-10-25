@@ -62,7 +62,6 @@ class AnalysisTest extends TestCase
             ->stripHTML('html_strip')
             ->create();
 
-
         $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasCharFilter('default', 'html_strip');
         });

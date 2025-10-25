@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use InvalidArgumentException;
 use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
@@ -16,19 +17,20 @@ class Embeddings extends Object_
         protected Properties $sourceProperties,
         SearchEngine $driver
     ) {
-        $this->driver = $driver ?? throw new \InvalidArgumentException('SearchEngineDriver is required');
+        $this->driver = $driver ?? throw new InvalidArgumentException('SearchEngineDriver is required');
 
         $names = $this->sourceProperties->fieldNames();
 
-        $newProperties = new NewProperties();
+        $newProperties = new NewProperties;
         $newProperties->propertiesName('_embeddings');
 
         foreach ($names as $name) {
             $type = $this->sourceProperties->get($name);
-            if (!$type instanceof Text) {
+            if (! $type instanceof Text) {
                 continue;
             }
-            if (!$type->isSemantic()) {
+
+            if (! $type->isSemantic()) {
                 continue;
             }
 

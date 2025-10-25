@@ -7,7 +7,7 @@ namespace Sigmie\Document;
 use ArrayAccess;
 use Sigmie\Shared\Contracts\FromRaw;
 
-class Document implements FromRaw, ArrayAccess
+class Document implements ArrayAccess, FromRaw
 {
     public readonly string $_index; // @phpstan-ignore-line
 
@@ -22,8 +22,9 @@ class Document implements FromRaw, ArrayAccess
         }
     }
 
-    public function get(string $key) {
-       return dot($this->_source)->get($key);
+    public function get(string $key)
+    {
+        return dot($this->_source)->get($key);
     }
 
     public function offsetExists(mixed $offset): bool

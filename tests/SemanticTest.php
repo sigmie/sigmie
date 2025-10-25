@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Mappings\Types\ElasticsearchNestedVector;
-use Sigmie\Enums\VectorSimilarity;
-use Sigmie\Query\Queries\Compound\Boolean;
-use Sigmie\Mappings\Types\OpenSearchNestedVector;
 use Exception;
 use Sigmie\Document\Document;
+use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Types\ElasticsearchNestedVector;
+use Sigmie\Mappings\Types\OpenSearchNestedVector;
+use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
 use Sigmie\Testing\TestCase;
 
@@ -873,5 +873,4 @@ class SemanticTest extends TestCase
             $this->assertStringContainsString("doc['", $raw['nested']['query']['function_score']['script_score']['script']['source']);
         });
     }
-
 }

@@ -11,14 +11,14 @@ class VectorMath
      */
     public static function normalize(array $vector): array
     {
-        $magnitude = sqrt(array_sum(array_map(fn($v): int|float => $v * $v, $vector)));
+        $magnitude = sqrt(array_sum(array_map(fn ($v): int|float => $v * $v, $vector)));
 
         // Avoid division by zero
         if ($magnitude == 0) {
             return $vector;
         }
 
-        return array_map(fn($v): float => $v / $magnitude, $vector);
+        return array_map(fn ($v): float => $v / $magnitude, $vector);
     }
 
     /**
@@ -26,7 +26,7 @@ class VectorMath
      */
     public static function isNormalized(array $vector, float $tolerance = 0.0001): bool
     {
-        $magnitude = sqrt(array_sum(array_map(fn($v): int|float => $v * $v, $vector)));
+        $magnitude = sqrt(array_sum(array_map(fn ($v): int|float => $v * $v, $vector)));
 
         return abs($magnitude - 1.0) < $tolerance;
     }
@@ -53,7 +53,7 @@ class VectorMath
         }
 
         // Average each dimension
-        $centroid = array_map(fn($sum): float => $sum / $numVectors, $centroid);
+        $centroid = array_map(fn ($sum): float => $sum / $numVectors, $centroid);
 
         // Normalize the centroid
         return self::normalize($centroid);
@@ -64,7 +64,7 @@ class VectorMath
      */
     public static function scale(array $vector, float $factor): array
     {
-        return array_map(fn($v): float => $v * $factor, $vector);
+        return array_map(fn ($v): float => $v * $factor, $vector);
     }
 
     /**

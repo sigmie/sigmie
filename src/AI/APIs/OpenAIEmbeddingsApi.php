@@ -23,12 +23,12 @@ class OpenAIEmbeddingsApi extends AbstractOpenAIApi implements EmbeddingsApi
             RequestOptions::JSON => [
                 'model' => $this->model,
                 'input' => $text,
-                'dimensions' => $dimensions
-            ]
+                'dimensions' => $dimensions,
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
-        
+
         return $data['data'][0]['embedding'];
     }
 
@@ -38,7 +38,7 @@ class OpenAIEmbeddingsApi extends AbstractOpenAIApi implements EmbeddingsApi
             return [];
         }
 
-        $texts = array_map(fn($item) => $item['text'] ?? '', $payload);
+        $texts = array_map(fn ($item) => $item['text'] ?? '', $payload);
 
         $dimensions = $payload[0]['dims'] ?? 1536;
 
@@ -46,8 +46,8 @@ class OpenAIEmbeddingsApi extends AbstractOpenAIApi implements EmbeddingsApi
             RequestOptions::JSON => [
                 'model' => $this->model,
                 'input' => $texts,
-                'dimensions' => (int) $dimensions
-            ]
+                'dimensions' => (int) $dimensions,
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -65,8 +65,8 @@ class OpenAIEmbeddingsApi extends AbstractOpenAIApi implements EmbeddingsApi
             RequestOptions::JSON => [
                 'model' => $this->model,
                 'input' => $text,
-                'dimensions' => $dimensions
-            ]
+                'dimensions' => $dimensions,
+            ],
         ]);
     }
 }

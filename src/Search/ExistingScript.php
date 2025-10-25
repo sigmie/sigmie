@@ -17,8 +17,9 @@ class ExistingScript
     use Index;
     use RenderAPI;
     use ScriptAPI;
-    use TemplateAPI;
     use SearchAPI;
+    use TemplateAPI;
+
     public function __construct(
         public readonly string $id,
         ElasticsearchConnection $connection

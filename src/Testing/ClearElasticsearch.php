@@ -15,13 +15,13 @@ use Sigmie\Base\Contracts\ElasticsearchConnection;
 
 trait ClearElasticsearch
 {
-    use Cat;
-    use Index;
     use API;
-    use Script;
+    use Cat;
     use Cluster;
-    use Template;
+    use Index;
     use Ingest;
+    use Script;
+    use Template;
 
     protected function clearElasticsearch(ElasticsearchConnection $connection): void
     {
@@ -31,9 +31,9 @@ trait ClearElasticsearch
 
         $names = array_map(fn ($data) => $data['index'], $response->json());
 
-        $nameChunks = array_chunk(array_filter($names, fn ($name): bool => !str_starts_with($name, '.')), 50);
+        $nameChunks = array_chunk(array_filter($names, fn ($name): bool => ! str_starts_with($name, '.')), 50);
 
-        //Delete indices
+        // Delete indices
         foreach ($nameChunks as $chunk) {
             $this->indexAPICall(implode(',', $chunk), 'DELETE');
         }
@@ -49,10 +49,10 @@ trait ClearElasticsearch
             $this->scriptAPICall('DELETE', (string) $name);
         }
 
-        //Delete index templates
+        // Delete index templates
         $this->templateAPICall('*', 'DELETE');
 
-        //Delete pipelines
+        // Delete pipelines
         $this->ingestAPICall('*', 'DELETE');
     }
 }

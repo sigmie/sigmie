@@ -84,7 +84,7 @@ trait CharFilters
 
     private function initCharFilters(): void
     {
-        $this->charFilters ??= new Collection();
+        $this->charFilters ??= new Collection;
     }
 
     private function createCharFilterName(string $name): string

@@ -46,8 +46,8 @@ class Text extends Type implements FromRaw
     ) {
         parent::__construct($name);
 
-        $this->fields = new Collection();
-        $this->newAnalyzerClosure = fn() => null;
+        $this->fields = new Collection;
+        $this->newAnalyzerClosure = fn () => null;
 
         $this->configure();
     }
@@ -99,8 +99,7 @@ class Text extends Type implements FromRaw
         int $dimensions = 256,
     ): NewSemanticField {
         return $this->newSemantic(
-            fn(NewSemanticField $semantic) =>
-            $semantic->accuracy($accuracy, $dimensions)
+            fn (NewSemanticField $semantic): NewSemanticField => $semantic->accuracy($accuracy, $dimensions)
                 ->api($api)
         );
     }
@@ -122,7 +121,7 @@ class Text extends Type implements FromRaw
 
     public function handleCustomAnalyzer(AnalysisInterface $analysis): void
     {
-        $name = is_null($this->parentPath) ? $this->name . '_field_analyzer' : sprintf('%s_%s_field_analyzer', $this->parentPath, $this->name);
+        $name = is_null($this->parentPath) ? $this->name.'_field_analyzer' : sprintf('%s_%s_field_analyzer', $this->parentPath, $this->name);
         $name = str_replace('.', '_', $name);
         $name = trim($name, '_');
 
@@ -146,15 +145,15 @@ class Text extends Type implements FromRaw
         }
 
         $this->fields
-            ->filter(fn($type): bool => $type instanceof Text)
-            ->map(function (Text $text) use ($analysis): \Sigmie\Mappings\Types\Text {
+            ->filter(fn ($type): bool => $type instanceof Text)
+            ->map(function (Text $text) use ($analysis): Text {
                 $text->handleCustomAnalyzer($analysis);
 
                 return $text;
             });
 
         $this->fields
-            ->filter(fn($type): bool => $type instanceof Keyword)
+            ->filter(fn ($type): bool => $type instanceof Keyword)
             ->map(function (Keyword $keyword) use ($analysis): Keyword {
                 $keyword->handleNormalizer($analysis);
 
@@ -205,7 +204,7 @@ class Text extends Type implements FromRaw
             'text' => $instance->unstructuredText(),
             'search_as_you_type' => $instance->searchAsYouType(),
             'completion' => $instance->completion(),
-            default => throw new Exception('Field ' . $configs['type'] . " couldn't be mapped")
+            default => throw new Exception('Field '.$configs['type']." couldn't be mapped")
         };
 
         return $instance;
@@ -327,7 +326,7 @@ class Text extends Type implements FromRaw
         }
 
         if (! $this->fields->isEmpty()) {
-            $raw[$this->name]['fields'] = $this->fields->mapWithKeys(fn(Type $field): array => $field->toRaw())->toArray();
+            $raw[$this->name]['fields'] = $this->fields->mapWithKeys(fn (Type $field): array => $field->toRaw())->toArray();
         }
 
         if (! is_null($this->raw)) {
@@ -344,8 +343,8 @@ class Text extends Type implements FromRaw
         if ($this->type === 'search_as_you_type') {
             $queries[] = new MultiMatch([
                 $this->name,
-                $this->name . '._2gram',
-                $this->name . '._3gram',
+                $this->name.'._2gram',
+                $this->name.'._3gram',
             ], $queryString);
         } else {
             $queries[] = new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer());
@@ -397,7 +396,7 @@ class Text extends Type implements FromRaw
 
     public function embeddingsName(): string
     {
-        return '_embeddings.' . $this->name();
+        return '_embeddings.'.$this->name();
     }
 
     public function embeddingsType(): string

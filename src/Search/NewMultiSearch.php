@@ -26,8 +26,7 @@ class NewMultiSearch
 
     public function __construct(
         protected ElasticsearchConnection $elasticsearchConnection
-    ) {
-    }
+    ) {}
 
     public function newSearch(string $index, ?string $name = null): NewSearch
     {
@@ -64,7 +63,7 @@ class NewMultiSearch
     {
         $this->queries[] = [
             ['index' => $index],
-            $query
+            $query,
         ];
         $this->names[count($this->queries) - 1] = $name ?? random_name('srch');
 
@@ -80,7 +79,7 @@ class NewMultiSearch
             if ($query instanceof MultiSearchable) {
                 $body = [
                     ...$body,
-                    ...$query->toMultiSearch()
+                    ...$query->toMultiSearch(),
                 ];
             } else {
                 // Raw query (array format: [header, body])

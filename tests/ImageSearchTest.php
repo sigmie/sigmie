@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Testing\FakeClipApi;
+use Exception;
 use Sigmie\AI\APIs\InfinityClipApi;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\Assert;
+use Sigmie\Testing\FakeClipApi;
 use Sigmie\Testing\TestCase;
 
 class ImageSearchTest extends TestCase
@@ -89,11 +90,11 @@ class ImageSearchTest extends TestCase
         // Download and convert basketball image to base64
         $basketballUrl = 'https://github.com/sigmie/test-images/raw/refs/heads/main/basket-ball.jpeg';
         $basketballData = file_get_contents($basketballUrl);
-        $base64Image = 'data:image/jpeg;base64,' . base64_encode($basketballData);
+        $base64Image = 'data:image/jpeg;base64,'.base64_encode($basketballData);
 
         $tennisUrl = 'https://github.com/sigmie/test-images/raw/refs/heads/main/tennis-ball.jpeg';
         $tennisData = file_get_contents($tennisUrl);
-        $base64Image2 = 'data:image/jpeg;base64,' . base64_encode($tennisData);
+        $base64Image2 = 'data:image/jpeg;base64,'.base64_encode($tennisData);
 
         $collected = $this->sigmie->collect($indexName, refresh: true)->properties($props);
 
@@ -143,7 +144,7 @@ class ImageSearchTest extends TestCase
      */
     public function image_preprocessing_resizes_to_224px(): void
     {
-        // Remove the feature also from internal 
+        // Remove the feature also from internal
         $this->assertTrue(true, 'Image resizing is handled by ImageHelper');
     }
 
@@ -367,7 +368,6 @@ class ImageSearchTest extends TestCase
         $this->clipApi->assertImageSourceWasEmbedded('https://github.com/sigmie/test-images/raw/refs/heads/main/pirates.jpeg');
     }
 
-
     /**
      * @test
      */
@@ -414,7 +414,7 @@ class ImageSearchTest extends TestCase
     public function error_handling_for_invalid_image_sources(): void
     {
         $indexName = uniqid();
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The field image contains an invalid image source');
 
         $props = new NewProperties;

@@ -13,9 +13,7 @@ abstract class Suggester implements ToRaw
 
     protected int $size = 5;
 
-    public function __construct(protected string $name)
-    {
-    }
+    public function __construct(protected string $name) {}
 
     abstract public function type(): SuggesterType;
 

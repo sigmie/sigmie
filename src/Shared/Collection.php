@@ -288,7 +288,7 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate
                 continue;
             }
 
-            if (!in_array($value, $seen, true)) {
+            if (! in_array($value, $seen, true)) {
                 $seen[] = $value;
                 $unique[] = $element;
             }
@@ -331,7 +331,7 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate
                 }
             } elseif (is_array($result) && isset($result['key']) && array_key_exists('value', $result)) {
                 $grouped[$result['key']][] = $result['value'];
-            } elseif (is_array($result) && count($result) === 2 && array_keys($result) === [0,1]) {
+            } elseif (is_array($result) && count($result) === 2 && array_keys($result) === [0, 1]) {
                 // fallback: treat $result as [groupKey, value]
                 $grouped[$result[0]][] = $result[1];
             }

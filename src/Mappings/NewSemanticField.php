@@ -7,8 +7,8 @@ namespace Sigmie\Mappings;
 use Exception;
 use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
-use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\BaseVector;
+use Sigmie\Mappings\Types\NestedVector;
 
 class NewSemanticField
 {
@@ -34,9 +34,7 @@ class NewSemanticField
 
     protected string $fieldType = 'text';
 
-    public function __construct(public string $name)
-    {
-    }
+    public function __construct(public string $name) {}
 
     public function cosineSimilarity(): static
     {
@@ -77,7 +75,7 @@ class NewSemanticField
     {
         $dimensions ??= $this->dims;
 
-        if (!in_array($dimensions, [
+        if (! in_array($dimensions, [
             128,
             256,
             384,
@@ -216,11 +214,11 @@ class NewSemanticField
         }
 
         $name = match ($this->index) {
-            true => 'm' . $this->m . '_efc' . $this->efConstruction . '_dims' . $this->dims . '_' . $this->similarity->value . '_' . $this->strategy->suffix(),
-            false => 'exact_dims' . $this->dims . '_' . $this->similarity->value . '_' . $this->strategy->suffix(),
+            true => 'm'.$this->m.'_efc'.$this->efConstruction.'_dims'.$this->dims.'_'.$this->similarity->value.'_'.$this->strategy->suffix(),
+            false => 'exact_dims'.$this->dims.'_'.$this->similarity->value.'_'.$this->strategy->suffix(),
         };
 
-        if (!$this->index) {
+        if (! $this->index) {
             return new NestedVector($name, $this->dims, $this->apiName, $this->strategy, $this->similarity, $this->queryApiName);
         }
 

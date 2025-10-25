@@ -16,14 +16,12 @@ trait LazyEach
 
     protected int $chunk = 500;
 
-
     public function chunk(int $size): self
     {
         $this->chunk = $size;
 
         return $this;
     }
-
 
     public function each(Closure $fn): self
     {

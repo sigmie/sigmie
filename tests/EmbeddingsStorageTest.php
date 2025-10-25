@@ -146,7 +146,6 @@ class EmbeddingsStorageTest extends TestCase
     {
         $indexName = uniqid();
 
-
         $props = new NewProperties;
         $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
         $props->text('content')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
@@ -186,8 +185,8 @@ class EmbeddingsStorageTest extends TestCase
         );
 
         // Verify magnitude is actually close to 1.0
-        $titleMagnitude = sqrt(array_sum(array_map(fn($v): int|float => $v * $v, $titleVector)));
-        $contentMagnitude = sqrt(array_sum(array_map(fn($v): int|float => $v * $v, $contentVector)));
+        $titleMagnitude = sqrt(array_sum(array_map(fn ($v): int|float => $v * $v, $titleVector)));
+        $contentMagnitude = sqrt(array_sum(array_map(fn ($v): int|float => $v * $v, $contentVector)));
 
         $this->assertEqualsWithDelta(1.0, $titleMagnitude, 0.01, 'Title vector magnitude should be ~1.0');
         $this->assertEqualsWithDelta(1.0, $contentMagnitude, 0.01, 'Content vector magnitude should be ~1.0');
@@ -209,8 +208,8 @@ class EmbeddingsStorageTest extends TestCase
         $this->sigmie->newIndex($indexName)->properties($props)->create();
 
         $collected = $this->sigmie->collect($indexName, true)
-        ->populateEmbeddings()
-        ->properties($props);
+            ->populateEmbeddings()
+            ->properties($props);
 
         // Create document with multiple comments (will trigger averaging)
         $collected->merge([
@@ -237,8 +236,8 @@ class EmbeddingsStorageTest extends TestCase
             'Averaged comment embedding should be normalized'
         );
 
-        $magnitude = sqrt(array_sum(array_map(fn($v): int|float => $v * $v, $commentVector)));
+        $magnitude = sqrt(array_sum(array_map(fn ($v): int|float => $v * $v, $commentVector)));
         $this->assertEqualsWithDelta(1.0, $magnitude, 0.01,
-            'Averaged vector magnitude should be ~1.0, got: ' . $magnitude);
+            'Averaged vector magnitude should be ~1.0, got: '.$magnitude);
     }
 }

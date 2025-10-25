@@ -27,6 +27,6 @@ class Email extends Text implements Analyze
 
     public function queries(array|string $queryString): array
     {
-        return [new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer()), new Prefix($this->name, $queryString), new Term($this->name . '.keyword', $queryString)];
+        return [new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer()), new Prefix($this->name, $queryString), new Term($this->name.'.keyword', $queryString)];
     }
 }

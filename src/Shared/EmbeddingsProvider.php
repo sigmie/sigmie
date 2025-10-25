@@ -14,5 +14,4 @@ trait EmbeddingsProvider
 
         return $this;
     }
-
 }

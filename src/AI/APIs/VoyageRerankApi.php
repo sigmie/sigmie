@@ -19,7 +19,7 @@ class VoyageRerankApi implements RerankApi
         $this->client = new Client([
             'base_uri' => 'https://api.voyageai.com',
             'headers' => [
-                'Authorization' => 'Bearer ' . $apiKey,
+                'Authorization' => 'Bearer '.$apiKey,
                 'Content-Type' => 'application/json',
             ],
             'timeout' => 60,
@@ -45,7 +45,7 @@ class VoyageRerankApi implements RerankApi
         // - truncation: whether to truncate long documents
 
         $response = $this->client->post('/v1/rerank', [
-            RequestOptions::JSON => $payload
+            RequestOptions::JSON => $payload,
         ]);
 
         $json = json_decode($response->getBody()->getContents(), true);
@@ -53,9 +53,9 @@ class VoyageRerankApi implements RerankApi
         $data = $json['data'];
 
         // Reorder documents based on reranking results using array_map
-        $newIndexes = array_map(fn($result): array => [
+        $newIndexes = array_map(fn ($result): array => [
             'index' => $result['index'],
-            'score' => $result['relevance_score']
+            'score' => $result['relevance_score'],
         ], $data);
 
         return $newIndexes;

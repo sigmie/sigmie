@@ -11,22 +11,20 @@ class VectorPool
 {
     protected array $pool = [];
 
-    public function __construct(protected EmbeddingsApi $embeddingsApi, protected bool $ensureNormalized = true)
-    {
-    }
+    public function __construct(protected EmbeddingsApi $embeddingsApi, protected bool $ensureNormalized = true) {}
 
     public function get(string $text, int $dimensions): array
     {
         // If not in pool, generate and cache
-        if (!isset($this->pool[$text][$dimensions])) {
-            if (!isset($this->pool[$text])) {
+        if (! isset($this->pool[$text][$dimensions])) {
+            if (! isset($this->pool[$text])) {
                 $this->pool[$text] = [];
             }
 
             $vector = $this->embeddingsApi->embed($text, $dimensions);
 
             // Ensure vector is normalized (critical for dot_product and max_inner_product)
-            if ($this->ensureNormalized && !VectorMath::isNormalized($vector)) {
+            if ($this->ensureNormalized && ! VectorMath::isNormalized($vector)) {
                 $vector = VectorMath::normalize($vector);
             }
 
@@ -40,7 +38,7 @@ class VectorPool
     {
         // $items format: [['text' => 'foo', 'dims' => 256], ...]
         // Filter out items that are already in the pool
-        $missing = array_filter($items, fn($item): bool => !$this->has($item['text'], $item['dims']));
+        $missing = array_filter($items, fn ($item): bool => ! $this->has($item['text'], $item['dims']));
 
         if ($missing === []) {
             return $this;
@@ -56,11 +54,11 @@ class VectorPool
             $vector = $result['vector'];
 
             // Ensure vector is normalized (critical for dot_product and max_inner_product)
-            if ($this->ensureNormalized && !VectorMath::isNormalized($vector)) {
+            if ($this->ensureNormalized && ! VectorMath::isNormalized($vector)) {
                 $vector = VectorMath::normalize($vector);
             }
 
-            if (!isset($this->pool[$text])) {
+            if (! isset($this->pool[$text])) {
                 $this->pool[$text] = [];
             }
 
@@ -83,13 +81,13 @@ class VectorPool
     public function setPool(array $pool): static
     {
         foreach ($pool as $text => $dimensions) {
-            if (!isset($this->pool[$text])) {
+            if (! isset($this->pool[$text])) {
                 $this->pool[$text] = [];
             }
 
             foreach ($dimensions as $dim => $vector) {
                 // Only add if not already present
-                if (!isset($this->pool[$text][$dim])) {
+                if (! isset($this->pool[$text][$dim])) {
                     $this->pool[$text][$dim] = $vector;
                 }
             }

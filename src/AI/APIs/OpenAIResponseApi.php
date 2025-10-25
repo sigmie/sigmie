@@ -6,11 +6,12 @@ namespace Sigmie\AI\APIs;
 
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
+use RuntimeException;
 use Sigmie\AI\Answers\OpenAIAnswer;
+use Sigmie\AI\Contracts\LLMAnswer;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Prompt;
 use Sigmie\Rag\LLMJsonAnswer;
-use Sigmie\AI\Contracts\LLMAnswer;
 
 class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
 {
@@ -23,9 +24,9 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
 
     public function answer(Prompt $prompt): LLMAnswer
     {
-        $input = array_map(fn($message): array => [
+        $input = array_map(fn ($message): array => [
             'role' => $message['role']->toOpenAI(),
-            'content' => $message['content']
+            'content' => $message['content'],
         ], $prompt->messages());
 
         $options = [
@@ -49,9 +50,9 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
 
     public function jsonAnswer(Prompt $prompt): LLMJsonAnswer
     {
-        $input = array_map(fn($message): array => [
+        $input = array_map(fn ($message): array => [
             'role' => $message['role']->toOpenAI(),
-            'content' => $message['content']
+            'content' => $message['content'],
         ], $prompt->messages());
 
         $options = [
@@ -65,7 +66,7 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
                         'type' => 'json_schema',
                         'schema' => $prompt->jsonSchema(),
                     ],
-                ]
+                ],
             ],
         ];
 
@@ -74,10 +75,10 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
         $data = json_decode($response->getBody()->getContents(), true);
 
         // Find the message output in the response array
-        $messageOutput = array_filter($data['output'], fn($output): bool => $output['type'] === 'message');
+        $messageOutput = array_filter($data['output'], fn ($output): bool => $output['type'] === 'message');
         $messageOutput = array_values($messageOutput)[0];
 
-        $content = $messageOutput['content'][0]['text'] ?? throw new \RuntimeException('No text content in response');
+        $content = $messageOutput['content'][0]['text'] ?? throw new RuntimeException('No text content in response');
 
         return new LLMJsonAnswer(
             $this->model,
@@ -89,9 +90,9 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
 
     public function streamAnswer(Prompt $prompt): iterable
     {
-        $input = array_map(fn($message): array => [
+        $input = array_map(fn ($message): array => [
             'role' => $message['role']->toOpenAI(),
-            'content' => $message['content']
+            'content' => $message['content'],
         ], $prompt->messages());
 
         $options = [
@@ -114,7 +115,7 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
         $stream = $response->getBody();
         $buffer = '';
 
-        while (!$stream->eof()) {
+        while (! $stream->eof()) {
             // Read smaller chunks for faster yielding
             $chunk = $stream->read(256);
             if ($chunk === '') {

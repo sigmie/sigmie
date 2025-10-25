@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Rag;
 
-abstract class LLMAnswer implements \Stringable
+use Stringable;
+
+abstract class LLMAnswer implements Stringable
 {
     public readonly string $timestamp;
 
@@ -15,8 +17,7 @@ abstract class LLMAnswer implements \Stringable
         public readonly string $model,
         public readonly array $request,
         public readonly array $response,
-    ) {
-    }
+    ) {}
 
     public function model(): string
     {

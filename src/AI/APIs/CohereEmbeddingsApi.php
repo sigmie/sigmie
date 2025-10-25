@@ -22,7 +22,7 @@ class CohereEmbeddingsApi implements EmbeddingsApi
         $this->client = new Client([
             'base_uri' => 'https://api.cohere.ai',
             'headers' => [
-                'Authorization' => 'Bearer ' . $apiKey,
+                'Authorization' => 'Bearer '.$apiKey,
                 'Content-Type' => 'application/json',
             ],
             'timeout' => 60,
@@ -42,7 +42,7 @@ class CohereEmbeddingsApi implements EmbeddingsApi
                 'texts' => [$text],
                 'input_type' => $this->inputType->value,
                 'embedding_types' => ['float'],
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -66,7 +66,7 @@ class CohereEmbeddingsApi implements EmbeddingsApi
             return [];
         }
 
-        $texts = array_map(fn($item) => $item['text'] ?? '', $payload);
+        $texts = array_map(fn ($item) => $item['text'] ?? '', $payload);
 
         $dimensions = (int) ($payload[0]['dims'] ?? 0);
 
@@ -76,7 +76,7 @@ class CohereEmbeddingsApi implements EmbeddingsApi
                 'texts' => $texts,
                 'input_type' => $this->inputType->value,
                 'embedding_types' => ['float'],
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -104,7 +104,7 @@ class CohereEmbeddingsApi implements EmbeddingsApi
                 'texts' => [$text],
                 'input_type' => $this->inputType->value,
                 'embedding_types' => ['float'],
-            ]
+            ],
         ]);
     }
 }

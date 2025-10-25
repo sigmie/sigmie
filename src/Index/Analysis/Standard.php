@@ -13,7 +13,7 @@ class Standard extends Analyzer
 
     public function __construct(
     ) {
-        $tokenizer = new WordBoundaries();
+        $tokenizer = new WordBoundaries;
         $filters = [
             new Lowercase('lowercase'),
         ];

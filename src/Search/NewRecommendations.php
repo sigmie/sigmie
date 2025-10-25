@@ -27,7 +27,8 @@ class NewRecommendations
     protected RecommendationStrategy $strategy = RecommendationStrategy::Centroid;
 
     protected int $rankWindowSize = 0;
-     // Auto-calculated as 10x topK by default
+
+    // Auto-calculated as 10x topK by default
     protected int $rrfRankConstant = 60;
 
     protected bool $excludeSeeds = true;
@@ -135,7 +136,7 @@ class NewRecommendations
     /**
      * Enable MMR (Maximal Marginal Relevance) for result diversification
      *
-     * @param float $lambda Balance between relevance (1.0) and diversity (0.0). Default: 0.5
+     * @param  float  $lambda  Balance between relevance (1.0) and diversity (0.0). Default: 0.5
      */
     public function mmr(float $lambda = 0.5): static
     {
@@ -152,14 +153,14 @@ class NewRecommendations
         }
 
         $filterString = implode(' AND ', [
-            'NOT _id:[' . implode(',', array_map(fn($id): string => sprintf("'%s'", $id), $this->seedIds)) . ']',
-            ...($this->filters === '' ? [] : [$this->filters])
+            'NOT _id:['.implode(',', array_map(fn ($id): string => sprintf("'%s'", $id), $this->seedIds)).']',
+            ...($this->filters === '' ? [] : [$this->filters]),
         ]);
 
         // Use MultiSearch to execute all kNN queries
         $multi = new NewMultiSearch($this->elasticsearchConnection);
 
-        /** @var Document $doc  */
+        /** @var Document $doc */
         foreach ($this->docs as $doc) {
 
             $newSearch = $multi

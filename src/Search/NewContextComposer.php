@@ -18,18 +18,21 @@ class NewContextComposer
     public function fields(array $fields): self
     {
         $this->fields = $fields;
+
         return $this;
     }
 
     public function formatter(callable $formatter): self
     {
         $this->formatter = $formatter;
+
         return $this;
     }
 
     public function separator(string $separator): self
     {
         $this->separator = $separator;
+
         return $this;
     }
 

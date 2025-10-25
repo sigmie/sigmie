@@ -10,9 +10,7 @@ class Assert
 {
     use Assertions;
 
-    public function __construct(private string $name, private array $data)
-    {
-    }
+    public function __construct(private string $name, private array $data) {}
 
     public function name(): string
     {

@@ -15,9 +15,9 @@ enum Role: string
     public function toOpenAI(): string
     {
         return match ($this) {
-            Role::System     => 'system',
-            Role::User       => 'user',
-            Role::Model  => 'assistant',
+            Role::System => 'system',
+            Role::User => 'user',
+            Role::Model => 'assistant',
         };
     }
 }

@@ -74,14 +74,14 @@ class NewClassification
         }
 
         foreach ($groupedExamples as $label => $texts) {
-            $payload = array_map(fn($text, $index): array => [
+            $payload = array_map(fn ($text, $index): array => [
                 'text' => $text,
                 'dims' => 1024,
             ], $texts, array_keys($texts));
 
             $embeddings = $this->embeddingsApi->batchEmbed($payload);
 
-            $vectors = array_map(fn($item) => $item['vector'], $embeddings);
+            $vectors = array_map(fn ($item) => $item['vector'], $embeddings);
 
             $this->centroids[$label] = $this->calculateCentroid($vectors);
         }

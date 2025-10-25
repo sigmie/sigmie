@@ -22,18 +22,21 @@ class NewRerank
     public function query(string $query): self
     {
         $this->query = $query;
+
         return $this;
     }
 
     public function topK(int $topK): self
     {
         $this->topK = $topK;
+
         return $this;
     }
 
     public function fields(array $fields): self
     {
         $this->fields = $fields;
+
         return $this;
     }
 
@@ -41,7 +44,7 @@ class NewRerank
     {
         $query = $this->query;
 
-        if ($hits === [] || !$query) {
+        if ($hits === [] || ! $query) {
             return $hits;
         }
 

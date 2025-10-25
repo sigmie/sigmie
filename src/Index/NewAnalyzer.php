@@ -20,7 +20,7 @@ class NewAnalyzer
 
     public function __construct(protected AnalysisInterface $analysis, public string $name)
     {
-        $this->tokenizer = new WordBoundaries();
+        $this->tokenizer = new WordBoundaries;
     }
 
     public function name(string $name): static

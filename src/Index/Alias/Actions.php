@@ -33,7 +33,7 @@ trait Actions
 
     protected function aliasExists(string $alias): bool
     {
-        $path = '_alias/' . $alias;
+        $path = '_alias/'.$alias;
 
         $res = $this->indexAPICall($path, 'HEAD');
 

@@ -8,8 +8,8 @@ use Sigmie\Base\APIs\Index as IndexAPICall;
 
 trait Index
 {
-    use IndexAPICall;
     use Contracts;
+    use IndexAPICall;
 
     private string $name;
 

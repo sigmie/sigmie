@@ -29,7 +29,7 @@ trait UsesApis
     protected function hasApi(?string $name = null): bool
     {
         if ($name === null) {
-            return !empty($this->apis);
+            return ! empty($this->apis);
         }
 
         return isset($this->apis[$name]);

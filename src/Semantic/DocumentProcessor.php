@@ -4,21 +4,22 @@ declare(strict_types=1);
 
 namespace Sigmie\Semantic;
 
-use Sigmie\Mappings\Types\Range;
 use Carbon\Carbon;
 use DateTime as PHPDateTime;
 use Exception;
+use InvalidArgumentException;
 use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\Mappings\Types\Date;
-use Sigmie\Mappings\Types\DateTime;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Combo;
+use Sigmie\Mappings\Types\Date;
+use Sigmie\Mappings\Types\DateTime;
 use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Nested;
-use Sigmie\Mappings\Types\Number;
-use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\NestedVector;
+use Sigmie\Mappings\Types\Number;
+use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
@@ -52,17 +53,17 @@ class DocumentProcessor
     public function populateEmbeddings(Document $document): Document
     {
         // Check if any embeddings API is registered
-        if (!$this->hasApi()) {
+        if (! $this->hasApi()) {
             // No embeddings API registered, skip embeddings
             return $document;
         }
 
         $embeddings = $this->properties
             ->nestedSemanticFields()
-            ->mapWithKeys(fn(Text|Image $field) => [
-                $field->fullPath => $this->processField($field, $document)
+            ->mapWithKeys(fn (Text|Image $field) => [
+                $field->fullPath => $this->processField($field, $document),
             ])
-            ->filter(fn($vectors): bool => !empty($vectors))
+            ->filter(fn ($vectors): bool => ! empty($vectors))
             ->toArray();
 
         $document['_embeddings'] = $this->buildNestedStructure($embeddings);
@@ -83,7 +84,7 @@ class DocumentProcessor
 
             $field = $this->properties->get($fieldPath);
 
-            if (!$field) {
+            if (! $field) {
                 continue;
             }
 
@@ -114,16 +115,16 @@ class DocumentProcessor
 
             $field = $this->properties->get($fieldPath);
 
-            if (!$field) {
+            if (! $field) {
                 continue;
             }
 
             $this->validateFieldValue($fieldPath, $value, $field, $errors);
         }
 
-        if (!empty($errors)) {
-            throw new \InvalidArgumentException(
-                'Document validation failed: ' . implode(', ', $errors)
+        if (! empty($errors)) {
+            throw new InvalidArgumentException(
+                'Document validation failed: '.implode(', ', $errors)
             );
         }
 
@@ -134,22 +135,22 @@ class DocumentProcessor
     {
         return $this->properties
             ->textFields()
-            ->filter(fn(Text $field): bool => $field instanceof Combo);
+            ->filter(fn (Text $field): bool => $field instanceof Combo);
     }
 
     protected function buildComboValue(Combo $field, Document $document): array
     {
         return (new Collection($field->sourceFields()))
-            ->map(fn($sourceField) => $document->get($sourceField))
-            ->filter(fn($value): bool => $value !== null)
-            ->flatMap(fn($value): array => is_array($value) ? $value : [$value])
+            ->map(fn ($sourceField) => $document->get($sourceField))
+            ->filter(fn ($value): bool => $value !== null)
+            ->flatMap(fn ($value): array => is_array($value) ? $value : [$value])
             ->toArray();
     }
 
     protected function processField(Text|Image $field, Document $document): array
     {
         // Check if embeddings already exist for this field
-        $existingEmbeddings = dot($document->_source)->get('_embeddings.' . $field->fullPath);
+        $existingEmbeddings = dot($document->_source)->get('_embeddings.'.$field->fullPath);
 
         if ($existingEmbeddings && is_array($existingEmbeddings)) {
             // Check if all required vector fields already have embeddings
@@ -157,7 +158,7 @@ class DocumentProcessor
             $allExist = true;
             foreach ($vectorFields as $vectorField) {
                 $name = $vectorField instanceof Nested ? $vectorField->name : $vectorField->name;
-                if (!isset($existingEmbeddings[$name]) || empty($existingEmbeddings[$name])) {
+                if (! isset($existingEmbeddings[$name]) || empty($existingEmbeddings[$name])) {
                     $allExist = false;
                     break;
                 }
@@ -191,7 +192,7 @@ class DocumentProcessor
 
     protected function findNestedAncestor(Text|Image $field): ?string
     {
-        if (!str_contains($field->fullPath, '.')) {
+        if (! str_contains($field->fullPath, '.')) {
             return null;
         }
 
@@ -221,7 +222,7 @@ class DocumentProcessor
     {
         $parentArray = dot($document->_source)->get($nestedPath);
 
-        if (!$parentArray || !is_array($parentArray)) {
+        if (! $parentArray || ! is_array($parentArray)) {
             return [];
         }
 
@@ -232,16 +233,17 @@ class DocumentProcessor
         // Single object: ['key' => 'value'], Array of objects: [['key' => 'value'], ['key' => 'value']]
         $isIndexedArray = array_keys($parentArray) === range(0, count($parentArray) - 1);
 
-        if (!$isIndexedArray) {
+        if (! $isIndexedArray) {
             // Single object - extract value directly
             $value = dot($parentArray)->get($relativePath);
+
             return $value !== null ? (is_array($value) ? $value : [$value]) : [];
         }
 
         // Array of objects - map over each item
         return (new Collection($parentArray))
-            ->map(fn($item) => dot($item)->get($relativePath))
-            ->filter(fn($value): bool => $value !== null)
+            ->map(fn ($item) => dot($item)->get($relativePath))
+            ->filter(fn ($value): bool => $value !== null)
             ->toArray();
     }
 
@@ -258,7 +260,7 @@ class DocumentProcessor
     {
         $value = dot($document->_source)->get($field->fullPath);
 
-        if (!$value) {
+        if (! $value) {
             return [];
         }
 
@@ -280,7 +282,7 @@ class DocumentProcessor
 
         $vectorsCollection = new Collection($fieldVectors);
 
-        $nameStrategy = $vectorsCollection->mapWithKeys(fn($item) => [$item['name'] => $item['strategy']]);
+        $nameStrategy = $vectorsCollection->mapWithKeys(fn ($item) => [$item['name'] => $item['strategy']]);
 
         // Collect normalize settings for each vector
         $normalizeSettings = [];
@@ -294,7 +296,7 @@ class DocumentProcessor
         }
 
         $valuesToEmbed = $vectorsCollection
-            ->map(fn($item) => $item['vectors'])
+            ->map(fn ($item) => $item['vectors'])
             ->flatten(1)
             ->values();
 
@@ -349,7 +351,7 @@ class DocumentProcessor
                 $normalize = $normalizeSettings[$name] ?? true;
 
                 $vectors = (new Collection($group))
-                    ->map(fn($item) => $item['vector'] ?? [])
+                    ->map(fn ($item) => $item['vector'] ?? [])
                     ->toArray();
 
                 $formatted = $strategy->format($vectors, $normalize);
@@ -362,10 +364,10 @@ class DocumentProcessor
     protected function prepareVectorFields(Collection $vectorFields, array $value): array
     {
         return $vectorFields
-            ->map(fn($vector): array => $this->prepareVectorTexts($vector, $value))
+            ->map(fn ($vector): array => $this->prepareVectorTexts($vector, $value))
             ->flatten(2)
             ->groupBy('name')
-            ->mapWithKeys(fn($group, $groupName): array => $this->groupVectorsByName($group, $groupName))
+            ->mapWithKeys(fn ($group, $groupName): array => $this->groupVectorsByName($group, $groupName))
             ->toArray();
     }
 
@@ -380,7 +382,7 @@ class DocumentProcessor
         $preparedTexts = $vector->strategy()->prepare($value);
 
         return [
-            array_map(fn($text): array => [
+            array_map(fn ($text): array => [
                 'name' => $name,
                 'text' => $text,
                 'strategy' => $vector->strategy(),
@@ -398,14 +400,14 @@ class DocumentProcessor
                 'name' => $groupName,
                 'strategy' => $groupCollection->first()['strategy'],
                 'vectors' => $groupCollection
-                    ->map(fn($item): array => [
+                    ->map(fn ($item): array => [
                         'name' => $groupName,
                         'text' => $item['text'],
                         'dims' => $item['dims'],
                         'vector' => [],
                     ])
                     ->toArray(),
-            ]
+            ],
         ];
     }
 
@@ -444,7 +446,7 @@ class DocumentProcessor
         }
 
         if (is_array($value)) {
-            return array_map(fn($item): mixed => $this->formatDateTimeValue($item, $field), $value);
+            return array_map(fn ($item): mixed => $this->formatDateTimeValue($item, $field), $value);
         }
 
         return $value;
@@ -457,7 +459,7 @@ class DocumentProcessor
         if ($field instanceof Range) {
             [$isValid, $errorMessage] = $field->validate($fieldPath, $value);
 
-            if (!$isValid) {
+            if (! $isValid) {
                 $errors[] = $errorMessage;
             }
 
@@ -474,7 +476,7 @@ class DocumentProcessor
 
         [$isValid, $errorMessage] = $field->validate($fieldPath, $value);
 
-        if (!$isValid) {
+        if (! $isValid) {
             $errors[] = $errorMessage;
         }
     }
@@ -485,7 +487,7 @@ class DocumentProcessor
             $vector = $vectorField instanceof Nested ? $vectorField->properties['vector'] : $vectorField;
 
             // Only SigmieVector has boost support
-            if (!($vector instanceof BaseVector)) {
+            if (! ($vector instanceof BaseVector)) {
                 continue;
             }
 
@@ -505,7 +507,7 @@ class DocumentProcessor
                 throw new Exception(sprintf("Boost field '%s' is not present in document for semantic field '%s'", $boostedByField, $field->fullPath));
             }
 
-            if (!is_numeric($boostValue) || $boostValue <= 0) {
+            if (! is_numeric($boostValue) || $boostValue <= 0) {
                 throw new Exception(sprintf("Boost field '%s' must be a positive number. Got: %s", $boostedByField, $boostValue));
             }
 
@@ -517,6 +519,7 @@ class DocumentProcessor
             if ($currentVector === null) {
                 continue;
             }
+
             if (empty($currentVector)) {
                 continue;
             }
@@ -558,8 +561,8 @@ class DocumentProcessor
             throw new Exception(sprintf("Boost field '%s' referenced by semantic field '%s' does not exist in properties", $boostField, $fieldPath));
         }
 
-        if (!($field instanceof Number)) {
-            throw new Exception(sprintf("Boost field '%s' must be a Number type (float/double/integer). Got: ", $boostField) . $field->typeName());
+        if (! ($field instanceof Number)) {
+            throw new Exception(sprintf("Boost field '%s' must be a Number type (float/double/integer). Got: ", $boostField).$field->typeName());
         }
     }
 }

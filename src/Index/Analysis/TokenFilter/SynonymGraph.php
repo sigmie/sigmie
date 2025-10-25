@@ -43,7 +43,7 @@ class SynonymGraph extends TokenFilter
                 'type' => $this->type(),
                 'expand' => $this->expand,
                 'synonyms' => $this->synonyms,
-            ]
+            ],
         ];
     }
 }

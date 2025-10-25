@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Mappings\Contracts\PropertiesField;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
-use Sigmie\Mappings\Contracts\PropertiesField;
 use Sigmie\Mappings\Shared\Properties as SharedProperties;
 
 class Nested extends Type implements PropertiesField

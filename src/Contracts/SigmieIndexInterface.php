@@ -38,8 +38,8 @@ interface SigmieIndexInterface
 
     /**
      * Convert data to Document instances
-     * 
-     * @param array $data Array of data to convert to documents
+     *
+     * @param  array  $data  Array of data to convert to documents
      * @return Document[]
      */
     public function toDocuments(array $data): array;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
-use Sigmie\AI\Contracts\RerankApi;
 use PHPUnit\Framework\Assert;
+use Sigmie\AI\Contracts\RerankApi;
 
 class FakeRerankApi implements RerankApi
 {
@@ -33,6 +33,7 @@ class FakeRerankApi implements RerankApi
 
         if ($times === null) {
             Assert::assertGreaterThan(0, $actualCount, 'rerank() was never called');
+
             return;
         }
 
@@ -44,6 +45,7 @@ class FakeRerankApi implements RerankApi
         foreach ($this->rerankCalls as $call) {
             if ($call['query'] === $query && ($topK === null || $call['topK'] === $topK)) {
                 Assert::assertTrue(true);
+
                 return;
             }
         }
@@ -60,6 +62,7 @@ class FakeRerankApi implements RerankApi
         foreach ($this->rerankCalls as $call) {
             if ($call['documents_count'] === $count) {
                 Assert::assertTrue(true);
+
                 return;
             }
         }

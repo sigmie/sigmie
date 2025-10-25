@@ -21,7 +21,7 @@ abstract class Parser implements ParserInterface
     protected array $fields = [];
 
     public function __construct(
-        Properties|NewProperties $properties = new Properties(),
+        Properties|NewProperties $properties = new Properties,
         protected bool $throwOnError = true
     ) {
         $this->properties($properties);
@@ -41,6 +41,7 @@ abstract class Parser implements ParserInterface
         if ($this->throwOnError) {
             throw new ParseException($message);
         }
+
         $this->errors[] = [
             'message' => $message,
             ...$context,

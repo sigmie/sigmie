@@ -78,7 +78,7 @@ trait Actions
         }
 
         $data = array_values($res->json())[0];
-        $name = $data['settings']['index']['provided_name'] ?? $this->indexAPICall('_resolve/index/' . $alias, 'GET')->json('indices.0.name');
+        $name = $data['settings']['index']['provided_name'] ?? $this->indexAPICall('_resolve/index/'.$alias, 'GET')->json('indices.0.name');
 
         $settings = Settings::fromRaw($data['settings']);
         $analyzers = $settings->analysis()->analyzers();
@@ -97,7 +97,7 @@ trait Actions
     protected function listIndices(string $pattern = '*'): array
     {
         $catResponse = $this->catAPICall(sprintf('indices/%s?h=index,health,status,uuid,pri,rep,docs.count,docs.deleted,store.size,pri.store.size,creation.date.string', $pattern), 'GET');
-        $aliasesResponse = $this->catAPICall("aliases", 'GET');
+        $aliasesResponse = $this->catAPICall('aliases', 'GET');
 
         $aliasesData = $aliasesResponse->json();
 
@@ -106,7 +106,7 @@ trait Actions
             $indexName = $aliasInfo['index'];
             $aliasName = $aliasInfo['alias'];
 
-            if (!isset($aliasesByIndex[$indexName])) {
+            if (! isset($aliasesByIndex[$indexName])) {
                 $aliasesByIndex[$indexName] = [];
             }
 
@@ -130,6 +130,6 @@ trait Actions
     protected function refreshIndex(string $name): void
     {
         // {"_shards":{"total":3,"successful":1,"failed":0}}
-        $this->indexAPICall($name . '/_refresh', 'POST');
+        $this->indexAPICall($name.'/_refresh', 'POST');
     }
 }

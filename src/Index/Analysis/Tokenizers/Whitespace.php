@@ -14,7 +14,7 @@ class Whitespace implements Tokenizer
 
     public static function fromRaw(array $raw): static
     {
-        return new static();
+        return new static;
     }
 
     public function toRaw(): array

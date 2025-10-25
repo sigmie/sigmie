@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\AI\NewJsonSchema;
 use Sigmie\AI\Contracts\LLMAnswer as ContractsLLMAnswer;
+use Sigmie\AI\NewJsonSchema;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Mappings\NewProperties;
@@ -23,7 +23,6 @@ class RagTest extends TestCase
     {
         $indexName = uniqid();
         $llm = $this->llmApi;
-
 
         $props = new NewProperties;
         $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
@@ -57,8 +56,8 @@ class RagTest extends TestCase
             ->newRag($llm)
             ->search($newSearch)
             ->prompt(function (NewRagPrompt $prompt): void {
-                $prompt->system("You are a helpful assistant. Extract dog names from the context.");
-                $prompt->user("List 3 good dog names from the context.");
+                $prompt->system('You are a helpful assistant. Extract dog names from the context.');
+                $prompt->user('List 3 good dog names from the context.');
                 $prompt->contextFields(['text']);
                 $prompt->answerJsonSchema(function (NewJsonSchema $schema): void {
                     $schema->array('dog_names', function (NewJsonSchema $items): void {
@@ -78,14 +77,14 @@ class RagTest extends TestCase
         $messages = $jsonCalls[0]['messages'];
 
         // Check system message
-        $systemMessages = array_filter($messages, fn($m): bool => $m['role']->value === 'system');
+        $systemMessages = array_filter($messages, fn ($m): bool => $m['role']->value === 'system');
         $this->assertGreaterThan(0, count($systemMessages));
         $systemContent = implode(' ', array_column($systemMessages, 'content'));
         $this->assertStringContainsString('helpful assistant', $systemContent);
         $this->assertStringContainsString('Extract dog names', $systemContent);
 
         // Check user message
-        $userMessages = array_filter($messages, fn($m): bool => $m['role']->value === 'user');
+        $userMessages = array_filter($messages, fn ($m): bool => $m['role']->value === 'user');
         $this->assertGreaterThan(0, count($userMessages));
         $userContent = implode(' ', array_column($userMessages, 'content'));
         $this->assertStringContainsString('List 3 good dog names', $userContent);
@@ -105,7 +104,6 @@ class RagTest extends TestCase
     {
         $indexName = uniqid();
         $llm = $this->llmApi;
-
 
         $props = new NewProperties;
         $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
@@ -156,10 +154,10 @@ class RagTest extends TestCase
                 $rerank->query('What is the privacy policy?');
             })
             ->prompt(function (NewRagPrompt $prompt): void {
-                $prompt->system("You are a precise assistant. Answer in 2 sentences max.");
-                $prompt->developer("Guardrails: Answer only from provided context.");
-                $prompt->user("What is the privacy policy?");
-                $prompt->contextFields(['text',]);
+                $prompt->system('You are a precise assistant. Answer in 2 sentences max.');
+                $prompt->developer('Guardrails: Answer only from provided context.');
+                $prompt->user('What is the privacy policy?');
+                $prompt->contextFields(['text']);
             })
             ->answer();
 
@@ -173,7 +171,7 @@ class RagTest extends TestCase
         $messages = $answerCalls[0]['messages'];
 
         // Check system messages
-        $systemMessages = array_filter($messages, fn($m): bool => $m['role']->value === 'system');
+        $systemMessages = array_filter($messages, fn ($m): bool => $m['role']->value === 'system');
         $this->assertGreaterThanOrEqual(2, count($systemMessages));
         $systemContent = implode(' ', array_column($systemMessages, 'content'));
 
@@ -185,7 +183,7 @@ class RagTest extends TestCase
         $this->assertStringContainsString('Patient privacy and confidentiality', $systemContent);
 
         // Check user message
-        $userMessages = array_filter($messages, fn($m): bool => $m['role']->value === 'user');
+        $userMessages = array_filter($messages, fn ($m): bool => $m['role']->value === 'user');
         $this->assertGreaterThan(0, count($userMessages));
         $userContent = implode(' ', array_column($userMessages, 'content'));
         $this->assertStringContainsString('What is the privacy policy?', $userContent);
@@ -202,7 +200,6 @@ class RagTest extends TestCase
     {
         $indexName = uniqid();
         $llm = $this->llmApi;
-
 
         $props = new NewProperties;
         $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
@@ -257,7 +254,7 @@ class RagTest extends TestCase
             'llm_chunk',  // There will be multiple llm_chunk events
             'llm_complete',
             'turn_store_start',
-            'turn_store_complete'
+            'turn_store_complete',
         ];
 
         $streamedEvents = [];
@@ -273,10 +270,10 @@ class RagTest extends TestCase
                 $rerank->query('What is the privacy policy?');
             })
             ->prompt(function (NewRagPrompt $prompt): void {
-                $prompt->system("You are a precise assistant. Answer in 2 sentences max.");
-                $prompt->developer("Guardrails: Answer only from provided context.");
-                $prompt->user("What is the privacy policy?");
-                $prompt->contextFields(['text',]);
+                $prompt->system('You are a precise assistant. Answer in 2 sentences max.');
+                $prompt->developer('Guardrails: Answer only from provided context.');
+                $prompt->user('What is the privacy policy?');
+                $prompt->contextFields(['text']);
             })
             ->streamAnswer();
 
@@ -329,7 +326,6 @@ class RagTest extends TestCase
         $turnStoreStartIndex = array_search('turn_store_start', $streamedEvents, true);
         $turnStoreCompleteIndex = array_search('turn_store_complete', $streamedEvents, true);
 
-
         // Assert proper ordering
         $this->assertLessThan($searchCompleteIndex, $searchStartIndex, 'search_start should come before search_complete');
         $this->assertLessThan($searchHitsIndex, $searchCompleteIndex, 'search_complete should come before search_hits');
@@ -354,7 +350,7 @@ class RagTest extends TestCase
         $messages = $streamCalls[0]['messages'];
 
         // Check system messages
-        $systemMessages = array_filter($messages, fn($m): bool => $m['role']->value === 'system');
+        $systemMessages = array_filter($messages, fn ($m): bool => $m['role']->value === 'system');
         $this->assertGreaterThanOrEqual(2, count($systemMessages));
         $systemContent = implode(' ', array_column($systemMessages, 'content'));
 
@@ -366,7 +362,7 @@ class RagTest extends TestCase
         $this->assertStringContainsString('Patient privacy and confidentiality', $systemContent);
 
         // Check user message
-        $userMessages = array_filter($messages, fn($m): bool => $m['role']->value === 'user');
+        $userMessages = array_filter($messages, fn ($m): bool => $m['role']->value === 'user');
         $this->assertGreaterThan(0, count($userMessages));
         $userContent = implode(' ', array_column($userMessages, 'content'));
         $this->assertStringContainsString('What is the privacy policy?', $userContent);

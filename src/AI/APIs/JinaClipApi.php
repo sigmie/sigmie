@@ -39,12 +39,12 @@ class JinaClipApi implements EmbeddingsApi
                 [
                     'text' => $isImage ? null : $text,
                     'uri' => $isImage ? $text : null,
-                ]
-            ]
+                ],
+            ],
         ];
 
         $response = $this->client->post('/encode', [
-            RequestOptions::JSON => $payload
+            RequestOptions::JSON => $payload,
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -75,8 +75,8 @@ class JinaClipApi implements EmbeddingsApi
 
         $response = $this->client->post('/encode', [
             RequestOptions::JSON => [
-                'data' => $jinaData
-            ]
+                'data' => $jinaData,
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -104,9 +104,9 @@ class JinaClipApi implements EmbeddingsApi
                     [
                         'text' => $isImage ? null : $text,
                         'uri' => $isImage ? $text : null,
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ]);
     }
 
@@ -123,9 +123,11 @@ class JinaClipApi implements EmbeddingsApi
         if (ImageHelper::isUrl($text)) {
             return true;
         }
+
         if (ImageHelper::isBase64($text)) {
             return true;
         }
+
         return ImageHelper::isFilePath($text);
     }
 }

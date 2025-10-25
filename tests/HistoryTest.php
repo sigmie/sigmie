@@ -50,12 +50,8 @@ class HistoryTest extends TestCase
             ->queryString("My name is Nico, what's a good name for a dog?")
             ->size(2);
 
-        $historyIndex = new class(
-            random_name('hist'),
-            $this->sigmie,
-            'test-embeddings'
-        ) extends HistoryIndex {
-
+        $historyIndex = new class(random_name('hist'), $this->sigmie, 'test-embeddings') extends HistoryIndex
+        {
             public function properties(): NewProperties
             {
                 $props = parent::properties();
@@ -75,8 +71,8 @@ class HistoryTest extends TestCase
             ->search($newSearch)
             ->historyIndex($historyIndex)
             ->prompt(function (NewRagPrompt $prompt): void {
-                $prompt->system("You are a precise assistant. Answer strictly only using one word, without any punctuation.");
-                $prompt->developer("Guardrails: Answer only from provided context.");
+                $prompt->system('You are a precise assistant. Answer strictly only using one word, without any punctuation.');
+                $prompt->developer('Guardrails: Answer only from provided context.');
                 $prompt->user("My name is Nico, what\'s a good name for a dog? Pick only one.");
                 $prompt->contextFields(['text']);
             })
@@ -92,8 +88,8 @@ class HistoryTest extends TestCase
             ->conversationId($answer->conversationId)
             ->historyIndex($historyIndex)
             ->prompt(function (NewRagPrompt $prompt): void {
-                $prompt->system("You are a precise assistant. Answer strictly only using one word, without any punctuation.");
-                $prompt->user("What did I say my name was ?");
+                $prompt->system('You are a precise assistant. Answer strictly only using one word, without any punctuation.');
+                $prompt->user('What did I say my name was ?');
             })
             ->answer();
 
@@ -109,7 +105,7 @@ class HistoryTest extends TestCase
             ->conversationId($answer->conversationId)
             ->historyIndex($historyIndex)
             ->prompt(function (NewRagPrompt $prompt): void {
-                $prompt->system("You are a precise assistant. Answer strictly only using one word, without any punctuation.");
+                $prompt->system('You are a precise assistant. Answer strictly only using one word, without any punctuation.');
                 $prompt->user('And what name did you mention before ?');
             })
             ->answer();
@@ -131,11 +127,8 @@ class HistoryTest extends TestCase
     {
         uniqid();
 
-        $historyIndex = new class(
-            random_name('hist'),
-            $this->sigmie,
-            'test-embeddings'
-        ) extends HistoryIndex {
+        $historyIndex = new class(random_name('hist'), $this->sigmie, 'test-embeddings') extends HistoryIndex
+        {
             public function properties(): NewProperties
             {
                 $props = parent::properties();
@@ -163,9 +156,9 @@ class HistoryTest extends TestCase
                     [
                         'text' => 'Hello World',
                         'role' => 'model',
-                    ]
+                    ],
                 ],
-            ],),
+            ], ),
         ]);
 
         $hits = $historyIndex->search('123')->hits();

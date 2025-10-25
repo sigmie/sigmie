@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace Sigmie\Traits;
 
+use InvalidArgumentException;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Document;
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Index;
 use Sigmie\Index\NewIndex;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Query\NewQuery;
 use Sigmie\Search\NewMultiSearch;
 use Sigmie\Search\NewSearch;
-use Sigmie\Query\NewQuery;
 use Sigmie\Sigmie;
 
 trait SigmieIndexTrait
@@ -88,7 +89,7 @@ trait SigmieIndexTrait
             } elseif (is_array($item)) {
                 $documents[] = new Document($item);
             } else {
-                throw new \InvalidArgumentException('Data must be an array or Document instance');
+                throw new InvalidArgumentException('Data must be an array or Document instance');
             }
         }
 
@@ -128,20 +129,21 @@ trait SigmieIndexTrait
     {
         $multiSearch = $this->sigmie->newMultiSearch();
 
-        return new class($multiSearch, $this->blueprint, $this->indexName) {
-            public function __construct(private NewMultiSearch $multiSearch, private NewProperties $properties, private string $defaultIndex)
-            {
-            }
+        return new class($multiSearch, $this->blueprint, $this->indexName)
+        {
+            public function __construct(private NewMultiSearch $multiSearch, private NewProperties $properties, private string $defaultIndex) {}
 
-            public function newSearch(string $indexName = null): NewSearch
+            public function newSearch(?string $indexName = null): NewSearch
             {
                 $index = $indexName ?? $this->defaultIndex;
+
                 return $this->multiSearch->newSearch($index)->properties($this->properties);
             }
 
-            public function newQuery(string $indexName = null): NewQuery
+            public function newQuery(?string $indexName = null): NewQuery
             {
                 $index = $indexName ?? $this->defaultIndex;
+
                 return $this->multiSearch->newQuery($index);
             }
 
@@ -172,6 +174,7 @@ trait SigmieIndexTrait
     {
         $collection = $this->sigmie->collect($this->indexName, $refresh);
         $collection->properties($this->blueprint);
+
         return $collection;
     }
 

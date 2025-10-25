@@ -2,9 +2,9 @@
 
 namespace Sigmie\Search\Formatters;
 
-use Sigmie\Search\SearchContext;
 use Sigmie\Document\Hit;
 use Sigmie\Mappings\Properties;
+use Sigmie\Search\SearchContext;
 
 class SigmieSearchResponse extends AbstractFormatter
 {
@@ -25,7 +25,7 @@ class SigmieSearchResponse extends AbstractFormatter
             'hits' => $this->queryResponseRaw['hits']['hits'] ?? [],
             'processing_time_ms' => $this->queryResponseRaw['took'] ?? 0,
             'total' => $this->queryResponseRaw['hits']['total']['value'] ?? 0,
-            'query_strings' => array_map(fn($qs): string => (string) $qs, $this->search->queryStrings ?? []),
+            'query_strings' => array_map(fn ($qs): string => (string) $qs, $this->search->queryStrings ?? []),
             'filter_string' => $this->search->filterString ?? '',
             'facets_string' => $this->search->facetString ?? '',
             'sort_string' => $this->search->sortString ?? '',
@@ -48,7 +48,7 @@ class SigmieSearchResponse extends AbstractFormatter
 
     public function hits(): array
     {
-        return array_map(fn(array $hit): Hit => new Hit(
+        return array_map(fn (array $hit): Hit => new Hit(
             $hit['_source'],
             $hit['_id'],
             $hit['_score'],
@@ -73,7 +73,7 @@ class SigmieSearchResponse extends AbstractFormatter
         foreach ($this->properties->toArray() as $type) {
             if ($type->isFacetable() && in_array($type->name, $this->search->facetFields)) {
                 $facetData = $type->facets($this->facetAggregations());
-                if (!is_null($facetData)) {
+                if (! is_null($facetData)) {
                     $facets[$type->name] = (object) $facetData;
                 }
             }

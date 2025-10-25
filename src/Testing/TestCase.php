@@ -25,12 +25,12 @@ use Symfony\Component\Dotenv\Dotenv;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    use ClearElasticsearch;
+    use Analyze;
     use Assertions;
-    use IndexAction;
+    use ClearElasticsearch;
     use DocumentActions;
     use Explain;
-    use Analyze;
+    use IndexAction;
 
     protected Sigmie $sigmie;
 
@@ -69,18 +69,18 @@ class TestCase extends \PHPUnit\Framework\TestCase
                     ['https://localhost:9200'],
                     $username,
                     $password,
-                    config: ['verify' => false,]
+                    config: ['verify' => false]
                 );
 
-                return new ElasticsearchConnection($this->jsonClient, new Opensearch());
+                return new ElasticsearchConnection($this->jsonClient, new Opensearch);
             })(),
             'elasticsearch' => (function () use (&$engine, &$driver): ElasticsearchConnection {
                 // Elasticsearch: HTTP without authentication
                 $this->jsonClient = JSONClient::create(['http://localhost:9200']);
 
-                return new ElasticsearchConnection($this->jsonClient, new Elasticsearch());
+                return new ElasticsearchConnection($this->jsonClient, new Elasticsearch);
             })(),
-            default => throw new Exception('Invalid search engine: ' . $searchEngine),
+            default => throw new Exception('Invalid search engine: '.$searchEngine),
         };
 
         $this->elasticsearchConnection = $connection;
@@ -114,16 +114,16 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
     protected function skipIfElasticsearchPluginNotInstalled(string $plugin)
     {
-        if (!in_array($plugin, $this->elasticsearchPlugins)) {
+        if (! in_array($plugin, $this->elasticsearchPlugins)) {
             $this->markTestSkipped(sprintf('Elasticsearch plugin %s is not installed', $plugin));
         }
     }
 
     public function loadEnv(): void
     {
-        $dotenv = new Dotenv();
+        $dotenv = new Dotenv;
         $dotenv->usePutenv(true);
-        $dotenv->loadEnv($GLOBALS['_composer_bin_dir'] . '/../../.env', overrideExistingVars: true);
+        $dotenv->loadEnv($GLOBALS['_composer_bin_dir'].'/../../.env', overrideExistingVars: true);
     }
 
     public function forOpensearch(Closure $callback): void

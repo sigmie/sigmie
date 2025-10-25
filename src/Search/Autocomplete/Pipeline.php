@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Search\Autocomplete;
 
-use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\APIs\API;
 use Sigmie\Base\APIs\Ingest;
+use Sigmie\Base\Contracts\ElasticsearchResponse;
 
 class Pipeline
 {
@@ -19,6 +19,6 @@ class Pipeline
 
     public function simulate(array $docs = []): ElasticsearchResponse
     {
-        return $this->ingestAPICall($this->name . '/_simulate', 'POST', ['docs' => $docs]);
+        return $this->ingestAPICall($this->name.'/_simulate', 'POST', ['docs' => $docs]);
     }
 }

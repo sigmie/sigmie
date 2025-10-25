@@ -76,7 +76,7 @@ class Range extends Type
 
     public function validate(string $key, mixed $value): array
     {
-        if (!is_array($value)) {
+        if (! is_array($value)) {
             return [false, sprintf("The field %s mapped as %s must be an array with 'gte', 'gt', 'lte', or 'lt' keys", $key, $this->typeName())];
         }
 
@@ -90,8 +90,8 @@ class Range extends Type
             }
         }
 
-        if (!$hasValidKeys) {
-            return [false, sprintf('The field %s mapped as %s must contain at least one of: ', $key, $this->typeName()) . implode(', ', $validKeys)];
+        if (! $hasValidKeys) {
+            return [false, sprintf('The field %s mapped as %s must contain at least one of: ', $key, $this->typeName()).implode(', ', $validKeys)];
         }
 
         return [true, ''];

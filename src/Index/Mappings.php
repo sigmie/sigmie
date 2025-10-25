@@ -27,7 +27,7 @@ class Mappings implements MappingsInterface
         ?Properties $properties = null,
         ?array $meta = null,
     ) {
-        $this->defaultAnalyzer = $defaultAnalyzer ?: new DefaultAnalyzer();
+        $this->defaultAnalyzer = $defaultAnalyzer ?: new DefaultAnalyzer;
         $this->properties = $properties ?: new Properties(name: 'mappings');
         $this->meta = $meta ?? [];
     }
@@ -50,8 +50,8 @@ class Mappings implements MappingsInterface
     public function analyzers(): array
     {
         $result = $this->properties->textFields()
-            ->filter(fn(Type $field): bool => $field instanceof Text)
-            ->filter(fn(Text $field): bool => ! is_null($field->analyzer()))
+            ->filter(fn (Type $field): bool => $field instanceof Text)
+            ->filter(fn (Text $field): bool => ! is_null($field->analyzer()))
             ->mapToDictionary(function (Text $field) {
 
                 $analyzer = $field->analyzer();
@@ -60,7 +60,7 @@ class Mappings implements MappingsInterface
                     return [$analyzer->name() => $analyzer];
                 }
 
-                $filters = array_filter($this->defaultAnalyzer->filters(), fn(TokenFilter $filter): bool => ! in_array($filter::class, $field->notAllowedFilters()));
+                $filters = array_filter($this->defaultAnalyzer->filters(), fn (TokenFilter $filter): bool => ! in_array($filter::class, $field->notAllowedFilters()));
 
                 $analyzer->addFilters($filters);
 
@@ -86,10 +86,9 @@ class Mappings implements MappingsInterface
         ];
     }
 
-
     public static function create(array $data, array $analyzers): static
     {
-        $defaultAnalyzer = $analyzers['default'] ?? new DefaultAnalyzer();
+        $defaultAnalyzer = $analyzers['default'] ?? new DefaultAnalyzer;
 
         $properties = Properties::create(
             $data['properties'] ?? [],

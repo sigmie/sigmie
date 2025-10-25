@@ -10,13 +10,11 @@ class HTMLStrip implements CharFilter
 {
     public function __construct(
         public string $name = 'html_strip',
-    ) {
-
-    }
+    ) {}
 
     public static function fromRaw(array $raw): static
     {
-        return new static();
+        return new static;
     }
 
     public function toRaw(): array
@@ -30,6 +28,6 @@ class HTMLStrip implements CharFilter
 
     public function name(): string
     {
-        return $this->name; 
+        return $this->name;
     }
 }

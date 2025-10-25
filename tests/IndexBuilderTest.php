@@ -6,15 +6,9 @@ namespace Sigmie\Tests;
 
 use Exception;
 use RachidLaasri\Travel\Travel;
-use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Document\Document;
+use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Index\AliasedIndex;
-use Sigmie\Languages\English\Builder as EnglishBuilder;
-use Sigmie\Languages\English\English;
-use Sigmie\Languages\German\Builder as GermanBuilder;
-use Sigmie\Languages\German\German;
-use Sigmie\Languages\Greek\Builder as GreekBuilder;
-use Sigmie\Languages\Greek\Greek;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Analysis\CharFilter\Pattern as PatternCharFilter;
@@ -23,6 +17,12 @@ use Sigmie\Index\Analysis\Tokenizers\Pattern as PatternTokenizer;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\NewAnalyzer;
+use Sigmie\Languages\English\Builder as EnglishBuilder;
+use Sigmie\Languages\English\English;
+use Sigmie\Languages\German\Builder as GermanBuilder;
+use Sigmie\Languages\German\German;
+use Sigmie\Languages\Greek\Builder as GreekBuilder;
+use Sigmie\Languages\Greek\Greek;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
@@ -61,7 +61,7 @@ class IndexBuilderTest extends TestCase
         $blueprint->name('name');
 
         /** @var GreekBuilder */
-        $greekBuilder = $this->sigmie->newIndex($alias)->language(new Greek());
+        $greekBuilder = $this->sigmie->newIndex($alias)->language(new Greek);
 
         $greekBuilder
             ->properties($blueprint)
@@ -103,7 +103,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         /** @var GermanBuilder */
-        $germanBuilder = $this->sigmie->newIndex($alias)->language(new German());
+        $germanBuilder = $this->sigmie->newIndex($alias)->language(new German);
 
         $germanBuilder
             ->germanLightStemmer()
@@ -172,7 +172,7 @@ class IndexBuilderTest extends TestCase
         $englishBuilder = $this->sigmie->newIndex($alias)
             ->shards(4)
             ->replicas(4)
-            ->language(new English());
+            ->language(new English);
 
         $englishBuilder
             ->englishStemmer()
@@ -517,7 +517,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->charFilter(new HTMLStrip())
+            ->charFilter(new HTMLStrip)
             ->create();
 
         $this->assertIndex($alias, function (Assert $index): void {
@@ -554,7 +554,7 @@ class IndexBuilderTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->tokenizer(new Whitespace())
+            ->tokenizer(new Whitespace)
             ->create();
 
         $this->assertIndex($alias, function (Assert $index): void {
@@ -573,7 +573,7 @@ class IndexBuilderTest extends TestCase
             ->twoWaySynonyms([
                 ['treasure', 'gem', 'gold', 'price'],
                 ['friend', 'buddy', 'partner'],
-            ], name: 'sigmie_two_way_synonyms',)
+            ], name: 'sigmie_two_way_synonyms', )
             ->create();
 
         $this->assertIndex($alias, function (Assert $index): void {
@@ -681,7 +681,7 @@ class IndexBuilderTest extends TestCase
         $this->sigmie->newIndex($alias)
             ->oneWaySynonyms([
                 ['ipod', ['i-pod', 'i pod']],
-            ], name: 'sigmie_one_way_synonyms',)
+            ], name: 'sigmie_one_way_synonyms', )
             ->create();
 
         $this->assertIndex($alias, function (Assert $index): void {
@@ -833,7 +833,7 @@ class IndexBuilderTest extends TestCase
 
         $this->sigmie->newIndex($alias)->create();
 
-        $this->assertIndexExists($alias . '_20200101235959000000');
+        $this->assertIndexExists($alias.'_20200101235959000000');
     }
 
     /**
@@ -861,7 +861,7 @@ class IndexBuilderTest extends TestCase
     {
         $alias = uniqid();
 
-        $properties = new NewProperties();
+        $properties = new NewProperties;
         $properties->text('title_one')->searchSynonyms(true);
         $properties->text('title_two')->searchSynonyms(false);
 
@@ -889,7 +889,7 @@ class IndexBuilderTest extends TestCase
             ->properties($properties)
             ->fields([
                 'title_two',
-                'title_one'
+                'title_one',
             ])
             ->queryString('ipod')
             ->get();
@@ -941,7 +941,7 @@ class IndexBuilderTest extends TestCase
                 'department' => 'engineering',
                 'version' => '2.0',
                 'custom_field' => 'custom_value',
-                'environment' => 'testing'
+                'environment' => 'testing',
             ])
             ->create();
 
@@ -952,17 +952,17 @@ class IndexBuilderTest extends TestCase
         $this->assertArrayHasKey('created_by', $raw['mappings']['_meta']);
         $this->assertArrayHasKey('lib_version', $raw['mappings']['_meta']);
         $this->assertArrayHasKey('language', $raw['mappings']['_meta']);
-        
+
         // Assert custom meta fields were added
         $this->assertArrayHasKey('department', $raw['mappings']['_meta']);
         $this->assertEquals('engineering', $raw['mappings']['_meta']['department']);
-        
+
         $this->assertArrayHasKey('version', $raw['mappings']['_meta']);
         $this->assertEquals('2.0', $raw['mappings']['_meta']['version']);
-        
+
         $this->assertArrayHasKey('custom_field', $raw['mappings']['_meta']);
         $this->assertEquals('custom_value', $raw['mappings']['_meta']['custom_field']);
-        
+
         $this->assertArrayHasKey('environment', $raw['mappings']['_meta']);
         $this->assertEquals('testing', $raw['mappings']['_meta']['environment']);
     }
@@ -985,10 +985,10 @@ class IndexBuilderTest extends TestCase
         // Assert all custom meta fields were merged correctly
         $this->assertArrayHasKey('department', $raw['mappings']['_meta']);
         $this->assertEquals('engineering', $raw['mappings']['_meta']['department']);
-        
+
         $this->assertArrayHasKey('version', $raw['mappings']['_meta']);
         $this->assertEquals('2.0', $raw['mappings']['_meta']['version']);
-        
+
         $this->assertArrayHasKey('custom_field', $raw['mappings']['_meta']);
         $this->assertEquals('custom_value', $raw['mappings']['_meta']['custom_field']);
     }

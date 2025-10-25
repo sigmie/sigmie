@@ -35,7 +35,7 @@ class Name extends Text implements Analyze
 
     public function analyze(NewAnalyzer $newAnalyzer): void
     {
-        $prefixField = (new Text($this->name . '_text'))->unstructuredText()
+        $prefixField = (new Text($this->name.'_text'))->unstructuredText()
             ->withNewAnalyzer(function (NewAnalyzer $newAnalyzer): void {
                 $newAnalyzer->tokenizeOnWhitespaces()
                     ->name($this->prefixAnalyzer)
