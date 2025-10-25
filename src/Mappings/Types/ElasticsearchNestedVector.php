@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use Sigmie\Enums\VectorStrategy;
+use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Nested as TypesNested;
@@ -18,16 +18,20 @@ class ElasticsearchNestedVector extends TypesNested implements Type
 
     protected int $dims;
 
+    protected VectorSimilarity $similarity;
+
     public function __construct(
         string $name,
         int $dims = 384,
         ?string $apiName = null,
+        VectorSimilarity $similarity = VectorSimilarity::Cosine,
     ) {
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->type(
             new DenseVector(
                 name: 'vector',
                 dims: $dims,
+                similarity: $similarity,
             )
         );
 
@@ -35,6 +39,7 @@ class ElasticsearchNestedVector extends TypesNested implements Type
 
         $this->dims = $dims;
         $this->apiName = $apiName;
+        $this->similarity = $similarity;
     }
 
     public function dims(): int
@@ -42,14 +47,23 @@ class ElasticsearchNestedVector extends TypesNested implements Type
         return $this->dims;
     }
 
+    protected function mapSimilarityToScript(VectorSimilarity $similarity): string
+    {
+        return match ($similarity) {
+            VectorSimilarity::Cosine => "cosineSimilarity(params.query_vector, '_embeddings.{$this->fullPath}.vector') + 1.0",
+            VectorSimilarity::DotProduct => "dotProduct(params.query_vector, '_embeddings.{$this->fullPath}.vector')",
+            VectorSimilarity::Euclidean => "1 / (1 + l2norm(params.query_vector, '_embeddings.{$this->fullPath}.vector'))",
+            VectorSimilarity::MaxInnerProduct => "dotProduct(params.query_vector, '_embeddings.{$this->fullPath}.vector')",
+        };
+    }
+
     public function vectorQueries(array $vector, int $k, array $filter = []): array
     {
-        // Elasticsearch uses 'field' string syntax
-        $source = "cosineSimilarity(params.query_vector, '_embeddings.{$this->fullPath}.vector') + 1.0";
+        $source = $this->mapSimilarityToScript($this->similarity);
 
         // For nested queries, don't apply root-level filters inside the nested query
         // Filters will be handled at the top level of the search
-        $baseQuery = new MatchAll();
+        $baseQuery = new MatchAll;
 
         return [
             new Nested(
@@ -59,10 +73,10 @@ class ElasticsearchNestedVector extends TypesNested implements Type
                     source: $source,
                     boostMode: 'replace',
                     params: [
-                        'query_vector' => $vector
+                        'query_vector' => $vector,
                     ]
                 )
-            )
+            ),
         ];
     }
 }

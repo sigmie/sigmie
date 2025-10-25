@@ -9,11 +9,11 @@ class OpenSearchKnn extends KnnVectorQuery
     public function toRaw(): array
     {
         return [
-            "knn" => [
+            'knn' => [
                 $this->field => [
-                    "vector" => $this->queryVector,
-                    "k" => $this->k,
-                    "filter" => $this->filter,
+                    'vector' => $this->queryVector,
+                    'k' => $this->k,
+                    'filter' => $this->filter,
                     'boost' => $this->boost,
                 ],
             ],

@@ -8,9 +8,7 @@ use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\Type as AbstractType;
-use Sigmie\Query\FunctionScore;
-use Sigmie\Query\Queries\DenseVectorQuery;
-use Sigmie\Query\Queries\KnnVectorQuery;
+use Sigmie\Query\Queries\ElasticsearchKnn;
 
 class DenseVector extends AbstractType implements Type
 {
@@ -43,7 +41,7 @@ class DenseVector extends AbstractType implements Type
                 'type' => $this->type,
                 'dims' => $this->dims,
                 'index' => $this->index,
-            ]
+            ],
         ];
 
         if ($this->index) {
@@ -115,11 +113,11 @@ class DenseVector extends AbstractType implements Type
 
     public function createSuffix(): string
     {
-        if (!$this->index) {
-            return 'exact_dims' . $this->dims . '_' . $this->similarity->value . '_' . VectorStrategy::Concatenate->value;
+        if (! $this->index) {
+            return 'exact_dims'.$this->dims.'_'.$this->similarity->value.'_'.VectorStrategy::Concatenate->value;
         }
 
-        return 'm' . $this->m . '_efc' . $this->efConstruction . '_dims' . $this->dims . '_' . $this->similarity->value . '_' . VectorStrategy::Concatenate->value;
+        return 'm'.$this->m.'_efc'.$this->efConstruction.'_dims'.$this->dims.'_'.$this->similarity->value.'_'.VectorStrategy::Concatenate->value;
     }
 
     public function textFieldName(string $name): static
@@ -146,20 +144,17 @@ class DenseVector extends AbstractType implements Type
 
     public function vectorQueries(array $vector, int $k, array $filter = []): array
     {
+        $numCandidates = max($k * 10, 1000);
+
         return [
-            new DenseVectorQuery(
-                field: '_embeddings.' . $this->fullPath,
+            new ElasticsearchKnn(
+                field: '_embeddings.'.$this->fullPath,
                 queryVector: $vector,
                 k: $k,
-                numCandidates: $k * 100,
+                numCandidates: $numCandidates,
                 filter: $filter,
-                boost: 1.0,
-            )
+                boost: 1.0
+            ),
         ];
-    }
-
-    public function queries(array|string $vector, array $filter = []): array
-    {
-        return [];
     }
 }

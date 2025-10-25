@@ -837,8 +837,11 @@ class NewSearch extends AbstractSearchBuilder implements SearchQueryBuilderInter
             $queries = new Collection($queries);
 
             $queries->map(function (Query $queryClause) use ($keywordBoolean, $queryBoost, $field) {
+
                 $queryClause = $this->configureQueryClause($queryClause, $field, $queryBoost);
+
                 return $this->wrapNestedQuery($queryClause, $field);
+
             })->each(fn(Query $query) => $keywordBoolean->should()->query($query));
         });
 

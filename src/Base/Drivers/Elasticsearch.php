@@ -7,12 +7,10 @@ namespace Sigmie\Base\Drivers;
 use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\Contracts\Type;
+use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\ElasticsearchNestedVector;
 use Sigmie\Mappings\Types\NestedVector;
-use Sigmie\Mappings\Types\BaseVector;
-use Sigmie\Query\Queries\ElasticsearchKnn;
-use Sigmie\Query\Queries\KnnVectorQuery;
 
 class Elasticsearch implements SearchEngine
 {
@@ -59,23 +57,5 @@ class Elasticsearch implements SearchEngine
     public function indexSettings(): array
     {
         return [];
-    }
-
-    public function knnQuery(
-        string $field,
-        array|string $queryVector,
-        int $k = 300,
-        int $numCandidates = 1000,
-        array $filter = [],
-        float $boost = 1.0
-    ): KnnVectorQuery {
-        return new ElasticsearchKnn(
-            field: $field,
-            queryVector: $queryVector,
-            k: $k,
-            numCandidates: $numCandidates,
-            filter: $filter,
-            boost: $boost,
-        );
     }
 }

@@ -8,7 +8,7 @@ use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\Type as AbstractType;
-use Sigmie\Query\Queries\KnnVectorQuery as KnnVectorQuery;
+use Sigmie\Query\Queries\OpenSearchKnn;
 
 class KnnVector extends AbstractType implements Type
 {
@@ -37,7 +37,7 @@ class KnnVector extends AbstractType implements Type
             $this->name => [
                 'type' => $this->type,
                 'dimension' => $this->dims,
-            ]
+            ],
         ];
 
         if ($this->index) {
@@ -112,11 +112,11 @@ class KnnVector extends AbstractType implements Type
 
     public function createSuffix(): string
     {
-        if (!$this->index) {
-            return 'exact_dims' . $this->dims . '_' . $this->similarity->value . '_' . VectorStrategy::Concatenate->value;
+        if (! $this->index) {
+            return 'exact_dims'.$this->dims.'_'.$this->similarity->value.'_'.VectorStrategy::Concatenate->value;
         }
 
-        return 'm' . $this->m . '_efc' . $this->efConstruction . '_dims' . $this->dims . '_' . $this->similarity->value . '_' . VectorStrategy::Concatenate->value;
+        return 'm'.$this->m.'_efc'.$this->efConstruction.'_dims'.$this->dims.'_'.$this->similarity->value.'_'.VectorStrategy::Concatenate->value;
     }
 
     public function textFieldName(string $name): static
@@ -141,15 +141,17 @@ class KnnVector extends AbstractType implements Type
         return $this->autoNormalizeVector;
     }
 
-    public function vectorQueries(array $vector, int $k, array $filter = []): array {
+    public function vectorQueries(array $vector, int $k, array $filter = []): array
+    {
         return [
-            new KnnVectorQuery(
+            new OpenSearchKnn(
                 field: '_embeddings.'.$this->fullPath,
                 queryVector: $vector,
                 k: $k,
+                numCandidates: 0, // OpenSearch doesn't use numCandidates
                 filter: $filter,
-                boost: 1.0,
-            )
+                boost: 1.0
+            ),
         ];
     }
 }
