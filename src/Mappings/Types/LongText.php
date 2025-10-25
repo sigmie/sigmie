@@ -21,10 +21,6 @@ class LongText extends Text
 
     public function queries(array|string $queryString): array
     {
-        $queries = [];
-
-        $queries[] = new Match_($this->name, $queryString);
-
-        return $queries;
+        return [new Match_($this->name, $queryString)];
     }
 }

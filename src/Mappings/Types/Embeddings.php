@@ -12,30 +12,29 @@ class Embeddings extends Object_
 {
     protected SearchEngine $driver;
 
-    protected Properties $sourceProperties;
-
     public function __construct(
-        Properties $properties,
+        protected Properties $sourceProperties,
         SearchEngine $driver
     ) {
         $this->driver = $driver ?? throw new \InvalidArgumentException('SearchEngineDriver is required');
-        $this->sourceProperties = $properties;
 
-        $names = $properties->fieldNames();
+        $names = $this->sourceProperties->fieldNames();
 
         $newProperties = new NewProperties();
         $newProperties->propertiesName('_embeddings');
 
         foreach ($names as $name) {
-            $type = $properties->get($name);
-
-            if (!$type instanceof Text || !$type->isSemantic()) {
+            $type = $this->sourceProperties->get($name);
+            if (!$type instanceof Text) {
+                continue;
+            }
+            if (!$type->isSemantic()) {
                 continue;
             }
 
-            $newProperties->object($name, function (NewProperties $props) use ($type) {
+            $newProperties->object($name, function (NewProperties $props) use ($type): void {
                 $type->vectorFields()
-                    ->map(function (Type $vectorField) use ($props) {
+                    ->map(function (Type $vectorField) use ($props): void {
                         // Use driver conversion for vector types
                         if ($vectorField instanceof BaseVector) {
                             $field = $this->driver->vectorField($vectorField);

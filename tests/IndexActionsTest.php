@@ -17,7 +17,7 @@ class IndexActionsTest extends TestCase
     /**
      * @test
      */
-    public function get_index()
+    public function get_index(): void
     {
         $indexName = uniqid();
 
@@ -39,7 +39,7 @@ class IndexActionsTest extends TestCase
     /**
      * @test
      */
-    public function index_exists()
+    public function index_exists(): void
     {
         $indexName = uniqid();
 
@@ -73,7 +73,7 @@ class IndexActionsTest extends TestCase
     /**
      * @test
      */
-    public function delete_index()
+    public function delete_index(): void
     {
         $indexName = uniqid();
 
@@ -87,7 +87,7 @@ class IndexActionsTest extends TestCase
 
         $collection = new Collection($indices);
 
-        $array = $collection->map(fn (ListedIndex $index) => $index->name)->toArray();
+        $array = $collection->map(fn (ListedIndex $index): string => $index->name)->toArray();
 
         $this->assertNotContains($indexName, $array);
     }
@@ -95,7 +95,7 @@ class IndexActionsTest extends TestCase
     /**
      * @test
      */
-    public function list_indices()
+    public function list_indices(): void
     {
         $fooIndexName = uniqid();
         $barIndexName = uniqid();
@@ -104,7 +104,7 @@ class IndexActionsTest extends TestCase
         $this->createIndex($barIndexName, new Settings(), new Mappings());
 
         $list = new Collection($this->listIndices());
-        $array = $list->map(fn (ListedIndex $index) => $index->name)->toArray();
+        $array = $list->map(fn (ListedIndex $index): string => $index->name)->toArray();
 
         $this->assertContains($fooIndexName, $array);
         $this->assertContains($barIndexName, $array);

@@ -12,17 +12,13 @@ use Sigmie\AI\Contracts\Embedder;
 class VoyageProvider implements Embedder
 {
     protected Client $client;
-    protected string $apiKey;
-    protected string $model;
 
-    public function __construct(string $apiKey, string $model = 'voyage-3')
+    public function __construct(protected string $apiKey, protected string $model = 'voyage-3')
     {
-        $this->apiKey = $apiKey;
-        $this->model = $model;
         $this->client = new Client([
             'base_uri' => 'https://api.voyageai.com',
             'headers' => [
-                'Authorization' => 'Bearer ' . $apiKey,
+                'Authorization' => 'Bearer ' . $this->apiKey,
                 'Content-Type' => 'application/json',
             ]
         ]);
@@ -44,7 +40,7 @@ class VoyageProvider implements Embedder
 
     public function batchEmbed(array $payload): array
     {
-        if (count($payload) === 0) {
+        if ($payload === []) {
             return [];
         }
 
@@ -84,11 +80,8 @@ class VoyageProvider implements Embedder
         ]);
 
         return new class($promise) implements Promise {
-            private PromiseInterface $promise;
-
-            public function __construct(PromiseInterface $promise)
+            public function __construct(private PromiseInterface $promise)
             {
-                $this->promise = $promise;
             }
 
             public function then(callable $onFulfilled = null, callable $onRejected = null)
@@ -97,9 +90,10 @@ class VoyageProvider implements Embedder
                     function ($response) use ($onFulfilled) {
                         $data = json_decode($response->getBody()->getContents(), true);
                         $embeddings = $data['data'][0]['embedding'];
-                        if ($onFulfilled) {
+                        if ($onFulfilled !== null) {
                             return $onFulfilled(['_embeddings' => $embeddings]);
                         }
+
                         return ['_embeddings' => $embeddings];
                     },
                     $onRejected

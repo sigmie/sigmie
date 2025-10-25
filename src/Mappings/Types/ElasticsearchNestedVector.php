@@ -14,8 +14,6 @@ use Sigmie\Query\Queries\Text\Nested;
 
 class ElasticsearchNestedVector extends TypesNested implements Type
 {
-    public ?string $apiName = null;
-
     protected int $dims;
 
     protected VectorSimilarity $similarity;
@@ -23,7 +21,7 @@ class ElasticsearchNestedVector extends TypesNested implements Type
     public function __construct(
         string $name,
         int $dims = 384,
-        ?string $apiName = null,
+        public ?string $apiName = null,
         VectorSimilarity $similarity = VectorSimilarity::Cosine,
     ) {
         $props = new NewProperties;
@@ -38,7 +36,6 @@ class ElasticsearchNestedVector extends TypesNested implements Type
         parent::__construct($name, $props);
 
         $this->dims = $dims;
-        $this->apiName = $apiName;
         $this->similarity = $similarity;
     }
 
@@ -50,10 +47,10 @@ class ElasticsearchNestedVector extends TypesNested implements Type
     protected function mapSimilarityToScript(VectorSimilarity $similarity): string
     {
         return match ($similarity) {
-            VectorSimilarity::Cosine => "cosineSimilarity(params.query_vector, '_embeddings.{$this->fullPath}.vector') + 1.0",
-            VectorSimilarity::DotProduct => "dotProduct(params.query_vector, '_embeddings.{$this->fullPath}.vector')",
-            VectorSimilarity::Euclidean => "1 / (1 + l2norm(params.query_vector, '_embeddings.{$this->fullPath}.vector'))",
-            VectorSimilarity::MaxInnerProduct => "dotProduct(params.query_vector, '_embeddings.{$this->fullPath}.vector')",
+            VectorSimilarity::Cosine => sprintf("cosineSimilarity(params.query_vector, '_embeddings.%s.vector') + 1.0", $this->fullPath),
+            VectorSimilarity::DotProduct => sprintf("dotProduct(params.query_vector, '_embeddings.%s.vector')", $this->fullPath),
+            VectorSimilarity::Euclidean => sprintf("1 / (1 + l2norm(params.query_vector, '_embeddings.%s.vector'))", $this->fullPath),
+            VectorSimilarity::MaxInnerProduct => sprintf("dotProduct(params.query_vector, '_embeddings.%s.vector')", $this->fullPath),
         };
     }
 
@@ -63,7 +60,7 @@ class ElasticsearchNestedVector extends TypesNested implements Type
 
         return [
             new Nested(
-                "_embeddings.{$this->fullPath}",
+                '_embeddings.' . $this->fullPath,
                 new FunctionScore(
                     query: $filter,
                     source: $source,

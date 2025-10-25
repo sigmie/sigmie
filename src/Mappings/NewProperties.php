@@ -16,7 +16,6 @@ use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\DateTime;
-use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Email;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\HTML;
@@ -77,6 +76,7 @@ class NewProperties
                 if ($this->fullPath !== '') {
                     $type->parent($this->fullPath, $this->parentType);
                 }
+
                 return [$type->name => $type];
             })->toArray();
 
@@ -116,7 +116,7 @@ class NewProperties
         return $field;
     }
 
-    public function embeddings(AIProvider $provider, string $name)
+    public function embeddings(AIProvider $provider, string $name): void
     {
         $this->fields->add($provider->type($name));
     }

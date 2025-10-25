@@ -19,7 +19,7 @@ class FlatObject extends Type
     public function validate(string $key, mixed $value): array
     {
         if (! is_array($value) && ! is_object($value)) {
-            return [false, "The field {$key} mapped as flat_object must be an object or array"];
+            return [false, sprintf('The field %s mapped as flat_object must be an object or array', $key)];
         }
 
         return [true, ''];

@@ -13,21 +13,16 @@ use Sigmie\AI\Contracts\LLMAnswer;
 
 class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
 {
-    protected ?string $conversationId = null;
     protected bool $autoCleanup = true;
-    protected array $metadata = [];
 
     public function __construct(
         string $apiKey,
-        ?string $conversationId = null,
-        array $metadata = [],
+        protected ?string $conversationId = null,
+        protected array $metadata = [],
         string $model = 'gpt-5-nano',
     ) {
 
         parent::__construct($apiKey, $model);
-
-        $this->conversationId = $conversationId;
-        $this->metadata = $metadata;
     }
 
     protected function createConversation(string $input): string
@@ -72,12 +67,10 @@ class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
     {
         $conversation = $this->conversation();
 
-        $input = array_map(function ($message) {
-            return [
-                'role' => $message['role']->value,
-                'content' => $message['content']
-            ];
-        }, $prompt->messages());
+        $input = array_map(fn($message): array => [
+            'role' => $message['role']->value,
+            'content' => $message['content']
+        ], $prompt->messages());
 
         $options = [
             RequestOptions::JSON => [
@@ -99,7 +92,7 @@ class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
     {
         $conversation = $this->conversation();
 
-        $input = array_map(fn($message) => [
+        $input = array_map(fn($message): array => [
             'role' => $message['role']->value,
             'content' => $message['content']
         ], $prompt->messages());
@@ -127,12 +120,10 @@ class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
 
         yield ['type' => 'conversation.created', 'conversation_id' => $conversation];
 
-        $input = array_map(function ($message) {
-            return [
-                'role' => $message['role']->value,
-                'content' => $message['content']
-            ];
-        }, $prompt->messages());
+        $input = array_map(fn($message): array => [
+            'role' => $message['role']->value,
+            'content' => $message['content']
+        ], $prompt->messages());
 
         $options = [
             RequestOptions::JSON => [
@@ -169,7 +160,7 @@ class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
                 $line = substr($buffer, 0, $pos);
                 $buffer = substr($buffer, $pos + 1);
 
-                if (strpos($line, 'data: ') === 0) {
+                if (str_starts_with($line, 'data: ')) {
                     $data = substr($line, 6);
 
                     // Skip the [DONE] message
@@ -192,7 +183,7 @@ class OpenAIConversationsApi extends AbstractOpenAIApi implements LLMApi
         }
 
         // Process any remaining buffer
-        if (!empty($buffer) && strpos($buffer, 'data: ') === 0) {
+        if ($buffer !== '' && $buffer !== '0' && str_starts_with($buffer, 'data: ')) {
             $data = substr($buffer, 6);
             if (trim($data) !== '[DONE]') {
                 $decoded = json_decode(trim($data), true);

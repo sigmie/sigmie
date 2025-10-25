@@ -18,7 +18,7 @@ class AutoDateHistogram extends Bucket
         protected MinimumInterval $minimumInterval = MinimumInterval::Second
     ) {}
 
-    public function value(): array
+    protected function value(): array
     {
         $value = [
             'auto_date_histogram' => [

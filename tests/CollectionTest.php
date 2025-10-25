@@ -12,12 +12,12 @@ class CollectionTest extends TestCase
     /**
      * @test
      */
-    public function map_with_keys()
+    public function map_with_keys(): void
     {
         $collection = new Collection(['foo' => ['bar', 'baz']]);
 
         $self = $this;
-        $collection->mapWithKeys(function ($value, $index) use ($self) {
+        $collection->mapWithKeys(function ($value, $index) use ($self): array {
             $self->assertEquals($value, ['bar', 'baz']);
             $self->assertEquals($index, 'foo');
 
@@ -60,7 +60,7 @@ class CollectionTest extends TestCase
     /**
      * @test
      */
-    public function flatten_with_keys()
+    public function flatten_with_keys(): void
     {
         $collection = new Collection([
             ['foo' => 'bar'],

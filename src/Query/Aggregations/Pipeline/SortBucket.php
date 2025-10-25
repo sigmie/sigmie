@@ -16,14 +16,12 @@ class SortBucket extends Pipeline
 
     public function toRaw(): array
     {
-        $raw = [$this->name => [
+        return [$this->name => [
             $this->type => [
                 'sort' => [
                     $this->path => ['order' => $this->order],
                 ],
             ],
         ]];
-
-        return $raw;
     }
 }

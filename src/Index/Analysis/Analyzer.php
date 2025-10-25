@@ -39,17 +39,12 @@ class Analyzer implements CustomAnalyzerInterface
 
     protected Collection $charFilters;
 
-    protected Tokenizer $tokenizer;
-
     public function __construct(
         public readonly string $name,
-        Tokenizer $tokenizer = new WordBoundaries(),
+        protected Tokenizer $tokenizer = new WordBoundaries(),
         array $filters = [],
         array $charFilters = [],
     ) {
-        // 'standard' is the default Elasticsearch
-        // tokenizer when no other is specified
-        $this->tokenizer = $tokenizer;
         $this->filters = new Collection($filters);
         $this->charFilters = new Collection($charFilters);
     }
@@ -141,24 +136,22 @@ class Analyzer implements CustomAnalyzerInterface
     public function toRaw(): array
     {
         $filters = $this->filters
-            ->map(fn (TokenFilter $filter) => $filter->name())
+            ->map(fn (TokenFilter $filter): string => $filter->name())
             ->flatten()
             ->toArray();
 
         $charFilters = $this->charFilters
-            ->map(fn (CharFilter $charFilter) => $charFilter->name())
+            ->map(fn (CharFilter $charFilter): string => $charFilter->name())
             ->flatten()
             ->toArray();
 
-        $raw = [
+        return [
             $this->name => [
                 'tokenizer' => $this->tokenizer()->name(),
                 'char_filter' => $charFilters,
                 'filter' => $filters,
             ],
         ];
-
-        return $raw;
     }
 
     public function filters(): array

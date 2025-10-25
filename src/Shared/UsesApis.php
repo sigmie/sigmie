@@ -22,6 +22,7 @@ trait UsesApis
         if ($name === null) {
             return null;
         }
+
         return $this->apis[$name] ?? null;
     }
 

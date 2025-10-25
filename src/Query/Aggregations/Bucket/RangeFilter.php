@@ -16,7 +16,7 @@ class RangeFilter extends Bucket
         parent::__construct($name);
     }
 
-    public function value(): array
+    protected function value(): array
     {
         $res = [
             'filter' => [

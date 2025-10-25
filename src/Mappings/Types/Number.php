@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Mappings\ElasticsearchMappingType;
 use Sigmie\Query\Aggs;
 
@@ -64,15 +63,13 @@ class Number extends Type
 
     public function facets(array $aggregation): ?array
     {
-        $originalBuckets = $aggregation[$this->name()][$this->name()] ?? $aggregation[$this->name()] ?? [];
-
-        return $originalBuckets;
+        return $aggregation[$this->name()][$this->name()] ?? $aggregation[$this->name()] ?? [];
     }
 
     public function validate(string $key, mixed $value): array
     {
         if (! is_numeric($value)) {
-            return [false, "The field {$key} mapped as {$this->typeName()} must be a number"];
+            return [false, sprintf('The field %s mapped as %s must be a number', $key, $this->typeName())];
         }
 
         return [true, ''];

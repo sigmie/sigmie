@@ -9,13 +9,8 @@ use Sigmie\Document\Hit;
 
 abstract class BaseReranker implements Reranker
 {
-    protected string $model;
-    protected array $options = [];
-    
-    public function __construct(string $model = '', array $options = [])
+    public function __construct(protected string $model = '', protected array $options = [])
     {
-        $this->model = $model;
-        $this->options = $options;
     }
     
     public function formatHit(Hit $hit): array

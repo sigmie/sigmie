@@ -13,11 +13,11 @@ class SigmieTest extends TestCase
     /**
      * @test
      */
-    public function index_docs_count()
+    public function index_docs_count(): void
     {
         $alias = uniqid();
 
-        $application = uniqid();
+        uniqid();
 
         $this->sigmie->newIndex($alias)->create();
 
@@ -36,7 +36,7 @@ class SigmieTest extends TestCase
             }
         }
 
-        $this->assertNotNull($foundIndex, "Index with alias '{$alias}' not found");
+        $this->assertNotNull($foundIndex, sprintf("Index with alias '%s' not found", $alias));
         $this->assertInstanceOf(ListedIndex::class, $foundIndex);
         $this->assertEquals(1, $foundIndex->documentsCount);
         $this->assertTrue(in_array($alias, $foundIndex->aliases));

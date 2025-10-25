@@ -14,7 +14,7 @@ class HTMLStrip implements CharFilter
 
     }
 
-    public static function fromRaw(array $raw)
+    public static function fromRaw(array $raw): static
     {
         return new static();
     }

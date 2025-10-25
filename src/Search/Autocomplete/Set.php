@@ -34,7 +34,7 @@ class Set extends Processor
         return $this;
     }
 
-    public function value(string $value)
+    public function value(string $value): static
     {
         $this->value = $value;
 

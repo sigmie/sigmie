@@ -2,7 +2,6 @@
 
 namespace Sigmie\Mappings\Shared;
 
-use Sigmie\Mappings\Contracts\PropertiesField;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties as MappingsProperties;
 

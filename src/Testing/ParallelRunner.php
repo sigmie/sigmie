@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
+use ParaTest\Coverage\CoverageMerger;
+use ParaTest\Logging\JUnit\Reader;
 use InvalidArgumentException;
 use ParaTest\Runners\PHPUnit\BaseRunner;
 use ParaTest\Runners\PHPUnit\Worker\WrapperWorker;
@@ -20,9 +22,9 @@ class ParallelRunner extends BaseRunner
     use ClearElasticsearch;
 
     /** @var WrapperWorker[] */
-    private $workers = [];
+    private array $workers = [];
 
-    public function clearProcessIndices(int $token)
+    public function clearProcessIndices(int $token): void
     {
         // TODO clear elasticsearch with prefix
         // $this->clearElasticsearch();
@@ -89,7 +91,7 @@ class ParallelRunner extends BaseRunner
 
         if ($this->hasCoverage()) {
             $coverageMerger = $this->getCoverage();
-            assert($coverageMerger !== null);
+            assert($coverageMerger instanceof CoverageMerger);
             if (($coverageFileName = $worker->getCoverageFileName()) !== null) {
                 $coverageMerger->addCoverageFromFile($coverageFileName);
             }
@@ -97,7 +99,7 @@ class ParallelRunner extends BaseRunner
 
         $worker->reset();
 
-        if ($reader === null) {
+        if (!$reader instanceof Reader) {
             return;
         }
 

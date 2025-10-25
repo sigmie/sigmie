@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\Number;
+use Sigmie\Mappings\Types\FlatObject;
 use DateTime;
-use Exception;
 use Sigmie\Document\Document;
-use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
@@ -44,9 +45,9 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function validate_case_sensitive_keyword()
+    public function validate_case_sensitive_keyword(): void
     {
-        $indexName = uniqid();
+        uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->caseSensitiveKeyword('code');
@@ -78,9 +79,9 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function validate_price()
+    public function validate_price(): void
     {
-        $indexName = uniqid();
+        uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->price('price');
@@ -112,9 +113,9 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function validate_number()
+    public function validate_number(): void
     {
-        $indexName = uniqid();
+        uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->number('location');
@@ -146,7 +147,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function validate_date()
+    public function validate_date(): void
     {
         $indexName = uniqid();
 
@@ -161,7 +162,7 @@ class MappingsTest extends TestCase
 
         [$valid, $message] = $props['created_at']->validate('created_at', 'foo');
 
-        $this->isFalse($valid);
+        $this->isFalse();
 
         [$valid, $message] = $props['created_at']->validate('created_at', [
             [
@@ -230,7 +231,7 @@ class MappingsTest extends TestCase
             ]),
         ]);
 
-        $res = $this->sigmie->newSearch($indexName)->properties($blueprint)->queryString('')->get();
+        $this->sigmie->newSearch($indexName)->properties($blueprint)->queryString('')->get();
 
         // expect no exception when indexing date
         $this->assertTrue(true);
@@ -239,7 +240,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function validate_datetime()
+    public function validate_datetime(): void
     {
         $indexName = uniqid();
 
@@ -254,7 +255,7 @@ class MappingsTest extends TestCase
 
         [$valid, $message] = $props['updated_at']->validate('updated_at', 'foo');
 
-        $this->isFalse($valid);
+        $this->isFalse();
 
         [$valid, $message] = $props['updated_at']->validate('updated_at', [
             [
@@ -338,7 +339,7 @@ class MappingsTest extends TestCase
             ]),
         ]);
 
-        $res = $this->sigmie->newSearch($indexName)->properties($blueprint)->queryString('')->get();
+        $this->sigmie->newSearch($indexName)->properties($blueprint)->queryString('')->get();
 
         // expect no exception when indexing datetime
         $this->assertTrue(true);
@@ -347,9 +348,9 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function validate_keyword()
+    public function validate_keyword(): void
     {
-        $indexName = uniqid();
+        uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->keyword('location');
@@ -381,9 +382,9 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function validate_text()
+    public function validate_text(): void
     {
-        $indexName = uniqid();
+        uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->text('location');
@@ -415,9 +416,9 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function validate_geo()
+    public function validate_geo(): void
     {
-        $indexName = uniqid();
+        uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->geoPoint('location');
@@ -448,12 +449,12 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function validate_object()
+    public function validate_object(): void
     {
-        $indexName = uniqid();
+        uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->object('comments', function (NewProperties $props) {});
+        $blueprint->object('comments', function (NewProperties $props): void {});
 
         $props = $blueprint->get();
 
@@ -492,7 +493,6 @@ class MappingsTest extends TestCase
             'comments',
             [
                 'comment_id' => '1',
-                'comment_id' => '1',
             ]
         );
 
@@ -502,12 +502,12 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function validate_nested()
+    public function validate_nested(): void
     {
-        $indexName = uniqid();
+        uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->nested('comments', function (NewProperties $props) {});
+        $blueprint->nested('comments', function (NewProperties $props): void {});
 
         $props = $blueprint->get();
 
@@ -546,7 +546,6 @@ class MappingsTest extends TestCase
             'comments',
             [
                 'comment_id' => '1',
-                'comment_id' => '1',
             ]
         );
 
@@ -556,7 +555,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function object()
+    public function object(): void
     {
         $indexName = uniqid();
 
@@ -577,7 +576,7 @@ class MappingsTest extends TestCase
         $blueprint->html('html');
         $blueprint->bool('is_active');
         $blueprint->id('id');
-        $blueprint->object('contact', function (NewProperties $props) {
+        $blueprint->object('contact', function (NewProperties $props): void {
             $props->name('name');
             $props->address();
             $props->caseSensitiveKeyword('code');
@@ -596,7 +595,7 @@ class MappingsTest extends TestCase
             $props->id('id');
         });
 
-        $index = $this->sigmie
+        $this->sigmie
             ->newIndex($indexName)
             ->properties($blueprint)
             ->create();
@@ -612,15 +611,15 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function nested()
+    public function nested(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->nested('comments', function (NewProperties $props) {
+        $blueprint->nested('comments', function (NewProperties $props): void {
             $props->keyword('comment_id');
             $props->text('text');
-            $props->nested('user', function (NewProperties $props) {
+            $props->nested('user', function (NewProperties $props): void {
                 $props->keyword('name');
                 $props->number('age');
             });
@@ -693,7 +692,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function class_meta()
+    public function class_meta(): void
     {
         $indexName = uniqid();
 
@@ -718,7 +717,7 @@ class MappingsTest extends TestCase
             ->properties($blueprint)
             ->create();
 
-        $this->assertIndex($indexName, function (Assert $index) {
+        $this->assertIndex($indexName, function (Assert $index): void {
             $index->assertPropertyHasMeta('category', 'class', Category::class);
             $index->assertPropertyHasMeta('id', 'class', Id::class);
             $index->assertPropertyHasMeta('path', 'class', Path::class);
@@ -739,14 +738,14 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function case_sensitive_keyword_mapping()
+    public function case_sensitive_keyword_mapping(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->caseSensitiveKeyword('code');
 
-        $index = $this->sigmie
+        $this->sigmie
             ->newIndex($indexName)
             ->lowercase()
             ->properties($blueprint)
@@ -771,14 +770,14 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function keyword_mapping()
+    public function keyword_mapping(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->keyword('code');
 
-        $index = $this->sigmie
+        $this->sigmie
             ->newIndex($indexName)
             ->lowercase()
             ->properties($blueprint)
@@ -803,7 +802,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function normalizer()
+    public function normalizer(): void
     {
         $indexName = uniqid();
 
@@ -815,7 +814,7 @@ class MappingsTest extends TestCase
             ->properties($blueprint)
             ->create();
 
-        $this->assertIndex($indexName, function (Assert $index) {
+        $this->assertIndex($indexName, function (Assert $index): void {
             $index->assertNormalizerExists('category_field_normalizer');
             $index->assertPropertyHasNormalizer('category', 'category_field_normalizer');
         });
@@ -824,7 +823,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function address_analyze()
+    public function address_analyze(): void
     {
         $indexName = uniqid();
 
@@ -836,7 +835,7 @@ class MappingsTest extends TestCase
             ->properties($blueprint)
             ->create();
 
-        $index = $this->sigmie->collect($indexName, refresh: true);
+        $this->sigmie->collect($indexName, refresh: true);
 
         $res = $this->analyzeAPICall($indexName, 'Hohn Doe 28, 58511', 'address_field_analyzer');
 
@@ -848,7 +847,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function date_format()
+    public function date_format(): void
     {
         $indexName = uniqid();
 
@@ -884,7 +883,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function sort_sentense()
+    public function sort_sentense(): void
     {
         $indexName = uniqid();
 
@@ -922,7 +921,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function year()
+    public function year(): void
     {
         $indexName = uniqid();
 
@@ -957,7 +956,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function category()
+    public function category(): void
     {
         $indexName = uniqid();
 
@@ -993,7 +992,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function searchable_number()
+    public function searchable_number(): void
     {
         $indexName = uniqid();
 
@@ -1041,7 +1040,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function email_with_callback_queries()
+    public function email_with_callback_queries(): void
     {
         $indexName = uniqid();
 
@@ -1050,20 +1049,10 @@ class MappingsTest extends TestCase
             ->unstructuredText()
             ->indexPrefixes()
             ->keyword()
-            ->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
+            ->withNewAnalyzer(function (NewAnalyzer $newAnalyzer): void {
                 $newAnalyzer->tokenizeOnPattern('(@|\.)');
                 $newAnalyzer->lowercase();
-            })->withQueries(function (string $queryString) {
-                $queries = [];
-
-                $queries[] = new Match_('email', $queryString);
-
-                $queries[] = new Prefix('email', $queryString);
-
-                $queries[] = new Term('email.keyword', $queryString);
-
-                return $queries;
-            });
+            })->withQueries(fn(string $queryString): array => [new Match_('email', $queryString), new Prefix('email', $queryString), new Term('email.keyword', $queryString)]);
 
         $index = $this->sigmie
             ->newIndex($indexName)
@@ -1113,7 +1102,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function email_with_callback()
+    public function email_with_callback(): void
     {
         $indexName = uniqid();
 
@@ -1122,7 +1111,7 @@ class MappingsTest extends TestCase
             ->unstructuredText()
             ->indexPrefixes()
             ->keyword()
-            ->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
+            ->withNewAnalyzer(function (NewAnalyzer $newAnalyzer): void {
                 $newAnalyzer->tokenizeOnPattern('(@|\.)');
                 $newAnalyzer->lowercase();
             });
@@ -1177,21 +1166,21 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function properties_field_no_found()
+    public function properties_field_no_found(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->category('code');
 
-        $index = $this->sigmie
+        $this->sigmie
             ->newIndex($indexName)
             ->properties($blueprint)
             ->create();
 
         $this->expectException(PropertiesFieldNotFound::class);
 
-        $search = $this->sigmie->newSearch($indexName)
+        $this->sigmie->newSearch($indexName)
             ->properties($blueprint())
             ->queryString('DT')
             ->fields(['codee'])
@@ -1201,7 +1190,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function category_prefix()
+    public function category_prefix(): void
     {
         $indexName = uniqid();
 
@@ -1234,7 +1223,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function email()
+    public function email(): void
     {
         $indexName = uniqid();
 
@@ -1262,9 +1251,9 @@ class MappingsTest extends TestCase
 
         $res = $this->analyzeAPICall($indexName, 'john.doe@gmail.com', 'default');
 
-        $tokens = array_map(fn($token) => $token['token'], $res->json('tokens'));
+        array_map(fn($token) => $token['token'], $res->json('tokens'));
 
-        $res = $this->indexAPICall($indexName, 'GET');
+        $this->indexAPICall($indexName, 'GET');
 
         $hits = $search->json('hits');
 
@@ -1295,7 +1284,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function analyzers_collection()
+    public function analyzers_collection(): void
     {
         $blueprint = new NewProperties();
         $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
@@ -1320,13 +1309,13 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function cosine_semantic_builder()
+    public function cosine_semantic_builder(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
         $blueprint->text('job_description')
-            ->newSemantic(function (NewSemanticField $semantic) {
+            ->newSemantic(function (NewSemanticField $semantic): void {
                 $semantic->cosineSimilarity();
             });
 
@@ -1334,15 +1323,15 @@ class MappingsTest extends TestCase
             ->properties($blueprint)
             ->create();
 
-        $this->assertIndex($indexName, function (Assert $assert) {
+        $this->assertIndex($indexName, function (Assert $assert): void {
 
             $jobDescription = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_cosine_concat'];
 
-            $this->forOpenSearch(function () use ($jobDescription) {
+            $this->forOpenSearch(function () use ($jobDescription): void {
                 $this->assertEquals('cosinesimil', $jobDescription['method']['space_type']);
             });
 
-            $this->forElasticsearch(function () use ($jobDescription) {
+            $this->forElasticsearch(function () use ($jobDescription): void {
                 $this->assertEquals('cosine', $jobDescription['similarity'] ?? null);
             });
         });
@@ -1351,13 +1340,13 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function euclidean_semantic_builder()
+    public function euclidean_semantic_builder(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
         $blueprint->text('job_description')
-            ->newSemantic(function (NewSemanticField $semantic) {
+            ->newSemantic(function (NewSemanticField $semantic): void {
                 $semantic->euclideanSimilarity();
             });
 
@@ -1365,15 +1354,15 @@ class MappingsTest extends TestCase
             ->properties($blueprint)
             ->create();
 
-        $this->assertIndex($indexName, function (Assert $assert) {
+        $this->assertIndex($indexName, function (Assert $assert): void {
 
             $field = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_l2_norm_concat'];
 
-            $this->forOpenSearch(function () use ($field) {
+            $this->forOpenSearch(function () use ($field): void {
                 $this->assertEquals('l2', $field['method']['space_type']);
             });
 
-            $this->forElasticsearch(function () use ($field) {
+            $this->forElasticsearch(function () use ($field): void {
                 $this->assertEquals('l2_norm', $field['similarity'] ?? null);
             });
         });
@@ -1382,13 +1371,13 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function dot_product_semantic_builder()
+    public function dot_product_semantic_builder(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
         $blueprint->text('job_description')
-            ->newSemantic(function (NewSemanticField $semantic) {
+            ->newSemantic(function (NewSemanticField $semantic): void {
                 $semantic->dotProductSimilarity();
             });
 
@@ -1396,14 +1385,14 @@ class MappingsTest extends TestCase
             ->properties($blueprint)
             ->create();
 
-        $this->assertIndex($indexName, function (Assert $assert) {
+        $this->assertIndex($indexName, function (Assert $assert): void {
             $field = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_dot_product_concat'];
 
-            $this->forOpenSearch(function () use ($field) {
+            $this->forOpenSearch(function () use ($field): void {
                 $this->assertEquals('innerproduct', $field['method']['space_type']);
             });
 
-            $this->forElasticsearch(function () use ($field) {
+            $this->forElasticsearch(function () use ($field): void {
                 $this->assertEquals('dot_product', $field['similarity'] ?? null);
             });
         });
@@ -1412,13 +1401,13 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function max_inner_product_semantic_builder()
+    public function max_inner_product_semantic_builder(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties();
         $blueprint->text('job_description')
-            ->newSemantic(function (NewSemanticField $semantic) {
+            ->newSemantic(function (NewSemanticField $semantic): void {
                 $semantic->maxInnerProductSimilarity();
             });
 
@@ -1426,15 +1415,15 @@ class MappingsTest extends TestCase
             ->properties($blueprint)
             ->create();
 
-        $this->assertIndex($indexName, function (Assert $assert) {
+        $this->assertIndex($indexName, function (Assert $assert): void {
 
             $field = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m64_efc300_dims256_max_inner_product_concat'];
 
-            $this->forOpenSearch(function () use ($field) {
+            $this->forOpenSearch(function () use ($field): void {
                 $this->assertEquals('innerproduct', $field['method']['space_type']);
             });
 
-            $this->forElasticsearch(function () use ($field) {
+            $this->forElasticsearch(function () use ($field): void {
                 $this->assertEquals('max_inner_product', $field['similarity'] ?? null);
             });
         });
@@ -1443,7 +1432,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function dimensions_accuracy_1()
+    public function dimensions_accuracy_1(): void
     {
         $indexName = uniqid();
 
@@ -1452,22 +1441,22 @@ class MappingsTest extends TestCase
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
-        $index = $this->sigmie->index($indexName);
+        $this->sigmie->index($indexName);
 
-        $this->assertIndex($indexName, function (Assert $assert) {
+        $this->assertIndex($indexName, function (Assert $assert): void {
 
             $jobDescription = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties'];
 
             $this->assertArrayHasKey('m12_efc60_dims256_cosine_concat', $jobDescription);
 
-            $this->forOpenSearch(function () use ($jobDescription) {
+            $this->forOpenSearch(function () use ($jobDescription): void {
                 $this->assertEquals('cosinesimil', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['space_type']);
                 $this->assertEquals('12', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['parameters']['m']);
                 $this->assertEquals('60', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['parameters']['ef_construction']);
                 $this->assertEquals('256', $jobDescription['m12_efc60_dims256_cosine_concat']['dimension']);
             });
 
-            $this->forElasticsearch(function () use ($jobDescription) {
+            $this->forElasticsearch(function () use ($jobDescription): void {
                 $this->assertEquals('cosine', $jobDescription['m12_efc60_dims256_cosine_concat']['similarity']);
                 $this->assertEquals('12', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['m']);
                 $this->assertEquals('60', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['ef_construction']);
@@ -1479,7 +1468,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function dimensions_accuracy_2()
+    public function dimensions_accuracy_2(): void
     {
         $indexName = uniqid();
 
@@ -1489,20 +1478,20 @@ class MappingsTest extends TestCase
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
-        $index = $this->sigmie->index($indexName);
+        $this->sigmie->index($indexName);
 
-        $this->assertIndex($indexName, function (Assert $assert) {
+        $this->assertIndex($indexName, function (Assert $assert): void {
 
             $jobDescription = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties'];
 
-            $this->forOpenSearch(function () use ($jobDescription) {
+            $this->forOpenSearch(function () use ($jobDescription): void {
                 $this->assertEquals('12', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['parameters']['m']);
                 $this->assertEquals('60', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['parameters']['ef_construction']);
                 $this->assertEquals('256', $jobDescription['m12_efc60_dims256_cosine_concat']['dimension']);
                 $this->assertEquals('cosinesimil', $jobDescription['m12_efc60_dims256_cosine_concat']['method']['space_type']);
             });
 
-            $this->forElasticsearch(function () use ($jobDescription) {
+            $this->forElasticsearch(function () use ($jobDescription): void {
                 $this->assertEquals('12', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['m']);
                 $this->assertEquals('60', $jobDescription['m12_efc60_dims256_cosine_concat']['index_options']['ef_construction']);
                 $this->assertEquals('256', $jobDescription['m12_efc60_dims256_cosine_concat']['dims']);
@@ -1514,7 +1503,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function dimensions_accuracy_3()
+    public function dimensions_accuracy_3(): void
     {
         $indexName = uniqid();
 
@@ -1523,20 +1512,20 @@ class MappingsTest extends TestCase
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
-        $index = $this->sigmie->index($indexName);
+        $this->sigmie->index($indexName);
 
-        $this->assertIndex($indexName, function (Assert $assert) {
+        $this->assertIndex($indexName, function (Assert $assert): void {
 
             $jobDescription = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties'];
 
-            $this->forOpenSearch(function () use ($jobDescription) {
+            $this->forOpenSearch(function () use ($jobDescription): void {
                 $this->assertEquals('34', $jobDescription['m34_efc212_dims512_cosine_avg']['method']['parameters']['m']);
                 $this->assertEquals('212', $jobDescription['m34_efc212_dims512_cosine_avg']['method']['parameters']['ef_construction']);
                 $this->assertEquals('512', $jobDescription['m34_efc212_dims512_cosine_avg']['dimension']);
                 $this->assertEquals('cosinesimil', $jobDescription['m34_efc212_dims512_cosine_avg']['method']['space_type']);
             });
 
-            $this->forElasticsearch(function () use ($jobDescription) {
+            $this->forElasticsearch(function () use ($jobDescription): void {
                 $this->assertEquals('34', $jobDescription['m34_efc212_dims512_cosine_avg']['index_options']['m']);
                 $this->assertEquals('212', $jobDescription['m34_efc212_dims512_cosine_avg']['index_options']['ef_construction']);
                 $this->assertEquals('512', $jobDescription['m34_efc212_dims512_cosine_avg']['dims']);
@@ -1548,7 +1537,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function dimensions_accuracy_5()
+    public function dimensions_accuracy_5(): void
     {
         $indexName = uniqid();
 
@@ -1557,20 +1546,20 @@ class MappingsTest extends TestCase
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
-        $index = $this->sigmie->index($indexName);
+        $this->sigmie->index($indexName);
 
-        $this->assertIndex($indexName, function (Assert $assert) {
+        $this->assertIndex($indexName, function (Assert $assert): void {
 
             $jobDescription = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties'];
 
-            $this->forOpenSearch(function () use ($jobDescription) {
+            $this->forOpenSearch(function () use ($jobDescription): void {
                 $this->assertEquals('40', $jobDescription['m40_efc300_dims256_cosine_avg']['method']['parameters']['m']);
                 $this->assertEquals('300', $jobDescription['m40_efc300_dims256_cosine_avg']['method']['parameters']['ef_construction']);
                 $this->assertEquals('256', $jobDescription['m40_efc300_dims256_cosine_avg']['dimension']);
                 $this->assertEquals('cosinesimil', $jobDescription['m40_efc300_dims256_cosine_avg']['method']['space_type']);
             });
 
-            $this->forElasticsearch(function () use ($jobDescription) {
+            $this->forElasticsearch(function () use ($jobDescription): void {
                 $this->assertEquals('40', $jobDescription['m40_efc300_dims256_cosine_avg']['index_options']['m']);
                 $this->assertEquals('300', $jobDescription['m40_efc300_dims256_cosine_avg']['index_options']['ef_construction']);
                 $this->assertEquals('256', $jobDescription['m40_efc300_dims256_cosine_avg']['dims']);
@@ -1582,7 +1571,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function multiple_vectors_per_field()
+    public function multiple_vectors_per_field(): void
     {
         $indexName = uniqid();
 
@@ -1596,9 +1585,9 @@ class MappingsTest extends TestCase
             ->properties($blueprint)
             ->create();
 
-        $this->assertIndex($indexName, function (Assert $assert) {
+        $this->assertIndex($indexName, function (Assert $assert): void {
 
-            $this->forOpenSearch(function () use ($assert) {
+            $this->forOpenSearch(function () use ($assert): void {
                 $field0 = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m34_efc212_dims512_cosine_avg']['method']['parameters'] ?? [];
                 $field1 = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m57_efc424_dims512_cosine_avg']['method']['parameters'] ?? [];
 
@@ -1606,7 +1595,7 @@ class MappingsTest extends TestCase
                 $assert->assertEquals(57, $field1['m'], 'm should be 57 for accuracy 5 and dimensions 512');
             });
 
-            $this->forElasticsearch(function () use ($assert) {
+            $this->forElasticsearch(function () use ($assert): void {
                 $field0 = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m34_efc212_dims512_cosine_avg']['index_options'] ?? [];
                 $field1 = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['m57_efc424_dims512_cosine_avg']['index_options'] ?? [];
 
@@ -1619,7 +1608,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function script_score_strategy()
+    public function script_score_strategy(): void
     {
         $indexName = uniqid();
 
@@ -1628,9 +1617,9 @@ class MappingsTest extends TestCase
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
-        $index = $this->sigmie->index($indexName);
+        $this->sigmie->index($indexName);
 
-        $this->assertIndex($indexName, function (Assert $assert) {
+        $this->assertIndex($indexName, function (Assert $assert): void {
 
             $jobDescription = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties']['exact_dims256_cosine_script'];
 
@@ -1638,7 +1627,7 @@ class MappingsTest extends TestCase
 
             $this->assertEquals('nested', $jobDescription['type']);
 
-            $this->forOpenSearch(function () use ($vectorField) {
+            $this->forOpenSearch(function () use ($vectorField): void {
                 $this->assertEquals('knn_vector', $vectorField['type']);
                 $this->assertEquals(256, $vectorField['dimension']);
                 $this->assertEquals('cosinesimil', $vectorField['method']['space_type']);
@@ -1647,7 +1636,7 @@ class MappingsTest extends TestCase
                 $this->assertEquals(300, $vectorField['method']['parameters']['ef_construction']);
             });
 
-            $this->forElasticsearch(function () use ($vectorField) {
+            $this->forElasticsearch(function () use ($vectorField): void {
                 $this->assertEquals('dense_vector', $vectorField['type']);
                 $this->assertEquals(256, $vectorField['dims']);
                 $this->assertTrue($vectorField['index']);
@@ -1662,7 +1651,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function html_custom_analyzer()
+    public function html_custom_analyzer(): void
     {
         $indexName = uniqid();
 
@@ -1682,25 +1671,25 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function all_fields()
+    public function all_fields(): void
     {
-        $indexName = uniqid();
+        uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->text('title');
 
-        $blueprint->nested('comments', function (NewProperties $props) {
+        $blueprint->nested('comments', function (NewProperties $props): void {
             $props->keyword('comment_id');
             $props->text('text');
-            $props->nested('user', function (NewProperties $props) {
+            $props->nested('user', function (NewProperties $props): void {
                 $props->keyword('name');
                 $props->number('age');
             });
         });
-        $blueprint->object('user', function (NewProperties $props) {
+        $blueprint->object('user', function (NewProperties $props): void {
             $props->keyword('name');
             $props->number('age');
-            $props->object('address', function (NewProperties $props) {
+            $props->object('address', function (NewProperties $props): void {
                 $props->keyword('street');
                 $props->keyword('city');
             });
@@ -1738,7 +1727,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function object_field_names_from_index()
+    public function object_field_names_from_index(): void
     {
         $indexName = uniqid();
 
@@ -1772,16 +1761,16 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function nested_field_names_from_index()
+    public function nested_field_names_from_index(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->text('title');
-        $blueprint->object('comments', function (NewProperties $props) {
+        $blueprint->object('comments', function (NewProperties $props): void {
             $props->keyword('comment_id');
             $props->text('text');
-            $props->object('user', function (NewProperties $props) {
+            $props->object('user', function (NewProperties $props): void {
                 $props->keyword('name');
                 $props->number('age');
             });
@@ -1805,7 +1794,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function double_field_mapping()
+    public function double_field_mapping(): void
     {
         $indexName = uniqid();
 
@@ -1816,7 +1805,7 @@ class MappingsTest extends TestCase
             ->properties($blueprint)
             ->create();
 
-        $this->assertIndex($indexName, function (Assert $assert) {
+        $this->assertIndex($indexName, function (Assert $assert): void {
             $scoreField = $assert->data()['mappings']['properties']['score'];
             $this->assertEquals('double', $scoreField['type']);
         });
@@ -1825,7 +1814,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function field_mapping_from_raw_double()
+    public function field_mapping_from_raw_double(): void
     {
         $rawMapping = [
             'score' => [
@@ -1836,17 +1825,17 @@ class MappingsTest extends TestCase
         $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
 
         // Test that double field type doesn't throw exception
-        $properties = \Sigmie\Mappings\Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
+        $properties = Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
 
         $scoreField = $properties->get('score');
-        $this->assertInstanceOf(\Sigmie\Mappings\Types\Number::class, $scoreField);
+        $this->assertInstanceOf(Number::class, $scoreField);
         $this->assertEquals('double', $scoreField->type());
     }
 
     /**
      * @test
      */
-    public function field_mapping_from_raw_flat_object()
+    public function field_mapping_from_raw_flat_object(): void
     {
         $rawMapping = [
             'metadata' => [
@@ -1857,17 +1846,17 @@ class MappingsTest extends TestCase
         $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
 
         // Test that flat_object field type doesn't throw exception
-        $properties = \Sigmie\Mappings\Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
+        $properties = Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
 
         $metadataField = $properties->get('metadata');
-        $this->assertInstanceOf(\Sigmie\Mappings\Types\FlatObject::class, $metadataField);
+        $this->assertInstanceOf(FlatObject::class, $metadataField);
         $this->assertEquals('flat_object', $metadataField->type());
     }
 
     /**
      * @test
      */
-    public function validate_range()
+    public function validate_range(): void
     {
         $blueprint = new NewProperties;
         $blueprint->range('age_range');
@@ -1893,7 +1882,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function range_field_types()
+    public function range_field_types(): void
     {
         $indexName = uniqid();
 
@@ -1909,7 +1898,7 @@ class MappingsTest extends TestCase
             ->properties($blueprint)
             ->create();
 
-        $this->assertIndex($indexName, function (Assert $assert) {
+        $this->assertIndex($indexName, function (Assert $assert): void {
             $integerRange = $assert->data()['mappings']['properties']['integer_range'];
             $this->assertEquals('integer_range', $integerRange['type']);
 
@@ -1933,7 +1922,7 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
-    public function range_field_mapping_from_raw()
+    public function range_field_mapping_from_raw(): void
     {
         $rawMapping = [
             'age_range' => ['type' => 'integer_range'],
@@ -1944,22 +1933,22 @@ class MappingsTest extends TestCase
 
         $defaultAnalyzer = new DefaultAnalyzer(new WordBoundaries());
 
-        $properties = \Sigmie\Mappings\Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
+        $properties = Properties::create($rawMapping, $defaultAnalyzer, [], 'mappings');
 
         $ageRange = $properties->get('age_range');
-        $this->assertInstanceOf(\Sigmie\Mappings\Types\Range::class, $ageRange);
+        $this->assertInstanceOf(Range::class, $ageRange);
         $this->assertEquals('integer_range', $ageRange->type());
 
         $priceRange = $properties->get('price_range');
-        $this->assertInstanceOf(\Sigmie\Mappings\Types\Range::class, $priceRange);
+        $this->assertInstanceOf(Range::class, $priceRange);
         $this->assertEquals('double_range', $priceRange->type());
 
         $dateRange = $properties->get('date_range');
-        $this->assertInstanceOf(\Sigmie\Mappings\Types\Range::class, $dateRange);
+        $this->assertInstanceOf(Range::class, $dateRange);
         $this->assertEquals('date_range', $dateRange->type());
 
         $ipRange = $properties->get('ip_range');
-        $this->assertInstanceOf(\Sigmie\Mappings\Types\Range::class, $ipRange);
+        $this->assertInstanceOf(Range::class, $ipRange);
         $this->assertEquals('ip_range', $ipRange->type());
     }
 }

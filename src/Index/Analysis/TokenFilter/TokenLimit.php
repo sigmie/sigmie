@@ -24,9 +24,7 @@ class TokenLimit extends TokenFilter
     {
         [$name, $configs] = name_configs($raw);
 
-        $instance = new static($name,(int) $configs['max_token_count']);
-
-        return $instance;
+        return new static($name,(int) $configs['max_token_count']);
     }
 
     protected function getValues(): array

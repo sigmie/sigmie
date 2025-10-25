@@ -36,7 +36,7 @@ class Date extends Type
     public function validate(string $key, mixed $value): array
     {
         if (! is_string($value)) {
-            return [false, "The field {$key} mapped as date must be a date string"];
+            return [false, sprintf('The field %s mapped as date must be a date string', $key)];
         }
 
         $dateFormats = [
@@ -57,7 +57,7 @@ class Date extends Type
         }
 
         if (! $isValid) {
-            return [false, "The field {$key} mapped as {$this->typeName()} must be a string in one of the following formats: ".implode(', ', $dateFormats)];
+            return [false, sprintf('The field %s mapped as %s must be a string in one of the following formats: ', $key, $this->typeName()).implode(', ', $dateFormats)];
         }
 
         return [true, ''];

@@ -29,9 +29,7 @@ class Truncate extends TokenFilter
 
         $length = $configs['length'] ?? 10;
 
-        $instance = new static($name, $length);
-
-        return $instance;
+        return new static($name, $length);
     }
 
     protected function getValues(): array

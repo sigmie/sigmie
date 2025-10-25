@@ -28,12 +28,10 @@ class NonLetter implements Tokenizer
 
     public function toRaw(): array
     {
-        $res = [
+        return [
             $this->name() => [
                 'type' => 'letter',
             ],
         ];
-
-        return $res;
     }
 }

@@ -29,7 +29,7 @@ abstract class Bucket implements Aggregation
             $raw[$this->name]['aggs'] = $this->aggs->toRaw();
         }
 
-        if (count($this->meta) > 0) {
+        if ($this->meta !== []) {
             $raw[$this->name]['meta'] = [
                 ...$this->meta,
             ];

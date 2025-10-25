@@ -6,24 +6,19 @@ namespace Sigmie\AI\Embedders;
 
 use Http\Promise\Promise;
 use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Promise\PromiseInterface;
 use Sigmie\AI\Contracts\Embedder;
 
 class OpenAIProvider implements Embedder
 {
     protected Client $client;
-    protected string $apiKey;
-    protected string $model;
 
-    public function __construct(string $apiKey, string $model = 'text-embedding-3-small')
+    public function __construct(protected string $apiKey, protected string $model = 'text-embedding-3-small')
     {
-        $this->apiKey = $apiKey;
-        $this->model = $model;
         $this->client = new Client([
             'base_uri' => 'https://api.openai.com',
             'headers' => [
-                'Authorization' => 'Bearer ' . $apiKey,
+                'Authorization' => 'Bearer ' . $this->apiKey,
                 'Content-Type' => 'application/json',
             ]
         ]);
@@ -45,7 +40,7 @@ class OpenAIProvider implements Embedder
 
     public function batchEmbed(array $payload): array
     {
-        if (count($payload) === 0) {
+        if ($payload === []) {
             return [];
         }
 
@@ -80,11 +75,8 @@ class OpenAIProvider implements Embedder
         ]);
 
         return new class($promise) implements Promise {
-            private PromiseInterface $promise;
-
-            public function __construct(PromiseInterface $promise)
+            public function __construct(private PromiseInterface $promise)
             {
-                $this->promise = $promise;
             }
 
             public function then(callable $onFulfilled = null, callable $onRejected = null)
@@ -93,9 +85,10 @@ class OpenAIProvider implements Embedder
                     function ($response) use ($onFulfilled) {
                         $data = json_decode($response->getBody()->getContents(), true);
                         $embeddings = $data['data'][0]['embedding'];
-                        if ($onFulfilled) {
+                        if ($onFulfilled !== null) {
                             return $onFulfilled(['_embeddings' => $embeddings]);
                         }
+
                         return ['_embeddings' => $embeddings];
                     },
                     $onRejected

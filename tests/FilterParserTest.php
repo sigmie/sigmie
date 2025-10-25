@@ -19,7 +19,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function wildcard_in_query()
+    public function wildcard_in_query(): void
     {
         $indexName = uniqid();
 
@@ -61,7 +61,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function end_in_query()
+    public function end_in_query(): void
     {
         $indexName = uniqid();
 
@@ -96,7 +96,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function parse_dash()
+    public function parse_dash(): void
     {
         $indexName = uniqid();
 
@@ -131,7 +131,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function parse_spaces()
+    public function parse_spaces(): void
     {
         $indexName = uniqid();
 
@@ -140,16 +140,16 @@ class FilterParserTest extends TestCase
         $props->id('system_id');
         $props->caseSensitiveKeyword('interval');
         $props->text('order_notes');
-        $props->nested('user', function (NewProperties $props) {
+        $props->nested('user', function (NewProperties $props): void {
             $props->id('id');
             $props->path('slug');
             $props->bool('internal');
         });
-        $props->object('lead_type', function (NewProperties $props) {
+        $props->object('lead_type', function (NewProperties $props): void {
             $props->id('id');
             $props->keyword('short_code');
         });
-        $props->nested('delivery_history', function (NewProperties $props) {
+        $props->nested('delivery_history', function (NewProperties $props): void {
             $props->id('id');
             $props->date('timestamp');
             $props->number('limit_amount')->integer();
@@ -191,12 +191,12 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function parse_parentheses_filter()
+    public function parse_parentheses_filter(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->nested('subject_services', function (NewProperties $props) {
+        $blueprint->nested('subject_services', function (NewProperties $props): void {
             $props->id('id');
             $props->text('name');
         });
@@ -231,7 +231,7 @@ class FilterParserTest extends TestCase
 
         $query = $parser->parse('subject_services:{id:"23"}');
 
-        $res = $this->sigmie->query($indexName, $query)->get();
+        $this->sigmie->query($indexName, $query)->get();
 
         $this->assertEmpty($parser->errors());
     }
@@ -239,7 +239,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function same_filter_nested_filter()
+    public function same_filter_nested_filter(): void
     {
         $indexName = uniqid();
 
@@ -273,13 +273,13 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function parse_deep_nested_filter()
+    public function parse_deep_nested_filter(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->nested('contact', function (NewProperties $props) {
-            $props->nested('address', function (NewProperties $props) {
+        $blueprint->nested('contact', function (NewProperties $props): void {
+            $props->nested('address', function (NewProperties $props): void {
                 $props->keyword('city');
                 $props->keyword('marker');
             });
@@ -338,12 +338,12 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function parse_object_filter()
+    public function parse_object_filter(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->object('contact', function (NewProperties $props) {
+        $blueprint->object('contact', function (NewProperties $props): void {
             $props->bool('active');
             $props->keyword('languages');
         });
@@ -395,14 +395,14 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function multi_nested_filter()
+    public function multi_nested_filter(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->nested('driver', function (NewProperties $props) {
+        $blueprint->nested('driver', function (NewProperties $props): void {
             $props->name('name');
-            $props->nested('vehicle', function (NewProperties $props) {
+            $props->nested('vehicle', function (NewProperties $props): void {
                 $props->keyword('make');
                 $props->keyword('model');
             });
@@ -463,12 +463,12 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function parse_nested_filter()
+    public function parse_nested_filter(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->nested('contact', function (NewProperties $props) {
+        $blueprint->nested('contact', function (NewProperties $props): void {
             $props->geoPoint('location');
             $props->bool('active');
             $props->number('points')->integer();
@@ -511,7 +511,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function parse_location_filter_with_zero_distance()
+    public function parse_location_filter_with_zero_distance(): void
     {
         $indexName = uniqid();
 
@@ -549,7 +549,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function parse_location_filter()
+    public function parse_location_filter(): void
     {
         $indexName = uniqid();
 
@@ -587,7 +587,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function location_parsing()
+    public function location_parsing(): void
     {
         $filterStrings = [
             'location:70km[52.31,8.61]',
@@ -604,7 +604,7 @@ class FilterParserTest extends TestCase
             'location:3in[41.9028,12.4964]',
         ];
 
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->geoPoint('location');
@@ -622,10 +622,10 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function has_not_filter()
+    public function has_not_filter(): void
     {
 
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->text('name')->unstructuredText();
@@ -666,9 +666,9 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function has_filter()
+    public function has_filter(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->text('name')->unstructuredText();
@@ -709,7 +709,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function parse_exception_for_space_between_filters()
+    public function parse_exception_for_space_between_filters(): void
     {
 
         $indexName = uniqid();
@@ -762,13 +762,13 @@ class FilterParserTest extends TestCase
 
         $this->expectException(ParseException::class);
 
-        $query = $parser->parse('location:1km[51.49,13.77] active:true');
+        $parser->parse('location:1km[51.49,13.77] active:true');
     }
 
     /**
      * @test
      */
-    public function parse_geo_distance()
+    public function parse_geo_distance(): void
     {
         $indexName = uniqid();
 
@@ -826,7 +826,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function handle_empty_in()
+    public function handle_empty_in(): void
     {
         $indexName = uniqid();
 
@@ -872,7 +872,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function fix_trim_in_spaces()
+    public function fix_trim_in_spaces(): void
     {
         $indexName = uniqid();
 
@@ -918,7 +918,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function fix_dont_replace_parenthesis_in_double_quotes()
+    public function fix_dont_replace_parenthesis_in_double_quotes(): void
     {
         $indexName = uniqid();
 
@@ -960,7 +960,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function fix_dont_replace_parenthesis_in_quotes()
+    public function fix_dont_replace_parenthesis_in_quotes(): void
     {
         $indexName = uniqid();
 
@@ -1000,7 +1000,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function fix_ignored_or()
+    public function fix_ignored_or(): void
     {
         $indexName = uniqid();
 
@@ -1064,7 +1064,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function parse_empty_term_double_quote()
+    public function parse_empty_term_double_quote(): void
     {
         $blueprint = new NewProperties;
         $blueprint->keyword('last_activity_label');
@@ -1088,7 +1088,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function parse_empty_term_double_quotes()
+    public function parse_empty_term_double_quotes(): void
     {
         $blueprint = new NewProperties;
         $blueprint->keyword('database');
@@ -1097,7 +1097,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('database:""');
+        $parser->parse('database:""');
 
         // other wise we get an exception
         $this->assertTrue(true);
@@ -1106,7 +1106,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function parse_empty_term()
+    public function parse_empty_term(): void
     {
         $blueprint = new NewProperties;
         $blueprint->keyword('database');
@@ -1115,7 +1115,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse("database:''");
+        $parser->parse("database:''");
 
         // other wise we get an exception
         $this->assertTrue(true);
@@ -1124,7 +1124,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function parse_empty_in()
+    public function parse_empty_in(): void
     {
         $blueprint = new NewProperties;
         $blueprint->keyword('database');
@@ -1133,7 +1133,7 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $query = $parser->parse('database:[]');
+        $parser->parse('database:[]');
 
         // other wise we get an exception
         $this->assertTrue(true);
@@ -1142,9 +1142,9 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function parse_non_existing_parenthesis()
+    public function parse_non_existing_parenthesis(): void
     {
-        $indexName = uniqid();
+        uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->keyword('database');
@@ -1155,15 +1155,15 @@ class FilterParserTest extends TestCase
 
         $this->expectException(ParseException::class);
 
-        $query = $parser->parse("(database:['GeneReviews','OMIM']) AND (mode_of_inheritance:['autosomal_dominant','autosomal_recessive'])");
+        $parser->parse("(database:['GeneReviews','OMIM']) AND (mode_of_inheritance:['autosomal_dominant','autosomal_recessive'])");
     }
 
     /**
      * @test
      */
-    public function exceptions()
+    public function exceptions(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
 
@@ -1173,13 +1173,13 @@ class FilterParserTest extends TestCase
 
         $parser = new FilterParser($props);
 
-        $boolean = $parser->parse('category:"sports" AND active:true OR name:foo');
+        $parser->parse('category:"sports" AND active:true OR name:foo');
     }
 
     /**
      * @test
      */
-    public function foo()
+    public function foo(): void
     {
         $indexName = uniqid();
 
@@ -1256,9 +1256,9 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function term_long_string_filter_with_single_quotes()
+    public function term_long_string_filter_with_single_quotes(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->text('name')->unstructuredText()->keyword();
@@ -1266,7 +1266,7 @@ class FilterParserTest extends TestCase
 
         $props = $blueprint();
         $parser = new FilterParser($props);
-        $boolean = $parser->parse('category:\'crime & drama\' OR category:\'crime OR | AND | AND NOT sports\'');
+        $boolean = $parser->parse("category:'crime & drama' OR category:'crime OR | AND | AND NOT sports'");
 
         $indexName = uniqid();
         $index = $this->sigmie
@@ -1292,7 +1292,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $boolean)->get();
 
-        foreach ($res->json('hits.hits') as $index => $data) {
+        foreach ($res->json('hits.hits') as $data) {
             $source = $data['_source'];
             $this->assertTrue($source['category'] === 'crime & drama');
         }
@@ -1301,9 +1301,9 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function term_long_string_filter()
+    public function term_long_string_filter(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->text('name')->unstructuredText()->keyword();
@@ -1337,7 +1337,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $boolean)->get();
 
-        foreach ($res->json('hits.hits') as $index => $data) {
+        foreach ($res->json('hits.hits') as $data) {
             $source = $data['_source'];
             $this->assertTrue($source['category'] === 'crime & drama');
         }
@@ -1346,9 +1346,9 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function term_filter()
+    public function term_filter(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->text('name')->unstructuredText()->keyword();
@@ -1385,7 +1385,7 @@ class FilterParserTest extends TestCase
 
         $res = $this->sigmie->query($indexName, $boolean)->get();
 
-        foreach ($res->json('hits.hits') as $index => $data) {
+        foreach ($res->json('hits.hits') as $data) {
             $source = $data['_source'];
             $this->assertTrue($source['name'] !== 'Adidas');
             $this->assertTrue($source['category'] === 'sports');
@@ -1395,9 +1395,9 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function is_not_filter()
+    public function is_not_filter(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->bool('active');
@@ -1450,9 +1450,9 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function is_filter()
+    public function is_filter(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->bool('active');
@@ -1503,9 +1503,9 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function date_single_quotes_range()
+    public function date_single_quotes_range(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->date('created_at');
@@ -1549,9 +1549,9 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function date_double_quotes_range()
+    public function date_double_quotes_range(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->date('created_at');
@@ -1595,9 +1595,9 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function not()
+    public function not(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->category('category');
@@ -1640,12 +1640,12 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function nested_object_is_active_filter()
+    public function nested_object_is_active_filter(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->object('contact', function (NewProperties $props) {
+        $blueprint->object('contact', function (NewProperties $props): void {
             $props->bool('is_active');
             $props->text('name')->unstructuredText();
         });
@@ -1696,12 +1696,12 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function nested_object_is_not_active_filter()
+    public function nested_object_is_not_active_filter(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->object('contact', function (NewProperties $props) {
+        $blueprint->object('contact', function (NewProperties $props): void {
             $props->bool('is_active');
             $props->text('name')->unstructuredText();
         });
@@ -1751,12 +1751,12 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function nested_object_name_filter()
+    public function nested_object_name_filter(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->object('contact', function (NewProperties $props) {
+        $blueprint->object('contact', function (NewProperties $props): void {
             $props->bool('is_active');
             $props->name('name');
             $props->address();
@@ -1785,7 +1785,6 @@ class FilterParserTest extends TestCase
         $docs = [
             new Document([
                 'contact' => [
-                    'is_active' => true,
                     'name' => 'John Doe',
                     'address' => '123 Main St',
                     'code' => 'A1B2C3',
@@ -1889,7 +1888,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function max_nested_filter()
+    public function max_nested_filter(): void
     {
         $indexName = uniqid();
 
@@ -1929,13 +1928,13 @@ class FilterParserTest extends TestCase
 
         $query = $parser->parse($filter);
 
-        $res = $this->sigmie->query($indexName, $query)->get();
+        $this->sigmie->query($indexName, $query)->get();
     }
 
     /**
      * @test
      */
-    public function handle_between()
+    public function handle_between(): void
     {
         $indexName = uniqid();
 
@@ -1980,7 +1979,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function handle_between_with_dates()
+    public function handle_between_with_dates(): void
     {
         $indexName = uniqid();
 
@@ -2023,9 +2022,9 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function handle_numbers_without_quotes()
+    public function handle_numbers_without_quotes(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->price();
@@ -2071,9 +2070,9 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function filter_syntax_exception()
+    public function filter_syntax_exception(): void
     {
-        $mappings = new Properties();
+        new Properties();
 
         $blueprint = new NewProperties;
         $blueprint->category('color');
@@ -2111,7 +2110,7 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
-    public function trim_quotes_from_id_filter()
+    public function trim_quotes_from_id_filter(): void
     {
         $indexName = uniqid();
 

@@ -30,14 +30,12 @@ class Ngram extends TokenFilter
     {
         [$name, $configs] = name_configs($raw);
 
-        $instance = new static(
+        return new static(
             $name,
             $configs['min_gram'],
             $configs['max_gram'],
             $configs['preserve_original'] ?? false
         );
-
-        return $instance;
     }
 
     protected function getValues(): array

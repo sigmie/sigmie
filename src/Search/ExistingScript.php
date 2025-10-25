@@ -14,8 +14,11 @@ use Sigmie\Base\ElasticsearchException;
 
 class ExistingScript
 {
-    use Index, RenderAPI, ScriptAPI, TemplateAPI, SearchAPI;
-
+    use Index;
+    use RenderAPI;
+    use ScriptAPI;
+    use TemplateAPI;
+    use SearchAPI;
     public function __construct(
         public readonly string $id,
         ElasticsearchConnection $connection
@@ -23,7 +26,7 @@ class ExistingScript
         $this->elasticsearchConnection = $connection;
     }
 
-    public function run(string $index, array $params = [])
+    public function run(string $index, array $params = []): \Sigmie\Base\Http\Responses\Search
     {
         $body = [
             'id' => $this->id,
@@ -41,14 +44,14 @@ class ExistingScript
             $res = $this->renderAPICall($this->id, $params);
 
             return $res->json('template_output');
-        } catch (ElasticsearchException $e) {
-            $type = $e->json('type');
+        } catch (ElasticsearchException $elasticsearchException) {
+            $type = $elasticsearchException->json('type');
 
             if ($type === 'resource_not_found_exception') {
                 return null;
             }
 
-            throw $e;
+            throw $elasticsearchException;
         }
     }
 
@@ -58,12 +61,12 @@ class ExistingScript
             $res = $this->scriptAPICall('GET', $this->id);
 
             return $res->json('script.source');
-        } catch (ElasticsearchException $e) {
-            if ($e->json('json.found') === false) {
+        } catch (ElasticsearchException $elasticsearchException) {
+            if ($elasticsearchException->json('json.found') === false) {
                 return null;
             }
 
-            throw $e;
+            throw $elasticsearchException;
         }
     }
 
@@ -73,14 +76,14 @@ class ExistingScript
             $res = $this->scriptAPICall('DELETE', $this->id);
 
             return $res->json('acknowledged');
-        } catch (ElasticsearchException $e) {
-            $type = $e->json('type');
+        } catch (ElasticsearchException $elasticsearchException) {
+            $type = $elasticsearchException->json('type');
 
             if ($type === 'resource_not_found_exception') {
                 return false;
             }
 
-            throw $e;
+            throw $elasticsearchException;
         }
     }
 }

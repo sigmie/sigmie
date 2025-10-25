@@ -25,13 +25,13 @@ class Id extends CaseSensitiveKeyword
 
     public function filterableName(): ?string
     {
-        return trim("{$this->parentPath}.{$this->name}", '.');
+        return trim(sprintf('%s.%s', $this->parentPath, $this->name), '.');
     }
 
     public function validate(string $key, mixed $value): array
     {
         if (! is_int($value)) {
-            return [false, "The field {$key} mapped as {$this->typeName()} must be an integer"];
+            return [false, sprintf('The field %s mapped as %s must be an integer', $key, $this->typeName())];
         }
 
         return [true, ''];

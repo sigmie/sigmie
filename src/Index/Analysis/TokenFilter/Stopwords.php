@@ -33,9 +33,7 @@ class Stopwords extends TokenFilter
             return new EnglishStopwords($name);
         }
 
-        $instance = new static($name, $configs['stopwords']);
-
-        return $instance;
+        return new static($name, $configs['stopwords']);
     }
 
     protected function getValues(): array

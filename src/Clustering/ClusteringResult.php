@@ -31,6 +31,7 @@ class ClusteringResult
             if (!isset($clusters[$clusterId])) {
                 $clusters[$clusterId] = [];
             }
+
             $clusters[$clusterId][] = [
                 'index' => $index,
                 'text' => $this->texts[$index],
@@ -56,6 +57,7 @@ class ClusteringResult
                 ];
             }
         }
+
         return $items;
     }
 
@@ -74,6 +76,7 @@ class ClusteringResult
                 ];
             }
         }
+
         return $noiseItems;
     }
 

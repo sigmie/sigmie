@@ -19,13 +19,11 @@ class Whitespace implements Tokenizer
 
     public function toRaw(): array
     {
-        $res = [
+        return [
             $this->name() => [
                 'type' => 'whitespace',
             ],
         ];
-
-        return $res;
     }
 
     public function name(): string

@@ -22,10 +22,8 @@ class TopHits extends Bucket
 
     protected function value(): array
     {
-        $value = [
+        return [
             'top_hits' => [],
         ];
-
-        return $value;
     }
 }

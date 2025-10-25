@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Sigmie\Document\Hit;
-
 class RRF
 {
     public function __construct(
@@ -51,13 +49,13 @@ class RRF
         }
 
         // Sort by RRF score descending
-        uasort($scores, fn($a, $b) => $b['score'] <=> $a['score']);
+        uasort($scores, fn($a, $b): int => $b['score'] <=> $a['score']);
 
         // Limit to topK results
         $topScores = array_slice(array_values($scores), 0, $this->topK);
 
         // Return documents with RRF scores
-        return array_map(function ($item) {
+        return array_map(function (array $item) {
             $doc = $item['doc'];
 
             if (is_array($doc)) {

@@ -32,7 +32,7 @@ class BooleanQueryBuilder implements Queries
 
     protected array $clauses = [];
 
-    public function parse(string $filterString)
+    public function parse(string $filterString): void
     {
         $parser = new FilterParser($this->properties);
 
@@ -179,7 +179,10 @@ class BooleanQueryBuilder implements Queries
         return $this;
     }
 
-    public function toRaw()
+    /**
+     * @return mixed[]
+     */
+    public function toRaw(): array
     {
         $res = [];
 

@@ -6,10 +6,8 @@ namespace Sigmie\Index\Shared;
 
 use Sigmie\Document\AliveCollection;
 use Sigmie\Index\NewIndex;
-use Sigmie\Mappings\NewProperties;
 use Sigmie\Search\NewSearch;
 use Sigmie\Sigmie;
-use Sigmie\Document\Document;
 
 trait SigmieIndex
 {

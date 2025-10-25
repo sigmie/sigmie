@@ -4,15 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\AI\APIs\CohereRerankApi;
-use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 use Sigmie\Document\Document;
 use Sigmie\Document\RerankedHit;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Rag\NewRerank;
-use Sigmie\Semantic\Providers\SigmieAI;
-use Sigmie\Semantic\Reranker;
-use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 use Symfony\Component\Yaml\Yaml;
 
@@ -21,10 +16,9 @@ class RerankerTest extends TestCase
     /**
      * @test
      */
-    public function rerank_threshold()
+    public function rerank_threshold(): void
     {
-        $indexName = uniqid();
-        $embeddings = $this->embeddingApi; 
+        $indexName = uniqid(); 
         $cohereReranker = $this->rerankApi; 
 
         $blueprint = new NewProperties();

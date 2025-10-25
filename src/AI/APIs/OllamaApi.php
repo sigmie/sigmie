@@ -164,7 +164,7 @@ class OllamaApi implements LLMApi
 
     protected function convertMessages(Prompt $prompt): array
     {
-        return array_map(fn($message) => [
+        return array_map(fn($message): array => [
             'role' => $message['role']->toOpenAI(),
             'content' => $message['content']
         ], $prompt->messages());
@@ -187,7 +187,7 @@ class OllamaApi implements LLMApi
                 $line = substr($buffer, 0, $pos);
                 $buffer = substr($buffer, $pos + 1);
 
-                if (strpos($line, 'data: ') === 0) {
+                if (str_starts_with($line, 'data: ')) {
                     $data = substr($line, 6);
 
                     if (trim($data) === '[DONE]') {
@@ -203,7 +203,7 @@ class OllamaApi implements LLMApi
             }
         }
 
-        if (!empty($buffer) && strpos($buffer, 'data: ') === 0) {
+        if ($buffer !== '' && $buffer !== '0' && str_starts_with($buffer, 'data: ')) {
             $data = substr($buffer, 6);
             if (trim($data) !== '[DONE]') {
                 $decoded = json_decode(trim($data), true);

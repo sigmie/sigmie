@@ -11,13 +11,8 @@ class VectorPool
 {
     protected array $pool = [];
 
-    protected EmbeddingsApi $embeddingsApi;
-
-    public function __construct(
-        EmbeddingsApi $embeddingsApi,
-        protected bool $ensureNormalized = true
-    ) {
-        $this->embeddingsApi = $embeddingsApi;
+    public function __construct(protected EmbeddingsApi $embeddingsApi, protected bool $ensureNormalized = true)
+    {
     }
 
     public function get(string $text, int $dimensions): array
@@ -45,9 +40,9 @@ class VectorPool
     {
         // $items format: [['text' => 'foo', 'dims' => 256], ...]
         // Filter out items that are already in the pool
-        $missing = array_filter($items, fn($item) => !$this->has($item['text'], $item['dims']));
+        $missing = array_filter($items, fn($item): bool => !$this->has($item['text'], $item['dims']));
 
-        if (empty($missing)) {
+        if ($missing === []) {
             return $this;
         }
 

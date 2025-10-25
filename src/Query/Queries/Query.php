@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Queries;
 
-use Sigmie\Query\Contracts\QueryClause as QueryClause;
+use Sigmie\Query\Contracts\QueryClause;
 
 abstract class Query implements QueryClause
 {

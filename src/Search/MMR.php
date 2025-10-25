@@ -23,28 +23,28 @@ class MMR
      */
     public function diversify(array $hits, array $seedDocs, string $fieldName, int $topK): array
     {
-        if (empty($hits) || empty($seedDocs) || empty($fieldName)) {
+        if ($hits === [] || $seedDocs === [] || ($fieldName === '' || $fieldName === '0')) {
             return array_slice($hits, 0, $topK);
         }
 
         // Extract query vectors from seed documents
         $queryVectors = $this->extractQueryVectors($seedDocs, $fieldName);
 
-        if (empty($queryVectors)) {
+        if ($queryVectors === []) {
             return array_slice($hits, 0, $topK);
         }
 
         // Calculate centroid of query vectors for relevance comparison
         $queryVector = VectorMath::centroid($queryVectors);
 
-        if (empty($queryVector)) {
+        if ($queryVector === []) {
             return array_slice($hits, 0, $topK);
         }
 
         $selected = [];
         $remaining = $hits;
 
-        while (count($selected) < $topK && !empty($remaining)) {
+        while (count($selected) < $topK && $remaining !== []) {
             $maxScore = -INF;
             $maxIndex = null;
 
@@ -61,17 +61,15 @@ class MMR
                 // Calculate diversity (max similarity to already selected docs)
                 $maxSimilarity = 0.0;
 
-                if (!empty($selected)) {
-                    foreach ($selected as $selectedHit) {
-                        $selectedVector = $this->extractVector($selectedHit, $fieldName);
+                foreach ($selected as $selectedHit) {
+                    $selectedVector = $this->extractVector($selectedHit, $fieldName);
 
-                        if ($selectedVector === null) {
-                            continue;
-                        }
-
-                        $similarity = VectorMath::cosineSimilarity($docVector, $selectedVector);
-                        $maxSimilarity = max($maxSimilarity, $similarity);
+                    if ($selectedVector === null) {
+                        continue;
                     }
+
+                    $similarity = VectorMath::cosineSimilarity($docVector, $selectedVector);
+                    $maxSimilarity = max($maxSimilarity, $similarity);
                 }
 
                 // MMR score: λ * relevance - (1-λ) * max_similarity
@@ -89,9 +87,10 @@ class MMR
                 $remaining = array_values($remaining);
             } else {
                 // No more hits with valid vectors - fill remaining with whatever's left
-                while (count($selected) < $topK && !empty($remaining)) {
+                while (count($selected) < $topK && $remaining !== []) {
                     $selected[] = array_shift($remaining);
                 }
+
                 break;
             }
         }
@@ -108,21 +107,25 @@ class MMR
 
         foreach ($seedDocs as $doc) {
             $source = is_array($doc) ? ($doc['_source'] ?? null) : ($doc->_source ?? null);
-
-            if (!$source || !isset($source['_embeddings'])) {
+            if (!$source) {
+                continue;
+            }
+            if (!isset($source['_embeddings'])) {
                 continue;
             }
 
             // Get all vectors for the field using dot notation
             $vectors = dot($source['_embeddings'])->get($fieldName);
-
-            if (!$vectors || !is_array($vectors)) {
+            if (!$vectors) {
+                continue;
+            }
+            if (!is_array($vectors)) {
                 continue;
             }
 
             // Add all vectors from this document
             foreach ($vectors as $vector) {
-                if (is_array($vector) && !empty($vector)) {
+                if (is_array($vector) && $vector !== []) {
                     $firstElement = reset($vector);
                     if (is_numeric($firstElement)) {
                         $queryVectors[] = $vector;
@@ -154,10 +157,12 @@ class MMR
 
         // Get the first valid vector (should be consistent across all documents)
         foreach ($vectors as $vectorData) {
-            if (!is_array($vectorData) || empty($vectorData)) {
+            if (!is_array($vectorData)) {
                 continue;
             }
-
+            if (empty($vectorData)) {
+                continue;
+            }
             // Check if it's a numeric vector array
             $firstElement = reset($vectorData);
             if (is_numeric($firstElement)) {

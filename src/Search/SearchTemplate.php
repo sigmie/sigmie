@@ -60,7 +60,7 @@ class SearchTemplate
         return $parsedSource;
     }
 
-    private function handleQueryParameter(string $tag, string $fallback, string $parsedSource)
+    private function handleQueryParameter(string $tag, string $fallback, string $parsedSource): string|array|null
     {
         if (preg_match('/"@' . $tag . '\((.+)\)@end' . $tag . '"/', $parsedSource, $sortMatches)) {
             $default = stripslashes($sortMatches[1]);
@@ -68,7 +68,7 @@ class SearchTemplate
             // this in case we want to improve and still render the queries in case
             // of an empty string.
             // $rawDefault = "{{#{$tag}}}{$default}{{/{$tag}}} {{^{$tag}}}{$default}{{/{$tag}}}";
-            $rawDefault = "{{#{$tag}}}{$default}{{/{$tag}}} {{^{$tag}}}{$fallback}{{/{$tag}}}";
+            $rawDefault = sprintf('{{#%s}}%s{{/%s}} {{^%s}}%s{{/%s}}', $tag, $default, $tag, $tag, $fallback, $tag);
 
             $parsedSource = preg_replace(
                 '/"@' . $tag . '\((.+)\)@end' . $tag . '"/',
@@ -88,7 +88,7 @@ class SearchTemplate
 
                 $default = stripslashes($sortMatches[1]);
 
-                $rawDefault = "{{^{$tag}.isEmpty}}{{#toJson}}{$tag}{{/toJson}}{{/{$tag}.isEmpty}} {{^{$tag}}}{$default}{{/{$tag}}}";
+                $rawDefault = sprintf('{{^%s.isEmpty}}{{#toJson}}%s{{/toJson}}{{/%s.isEmpty}} {{^%s}}%s{{/%s}}', $tag, $tag, $tag, $tag, $default, $tag);
 
                 $parsedSource = preg_replace(
                     '/"@' . $tag . '\((.+?)\)@end' . $tag . '"/s',

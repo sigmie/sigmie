@@ -24,13 +24,13 @@ trait Assertions
     {
         $res = $this->indexAPICall($index, 'HEAD');
 
-        $this->assertEquals(200, $res->code(), "Failed to assert that index {$index} exists.");
+        $this->assertEquals(200, $res->code(), sprintf('Failed to assert that index %s exists.', $index));
     }
 
     public function assertIndexNotExists(string $index): void
     {
         $res = $this->indexAPICall($index, 'HEAD');
 
-        $this->assertEquals(404, $res->code(), "Failed to assert that index {$index} not exists.");
+        $this->assertEquals(404, $res->code(), sprintf('Failed to assert that index %s not exists.', $index));
     }
 }

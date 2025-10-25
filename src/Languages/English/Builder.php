@@ -55,7 +55,7 @@ class Builder extends IndexBuilder implements LanguageBuilder
         return $this;
     }
 
-    public function englishLightStemmer(null|string $name = null)
+    public function englishLightStemmer(null|string $name = null): static
     {
         $filter = is_null($name) ? new EnglishLightStemmer() : new EnglishLightStemmer($name);
 
@@ -64,7 +64,7 @@ class Builder extends IndexBuilder implements LanguageBuilder
         return $this;
     }
 
-    public function englishLovinsStemmer(null|string $name = null)
+    public function englishLovinsStemmer(null|string $name = null): static
     {
         $filter = is_null($name) ? new EnglishLovinsStemmer() : new EnglishLovinsStemmer($name);
 
@@ -73,7 +73,7 @@ class Builder extends IndexBuilder implements LanguageBuilder
         return $this;
     }
 
-    public function englishMinimalStemmer(null|string $name = null)
+    public function englishMinimalStemmer(null|string $name = null): static
     {
         $filter = is_null($name) ? new EnglishMinimalStemmer() : new EnglishMinimalStemmer($name);
 

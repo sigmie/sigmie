@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Semantic\Providers;
 
-use Sigmie\Semantic\Contracts\AIProvider;
-
 abstract class AbstractAIProvider 
 {
     public function rerank(array $documents, string $queryString): array

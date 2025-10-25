@@ -24,7 +24,7 @@ class MatchPhrasePrefix extends Query
 
     public function toRaw(): array
     {
-        $raw = [
+        return [
             'match_phrase_prefix' => [
                 $this->field => [
                     'query' => $this->query,
@@ -33,7 +33,5 @@ class MatchPhrasePrefix extends Query
                 ],
             ],
         ];
-
-        return $raw;
     }
 }

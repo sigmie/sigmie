@@ -24,7 +24,7 @@ class MultiMatch extends Query
             ],
         ];
 
-        if (count($this->fields) > 0) {
+        if ($this->fields !== []) {
             $res['multi_match']['fields'] = $this->fields;
         }
 

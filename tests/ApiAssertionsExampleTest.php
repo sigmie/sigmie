@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\AI\Prompt;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\TestCase;
@@ -13,7 +14,7 @@ class ApiAssertionsExampleTest extends TestCase
     /**
      * @test
      */
-    public function example_embedding_assertions()
+    public function example_embedding_assertions(): void
     {
         $indexName = uniqid();
 
@@ -40,9 +41,9 @@ class ApiAssertionsExampleTest extends TestCase
     /**
      * @test
      */
-    public function example_llm_assertions()
+    public function example_llm_assertions(): void
     {
-        $prompt = new \Sigmie\AI\Prompt();
+        $prompt = new Prompt();
         $prompt->user('Tell me a joke');
 
         $this->llmApi->jsonAnswer($prompt);

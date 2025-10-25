@@ -13,7 +13,7 @@ class AnalysisTest extends TestCase
     /**
      * @test
      */
-    public function analysis_has_filter_method()
+    public function analysis_has_filter_method(): void
     {
         $alias = uniqid();
 
@@ -21,7 +21,7 @@ class AnalysisTest extends TestCase
             ->stopwords(['foo', 'bar'], 'foo_stopwords')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterExists('foo_stopwords');
         });
 
@@ -33,7 +33,7 @@ class AnalysisTest extends TestCase
     /**
      * @test
      */
-    public function analysis_tokenizer_method()
+    public function analysis_tokenizer_method(): void
     {
         $alias = uniqid();
 
@@ -42,7 +42,7 @@ class AnalysisTest extends TestCase
             ->stripHTML()
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasTokenizer('default', 'foo_tokenizer');
         });
 
@@ -54,7 +54,7 @@ class AnalysisTest extends TestCase
     /**
      * @test
      */
-    public function analysis_has_char_filter_method()
+    public function analysis_has_char_filter_method(): void
     {
         $alias = uniqid();
 
@@ -63,7 +63,7 @@ class AnalysisTest extends TestCase
             ->create();
 
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasCharFilter('default', 'html_strip');
         });
 

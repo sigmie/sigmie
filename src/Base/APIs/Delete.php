@@ -14,7 +14,7 @@ trait Delete
 
     protected function deleteAPICall(string $index, string $identifier, string $refresh = 'false'): ElasticsearchResponse
     {
-        $uri = new Uri("/{$index}/_doc/{$identifier}");
+        $uri = new Uri(sprintf('/%s/_doc/%s', $index, $identifier));
 
         $uri = Uri::withQueryValue($uri, 'refresh', $refresh);
 

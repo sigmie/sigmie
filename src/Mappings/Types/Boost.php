@@ -21,7 +21,7 @@ class Boost extends Number
 
     public function scriptScoreSource(): string
     {
-        return "doc.containsKey('{$this->name}') && doc['{$this->name}'].size() > 0 ? doc['{$this->name}'].value : 1";
+        return sprintf("doc.containsKey('%s') && doc['%s'].size() > 0 ? doc['%s'].value : 1", $this->name, $this->name, $this->name);
     }
 
     public function scriptScoreBoostMode(): string
@@ -31,13 +31,11 @@ class Boost extends Number
 
     public function queries(array|string $queryString): array
     {
-        $queries = [];
-
         // It's unlikely to search in an input field
         // for a price.
 
         // Price type is better for range filters
 
-        return $queries;
+        return [];
     }
 }

@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use InvalidArgumentException;
-use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\Base\APIs\Mget;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Document;
@@ -14,23 +11,35 @@ use Sigmie\Enums\RecommendationStrategy;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Query\Search;
-use Sigmie\Support\VectorMath;
 
 class NewRecommendations
 {
     protected Properties $properties;
+
     protected array $fields = [];
+
     protected int $topK = 10;
+
     protected string $filters = '';
+
     protected NewSearch $search;
+
     protected RecommendationStrategy $strategy = RecommendationStrategy::Centroid;
-    protected int $rankWindowSize = 0; // Auto-calculated as 10x topK by default
+
+    protected int $rankWindowSize = 0;
+     // Auto-calculated as 10x topK by default
     protected int $rrfRankConstant = 60;
+
     protected bool $excludeSeeds = true;
+
     protected array $seedDocumentIds = [];
+
     protected array $docs = [];
+
     protected array $seedIds = [];
+
     protected bool $mmrEnabled = false;
+
     protected float $mmrLambda = 0.5;
 
     public function __construct(
@@ -114,7 +123,7 @@ class NewRecommendations
         return $this->getFusionResults();
     }
 
-    public function rrf(int $rrfRankConstant = 60, int $rankWindowSize = 10)
+    public function rrf(int $rrfRankConstant = 60, int $rankWindowSize = 10): static
     {
         $this->strategy = RecommendationStrategy::Fusion;
         $this->rrfRankConstant = $rrfRankConstant;
@@ -127,7 +136,6 @@ class NewRecommendations
      * Enable MMR (Maximal Marginal Relevance) for result diversification
      *
      * @param float $lambda Balance between relevance (1.0) and diversity (0.0). Default: 0.5
-     * @return static
      */
     public function mmr(float $lambda = 0.5): static
     {
@@ -139,12 +147,12 @@ class NewRecommendations
 
     protected function getFusionResults(): array
     {
-        if (count($this->docs) === 0 || empty($this->fields)) {
+        if ($this->docs === [] || $this->fields === []) {
             return [];
         }
 
         $filterString = implode(' AND ', [
-            'NOT _id:[' . implode(',', array_map(fn($id) => "'$id'", $this->seedIds)) . ']',
+            'NOT _id:[' . implode(',', array_map(fn($id): string => sprintf("'%s'", $id), $this->seedIds)) . ']',
             ...($this->filters === '' ? [] : [$this->filters])
         ]);
 
@@ -168,7 +176,7 @@ class NewRecommendations
 
                 $vectors = dot($doc->_source['_embeddings'])->get($fieldName);
 
-                foreach ($vectors as $vectorName => $vector) {
+                foreach ($vectors as $vector) {
                     $newSearch->queryString(
                         query: '',
                         weight: $field['weight'],

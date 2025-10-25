@@ -14,7 +14,7 @@ trait Stats
 
     protected function statsAPICall(string $index): ElasticsearchResponse
     {
-        $uri = new Uri("/{$index}/_stats");
+        $uri = new Uri(sprintf('/%s/_stats', $index));
 
         $esRequest = new ElasticsearchRequest('GET', $uri);
 

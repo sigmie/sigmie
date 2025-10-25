@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings;
 
+use Sigmie\Enums\VectorSimilarity;
 use ArrayAccess;
 use Exception;
-use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\SimpleAnalyzer;
 use Sigmie\Index\Analysis\Standard;
@@ -16,7 +16,6 @@ use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Boost;
 use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\Date;
-use Sigmie\Mappings\Types\DateTime;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\Image;
@@ -28,7 +27,6 @@ use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Mappings\Types\FlatObject;
-use Sigmie\Plugins\Elastiknn\DenseFloatVector;
 use Sigmie\Shared\Collection;
 
 class Properties extends Type implements ArrayAccess
@@ -41,14 +39,14 @@ class Properties extends Type implements ArrayAccess
     {
         $this->type = ElasticsearchMappingType::PROPERTIES->value;
 
-        $boostField = array_values(array_filter($fields, fn(Type $field) => $field instanceof Boost))[0] ?? null;
+        $boostField = array_values(array_filter($fields, fn(Type $field): bool => $field instanceof Boost))[0] ?? null;
 
         // Boost field can only as a top level prop 
         if ($name === 'mappings' && $boostField) {
             $this->boostField = $boostField;
         }
 
-        $this->fields = array_map(function (Type $field) use ($name) {
+        $this->fields = array_map(function (Type $field) use ($name): \Sigmie\Mappings\Types\Type {
 
             $name = $name !== 'mappings' ? $name : '';
 
@@ -89,27 +87,27 @@ class Properties extends Type implements ArrayAccess
     {
         $collection = new Collection($this->fields);
 
-        return $collection->filter(fn(ContractsType $type) => $type instanceof Text);
+        return $collection->filter(fn(ContractsType $type): bool => $type instanceof Text);
     }
 
     public function imageFields(): Collection
     {
         $collection = new Collection($this->fields);
 
-        return $collection->filter(fn(ContractsType $type) => $type instanceof Image);
+        return $collection->filter(fn(ContractsType $type): bool => $type instanceof Image);
     }
 
     public function deepFields(): Collection
     {
         $collection = new Collection($this->fields);
 
-        return $collection->filter(fn(Type $type) => $type instanceof Object_ || $type instanceof Nested);
+        return $collection->filter(fn(Type $type): bool => $type instanceof Object_ || $type instanceof Nested);
     }
 
     public function embeddingsFields(): Collection
     {
-        $textFields = $this->textFields()->filter(fn(Text $text) => $text->isSemantic());
-        $imageFields = $this->imageFields()->filter(fn(Image $image) => $image->isSemantic());
+        $textFields = $this->textFields()->filter(fn(Text $text): bool => $text->isSemantic());
+        $imageFields = $this->imageFields()->filter(fn(Image $image): bool => $image->isSemantic());
 
         return $textFields->merge($imageFields);
     }
@@ -118,8 +116,8 @@ class Properties extends Type implements ArrayAccess
     {
         $collection = new Collection($this->fields);
 
-        return $collection->filter(fn(Type $type) => $type instanceof Text)
-            ->filter(fn(Text $text) => $text->type() === 'completion');
+        return $collection->filter(fn(Type $type): bool => $type instanceof Text)
+            ->filter(fn(Text $text): bool => $text->type() === 'completion');
     }
 
     public function toArray(): array
@@ -127,7 +125,7 @@ class Properties extends Type implements ArrayAccess
         return $this->fields;
     }
 
-    public function handleCustomAnalyzers(AnalysisInterface $analysis)
+    public function handleCustomAnalyzers(AnalysisInterface $analysis): void
     {
         foreach ($this->fields as $type) {
             if ($type instanceof Text) {
@@ -144,7 +142,7 @@ class Properties extends Type implements ArrayAccess
         }
     }
 
-    public function handleNormalizers(AnalysisInterface $analysis)
+    public function handleNormalizers(AnalysisInterface $analysis): void
     {
 
         foreach ($this->fields as $type) {
@@ -176,7 +174,7 @@ class Properties extends Type implements ArrayAccess
 
             $field = match (true) {
                 // This is an object type
-                isset($value['properties']) && ! isset($value['type']) => (function () use ($fieldName, $value, $defaultAnalyzer, $analyzers, $parentPath) {
+                isset($value['properties']) && ! isset($value['type']) => (function () use ($fieldName, $value, $defaultAnalyzer, $analyzers, $parentPath): Object_ {
 
                     $props = self::create(
                         $value['properties'],
@@ -187,12 +185,10 @@ class Properties extends Type implements ArrayAccess
                     );
                     $props->parent($parentPath, self::class);
 
-                    $object = new Object_(
+                    return new Object_(
                         $fieldName,
                         $props,
                     );
-
-                    return $object;
                 })(),
                 isset($value['properties']) && $value['type'] === 'nested' => (function () use (
                     $fieldName,
@@ -200,7 +196,7 @@ class Properties extends Type implements ArrayAccess
                     $defaultAnalyzer,
                     $analyzers,
                     $parentPath
-                ) {
+                ): Nested {
                     $props = self::create(
                         $value['properties'],
                         $defaultAnalyzer,
@@ -209,9 +205,7 @@ class Properties extends Type implements ArrayAccess
                     );
                     $props->parent($parentPath, self::class);
 
-                    $nested = new Nested($fieldName, $props);
-
-                    return $nested;
+                    return new Nested($fieldName, $props);
                 })(),
                 in_array(
                     $value['type'],
@@ -228,27 +222,25 @@ class Properties extends Type implements ArrayAccess
                 $value['type'] === 'date' => new Date($fieldName),
                 $value['type'] === 'object' => new Object_($fieldName),
                 $value['type'] === 'flat_object' => new FlatObject($fieldName),
-                $value['type'] === 'dense_vector' => (function () use ($fieldName, $value) {
-                    return new DenseVector(
-                        name: $fieldName,
-                        dims: $value['dims'] ?? 384,
-                        index: $value['index'] ?? true,
-                        similarity: isset($value['similarity'])
-                            ? \Sigmie\Enums\VectorSimilarity::from($value['similarity'])
-                            : \Sigmie\Enums\VectorSimilarity::Cosine,
-                        indexType: $value['index_options']['type'] ?? 'hnsw',
-                        m: $value['index_options']['m'] ?? 64,
-                        efConstruction: $value['index_options']['ef_construction'] ?? 300,
-                    );
-                })(),
-                $value['type'] === 'knn_vector' => (function () use ($fieldName, $value) {
+                $value['type'] === 'dense_vector' => (fn(): DenseVector => new DenseVector(
+                    name: $fieldName,
+                    dims: $value['dims'] ?? 384,
+                    index: $value['index'] ?? true,
+                    similarity: isset($value['similarity'])
+                        ? VectorSimilarity::from($value['similarity'])
+                        : VectorSimilarity::Cosine,
+                    indexType: $value['index_options']['type'] ?? 'hnsw',
+                    m: $value['index_options']['m'] ?? 64,
+                    efConstruction: $value['index_options']['ef_construction'] ?? 300,
+                ))(),
+                $value['type'] === 'knn_vector' => (function () use ($fieldName, $value): DenseVector {
                     // Map OpenSearch space_type to VectorSimilarity enum
                     $spaceType = $value['method']['space_type'] ?? 'cosinesimil';
                     $similarity = match ($spaceType) {
-                        'cosinesimil' => \Sigmie\Enums\VectorSimilarity::Cosine,
-                        'l2' => \Sigmie\Enums\VectorSimilarity::Euclidean,
-                        'innerproduct' => \Sigmie\Enums\VectorSimilarity::DotProduct,
-                        default => \Sigmie\Enums\VectorSimilarity::Cosine,
+                        'cosinesimil' => VectorSimilarity::Cosine,
+                        'l2' => VectorSimilarity::Euclidean,
+                        'innerproduct' => VectorSimilarity::DotProduct,
+                        default => VectorSimilarity::Cosine,
                     };
 
                     return new DenseVector(
@@ -267,7 +259,7 @@ class Properties extends Type implements ArrayAccess
                 $value['type'] === 'double_range' => (new Range($fieldName))->double(),
                 $value['type'] === 'date_range' => (new Range($fieldName))->date(),
                 $value['type'] === 'ip_range' => (new Range($fieldName))->ip(),
-                default => throw new Exception('Field ' . $value['type'] . ' couldn\'t be mapped')
+                default => throw new Exception('Field ' . $value['type'] . " couldn't be mapped")
             };
 
             if ($field instanceof Text && ! isset($value['analyzer'])) {
@@ -291,20 +283,18 @@ class Properties extends Type implements ArrayAccess
         }
 
         $props = new Properties($name, $fields);
-        $props->parent("{$parentPath}.{$name}", self::class);
+        $props->parent(sprintf('%s.%s', $parentPath, $name), self::class);
 
         return $props;
     }
 
     public function toRaw(): array
     {
-        $fields = (new Collection($this->fields))
-            ->filter(fn(ContractsType $value) => !($value instanceof Combo))
-            ->mapToDictionary(fn(ContractsType $value) => $value->toRaw())
-            ->toArray();
-
         // if (in_array($this->name, ['mappings', '_embeddings'])) {
-        return $fields;
+        return (new Collection($this->fields))
+            ->filter(fn(ContractsType $value): bool => !($value instanceof Combo))
+            ->mapToDictionary(fn(ContractsType $value): array => $value->toRaw())
+            ->toArray();
         // } else {
         //     return [$this->name() => ['properties' => $fields]];
         // }
@@ -322,7 +312,7 @@ class Properties extends Type implements ArrayAccess
 
         $type = $this->fields[$firstField];
 
-        if (empty($fields)) {
+        if ($fields === []) {
             return $type;
         }
 
@@ -335,14 +325,14 @@ class Properties extends Type implements ArrayAccess
         return null;
     }
 
-    public function propertiesParent(string $parentPath, string $parentType)
+    public function propertiesParent(string $parentPath, string $parentType): void
     {
         foreach ($this->fields as $field) {
             $field->parent($parentPath, $parentType);
         }
     }
 
-    public function fieldNames(bool $withParent = false)
+    public function fieldNames(bool $withParent = false): array
     {
         $collection = new Collection($this->fields);
 
@@ -367,33 +357,28 @@ class Properties extends Type implements ArrayAccess
             ->toArray();
     }
 
-    private function semanticFields()
+    private function semanticFields(): Collection
     {
         $textFields = $this->textFields()
-            ->filter(fn(Text $field) => $field->isSemantic())
+            ->filter(fn(Text $field): bool => $field->isSemantic())
             ->mapWithKeys(fn(Text $field) => [$field->fullPath => $field]);
 
         $imageFields = $this->imageFields()
-            ->filter(fn(Image $field) => $field->isSemantic())
+            ->filter(fn(Image $field): bool => $field->isSemantic())
             ->mapWithKeys(fn(Image $field) => [$field->fullPath => $field]);
 
         return $textFields->merge($imageFields);
     }
 
-    public function nestedSemanticFields()
+    public function nestedSemanticFields(): Collection
     {
         $semanticFields = $this->semanticFields();
 
         $nestedFields = $this->deepFields()
-            ->mapWithKeys(function (Object_|Nested $field) {
-
-                $result = [
-                    ...$field->properties->semanticFields()->toArray(),
-                    ...$field->properties->nestedSemanticFields()->toArray()
-                ];
-
-                return $result;
-            });
+            ->mapWithKeys(fn(Object_|Nested $field): array => [
+                ...$field->properties->semanticFields()->toArray(),
+                ...$field->properties->nestedSemanticFields()->toArray()
+            ]);
 
         $res = [
             ...$semanticFields->toArray(),

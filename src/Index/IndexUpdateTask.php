@@ -10,9 +10,6 @@ use Sigmie\Base\APIs\Reindex;
 use Sigmie\Base\APIs\Tasks;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 
-use function Nicoorfi\Insist\insist_fibonnaci;
-use function Nicoorfi\Insist\insist_linear;
-
 class IndexUpdateTask
 {
     use Actions;
@@ -73,7 +70,7 @@ class IndexUpdateTask
 
     public function finish()
     {
-        $this->indexAPICall("{$this->dest}/_settings", 'PUT', [
+        $this->indexAPICall($this->dest . '/_settings', 'PUT', [
             'number_of_replicas' => $this->requestedReplicas,
             'refresh_interval' => '1s',
         ]);
@@ -98,8 +95,8 @@ class IndexUpdateTask
     public function waitAndFinish(
         ?Carbon $startPollingAt = null,
         int $maxTries = 100,
-    ) {
-        $startPollingAt = $startPollingAt ?? Carbon::now();
+    ): void {
+        $startPollingAt ??= Carbon::now();
         $tries = 0;
 
         while (true) {

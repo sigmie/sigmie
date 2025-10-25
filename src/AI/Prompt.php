@@ -22,7 +22,7 @@ class Prompt
 
     public function jsonSchema(): array
     {
-        if ($this->jsonSchemaBuilder) {
+        if ($this->jsonSchemaBuilder instanceof NewJsonSchema) {
             return $this->jsonSchemaBuilder->toArray();
         }
 

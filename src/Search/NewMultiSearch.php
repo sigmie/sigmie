@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Base\APIs\MSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\ElasticsearchException;
 use Sigmie\Query\NewQuery;
 use Sigmie\Search\Contracts\MultiSearchable;
-use Sigmie\Search\MultiSearchResponse;
 use Sigmie\Shared\UsesApis;
 
 use function Sigmie\Functions\random_name;
@@ -38,7 +36,7 @@ class NewMultiSearch
             ->apis($this->apis);
 
         $this->queries[] = $search;
-        $this->names[count($this->queries) - 1] = $name ?? random_name('srch', 10);
+        $this->names[count($this->queries) - 1] = $name ?? random_name('srch');
 
         return $search;
     }
@@ -46,7 +44,7 @@ class NewMultiSearch
     public function add(NewSearch $search, ?string $name = null): NewSearch
     {
         $this->queries[] = $search;
-        $this->names[count($this->queries) - 1] = $name ?? random_name('srch', 10);
+        $this->names[count($this->queries) - 1] = $name ?? random_name('srch');
 
         return $search;
     }
@@ -57,7 +55,7 @@ class NewMultiSearch
         $query = $query->index($index);
 
         $this->queries[] = $query;
-        $this->names[count($this->queries) - 1] = $name ?? random_name('srch', 10);
+        $this->names[count($this->queries) - 1] = $name ?? random_name('srch');
 
         return $query;
     }
@@ -68,7 +66,7 @@ class NewMultiSearch
             ['index' => $index],
             $query
         ];
-        $this->names[count($this->queries) - 1] = $name ?? random_name('srch', 10);
+        $this->names[count($this->queries) - 1] = $name ?? random_name('srch');
 
         return $this;
     }
@@ -126,6 +124,7 @@ class NewMultiSearch
             if (is_array($result)) {
                 return $result['hits']['hits'] ?? [];
             }
+
             return $result->hits();
         }, $results);
 
@@ -141,7 +140,7 @@ class NewMultiSearch
         $grouped = [];
 
         foreach ($results as $index => $result) {
-            $name = $this->names[$index] ?? random_name('srch', 10);
+            $name = $this->names[$index] ?? random_name('srch');
             $hits = is_array($result)
                 ? ($result['hits']['hits'] ?? [])
                 : $result->hits();

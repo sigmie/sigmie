@@ -39,19 +39,17 @@ class Nested extends Type implements PropertiesField
 
     public function queries(array|string $queryString): array
     {
-        $queries = [];
-
-        return $queries;
+        return [];
     }
 
     public function validate(string $key, mixed $value): array
     {
         if (! is_array($value)) {
-            return [false, "Nested field {$key} must be an object."];
+            return [false, sprintf('Nested field %s must be an object.', $key)];
         }
 
         if (count($value) === count($value, COUNT_RECURSIVE)) {
-            return [false, "Nested field {$key} must be an array of objects."];
+            return [false, sprintf('Nested field %s must be an array of objects.', $key)];
         }
 
         return [true, ''];

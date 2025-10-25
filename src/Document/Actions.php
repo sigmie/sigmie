@@ -55,7 +55,7 @@ trait Actions
     {
         $body = [];
         $documents = new Collection($documents);
-        $documents->each(function (Doc $document, $index) use (&$body) {
+        $documents->each(function (Doc $document, $index) use (&$body): void {
 
             //Upsert docs with id
             if (isset($document->_id)) {
@@ -67,6 +67,7 @@ trait Actions
 
                 return;
             }
+
             //or
 
             //create docs without id
@@ -152,11 +153,11 @@ trait Actions
         $query = [];
 
         if ($this->only) {
-            $query['_source_includes'] = implode($this->only);
+            $query['_source_includes'] = implode('', $this->only);
         }
 
         if ($this->except) {
-            $query['_source_excludes'] = implode($this->except);
+            $query['_source_excludes'] = implode('', $this->except);
         }
 
         $response = $this->mgetAPICall($indexName, $payload, $query);
@@ -170,17 +171,17 @@ trait Actions
     ): Collection {
 
         $payload = [
-            'docs' => array_map(fn(string $id) => ['_id' => $id], $ids),
+            'docs' => array_map(fn(string $id): array => ['_id' => $id], $ids),
         ];
 
         $query = [];
 
         if ($this->only) {
-            $query['_source_includes'] = implode($this->only);
+            $query['_source_includes'] = implode('', $this->only);
         }
 
         if ($this->except) {
-            $query['_source_excludes'] = implode($this->except);
+            $query['_source_excludes'] = implode('', $this->except);
         }
 
         $response = $this->mgetAPICall($indexName, $payload, $query);
@@ -252,6 +253,7 @@ trait Actions
                 ['delete' => ['_index' => $indexName, '_id' => $id]],
             ];
         }
+
         $response = $this->bulkAPICall($indexName, $body, $refresh);
 
         return $response->failed() === false;

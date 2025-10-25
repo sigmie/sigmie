@@ -33,7 +33,7 @@ class ImageHelper
             return self::fetchFromFile($source);
         }
 
-        throw new Exception("Invalid image source: {$source}. Must be a URL, base64 string, or file path.");
+        throw new Exception(sprintf('Invalid image source: %s. Must be a URL, base64 string, or file path.', $source));
     }
 
     /**
@@ -125,7 +125,7 @@ class ImageHelper
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
                 $mimeType = finfo_buffer($finfo, $decoded);
                 finfo_close($finfo);
-                return strpos($mimeType, 'image/') === 0;
+                return str_starts_with($mimeType, 'image/');
             }
         }
 
@@ -179,7 +179,7 @@ class ImageHelper
         $content = @file_get_contents($url, false, $context);
 
         if ($content === false) {
-            throw new Exception("Failed to fetch image from URL: {$url}");
+            throw new Exception('Failed to fetch image from URL: ' . $url);
         }
 
         // Verify it's actually an image
@@ -187,8 +187,8 @@ class ImageHelper
         $mimeType = finfo_buffer($finfo, $content);
         finfo_close($finfo);
 
-        if (strpos($mimeType, 'image/') !== 0) {
-            throw new Exception("URL does not point to a valid image: {$url}");
+        if (!str_starts_with($mimeType, 'image/')) {
+            throw new Exception('URL does not point to a valid image: ' . $url);
         }
 
         return $content;
@@ -200,17 +200,17 @@ class ImageHelper
     private static function fetchFromFile(string $path): string
     {
         if (!file_exists($path)) {
-            throw new Exception("File does not exist: {$path}");
+            throw new Exception('File does not exist: ' . $path);
         }
 
         if (!is_readable($path)) {
-            throw new Exception("File is not readable: {$path}");
+            throw new Exception('File is not readable: ' . $path);
         }
 
         $content = @file_get_contents($path);
 
         if ($content === false) {
-            throw new Exception("Failed to read file: {$path}");
+            throw new Exception('Failed to read file: ' . $path);
         }
 
         // Verify it's actually an image
@@ -218,8 +218,8 @@ class ImageHelper
         $mimeType = finfo_file($finfo, $path);
         finfo_close($finfo);
 
-        if (strpos($mimeType, 'image/') !== 0) {
-            throw new Exception("File is not a valid image: {$path}");
+        if (!str_starts_with($mimeType, 'image/')) {
+            throw new Exception('File is not a valid image: ' . $path);
         }
 
         return $content;

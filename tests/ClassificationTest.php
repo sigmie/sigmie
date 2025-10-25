@@ -11,7 +11,7 @@ class ClassificationTest extends TestCase
     /**
      * @test
      */
-    public function centroid_based_classification()
+    public function centroid_based_classification(): void
     {
         $embeddingsApi = $this->embeddingApi;
 
@@ -76,7 +76,7 @@ class ClassificationTest extends TestCase
     /**
      * @test
      */
-    public function kmeans_clustering()
+    public function kmeans_clustering(): void
     {
         $embeddingsApi = $this->embeddingApi;
 
@@ -106,7 +106,7 @@ class ClassificationTest extends TestCase
         $this->assertCount(3, $clusters);
 
         // Each cluster should have at least one item
-        foreach ($clusters as $clusterId => $items) {
+        foreach ($clusters as $items) {
             $this->assertGreaterThan(0, count($items));
         }
     }
@@ -114,7 +114,7 @@ class ClassificationTest extends TestCase
     /**
      * @test
      */
-    public function hdbscan_clustering()
+    public function hdbscan_clustering(): void
     {
         $embeddingsApi = $this->embeddingApi;
 

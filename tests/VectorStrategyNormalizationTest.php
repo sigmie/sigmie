@@ -13,7 +13,7 @@ class VectorStrategyNormalizationTest extends TestCase
     /**
      * @test
      */
-    public function average_strategy_produces_normalized_vectors()
+    public function average_strategy_produces_normalized_vectors(): void
     {
         $strategy = VectorStrategy::Average;
 
@@ -33,7 +33,7 @@ class VectorStrategyNormalizationTest extends TestCase
         // Average: [0.7, 0.7, 0]
         // Magnitude: sqrt(0.7^2 + 0.7^2) = sqrt(0.98) ≈ 0.99 (NOT 1.0!)
 
-        $magnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $result)));
+        $magnitude = sqrt(array_sum(array_map(fn($v): int|float => $v * $v, $result)));
 
         // This will fail with current implementation
         $this->assertEqualsWithDelta(1.0, $magnitude, 0.01,
@@ -43,7 +43,7 @@ class VectorStrategyNormalizationTest extends TestCase
     /**
      * @test
      */
-    public function concatenate_strategy_preserves_normalization()
+    public function concatenate_strategy_preserves_normalization(): void
     {
         $strategy = VectorStrategy::Concatenate;
 
@@ -62,7 +62,7 @@ class VectorStrategyNormalizationTest extends TestCase
     /**
      * @test
      */
-    public function average_strategy_with_three_vectors()
+    public function average_strategy_with_three_vectors(): void
     {
         $strategy = VectorStrategy::Average;
 
@@ -77,7 +77,7 @@ class VectorStrategyNormalizationTest extends TestCase
         // Average: [1/3, 1/3, 1/3]
         // Magnitude: sqrt(3 * (1/3)^2) = sqrt(1/3) ≈ 0.577 (NOT normalized!)
 
-        $magnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $result)));
+        $magnitude = sqrt(array_sum(array_map(fn($v): int|float => $v * $v, $result)));
 
         $this->assertEqualsWithDelta(1.0, $magnitude, 0.01,
             'Average of 3 orthogonal unit vectors should be normalized. Got: ' . $magnitude);

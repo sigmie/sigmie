@@ -27,11 +27,6 @@ class Title extends Text implements Analyze
 
     public function queries(array|string $queryString): array
     {
-        $queries = [];
-
-        $queries[] = new MatchPhrasePrefix($this->name, $queryString, analyzer: $this->searchAnalyzer());
-        $queries[] = new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer());
-
-        return $queries;
+        return [new MatchPhrasePrefix($this->name, $queryString, analyzer: $this->searchAnalyzer()), new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer())];
     }
 }

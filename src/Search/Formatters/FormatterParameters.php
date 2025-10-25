@@ -7,11 +7,17 @@ namespace Sigmie\Search\Formatters;
 class FormatterParameters
 {
     private array $queryStrings = [];
+
     private string $filterString = '';
+
     private string $sortString = '';
+
     private string $facetString = '';
+
     private int $size = 20;
+
     private int $from = 0;
+
     private array $meta = [];
 
     public function queryStrings(array $queryStrings): self
@@ -66,10 +72,16 @@ class FormatterParameters
 
     // Getters
     public function getQueryStrings(): array { return $this->queryStrings; }
+
     public function getFilterString(): string { return $this->filterString; }
+
     public function getSortString(): string { return $this->sortString; }
+
     public function getFacetString(): string { return $this->facetString; }
+
     public function getSize(): int { return $this->size; }
+
     public function getFrom(): int { return $this->from; }
+
     public function getMeta(): array { return $this->meta; }
 } 

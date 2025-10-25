@@ -17,7 +17,7 @@ trait Analyzer
         $this->assertContains(
             $charFilter,
             $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['char_filter'],
-            "Failed to assert that analyzer '{$analyzer}' has the char_filter '{$charFilter}' in '{$this->name}' index."
+            sprintf("Failed to assert that analyzer '%s' has the char_filter '%s' in '%s' index.", $analyzer, $charFilter, $this->name)
         );
     }
 
@@ -26,7 +26,7 @@ trait Analyzer
         $this->assertNotContains(
             $charFilter,
             $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['char_filter'],
-            "Failed to assert that analyzer '{$analyzer}' has not the char_filter '{$charFilter}' in '{$this->name}' index."
+            sprintf("Failed to assert that analyzer '%s' has not the char_filter '%s' in '%s' index.", $analyzer, $charFilter, $this->name)
         );
     }
 
@@ -35,7 +35,7 @@ trait Analyzer
         $this->assertContains(
             $filter,
             $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['filter'],
-            "Failed to assert that analyzer '{$analyzer}' has the filter '{$filter}' in '{$this->name}' index."
+            sprintf("Failed to assert that analyzer '%s' has the filter '%s' in '%s' index.", $analyzer, $filter, $this->name)
         );
     }
 
@@ -44,7 +44,7 @@ trait Analyzer
         $this->assertNotContains(
             $filter,
             $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['filter'],
-            "Failed to assert that analyzer '{$analyzer}' has not the filter '{$filter}' in '{$this->name}' index."
+            sprintf("Failed to assert that analyzer '%s' has not the filter '%s' in '%s' index.", $analyzer, $filter, $this->name)
         );
     }
 
@@ -53,7 +53,7 @@ trait Analyzer
         $this->assertEquals(
             $tokenizer,
             $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['tokenizer'],
-            "Failed to assert that analyzer '{$analyzer}' has the tokenizer '{$tokenizer}' in '{$this->name}' index."
+            sprintf("Failed to assert that analyzer '%s' has the tokenizer '%s' in '%s' index.", $analyzer, $tokenizer, $this->name)
         );
     }
 
@@ -71,7 +71,7 @@ trait Analyzer
     {
         $this->assertEmpty(
             $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['char_filter'],
-            "Failed to assert that analyzer '{$analyzer}' has not any char_filter in '{$this->name}' index."
+            sprintf("Failed to assert that analyzer '%s' has not any char_filter in '%s' index.", $analyzer, $this->name)
         );
     }
 
@@ -79,7 +79,7 @@ trait Analyzer
     {
         $this->assertEmpty(
             $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['filter'],
-            "Failed to assert that analyzer '{$analyzer}' has not any filter in '{$this->name}' index."
+            sprintf("Failed to assert that analyzer '%s' has not any filter in '%s' index.", $analyzer, $this->name)
         );
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Search\Formatters;
 
+use Sigmie\Search\NewSearch;
 use Sigmie\Mappings\Properties;
 use Sigmie\Search\Contracts\MultiSearchResponse;
 use Sigmie\Search\Contracts\MultiSearchable;
@@ -34,7 +35,7 @@ class SigmieMultiSearchResponse implements MultiSearchResponse
 
     public function format(): array
     {
-        if (!empty($this->formattedResults)) {
+        if ($this->formattedResults !== []) {
             return $this->formattedResults;
         }
 
@@ -43,7 +44,7 @@ class SigmieMultiSearchResponse implements MultiSearchResponse
         
         $responseIndex = 0;
         foreach ($this->searches as $searchIndex => $search) {
-            if ($search instanceof \Sigmie\Search\NewSearch) {
+            if ($search instanceof NewSearch) {
                 // NewSearch has 2 responses: search + facets
                 $searchResponse = $responses[$responseIndex] ?? [];
                 $facetsResponse = $responses[$responseIndex + 1] ?? [];

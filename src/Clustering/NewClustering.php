@@ -9,8 +9,11 @@ use Sigmie\AI\Contracts\EmbeddingsApi;
 class NewClustering
 {
     protected array $texts = [];
+
     protected string $algorithm = 'kmeans';
+
     protected int $clusters = 3;
+
     protected int $maxIterations = 100;
 
     public function __construct(
@@ -52,13 +55,13 @@ class NewClustering
         return match ($this->algorithm) {
             'kmeans' => $this->kMeans($embeddings),
             'hdbscan' => $this->hdbscan($embeddings),
-            default => throw new \InvalidArgumentException("Unsupported algorithm: {$this->algorithm}")
+            default => throw new \InvalidArgumentException('Unsupported algorithm: ' . $this->algorithm)
         };
     }
 
     protected function getEmbeddings(): array
     {
-        $payload = array_map(fn($text, $index) => [
+        $payload = array_map(fn($text, $index): array => [
             'text' => $text,
             'dims' => 1024,
         ], $this->texts, array_keys($this->texts));
@@ -72,7 +75,6 @@ class NewClustering
     {
         $k = $this->clusters;
         $n = count($embeddings);
-        $dims = count($embeddings[0]);
 
         // Initialize centroids randomly
         $centroidIndices = array_rand($embeddings, min($k, $n));
@@ -119,7 +121,7 @@ class NewClustering
                     }
                 }
 
-                if (count($clusterPoints) > 0) {
+                if ($clusterPoints !== []) {
                     $centroids[$j] = $this->calculateCentroid($clusterPoints);
                 }
             }
@@ -191,7 +193,8 @@ class NewClustering
                     $clusterPoints[] = $embeddings[$i];
                 }
             }
-            if (count($clusterPoints) > 0) {
+
+            if ($clusterPoints !== []) {
                 $centroids[$c] = $this->calculateCentroid($clusterPoints);
             }
         }
@@ -218,6 +221,7 @@ class NewClustering
                     $distances[] = $this->euclideanDistance($embeddings[$i], $embeddings[$j]);
                 }
             }
+
             sort($distances);
             $kthDistances[] = $distances[min($k - 1, count($distances) - 1)];
         }
@@ -241,12 +245,13 @@ class NewClustering
         $queue = $neighbors;
         $processed = [$point => true];
 
-        while (!empty($queue)) {
+        while ($queue !== []) {
             $current = array_shift($queue);
 
             if (isset($processed[$current])) {
                 continue;
             }
+
             $processed[$current] = true;
 
             if (!$visited[$current]) {
@@ -278,16 +283,18 @@ class NewClustering
     protected function euclideanDistance(array $a, array $b): float
     {
         $sum = 0.0;
-        for ($i = 0; $i < count($a); $i++) {
+        $counter = count($a);
+        for ($i = 0; $i < $counter; $i++) {
             $diff = $a[$i] - $b[$i];
             $sum += $diff * $diff;
         }
+
         return sqrt($sum);
     }
 
     protected function calculateCentroid(array $vectors): array
     {
-        if (count($vectors) === 0) {
+        if ($vectors === []) {
             return [];
         }
 

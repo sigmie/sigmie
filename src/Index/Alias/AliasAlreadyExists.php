@@ -15,6 +15,6 @@ class AliasAlreadyExists extends Exception
 
     public static function forAlias(string $alias): static
     {
-        return new static("An index with alias '{$alias}' already exists.");
+        return new static(sprintf("An index with alias '%s' already exists.", $alias));
     }
 }

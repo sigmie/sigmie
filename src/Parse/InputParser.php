@@ -25,12 +25,10 @@ class InputParser extends Parser
             $filterString = trim($filterString);
         }
 
-        $res = [
+        return [
             'query_string' => $string,
             'filter_string' => $filterString,
             'sort_string' => $sortString,
         ];
-
-        return $res;
     }
 }

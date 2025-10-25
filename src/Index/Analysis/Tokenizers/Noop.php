@@ -24,12 +24,10 @@ class Noop implements Tokenizer
 
     public function toRaw(): array
     {
-        $res = [
+        return [
             $this->name => [
                 'type' => 'keyword',
             ],
         ];
-
-        return $res;
     }
 }

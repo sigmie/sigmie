@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
@@ -15,13 +14,7 @@ class CaseSensitiveKeyword extends Type
 
     public function queries(array|string $queryString): array
     {
-        $queries = [];
-
-        $queries[] = new Term($this->name, $queryString);
-
-        $queries[] = new Prefix($this->name, $queryString);
-
-        return $queries;
+        return [new Term($this->name, $queryString), new Prefix($this->name, $queryString)];
     }
 
     public function aggregation(Aggs $aggs, string $params): void
@@ -54,7 +47,7 @@ class CaseSensitiveKeyword extends Type
     public function validate(string $key, mixed $value): array
     {
         if (! is_string($value)) {
-            return [false, "The field {$key} mapped as {$this->typeName()} must be a string"];
+            return [false, sprintf('The field %s mapped as %s must be a string', $key, $this->typeName())];
         }
 
         return [true, ''];

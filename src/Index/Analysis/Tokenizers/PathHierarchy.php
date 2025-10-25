@@ -29,13 +29,11 @@ class PathHierarchy implements Tokenizer
 
     public function toRaw(): array
     {
-        $res = [
+        return [
             $this->name() => [
                 'type' => 'path_hierarchy',
                 'delimiter' => $this->delimiter,
             ],
         ];
-
-        return $res;
     }
 }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use Closure;
-use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Enums\FacetLogic;
 use Sigmie\Mappings\Contracts\Type as TypeInterface;
 use Sigmie\Query\Aggs;
@@ -89,7 +88,7 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
 
     public function name(): string
     {
-        return trim("{$this->parentPath}.{$this->name}", '.');
+        return trim(sprintf('%s.%s', $this->parentPath, $this->name), '.');
     }
 
     public function names(): array
@@ -179,8 +178,6 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
     public function vectorFields() 
     {
         return (new Collection([]))
-            ->map(function (Nested|DenseVector $field) {
-                return $field;
-            });
+            ->map(fn(Nested|DenseVector $field): Nested|DenseVector => $field);
     }
 }

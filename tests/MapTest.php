@@ -19,7 +19,7 @@ class MapTest extends TestCase
     /**
      * @test
      */
-    public function token_filter_map()
+    public function token_filter_map(): void
     {
         $this->assertArrayNotHasKey('foo', TokenFilter::$map);
 
@@ -44,7 +44,7 @@ class MapTest extends TestCase
     /**
      * @test
      */
-    public function char_filter_map_exceptions()
+    public function char_filter_map_exceptions(): void
     {
         $this->assertArrayNotHasKey('foo', CharFilter::$map);
 
@@ -60,7 +60,7 @@ class MapTest extends TestCase
     /**
      * @test
      */
-    public function char_filter_map()
+    public function char_filter_map(): void
     {
         CharFilter::filterMap([
             'bar' => PatternCharFilter::class,
@@ -80,7 +80,7 @@ class MapTest extends TestCase
     /**
      * @test
      */
-    public function tokenizer_map()
+    public function tokenizer_map(): void
     {
         $this->assertArrayNotHasKey('foo', Tokenizer::$map);
 

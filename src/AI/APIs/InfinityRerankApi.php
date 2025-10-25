@@ -12,13 +12,10 @@ class InfinityRerankApi implements RerankApi
 {
     protected Client $client;
 
-    protected string $model;
-
     public function __construct(
         string $baseUrl = 'http://localhost:7998',
-        string $model = 'cross-encoder/ms-marco-MiniLM-L-6-v2'
+        protected string $model = 'cross-encoder/ms-marco-MiniLM-L-6-v2'
     ) {
-        $this->model = $model;
         $this->client = new Client([
             'base_uri' => $baseUrl,
             'headers' => [
@@ -48,7 +45,7 @@ class InfinityRerankApi implements RerankApi
 
         $data = $json['results'] ?? $json['data'] ?? [];
 
-        return array_map(fn($result) => [
+        return array_map(fn($result): array => [
             'index' => $result['index'],
             'score' => $result['relevance_score'] ?? $result['score']
         ], $data);

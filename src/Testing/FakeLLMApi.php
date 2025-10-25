@@ -67,7 +67,7 @@ class FakeLLMApi implements LLMApi
             return;
         }
 
-        Assert::assertEquals($times, $actualCount, "answer() was called {$actualCount} times, expected {$times} times");
+        Assert::assertEquals($times, $actualCount, sprintf('answer() was called %d times, expected %d times', $actualCount, $times));
     }
 
     public function assertStreamAnswerWasCalled(int $times = null): void
@@ -79,7 +79,7 @@ class FakeLLMApi implements LLMApi
             return;
         }
 
-        Assert::assertEquals($times, $actualCount, "streamAnswer() was called {$actualCount} times, expected {$times} times");
+        Assert::assertEquals($times, $actualCount, sprintf('streamAnswer() was called %d times, expected %d times', $actualCount, $times));
     }
 
     public function assertJsonAnswerWasCalled(int $times = null): void
@@ -91,7 +91,7 @@ class FakeLLMApi implements LLMApi
             return;
         }
 
-        Assert::assertEquals($times, $actualCount, "jsonAnswer() was called {$actualCount} times, expected {$times} times");
+        Assert::assertEquals($times, $actualCount, sprintf('jsonAnswer() was called %d times, expected %d times', $actualCount, $times));
     }
 
     public function assertAnswerWasCalledWithMessage(string $role, string $contentSubstring): void
@@ -105,7 +105,7 @@ class FakeLLMApi implements LLMApi
             }
         }
 
-        Assert::fail("answer() was never called with {$role} message containing: \"{$contentSubstring}\"");
+        Assert::fail(sprintf('answer() was never called with %s message containing: "%s"', $role, $contentSubstring));
     }
 
     public function getAnswerCalls(): array

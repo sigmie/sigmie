@@ -35,8 +35,8 @@ class Name extends Text implements Analyze
 
     public function analyze(NewAnalyzer $newAnalyzer): void
     {
-        $prefixField = (new Text("{$this->name}_text"))->unstructuredText()
-            ->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
+        $prefixField = (new Text($this->name . '_text'))->unstructuredText()
+            ->withNewAnalyzer(function (NewAnalyzer $newAnalyzer): void {
                 $newAnalyzer->tokenizeOnWhitespaces()
                     ->name($this->prefixAnalyzer)
                     ->lowercase()
@@ -61,7 +61,7 @@ class Name extends Text implements Analyze
         return [
             $this->name,
             // "{$this->name}.{$this->name}_text",
-            $this->parentPath ? "{$this->parentPath}.{$this->name}.{$this->name}_text" : "{$this->name}.{$this->name}_text",
+            $this->parentPath ? sprintf('%s.%s.%s_text', $this->parentPath, $this->name, $this->name) : sprintf('%s.%s_text', $this->name, $this->name),
         ];
     }
 
@@ -69,7 +69,7 @@ class Name extends Text implements Analyze
     {
         $queries = [];
 
-        $prefixField = $this->parentPath ? "{$this->parentPath}.{$this->name}.{$this->name}_text" : "{$this->name}.{$this->name}_text";
+        $prefixField = $this->parentPath ? sprintf('%s.%s.%s_text', $this->parentPath, $this->name, $this->name) : sprintf('%s.%s_text', $this->name, $this->name);
 
         $queries[] = new Match_($this->name(), $queryString, analyzer: $this->ngramAnalyzer);
         $queries[] = new MatchPhrasePrefix($prefixField, $queryString, analyzer: $this->prefixAnalyzer);
@@ -78,7 +78,7 @@ class Name extends Text implements Analyze
         return $queries;
     }
 
-    public function notAllowedFilters()
+    public function notAllowedFilters(): array
     {
         return [
             Synonyms::class,

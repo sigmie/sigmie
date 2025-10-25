@@ -12,13 +12,11 @@ use Sigmie\AI\Contracts\EmbeddingsApi;
 class VoyageEmbeddingsApi implements EmbeddingsApi
 {
     protected Client $client;
-    protected string $model;
 
     public function __construct(
         string $apiKey,
-        string $model = 'voyage-2'
+        protected string $model = 'voyage-2'
     ) {
-        $this->model = $model;
         $this->client = new Client([
             'base_uri' => 'https://api.voyageai.com',
             'headers' => [
@@ -65,13 +63,11 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
 
     public function batchEmbed(array $payload): array
     {
-        if (count($payload) === 0) {
+        if ($payload === []) {
             return [];
         }
 
-        $texts = array_map(function ($item) {
-            return $item['text'] ?? '';
-        }, $payload);
+        $texts = array_map(fn($item) => $item['text'] ?? '', $payload);
 
         $dimensions = $payload[0]['dims'] ?? 0;
 

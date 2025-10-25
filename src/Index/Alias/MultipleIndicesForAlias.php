@@ -15,6 +15,6 @@ class MultipleIndicesForAlias extends Exception
 
     public static function forAlias(string $alias): static
     {
-        return new static("Multiple indices found for alias {$alias}.");
+        return new static(sprintf('Multiple indices found for alias %s.', $alias));
     }
 }

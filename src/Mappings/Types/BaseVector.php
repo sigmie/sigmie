@@ -77,9 +77,7 @@ class BaseVector extends AbstractType
             return 'exact_dims'.$this->dims.'_'.$this->similarity->value.'_'.$this->strategy->value;
         }
 
-        $suffix = 'm'.$this->m.'_efc'.$this->efConstruction.'_dims'.$this->dims.'_'.$this->similarity->value.'_'.$this->strategy->value;
-
-        return $suffix;
+        return 'm'.$this->m.'_efc'.$this->efConstruction.'_dims'.$this->dims.'_'.$this->similarity->value.'_'.$this->strategy->value;
     }
 
     public function boostedByField(): ?string

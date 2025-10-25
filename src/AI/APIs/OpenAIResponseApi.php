@@ -9,7 +9,6 @@ use Psr\Http\Message\ResponseInterface;
 use Sigmie\AI\Answers\OpenAIAnswer;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Prompt;
-use Sigmie\Rag\OpenAIRagAnswer;
 use Sigmie\Rag\LLMJsonAnswer;
 use Sigmie\AI\Contracts\LLMAnswer;
 
@@ -24,12 +23,10 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
 
     public function answer(Prompt $prompt): LLMAnswer
     {
-        $input = array_map(function ($message) {
-            return [
-                'role' => $message['role']->toOpenAI(),
-                'content' => $message['content']
-            ];
-        }, $prompt->messages());
+        $input = array_map(fn($message): array => [
+            'role' => $message['role']->toOpenAI(),
+            'content' => $message['content']
+        ], $prompt->messages());
 
         $options = [
             RequestOptions::JSON => [
@@ -52,7 +49,7 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
 
     public function jsonAnswer(Prompt $prompt): LLMJsonAnswer
     {
-        $input = array_map(fn($message) => [
+        $input = array_map(fn($message): array => [
             'role' => $message['role']->toOpenAI(),
             'content' => $message['content']
         ], $prompt->messages());
@@ -77,9 +74,7 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
         $data = json_decode($response->getBody()->getContents(), true);
 
         // Find the message output in the response array
-        $messageOutput = array_filter($data['output'], function ($output) {
-            return $output['type'] === 'message';
-        });
+        $messageOutput = array_filter($data['output'], fn($output): bool => $output['type'] === 'message');
         $messageOutput = array_values($messageOutput)[0];
 
         $content = $messageOutput['content'][0]['text'] ?? throw new \RuntimeException('No text content in response');
@@ -94,12 +89,10 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
 
     public function streamAnswer(Prompt $prompt): iterable
     {
-        $input = array_map(function ($message) {
-            return [
-                'role' => $message['role']->toOpenAI(),
-                'content' => $message['content']
-            ];
-        }, $prompt->messages());
+        $input = array_map(fn($message): array => [
+            'role' => $message['role']->toOpenAI(),
+            'content' => $message['content']
+        ], $prompt->messages());
 
         $options = [
             RequestOptions::JSON => [
@@ -135,7 +128,7 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
                 $line = substr($buffer, 0, $pos);
                 $buffer = substr($buffer, $pos + 1);
 
-                if (strpos($line, 'data: ') === 0) {
+                if (str_starts_with($line, 'data: ')) {
                     $data = substr($line, 6);
 
                     // Skip the [DONE] message
@@ -154,7 +147,7 @@ class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
         }
 
         // Process any remaining buffer
-        if (!empty($buffer) && strpos($buffer, 'data: ') === 0) {
+        if ($buffer !== '' && $buffer !== '0' && str_starts_with($buffer, 'data: ')) {
             $data = substr($buffer, 6);
             if (trim($data) !== '[DONE]') {
                 $decoded = json_decode(trim($data), true);
