@@ -21,7 +21,7 @@ class Elasticsearch implements SearchEngine
 
     public function vectorField(BaseVector $field): Type
     {
-        $vector = new DenseVector(
+        return new DenseVector(
             name: $field->name,
             dims: $field->dims(),
             index: $field->isIndexed(),
@@ -29,29 +29,18 @@ class Elasticsearch implements SearchEngine
             indexType: $field->indexType(),
             m: $field->m(),
             efConstruction: $field->efConstruction(),
-            confidenceInterval: $field->confidenceInterval(),
-            oversample: $field->oversample(),
+            fullPath: $field->fullPath,
         );
-
-        $vector->fullPath = $field->fullPath;
-        $vector->apiName = $field->apiName ?? null;
-        $vector->boostedByField = $field->boostedByField();
-        $vector->autoNormalizeVector = $field->autoNormalizeVector();
-
-        return $vector;
     }
 
     public function nestedVectorField(NestedVector $field): Type
     {
-        $nestedVector = new ElasticsearchNestedVector(
+        return new ElasticsearchNestedVector(
             name: $field->name,
             dims: $field->dims,
-            apiName: $field->apiName,
+            similarity: $field->similarity,
+            fullPath: $field->fullPath,
         );
-
-        $nestedVector->fullPath = $field->fullPath;
-
-        return $nestedVector;
     }
 
     public function indexSettings(): array

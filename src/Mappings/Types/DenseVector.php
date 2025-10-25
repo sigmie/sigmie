@@ -8,6 +8,7 @@ use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\Type as AbstractType;
+use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\ElasticsearchKnn;
 
 class DenseVector extends AbstractType implements Type
@@ -16,23 +17,18 @@ class DenseVector extends AbstractType implements Type
 
     public ?string $textFieldName = null;
 
-    public ?string $apiName = null;
-
-    public ?string $boostedByField = null;
-
-    public bool $autoNormalizeVector = true;
-
     public function __construct(
-        public string $name,
+        string $name,
         protected int $dims = 384,
         protected bool $index = true,
         protected VectorSimilarity $similarity = VectorSimilarity::Cosine,
         protected string $indexType = 'hnsw',
         protected ?int $m = 64,
         protected ?int $efConstruction = 300,
-        protected ?float $confidenceInterval = null,
-        protected ?int $oversample = null,
-    ) {}
+        ?string $fullPath = '',
+    ) {
+        parent::__construct($name, fullPath: $fullPath);
+    }
 
     public function toRaw(): array
     {
@@ -51,16 +47,6 @@ class DenseVector extends AbstractType implements Type
                 'm' => $this->m,
                 'ef_construction' => $this->efConstruction,
             ];
-
-            if ($this->confidenceInterval !== null) {
-                $raw[$this->name]['index_options']['confidence_interval'] = $this->confidenceInterval;
-            }
-
-            if ($this->oversample !== null) {
-                $raw[$this->name]['index_options']['rescore_vector'] = [
-                    'oversample' => $this->oversample,
-                ];
-            }
         }
 
         return $raw;
@@ -101,25 +87,6 @@ class DenseVector extends AbstractType implements Type
         return $this->efConstruction;
     }
 
-    public function confidenceInterval(): ?float
-    {
-        return $this->confidenceInterval;
-    }
-
-    public function oversample(): ?int
-    {
-        return $this->oversample;
-    }
-
-    public function createSuffix(): string
-    {
-        if (! $this->index) {
-            return 'exact_dims'.$this->dims.'_'.$this->similarity->value.'_'.VectorStrategy::Concatenate->value;
-        }
-
-        return 'm'.$this->m.'_efc'.$this->efConstruction.'_dims'.$this->dims.'_'.$this->similarity->value.'_'.VectorStrategy::Concatenate->value;
-    }
-
     public function textFieldName(string $name): static
     {
         $this->textFieldName = $name;
@@ -132,17 +99,7 @@ class DenseVector extends AbstractType implements Type
         return "{$this->textFieldName}.{$this->name}";
     }
 
-    public function boostedByField(): ?string
-    {
-        return $this->boostedByField;
-    }
-
-    public function autoNormalizeVector(): bool
-    {
-        return $this->autoNormalizeVector;
-    }
-
-    public function vectorQueries(array $vector, int $k, array $filter = []): array
+    public function vectorQueries(array $vector, int $k, Boolean $filter): array
     {
         $numCandidates = max($k * 10, 1000);
 
@@ -152,7 +109,7 @@ class DenseVector extends AbstractType implements Type
                 queryVector: $vector,
                 k: $k,
                 numCandidates: $numCandidates,
-                filter: $filter,
+                filter: $filter->toRaw(),
                 boost: 1.0
             ),
         ];

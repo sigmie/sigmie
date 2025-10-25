@@ -31,7 +31,8 @@
         "spatie/ray": "^1.1",
         "brianium/paratest": "^6.3",
         "rachidlaasri/travel": "^1.06",
-        "symfony/dotenv": "^7.0"
+        "symfony/dotenv": "^7.0",
+        "rector/rector": "^1.2"
     },
     "autoload": {
         "psr-4": {

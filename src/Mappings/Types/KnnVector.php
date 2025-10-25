@@ -8,6 +8,7 @@ use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\Type as AbstractType;
+use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\OpenSearchKnn;
 
 class KnnVector extends AbstractType implements Type
@@ -16,20 +17,17 @@ class KnnVector extends AbstractType implements Type
 
     public ?string $textFieldName = null;
 
-    public ?string $apiName = null;
-
-    public ?string $boostedByField = null;
-
-    public bool $autoNormalizeVector = true;
-
     public function __construct(
-        public string $name,
+        string $name,
         protected int $dims = 384,
         protected bool $index = true,
         protected VectorSimilarity $similarity = VectorSimilarity::Cosine,
         protected ?int $m = 64,
         protected ?int $efConstruction = 300,
-    ) {}
+        ?string $fullPath = '',
+    ) {
+        parent::__construct($name, fullPath: $fullPath);
+    }
 
     public function toRaw(): array
     {
@@ -100,25 +98,6 @@ class KnnVector extends AbstractType implements Type
         return $this->efConstruction;
     }
 
-    public function confidenceInterval(): ?float
-    {
-        return null;
-    }
-
-    public function oversample(): ?int
-    {
-        return null;
-    }
-
-    public function createSuffix(): string
-    {
-        if (! $this->index) {
-            return 'exact_dims'.$this->dims.'_'.$this->similarity->value.'_'.VectorStrategy::Concatenate->value;
-        }
-
-        return 'm'.$this->m.'_efc'.$this->efConstruction.'_dims'.$this->dims.'_'.$this->similarity->value.'_'.VectorStrategy::Concatenate->value;
-    }
-
     public function textFieldName(string $name): static
     {
         $this->textFieldName = $name;
@@ -131,25 +110,14 @@ class KnnVector extends AbstractType implements Type
         return "{$this->textFieldName}.{$this->name}";
     }
 
-    public function boostedByField(): ?string
-    {
-        return $this->boostedByField;
-    }
-
-    public function autoNormalizeVector(): bool
-    {
-        return $this->autoNormalizeVector;
-    }
-
-    public function vectorQueries(array $vector, int $k, array $filter = []): array
+    public function vectorQueries(array $vector, int $k, Boolean $filter): array
     {
         return [
             new OpenSearchKnn(
                 field: '_embeddings.'.$this->fullPath,
                 queryVector: $vector,
                 k: $k,
-                numCandidates: 0, // OpenSearch doesn't use numCandidates
-                filter: $filter,
+                filter: $filter->toRaw(),
                 boost: 1.0
             ),
         ];

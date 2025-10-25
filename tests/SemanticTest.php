@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Exception;
 use Sigmie\Document\Document;
-use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
-use Sigmie\Semantic\Providers\Noop;
-use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
 class SemanticTest extends TestCase
@@ -20,7 +18,7 @@ class SemanticTest extends TestCase
     public function brute_force_nested_semantic_fields_filters()
     {
         $indexName = uniqid();
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->bool('active');
         $blueprint->title('title');
         $blueprint->nested('charachter', function (NewProperties $blueprint) {
@@ -115,7 +113,7 @@ class SemanticTest extends TestCase
             ->queryString('woman')
             ->size(2);
 
-        /** @var SigmieSearchResponse $res  */
+        /** @var SigmieSearchResponse $res */
         $res = $search->get();
 
         // Verify results
@@ -154,7 +152,7 @@ class SemanticTest extends TestCase
     public function nested_semantic_fields()
     {
         $indexName = uniqid();
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->bool('active');
         $blueprint->title('title');
         $blueprint->nested('charachter', function (NewProperties $blueprint) {
@@ -249,9 +247,8 @@ class SemanticTest extends TestCase
             ->queryString('woman')
             ->size(2);
 
-        /** @var SigmieSearchResponse $res  */
+        /** @var SigmieSearchResponse $res */
         $res = $search->get();
-
 
         // Verify results
         $hits = $res->hits();
@@ -290,7 +287,7 @@ class SemanticTest extends TestCase
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->title('name')->semantic(accuracy: 6, dimensions: 384, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)
@@ -392,7 +389,7 @@ class SemanticTest extends TestCase
     {
         $indexName = uniqid();
 
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->number('popularity')->float();
         $props->text('title')->semantic(api: 'test-embeddings', accuracy: 3, dimensions: 256)->boostedBy('popularity');
 
@@ -433,7 +430,7 @@ class SemanticTest extends TestCase
     {
         $indexName = uniqid();
 
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->image('photo')->semantic(accuracy: 3, dimensions: 256, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($props)->create();
@@ -473,7 +470,7 @@ class SemanticTest extends TestCase
     {
         $indexName = uniqid();
 
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->text('title')->semantic(accuracy: 3, dimensions: 256, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($props)->create();
@@ -513,7 +510,7 @@ class SemanticTest extends TestCase
     {
         $indexName = uniqid();
 
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->number('boost')->float();
         $props->text('title')
             ->newSemantic(function ($semantic) {
@@ -564,7 +561,7 @@ class SemanticTest extends TestCase
         // Check that vector2 is approximately double vector1
         for ($i = 0; $i < min(5, count($vector1)); $i++) {
             $ratio = $vector2[$i] / $vector1[$i];
-            $this->assertEqualsWithDelta(2.0, $ratio, 0.001, "Vector values should be scaled by boost factor");
+            $this->assertEqualsWithDelta(2.0, $ratio, 0.001, 'Vector values should be scaled by boost factor');
         }
     }
 
@@ -573,12 +570,12 @@ class SemanticTest extends TestCase
      */
     public function exception_when_boost_field_missing()
     {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage("does not exist in properties");
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('does not exist in properties');
 
         $indexName = uniqid();
 
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->text('title')->semantic(api: 'test-embeddings', accuracy: 1, dimensions: 128)->boostedBy('nonexistent_field');
 
         $this->sigmie->newIndex($indexName)->properties($props)->create();
@@ -598,12 +595,12 @@ class SemanticTest extends TestCase
      */
     public function exception_when_boost_field_not_number()
     {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage("must be a Number type");
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('must be a Number type');
 
         $indexName = uniqid();
 
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->text('boost_text');
         $props->text('title')->semantic(api: 'test-embeddings', accuracy: 1, dimensions: 128)->boostedBy('boost_text');
 
@@ -625,12 +622,12 @@ class SemanticTest extends TestCase
      */
     public function exception_when_boost_value_not_in_document()
     {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage("is not present in document");
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('is not present in document');
 
         $indexName = uniqid();
 
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->number('boost')->float();
         $props->text('title')
             ->semantic(api: 'test-embeddings', accuracy: 1, dimensions: 128)
@@ -654,12 +651,12 @@ class SemanticTest extends TestCase
      */
     public function exception_when_boost_value_negative()
     {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage("must be a positive number");
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('must be a positive number');
 
         $indexName = uniqid();
 
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->number('boost')->float();
         $props->text('title')->semantic(api: 'test-embeddings', accuracy: 1, dimensions: 128)->boostedBy('boost');
 
@@ -685,14 +682,14 @@ class SemanticTest extends TestCase
         $indexWithNorm = uniqid();
         $indexWithoutNorm = uniqid();
 
-        $propsWithNorm = new NewProperties();
+        $propsWithNorm = new NewProperties;
         $propsWithNorm->text('title')->newSemantic(function ($semantic) {
             $semantic->accuracy(2, 384)
                 ->api('test-embeddings')
                 ->euclideanSimilarity();  // l2_norm with normalization
         });
 
-        $propsWithoutNorm = new NewProperties();
+        $propsWithoutNorm = new NewProperties;
         $propsWithoutNorm->text('title')->newSemantic(function ($semantic) {
             $semantic->accuracy(2, 384)
                 ->api('test-embeddings')
@@ -729,8 +726,8 @@ class SemanticTest extends TestCase
         $vectorWithoutNorm = $embeddingsWithoutNorm[$vectorFieldName];
 
         // Calculate magnitudes
-        $magnitudeWithNorm = sqrt(array_sum(array_map(fn($v) => $v * $v, $vectorWithNorm)));
-        $magnitudeWithoutNorm = sqrt(array_sum(array_map(fn($v) => $v * $v, $vectorWithoutNorm)));
+        $magnitudeWithNorm = sqrt(array_sum(array_map(fn ($v) => $v * $v, $vectorWithNorm)));
+        $magnitudeWithoutNorm = sqrt(array_sum(array_map(fn ($v) => $v * $v, $vectorWithoutNorm)));
 
         // With normalization, magnitude should be ~1.0
         $this->assertEqualsWithDelta(1.0, $magnitudeWithNorm, 0.001, 'Normalized vector should have magnitude ~1.0');
@@ -742,5 +739,134 @@ class SemanticTest extends TestCase
             round($magnitudeWithoutNorm, 3),
             'Normalized and unnormalized vectors should have different magnitudes'
         );
+    }
+
+    /**
+     * @test
+     */
+    public function nested_vector_queries_use_correct_similarity_algorithm()
+    {
+        // Test Elasticsearch nested vectors with different similarities
+        $this->forElasticsearch(function () {
+            // Cosine similarity (default)
+            $cosineVector = new \Sigmie\Mappings\Types\ElasticsearchNestedVector(
+                name: 'test_cosine',
+                dims: 256,
+                similarity: \Sigmie\Enums\VectorSimilarity::Cosine,
+                fullPath: 'test_cosine'
+            );
+
+            $cosineQueries = $cosineVector->vectorQueries(
+                vector: array_fill(0, 256, 0.5),
+                k: 10,
+                filter: new \Sigmie\Query\Queries\Compound\Boolean
+            );
+
+            $this->assertCount(1, $cosineQueries);
+            $query = $cosineQueries[0];
+            $raw = $query->toRaw();
+            $this->assertStringContainsString('cosineSimilarity', $raw['nested']['query']['function_score']['script_score']['script']['source']);
+
+            // Dot product similarity
+            $dotVector = new \Sigmie\Mappings\Types\ElasticsearchNestedVector(
+                name: 'test_dot',
+                dims: 256,
+                similarity: \Sigmie\Enums\VectorSimilarity::DotProduct,
+                fullPath: 'test_dot'
+            );
+
+            $dotQueries = $dotVector->vectorQueries(
+                vector: array_fill(0, 256, 0.5),
+                k: 10,
+                filter: new \Sigmie\Query\Queries\Compound\Boolean
+            );
+
+            $this->assertCount(1, $dotQueries);
+            $query = $dotQueries[0];
+            $raw = $query->toRaw();
+            $this->assertStringContainsString('dotProduct', $raw['nested']['query']['function_score']['script_score']['script']['source']);
+
+            // Euclidean similarity
+            $euclideanVector = new \Sigmie\Mappings\Types\ElasticsearchNestedVector(
+                name: 'test_euclidean',
+                dims: 256,
+                similarity: \Sigmie\Enums\VectorSimilarity::Euclidean,
+                fullPath: 'test_euclidean'
+            );
+
+            $euclideanQueries = $euclideanVector->vectorQueries(
+                vector: array_fill(0, 256, 0.5),
+                k: 10,
+                filter: new \Sigmie\Query\Queries\Compound\Boolean
+            );
+
+            $this->assertCount(1, $euclideanQueries);
+            $query = $euclideanQueries[0];
+            $raw = $query->toRaw();
+            $this->assertStringContainsString('l2norm', $raw['nested']['query']['function_score']['script_score']['script']['source']);
+        });
+
+        // Test OpenSearch nested vectors with different similarities
+        $this->forOpensearch(function () {
+            // Cosine similarity (default)
+            $cosineVector = new \Sigmie\Mappings\Types\OpenSearchNestedVector(
+                name: 'test_cosine',
+                dims: 256,
+                similarity: \Sigmie\Enums\VectorSimilarity::Cosine,
+                fullPath: 'test_cosine'
+            );
+
+            $cosineQueries = $cosineVector->vectorQueries(
+                vector: array_fill(0, 256, 0.5),
+                k: 10,
+                filter: new \Sigmie\Query\Queries\Compound\Boolean
+            );
+
+            $this->assertCount(1, $cosineQueries);
+            $query = $cosineQueries[0];
+            $raw = $query->toRaw();
+            $this->assertStringContainsString('cosineSimilarity', $raw['nested']['query']['function_score']['script_score']['script']['source']);
+            $this->assertStringContainsString("doc['", $raw['nested']['query']['function_score']['script_score']['script']['source']);
+
+            // Dot product similarity
+            $dotVector = new \Sigmie\Mappings\Types\OpenSearchNestedVector(
+                name: 'test_dot',
+                dims: 256,
+                similarity: \Sigmie\Enums\VectorSimilarity::DotProduct,
+                fullPath: 'test_dot'
+            );
+
+            $dotQueries = $dotVector->vectorQueries(
+                vector: array_fill(0, 256, 0.5),
+                k: 10,
+                filter: new \Sigmie\Query\Queries\Compound\Boolean
+            );
+
+            $this->assertCount(1, $dotQueries);
+            $query = $dotQueries[0];
+            $raw = $query->toRaw();
+            $this->assertStringContainsString('dotProduct', $raw['nested']['query']['function_score']['script_score']['script']['source']);
+            $this->assertStringContainsString("doc['", $raw['nested']['query']['function_score']['script_score']['script']['source']);
+
+            // Euclidean similarity
+            $euclideanVector = new \Sigmie\Mappings\Types\OpenSearchNestedVector(
+                name: 'test_euclidean',
+                dims: 256,
+                similarity: \Sigmie\Enums\VectorSimilarity::Euclidean,
+                fullPath: 'test_euclidean'
+            );
+
+            $euclideanQueries = $euclideanVector->vectorQueries(
+                vector: array_fill(0, 256, 0.5),
+                k: 10,
+                filter: new \Sigmie\Query\Queries\Compound\Boolean
+            );
+
+            $this->assertCount(1, $euclideanQueries);
+            $query = $euclideanQueries[0];
+            $raw = $query->toRaw();
+            $this->assertStringContainsString('l2norm', $raw['nested']['query']['function_score']['script_score']['script']['source']);
+            $this->assertStringContainsString("doc['", $raw['nested']['query']['function_score']['script_score']['script']['source']);
+        });
     }
 }

@@ -8,6 +8,10 @@ use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Types\Type as AbstractType;
 
+/**
+ * Abstract vector type that is driver-agnostic.
+ * Contains only properties required by DocumentProcessor and driver conversions.
+ */
 class BaseVector extends AbstractType
 {
     public function __construct(
@@ -19,8 +23,6 @@ class BaseVector extends AbstractType
         public readonly string $indexType = 'hnsw',
         public readonly ?int $m = 64,
         public readonly ?int $efConstruction = 300,
-        public readonly ?float $confidenceInterval = null,
-        public readonly ?int $oversample = null,
         public readonly ?string $apiName = null,
         public readonly ?string $boostedByField = null,
         public readonly bool $autoNormalizeVector = true,
@@ -59,27 +61,6 @@ class BaseVector extends AbstractType
     public function efConstruction(): ?int
     {
         return $this->efConstruction;
-    }
-
-    public function confidenceInterval(): ?float
-    {
-        return $this->confidenceInterval;
-    }
-
-    public function oversample(): ?int
-    {
-        return $this->oversample;
-    }
-
-    public function createSuffix(): string
-    {
-        if (! $this->index) {
-            return 'exact_dims'.$this->dims.'_'.$this->similarity->value.'_'.$this->strategy->value;
-        }
-
-        $suffix = 'm'.$this->m.'_efc'.$this->efConstruction.'_dims'.$this->dims.'_'.$this->similarity->value.'_'.$this->strategy->value;
-
-        return $suffix;
     }
 
     public function boostedByField(): ?string

@@ -4,13 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Index\ListedIndex;
 use Sigmie\Document\Document;
-use Sigmie\Mappings\Types\Text;
-use Sigmie\Plugins\Elastiknn\NearestNeighbors as ElastiknnNearestNeighbors;
-use Sigmie\Query\Queries\KnnVectorQuery;
-use Sigmie\Semantic\Providers\SigmieAI;
-use Sigmie\Sigmie;
+use Sigmie\Index\ListedIndex;
 use Sigmie\Testing\TestCase;
 
 class SigmieTest extends TestCase

@@ -22,48 +22,29 @@ class Opensearch implements SearchEngine
 
     public function vectorField(BaseVector $field): Type
     {
-        $vector = new KnnVector(
+        return new KnnVector(
             name: $field->name,
             dims: $field->dims(),
             index: $field->isIndexed(),
             similarity: $field->similarity(),
             m: $field->m(),
             efConstruction: $field->efConstruction(),
+            fullPath: $field->fullPath,
         );
-
-        $vector->fullPath = $field->fullPath;
-        $vector->apiName = $field->apiName ?? null;
-        $vector->boostedByField = $field->boostedByField();
-        $vector->autoNormalizeVector = $field->autoNormalizeVector();
-
-        return $vector;
     }
 
     public function nestedVectorField(NestedVector $field): Type
     {
-        $nestedVector = new OpenSearchNestedVector(
+        return new OpenSearchNestedVector(
             name: $field->name,
             dims: $field->dims,
-            apiName: $field->apiName,
+            similarity: $field->similarity,
+            fullPath: $field->fullPath,
         );
-
-        $nestedVector->fullPath = $field->fullPath;
-
-        return $nestedVector;
     }
 
     public function indexSettings(): array
     {
         return ['index.knn' => true];
-    }
-
-    protected function mapSimilarity(VectorSimilarity $similarity): string
-    {
-        return match ($similarity) {
-            VectorSimilarity::Cosine => 'cosinesimil',
-            VectorSimilarity::DotProduct => 'innerproduct',
-            VectorSimilarity::Euclidean => 'l2',
-            VectorSimilarity::MaxInnerProduct => 'innerproduct',
-        };
     }
 }
