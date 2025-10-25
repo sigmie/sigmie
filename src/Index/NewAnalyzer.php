@@ -11,7 +11,6 @@ use Sigmie\Index\Contracts\CustomAnalyzer;
 use Sigmie\Index\Shared\CharFilters;
 use Sigmie\Index\Shared\Filters;
 use Sigmie\Index\Shared\Tokenizer;
-use Sigmie\Shared\Name;
 
 class NewAnalyzer
 {
@@ -19,16 +18,12 @@ class NewAnalyzer
     use Filters;
     use Tokenizer;
 
-    public string $name;
-
-    public function __construct(protected AnalysisInterface $analysis, string $name)
+    public function __construct(protected AnalysisInterface $analysis, public string $name)
     {
-        $this->name = $name;
-
-        $this->tokenizer = new WordBoundaries();
+        $this->tokenizer = new WordBoundaries;
     }
 
-    public function name(string $name)
+    public function name(string $name): static
     {
         $this->name = $name;
 

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Testing;
 
 use GuzzleHttp\Promise\Promise;
-use Sigmie\AI\Contracts\EmbeddingsApi;
 use PHPUnit\Framework\Assert;
+use Sigmie\AI\Contracts\EmbeddingsApi;
 
 class FakeEmbeddingsApi implements EmbeddingsApi
 {
@@ -45,44 +45,47 @@ class FakeEmbeddingsApi implements EmbeddingsApi
         return $this->realApi->model();
     }
 
-    public function assertEmbedWasCalled(int $times = null): void
+    public function assertEmbedWasCalled(?int $times = null): void
     {
         $actualCount = count($this->embedCalls);
 
         if ($times === null) {
             Assert::assertGreaterThan(0, $actualCount, 'embed() was never called');
+
             return;
         }
 
-        Assert::assertEquals($times, $actualCount, "embed() was called {$actualCount} times, expected {$times} times");
+        Assert::assertEquals($times, $actualCount, sprintf('embed() was called %d times, expected %d times', $actualCount, $times));
     }
 
-    public function assertEmbedWasCalledWith(string $text, int $dimensions = null): void
+    public function assertEmbedWasCalledWith(string $text, ?int $dimensions = null): void
     {
         foreach ($this->embedCalls as $call) {
             if ($call['text'] === $text && ($dimensions === null || $call['dimensions'] === $dimensions)) {
                 Assert::assertTrue(true);
+
                 return;
             }
         }
 
         $message = $dimensions === null
-            ? "embed() was never called with text: \"{$text}\""
-            : "embed() was never called with text: \"{$text}\" and dimensions: {$dimensions}";
+            ? sprintf('embed() was never called with text: "%s"', $text)
+            : sprintf('embed() was never called with text: "%s" and dimensions: %d', $text, $dimensions);
 
         Assert::fail($message);
     }
 
-    public function assertBatchEmbedWasCalled(int $times = null): void
+    public function assertBatchEmbedWasCalled(?int $times = null): void
     {
         $actualCount = count($this->batchEmbedCalls);
 
         if ($times === null) {
             Assert::assertGreaterThan(0, $actualCount, 'batchEmbed() was never called');
+
             return;
         }
 
-        Assert::assertEquals($times, $actualCount, "batchEmbed() was called {$actualCount} times, expected {$times} times");
+        Assert::assertEquals($times, $actualCount, sprintf('batchEmbed() was called %d times, expected %d times', $actualCount, $times));
     }
 
     public function assertBatchEmbedWasCalledWithCount(int $itemCount): void
@@ -90,11 +93,12 @@ class FakeEmbeddingsApi implements EmbeddingsApi
         foreach ($this->batchEmbedCalls as $call) {
             if (count($call) === $itemCount) {
                 Assert::assertTrue(true);
+
                 return;
             }
         }
 
-        Assert::fail("batchEmbed() was never called with {$itemCount} items");
+        Assert::fail(sprintf('batchEmbed() was never called with %d items', $itemCount));
     }
 
     public function assertBatchEmbedWasCalledWith(string $expectedText): void
@@ -112,7 +116,7 @@ class FakeEmbeddingsApi implements EmbeddingsApi
         }
 
         // Also check in single embed calls
-        if (!$found) {
+        if (! $found) {
             foreach ($this->embedCalls as $call) {
                 if (($call['text'] ?? '') === $expectedText) {
                     $found = true;
@@ -121,7 +125,7 @@ class FakeEmbeddingsApi implements EmbeddingsApi
             }
         }
 
-        Assert::assertTrue($found, "Text '{$expectedText}' was never embedded");
+        Assert::assertTrue($found, sprintf("Text '%s' was never embedded", $expectedText));
     }
 
     public function getEmbedCalls(): array

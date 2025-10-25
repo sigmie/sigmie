@@ -5,17 +5,10 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Exception;
-use OutOfBoundsException;
 use RachidLaasri\Travel\Travel;
-use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Document\Document;
+use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Index\AliasedIndex;
-use Sigmie\Languages\English\Builder as EnglishBuilder;
-use Sigmie\Languages\English\English;
-use Sigmie\Languages\German\Builder as GermanBuilder;
-use Sigmie\Languages\German\German;
-use Sigmie\Languages\Greek\Builder as GreekBuilder;
-use Sigmie\Languages\Greek\Greek;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Analysis\CharFilter\Pattern as PatternCharFilter;
@@ -24,9 +17,13 @@ use Sigmie\Index\Analysis\Tokenizers\Pattern as PatternTokenizer;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\NewAnalyzer;
+use Sigmie\Languages\English\Builder as EnglishBuilder;
+use Sigmie\Languages\English\English;
+use Sigmie\Languages\German\Builder as GermanBuilder;
+use Sigmie\Languages\German\German;
+use Sigmie\Languages\Greek\Builder as GreekBuilder;
+use Sigmie\Languages\Greek\Greek;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Query\Queries\MatchAll;
-use Sigmie\Sigmie;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
 
@@ -35,20 +32,20 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function default_analyzer_even_if_no_text_field_mapping()
+    public function default_analyzer_even_if_no_text_field_mapping(): void
     {
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->mapping(function (NewProperties $blueprint) {
+            ->mapping(function (NewProperties $blueprint): NewProperties {
                 $blueprint->bool('active');
-                $blueprint->text('description')->newAnalyzer(function (NewAnalyzer $newAnalyzer) {});
+                $blueprint->text('description')->newAnalyzer(function (NewAnalyzer $newAnalyzer): void {});
 
                 return $blueprint;
             })
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerExists('default');
         });
     }
@@ -56,7 +53,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function language_greek()
+    public function language_greek(): void
     {
         $alias = uniqid();
 
@@ -64,7 +61,7 @@ class IndexBuilderTest extends TestCase
         $blueprint->name('name');
 
         /** @var GreekBuilder */
-        $greekBuilder = $this->sigmie->newIndex($alias)->language(new Greek());
+        $greekBuilder = $this->sigmie->newIndex($alias)->language(new Greek);
 
         $greekBuilder
             ->properties($blueprint)
@@ -80,7 +77,7 @@ class IndexBuilderTest extends TestCase
             ->greekStopwords()
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
 
             $index->assertAnalyzerHasFilter('default', 'greek_stopwords');
             $index->assertAnalyzerHasFilter('default', 'greek_stemmer');
@@ -101,12 +98,12 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function language_german()
+    public function language_german(): void
     {
         $alias = uniqid();
 
         /** @var GermanBuilder */
-        $germanBuilder = $this->sigmie->newIndex($alias)->language(new German());
+        $germanBuilder = $this->sigmie->newIndex($alias)->language(new German);
 
         $germanBuilder
             ->germanLightStemmer()
@@ -120,7 +117,7 @@ class IndexBuilderTest extends TestCase
 
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasFilter('default', 'german_lowercase');
             $index->assertAnalyzerHasFilter('default', 'german_stemmer');
             $index->assertAnalyzerHasFilter('default', 'german_stemmer_2');
@@ -167,7 +164,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function language_english()
+    public function language_english(): void
     {
         $alias = uniqid();
 
@@ -175,7 +172,7 @@ class IndexBuilderTest extends TestCase
         $englishBuilder = $this->sigmie->newIndex($alias)
             ->shards(4)
             ->replicas(4)
-            ->language(new English());
+            ->language(new English);
 
         $englishBuilder
             ->englishStemmer()
@@ -189,7 +186,7 @@ class IndexBuilderTest extends TestCase
             ->englishLowercase()
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertShards(4);
             $index->assertReplicas(4);
 
@@ -249,7 +246,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function unique_filter()
+    public function unique_filter(): void
     {
         $alias = uniqid();
 
@@ -257,7 +254,7 @@ class IndexBuilderTest extends TestCase
             ->unique(name: 'unique_filter', onlyOnSamePosition: true)
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasFilter('default', 'unique_filter');
             $index->assertFilterExists('unique_filter');
             $index->assertFilterEquals('unique_filter', [
@@ -270,7 +267,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function trim_filter()
+    public function trim_filter(): void
     {
         $alias = uniqid();
 
@@ -278,7 +275,7 @@ class IndexBuilderTest extends TestCase
             ->trim(name: 'trim_filter_name')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasFilter('default', 'trim_filter_name');
             $index->assertFilterExists('trim_filter_name');
             $index->assertFilterEquals('trim_filter_name', [
@@ -290,7 +287,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function uppercase_filter()
+    public function uppercase_filter(): void
     {
         $alias = uniqid();
 
@@ -298,7 +295,7 @@ class IndexBuilderTest extends TestCase
             ->uppercase(name: 'uppercase_filter_name')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasFilter('default', 'uppercase_filter_name');
             $index->assertFilterExists('uppercase_filter_name');
             $index->assertFilterEquals('uppercase_filter_name', [
@@ -310,7 +307,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function tokenize_on_word_pattern_flags()
+    public function tokenize_on_word_pattern_flags(): void
     {
         $alias = uniqid();
 
@@ -318,7 +315,7 @@ class IndexBuilderTest extends TestCase
             ->tokenizeOnPattern('/something/', 'CASE_INSENSITIVE', name: 'some_pattern')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasTokenizer('default', 'some_pattern');
             $index->assertTokenizerExists('some_pattern');
             $index->assertTokenizerEquals('some_pattern', [
@@ -332,7 +329,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function tokenize_on_word_pattern()
+    public function tokenize_on_word_pattern(): void
     {
         $alias = uniqid();
 
@@ -340,7 +337,7 @@ class IndexBuilderTest extends TestCase
             ->tokenizeOnPattern('/something/', name: 'some_pattern')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasTokenizer('default', 'some_pattern');
             $index->assertTokenizerExists('some_pattern');
             $index->assertTokenizerEquals('some_pattern', [
@@ -353,7 +350,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function tokenize_on_word_boundaries()
+    public function tokenize_on_word_boundaries(): void
     {
         $alias = uniqid();
 
@@ -361,7 +358,7 @@ class IndexBuilderTest extends TestCase
             ->tokenizeOnWordBoundaries('able')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasTokenizer('default', 'able');
             $index->assertTokenizerExists('able');
             $index->assertTokenizerEquals('able', [
@@ -374,7 +371,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function tokenize_on_whitespace()
+    public function tokenize_on_whitespace(): void
     {
         $alias = uniqid();
 
@@ -382,7 +379,7 @@ class IndexBuilderTest extends TestCase
             ->tokenizeOnWhiteSpaces('whitespace')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasTokenizer('default', 'whitespace');
         });
     }
@@ -390,7 +387,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function exception_on_char_filter_name_collision()
+    public function exception_on_char_filter_name_collision(): void
     {
         $alias = uniqid();
 
@@ -405,7 +402,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function exception_on_filter_name_collision()
+    public function exception_on_filter_name_collision(): void
     {
         $alias = uniqid();
 
@@ -420,7 +417,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function tokenizer_on_method()
+    public function tokenizer_on_method(): void
     {
         $alias = uniqid();
 
@@ -430,7 +427,7 @@ class IndexBuilderTest extends TestCase
 
         $builder->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasTokenizer('default', 'whitespace');
         });
     }
@@ -438,7 +435,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function pattern_tokenizer()
+    public function pattern_tokenizer(): void
     {
         $alias = uniqid();
 
@@ -446,7 +443,7 @@ class IndexBuilderTest extends TestCase
             ->tokenizer(new PatternTokenizer('sigmie_tokenizer', '/[ ]/'))
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasTokenizer('default', 'sigmie_tokenizer');
             $index->assertTokenizerEquals('sigmie_tokenizer', [
                 'type' => 'pattern',
@@ -458,7 +455,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function non_letter_tokenizer()
+    public function non_letter_tokenizer(): void
     {
         $alias = uniqid();
 
@@ -466,7 +463,7 @@ class IndexBuilderTest extends TestCase
             ->tokenizer(new NonLetter('letter-tokenizer'))
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasTokenizer('default', 'letter-tokenizer');
         });
     }
@@ -474,7 +471,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function mapping_char_filters()
+    public function mapping_char_filters(): void
     {
         $alias = uniqid();
 
@@ -482,7 +479,7 @@ class IndexBuilderTest extends TestCase
             ->charFilter(new Mapping('sigmie_mapping_char_filter', ['a' => 'bar', 'f' => 'foo']))
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertCharFilterExists('sigmie_mapping_char_filter');
             $index->assertCharFilterEquals('sigmie_mapping_char_filter', [
                 'type' => 'mapping',
@@ -494,7 +491,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function pattern_char_filters()
+    public function pattern_char_filters(): void
     {
         $alias = uniqid();
 
@@ -502,7 +499,7 @@ class IndexBuilderTest extends TestCase
             ->charFilter(new PatternCharFilter('pattern_char_filter', '/foo/', '$1'))
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertCharFilterExists('pattern_char_filter');
             $index->assertCharFilterEquals('pattern_char_filter', [
                 'pattern' => '/foo/',
@@ -515,15 +512,15 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function html_char_filters()
+    public function html_char_filters(): void
     {
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->charFilter(new HTMLStrip())
+            ->charFilter(new HTMLStrip)
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerHasCharFilter('default', 'html_strip');
         });
     }
@@ -531,7 +528,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function word_boundaries_tokenizer()
+    public function word_boundaries_tokenizer(): void
     {
         $alias = uniqid();
 
@@ -539,7 +536,7 @@ class IndexBuilderTest extends TestCase
             ->tokenizer(new WordBoundaries('some_name', 40))
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertTokenizerExists('some_name');
             $index->assertAnalyzerHasTokenizer('default', 'some_name');
             $index->assertTokenizerEquals('some_name', [
@@ -552,15 +549,15 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function whitespace_tokenizer()
+    public function whitespace_tokenizer(): void
     {
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->tokenizer(new Whitespace())
+            ->tokenizer(new Whitespace)
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerTokenizerIsWhitespaces('default');
         });
     }
@@ -568,7 +565,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function two_way_synonyms()
+    public function two_way_synonyms(): void
     {
         $alias = uniqid();
 
@@ -576,10 +573,10 @@ class IndexBuilderTest extends TestCase
             ->twoWaySynonyms([
                 ['treasure', 'gem', 'gold', 'price'],
                 ['friend', 'buddy', 'partner'],
-            ], name: 'sigmie_two_way_synonyms',)
+            ], name: 'sigmie_two_way_synonyms', )
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterExists('sigmie_two_way_synonyms');
             $index->assertFilterHasSynonyms('sigmie_two_way_synonyms', [
                 'treasure, gem, gold, price',
@@ -599,7 +596,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function token_filter_random_suffix()
+    public function token_filter_random_suffix(): void
     {
         $alias = uniqid();
 
@@ -610,7 +607,7 @@ class IndexBuilderTest extends TestCase
             ])
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             [$name] = array_keys($index->data()['settings']['index']['analysis']['filter']);
 
             $this->assertStringStartsWith('synonyms_', $name);
@@ -620,7 +617,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function lowercase()
+    public function lowercase(): void
     {
         $alias = uniqid();
 
@@ -628,7 +625,7 @@ class IndexBuilderTest extends TestCase
             ->lowercase('custom_lowercase')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterExists('custom_lowercase');
             $index->assertAnalyzerHasFilter('default', 'custom_lowercase');
             $index->assertFilterEquals(
@@ -643,7 +640,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function uppercase()
+    public function uppercase(): void
     {
         $alias = uniqid();
 
@@ -651,7 +648,7 @@ class IndexBuilderTest extends TestCase
             ->uppercase('custom_uppercase')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterExists('custom_uppercase');
             $index->assertAnalyzerHasFilter('default', 'custom_uppercase');
             $index->assertFilterEquals(
@@ -668,7 +665,7 @@ class IndexBuilderTest extends TestCase
             ->uppercase('custom_uppercase')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterExists('custom_uppercase');
             $index->assertAnalyzerHasFilter('default', 'custom_uppercase');
         });
@@ -677,17 +674,17 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function one_way_synonyms()
+    public function one_way_synonyms(): void
     {
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
             ->oneWaySynonyms([
                 ['ipod', ['i-pod', 'i pod']],
-            ], name: 'sigmie_one_way_synonyms',)
+            ], name: 'sigmie_one_way_synonyms', )
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterExists('sigmie_one_way_synonyms');
             $index->assertFilterHasSynonyms('sigmie_one_way_synonyms', [
                 'i-pod, i pod => ipod',
@@ -705,7 +702,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function stopwords()
+    public function stopwords(): void
     {
         $alias = uniqid();
 
@@ -713,7 +710,7 @@ class IndexBuilderTest extends TestCase
             ->stopwords(['about', 'after', 'again'], 'sigmie_stopwords')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterExists('sigmie_stopwords');
             $index->assertFilterHasStopwords('sigmie_stopwords', ['about', 'after', 'again']);
             $index->assertFilterEquals('sigmie_stopwords', [
@@ -730,7 +727,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function stemming()
+    public function stemming(): void
     {
         $alias = uniqid();
 
@@ -742,7 +739,7 @@ class IndexBuilderTest extends TestCase
             ], 'sigmie_stemmer_overrides')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertFilterExists('sigmie_stemmer_overrides');
             $index->assertFilterHasStemming(
                 'sigmie_stemmer_overrides',
@@ -758,14 +755,14 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function analyzer_defaults()
+    public function analyzer_defaults(): void
     {
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertAnalyzerExists('default');
             $index->assertAnalyzerFilterIsEmpty('default');
             $index->assertAnalyzerTokenizerIsWordBoundaries('default');
@@ -775,12 +772,12 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function field_mappings()
+    public function field_mappings(): void
     {
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->mapping(function (NewProperties $blueprint) {
+            ->mapping(function (NewProperties $blueprint): NewProperties {
                 $blueprint->text('title')->searchAsYouType();
                 $blueprint->text('content')->unstructuredText();
                 $blueprint->number('adults')->integer();
@@ -793,7 +790,7 @@ class IndexBuilderTest extends TestCase
             ->stopwords(['amazing', 'wonderful'], 'custom_stopwords')
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertIndexHasMappings();
             $index->assertPropertyExists('title');
             $index->assertPropertyIsSearchAsYouType('title');
@@ -814,7 +811,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function creates_and_index_with_alias()
+    public function creates_and_index_with_alias(): void
     {
         $alias = uniqid();
 
@@ -828,7 +825,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function index_name_is_current_timestamp()
+    public function index_name_is_current_timestamp(): void
     {
         $alias = uniqid();
 
@@ -836,13 +833,13 @@ class IndexBuilderTest extends TestCase
 
         $this->sigmie->newIndex($alias)->create();
 
-        $this->assertIndexExists("{$alias}_20200101235959000000");
+        $this->assertIndexExists($alias.'_20200101235959000000');
     }
 
     /**
      * @test
      */
-    public function index_replicas_and_shards()
+    public function index_replicas_and_shards(): void
     {
         $alias = uniqid();
 
@@ -851,7 +848,7 @@ class IndexBuilderTest extends TestCase
             ->replicas(3)
             ->create();
 
-        $this->assertIndex($alias, function (Assert $index) {
+        $this->assertIndex($alias, function (Assert $index): void {
             $index->assertShards(4);
             $index->assertReplicas(3);
         });
@@ -860,11 +857,11 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function index_synonyms_graph()
+    public function index_synonyms_graph(): void
     {
         $alias = uniqid();
 
-        $properties = new NewProperties();
+        $properties = new NewProperties;
         $properties->text('title_one')->searchSynonyms(true);
         $properties->text('title_two')->searchSynonyms(false);
 
@@ -892,7 +889,7 @@ class IndexBuilderTest extends TestCase
             ->properties($properties)
             ->fields([
                 'title_two',
-                'title_one'
+                'title_one',
             ])
             ->queryString('ipod')
             ->get();
@@ -905,7 +902,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function index_meta()
+    public function index_meta(): void
     {
         $alias = uniqid();
 
@@ -921,7 +918,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function index_serverless()
+    public function index_serverless(): void
     {
         $alias = uniqid();
 
@@ -935,7 +932,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function custom_meta()
+    public function custom_meta(): void
     {
         $alias = uniqid();
 
@@ -944,7 +941,7 @@ class IndexBuilderTest extends TestCase
                 'department' => 'engineering',
                 'version' => '2.0',
                 'custom_field' => 'custom_value',
-                'environment' => 'testing'
+                'environment' => 'testing',
             ])
             ->create();
 
@@ -955,17 +952,17 @@ class IndexBuilderTest extends TestCase
         $this->assertArrayHasKey('created_by', $raw['mappings']['_meta']);
         $this->assertArrayHasKey('lib_version', $raw['mappings']['_meta']);
         $this->assertArrayHasKey('language', $raw['mappings']['_meta']);
-        
+
         // Assert custom meta fields were added
         $this->assertArrayHasKey('department', $raw['mappings']['_meta']);
         $this->assertEquals('engineering', $raw['mappings']['_meta']['department']);
-        
+
         $this->assertArrayHasKey('version', $raw['mappings']['_meta']);
         $this->assertEquals('2.0', $raw['mappings']['_meta']['version']);
-        
+
         $this->assertArrayHasKey('custom_field', $raw['mappings']['_meta']);
         $this->assertEquals('custom_value', $raw['mappings']['_meta']['custom_field']);
-        
+
         $this->assertArrayHasKey('environment', $raw['mappings']['_meta']);
         $this->assertEquals('testing', $raw['mappings']['_meta']['environment']);
     }
@@ -973,7 +970,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function custom_meta_multiple_calls()
+    public function custom_meta_multiple_calls(): void
     {
         $alias = uniqid();
 
@@ -988,10 +985,10 @@ class IndexBuilderTest extends TestCase
         // Assert all custom meta fields were merged correctly
         $this->assertArrayHasKey('department', $raw['mappings']['_meta']);
         $this->assertEquals('engineering', $raw['mappings']['_meta']['department']);
-        
+
         $this->assertArrayHasKey('version', $raw['mappings']['_meta']);
         $this->assertEquals('2.0', $raw['mappings']['_meta']['version']);
-        
+
         $this->assertArrayHasKey('custom_field', $raw['mappings']['_meta']);
         $this->assertEquals('custom_value', $raw['mappings']['_meta']['custom_field']);
     }
@@ -999,7 +996,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function cannot_create_index_with_existing_alias()
+    public function cannot_create_index_with_existing_alias(): void
     {
         $alias = uniqid();
 
@@ -1010,7 +1007,7 @@ class IndexBuilderTest extends TestCase
 
         // Try to create another index with the same alias - should throw exception
         $this->expectException(AliasAlreadyExists::class);
-        $this->expectExceptionMessage("An index with alias '{$alias}' already exists.");
+        $this->expectExceptionMessage(sprintf("An index with alias '%s' already exists.", $alias));
 
         $this->sigmie->newIndex($alias)->create();
     }
@@ -1018,7 +1015,7 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
-    public function create_if_not_exists_returns_existing_index()
+    public function create_if_not_exists_returns_existing_index(): void
     {
         $alias = uniqid();
 

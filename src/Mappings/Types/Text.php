@@ -6,9 +6,7 @@ namespace Sigmie\Mappings\Types;
 
 use Closure;
 use Exception;
-use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Enums\FacetLogic;
-use Sigmie\Enums\VectorStrategy;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Index\NewAnalyzer;
@@ -48,8 +46,8 @@ class Text extends Type implements FromRaw
     ) {
         parent::__construct($name);
 
-        $this->fields = new Collection();
-        $this->newAnalyzerClosure = fn() => null;
+        $this->fields = new Collection;
+        $this->newAnalyzerClosure = fn () => null;
 
         $this->configure();
     }
@@ -75,7 +73,7 @@ class Text extends Type implements FromRaw
         return $this;
     }
 
-    public function makeSortable()
+    public function makeSortable(): void
     {
         $this->sortable = true;
 
@@ -99,17 +97,16 @@ class Text extends Type implements FromRaw
         string $api,
         int $accuracy = 3,
         int $dimensions = 256,
-    ) {
+    ): NewSemanticField {
         return $this->newSemantic(
-            fn(NewSemanticField $semantic) =>
-            $semantic->accuracy($accuracy, $dimensions)
+            fn (NewSemanticField $semantic): NewSemanticField => $semantic->accuracy($accuracy, $dimensions)
                 ->api($api)
         );
     }
 
     public function isSemantic(): bool
     {
-        return count($this->vectors) > 0;
+        return $this->vectors !== [];
     }
 
     public function configure(): void
@@ -122,9 +119,9 @@ class Text extends Type implements FromRaw
         //
     }
 
-    public function handleCustomAnalyzer(AnalysisInterface $analysis)
+    public function handleCustomAnalyzer(AnalysisInterface $analysis): void
     {
-        $name = ! is_null($this->parentPath) ? "{$this->parentPath}_{$this->name}_field_analyzer" : "{$this->name}_field_analyzer";
+        $name = is_null($this->parentPath) ? $this->name.'_field_analyzer' : sprintf('%s_%s_field_analyzer', $this->parentPath, $this->name);
         $name = str_replace('.', '_', $name);
         $name = trim($name, '_');
 
@@ -148,30 +145,30 @@ class Text extends Type implements FromRaw
         }
 
         $this->fields
-            ->filter(fn($type) => $type instanceof Text)
-            ->map(function (Text $text) use ($analysis) {
+            ->filter(fn ($type): bool => $type instanceof Text)
+            ->map(function (Text $text) use ($analysis): Text {
                 $text->handleCustomAnalyzer($analysis);
 
                 return $text;
             });
 
         $this->fields
-            ->filter(fn($type) => $type instanceof Keyword)
-            ->map(function (Keyword $keyword) use ($analysis) {
+            ->filter(fn ($type): bool => $type instanceof Keyword)
+            ->map(function (Keyword $keyword) use ($analysis): Keyword {
                 $keyword->handleNormalizer($analysis);
 
                 return $keyword;
             });
     }
 
-    public function field(Type $type)
+    public function field(Type $type): static
     {
         $this->fields->add($type);
 
         return $this;
     }
 
-    public function hasFields()
+    public function hasFields(): bool
     {
         return ! $this->fields->isEmpty();
     }
@@ -181,7 +178,7 @@ class Text extends Type implements FromRaw
         ($this->newAnalyzerClosure)($newAnalyzer);
     }
 
-    public function withNewAnalyzer(Closure $closure)
+    public function withNewAnalyzer(Closure $closure): static
     {
         $this->hasAnalyzerCallback = true;
         $this->newAnalyzerClosure = $closure;
@@ -207,7 +204,7 @@ class Text extends Type implements FromRaw
             'text' => $instance->unstructuredText(),
             'search_as_you_type' => $instance->searchAsYouType(),
             'completion' => $instance->completion(),
-            default => throw new Exception('Field ' . $configs['type'] . ' couldn\'t be mapped')
+            default => throw new Exception('Field '.$configs['type']." couldn't be mapped")
         };
 
         return $instance;
@@ -238,17 +235,17 @@ class Text extends Type implements FromRaw
 
     public function keywordName(): ?string
     {
-        return (is_null($this->raw)) ? null : "{$this->name}.{$this->raw}";
+        return (is_null($this->raw)) ? null : sprintf('%s.%s', $this->name, $this->raw);
     }
 
     public function sortableName(): ?string
     {
-        return trim("{$this->parentPath}.{$this->name}.sortable", '.');
+        return trim(sprintf('%s.%s.sortable', $this->parentPath, $this->name), '.');
     }
 
     public function filterableName(): ?string
     {
-        return trim("{$this->parentPath}.{$this->name}.{$this->raw}", '.');
+        return trim(sprintf('%s.%s.%s', $this->parentPath, $this->name, $this->raw), '.');
     }
 
     public function searchAsYouType(?Analyzer $analyzer = null): self
@@ -256,7 +253,7 @@ class Text extends Type implements FromRaw
         $this->analyzer = $analyzer;
         $this->type = 'search_as_you_type';
 
-        if ($analyzer) {
+        if ($analyzer instanceof Analyzer) {
             $this->searchAnalyzer = $analyzer->name();
         }
 
@@ -268,14 +265,14 @@ class Text extends Type implements FromRaw
         $this->analyzer = $analyzer;
         $this->type = 'text';
 
-        if ($analyzer) {
+        if ($analyzer instanceof Analyzer) {
             $this->searchAnalyzer = $analyzer->name();
         }
 
         return $this;
     }
 
-    public function keyword()
+    public function keyword(): static
     {
         if ($this->type !== 'text') {
             throw new Exception('Only unstructured text can be used as keyword');
@@ -294,7 +291,7 @@ class Text extends Type implements FromRaw
         return $this;
     }
 
-    public function newAnalyzer(Closure $callable)
+    public function newAnalyzer(Closure $callable): void
     {
         $this->hasAnalyzerCallback = true;
         $this->newAnalyzerClosure = $callable;
@@ -329,9 +326,7 @@ class Text extends Type implements FromRaw
         }
 
         if (! $this->fields->isEmpty()) {
-            $raw[$this->name]['fields'] = $this->fields->mapWithKeys(function (Type $field) {
-                return $field->toRaw();
-            })->toArray();
+            $raw[$this->name]['fields'] = $this->fields->mapWithKeys(fn (Type $field): array => $field->toRaw())->toArray();
         }
 
         if (! is_null($this->raw)) {
@@ -348,8 +343,8 @@ class Text extends Type implements FromRaw
         if ($this->type === 'search_as_you_type') {
             $queries[] = new MultiMatch([
                 $this->name,
-                "{$this->name}._2gram",
-                "{$this->name}._3gram",
+                $this->name.'._2gram',
+                $this->name.'._3gram',
             ], $queryString);
         } else {
             $queries[] = new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer());
@@ -385,7 +380,7 @@ class Text extends Type implements FromRaw
         return array_column($originalBuckets, 'doc_count', 'key');
     }
 
-    public function notAllowedFilters()
+    public function notAllowedFilters(): array
     {
         return [];
     }
@@ -393,7 +388,7 @@ class Text extends Type implements FromRaw
     public function validate(string $key, mixed $value): array
     {
         if (! is_string($value)) {
-            return [false, "The field {$key} mapped as {$this->typeName()} must be a string"];
+            return [false, sprintf('The field %s mapped as %s must be a string', $key, $this->typeName())];
         }
 
         return [true, ''];
@@ -401,7 +396,7 @@ class Text extends Type implements FromRaw
 
     public function embeddingsName(): string
     {
-        return "_embeddings.{$this->name()}";
+        return '_embeddings.'.$this->name();
     }
 
     public function embeddingsType(): string
@@ -417,7 +412,7 @@ class Text extends Type implements FromRaw
     public function vectorFields(): Collection
     {
         return (new Collection($this->vectors))
-            ->map(function (NewSemanticField|BaseVector|NestedVector $field) {
+            ->map(function (NewSemanticField|BaseVector|NestedVector $field): BaseVector|NestedVector {
                 // If it's a NewSemanticField, call make() to get the actual vector
                 if ($field instanceof NewSemanticField) {
                     $vector = $field->make();

@@ -8,8 +8,8 @@ use GuzzleHttp\Client;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
 use Sigmie\AI\Answers\LocalAnswer;
-use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Contracts\LLMAnswer;
+use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Prompt;
 use Sigmie\Rag\LLMJsonAnswer;
 
@@ -62,7 +62,7 @@ class OllamaApi implements LLMApi
         $schema = $prompt->jsonSchema();
 
         // Build a much more explicit instruction for smaller models
-        $schemaInstruction = "IMPORTANT: You must respond ONLY with valid JSON data (not the schema itself). ";
+        $schemaInstruction = 'IMPORTANT: You must respond ONLY with valid JSON data (not the schema itself). ';
         $schemaInstruction .= "Do not return the schema. Generate actual example data that matches this structure:\n\n";
         $schemaInstruction .= $this->buildExampleFromSchema($schema);
         $schemaInstruction .= "\n\nRespond with ONLY the JSON object, nothing else.";
@@ -73,7 +73,7 @@ class OllamaApi implements LLMApi
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => $schemaInstruction
+                        'content' => $schemaInstruction,
                     ],
                     ...$messages,
                 ],
@@ -108,6 +108,7 @@ class OllamaApi implements LLMApi
     protected function buildExampleFromSchema(array $schema): string
     {
         $example = $this->generateExample($schema);
+
         return json_encode($example, JSON_PRETTY_PRINT);
     }
 
@@ -164,9 +165,9 @@ class OllamaApi implements LLMApi
 
     protected function convertMessages(Prompt $prompt): array
     {
-        return array_map(fn($message) => [
+        return array_map(fn ($message): array => [
             'role' => $message['role']->toOpenAI(),
-            'content' => $message['content']
+            'content' => $message['content'],
         ], $prompt->messages());
     }
 
@@ -175,7 +176,7 @@ class OllamaApi implements LLMApi
         $stream = $response->getBody();
         $buffer = '';
 
-        while (!$stream->eof()) {
+        while (! $stream->eof()) {
             $chunk = $stream->read(256);
             if ($chunk === '') {
                 continue;
@@ -187,7 +188,7 @@ class OllamaApi implements LLMApi
                 $line = substr($buffer, 0, $pos);
                 $buffer = substr($buffer, $pos + 1);
 
-                if (strpos($line, 'data: ') === 0) {
+                if (str_starts_with($line, 'data: ')) {
                     $data = substr($line, 6);
 
                     if (trim($data) === '[DONE]') {
@@ -203,7 +204,7 @@ class OllamaApi implements LLMApi
             }
         }
 
-        if (!empty($buffer) && strpos($buffer, 'data: ') === 0) {
+        if ($buffer !== '' && $buffer !== '0' && str_starts_with($buffer, 'data: ')) {
             $data = substr($buffer, 6);
             if (trim($data) !== '[DONE]') {
                 $decoded = json_decode(trim($data), true);

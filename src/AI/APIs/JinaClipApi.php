@@ -14,13 +14,10 @@ class JinaClipApi implements EmbeddingsApi
 {
     protected Client $client;
 
-    protected string $model;
-
     public function __construct(
         string $baseUrl = 'http://localhost:7996',
-        string $model = 'ViT-B/32'
+        protected string $model = 'ViT-B/32'
     ) {
-        $this->model = $model;
         $this->client = new Client([
             'base_uri' => $baseUrl,
             'headers' => [
@@ -40,14 +37,14 @@ class JinaClipApi implements EmbeddingsApi
         $payload = [
             'data' => [
                 [
-                    'text' => !$isImage ? $text : null,
+                    'text' => $isImage ? null : $text,
                     'uri' => $isImage ? $text : null,
-                ]
-            ]
+                ],
+            ],
         ];
 
         $response = $this->client->post('/encode', [
-            RequestOptions::JSON => $payload
+            RequestOptions::JSON => $payload,
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -60,7 +57,7 @@ class JinaClipApi implements EmbeddingsApi
      */
     public function batchEmbed(array $payload): array
     {
-        if (count($payload) === 0) {
+        if ($payload === []) {
             return [];
         }
 
@@ -71,15 +68,15 @@ class JinaClipApi implements EmbeddingsApi
             $isImage = $this->isImageSource($text);
 
             $jinaData[] = [
-                'text' => !$isImage ? $text : null,
+                'text' => $isImage ? null : $text,
                 'uri' => $isImage ? $text : null,
             ];
         }
 
         $response = $this->client->post('/encode', [
             RequestOptions::JSON => [
-                'data' => $jinaData
-            ]
+                'data' => $jinaData,
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -105,11 +102,11 @@ class JinaClipApi implements EmbeddingsApi
             RequestOptions::JSON => [
                 'data' => [
                     [
-                        'text' => !$isImage ? $text : null,
+                        'text' => $isImage ? null : $text,
                         'uri' => $isImage ? $text : null,
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ]);
     }
 
@@ -123,8 +120,14 @@ class JinaClipApi implements EmbeddingsApi
      */
     protected function isImageSource(string $text): bool
     {
-        return ImageHelper::isUrl($text) ||
-               ImageHelper::isBase64($text) ||
-               ImageHelper::isFilePath($text);
+        if (ImageHelper::isUrl($text)) {
+            return true;
+        }
+
+        if (ImageHelper::isBase64($text)) {
+            return true;
+        }
+
+        return ImageHelper::isFilePath($text);
     }
 }

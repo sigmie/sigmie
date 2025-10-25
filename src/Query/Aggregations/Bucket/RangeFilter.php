@@ -16,7 +16,7 @@ class RangeFilter extends Bucket
         parent::__construct($name);
     }
 
-    public function value(): array
+    protected function value(): array
     {
         $res = [
             'filter' => [
@@ -25,7 +25,7 @@ class RangeFilter extends Bucket
         ];
 
         foreach ($this->ranges as $operator => $value) {
-            $operator = (new RangeOperatorParser())->parse($operator);
+            $operator = (new RangeOperatorParser)->parse($operator);
 
             $res['filter']['range'][$this->field][$operator] = $value;
         }

@@ -53,7 +53,7 @@ class Suggest
     public function toRaw(): array
     {
         $suggesters = (new Collection($this->suggest))
-            ->mapToDictionary(fn (Suggester $value) => $value->toRaw())
+            ->mapToDictionary(fn (Suggester $value): array => $value->toRaw())
             ->toArray();
 
         if ($this->text ?? false) {

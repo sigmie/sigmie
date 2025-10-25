@@ -2,9 +2,7 @@
 
 namespace Sigmie\Search\Formatters;
 
-use Sigmie\Base\ElasticsearchException;
 use Sigmie\Search\Contracts\ResponseFormater;
-use Sigmie\Search\Contracts\SearchBuilder;
 use Sigmie\Search\SearchContext;
 
 abstract class AbstractFormatter implements ResponseFormater

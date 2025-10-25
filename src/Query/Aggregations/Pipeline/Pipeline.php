@@ -25,7 +25,7 @@ abstract class Pipeline implements Aggregation
             ],
         ]];
 
-        if (count($this->meta) > 0) {
+        if ($this->meta !== []) {
             $raw[$this->name]['meta'] = [
                 ...$this->meta,
             ];

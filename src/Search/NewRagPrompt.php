@@ -9,11 +9,17 @@ use Sigmie\AI\Prompt;
 class NewRagPrompt extends Prompt
 {
     protected array $contextFields = [];
+
     protected string $conversationId = '';
+
     protected string $userToken = '';
+
     protected string $instructions = '';
+
     protected string $summary = '';
+
     protected array $tags = [];
+
     protected array $turns = [];
 
     public function __construct(
@@ -29,7 +35,7 @@ class NewRagPrompt extends Prompt
 
         $context = $this->createContext($this->contextFields);
 
-        $this->system('Context: ' . json_encode($context));
+        $this->system('Context: '.json_encode($context));
 
         return $this;
     }
@@ -39,7 +45,10 @@ class NewRagPrompt extends Prompt
         return $this->hits;
     }
 
-    private function createContext($fields)
+    /**
+     * @return mixed[][]
+     */
+    private function createContext(array $fields): array
     {
         $context = [];
 
@@ -50,6 +59,7 @@ class NewRagPrompt extends Prompt
                     ? ($hit['_source'][$field] ?? null)
                     : dot($hit->_source)->get($field);
             }
+
             $context[] = $contextItem;
         }
 

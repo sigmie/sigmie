@@ -22,12 +22,12 @@ class SuggestTest extends TestCase
     /**
      * @test
      */
-    public function term()
+    public function term(): void
     {
         $name = uniqid();
 
         $this->sigmie->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {
+            ->mapping(function (NewProperties $blueprint): void {
                 $blueprint->text('title-text');
             })
             ->lowercase()
@@ -56,7 +56,7 @@ class SuggestTest extends TestCase
 
         $collection->merge($docs);
 
-        $suggest = new Suggest();
+        $suggest = new Suggest;
         $suggest->term(name: 'my-term')
             ->field('title-text')
             ->text('stary');
@@ -68,7 +68,7 @@ class SuggestTest extends TestCase
             )
             ->get();
 
-        $suggestions = array_map(fn($value) => $value['text'], $res->json('suggest.my-term.0.options'));
+        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.my-term.0.options'));
 
         $this->assertEquals([
             'starry',
@@ -79,13 +79,13 @@ class SuggestTest extends TestCase
     /**
      * @test
      */
-    public function phrase()
+    public function phrase(): void
     {
         $name = uniqid();
 
         $this->sigmie->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {
-                $blueprint->text('title-phrase')->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) {
+            ->mapping(function (NewProperties $blueprint): void {
+                $blueprint->text('title-phrase')->withNewAnalyzer(function (NewAnalyzer $newAnalyzer): void {
                     $newAnalyzer
                         ->lowercase()
                         ->shingle(2, 3);
@@ -115,7 +115,7 @@ class SuggestTest extends TestCase
 
         $collection->merge($docs);
 
-        $suggest = new Suggest();
+        $suggest = new Suggest;
         $suggest->phrase(name: 'my-phrase')
             ->field('title-phrase')
             ->highlight('<em>', '</em>')
@@ -130,8 +130,8 @@ class SuggestTest extends TestCase
             )
             ->get();
 
-        $suggestions = array_map(fn($value) => $value['text'], $res->json('suggest.my-phrase.0.options'));
-        $highlighted = array_map(fn($value) => $value['highlighted'], $res->json('suggest.my-phrase.0.options'));
+        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.my-phrase.0.options'));
+        $highlighted = array_map(fn ($value) => $value['highlighted'], $res->json('suggest.my-phrase.0.options'));
 
         $this->assertEquals([
             '<em>nobel</em> garden',
@@ -144,12 +144,12 @@ class SuggestTest extends TestCase
     /**
      * @test
      */
-    public function completion()
+    public function completion(): void
     {
         $name = uniqid();
 
         $this->sigmie->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {
+            ->mapping(function (NewProperties $blueprint): void {
                 $blueprint->text('title-completion')->completion();
             })
             ->create();
@@ -176,7 +176,7 @@ class SuggestTest extends TestCase
 
         $collection->merge($docs);
 
-        $suggest = new Suggest();
+        $suggest = new Suggest;
         $suggest->completion(name: 'my-completion')
             ->field('title-completion')
             ->prefix('st');
@@ -188,7 +188,7 @@ class SuggestTest extends TestCase
             )
             ->get();
 
-        $suggestions = array_map(fn($value) => $value['text'], $res->json('suggest.my-completion.0.options'));
+        $suggestions = array_map(fn ($value) => $value['text'], $res->json('suggest.my-completion.0.options'));
 
         $this->assertEquals([
             'Star Trek',

@@ -22,7 +22,7 @@ abstract class Metric implements Aggregation
             ...$this->value(),
         ]];
 
-        if (count($this->meta) > 0) {
+        if ($this->meta !== []) {
             $raw[$this->name]['meta'] = [
                 ...$this->meta,
             ];

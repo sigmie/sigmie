@@ -11,12 +11,10 @@ use Sigmie\Mappings\Properties as MappingsProperties;
 use Sigmie\Query\Aggs as FacetAggs;
 use Sigmie\Query\Contracts\Aggs;
 use Sigmie\Query\Queries\Compound\Boolean;
-use Sigmie\AI\Contracts\Embedder;
 use Sigmie\Search\Contracts\SearchBuilder;
 
 abstract class AbstractSearchBuilder implements SearchBuilder
 {
-
     protected Properties $properties;
 
     protected string $highlightSuffix;
@@ -31,7 +29,7 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected array $fields = [];
 
-    protected null|array $retrieve = null;
+    protected ?array $retrieve = null;
 
     protected array $typoTolerantAttributes = [];
 
@@ -76,7 +74,7 @@ abstract class AbstractSearchBuilder implements SearchBuilder
     public function __construct(
         public readonly ElasticsearchConnection $elasticsearchConnection,
     ) {
-        $this->properties = new MappingsProperties();
+        $this->properties = new MappingsProperties;
 
         $this->facets = new FacetAggs;
 
@@ -96,7 +94,7 @@ abstract class AbstractSearchBuilder implements SearchBuilder
     {
         $this->properties = $props instanceof NewProperties ? $props->get() : $props;
 
-        if (count($this->fields) === 0) {
+        if ($this->fields === []) {
             $this->fields = $this->properties->fieldNames();
         }
 
@@ -126,14 +124,14 @@ abstract class AbstractSearchBuilder implements SearchBuilder
         return $this;
     }
 
-    public function noResultsOnEmptySearch($value = true): static
+    public function noResultsOnEmptySearch(bool $value = true): static
     {
         $this->noResultsOnEmptySearch = $value;
 
         return $this;
     }
 
-    public function disableKeywordSearch($value = true): static
+    public function disableKeywordSearch(bool $value = true): static
     {
         $this->noKeywordSearch = $value;
 
@@ -154,7 +152,6 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
         return $this;
     }
-
 
     public function autocomplete(
         bool $enabled = true,

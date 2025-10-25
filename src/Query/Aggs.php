@@ -37,14 +37,14 @@ class Aggs implements AggsInterface
 {
     protected array $aggs = [];
 
-    public function add($aggs)
+    public function add($aggs): static
     {
         $this->aggs[] = $aggs;
 
         return $this;
     }
 
-    public function nested(string $name, string $path, callable $callable)
+    public function nested(string $name, string $path, callable $callable): Nested
     {
         $aggs = new Aggs;
 
@@ -60,12 +60,12 @@ class Aggs implements AggsInterface
     public function filter(
         string $name,
         // string $field,
-        //TODO add cast
+        // TODO add cast
         $query,
     ): Filter {
-        $aggregation = new Filter($name, 
-        // $field,
-         $query);
+        $aggregation = new Filter($name,
+            // $field,
+            $query);
 
         $this->aggs[] = $aggregation;
 
@@ -77,7 +77,7 @@ class Aggs implements AggsInterface
         string $field,
         string $term,
     ): TermFilter {
-        return $this->filter($name, $field, $term);
+        return $this->filter($name, $field);
     }
 
     public function rangeFilter(
@@ -138,7 +138,7 @@ class Aggs implements AggsInterface
         string $field,
         int $buckets,
         MinimumInterval $minimumInterval = MinimumInterval::Second
-    ) {
+    ): AutoDateHistogram {
         $aggregation = new AutoDateHistogram($name, $field, $buckets, $minimumInterval);
 
         $this->aggs[] = $aggregation;

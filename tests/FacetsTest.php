@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Carbon\Exceptions\ParseErrorException;
 use Sigmie\Base\APIs\Explain;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Search;
@@ -22,11 +21,13 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
-    public function deeper_nested_price_facets()
+    public function deeper_nested_price_facets(): void
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties; $blueprint->nested('shirt', function (NewProperties $blueprint) { $blueprint->nested('red', function (NewProperties $blueprint) {
+        $blueprint = new NewProperties;
+        $blueprint->nested('shirt', function (NewProperties $blueprint): void {
+            $blueprint->nested('red', function (NewProperties $blueprint): void {
                 $blueprint->price();
             });
         });
@@ -73,12 +74,12 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
-    public function nested_price_facets()
+    public function nested_price_facets(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->nested('shirt', function (NewProperties $blueprint) {
+        $blueprint->nested('shirt', function (NewProperties $blueprint): void {
             $blueprint->price();
         });
 
@@ -124,7 +125,7 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
-    public function price_facets()
+    public function price_facets(): void
     {
         $indexName = uniqid();
 
@@ -180,12 +181,12 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
-    public function nested_keywords_facets()
+    public function nested_keywords_facets(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->nested('foo', function (NewProperties $blueprint) {
+        $blueprint->nested('foo', function (NewProperties $blueprint): void {
             $blueprint->keyword('keyword');
         });
 
@@ -222,13 +223,13 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
-    public function deeper_nested_keywords_facets()
+    public function deeper_nested_keywords_facets(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->nested('foo', function (NewProperties $blueprint) {
-            $blueprint->nested('bar', function (NewProperties $blueprint) {
+        $blueprint->nested('foo', function (NewProperties $blueprint): void {
+            $blueprint->nested('bar', function (NewProperties $blueprint): void {
                 $blueprint->keyword('keyword');
             });
         });
@@ -266,7 +267,7 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
-    public function keywords_facets()
+    public function keywords_facets(): void
     {
         $indexName = uniqid();
 
@@ -306,7 +307,7 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
-    public function text_bool_number_facets()
+    public function text_bool_number_facets(): void
     {
         $indexName = uniqid();
 
@@ -370,7 +371,7 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
-    public function category_facets()
+    public function category_facets(): void
     {
         $indexName = uniqid();
 
@@ -410,13 +411,13 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
-    public function nested_category_facets()
+    public function nested_category_facets(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->nested('category', function (NewProperties $blueprint) {
-            $blueprint->nested('sport', function (NewProperties $blueprint) {
+        $blueprint->nested('category', function (NewProperties $blueprint): void {
+            $blueprint->nested('sport', function (NewProperties $blueprint): void {
                 $blueprint->keyword('type');
             });
         });
@@ -454,7 +455,7 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
-    public function facet_exclusion_logic()
+    public function facet_exclusion_logic(): void
     {
         $indexName = uniqid();
 
@@ -523,7 +524,7 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
-    public function facet_disjunctive()
+    public function facet_disjunctive(): void
     {
         $indexName = uniqid();
 
@@ -577,7 +578,7 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
-    public function facet_conjunctive()
+    public function facet_conjunctive(): void
     {
         $indexName = uniqid();
 
@@ -631,7 +632,7 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
-    public function facet_parenthetic_expressions()
+    public function facet_parenthetic_expressions(): void
     {
         $indexName = uniqid();
 
@@ -662,7 +663,7 @@ class FacetsTest extends TestCase
         $searchResponse = $this->sigmie->newSearch($indexName)
             ->properties($blueprint())
             ->queryString('')
-            ->facets('price', "(price:100..200)")
+            ->facets('price', '(price:100..200)')
             ->get();
 
         $this->assertNotEmpty($searchResponse->json('errors'));

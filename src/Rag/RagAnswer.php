@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Sigmie\Rag;
 
 use Sigmie\AI\Contracts\LLMAnswer;
+use Sigmie\Document\Hit;
+use Stringable;
 
-class RagAnswer
+class RagAnswer implements Stringable
 {
     /**
-     * @param array<\Sigmie\Document\Hit> $hits
+     * @param  array<Hit>  $hits
      */
     public function __construct(
         public readonly array $hits,

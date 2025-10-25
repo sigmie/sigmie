@@ -17,7 +17,7 @@ trait CharFilter
         $this->assertEquals(
             $value,
             $this->data['settings']['index']['analysis']['char_filter'][$charFilter],
-            "Failed to assert that the char_filter is equal to given array in index {$this->name}."
+            sprintf('Failed to assert that the char_filter is equal to given array in index %s.', $this->name)
         );
     }
 
@@ -26,7 +26,7 @@ trait CharFilter
         $this->assertArrayHasKey(
             $charFilter,
             $this->data['settings']['index']['analysis']['char_filter'],
-            "Failed to assert that the char_filter exists in index {$this->name}."
+            sprintf('Failed to assert that the char_filter exists in index %s.', $this->name)
         );
     }
 
@@ -35,7 +35,7 @@ trait CharFilter
         $this->assertArrayNotHasKey(
             $charFilter,
             $this->data['settings']['index']['analysis']['char_filter'],
-            "Failed to assert that the char_filter not exists in index {$this->name}."
+            sprintf('Failed to assert that the char_filter not exists in index %s.', $this->name)
         );
     }
 }

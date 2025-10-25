@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Mappings\Contracts\PropertiesField;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
-use Sigmie\Mappings\Contracts\PropertiesField;
 use Sigmie\Mappings\Shared\Properties as SharedProperties;
 
 class Object_ extends Type implements PropertiesField
@@ -30,9 +30,7 @@ class Object_ extends Type implements PropertiesField
 
     public function queries(array|string $queryString): array
     {
-        $queries = [];
-
-        return $queries;
+        return [];
     }
 
     public function toRaw(): array
@@ -47,11 +45,11 @@ class Object_ extends Type implements PropertiesField
     public function validate(string $key, mixed $value): array
     {
         if (! is_array($value)) {
-            return [false, "Object field {$key} must be an object."];
+            return [false, sprintf('Object field %s must be an object.', $key)];
         }
 
         if (count($value) === count($value, COUNT_RECURSIVE)) {
-            return [false, "Onject field {$key} must be an array of objects."];
+            return [false, sprintf('Onject field %s must be an array of objects.', $key)];
         }
 
         return [true, ''];

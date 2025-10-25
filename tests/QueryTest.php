@@ -8,20 +8,20 @@ use Exception;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Query\BooleanQueryBuilder;
 use Sigmie\Query\Queries\Compound\Boolean as QueriesCompoundBoolean;
 use Sigmie\Testing\TestCase;
-use stdClass;
 
 class QueryTest extends TestCase
 {
     /**
      * @test
      */
-    public function filter_parse_without_mappings_query()
+    public function filter_parse_without_mappings_query(): void
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
 
         $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -52,11 +52,11 @@ class QueryTest extends TestCase
     /**
      * @test
      */
-    public function filter_parse_query()
+    public function filter_parse_query(): void
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->name('name');
         $blueprint->number('age')->integer();
 
@@ -91,7 +91,7 @@ class QueryTest extends TestCase
         $search = $this->sigmie->newQuery($indexName)
             ->properties($blueprint)
             ->bool(
-                fn(QueriesCompoundBoolean $bool) => $bool->must()->parse('name:"John Doe" AND age<21')
+                fn (QueriesCompoundBoolean $bool) => $bool->must()->parse('name:"John Doe" AND age<21')
             )
             ->get();
 
@@ -103,11 +103,11 @@ class QueryTest extends TestCase
     /**
      * @test
      */
-    public function zero_query()
+    public function zero_query(): void
     {
         $name = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->name('name');
 
         $this->sigmie->newIndex($name)
@@ -130,7 +130,7 @@ class QueryTest extends TestCase
 
         $res = $search->get();
 
-        $hits = $res->json();
+        $res->json();
 
         // this is a test for completion suggester
         $this->assertTrue(true);
@@ -139,7 +139,7 @@ class QueryTest extends TestCase
     /**
      * @test
      */
-    public function valid_range_query()
+    public function valid_range_query(): void
     {
         $name = uniqid();
 
@@ -175,13 +175,13 @@ class QueryTest extends TestCase
     /**
      * @test
      */
-    public function valid_search()
+    public function valid_search(): void
     {
         $name = uniqid();
 
         $this->sigmie->newIndex($name)->create();
 
-        $res = $this->sigmie->newQuery($name)->bool(function (QueriesCompoundBoolean $boolean) {
+        $res = $this->sigmie->newQuery($name)->bool(function (QueriesCompoundBoolean $boolean): void {
             $boolean->filter->matchAll();
             $boolean->filter->matchNone();
             $boolean->filter->fuzzy('bar', 'baz');
@@ -194,7 +194,7 @@ class QueryTest extends TestCase
             $boolean->mustNot->wildcard('foo', '**/*');
             $boolean->mustNot->ids(['unqie']);
 
-            $boolean->should->bool(fn(QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
+            $boolean->should->bool(fn (QueriesCompoundBoolean $boolean): BooleanQueryBuilder => $boolean->must->match('foo', 'bar'));
         })
             ->from(0)
             ->size(2)
@@ -206,9 +206,9 @@ class QueryTest extends TestCase
     /**
      * @test
      */
-    public function query_clauses()
+    public function query_clauses(): void
     {
-        $query = $this->sigmie->newQuery('')->bool(function (QueriesCompoundBoolean $boolean) {
+        $query = $this->sigmie->newQuery('')->bool(function (QueriesCompoundBoolean $boolean): void {
             $boolean->filter->matchAll();
             $boolean->filter->matchNone();
             $boolean->filter->fuzzy('bar', 'baz');
@@ -221,7 +221,7 @@ class QueryTest extends TestCase
             $boolean->mustNot->wildcard('foo', '**/*');
             $boolean->mustNot->ids(['unqie']);
 
-            $boolean->should->bool(fn(QueriesCompoundBoolean $boolean) => $boolean->must->match('foo', 'bar'));
+            $boolean->should->bool(fn (QueriesCompoundBoolean $boolean): BooleanQueryBuilder => $boolean->must->match('foo', 'bar'));
         })->sort(['title.raw' => 'asc'])
             ->fields(['title'])
             ->from(0)
@@ -235,45 +235,45 @@ class QueryTest extends TestCase
         $this->assertArrayHasKey('size', $query);
 
         $expected = [
-            "bool" => [
-                "must" => [
-                    ["term" => ["foo" => ["value" => "bar", "boost" => 1.0]]],
-                    ["exists" => ["field" => "bar", "boost" => 1.0]],
-                    ["terms" => ["foo" => ["bar", "baz"], "boost" => 1.0]],
+            'bool' => [
+                'must' => [
+                    ['term' => ['foo' => ['value' => 'bar', 'boost' => 1.0]]],
+                    ['exists' => ['field' => 'bar', 'boost' => 1.0]],
+                    ['terms' => ['foo' => ['bar', 'baz'], 'boost' => 1.0]],
                 ],
-                "must_not" => [
-                    ["wildcard" => ["foo" => ["value" => "**/*", "boost" => 1.0]]],
-                    ["ids" => ["values" => ["unqie"], "boost" => 1.0]],
+                'must_not' => [
+                    ['wildcard' => ['foo' => ['value' => '**/*', 'boost' => 1.0]]],
+                    ['ids' => ['values' => ['unqie'], 'boost' => 1.0]],
                 ],
-                "should" => [
+                'should' => [
                     [
-                        "bool" => [
-                            "must" => [
-                                ["match" => [
-                                    "foo" => [
-                                        "query" => "bar",
-                                        "boost" => 1.0,
-                                        "analyzer" => "default"
-                                    ]
-                                ]]
+                        'bool' => [
+                            'must' => [
+                                ['match' => [
+                                    'foo' => [
+                                        'query' => 'bar',
+                                        'boost' => 1.0,
+                                        'analyzer' => 'default',
+                                    ],
+                                ]],
                             ],
-                            "boost" => 1.0
-                        ]
-                    ]
+                            'boost' => 1.0,
+                        ],
+                    ],
                 ],
-                "filter" => [
-                    ["match_all" => (object)["boost" => 1.0]],
-                    ["match_none" => (object)["boost" => 1.0]],
-                    ["fuzzy" => ["bar" => ["value" => "baz"]]],
-                    ["multi_match" => [
-                        "query" => "baz",
-                        "boost" => 1.0,
-                        "analyzer" => "default",
-                        "fields" => ["foo", "bar"]
-                    ]]
+                'filter' => [
+                    ['match_all' => (object) ['boost' => 1.0]],
+                    ['match_none' => (object) ['boost' => 1.0]],
+                    ['fuzzy' => ['bar' => ['value' => 'baz']]],
+                    ['multi_match' => [
+                        'query' => 'baz',
+                        'boost' => 1.0,
+                        'analyzer' => 'default',
+                        'fields' => ['foo', 'bar'],
+                    ]],
                 ],
-                "boost" => 1.0
-            ]
+                'boost' => 1.0,
+            ],
         ];
 
         $this->assertEquals($expected, $query['query']);
@@ -282,7 +282,7 @@ class QueryTest extends TestCase
     /**
      * @test
      */
-    public function match_query_analyzer()
+    public function match_query_analyzer(): void
     {
         $query = $this->sigmie
             ->newQuery('index')
@@ -299,7 +299,7 @@ class QueryTest extends TestCase
     /**
      * @test
      */
-    public function raw_query()
+    public function raw_query(): void
     {
         $name = uniqid();
 
@@ -325,7 +325,7 @@ class QueryTest extends TestCase
     /**
      * @test
      */
-    public function multi_raw_query()
+    public function multi_raw_query(): void
     {
         $name = uniqid();
         $name2 = uniqid();
@@ -342,7 +342,7 @@ class QueryTest extends TestCase
         $this->sigmie->collect($name, true)->merge($docs);
         $this->sigmie->collect($name2, true)->merge($docs);
 
-        $res = $this->sigmie->rawQuery("$name,$name2", [
+        $res = $this->sigmie->rawQuery(sprintf('%s,%s', $name, $name2), [
             'query' => [
                 'match' => [
                     'foo' => 'bar',

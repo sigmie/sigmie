@@ -12,17 +12,15 @@ use Sigmie\AI\Contracts\EmbeddingsApi;
 class VoyageEmbeddingsApi implements EmbeddingsApi
 {
     protected Client $client;
-    protected string $model;
 
     public function __construct(
         string $apiKey,
-        string $model = 'voyage-2'
+        protected string $model = 'voyage-2'
     ) {
-        $this->model = $model;
         $this->client = new Client([
             'base_uri' => 'https://api.voyageai.com',
             'headers' => [
-                'Authorization' => 'Bearer ' . $apiKey,
+                'Authorization' => 'Bearer '.$apiKey,
                 'Content-Type' => 'application/json',
             ],
             'timeout' => 60,
@@ -41,7 +39,7 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
                 'model' => $this->model,
                 'input' => $text,
                 'input_type' => 'document', // Can be 'query' or 'document'
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -65,13 +63,11 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
 
     public function batchEmbed(array $payload): array
     {
-        if (count($payload) === 0) {
+        if ($payload === []) {
             return [];
         }
 
-        $texts = array_map(function ($item) {
-            return $item['text'] ?? '';
-        }, $payload);
+        $texts = array_map(fn ($item) => $item['text'] ?? '', $payload);
 
         $dimensions = $payload[0]['dims'] ?? 0;
 
@@ -80,7 +76,7 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
                 'model' => $this->model,
                 'input' => $texts,
                 'input_type' => 'document',
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -110,7 +106,7 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
                 'model' => $this->model,
                 'input' => $text,
                 'input_type' => 'document',
-            ]
+            ],
         ]);
     }
 
@@ -124,7 +120,7 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
                 'model' => $this->model,
                 'input' => $query,
                 'input_type' => 'query', // Optimized for queries
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);

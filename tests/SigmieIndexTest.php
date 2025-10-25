@@ -5,21 +5,20 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Sigmie\Document\Document;
-use Sigmie\Index\NewIndex;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Sigmie;
-use Sigmie\Testing\TestCase;
 use Sigmie\SigmieIndex;
+use Sigmie\Testing\TestCase;
 
 class SigmieIndexTest extends TestCase
 {
     /**
      * @test
      */
-    public function properties_are_automatically_passed_to_searches()
+    public function properties_are_automatically_passed_to_searches(): void
     {
-        $productIndex = new class($this->sigmie) extends SigmieIndex {
-
+        $productIndex = new class($this->sigmie) extends SigmieIndex
+        {
             protected string $indexName;
 
             public function __construct(Sigmie $sigmie)
@@ -36,10 +35,11 @@ class SigmieIndexTest extends TestCase
 
             public function properties(): NewProperties
             {
-                $blueprint = new NewProperties();
+                $blueprint = new NewProperties;
                 $blueprint->text('name');
                 $blueprint->text('description');
                 $blueprint->category('category');
+
                 return $blueprint;
             }
         };
@@ -66,10 +66,10 @@ class SigmieIndexTest extends TestCase
     /**
      * @test
      */
-    public function name_method_returns_index_name()
+    public function name_method_returns_index_name(): void
     {
-        $index = new class($this->sigmie) extends SigmieIndex {
-
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
             protected string $indexName;
 
             public function __construct(Sigmie $sigmie)
@@ -86,7 +86,7 @@ class SigmieIndexTest extends TestCase
 
             public function properties(): NewProperties
             {
-                return new NewProperties();
+                return new NewProperties;
             }
         };
 
@@ -96,10 +96,10 @@ class SigmieIndexTest extends TestCase
     /**
      * @test
      */
-    public function properties_method_returns_blueprint()
+    public function properties_method_returns_blueprint(): void
     {
-        $index = new class($this->sigmie) extends SigmieIndex {
-
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
             protected string $indexName;
 
             public function __construct(Sigmie $sigmie)
@@ -116,9 +116,10 @@ class SigmieIndexTest extends TestCase
 
             public function properties(): NewProperties
             {
-                $blueprint = new NewProperties();
+                $blueprint = new NewProperties;
                 $blueprint->text('title');
                 $blueprint->bool('active');
+
                 return $blueprint;
             }
         };
@@ -131,10 +132,10 @@ class SigmieIndexTest extends TestCase
     /**
      * @test
      */
-    public function create_and_delete_index()
+    public function create_and_delete_index(): void
     {
-        $index = new class($this->sigmie) extends SigmieIndex {
-
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
             protected string $indexName;
 
             public function __construct(Sigmie $sigmie)
@@ -151,8 +152,9 @@ class SigmieIndexTest extends TestCase
 
             public function properties(): NewProperties
             {
-                $blueprint = new NewProperties();
+                $blueprint = new NewProperties;
                 $blueprint->text('content');
+
                 return $blueprint;
             }
         };
@@ -173,10 +175,10 @@ class SigmieIndexTest extends TestCase
     /**
      * @test
      */
-    public function to_documents_converts_arrays_to_documents()
+    public function to_documents_converts_arrays_to_documents(): void
     {
-        $index = new class($this->sigmie) extends SigmieIndex {
-
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
             protected string $indexName;
 
             public function __construct(Sigmie $sigmie)
@@ -193,7 +195,7 @@ class SigmieIndexTest extends TestCase
 
             public function properties(): NewProperties
             {
-                return new NewProperties();
+                return new NewProperties;
             }
         };
 
@@ -202,7 +204,7 @@ class SigmieIndexTest extends TestCase
             ['name' => 'Item 2'],
         ];
 
-        $index->collect(refresh: true)->merge(array_map(fn($document) => new Document($document), $data));
+        $index->collect(refresh: true)->merge(array_map(fn ($document): Document => new Document($document), $data));
 
         $this->assertEquals(2, $index->collect(refresh: true)->count());
     }
@@ -210,10 +212,10 @@ class SigmieIndexTest extends TestCase
     /**
      * @test
      */
-    public function collect_uses_properties_automatically()
+    public function collect_uses_properties_automatically(): void
     {
-        $index = new class($this->sigmie) extends SigmieIndex {
-
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
             protected string $indexName;
 
             public function __construct(Sigmie $sigmie)
@@ -230,9 +232,10 @@ class SigmieIndexTest extends TestCase
 
             public function properties(): NewProperties
             {
-                $blueprint = new NewProperties();
+                $blueprint = new NewProperties;
                 $blueprint->text('title');
                 $blueprint->category('type');
+
                 return $blueprint;
             }
         };
@@ -256,10 +259,10 @@ class SigmieIndexTest extends TestCase
     /**
      * @test
      */
-    public function custom_index_builder_configuration()
+    public function custom_index_builder_configuration(): void
     {
-        $index = new class($this->sigmie) extends SigmieIndex {
-
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
             protected string $indexName;
 
             public function __construct(Sigmie $sigmie)
@@ -276,8 +279,9 @@ class SigmieIndexTest extends TestCase
 
             public function properties(): NewProperties
             {
-                $blueprint = new NewProperties();
+                $blueprint = new NewProperties;
                 $blueprint->text('content');
+
                 return $blueprint;
             }
         };

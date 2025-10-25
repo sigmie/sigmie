@@ -10,12 +10,10 @@ class Global_ extends Bucket
         protected string $name,
     ) {}
 
-    public function value(): array
+    protected function value(): array
     {
-        $value = [
+        return [
             'global' => (object) [],
         ];
-
-        return $value;
     }
 }

@@ -14,7 +14,15 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
 {
     public function failed(): bool
     {
-        return $this->serverError() || $this->clientError() || $this->hasErrorKey();
+        if ($this->serverError()) {
+            return true;
+        }
+
+        if ($this->clientError()) {
+            return true;
+        }
+
+        return $this->hasErrorKey();
     }
 
     public function exception(ElasticsearchRequest $request): Exception
@@ -22,7 +30,7 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
         $type = null;
 
         if (is_null($this->json())) {
-            $type = "Request failed with code {$this->code()}.";
+            $type = sprintf('Request failed with code %d.', $this->code());
         }
 
         if (is_string($this->json('error'))) {

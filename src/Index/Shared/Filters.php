@@ -39,7 +39,7 @@ trait Filters
 
     public function stemming(array $stemming, ?string $name = null): static
     {
-        $name = $name ?? $this->createFilterName('stemming');
+        $name ??= $this->createFilterName('stemming');
 
         $this->addFilter(new Stemmer($name, $stemming));
 
@@ -48,7 +48,7 @@ trait Filters
 
     public function decimalDigit(?string $name = null): static
     {
-        $name = $name ?? $this->createFilterName('decimal_digit');
+        $name ??= $this->createFilterName('decimal_digit');
 
         $this->addFilter(new DecimalDigit($name));
 
@@ -57,7 +57,7 @@ trait Filters
 
     public function shingle(int $minSize = 2, int $maxSize = 2, ?string $name = null): static
     {
-        $name = $name ?? $this->createFilterName('shingle');
+        $name ??= $this->createFilterName('shingle');
 
         $this->addFilter(new Shingle($name, $minSize, $maxSize));
 
@@ -66,7 +66,7 @@ trait Filters
 
     public function asciiFolding(?string $name = null): static
     {
-        $name = $name ?? $this->createFilterName('ascii_folding');
+        $name ??= $this->createFilterName('ascii_folding');
 
         $this->addFilter(new AsciiFolding($name));
 
@@ -75,7 +75,7 @@ trait Filters
 
     public function stopwords(array $stopwords, ?string $name = null): static
     {
-        $name = $name ?? $this->createFilterName('stopwords');
+        $name ??= $this->createFilterName('stopwords');
 
         $this->addFilter(new Stopwords($name, $stopwords));
 
@@ -84,7 +84,7 @@ trait Filters
 
     public function tokenLimit(int $maxTokenCount, ?string $name = null): static
     {
-        $name = $name ?? $this->createFilterName('token_limit');
+        $name ??= $this->createFilterName('token_limit');
 
         $this->addFilter(new TokenLimit($name, $maxTokenCount));
 
@@ -93,7 +93,7 @@ trait Filters
 
     public function trim(?string $name = null): static
     {
-        $name = $name ?? $this->createFilterName('trim');
+        $name ??= $this->createFilterName('trim');
 
         $this->addFilter(new Trim($name));
 
@@ -102,7 +102,7 @@ trait Filters
 
     public function truncate(int $length = 10, ?string $name = null): static
     {
-        $name = $name ?? $this->createFilterName('truncate');
+        $name ??= $this->createFilterName('truncate');
 
         $this->addFilter(new Truncate($name, $length));
 
@@ -111,7 +111,7 @@ trait Filters
 
     public function unique(bool $onlyOnSamePosition = false, ?string $name = null): static
     {
-        $name = $name ?? $this->createFilterName('unique');
+        $name ??= $this->createFilterName('unique');
 
         $this->addFilter(new Unique($name, $onlyOnSamePosition));
 
@@ -120,7 +120,7 @@ trait Filters
 
     public function uppercase(?string $name = null): static
     {
-        $name = $name ?? $this->createFilterName('uppercase');
+        $name ??= $this->createFilterName('uppercase');
 
         $this->addFilter(new Uppercase($name));
 
@@ -129,7 +129,7 @@ trait Filters
 
     public function lowercase(?string $name = null): static
     {
-        $name = $name ?? $this->createFilterName('lowercase');
+        $name ??= $this->createFilterName('lowercase');
 
         $this->addFilter(new Lowercase($name));
 
@@ -138,7 +138,7 @@ trait Filters
 
     public function keywords(array $keywords, ?string $name = null): static
     {
-        $name = $name ?? $this->createFilterName('keywords');
+        $name ??= $this->createFilterName('keywords');
 
         $this->addFilter(new Keywords($name, $keywords));
 
@@ -147,7 +147,7 @@ trait Filters
 
     public function oneWaySynonyms(array $synonyms, ?string $name = null): static
     {
-        $name = $name ?? $this->createFilterName('synonyms');
+        $name ??= $this->createFilterName('synonyms');
 
         $this->addFilter(new Synonyms($name, $synonyms, expand: false));
 
@@ -156,7 +156,7 @@ trait Filters
 
     public function twoWaySynonyms(array $synonyms, ?string $name = null): static
     {
-        $name = $name ?? $this->createFilterName('synonyms');
+        $name ??= $this->createFilterName('synonyms');
 
         $this->addFilter(new Synonyms($name, $synonyms, expand: true));
 
@@ -165,7 +165,7 @@ trait Filters
 
     public function synonyms(array $synonyms, bool $expand = true, ?string $name = null): static
     {
-        $name = $name ?? $this->createFilterName('synonyms');
+        $name ??= $this->createFilterName('synonyms');
 
         $this->addFilter(new Synonyms($name, $synonyms, $expand));
 
@@ -192,18 +192,18 @@ trait Filters
 
     private function initFilters(): void
     {
-        $this->filters = $this->filters ?? new Collection();
+        $this->filters ??= new Collection;
     }
 
     private function ensureFilterNameIsAvailable(string $name): void
     {
         if ($this->analysis()->hasFilter($name)) {
-            throw new Exception("Token filter `{$name}` already exists.");
+            throw new Exception(sprintf('Token filter `%s` already exists.', $name));
         }
     }
 
     private function createFilterName(string $name): string
     {
-        return strtolower(random_name($name,5));
+        return strtolower(random_name($name));
     }
 }

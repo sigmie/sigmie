@@ -6,7 +6,6 @@ namespace Sigmie\Base\Drivers;
 
 use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Enums\SearchEngineType;
-use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\KnnVector;

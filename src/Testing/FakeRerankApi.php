@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing;
 
-use Sigmie\AI\Contracts\RerankApi;
 use PHPUnit\Framework\Assert;
+use Sigmie\AI\Contracts\RerankApi;
 
 class FakeRerankApi implements RerankApi
 {
@@ -33,10 +33,11 @@ class FakeRerankApi implements RerankApi
 
         if ($times === null) {
             Assert::assertGreaterThan(0, $actualCount, 'rerank() was never called');
+
             return;
         }
 
-        Assert::assertEquals($times, $actualCount, "rerank() was called {$actualCount} times, expected {$times} times");
+        Assert::assertEquals($times, $actualCount, sprintf('rerank() was called %d times, expected %d times', $actualCount, $times));
     }
 
     public function assertRerankWasCalledWith(string $query, ?int $topK = null): void
@@ -44,13 +45,14 @@ class FakeRerankApi implements RerankApi
         foreach ($this->rerankCalls as $call) {
             if ($call['query'] === $query && ($topK === null || $call['topK'] === $topK)) {
                 Assert::assertTrue(true);
+
                 return;
             }
         }
 
         $message = $topK === null
-            ? "rerank() was never called with query: \"{$query}\""
-            : "rerank() was never called with query: \"{$query}\" and topK: {$topK}";
+            ? sprintf('rerank() was never called with query: "%s"', $query)
+            : sprintf('rerank() was never called with query: "%s" and topK: %d', $query, $topK);
 
         Assert::fail($message);
     }
@@ -60,11 +62,12 @@ class FakeRerankApi implements RerankApi
         foreach ($this->rerankCalls as $call) {
             if ($call['documents_count'] === $count) {
                 Assert::assertTrue(true);
+
                 return;
             }
         }
 
-        Assert::fail("rerank() was never called with {$count} documents");
+        Assert::fail(sprintf('rerank() was never called with %d documents', $count));
     }
 
     public function getRerankCalls(): array

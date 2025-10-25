@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Index;
 
 use Carbon\Carbon;
+use RuntimeException;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
-use Sigmie\Base\Contracts\SearchEngine;
-use Sigmie\Languages\English\Filter\Lowercase;
-use Sigmie\Languages\English\Filter\Stemmer;
-use Sigmie\Languages\English\Filter\Stopwords;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Index\Analysis\Analysis;
@@ -25,21 +22,20 @@ use Sigmie\Index\Shared\Replicas;
 use Sigmie\Index\Shared\SearchSynonyms;
 use Sigmie\Index\Shared\Shards;
 use Sigmie\Index\Shared\Tokenizer;
+use Sigmie\Languages\English\Filter\Lowercase;
+use Sigmie\Languages\English\Filter\Stemmer;
+use Sigmie\Languages\English\Filter\Stopwords;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
-use Sigmie\AI\Contracts\Embedder;
-use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\Enums\SearchEngineType;
-use Sigmie\Sigmie;
 
 class NewIndex
 {
     use CharFilters;
     use Filters;
-    use SearchSynonyms;
     use IndexActions;
     use Mappings;
     use Replicas;
+    use SearchSynonyms;
     use Shards;
     use Tokenizer;
 
@@ -69,9 +65,9 @@ class NewIndex
     ) {
         $this->setElasticsearchConnection($connection);
 
-        $this->tokenizer = new WordBoundaries();
+        $this->tokenizer = new WordBoundaries;
 
-        $this->analysis = new Analysis();
+        $this->analysis = new Analysis;
 
         $this->properties = new MappingsProperties;
     }
@@ -113,7 +109,7 @@ class NewIndex
 
     public function defaultAnalyzer(): DefaultAnalyzer
     {
-        $this->defaultAnalyzer ?? $this->defaultAnalyzer = new DefaultAnalyzer();
+        $this->defaultAnalyzer ?? $this->defaultAnalyzer = new DefaultAnalyzer;
 
         return $this->defaultAnalyzer;
     }
@@ -145,7 +141,7 @@ class NewIndex
                 return $existingIndex;
             }
 
-            throw new \RuntimeException("Index '{$this->alias}' exists but is not an aliased index");
+            throw new RuntimeException(sprintf("Index '%s' exists but is not an aliased index", $this->alias));
         }
 
         return $this->create();
@@ -155,14 +151,12 @@ class NewIndex
     {
         $index = $this->make();
 
-        $template = $this->saveIndexTemplate(
+        return $this->saveIndexTemplate(
             $name,
             $patterns,
             $index->settings,
             $index->mappings
         );
-
-        return $template;
     }
 
     public function make(): Index
@@ -197,15 +191,13 @@ class NewIndex
 
         $name = $this->createIndexName();
 
-        $index = new Index($name, $settings, $mappings);
-
-        return $index;
+        return new Index($name, $settings, $mappings);
     }
 
-    protected function createIndexName()
+    protected function createIndexName(): string
     {
         $timestamp = Carbon::now()->format('YmdHisu');
 
-        return "{$this->alias}_{$timestamp}";
+        return sprintf('%s_%s', $this->alias, $timestamp);
     }
 }

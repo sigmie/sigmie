@@ -17,12 +17,12 @@ class RareTerms extends Bucket
         protected string $field,
     ) {}
 
-    public function size(int $size)
+    public function size(int $size): void
     {
         $this->size = $size;
     }
 
-    public function value(): array
+    protected function value(): array
     {
         $value = [
             'rare_terms' => [

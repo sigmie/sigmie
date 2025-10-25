@@ -13,12 +13,11 @@ class ComboFieldTest extends TestCase
     /**
      * @test
      */
-    public function combo_field_combines_multiple_text_fields()
+    public function combo_field_combines_multiple_text_fields(): void
     {
         $indexName = uniqid();
 
-
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('name');
         $blueprint->text('category');
         $blueprint->text('brand');
@@ -71,11 +70,11 @@ class ComboFieldTest extends TestCase
     /**
      * @test
      */
-    public function combo_field_with_array_values()
+    public function combo_field_with_array_values(): void
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('title');
         $blueprint->text('tags');
         $blueprint->text('description');
@@ -86,7 +85,7 @@ class ComboFieldTest extends TestCase
             ->properties($blueprint)
             ->create();
 
-        $raw = $this->sigmie->index($indexName)->raw;
+        $this->sigmie->index($indexName)->raw;
 
         $this->sigmie
             ->collect($indexName, refresh: true)

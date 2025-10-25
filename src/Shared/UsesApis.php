@@ -22,13 +22,14 @@ trait UsesApis
         if ($name === null) {
             return null;
         }
+
         return $this->apis[$name] ?? null;
     }
 
     protected function hasApi(?string $name = null): bool
     {
         if ($name === null) {
-            return !empty($this->apis);
+            return ! empty($this->apis);
         }
 
         return isset($this->apis[$name]);

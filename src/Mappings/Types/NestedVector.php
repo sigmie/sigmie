@@ -8,9 +8,6 @@ use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Nested as TypesNested;
-use Sigmie\Query\FunctionScore;
-use Sigmie\Query\Queries\MatchAll;
-use Sigmie\Query\Queries\Text\Nested;
 
 /**
  * Utility helper for vector fields in nested structures
@@ -26,7 +23,7 @@ class NestedVector extends TypesNested
         public readonly VectorSimilarity $similarity = VectorSimilarity::Cosine,
         public readonly ?string $queryApiName = null,
     ) {
-        $props = new NewProperties();
+        $props = new NewProperties;
         $props->type(
             new BaseVector(
                 name: 'vector',
@@ -38,7 +35,8 @@ class NestedVector extends TypesNested
         parent::__construct($name, $props);
     }
 
-    public function dims(): int {
+    public function dims(): int
+    {
         return $this->dims;
     }
 }

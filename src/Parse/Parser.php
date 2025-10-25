@@ -21,7 +21,7 @@ abstract class Parser implements ParserInterface
     protected array $fields = [];
 
     public function __construct(
-        Properties|NewProperties $properties = new Properties(),
+        Properties|NewProperties $properties = new Properties,
         protected bool $throwOnError = true
     ) {
         $this->properties($properties);
@@ -40,18 +40,18 @@ abstract class Parser implements ParserInterface
     {
         if ($this->throwOnError) {
             throw new ParseException($message);
-        } else {
-            $this->errors[] = [
-                'message' => $message,
-                ...$context,
-            ];
         }
+
+        $this->errors[] = [
+            'message' => $message,
+            ...$context,
+        ];
     }
 
     protected function handleSortableFieldName(string $fieldName): ?string
     {
         if (! $this->fieldExists($fieldName)) {
-            $this->handleError("Field {$fieldName} does not exist.", [
+            $this->handleError(sprintf('Field %s does not exist.', $fieldName), [
                 'field' => $fieldName,
             ]);
 
@@ -69,7 +69,7 @@ abstract class Parser implements ParserInterface
         }
 
         if (! $fieldType->isSortable()) {
-            $this->handleError("Field {$fieldName} is not sortable.", [
+            $this->handleError(sprintf('Field %s is not sortable.', $fieldName), [
                 'field' => $fieldName,
             ]);
 
@@ -82,7 +82,7 @@ abstract class Parser implements ParserInterface
     protected function handleFieldName(string $name): ?string
     {
         if (! $this->fieldExists($name)) {
-            $this->handleError("Field {$name} does not exist.", [
+            $this->handleError(sprintf('Field %s does not exist.', $name), [
                 'field' => $name,
             ]);
 
@@ -100,7 +100,7 @@ abstract class Parser implements ParserInterface
         }
 
         if (! $field->isFilterable()) {
-            $this->handleError("Field {$name} is not filterable.", [
+            $this->handleError(sprintf('Field %s is not filterable.', $name), [
                 'field' => $name,
             ]);
 

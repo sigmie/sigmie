@@ -12,16 +12,13 @@ class Term extends Suggester
 {
     protected string $text;
 
-    protected SuggesterSort $sort;
+    protected SuggesterSort $sort = SuggesterSort::Score;
 
-    protected SuggesterMode $mode;
+    protected SuggesterMode $mode = SuggesterMode::Always;
 
     public function __construct(protected string $name)
     {
         parent::__construct($name);
-
-        $this->mode = SuggesterMode::Always;
-        $this->sort = SuggesterSort::Score;
     }
 
     public function sortByScore(): self

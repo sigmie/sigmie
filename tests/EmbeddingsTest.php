@@ -6,7 +6,6 @@ namespace Sigmie\Tests;
 
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Semantic\Providers\SigmieAI;
 use Sigmie\Testing\TestCase;
 
 class EmbeddingsTest extends TestCase
@@ -14,15 +13,15 @@ class EmbeddingsTest extends TestCase
     /**
      * @test
      */
-    public function embeddings_mapping()
+    public function embeddings_mapping(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
-        $blueprint->nested('comments', function (NewProperties $props) {
+        $blueprint->nested('comments', function (NewProperties $props): void {
             $props->text('text')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
-            $props->object('user', function (NewProperties $props) {
+            $props->object('user', function (NewProperties $props): void {
                 $text = $props->text('name');
                 $text->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
                 $text->semantic(accuracy: 7, dimensions: 384, api: 'test-embeddings');
@@ -48,13 +47,13 @@ class EmbeddingsTest extends TestCase
         $this->assertIsArray($text);
         $this->assertIsArray($title);
 
-        $this->forOpenSearch(function () use ($name, $text, $title) {
+        $this->forOpenSearch(function () use ($name, $text, $title): void {
             $this->assertEquals(384, $name[array_key_first($name)]['dimension']);
             $this->assertEquals(384, $text[array_key_first($text)]['dimension']);
             $this->assertEquals(384, $title[array_key_first($title)]['dimension']);
         });
 
-        $this->forElasticsearch(function () use ($name, $text, $title) {
+        $this->forElasticsearch(function () use ($name, $text, $title): void {
             $this->assertEquals(384, $name[array_key_first($name)]['dims']);
             $this->assertEquals(384, $text[array_key_first($text)]['dims']);
             $this->assertEquals(384, $title[array_key_first($title)]['dims']);
@@ -64,7 +63,7 @@ class EmbeddingsTest extends TestCase
     /**
      * @test
      */
-    public function knn_filter()
+    public function knn_filter(): void
     {
         $indexName = uniqid();
 
@@ -90,11 +89,11 @@ class EmbeddingsTest extends TestCase
                 new Document([
                     'title' => 'Queen',
                     'color' => 'red',
-                ],),
+                ], ),
                 new Document([
                     'title' => 'King',
                     'color' => 'blue',
-                ],),
+                ], ),
             ]);
 
         // Assert embeddings were generated for the 2 documents
@@ -124,16 +123,16 @@ class EmbeddingsTest extends TestCase
     /**
      * @test
      */
-    public function vectorize_documents()
+    public function vectorize_documents(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
         $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
         $blueprint->category('color');
-        $blueprint->nested('comments', function (NewProperties $props) {
+        $blueprint->nested('comments', function (NewProperties $props): void {
             $props->text('text')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
-            $props->object('user', function (NewProperties $props) {
+            $props->object('user', function (NewProperties $props): void {
                 $name = $props->text('name');
                 $name->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
                 $name->semantic(accuracy: 7, dimensions: 384, api: 'test-embeddings');
@@ -164,9 +163,9 @@ class EmbeddingsTest extends TestCase
                             'user' => [
                                 'name' => 'John Doe',
                             ],
-                        ]
+                        ],
                     ],
-                ],),
+                ], ),
             ]);
 
         // Assert embeddings were generated for first document
@@ -183,7 +182,7 @@ class EmbeddingsTest extends TestCase
                             'user' => [
                                 'name' => 'John Doe',
                             ],
-                        ]
+                        ],
                     ],
                 ], _id: '1234'),
             ]);
@@ -202,7 +201,7 @@ class EmbeddingsTest extends TestCase
     /**
      * @test
      */
-    public function non_semantic_fields_excluded_from_embeddings_mapping()
+    public function non_semantic_fields_excluded_from_embeddings_mapping(): void
     {
         $indexName = uniqid();
 

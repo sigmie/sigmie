@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use Closure;
-use Sigmie\Base\Http\ElasticsearchResponse;
+use ReflectionClass;
 use Sigmie\Enums\FacetLogic;
 use Sigmie\Mappings\Contracts\Type as TypeInterface;
 use Sigmie\Query\Aggs;
@@ -14,7 +14,7 @@ use Sigmie\Shared\Collection;
 use Sigmie\Shared\Contracts\Name;
 use Sigmie\Shared\Contracts\ToRaw;
 
-abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
+abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
 {
     protected string $type;
 
@@ -33,14 +33,13 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
 
     public Closure $queriesClosure;
 
-
     public function parent(
         string $parentPath,
         string $parentType,
     ): static {
         $this->parentPath = $parentPath;
         $this->parentType = $parentType;
-        $this->fullPath = trim($parentPath . '.' . $this->name, '.');
+        $this->fullPath = trim($parentPath.'.'.$this->name, '.');
 
         return $this;
     }
@@ -55,7 +54,7 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
         if ($this->hasQueriesCallback) {
             return $this->queriesFromCallback($queryString);
         }
-        
+
         return $this->queries($queryString);
     }
 
@@ -89,7 +88,7 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
 
     public function name(): string
     {
-        return trim("{$this->parentPath}.{$this->name}", '.');
+        return trim(sprintf('%s.%s', $this->parentPath, $this->name), '.');
     }
 
     public function names(): array
@@ -152,10 +151,8 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
 
     public function typeName(): string
     {
-        return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', (new \ReflectionClass($this))->getShortName()));
+        return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', (new ReflectionClass($this))->getShortName()));
     }
-
-
 
     public function isFacetSearchable(): bool
     {
@@ -176,11 +173,9 @@ abstract class Type implements Name, ToRaw, TypeInterface, TextQueries
         return $this;
     }
 
-    public function vectorFields() 
+    public function vectorFields()
     {
         return (new Collection([]))
-            ->map(function (Nested|DenseVector $field) {
-                return $field;
-            });
+            ->map(fn (Nested|DenseVector $field): Nested|DenseVector => $field);
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\AI\Prompt;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\TestCase;
@@ -13,11 +14,11 @@ class ApiAssertionsExampleTest extends TestCase
     /**
      * @test
      */
-    public function example_embedding_assertions()
+    public function example_embedding_assertions(): void
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
@@ -40,9 +41,9 @@ class ApiAssertionsExampleTest extends TestCase
     /**
      * @test
      */
-    public function example_llm_assertions()
+    public function example_llm_assertions(): void
     {
-        $prompt = new \Sigmie\AI\Prompt();
+        $prompt = new Prompt;
         $prompt->user('Tell me a joke');
 
         $this->llmApi->jsonAnswer($prompt);
@@ -57,5 +58,4 @@ class ApiAssertionsExampleTest extends TestCase
         $calls = $this->llmApi->getJsonAnswerCalls();
         $this->assertCount(1, $calls);
     }
-
 }

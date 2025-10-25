@@ -19,7 +19,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function take()
+    public function take(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->newIndex($indexName)->create();
@@ -56,7 +56,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function index_delete_method()
+    public function index_delete_method(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->newIndex($indexName)->create();
@@ -71,7 +71,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function lazy_each()
+    public function lazy_each(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->newIndex($indexName)->create();
@@ -89,7 +89,7 @@ class AliveCollectionTest extends TestCase
 
         $count = 0;
 
-        $index->each(function (Document $document, string $_index) use (&$count) {
+        $index->each(function (Document $document, string $_index) use (&$count): void {
             $count++;
         });
 
@@ -99,7 +99,7 @@ class AliveCollectionTest extends TestCase
 
         $count = 0;
 
-        $index->each(function (Document $document, string $_index) use (&$count) {
+        $index->each(function (Document $document, string $_index) use (&$count): void {
             $count++;
         });
 
@@ -109,7 +109,7 @@ class AliveCollectionTest extends TestCase
 
         $count = 0;
 
-        $index->each(function (Document $document, string $_index) use (&$count) {
+        $index->each(function (Document $document, string $_index) use (&$count): void {
             $count++;
         });
 
@@ -119,7 +119,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function mass_delete_docs()
+    public function mass_delete_docs(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->newIndex($indexName)->create();
@@ -141,7 +141,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function add_or_update()
+    public function add_or_update(): void
     {
         $indexName = uniqid();
 
@@ -149,7 +149,7 @@ class AliveCollectionTest extends TestCase
 
         $document = new Document(['foo' => 'bar'], 'id');
 
-        $index->add($document, true);
+        $index->add($document);
 
         $document->foo = 'john';
 
@@ -163,7 +163,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function offset_unset()
+    public function offset_unset(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->newIndex($indexName)->create();
@@ -182,7 +182,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function offset_exists()
+    public function offset_exists(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->newIndex($indexName)->create();
@@ -198,7 +198,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function offset_set()
+    public function offset_set(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->newIndex($indexName)->create();
@@ -219,7 +219,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function offset_get()
+    public function offset_get(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->collect($indexName, true);
@@ -243,7 +243,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function remove_document()
+    public function remove_document(): void
     {
         $indexName = uniqid();
 
@@ -267,7 +267,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function index_clear_and_is_empty()
+    public function index_clear_and_is_empty(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->collect($indexName, true);
@@ -279,7 +279,7 @@ class AliveCollectionTest extends TestCase
 
         $index->merge($docs);
 
-        $index->clear(true);
+        $index->clear();
 
         $this->assertTrue(count($index) === 0);
         $this->assertTrue($index->isEmpty());
@@ -289,7 +289,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function add_documents_accepts_collection_or_array()
+    public function add_documents_accepts_collection_or_array(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->collect($indexName, true);
@@ -306,7 +306,7 @@ class AliveCollectionTest extends TestCase
             new Document(['baz' => 'john'], '3'),
         ];
 
-        $index->merge($docs, true);
+        $index->merge($docs);
 
         $this->assertCount(4, $index);
     }
@@ -314,7 +314,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function add_document_assigns_id()
+    public function add_document_assigns_id(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->collect($indexName, true);
@@ -331,7 +331,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function index_collection_keys()
+    public function index_collection_keys(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->collect($indexName, true);
@@ -352,7 +352,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function index_collection_methods()
+    public function index_collection_methods(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->collect($indexName, true);
@@ -373,7 +373,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function index_interfaces()
+    public function index_interfaces(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->collect($indexName, true);
@@ -386,7 +386,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function random()
+    public function random(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->newIndex($indexName)->create();
@@ -423,7 +423,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function only()
+    public function only(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->newIndex($indexName)->create();
@@ -449,7 +449,7 @@ class AliveCollectionTest extends TestCase
         $this->assertEmpty($doc->_source);
 
         $docs = $index->take(3);
-        
+
         $firstDoc = null;
         foreach ($docs as $doc) {
             if ($doc->_id === '2') {
@@ -464,7 +464,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function except()
+    public function except(): void
     {
         $indexName = uniqid();
         $index = $this->sigmie->newIndex($indexName)->create();
@@ -492,7 +492,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function auto_format_datetime_to_datetime_string()
+    public function auto_format_datetime_to_datetime_string(): void
     {
         $indexName = uniqid();
 
@@ -527,7 +527,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function auto_format_datetime_to_date_string()
+    public function auto_format_datetime_to_date_string(): void
     {
         $indexName = uniqid();
 
@@ -562,7 +562,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function validation_fails_for_invalid_datetime()
+    public function validation_fails_for_invalid_datetime(): void
     {
         $indexName = uniqid();
 
@@ -582,7 +582,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function validation_fails_for_invalid_date()
+    public function validation_fails_for_invalid_date(): void
     {
         $indexName = uniqid();
 
@@ -602,7 +602,7 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
-    public function validation_passes_for_correct_formats()
+    public function validation_passes_for_correct_formats(): void
     {
         $indexName = uniqid();
 
@@ -618,10 +618,9 @@ class AliveCollectionTest extends TestCase
         $index->add(new Document([
             'title' => 'Test',
             'birth_date' => '2023-04-07',
-            'created_at' => '2023-04-07T12:38:29.000000Z'
+            'created_at' => '2023-04-07T12:38:29.000000Z',
         ]));
 
         $this->assertCount(1, $index);
     }
-
 }

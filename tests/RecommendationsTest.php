@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\TestCase;
@@ -14,11 +13,11 @@ class RecommendationsTest extends TestCase
     /**
      * @test
      */
-    public function fusion()
+    public function fusion(): void
     {
         $indexName = uniqid();
 
-        $blueprint = new NewProperties();
+        $blueprint = new NewProperties;
         $blueprint->text('name')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
         $blueprint->text('category')->semantic(accuracy: 4, dimensions: 384, api: 'test-embeddings');
         $blueprint->number('price');
@@ -138,8 +137,8 @@ class RecommendationsTest extends TestCase
                 $wirelessEarbudsCount++;
             }
         }
-        $this->assertLessThanOrEqual(1, $wirelessEarbudsCount);
 
+        $this->assertLessThanOrEqual(1, $wirelessEarbudsCount);
 
         $hist = $this->sigmie->newRecommend($indexName)
             ->properties($blueprint)

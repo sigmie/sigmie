@@ -6,7 +6,6 @@ namespace Sigmie\Mappings\Types;
 
 use Sigmie\Mappings\ElasticsearchMappingType;
 use Sigmie\Query\Aggs;
-use Sigmie\Query\Queries\Term\Range as RangeQuery;
 
 class Range extends Type
 {
@@ -77,8 +76,8 @@ class Range extends Type
 
     public function validate(string $key, mixed $value): array
     {
-        if (!is_array($value)) {
-            return [false, "The field {$key} mapped as {$this->typeName()} must be an array with 'gte', 'gt', 'lte', or 'lt' keys"];
+        if (! is_array($value)) {
+            return [false, sprintf("The field %s mapped as %s must be an array with 'gte', 'gt', 'lte', or 'lt' keys", $key, $this->typeName())];
         }
 
         $validKeys = ['gte', 'gt', 'lte', 'lt'];
@@ -91,8 +90,8 @@ class Range extends Type
             }
         }
 
-        if (!$hasValidKeys) {
-            return [false, "The field {$key} mapped as {$this->typeName()} must contain at least one of: " . implode(', ', $validKeys)];
+        if (! $hasValidKeys) {
+            return [false, sprintf('The field %s mapped as %s must contain at least one of: ', $key, $this->typeName()).implode(', ', $validKeys)];
         }
 
         return [true, ''];

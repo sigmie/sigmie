@@ -6,23 +6,17 @@ namespace Sigmie\Document;
 
 class Hit extends Document
 {
-    //TODO make readonly
-    public null|float $_score; // @phpstan-ignore-line
-    
-    public readonly null|array $sort; // @phpstan-ignore-line
+    // @phpstan-ignore-line
 
     public function __construct(
         array $_source,
         string $_id,
-        null|float $_score,
+        public ?float $_score,
         ?string $_index = null,
-        null|array $sort = null,
+        public readonly ?array $sort = null,
     ) {
         parent::__construct($_source, $_id);
 
         $this->index($_index);
-
-        $this->_score = $_score;
-        $this->sort = $sort;
     }
 }

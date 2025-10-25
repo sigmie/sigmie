@@ -7,7 +7,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, ctype, json
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Run Rector
+        run: vendor/bin/rector process --no-progress-bar
+
+      - name: Run Pint
+        run: vendor/bin/pint
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore: apply rector and pint fixes'
+          commit_user_name: 'github-actions[bot]'
+          commit_user_email: 'github-actions[bot]@users.noreply.github.com'
+
   test-elasticsearch:
+    needs: code-quality
     runs-on: ubuntu-latest
 
     strategy:
@@ -148,6 +186,7 @@ jobs:
           name: elasticsearch-${{ matrix.elasticsearch_version }}
 
   test-opensearch:
+    needs: code-quality
     runs-on: ubuntu-latest
 
     strategy:

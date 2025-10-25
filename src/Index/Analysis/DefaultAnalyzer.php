@@ -12,7 +12,7 @@ class DefaultAnalyzer extends Analyzer
     public const name = 'default';
 
     public function __construct(
-        Tokenizer $tokenizer = new WordBoundaries(),
+        Tokenizer $tokenizer = new WordBoundaries,
         array $filters = [],
         array $charFilters = [],
     ) {

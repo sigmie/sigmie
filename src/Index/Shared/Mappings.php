@@ -23,12 +23,12 @@ trait Mappings
 
     public function analysis(): Analysis
     {
-        return $this->analysis ?? new AnalysisAnalysis();
+        return $this->analysis ?? new AnalysisAnalysis;
     }
 
     public function mapping(callable $callable): static
     {
-        $newProperties = new NewProperties();
+        $newProperties = new NewProperties;
 
         $callable($newProperties);
 
@@ -54,9 +54,9 @@ trait Mappings
     protected function createMappings(DefaultAnalyzer $defaultAnalyzer): MappingsInterface
     {
         $defaultMeta = [
-            "created_by" => "sigmie",
-            "lib_version" => InstalledVersions::getVersion('sigmie/sigmie'),
-            "language" => $this->language,
+            'created_by' => 'sigmie',
+            'lib_version' => InstalledVersions::getVersion('sigmie/sigmie'),
+            'language' => $this->language,
         ];
 
         return new IndexMappings(

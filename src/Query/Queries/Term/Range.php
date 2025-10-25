@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Queries\Term;
 
-use Exception;
 use Sigmie\Parse\RangeOperatorParser;
 use Sigmie\Query\Queries\Query;
 

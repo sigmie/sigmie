@@ -7,27 +7,24 @@ namespace Sigmie\Document;
 use ArrayAccess;
 use Sigmie\Shared\Contracts\FromRaw;
 
-class Document implements FromRaw, ArrayAccess
+class Document implements ArrayAccess, FromRaw
 {
-    public array $_source;
-
     public readonly string $_index; // @phpstan-ignore-line
 
     public readonly string $_id; // @phpstan-ignore-line
 
     public function __construct(
-        array $_source = [],
+        public array $_source = [],
         ?string $_id = null,
     ) {
-        $this->_source = $_source;
-
         if ($_id !== null) {
             $this->_id = $_id;
         }
     }
 
-    public function get(string $key) {
-       return dot($this->_source)->get($key);
+    public function get(string $key)
+    {
+        return dot($this->_source)->get($key);
     }
 
     public function offsetExists(mixed $offset): bool
@@ -88,11 +85,7 @@ class Document implements FromRaw, ArrayAccess
 
     protected function getSource(string $source): mixed
     {
-        if (isset($this->_source[$source])) {
-            return $this->_source[$source];
-        }
-
-        return null;
+        return $this->_source[$source] ?? null;
     }
 
     protected function setSource(string $name, mixed $value): self

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Query\Aggs;
 
 class Price extends Type
@@ -27,14 +26,12 @@ class Price extends Type
 
     public function queries(array|string $queryString): array
     {
-        $queries = [];
-
         // It's unlikely to search in an input field
         // for a price.
 
         // Price type is better for range filters
 
-        return $queries;
+        return [];
     }
 
     public function aggregation(Aggs $aggs, string $param): void
@@ -42,21 +39,21 @@ class Price extends Type
         [$interval] = explode(',', $param);
 
         $aggs->histogram(
-            "{$this->name()}_histogram",
+            $this->name().'_histogram',
             $this->name(),
             interval: (int) $interval
         );
 
-        $aggs->min("{$this->name()}_min", $this->name());
-        $aggs->max("{$this->name()}_max", $this->name());
+        $aggs->min($this->name().'_min', $this->name());
+        $aggs->max($this->name().'_max', $this->name());
     }
 
     public function facets(array $aggregation): ?array
     {
-        $originalBuckets = $aggregation[$this->name()][$this->name()][$this->name() . '_histogram']['buckets'] ?? $aggregation[$this->name()][$this->name() . '_histogram']['buckets'] ?? [];
+        $originalBuckets = $aggregation[$this->name()][$this->name()][$this->name().'_histogram']['buckets'] ?? $aggregation[$this->name()][$this->name().'_histogram']['buckets'] ?? [];
 
-        $min = $aggregation[$this->name()][$this->name()][$this->name() . '_min']['value'] ?? $aggregation[$this->name()][$this->name() . '_min']['value'] ?? 0;
-        $max = $aggregation[$this->name()][$this->name()][$this->name() . '_max']['value'] ?? $aggregation[$this->name()][$this->name() . '_max']['value'] ?? 0;
+        $min = $aggregation[$this->name()][$this->name()][$this->name().'_min']['value'] ?? $aggregation[$this->name()][$this->name().'_min']['value'] ?? 0;
+        $max = $aggregation[$this->name()][$this->name()][$this->name().'_max']['value'] ?? $aggregation[$this->name()][$this->name().'_max']['value'] ?? 0;
 
         $histogram = array_column($originalBuckets, 'doc_count', 'key');
 
@@ -75,7 +72,7 @@ class Price extends Type
     public function validate(string $key, mixed $value): array
     {
         if (! is_numeric($value)) {
-            return [false, "The field {$key} mapped as price must be a number"];
+            return [false, sprintf('The field %s mapped as price must be a number', $key)];
         }
 
         return [true, ''];

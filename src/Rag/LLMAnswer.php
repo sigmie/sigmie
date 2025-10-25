@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Rag;
 
-use DateTime;
-use Sigmie\Document\Document;
-use Sigmie\Mappings\Types\Date;
+use Stringable;
 
-abstract class LLMAnswer
+abstract class LLMAnswer implements Stringable
 {
     public readonly string $timestamp;
 
@@ -19,15 +17,14 @@ abstract class LLMAnswer
         public readonly string $model,
         public readonly array $request,
         public readonly array $response,
-    ) {
-    }
+    ) {}
 
     public function model(): string
     {
         return $this->model;
     }
 
-    public function conversation(string $conversationId)
+    public function conversation(string $conversationId): void
     {
         $this->conversationId = $conversationId;
     }

@@ -14,18 +14,16 @@ class Whitespace implements Tokenizer
 
     public static function fromRaw(array $raw): static
     {
-        return new static();
+        return new static;
     }
 
     public function toRaw(): array
     {
-        $res = [
+        return [
             $this->name() => [
                 'type' => 'whitespace',
             ],
         ];
-
-        return $res;
     }
 
     public function name(): string

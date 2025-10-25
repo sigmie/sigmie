@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Testing;
 
 use InvalidArgumentException;
+use ParaTest\Coverage\CoverageMerger;
+use ParaTest\Logging\JUnit\Reader;
 use ParaTest\Runners\PHPUnit\BaseRunner;
 use ParaTest\Runners\PHPUnit\Worker\WrapperWorker;
 use PHPUnit\TextUI\TestRunner;
@@ -14,15 +16,15 @@ use Sigmie\Base\APIs\Index;
 
 class ParallelRunner extends BaseRunner
 {
-    use Cat;
-    use Index;
     use API;
+    use Cat;
     use ClearElasticsearch;
+    use Index;
 
     /** @var WrapperWorker[] */
-    private $workers = [];
+    private array $workers = [];
 
-    public function clearProcessIndices(int $token)
+    public function clearProcessIndices(int $token): void
     {
         // TODO clear elasticsearch with prefix
         // $this->clearElasticsearch();
@@ -61,7 +63,7 @@ class ParallelRunner extends BaseRunner
         $phpunit = $this->options->phpunit();
         $phpunitOptions = $this->options->filtered();
 
-        while (count($this->pending) > 0 && count($this->workers) > 0) {
+        while (count($this->pending) > 0 && $this->workers !== []) {
             foreach ($this->workers as $worker) {
                 if (! $worker->isRunning()) {
                     throw $worker->getWorkerCrashedException();
@@ -89,7 +91,7 @@ class ParallelRunner extends BaseRunner
 
         if ($this->hasCoverage()) {
             $coverageMerger = $this->getCoverage();
-            assert($coverageMerger !== null);
+            assert($coverageMerger instanceof CoverageMerger);
             if (($coverageFileName = $worker->getCoverageFileName()) !== null) {
                 $coverageMerger->addCoverageFromFile($coverageFileName);
             }
@@ -97,7 +99,7 @@ class ParallelRunner extends BaseRunner
 
         $worker->reset();
 
-        if ($reader === null) {
+        if (! $reader instanceof Reader) {
             return;
         }
 
@@ -122,7 +124,7 @@ class ParallelRunner extends BaseRunner
     {
         $workersCount = count($this->workers);
 
-        while (count($this->workers) > 0) {
+        while ($this->workers !== []) {
             foreach ($this->workers as $token => $worker) {
                 if ($worker->isRunning()) {
                     continue;

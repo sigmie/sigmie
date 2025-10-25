@@ -12,12 +12,12 @@ enum VectorStrategy: string
     // Good for short strings
     case Concatenate = 'concatenate';
 
-        // Average accuracy
-        // Good for long strings
+    // Average accuracy
+    // Good for long strings
     case Average = 'average';
 
-        // Max accuracy
-        // Good for short strings
+    // Max accuracy
+    // Good for short strings
     case ScriptScore = 'script_score';
 
     public function suffix(): string
@@ -40,9 +40,7 @@ enum VectorStrategy: string
     public function format(array $embeddings, bool $normalize = true): array
     {
         return (match ($this) {
-            self::Concatenate => function ($embeddings, $normalize) {
-                return $embeddings[0] ?? [];
-            },
+            self::Concatenate => fn ($embeddings, $normalize) => $embeddings[0] ?? [],
             self::Average => function ($embeddings, $normalize) {
 
                 $count = count($embeddings);
@@ -59,19 +57,16 @@ enum VectorStrategy: string
                         }
                     }
 
-                    $result = array_map(fn($total) => $total / $count, $sum);
+                    $result = array_map(fn ($total): float => $total / $count, $sum);
                 }
 
                 // Always normalize if requested, even for single embeddings
                 // (The API may return normalized vectors, but we honor the normalize flag)
                 return $normalize ? VectorMath::normalize($result) : $result;
             },
-            self::ScriptScore => function (array $embeddings, $normalize) {
+            self::ScriptScore => fn (array $embeddings, $normalize): array =>
                 // For ScriptScore: create array of objects with embedding field
-                return array_map(function ($embedding) {
-                    return ['vector' => $embedding];
-                }, $embeddings);
-            },
+                array_map(fn ($embedding): array => ['vector' => $embedding], $embeddings),
         })($embeddings, $normalize);
     }
 }

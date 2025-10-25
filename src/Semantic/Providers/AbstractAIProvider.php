@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Semantic\Providers;
 
-use Sigmie\Semantic\Contracts\AIProvider;
-
-abstract class AbstractAIProvider 
+abstract class AbstractAIProvider
 {
     public function rerank(array $documents, string $queryString): array
     {
         // This function should return an associative array mapping the index of each document
-        // to a relevance score between 0 and 1. The relevance score indicates how relevant 
+        // to a relevance score between 0 and 1. The relevance score indicates how relevant
         // each document is to the given query string, with higher scores meaning higher relevance.
         // For example:
         // [

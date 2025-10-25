@@ -21,7 +21,7 @@ class Boolean extends Query
 
     public array $raw = [];
 
-    public function __construct(NewProperties|Properties $properties = new NewProperties())
+    public function __construct(NewProperties|Properties $properties = new NewProperties)
     {
         $this->must = new BooleanQueryBuilder($properties);
         $this->mustNot = new BooleanQueryBuilder($properties);
@@ -39,7 +39,7 @@ class Boolean extends Query
         return $this->mustNot;
     }
 
-    public function addRaw(string $key, mixed $value)
+    public function addRaw(string $key, mixed $value): void
     {
         $this->raw[$key] = $value;
     }
@@ -58,19 +58,19 @@ class Boolean extends Query
     {
         $res = [];
 
-        if (count($this->must->toRaw()) > 0) {
+        if ($this->must->toRaw() !== []) {
             $res['must'] = $this->must->toRaw();
         }
 
-        if (count($this->mustNot->toRaw()) > 0) {
+        if ($this->mustNot->toRaw() !== []) {
             $res['must_not'] = $this->mustNot->toRaw();
         }
 
-        if (count($this->should->toRaw()) > 0) {
+        if ($this->should->toRaw() !== []) {
             $res['should'] = $this->should->toRaw();
         }
 
-        if (count($this->filter->toRaw()) > 0) {
+        if ($this->filter->toRaw() !== []) {
             $res['filter'] = $this->filter->toRaw();
         }
 

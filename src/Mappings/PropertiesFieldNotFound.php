@@ -10,6 +10,6 @@ class PropertiesFieldNotFound extends RuntimeException
 {
     public function __construct(string $field)
     {
-        parent::__construct("The field '{$field}' was not found in properties.");
+        parent::__construct(sprintf("The field '%s' was not found in properties.", $field));
     }
 }

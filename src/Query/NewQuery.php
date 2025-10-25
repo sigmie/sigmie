@@ -10,7 +10,6 @@ use Sigmie\Mappings\Properties;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Query\Contracts\Queries;
 use Sigmie\Query\Contracts\QueryClause as Query;
-use Sigmie\Search\Contracts\MultiSearchable;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\MatchNone;
@@ -24,10 +23,11 @@ use Sigmie\Query\Queries\Term\Terms;
 use Sigmie\Query\Queries\Term\Wildcard;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
+use Sigmie\Search\Contracts\MultiSearchable;
 
 use function Sigmie\Functions\random_name;
 
-class NewQuery implements Queries, MultiSearchable
+class NewQuery implements MultiSearchable, Queries
 {
     protected Search $search;
 
@@ -41,7 +41,7 @@ class NewQuery implements Queries, MultiSearchable
     ) {
         $this->search = new Search($httpConnection);
 
-        $this->properties = new Properties();
+        $this->properties = new Properties;
 
         if ($index) {
             $this->search->index($index);
@@ -102,7 +102,7 @@ class NewQuery implements Queries, MultiSearchable
 
     public function matchAll(float $boost = 1): Search
     {
-        $clause = new MatchAll();
+        $clause = new MatchAll;
 
         return $this->search->query($clause->boost($boost));
     }
@@ -114,12 +114,12 @@ class NewQuery implements Queries, MultiSearchable
 
     public function matchNone(float $boost = 1): Search
     {
-        $clause = new MatchNone();
+        $clause = new MatchNone;
 
         return $this->search->query($clause->boost($boost));
     }
 
-    //TODO allow passing search analyzer
+    // TODO allow passing search analyzer
     public function match(
         string $field,
         string $query,
@@ -188,9 +188,9 @@ class NewQuery implements Queries, MultiSearchable
     {
         return [
             [
-                'index' => $this->search->index
+                'index' => $this->search->index,
             ],
-            $this->search->toRaw()
+            $this->search->toRaw(),
         ];
     }
 
@@ -227,7 +227,7 @@ class NewQuery implements Queries, MultiSearchable
 
     public function getName(): string
     {
-        if (!empty($this->searchName)) {
+        if ($this->searchName !== '' && $this->searchName !== '0') {
             return $this->searchName;
         }
 

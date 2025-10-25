@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Parse;
 
-use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Query\Aggs;
 
@@ -21,14 +20,14 @@ class FacetParser extends Parser
 
         // Remove AND NOT, AND and OR from the filter string
         if (preg_match('/\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^\'"\{\}]*[\'"\{\}]){2})*[^\'"\{\}]*$)(?=(?:(?:[^\{\}]*\{[^\{\}]*\})*[^\{\}]*$))/', $filterString)) {
-            $this->handleError("Facet filter string cannot contain logical operators (AND, OR, AND NOT): '{$filterString}'");
+            $this->handleError(sprintf("Facet filter string cannot contain logical operators (AND, OR, AND NOT): '%s'", $filterString));
         }
 
         if (preg_match('/\((?=(?:[^\'"]|\'[^\']*\'|"[^"]*")*$)/', $filterString)) {
-            $this->handleError("Facet filter string cannot contain parenthetic expressions: '{$filterString}'");
+            $this->handleError(sprintf("Facet filter string cannot contain parenthetic expressions: '%s'", $filterString));
         }
 
-        if (count($this->errors()) > 0) {
+        if ($this->errors() !== []) {
             return '';
         }
 
@@ -39,13 +38,9 @@ class FacetParser extends Parser
         foreach ($filters as $filter) {
 
             // Match field name
-            if (preg_match('/^([\w\.]+)[:<=](.*)$/', $filter, $matches)) {
-                $field = $matches[1];
-            } else {
-                $field = $filter;
-            }
+            $field = preg_match('/^([\w\.]+)[:<=](.*)$/', $filter, $matches) ? $matches[1] : $filter;
 
-            if (!isset($fields[$field])) {
+            if (! isset($fields[$field])) {
                 $fields[$field] = [];
             }
 
@@ -56,15 +51,10 @@ class FacetParser extends Parser
         foreach ($fields as $field => $values) {
 
             $type = $this->properties->get($field);
-
-            $fieldFilters = [];
-
-            foreach ($values as $value) {
-                $fieldFilters[] = $value;
-            }
+            $fieldFilters = $values;
 
             if (is_null($type)) {
-                $this->handleError("Facet field '{$field}' was not found.", [
+                $this->handleError(sprintf("Facet field '%s' was not found.", $field), [
                     'field' => $field,
                 ]);
 
@@ -79,7 +69,7 @@ class FacetParser extends Parser
                 $facetFilter = implode(' OR ', $fieldFilters);
             }
 
-            $res[] = "({$facetFilter})";
+            $res[] = sprintf('(%s)', $facetFilter);
         }
 
         return implode(' AND ', $res);
@@ -101,20 +91,18 @@ class FacetParser extends Parser
             }
 
             if (! $this->fieldExists($field)) {
-                $this->handleError("Field {$field} does not exist.", [
+                $this->handleError(sprintf('Field %s does not exist.', $field), [
                     'field' => $field,
                 ]);
 
                 continue;
             }
 
-
             /** @var Type $field */
             $field = $this->properties->get($field);
 
-
             if (! $field->isFacetable()) {
-                $this->handleError("The field '{$field->name()}' does not support facets.", [
+                $this->handleError(sprintf("The field '%s' does not support facets.", $field->name()), [
                     'field' => $field->name(),
                 ]);
 
@@ -126,10 +114,10 @@ class FacetParser extends Parser
             try {
                 if ($field->parentPath) {
 
-                    $aggregation->nested($field->name(), $field->parentPath, function (Aggs $aggs) use ($params, $field, $query) {
+                    $aggregation->nested($field->name(), $field->parentPath, function (Aggs $aggs) use ($params, $field, $query): void {
 
                         $aggs->filter($field->name(), $query)
-                            ->aggregate(function (Aggs $aggs) use ($params, $field) {
+                            ->aggregate(function (Aggs $aggs) use ($params, $field): void {
                                 $field->aggregation($aggs, $params);
                             });
 
@@ -137,7 +125,7 @@ class FacetParser extends Parser
                 } else {
 
                     $aggregation->filter($field->name(), $query)
-                        ->aggregate(function (Aggs $aggs) use ($params, $field) {
+                        ->aggregate(function (Aggs $aggs) use ($params, $field): void {
                             $field->aggregation($aggs, $params);
                         });
 
@@ -152,7 +140,7 @@ class FacetParser extends Parser
         return $aggregation;
     }
 
-    protected function explode(string $string)
+    protected function explode(string $string): array
     {
 
         $string = preg_replace('/\s+(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)/', ' ', $string);

@@ -13,13 +13,10 @@ class InfinityEmbeddingsApi implements EmbeddingsApi
 {
     protected Client $client;
 
-    protected string $model;
-
     public function __construct(
         string $baseUrl = 'http://localhost:7997',
-        string $model = 'BAAI/bge-small-en-v1.5'
+        protected string $model = 'BAAI/bge-small-en-v1.5'
     ) {
-        $this->model = $model;
         $this->client = new Client([
             'base_uri' => $baseUrl,
             'headers' => [
@@ -35,7 +32,7 @@ class InfinityEmbeddingsApi implements EmbeddingsApi
             RequestOptions::JSON => [
                 'model' => $this->model,
                 'input' => $text,
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -45,17 +42,17 @@ class InfinityEmbeddingsApi implements EmbeddingsApi
 
     public function batchEmbed(array $payload): array
     {
-        if (count($payload) === 0) {
+        if ($payload === []) {
             return [];
         }
 
-        $texts = array_map(fn($item) => $item['text'] ?? '', $payload);
+        $texts = array_map(fn ($item) => $item['text'] ?? '', $payload);
 
         $response = $this->client->post('/embeddings', [
             RequestOptions::JSON => [
                 'model' => $this->model,
                 'input' => $texts,
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -73,7 +70,7 @@ class InfinityEmbeddingsApi implements EmbeddingsApi
             RequestOptions::JSON => [
                 'model' => $this->model,
                 'input' => $text,
-            ]
+            ],
         ]);
     }
 

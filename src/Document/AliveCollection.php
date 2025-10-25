@@ -11,25 +11,20 @@ use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Document\Actions as DocumentActions;
 use Sigmie\Document\Contracts\DocumentCollection;
 use Sigmie\Index\Actions as IndexActions;
-use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Shared\Mappings;
 use Sigmie\Mappings\Properties;
-use Sigmie\Mappings\Types\HTML;
-use Sigmie\Mappings\Types\Text;
-use Sigmie\AI\Contracts\Embedder;
-use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Semantic\DocumentProcessor;
-use Traversable;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\UsesApis;
+use Traversable;
 
 class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 {
     use DocumentActions;
     use IndexActions;
     use LazyEach;
-    use Search;
     use Mappings;
+    use Search;
     use UsesApis;
 
     protected ?array $only = null;
@@ -45,10 +40,10 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     ) {
         $this->setElasticsearchConnection($connection);
 
-        $this->properties = new Properties();
+        $this->properties = new Properties;
     }
 
-    public function populateEmbeddings(bool $value = true)
+    public function populateEmbeddings(bool $value = true): static
     {
         $this->populateEmbeddings = $value;
 
@@ -60,7 +55,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         return $this->retrieveDocuments($this->name, $ids)->toArray();
     }
 
-    public function refresh()
+    public function refresh(): static
     {
         $this->refreshIndex($this->name);
 
@@ -71,9 +66,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     {
         $document = $this->documentEmbeddings($document);
 
-        $doc = $this->updateDocument($this->name, $document, $this->refresh);
-
-        return $doc;
+        return $this->updateDocument($this->name, $document, $this->refresh);
     }
 
     public function all(): Traversable
@@ -86,7 +79,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         return $this->documentExists($this->name, $_id);
     }
 
-    public function random(int $size = 10)
+    public function random(int $size = 10): Collection
     {
         $response = $this->searchAPICall($this->name, [
             'from' => 0,
@@ -100,7 +93,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
             ],
         ]);
 
-        $collection = new Collection();
+        $collection = new Collection;
 
         $values = $response->json('hits')['hits'];
 
@@ -112,7 +105,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         return $collection;
     }
 
-    public function take(int $limit)
+    public function take(int $limit): array
     {
         if ($limit > 0) {
             return $this->listDocuments($this->name, 0, $limit)->toArray();
@@ -137,9 +130,9 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function merge(array $docs): AliveCollection
     {
-        $docs = array_map(fn(Document $doc) => $this->processDocument($doc), $docs);
+        $docs = array_map(fn (Document $doc): Document => $this->processDocument($doc), $docs);
 
-        $collection = $this->upsertDocuments($this->name, $docs, $this->refresh);
+        $this->upsertDocuments($this->name, $docs, $this->refresh);
 
         return $this;
     }
@@ -154,7 +147,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         $document = $documentProcessor->populateComboFields($document);
 
         if ($this->populateEmbeddings) {
-            $document = $documentProcessor->populateEmbeddings($document);
+            return $documentProcessor->populateEmbeddings($document);
         }
 
         return $document;
@@ -172,7 +165,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function clear(): void
     {
-        $this->indexAPICall("{$this->name}/_delete_by_query?refresh={$this->refresh}", 'POST', [
+        $this->indexAPICall(sprintf('%s/_delete_by_query?refresh=%s', $this->name, $this->refresh), 'POST', [
             'query' => ['match_all' => (object) []],
         ]);
     }

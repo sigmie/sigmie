@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Base\APIs;
 
 use GuzzleHttp\Psr7\Uri;
-use Http\Promise\Promise;
 use Sigmie\Base\Http\Requests\Search as SearchRequest;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 
@@ -22,7 +21,7 @@ trait Search
 
     protected function scrollAPICall(string $scrollId, string $scroll): SearchResponse
     {
-        $uri = new Uri("/_search/scroll");
+        $uri = new Uri('/_search/scroll');
 
         return $this->elasticsearchCall(new SearchRequest('POST', $uri, [
             'scroll' => $scroll,
@@ -32,10 +31,10 @@ trait Search
 
     protected function searchRequest(string $index, array $query, ?string $scroll = null): SearchRequest
     {
-        $uri = new Uri("/{$index}/_search");
+        $uri = new Uri(sprintf('/%s/_search', $index));
 
         if ($scroll) {
-            $uri = $uri->withQuery('scroll=' . $scroll);
+            $uri = $uri->withQuery('scroll='.$scroll);
         }
 
         return new SearchRequest('POST', $uri, $query);
@@ -43,7 +42,7 @@ trait Search
 
     protected function searchTemplateRequest(string $index, array $query): SearchResponse
     {
-        $uri = new Uri("/{$index}/_search/template");
+        $uri = new Uri(sprintf('/%s/_search/template', $index));
 
         return $this->elasticsearchCall(new SearchRequest('POST', $uri, $query));
     }

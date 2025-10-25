@@ -48,7 +48,7 @@ class HttpTest extends TestCase
     /**
      * @test
      */
-    public function decode_ndjson()
+    public function decode_ndjson(): void
     {
         $req = new NdJSONRequest('GET', new Uri('http://foo.com'), [
             ['foo' => 'bar'],

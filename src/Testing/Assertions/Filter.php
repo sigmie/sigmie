@@ -17,7 +17,7 @@ trait Filter
         $this->assertEquals(
             $value,
             $this->data['settings']['index']['analysis']['filter'][$filter],
-            "Failed to assert that the filter is equal to given array in index {$this->name}."
+            sprintf('Failed to assert that the filter is equal to given array in index %s.', $this->name)
         );
     }
 
@@ -26,7 +26,7 @@ trait Filter
         $this->assertArrayHasKey(
             $filter,
             $this->data['settings']['index']['analysis']['filter'],
-            "Failed to assert that the filter exists in index {$this->name}."
+            sprintf('Failed to assert that the filter exists in index %s.', $this->name)
         );
     }
 
@@ -35,7 +35,7 @@ trait Filter
         $this->assertArrayNotHasKey(
             $filter,
             $this->data['settings']['index']['analysis']['filter'],
-            "Failed to assert that the filter not exists in index {$this->name}."
+            sprintf('Failed to assert that the filter not exists in index %s.', $this->name)
         );
     }
 
@@ -44,7 +44,7 @@ trait Filter
         $this->assertEquals(
             $rules,
             $this->data['settings']['index']['analysis']['filter'][$filter]['rules'],
-            "Failed to assert that the filter {$filter} has the given rules in index {$this->name}."
+            sprintf('Failed to assert that the filter %s has the given rules in index %s.', $filter, $this->name)
         );
     }
 
@@ -53,7 +53,7 @@ trait Filter
         $this->assertEquals(
             $stopwords,
             $this->data['settings']['index']['analysis']['filter'][$filter]['stopwords'],
-            "Failed to assert that the filter {$filter} has the given stopwords in index {$this->name}."
+            sprintf('Failed to assert that the filter %s has the given stopwords in index %s.', $filter, $this->name)
         );
     }
 
@@ -62,7 +62,7 @@ trait Filter
         $this->assertEquals(
             $synonyms,
             $this->data['settings']['index']['analysis']['filter'][$filter]['synonyms'],
-            "Failed to assert that the filter {$filter} has the given synonyms in index {$this->name}."
+            sprintf('Failed to assert that the filter %s has the given synonyms in index %s.', $filter, $this->name)
         );
     }
 }

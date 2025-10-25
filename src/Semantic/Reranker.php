@@ -29,9 +29,9 @@ class Reranker
             return $res;
         }
 
-        $semanticProps = $this->properties->nestedSemanticFields()->map(fn(Text $field) => $field->name())->toArray();
+        $semanticProps = $this->properties->nestedSemanticFields()->map(fn (Text $field): string => $field->name())->toArray();
 
-        $documents = (new Collection($res->hits()))->map(function (Hit $hit) use ($semanticProps) {
+        $documents = (new Collection($res->hits()))->map(function (Hit $hit) use ($semanticProps): string {
 
             $document = [];
 
@@ -57,11 +57,11 @@ class Reranker
                             $company = $matches[2] ?? '';
                             $yearFrom = $matches[3] ?? '';
                             $yearTo = $matches[4] ?? '';
-                            $branchesString = !empty($matches[5]) ? ' in ' . $matches[5] : '';
+                            $branchesString = empty($matches[5]) ? '' : ' in '.$matches[5];
                             $description = $matches[6] ?? '';
 
                             // $text = "$title at $company from $yearFrom to $yearTo$branchesString: $description";
-                            $res .= "$title at $company from $yearFrom to $yearTo: $description | "; // 29 / 60
+                            $res .= sprintf('%s at %s from %s to %s: %s | ', $title, $company, $yearFrom, $yearTo, $description); // 29 / 60
                             // $res .= "$title at $company from $yearFrom to $yearTo | "; // 24 / 60
                         }
                     }
@@ -71,11 +71,10 @@ class Reranker
                     $text = $res;
                 }
 
-
-                $document[] = $semanticProp . ': ' . $text;
+                $document[] = $semanticProp.': '.$text;
             }
 
-            return implode("|", $document);
+            return implode('|', $document);
         });
 
         $rerankedScores = $this->aiProvider->rerank($documents->toArray(), $queryString);
@@ -88,13 +87,9 @@ class Reranker
             $rerankedHits[] = $hit;
         }
 
-        usort($rerankedHits, function ($a, $b) {
-            return $b['_rerank_score'] <=> $a['_rerank_score'];
-        });
+        usort($rerankedHits, fn ($a, $b): int => $b['_rerank_score'] <=> $a['_rerank_score']);
 
-        $rerankedHits = array_filter($rerankedHits, function ($hit) {
-            return $hit['_rerank_score'] >= $this->rerankThreshold;
-        });
+        $rerankedHits = array_filter($rerankedHits, fn ($hit): bool => $hit['_rerank_score'] >= $this->rerankThreshold);
 
         $res->replaceHits($rerankedHits);
 

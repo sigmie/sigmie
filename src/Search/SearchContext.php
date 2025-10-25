@@ -18,4 +18,4 @@ class SearchContext
         public int $from = 0,
         public array $autocompletePrefixStrings = [],
     ) {}
-} 
+}

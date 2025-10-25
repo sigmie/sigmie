@@ -22,7 +22,7 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function auto_date_histogram_aggregation()
+    public function auto_date_histogram_aggregation(): void
     {
         $name = uniqid();
 
@@ -58,7 +58,7 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
                 $aggregation->autoDateHistogram('histogram', 'date', 2);
             })
             ->get();
@@ -68,18 +68,17 @@ class AggregationTest extends TestCase
         $this->assertCount(2, $value['buckets']);
     }
 
-
     /**
      * @test
      */
-    public function nested_date_histogram_aggregation()
+    public function nested_date_histogram_aggregation(): void
     {
         $name = uniqid();
 
         $this->sigmie->newIndex($name)
-            ->mapping(function (NewProperties $blueprint) {
+            ->mapping(function (NewProperties $blueprint): void {
                 $blueprint->date('date');
-                $blueprint->nested('nested_property', function (NewProperties $blueprint) {
+                $blueprint->nested('nested_property', function (NewProperties $blueprint): void {
                     $blueprint->date('date');
                     $blueprint->number('count');
                 });
@@ -119,12 +118,12 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
 
                 $aggregation->nested(
                     'nested_property',
                     'nested_property',
-                    function (SearchAggregation $aggregation) {
+                    function (SearchAggregation $aggregation): void {
 
                         $aggregation->rangeFilter(
                             'range_filter',
@@ -133,14 +132,14 @@ class AggregationTest extends TestCase
                                 '>=' => '2019-01-01',
                                 '<=' => '2019-01-01',
                             ]
-                        )->aggregate(function (SearchAggregation $aggregation) {
+                        )->aggregate(function (SearchAggregation $aggregation): void {
                             $aggregation->dateHistogram(
                                 'histogram',
                                 'nested_property.date',
                                 CalendarInterval::Year,
                             )
                                 ->missing('2021-01-01')
-                                ->aggregate(function (SearchAggregation $aggregation) {
+                                ->aggregate(function (SearchAggregation $aggregation): void {
                                     $aggregation->max('count_sum', 'nested_property.count')
                                         ->missing(0);
                                 });
@@ -158,11 +157,11 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function significant_text_aggregation()
+    public function significant_text_aggregation(): void
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->mapping(function (NewProperties $blueprint) {
+        $this->sigmie->newIndex($name)->mapping(function (NewProperties $blueprint): void {
             $blueprint->text('title')->unstructuredText();
         })->create();
 
@@ -187,7 +186,7 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
                 $aggregation->significantText('significant', 'title')
                     ->meta(['something' => 'something else']);
             })
@@ -203,7 +202,7 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function date_histogram_aggregation()
+    public function date_histogram_aggregation(): void
     {
         $name = uniqid();
 
@@ -239,10 +238,10 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
                 $aggregation->dateHistogram('histogram', 'date', CalendarInterval::Year)
 
-                    ->aggregate(function (SearchAggregation $aggregation) {
+                    ->aggregate(function (SearchAggregation $aggregation): void {
                         $aggregation->dateHistogram('histogram_nested', 'date', CalendarInterval::Day)
                             ->missing('2021-01-01');
                     })
@@ -259,11 +258,11 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function ranges_aggregation()
+    public function ranges_aggregation(): void
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->mapping(function (NewProperties $blueprint) {
+        $this->sigmie->newIndex($name)->mapping(function (NewProperties $blueprint): void {
             $blueprint->keyword('type');
         })->create();
 
@@ -288,7 +287,7 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
                 $aggregation->range('price_ranges', 'price', [
                     ['to' => 100],
                     ['from' => 200, 'to' => 400],
@@ -305,11 +304,11 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function terms_aggregation()
+    public function terms_aggregation(): void
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->mapping(function (NewProperties $blueprint) {
+        $this->sigmie->newIndex($name)->mapping(function (NewProperties $blueprint): void {
             $blueprint->keyword('type');
         })->create();
 
@@ -340,7 +339,7 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
                 $aggregation->terms('genders', 'type')->missing('N/A');
             })
             ->get();
@@ -353,7 +352,7 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function min_aggregation()
+    public function min_aggregation(): void
     {
         $name = uniqid();
 
@@ -377,7 +376,7 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
                 $aggregation->min('minCount', 'count');
             })
             ->get();
@@ -388,7 +387,7 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function avg_aggregation()
+    public function avg_aggregation(): void
     {
         $name = uniqid();
 
@@ -412,7 +411,7 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
                 $aggregation->avg('averageCount', 'count');
             })
             ->get();
@@ -421,7 +420,7 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
                 $aggregation->avg('averageCount', 'count')->missing(6);
             })
             ->get();
@@ -432,7 +431,7 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function percentile_ranks_aggregation()
+    public function percentile_ranks_aggregation(): void
     {
         $name = uniqid();
 
@@ -462,7 +461,7 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
                 $aggregation->percentileRanks('percentile_rank', 'type', [3, 2]);
             })
             ->get();
@@ -477,7 +476,7 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function percentiles_aggregation()
+    public function percentiles_aggregation(): void
     {
         $name = uniqid();
 
@@ -507,7 +506,7 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
                 $aggregation->percentiles('percentile', 'type', [1, 2]);
             })
             ->get();
@@ -522,7 +521,7 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function cardinality_aggregation()
+    public function cardinality_aggregation(): void
     {
         $name = uniqid();
 
@@ -549,7 +548,7 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
                 $aggregation->cardinality('type_count', 'type');
             })
             ->get();
@@ -562,7 +561,7 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function value_count_aggregation()
+    public function value_count_aggregation(): void
     {
         $name = uniqid();
 
@@ -589,7 +588,7 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
                 $aggregation->valueCount('type_count', 'type');
             })
             ->get();
@@ -602,7 +601,7 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function sum_aggregation()
+    public function sum_aggregation(): void
     {
         $name = uniqid();
 
@@ -626,7 +625,7 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
                 $aggregation->sum('count_sum', 'count');
             })
             ->get();
@@ -639,7 +638,7 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function stats_aggregation()
+    public function stats_aggregation(): void
     {
         $name = uniqid();
 
@@ -663,7 +662,7 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
                 $aggregation->stats('stats', 'count');
             })
             ->get();
@@ -680,7 +679,7 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function max_aggregation()
+    public function max_aggregation(): void
     {
         $name = uniqid();
 
@@ -704,7 +703,7 @@ class AggregationTest extends TestCase
 
         $res = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->aggregate(function (SearchAggregation $aggregation) {
+            ->aggregate(function (SearchAggregation $aggregation): void {
                 $aggregation->max('maxCount', 'count');
             })
             ->get();

@@ -10,7 +10,11 @@ class Bulk extends ElasticsearchResponse
 {
     public function failed(): bool
     {
-        return parent::failed() || $this->code() === 400;
+        if (parent::failed()) {
+            return true;
+        }
+
+        return $this->code() === 400;
     }
 
     public function items(): array

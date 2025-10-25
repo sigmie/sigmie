@@ -14,7 +14,7 @@ class Noop implements Tokenizer
 
     public static function fromRaw(array $raw): static
     {
-        return new static();
+        return new static;
     }
 
     public function name(): string
@@ -24,12 +24,10 @@ class Noop implements Tokenizer
 
     public function toRaw(): array
     {
-        $res = [
+        return [
             $this->name => [
                 'type' => 'keyword',
             ],
         ];
-
-        return $res;
     }
 }

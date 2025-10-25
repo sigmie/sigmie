@@ -18,7 +18,6 @@ class DateTime extends Type
         parent::__construct($name);
     }
 
-
     public function format(string $format): void
     {
         $this->formats[] = $format;
@@ -36,7 +35,7 @@ class DateTime extends Type
     public function validate(string $key, mixed $value): array
     {
         if (! is_string($value)) {
-            return [false, "The field {$key} mapped as datetime must be a datetime string"];
+            return [false, sprintf('The field %s mapped as datetime must be a datetime string', $key)];
         }
 
         $dateTimeFormats = [
@@ -64,7 +63,7 @@ class DateTime extends Type
         }
 
         if (! $isValid) {
-            return [false, "The field {$key} mapped as {$this->typeName()} must be a string in one of the following formats: ".implode(', ', $dateTimeFormats)];
+            return [false, sprintf('The field %s mapped as %s must be a string in one of the following formats: ', $key, $this->typeName()).implode(', ', $dateTimeFormats)];
         }
 
         return [true, ''];

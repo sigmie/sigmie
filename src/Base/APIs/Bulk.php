@@ -14,7 +14,7 @@ trait Bulk
 
     protected function bulkAPICall(string $indexName, array $data, string $refresh = 'false'): BulkResponse
     {
-        $uri = new Uri("/{$indexName}/_bulk");
+        $uri = new Uri(sprintf('/%s/_bulk', $indexName));
 
         $uri = Uri::withQueryValue($uri, 'refresh', $refresh);
 

@@ -3,9 +3,7 @@
 declare(strict_types=1);
 
 namespace Sigmie\Functions {
-    use Carbon\Carbon;
     use Exception;
-    use GuzzleHttp\Promise\Utils;
 
     // function await(array $promises)
     // {
@@ -28,7 +26,7 @@ namespace Sigmie\Functions {
 
     function random_name(string $name): string
     {
-        return strtolower(prefix_id($name,5));
+        return strtolower(prefix_id($name, 5));
     }
 
     function name_configs(array $values): array

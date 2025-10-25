@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie;
 
-use Exception;
-use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Index\Shared\SigmieIndex as SharedSigmieIndex;
 use Sigmie\Mappings\NewProperties;
 

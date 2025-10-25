@@ -32,7 +32,7 @@ trait Tokenizer
 
     public function dontTokenize(?string $name = null): static
     {
-        $name = $name ?? $this->createTokenizerName('whitespace');
+        $name ??= $this->createTokenizerName('whitespace');
 
         $this->tokenizer = new Noop($name);
 
@@ -41,7 +41,7 @@ trait Tokenizer
 
     public function tokenizeOnNonLetter(?string $name = null): static
     {
-        $name = $name ?? $this->createTokenizerName('non_letter');
+        $name ??= $this->createTokenizerName('non_letter');
 
         $this->tokenizer = new NonLetter($name);
 
@@ -50,7 +50,7 @@ trait Tokenizer
 
     public function tokenizePathHierarchy(string $delimiter = '/', ?string $name = null): static
     {
-        $name = $name ?? $this->createTokenizerName('path_hierarchy');
+        $name ??= $this->createTokenizerName('path_hierarchy');
 
         $this->tokenizer = new PathHierarchy($name, $delimiter);
 
@@ -59,7 +59,7 @@ trait Tokenizer
 
     public function tokenizeOnWhitespaces(?string $name = null): static
     {
-        $name = $name ?? $this->createTokenizerName('whitespace');
+        $name ??= $this->createTokenizerName('whitespace');
 
         $this->tokenizer = new Whitespace($name);
 
@@ -76,7 +76,7 @@ trait Tokenizer
         ?string $flags = null,
         ?string $name = null
     ): static {
-        $name = $name ?? $this->createTokenizerName('pattern_tokenizer');
+        $name ??= $this->createTokenizerName('pattern_tokenizer');
 
         $this->tokenizer(new Pattern($name, $pattern, $flags));
 
@@ -87,7 +87,7 @@ trait Tokenizer
         string $pattern,
         ?string $name = null
     ): static {
-        $name = $name ?? $this->createTokenizerName('simple_pattern_split_tokenizer');
+        $name ??= $this->createTokenizerName('simple_pattern_split_tokenizer');
 
         $this->tokenizer(new SimplePatternSplit($name, $pattern));
 
@@ -98,7 +98,7 @@ trait Tokenizer
         string $pattern,
         ?string $name = null
     ): static {
-        $name = $name ?? $this->createTokenizerName('simple_pattern');
+        $name ??= $this->createTokenizerName('simple_pattern');
 
         $this->tokenizer(new SimplePattern($name, $pattern));
 
@@ -107,7 +107,7 @@ trait Tokenizer
 
     public function tokenizeOnWordBoundaries(?string $name = null): static
     {
-        $name = $name ?? $this->createTokenizerName('standard');
+        $name ??= $this->createTokenizerName('standard');
 
         $this->tokenizer(new WordBoundaries($name));
 

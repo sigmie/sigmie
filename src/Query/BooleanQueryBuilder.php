@@ -27,12 +27,12 @@ use Sigmie\Query\Queries\Text\MultiMatch;
 class BooleanQueryBuilder implements Queries
 {
     public function __construct(
-        protected NewProperties|Properties $properties = new NewProperties()
+        protected NewProperties|Properties $properties = new NewProperties
     ) {}
 
     protected array $clauses = [];
 
-    public function parse(string $filterString)
+    public function parse(string $filterString): void
     {
         $parser = new FilterParser($this->properties);
 
@@ -43,7 +43,7 @@ class BooleanQueryBuilder implements Queries
 
     public function matchAll(float|int $boost = 1): self
     {
-        $clause = new MatchAll();
+        $clause = new MatchAll;
 
         $this->clauses[] = $clause->boost($boost);
 
@@ -52,7 +52,7 @@ class BooleanQueryBuilder implements Queries
 
     public function matchNone(float $boost = 1): self
     {
-        $clause = new MatchNone();
+        $clause = new MatchNone;
 
         $this->clauses[] = $clause->boost($boost);
 
@@ -170,7 +170,7 @@ class BooleanQueryBuilder implements Queries
 
     public function bool(callable $callable, float $boost = 1): self
     {
-        $query = new Boolean();
+        $query = new Boolean;
 
         $this->clauses[] = $query->boost($boost);
 
@@ -179,7 +179,10 @@ class BooleanQueryBuilder implements Queries
         return $this;
     }
 
-    public function toRaw()
+    /**
+     * @return mixed[]
+     */
+    public function toRaw(): array
     {
         $res = [];
 

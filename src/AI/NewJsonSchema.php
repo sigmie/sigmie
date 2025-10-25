@@ -7,7 +7,9 @@ namespace Sigmie\AI;
 class NewJsonSchema
 {
     protected array $properties = [];
+
     protected array $required = [];
+
     protected string $name = 'response';
 
     public function name(string $name): self
@@ -41,7 +43,7 @@ class NewJsonSchema
 
     public function array(string $name, callable $items, bool $required = true): self
     {
-        $itemSchema = new NewJsonSchema();
+        $itemSchema = new NewJsonSchema;
         $items($itemSchema);
 
         $this->properties[$name] = [
@@ -59,7 +61,7 @@ class NewJsonSchema
 
     public function object(string $name, callable $callback, bool $required = true): self
     {
-        $objectSchema = new NewJsonSchema();
+        $objectSchema = new NewJsonSchema;
         $callback($objectSchema);
 
         $this->properties[$name] = $objectSchema->toObjectSchema();
@@ -79,7 +81,7 @@ class NewJsonSchema
             'additionalProperties' => false,
         ];
 
-        if (!empty($this->required)) {
+        if ($this->required !== []) {
             $schema['required'] = $this->required;
         }
 
@@ -99,7 +101,7 @@ class NewJsonSchema
             'additionalProperties' => false,
         ];
 
-        if (!empty($this->required)) {
+        if ($this->required !== []) {
             $schema['required'] = $this->required;
         }
 

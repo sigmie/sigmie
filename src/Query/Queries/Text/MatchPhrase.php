@@ -16,7 +16,7 @@ class MatchPhrase extends Query
 
     public function toRaw(): array
     {
-        $raw = [
+        return [
             'match_phrase' => [
                 $this->field => [
                     'query' => $this->query,
@@ -25,7 +25,5 @@ class MatchPhrase extends Query
                 ],
             ],
         ];
-
-        return $raw;
     }
 }

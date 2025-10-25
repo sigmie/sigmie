@@ -28,9 +28,10 @@ class ClusteringResult
         $clusters = [];
 
         foreach ($this->assignments as $index => $clusterId) {
-            if (!isset($clusters[$clusterId])) {
+            if (! isset($clusters[$clusterId])) {
                 $clusters[$clusterId] = [];
             }
+
             $clusters[$clusterId][] = [
                 'index' => $index,
                 'text' => $this->texts[$index],
@@ -56,6 +57,7 @@ class ClusteringResult
                 ];
             }
         }
+
         return $items;
     }
 
@@ -74,6 +76,7 @@ class ClusteringResult
                 ];
             }
         }
+
         return $noiseItems;
     }
 

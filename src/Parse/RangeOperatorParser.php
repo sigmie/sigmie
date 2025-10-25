@@ -21,14 +21,14 @@ class RangeOperatorParser implements Parser
             '>=' => 'gte',
             '<' => 'lt',
             '<=' => 'lte',
-            default => (function () use ($operator) {
-                $message = 'Range operator `' . $operator . '` could not be parsed.';
+            default => (function () use ($operator): void {
+                $message = 'Range operator `'.$operator.'` could not be parsed.';
 
                 if ($this->throwOnError) {
                     throw new ParseException($message);
-                } else {
-                    $this->errors[] = $message;
                 }
+
+                $this->errors[] = $message;
             })()
         };
     }

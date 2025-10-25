@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Sigmie\Document\Hit;
-
 class RRF
 {
     public function __construct(
@@ -16,8 +14,8 @@ class RRF
     /**
      * Fuse multiple search result arrays using Reciprocal Rank Fusion
      *
-     * @param array $rankedLists Array of ranked lists (each list is an array of hits)
-     * @param array|null $weights Optional weights for each ranked list (same order as rankedLists)
+     * @param  array  $rankedLists  Array of ranked lists (each list is an array of hits)
+     * @param  array|null  $weights  Optional weights for each ranked list (same order as rankedLists)
      * @return array Fused and re-ranked results
      */
     public function fuse(array $rankedLists, ?array $weights = null): array
@@ -31,7 +29,7 @@ class RRF
             foreach ($rankedList as $rank => $hit) {
                 $docId = is_array($hit) ? ($hit['_id'] ?? null) : ($hit->_id ?? null);
 
-                if (!$docId) {
+                if (! $docId) {
                     continue;
                 }
 
@@ -39,7 +37,7 @@ class RRF
                 // rank is 0-based, so we add 1
                 $rrfScore = $weight * (1.0 / ($this->rankConstant + $rank + 1));
 
-                if (!isset($scores[$docId])) {
+                if (! isset($scores[$docId])) {
                     $scores[$docId] = [
                         'doc' => $hit,
                         'score' => 0.0,
@@ -51,13 +49,13 @@ class RRF
         }
 
         // Sort by RRF score descending
-        uasort($scores, fn($a, $b) => $b['score'] <=> $a['score']);
+        uasort($scores, fn ($a, $b): int => $b['score'] <=> $a['score']);
 
         // Limit to topK results
         $topScores = array_slice(array_values($scores), 0, $this->topK);
 
         // Return documents with RRF scores
-        return array_map(function ($item) {
+        return array_map(function (array $item) {
             $doc = $item['doc'];
 
             if (is_array($doc)) {
@@ -65,6 +63,7 @@ class RRF
             }
 
             $doc->_score = $item['score'];
+
             return $doc;
         }, $topScores);
     }

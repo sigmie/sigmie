@@ -79,12 +79,7 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate
             if (! is_array($item)) {
                 $result[$key] = $item;
             } else {
-                if ($depth === 0) {
-                    $values = [$key => $item];
-                } else {
-                    $values = (new static($item))->flattenWithKeys($depth - 1)->toArray();
-                }
-
+                $values = $depth === 0 ? [$key => $item] : (new static($item))->flattenWithKeys($depth - 1)->toArray();
                 foreach ($values as $key => $value) {
                     $result[$key] = $value;
                 }
@@ -233,7 +228,7 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate
 
     public function isEmpty(): bool
     {
-        return empty($this->elements);
+        return $this->elements === [];
     }
 
     public function isNotEmpty(): bool
@@ -293,7 +288,7 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate
                 continue;
             }
 
-            if (!in_array($value, $seen, true)) {
+            if (! in_array($value, $seen, true)) {
                 $seen[] = $value;
                 $unique[] = $element;
             }
@@ -336,11 +331,9 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate
                 }
             } elseif (is_array($result) && isset($result['key']) && array_key_exists('value', $result)) {
                 $grouped[$result['key']][] = $result['value'];
-            } else {
+            } elseif (is_array($result) && count($result) === 2 && array_keys($result) === [0, 1]) {
                 // fallback: treat $result as [groupKey, value]
-                if (is_array($result) && count($result) === 2 && array_keys($result) === [0,1]) {
-                    $grouped[$result[0]][] = $result[1];
-                }
+                $grouped[$result[0]][] = $result[1];
             }
         }
 

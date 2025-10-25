@@ -23,7 +23,7 @@ class ListedIndex
 
     public static function fromRaw(array $raw, array $aliases = []): static
     {
-        $index = new static(
+        return new static(
             $raw['index'],
             health: $raw['health'],
             status: $raw['status'],
@@ -37,7 +37,5 @@ class ListedIndex
             datasetSize: (string) $raw['pri.store.size'],
             aliases: $aliases,
         );
-
-        return $index;
     }
 }

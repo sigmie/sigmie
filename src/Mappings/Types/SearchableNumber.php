@@ -33,11 +33,6 @@ class SearchableNumber extends Text implements Analyze
 
     public function queries(array|string $queryString): array
     {
-        $queries = [];
-
-        $queries[] = new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer());
-        $queries[] = new MatchPhrasePrefix($this->name, $queryString, analyzer: $this->searchAnalyzer());
-
-        return $queries;
+        return [new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer()), new MatchPhrasePrefix($this->name, $queryString, analyzer: $this->searchAnalyzer())];
     }
 }

@@ -11,12 +11,11 @@ use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Boost;
-use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Category;
+use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\DateTime;
-use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Email;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\HTML;
@@ -32,10 +31,10 @@ use Sigmie\Mappings\Types\Path;
 use Sigmie\Mappings\Types\Price;
 use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\SearchableNumber;
-use Sigmie\Mappings\Types\Title;
 use Sigmie\Mappings\Types\ShortText;
 use Sigmie\Mappings\Types\Tags;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\Mappings\Types\Title;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Semantic\Contracts\AIProvider;
 use Sigmie\Shared\Collection;
@@ -51,7 +50,7 @@ class NewProperties
         public string $fullPath = '',
         public string $parentType = Mapping::class
     ) {
-        $this->fields = new Collection();
+        $this->fields = new Collection;
     }
 
     public function propertiesName(string $name): self
@@ -61,14 +60,14 @@ class NewProperties
         return $this;
     }
 
-    public function __invoke(null|string $name = null): Properties
+    public function __invoke(?string $name = null): Properties
     {
         return $this->get(name: $name ?? $this->name);
     }
 
     public function get(
-        AnalysisInterface $analysis = new Analysis(),
-        null|string $name = null
+        AnalysisInterface $analysis = new Analysis,
+        ?string $name = null
     ): Properties {
 
         $fields = $this->fields
@@ -77,9 +76,9 @@ class NewProperties
                 if ($this->fullPath !== '') {
                     $type->parent($this->fullPath, $this->parentType);
                 }
+
                 return [$type->name => $type];
             })->toArray();
-
 
         $props = new Properties($name ?? $this->name, $fields);
 
@@ -116,7 +115,7 @@ class NewProperties
         return $field;
     }
 
-    public function embeddings(AIProvider $provider, string $name)
+    public function embeddings(AIProvider $provider, string $name): void
     {
         $this->fields->add($provider->type($name));
     }
@@ -358,7 +357,7 @@ class NewProperties
     {
         $props = new NewProperties(
             parentPath: $this->parentPath,
-            fullPath: trim($this->fullPath . '.' . $name, '.'),
+            fullPath: trim($this->fullPath.'.'.$name, '.'),
             parentType: $field::class
         );
         $props->propertiesName($name);

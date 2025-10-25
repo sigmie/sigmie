@@ -4,16 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis;
 
-use Sigmie\Languages\English\Filter\Lowercase;
-use Sigmie\Languages\English\Filter\Stemmer;
-use Sigmie\Languages\English\Filter\Stopwords;
-use Sigmie\Languages\German\Filter\GermanNormalization;
-use Sigmie\Languages\German\Filter\LightStemmer as GermanLightStemmer;
-use Sigmie\Languages\German\Filter\Lowercase as GermanLowercase;
-use Sigmie\Languages\German\Filter\Stopwords as GermanStopwords;
-use Sigmie\Languages\Greek\Filter\Lowercase as GreekLowercase;
-use Sigmie\Languages\Greek\Filter\Stemmer as GreekStemmer;
-use Sigmie\Languages\Greek\Filter\Stopwords as GreekStopwords;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Index\Analysis\TokenFilter\AsciiFolding;
 use Sigmie\Index\Analysis\TokenFilter\DecimalDigit;
@@ -26,6 +16,16 @@ use Sigmie\Index\Contracts\CharFilter;
 use Sigmie\Index\Contracts\CustomAnalyzer as CustomAnalyzerInterface;
 use Sigmie\Index\Contracts\TokenFilter;
 use Sigmie\Index\Contracts\Tokenizer;
+use Sigmie\Languages\English\Filter\Lowercase;
+use Sigmie\Languages\English\Filter\Stemmer;
+use Sigmie\Languages\English\Filter\Stopwords;
+use Sigmie\Languages\German\Filter\GermanNormalization;
+use Sigmie\Languages\German\Filter\LightStemmer as GermanLightStemmer;
+use Sigmie\Languages\German\Filter\Lowercase as GermanLowercase;
+use Sigmie\Languages\German\Filter\Stopwords as GermanStopwords;
+use Sigmie\Languages\Greek\Filter\Lowercase as GreekLowercase;
+use Sigmie\Languages\Greek\Filter\Stemmer as GreekStemmer;
+use Sigmie\Languages\Greek\Filter\Stopwords as GreekStopwords;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\Name;
 
@@ -39,17 +39,12 @@ class Analyzer implements CustomAnalyzerInterface
 
     protected Collection $charFilters;
 
-    protected Tokenizer $tokenizer;
-
     public function __construct(
         public readonly string $name,
-        Tokenizer $tokenizer = new WordBoundaries(),
+        protected Tokenizer $tokenizer = new WordBoundaries,
         array $filters = [],
         array $charFilters = [],
     ) {
-        // 'standard' is the default Elasticsearch
-        // tokenizer when no other is specified
-        $this->tokenizer = $tokenizer;
         $this->filters = new Collection($filters);
         $this->charFilters = new Collection($charFilters);
     }
@@ -72,7 +67,7 @@ class Analyzer implements CustomAnalyzerInterface
                 'autocomplete_english_stopwords' => new Stopwords($filterName),
                 'autocomplete_english_lowercase' => new Lowercase($filterName),
 
-                'autocomplete_german_normalization' => new GermanNormalization(),
+                'autocomplete_german_normalization' => new GermanNormalization,
                 'autocomplete_german_light_stemmer' => new GermanLightStemmer($filterName),
                 'autocomplete_german_stopwords' => new GermanStopwords($filterName),
                 'autocomplete_german_lowercase' => new GermanLowercase($filterName),
@@ -94,7 +89,7 @@ class Analyzer implements CustomAnalyzerInterface
 
         foreach ($config['char_filter'] ?? [] as $filterName) {
             $analyzerCharFilters[$filterName] = match ($filterName) {
-                'html_strip' => new HTMLStrip(),
+                'html_strip' => new HTMLStrip,
                 default => $charFilters[$filterName]
             };
         }
@@ -102,8 +97,8 @@ class Analyzer implements CustomAnalyzerInterface
         $tokenizerName = $config['tokenizer'] ?? null;
 
         $analyzerTokenizer = match ($tokenizerName) {
-            'whitespace' => new Whitespace(),
-            'standard' => new WordBoundaries(),
+            'whitespace' => new Whitespace,
+            'standard' => new WordBoundaries,
             default => $tokenizers[$tokenizerName]
         };
 
@@ -141,24 +136,22 @@ class Analyzer implements CustomAnalyzerInterface
     public function toRaw(): array
     {
         $filters = $this->filters
-            ->map(fn (TokenFilter $filter) => $filter->name())
+            ->map(fn (TokenFilter $filter): string => $filter->name())
             ->flatten()
             ->toArray();
 
         $charFilters = $this->charFilters
-            ->map(fn (CharFilter $charFilter) => $charFilter->name())
+            ->map(fn (CharFilter $charFilter): string => $charFilter->name())
             ->flatten()
             ->toArray();
 
-        $raw = [
+        return [
             $this->name => [
                 'tokenizer' => $this->tokenizer()->name(),
                 'char_filter' => $charFilters,
                 'filter' => $filters,
             ],
         ];
-
-        return $raw;
     }
 
     public function filters(): array

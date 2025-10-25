@@ -16,7 +16,7 @@ class FacetParserTest extends TestCase
     /**
      * @test
      */
-    public function no_existing_field()
+    public function no_existing_field(): void
     {
         $indexName = uniqid();
 
@@ -40,7 +40,7 @@ class FacetParserTest extends TestCase
 
         $parser = new FacetParser($props, throwOnError: false);
 
-        $aggs = $parser->parse('nameabc:2,asc');
+        $parser->parse('nameabc:2,asc');
 
         $this->assertNotEmpty($parser->errors());
     }
@@ -48,7 +48,7 @@ class FacetParserTest extends TestCase
     /**
      * @test
      */
-    public function case_sensitive_keyword()
+    public function case_sensitive_keyword(): void
     {
         $indexName = uniqid();
 
@@ -90,7 +90,7 @@ class FacetParserTest extends TestCase
     /**
      * @test
      */
-    public function sort_numbers()
+    public function sort_numbers(): void
     {
         $indexName = uniqid();
 
@@ -132,7 +132,7 @@ class FacetParserTest extends TestCase
     /**
      * @test
      */
-    public function terms_sort()
+    public function terms_sort(): void
     {
         $indexName = uniqid();
 
@@ -189,7 +189,7 @@ class FacetParserTest extends TestCase
     /**
      * @test
      */
-    public function exception()
+    public function exception(): void
     {
         $indexName = uniqid();
 
@@ -225,13 +225,13 @@ class FacetParserTest extends TestCase
 
         $aggs = $parser->parse('category description stock active');
 
-        $res = $this->sigmie->query($indexName, new MatchAll, $aggs)->get();
+        $this->sigmie->query($indexName, new MatchAll, $aggs)->get();
     }
 
     /**
      * @test
      */
-    public function has_aggregations()
+    public function has_aggregations(): void
     {
         $indexName = uniqid();
 

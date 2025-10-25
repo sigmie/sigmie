@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\AI;
 
-use Sigmie\AI\Role;
-
 class Prompt
 {
     protected ?NewJsonSchema $jsonSchemaBuilder = null;
@@ -14,7 +12,7 @@ class Prompt
 
     public function answerJsonSchema(callable $callback): self
     {
-        $this->jsonSchemaBuilder = new NewJsonSchema();
+        $this->jsonSchemaBuilder = new NewJsonSchema;
         $callback($this->jsonSchemaBuilder);
 
         return $this;
@@ -22,7 +20,7 @@ class Prompt
 
     public function jsonSchema(): array
     {
-        if ($this->jsonSchemaBuilder) {
+        if ($this->jsonSchemaBuilder instanceof NewJsonSchema) {
             return $this->jsonSchemaBuilder->toArray();
         }
 

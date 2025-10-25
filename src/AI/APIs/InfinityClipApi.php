@@ -14,13 +14,10 @@ class InfinityClipApi implements EmbeddingsApi
 {
     protected Client $client;
 
-    protected string $model;
-
     public function __construct(
         string $baseUrl = 'http://localhost:7996',
-        string $model = 'wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M'
+        protected string $model = 'wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M'
     ) {
-        $this->model = $model;
         $this->client = new Client([
             'base_uri' => $baseUrl,
             'headers' => [
@@ -53,7 +50,7 @@ class InfinityClipApi implements EmbeddingsApi
      */
     public function batchEmbed(array $payload): array
     {
-        if (count($payload) === 0) {
+        if ($payload === []) {
             return [];
         }
 
@@ -82,7 +79,7 @@ class InfinityClipApi implements EmbeddingsApi
                 'model' => $this->model,
                 'input' => $inputs,
                 'modality' => $modality,
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -107,7 +104,7 @@ class InfinityClipApi implements EmbeddingsApi
                 'model' => $this->model,
                 'input' => $text,
                 'modality' => $modality,
-            ]
+            ],
         ]);
     }
 
@@ -126,7 +123,7 @@ class InfinityClipApi implements EmbeddingsApi
                 'model' => $this->model,
                 'input' => $text,
                 'modality' => 'text',
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -148,7 +145,7 @@ class InfinityClipApi implements EmbeddingsApi
                 'model' => $this->model,
                 'input' => $imageSource,
                 'modality' => 'image',
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -161,8 +158,14 @@ class InfinityClipApi implements EmbeddingsApi
      */
     protected function isImageSource(string $text): bool
     {
-        return ImageHelper::isUrl($text) ||
-            ImageHelper::isBase64($text) ||
-            ImageHelper::isFilePath($text);
+        if (ImageHelper::isUrl($text)) {
+            return true;
+        }
+
+        if (ImageHelper::isBase64($text)) {
+            return true;
+        }
+
+        return ImageHelper::isFilePath($text);
     }
 }

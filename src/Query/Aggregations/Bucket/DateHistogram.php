@@ -19,7 +19,7 @@ class DateHistogram extends Bucket
         protected ?array $extendedBounds = null
     ) {}
 
-    public function value(): array
+    protected function value(): array
     {
         $value = [
             'date_histogram' => [

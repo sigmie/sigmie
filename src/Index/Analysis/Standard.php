@@ -6,7 +6,6 @@ namespace Sigmie\Index\Analysis;
 
 use Sigmie\Index\Analysis\TokenFilter\Lowercase;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
-use Sigmie\Index\Contracts\Tokenizer;
 
 class Standard extends Analyzer
 {
@@ -14,7 +13,7 @@ class Standard extends Analyzer
 
     public function __construct(
     ) {
-        $tokenizer = new WordBoundaries();
+        $tokenizer = new WordBoundaries;
         $filters = [
             new Lowercase('lowercase'),
         ];

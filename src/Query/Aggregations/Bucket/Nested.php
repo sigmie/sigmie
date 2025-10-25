@@ -14,15 +14,13 @@ class Nested extends Bucket
         protected Aggs $aggs,
     ) {}
 
-    public function value(): array
+    protected function value(): array
     {
-        $value = [
+        return [
             'nested' => [
                 'path' => $this->path,
             ],
             'aggs' => $this->aggs->toRaw(),
         ];
-
-        return $value;
     }
 }

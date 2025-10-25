@@ -4,27 +4,23 @@ declare(strict_types=1);
 
 namespace Sigmie\AI\Embedders;
 
-use Http\Promise\Promise;
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise\PromiseInterface;
+use Http\Promise\Promise;
 use Sigmie\AI\Contracts\Embedder;
 
 class VoyageProvider implements Embedder
 {
     protected Client $client;
-    protected string $apiKey;
-    protected string $model;
 
-    public function __construct(string $apiKey, string $model = 'voyage-3')
+    public function __construct(protected string $apiKey, protected string $model = 'voyage-3')
     {
-        $this->apiKey = $apiKey;
-        $this->model = $model;
         $this->client = new Client([
             'base_uri' => 'https://api.voyageai.com',
             'headers' => [
-                'Authorization' => 'Bearer ' . $apiKey,
+                'Authorization' => 'Bearer '.$this->apiKey,
                 'Content-Type' => 'application/json',
-            ]
+            ],
         ]);
     }
 
@@ -35,21 +31,22 @@ class VoyageProvider implements Embedder
                 'model' => $this->model,
                 'input' => [$text],
                 'output_dimension' => $dimensions,
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
+
         return $data['data'][0]['embedding'];
     }
 
     public function batchEmbed(array $payload): array
     {
-        if (count($payload) === 0) {
+        if ($payload === []) {
             return [];
         }
 
         $texts = array_column($payload, 'text');
-        $dimensions = isset($payload[0]['dims']) ? (int)$payload[0]['dims'] : null;
+        $dimensions = isset($payload[0]['dims']) ? (int) $payload[0]['dims'] : null;
 
         $requestData = [
             'model' => $this->model,
@@ -61,11 +58,11 @@ class VoyageProvider implements Embedder
         }
 
         $response = $this->client->post('/v1/embeddings', [
-            'json' => $requestData
+            'json' => $requestData,
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
-        
+
         foreach ($data['data'] as $index => $embedding) {
             $payload[$index]['vector'] = $embedding['embedding'];
         }
@@ -80,26 +77,23 @@ class VoyageProvider implements Embedder
                 'model' => $this->model,
                 'input' => [$text],
                 'output_dimension' => $dimensions,
-            ]
+            ],
         ]);
 
-        return new class($promise) implements Promise {
-            private PromiseInterface $promise;
+        return new class($promise) implements Promise
+        {
+            public function __construct(private PromiseInterface $promise) {}
 
-            public function __construct(PromiseInterface $promise)
-            {
-                $this->promise = $promise;
-            }
-
-            public function then(callable $onFulfilled = null, callable $onRejected = null)
+            public function then(?callable $onFulfilled = null, ?callable $onRejected = null)
             {
                 return $this->promise->then(
                     function ($response) use ($onFulfilled) {
                         $data = json_decode($response->getBody()->getContents(), true);
                         $embeddings = $data['data'][0]['embedding'];
-                        if ($onFulfilled) {
+                        if ($onFulfilled !== null) {
                             return $onFulfilled(['_embeddings' => $embeddings]);
                         }
+
                         return ['_embeddings' => $embeddings];
                     },
                     $onRejected
@@ -115,6 +109,7 @@ class VoyageProvider implements Embedder
             {
                 $response = $this->promise->wait($unwrap);
                 $data = json_decode($response->getBody()->getContents(), true);
+
                 return ['_embeddings' => $data['data'][0]['embedding']];
             }
         };

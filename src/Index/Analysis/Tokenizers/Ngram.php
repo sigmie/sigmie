@@ -26,7 +26,7 @@ class Ngram implements Tokenizer
 
     public function toRaw(): array
     {
-        $res = [
+        return [
             $this->name() => [
                 'type' => 'ngram',
                 'min_gram' => $this->minGram,
@@ -34,8 +34,6 @@ class Ngram implements Tokenizer
                 'token_chars' => $this->tokenChars,
             ],
         ];
-
-        return $res;
     }
 
     public function name(): string

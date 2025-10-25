@@ -11,17 +11,12 @@ use Sigmie\AI\APIs\InfinityClipApi;
 use Sigmie\AI\APIs\InfinityEmbeddingsApi;
 use Sigmie\AI\APIs\InfinityRerankApi;
 use Sigmie\AI\APIs\OllamaApi;
-use Sigmie\AI\Contracts\LLMApi;
-use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\AI\Contracts\RerankApi;
-use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\APIs\Analyze;
 use Sigmie\Base\APIs\Explain;
 use Sigmie\Base\Drivers\Elasticsearch;
 use Sigmie\Base\Drivers\Opensearch;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Document\Actions as DocumentActions;
-use Sigmie\Enums\ElasticsearchVersion;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Http\JSONClient;
 use Sigmie\Index\Actions as IndexAction;
@@ -30,11 +25,12 @@ use Symfony\Component\Dotenv\Dotenv;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    use ClearElasticsearch;
+    use Analyze;
     use Assertions;
-    use IndexAction;
+    use ClearElasticsearch;
     use DocumentActions;
-    use Explain, Analyze;
+    use Explain;
+    use IndexAction;
 
     protected Sigmie $sigmie;
 
@@ -50,7 +46,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
     protected FakeClipApi $clipApi;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -64,7 +60,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
         $searchEngine = getenv('SEARCH_ENGINE');
 
         $connection = match ($searchEngine) {
-            'opensearch' => (function () use (&$engine, &$driver) {
+            'opensearch' => (function () use (&$engine, &$driver): ElasticsearchConnection {
                 // OpenSearch: HTTPS with authentication
                 $username = getenv('OPENSEARCH_USER') ?: 'admin';
                 $password = getenv('OPENSEARCH_PASSWORD') ?: 'MyStrongPass123!@#';
@@ -73,18 +69,18 @@ class TestCase extends \PHPUnit\Framework\TestCase
                     ['https://localhost:9200'],
                     $username,
                     $password,
-                    config: ['verify' => false,]
+                    config: ['verify' => false]
                 );
 
-                return new ElasticsearchConnection($this->jsonClient, new Opensearch());
+                return new ElasticsearchConnection($this->jsonClient, new Opensearch);
             })(),
-            'elasticsearch' => (function () use (&$engine, &$driver) {
+            'elasticsearch' => (function () use (&$engine, &$driver): ElasticsearchConnection {
                 // Elasticsearch: HTTP without authentication
                 $this->jsonClient = JSONClient::create(['http://localhost:9200']);
 
-                return new ElasticsearchConnection($this->jsonClient, new Elasticsearch());
+                return new ElasticsearchConnection($this->jsonClient, new Elasticsearch);
             })(),
-            default => throw new Exception("Invalid search engine: {$searchEngine}"),
+            default => throw new Exception('Invalid search engine: '.$searchEngine),
         };
 
         $this->elasticsearchConnection = $connection;
@@ -118,33 +114,33 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
     protected function skipIfElasticsearchPluginNotInstalled(string $plugin)
     {
-        if (!in_array($plugin, $this->elasticsearchPlugins)) {
-            $this->markTestSkipped("Elasticsearch plugin {$plugin} is not installed");
+        if (! in_array($plugin, $this->elasticsearchPlugins)) {
+            $this->markTestSkipped(sprintf('Elasticsearch plugin %s is not installed', $plugin));
         }
     }
 
-    public function loadEnv()
+    public function loadEnv(): void
     {
-        $dotenv = new Dotenv();
+        $dotenv = new Dotenv;
         $dotenv->usePutenv(true);
-        $dotenv->loadEnv($GLOBALS['_composer_bin_dir'] . '/../../.env', overrideExistingVars: true);
+        $dotenv->loadEnv($GLOBALS['_composer_bin_dir'].'/../../.env', overrideExistingVars: true);
     }
 
-    public function forOpensearch(Closure $callback)
+    public function forOpensearch(Closure $callback): void
     {
         if ($this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch) {
             $callback();
         }
     }
 
-    public function forElasticsearch(Closure $callback)
+    public function forElasticsearch(Closure $callback): void
     {
         if ($this->elasticsearchConnection->driver()->engine() === SearchEngineType::Elasticsearch) {
             $callback();
         }
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         $this->embeddingApi->reset();
         $this->rerankApi->reset();

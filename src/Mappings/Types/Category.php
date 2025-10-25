@@ -28,12 +28,6 @@ class Category extends Text
 
     public function queries(array|string $queryString): array
     {
-        $queries = [];
-
-        $queries[] = new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer());
-        $queries[] = new Term("{$this->name}.keyword", $queryString);
-        $queries[] = new MatchPhrasePrefix($this->name, $queryString, analyzer: $this->searchAnalyzer());
-
-        return $queries;
+        return [new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer()), new Term($this->name.'.keyword', $queryString), new MatchPhrasePrefix($this->name, $queryString, analyzer: $this->searchAnalyzer())];
     }
 }

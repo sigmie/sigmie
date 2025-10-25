@@ -14,7 +14,7 @@ class EmbeddingsStorageTest extends TestCase
     /**
      * @test
      */
-    public function embeddings_are_stored_and_retrieved_correctly_per_field()
+    public function embeddings_are_stored_and_retrieved_correctly_per_field(): void
     {
         $indexName = uniqid();
 
@@ -22,7 +22,7 @@ class EmbeddingsStorageTest extends TestCase
         $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
         $props->text('description')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
         $props->text('content')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
-        $props->nested('comments', function (NewProperties $props) {
+        $props->nested('comments', function (NewProperties $props): void {
             $props->text('text')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
             $props->text('author')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
         });
@@ -97,7 +97,7 @@ class EmbeddingsStorageTest extends TestCase
     /**
      * @test
      */
-    public function embeddings_use_md5_keys_for_field_identification()
+    public function embeddings_use_md5_keys_for_field_identification(): void
     {
         $indexName = uniqid();
 
@@ -142,10 +142,9 @@ class EmbeddingsStorageTest extends TestCase
     /**
      * @test
      */
-    public function stored_embeddings_are_normalized()
+    public function stored_embeddings_are_normalized(): void
     {
         $indexName = uniqid();
-
 
         $props = new NewProperties;
         $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
@@ -186,8 +185,8 @@ class EmbeddingsStorageTest extends TestCase
         );
 
         // Verify magnitude is actually close to 1.0
-        $titleMagnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $titleVector)));
-        $contentMagnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $contentVector)));
+        $titleMagnitude = sqrt(array_sum(array_map(fn ($v): int|float => $v * $v, $titleVector)));
+        $contentMagnitude = sqrt(array_sum(array_map(fn ($v): int|float => $v * $v, $contentVector)));
 
         $this->assertEqualsWithDelta(1.0, $titleMagnitude, 0.01, 'Title vector magnitude should be ~1.0');
         $this->assertEqualsWithDelta(1.0, $contentMagnitude, 0.01, 'Content vector magnitude should be ~1.0');
@@ -196,21 +195,21 @@ class EmbeddingsStorageTest extends TestCase
     /**
      * @test
      */
-    public function average_strategy_produces_normalized_vectors_in_nested_fields()
+    public function average_strategy_produces_normalized_vectors_in_nested_fields(): void
     {
         $indexName = uniqid();
 
         $props = new NewProperties;
         // Use Average strategy for nested comments field (multiple items will be averaged)
-        $props->nested('comments', function (NewProperties $props) {
+        $props->nested('comments', function (NewProperties $props): void {
             $props->text('text')->semantic(accuracy: 2, dimensions: 384, api: 'test-embeddings'); // accuracy 2 uses Average strategy
         });
 
         $this->sigmie->newIndex($indexName)->properties($props)->create();
 
         $collected = $this->sigmie->collect($indexName, true)
-        ->populateEmbeddings()
-        ->properties($props);
+            ->populateEmbeddings()
+            ->properties($props);
 
         // Create document with multiple comments (will trigger averaging)
         $collected->merge([
@@ -237,8 +236,8 @@ class EmbeddingsStorageTest extends TestCase
             'Averaged comment embedding should be normalized'
         );
 
-        $magnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $commentVector)));
+        $magnitude = sqrt(array_sum(array_map(fn ($v): int|float => $v * $v, $commentVector)));
         $this->assertEqualsWithDelta(1.0, $magnitude, 0.01,
-            'Averaged vector magnitude should be ~1.0, got: ' . $magnitude);
+            'Averaged vector magnitude should be ~1.0, got: '.$magnitude);
     }
 }

@@ -12,13 +12,13 @@ class VectorNormalizationTest extends TestCase
     /**
      * @test
      */
-    public function normalizes_vector_to_unit_length()
+    public function normalizes_vector_to_unit_length(): void
     {
         $vector = [3.0, 4.0, 0.0];
         $normalized = VectorMath::normalize($vector);
 
         // Magnitude should be 1.0
-        $magnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $normalized)));
+        $magnitude = sqrt(array_sum(array_map(fn ($v): int|float => $v * $v, $normalized)));
         $this->assertEqualsWithDelta(1.0, $magnitude, 0.0001);
 
         // Values should be scaled correctly
@@ -30,7 +30,7 @@ class VectorNormalizationTest extends TestCase
     /**
      * @test
      */
-    public function handles_already_normalized_vector()
+    public function handles_already_normalized_vector(): void
     {
         $vector = [0.6, 0.8, 0.0];
         $normalized = VectorMath::normalize($vector);
@@ -43,7 +43,7 @@ class VectorNormalizationTest extends TestCase
     /**
      * @test
      */
-    public function handles_zero_vector()
+    public function handles_zero_vector(): void
     {
         $vector = [0.0, 0.0, 0.0];
         $normalized = VectorMath::normalize($vector);
@@ -55,7 +55,7 @@ class VectorNormalizationTest extends TestCase
     /**
      * @test
      */
-    public function detects_normalized_vectors()
+    public function detects_normalized_vectors(): void
     {
         $normalized = [0.6, 0.8, 0.0];
         $this->assertTrue(VectorMath::isNormalized($normalized));
@@ -67,14 +67,14 @@ class VectorNormalizationTest extends TestCase
     /**
      * @test
      */
-    public function normalizes_high_dimensional_vector()
+    public function normalizes_high_dimensional_vector(): void
     {
         // Create a 256-dimensional vector
         $vector = array_fill(0, 256, 1.0);
         $normalized = VectorMath::normalize($vector);
 
         // Magnitude should be 1.0
-        $magnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $normalized)));
+        $magnitude = sqrt(array_sum(array_map(fn ($v): int|float => $v * $v, $normalized)));
         $this->assertEqualsWithDelta(1.0, $magnitude, 0.0001);
 
         // Each component should be 1/sqrt(256) = 1/16 = 0.0625

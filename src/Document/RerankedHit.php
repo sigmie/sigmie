@@ -6,11 +6,9 @@ namespace Sigmie\Document;
 
 class RerankedHit extends Hit
 {
-    public readonly float $_rerank_score;
-
     public function __construct(
         Hit $hit,
-        float $_rerank_score,
+        public readonly float $_rerank_score,
     ) {
         parent::__construct(
             $hit->_source,
@@ -19,7 +17,5 @@ class RerankedHit extends Hit
             $hit->_index,
             $hit->sort,
         );
-
-        $this->_rerank_score = $_rerank_score;
     }
 }

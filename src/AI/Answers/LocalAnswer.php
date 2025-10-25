@@ -26,6 +26,6 @@ class LocalAnswer implements LLMAnswerInterface
 
     public function __toString(): string
     {
-        return $this->response['choices'][0]['message']['content'] ?? '';
+        return (string) ($this->response['choices'][0]['message']['content'] ?? '');
     }
 }

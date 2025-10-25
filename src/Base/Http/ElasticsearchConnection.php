@@ -15,17 +15,7 @@ use Sigmie\Http\Contracts\JSONResponse;
 
 class ElasticsearchConnection implements ElasticsearchConnectionInterface
 {
-    protected JSONClientInterface $http;
-
-    protected SearchEngine $driver;
-
-    public function __construct(
-        JsonClientInterface $http,
-        SearchEngine $driver = new Elasticsearch()
-    ) {
-        $this->http = $http;
-        $this->driver = $driver;
-    }
+    public function __construct(protected JSONClientInterface $http, protected SearchEngine $driver = new Elasticsearch) {}
 
     public function driver(): SearchEngine
     {
@@ -35,9 +25,7 @@ class ElasticsearchConnection implements ElasticsearchConnectionInterface
     public function promise(ElasticsearchRequest $request): Promise
     {
         return $this->http->promise($request)
-            ->then(function (JSONResponse $res) use ($request) {
-                return $request->response($res->psr());
-            });
+            ->then(fn (JSONResponse $res): ElasticsearchResponse => $request->response($res->psr()));
     }
 
     public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse

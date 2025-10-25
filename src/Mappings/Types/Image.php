@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Helpers\ImageHelper;
+use Sigmie\Mappings\NewSemanticField;
+
 class Image extends Text
 {
     public function configure(): void
@@ -28,24 +31,25 @@ class Image extends Text
         // Handle multiple images (array)
         if (is_array($value)) {
             foreach ($value as $imageSource) {
-                if (!is_string($imageSource)) {
-                    return [false, "The field {$key} contains a non-string value in the array"];
+                if (! is_string($imageSource)) {
+                    return [false, sprintf('The field %s contains a non-string value in the array', $key)];
                 }
 
-                if ($this->isSemantic() && !$this->isValidImageSource($imageSource)) {
-                    return [false, "The field {$key} contains an invalid image source: {$imageSource}. Must be a URL, base64 string, or existing file path."];
+                if ($this->isSemantic() && ! $this->isValidImageSource($imageSource)) {
+                    return [false, sprintf('The field %s contains an invalid image source: %s. Must be a URL, base64 string, or existing file path.', $key, $imageSource)];
                 }
             }
+
             return [true, ''];
         }
 
-        if (!is_string($value)) {
-            return [false, "The field {$key} mapped as image must be a string (URL, base64, or file path)"];
+        if (! is_string($value)) {
+            return [false, sprintf('The field %s mapped as image must be a string (URL, base64, or file path)', $key)];
         }
 
         // Validate it's a valid image source when semantic is enabled
-        if ($this->isSemantic() && !$this->isValidImageSource($value)) {
-            return [false, "The field {$key} contains an invalid image source: {$value}. Must be a URL, base64 string, or existing file path."];
+        if ($this->isSemantic() && ! $this->isValidImageSource($value)) {
+            return [false, sprintf('The field %s contains an invalid image source: %s. Must be a URL, base64 string, or existing file path.', $key, $value)];
         }
 
         return [true, ''];
@@ -57,9 +61,15 @@ class Image extends Text
     protected function isValidImageSource(string $value): bool
     {
         // Use the ImageHelper to validate
-        return \Sigmie\Helpers\ImageHelper::isUrl($value) ||
-               \Sigmie\Helpers\ImageHelper::isBase64($value) ||
-               \Sigmie\Helpers\ImageHelper::isFilePath($value);
+        if (ImageHelper::isUrl($value)) {
+            return true;
+        }
+
+        if (ImageHelper::isBase64($value)) {
+            return true;
+        }
+
+        return ImageHelper::isFilePath($value);
     }
 
     /**
@@ -69,9 +79,9 @@ class Image extends Text
         string $api,
         int $accuracy = 3,
         int $dimensions = 256,
-    ) {
+    ): NewSemanticField {
         return $this->newSemantic(
-            fn($semantic) => $semantic
+            fn ($semantic) => $semantic
                 ->accuracy($accuracy, $dimensions)
                 ->api($api)
                 ->fieldType('image')

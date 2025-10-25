@@ -36,7 +36,7 @@ trait CharFilters
 
     public function stripHTML(?string $name = null): static
     {
-        $name = $name ?? $this->createCharFilterName('html_strip');
+        $name ??= $this->createCharFilterName('html_strip');
 
         $this->addCharFilter(new HTMLStrip($name));
 
@@ -48,7 +48,7 @@ trait CharFilters
         string $replace,
         ?string $name = null
     ): static {
-        $name = $name ?? $this->createCharFilterName('pattern_replace_filter');
+        $name ??= $this->createCharFilterName('pattern_replace_filter');
 
         $this->addCharFilter(new Pattern($name, $pattern, $replace));
 
@@ -57,7 +57,7 @@ trait CharFilters
 
     public function mapChars(array $mappings, ?string $name = null): static
     {
-        $name = $name ?? $this->createCharFilterName('mapping_filter');
+        $name ??= $this->createCharFilterName('mapping_filter');
 
         $this->addCharFilter(new Mapping($name, $mappings));
 
@@ -84,7 +84,7 @@ trait CharFilters
 
     private function initCharFilters(): void
     {
-        $this->charFilters = $this->charFilters ?? new Collection();
+        $this->charFilters ??= new Collection;
     }
 
     private function createCharFilterName(string $name): string

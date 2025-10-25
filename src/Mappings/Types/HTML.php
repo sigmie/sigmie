@@ -16,7 +16,7 @@ class HTML extends Text
 
         $this->unstructuredText();
 
-        $this->newAnalyzer(function (NewAnalyzer $newAnalyzer) use ($name) {
+        $this->newAnalyzer(function (NewAnalyzer $newAnalyzer): void {
             $newAnalyzer->tokenizeOnWordBoundaries();
             $newAnalyzer->stripHTML();
             $newAnalyzer->trim();
@@ -27,13 +27,9 @@ class HTML extends Text
 
     public function queries(array|string $queryString): array
     {
-        $queries = [];
-
-        $queries[] = new Match_(
+        return [new Match_(
             $this->name,
             $queryString,
-        );
-
-        return $queries;
+        )];
     }
 }

@@ -14,7 +14,7 @@ trait Analyze
 
     protected function analyzeAPICall(string $indexName, string $text, string $analyzer): ElasticsearchResponse
     {
-        $uri = new Uri("/{$indexName}/_analyze");
+        $uri = new Uri(sprintf('/%s/_analyze', $indexName));
 
         $request = new ElasticsearchRequest('POST', $uri, [
             'analyzer' => $analyzer,

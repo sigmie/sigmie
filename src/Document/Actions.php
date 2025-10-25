@@ -55,9 +55,9 @@ trait Actions
     {
         $body = [];
         $documents = new Collection($documents);
-        $documents->each(function (Doc $document, $index) use (&$body) {
+        $documents->each(function (Doc $document, $index) use (&$body): void {
 
-            //Upsert docs with id
+            // Upsert docs with id
             if (isset($document->_id)) {
                 $body = [
                     ...$body,
@@ -67,9 +67,10 @@ trait Actions
 
                 return;
             }
-            //or
 
-            //create docs without id
+            // or
+
+            // create docs without id
             $body = [
                 ...$body,
                 ['create' => (object) []],
@@ -82,7 +83,6 @@ trait Actions
         }
 
         $res = $this->bulkAPICall($indexName, $body, $refresh);
-
 
         foreach ($res->json('items') as $index => $value) {
             $action = array_key_first($value);
@@ -146,17 +146,17 @@ trait Actions
     protected function getDocument(string $indexName, string $identifier): ?Doc
     {
         $payload = [
-            'docs' => [['_id' => $identifier],]
+            'docs' => [['_id' => $identifier]],
         ];
 
         $query = [];
 
         if ($this->only) {
-            $query['_source_includes'] = implode($this->only);
+            $query['_source_includes'] = implode('', $this->only);
         }
 
         if ($this->except) {
-            $query['_source_excludes'] = implode($this->except);
+            $query['_source_excludes'] = implode('', $this->except);
         }
 
         $response = $this->mgetAPICall($indexName, $payload, $query);
@@ -170,17 +170,17 @@ trait Actions
     ): Collection {
 
         $payload = [
-            'docs' => array_map(fn(string $id) => ['_id' => $id], $ids),
+            'docs' => array_map(fn (string $id): array => ['_id' => $id], $ids),
         ];
 
         $query = [];
 
         if ($this->only) {
-            $query['_source_includes'] = implode($this->only);
+            $query['_source_includes'] = implode('', $this->only);
         }
 
         if ($this->except) {
-            $query['_source_excludes'] = implode($this->except);
+            $query['_source_excludes'] = implode('', $this->except);
         }
 
         $response = $this->mgetAPICall($indexName, $payload, $query);
@@ -215,12 +215,11 @@ trait Actions
             }
         }
 
-
         $response = $this->searchAPICall($indexName, [
-            ...$payload
+            ...$payload,
         ]);
 
-        $collection = new Collection();
+        $collection = new Collection;
 
         $values = $response->json('hits')['hits'];
 
@@ -252,6 +251,7 @@ trait Actions
                 ['delete' => ['_index' => $indexName, '_id' => $id]],
             ];
         }
+
         $response = $this->bulkAPICall($indexName, $body, $refresh);
 
         return $response->failed() === false;

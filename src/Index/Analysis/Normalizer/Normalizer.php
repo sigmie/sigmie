@@ -78,24 +78,22 @@ class Normalizer implements NormalizerInterface
     public function toRaw(): array
     {
         $filters = $this->filters
-            ->map(fn (NormalizerFilter $filter) => $filter->type())
+            ->map(fn (NormalizerFilter $filter): string => $filter->type())
             ->flatten()
             ->toArray();
 
         $charFilters = $this->charFilters
-            ->map(fn (CharFilter $charFilter) => $charFilter->name())
+            ->map(fn (CharFilter $charFilter): string => $charFilter->name())
             ->flatten()
             ->toArray();
 
-        $raw = [
+        return [
             $this->name => [
                 'type' => 'custom',
                 'char_filter' => $charFilters,
                 'filter' => $filters,
             ],
         ];
-
-        return $raw;
     }
 
     public function filters(): array
@@ -112,6 +110,6 @@ class Normalizer implements NormalizerInterface
     {
         [$name, $config] = name_configs($raw);
 
-        throw new Exception("Normalizer of type '{$config['type']}' doesn't exists.");
+        throw new Exception(sprintf("Normalizer of type '%s' doesn't exists.", $config['type']));
     }
 }

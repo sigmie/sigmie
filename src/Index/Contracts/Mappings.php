@@ -6,7 +6,6 @@ namespace Sigmie\Index\Contracts;
 
 use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Mappings\Properties;
-use Sigmie\Shared\Contracts\ToRaw;
 
 interface Mappings
 {

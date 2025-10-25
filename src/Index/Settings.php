@@ -10,24 +10,9 @@ use Sigmie\Index\Contracts\Settings as SettingsInterface;
 
 class Settings implements SettingsInterface
 {
-    public readonly ?int $primaryShards;
-
-    public readonly ?int $replicaShards;
-
-    protected AnalysisInterface $analysis;
-
     protected string $defaultPipeline;
 
-    public function __construct(
-        ?int $primaryShards = null,
-        ?int $replicaShards = null,
-        AnalysisInterface $analysis = new Analysis(),
-        protected array $configs = []
-    ) {
-        $this->analysis = $analysis;
-        $this->primaryShards = $primaryShards;
-        $this->replicaShards = $replicaShards;
-    }
+    public function __construct(public readonly ?int $primaryShards = null, public readonly ?int $replicaShards = null, protected AnalysisInterface $analysis = new Analysis, protected array $configs = []) {}
 
     public function analysis(): AnalysisInterface
     {
@@ -63,11 +48,11 @@ class Settings implements SettingsInterface
         $settings = $raw['index'];
 
         $analysis = ($settings['analysis'] ?? false)
-            ? Analysis::fromRaw($settings['analysis']) : new Analysis();
+            ? Analysis::fromRaw($settings['analysis']) : new Analysis;
 
         return new static(
-            (isset($settings['number_of_shards']) ? (int)$settings['number_of_shards'] : null),
-            (isset($settings['number_of_replicas']) ? (int)$settings['number_of_replicas'] : null),
+            (isset($settings['number_of_shards']) ? (int) $settings['number_of_shards'] : null),
+            (isset($settings['number_of_replicas']) ? (int) $settings['number_of_replicas'] : null),
             $analysis
         );
     }
@@ -82,7 +67,7 @@ class Settings implements SettingsInterface
             $res['number_of_shards'] = $this->primaryShards;
         }
 
-        if (!is_null($this->replicaShards)) {
+        if (! is_null($this->replicaShards)) {
             $res['number_of_replicas'] = $this->replicaShards;
         }
 

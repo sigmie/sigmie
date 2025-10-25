@@ -13,20 +13,16 @@ use Sigmie\Enums\CohereInputType;
 class CohereEmbeddingsApi implements EmbeddingsApi
 {
     protected Client $client;
-    protected string $model;
-    protected CohereInputType $inputType;
 
     public function __construct(
         string $apiKey,
-        CohereInputType $inputType,
-        string $model = 'embed-english-v3.0'
+        protected CohereInputType $inputType,
+        protected string $model = 'embed-english-v3.0'
     ) {
-        $this->model = $model;
-        $this->inputType = $inputType;
         $this->client = new Client([
             'base_uri' => 'https://api.cohere.ai',
             'headers' => [
-                'Authorization' => 'Bearer ' . $apiKey,
+                'Authorization' => 'Bearer '.$apiKey,
                 'Content-Type' => 'application/json',
             ],
             'timeout' => 60,
@@ -46,7 +42,7 @@ class CohereEmbeddingsApi implements EmbeddingsApi
                 'texts' => [$text],
                 'input_type' => $this->inputType->value,
                 'embedding_types' => ['float'],
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -66,11 +62,11 @@ class CohereEmbeddingsApi implements EmbeddingsApi
 
     public function batchEmbed(array $payload): array
     {
-        if (count($payload) === 0) {
+        if ($payload === []) {
             return [];
         }
 
-        $texts = array_map(fn($item) => $item['text'] ?? '', $payload);
+        $texts = array_map(fn ($item) => $item['text'] ?? '', $payload);
 
         $dimensions = (int) ($payload[0]['dims'] ?? 0);
 
@@ -80,7 +76,7 @@ class CohereEmbeddingsApi implements EmbeddingsApi
                 'texts' => $texts,
                 'input_type' => $this->inputType->value,
                 'embedding_types' => ['float'],
-            ]
+            ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
@@ -108,7 +104,7 @@ class CohereEmbeddingsApi implements EmbeddingsApi
                 'texts' => [$text],
                 'input_type' => $this->inputType->value,
                 'embedding_types' => ['float'],
-            ]
+            ],
         ]);
     }
 }
