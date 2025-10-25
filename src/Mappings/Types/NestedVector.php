@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Nested as TypesNested;
@@ -22,6 +23,7 @@ class NestedVector extends TypesNested
         public readonly int $dims,
         public readonly string $apiName,
         public readonly VectorStrategy $strategy = VectorStrategy::Concatenate,
+        public readonly VectorSimilarity $similarity = VectorSimilarity::Cosine,
     ) {
         $props = new NewProperties();
         $props->type(

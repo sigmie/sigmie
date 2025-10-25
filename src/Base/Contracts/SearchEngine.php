@@ -6,10 +6,8 @@ namespace Sigmie\Base\Contracts;
 
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\Contracts\Type;
-use Sigmie\Mappings\Types\DenseVector;
-use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\BaseVector;
-use Sigmie\Query\Queries\KnnVectorQuery;
+use Sigmie\Mappings\Types\NestedVector;
 
 interface SearchEngine
 {
@@ -29,16 +27,4 @@ interface SearchEngine
      * Return engine-specific index settings for semantic/vector fields
      */
     public function indexSettings(): array;
-
-    /**
-     * Create an engine-specific KNN query
-     */
-    public function knnQuery(
-        string $field,
-        array|string $queryVector,
-        int $k = 300,
-        int $numCandidates = 1000,
-        array $filter = [],
-        float $boost = 1.0
-    ): KnnVectorQuery;
 }

@@ -219,7 +219,7 @@ class NewSemanticField
         };
 
         if (!$this->index) {
-            return new NestedVector($name, $this->dims, $this->apiName, $this->strategy);
+            return new NestedVector($name, $this->dims, $this->apiName, $this->strategy, $this->similarity);
         }
 
         $vector = new BaseVector(
