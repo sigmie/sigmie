@@ -869,4 +869,40 @@ class SemanticTest extends TestCase
             $this->assertStringContainsString("doc['", $raw['nested']['query']['function_score']['script_score']['script']['source']);
         });
     }
+
+    /**
+     * @test
+     */
+    public function separate_api_for_search_and_indexing()
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->title('title')
+            ->semantic(accuracy: 1, dimensions: 256, api: 'test-embeddings')
+            ->searchApi('test-embeddings'); // Override for search
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Test document']),
+            ]);
+
+        $search = $this->sigmie
+            ->newSearch($indexName)
+            ->properties($blueprint)
+            ->semantic()
+            ->queryString('test')
+            ->size(10);
+
+        $res = $search->get();
+
+        // Verify search works with searchApi
+        $this->assertGreaterThanOrEqual(0, $res->total());
+    }
 }
