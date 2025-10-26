@@ -1,540 +1,372 @@
-## Filtering 
+# Filter Parser
 
-Creating boolean queries can be complex, especially when your primary goal is to filter results.
-To simplify this process, we've developed our own filtering language.
+The Filter Parser provides a human-readable query language for building complex Elasticsearch filters. Instead of manually constructing boolean queries, you write intuitive filter expressions that get parsed into optimized Elasticsearch queries.
 
-This language serves as a developer-friendly interface for constructing boolean queries, with the goal of reducing the likelihood of errors.
+## Why Use the Filter Parser?
 
-For instance, if you want to search for movies that are currently active, in stock, and belong to either the `action` or `horror` category, you can write:
+Creating boolean queries can be complex and error-prone. The Filter Parser simplifies this by providing:
 
-```sql
-is:active AND (category:"action" OR category:"horror") AND NOT stock:0
-```
+- **Intuitive syntax**: Write filters that read like natural language
+- **Type safety**: Automatic validation against your index mappings
+- **Error prevention**: Catches syntax errors before they reach Elasticsearch
+- **Developer friendly**: No need to understand Elasticsearch's boolean query DSL
 
-@warning
-It's important to note that filtering isn't possible on **all** mapping types.
+## Getting Started
 
-Visit the [Mapping](/docs/v0/mappings) section of this documentation for more details.
-@endwarning
+The Filter Parser requires your index properties to validate field types and ensure correct query construction.
 
-Now, let's delve deeper into the syntax and understand how to use it effectively.
-
-### Syntax
-
-Filter clauses can be combined using logical operators to create complex queries.
-
-Here are the operators you can use:
-* `AND`: Used to **combine two or more** filters. **Only documents that meet all conditions will be matched**.
-* `OR`: Used to match documents that meet **at least one of the conditions**.
-* `AND NOT`: Used to **exclude** documents that meet a certain condition.
-
-Using these operators effectively will help you create precise and powerful filter queries.
-
-Spaces are used to separate logical operators and filter clauses:
-
-```bash
-{filter_clause} AND {filter_clause}
-```
-
-To specify the order of execution, you can use **parentheses** to group clauses in a filter query.
-
-Consider this example:
-
-```sql
-is:active AND (category:"action" OR category:"horror") AND NOT stock:0
-```
-
-Here, the **AND** operator joins three distinct clauses:
-* `is:active`
-* `(category:"action" OR category:"horror")`
-* `NOT stock:0`
-
-The parentheses indicate that the **OR** operator applies only to the category field clauses, not the entire query.
-
-This query will return all items that are active, belong to either the "action" or "horror" categories, and are not out of stock.
-
-### Negative Filtering
-
-To construct a **negative** filter, prefix the filter value with `NOT`:
-
-```bash
-NOT {filter_clause}
-```
-
-For instance, to exclude documents in the "Sports" category:
-```sql
-NOT category:'Sports'
-```
-
-### Equals
-
-```bash
-{field}:"{value}"
-``` 
-
-This syntax filters for specific values. Use it when you need to narrow down your search based on a specific field value.
-
-The `{field}` placeholder represents the field name. 
-
-Consider this document structure:
-```json
-{
- "color": "..."
-}
-```
-
-To filter for documents with the color red:
-
-```sql
-color:'red'
-``` 
-
-For strings, the `{value}` must be enclosed in double `"` or single quotes `'`.
-You can escape quotes inside the `{value}` using a **backslash** `\`.
-
-### Boolean Field Filtering
-
-Boolean fields can be filtered using two different syntaxes, giving you flexibility in how you write your filter expressions.
-
-#### Direct Boolean Value Syntax
-
-You can filter boolean fields directly using `true` or `false` values:
-
-```bash
-{field}:true
-{field}:false
-```
-
-For example, given a document structure:
-```json
-{
-  "active": true,
-  "published": false
-}
-```
-
-You can filter for active documents:
-```sql
-active:true
-```
-
-Or filter for inactive documents:
-```sql
-active:false
-```
-
-#### Using Boolean Values in Complex Queries
-
-Boolean filters work seamlessly with logical operators:
-
-```sql
-# Find active and published documents
-active:true AND published:true
-
-# Find documents that are either active OR published
-active:true OR published:true
-
-# Find active documents that are NOT published
-active:true AND NOT published:true
-
-# Complex boolean filtering with other field types
-active:true AND category:"sports" AND stock>0
-```
-
-#### Boolean Values in Nested Objects
-
-Boolean filtering also works with nested object properties using dot notation:
-
-```sql
-# For object properties
-contact.active:true
-contact.is_verified:false
-
-# Combining nested boolean with other conditions
-contact.active:true AND contact.name:"John Doe"
-```
-
-For deeply nested structures, you can chain the dot notation:
-```sql
-user.profile.active:true
-user.settings.notifications:false
-```
-
-#### Boolean Values in Nested Fields
-
-For true nested fields (not object properties), use the curly brace syntax:
-
-```sql
-# Single boolean condition in nested field
-contact:{ active:true }
-
-# Multiple conditions in nested field
-contact:{ active:true AND verified:false }
-
-# Complex nested boolean filtering
-contact:{ active:true AND location:1km[51.16,13.49] }
-```
-
-#### Real-World Boolean Filtering Examples
-
-Based on practical use cases, here are some comprehensive examples:
-
-```sql
-# E-commerce product filtering
-active:true AND stock>0 AND (category:"electronics" OR category:"computers")
-
-# User management with nested object properties
-contact.is_active:true AND contact.is_verified:false AND contact.category:"premium"
-
-# Complex nested filtering with boolean conditions
-driver.vehicle:{ active:true AND model:"Canyonero" } AND driver.license:true
-
-# Multi-level boolean conditions
-contact:{ active:true AND verified:true } AND account.premium:true AND status:"confirmed"
-```
-
-### is & is_not
-
-The `is:` and `is_not:` operators provide an alternative, more semantic way to filter `boolean` fields.
-
-The `is` operator matches documents where the specified **boolean** field value is `true`.
-
-```bash
-is:{field}
-```
-
-Conversely, the `is_not` operator matches documents where the specified **boolean** field value is `false`.
-
-```bash
-is_not:{field}
-```
-
-For instance, consider the following document structure:
-```json
-{
-  "active": true
-}
-```
-
-In this case, you can use:
-
-```sql
-is:active
-```
-
-to match documents that are **active**, and:
-
-```sql
-is_not:active
-```
-
-to match documents that **are NOT** active.
-
-#### Equivalence Between Syntaxes
-
-The following filter expressions are equivalent:
-
-```sql
-# These all match documents where active=true
-active:true
-is:active
-
-# These all match documents where active=false  
-active:false
-is_not:active
-
-# These all exclude active documents
-NOT active:true
-NOT is:active
-active:false
-is_not:active
-```
-
-Choose the syntax that feels most natural for your use case. The `is:` and `is_not:` operators can make filters more readable, especially in complex queries:
-
-```sql
-# Using direct boolean syntax
-active:true AND published:true AND featured:false
-
-# Using semantic operators (equivalent)
-is:active AND is:published AND is_not:featured
-```
-
-### Important Notes for Boolean Filtering
-
-1. **No Quotes Required**: Boolean values (`true`/`false`) don't require quotes:
-   ```sql
-   # ✅ Correct
-   active:true
-   published:false
-   
-   # ⚠️ Also works, but unnecessary
-   active:"true"
-   published:"false"
-   ```
-
-2. **Case Sensitivity**: Boolean values are case-sensitive and must be lowercase:
-   ```sql
-   # ✅ Correct
-   active:true
-   active:false
-   
-   # ❌ Will not work as expected
-   active:True
-   active:FALSE
-   active:TRUE
-   ```
-
-3. **Type Validation**: The filter parser validates that boolean syntax is only used with actual boolean fields defined in your mappings.
-
-4. **Performance**: Boolean filters are typically very fast as they create efficient term queries in Elasticsearch.
-
-5. **Nested Field Behavior**: When using boolean filters in nested fields, each nested document is evaluated independently:
-   ```sql
-   # This matches any nested document where both conditions are true in the same nested object
-   contact:{ active:true AND verified:true }
-   
-   # This is different from object properties where conditions apply to the parent document
-   contact.active:true AND contact.verified:true
-   ```
-
-### In
-
-The `in` operator is useful when you need to filter a field for multiple values.
-
-```bash
-{field}:[{value1}, {value2}]
-```
-
-For instance, given the previous document structure, if you want to find documents with the **color** `red` or `blue`, you can use:
-
-```bash
-category:['red', 'blue']
-```
-
-### Wildcard Filtering
-
-You can use wildcard patterns to match partial values using the `*` character:
-
-```bash
-{field}:'*{pattern}'    # Match ending with pattern
-{field}:'{pattern}*'    # Match starting with pattern  
-{field}:'*{pattern}*'   # Match containing pattern
-```
-
-Examples:
-```sql
-# Match phone numbers ending with specific digits
-number:'*650'
-
-# Match phone numbers starting with area code
-number:'2353*'
-
-# Check for field existence (has any value)
-field_name:*
-
-# Check for field non-existence  
-NOT field_name:*
-```
-
-This is particularly useful for:
-- Partial phone number matching
-- Prefix/suffix searching on identifiers
-- Checking if fields have any value
-
-### Range Filtering
-
-Often, you may need to filter data within a certain range. This can be achieved using the **range operators**.
-
-Here is a list of **valid** range operators and their corresponding meanings:
-*  `>` - **greater than**.
-* `<` - **less than**.
-* `<=` - **less than or equal to**.
-* `>=` - **greater than or equal to**.
-
-The syntax for using **range operators** is as follows:
-
-```bash
-{field}{operator}{value} 
-```
-
-**Range operators** can be used for both **Dates** and **Numbers**.
-
-For instance, consider the following document structure:
 ```php
-{
- "created_at": "2023-08-01",
- "price": 199
-}
-```
-By using the filter:
-```sql
-created_at>="2023-05-01" AND created_at<="2023-10-01"
-```
-you can filter documents where the `created_at` date field is **greater than or equal to** `2023-05-01` and **less than or equal to** `2023-10-01`.
+use Sigmie\Parse\FilterParser;
+use Sigmie\Mappings\NewProperties;
 
-The same syntax can be used to filter within a specific **price range**.
+$props = new NewProperties;
+$props->keyword('category');
+$props->bool('active');
+$props->number('stock');
 
-```sql
-price>=100 AND price<=200
+$parser = new FilterParser($props());
+$query = $parser->parse('active:true AND category:"sports"');
+
+// Use the query with your search
+$results = $sigmie->query($indexName, $query)->get();
 ```
 
-### Between Range Syntax
+This example creates a filter that finds active documents in the sports category.
 
-For convenience, you can also use the **between** syntax with `..` (double dot) to specify ranges:
+## Basic Field Filtering
 
-```bash
-{field}:{from_value}..{to_value}
-```
+### Exact Match
 
-This is equivalent to using `>=` and `<=` operators but more concise:
+Filter for specific values using the colon operator:
 
 ```sql
-price:100..200
+category:"sports"
+color:'red'
 ```
 
-This is the same as writing:
+Both single and double quotes work. Use whichever feels natural:
+
 ```sql
-price>=100 AND price<=200
+name:"John Doe"
+name:'John Doe'  # Equivalent
 ```
 
-The between syntax works with both numbers and dates:
+### Numbers
+
+Numbers can be used with or without quotes:
+
+```sql
+price:100
+stock:50
+quantity:"25"  # Also works
+```
+
+### Boolean Values
+
+Filter boolean fields using `true` or `false`:
+
+```sql
+active:true
+published:false
+verified:true
+```
+
+Boolean values must be lowercase and don't require quotes.
+
+### Field Existence
+
+Check if a field has any value using the wildcard operator:
+
+```sql
+# Has a value
+email:*
+
+# Does not have a value
+NOT email:*
+```
+
+This is useful for finding documents with missing or populated fields.
+
+## Multiple Values (IN Operator)
+
+Match any of several values using array syntax:
+
+```sql
+category:["sports", "action", "horror"]
+color:['red', 'blue', 'green']
+status:["active", "pending"]
+```
+
+Arrays automatically trim whitespace:
+
+```sql
+# These are equivalent
+ids:['123', '456', '789']
+ids:[' 123 ', ' 456 ', ' 789 ']
+```
+
+**Note**: Empty arrays return no results:
+
+```sql
+category:[]  # Returns nothing
+```
+
+## Wildcard Matching
+
+Use the `*` character for partial matches:
+
+```sql
+# Match ending pattern
+phone:'*650'
+
+# Match starting pattern
+phone:'2353*'
+
+# Match containing pattern
+title:'*manager*'
+```
+
+Real-world example:
+
+```php
+$props = new NewProperties;
+$props->searchableNumber('phone');
+
+$parser = new FilterParser($props(), false);
+
+// Find phone numbers ending in 650
+$query = $parser->parse("phone:'*650'");
+```
+
+## Range Filtering
+
+### Comparison Operators
+
+Filter numeric and date ranges using comparison operators:
+
+```sql
+# Numbers
+price>=100
+price<=200
+stock>0
+
+# Dates
+created_at>="2023-05-01"
+created_at<="2023-08-01"
+```
+
+Available operators:
+- `>` - greater than
+- `<` - less than
+- `>=` - greater than or equal to
+- `<=` - less than or equal to
+
+### Between Syntax
+
+Use the `..` operator for inclusive ranges:
 
 ```sql
 # Number ranges
-price:100..500
+price:100..200
 stock:10..100
 
-# Date ranges  
-created_at:2023-01-01T00:00:00.000000+00:00..2023-12-31T23:59:59.999999+00:00
-last_activity:2024-01-01..2024-12-31
+# Date ranges
+created_at:"2023-01-01".."2023-12-31"
+last_activity:2024-01-01T00:00:00+00:00..2024-12-31T23:59:59+00:00
 ```
 
-## Value Quoting Rules
-
-### Numbers and Quotes
-
-Numbers can be used with or without quotes in most contexts:
+This is equivalent to:
 
 ```sql
-# Both are valid for number fields
-price:100
-price:"100"
-
-# Same for comparisons
-stock>=50
-stock>="50"
-
-# Range syntax
-price:100..200    # No quotes needed
+price:100..200
+# Same as:
+price>=100 AND price<=200
 ```
 
-### String Values
+Real-world example:
 
-String values should be quoted, but both single and double quotes are supported:
+```php
+$props = new NewProperties;
+$props->number('price');
+$props->date('created_at');
+
+$parser = new FilterParser($props());
+
+// Between syntax
+$query = $parser->parse('price:100..500');
+
+// Equivalent comparison operators
+$query = $parser->parse('price>=100 AND price<=500');
+```
+
+## Logical Operators
+
+Combine filters using logical operators.
+
+### AND Operator
+
+Match documents that satisfy **all** conditions:
 
 ```sql
-# Both are equivalent  
-category:"sports"
-category:'sports'
-
-# Complex strings with special characters
-job_title:"Chief Information Officer (CIO)"
-category:'crime & drama'
+active:true AND category:"sports" AND stock>0
 ```
 
-### Empty Values
+### OR Operator
 
-You can filter for empty values using empty quotes:
+Match documents that satisfy **at least one** condition:
 
 ```sql
-# Find documents with empty database field
-database:""
-database:''
-
-# Find documents with empty array
-tags:[]
+category:"action" OR category:"horror"
+status:"pending" OR status:"approved"
 ```
 
-### Escaping Special Characters
+### NOT Operator
 
-Use backslashes to escape quotes within quoted strings:
+Exclude documents matching a condition:
 
 ```sql
-description:"She said \"Hello World\""
-title:'It\'s working'
+NOT category:"sports"
+active:true AND NOT stock:0
 ```
 
+### Combining Operators
 
-## Sorting
+Use parentheses to control evaluation order:
 
-To further refine your search results, you can use our intuitive sorting language.
-
-Here's how you can use it:
-
-```bash
-_score rating:desc name:asc
-```
-
-In this example, the results are first sorted by the relevance score, then by rating in a descending order,
-and lastly by name in an ascending order.
-
-@info
-The `_score` is a unique sorting attribute that arranges the results in a descending order,
-based on their computed relevance score.
-@endinfo
-
-Sorting clauses are divided by spaces, and follow this syntax:
 ```sql
-{attribute}:{direction}
+active:true AND (category:"action" OR category:"horror") AND stock>0
 ```
 
-The `direction` can be either `asc` for ascending order or `desc` for descending order.
+This matches documents that are:
+- Active
+- In either the action OR horror category
+- In stock
 
-# Filtering Nested Properties
+**Important**: Multiple filters without operators will throw an error:
 
-When working with nested properties in your Elasticsearch documents, you can use a special syntax to filter based on nested field values. The syntax supports both simple and complex nested property filtering.
-
-## Basic Nested Property Filtering
-
-To filter nested properties, use the following syntax:
 ```sql
-property_name:{ field:"value" }
+# ✅ Correct
+color:'red' AND size:'large'
+
+# ❌ Throws ParseException
+color:'red' size:'large'
 ```
 
-For example, if you have a nested field called `subject_services` with `id` and `name` properties:
+## Complex Query Examples
+
+### E-commerce Product Filter
+
+```sql
+active:true AND stock>0 AND (category:"electronics" OR category:"computers") AND price:100..500
+```
+
+### User Activity Filter
+
+```sql
+(
+    (emails_sent>0 AND last_activity>="2024-01-01")
+    OR
+    (clicks>=5 AND visits>=10)
+)
+AND account_status:"active"
+```
+
+### Exclusion Filter
+
+```sql
+active:true AND NOT (category:"drama" OR category:"horror")
+```
+
+This finds active documents that are neither drama nor horror.
+
+## Object Properties
+
+For object fields (flattened structures), use dot notation:
+
+```sql
+contact.active:true
+contact.name:"John Doe"
+user.email:"john@example.com"
+```
+
+You can combine multiple object properties:
+
+```sql
+contact.active:true AND contact.email:"john@example.com" AND contact.verified:false
+```
+
+Deep object paths work seamlessly:
+
+```sql
+user.profile.settings.notifications:true
+order.shipping.address.city:"Berlin"
+```
+
+Example with all field types:
+
+```php
+$props = new NewProperties;
+$props->object('contact', function (NewProperties $p) {
+    $p->bool('active');
+    $p->name('name');
+    $p->email('email');
+    $p->number('age');
+    $p->keyword('status');
+});
+
+$parser = new FilterParser($props());
+
+$query = $parser->parse(
+    'contact.active:true AND contact.name:"Alice" AND contact.age>=25'
+);
+```
+
+## Nested Field Filtering
+
+For true nested fields (arrays of objects), use curly brace syntax:
+
+```sql
+contact:{ active:true }
+contact:{ name:"John Doe" AND verified:true }
+```
+
+### Single Condition
+
+```sql
+subject_services:{ id:"23" }
+```
+
+Matches documents like:
 
 ```php
 [
     'subject_services' => [
         ['name' => 'BMAT', 'id' => 23],
-        ['name' => 'IMAT', 'id' => 24]
+        ['name' => 'IMAT', 'id' => 24],
     ]
 ]
 ```
 
-You can filter for specific values like this:
-```sql
-subject_services:{ id:"23" }
-```
+### Multiple Conditions
 
-## Multiple Conditions in Nested Filters
-
-You can combine multiple conditions within a nested filter using AND/OR operators:
+All conditions must match within the **same** nested object:
 
 ```sql
-subject_services:{ id:"23" AND name:"BMAT" }
+driver.vehicle:{ make:"Powell Motors" AND model:"Canyonero" }
 ```
 
-## Deep Nested Properties
+This ensures both `make` and `model` match in the same vehicle, not across different vehicles.
 
-For deeply nested properties (nested fields within nested fields), you can use multiple levels of curly braces:
+### Deep Nesting
 
-```
+Nest filters for multi-level structures:
+
+```sql
 contact:{ address:{ city:"Berlin" AND marker:"X" } }
 ```
 
-This would match documents with this structure:
+Matches:
+
 ```php
 [
     'contact' => [
@@ -542,70 +374,71 @@ This would match documents with this structure:
             [
                 'city' => 'Berlin',
                 'marker' => 'X'
+            ],
+            [
+                'city' => 'Hamburg',
+                'marker' => 'A'
             ]
         ]
     ]
 ]
 ```
 
-## Object Properties vs Nested Properties
+### Object vs Nested Syntax
 
-It's important to note the difference between object properties and nested properties:
-
-- **For object properties**, use dot notation:
-```sql
-contact.active:true
-contact.name:"John Doe"
-contact.location.lat:40.7128
-```
-
-- **For nested properties**, use the curly brace syntax:
-```sql
-contact:{ active:true }
-contact:{ name:"John Doe" AND location:1km[40.7128,-74.0060] }
-```
-
-### Mixed Nested Path Syntax
-
-For complex nested structures, you can also use the mixed dot and curly brace syntax:
+**Objects** use dot notation (flat structure):
 
 ```sql
-# For nested fields within nested fields
-driver.vehicle:{ make:"Powell Motors" AND model:"Canyonero" }
-
-# For deeply nested structures
-subject_services:{ id:"23" AND name:"BMAT" }
+contact.active:true AND contact.city:"Berlin"
 ```
 
-## Combining Nested Filters
-
-You can combine nested filters with other filter types using AND/OR operators:
+**Nested** uses curly braces (array structure with relationship preservation):
 
 ```sql
-subject_services:{ id:"23" } AND category:"active"
+contact:{ active:true AND city:"Berlin" }
 ```
 
-Remember that nested filters are powerful but should be used judiciously, as they can impact query performance, especially with deeply nested structures or complex conditions.
+The nested syntax ensures conditions match within the same array element.
 
-# Geo-Location Filtering
+Real-world example:
 
-Elasticsearch provides powerful geo-location filtering capabilities that allow you to search for documents within a specific distance from a given point. 
+```php
+$props = new NewProperties;
+$props->nested('driver', function (NewProperties $p) {
+    $p->name('name');
+    $p->nested('vehicle', function (NewProperties $p) {
+        $p->keyword('make');
+        $p->keyword('model');
+    });
+});
 
-## Basic Syntax
+$parser = new FilterParser($props());
 
-The basic syntax for geo-location filtering is:
+// Find drivers with specific vehicle
+$query = $parser->parse(
+    "driver.vehicle:{ make:'Powell Motors' AND model:'Canyonero' }"
+);
 ```
+
+## Geo-Location Filtering
+
+Filter documents by geographic proximity.
+
+### Basic Syntax
+
+```sql
 location:distance[latitude,longitude]
 ```
 
-Where:
-- `location` is your geo-point field name
-- `distance` is the radius with a unit (see supported units below)
-- `latitude` and `longitude` are the coordinates of the center point
+Example:
 
-## Distance Units
+```sql
+location:1km[51.49,13.77]
+location:5mi[40.7128,-74.0060]
+```
 
-You can specify distances using various units:
+### Supported Distance Units
+
 - Kilometers: `km`
 - Miles: `mi`
 - Meters: `m`
@@ -615,21 +448,10 @@ You can specify distances using various units:
 - Centimeters: `cm`
 - Inches: `in`
 
-Examples:
-```
-location:70km[52.31,8.61]
-location:5mi[-33.8688,151.2093]
-location:100m[40.7128,-74.0060]
-location:500yd[35.6762,139.6503]
-location:1000ft[55.7558,37.6173]
-location:10nmi[-22.9068,-43.1729]
-location:50cm[-1.2921,36.8219]
-location:3in[41.9028,12.4964]
-```
+### Document Structure
 
-## Document Structure
+Store locations as geo-points:
 
-Your documents should store geo-points in this format:
 ```php
 [
     'location' => [
@@ -639,122 +461,270 @@ Your documents should store geo-points in this format:
 ]
 ```
 
-## Example Usage
+### Real-World Examples
 
-To find documents within 1 kilometer of a specific point:
-```
-location:1km[51.49,13.77]
-```
-
-## Combining with Other Filters
-
-You can combine geo-location filters with other filters using AND/OR operators:
-```
-location:1km[51.49,13.77] AND is:active
-```
-
-## Important Notes
-
-1. Distance of Zero:
-   - Using `location:0km[lat,lon]` will not return any results, even for exact matches
-   - Always use a small positive distance for exact location matching
-
-2. Precision:
-   - You can use decimal points in coordinates for more precise locations
-   - Example: `location:2km[51.16,13.49]` vs `location:2km[51,13]`
-
-3. Performance:
-   - Geo-location queries can be computationally expensive
-   - Consider using appropriate distances based on your use case
-   - Very large distances (like `2000000000mi`) might impact performance
-
-## Nested Geo-Location Filters
-
-You can also use geo-location filters with nested fields:
-```
-contact:{ location:1km[51.16,13.49] }
-```
-
-For a document structure like:
 ```php
-[
-    'contact' => [
-        'location' => [
-            'lat' => 51.16,
-            'lon' => 13.49
-        ]
-    ]
-]
+$props = new NewProperties;
+$props->geoPoint('location');
+
+$parser = new FilterParser($props());
+
+// Find locations within 100km
+$query = $parser->parse('location:100km[51.34,12.32]');
+
+// Combine with other filters
+$query = $parser->parse('location:1km[51.49,13.77] AND active:true');
 ```
 
-Remember that geo-location filtering is particularly useful for:
-- Finding nearby locations
-- Territory-based searches
-- Distance-based filtering
-- Geographic boundary queries
+### Nested Geo-Locations
 
-## Important Limitations and Best Practices
+Geo-filters work inside nested fields:
 
-### Syntax Requirements
+```sql
+contact:{ active:true AND location:1km[51.16,13.49] }
+```
 
-1. **Logical Operators Must Be Separated**: Always separate filter clauses with proper logical operators:
-   ```sql
-   # ✅ Correct
-   color:'red' AND category:'sports'
-   
-   # ❌ Incorrect - will throw ParseException
-   color:'red' color:'sports'
-   ```
+**Important**: Zero distance returns no results, even for exact matches. Use a small positive value:
 
-2. **Property Validation**: The filter parser validates that all referenced fields exist in your mappings. Using non-existent fields will result in errors.
+```sql
+# ❌ Returns nothing
+location:0km[51.16,13.49]
 
-3. **Complex Nested Filters**: There are limits to nesting depth to prevent performance issues:
-   ```sql
-   # ✅ Reasonable nesting
-   (category:'action' OR category:'horror') AND stock>0
-   
-   # ❌ Excessive nesting (will throw ParseException)
-   (((((((((((((((((NOT field:'value'))))))))))))))))
-   ```
+# ✅ Use small distance
+location:1m[51.16,13.49]
+```
 
-### Performance Considerations
+## Empty Values
 
-1. **Geo-location Distance**: Very large distances can impact performance:
-   ```sql
-   # ✅ Reasonable distance
-   location:100km[51.49,13.77]
-   
-   # ⚠️ Very large distance - may be slow  
-   location:2000000000mi[51.49,13.77]
-   ```
+Filter for empty or missing values.
 
-2. **Zero Distance**: Using zero distance in geo-location filters returns no results, even for exact matches:
-   ```sql
-   # ❌ Returns no results
-   location:0km[51.16,13.49]
-   
-   # ✅ Use small positive distance instead
-   location:1m[51.16,13.49]
-   ```
+### Empty Strings
 
-3. **Empty Arrays**: Empty `IN` arrays return no results:
-   ```sql
-   # Returns no documents
-   category:[]
-   ```
+```sql
+database:""
+database:''
+```
 
-### Quote Handling
+### Empty Arrays
 
-1. **Parentheses in Quotes**: Parentheses inside quoted strings are preserved and don't affect parsing:
-   ```sql
-   # ✅ Correctly handled
-   title:"Chief Executive Officer (CEO)"
-   job_titles:["Chief Information Officer (CIO)"]
-   ```
+```sql
+tags:[]
+categories:[]
+```
 
-2. **Whitespace Trimming**: Values in arrays are automatically trimmed:
-   ```sql
-   # These are equivalent
-   ids:['123', '456', '789']
-   ids:[' 123 ', ' 456 ', ' 789 ']
-   ```
+**Note**: Empty arrays in filters return no results.
+
+## Special Characters
+
+### Escaping Quotes
+
+Use backslashes to escape quotes inside strings:
+
+```sql
+description:"She said \"Hello World\""
+title:'It\'s working'
+```
+
+### Dashes and Spaces
+
+Dashes and spaces in values require quotes:
+
+```sql
+status:'in-progress'
+category:"crime & drama"
+title:"Chief Information Officer (CIO)"
+```
+
+Parentheses inside quotes are preserved:
+
+```sql
+job_title:"Chief Executive Officer (CEO)"
+industry:["Renewables & Environment"]
+```
+
+## Error Handling
+
+### Parse Exceptions
+
+The parser validates syntax and throws `ParseException` for invalid queries:
+
+```php
+use Sigmie\Parse\ParseException;
+
+try {
+    $query = $parser->parse('color:"red" color:"blue"'); // Missing operator
+} catch (ParseException $e) {
+    // Handle syntax error
+}
+```
+
+Common errors:
+- Missing logical operators between clauses
+- Non-existent fields in mappings
+- Excessive nesting depth
+- Mismatched parentheses
+
+### Field Validation
+
+The parser validates fields against your mappings:
+
+```php
+$props = new NewProperties;
+$props->keyword('category');
+
+$parser = new FilterParser($props());
+
+// ✅ Works - field exists
+$query = $parser->parse('category:"sports"');
+
+// ❌ Error - field doesn't exist
+$query = $parser->parse('subject_service:{ id:"23" }');
+
+// Check for errors
+if (!empty($parser->errors())) {
+    // Handle validation errors
+}
+```
+
+## Performance Considerations
+
+### Nesting Depth
+
+Avoid excessive nesting to maintain performance:
+
+```sql
+# ✅ Reasonable complexity
+(category:'action' OR category:'horror') AND active:true
+
+# ❌ Excessive nesting (throws ParseException)
+(((((((((((((((((NOT field:'value'))))))))))))))))
+```
+
+### Geo-Location Distance
+
+Large distances can impact performance:
+
+```sql
+# ✅ Reasonable
+location:100km[51.49,13.77]
+
+# ⚠️ May be slow
+location:2000000000mi[51.49,13.77]
+```
+
+### Boolean Filters
+
+Boolean filters are typically fast and efficient:
+
+```sql
+active:true AND verified:true AND published:false
+```
+
+## Complete Real-World Examples
+
+### Product Search
+
+```php
+$props = new NewProperties;
+$props->keyword('category');
+$props->bool('active');
+$props->number('stock');
+$props->number('price');
+
+$parser = new FilterParser($props());
+
+$query = $parser->parse(
+    'active:true AND stock>0 AND (category:"electronics" OR category:"computers") AND price:100..500'
+);
+
+$results = $sigmie->query('products', $query)->get();
+```
+
+### User Management
+
+```php
+$props = new NewProperties;
+$props->object('contact', function (NewProperties $p) {
+    $p->bool('active');
+    $p->bool('verified');
+    $p->email('email');
+    $p->geoPoint('location');
+});
+
+$parser = new FilterParser($props());
+
+$query = $parser->parse(
+    'contact.active:true AND contact.verified:false AND contact.location:10km[51.16,13.49]'
+);
+
+$results = $sigmie->query('users', $query)->get();
+```
+
+### Advanced Nested Filtering
+
+```php
+$props = new NewProperties;
+$props->nested('driver', function (NewProperties $p) {
+    $p->name('name');
+    $p->nested('vehicle', function (NewProperties $p) {
+        $p->keyword('make');
+        $p->keyword('model');
+        $p->bool('active');
+    });
+});
+
+$parser = new FilterParser($props());
+
+$query = $parser->parse(
+    "driver.vehicle:{ make:'Powell Motors' AND model:'Canyonero' AND active:true }"
+);
+
+$results = $sigmie->query('drivers', $query)->get();
+```
+
+### Time-Based Activity Filter
+
+```php
+$props = new NewProperties;
+$props->date('last_activity');
+$props->number('emails_click_count');
+$props->number('finished_surveys_count');
+$props->number('account_id');
+
+$parser = new FilterParser($props());
+
+$query = $parser->parse(
+    "(emails_click_count:1..3 AND finished_surveys_count>=5)
+    AND last_activity>='2024-02-12T00:00:00+00:00'
+    AND last_activity<='2024-03-13T23:59:59+00:00'
+    AND account_id:'2'"
+);
+
+$results = $sigmie->query('activity', $query)->get();
+```
+
+## Syntax Quick Reference
+
+| Operation | Syntax | Example |
+|-----------|--------|---------|
+| Exact match | `field:"value"` | `category:"sports"` |
+| Number | `field:123` | `price:100` |
+| Boolean | `field:true` | `active:true` |
+| Field exists | `field:*` | `email:*` |
+| IN operator | `field:[val1,val2]` | `status:["active","pending"]` |
+| Wildcard | `field:'*pattern*'` | `phone:'*650'` |
+| Range | `field:min..max` | `price:100..500` |
+| Greater than | `field>value` | `stock>0` |
+| Less than | `field<value` | `price<100` |
+| AND | `clause AND clause` | `active:true AND stock>0` |
+| OR | `clause OR clause` | `cat:"a" OR cat:"b"` |
+| NOT | `NOT clause` | `NOT category:"sports"` |
+| Object | `obj.field:value` | `contact.active:true` |
+| Nested | `field:{condition}` | `contact:{active:true}` |
+| Geo-location | `field:dist[lat,lon]` | `location:1km[51,13]` |
+
+## Next Steps
+
+- Learn about [Search](/docs/search) to use filters in queries
+- Explore [Mappings](/docs/mappings) to define filterable fields
+- Read about [Aggregations](/docs/aggregations) for faceted search
