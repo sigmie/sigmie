@@ -1,3 +1,12 @@
+---
+title: Token Filters
+short_description: Transform and filter tokens with stemming, synonyms, and more
+keywords: [token filters, stemming, synonyms, lowercase, stopwords]
+category: Text Analysis
+order: 3
+related_pages: [tokenizers, analysis, char-filters, language]
+---
+
 ## Token Filters
 
 Filters are applied in the order that you specify them. Here are some examples of how each filter works:

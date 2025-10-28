@@ -1,3 +1,12 @@
+---
+title: Facets
+short_description: Add faceted navigation and filters to search results
+keywords: [facets, filters, faceted search, navigation, refinement]
+category: Features
+order: 3
+related_pages: [aggregations, search, filter-parser]
+---
+
 # Facets
 
 ## Introduction

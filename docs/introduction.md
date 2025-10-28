@@ -1,3 +1,12 @@
+---
+title: Introduction
+short_description: Learn what Sigmie is and when to use it for Elasticsearch search
+keywords: [introduction, overview, sigmie, elasticsearch, search library, php]
+category: Getting Started
+order: 1
+related_pages: [installation, quick-start, core-concepts]
+---
+
 # Introduction
 
 ## What is Sigmie?

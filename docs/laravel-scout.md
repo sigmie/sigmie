@@ -1,3 +1,12 @@
+---
+title: Laravel Scout
+short_description: Integrate Sigmie with Laravel Scout for Eloquent model search
+keywords: [laravel scout, laravel, eloquent, integration, scout driver]
+category: Integrations
+order: 1
+related_pages: [installation, search, document]
+---
+
 # Introduction
 
 Elasticsearch Scout by Sigmie is a driver for Elasticsearch that integrates with [Laravel Scout](https://laravel.com/docs/9.x/scout). It provides a simple and efficient way to add full-text search to your [Eloquent models](https://laravel.com/docs/9.x/eloquent) using Elasticsearch.

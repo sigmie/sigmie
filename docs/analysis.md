@@ -1,3 +1,12 @@
+---
+title: Text Analysis
+short_description: Configure analyzers, tokenizers, and filters for text processing
+keywords: [analysis, analyzers, text processing, tokenization, elasticsearch]
+category: Text Analysis
+order: 1
+related_pages: [tokenizers, token-filters, char-filters, language]
+---
+
 ## Introduction
 The analysis is the process that separates Elasticsearch from a traditional database. To accomplish this impressive speed when searching one word in thousands of records, work must be done before the search happens.
 

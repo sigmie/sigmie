@@ -1,3 +1,12 @@
+---
+title: RAG
+short_description: Combine search with LLMs for retrieval-augmented generation
+keywords: [rag, retrieval augmented generation, llm, ai, openai, chatgpt]
+category: Features
+order: 5
+related_pages: [semantic-search, recommendations, search]
+---
+
 # RAG (Retrieval-Augmented Generation)
 
 ## What is RAG?

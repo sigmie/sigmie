@@ -1,3 +1,12 @@
+---
+title: Search Templates
+short_description: Create reusable search templates for common queries
+keywords: [templates, search templates, reusable queries, parameterized search]
+category: Advanced
+order: 2
+related_pages: [search, query]
+---
+
 # Template
 
 ```php

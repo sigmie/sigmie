@@ -1,3 +1,12 @@
+---
+title: Character Filters
+short_description: Pre-process text before tokenization with character filters
+keywords: [char filters, character filters, html strip, char mapping, preprocessing]
+category: Text Analysis
+order: 4
+related_pages: [tokenizers, token-filters, analysis]
+---
+
 ## Introduction
 Char filters are filters applied to texts **before** they reach the **Tokenizer** and they become **Tokens**. 
 

@@ -1,3 +1,12 @@
+---
+title: Mappings & Properties
+short_description: Define field types and mappings for your documents
+keywords: [mappings, properties, field types, text, keyword, number, schema]
+category: Core Concepts
+order: 4
+related_pages: [document, index, search, analysis]
+---
+
 ## Introduction
 
 Sigmie includes Elasticsearch native fields like **Keyword** and **Text** (for unstructured text), as well as high-level fields such as **Name**, **Tags**, or **Category**.

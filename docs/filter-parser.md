@@ -1,3 +1,12 @@
+---
+title: Filter Parser
+short_description: Parse human-readable filter expressions into Elasticsearch queries
+keywords: [filter parser, filters, query parser, boolean queries, syntax]
+category: Utilities
+order: 1
+related_pages: [search, sort-parser, facets]
+---
+
 # Filter Parser
 
 The Filter Parser provides a human-readable query language for building complex Elasticsearch filters. Instead of manually constructing boolean queries, you write intuitive filter expressions that get parsed into optimized Elasticsearch queries.

@@ -1,3 +1,12 @@
+---
+title: Indices
+short_description: Create and manage Elasticsearch indices to organize your documents
+keywords: [index, indices, create index, documents, elasticsearch]
+category: Core Concepts
+order: 2
+related_pages: [document, mappings, core-concepts]
+---
+
 ## Introduction
 Suppose you want to store a **Fairy Tale** in an SQL database. You would first need to create a `users` table, then define columns like **name** and **category**.  
 

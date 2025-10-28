@@ -1,3 +1,12 @@
+---
+title: Quick Start
+short_description: Build your first search in 5 minutes with index creation and document search
+keywords: [quick start, tutorial, first search, getting started, index, search]
+category: Getting Started
+order: 3
+related_pages: [installation, introduction, search, document]
+---
+
 # Quick Start
 
 Get your first Sigmie search working in 5 minutes. You'll create an index, add documents, and build a search that handles typos and filtering.
