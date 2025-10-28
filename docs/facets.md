@@ -1,274 +1,224 @@
-# Facets and Facet Parser
+# Facets
 
-Facets provide a powerful way to create interactive search experiences by allowing users to refine their searches through categorized filters and aggregated data insights. Sigmie's faceting system supports both simple term facets and complex numerical/date histogram facets with advanced filtering logic.
+## Introduction
 
-## What are Facets?
+When users search for "laptop" and see 1,247 results, they need a way to narrow down the options. Do they want Apple or Dell? Under $500 or premium models? This is where facets come in.
 
-Facets are aggregated summaries of your data that help users understand the distribution of values in their search results. They're commonly used in e-commerce sites for filtering by categories, price ranges, brands, and other attributes.
+Facets show aggregated summaries alongside your search results—think of the sidebar filters on Amazon displaying "Brand: Apple (45), Dell (32), HP (28)" or "Price Range: $0-$500 (124), $500-$1000 (89)". Users can click these to refine their search without typing new queries.
 
-**Example Use Cases:**
-- **E-commerce**: Filter products by color, size, brand, price range
-- **Content Management**: Filter articles by category, author, publication date
-- **Analytics**: Group data by regions, time periods, user segments
+Sigmie automatically generates facets from your index properties. Define a `brand` category field, request it in `facets('brand')`, and you'll get back counts for every brand in your results. The same works for prices (with min/max and histograms), ratings (with statistics), and any keyword or numeric field.
 
-## Basic Facet Syntax
+## Quick Start
 
-The simplest way to request facets is using the `facets()` method on your search query:
+Add facets to your search by specifying field names in the `facets()` method:
 
 ```php
 use Sigmie\Mappings\NewProperties;
 
-// Define your field mappings
 $blueprint = new NewProperties;
-$blueprint->category('color');
-$blueprint->category('size'); 
+$blueprint->category('brand');
 $blueprint->price();
 
-// Create index with mappings
-$this->sigmie->newIndex($indexName)
+$sigmie->newIndex('products')
     ->properties($blueprint)
     ->create();
 
-// Request facets for specific fields
-$searchResponse = $this->sigmie->newSearch($indexName)
+$response = $sigmie->newSearch('products')
     ->properties($blueprint())
-    ->queryString('shoes')
-    ->facets('color size price')  // Space-separated field names
+    ->queryString('laptop')
+    ->facets('brand price:100')
     ->get();
 
-// Access facet results
-$facets = $searchResponse->json('facets');
+$facets = $response->json('facets');
+// Returns: ['brand' => ['Apple' => 5, 'Dell' => 3], 'price' => ...]
 ```
 
-## Field-Specific Facet Configuration
+Facets are returned alongside search results, showing counts and distributions for the specified fields.
 
-### Category/Keyword Facets
+## Facet Types
 
-Category and keyword fields produce term-based facets showing the distribution of values:
+### Term Facets
+
+Category and keyword fields return counts for each unique value:
 
 ```php
 $blueprint = new NewProperties;
 $blueprint->category('brand');
-$blueprint->keyword('type');
+$blueprint->keyword('color');
 
-// Add documents
-$docs = [
-    new Document(['brand' => 'Nike', 'type' => 'sneakers']),
-    new Document(['brand' => 'Nike', 'type' => 'boots']),
-    new Document(['brand' => 'Adidas', 'type' => 'sneakers']),
-];
-
-// Get facets
-$searchResponse = $this->sigmie->newSearch($indexName)
+$response = $sigmie->newSearch('products')
     ->properties($blueprint())
-    ->queryString('')
-    ->facets('brand type')
+    ->queryString('shoes')
+    ->facets('brand color')
     ->get();
 
-// Result structure:
-$facets = $searchResponse->json('facets');
-// $facets['brand'] = ['Nike' => 2, 'Adidas' => 1]
-// $facets['type'] = ['sneakers' => 2, 'boots' => 1]
+$facets = $response->json('facets');
+// ['brand' => ['Nike' => 15, 'Adidas' => 12], 'color' => ['black' => 10, 'white' => 8]]
 ```
+
+Both `category()` and `keyword()` fields produce term facets. Use `category()` for categorical data (departments, brands) and `keyword()` for exact-match strings.
 
 ### Price Facets
 
-Price fields automatically generate histogram facets with min/max values and distribution buckets:
+Price fields return min/max values and a histogram distribution:
 
 ```php
 $blueprint = new NewProperties;
-$blueprint->price(); // Creates a 'price' field
+$blueprint->price();
 
-$docs = [
-    new Document(['price' => 100]),
-    new Document(['price' => 150]), 
-    new Document(['price' => 200]),
-    new Document(['price' => 400]),
-];
-
-// Request price facets with interval
-$searchResponse = $this->sigmie->newSearch($indexName)
+$response = $sigmie->newSearch('products')
     ->properties($blueprint())
-    ->queryString('')
-    ->facets('price:100')  // 100 is the histogram interval
+    ->queryString('laptop')
+    ->facets('price:100')  // $100 interval
     ->get();
 
 $props = $blueprint();
-$facets = $props['price']->facets($searchResponse->facetAggregations());
+$priceFacets = $props['price']->facets($response->facetAggregations());
 
-// Result structure:
-// $facets = [
-//     'min' => 100,
-//     'max' => 400, 
+// [
+//     'min' => 299,
+//     'max' => 1499,
 //     'histogram' => [
-//         100 => 1,   // 1 product at $100
-//         200 => 2,   // 2 products at $150-200 range  
-//         300 => 0,   // 0 products in this range
-//         400 => 1,   // 1 product at $400
+//         200 => 3,   // 3 products in $200-299 range
+//         300 => 8,   // 8 products in $300-399 range
+//         400 => 5,
+//         500 => 2,
+//         ...
 //     ]
 // ]
 ```
 
-### Number Field Facets
+The interval parameter (`:100`) determines bucket size. Use larger intervals for wider price ranges and smaller intervals for precise distributions.
 
-Number fields provide statistical facets with count, min, max, average, and sum:
+### Number Facets
+
+Number fields provide statistical aggregations:
 
 ```php
 $blueprint = new NewProperties;
 $blueprint->number('rating');
 
-// Get statistical facets
-$searchResponse = $this->sigmie->newSearch($indexName)
+$response = $sigmie->newSearch('products')
     ->properties($blueprint())
-    ->queryString('')
+    ->queryString('laptop')
     ->facets('rating')
     ->get();
 
 $props = $blueprint();
-$facets = $props['rating']->facets($searchResponse->facetAggregations());
+$ratingStats = $props['rating']->facets($response->facetAggregations());
 
-// Result structure:
-// $facets = [
-//     'count' => 100,
+// [
+//     'count' => 127,
 //     'min' => 1.0,
 //     'max' => 5.0,
-//     'avg' => 4.2,
-//     'sum' => 420.0
+//     'avg' => 4.3,
+//     'sum' => 546.1
 // ]
 ```
 
-### Text Field Facets
+Statistical facets are perfect for displaying metrics in analytics dashboards or showing aggregate information.
 
-Text fields can be configured to provide keyword-based facets:
+### Text Facets
+
+Text fields support faceting when configured with a keyword sub-field:
 
 ```php
 $blueprint = new NewProperties;
-$blueprint->text('title')->keyword(); // Enable keyword sub-field for facets
+$blueprint->text('author')->keyword();
 
-$searchResponse = $this->sigmie->newSearch($indexName)
+$response = $sigmie->newSearch('articles')
     ->properties($blueprint())
-    ->queryString('')
-    ->facets('title')
+    ->queryString('technology')
+    ->facets('author')
     ->get();
 
 $props = $blueprint();
-$facets = $props['title']->facets($searchResponse->facetAggregations());
-
-// Result: Term distribution for exact title matches
-// $facets = ['Product A' => 5, 'Product B' => 3, ...]
+$authorFacets = $props['author']->facets($response->facetAggregations());
+// ['John Doe' => 15, 'Jane Smith' => 12, ...]
 ```
 
-## Advanced Facet Logic: Conjunctive vs Disjunctive
+The `keyword()` modifier creates an exact-match sub-field for aggregation while preserving full-text search on the main field.
 
-Sigmie supports two types of facet filtering logic that dramatically affect how multiple filters interact:
+## Filtering with Facets
+
+### Basic Filtering
+
+Combine facets with filters to create interactive filtering:
+
+```php
+$response = $sigmie->newSearch('products')
+    ->properties($blueprint())
+    ->queryString('laptop')
+    ->filters("brand:'Apple' price:500..1500")
+    ->facets('brand category price:100')
+    ->get();
+```
+
+The `filters()` method applies global filters to both results and facet counts.
+
+### Facet-Specific Filters
+
+Pass filters as the second argument to `facets()`:
+
+```php
+$response = $sigmie->newSearch('products')
+    ->properties($blueprint())
+    ->queryString('laptop')
+    ->facets('brand category color', "brand:'Apple' category:'electronics'")
+    ->get();
+```
+
+These filters affect both search results and facet aggregations.
+
+## Facet Logic: Conjunctive vs Disjunctive
 
 ### Disjunctive Facets (OR Logic)
 
-Disjunctive facets use OR logic within the same field and AND logic between different fields. This is the most common e-commerce pattern.
+Disjunctive faceting allows multiple values within the same field using OR logic. This is the standard e-commerce pattern:
 
 ```php
 $blueprint = new NewProperties;
 $blueprint->category('color')->facetDisjunctive();
-$blueprint->category('size')->facetDisjunctive(); 
-$blueprint->price();
+$blueprint->category('size')->facetDisjunctive();
 
-// Documents with multiple colors
-$docs = [
-    new Document(['color' => ['red', 'blue'], 'size' => 'lg', 'price' => 100]),
-    new Document(['color' => 'red', 'size' => 'lg', 'price' => 150]),
-    new Document(['color' => 'blue', 'size' => 'lg', 'price' => 200]),
-];
-
-// Apply multiple color filters (OR logic) and size filter (AND logic)
-$searchResponse = $this->sigmie->newSearch($indexName)
+$response = $sigmie->newSearch('products')
     ->properties($blueprint())
-    ->queryString('')
-    ->facets('color size', "color:'red' color:'blue' size:'lg' price:100..200")
+    ->queryString('shirt')
+    ->facets('color size', "color:'red' color:'blue' size:'lg'")
     ->get();
-
-// Results: All 3 documents match because:
-// - (red OR blue) AND (size = lg) AND (price 100-200)
-// - Document 1: has both red+blue colors ✓
-// - Document 2: has red color ✓  
-// - Document 3: has blue color ✓
 ```
+
+With disjunctive faceting:
+- Multiple color selections use OR logic: `color:'red' OR color:'blue'`
+- Different fields use AND logic: `(color) AND (size)`
+- Both "red" and "blue" remain visible in color facets
+- Results include products matching either red OR blue in large size
 
 ### Conjunctive Facets (AND Logic)
 
-Conjunctive facets use AND logic for all filters, requiring documents to match ALL specified values.
+Conjunctive faceting requires ALL specified values to match:
 
 ```php
 $blueprint = new NewProperties;
 $blueprint->category('color')->facetConjunctive();
-$blueprint->category('size')->facetConjunctive();
+$blueprint->category('material')->facetConjunctive();
 
-// Same documents as above
-$searchResponse = $this->sigmie->newSearch($indexName)
+$response = $sigmie->newSearch('products')
     ->properties($blueprint())
-    ->queryString('')
-    ->facets('color size', filters: "color:'red' color:'blue' price:100..200")
+    ->queryString('shirt')
+    ->facets('color material', "color:'red' color:'blue'")
     ->get();
-
-// Results: Only 1 document matches because:
-// - red AND blue AND (price 100-200)
-// - Only Document 1 has BOTH red AND blue colors ✓
-// - Documents 2 & 3 have only one color each ✗
 ```
 
-## Nested Field Facets
+With conjunctive faceting:
+- Multiple selections use AND logic: `color:'red' AND color:'blue'`
+- Only products with both red AND blue colors match
+- Facet counts narrow as more filters are applied
+- Useful for multi-attribute matching
 
-Sigmie supports facets on nested fields with different syntax for different nesting types:
+### Facet Exclusion
 
-### Simple Nested Fields
-
-```php
-$blueprint = new NewProperties;
-$blueprint->nested('shirt', function (NewProperties $blueprint) {
-    $blueprint->price();
-    $blueprint->keyword('color');
-});
-
-$docs = [
-    new Document(['shirt' => ['price' => 500, 'color' => 'red']]),
-    new Document(['shirt' => ['price' => 400, 'color' => 'blue']]),
-];
-
-// Request nested facets
-$searchResponse = $this->sigmie->newSearch($indexName)
-    ->properties($blueprint())
-    ->queryString('')
-    ->facets('shirt.price:100 shirt.color')
-    ->get();
-
-$props = $blueprint();
-$priceFacets = $props->get('shirt.price')->facets($searchResponse->facetAggregations());
-$colorFacets = $props->get('shirt.color')->facets($searchResponse->facetAggregations());
-```
-
-### Deep Nested Fields
-
-```php
-$blueprint = new NewProperties;
-$blueprint->nested('shirt', function (NewProperties $blueprint) {
-    $blueprint->nested('red', function (NewProperties $blueprint) {
-        $blueprint->price();
-    });
-});
-
-// Request deeply nested price facets
-$searchResponse = $this->sigmie->newSearch($indexName)
-    ->properties($blueprint())
-    ->queryString('')
-    ->facets('shirt.red.price:100')
-    ->get();
-
-$props = $blueprint();
-$facets = $props->get('shirt.red.price')->facets($searchResponse->facetAggregations());
-```
-
-## Facet Exclusion Logic
-
-Disjunctive facets support advanced exclusion logic where applied filters don't affect the facet counts for the same field:
+Disjunctive facets support exclusion logic where a field's filters don't affect its own facet counts:
 
 ```php
 $blueprint = new NewProperties;
@@ -276,182 +226,277 @@ $blueprint->category('color')->facetDisjunctive();
 $blueprint->category('size')->facetDisjunctive();
 $blueprint->number('stock');
 
-$docs = [
-    new Document(['color' => 'red', 'size' => 'xl', 'stock' => 10]),
-    new Document(['color' => 'red', 'size' => 'lg', 'stock' => 20]),  
-    new Document(['color' => 'green', 'size' => 'md', 'stock' => 30]),
-    new Document(['color' => 'green', 'size' => 'xs', 'stock' => 0]),
-];
+$response = $sigmie->newSearch('products')
+    ->properties($blueprint())
+    ->filters("stock>'0'")
+    ->facets('color size', "color:'green'")
+    ->get();
 
-// Apply color filter but exclude it from color facet calculation
-$searchResponse = $this->sigmie->newSearch($indexName)
+$facets = $response->json('facets');
+// Color facets show both 'green' AND other colors (self-excluded)
+// Size facets show only sizes available in green products
+// Results include only green products with stock > 0
+```
+
+This pattern maintains facet visibility while filtering results, improving the user experience by showing available options.
+
+## Nested Field Facets
+
+Facets work with nested fields using dot notation:
+
+### Basic Nested Facets
+
+```php
+$blueprint = new NewProperties;
+$blueprint->nested('attributes', function (NewProperties $props) {
+    $props->keyword('color');
+    $props->price();
+});
+
+$response = $sigmie->newSearch('products')
+    ->properties($blueprint())
+    ->queryString('shirt')
+    ->facets('attributes.color attributes.price:50')
+    ->get();
+
+$props = $blueprint();
+$colorFacets = $props->get('attributes.color')
+    ->facets($response->facetAggregations());
+$priceFacets = $props->get('attributes.price')
+    ->facets($response->facetAggregations());
+```
+
+### Multi-Level Nesting
+
+```php
+$blueprint = new NewProperties;
+$blueprint->nested('product', function (NewProperties $props) {
+    $props->nested('variants', function (NewProperties $props) {
+        $props->keyword('size');
+        $props->price();
+    });
+});
+
+$response = $sigmie->newSearch('products')
+    ->properties($blueprint())
+    ->facets('product.variants.size product.variants.price:25')
+    ->get();
+
+$props = $blueprint();
+$sizeFacets = $props->get('product.variants.size')
+    ->facets($response->facetAggregations());
+```
+
+Nested facets maintain the hierarchical relationship between fields, ensuring accurate aggregations for complex data structures.
+
+## Retrieving Facet Data
+
+### Using the Response
+
+Facet data is automatically formatted in the search response:
+
+```php
+$response = $sigmie->newSearch('products')
+    ->properties($blueprint())
+    ->queryString('laptop')
+    ->facets('brand color price:100')
+    ->get();
+
+// Get all facets
+$allFacets = $response->json('facets');
+
+// Get specific facet
+$brandFacets = $response->json('facets.brand');
+$colorFacets = $response->json('facets.color');
+```
+
+### Using Property Objects
+
+For detailed information (especially price and number fields), use property objects:
+
+```php
+$props = $blueprint();
+
+// Get price facet with min, max, and histogram
+$priceFacet = $props['price']->facets($response->facetAggregations());
+$minPrice = $priceFacet['min'];
+$maxPrice = $priceFacet['max'];
+$distribution = $priceFacet['histogram'];
+
+// Get number statistics
+$ratingFacet = $props['rating']->facets($response->facetAggregations());
+$avgRating = $ratingFacet['avg'];
+$totalReviews = $ratingFacet['count'];
+```
+
+## Advanced Usage
+
+### Combining Multiple Facets
+
+Request facets for multiple fields in a single query:
+
+```php
+$response = $sigmie->newSearch('products')
+    ->properties($blueprint())
+    ->queryString('laptop')
+    ->facets('brand category color price:50 rating stock')
+    ->get();
+
+// Access different facet types
+$brandCounts = $response->json('facets.brand');        // Term facets
+$categoryCounts = $response->json('facets.category');  // Term facets
+
+$props = $blueprint();
+$priceData = $props['price']->facets($response->facetAggregations());  // Histogram
+$ratingStats = $props['rating']->facets($response->facetAggregations()); // Stats
+```
+
+### Facets with Pagination
+
+Facets reflect totals across all pages:
+
+```php
+$response = $sigmie->newSearch('products')
+    ->properties($blueprint())
+    ->queryString('laptop')
+    ->facets('brand price:100')
+    ->page(2, 20)
+    ->get();
+
+// Facets show counts for all results
+$facets = $response->json('facets');
+
+// Results are paginated
+$currentPage = $response->json('page');
+$totalPages = $response->json('total_pages');
+```
+
+### Empty Search with Facets
+
+Browse all data using facets without a search query:
+
+```php
+$response = $sigmie->newSearch('products')
     ->properties($blueprint())
     ->queryString('')
-    ->filters("stock>'0'")                    // Global filter: only in-stock items
-    ->facets('color size', "color:'green'")   // Facet filter: focus on green items
+    ->facets('category brand price:100')
     ->get();
 
-$facets = $searchResponse->json('facets');
-
-// Results:
-// color facets show both green AND red (self-excluded)
-// size facets show only 'md' (the only green size with stock > 0)
+// Returns facets for entire dataset
 ```
 
-## Multiple Field Facets
+## Real-World Examples
 
-You can request facets for multiple fields in a single query:
+### E-Commerce Product Filtering
 
 ```php
 $blueprint = new NewProperties;
-$blueprint->keyword('brand');
-$blueprint->category('type');  
-$blueprint->number('rating');
-$blueprint->price();
-
-// Request facets for multiple fields
-$searchResponse = $this->sigmie->newSearch($indexName)
-    ->properties($blueprint())
-    ->queryString('electronics')
-    ->facets('brand type rating price:50')  // Mix of term and histogram facets
-    ->get();
-
-$facets = $searchResponse->json('facets');
-// Access individual facets:
-// $facets['brand'] - term facets
-// $facets['type'] - term facets  
-// $facets['rating'] - statistical facets
-// $facets['price'] - histogram facets
-```
-
-## Facet Parser Syntax
-
-The facet parser supports a flexible syntax for specifying which facets to compute:
-
-### Basic Syntax
-```php
-// Single field
-->facets('category')
-
-// Multiple fields (space-separated)
-->facets('category brand price')
-
-// Price histogram with interval
-->facets('price:100')
-
-// Mixed field types
-->facets('category brand:20 price:50')
-```
-
-### With Filters
-```php
-// Apply filters while computing facets
-->facets('color size', "color:'red' price:100..500")
-
-// Named parameter syntax
-->facets('color size', filters: "color:'red' size:'lg'")
-```
-
-### Nested Field Syntax
-```php
-// Nested fields use dot notation
-->facets('product.category product.price:25')
-
-// Deep nesting
-->facets('contact.address.city') 
-```
-
-## Error Handling
-
-The facet parser validates field names and provides helpful error messages:
-
-```php
-try {
-    $searchResponse = $this->sigmie->newSearch($indexName)
-        ->properties($blueprint())
-        ->facets('nonexistent_field')
-        ->get();
-} catch (\Exception $e) {
-    // Handle unknown field error
-    echo "Field not found in mappings: " . $e->getMessage();
-}
-```
-
-## Performance Considerations
-
-### Facet Field Design
-
-1. **Use appropriate field types**: `category()` for terms, `price()` for histograms
-2. **Enable faceting during mapping**: Add `->facetDisjunctive()` or `->facetConjunctive()`
-3. **Consider cardinality**: High-cardinality fields (many unique values) can be slower
-
-### Query Optimization
-
-```php
-// ✅ Efficient: Request only needed facets
-->facets('color size')
-
-// ❌ Inefficient: Request unnecessary facets  
-->facets('color size brand type material weight dimensions')
-
-// ✅ Efficient: Use appropriate histogram intervals
-->facets('price:50')  // 50-unit intervals
-
-// ❌ Inefficient: Too granular intervals
-->facets('price:1')   // 1-unit intervals
-```
-
-### Memory Considerations
-
-```php
-// For large datasets, consider:
-// 1. Limiting facet size in aggregations
-// 2. Using filters to reduce dataset before faceting
-// 3. Paginating facet results for high-cardinality fields
-
-$searchResponse = $this->sigmie->newSearch($indexName)
-    ->properties($blueprint())
-    ->filters('in_stock:true')  // Reduce dataset first
-    ->facets('brand')           // Then compute facets
-    ->get();
-```
-
-## Common Patterns
-
-### E-commerce Product Filtering
-
-```php
-$blueprint = new NewProperties;
+$blueprint->category('category')->facetDisjunctive();
 $blueprint->category('brand')->facetDisjunctive();
 $blueprint->category('color')->facetDisjunctive();
 $blueprint->category('size')->facetDisjunctive();
 $blueprint->price();
 $blueprint->number('rating');
-$blueprint->bool('in_stock');
+$blueprint->number('stock');
 
-// Typical e-commerce faceted search
-$searchResponse = $this->sigmie->newSearch('products')
+$response = $sigmie->newSearch('products')
     ->properties($blueprint())
     ->queryString($searchTerm)
-    ->filters('in_stock:true')  // Only show available products
-    ->facets('brand color size price:25 rating', $userFilters)
+    ->filters("stock>'0'")
+    ->facets(
+        'category brand color size price:50 rating',
+        "category:'electronics' brand:'apple' price:500..1500"
+    )
     ->get();
+
+// Build UI from facets
+$categories = $response->json('facets.category');
+$brands = $response->json('facets.brand');
+$colors = $response->json('facets.color');
+
+$props = $blueprint();
+$priceRange = $props['price']->facets($response->facetAggregations());
+$ratingStats = $props['rating']->facets($response->facetAggregations());
 ```
 
-### Content Management Faceting
+### Analytics Dashboard
 
 ```php
 $blueprint = new NewProperties;
-$blueprint->category('author')->facetDisjunctive();
-$blueprint->category('topic')->facetDisjunctive(); 
-$blueprint->date('published_at');
-$blueprint->text('title')->keyword();
+$blueprint->category('status');
+$blueprint->category('department');
+$blueprint->number('revenue');
+$blueprint->number('quantity');
 
-$searchResponse = $this->sigmie->newSearch('articles')
+$response = $sigmie->newSearch('orders')
     ->properties($blueprint())
-    ->queryString($query)
-    ->facets('author topic published_at title')
+    ->queryString('')
+    ->facets('status department revenue quantity')
     ->get();
+
+$props = $blueprint();
+
+// Distribution facets
+$statusCounts = $response->json('facets.status');
+$departmentCounts = $response->json('facets.department');
+
+// Statistical facets
+$revenueStats = $props['revenue']->facets($response->facetAggregations());
+$totalRevenue = $revenueStats['sum'];
+$avgRevenue = $revenueStats['avg'];
+
+$quantityStats = $props['quantity']->facets($response->facetAggregations());
+$totalOrders = $quantityStats['count'];
 ```
 
-Facets provide a powerful foundation for building rich, interactive search experiences. The combination of term facets, histogram facets, and flexible conjunctive/disjunctive logic allows you to create sophisticated filtering interfaces that help users quickly find what they're looking for.
+### Content Discovery Platform
+
+```php
+$blueprint = new NewProperties;
+$blueprint->text('title')->keyword();
+$blueprint->category('topic')->facetDisjunctive();
+$blueprint->category('difficulty')->facetDisjunctive();
+$blueprint->number('duration');
+
+$response = $sigmie->newSearch('courses')
+    ->properties($blueprint())
+    ->queryString('python programming')
+    ->facets(
+        'topic difficulty duration',
+        "topic:'web-development' topic:'data-science' difficulty:'beginner'"
+    )
+    ->sort('duration:asc')
+    ->get();
+
+// Display facets for filtering
+$topics = $response->json('facets.topic');
+$difficulties = $response->json('facets.difficulty');
+
+$props = $blueprint();
+$durationStats = $props['duration']->facets($response->facetAggregations());
+```
+
+## Best Practices
+
+**Choose appropriate field types**: Use `category()` for categorical data, `price()` for monetary values, `number()` for counts and metrics, and `keyword()` for exact-match strings.
+
+**Set meaningful intervals**: For price and histogram facets, choose intervals that make sense for your data range (e.g., $10 for sub-$100 items, $100 for $1000+ items).
+
+**Use disjunctive faceting for inclusive filters**: When users should select multiple options within a category (colors, brands), use `facetDisjunctive()`.
+
+**Limit facet sizes for performance**: For high-cardinality fields, limit results to prevent overwhelming users and improve performance.
+
+**Combine filters strategically**: Remember facet filters affect both results and counts. Use the exclusion pattern for better UX.
+
+**Consider nested structures**: For complex data models, use nested fields to maintain proper relationships between dimensions.
+
+**Test with real data**: Facet distributions vary significantly with actual data. Always test with production-like datasets.
+
+**Request only needed facets**: Avoid requesting unnecessary facets to improve query performance.
+
+## Related Features
+
+- [Filtering](/docs/filter-parser.md) - Learn about the filter syntax used with facets
+- [Properties](/docs/mappings.md) - Understand field types and their faceting capabilities
+- [Search](/docs/search.md) - Combine facets with full-text search
+- [Sorting](/docs/sort-parser.md) - Sort results alongside faceted filtering
