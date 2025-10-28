@@ -309,7 +309,7 @@ class SortParserTest extends TestCase
 
         $this->expectException(ParseException::class);
 
-        $query = $parser->parse('location[52.49,13.77]:ieow:asc');
+        $parser->parse('location[52.49,13.77]:ieow:asc');
 
         $this->expectException(ParseException::class);
 
