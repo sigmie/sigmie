@@ -1,3 +1,12 @@
+---
+title: Getting Started
+short_description: Comprehensive guide to getting started with Sigmie and Elasticsearch
+keywords: [getting started, guide, tutorial, elasticsearch, search, php]
+category: Getting Started
+order: 4
+related_pages: [introduction, installation, quick-start, core-concepts]
+---
+
 # Getting Started with Sigmie
 
 Sigmie is a powerful PHP library designed to simplify working with Elasticsearch for search functionality. This guide will walk you through everything you need to know to get started with Sigmie.

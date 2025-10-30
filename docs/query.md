@@ -1,3 +1,12 @@
+---
+title: Advanced Queries
+short_description: Build custom Elasticsearch queries for advanced use cases
+keywords: [query, advanced query, bool query, elasticsearch dsl, custom queries]
+category: Core Concepts
+order: 6
+related_pages: [search, document, semantic-search]
+---
+
 # Introduction
 If you are familiar with Elasticsearch and the Search functionality doesn't cover your needs, you can of course send any query that you wish to Elasticsearch using the `newQuery` method on the Sigmie client instance.
 

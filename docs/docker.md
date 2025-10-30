@@ -1,3 +1,12 @@
+---
+title: Docker Setup
+short_description: Run Elasticsearch, OpenSearch, and AI services with Docker
+keywords: [docker, docker compose, local development, embeddings, llm]
+category: Configuration
+order: 2
+related_pages: [installation, connection, opensearch, semantic-search]
+---
+
 # Docker
 
 Sigmie provides a complete AI-powered search stack using Docker Compose. This includes local embedding services, reranking, language models, and search engines—eliminating the need for expensive cloud APIs during development.

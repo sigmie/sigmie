@@ -1,3 +1,12 @@
+---
+title: API Reference
+short_description: Complete reference for Sigmie classes and methods
+keywords: [api reference, class reference, methods, documentation]
+category: Reference
+order: 3
+related_pages: [api, packages]
+---
+
 # API Reference
 
 This document provides a comprehensive reference for all Sigmie classes, methods, and their usage.

@@ -1,3 +1,12 @@
+---
+title: Aggregations
+short_description: Analyze and summarize data with Elasticsearch aggregations
+keywords: [aggregations, facets, analytics, bucket aggregations, metrics]
+category: Features
+order: 2
+related_pages: [facets, search]
+---
+
 # Aggregations & Facets
 
 Aggregations in Sigmie allow you to analyze and summarize your data. They're particularly useful for creating faceted search, analytics dashboards, and understanding your dataset.

@@ -1,4 +1,13 @@
-Tokenization is the second step in the Elasticsearch analysis process. Once the analyzer has applied all char filters, it’s time to split the text into tokens.
+---
+title: Tokenizers
+short_description: Split text into tokens with various tokenization strategies
+keywords: [tokenizers, tokenization, tokens, text splitting, analysis]
+category: Text Analysis
+order: 2
+related_pages: [analysis, token-filters, char-filters]
+---
+
+Tokenization is the second step in the Elasticsearch analysis process. Once the analyzer has applied all char filters, it's time to split the text into tokens.
 
 To do this Elasticsearch uses the so-called **Tokenizers**, which take a text and produce **tokens**. 
 

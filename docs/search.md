@@ -1,3 +1,12 @@
+---
+title: Search
+short_description: Build powerful search queries with filtering, sorting, and highlighting
+keywords: [search, query, filters, sorting, highlighting, typo tolerance]
+category: Core Concepts
+order: 5
+related_pages: [query, document, semantic-search, filter-parser]
+---
+
 ## Introduction
 Once you've indexed all your documents into an index, you'll want to start searching. However, "searching" in Elasticsearch can mean many different things. To search for your indexed documents, you'll need to make decisions like "Title is more important than a tag," and these decisions can be even more complex when you need to filter and sort the matches.
 

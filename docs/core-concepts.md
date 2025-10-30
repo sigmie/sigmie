@@ -1,3 +1,12 @@
+---
+title: Core Concepts
+short_description: Understand the fundamental concepts of Sigmie and Elasticsearch
+keywords: [core concepts, fundamentals, client, indices, documents, properties]
+category: Core Concepts
+order: 1
+related_pages: [index, document, mappings, search]
+---
+
 # Core Concepts
 
 Understanding these core concepts is essential for working effectively with Sigmie. This guide explains the fundamental building blocks and how they work together.

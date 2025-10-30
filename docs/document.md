@@ -1,3 +1,12 @@
+---
+title: Documents
+short_description: Create, update, and manage documents in your Elasticsearch indices
+keywords: [documents, indexing, upsert, bulk operations, json]
+category: Core Concepts
+order: 3
+related_pages: [index, mappings, search, update]
+---
+
 # Document Management
 
 Documents are JSON objects stored within an Index. In Sigmie, you work with documents through the `Document` class and manage them using collection methods.

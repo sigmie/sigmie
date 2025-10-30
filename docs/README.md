@@ -1,3 +1,12 @@
+---
+title: Documentation Home
+short_description: Complete documentation for Sigmie PHP library for Elasticsearch
+keywords: [documentation, sigmie, elasticsearch, php, search library]
+category: Getting Started
+order: 0
+related_pages: [introduction, installation, quick-start]
+---
+
 # Sigmie Documentation
 
 Welcome to the complete documentation for Sigmie, the PHP library that makes Elasticsearch simple and powerful.

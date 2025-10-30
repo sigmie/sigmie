@@ -1,3 +1,12 @@
+---
+title: Installation
+short_description: Install Sigmie and connect to Elasticsearch or OpenSearch
+keywords: [installation, setup, composer, requirements, php, elasticsearch]
+category: Getting Started
+order: 2
+related_pages: [introduction, quick-start, connection]
+---
+
 # Installation
 
 Sigmie is a modern PHP library for Elasticsearch with AI-powered search capabilities. This guide walks you through installing Sigmie, connecting to Elasticsearch, and verifying your setup.
