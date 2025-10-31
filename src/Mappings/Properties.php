@@ -320,6 +320,16 @@ class Properties extends Type implements ArrayAccess, FieldContainer
         return null;
     }
 
+    public function fullPath(): string
+    {
+        // 'mappings' is a special root container and should not be part of the path
+        if ($this->name === 'mappings') {
+            return '';
+        }
+
+        return parent::fullPath();
+    }
+
     public function propertiesParent(Type $parent): void
     {
         foreach ($this->fields as $field) {

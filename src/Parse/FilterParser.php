@@ -467,7 +467,7 @@ class FilterParser extends Parser
         $fieldType = $this->properties->get($field);
 
         // If it's a facets filter we match all for the facet value
-        if (($this->facetField ?? false) && $fieldType->fullPath === $this->facetField->fullPath) {
+        if (($this->facetField ?? false) && $fieldType->fullPath() === $this->facetField->fullPath()) {
             return new MatchAll;
         }
 

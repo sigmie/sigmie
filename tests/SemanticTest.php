@@ -756,8 +756,7 @@ class SemanticTest extends TestCase
             $cosineVector = new ElasticsearchNestedVector(
                 name: 'test_cosine',
                 dims: 256,
-                similarity: VectorSimilarity::Cosine,
-                fullPath: 'test_cosine'
+                similarity: VectorSimilarity::Cosine
             );
 
             $cosineQueries = $cosineVector->vectorQueries(
@@ -775,8 +774,7 @@ class SemanticTest extends TestCase
             $dotVector = new ElasticsearchNestedVector(
                 name: 'test_dot',
                 dims: 256,
-                similarity: VectorSimilarity::DotProduct,
-                fullPath: 'test_dot'
+                similarity: VectorSimilarity::DotProduct
             );
 
             $dotQueries = $dotVector->vectorQueries(
@@ -794,8 +792,7 @@ class SemanticTest extends TestCase
             $euclideanVector = new ElasticsearchNestedVector(
                 name: 'test_euclidean',
                 dims: 256,
-                similarity: VectorSimilarity::Euclidean,
-                fullPath: 'test_euclidean'
+                similarity: VectorSimilarity::Euclidean
             );
 
             $euclideanQueries = $euclideanVector->vectorQueries(
@@ -816,8 +813,7 @@ class SemanticTest extends TestCase
             $cosineVector = new OpenSearchNestedVector(
                 name: 'test_cosine',
                 dims: 256,
-                similarity: VectorSimilarity::Cosine,
-                fullPath: 'test_cosine'
+                similarity: VectorSimilarity::Cosine
             );
 
             $cosineQueries = $cosineVector->vectorQueries(
@@ -836,8 +832,7 @@ class SemanticTest extends TestCase
             $dotVector = new OpenSearchNestedVector(
                 name: 'test_dot',
                 dims: 256,
-                similarity: VectorSimilarity::DotProduct,
-                fullPath: 'test_dot'
+                similarity: VectorSimilarity::DotProduct
             );
 
             $dotQueries = $dotVector->vectorQueries(
@@ -856,8 +851,7 @@ class SemanticTest extends TestCase
             $euclideanVector = new OpenSearchNestedVector(
                 name: 'test_euclidean',
                 dims: 256,
-                similarity: VectorSimilarity::Euclidean,
-                fullPath: 'test_euclidean'
+                similarity: VectorSimilarity::Euclidean
             );
 
             $euclideanQueries = $euclideanVector->vectorQueries(
