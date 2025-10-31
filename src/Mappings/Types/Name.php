@@ -58,18 +58,21 @@ class Name extends Text implements Analyze
 
     public function names(): array
     {
+        $parentPath = $this->parentPath();
+
         return [
             $this->name,
             // "{$this->name}.{$this->name}_text",
-            $this->parentPath ? sprintf('%s.%s.%s_text', $this->parentPath, $this->name, $this->name) : sprintf('%s.%s_text', $this->name, $this->name),
+            $parentPath !== '' ? sprintf('%s.%s.%s_text', $parentPath, $this->name, $this->name) : sprintf('%s.%s_text', $this->name, $this->name),
         ];
     }
 
     public function queries(array|string $queryString): array
     {
         $queries = [];
+        $parentPath = $this->parentPath();
 
-        $prefixField = $this->parentPath ? sprintf('%s.%s.%s_text', $this->parentPath, $this->name, $this->name) : sprintf('%s.%s_text', $this->name, $this->name);
+        $prefixField = $parentPath !== '' ? sprintf('%s.%s.%s_text', $parentPath, $this->name, $this->name) : sprintf('%s.%s_text', $this->name, $this->name);
 
         $queries[] = new Match_($this->name(), $queryString, analyzer: $this->ngramAnalyzer);
         $queries[] = new MatchPhrasePrefix($prefixField, $queryString, analyzer: $this->prefixAnalyzer);

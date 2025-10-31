@@ -22,26 +22,66 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
 
     protected FacetLogic $facetLogic = FacetLogic::Conjunctive;
 
+    protected ?Type $parent = null;
+
     public function __construct(
         public string $name,
-        public ?string $parentPath = null,
-        public ?string $parentType = null,
-        public ?string $fullPath = ''
-    ) {}
+        ?Type $parent = null
+    ) {
+        $this->parent = $parent;
+    }
 
     public bool $hasQueriesCallback = false;
 
     public Closure $queriesClosure;
 
-    public function parent(
-        string $parentPath,
-        string $parentType,
-    ): static {
-        $this->parentPath = $parentPath;
-        $this->parentType = $parentType;
-        $this->fullPath = trim($parentPath.'.'.$this->name, '.');
+    public function setParent(?Type $parent): static
+    {
+        $this->parent = $parent;
 
         return $this;
+    }
+
+    public function parent(
+        string|Type $parentPath,
+        ?string $parentType = null,
+    ): static {
+        if ($parentPath instanceof Type) {
+            $this->parent = $parentPath;
+
+            return $this;
+        }
+
+        // Backward compatibility: accept string path, but we can't set parent reference
+        // This will be deprecated once all code uses parent references
+        return $this;
+    }
+
+    public function parentPath(): string
+    {
+        if ($this->parent === null) {
+            return '';
+        }
+
+        $path = $this->parent->fullPath();
+
+        return $path === '' ? '' : $path;
+    }
+
+    public function fullPath(): string
+    {
+        $parentPath = $this->parentPath();
+
+        if ($parentPath === '') {
+            return $this->name;
+        }
+
+        return $parentPath.'.'.$this->name;
+    }
+
+    public function parentType(): ?string
+    {
+        return $this->parent ? $this->parent::class : null;
     }
 
     public function queries(array|string $queryString): array
@@ -88,7 +128,7 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
 
     public function name(): string
     {
-        return trim(sprintf('%s.%s', $this->parentPath, $this->name), '.');
+        return trim(sprintf('%s.%s', $this->parentPath(), $this->name), '.');
     }
 
     public function names(): array

@@ -28,7 +28,6 @@ class Opensearch implements SearchEngine
             similarity: $field->similarity(),
             m: $field->m(),
             efConstruction: $field->efConstruction(),
-            fullPath: $field->fullPath,
         );
     }
 
@@ -38,7 +37,6 @@ class Opensearch implements SearchEngine
             name: $field->name,
             dims: $field->dims,
             similarity: $field->similarity,
-            fullPath: $field->fullPath,
         );
     }
 

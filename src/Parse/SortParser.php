@@ -76,11 +76,11 @@ class SortParser extends Parser
                 }
 
                 $hasGeoDistance = true;
-                if ($fieldType->parentPath && $fieldType->parentType === Nested::class) {
+                if ($fieldType->parentPath() && $fieldType->parentType() === Nested::class) {
                     $sort[] = [
                         '_geo_distance' => [
                             'nested' => [
-                                'path' => $fieldType->parentPath,
+                                'path' => $fieldType->parentPath(),
                             ],
                             $field => [
                                 'lat' => (float) $latitude,
@@ -123,11 +123,11 @@ class SortParser extends Parser
                 continue;
             }
 
-            if ($type->parentPath && $type->parentType === Nested::class) {
+            if ($type->parentPath() && $type->parentType() === Nested::class) {
                 $sort[] = [
                     $sortableName => [
                         'nested' => [
-                            'path' => $type->parentPath,
+                            'path' => $type->parentPath(),
                         ],
                         'order' => $direction,
                     ],

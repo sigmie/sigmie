@@ -45,11 +45,12 @@ class NewProperties
 
     protected string $name = 'mappings';
 
+    protected ?Type $parentField = null;
+
     public function __construct(
-        public string $parentPath = '',
-        public string $fullPath = '',
-        public string $parentType = Mapping::class
+        ?Type $parentField = null
     ) {
+        $this->parentField = $parentField;
         $this->fields = new Collection;
     }
 
@@ -71,14 +72,8 @@ class NewProperties
     ): Properties {
 
         $fields = $this->fields
-            ->mapToDictionary(function (Type $type) {
-                // Initialize the parent path for each field based on current context
-                if ($this->fullPath !== '') {
-                    $type->parent($this->fullPath, $this->parentType);
-                }
-
-                return [$type->name => $type];
-            })->toArray();
+            ->mapToDictionary(fn (Type $type) => [$type->name => $type])
+            ->toArray();
 
         $props = new Properties($name ?? $this->name, $fields);
 
@@ -355,14 +350,14 @@ class NewProperties
 
     protected function propertiesType(Nested|Object_ $field, string $name, callable $callable): Object_|Nested
     {
-        $props = new NewProperties(
-            parentPath: $this->parentPath,
-            fullPath: trim($this->fullPath.'.'.$name, '.'),
-            parentType: $field::class
-        );
+        // Create nested properties context with this field as parent
+        $props = new NewProperties($field);
         $props->propertiesName($name);
 
-        $field->parent($this->parentPath, $field::class);
+        // Set parent for the field itself (e.g., if we're nested inside another object)
+        if ($this->parentField !== null) {
+            $field->setParent($this->parentField);
+        }
 
         $this->fields->add($field);
 

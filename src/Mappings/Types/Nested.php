@@ -18,12 +18,8 @@ class Nested extends Type implements PropertiesField
     public function __construct(
         string $name,
         Properties|NewProperties $properties = new NewProperties,
-        ?string $fullPath = '',
     ) {
-        parent::__construct(
-            name: $name,
-            fullPath: $fullPath
-        );
+        parent::__construct($name);
 
         $this->properties($properties);
     }

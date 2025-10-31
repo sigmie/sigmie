@@ -25,7 +25,7 @@ class Id extends CaseSensitiveKeyword
 
     public function filterableName(): ?string
     {
-        return trim(sprintf('%s.%s', $this->parentPath, $this->name), '.');
+        return trim(sprintf('%s.%s', $this->parentPath(), $this->name), '.');
     }
 
     public function validate(string $key, mixed $value): array

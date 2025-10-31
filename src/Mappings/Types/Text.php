@@ -121,7 +121,8 @@ class Text extends Type implements FromRaw
 
     public function handleCustomAnalyzer(AnalysisInterface $analysis): void
     {
-        $name = is_null($this->parentPath) ? $this->name.'_field_analyzer' : sprintf('%s_%s_field_analyzer', $this->parentPath, $this->name);
+        $parentPath = $this->parentPath();
+        $name = $parentPath === '' ? $this->name.'_field_analyzer' : sprintf('%s_%s_field_analyzer', $parentPath, $this->name);
         $name = str_replace('.', '_', $name);
         $name = trim($name, '_');
 
@@ -240,12 +241,12 @@ class Text extends Type implements FromRaw
 
     public function sortableName(): ?string
     {
-        return trim(sprintf('%s.%s.sortable', $this->parentPath, $this->name), '.');
+        return trim(sprintf('%s.%s.sortable', $this->parentPath(), $this->name), '.');
     }
 
     public function filterableName(): ?string
     {
-        return trim(sprintf('%s.%s.%s', $this->parentPath, $this->name, $this->raw), '.');
+        return trim(sprintf('%s.%s.%s', $this->parentPath(), $this->name, $this->raw), '.');
     }
 
     public function searchAsYouType(?Analyzer $analyzer = null): self
@@ -417,15 +418,8 @@ class Text extends Type implements FromRaw
                 if ($field instanceof NewSemanticField) {
                     $vector = $field->make();
 
-                    // Initialize the parent path for the vector field
-                    if ($this->fullPath !== null && $this->fullPath !== '') {
-                        $vector->parent($this->fullPath, static::class);
-                    } elseif ($this->parentPath !== null) {
-                        $vector->parent($this->parentPath, $this->parentType ?? static::class);
-                    } else {
-                        // If no parent context, set the parent to just this field's name
-                        $vector->parent($this->name, static::class);
-                    }
+                    // Set parent reference to this text field
+                    $vector->setParent($this);
 
                     return $vector;
                 }

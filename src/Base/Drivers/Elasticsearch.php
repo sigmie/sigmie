@@ -29,7 +29,6 @@ class Elasticsearch implements SearchEngine
             indexType: $field->indexType(),
             m: $field->m(),
             efConstruction: $field->efConstruction(),
-            fullPath: $field->fullPath,
         );
     }
 
@@ -39,7 +38,6 @@ class Elasticsearch implements SearchEngine
             name: $field->name,
             dims: $field->dims,
             similarity: $field->similarity,
-            fullPath: $field->fullPath,
         );
     }
 

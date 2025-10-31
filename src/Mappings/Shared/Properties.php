@@ -13,7 +13,8 @@ trait Properties
     {
         $this->properties = $props instanceof NewProperties ? $props->get() : $props;
 
-        $this->properties->propertiesParent($props->fullPath, static::class);
+        // Set this Object_/Nested instance as the parent for all fields in properties
+        $this->properties->propertiesParent($this);
 
         return $this;
     }

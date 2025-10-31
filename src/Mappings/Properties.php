@@ -37,6 +37,8 @@ class Properties extends Type implements ArrayAccess
 
     public function __construct(string $name = 'mappings', array $fields = [])
     {
+        parent::__construct($name);
+
         $this->type = ElasticsearchMappingType::PROPERTIES->value;
 
         $boostField = array_values(array_filter($fields, fn (Type $field): bool => $field instanceof Boost))[0] ?? null;
@@ -46,16 +48,16 @@ class Properties extends Type implements ArrayAccess
             $this->boostField = $boostField;
         }
 
-        $this->fields = array_map(function (Type $field) use ($name): Type {
-
-            $name = $name !== 'mappings' ? $name : '';
-
-            $field->parent($name, self::class);
+        // Set parent references for all fields
+        $this->fields = array_map(function (Type $field): Type {
+            // For root mappings, fields don't have a parent (empty path)
+            // For nested properties, this Properties instance is the parent
+            if ($this->name !== 'mappings') {
+                $field->setParent($this);
+            }
 
             return $field;
         }, $fields);
-
-        parent::__construct($name);
     }
 
     public function queries(array|string $queryString): array
@@ -325,10 +327,10 @@ class Properties extends Type implements ArrayAccess
         return null;
     }
 
-    public function propertiesParent(string $parentPath, string $parentType): void
+    public function propertiesParent(Type $parent): void
     {
         foreach ($this->fields as $field) {
-            $field->parent($parentPath, $parentType);
+            $field->setParent($parent);
         }
     }
 
@@ -340,19 +342,19 @@ class Properties extends Type implements ArrayAccess
 
             if ($type instanceof Object_) {
                 return [
-                    ...$withParent ? [$type->fullPath] : [],
+                    ...$withParent ? [$type->fullPath()] : [],
                     ...$type->properties->fieldNames($withParent),
                 ];
             }
 
             if ($type instanceof Nested) {
                 return [
-                    ...$withParent ? [$type->fullPath] : [],
+                    ...$withParent ? [$type->fullPath()] : [],
                     ...$type->properties->fieldNames($withParent),
                 ];
             }
 
-            return $type->fullPath;
+            return $type->fullPath();
         })->flatten()
             ->toArray();
     }
@@ -361,11 +363,11 @@ class Properties extends Type implements ArrayAccess
     {
         $textFields = $this->textFields()
             ->filter(fn (Text $field): bool => $field->isSemantic())
-            ->mapWithKeys(fn (Text $field) => [$field->fullPath => $field]);
+            ->mapWithKeys(fn (Text $field) => [$field->fullPath() => $field]);
 
         $imageFields = $this->imageFields()
             ->filter(fn (Image $field): bool => $field->isSemantic())
-            ->mapWithKeys(fn (Image $field) => [$field->fullPath => $field]);
+            ->mapWithKeys(fn (Image $field) => [$field->fullPath() => $field]);
 
         return $textFields->merge($imageFields);
     }
