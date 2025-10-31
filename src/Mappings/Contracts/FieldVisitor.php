@@ -11,7 +11,7 @@ interface FieldVisitor
     /**
      * Visit a field in the tree
      *
-     * @param Type $field The field being visited
+     * @param  Type  $field  The field being visited
      * @return mixed The result of visiting this field (optional)
      */
     public function visit(Type $field): mixed;

@@ -383,7 +383,7 @@ class Properties extends Type implements ArrayAccess, FieldContainer
 
     public function hasFields(): bool
     {
-        return count($this->fields) > 0;
+        return $this->fields !== [];
     }
 
     /**

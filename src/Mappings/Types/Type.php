@@ -24,14 +24,7 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
 
     protected FacetLogic $facetLogic = FacetLogic::Conjunctive;
 
-    protected ?Type $parent = null;
-
-    public function __construct(
-        public string $name,
-        ?Type $parent = null
-    ) {
-        $this->parent = $parent;
-    }
+    public function __construct(public string $name, protected ?Type $parent = null) {}
 
     public bool $hasQueriesCallback = false;
 
@@ -61,13 +54,11 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
 
     public function parentPath(): string
     {
-        if ($this->parent === null) {
+        if (! $this->parent instanceof Type) {
             return '';
         }
 
-        $path = $this->parent->fullPath();
-
-        return $path === '' ? '' : $path;
+        return $this->parent->fullPath();
     }
 
     public function fullPath(): string
@@ -83,7 +74,7 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
 
     public function parentType(): ?string
     {
-        return $this->parent ? $this->parent::class : null;
+        return $this->parent instanceof Type ? $this->parent::class : null;
     }
 
     public function queries(array|string $queryString): array

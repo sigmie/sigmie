@@ -10,7 +10,7 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Shared\Properties as SharedProperties;
 
-class Object_ extends Type implements PropertiesField, FieldContainer
+class Object_ extends Type implements FieldContainer, PropertiesField
 {
     use SharedProperties;
 

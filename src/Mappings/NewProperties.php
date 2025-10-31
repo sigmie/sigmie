@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Mappings;
 
 use Sigmie\Index\Analysis\Analysis;
-use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\BaseVector;
@@ -45,12 +44,9 @@ class NewProperties
 
     protected string $name = 'mappings';
 
-    protected ?Type $parentField = null;
-
     public function __construct(
-        ?Type $parentField = null
+        protected ?Type $parentField = null
     ) {
-        $this->parentField = $parentField;
         $this->fields = new Collection;
     }
 
@@ -355,7 +351,7 @@ class NewProperties
         $props->propertiesName($name);
 
         // Set parent for the field itself (e.g., if we're nested inside another object)
-        if ($this->parentField !== null) {
+        if ($this->parentField instanceof Type) {
             $field->setParent($this->parentField);
         }
 
