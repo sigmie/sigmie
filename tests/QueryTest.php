@@ -10,6 +10,7 @@ use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\BooleanQueryBuilder;
 use Sigmie\Query\Queries\Compound\Boolean as QueriesCompoundBoolean;
+use Sigmie\Query\Queries\ElasticsearchKnn;
 use Sigmie\Testing\TestCase;
 
 class QueryTest extends TestCase
@@ -349,6 +350,76 @@ class QueryTest extends TestCase
                 ],
             ],
         ]);
+
+        $this->assertEquals(2, $res->json()['hits']['total']['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function knn_query(): void
+    {
+        $name = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->vector('title_embedding', dims: 384);
+
+        $this->sigmie->newIndex($name)
+            ->properties($blueprint)
+            ->create();
+
+        $collection = $this->sigmie->collect($name, refresh: true);
+
+        $docs = [
+            new Document([
+                'title' => 'Machine Learning Basics',
+                'title_embedding' => array_fill(0, 384, 0.1),
+            ]),
+            new Document([
+                'title' => 'Deep Learning Advanced',
+                'title_embedding' => array_fill(0, 384, 0.2),
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $queryVector = array_fill(0, 384, 0.15);
+
+        $dsl = $this->sigmie->newQuery($name)
+            ->properties($blueprint)
+            ->knn([
+                new ElasticsearchKnn(
+                    field: 'title_embedding',
+                    queryVector: $queryVector,
+                    k: 10,
+                    numCandidates: 100,
+                    filter: [],
+                    boost: 1.0
+                ),
+            ])
+            ->getDSL();
+
+        $this->assertArrayHasKey('knn', $dsl);
+        $this->assertCount(1, $dsl['knn']);
+        $this->assertEquals('title_embedding', $dsl['knn'][0]['field']);
+        $this->assertEquals($queryVector, $dsl['knn'][0]['query_vector']);
+        $this->assertEquals(10, $dsl['knn'][0]['k']);
+        $this->assertEquals(100, $dsl['knn'][0]['num_candidates']);
+
+        $res = $this->sigmie->newQuery($name)
+            ->properties($blueprint)
+            ->knn([
+                new ElasticsearchKnn(
+                    field: 'title_embedding',
+                    queryVector: $queryVector,
+                    k: 10,
+                    numCandidates: 100,
+                    filter: [],
+                    boost: 1.0
+                ),
+            ])
+            ->get();
 
         $this->assertEquals(2, $res->json()['hits']['total']['value']);
     }

@@ -23,6 +23,7 @@ use Sigmie\Query\Queries\Term\Terms;
 use Sigmie\Query\Queries\Term\Wildcard;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
+use Sigmie\Query\Queries\ElasticsearchKnn;
 use Sigmie\Search\Contracts\MultiSearchable;
 
 use function Sigmie\Functions\random_name;
@@ -182,6 +183,16 @@ class NewQuery implements MultiSearchable, Queries
         $clause = new Wildcard($field, $value);
 
         return $this->search->query($clause->boost($boost));
+    }
+
+    /**
+     * @param ElasticsearchKnn[] $knnQueries
+     */
+    public function knn(array $knnQueries): Search
+    {
+        $knnRaw = array_map(fn (ElasticsearchKnn $knn) => $knn->toRaw(), $knnQueries);
+
+        return $this->search->knn($knnRaw);
     }
 
     public function toMultiSearch(): array

@@ -14,8 +14,10 @@ use Sigmie\Mappings\Types\Type as AbstractType;
  */
 class BaseVector extends AbstractType
 {
+    public string $type = 'dense_vector';
+
     public function __construct(
-        public string $name,
+        string $name,
         public readonly int $dims = 384,
         public readonly bool $index = true,
         public readonly VectorSimilarity $similarity = VectorSimilarity::Cosine,
@@ -27,7 +29,9 @@ class BaseVector extends AbstractType
         public readonly ?string $boostedByField = null,
         public readonly bool $autoNormalizeVector = true,
         public readonly ?string $queryApiName = null,
-    ) {}
+    ) {
+        parent::__construct($name);
+    }
 
     public function strategy(): VectorStrategy
     {
@@ -72,5 +76,27 @@ class BaseVector extends AbstractType
     public function autoNormalizeVector(): bool
     {
         return $this->autoNormalizeVector;
+    }
+
+    public function toRaw(): array
+    {
+        $raw = [
+            $this->name => [
+                'type' => $this->type,
+                'dims' => $this->dims,
+                'index' => $this->index,
+            ],
+        ];
+
+        if ($this->index) {
+            $raw[$this->name]['similarity'] = $this->similarity->value;
+            $raw[$this->name]['index_options'] = [
+                'type' => $this->indexType,
+                'm' => $this->m,
+                'ef_construction' => $this->efConstruction,
+            ];
+        }
+
+        return $raw;
     }
 }

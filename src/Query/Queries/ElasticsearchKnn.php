@@ -18,14 +18,12 @@ class ElasticsearchKnn extends Query
     public function toRaw(): array
     {
         return [
-            'knn' => [
-                'field' => $this->field,
-                'query_vector' => $this->queryVector,
-                'k' => $this->k,
-                'filter' => $this->filter,
-                'num_candidates' => $this->numCandidates,
-                'boost' => $this->boost,
-            ],
+            'field' => $this->field,
+            'query_vector' => $this->queryVector,
+            'k' => $this->k,
+            'filter' => $this->filter,
+            'num_candidates' => $this->numCandidates,
+            'boost' => $this->boost,
         ];
     }
 }
