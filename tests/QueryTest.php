@@ -423,4 +423,51 @@ class QueryTest extends TestCase
 
         $this->assertEquals(2, $res->json()['hits']['total']['value']);
     }
+
+    /**
+     * @test
+     */
+    public function raw_array_query(): void
+    {
+        $name = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->vector('fixture_vector', dims: 384);
+
+        $this->sigmie->newIndex($name)
+            ->properties($blueprint)
+            ->create();
+
+        $collection = $this->sigmie->collect($name, refresh: true);
+
+        $vector = array_fill(0, 384, 0.5);
+
+        $docs = [
+            new Document([
+                'title' => 'Test Document',
+                'fixture_vector' => $vector,
+            ]),
+        ];
+
+        $collection->merge($docs);
+
+        $res = $this->sigmie->newQuery($name)
+            ->query([
+                'script_score' => [
+                    'query' => [
+                        'match_all' => (object) [],
+                    ],
+                    'script' => [
+                        'source' => "cosineSimilarity(params.query_vector, 'fixture_vector') + 1.0",
+                        'params' => [
+                            'query_vector' => $vector,
+                        ],
+                    ],
+                ],
+            ])
+            ->get();
+
+        $this->assertEquals(1, $res->json()['hits']['total']['value']);
+    }
 }

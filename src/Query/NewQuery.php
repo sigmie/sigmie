@@ -11,7 +11,6 @@ use Sigmie\Parse\FilterParser;
 use Sigmie\Query\Contracts\Queries;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\Compound\Boolean;
-use Sigmie\Query\Queries\ElasticsearchKnn;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\MatchNone;
 use Sigmie\Query\Queries\Term\Exists;
@@ -24,6 +23,8 @@ use Sigmie\Query\Queries\Term\Terms;
 use Sigmie\Query\Queries\Term\Wildcard;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
+use Sigmie\Query\Queries\ElasticsearchKnn;
+use Sigmie\Query\Queries\Raw;
 use Sigmie\Search\Contracts\MultiSearchable;
 
 use function Sigmie\Functions\random_name;
@@ -108,8 +109,12 @@ class NewQuery implements MultiSearchable, Queries
         return $this->search->query($clause->boost($boost));
     }
 
-    public function query(Query $query): Search
+    public function query(Query|array $query): Search
     {
+        if (is_array($query)) {
+            $query = new Raw($query);
+        }
+
         return $this->search->query($query);
     }
 
