@@ -7,6 +7,8 @@ namespace Sigmie\Mappings\Types;
 use Closure;
 use ReflectionClass;
 use Sigmie\Enums\FacetLogic;
+use Sigmie\Mappings\Contracts\FieldContainer;
+use Sigmie\Mappings\Contracts\FieldVisitor;
 use Sigmie\Mappings\Contracts\Type as TypeInterface;
 use Sigmie\Query\Aggs;
 use Sigmie\Search\Contracts\TextQueries;
@@ -217,5 +219,28 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
     {
         return (new Collection([]))
             ->map(fn (Nested|DenseVector $field): Nested|DenseVector => $field);
+    }
+
+    /**
+     * Accept a visitor for tree traversal
+     */
+    public function accept(FieldVisitor $visitor): mixed
+    {
+        return $visitor->visit($this);
+    }
+
+    /**
+     * Walk through this field and all nested fields, calling the callback for each
+     */
+    public function walk(callable $callback): void
+    {
+        $callback($this);
+
+        if ($this instanceof FieldContainer && $this->hasFields()) {
+            $properties = $this->getProperties();
+            foreach ($properties->fields() as $field) {
+                $field->walk($callback);
+            }
+        }
     }
 }

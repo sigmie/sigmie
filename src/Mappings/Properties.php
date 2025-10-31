@@ -11,6 +11,7 @@ use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\SimpleAnalyzer;
 use Sigmie\Index\Analysis\Standard;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
+use Sigmie\Mappings\Contracts\FieldContainer;
 use Sigmie\Mappings\Contracts\Type as ContractsType;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Boost;
@@ -29,7 +30,7 @@ use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
 
-class Properties extends Type implements ArrayAccess
+class Properties extends Type implements ArrayAccess, FieldContainer
 {
     protected array $fields = [];
 
@@ -103,7 +104,7 @@ class Properties extends Type implements ArrayAccess
     {
         $collection = new Collection($this->fields);
 
-        return $collection->filter(fn (Type $type): bool => $type instanceof Object_ || $type instanceof Nested);
+        return $collection->filter(fn (Type $type): bool => $type instanceof FieldContainer);
     }
 
     public function embeddingsFields(): Collection
@@ -134,12 +135,8 @@ class Properties extends Type implements ArrayAccess
                 $type->handleCustomAnalyzer($analysis);
             }
 
-            if ($type instanceof Object_) {
-                $type->properties->handleCustomAnalyzers($analysis);
-            }
-
-            if ($type instanceof Nested) {
-                $type->properties->handleCustomAnalyzers($analysis);
+            if ($type instanceof FieldContainer) {
+                $type->getProperties()->handleCustomAnalyzers($analysis);
             }
         }
     }
@@ -152,12 +149,8 @@ class Properties extends Type implements ArrayAccess
                 $type->handleNormalizer($analysis);
             }
 
-            if ($type instanceof Object_) {
-                $type->properties->handleNormalizers($analysis);
-            }
-
-            if ($type instanceof Nested) {
-                $type->properties->handleNormalizers($analysis);
+            if ($type instanceof FieldContainer) {
+                $type->getProperties()->handleNormalizers($analysis);
             }
         }
     }
@@ -318,10 +311,10 @@ class Properties extends Type implements ArrayAccess
             return $type;
         }
 
-        if ($type instanceof Nested || $type instanceof Object_) {
+        if ($type instanceof FieldContainer) {
             $childName = implode('.', $fields);
 
-            return $type->properties->get($childName);
+            return $type->getProperties()->get($childName);
         }
 
         return null;
@@ -340,17 +333,10 @@ class Properties extends Type implements ArrayAccess
 
         return $collection->map(function (ContractsType $type) use ($withParent) {
 
-            if ($type instanceof Object_) {
+            if ($type instanceof FieldContainer) {
                 return [
                     ...$withParent ? [$type->fullPath()] : [],
-                    ...$type->properties->fieldNames($withParent),
-                ];
-            }
-
-            if ($type instanceof Nested) {
-                return [
-                    ...$withParent ? [$type->fullPath()] : [],
-                    ...$type->properties->fieldNames($withParent),
+                    ...$type->getProperties()->fieldNames($withParent),
                 ];
             }
 
@@ -377,9 +363,9 @@ class Properties extends Type implements ArrayAccess
         $semanticFields = $this->semanticFields();
 
         $nestedFields = $this->deepFields()
-            ->mapWithKeys(fn (Object_|Nested $field): array => [
-                ...$field->properties->semanticFields()->toArray(),
-                ...$field->properties->nestedSemanticFields()->toArray(),
+            ->mapWithKeys(fn (FieldContainer $field): array => [
+                ...$field->getProperties()->semanticFields()->toArray(),
+                ...$field->getProperties()->nestedSemanticFields()->toArray(),
             ]);
 
         $res = [
@@ -388,5 +374,25 @@ class Properties extends Type implements ArrayAccess
         ];
 
         return new Collection($res);
+    }
+
+    public function getProperties(): Properties
+    {
+        return $this;
+    }
+
+    public function hasFields(): bool
+    {
+        return count($this->fields) > 0;
+    }
+
+    /**
+     * Walk through all fields in the tree, calling the callback for each field
+     */
+    public function walkFields(callable $callback): void
+    {
+        foreach ($this->fields as $field) {
+            $field->walk($callback);
+        }
     }
 }

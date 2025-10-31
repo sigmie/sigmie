@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Mappings\Contracts\FieldContainer;
 use Sigmie\Mappings\Contracts\PropertiesField;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Shared\Properties as SharedProperties;
 
-class Object_ extends Type implements PropertiesField
+class Object_ extends Type implements PropertiesField, FieldContainer
 {
     use SharedProperties;
 
@@ -49,5 +50,15 @@ class Object_ extends Type implements PropertiesField
         }
 
         return [true, ''];
+    }
+
+    public function getProperties(): Properties
+    {
+        return $this->properties;
+    }
+
+    public function hasFields(): bool
+    {
+        return isset($this->properties);
     }
 }
