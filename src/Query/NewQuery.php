@@ -11,6 +11,7 @@ use Sigmie\Parse\FilterParser;
 use Sigmie\Query\Contracts\Queries;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\Compound\Boolean;
+use Sigmie\Query\Queries\ElasticsearchKnn;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\MatchNone;
 use Sigmie\Query\Queries\Term\Exists;
@@ -23,7 +24,6 @@ use Sigmie\Query\Queries\Term\Terms;
 use Sigmie\Query\Queries\Term\Wildcard;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
-use Sigmie\Query\Queries\ElasticsearchKnn;
 use Sigmie\Search\Contracts\MultiSearchable;
 
 use function Sigmie\Functions\random_name;
@@ -186,11 +186,11 @@ class NewQuery implements MultiSearchable, Queries
     }
 
     /**
-     * @param ElasticsearchKnn[] $knnQueries
+     * @param  ElasticsearchKnn[]  $knnQueries
      */
     public function knn(array $knnQueries): Search
     {
-        $knnRaw = array_map(fn (ElasticsearchKnn $knn) => $knn->toRaw(), $knnQueries);
+        $knnRaw = array_map(fn (ElasticsearchKnn $knn): array => $knn->toRaw(), $knnQueries);
 
         return $this->search->knn($knnRaw);
     }
