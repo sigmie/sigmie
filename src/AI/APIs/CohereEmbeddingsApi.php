@@ -22,7 +22,7 @@ class CohereEmbeddingsApi implements EmbeddingsApi
         $this->client = new Client([
             'base_uri' => 'https://api.cohere.ai',
             'headers' => [
-                'Authorization' => 'Bearer '.$apiKey,
+                'Authorization' => 'Bearer ' . $apiKey,
                 'Content-Type' => 'application/json',
             ],
             'timeout' => 60,
@@ -66,22 +66,23 @@ class CohereEmbeddingsApi implements EmbeddingsApi
             return [];
         }
 
-        $texts = array_map(fn ($item) => $item['text'] ?? '', $payload);
+        $texts = array_map(fn($item) => $item['text'] ?? '', $payload);
 
         $dimensions = (int) ($payload[0]['dims'] ?? 0);
 
-        $response = $this->client->post('/v1/embed', [
+        $response = $this->client->post('/v2/embed', [
             RequestOptions::JSON => [
                 'model' => $this->model,
                 'texts' => $texts,
                 'input_type' => $this->inputType->value,
                 'embedding_types' => ['float'],
+                ...($this->model === 'embed-v4.0' ? ['output_dimension' => $dimensions] : []),
             ],
         ]);
 
         $data = json_decode($response->getBody()->getContents(), true);
 
-        foreach ($data['_embeddings']['float'] as $index => $embedding) {
+        foreach ($data['embeddings']['float'] as $index => $embedding) {
             if ($dimensions > 0 && count($embedding) !== $dimensions) {
                 if (count($embedding) > $dimensions) {
                     $embedding = array_slice($embedding, 0, $dimensions);
