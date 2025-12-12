@@ -120,6 +120,16 @@ class NewProperties
         return $field->unstructuredText();
     }
 
+    public function completion(string $name): Text
+    {
+        return $this->text($name)->completion();
+    }
+
+    public function searchAsYouType(string $name): Text
+    {
+        return $this->text($name)->searchAsYouType();
+    }
+
     public function image(string $name): Image
     {
         $field = new Image($name);
@@ -235,6 +245,31 @@ class NewProperties
         $this->fields->add($field);
 
         return $field;
+    }
+
+    public function integer(string $name): Number
+    {
+        return $this->number($name)->integer();
+    }
+
+    public function float(string $name): Number
+    {
+        return $this->number($name)->float();
+    }
+
+    public function long(string $name): Number
+    {
+        return $this->number($name)->long();
+    }
+
+    public function double(string $name): Number
+    {
+        return $this->number($name)->double();
+    }
+
+    public function scaledFloat(string $name): Number
+    {
+        return $this->number($name)->scaledFloat();
     }
 
     public function range(string $name): Range

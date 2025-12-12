@@ -12,6 +12,7 @@ use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\Contracts\Analyze;
 use Sigmie\Mappings\NewSemanticField;
+use Sigmie\Mappings\Traits\HasAnalyzer;
 use Sigmie\Mappings\Traits\HasFacets;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Text\Match_;
@@ -23,25 +24,18 @@ use function Sigmie\Functions\name_configs;
 
 class Text extends Type implements FromRaw
 {
+    use HasAnalyzer;
     use HasFacets;
-
-    protected ?Analyzer $analyzer = null;
 
     protected ?array $indexPrefixes = null;
 
-    public bool $hasAnalyzerCallback = false;
-
     protected bool $sortable = false;
-
-    public Closure $newAnalyzerClosure;
 
     protected Collection $fields;
 
     protected array $vectors = [];
 
     protected bool $searchSynonyms = false;
-
-    protected string $searchAnalyzer = 'default';
 
     public function __construct(
         string $name,
@@ -50,7 +44,8 @@ class Text extends Type implements FromRaw
         parent::__construct($name);
 
         $this->fields = new Collection;
-        $this->newAnalyzerClosure = fn () => null;
+
+        $this->initAnalyzer();
 
         $this->configure();
     }
@@ -174,19 +169,6 @@ class Text extends Type implements FromRaw
         return ! $this->fields->isEmpty();
     }
 
-    public function analysisFromCallback(NewAnalyzer $newAnalyzer): void
-    {
-        ($this->newAnalyzerClosure)($newAnalyzer);
-    }
-
-    public function withNewAnalyzer(Closure $closure): static
-    {
-        $this->hasAnalyzerCallback = true;
-        $this->newAnalyzerClosure = $closure;
-
-        return $this;
-    }
-
     public static function fromRaw(array $raw): static
     {
         [$name, $configs] = name_configs($raw);
@@ -290,28 +272,6 @@ class Text extends Type implements FromRaw
         $this->type = 'completion';
 
         return $this;
-    }
-
-    public function newAnalyzer(Closure $callable): void
-    {
-        $this->hasAnalyzerCallback = true;
-        $this->newAnalyzerClosure = $callable;
-    }
-
-    public function withAnalyzer(Analyzer $analyzer): void
-    {
-        $this->analyzer = $analyzer;
-        $this->searchAnalyzer = $analyzer->name();
-    }
-
-    public function searchAnalyzer(): string
-    {
-        return $this->searchAnalyzer;
-    }
-
-    public function analyzer(): ?Analyzer
-    {
-        return $this->analyzer;
     }
 
     public function toRaw(): array

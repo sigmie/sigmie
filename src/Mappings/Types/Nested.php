@@ -33,6 +33,7 @@ class Nested extends Type implements FieldContainer, PropertiesField
 
         // Set paths with > marker to indicate nested boundary
         $nestedPath = $this->fullPath();
+
         foreach ($this->properties->toArray() as $field) {
             $field->setPath($nestedPath . '>' . $field->name);
         }
