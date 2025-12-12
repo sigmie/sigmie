@@ -52,7 +52,7 @@ class Properties extends Type implements ArrayAccess, FieldContainer
         // Set paths for all fields
         $containerPath = $this->name === 'mappings' ? '' : $this->name;
         $this->fields = array_map(function (Type $field) use ($containerPath): Type {
-            $field->setPath($containerPath ? "$containerPath.$field->name" : $field->name);
+            $field->setPath($containerPath !== '' && $containerPath !== '0' ? sprintf('%s.%s', $containerPath, $field->name) : $field->name);
 
             return $field;
         }, $fields);
@@ -167,7 +167,7 @@ class Properties extends Type implements ArrayAccess, FieldContainer
             $field = match (true) {
                 // This is an object type
                 isset($value['properties']) && ! isset($value['type']) => (function () use ($fieldName, $value, $defaultAnalyzer, $analyzers, $parentPath): Object_ {
-                    $childPath = $parentPath ? "$parentPath.$fieldName" : $fieldName;
+                    $childPath = $parentPath !== '' && $parentPath !== '0' ? sprintf('%s.%s', $parentPath, $fieldName) : $fieldName;
                     $props = self::create(
                         $value['properties'],
                         $defaultAnalyzer,
@@ -189,7 +189,7 @@ class Properties extends Type implements ArrayAccess, FieldContainer
                     $analyzers,
                     $parentPath
                 ): Nested {
-                    $childPath = $parentPath ? "$parentPath.$fieldName" : $fieldName;
+                    $childPath = $parentPath !== '' && $parentPath !== '0' ? sprintf('%s.%s', $parentPath, $fieldName) : $fieldName;
                     $props = self::create(
                         $value['properties'],
                         $defaultAnalyzer,
@@ -341,7 +341,7 @@ class Properties extends Type implements ArrayAccess, FieldContainer
     public function setFieldPaths(string $containerPath): void
     {
         foreach ($this->fields as $field) {
-            $field->setPath($containerPath ? "$containerPath.$field->name" : $field->name);
+            $field->setPath($containerPath !== '' && $containerPath !== '0' ? sprintf('%s.%s', $containerPath, $field->name) : $field->name);
         }
     }
 

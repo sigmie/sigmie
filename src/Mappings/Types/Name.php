@@ -60,7 +60,7 @@ class Name extends Text implements Analyze
     {
         return [
             $this->name,
-            $this->fullPath() . '.' . $this->name . '_text',
+            $this->fullPath().'.'.$this->name.'_text',
         ];
     }
 
@@ -68,7 +68,7 @@ class Name extends Text implements Analyze
     {
         $queries = [];
 
-        $prefixField = $this->fullPath() . '.' . $this->name . '_text';
+        $prefixField = $this->fullPath().'.'.$this->name.'_text';
 
         $queries[] = new Match_($this->name(), $queryString, analyzer: $this->ngramAnalyzer);
         $queries[] = new MatchPhrasePrefix($prefixField, $queryString, analyzer: $this->prefixAnalyzer);

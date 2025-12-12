@@ -119,7 +119,7 @@ class Text extends Type implements FromRaw
 
     public function handleCustomAnalyzer(AnalysisInterface $analysis): void
     {
-        $name = str_replace('.', '_', $this->fullPath()) . '_field_analyzer';
+        $name = str_replace('.', '_', $this->fullPath()).'_field_analyzer';
 
         $newAnalyzer = new NewAnalyzer(
             $analysis,
@@ -223,12 +223,12 @@ class Text extends Type implements FromRaw
 
     public function sortableName(): ?string
     {
-        return $this->fullPath() . '.sortable';
+        return $this->fullPath().'.sortable';
     }
 
     public function filterableName(): ?string
     {
-        return $this->fullPath() . '.' . $this->raw;
+        return $this->fullPath().'.'.$this->raw;
     }
 
     public function searchAsYouType(?Analyzer $analyzer = null): self
@@ -380,7 +380,7 @@ class Text extends Type implements FromRaw
 
                     // Set path including this text field's path and vector's name
                     $parentPath = $this->fullPath();
-                    $vector->setPath($parentPath ? "$parentPath.{$vector->name}" : $vector->name);
+                    $vector->setPath($parentPath !== '' && $parentPath !== '0' ? sprintf('%s.%s', $parentPath, $vector->name) : $vector->name);
 
                     return $vector;
                 }

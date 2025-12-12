@@ -50,7 +50,7 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
 
     public function nestedPath(): ?string
     {
-        if (!str_contains($this->path, '>')) {
+        if (! str_contains($this->path, '>')) {
             return null;
         }
 

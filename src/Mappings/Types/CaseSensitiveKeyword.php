@@ -12,6 +12,7 @@ use Sigmie\Query\Queries\Term\Term;
 class CaseSensitiveKeyword extends Type
 {
     use HasFacets;
+
     protected string $type = 'keyword';
 
     public function queries(array|string $queryString): array

@@ -9,7 +9,6 @@ use Sigmie\Document\Document;
 use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Mappings\Types\Price;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Testing\TestCase;
 

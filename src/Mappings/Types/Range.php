@@ -11,6 +11,7 @@ use Sigmie\Query\Aggs;
 class Range extends Type
 {
     use HasFacets;
+
     public function __construct(string $name)
     {
         parent::__construct($name);

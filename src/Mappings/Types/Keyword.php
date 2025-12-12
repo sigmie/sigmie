@@ -16,6 +16,7 @@ use Sigmie\Query\Queries\Term\Term;
 class Keyword extends Type
 {
     use HasFacets;
+
     protected string $type = 'keyword';
 
     public function toRaw(): array

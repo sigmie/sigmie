@@ -35,7 +35,7 @@ class Nested extends Type implements FieldContainer, PropertiesField
         $nestedPath = $this->fullPath();
 
         foreach ($this->properties->toArray() as $field) {
-            $field->setPath($nestedPath . '>' . $field->name);
+            $field->setPath($nestedPath.'>'.$field->name);
         }
 
         return $this;

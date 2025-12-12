@@ -10,6 +10,7 @@ use Sigmie\Query\Aggs;
 class Price extends Type
 {
     use HasFacets;
+
     public function toRaw(): array
     {
         $raw = [$this->name => [

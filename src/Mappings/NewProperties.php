@@ -388,7 +388,7 @@ class NewProperties
         // Set path for the field based on parent's path
         if ($this->parentField instanceof Type) {
             $parentPath = $this->parentField->fullPath();
-            $field->setPath($parentPath ? "$parentPath.$name" : $name);
+            $field->setPath($parentPath !== '' && $parentPath !== '0' ? sprintf('%s.%s', $parentPath, $name) : $name);
         }
 
         $this->fields->add($field);

@@ -16,7 +16,8 @@ class FilterParserTest extends TestCase
 {
     /**
      * @test
-     */ public function wildcard_in_query(): void
+     */
+    public function wildcard_in_query(): void
     {
         $indexName = uniqid();
 

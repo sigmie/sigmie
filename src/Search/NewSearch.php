@@ -432,7 +432,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
 
         // If specific fields are requested, filter to only those fields
         // Otherwise, use all semantic fields
-        if (! empty($this->fields)) {
+        if ($this->fields !== []) {
             $semanticFields = $semanticFields->filter(fn (Text $field): bool => in_array($field->fullPath(), $this->fields));
         }
 
@@ -471,7 +471,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
             ->filter(fn (Text $field): bool => $field->isSemantic());
 
         // If specific fields are requested, filter to only those fields
-        if (! empty($this->fields)) {
+        if ($this->fields !== []) {
             $semanticFields = $semanticFields->filter(fn (Text $field): bool => in_array($field->fullPath(), $this->fields));
         }
 
@@ -782,7 +782,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
             ->filter(fn (Text $field): bool => $field->isSemantic());
 
         // If specific fields are requested, filter to only those fields
-        if (! empty($fieldsToFilter)) {
+        if ($fieldsToFilter !== []) {
             $semanticFields = $semanticFields->filter(fn (Text $field): bool => in_array($field->fullPath(), $fieldsToFilter));
         }
 
@@ -1028,7 +1028,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
             ->filter(fn (Text $field): bool => $field->isSemantic());
 
         // If specific fields are requested, filter to only those fields
-        if (! empty($this->fields)) {
+        if ($this->fields !== []) {
             $semanticFields = $semanticFields->filter(fn (Text $field): bool => in_array($field->fullPath(), $this->fields));
         }
 
