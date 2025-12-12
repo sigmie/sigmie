@@ -11,7 +11,6 @@ use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Mappings;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\Number;
@@ -126,7 +125,7 @@ class FromRawTest extends TestCase
         $this->assertInstanceOf(Text::class, $properties['title']);
 
         $title = new Text('title');
-        $title->parent('', Properties::class);
+        $title->setPath('title');
         $this->assertEquals($title->searchAsYouType($defaultAnalyzer), $properties['title']);
 
         $this->assertArrayHasKey('content', $properties);
@@ -134,7 +133,7 @@ class FromRawTest extends TestCase
 
         $content = (new Text('content'))
             ->unstructuredText($customFieldAnalyzer);
-        $content->parent('', Properties::class);
+        $content->setPath('content');
         $this->assertEquals($content, $properties['content']);
     }
 
@@ -175,42 +174,42 @@ class FromRawTest extends TestCase
         $this->assertInstanceOf(Text::class, $properties['title']);
 
         $title = new Text('title');
-        $title->parent('', Properties::class);
+        $title->setPath('title');
         $this->assertEquals($title->searchAsYouType($defaultAnalyzer), $properties['title']);
 
         $this->assertArrayHasKey('content', $properties);
         $this->assertInstanceOf(Text::class, $properties['content']);
 
         $content = new Text('content');
-        $content->parent('', Properties::class);
+        $content->setPath('content');
         $this->assertEquals($content->unstructuredText($defaultAnalyzer), $properties['content']);
 
         $this->assertArrayHasKey('adults', $properties);
         $this->assertInstanceOf(Number::class, $properties['adults']);
 
         $adults = new Number('adults');
-        $adults->parent('', Properties::class);
+        $adults->setPath('adults');
         $this->assertEquals($adults->integer(), $properties['adults']);
 
         $this->assertArrayHasKey('price', $properties);
         $this->assertInstanceOf(Number::class, $properties['price']);
 
         $price = new Number('price');
-        $price->parent('', Properties::class);
+        $price->setPath('price');
         $this->assertEquals($price->float(), $properties['price']);
 
         $this->assertArrayHasKey('created_at', $properties);
         $this->assertInstanceOf(Date::class, $properties['created_at']);
 
         $createdAt = new Date('created_at');
-        $createdAt->parent('', Properties::class);
+        $createdAt->setPath('created_at');
         $this->assertEquals($createdAt, $properties['created_at']);
 
         $this->assertArrayHasKey('is_valid', $properties);
         $this->assertInstanceOf(Boolean::class, $properties['is_valid']);
 
         $isValid = new Boolean('is_valid');
-        $isValid->parent('', Properties::class);
+        $isValid->setPath('is_valid');
         $this->assertEquals($isValid, $properties['is_valid']);
     }
 

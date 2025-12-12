@@ -9,7 +9,6 @@ use Sigmie\Document\Document;
 use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Mappings\Types\Price;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Testing\TestCase;
 
@@ -363,7 +362,7 @@ class SearchTest extends TestCase
 
         $res = $this->indexAPICall($indexName, 'GET');
 
-        $this->assertEquals(Price::class, $res->json($index->name.'.mappings.properties.price.meta.class'));
+        $this->assertEquals('price', $res->json($index->name.'.mappings.properties.price.meta.type'));
 
         $index = $this->sigmie->collect($indexName, refresh: true);
 

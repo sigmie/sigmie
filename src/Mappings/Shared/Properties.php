@@ -13,7 +13,8 @@ trait Properties
     {
         $this->properties = $props instanceof NewProperties ? $props->get() : $props;
 
-        $this->properties->propertiesParent($props->fullPath, static::class);
+        // Set paths for all fields based on this container's path
+        $this->properties->setFieldPaths($this->fullPath());
 
         return $this;
     }

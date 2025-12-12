@@ -6,11 +6,8 @@ namespace Sigmie\Mappings\Types;
 
 use Closure;
 use ReflectionClass;
-use Sigmie\Enums\FacetLogic;
 use Sigmie\Mappings\Contracts\Type as TypeInterface;
-use Sigmie\Query\Aggs;
 use Sigmie\Search\Contracts\TextQueries;
-use Sigmie\Shared\Collection;
 use Sigmie\Shared\Contracts\Name;
 use Sigmie\Shared\Contracts\ToRaw;
 
@@ -20,28 +17,44 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
 
     protected array $meta = [];
 
-    protected FacetLogic $facetLogic = FacetLogic::Conjunctive;
-
-    public function __construct(
-        public string $name,
-        public ?string $parentPath = null,
-        public ?string $parentType = null,
-        public ?string $fullPath = ''
-    ) {}
+    /**
+     * Field path with optional nested boundary marker (>).
+     *
+     * Regular field:              "title"           → fullPath: "title", nestedPath: null
+     * Inside Object_:             "meta.author"     → fullPath: "meta.author", nestedPath: null
+     * Inside Nested:              "items>name"      → fullPath: "items.name", nestedPath: "items"
+     * Inside Nested → Object_:    "items>details.price" → fullPath: "items.details.price", nestedPath: "items"
+     * Nested inside Nested:       "orders>items>sku" → fullPath: "orders.items.sku", nestedPath: "orders"
+     */
+    protected string $path = '';
 
     public bool $hasQueriesCallback = false;
 
     public Closure $queriesClosure;
 
-    public function parent(
-        string $parentPath,
-        string $parentType,
-    ): static {
-        $this->parentPath = $parentPath;
-        $this->parentType = $parentType;
-        $this->fullPath = trim($parentPath.'.'.$this->name, '.');
+    public function __construct(public string $name) {}
+
+    public function setPath(string $path): static
+    {
+        $this->path = $path;
 
         return $this;
+    }
+
+    public function fullPath(): string
+    {
+        $path = $this->path ?: $this->name;
+
+        return str_replace('>', '.', $path);
+    }
+
+    public function nestedPath(): ?string
+    {
+        if (! str_contains($this->path, '>')) {
+            return null;
+        }
+
+        return explode('>', $this->path)[0];
     }
 
     public function queries(array|string $queryString): array
@@ -58,22 +71,27 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
         return $this->queries($queryString);
     }
 
-    public function meta(array $meta): void
-    {
-        $this->meta = [...$this->meta, ...$meta];
-    }
-
     public function queriesFromCallback(string $queryString): array
     {
         return ($this->queriesClosure)($queryString);
     }
 
-    public function withQueries(Closure $closure)
+    public function withQueries(Closure $closure): static
     {
         $this->hasQueriesCallback = true;
         $this->queriesClosure = $closure;
 
         return $this;
+    }
+
+    public function meta(array $meta): void
+    {
+        $this->meta = [...$this->meta, ...$meta];
+    }
+
+    public function isFacetable(): bool
+    {
+        return false;
     }
 
     public function __invoke(): array
@@ -88,7 +106,7 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
 
     public function name(): string
     {
-        return trim(sprintf('%s.%s', $this->parentPath, $this->name), '.');
+        return $this->fullPath();
     }
 
     public function names(): array
@@ -110,33 +128,11 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
             $raw[$this->name]['meta'] =
                 [
                     ...$this->meta,
-                    'class' => static::class,
+                    'type' => $this->typeName(),
                 ];
         }
 
         return $raw;
-    }
-
-    public function aggregation(Aggs $aggs, string $params): void {}
-
-    public function isFacetConjunctive(): bool
-    {
-        return $this->facetLogic === FacetLogic::Conjunctive;
-    }
-
-    public function isFacetDisjunctive(): bool
-    {
-        return $this->facetLogic === FacetLogic::Disjunctive;
-    }
-
-    public function isFacetable(): bool
-    {
-        return false;
-    }
-
-    public function facets(array $aggregation): ?array
-    {
-        return null;
     }
 
     public function sortableName(): ?string
@@ -152,30 +148,5 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
     public function typeName(): string
     {
         return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', (new ReflectionClass($this))->getShortName()));
-    }
-
-    public function isFacetSearchable(): bool
-    {
-        return $this->facetLogic === FacetLogic::Searchable;
-    }
-
-    public function facetConjunctive(): static
-    {
-        $this->facetLogic = FacetLogic::Conjunctive;
-
-        return $this;
-    }
-
-    public function facetDisjunctive(): static
-    {
-        $this->facetLogic = FacetLogic::Disjunctive;
-
-        return $this;
-    }
-
-    public function vectorFields()
-    {
-        return (new Collection([]))
-            ->map(fn (Nested|DenseVector $field): Nested|DenseVector => $field);
     }
 }

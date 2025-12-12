@@ -8,12 +8,15 @@ use Sigmie\Index\Analysis\Normalizer\Normalizer;
 use Sigmie\Index\Analysis\NormalizerFilter\Lowercase;
 use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\Normalizer as NormalizerInterface;
+use Sigmie\Mappings\Traits\HasFacets;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 
 class Keyword extends Type
 {
+    use HasFacets;
+
     protected string $type = 'keyword';
 
     public function toRaw(): array

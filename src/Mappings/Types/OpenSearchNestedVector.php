@@ -23,7 +23,6 @@ class OpenSearchNestedVector extends TypesNested implements Type
         string $name,
         int $dims = 384,
         VectorSimilarity $similarity = VectorSimilarity::Cosine,
-        ?string $fullPath = '',
     ) {
         $props = new NewProperties;
         $props->type(
@@ -31,11 +30,10 @@ class OpenSearchNestedVector extends TypesNested implements Type
                 name: 'vector',
                 dims: $dims,
                 similarity: $similarity,
-                fullPath: $fullPath ? $fullPath.'.vector' : 'vector',
             )
         );
 
-        parent::__construct($name, $props, $fullPath);
+        parent::__construct($name, $props);
 
         $this->dims = $dims;
         $this->similarity = $similarity;
@@ -48,11 +46,13 @@ class OpenSearchNestedVector extends TypesNested implements Type
 
     protected function mapSimilarityToScript(VectorSimilarity $similarity): string
     {
+        $fullPath = $this->fullPath();
+
         return match ($similarity) {
-            VectorSimilarity::Cosine => sprintf("cosineSimilarity(params.query_vector, doc['_embeddings.%s.vector']) + 1.0", $this->fullPath),
-            VectorSimilarity::DotProduct => sprintf("dotProduct(params.query_vector, doc['_embeddings.%s.vector'])", $this->fullPath),
-            VectorSimilarity::Euclidean => sprintf("1 / (1 + l2norm(params.query_vector, doc['_embeddings.%s.vector']))", $this->fullPath),
-            VectorSimilarity::MaxInnerProduct => sprintf("dotProduct(params.query_vector, doc['_embeddings.%s.vector'])", $this->fullPath),
+            VectorSimilarity::Cosine => sprintf("cosineSimilarity(params.query_vector, doc['_embeddings.%s.vector']) + 1.0", $fullPath),
+            VectorSimilarity::DotProduct => sprintf("dotProduct(params.query_vector, doc['_embeddings.%s.vector'])", $fullPath),
+            VectorSimilarity::Euclidean => sprintf("1 / (1 + l2norm(params.query_vector, doc['_embeddings.%s.vector']))", $fullPath),
+            VectorSimilarity::MaxInnerProduct => sprintf("dotProduct(params.query_vector, doc['_embeddings.%s.vector'])", $fullPath),
         };
     }
 
@@ -67,7 +67,7 @@ class OpenSearchNestedVector extends TypesNested implements Type
         // that wraps these nested vector queries.
         return [
             new Nested(
-                '_embeddings.'.$this->fullPath,
+                '_embeddings.'.$this->fullPath(),
                 new FunctionScore(
                     query: new MatchAll,
                     source: $source,

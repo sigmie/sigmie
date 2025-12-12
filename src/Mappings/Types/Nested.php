@@ -4,28 +4,41 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Mappings\Contracts\FieldContainer;
 use Sigmie\Mappings\Contracts\PropertiesField;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Shared\Properties as SharedProperties;
 
-class Nested extends Type implements PropertiesField
+class Nested extends Type implements FieldContainer, PropertiesField
 {
-    use SharedProperties;
+    use SharedProperties {
+        properties as traitProperties;
+    }
 
     protected string $type = 'nested';
 
     public function __construct(
         string $name,
         Properties|NewProperties $properties = new NewProperties,
-        ?string $fullPath = '',
     ) {
-        parent::__construct(
-            name: $name,
-            fullPath: $fullPath
-        );
+        parent::__construct($name);
 
         $this->properties($properties);
+    }
+
+    public function properties(Properties|NewProperties $props): static
+    {
+        $this->traitProperties($props);
+
+        // Set paths with > marker to indicate nested boundary
+        $nestedPath = $this->fullPath();
+
+        foreach ($this->properties->toArray() as $field) {
+            $field->setPath($nestedPath.'>'.$field->name);
+        }
+
+        return $this;
     }
 
     public function toRaw(): array
@@ -53,5 +66,15 @@ class Nested extends Type implements PropertiesField
         }
 
         return [true, ''];
+    }
+
+    public function getProperties(): Properties
+    {
+        return $this->properties;
+    }
+
+    public function hasFields(): bool
+    {
+        return isset($this->properties);
     }
 }

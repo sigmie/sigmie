@@ -61,7 +61,7 @@ class DocumentProcessor
         $embeddings = $this->properties
             ->nestedSemanticFields()
             ->mapWithKeys(fn (Text|Image $field) => [
-                $field->fullPath => $this->processField($field, $document),
+                $field->fullPath() => $this->processField($field, $document),
             ])
             ->filter(fn ($vectors): bool => ! empty($vectors))
             ->toArray();
@@ -150,7 +150,7 @@ class DocumentProcessor
     protected function processField(Text|Image $field, Document $document): array
     {
         // Check if embeddings already exist for this field
-        $existingEmbeddings = dot($document->_source)->get('_embeddings.'.$field->fullPath);
+        $existingEmbeddings = dot($document->_source)->get('_embeddings.'.$field->fullPath());
 
         if ($existingEmbeddings && is_array($existingEmbeddings)) {
             // Check if all required vector fields already have embeddings
@@ -192,11 +192,11 @@ class DocumentProcessor
 
     protected function findNestedAncestor(Text|Image $field): ?string
     {
-        if (! str_contains($field->fullPath, '.')) {
+        if (! str_contains($field->fullPath(), '.')) {
             return null;
         }
 
-        $parts = explode('.', $field->fullPath);
+        $parts = explode('.', $field->fullPath());
         // Check each ancestor path to see if it's a nested field
         $counter = count($parts);
 
@@ -215,7 +215,7 @@ class DocumentProcessor
 
     protected function isNestedField(Text|Image $field): bool
     {
-        return $field->parentType === Nested::class && str_contains($field->fullPath, '.');
+        return $field->nestedPath() !== null;
     }
 
     protected function extractNestedValue(Text|Image $field, Document $document, string $nestedPath): array
@@ -227,7 +227,7 @@ class DocumentProcessor
         }
 
         // Get the relative path from the nested field to this field
-        $relativePath = substr($field->fullPath, strlen($nestedPath) + 1);
+        $relativePath = substr($field->fullPath(), strlen($nestedPath) + 1);
 
         // Check if this is a single object (associative array) or array of objects (indexed array)
         // Single object: ['key' => 'value'], Array of objects: [['key' => 'value'], ['key' => 'value']]
@@ -258,7 +258,7 @@ class DocumentProcessor
 
     protected function extractSimpleValue(Text|Image $field, Document $document): array
     {
-        $value = dot($document->_source)->get($field->fullPath);
+        $value = dot($document->_source)->get($field->fullPath());
 
         if (! $value) {
             return [];
@@ -498,13 +498,13 @@ class DocumentProcessor
             }
 
             // Validate boost field
-            $this->validateBoostField($field->fullPath, $boostedByField);
+            $this->validateBoostField($field->fullPath(), $boostedByField);
 
             // Extract boost value from document
             $boostValue = dot($document->_source)->get($boostedByField);
 
             if ($boostValue === null) {
-                throw new Exception(sprintf("Boost field '%s' is not present in document for semantic field '%s'", $boostedByField, $field->fullPath));
+                throw new Exception(sprintf("Boost field '%s' is not present in document for semantic field '%s'", $boostedByField, $field->fullPath()));
             }
 
             if (! is_numeric($boostValue) || $boostValue <= 0) {

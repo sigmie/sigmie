@@ -427,10 +427,16 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
             return false;
         }
 
-        return $this->properties->nestedSemanticFields()
-            ->filter(fn (Text $field): bool => $field->isSemantic())
-            ->filter(fn (Text $field): bool => in_array($field->fullPath, $this->fields))
-            ->isNotEmpty();
+        $semanticFields = $this->properties->nestedSemanticFields()
+            ->filter(fn (Text $field): bool => $field->isSemantic());
+
+        // If specific fields are requested, filter to only those fields
+        // Otherwise, use all semantic fields
+        if ($this->fields !== []) {
+            $semanticFields = $semanticFields->filter(fn (Text $field): bool => in_array($field->fullPath(), $this->fields));
+        }
+
+        return $semanticFields->isNotEmpty();
     }
 
     protected function populateVectorPool(): void
@@ -456,9 +462,18 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
 
         // Group fields by their API
         $fieldsByApi = [];
+
+        if (! $this->properties) {
+            return;
+        }
+
         $semanticFields = $this->properties->nestedSemanticFields()
-            ->filter(fn (Text $field): bool => $field->isSemantic())
-            ->filter(fn (Text $field): bool => in_array($field->fullPath, $this->fields));
+            ->filter(fn (Text $field): bool => $field->isSemantic());
+
+        // If specific fields are requested, filter to only those fields
+        if ($this->fields !== []) {
+            $semanticFields = $semanticFields->filter(fn (Text $field): bool => in_array($field->fullPath(), $this->fields));
+        }
 
         foreach ($semanticFields as $field) {
             foreach ($field->vectorFields()->getIterator() as $vectorField) {
@@ -533,14 +548,14 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
 
     protected function queryBoost(Type $field, float $queryWeight): float
     {
-        $fieldWeight = $this->weight[$field->fullPath] ?? 1;
+        $fieldWeight = $this->weight[$field->fullPath()] ?? 1;
 
-        return array_key_exists($field->fullPath, $this->weight) ? $fieldWeight * $queryWeight : $queryWeight;
+        return array_key_exists($field->fullPath(), $this->weight) ? $fieldWeight * $queryWeight : $queryWeight;
     }
 
     protected function queryFuzziness(Text $field): ?string
     {
-        return in_array($field->fullPath, $this->typoTolerantAttributes) ? sprintf('AUTO:%d,%d', $this->minCharsForOneTypo, $this->minCharsForTwoTypo) : null;
+        return in_array($field->fullPath(), $this->typoTolerantAttributes) ? sprintf('AUTO:%d,%d', $this->minCharsForOneTypo, $this->minCharsForTwoTypo) : null;
     }
 
     protected function createStringQueries(string $queryString, float $queryBoost = 1.0, ?array $scopedFields = null): Query
@@ -757,11 +772,21 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
 
     protected function getVectorFields(?array $scopedFields = null): Collection
     {
+        if (! $this->properties) {
+            return new Collection([]);
+        }
+
         $fieldsToFilter = $scopedFields ?? $this->fields;
 
-        return $this->properties->nestedSemanticFields()
-            ->filter(fn (Text $field): bool => $field->isSemantic())
-            ->filter(fn (Text $field): bool => in_array($field->fullPath, $fieldsToFilter))
+        $semanticFields = $this->properties->nestedSemanticFields()
+            ->filter(fn (Text $field): bool => $field->isSemantic());
+
+        // If specific fields are requested, filter to only those fields
+        if ($fieldsToFilter !== []) {
+            $semanticFields = $semanticFields->filter(fn (Text $field): bool => in_array($field->fullPath(), $fieldsToFilter));
+        }
+
+        return $semanticFields
             ->map(fn (Text $field): Collection => $field->vectorFields())
             ->flatten(1);
     }
@@ -858,8 +883,8 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
 
     protected function wrapNestedQuery(Query $queryClause, $field): Query
     {
-        if (($field->parentPath ?? false) && $field->parentType === TypesNested::class) {
-            return new Nested($field->parentPath, $queryClause);
+        if ($nestedPath = $field->nestedPath()) {
+            return new Nested($nestedPath, $queryClause);
         }
 
         return $queryClause;
@@ -993,11 +1018,19 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
 
     protected function getRequiredEmbeddingApis(): array
     {
+        if (! $this->properties) {
+            return [];
+        }
+
         $apis = [];
 
         $semanticFields = $this->properties->nestedSemanticFields()
-            ->filter(fn (Text $field): bool => $field->isSemantic())
-            ->filter(fn (Text $field): bool => in_array($field->fullPath, $this->fields));
+            ->filter(fn (Text $field): bool => $field->isSemantic());
+
+        // If specific fields are requested, filter to only those fields
+        if ($this->fields !== []) {
+            $semanticFields = $semanticFields->filter(fn (Text $field): bool => in_array($field->fullPath(), $this->fields));
+        }
 
         foreach ($semanticFields as $field) {
             foreach ($field->vectorFields()->getIterator() as $vectorField) {

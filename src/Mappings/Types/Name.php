@@ -60,8 +60,7 @@ class Name extends Text implements Analyze
     {
         return [
             $this->name,
-            // "{$this->name}.{$this->name}_text",
-            $this->parentPath ? sprintf('%s.%s.%s_text', $this->parentPath, $this->name, $this->name) : sprintf('%s.%s_text', $this->name, $this->name),
+            $this->fullPath().'.'.$this->name.'_text',
         ];
     }
 
@@ -69,7 +68,7 @@ class Name extends Text implements Analyze
     {
         $queries = [];
 
-        $prefixField = $this->parentPath ? sprintf('%s.%s.%s_text', $this->parentPath, $this->name, $this->name) : sprintf('%s.%s_text', $this->name, $this->name);
+        $prefixField = $this->fullPath().'.'.$this->name.'_text';
 
         $queries[] = new Match_($this->name(), $queryString, analyzer: $this->ngramAnalyzer);
         $queries[] = new MatchPhrasePrefix($prefixField, $queryString, analyzer: $this->prefixAnalyzer);

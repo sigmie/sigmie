@@ -12,6 +12,8 @@ use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\Contracts\Analyze;
 use Sigmie\Mappings\NewSemanticField;
+use Sigmie\Mappings\Traits\HasAnalyzer;
+use Sigmie\Mappings\Traits\HasFacets;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
@@ -22,23 +24,18 @@ use function Sigmie\Functions\name_configs;
 
 class Text extends Type implements FromRaw
 {
-    protected ?Analyzer $analyzer = null;
+    use HasAnalyzer;
+    use HasFacets;
 
     protected ?array $indexPrefixes = null;
 
-    public bool $hasAnalyzerCallback = false;
-
     protected bool $sortable = false;
-
-    public Closure $newAnalyzerClosure;
 
     protected Collection $fields;
 
     protected array $vectors = [];
 
     protected bool $searchSynonyms = false;
-
-    protected string $searchAnalyzer = 'default';
 
     public function __construct(
         string $name,
@@ -47,7 +44,8 @@ class Text extends Type implements FromRaw
         parent::__construct($name);
 
         $this->fields = new Collection;
-        $this->newAnalyzerClosure = fn () => null;
+
+        $this->initAnalyzer();
 
         $this->configure();
     }
@@ -121,9 +119,7 @@ class Text extends Type implements FromRaw
 
     public function handleCustomAnalyzer(AnalysisInterface $analysis): void
     {
-        $name = is_null($this->parentPath) ? $this->name.'_field_analyzer' : sprintf('%s_%s_field_analyzer', $this->parentPath, $this->name);
-        $name = str_replace('.', '_', $name);
-        $name = trim($name, '_');
+        $name = str_replace('.', '_', $this->fullPath()).'_field_analyzer';
 
         $newAnalyzer = new NewAnalyzer(
             $analysis,
@@ -171,19 +167,6 @@ class Text extends Type implements FromRaw
     public function hasFields(): bool
     {
         return ! $this->fields->isEmpty();
-    }
-
-    public function analysisFromCallback(NewAnalyzer $newAnalyzer): void
-    {
-        ($this->newAnalyzerClosure)($newAnalyzer);
-    }
-
-    public function withNewAnalyzer(Closure $closure): static
-    {
-        $this->hasAnalyzerCallback = true;
-        $this->newAnalyzerClosure = $closure;
-
-        return $this;
     }
 
     public static function fromRaw(array $raw): static
@@ -240,12 +223,12 @@ class Text extends Type implements FromRaw
 
     public function sortableName(): ?string
     {
-        return trim(sprintf('%s.%s.sortable', $this->parentPath, $this->name), '.');
+        return $this->fullPath().'.sortable';
     }
 
     public function filterableName(): ?string
     {
-        return trim(sprintf('%s.%s.%s', $this->parentPath, $this->name, $this->raw), '.');
+        return $this->fullPath().'.'.$this->raw;
     }
 
     public function searchAsYouType(?Analyzer $analyzer = null): self
@@ -289,28 +272,6 @@ class Text extends Type implements FromRaw
         $this->type = 'completion';
 
         return $this;
-    }
-
-    public function newAnalyzer(Closure $callable): void
-    {
-        $this->hasAnalyzerCallback = true;
-        $this->newAnalyzerClosure = $callable;
-    }
-
-    public function withAnalyzer(Analyzer $analyzer): void
-    {
-        $this->analyzer = $analyzer;
-        $this->searchAnalyzer = $analyzer->name();
-    }
-
-    public function searchAnalyzer(): string
-    {
-        return $this->searchAnalyzer;
-    }
-
-    public function analyzer(): ?Analyzer
-    {
-        return $this->analyzer;
     }
 
     public function toRaw(): array
@@ -417,15 +378,9 @@ class Text extends Type implements FromRaw
                 if ($field instanceof NewSemanticField) {
                     $vector = $field->make();
 
-                    // Initialize the parent path for the vector field
-                    if ($this->fullPath !== null && $this->fullPath !== '') {
-                        $vector->parent($this->fullPath, static::class);
-                    } elseif ($this->parentPath !== null) {
-                        $vector->parent($this->parentPath, $this->parentType ?? static::class);
-                    } else {
-                        // If no parent context, set the parent to just this field's name
-                        $vector->parent($this->name, static::class);
-                    }
+                    // Set path including this text field's path and vector's name
+                    $parentPath = $this->fullPath();
+                    $vector->setPath($parentPath !== '' && $parentPath !== '0' ? sprintf('%s.%s', $parentPath, $vector->name) : $vector->name);
 
                     return $vector;
                 }

@@ -24,9 +24,8 @@ class KnnVector extends AbstractType implements Type
         protected VectorSimilarity $similarity = VectorSimilarity::Cosine,
         protected ?int $m = 64,
         protected ?int $efConstruction = 300,
-        ?string $fullPath = '',
     ) {
-        parent::__construct($name, fullPath: $fullPath);
+        parent::__construct($name);
     }
 
     public function toRaw(): array
@@ -114,7 +113,7 @@ class KnnVector extends AbstractType implements Type
     {
         return [
             new OpenSearchKnn(
-                field: '_embeddings.'.$this->fullPath,
+                field: '_embeddings.'.$this->fullPath(),
                 queryVector: $vector,
                 k: $k,
                 filter: $filter->toRaw(),

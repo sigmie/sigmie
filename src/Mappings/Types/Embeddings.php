@@ -54,10 +54,6 @@ class Embeddings extends Object_
 
         $props = $newProperties->get();
 
-        parent::__construct(
-            '_embeddings',
-            $props,
-            fullPath: '_embeddings'
-        );
+        parent::__construct('_embeddings', $props);
     }
 }

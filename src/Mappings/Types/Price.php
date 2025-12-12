@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Mappings\Traits\HasFacets;
 use Sigmie\Query\Aggs;
 
 class Price extends Type
 {
+    use HasFacets;
+
     public function toRaw(): array
     {
         $raw = [$this->name => [
@@ -18,7 +21,7 @@ class Price extends Type
         $raw[$this->name]['meta'] =
             [
                 ...$this->meta,
-                'class' => static::class,
+                'type' => $this->typeName(),
             ];
 
         return $raw;
