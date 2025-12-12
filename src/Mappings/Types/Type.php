@@ -37,6 +37,11 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
         return $this;
     }
 
+    public function getParent(): ?Type
+    {
+        return $this->parent;
+    }
+
     public function parent(
         string|Type $parentPath,
         ?string $parentType = null,

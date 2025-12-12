@@ -21,7 +21,7 @@ class Opensearch implements SearchEngine
 
     public function vectorField(BaseVector $field): Type
     {
-        return new KnnVector(
+        $knnVector = new KnnVector(
             name: $field->name,
             dims: $field->dims(),
             index: $field->isIndexed(),
@@ -29,15 +29,27 @@ class Opensearch implements SearchEngine
             m: $field->m(),
             efConstruction: $field->efConstruction(),
         );
+
+        if ($field->getParent() !== null) {
+            $knnVector->setParent($field->getParent());
+        }
+
+        return $knnVector;
     }
 
     public function nestedVectorField(NestedVector $field): Type
     {
-        return new OpenSearchNestedVector(
+        $nestedVector = new OpenSearchNestedVector(
             name: $field->name,
             dims: $field->dims,
             similarity: $field->similarity,
         );
+
+        if ($field->getParent() !== null) {
+            $nestedVector->setParent($field->getParent());
+        }
+
+        return $nestedVector;
     }
 
     public function indexSettings(): array
