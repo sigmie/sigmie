@@ -12,7 +12,9 @@ use Sigmie\Mappings\Shared\Properties as SharedProperties;
 
 class Nested extends Type implements FieldContainer, PropertiesField
 {
-    use SharedProperties;
+    use SharedProperties {
+        properties as traitProperties;
+    }
 
     protected string $type = 'nested';
 
@@ -23,6 +25,19 @@ class Nested extends Type implements FieldContainer, PropertiesField
         parent::__construct($name);
 
         $this->properties($properties);
+    }
+
+    public function properties(Properties|NewProperties $props): static
+    {
+        $this->traitProperties($props);
+
+        // Set paths with > marker to indicate nested boundary
+        $nestedPath = $this->fullPath();
+        foreach ($this->properties->toArray() as $field) {
+            $field->setPath($nestedPath . '>' . $field->name);
+        }
+
+        return $this;
     }
 
     public function toRaw(): array

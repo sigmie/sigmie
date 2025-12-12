@@ -215,7 +215,7 @@ class DocumentProcessor
 
     protected function isNestedField(Text|Image $field): bool
     {
-        return $field->parentType() === Nested::class && str_contains($field->fullPath(), '.');
+        return $field->nestedPath() !== null;
     }
 
     protected function extractNestedValue(Text|Image $field, Document $document, string $nestedPath): array

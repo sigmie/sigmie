@@ -12,6 +12,7 @@ use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\Contracts\Analyze;
 use Sigmie\Mappings\NewSemanticField;
+use Sigmie\Mappings\Traits\HasFacets;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
@@ -22,6 +23,8 @@ use function Sigmie\Functions\name_configs;
 
 class Text extends Type implements FromRaw
 {
+    use HasFacets;
+
     protected ?Analyzer $analyzer = null;
 
     protected ?array $indexPrefixes = null;
@@ -121,10 +124,7 @@ class Text extends Type implements FromRaw
 
     public function handleCustomAnalyzer(AnalysisInterface $analysis): void
     {
-        $parentPath = $this->parentPath();
-        $name = $parentPath === '' ? $this->name.'_field_analyzer' : sprintf('%s_%s_field_analyzer', $parentPath, $this->name);
-        $name = str_replace('.', '_', $name);
-        $name = trim($name, '_');
+        $name = str_replace('.', '_', $this->fullPath()) . '_field_analyzer';
 
         $newAnalyzer = new NewAnalyzer(
             $analysis,
@@ -241,12 +241,12 @@ class Text extends Type implements FromRaw
 
     public function sortableName(): ?string
     {
-        return trim(sprintf('%s.%s.sortable', $this->parentPath(), $this->name), '.');
+        return $this->fullPath() . '.sortable';
     }
 
     public function filterableName(): ?string
     {
-        return trim(sprintf('%s.%s.%s', $this->parentPath(), $this->name, $this->raw), '.');
+        return $this->fullPath() . '.' . $this->raw;
     }
 
     public function searchAsYouType(?Analyzer $analyzer = null): self
@@ -418,8 +418,8 @@ class Text extends Type implements FromRaw
                 if ($field instanceof NewSemanticField) {
                     $vector = $field->make();
 
-                    // Set parent reference to this text field
-                    $vector->setParent($this);
+                    // Set path for the vector based on this text field's path
+                    $vector->setPath($this->fullPath());
 
                     return $vector;
                 }

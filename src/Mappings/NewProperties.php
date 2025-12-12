@@ -350,9 +350,10 @@ class NewProperties
         $props = new NewProperties($field);
         $props->propertiesName($name);
 
-        // Set parent for the field itself (e.g., if we're nested inside another object)
+        // Set path for the field based on parent's path
         if ($this->parentField instanceof Type) {
-            $field->setParent($this->parentField);
+            $parentPath = $this->parentField->fullPath();
+            $field->setPath($parentPath ? "$parentPath.$name" : $name);
         }
 
         $this->fields->add($field);

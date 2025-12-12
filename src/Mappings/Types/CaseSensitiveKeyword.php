@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Mappings\Traits\HasFacets;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 
 class CaseSensitiveKeyword extends Type
 {
+    use HasFacets;
     protected string $type = 'keyword';
 
     public function queries(array|string $queryString): array

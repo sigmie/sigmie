@@ -30,9 +30,8 @@ class Opensearch implements SearchEngine
             efConstruction: $field->efConstruction(),
         );
 
-        if ($field->getParent() !== null) {
-            $knnVector->setParent($field->getParent());
-        }
+        // Preserve the path from the original field
+        $knnVector->setPath($field->fullPath());
 
         return $knnVector;
     }
@@ -45,9 +44,8 @@ class Opensearch implements SearchEngine
             similarity: $field->similarity,
         );
 
-        if ($field->getParent() !== null) {
-            $nestedVector->setParent($field->getParent());
-        }
+        // Preserve the path from the original field
+        $nestedVector->setPath($field->fullPath());
 
         return $nestedVector;
     }

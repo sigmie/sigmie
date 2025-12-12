@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use Sigmie\Mappings\ElasticsearchMappingType;
+use Sigmie\Mappings\Traits\HasFacets;
 use Sigmie\Query\Aggs;
 
 class Number extends Type
 {
+    use HasFacets;
     public function __construct(string $name)
     {
         parent::__construct($name);

@@ -31,9 +31,8 @@ class Elasticsearch implements SearchEngine
             efConstruction: $field->efConstruction(),
         );
 
-        if ($field->getParent() !== null) {
-            $denseVector->setParent($field->getParent());
-        }
+        // Preserve the path from the original field
+        $denseVector->setPath($field->fullPath());
 
         return $denseVector;
     }
@@ -46,9 +45,8 @@ class Elasticsearch implements SearchEngine
             similarity: $field->similarity,
         );
 
-        if ($field->getParent() !== null) {
-            $nestedVector->setParent($field->getParent());
-        }
+        // Preserve the path from the original field
+        $nestedVector->setPath($field->fullPath());
 
         return $nestedVector;
     }

@@ -363,7 +363,7 @@ class SearchTest extends TestCase
 
         $res = $this->indexAPICall($indexName, 'GET');
 
-        $this->assertEquals(Price::class, $res->json($index->name.'.mappings.properties.price.meta.class'));
+        $this->assertEquals('price', $res->json($index->name.'.mappings.properties.price.meta.type'));
 
         $index = $this->sigmie->collect($indexName, refresh: true);
 

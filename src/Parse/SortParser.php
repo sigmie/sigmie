@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Parse;
 
 use Sigmie\Mappings\Types\GeoPoint;
-use Sigmie\Mappings\Types\Nested;
 
 class SortParser extends Parser
 {
@@ -76,11 +75,11 @@ class SortParser extends Parser
                 }
 
                 $hasGeoDistance = true;
-                if ($fieldType->parentPath() && $fieldType->parentType() === Nested::class) {
+                if ($nestedPath = $fieldType->nestedPath()) {
                     $sort[] = [
                         '_geo_distance' => [
                             'nested' => [
-                                'path' => $fieldType->parentPath(),
+                                'path' => $nestedPath,
                             ],
                             $field => [
                                 'lat' => (float) $latitude,
@@ -123,11 +122,11 @@ class SortParser extends Parser
                 continue;
             }
 
-            if ($type->parentPath() && $type->parentType() === Nested::class) {
+            if ($nestedPath = $type->nestedPath()) {
                 $sort[] = [
                     $sortableName => [
                         'nested' => [
-                            'path' => $type->parentPath(),
+                            'path' => $nestedPath,
                         ],
                         'order' => $direction,
                     ],

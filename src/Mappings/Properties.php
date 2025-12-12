@@ -49,13 +49,10 @@ class Properties extends Type implements ArrayAccess, FieldContainer
             $this->boostField = $boostField;
         }
 
-        // Set parent references for all fields
-        $this->fields = array_map(function (Type $field): Type {
-            // For root mappings, fields don't have a parent (empty path)
-            // For nested properties, this Properties instance is the parent
-            if ($this->name !== 'mappings') {
-                $field->setParent($this);
-            }
+        // Set paths for all fields
+        $containerPath = $this->name === 'mappings' ? '' : $this->name;
+        $this->fields = array_map(function (Type $field) use ($containerPath): Type {
+            $field->setPath($containerPath ? "$containerPath.$field->name" : $field->name);
 
             return $field;
         }, $fields);
@@ -170,15 +167,14 @@ class Properties extends Type implements ArrayAccess, FieldContainer
             $field = match (true) {
                 // This is an object type
                 isset($value['properties']) && ! isset($value['type']) => (function () use ($fieldName, $value, $defaultAnalyzer, $analyzers, $parentPath): Object_ {
-
+                    $childPath = $parentPath ? "$parentPath.$fieldName" : $fieldName;
                     $props = self::create(
                         $value['properties'],
                         $defaultAnalyzer,
                         $analyzers,
                         (string) $fieldName,
-                        $fieldName
+                        $childPath
                     );
-                    $props->parent($parentPath, self::class);
 
                     return new Object_(
                         $fieldName,
@@ -192,13 +188,14 @@ class Properties extends Type implements ArrayAccess, FieldContainer
                     $analyzers,
                     $parentPath
                 ): Nested {
+                    $childPath = $parentPath ? "$parentPath.$fieldName" : $fieldName;
                     $props = self::create(
                         $value['properties'],
                         $defaultAnalyzer,
                         $analyzers,
                         (string) $fieldName,
+                        $childPath
                     );
-                    $props->parent($parentPath, self::class);
 
                     return new Nested($fieldName, $props);
                 })(),
@@ -278,7 +275,8 @@ class Properties extends Type implements ArrayAccess, FieldContainer
         }
 
         $props = new Properties($name, $fields);
-        $props->parent(sprintf('%s.%s', $parentPath, $name), self::class);
+        $fullPath = $parentPath ? "$parentPath.$name" : $name;
+        $props->setPath($fullPath);
 
         return $props;
     }
@@ -330,10 +328,10 @@ class Properties extends Type implements ArrayAccess, FieldContainer
         return parent::fullPath();
     }
 
-    public function propertiesParent(Type $parent): void
+    public function setFieldPaths(string $containerPath): void
     {
         foreach ($this->fields as $field) {
-            $field->setParent($parent);
+            $field->setPath($containerPath ? "$containerPath.$field->name" : $field->name);
         }
     }
 
@@ -394,15 +392,5 @@ class Properties extends Type implements ArrayAccess, FieldContainer
     public function hasFields(): bool
     {
         return $this->fields !== [];
-    }
-
-    /**
-     * Walk through all fields in the tree, calling the callback for each field
-     */
-    public function walkFields(callable $callback): void
-    {
-        foreach ($this->fields as $field) {
-            $field->walk($callback);
-        }
     }
 }

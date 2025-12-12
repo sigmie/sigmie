@@ -883,8 +883,8 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
 
     protected function wrapNestedQuery(Query $queryClause, $field): Query
     {
-        if (($field->parentPath() ?? false) && $field->parentType() === TypesNested::class) {
-            return new Nested($field->parentPath(), $queryClause);
+        if ($nestedPath = $field->nestedPath()) {
+            return new Nested($nestedPath, $queryClause);
         }
 
         return $queryClause;
