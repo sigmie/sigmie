@@ -176,10 +176,11 @@ class Properties extends Type implements ArrayAccess, FieldContainer
                         $childPath
                     );
 
-                    return new Object_(
-                        $fieldName,
-                        $props,
-                    );
+                    $obj = new Object_($fieldName, $props);
+                    // Re-set paths - constructor uses wrong path before Object_'s path is set
+                    $props->setFieldPaths($childPath);
+
+                    return $obj;
                 })(),
                 isset($value['properties']) && $value['type'] === 'nested' => (function () use (
                     $fieldName,
@@ -197,7 +198,11 @@ class Properties extends Type implements ArrayAccess, FieldContainer
                         $childPath
                     );
 
-                    return new Nested($fieldName, $props);
+                    $nested = new Nested($fieldName, $props);
+                    // Re-set paths - constructor uses wrong path before Nested's path is set
+                    $props->setFieldPaths($childPath);
+
+                    return $nested;
                 })(),
                 in_array(
                     $value['type'],
@@ -275,8 +280,13 @@ class Properties extends Type implements ArrayAccess, FieldContainer
         }
 
         $props = new Properties($name, $fields);
-        $fullPath = $parentPath ? "$parentPath.$name" : $name;
+        // $parentPath already contains the full path to this container
+        $fullPath = $parentPath ?: $name;
         $props->setPath($fullPath);
+
+        // Update children paths with correct full container path
+        $containerPath = $name === 'mappings' ? '' : $fullPath;
+        $props->setFieldPaths($containerPath);
 
         return $props;
     }

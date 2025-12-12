@@ -416,13 +416,14 @@ class FilterParser extends Parser
     {
         [$field] = explode(':', $has);
 
-        $realFieldName = $this->properties->get($field)->filterableName();
+        $type = $this->properties->get($field);
 
-        if (is_null($realFieldName)) {
+        if (is_null($type)) {
             return null;
         }
 
-        return $this->prepareQuery($field, new Exists($this->fieldName($realFieldName)));
+        // Use fullPath() for Exists query - checks if field has any value
+        return $this->prepareQuery($field, new Exists($this->fieldName($type->fullPath())));
     }
 
     public function handleIsNot(string $is): ?Query

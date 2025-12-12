@@ -378,8 +378,9 @@ class Text extends Type implements FromRaw
                 if ($field instanceof NewSemanticField) {
                     $vector = $field->make();
 
-                    // Set path for the vector based on this text field's path
-                    $vector->setPath($this->fullPath());
+                    // Set path including this text field's path and vector's name
+                    $parentPath = $this->fullPath();
+                    $vector->setPath($parentPath ? "$parentPath.{$vector->name}" : $vector->name);
 
                     return $vector;
                 }

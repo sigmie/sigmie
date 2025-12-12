@@ -718,20 +718,20 @@ class MappingsTest extends TestCase
             ->create();
 
         $this->assertIndex($indexName, function (Assert $index): void {
-            $index->assertPropertyHasMeta('category', 'class', Category::class);
-            $index->assertPropertyHasMeta('id', 'class', Id::class);
-            $index->assertPropertyHasMeta('path', 'class', Path::class);
-            $index->assertPropertyHasMeta('case_sensitive_keyword', 'class', CaseSensitiveKeyword::class);
-            $index->assertPropertyHasMeta('address', 'class', Address::class);
-            $index->assertPropertyHasMeta('email', 'class', Email::class);
-            $index->assertPropertyHasMeta('html', 'class', HTML::class);
-            $index->assertPropertyHasMeta('long_text', 'class', LongText::class);
-            $index->assertPropertyHasMeta('name', 'class', Name::class);
-            $index->assertPropertyHasMeta('path', 'class', Path::class);
-            $index->assertPropertyHasMeta('searchable_number', 'class', SearchableNumber::class);
-            $index->assertPropertyHasMeta('sentence', 'class', Title::class);
-            $index->assertPropertyHasMeta('tags', 'class', Tags::class);
-            $index->assertPropertyHasMeta('price', 'class', Price::class);
+            $index->assertPropertyHasMeta('category', 'type', 'category');
+            $index->assertPropertyHasMeta('id', 'type', 'identifier');
+            $index->assertPropertyHasMeta('path', 'type', 'path');
+            $index->assertPropertyHasMeta('case_sensitive_keyword', 'type', 'case_sensitive_keyword');
+            $index->assertPropertyHasMeta('address', 'type', 'address');
+            $index->assertPropertyHasMeta('email', 'type', 'email');
+            $index->assertPropertyHasMeta('html', 'type', 'h_t_m_l');
+            $index->assertPropertyHasMeta('long_text', 'type', 'long_text');
+            $index->assertPropertyHasMeta('name', 'type', 'name');
+            $index->assertPropertyHasMeta('path', 'type', 'path');
+            $index->assertPropertyHasMeta('searchable_number', 'type', 'searchable_number');
+            $index->assertPropertyHasMeta('sentence', 'type', 'title');
+            $index->assertPropertyHasMeta('tags', 'type', 'tags');
+            $index->assertPropertyHasMeta('price', 'type', 'price');
         });
     }
 
