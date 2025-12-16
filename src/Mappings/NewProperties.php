@@ -42,7 +42,7 @@ class NewProperties
 {
     protected Collection $fields;
 
-    protected string $name = 'mappings';
+    protected string $name = Properties::ROOT_NAME;
 
     public function __construct(
         protected ?Type $parentField = null

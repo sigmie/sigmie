@@ -32,11 +32,13 @@ use Sigmie\Shared\Collection;
 
 class Properties extends Type implements ArrayAccess, FieldContainer
 {
+    public const ROOT_NAME = 'mappings';
+
     protected array $fields = [];
 
     public readonly Boost $boostField;
 
-    public function __construct(string $name = 'mappings', array $fields = [])
+    public function __construct(string $name = self::ROOT_NAME, array $fields = [])
     {
         parent::__construct($name);
 
@@ -45,12 +47,12 @@ class Properties extends Type implements ArrayAccess, FieldContainer
         $boostField = array_values(array_filter($fields, fn (Type $field): bool => $field instanceof Boost))[0] ?? null;
 
         // Boost field can only as a top level prop
-        if ($name === 'mappings' && $boostField) {
+        if ($name === self::ROOT_NAME && $boostField) {
             $this->boostField = $boostField;
         }
 
         // Set paths for all fields
-        $containerPath = $this->name === 'mappings' ? '' : $this->name;
+        $containerPath = $this->isRoot() ? '' : $this->name;
         $this->fields = array_map(function (Type $field) use ($containerPath): Type {
             $field->setPath($containerPath !== '' && $containerPath !== '0' ? sprintf('%s.%s', $containerPath, $field->name) : $field->name);
 
@@ -285,7 +287,7 @@ class Properties extends Type implements ArrayAccess, FieldContainer
         $props->setPath($fullPath);
 
         // Update children paths with correct full container path
-        $containerPath = $name === 'mappings' ? '' : $fullPath;
+        $containerPath = $name === self::ROOT_NAME ? '' : $fullPath;
         $props->setFieldPaths($containerPath);
 
         return $props;
@@ -328,10 +330,14 @@ class Properties extends Type implements ArrayAccess, FieldContainer
         return null;
     }
 
+    public function isRoot(): bool
+    {
+        return $this->name === self::ROOT_NAME;
+    }
+
     public function fullPath(): string
     {
-        // 'mappings' is a special root container and should not be part of the path
-        if ($this->name === 'mappings') {
+        if ($this->isRoot()) {
             return '';
         }
 

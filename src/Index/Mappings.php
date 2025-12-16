@@ -28,7 +28,7 @@ class Mappings implements MappingsInterface
         ?array $meta = null,
     ) {
         $this->defaultAnalyzer = $defaultAnalyzer ?: new DefaultAnalyzer;
-        $this->properties = $properties ?: new Properties(name: 'mappings');
+        $this->properties = $properties ?: new Properties;
         $this->meta = $meta ?? [];
     }
 
@@ -94,7 +94,7 @@ class Mappings implements MappingsInterface
             $data['properties'] ?? [],
             $defaultAnalyzer,
             $analyzers,
-            name: 'mappings',
+            name: Properties::ROOT_NAME,
         );
 
         return new static(
