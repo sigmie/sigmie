@@ -29,6 +29,30 @@ class SortParser extends Parser
                 continue;
             }
 
+            // Handle _score with direction
+            if (str_starts_with($match, '_score:')) {
+                $direction = substr($match, 7); // Remove '_score:'
+                
+                if ($direction === 'desc') {
+                    $sort[] = ['_score' => 'desc'];
+                    continue;
+                }
+                
+                if ($direction === 'asc') {
+                    $this->handleError("_score cannot be sorted in ascending order. Use '_score:desc' or '_score' instead.", [
+                        'field' => '_score',
+                        'direction' => 'asc',
+                    ]);
+                    continue;
+                }
+                
+                $this->handleError(sprintf("Invalid direction '%s' for _score. Use 'desc' or omit direction.", $direction), [
+                    'field' => '_score',
+                    'direction' => $direction,
+                ]);
+                continue;
+            }
+
             if (preg_match(
                 '/(?P<field>\w+(\.\w+)*(\.\w+)*)\[(?P<latitude>-?\d+(\.\d+)?),(?P<longitude>-?\d+(\.\d+)?)\]:(?P<unit>\w+):(?P<order>\w+)/',
                 $match,

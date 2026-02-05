@@ -155,17 +155,19 @@ This code sorts the **matched hits** first by their `name` in ascending directio
 
 By default, the matched hits are sorted by their `_score`, which shows how well a document matches the query.
 
-You can also use  `_score` in the sort string like this:
+You can also use `_score` in the sort string. By default, `_score` sorts in descending order (highest scores first). You can explicitly specify `_score:desc`:
 
 ```php
 $sigmie->newSearch('fairy-tales')
        ->properties($properties)
        ->queryString('Snow White')
-       ->sort('_score name:asc')
+       ->sort('_score:desc name:asc')
        ->get();
 ```
 
-This will sort the **hits** first by their `_score` and then ascending by their `name`  attribute.
+This will sort the **hits** first by their `_score` in descending order and then ascending by their `name` attribute.
+
+**Note**: `_score:asc` is not allowed. Use `_score` or `_score:desc` instead.
 
 ## Filtering
 

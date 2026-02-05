@@ -18,12 +18,14 @@ $parser->parse('_score name:asc');
 ```
 
 ```bash
-_score rating:desc name:asc
+_score:desc rating:desc name:asc
 ```
 
 ```json
 [
-    "_score",
+    {
+        "_score": "desc"
+    },
     {
         "rating": "desc"
     },
@@ -32,6 +34,8 @@ _score rating:desc name:asc
     }
 ]
 ```
+
+**Note**: `_score` can be used alone (defaults to descending) or with `:desc` explicitly. `_score:asc` is not allowed.
 
 ### Properties
 

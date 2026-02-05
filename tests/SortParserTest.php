@@ -488,6 +488,58 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
+    public function score_desc_allowed(): void
+    {
+        $blueprint = new NewProperties;
+        $blueprint->keyword('name');
+
+        $props = $blueprint();
+        $parser = new SortParser($props);
+
+        $sorts = $parser->parse('_score:desc name:asc');
+
+        $this->assertEquals([['_score' => 'desc'], ['name' => 'asc']], $sorts);
+        $this->assertEmpty($parser->errors());
+    }
+
+    /**
+     * @test
+     */
+    public function score_asc_not_allowed(): void
+    {
+        $blueprint = new NewProperties;
+        $blueprint->keyword('name');
+
+        $props = $blueprint();
+        $parser = new SortParser($props, throwOnError: false);
+
+        $sorts = $parser->parse('_score:asc name:asc');
+
+        $this->assertEquals([['name' => 'asc']], $sorts);
+        $this->assertNotEmpty($parser->errors());
+        $this->assertStringContainsString('_score cannot be sorted in ascending order', $parser->errors()[0]);
+    }
+
+    /**
+     * @test
+     */
+    public function score_asc_without_throw_on_error(): void
+    {
+        $blueprint = new NewProperties;
+        $blueprint->keyword('name');
+
+        $props = $blueprint();
+        $parser = new SortParser($props, throwOnError: false);
+
+        $sorts = $parser->parse('_score:asc');
+
+        $this->assertEmpty($sorts);
+        $this->assertNotEmpty($parser->errors());
+    }
+
+    /**
+     * @test
+     */
     public function text_asc_filter(): void
     {
         new Properties;
