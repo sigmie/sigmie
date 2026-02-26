@@ -517,7 +517,7 @@ class SortParserTest extends TestCase
 
         $this->assertEquals([['name' => 'asc']], $sorts);
         $this->assertNotEmpty($parser->errors());
-        $this->assertStringContainsString('_score cannot be sorted in ascending order', $parser->errors()[0]);
+        $this->assertStringContainsString('_score cannot be sorted in ascending order', $parser->errors()[0]['message']);
     }
 
     /**
