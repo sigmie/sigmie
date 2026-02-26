@@ -17,6 +17,8 @@ abstract class AbstractFormatter implements ResponseFormater
 
     protected SearchContext $search;
 
+    protected int $responseCode = 200;
+
     abstract public function format(): array;
 
     public function queryResponseRaw(array $raw): static
@@ -45,6 +47,18 @@ abstract class AbstractFormatter implements ResponseFormater
         $this->search = $context;
 
         return $this;
+    }
+
+    public function responseCode(int $code): static
+    {
+        $this->responseCode = $code;
+
+        return $this;
+    }
+
+    public function code(): int
+    {
+        return $this->responseCode;
     }
 
     public function facetAggregations(): array

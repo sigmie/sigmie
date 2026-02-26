@@ -11,6 +11,7 @@ use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\SimpleAnalyzer;
 use Sigmie\Index\Analysis\Standard;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
+use Sigmie\Mappings\Contracts\FieldContainer;
 use Sigmie\Mappings\Contracts\Type as ContractsType;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Boost;
@@ -29,33 +30,34 @@ use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
 
-class Properties extends Type implements ArrayAccess
+class Properties extends Type implements ArrayAccess, FieldContainer
 {
+    public const ROOT_NAME = 'mappings';
+
     protected array $fields = [];
 
     public readonly Boost $boostField;
 
-    public function __construct(string $name = 'mappings', array $fields = [])
+    public function __construct(string $name = self::ROOT_NAME, array $fields = [])
     {
+        parent::__construct($name);
+
         $this->type = ElasticsearchMappingType::PROPERTIES->value;
 
         $boostField = array_values(array_filter($fields, fn (Type $field): bool => $field instanceof Boost))[0] ?? null;
 
         // Boost field can only as a top level prop
-        if ($name === 'mappings' && $boostField) {
+        if ($name === self::ROOT_NAME && $boostField) {
             $this->boostField = $boostField;
         }
 
-        $this->fields = array_map(function (Type $field) use ($name): Type {
-
-            $name = $name !== 'mappings' ? $name : '';
-
-            $field->parent($name, self::class);
+        // Set paths for all fields
+        $containerPath = $this->isRoot() ? '' : $this->name;
+        $this->fields = array_map(function (Type $field) use ($containerPath): Type {
+            $field->setPath($containerPath !== '' && $containerPath !== '0' ? sprintf('%s.%s', $containerPath, $field->name) : $field->name);
 
             return $field;
         }, $fields);
-
-        parent::__construct($name);
     }
 
     public function queries(array|string $queryString): array
@@ -101,7 +103,7 @@ class Properties extends Type implements ArrayAccess
     {
         $collection = new Collection($this->fields);
 
-        return $collection->filter(fn (Type $type): bool => $type instanceof Object_ || $type instanceof Nested);
+        return $collection->filter(fn (Type $type): bool => $type instanceof FieldContainer);
     }
 
     public function embeddingsFields(): Collection
@@ -132,12 +134,8 @@ class Properties extends Type implements ArrayAccess
                 $type->handleCustomAnalyzer($analysis);
             }
 
-            if ($type instanceof Object_) {
-                $type->properties->handleCustomAnalyzers($analysis);
-            }
-
-            if ($type instanceof Nested) {
-                $type->properties->handleCustomAnalyzers($analysis);
+            if ($type instanceof FieldContainer) {
+                $type->getProperties()->handleCustomAnalyzers($analysis);
             }
         }
     }
@@ -150,12 +148,8 @@ class Properties extends Type implements ArrayAccess
                 $type->handleNormalizer($analysis);
             }
 
-            if ($type instanceof Object_) {
-                $type->properties->handleNormalizers($analysis);
-            }
-
-            if ($type instanceof Nested) {
-                $type->properties->handleNormalizers($analysis);
+            if ($type instanceof FieldContainer) {
+                $type->getProperties()->handleNormalizers($analysis);
             }
         }
     }
@@ -175,20 +169,20 @@ class Properties extends Type implements ArrayAccess
             $field = match (true) {
                 // This is an object type
                 isset($value['properties']) && ! isset($value['type']) => (function () use ($fieldName, $value, $defaultAnalyzer, $analyzers, $parentPath): Object_ {
-
+                    $childPath = $parentPath !== '' && $parentPath !== '0' ? sprintf('%s.%s', $parentPath, $fieldName) : $fieldName;
                     $props = self::create(
                         $value['properties'],
                         $defaultAnalyzer,
                         $analyzers,
                         (string) $fieldName,
-                        $fieldName
+                        $childPath
                     );
-                    $props->parent($parentPath, self::class);
 
-                    return new Object_(
-                        $fieldName,
-                        $props,
-                    );
+                    $obj = new Object_($fieldName, $props);
+                    // Re-set paths - constructor uses wrong path before Object_'s path is set
+                    $props->setFieldPaths($childPath);
+
+                    return $obj;
                 })(),
                 isset($value['properties']) && $value['type'] === 'nested' => (function () use (
                     $fieldName,
@@ -197,15 +191,20 @@ class Properties extends Type implements ArrayAccess
                     $analyzers,
                     $parentPath
                 ): Nested {
+                    $childPath = $parentPath !== '' && $parentPath !== '0' ? sprintf('%s.%s', $parentPath, $fieldName) : $fieldName;
                     $props = self::create(
                         $value['properties'],
                         $defaultAnalyzer,
                         $analyzers,
                         (string) $fieldName,
+                        $childPath
                     );
-                    $props->parent($parentPath, self::class);
 
-                    return new Nested($fieldName, $props);
+                    $nested = new Nested($fieldName, $props);
+                    // Re-set paths - constructor uses wrong path before Nested's path is set
+                    $props->setFieldPaths($childPath);
+
+                    return $nested;
                 })(),
                 in_array(
                     $value['type'],
@@ -283,7 +282,13 @@ class Properties extends Type implements ArrayAccess
         }
 
         $props = new Properties($name, $fields);
-        $props->parent(sprintf('%s.%s', $parentPath, $name), self::class);
+        // $parentPath already contains the full path to this container
+        $fullPath = $parentPath ?: $name;
+        $props->setPath($fullPath);
+
+        // Update children paths with correct full container path
+        $containerPath = $name === self::ROOT_NAME ? '' : $fullPath;
+        $props->setFieldPaths($containerPath);
 
         return $props;
     }
@@ -316,19 +321,33 @@ class Properties extends Type implements ArrayAccess
             return $type;
         }
 
-        if ($type instanceof Nested || $type instanceof Object_) {
+        if ($type instanceof FieldContainer) {
             $childName = implode('.', $fields);
 
-            return $type->properties->get($childName);
+            return $type->getProperties()->get($childName);
         }
 
         return null;
     }
 
-    public function propertiesParent(string $parentPath, string $parentType): void
+    public function isRoot(): bool
+    {
+        return $this->name === self::ROOT_NAME;
+    }
+
+    public function fullPath(): string
+    {
+        if ($this->isRoot()) {
+            return '';
+        }
+
+        return parent::fullPath();
+    }
+
+    public function setFieldPaths(string $containerPath): void
     {
         foreach ($this->fields as $field) {
-            $field->parent($parentPath, $parentType);
+            $field->setPath($containerPath !== '' && $containerPath !== '0' ? sprintf('%s.%s', $containerPath, $field->name) : $field->name);
         }
     }
 
@@ -338,21 +357,14 @@ class Properties extends Type implements ArrayAccess
 
         return $collection->map(function (ContractsType $type) use ($withParent) {
 
-            if ($type instanceof Object_) {
+            if ($type instanceof FieldContainer) {
                 return [
-                    ...$withParent ? [$type->fullPath] : [],
-                    ...$type->properties->fieldNames($withParent),
+                    ...$withParent ? [$type->fullPath()] : [],
+                    ...$type->getProperties()->fieldNames($withParent),
                 ];
             }
 
-            if ($type instanceof Nested) {
-                return [
-                    ...$withParent ? [$type->fullPath] : [],
-                    ...$type->properties->fieldNames($withParent),
-                ];
-            }
-
-            return $type->fullPath;
+            return $type->fullPath();
         })->flatten()
             ->toArray();
     }
@@ -361,11 +373,11 @@ class Properties extends Type implements ArrayAccess
     {
         $textFields = $this->textFields()
             ->filter(fn (Text $field): bool => $field->isSemantic())
-            ->mapWithKeys(fn (Text $field) => [$field->fullPath => $field]);
+            ->mapWithKeys(fn (Text $field) => [$field->fullPath() => $field]);
 
         $imageFields = $this->imageFields()
             ->filter(fn (Image $field): bool => $field->isSemantic())
-            ->mapWithKeys(fn (Image $field) => [$field->fullPath => $field]);
+            ->mapWithKeys(fn (Image $field) => [$field->fullPath() => $field]);
 
         return $textFields->merge($imageFields);
     }
@@ -375,9 +387,9 @@ class Properties extends Type implements ArrayAccess
         $semanticFields = $this->semanticFields();
 
         $nestedFields = $this->deepFields()
-            ->mapWithKeys(fn (Object_|Nested $field): array => [
-                ...$field->properties->semanticFields()->toArray(),
-                ...$field->properties->nestedSemanticFields()->toArray(),
+            ->mapWithKeys(fn (FieldContainer $field): array => [
+                ...$field->getProperties()->semanticFields()->toArray(),
+                ...$field->getProperties()->nestedSemanticFields()->toArray(),
             ]);
 
         $res = [
@@ -386,5 +398,15 @@ class Properties extends Type implements ArrayAccess
         ];
 
         return new Collection($res);
+    }
+
+    public function getProperties(): Properties
+    {
+        return $this;
+    }
+
+    public function hasFields(): bool
+    {
+        return $this->fields !== [];
     }
 }

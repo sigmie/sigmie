@@ -112,9 +112,9 @@ class FacetParser extends Parser
             $query = $filterParser->facetFilter($field, $filterString);
 
             try {
-                if ($field->parentPath) {
+                if ($nestedPath = $field->nestedPath()) {
 
-                    $aggregation->nested($field->name(), $field->parentPath, function (Aggs $aggs) use ($params, $field, $query): void {
+                    $aggregation->nested($field->name(), $nestedPath, function (Aggs $aggs) use ($params, $field, $query): void {
 
                         $aggs->filter($field->name(), $query)
                             ->aggregate(function (Aggs $aggs) use ($params, $field): void {

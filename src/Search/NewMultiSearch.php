@@ -24,6 +24,9 @@ class NewMultiSearch
     /** @var array Names associated with each query (by index) */
     protected array $names = [];
 
+    /** @var int HTTP response code from the last _msearch call */
+    protected int $responseCode = 200;
+
     public function __construct(
         protected ElasticsearchConnection $elasticsearchConnection
     ) {}
@@ -94,6 +97,8 @@ class NewMultiSearch
             throw new ElasticsearchException($response->json(), $response->code());
         }
 
+        $this->responseCode = $response->code();
+
         $responses = $response->json('responses') ?? [];
         $results = [];
         $responseIndex = 0;
@@ -102,7 +107,11 @@ class NewMultiSearch
         foreach ($this->queries as $query) {
             if ($query instanceof MultiSearchable) {
                 $searchResponses = array_slice($responses, $responseIndex, $query->multisearchResCount());
-                $results[] = $query->formatResponses(...$searchResponses);
+
+                // Pass HTTP code as the last argument
+                $result = $query->formatResponses(...$searchResponses, httpCode: $this->responseCode);
+
+                $results[] = $result;
                 $responseIndex += $query->multisearchResCount();
             } else {
                 // Raw query
@@ -148,5 +157,13 @@ class NewMultiSearch
         }
 
         return $grouped;
+    }
+
+    /**
+     * Get the HTTP response code from the last _msearch call
+     */
+    public function responseCode(): int
+    {
+        return $this->responseCode;
     }
 }

@@ -416,13 +416,14 @@ class FilterParser extends Parser
     {
         [$field] = explode(':', $has);
 
-        $realFieldName = $this->properties->get($field)->filterableName();
+        $type = $this->properties->get($field);
 
-        if (is_null($realFieldName)) {
+        if (is_null($type)) {
             return null;
         }
 
-        return $this->prepareQuery($field, new Exists($this->fieldName($realFieldName)));
+        // Use fullPath() for Exists query - checks if field has any value
+        return $this->prepareQuery($field, new Exists($this->fieldName($type->fullPath())));
     }
 
     public function handleIsNot(string $is): ?Query
@@ -467,7 +468,7 @@ class FilterParser extends Parser
         $fieldType = $this->properties->get($field);
 
         // If it's a facets filter we match all for the facet value
-        if (($this->facetField ?? false) && $fieldType->fullPath === $this->facetField->fullPath) {
+        if (($this->facetField ?? false) && $fieldType->fullPath() === $this->facetField->fullPath()) {
             return new MatchAll;
         }
 

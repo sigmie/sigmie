@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Parse;
 
 use Sigmie\Mappings\Types\GeoPoint;
-use Sigmie\Mappings\Types\Nested;
 
 class SortParser extends Parser
 {
@@ -26,6 +25,33 @@ class SortParser extends Parser
         foreach ($sorts as $match) {
             if (in_array($match, ['_score', '_doc'])) {
                 $sort[] = $match;
+
+                continue;
+            }
+
+            // Handle _score with direction
+            if (str_starts_with($match, '_score:')) {
+                $direction = substr($match, 7); // Remove '_score:'
+
+                if ($direction === 'desc') {
+                    $sort[] = ['_score' => 'desc'];
+
+                    continue;
+                }
+
+                if ($direction === 'asc') {
+                    $this->handleError("_score cannot be sorted in ascending order. Use '_score:desc' or '_score' instead.", [
+                        'field' => '_score',
+                        'direction' => 'asc',
+                    ]);
+
+                    continue;
+                }
+
+                $this->handleError(sprintf("Invalid direction '%s' for _score. Use 'desc' or omit direction.", $direction), [
+                    'field' => '_score',
+                    'direction' => $direction,
+                ]);
 
                 continue;
             }
@@ -76,11 +102,11 @@ class SortParser extends Parser
                 }
 
                 $hasGeoDistance = true;
-                if ($fieldType->parentPath && $fieldType->parentType === Nested::class) {
+                if ($nestedPath = $fieldType->nestedPath()) {
                     $sort[] = [
                         '_geo_distance' => [
                             'nested' => [
-                                'path' => $fieldType->parentPath,
+                                'path' => $nestedPath,
                             ],
                             $field => [
                                 'lat' => (float) $latitude,
@@ -123,11 +149,11 @@ class SortParser extends Parser
                 continue;
             }
 
-            if ($type->parentPath && $type->parentType === Nested::class) {
+            if ($nestedPath = $type->nestedPath()) {
                 $sort[] = [
                     $sortableName => [
                         'nested' => [
-                            'path' => $type->parentPath,
+                            'path' => $nestedPath,
                         ],
                         'order' => $direction,
                     ],

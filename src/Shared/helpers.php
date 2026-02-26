@@ -3,26 +3,8 @@
 declare(strict_types=1);
 
 namespace Sigmie\Functions {
+
     use Exception;
-
-    // function await(array $promises)
-    // {
-    //     return Utils::settle(
-    //         Utils::unwrap($promises)
-    //     )->wait();
-    // }
-
-    // function index_name(string $prefix): string
-    // {
-    //     $timestamp = Carbon::now()->format('YmdHisu');
-
-    //     return "{$prefix}_{$timestamp}";
-    // }
-
-    // function auto_fuzziness(int $oneTypoChars = 3, int $twoTypoChars = 6): string
-    // {
-    //     return "AUTO:{$oneTypoChars},{$twoTypoChars}";
-    // }
 
     function random_name(string $name): string
     {
@@ -40,15 +22,4 @@ namespace Sigmie\Functions {
 
         return [$name, $configs];
     }
-
-    // function random_letters(int $count = 3): string
-    // {
-    //     $result = [];
-
-    //     for ($x = 1; $x <= $count; $x++) {
-    //         $result[] = chr(mt_rand(97, 122));
-    //     }
-
-    //     return implode('', $result);
-    // }
 }

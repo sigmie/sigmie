@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Mappings;
 
 use Sigmie\Index\Analysis\Analysis;
-use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\BaseVector;
@@ -43,12 +42,10 @@ class NewProperties
 {
     protected Collection $fields;
 
-    protected string $name = 'mappings';
+    protected string $name = Properties::ROOT_NAME;
 
     public function __construct(
-        public string $parentPath = '',
-        public string $fullPath = '',
-        public string $parentType = Mapping::class
+        protected ?Type $parentField = null
     ) {
         $this->fields = new Collection;
     }
@@ -71,14 +68,8 @@ class NewProperties
     ): Properties {
 
         $fields = $this->fields
-            ->mapToDictionary(function (Type $type) {
-                // Initialize the parent path for each field based on current context
-                if ($this->fullPath !== '') {
-                    $type->parent($this->fullPath, $this->parentType);
-                }
-
-                return [$type->name => $type];
-            })->toArray();
+            ->mapToDictionary(fn (Type $type) => [$type->name => $type])
+            ->toArray();
 
         $props = new Properties($name ?? $this->name, $fields);
 
@@ -127,6 +118,16 @@ class NewProperties
         $this->fields->add($field);
 
         return $field->unstructuredText();
+    }
+
+    public function completion(string $name): Text
+    {
+        return $this->text($name)->completion();
+    }
+
+    public function searchAsYouType(string $name): Text
+    {
+        return $this->text($name)->searchAsYouType();
     }
 
     public function image(string $name): Image
@@ -246,6 +247,31 @@ class NewProperties
         return $field;
     }
 
+    public function integer(string $name): Number
+    {
+        return $this->number($name)->integer();
+    }
+
+    public function float(string $name): Number
+    {
+        return $this->number($name)->float();
+    }
+
+    public function long(string $name): Number
+    {
+        return $this->number($name)->long();
+    }
+
+    public function double(string $name): Number
+    {
+        return $this->number($name)->double();
+    }
+
+    public function scaledFloat(string $name): Number
+    {
+        return $this->number($name)->scaledFloat();
+    }
+
     public function range(string $name): Range
     {
         $field = new Range($name);
@@ -355,14 +381,15 @@ class NewProperties
 
     protected function propertiesType(Nested|Object_ $field, string $name, callable $callable): Object_|Nested
     {
-        $props = new NewProperties(
-            parentPath: $this->parentPath,
-            fullPath: trim($this->fullPath.'.'.$name, '.'),
-            parentType: $field::class
-        );
+        // Create nested properties context with this field as parent
+        $props = new NewProperties($field);
         $props->propertiesName($name);
 
-        $field->parent($this->parentPath, $field::class);
+        // Set path for the field based on parent's path
+        if ($this->parentField instanceof Type) {
+            $parentPath = $this->parentField->fullPath();
+            $field->setPath($parentPath !== '' && $parentPath !== '0' ? sprintf('%s.%s', $parentPath, $name) : $name);
+        }
 
         $this->fields->add($field);
 

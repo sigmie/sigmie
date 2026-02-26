@@ -392,11 +392,13 @@ $facets = $response->json('aggregations');
 
 # Sorting
 
-By default, the returned Documents are sorted by the `_score` attribute. You can change this behavior using the `sortString` method:
+By default, the returned Documents are sorted by the `_score` attribute in descending order (highest scores first). You can change this behavior using the `sortString` method:
 
 ```php
 $newQuery->sortString('name:asc _score:desc');
 ```
+
+**Note**: `_score:asc` is not allowed. Use `_score` or `_score:desc` instead.
 
 Multiple sorts can be chained:
 ```php

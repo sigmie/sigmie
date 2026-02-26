@@ -9,7 +9,6 @@ use Sigmie\Document\Document;
 use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Mappings\Types\Price;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Testing\TestCase;
 
@@ -363,7 +362,7 @@ class SearchTest extends TestCase
 
         $res = $this->indexAPICall($indexName, 'GET');
 
-        $this->assertEquals(Price::class, $res->json($index->name.'.mappings.properties.price.meta.class'));
+        $this->assertEquals('price', $res->json($index->name.'.mappings.properties.price.meta.type'));
 
         $index = $this->sigmie->collect($indexName, refresh: true);
 
@@ -1282,5 +1281,32 @@ class SearchTest extends TestCase
             ->get();
 
         $this->assertEquals(0, $response->total());
+    }
+
+    /**
+     * @test
+     */
+    public function response_code_is_populated(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->merge([
+                new Document(['name' => 'Test Document']),
+            ]);
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Test')
+            ->get();
+
+        $this->assertEquals(200, $response->code());
     }
 }

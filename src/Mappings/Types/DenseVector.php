@@ -25,9 +25,8 @@ class DenseVector extends AbstractType implements Type
         protected string $indexType = 'hnsw',
         protected ?int $m = 64,
         protected ?int $efConstruction = 300,
-        ?string $fullPath = '',
     ) {
-        parent::__construct($name, fullPath: $fullPath);
+        parent::__construct($name);
     }
 
     public function toRaw(): array
@@ -105,7 +104,7 @@ class DenseVector extends AbstractType implements Type
 
         return [
             new ElasticsearchKnn(
-                field: '_embeddings.'.$this->fullPath,
+                field: '_embeddings.'.$this->fullPath(),
                 queryVector: $vector,
                 k: $k,
                 numCandidates: $numCandidates,
