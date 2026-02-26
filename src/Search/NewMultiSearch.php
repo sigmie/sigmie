@@ -107,10 +107,10 @@ class NewMultiSearch
         foreach ($this->queries as $query) {
             if ($query instanceof MultiSearchable) {
                 $searchResponses = array_slice($responses, $responseIndex, $query->multisearchResCount());
-                
+
                 // Pass HTTP code as the last argument
                 $result = $query->formatResponses(...$searchResponses, httpCode: $this->responseCode);
-                
+
                 $results[] = $result;
                 $responseIndex += $query->multisearchResCount();
             } else {
