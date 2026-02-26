@@ -21,6 +21,7 @@ class SigmieSearchResponse extends AbstractFormatter
     public function format(): array
     {
         return [
+            'code' => $this->code(),
             'semantic' => $this->semantic,
             'hits' => $this->queryResponseRaw['hits']['hits'] ?? [],
             'processing_time_ms' => $this->queryResponseRaw['took'] ?? 0,

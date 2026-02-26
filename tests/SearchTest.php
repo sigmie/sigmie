@@ -1282,4 +1282,31 @@ class SearchTest extends TestCase
 
         $this->assertEquals(0, $response->total());
     }
+
+    /**
+     * @test
+     */
+    public function response_code_is_populated(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->merge([
+                new Document(['name' => 'Test Document']),
+            ]);
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Test')
+            ->get();
+
+        $this->assertEquals(200, $response->code());
+    }
 }

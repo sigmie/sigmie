@@ -897,7 +897,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         return $this;
     }
 
-    public function formatRespones(array $searchResponse, array $facetsResponse)
+    public function formatRespones(array $searchResponse, array $facetsResponse, ?int $httpCode = null)
     {
         $formatter = $this->formatter ?? new SigmieSearchResponse($this->properties, $this->semanticSearch);
 
@@ -908,7 +908,8 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
                 ...$this->sortParser->errors(),
             ])
             ->facetsResponseRaw($facetsResponse)
-            ->queryResponseRaw($searchResponse);
+            ->queryResponseRaw($searchResponse)
+            ->responseCode($httpCode ?? 200);
 
         return $formatter;
     }
@@ -922,7 +923,9 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
 
         [$searchResponse, $facetsResponse] = $multi->get();
 
-        return $this->formatRespones($searchResponse, $facetsResponse);
+        $httpCode = $multi->responseCode();
+
+        return $this->formatRespones($searchResponse, $facetsResponse, $httpCode);
     }
 
     public function promise(): Promise
@@ -957,8 +960,9 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
     {
         $searchResponse = $responses[0] ?? [];
         $facetsResponse = $responses[1] ?? [];
+        $httpCode = $responses['httpCode'] ?? null;
 
-        return $this->formatRespones($searchResponse, $facetsResponse);
+        return $this->formatRespones($searchResponse, $facetsResponse, $httpCode);
     }
 
     public function multisearchResCount(): int

@@ -50,6 +50,7 @@ class NewQuery implements MultiSearchable, Queries
 
     public function formatResponses(...$responses): mixed
     {
+        // NewQuery just returns the raw response, ignore httpCode
         return $responses[0];
     }
 
