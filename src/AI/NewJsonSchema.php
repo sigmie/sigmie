@@ -59,6 +59,20 @@ class NewJsonSchema
         return $this;
     }
 
+    public function stringArray(string $name, bool $required = true): self
+    {
+        $this->properties[$name] = [
+            'type' => 'array',
+            'items' => ['type' => 'string'],
+        ];
+
+        if ($required) {
+            $this->required[] = $name;
+        }
+
+        return $this;
+    }
+
     public function object(string $name, callable $callback, bool $required = true): self
     {
         $objectSchema = new NewJsonSchema;

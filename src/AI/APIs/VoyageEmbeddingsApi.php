@@ -69,7 +69,7 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
 
         $texts = array_map(fn ($item) => $item['text'] ?? '', $payload);
 
-        $dimensions = $payload[0]['dims'] ?? 0;
+        $dimensions = (int) ($payload[0]['dims'] ?? 0);
 
         $response = $this->client->post('/v1/embeddings', [
             RequestOptions::JSON => [
