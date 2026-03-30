@@ -22,6 +22,7 @@ use Sigmie\Mappings\Types\FlatObject;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Mappings\Types\MagicTags;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Object_;
@@ -398,6 +399,28 @@ class Properties extends Type implements ArrayAccess, FieldContainer
         ];
 
         return new Collection($res);
+    }
+
+    private function magicTagsFieldsAtLevel(): Collection
+    {
+        $collection = new Collection($this->fields);
+
+        return $collection
+            ->filter(fn (ContractsType $type): bool => $type instanceof MagicTags)
+            ->mapWithKeys(fn (MagicTags $field): array => [$field->fullPath() => $field]);
+    }
+
+    public function magicTagsFields(): Collection
+    {
+        $direct = $this->magicTagsFieldsAtLevel();
+
+        $nested = $this->deepFields()
+            ->mapWithKeys(fn (FieldContainer $field): array => $field->getProperties()->magicTagsFields()->toArray());
+
+        return new Collection([
+            ...$direct->toArray(),
+            ...$nested->toArray(),
+        ]);
     }
 
     public function getProperties(): Properties

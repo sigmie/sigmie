@@ -22,6 +22,7 @@ use Sigmie\Mappings\Types\Id;
 use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\LongText;
+use Sigmie\Mappings\Types\MagicTags;
 use Sigmie\Mappings\Types\Name;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
@@ -311,6 +312,15 @@ class NewProperties
     public function tags(string $name = 'tags'): Tags
     {
         $field = new Tags($name);
+
+        $this->fields->add($field);
+
+        return $field;
+    }
+
+    public function magicTags(string $name, string $fromField): MagicTags
+    {
+        $field = new MagicTags($name, $fromField);
 
         $this->fields->add($field);
 

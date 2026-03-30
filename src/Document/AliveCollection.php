@@ -33,6 +33,8 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     protected bool $populateEmbeddings = true;
 
+    protected bool $populateMagicTags = true;
+
     public function __construct(
         protected string $name,
         ElasticsearchConnection $connection,
@@ -46,6 +48,13 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     public function populateEmbeddings(bool $value = true): static
     {
         $this->populateEmbeddings = $value;
+
+        return $this;
+    }
+
+    public function populateMagicTags(bool $value = true): static
+    {
+        $this->populateMagicTags = $value;
 
         return $this;
     }
@@ -130,14 +139,23 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function merge(array $docs): AliveCollection
     {
-        $docs = array_map(fn (Document $doc): Document => $this->processDocument($doc), $docs);
+        $existingMagicTags = null;
+
+        if ($this->populateMagicTags && ! $this->properties->magicTagsFields()->isEmpty()) {
+            $existingMagicTags = $this->fetchExistingMagicTags();
+        }
+
+        $docs = array_map(
+            fn (Document $doc): Document => $this->processDocument($doc, $existingMagicTags),
+            $docs
+        );
 
         $this->upsertDocuments($this->name, $docs, $this->refresh);
 
         return $this;
     }
 
-    protected function processDocument(Document $document): Document
+    protected function processDocument(Document $document, ?array $existingMagicTags = null): Document
     {
         $documentProcessor = new DocumentProcessor($this->properties);
         $documentProcessor->apis($this->apis);
@@ -145,6 +163,14 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         $document = $documentProcessor->formatDateTimeFields($document);
         $document = $documentProcessor->validateFields($document);
         $document = $documentProcessor->populateComboFields($document);
+
+        if ($this->populateMagicTags) {
+            if ($existingMagicTags === null && ! $this->properties->magicTagsFields()->isEmpty()) {
+                $existingMagicTags = $this->fetchExistingMagicTags();
+            }
+
+            $document = $documentProcessor->populateMagicTags($document, $existingMagicTags ?? []);
+        }
 
         if ($this->populateEmbeddings) {
             return $documentProcessor->populateEmbeddings($document);
@@ -156,6 +182,42 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     private function documentEmbeddings(Document $document): Document
     {
         return $this->processDocument($document);
+    }
+
+    protected function fetchExistingMagicTags(): array
+    {
+        $magicFields = $this->properties->magicTagsFields();
+
+        if ($magicFields->isEmpty()) {
+            return [];
+        }
+
+        $aggs = [];
+
+        foreach ($magicFields as $path => $field) {
+            $aggs[$path] = [
+                'terms' => [
+                    'field' => $path,
+                    'size' => 500,
+                ],
+            ];
+        }
+
+        $response = $this->searchAPICall($this->name, [
+            'size' => 0,
+            'query' => ['match_all' => (object) []],
+            'aggs' => $aggs,
+        ]);
+
+        $aggregations = $response->json('aggregations') ?? [];
+        $result = [];
+
+        foreach ($magicFields as $path => $field) {
+            $buckets = $aggregations[$path]['buckets'] ?? [];
+            $result[$path] = array_column($buckets, 'key');
+        }
+
+        return $result;
     }
 
     public function toArray(): array

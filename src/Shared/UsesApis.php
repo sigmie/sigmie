@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Shared;
 
 use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\AI\Contracts\LLMApi;
 
 trait UsesApis
 {
@@ -24,6 +25,17 @@ trait UsesApis
         }
 
         return $this->apis[$name] ?? null;
+    }
+
+    protected function getLlmApi(?string $name = null): ?LLMApi
+    {
+        if ($name === null || $name === '') {
+            return null;
+        }
+
+        $api = $this->apis[$name] ?? null;
+
+        return $api instanceof LLMApi ? $api : null;
     }
 
     protected function hasApi(?string $name = null): bool

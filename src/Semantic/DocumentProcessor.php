@@ -9,6 +9,8 @@ use DateTime as PHPDateTime;
 use Exception;
 use InvalidArgumentException;
 use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\AI\NewJsonSchema;
+use Sigmie\AI\Prompt;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\BaseVector;
@@ -16,6 +18,7 @@ use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\DateTime;
 use Sigmie\Mappings\Types\Image;
+use Sigmie\Mappings\Types\MagicTags;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\Number;
@@ -69,6 +72,103 @@ class DocumentProcessor
         $document['_embeddings'] = $this->buildNestedStructure($embeddings);
 
         return $document;
+    }
+
+    public function populateMagicTags(Document $document, array $existingTags = []): Document
+    {
+        $magicFields = $this->properties->magicTagsFields();
+
+        if ($magicFields->isEmpty()) {
+            return $document;
+        }
+
+        foreach ($magicFields as $path => $field) {
+            if (! $field instanceof MagicTags) {
+                continue;
+            }
+
+            $llm = $this->getLlmApi($field->apiName());
+
+            if ($llm === null) {
+                continue;
+            }
+
+            $current = dot($document->_source)->get($path);
+
+            if (is_array($current) && $current !== []) {
+                continue;
+            }
+
+            if (is_string($current) && $current !== '') {
+                continue;
+            }
+
+            $rawContent = dot($document->_source)->get($field->fromField());
+            $content = $this->normalizeContentForMagicTags($rawContent);
+
+            if ($content === '') {
+                continue;
+            }
+
+            $maxTags = $field->getMaxTags();
+            $existing = $existingTags[$path] ?? [];
+
+            $prompt = new Prompt;
+            $prompt->system(
+                "You are a taxonomy tagger for search indexing.\n"
+                ."Return up to {$maxTags} concise tags as lowercase kebab-case tokens.\n"
+                ."IMPORTANT: You MUST reuse tags from the existing list when they fit the content. Only create a new tag when no existing tag covers the topic."
+            );
+
+            if ($existing !== []) {
+                $prompt->user("Existing tags already in the index (reuse these when they fit):\n".implode(', ', $existing));
+            }
+
+            $prompt->user("Content to tag:\n\n".$content);
+            $prompt->answerJsonSchema(function (NewJsonSchema $schema): void {
+                $schema->name('magic_tags');
+                $schema->stringArray('tags');
+            });
+
+            $answer = $llm->jsonAnswer($prompt);
+            $json = $answer->json();
+            $tags = $json['tags'] ?? [];
+
+            if (! is_array($tags)) {
+                continue;
+            }
+
+            $tags = array_values(array_filter(
+                array_map(static fn (mixed $t): string => is_string($t) ? trim($t) : '', $tags),
+                fn (string $t): bool => $t !== ''
+            ));
+
+            $tags = array_slice($tags, 0, $maxTags);
+
+            $dotHelper = dot($document->_source);
+            $dotHelper->set($path, $tags);
+            $document->_source = $dotHelper->all();
+        }
+
+        return $document;
+    }
+
+    protected function normalizeContentForMagicTags(mixed $raw): string
+    {
+        if (is_string($raw)) {
+            return trim($raw);
+        }
+
+        if (is_array($raw)) {
+            $parts = array_map(
+                fn ($v): string => is_scalar($v) ? (string) $v : '',
+                $raw
+            );
+
+            return trim(implode("\n", array_filter($parts, fn (string $p): bool => $p !== '')));
+        }
+
+        return '';
     }
 
     public function formatDateTimeFields(Document $document): Document
