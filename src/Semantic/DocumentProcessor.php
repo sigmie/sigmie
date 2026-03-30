@@ -9,6 +9,7 @@ use DateTime as PHPDateTime;
 use Exception;
 use InvalidArgumentException;
 use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\NewJsonSchema;
 use Sigmie\AI\Prompt;
 use Sigmie\Document\Document;
@@ -89,7 +90,7 @@ class DocumentProcessor
 
             $llm = $this->getLlmApi($field->apiName());
 
-            if ($llm === null) {
+            if (! $llm instanceof LLMApi) {
                 continue;
             }
 
@@ -117,7 +118,7 @@ class DocumentProcessor
             $prompt->system(
                 "You are a taxonomy tagger for search indexing.\n"
                 ."Return up to {$maxTags} concise tags as lowercase kebab-case tokens.\n"
-                ."IMPORTANT: You MUST reuse tags from the existing list when they fit the content. Only create a new tag when no existing tag covers the topic."
+                .'IMPORTANT: You MUST reuse tags from the existing list when they fit the content. Only create a new tag when no existing tag covers the topic.'
             );
 
             if ($existing !== []) {
