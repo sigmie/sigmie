@@ -4,7 +4,7 @@ short_description: Build AI-powered semantic search with vector embeddings
 keywords: [semantic search, vector search, embeddings, ai, machine learning, similarity]
 category: Features
 order: 1
-related_pages: [search, rag, recommendations, opensearch]
+related_pages: [search, rag, recommendations, opensearch, magic-tags]
 ---
 
 # Semantic Search & AI Features

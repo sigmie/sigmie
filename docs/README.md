@@ -71,6 +71,7 @@ $response = $sigmie->newSearch('movies')
 - **[Analysis](analysis.md)** - Text processing and tokenization
 - **[Language Support](language.md)** - Multi-language search capabilities
 - **[Semantic Search](semantic-search.md)** - Vector-based search
+- **[Magic Tags](magic-tags.md)** - LLM-generated taxonomy tags and shared tag sidecar
 - **[RAG (Retrieval-Augmented Generation)](rag.md)** - LLM-powered intelligent answers
 - **[Facets & Aggregations](facets.md)** - Faceted search interfaces
 - **[Filter Parser](filter-parser.md)** - Advanced filtering syntax

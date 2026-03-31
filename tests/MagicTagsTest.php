@@ -426,6 +426,60 @@ class MagicTagsTest extends TestCase
     /**
      * @test
      */
+    public function shared_tag_index_across_multiple_main_collections(): void
+    {
+        $sharedTagRepo = 'property_app_tags_'.uniqid();
+        $indexKb = uniqid('kb_');
+        $indexMem = uniqid('mem_');
+
+        $llm = $this->createMock(LLMApi::class);
+        $llm->expects($this->exactly(2))
+            ->method('jsonAnswer')
+            ->willReturnOnConsecutiveCalls(
+                new LLMJsonAnswer('test-model', [], [], ['tags' => ['lease', 'billing']]),
+                new LLMJsonAnswer('test-model', [], [], ['tags' => ['maintenance', 'lease']])
+            );
+
+        $embeddings = $this->createMock(EmbeddingsApi::class);
+        $embeddings->method('embed')->willReturn(array_fill(0, 256, 0.1));
+        $embeddings->method('batchEmbed')->willReturnCallback(function ($payloads) {
+            return array_map(fn () => ['vector' => array_fill(0, 256, 0.1)], $payloads);
+        });
+
+        $blueprint = new NewProperties;
+        $blueprint->text('content')->semantic(api: 'test-embeddings', accuracy: 1, dimensions: 256);
+        $blueprint->magicTags('topic', fromField: 'content')
+            ->api('test-llm')
+            ->tagIndex($sharedTagRepo);
+
+        $this->sigmie->newIndex($indexKb)->properties($blueprint)->create();
+        $this->sigmie->newIndex($indexMem)->properties($blueprint)->create();
+
+        $apis = ['test-llm' => $llm, 'test-embeddings' => $embeddings];
+
+        $this->sigmie->collect($indexKb, true)->properties($blueprint)->apis($apis)
+            ->merge([new Document(['content' => 'Knowledge about leases'], _id: 'k1')]);
+
+        $this->sigmie->collect($indexMem, true)->properties($blueprint)->apis($apis)
+            ->merge([new Document(['content' => 'User memory about maintenance'], _id: 'm1')]);
+
+        $sharedSidecarAlias = $sharedTagRepo.'__sigmie_magic_tags';
+        $this->assertNotNull($this->sigmie->index($sharedSidecarAlias));
+
+        $sharedSidecar = $this->sigmie->collect($sharedSidecarAlias);
+        $this->assertSame(3, $sharedSidecar->count(), 'billing, lease, maintenance; lease upserts once');
+
+        $tags = array_map(fn ($doc) => $doc->get('tag'), $sharedSidecar->take(10));
+        sort($tags);
+        $this->assertSame(['billing', 'lease', 'maintenance'], $tags);
+
+        $this->assertNull($this->sigmie->index($indexKb.'__sigmie_magic_tags'));
+        $this->assertNull($this->sigmie->index($indexMem.'__sigmie_magic_tags'));
+    }
+
+    /**
+     * @test
+     */
     public function similar_documents_get_overlapping_tags(): void
     {
         $indexName = uniqid('magic_tags_overlap_');

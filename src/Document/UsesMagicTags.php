@@ -19,7 +19,10 @@ trait UsesMagicTags
 
     protected bool $populateMagicTags = true;
 
-    protected bool $magicTagsSidecarEnsured = false;
+    /**
+     * @var array<string, true>
+     */
+    protected array $magicTagsSidecarsEnsured = [];
 
     public function populateMagicTags(bool $value = true): static
     {
@@ -75,9 +78,16 @@ trait UsesMagicTags
         ];
     }
 
+    private function sidecarLogicalNameForField(MagicTags $field): string
+    {
+        $name = $field->tagIndexName();
+
+        return $name !== '' ? $name : $this->name;
+    }
+
     private function ensureMagicTagsSidecarIndexExists(): void
     {
-        if ($this->magicTagsSidecarEnsured || ! $this->populateMagicTags) {
+        if (! $this->populateMagicTags) {
             return;
         }
 
@@ -87,13 +97,25 @@ trait UsesMagicTags
             return;
         }
 
-        (new MagicTagsSidecarIndex(
-            $this->name,
-            $this->sigmie(),
-            $config['api'],
-            $config['dimensions'],
-        ))->ensureExists();
-        $this->magicTagsSidecarEnsured = true;
+        foreach ($this->properties->magicTagsFields() as $field) {
+            if (! $field instanceof MagicTags) {
+                continue;
+            }
+
+            $logical = $this->sidecarLogicalNameForField($field);
+
+            if (isset($this->magicTagsSidecarsEnsured[$logical])) {
+                continue;
+            }
+
+            (new MagicTagsSidecarIndex(
+                $logical,
+                $this->sigmie(),
+                $config['api'],
+                $config['dimensions'],
+            ))->ensureExists();
+            $this->magicTagsSidecarsEnsured[$logical] = true;
+        }
     }
 
     /**
@@ -113,31 +135,29 @@ trait UsesMagicTags
             return;
         }
 
-        $sidecar = (new MagicTagsSidecarIndex(
-            $this->name,
-            $this->sigmie(),
-            $config['api'],
-            $config['dimensions'],
-        ))->collect($this->refresh === 'true')
-            ->apis($this->apis)
-            ->populateMagicTags(false);
-
-        $tagDocs = [];
+        /** @var array<string, array<int, Document>> $tagDocsBySidecar */
+        $tagDocsBySidecar = [];
 
         foreach ($documents as $document) {
             foreach ($this->properties->magicTagsFields() as $path => $magicField) {
+                if (! $magicField instanceof MagicTags) {
+                    continue;
+                }
+
                 $tags = $document->get($path);
 
                 if (! is_array($tags)) {
                     continue;
                 }
 
+                $logical = $this->sidecarLogicalNameForField($magicField);
+
                 foreach ($tags as $tag) {
                     if (! is_string($tag) || $tag === '') {
                         continue;
                     }
 
-                    $tagDocs[] = new Document([
+                    $tagDocsBySidecar[$logical][] = new Document([
                         'magic_field_path' => $path,
                         'tag' => $tag,
                     ], md5($path.'::'.$tag));
@@ -145,8 +165,20 @@ trait UsesMagicTags
             }
         }
 
-        if ($tagDocs !== []) {
-            $sidecar->merge($tagDocs);
+        foreach ($tagDocsBySidecar as $logical => $tagDocs) {
+            if ($tagDocs === []) {
+                continue;
+            }
+
+            (new MagicTagsSidecarIndex(
+                $logical,
+                $this->sigmie(),
+                $config['api'],
+                $config['dimensions'],
+            ))->collect($this->refresh === 'true')
+                ->apis($this->apis)
+                ->populateMagicTags(false)
+                ->merge($tagDocs);
         }
     }
 

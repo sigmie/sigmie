@@ -26,6 +26,12 @@ class MagicTags extends Keyword
 
     protected string $prompt = '';
 
+    /**
+     * When non-empty, magic-tag sidecar index name is derived from this value instead of the main collection name,
+     * so multiple indices can share one tag registry.
+     */
+    protected string $tagIndexName = '';
+
     public function __construct(
         string $name,
         protected string $fromField,
@@ -103,6 +109,13 @@ class MagicTags extends Keyword
         return $this;
     }
 
+    public function tagIndex(string $name): self
+    {
+        $this->tagIndexName = $name;
+
+        return $this;
+    }
+
     public function getPrompt(): string
     {
         return $this->prompt;
@@ -111,6 +124,11 @@ class MagicTags extends Keyword
     public function getMaxTags(): int
     {
         return $this->maxTags;
+    }
+
+    public function tagIndexName(): string
+    {
+        return $this->tagIndexName;
     }
 
     public function embeddingsApiName(): string
