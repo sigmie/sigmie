@@ -15,8 +15,8 @@ use Sigmie\Index\Shared\Mappings;
 use Sigmie\Mappings\Properties;
 use Sigmie\Semantic\DocumentProcessor;
 use Sigmie\Shared\Collection;
-use Sigmie\Sigmie;
 use Sigmie\Shared\UsesApis;
+use Sigmie\Sigmie;
 use Traversable;
 
 class AliveCollection implements ArrayAccess, Countable, DocumentCollection

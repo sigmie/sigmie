@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Sigmie\Document;
 
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
-use Sigmie\Semantic\MagicTags\Index as MagicTagsSidecarIndex;
-use Sigmie\Sigmie;
 use Sigmie\Mappings\Types\MagicTags;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Search as QuerySearch;
+use Sigmie\Semantic\MagicTags\Index as MagicTagsSidecarIndex;
+use Sigmie\Sigmie;
 
 trait UsesMagicTags
 {
@@ -153,10 +153,12 @@ trait UsesMagicTags
                 $logical = $this->sidecarLogicalNameForField($magicField);
 
                 foreach ($tags as $tag) {
-                    if (! is_string($tag) || $tag === '') {
+                    if (! is_string($tag)) {
                         continue;
                     }
-
+                    if ($tag === '') {
+                        continue;
+                    }
                     $tagDocsBySidecar[$logical][] = new Document([
                         'magic_field_path' => $path,
                         'tag' => $tag,

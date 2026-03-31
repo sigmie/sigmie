@@ -183,8 +183,10 @@ class MagicTags extends Keyword
 
         foreach ($buckets as $bucket) {
             $tagKey = $bucket['key'] ?? null;
-
-            if ($tagKey === null || $tagKey === '') {
+            if ($tagKey === null) {
+                continue;
+            }
+            if ($tagKey === '') {
                 continue;
             }
 

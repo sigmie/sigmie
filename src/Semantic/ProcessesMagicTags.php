@@ -278,7 +278,7 @@ trait ProcessesMagicTags
         ?EmbeddingsApi $embeddingsApi,
         MagicTags $field,
     ): array {
-        if ($embeddingsApi === null || $tags === []) {
+        if (! $embeddingsApi instanceof EmbeddingsApi || $tags === []) {
             return $tags;
         }
 
@@ -501,6 +501,7 @@ trait ProcessesMagicTags
     {
         $dotHelper = dot($document->_source);
         $dotHelper->set($path, $tags);
+
         $document->_source = $dotHelper->all();
     }
 

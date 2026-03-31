@@ -8,12 +8,12 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\Document\Document;
-use Sigmie\Semantic\MagicTags\Index as MagicTagsSidecarIndex;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\MagicTags;
 use Sigmie\Query\Aggs;
 use Sigmie\Rag\LLMJsonAnswer;
 use Sigmie\Semantic\DocumentProcessor;
+use Sigmie\Semantic\MagicTags\Index as MagicTagsSidecarIndex;
 use Sigmie\Testing\TestCase;
 
 class MagicTagsTest extends TestCase
@@ -393,9 +393,7 @@ class MagicTagsTest extends TestCase
 
         $embeddings = $this->createMock(EmbeddingsApi::class);
         $embeddings->method('embed')->willReturn(array_fill(0, 256, 0.1));
-        $embeddings->method('batchEmbed')->willReturnCallback(function ($payloads) {
-            return array_map(fn () => ['vector' => array_fill(0, 256, 0.1)], $payloads);
-        });
+        $embeddings->method('batchEmbed')->willReturnCallback(fn ($payloads): array => array_map(fn (): array => ['vector' => array_fill(0, 256, 0.1)], $payloads));
 
         $blueprint = new NewProperties;
         $blueprint->text('content')->semantic(api: 'test-embeddings', accuracy: 1, dimensions: 256);
@@ -442,9 +440,7 @@ class MagicTagsTest extends TestCase
 
         $embeddings = $this->createMock(EmbeddingsApi::class);
         $embeddings->method('embed')->willReturn(array_fill(0, 256, 0.1));
-        $embeddings->method('batchEmbed')->willReturnCallback(function ($payloads) {
-            return array_map(fn () => ['vector' => array_fill(0, 256, 0.1)], $payloads);
-        });
+        $embeddings->method('batchEmbed')->willReturnCallback(fn ($payloads): array => array_map(fn (): array => ['vector' => array_fill(0, 256, 0.1)], $payloads));
 
         $blueprint = new NewProperties;
         $blueprint->text('content')->semantic(api: 'test-embeddings', accuracy: 1, dimensions: 256);
@@ -494,9 +490,7 @@ class MagicTagsTest extends TestCase
 
         $embeddings = $this->createMock(EmbeddingsApi::class);
         $embeddings->method('embed')->willReturn(array_fill(0, 256, 0.1));
-        $embeddings->method('batchEmbed')->willReturnCallback(function ($texts) {
-            return array_map(fn () => array_fill(0, 256, 0.1), $texts);
-        });
+        $embeddings->method('batchEmbed')->willReturnCallback(fn ($texts): array => array_map(fn (): array => array_fill(0, 256, 0.1), $texts));
 
         $blueprint = new NewProperties;
         $blueprint->text('content')->semantic(api: 'test-embeddings', accuracy: 1, dimensions: 256);
