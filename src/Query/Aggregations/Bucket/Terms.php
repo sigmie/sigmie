@@ -19,9 +19,11 @@ class Terms extends Bucket
         protected string $field,
     ) {}
 
-    public function size(int $size): void
+    public function size(int $size): static
     {
         $this->size = $size;
+
+        return $this;
     }
 
     public function order(string $subaggregation, string $direction): self

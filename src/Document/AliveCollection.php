@@ -15,6 +15,7 @@ use Sigmie\Index\Shared\Mappings;
 use Sigmie\Mappings\Properties;
 use Sigmie\Semantic\DocumentProcessor;
 use Sigmie\Shared\Collection;
+use Sigmie\Sigmie;
 use Sigmie\Shared\UsesApis;
 use Traversable;
 
@@ -26,14 +27,13 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     use Mappings;
     use Search;
     use UsesApis;
+    use UsesMagicTags;
 
     protected ?array $only = null;
 
     protected ?array $except = null;
 
     protected bool $populateEmbeddings = true;
-
-    protected bool $populateMagicTags = true;
 
     public function __construct(
         protected string $name,
@@ -45,16 +45,14 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         $this->properties = new Properties;
     }
 
+    protected function sigmie(): Sigmie
+    {
+        return new Sigmie($this->elasticsearchConnection);
+    }
+
     public function populateEmbeddings(bool $value = true): static
     {
         $this->populateEmbeddings = $value;
-
-        return $this;
-    }
-
-    public function populateMagicTags(bool $value = true): static
-    {
-        $this->populateMagicTags = $value;
 
         return $this;
     }
@@ -130,27 +128,57 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function add(Document $document): Document
     {
+        $this->ensureMagicTagsSidecarIndexExists();
+
         $document = $this->documentEmbeddings($document);
 
         $document = $this->createDocument($this->name, $document, $this->refresh);
+
+        $this->writeMagicTagsToSidecar([$document]);
 
         return $document;
     }
 
     public function merge(array $docs): AliveCollection
     {
+        $this->ensureMagicTagsSidecarIndexExists();
+
         $existingMagicTags = null;
 
         if ($this->populateMagicTags && ! $this->properties->magicTagsFields()->isEmpty()) {
             $existingMagicTags = $this->fetchExistingMagicTags();
         }
 
-        $docs = array_map(
-            fn (Document $doc): Document => $this->processDocument($doc, $existingMagicTags),
-            $docs
-        );
+        $processor = new DocumentProcessor($this->properties);
+        $processor->apis($this->apis);
+
+        $docs = array_map(function (Document $doc) use ($processor): Document {
+            $doc = $processor->formatDateTimeFields($doc);
+            $doc = $processor->validateFields($doc);
+            $doc = $processor->populateComboFields($doc);
+
+            return $doc;
+        }, $docs);
+
+        if ($this->populateMagicTags) {
+            $existing = $existingMagicTags ?? [];
+
+            if ($existingMagicTags === null && ! $this->properties->magicTagsFields()->isEmpty()) {
+                $existing = $this->fetchExistingMagicTags();
+            }
+
+            $tagSamples = $this->fetchTagSampleTextsByField($existing);
+
+            $docs = $processor->populateMagicTagsForDocuments($docs, $existing, $tagSamples);
+        }
+
+        if ($this->populateEmbeddings) {
+            $docs = array_map(fn (Document $doc): Document => $processor->populateEmbeddings($doc), $docs);
+        }
 
         $this->upsertDocuments($this->name, $docs, $this->refresh);
+
+        $this->writeMagicTagsToSidecar($docs);
 
         return $this;
     }
@@ -169,7 +197,10 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
                 $existingMagicTags = $this->fetchExistingMagicTags();
             }
 
-            $document = $documentProcessor->populateMagicTags($document, $existingMagicTags ?? []);
+            $existing = $existingMagicTags ?? [];
+            $tagSamples = $this->fetchTagSampleTextsByField($existing);
+
+            $document = $documentProcessor->populateMagicTags($document, $existing, $tagSamples);
         }
 
         if ($this->populateEmbeddings) {
@@ -182,42 +213,6 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     private function documentEmbeddings(Document $document): Document
     {
         return $this->processDocument($document);
-    }
-
-    protected function fetchExistingMagicTags(): array
-    {
-        $magicFields = $this->properties->magicTagsFields();
-
-        if ($magicFields->isEmpty()) {
-            return [];
-        }
-
-        $aggs = [];
-
-        foreach ($magicFields as $path => $field) {
-            $aggs[$path] = [
-                'terms' => [
-                    'field' => $path,
-                    'size' => 500,
-                ],
-            ];
-        }
-
-        $response = $this->searchAPICall($this->name, [
-            'size' => 0,
-            'query' => ['match_all' => (object) []],
-            'aggs' => $aggs,
-        ]);
-
-        $aggregations = $response->json('aggregations') ?? [];
-        $result = [];
-
-        foreach ($magicFields as $path => $field) {
-            $buckets = $aggregations[$path]['buckets'] ?? [];
-            $result[$path] = array_column($buckets, 'key');
-        }
-
-        return $result;
     }
 
     public function toArray(): array

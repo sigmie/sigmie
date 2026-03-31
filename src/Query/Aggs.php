@@ -30,6 +30,7 @@ use Sigmie\Query\Aggregations\Metrics\Percentiles;
 use Sigmie\Query\Aggregations\Metrics\Rate;
 use Sigmie\Query\Aggregations\Metrics\Stats;
 use Sigmie\Query\Aggregations\Metrics\Sum;
+use Sigmie\Query\Aggregations\Metrics\TopHits;
 use Sigmie\Query\Aggregations\Metrics\ValueCount;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
 
@@ -182,6 +183,19 @@ class Aggs implements AggsInterface
     public function terms(string $name, string $field): Terms
     {
         $aggregation = new Terms($name, $field);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    public function topHits(
+        string $name,
+        int $size = 1,
+        ?array $sourceIncludes = null,
+        ?array $sort = null,
+    ): TopHits {
+        $aggregation = new TopHits($name, $sort, $sourceIncludes, $size);
 
         $this->aggs[] = $aggregation;
 
