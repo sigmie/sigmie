@@ -290,5 +290,4 @@ class Sigmie
     {
         return in_array($plugin, self::$plugins);
     }
-
 }
