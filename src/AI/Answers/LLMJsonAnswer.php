@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Rag;
+namespace Sigmie\AI\Answers;
 
-class LLMJsonAnswer extends LLMAnswer
+class LLMJsonAnswer extends AbstractLLMAnswer
 {
     public function __construct(
         string $model,

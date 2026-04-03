@@ -9,6 +9,7 @@ use Countable;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Document\Actions as DocumentActions;
+use Sigmie\Document\Contracts\CollectionHook;
 use Sigmie\Document\Contracts\DocumentCollection;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Shared\Mappings;
@@ -27,7 +28,11 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     use Mappings;
     use Search;
     use UsesApis;
-    use UsesMagicTags;
+
+    /** @var array<int, CollectionHook> */
+    protected array $hooks = [];
+
+    protected bool $hooksEnabled = true;
 
     protected ?array $only = null;
 
@@ -48,6 +53,23 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     protected function sigmie(): Sigmie
     {
         return new Sigmie($this->elasticsearchConnection);
+    }
+
+    /**
+     * @param  array<int, CollectionHook>  $hooks
+     */
+    public function hooks(array $hooks): static
+    {
+        $this->hooks = $hooks;
+
+        return $this;
+    }
+
+    public function withoutHooks(): static
+    {
+        $this->hooksEnabled = false;
+
+        return $this;
     }
 
     public function populateEmbeddings(bool $value = true): static
@@ -71,7 +93,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function replace(Document $document): Document
     {
-        $document = $this->documentEmbeddings($document);
+        $document = $this->processDocument($document);
 
         return $this->updateDocument($this->name, $document, $this->refresh);
     }
@@ -128,25 +150,29 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function add(Document $document): Document
     {
-        $this->ensureMagicTagsSidecarIndexExists();
+        $activeHooks = $this->activeHooks();
 
-        $document = $this->documentEmbeddings($document);
+        foreach ($activeHooks as $hook) {
+            $hook->beforeBatch($this->name, $this->sigmie(), $this->properties, $this->apis);
+        }
+
+        $document = $this->processDocument($document);
 
         $document = $this->createDocument($this->name, $document, $this->refresh);
 
-        $this->writeMagicTagsToSidecar([$document]);
+        foreach ($activeHooks as $hook) {
+            $hook->afterBatch([$document], $this->name, $this->sigmie(), $this->properties, $this->apis);
+        }
 
         return $document;
     }
 
     public function merge(array $docs): AliveCollection
     {
-        $this->ensureMagicTagsSidecarIndexExists();
+        $activeHooks = $this->activeHooks();
 
-        $existingMagicTags = null;
-
-        if ($this->populateMagicTags && ! $this->properties->magicTagsFields()->isEmpty()) {
-            $existingMagicTags = $this->fetchExistingMagicTags();
+        foreach ($activeHooks as $hook) {
+            $hook->beforeBatch($this->name, $this->sigmie(), $this->properties, $this->apis);
         }
 
         $processor = new DocumentProcessor($this->properties);
@@ -160,59 +186,56 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
             return $doc;
         }, $docs);
 
-        if ($this->populateMagicTags) {
-            $existing = $existingMagicTags ?? [];
-
-            if ($existingMagicTags === null && ! $this->properties->magicTagsFields()->isEmpty()) {
-                $existing = $this->fetchExistingMagicTags();
-            }
-
-            $tagSamples = $this->fetchTagSampleTextsByField($existing);
-
-            $docs = $processor->populateMagicTagsForDocuments($docs, $existing, $tagSamples);
-        }
-
         if ($this->populateEmbeddings) {
             $docs = array_map(fn (Document $doc): Document => $processor->populateEmbeddings($doc), $docs);
         }
 
+        foreach ($activeHooks as $hook) {
+            $docs = $hook->processBatch($docs, $this->properties, $this->apis);
+        }
+
         $this->upsertDocuments($this->name, $docs, $this->refresh);
 
-        $this->writeMagicTagsToSidecar($docs);
+        foreach ($activeHooks as $hook) {
+            $hook->afterBatch($docs, $this->name, $this->sigmie(), $this->properties, $this->apis);
+        }
 
         return $this;
     }
 
-    protected function processDocument(Document $document, ?array $existingMagicTags = null): Document
+    protected function processDocument(Document $document): Document
     {
-        $documentProcessor = new DocumentProcessor($this->properties);
-        $documentProcessor->apis($this->apis);
+        $processor = new DocumentProcessor($this->properties);
+        $processor->apis($this->apis);
 
-        $document = $documentProcessor->formatDateTimeFields($document);
-        $document = $documentProcessor->validateFields($document);
-        $document = $documentProcessor->populateComboFields($document);
-
-        if ($this->populateMagicTags) {
-            if ($existingMagicTags === null && ! $this->properties->magicTagsFields()->isEmpty()) {
-                $existingMagicTags = $this->fetchExistingMagicTags();
-            }
-
-            $existing = $existingMagicTags ?? [];
-            $tagSamples = $this->fetchTagSampleTextsByField($existing);
-
-            $document = $documentProcessor->populateMagicTags($document, $existing, $tagSamples);
-        }
+        $document = $processor->formatDateTimeFields($document);
+        $document = $processor->validateFields($document);
+        $document = $processor->populateComboFields($document);
 
         if ($this->populateEmbeddings) {
-            return $documentProcessor->populateEmbeddings($document);
+            $document = $processor->populateEmbeddings($document);
+        }
+
+        foreach ($this->activeHooks() as $hook) {
+            [$document] = $hook->processBatch([$document], $this->properties, $this->apis);
         }
 
         return $document;
     }
 
-    private function documentEmbeddings(Document $document): Document
+    /**
+     * @return array<int, CollectionHook>
+     */
+    private function activeHooks(): array
     {
-        return $this->processDocument($document);
+        if (! $this->hooksEnabled) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $this->hooks,
+            fn (CollectionHook $hook): bool => $hook->shouldRun($this->properties)
+        ));
     }
 
     public function toArray(): array

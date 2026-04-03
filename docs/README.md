@@ -71,8 +71,9 @@ $response = $sigmie->newSearch('movies')
 - **[Analysis](analysis.md)** - Text processing and tokenization
 - **[Language Support](language.md)** - Multi-language search capabilities
 - **[Semantic Search](semantic-search.md)** - Vector-based search
-- **[Magic Tags](magic-tags.md)** - LLM-generated taxonomy tags and shared tag sidecar
-- **[RAG (Retrieval-Augmented Generation)](rag.md)** - LLM-powered intelligent answers
+- **[Magic Tags](magic-tags.md)** - LLM taxonomy tags and shared tag sidecar (package)
+- **[Retrieval and agents](rag.md)** - Search, reranking, and LLM usage in your application
+- **[Extending Sigmie](extending.md)** - Build packages that add field types and processing hooks
 - **[Facets & Aggregations](facets.md)** - Faceted search interfaces
 - **[Filter Parser](filter-parser.md)** - Advanced filtering syntax
 - **[Sort Parser](sort-parser.md)** - Flexible sorting options
@@ -105,10 +106,10 @@ $response = $sigmie->newSearch('movies')
 - Semantic search using vector embeddings
 
 ### 🤖 **AI-Powered Features**
-- Retrieval-Augmented Generation (RAG) for intelligent answers
-- Streaming responses for real-time user experiences
-- Vector embeddings and semantic search
-- LLM integration with reranking capabilities
+- Semantic search and vector embeddings
+- Reranking on the search response (`$response->rerank(...)`) with pluggable rerank APIs
+- LLM and JSON answer types for prompts you build in your app
+- Magic tags for LLM-assisted taxonomy
 
 ### 📝 **Document Management**  
 - Type-safe document creation and validation
@@ -186,26 +187,24 @@ $response = $sigmie->newSearch('documents')
 
 ### AI-Powered Question Answering
 
+Retrieve with `newSearch()` → `get()`, optionally `$response->rerank(...)`, then call your LLM with `Sigmie\AI\Prompt` (full RAG orchestration lives in your app or Laravel AI):
+
 ```php
-use Sigmie\AI\LLMs\OpenAILLM;
+use Sigmie\AI\Prompt;
 
-$llm = new OpenAILLM('your-openai-api-key');
+// $llm implements Sigmie\AI\Contracts\LLMApi (e.g. OpenAI or Ollama adapter)
 
-// Streaming response for real-time experience
-$stream = $sigmie->newRag($llm)
-    ->search(
-        $sigmie->newSearch('knowledge-base')
-            ->queryString('What is machine learning?')
-            ->size(5)
-    )
-    ->prompt(function ($prompt) {
-        $prompt->question('What is machine learning?');
-        $prompt->contextFields(['title', 'content']);
-    })
-    ->instructions('You are a helpful technical assistant.')
-    ->answer(stream: true);
+$hits = $sigmie->newSearch('knowledge-base')
+    ->queryString('What is machine learning?')
+    ->size(5)
+    ->get()
+    ->hits();
 
-foreach ($stream as $chunk) {
+$prompt = (new Prompt)
+    ->system('You are a helpful technical assistant.')
+    ->user('Answer using the following context: '.json_encode($hits));
+
+foreach ($llm->streamAnswer($prompt) as $chunk) {
     echo $chunk;
     flush();
 }
@@ -220,7 +219,7 @@ Build search experiences with typo tolerance, highlighting, and faceted navigati
 Enable semantic search to find content by meaning, not just keywords.
 
 ### Intelligent Q&A Systems
-Create AI-powered question-answering systems that provide contextually accurate responses using your own data.
+Combine Elasticsearch retrieval with LLMs in your application for grounded answers.
 
 ### Data Analysis
 Use aggregations and facets to analyze and summarize your data.
@@ -239,7 +238,7 @@ Implement autocomplete and search-as-you-type functionality.
 │ • Views         │    │ • Index         │    │ • Mappings      │
 └─────────────────┘    │ • Document      │    └─────────────────┘
                        │ • Properties    │           ▲
-                       │ • RAG           │           │
+                       │ • AI APIs       │           │
                        └─────────────────┘           │
                                │                     │
                                ▼                     │
@@ -272,4 +271,4 @@ Sigmie is released under the MIT License. See the LICENSE file for details.
 
 For experienced Elasticsearch users, the [API Reference](api-reference.md) provides comprehensive documentation of all available methods and classes.
 
-To explore AI-powered search capabilities, check out the [RAG Documentation](rag.md) for intelligent question-answering systems.
+To explore how retrieval fits with LLMs, see [Retrieval and agents](rag.md).

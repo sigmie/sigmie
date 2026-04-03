@@ -22,7 +22,7 @@ use Sigmie\Mappings\Types\Id;
 use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\LongText;
-use Sigmie\Mappings\Types\MagicTags;
+use Closure;
 use Sigmie\Mappings\Types\Name;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
@@ -41,6 +41,9 @@ use Sigmie\Shared\Collection;
 
 class NewProperties
 {
+    /** @var array<string, Closure> */
+    protected static array $macros = [];
+
     protected Collection $fields;
 
     protected string $name = Properties::ROOT_NAME;
@@ -49,6 +52,20 @@ class NewProperties
         protected ?Type $parentField = null
     ) {
         $this->fields = new Collection;
+    }
+
+    public static function macro(string $name, Closure $fn): void
+    {
+        self::$macros[$name] = $fn;
+    }
+
+    public function __call(string $name, array $args): mixed
+    {
+        if (isset(self::$macros[$name])) {
+            return Closure::bind(self::$macros[$name], $this, static::class)(...$args);
+        }
+
+        throw new \BadMethodCallException(sprintf('No macro "%s" registered on NewProperties.', $name));
     }
 
     public function propertiesName(string $name): self
@@ -312,15 +329,6 @@ class NewProperties
     public function tags(string $name = 'tags'): Tags
     {
         $field = new Tags($name);
-
-        $this->fields->add($field);
-
-        return $field;
-    }
-
-    public function magicTags(string $name, string $fromField): MagicTags
-    {
-        $field = new MagicTags($name, $fromField);
 
         $this->fields->add($field);
 

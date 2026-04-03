@@ -2,17 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Rag;
+namespace Sigmie\AI\Answers;
 
+use Sigmie\AI\Contracts\LLMAnswer as LLMAnswerContract;
 use Stringable;
 
-abstract class LLMAnswer implements Stringable
+abstract class AbstractLLMAnswer implements LLMAnswerContract, Stringable
 {
-    public readonly string $timestamp;
-
-    // TODO make readonly
-    public string $conversationId;
-
     public function __construct(
         public readonly string $model,
         public readonly array $request,
@@ -22,11 +18,6 @@ abstract class LLMAnswer implements Stringable
     public function model(): string
     {
         return $this->model;
-    }
-
-    public function conversation(string $conversationId): void
-    {
-        $this->conversationId = $conversationId;
     }
 
     public function totalTokens(): int

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sigmie\Rag;
+namespace Sigmie\Search;
 
 use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Document\Hit;
@@ -48,16 +48,13 @@ class NewRerank
             return $hits;
         }
 
-        // Format hits for reranking
         $textDocuments = $this->payload($hits);
 
-        // Perform reranking
         $res = $this->reranker->rerank($textDocuments, $query, $this->topK) ?? [];
 
         return array_map(function (array $index) use ($hits): RerankedHit {
             $hit = $hits[$index['index']];
 
-            // Convert array to Hit object if needed
             if (is_array($hit)) {
                 $hit = new Hit(
                     $hit['_source'] ?? [],
@@ -74,20 +71,29 @@ class NewRerank
 
     public function payload(array $hits): array
     {
+        return self::documentPayloads($hits, $this->fields);
+    }
+
+    /**
+     * YAML document strings for reranking (same shape as {@see payload()}).
+     *
+     * @param  array<int, Hit|array<string, mixed>>  $hits
+     * @return array<int, string>
+     */
+    public static function documentPayloads(array $hits, array $fields): array
+    {
         $documents = [];
 
         foreach ($hits as $hit) {
-            // Filter to specific fields and format as inline YAML string
             $filteredData = [];
             $source = is_array($hit) ? ($hit['_source'] ?? []) : $hit->_source;
 
-            foreach ($this->fields as $field) {
+            foreach ($fields as $field) {
                 if (isset($source[$field])) {
                     $filteredData[$field] = $source[$field];
                 }
             }
 
-            // Format as inline YAML (e.g., "name: Value\ndescription: Another value")
             $documents[] = Yaml::dump($filteredData, inline: 1);
         }
 

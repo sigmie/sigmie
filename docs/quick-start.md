@@ -321,22 +321,18 @@ $results = $sigmie->newSearch('products')
 
 See [Semantic Search](/docs/semantic-search) for embeddings, vector strategies, and advanced techniques.
 
-## Next: RAG (Retrieval-Augmented Generation)
+## Next: Retrieval plus LLM (app-level RAG)
 
-Combine search with AI to answer questions from your documents:
+Combine search and reranking in Sigmie, then call your LLM with a `Prompt` in your application (Sigmie does not ship a single `newRag()` orchestrator):
 
 ```php
-use Sigmie\AI\OpenAI\LLM;
-use Sigmie\AI\OpenAI\Rerank;
+use Sigmie\AI\Prompt;
+use Sigmie\Search\NewRerank;
 
-// Register AI services
-$llm = new LLM(apiKey: 'your-openai-key', model: 'gpt-4');
-$reranker = new Rerank(apiKey: 'your-voyage-key');
-
+// Register AI services (example: your LLM and reranker implementations)
 $sigmie->registerApi('llm', $llm);
-$sigmie->registerApi('reranker', $reranker);
+// $reranker implements RerankApi — pass the instance you use for NewRerank
 
-// Create knowledge base
 $props = new NewProperties;
 $props->text('content')->semantic(accuracy: 1, dimensions: 384, api: 'embeddings');
 
@@ -345,31 +341,27 @@ $sigmie->collect('docs', refresh: true)->properties($props)->merge([
     new Document([
         'content' => 'Returnable within 30 days for full refund.',
     ]),
-    // ... more documents
 ]);
 
-// Get AI-powered answer
-$search = $sigmie->newSearch('docs')
+$hits = $sigmie->newSearch('docs')
     ->properties($props)
     ->semantic()
     ->queryString('What is your return policy?')
-    ->size(5);
+    ->size(5)
+    ->get()
+    ->hits();
 
-$answer = $sigmie->newRag($llm, $reranker)
-    ->search($search)
-    ->rerank(fn($r) => $r->topK(3)->query('return policy'))
-    ->prompt(fn($p) => $p
-        ->system('You are a helpful support agent.')
-        ->user('What is your return policy?')
-        ->contextFields(['content'])
-    )
-    ->answer();
+$reranked = $res->rerank($reranker, ['content'], 'return policy', 3);
 
-echo $answer->llmAnswer->answer();
-// Output: You can return items within 30 days for a full refund.
+$prompt = (new Prompt)
+    ->system('You are a helpful support agent. Answer using the context.')
+    ->user('Context: '.json_encode($reranked)."\n\nQuestion: What is your return policy?");
+
+$answer = $llm->answer($prompt);
+echo (string) $answer;
 ```
 
-See [RAG with LLMs](/docs/rag) for conversation history, streaming, and structured outputs.
+See [Retrieval and agents](/docs/rag) for positioning and optional conversation history.
 
 ## Complete Example: Product Search App
 
@@ -513,7 +505,7 @@ Now that you understand keyword search, explore Sigmie's advanced features:
 - **[Filter Parser](/docs/filter-parser)** - Build complex, readable filters
 - **[Facets & Aggregations](/docs/aggregations)** - Create filter sidebars and analytics
 - **[Semantic Search](/docs/semantic-search)** - Find results by meaning with embeddings
-- **[RAG (LLM Integration)](/docs/rag)** - Generate AI-powered answers from documents
+- **[Retrieval and agents](/docs/rag)** - Search, reranking, and LLM orchestration in your app
 - **[Index Management](/docs/index)** - Customize field types, analyzers, and settings
 - **[Search API Reference](/docs/search)** - Complete method documentation
 

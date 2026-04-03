@@ -902,6 +902,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         $formatter = $this->formatter ?? new SigmieSearchResponse($this->properties, $this->semanticSearch);
 
         $formatter->context($this->searchContext)
+            ->apis($this->apis)
             ->errors([
                 ...$this->filterParser->errors(),
                 ...$this->facetParser->errors(),

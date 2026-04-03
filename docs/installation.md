@@ -172,11 +172,12 @@ $embeddings = new Infinity(
 $sigmie->setEmbeddings($embeddings);
 ```
 
-Use local Ollama for RAG instead of OpenAI:
+Use local Ollama for generation and rerank on the **search response** (`$res->rerank(...)`) instead of cloud APIs. Sigmie does not provide `newRag()`; retrieve with `newSearch()`, optionally rerank hits from that response, then call `LLMApi` with a `Prompt` in your code:
 
 ```php
 use Sigmie\LLM\Ollama;
 use Sigmie\Rerank\Infinity as InfinityReranker;
+use Sigmie\AI\Prompt;
 
 $llm = new Ollama(
     baseUrl: 'http://localhost:7999',
@@ -188,10 +189,9 @@ $reranker = new InfinityReranker(
     model: 'cross-encoder/ms-marco-MiniLM-L-6-v2'
 );
 
-$answer = $sigmie->newRag($llm, $reranker)
-    ->search($search)
-    ->prompt(fn($p) => $p->system('You are helpful'))
-    ->answer();
+$res = $search->get();
+$reranked = $res->rerank($reranker, ['content'], query: '...', topK: 5);
+$answer = $llm->answer((new Prompt)->system('You are helpful')->user('...'));
 ```
 
 ### Environment Configuration

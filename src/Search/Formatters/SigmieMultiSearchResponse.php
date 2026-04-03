@@ -59,12 +59,17 @@ class SigmieMultiSearchResponse implements MultiSearchResponse
                 $searchContextProperty->setAccessible(true);
                 $searchContext = $searchContextProperty->getValue($search);
 
+                $apisProperty = $reflection->getProperty('apis');
+                $apisProperty->setAccessible(true);
+                $apis = $apisProperty->getValue($search) ?? [];
+
                 // Create a formatter similar to NewSearch::get()
                 $formatter = new SigmieSearchResponse($properties);
                 $formatter->queryResponseRaw($searchResponse)
                     ->facetsResponseRaw($facetsResponse)
                     ->context($searchContext)
-                    ->errors([]);
+                    ->errors([])
+                    ->apis($apis);
 
                 $results[$searchIndex] = $formatter->format();
                 $responseIndex += 2;

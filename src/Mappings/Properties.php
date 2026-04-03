@@ -22,7 +22,6 @@ use Sigmie\Mappings\Types\FlatObject;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Keyword;
-use Sigmie\Mappings\Types\MagicTags;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Object_;
@@ -401,21 +400,22 @@ class Properties extends Type implements ArrayAccess, FieldContainer
         return new Collection($res);
     }
 
-    private function magicTagsFieldsAtLevel(): Collection
+    /**
+     * Return all fields of a given type, recursively including nested properties.
+     * Keys are the field's full dot-path.
+     *
+     * @template T of ContractsType
+     * @param  class-string<T>  $class
+     * @return Collection<string, T>
+     */
+    public function fieldsOfType(string $class): Collection
     {
-        $collection = new Collection($this->fields);
-
-        return $collection
-            ->filter(fn (ContractsType $type): bool => $type instanceof MagicTags)
-            ->mapWithKeys(fn (MagicTags $field): array => [$field->fullPath() => $field]);
-    }
-
-    public function magicTagsFields(): Collection
-    {
-        $direct = $this->magicTagsFieldsAtLevel();
+        $direct = (new Collection($this->fields))
+            ->filter(fn (ContractsType $type): bool => $type instanceof $class)
+            ->mapWithKeys(fn (ContractsType $field): array => [$field->fullPath() => $field]);
 
         $nested = $this->deepFields()
-            ->mapWithKeys(fn (FieldContainer $field): array => $field->getProperties()->magicTagsFields()->toArray());
+            ->mapWithKeys(fn (FieldContainer $field): array => $field->getProperties()->fieldsOfType($class)->toArray());
 
         return new Collection([
             ...$direct->toArray(),

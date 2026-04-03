@@ -9,6 +9,8 @@ use GuzzleHttp\Psr7\Uri;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Contracts\RerankApi;
+use Sigmie\Contracts\Package;
+use Sigmie\Document\Contracts\CollectionHook;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
 use Sigmie\Base\Drivers\Elasticsearch;
@@ -34,7 +36,6 @@ use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Search;
 use Sigmie\Search\ExistingScript;
 use Sigmie\Search\NewMultiSearch;
-use Sigmie\Search\NewRag;
 use Sigmie\Search\NewRecommendations;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewTemplate;
@@ -51,6 +52,9 @@ class Sigmie
     protected array $apis = [];
 
     public static array $plugins = [];
+
+    /** @var array<int, CollectionHook> */
+    public static array $collectionHooks = [];
 
     public function __construct(
         Connection $httpConnection
@@ -113,7 +117,17 @@ class Sigmie
             $name,
             $this->elasticsearchConnection,
             $refresh ? 'true' : 'false'
-        ))->apis($this->apis);
+        ))->apis($this->apis)->hooks(self::$collectionHooks);
+    }
+
+    public static function extend(Package $package): void
+    {
+        $package->register();
+    }
+
+    public static function addCollectionHook(CollectionHook $hook): void
+    {
+        self::$collectionHooks[] = $hook;
     }
 
     public function newClassification(EmbeddingsApi $embeddingsApi): NewClassification
@@ -160,14 +174,6 @@ class Sigmie
         return (new NewSearch($this->elasticsearchConnection))
             ->index($index)
             ->apis($this->apis);
-    }
-
-    public function newRag(
-        LLMApi $llm,
-        ?RerankApi $reranker = null
-    ): NewRag {
-
-        return new NewRag($llm, $reranker);
     }
 
     public function newMultiSearch(): NewMultiSearch
@@ -284,5 +290,10 @@ class Sigmie
     public static function isPluginRegistered(string $plugin): bool
     {
         return in_array($plugin, self::$plugins);
+    }
+
+    public static function resetExtensions(): void
+    {
+        self::$collectionHooks = [];
     }
 }

@@ -28,7 +28,6 @@ use Sigmie\Support\VectorMath;
 
 class DocumentProcessor
 {
-    use ProcessesMagicTags;
     use UsesApis;
 
     public function __construct(

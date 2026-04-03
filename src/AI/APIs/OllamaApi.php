@@ -11,7 +11,7 @@ use Sigmie\AI\Answers\LocalAnswer;
 use Sigmie\AI\Contracts\LLMAnswer;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Prompt;
-use Sigmie\Rag\LLMJsonAnswer;
+use Sigmie\AI\Answers\LLMJsonAnswer;
 
 class OllamaApi implements LLMApi
 {

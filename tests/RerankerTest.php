@@ -7,7 +7,7 @@ namespace Sigmie\Tests;
 use Sigmie\Document\Document;
 use Sigmie\Document\RerankedHit;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Rag\NewRerank;
+use Sigmie\Search\NewRerank;
 use Sigmie\Testing\TestCase;
 use Symfony\Component\Yaml\Yaml;
 
@@ -45,15 +45,8 @@ class RerankerTest extends TestCase
 
         $this->assertEquals(2, $res->total());
 
-        $hits = $res->hits();
-
-        $newRerank = new NewRerank($cohereReranker);
-        $newRerank->fields(['name', 'description']);
-        $newRerank->topK(2);
-        $newRerank->query('web framework');
-
         // Assert payload contains only specified fields formatted as YAML
-        $payload = $newRerank->payload($hits);
+        $payload = NewRerank::documentPayloads($res->hits(), ['name', 'description']);
 
         $this->assertCount(2, $payload);
         foreach ($payload as $document) {
@@ -63,7 +56,7 @@ class RerankerTest extends TestCase
             $this->assertCount(2, $parsed);
         }
 
-        $rerankedHits = $newRerank->rerank($hits);
+        $rerankedHits = $res->rerank($cohereReranker, ['name', 'description'], 'web framework', 2);
 
         // Assert rerank API was called
         $this->rerankApi->assertRerankWasCalled();

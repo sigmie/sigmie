@@ -67,7 +67,7 @@ docker-compose up -d reranker
 - **Use case:** Rerank search results for better accuracy in RAG pipelines
 - **Health check:** `curl http://localhost:7998/health`
 
-Use the local reranker in RAG:
+Use the local reranker on the **search response** after you run a search; call your LLM with `Prompt` in application code:
 
 ```php
 use Sigmie\Rerank\Infinity as InfinityReranker;
@@ -77,9 +77,8 @@ $reranker = new InfinityReranker(
     model: 'cross-encoder/ms-marco-MiniLM-L-6-v2'
 );
 
-$sigmie->newRag($llm, $reranker)
-    ->rerank(fn($r) => $r->topK(5))
-    ->answer();
+$res = $sigmie->newSearch($index)->properties($props)->queryString($query)->get();
+$reranked = $res->rerank($reranker, ['body'], $query, 5);
 ```
 
 ### Image Embeddings Service
@@ -122,20 +121,18 @@ Popular models:
 - **mistral** - 4.1GB, high quality responses
 - **codellama** - 3.8GB, optimized for code
 
-Use Ollama with Sigmie RAG:
+Use Ollama as your `LLMApi` implementation and compose answers with `Prompt` after retrieval:
 
 ```php
 use Sigmie\LLM\Ollama;
+use Sigmie\AI\Prompt;
 
 $llm = new Ollama(
     baseUrl: 'http://localhost:7999',
     model: 'tinyllama'
 );
 
-$answer = $sigmie->newRag($llm, $reranker)
-    ->search($search)
-    ->prompt(fn($p) => $p->system('You are helpful'))
-    ->answer();
+$answer = $llm->answer((new Prompt)->system('You are helpful')->user($userQuestion));
 ```
 
 ### Elasticsearch
@@ -455,6 +452,6 @@ With the Docker stack running, you can build AI-powered search features:
 - **[Quick Start](/docs/quick-start)** - Build your first semantic search
 - **[Installation](/docs/installation)** - Connect Sigmie to your local services
 - **[Semantic Search](/docs/semantic-search)** - Configure vector embeddings
-- **[RAG](/docs/rag)** - Build retrieval-augmented generation pipelines
+- **[Retrieval and agents](/docs/rag)** - Search, reranking, and LLM orchestration in your app
 
 Your local AI-powered search stack is ready!
