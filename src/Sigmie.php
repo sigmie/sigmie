@@ -53,7 +53,7 @@ class Sigmie
     public static array $plugins = [];
 
     /** @var array<int, CollectionHook> */
-    public static array $collectionHooks = [];
+    protected array $collectionHooks = [];
 
     public function __construct(
         Connection $httpConnection
@@ -116,17 +116,17 @@ class Sigmie
             $name,
             $this->elasticsearchConnection,
             $refresh ? 'true' : 'false'
-        ))->apis($this->apis)->hooks(self::$collectionHooks);
+        ))->apis($this->apis)->hooks($this->collectionHooks);
     }
 
-    public static function extend(Package $package): void
+    public function extend(Package $package): void
     {
-        $package->register();
+        $package->register($this);
     }
 
-    public static function addCollectionHook(CollectionHook $hook): void
+    public function addCollectionHook(CollectionHook $hook): void
     {
-        self::$collectionHooks[] = $hook;
+        $this->collectionHooks[] = $hook;
     }
 
     public function newClassification(EmbeddingsApi $embeddingsApi): NewClassification
@@ -291,8 +291,4 @@ class Sigmie
         return in_array($plugin, self::$plugins);
     }
 
-    public static function resetExtensions(): void
-    {
-        self::$collectionHooks = [];
-    }
 }

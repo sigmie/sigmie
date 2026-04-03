@@ -60,6 +60,11 @@ class NewProperties
         self::$macros[$name] = $fn;
     }
 
+    public static function flushMacros(): void
+    {
+        self::$macros = [];
+    }
+
     public function __call(string $name, array $args): mixed
     {
         if (isset(self::$macros[$name])) {

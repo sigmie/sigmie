@@ -19,6 +19,7 @@ use Sigmie\Document\Actions as DocumentActions;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Http\JSONClient;
 use Sigmie\Index\Actions as IndexAction;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Sigmie;
 use Symfony\Component\Dotenv\Dotenv;
 
@@ -46,8 +47,6 @@ class TestCase extends \PHPUnit\Framework\TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        Sigmie::$plugins = [];
 
         $this->loadEnv();
 
@@ -139,6 +138,9 @@ class TestCase extends \PHPUnit\Framework\TestCase
         $this->embeddingApi->reset();
         $this->rerankApi->reset();
         $this->clipApi->reset();
+
+        NewProperties::flushMacros();
+        Sigmie::$plugins = [];
 
         parent::tearDown();
     }

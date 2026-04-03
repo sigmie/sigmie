@@ -11,14 +11,16 @@ related_pages: [mappings, document, search, magic-tags]
 
 Sigmie ships with a single registration point for external packages. The **magic tags** feature is a good mental model: a package adds a `magicTags()` builder on mappings and a `CollectionHook` that fills tags and syncs a sidecar index. Nothing in core knows about magic tags — only your package does.
 
+`extend()` runs on a **`Sigmie` instance** so hooks apply to that client only (not process-wide static state). Macros on `NewProperties` remain global to the process; in tests call `NewProperties::flushMacros()` when you need isolation.
+
 ```php
 use Vendor\MagicTags\MagicTagsPackage;
 use Sigmie\Sigmie;
 
-Sigmie::extend(new MagicTagsPackage());
+$sigmie->extend(new MagicTagsPackage());
 ```
 
-One call registers everything the package needs — custom field-type builder methods and document processing hooks.
+One call registers everything the package needs — custom field-type builder methods and document processing hooks on **this** `Sigmie` instance.
 
 See [Magic Tags](magic-tags.md) for the product behavior (sidecar index, LLM, classification).
 
@@ -35,15 +37,15 @@ use Sigmie\Sigmie;
 
 class MagicTagsPackage implements Package
 {
-    public function register(): void
+    public function register(Sigmie $sigmie): void
     {
         NewProperties::macro('magicTags', /* ... */);
-        Sigmie::addCollectionHook(new MagicTagsCollectionHook());
+        $sigmie->addCollectionHook(new MagicTagsCollectionHook());
     }
 }
 ```
 
-`register()` is called immediately by `Sigmie::extend()`.
+`register()` is called immediately by `$sigmie->extend()`.
 
 ## Field-type macros
 
@@ -80,12 +82,10 @@ $props->magicTags('topic', fromField: 'content')
 
 A `CollectionHook` lets your package run logic before, during, and after documents are indexed via `AliveCollection::merge()` and `AliveCollection::add()`.
 
-Register the hook inside the package's `register()`:
+Register the hook inside the package's `register()` using the same `Sigmie` instance passed in:
 
 ```php
-use Sigmie\Sigmie;
-
-Sigmie::addCollectionHook(new MagicTagsCollectionHook());
+$sigmie->addCollectionHook(new MagicTagsCollectionHook());
 ```
 
 Implement `Sigmie\Document\Contracts\CollectionHook`. For magic tags, `shouldRun()` limits work to indices that actually declare `MagicTags` fields — so the hook does not run on unrelated collections or on the sidecar index itself.
@@ -168,7 +168,7 @@ use Vendor\MagicTags\Types\MagicTags;
 
 class MagicTagsPackage implements Package
 {
-    public function register(): void
+    public function register(Sigmie $sigmie): void
     {
         NewProperties::macro('magicTags', function (string $name, string $fromField): MagicTags {
             $field = new MagicTags($name, $fromField);
@@ -177,7 +177,7 @@ class MagicTagsPackage implements Package
             return $field;
         });
 
-        Sigmie::addCollectionHook(new MagicTagsCollectionHook());
+        $sigmie->addCollectionHook(new MagicTagsCollectionHook());
     }
 }
 ```
@@ -189,7 +189,8 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Sigmie;
 use Vendor\MagicTags\MagicTagsPackage;
 
-Sigmie::extend(new MagicTagsPackage());
+$sigmie = new Sigmie($connection);
+$sigmie->extend(new MagicTagsPackage());
 
 $props = new NewProperties;
 $props->text('content')->semantic(api: 'embeds', accuracy: 1, dimensions: 1024);
@@ -201,4 +202,4 @@ $sigmie->collect('kb', refresh: true)
     ->merge([/* documents */]);
 ```
 
-Any `merge()` or `add()` on a collection whose properties include `MagicTags` fields runs `MagicTagsCollectionHook` for that batch (unless you use `withoutHooks()`).
+Any `merge()` or `add()` on a collection whose properties include `MagicTags` fields runs `MagicTagsCollectionHook` for that batch (unless you use `withoutHooks()`), **for the same `Sigmie` instance** you called `extend()` on.

@@ -17,12 +17,12 @@ Magic tags add a **keyword field** to your documents whose values come from an L
 
 A magic-tags package maintains a **sidecar index** of unique tags with **semantic embeddings** on the tag text. That index shares the same embedding API and dimensions as your semantic **source** field, so you can run vector operations on tags consistently with the rest of the stack. You optionally point several main indices at **one** logical tag registry so a chatbot or multi-index app uses a single vocabulary.
 
-Bootstrap the package once (exact class names depend on your package):
+Bootstrap the package once on your `Sigmie` client (exact class names depend on your package):
 
 ```php
-use Sigmie\Sigmie;
+// $sigmie = new Sigmie($connection);
 
-Sigmie::extend(new \Vendor\MagicTags\MagicTagsPackage());
+$sigmie->extend(new \Vendor\MagicTags\MagicTagsPackage());
 ```
 
 ## Core Concepts
@@ -188,7 +188,7 @@ See [Aggregations](aggregations.md) for the general aggregation API.
 A magic-tags package typically:
 
 - Registers **`NewProperties::macro('magicTags', …)`** so mappings can call `magicTags('topic', fromField: 'content')`.
-- Registers a **`CollectionHook`** via `Sigmie::addCollectionHook()` that implements `beforeBatch` (ensure sidecar index), `processBatch` (LLM + classification + dedup), and `afterBatch` (write tag rows to the sidecar).
+- Registers a **`CollectionHook`** via `$sigmie->addCollectionHook(...)` on the same `Sigmie` instance you call `extend()` on; the hook implements `beforeBatch` (ensure sidecar index), `processBatch` (LLM + classification + dedup), and `afterBatch` (write tag rows to the sidecar).
 - Uses **`Properties::fieldsOfType(MagicTags::class)`** inside `shouldRun()` so unrelated collections (including the sidecar index itself) do not run the hook.
 
 See [Extending Sigmie](extending.md) for the `Package` interface, hooks, and `withoutHooks()`.
