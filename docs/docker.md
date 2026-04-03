@@ -67,7 +67,7 @@ docker-compose up -d reranker
 - **Use case:** Rerank search results for better accuracy in RAG pipelines
 - **Health check:** `curl http://localhost:7998/health`
 
-Use the local reranker on the **search response** after you run a search; call your LLM with `Prompt` in application code:
+Use the local reranker on the **search response** after you run a search; run text generation in your application with any HTTP client or vendor SDK (not part of Sigmie):
 
 ```php
 use Sigmie\Rerank\Infinity as InfinityReranker;
@@ -94,46 +94,9 @@ docker-compose up -d image-embeddings
 - **Use case:** Image-to-image and image-to-text search
 - **Health check:** `curl http://localhost:7996/health`
 
-### Language Model Service
+### Language model (optional, not part of Sigmie)
 
-Runs local language models using Ollama for text generation, RAG responses, and chat completions.
-
-```bash
-docker-compose up -d llm
-```
-
-- **Port:** 7999 (maps to Ollama's internal port 11434)
-- **Default model:** tinyllama (fast, lightweight)
-- **Use case:** Generate answers in RAG pipelines without OpenAI
-- **Health check:** `docker exec sigmie-llm ollama list`
-
-The service automatically downloads the configured model on first start. This takes 2-10 minutes depending on model size.
-
-Configure a different model using the `OLLAMA_MODEL` environment variable:
-
-```bash
-OLLAMA_MODEL=llama2 docker-compose up -d llm
-```
-
-Popular models:
-- **tinyllama** - 637MB, fastest, good for testing
-- **llama2** - 3.8GB, balanced performance
-- **mistral** - 4.1GB, high quality responses
-- **codellama** - 3.8GB, optimized for code
-
-Use Ollama as your `LLMApi` implementation and compose answers with `Prompt` after retrieval:
-
-```php
-use Sigmie\LLM\Ollama;
-use Sigmie\AI\Prompt;
-
-$llm = new Ollama(
-    baseUrl: 'http://localhost:7999',
-    model: 'tinyllama'
-);
-
-$answer = $llm->answer((new Prompt)->system('You are helpful')->user($userQuestion));
-```
+If your **application** uses [Ollama](https://ollama.com) or another local generator, you can run it alongside Elasticsearch and the Infinity services. Sigmie does not register or wrap LLM clients — wire generation in your own code after `newSearch()` and optional `$response->rerank(...)`.
 
 ### Elasticsearch
 
@@ -206,13 +169,17 @@ docker-compose up -d elasticsearch embeddings
 
 This enables semantic search with vector embeddings.
 
-### Full RAG Stack (Without OpenSearch)
+### Search, embeddings, and rerank (Without OpenSearch)
 
 ```bash
-docker-compose up -d elasticsearch embeddings reranker llm
+docker-compose up -d elasticsearch embeddings reranker
 ```
 
-This provides everything for local RAG: search engine, embeddings, reranking, and LLM.
+This covers what Sigmie integrates with: Elasticsearch, `EmbeddingsApi`, and `RerankApi`. Add the optional `llm` service from the same compose file only if **your application** calls Ollama (or similar) for generation — Sigmie does not ship an LLM client.
+
+```bash
+docker-compose up -d llm   # optional, for app-level generation only
+```
 
 ### Image Search Stack
 
@@ -253,28 +220,14 @@ Copy `.env.example` to `.env` and customize:
 cp .env.example .env
 ```
 
-### Ollama Model Selection
-
-Set the language model for the LLM service:
-
-```ini
-OLLAMA_MODEL=tinyllama
-```
-
-Change to a larger model for better quality:
-
-```ini
-OLLAMA_MODEL=mistral
-```
-
-The service automatically downloads the specified model on startup.
+If you use the optional Ollama service, set `OLLAMA_MODEL` in `.env` (for example `tinyllama` or `mistral`). Sigmie does not read this variable — only your app’s Ollama client does.
 
 ### API Keys for Cloud Services
 
 If you prefer cloud APIs over local services, add your keys:
 
 ```ini
-# OpenAI (embeddings + LLM)
+# OpenAI (embeddings API keys for EmbeddingsApi implementations you register)
 OPENAI_API_KEY=sk-...
 
 # Voyage AI (embeddings)
@@ -327,11 +280,6 @@ curl http://localhost:7998/health
 curl http://localhost:7996/health
 ```
 
-**LLM (Ollama):**
-```bash
-docker exec sigmie-llm ollama list
-```
-
 **Elasticsearch:**
 ```bash
 curl http://localhost:9200/_cluster/health
@@ -380,7 +328,6 @@ View logs for a specific service:
 
 ```bash
 docker-compose logs embeddings
-docker-compose logs llm
 docker-compose logs elasticsearch
 ```
 
@@ -396,16 +343,6 @@ docker-compose up -d opensearch
 ```
 
 Or vice versa.
-
-**Ollama model download is slow:**
-
-Large models take time. Monitor progress:
-
-```bash
-docker-compose logs -f llm
-```
-
-The tinyllama model (637MB) downloads in 1-2 minutes. Larger models like mistral (4.1GB) take 5-10 minutes.
 
 **Embedding service fails to start:**
 
@@ -436,12 +373,10 @@ Approximate memory requirements per service:
 | Embeddings | 1-2 GB | 500 MB |
 | Reranker | 1-2 GB | 400 MB |
 | Image Embeddings | 1-2 GB | 300 MB |
-| LLM (tinyllama) | 1-2 GB | 637 MB |
-| LLM (mistral) | 4-6 GB | 4.1 GB |
 | Elasticsearch | 2-4 GB | Varies |
 | OpenSearch | 2-4 GB | Varies |
 
-**Full stack (with tinyllama):** 10-14 GB RAM total
+**Typical stack (ES + embeddings + rerank):** plan RAM for Elasticsearch and the Infinity containers; add more if you run optional Ollama locally.
 
 For development on limited hardware, start only the services you need.
 
@@ -452,6 +387,6 @@ With the Docker stack running, you can build AI-powered search features:
 - **[Quick Start](/docs/quick-start)** - Build your first semantic search
 - **[Installation](/docs/installation)** - Connect Sigmie to your local services
 - **[Semantic Search](/docs/semantic-search)** - Configure vector embeddings
-- **[Retrieval and agents](/docs/rag)** - Search, reranking, and LLM orchestration in your app
+- **[Retrieval and agents](/docs/rag)** - Search, reranking, and generation in your app
 
 Your local AI-powered search stack is ready!

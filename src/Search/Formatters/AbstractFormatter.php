@@ -11,7 +11,7 @@ use Sigmie\Search\SearchContext;
 abstract class AbstractFormatter implements ResponseFormater
 {
     /**
-     * Registered embeddings / LLM / rerank APIs from the search builder (for response helpers).
+     * Registered embeddings and rerank APIs from the search builder (for response helpers).
      *
      * @var array<string, mixed>
      */

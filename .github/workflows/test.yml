@@ -80,8 +80,6 @@ jobs:
       LOCAL_EMBEDDING_URL: http://localhost:7997
       LOCAL_RERANK_URL: http://localhost:7998
       LOCAL_CLIP_URL: http://localhost:7996
-      LOCAL_LLM_URL: http://localhost:7999
-      OLLAMA_MODEL: tinyllama
 
     steps:
       - name: Checkout code
@@ -110,21 +108,6 @@ jobs:
             -e MODEL_ID=wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M \
             michaelf34/infinity:latest \
             v2 --model-id wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M --port 7996 --engine torch
-
-      - name: Start LLM Service
-        run: |
-          docker run -d --name llm \
-            -p 7999:11434 \
-            -v ollama:/root/.ollama \
-            ollama/ollama:latest
-
-          # Wait for Ollama to start
-          sleep 5
-
-          # Pull tinyllama model
-          docker exec llm ollama pull tinyllama
-
-          echo "LLM service is ready with tinyllama model!"
 
       - name: Wait for AI Services
         run: |
@@ -224,8 +207,6 @@ jobs:
       LOCAL_EMBEDDING_URL: http://localhost:7997
       LOCAL_RERANK_URL: http://localhost:7998
       LOCAL_CLIP_URL: http://localhost:7996
-      LOCAL_LLM_URL: http://localhost:7999
-      OLLAMA_MODEL: tinyllama
 
     steps:
       - name: Checkout code
@@ -254,21 +235,6 @@ jobs:
             -e MODEL_ID=wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M \
             michaelf34/infinity:latest \
             v2 --model-id wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M --port 7996 --engine torch
-
-      - name: Start LLM Service
-        run: |
-          docker run -d --name llm \
-            -p 7999:11434 \
-            -v ollama:/root/.ollama \
-            ollama/ollama:latest
-
-          # Wait for Ollama to start
-          sleep 5
-
-          # Pull tinyllama model
-          docker exec llm ollama pull tinyllama
-
-          echo "LLM service is ready with tinyllama model!"
 
       - name: Wait for AI Services
         run: |

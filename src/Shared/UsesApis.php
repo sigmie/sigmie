@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Shared;
 
 use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\AI\Contracts\LLMApi;
+use Sigmie\AI\Contracts\RerankApi;
 
 trait UsesApis
 {
@@ -24,10 +24,12 @@ trait UsesApis
             return null;
         }
 
-        return $this->apis[$name] ?? null;
+        $api = $this->apis[$name] ?? null;
+
+        return $api instanceof EmbeddingsApi ? $api : null;
     }
 
-    protected function getLlmApi(?string $name = null): ?LLMApi
+    protected function getRerankApi(?string $name = null): ?RerankApi
     {
         if ($name === null || $name === '') {
             return null;
@@ -35,7 +37,7 @@ trait UsesApis
 
         $api = $this->apis[$name] ?? null;
 
-        return $api instanceof LLMApi ? $api : null;
+        return $api instanceof RerankApi ? $api : null;
     }
 
     protected function hasApi(?string $name = null): bool

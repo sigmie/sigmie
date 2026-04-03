@@ -72,7 +72,7 @@ $response = $sigmie->newSearch('movies')
 - **[Language Support](language.md)** - Multi-language search capabilities
 - **[Semantic Search](semantic-search.md)** - Vector-based search
 - **[Magic Tags](magic-tags.md)** - LLM taxonomy tags and shared tag sidecar (package)
-- **[Retrieval and agents](rag.md)** - Search, reranking, and LLM usage in your application
+- **[Retrieval and agents](rag.md)** - Search, reranking, and generation in your application
 - **[Extending Sigmie](extending.md)** - Build packages that add field types and processing hooks
 - **[Facets & Aggregations](facets.md)** - Faceted search interfaces
 - **[Filter Parser](filter-parser.md)** - Advanced filtering syntax
@@ -106,10 +106,9 @@ $response = $sigmie->newSearch('movies')
 - Semantic search using vector embeddings
 
 ### 🤖 **AI-Powered Features**
-- Semantic search and vector embeddings
-- Reranking on the search response (`$response->rerank(...)`) with pluggable rerank APIs
-- LLM and JSON answer types for prompts you build in your app
-- Magic tags for LLM-assisted taxonomy
+- Semantic search and vector embeddings (`EmbeddingsApi`)
+- Reranking on the search response (`$response->rerank(...)`) with pluggable `RerankApi` implementations
+- Optional [Magic Tags](magic-tags.md) package for taxonomy-style tags (external to core)
 
 ### 📝 **Document Management**  
 - Type-safe document creation and validation
@@ -185,29 +184,20 @@ $response = $sigmie->newSearch('documents')
     ->get();
 ```
 
-### AI-Powered Question Answering
+### Retrieval, rerank, then generate (app code)
 
-Retrieve with `newSearch()` → `get()`, optionally `$response->rerank(...)`, then call your LLM with `Sigmie\AI\Prompt` (full RAG orchestration lives in your app or Laravel AI):
+Sigmie handles **search** and optional **reranking**. Text generation uses your own HTTP client, vendor SDK, or framework — not this package:
 
 ```php
-use Sigmie\AI\Prompt;
-
-// $llm implements Sigmie\AI\Contracts\LLMApi (e.g. OpenAI or Ollama adapter)
-
-$hits = $sigmie->newSearch('knowledge-base')
+$res = $sigmie->newSearch('knowledge-base')
+    ->properties($props)
     ->queryString('What is machine learning?')
     ->size(5)
-    ->get()
-    ->hits();
+    ->get();
 
-$prompt = (new Prompt)
-    ->system('You are a helpful technical assistant.')
-    ->user('Answer using the following context: '.json_encode($hits));
+$reranked = $res->rerank('my-rerank', ['body'], 'machine learning', 3);
 
-foreach ($llm->streamAnswer($prompt) as $chunk) {
-    echo $chunk;
-    flush();
-}
+// Build context from $reranked, then call your OpenAI / Ollama / other API outside Sigmie.
 ```
 
 ## Common Use Cases
@@ -219,7 +209,7 @@ Build search experiences with typo tolerance, highlighting, and faceted navigati
 Enable semantic search to find content by meaning, not just keywords.
 
 ### Intelligent Q&A Systems
-Combine Elasticsearch retrieval with LLMs in your application for grounded answers.
+Combine Elasticsearch retrieval and reranking in Sigmie with generation in your application for grounded answers.
 
 ### Data Analysis
 Use aggregations and facets to analyze and summarize your data.
@@ -238,16 +228,15 @@ Implement autocomplete and search-as-you-type functionality.
 │ • Views         │    │ • Index         │    │ • Mappings      │
 └─────────────────┘    │ • Document      │    └─────────────────┘
                        │ • Properties    │           ▲
-                       │ • AI APIs       │           │
+                       │ • Embeddings    │           │
+                       │ • Rerank        │           │
                        └─────────────────┘           │
                                │                     │
                                ▼                     │
                        ┌─────────────────┐           │
-                       │   AI Services   │───────────┘
-                       │                 │
-                       │ • OpenAI        │
-                       │ • Embeddings    │
-                       │ • Rerankers     │
+                       │  Vector / rank  │───────────┘
+                       │  APIs you       │
+                       │  register       │
                        └─────────────────┘
 ```
 
@@ -271,4 +260,4 @@ Sigmie is released under the MIT License. See the LICENSE file for details.
 
 For experienced Elasticsearch users, the [API Reference](api-reference.md) provides comprehensive documentation of all available methods and classes.
 
-To explore how retrieval fits with LLMs, see [Retrieval and agents](rag.md).
+To explore how retrieval fits with generation in your app, see [Retrieval and agents](rag.md).

@@ -139,11 +139,11 @@ class MagicTagsCollectionHook implements CollectionHook
 
 `shouldRun(Properties $properties)` receives the index's field definitions. Use `Properties::fieldsOfType(MagicTags::class)` so the hook is skipped when there are no magic-tags fields — including sidecar indices your package creates.
 
-The `$apis` array passed to `processBatch` / `afterBatch` is the same map registered on the `Sigmie` instance via `registerApi()`. Magic tags resolve LLM and embeddings by name:
+The `$apis` array passed to `processBatch` / `afterBatch` is the map from `Sigmie::registerApi()`. **Core Sigmie only registers `EmbeddingsApi` and `RerankApi` implementations** (for semantic indexing and `$response->rerank(...)`). Magic tags need an LLM for tag text: inject that in your package (for example pass a client into `MagicTagsCollectionHook`’s constructor, or resolve it from your app container). Resolve embeddings the same way users registered them on the collection:
 
 ```php
-$llm = $apis['my-llm'] ?? null;  // implements LLMApi
-$embeddings = $apis['my-embeddings'] ?? null;  // implements EmbeddingsApi
+$embeddings = $apis['my-embeddings'] ?? null;  // EmbeddingsApi
+$rerank = $apis['my-rerank'] ?? null;            // RerankApi
 ```
 
 ## `withoutHooks()`

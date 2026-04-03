@@ -321,44 +321,36 @@ $results = $sigmie->newSearch('products')
 
 See [Semantic Search](/docs/semantic-search) for embeddings, vector strategies, and advanced techniques.
 
-## Next: Retrieval plus LLM (app-level RAG)
+## Next: Retrieval, rerank, then generate (app-level)
 
-Combine search and reranking in Sigmie, then call your LLM with a `Prompt` in your application (Sigmie does not ship a single `newRag()` orchestrator):
+Combine search and reranking in Sigmie. Register **embeddings** and **rerank** APIs on the client; call your own generation API outside this package (Sigmie does not ship a `newRag()` orchestrator or an LLM client):
 
 ```php
-use Sigmie\AI\Prompt;
-use Sigmie\Search\NewRerank;
-
-// Register AI services (example: your LLM and reranker implementations)
-$sigmie->registerApi('llm', $llm);
-// $reranker implements RerankApi — pass the instance you use for NewRerank
+$sigmie->registerApi('embeddings', $embeddingsApi);
+$sigmie->registerApi('my-rerank', $rerankApi);
 
 $props = new NewProperties;
 $props->text('content')->semantic(accuracy: 1, dimensions: 384, api: 'embeddings');
 
 $sigmie->newIndex('docs')->properties($props)->create();
-$sigmie->collect('docs', refresh: true)->properties($props)->merge([
+$sigmie->collect('docs', refresh: true)->properties($props)->apis([
+    'embeddings' => $embeddingsApi,
+])->merge([
     new Document([
         'content' => 'Returnable within 30 days for full refund.',
     ]),
 ]);
 
-$hits = $sigmie->newSearch('docs')
+$res = $sigmie->newSearch('docs')
     ->properties($props)
     ->semantic()
     ->queryString('What is your return policy?')
     ->size(5)
-    ->get()
-    ->hits();
+    ->get();
 
-$reranked = $res->rerank($reranker, ['content'], 'return policy', 3);
+$reranked = $res->rerank('my-rerank', ['content'], 'return policy', 3);
 
-$prompt = (new Prompt)
-    ->system('You are a helpful support agent. Answer using the context.')
-    ->user('Context: '.json_encode($reranked)."\n\nQuestion: What is your return policy?");
-
-$answer = $llm->answer($prompt);
-echo (string) $answer;
+// Build context from $reranked, then call OpenAI / Ollama / etc. in your app.
 ```
 
 See [Retrieval and agents](/docs/rag) for positioning and optional conversation history.
@@ -505,7 +497,7 @@ Now that you understand keyword search, explore Sigmie's advanced features:
 - **[Filter Parser](/docs/filter-parser)** - Build complex, readable filters
 - **[Facets & Aggregations](/docs/aggregations)** - Create filter sidebars and analytics
 - **[Semantic Search](/docs/semantic-search)** - Find results by meaning with embeddings
-- **[Retrieval and agents](/docs/rag)** - Search, reranking, and LLM orchestration in your app
+- **[Retrieval and agents](/docs/rag)** - Search, reranking, and generation in your app
 - **[Index Management](/docs/index)** - Customize field types, analyzers, and settings
 - **[Search API Reference](/docs/search)** - Complete method documentation
 

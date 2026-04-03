@@ -7,7 +7,6 @@ namespace Sigmie;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
@@ -62,14 +61,14 @@ class Sigmie
         $this->elasticsearchConnection = $httpConnection;
     }
 
-    public function registerApi(string $name, EmbeddingsApi|LLMApi|RerankApi $api): static
+    public function registerApi(string $name, EmbeddingsApi|RerankApi $api): static
     {
         $this->apis[$name] = $api;
 
         return $this;
     }
 
-    public function api(string $name): EmbeddingsApi|LLMApi|RerankApi
+    public function api(string $name): EmbeddingsApi|RerankApi
     {
         return $this->apis[$name];
     }
