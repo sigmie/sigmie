@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Sigmie\Testing;
 
 use PHPUnit\Framework\Assert;
+use Sigmie\AI\Answers\LLMJsonAnswer;
 use Sigmie\AI\Contracts\LLMAnswer;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Prompt;
-use Sigmie\AI\Answers\LLMJsonAnswer;
 
 class FakeLLMApi implements LLMApi
 {

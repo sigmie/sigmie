@@ -4,6 +4,7 @@ namespace Sigmie\Search\Formatters;
 
 use LogicException;
 use Sigmie\AI\Contracts\RerankApi;
+use Sigmie\Document\RerankedHit;
 use Sigmie\Search\Contracts\ResponseFormater;
 use Sigmie\Search\SearchContext;
 
@@ -70,7 +71,7 @@ abstract class AbstractFormatter implements ResponseFormater
 
     /**
      * @param  array<int, string>  $fields
-     * @return array<int, \Sigmie\Document\RerankedHit>
+     * @return array<int, RerankedHit>
      */
     public function rerank(
         RerankApi|string $reranker,

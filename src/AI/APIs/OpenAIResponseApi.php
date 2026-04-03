@@ -7,11 +7,11 @@ namespace Sigmie\AI\APIs;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
+use Sigmie\AI\Answers\LLMJsonAnswer;
 use Sigmie\AI\Answers\OpenAIAnswer;
 use Sigmie\AI\Contracts\LLMAnswer;
 use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Prompt;
-use Sigmie\AI\Answers\LLMJsonAnswer;
 
 class OpenAIResponseApi extends AbstractOpenAIApi implements LLMApi
 {

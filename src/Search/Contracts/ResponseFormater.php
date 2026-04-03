@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Search\Contracts;
 
 use Sigmie\AI\Contracts\RerankApi;
+use Sigmie\Document\RerankedHit;
 use Sigmie\Search\SearchContext;
 
 interface ResponseFormater
@@ -26,7 +27,7 @@ interface ResponseFormater
 
     /**
      * @param  array<int, string>  $fields
-     * @return array<int, \Sigmie\Document\RerankedHit>
+     * @return array<int, RerankedHit>
      */
     public function rerank(
         RerankApi|string $reranker,

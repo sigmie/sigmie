@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings;
 
+use BadMethodCallException;
+use Closure;
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Mappings\Types\Address;
@@ -22,7 +24,6 @@ use Sigmie\Mappings\Types\Id;
 use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\LongText;
-use Closure;
 use Sigmie\Mappings\Types\Name;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
@@ -65,7 +66,7 @@ class NewProperties
             return Closure::bind(self::$macros[$name], $this, static::class)(...$args);
         }
 
-        throw new \BadMethodCallException(sprintf('No macro "%s" registered on NewProperties.', $name));
+        throw new BadMethodCallException(sprintf('No macro "%s" registered on NewProperties.', $name));
     }
 
     public function propertiesName(string $name): self

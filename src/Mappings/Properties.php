@@ -405,6 +405,7 @@ class Properties extends Type implements ArrayAccess, FieldContainer
      * Keys are the field's full dot-path.
      *
      * @template T of ContractsType
+     *
      * @param  class-string<T>  $class
      * @return Collection<string, T>
      */
