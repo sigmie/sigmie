@@ -263,7 +263,7 @@ class Search
             }
         }
 
-        if ($this->postFilter !== null) {
+        if ($this->postFilter instanceof Query) {
             $result['post_filter'] = $this->postFilter->toRaw();
         }
 
