@@ -45,11 +45,8 @@ class SigmieMultiSearchResponse implements MultiSearchResponse
         $responseIndex = 0;
         foreach ($this->searches as $searchIndex => $search) {
             if ($search instanceof NewSearch) {
-                // NewSearch has 2 responses: search + facets
                 $searchResponse = $responses[$responseIndex] ?? [];
-                $facetsResponse = $responses[$responseIndex + 1] ?? [];
 
-                // Use reflection to access protected properties property
                 $reflection = new ReflectionClass($search);
                 $propertiesProperty = $reflection->getProperty('properties');
                 $propertiesProperty->setAccessible(true);
@@ -59,15 +56,14 @@ class SigmieMultiSearchResponse implements MultiSearchResponse
                 $searchContextProperty->setAccessible(true);
                 $searchContext = $searchContextProperty->getValue($search);
 
-                // Create a formatter similar to NewSearch::get()
                 $formatter = new SigmieSearchResponse($properties);
                 $formatter->queryResponseRaw($searchResponse)
-                    ->facetsResponseRaw($facetsResponse)
+                    ->facetsResponseRaw($searchResponse)
                     ->context($searchContext)
                     ->errors([]);
 
                 $results[$searchIndex] = $formatter->format();
-                $responseIndex += 2;
+                $responseIndex += 1;
             } else {
                 // NewQuery has 1 response: just search
                 $searchResponse = $responses[$responseIndex] ?? [];

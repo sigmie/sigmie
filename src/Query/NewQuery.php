@@ -113,6 +113,11 @@ class NewQuery implements MultiSearchable, Queries
         return $this->search->query($query);
     }
 
+    public function postFilter(Query $postFilter): Search
+    {
+        return $this->search->postFilter($postFilter);
+    }
+
     public function matchNone(float $boost = 1): Search
     {
         $clause = new MatchNone;

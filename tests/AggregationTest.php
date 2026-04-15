@@ -11,6 +11,7 @@ use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Aggs as SearchAggregation;
+use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Testing\TestCase;
 
 class AggregationTest extends TestCase
@@ -253,6 +254,40 @@ class AggregationTest extends TestCase
 
         $this->assertArrayHasKey('buckets', $value);
         $this->assertArrayHasKey('histogram_nested', $res->aggregation('histogram.buckets.0'));
+    }
+
+    /**
+     * @test
+     */
+    public function post_filter_serializes_when_set(): void
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->create();
+
+        $raw = $this->sigmie->newQuery($name)
+            ->matchAll()
+            ->postFilter(new Term('status', 'published'))
+            ->getDSL();
+
+        $this->assertArrayHasKey('post_filter', $raw);
+        $this->assertSame('published', $raw['post_filter']['term']['status']['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function post_filter_omitted_when_not_set(): void
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->create();
+
+        $raw = $this->sigmie->newQuery($name)
+            ->matchAll()
+            ->getDSL();
+
+        $this->assertArrayNotHasKey('post_filter', $raw);
     }
 
     /**

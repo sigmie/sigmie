@@ -162,16 +162,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
     {
         $this->searchContext->filterString = $filters;
 
-        $filters = implode(
-            ' AND ',
-            array_filter([
-                sprintf('(%s)', $this->searchContext->filterString),
-                sprintf('(%s)', $this->searchContext->facetFilterString),
-            ], fn ($filter): bool => ! in_array(trim($filter, '()'), ['', '0'], true))
-        );
-
         $this->globalFilters = $this->filterParser->parse($this->searchContext->filterString);
-        $this->filters = $this->filterParser->parse($filters);
 
         return $this;
     }
@@ -201,15 +192,10 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         $this->searchContext->facetString = $facets;
         $this->searchContext->facetFilterString = $facetFilterString;
 
-        $allFilters = implode(
-            ' AND ',
-            array_filter([
-                sprintf('(%s)', $this->searchContext->filterString),
-                sprintf('(%s)', $this->searchContext->facetFilterString),
-            ], fn ($filter): bool => ! in_array(trim($filter, '()'), ['', '0'], true))
-        );
+        if ($facetFilterString !== '') {
+            $this->facetFilters = $this->filterParser->parse($facetFilterString);
+        }
 
-        $this->filters = $this->filterParser->parse($allFilters);
         $this->facets = $this->facetParser->parse($facets, $facetFilterString);
 
         return $this;
@@ -307,9 +293,16 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
     {
         $boolean->must()->bool(
             fn (Boolean $boolean): BooleanQueryBuilder => $boolean->filter()->query(
-                $this->filters
+                $this->globalFilters
             )
         );
+    }
+
+    protected function handlePostFilter(Search $search): void
+    {
+        if ($this->searchContext->facetFilterString !== '') {
+            $search->postFilter($this->facetFilters);
+        }
     }
 
     protected function handleQueryStrings(Boolean $boolean): void
@@ -411,6 +404,8 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         $query = $this->handleBoostField($boolean);
 
         $search->query($query);
+
+        $this->handlePostFilter($search);
 
         return $search;
     }
@@ -659,7 +654,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
             $vectorByDims = new Collection([$dims => $vector]);
 
             // Build queries for these fields
-            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryImage->weight(), $this->filters);
+            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryImage->weight(), $this->globalFilters);
 
             $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries): void {
 
@@ -748,7 +743,7 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
             $vectorByDims = new Collection([$dims => $vector]);
 
             // Build queries for these fields
-            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryString->weight(), $this->filters);
+            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryString->weight(), $this->globalFilters);
 
             $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries): void {
                 $raw = $query->toRaw();
@@ -919,13 +914,12 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
         $multi = new NewMultiSearch($this->elasticsearchConnection);
 
         $multi->raw($this->index, $this->makeSearch()->toRaw());
-        $multi->raw($this->index, $this->makeFacetSearch()->toRaw());
 
-        [$searchResponse, $facetsResponse] = $multi->get();
+        [$response] = $multi->get();
 
         $httpCode = $multi->responseCode();
 
-        return $this->formatRespones($searchResponse, $facetsResponse, $httpCode);
+        return $this->formatRespones($response, $response, $httpCode);
     }
 
     public function promise(): Promise
@@ -949,25 +943,20 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
                 'index' => $this->index,
             ],
             $this->makeSearch()->toRaw(),
-            [
-                'index' => $this->index,
-            ],
-            $this->makeFacetSearch()->toRaw(),
         ];
     }
 
     public function formatResponses(...$responses): mixed
     {
-        $searchResponse = $responses[0] ?? [];
-        $facetsResponse = $responses[1] ?? [];
+        $response = $responses[0] ?? [];
         $httpCode = $responses['httpCode'] ?? null;
 
-        return $this->formatRespones($searchResponse, $facetsResponse, $httpCode);
+        return $this->formatRespones($response, $response, $httpCode);
     }
 
     public function multisearchResCount(): int
     {
-        return 2; // search + facets
+        return 1;
     }
 
     public function hits()
