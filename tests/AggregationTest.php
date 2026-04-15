@@ -293,6 +293,32 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
+    public function date_histogram_serializes_format_when_set(): void
+    {
+        $aggs = new SearchAggregation;
+        $aggs->dateHistogram('timeline', 'created_at', CalendarInterval::Month, 0, null, 'yyyy-MM');
+
+        $raw = $aggs->toRaw();
+
+        $this->assertSame('yyyy-MM', $raw['timeline']['date_histogram']['format']);
+    }
+
+    /**
+     * @test
+     */
+    public function date_histogram_omits_format_when_not_set(): void
+    {
+        $aggs = new SearchAggregation;
+        $aggs->dateHistogram('timeline', 'created_at', CalendarInterval::Month);
+
+        $raw = $aggs->toRaw();
+
+        $this->assertArrayNotHasKey('format', $raw['timeline']['date_histogram']);
+    }
+
+    /**
+     * @test
+     */
     public function ranges_aggregation(): void
     {
         $name = uniqid();
