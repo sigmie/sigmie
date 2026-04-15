@@ -43,6 +43,8 @@ class Search
 
     protected Query $query;
 
+    protected ?Query $postFilter = null;
+
     protected Aggs $aggs;
 
     protected Suggest $suggest;
@@ -212,6 +214,13 @@ class Search
         return $this;
     }
 
+    public function postFilter(Query $postFilter): static
+    {
+        $this->postFilter = $postFilter;
+
+        return $this;
+    }
+
     public function aggs(Aggs $aggs): static
     {
         $this->aggs = $aggs;
@@ -252,6 +261,10 @@ class Search
             if ($aggsRaw !== []) {
                 $result['aggs'] = $aggsRaw;
             }
+        }
+
+        if ($this->postFilter instanceof Query) {
+            $result['post_filter'] = $this->postFilter->toRaw();
         }
 
         return $result;

@@ -1,6 +1,8 @@
 name: Tests
 
-on: push
+on:
+  push:
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -51,12 +53,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['8.1']
+        php: ['8.3']
         elasticsearch_version: ['9.1.3']
         stability: [prefer-stable]
-        include:
-          - php: '8.1'
-            flags: "--ignore-platform-req=php"
 
     name: PHP ${{ matrix.php }} - Elasticsearch ${{ matrix.elasticsearch_version }}
 
@@ -173,7 +172,7 @@ jobs:
         with:
           timeout_minutes: 5
           max_attempts: 5
-          command: composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress ${{ matrix.flags }}
+          command: composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress
 
       - name: Tests
         run: vendor/bin/phpunit -c phpunit.xml
@@ -192,12 +191,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['8.1']
+        php: ['8.3']
         opensearch_version: ['3.2.0']
         stability: [prefer-stable]
-        include:
-          - php: '8.1'
-            flags: "--ignore-platform-req=php"
 
     name: PHP ${{ matrix.php }} - OpenSearch ${{ matrix.opensearch_version }}
 
@@ -317,7 +313,7 @@ jobs:
         with:
           timeout_minutes: 5
           max_attempts: 5
-          command: composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress ${{ matrix.flags }}
+          command: composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress
 
       - name: Tests
         run: vendor/bin/phpunit -c phpunit.xml
