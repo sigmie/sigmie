@@ -229,6 +229,17 @@ class Sigmie
         return new static(new HttpConnection(new JSONClient($transport), new Elasticsearch));
     }
 
+    public static function createForServerless(
+        string $host,
+        string $apiKey
+    ): static {
+        $client = JSONClient::create([$host], [
+            'headers' => ['Authorization' => 'ApiKey '.$apiKey],
+        ]);
+
+        return new static(new HttpConnection($client, new Elasticsearch));
+    }
+
     public static function create(
         array|string $hosts,
         SearchEngineType $engine = SearchEngineType::Elasticsearch,

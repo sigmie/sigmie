@@ -30,6 +30,19 @@ class HttpTest extends TestCase
     /**
      * @test
      */
+    public function create_for_serverless_returns_sigmie_instance(): void
+    {
+        $sigmie = Sigmie::createForServerless(
+            'https://my-project.es.us-east-1.aws.elastic.cloud',
+            'my-api-key'
+        );
+
+        $this->assertInstanceOf(Sigmie::class, $sigmie);
+    }
+
+    /**
+     * @test
+     */
     public function response(): void
     {
         $successfulResponse = JSONResponse::fromPsrResponse(new PsrResponse(200, ['content-type' => 'application/json'], '{"foo":"bar"}'));
