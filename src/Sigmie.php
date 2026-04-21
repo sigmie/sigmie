@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie;
 
+use Elastic\Transport\TransportBuilder;
+use GuzzleHttp\Client as GuzzleHttpClient;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\AI\Contracts\EmbeddingsApi;
@@ -208,6 +210,34 @@ class Sigmie
         } catch (ConnectException) {
             return false;
         }
+    }
+
+    public static function createForCloud(
+        string $cloudId,
+        string $apiKey
+    ): static {
+        $transport = TransportBuilder::create()
+            ->setCloudId($cloudId)
+            ->setClient(new GuzzleHttpClient([
+                'allow_redirects' => false,
+                'http_errors' => false,
+                'connect_timeout' => 15,
+                'headers' => ['Authorization' => 'ApiKey '.$apiKey],
+            ]))
+            ->build();
+
+        return new static(new HttpConnection(new JSONClient($transport), new Elasticsearch));
+    }
+
+    public static function createForServerless(
+        string $host,
+        string $apiKey
+    ): static {
+        $client = JSONClient::create([$host], [
+            'headers' => ['Authorization' => 'ApiKey '.$apiKey],
+        ]);
+
+        return new static(new HttpConnection($client, new Elasticsearch));
     }
 
     public static function create(
