@@ -277,6 +277,37 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
+    public function post_filter_string_filters_hits(): void
+    {
+        $name = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('status');
+
+        $this->sigmie->newIndex($name)
+            ->properties($blueprint)
+            ->create();
+
+        $collection = $this->sigmie->collect($name, refresh: true);
+
+        $collection->merge([
+            new Document(['status' => 'published']),
+            new Document(['status' => 'draft']),
+            new Document(['status' => 'published']),
+        ]);
+
+        $response = $this->sigmie->newQuery($name)
+            ->properties($blueprint)
+            ->matchAll()
+            ->postFilterString('status:"published"')
+            ->get();
+
+        $this->assertEquals(2, $response->json('hits.total.value'));
+    }
+
+    /**
+     * @test
+     */
     public function post_filter_omitted_when_not_set(): void
     {
         $name = uniqid();
