@@ -8,6 +8,8 @@ use Http\Promise\Promise;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
+use Sigmie\Mappings\Properties;
+use Sigmie\Parse\FilterParser;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\MatchAll;
 
@@ -44,6 +46,8 @@ class Search
     protected Query $query;
 
     protected ?Query $postFilter = null;
+
+    protected ?Properties $filterParserProperties = null;
 
     protected Aggs $aggs;
 
@@ -219,6 +223,20 @@ class Search
         $this->postFilter = $postFilter;
 
         return $this;
+    }
+
+    public function filterParserProperties(Properties $properties): static
+    {
+        $this->filterParserProperties = $properties;
+
+        return $this;
+    }
+
+    public function postFilterString(string $filterString): static
+    {
+        $parser = new FilterParser($this->filterParserProperties ?? new Properties);
+
+        return $this->postFilter($parser->parse($filterString));
     }
 
     public function aggs(Aggs $aggs): static
