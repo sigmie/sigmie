@@ -10,10 +10,23 @@ use Psr\Http\Message\ResponseInterface;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Http\JSONResponse;
 use Sigmie\Http\NdJSONRequest;
+use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
 class HttpTest extends TestCase
 {
+    /**
+     * @test
+     */
+    public function create_for_cloud_returns_sigmie_instance(): void
+    {
+        $cloudId = 'test:'.base64_encode('us-east-1.aws.found.io$esid$kibanaid');
+
+        $sigmie = Sigmie::createForCloud($cloudId, 'my-api-key');
+
+        $this->assertInstanceOf(Sigmie::class, $sigmie);
+    }
+
     /**
      * @test
      */
