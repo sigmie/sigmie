@@ -77,8 +77,19 @@ trait Actions
             throw MultipleIndicesForAlias::forAlias($alias);
         }
 
-        $data = array_values($res->json())[0];
-        $name = $data['settings']['index']['provided_name'] ?? $this->indexAPICall('_resolve/index/'.$alias, 'GET')->json('indices.0.name');
+        $json = $res->json();
+        $concreteName = (string) array_key_first($json);
+        $data = $json[$concreteName];
+
+        // Serverless / some 8.x responses omit settings.index.provided_name; _resolve can also
+        // return a shape without indices.0.name — the GET response key is the concrete index name.
+        $name = $data['settings']['index']['provided_name'] ?? null;
+        if ($name === null || $name === '') {
+            $name = $this->indexAPICall('_resolve/index/'.$alias, 'GET')->json('indices.0.name');
+        }
+        if ($name === null || $name === '') {
+            $name = $concreteName;
+        }
 
         $settings = Settings::fromRaw($data['settings']);
         $analyzers = $settings->analysis()->analyzers();
