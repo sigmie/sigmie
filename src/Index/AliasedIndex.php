@@ -76,10 +76,16 @@ class AliasedIndex extends Index
 
         $this->reindexAPICall($this->name, $newIndex->name);
 
-        $this->indexAPICall($newIndex->name.'/_settings', 'PUT', [
-            'number_of_replicas' => $requestedReplicas,
-            'refresh_interval' => '1s',
-        ]);
+        $connection = $this->getElasticsearchConnection();
+        // Serverless: refresh_interval must be -1 or ≥5s (not 1s).
+        $afterReindexSettings = [
+            'refresh_interval' => $connection->isServerless() ? '5s' : '1s',
+        ];
+        if (! $connection->isServerless()) {
+            $afterReindexSettings['number_of_replicas'] = $requestedReplicas;
+        }
+
+        $this->indexAPICall($newIndex->name.'/_settings', 'PUT', $afterReindexSettings);
 
         if ($oldAlias === $newAlias) {
             $this->switchAlias($newAlias, $this->name, $newIndex->name);

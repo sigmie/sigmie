@@ -4,13 +4,23 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use GuzzleHttp\Psr7\Response as PsrResponse;
+use Http\Promise\FulfilledPromise;
+use Http\Promise\Promise;
+use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Base\Contracts\ElasticsearchRequest;
+use Sigmie\Base\Contracts\ElasticsearchResponse;
+use Sigmie\Base\Contracts\SearchEngine;
+use Sigmie\Base\Drivers\Elasticsearch;
 use Sigmie\Document\Document;
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
+use Sigmie\Index\IndexUpdateTask;
 use Sigmie\Index\UpdateIndex as Update;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
+use stdClass;
 
 class IndexUpdateTest extends TestCase
 {
@@ -553,6 +563,162 @@ class IndexUpdateTest extends TestCase
         $newName = $this->sigmie->index($alias)->raw['settings']['index']['provided_name'];
 
         $this->assertNotEquals($oldName, $newName);
+    }
+
+    /**
+     * @test
+     */
+    public function serverless_update_omits_replicas_and_uses_5s_refresh_interval(): void
+    {
+        $alias = 'alias_'.uniqid();
+        $sourceName = 'src_'.uniqid();
+
+        $connection = new class($alias) implements ElasticsearchConnection
+        {
+            public array $settingsCalls = [];
+
+            public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse
+            {
+                $path = $request->getUri()->getPath();
+                $method = $request->getMethod();
+                $body = json_decode((string) $request->getBody(), true) ?? [];
+
+                if ($method === 'PUT' && str_ends_with($path, '/_settings')) {
+                    $this->settingsCalls[] = $body;
+
+                    return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"acknowledged":true}'));
+                }
+
+                if ($method === 'PUT') {
+                    return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"acknowledged":true}'));
+                }
+
+                if ($method === 'POST') {
+                    return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"acknowledged":true}'));
+                }
+
+                if ($method === 'DELETE') {
+                    return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"acknowledged":true}'));
+                }
+
+                if ($method === 'GET' && ! str_starts_with($path, '/_resolve')) {
+                    $aliasName = ltrim($path, '/');
+                    $data = [
+                        $aliasName.'_concrete' => [
+                            'aliases' => [$aliasName => new stdClass],
+                            'mappings' => ['properties' => new stdClass],
+                            'settings' => ['index' => ['number_of_shards' => '1', 'number_of_replicas' => '0']],
+                        ],
+                    ];
+
+                    return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], (string) json_encode($data)));
+                }
+
+                return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"indices":[]}'));
+            }
+
+            public function promise(ElasticsearchRequest $request): Promise
+            {
+                return new FulfilledPromise($this($request));
+            }
+
+            public function driver(): SearchEngine
+            {
+                return new Elasticsearch;
+            }
+
+            public function isServerless(): bool
+            {
+                return true;
+            }
+        };
+
+        $index = new AliasedIndex($sourceName, $alias);
+        $index->setElasticsearchConnection($connection);
+
+        $index->update(fn (Update $update): Update => $update);
+
+        $afterReindex = array_values(array_filter(
+            $connection->settingsCalls,
+            fn ($s): bool => isset($s['refresh_interval'])
+        ))[0] ?? [];
+
+        $this->assertSame('5s', $afterReindex['refresh_interval']);
+        $this->assertArrayNotHasKey('number_of_replicas', $afterReindex);
+    }
+
+    /**
+     * @test
+     */
+    public function serverless_finish_omits_replicas_and_uses_5s_refresh_interval(): void
+    {
+        $source = 'src_'.uniqid();
+        $dest = 'dst_'.uniqid();
+        $alias = 'alias_'.uniqid();
+
+        $connection = new class($dest, $alias) implements ElasticsearchConnection
+        {
+            public array $settingsCalls = [];
+
+            public function __construct(private string $dest) {}
+
+            public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse
+            {
+                $path = $request->getUri()->getPath();
+                $method = $request->getMethod();
+
+                if ($method === 'PUT' && str_ends_with($path, '/_settings')) {
+                    $this->settingsCalls[] = json_decode((string) $request->getBody(), true) ?? [];
+
+                    return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"acknowledged":true}'));
+                }
+
+                if ($method === 'POST') {
+                    return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"task":"node:1","acknowledged":true}'));
+                }
+
+                if ($method === 'DELETE') {
+                    return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"acknowledged":true}'));
+                }
+
+                if ($method === 'GET' && ! str_starts_with($path, '/_resolve')) {
+                    $aliasName = ltrim($path, '/');
+                    $data = [
+                        $this->dest => [
+                            'aliases' => [$aliasName => new stdClass],
+                            'mappings' => ['properties' => new stdClass],
+                            'settings' => ['index' => ['number_of_shards' => '1', 'number_of_replicas' => '0']],
+                        ],
+                    ];
+
+                    return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], (string) json_encode($data)));
+                }
+
+                return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"indices":[]}'));
+            }
+
+            public function promise(ElasticsearchRequest $request): Promise
+            {
+                return new FulfilledPromise($this($request));
+            }
+
+            public function driver(): SearchEngine
+            {
+                return new Elasticsearch;
+            }
+
+            public function isServerless(): bool
+            {
+                return true;
+            }
+        };
+
+        $task = new IndexUpdateTask($connection, $source, $dest, $alias, $alias, 2);
+        $task->finish();
+
+        $settings = $connection->settingsCalls[0] ?? [];
+        $this->assertSame('5s', $settings['refresh_interval']);
+        $this->assertArrayNotHasKey('number_of_replicas', $settings);
     }
 
     /**
