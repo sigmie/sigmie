@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Search\Formatters;
 
-use ReflectionClass;
 use Sigmie\Mappings\Properties;
 use Sigmie\Search\Contracts\MultiSearchable;
 use Sigmie\Search\Contracts\MultiSearchResponse;
@@ -47,14 +46,8 @@ class SigmieMultiSearchResponse implements MultiSearchResponse
             if ($search instanceof NewSearch) {
                 $searchResponse = $responses[$responseIndex] ?? [];
 
-                $reflection = new ReflectionClass($search);
-                $propertiesProperty = $reflection->getProperty('properties');
-                $propertiesProperty->setAccessible(true);
-                $properties = $propertiesProperty->getValue($search) ?? new Properties;
-
-                $searchContextProperty = $reflection->getProperty('searchContext');
-                $searchContextProperty->setAccessible(true);
-                $searchContext = $searchContextProperty->getValue($search);
+                $properties = $search->getProperties() ?? new Properties;
+                $searchContext = $search->searchContext;
 
                 $formatter = new SigmieSearchResponse($properties);
                 $formatter->queryResponseRaw($searchResponse)

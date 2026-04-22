@@ -38,6 +38,7 @@ class HttpTest extends TestCase
         );
 
         $this->assertInstanceOf(Sigmie::class, $sigmie);
+        $this->assertTrue($sigmie->isServerless());
     }
 
     /**

@@ -182,9 +182,11 @@ class NewIndex
         $engineSettings = $driver->indexSettings();
         $this->config = [...$this->config, ...$engineSettings];
 
+        $useServerless = $this->serverless || $this->elasticsearchConnection->isServerless();
+
         $settings = new Settings(
-            primaryShards: $this->serverless ? null : $this->shards,
-            replicaShards: $this->serverless ? null : $this->replicas,
+            primaryShards: $useServerless ? null : $this->shards,
+            replicaShards: $useServerless ? null : $this->replicas,
             analysis: $this->analysis,
             configs: $this->config
         );

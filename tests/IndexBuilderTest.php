@@ -6,6 +6,7 @@ namespace Sigmie\Tests;
 
 use Exception;
 use RachidLaasri\Travel\Travel;
+use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Document\Document;
 use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Index\AliasedIndex;
@@ -17,6 +18,7 @@ use Sigmie\Index\Analysis\Tokenizers\Pattern as PatternTokenizer;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\NewAnalyzer;
+use Sigmie\Index\NewIndex;
 use Sigmie\Languages\English\Builder as EnglishBuilder;
 use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\Builder as GermanBuilder;
@@ -927,6 +929,26 @@ class IndexBuilderTest extends TestCase
 
         $this->assertArrayNotHasKey('number_of_shards', $settings->toRaw());
         $this->assertArrayNotHasKey('number_of_replicas', $settings->toRaw());
+    }
+
+    /**
+     * @test
+     */
+    public function serverless_connection_omits_index_shard_replica_settings(): void
+    {
+        $conn = new ElasticsearchConnection(
+            $this->jsonClient,
+            $this->elasticsearchConnection->driver(),
+            true
+        );
+
+        $this->assertTrue($conn->isServerless());
+
+        $settings = (new NewIndex($conn))->alias(uniqid())->make()->settings;
+
+        $raw = $settings->toRaw();
+        $this->assertArrayNotHasKey('number_of_shards', $raw);
+        $this->assertArrayNotHasKey('number_of_replicas', $raw);
     }
 
     /**
