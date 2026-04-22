@@ -70,10 +70,15 @@ class IndexUpdateTask
 
     public function finish()
     {
-        $this->indexAPICall($this->dest.'/_settings', 'PUT', [
-            'number_of_replicas' => $this->requestedReplicas,
-            'refresh_interval' => '1s',
-        ]);
+        $connection = $this->getElasticsearchConnection();
+        $afterReindexSettings = [
+            'refresh_interval' => $connection->isServerless() ? '5s' : '1s',
+        ];
+        if (! $connection->isServerless()) {
+            $afterReindexSettings['number_of_replicas'] = $this->requestedReplicas;
+        }
+
+        $this->indexAPICall($this->dest.'/_settings', 'PUT', $afterReindexSettings);
 
         if ($this->oldAlias === $this->newAlias) {
             $this->switchAlias($this->newAlias, $this->source, $this->dest);
