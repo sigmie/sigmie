@@ -379,7 +379,7 @@ class NewProperties
         return $this->propertiesType($field, $name, $callable);
     }
 
-    protected function propertiesType(Nested|Object_ $field, string $name, callable $callable): Object_|Nested
+    protected function propertiesType(Nested|Object_ $field, string $name, ?callable $callable): Object_|Nested
     {
         // Create nested properties context with this field as parent
         $props = new NewProperties($field);

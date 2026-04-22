@@ -60,13 +60,13 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
 
     protected ResponseFormater $formatter;
 
-    protected SearchContext $searchContext;
+    public readonly SearchContext $searchContext;
 
-    protected FilterParser $filterParser;
+    public readonly FilterParser $filterParser;
 
-    protected FacetParser $facetParser;
+    public readonly FacetParser $facetParser;
 
-    protected SortParser $sortParser;
+    public readonly SortParser $sortParser;
 
     protected array $vectorPools = [];
 

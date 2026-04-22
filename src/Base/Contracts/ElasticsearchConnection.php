@@ -13,4 +13,6 @@ interface ElasticsearchConnection
     public function promise(ElasticsearchRequest $request): Promise;
 
     public function driver(): SearchEngine;
+
+    public function isServerless(): bool;
 }

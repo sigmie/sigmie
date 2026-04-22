@@ -212,6 +212,11 @@ class Sigmie
         }
     }
 
+    public function isServerless(): bool
+    {
+        return $this->elasticsearchConnection->isServerless();
+    }
+
     public static function createForCloud(
         string $cloudId,
         string $apiKey
@@ -237,7 +242,7 @@ class Sigmie
             'headers' => ['Authorization' => 'ApiKey '.$apiKey],
         ]);
 
-        return new static(new HttpConnection($client, new Elasticsearch));
+        return new static(new HttpConnection($client, new Elasticsearch, serverless: true));
     }
 
     public static function create(

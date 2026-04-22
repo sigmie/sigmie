@@ -15,7 +15,16 @@ use Sigmie\Http\Contracts\JSONResponse;
 
 class ElasticsearchConnection implements ElasticsearchConnectionInterface
 {
-    public function __construct(protected JSONClientInterface $http, protected SearchEngine $driver = new Elasticsearch) {}
+    public function __construct(
+        protected JSONClientInterface $http,
+        protected SearchEngine $driver = new Elasticsearch,
+        protected bool $serverless = false,
+    ) {}
+
+    public function isServerless(): bool
+    {
+        return $this->serverless;
+    }
 
     public function driver(): SearchEngine
     {
