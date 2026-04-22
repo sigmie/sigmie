@@ -60,7 +60,8 @@ class SigmieMultiSearchResponse implements MultiSearchResponse
                 $formatter->queryResponseRaw($searchResponse)
                     ->facetsResponseRaw($searchResponse)
                     ->context($searchContext)
-                    ->errors([]);
+                    ->errors([])
+                    ->apis($apis);
 
                 $results[$searchIndex] = $formatter->format();
                 $responseIndex += 1;

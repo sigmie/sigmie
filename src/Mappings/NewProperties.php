@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings;
 
+use BadMethodCallException;
+use Closure;
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Mappings\Types\Address;
@@ -40,6 +42,9 @@ use Sigmie\Shared\Collection;
 
 class NewProperties
 {
+    /** @var array<string, Closure> */
+    protected static array $macros = [];
+
     protected Collection $fields;
 
     protected string $name = Properties::ROOT_NAME;
@@ -48,6 +53,25 @@ class NewProperties
         protected ?Type $parentField = null
     ) {
         $this->fields = new Collection;
+    }
+
+    public static function macro(string $name, Closure $fn): void
+    {
+        self::$macros[$name] = $fn;
+    }
+
+    public static function flushMacros(): void
+    {
+        self::$macros = [];
+    }
+
+    public function __call(string $name, array $args): mixed
+    {
+        if (isset(self::$macros[$name])) {
+            return Closure::bind(self::$macros[$name], $this, static::class)(...$args);
+        }
+
+        throw new BadMethodCallException(sprintf('No macro "%s" registered on NewProperties.', $name));
     }
 
     public function propertiesName(string $name): self

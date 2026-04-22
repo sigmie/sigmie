@@ -2,11 +2,21 @@
 
 namespace Sigmie\Search\Formatters;
 
+use LogicException;
+use Sigmie\AI\Contracts\RerankApi;
+use Sigmie\Document\RerankedHit;
 use Sigmie\Search\Contracts\ResponseFormater;
 use Sigmie\Search\SearchContext;
 
 abstract class AbstractFormatter implements ResponseFormater
 {
+    /**
+     * Registered embeddings and rerank APIs from the search builder (for response helpers).
+     *
+     * @var array<string, mixed>
+     */
+    protected array $apis = [];
+
     protected array $queryResponseRaw = [];
 
     protected array $facetsResponseRaw = [];
@@ -47,6 +57,29 @@ abstract class AbstractFormatter implements ResponseFormater
         $this->search = $context;
 
         return $this;
+    }
+
+    /**
+     * @param  array<string, mixed>  $apis
+     */
+    public function apis(array $apis): static
+    {
+        $this->apis = $apis;
+
+        return $this;
+    }
+
+    /**
+     * @param  array<int, string>  $fields
+     * @return array<int, RerankedHit>
+     */
+    public function rerank(
+        RerankApi|string $reranker,
+        array $fields,
+        ?string $query = null,
+        ?int $topK = null,
+    ): array {
+        throw new LogicException('Reranking is only available on SigmieSearchResponse.');
     }
 
     public function responseCode(int $code): static

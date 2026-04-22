@@ -400,6 +400,30 @@ class Properties extends Type implements ArrayAccess, FieldContainer
         return new Collection($res);
     }
 
+    /**
+     * Return all fields of a given type, recursively including nested properties.
+     * Keys are the field's full dot-path.
+     *
+     * @template T of ContractsType
+     *
+     * @param  class-string<T>  $class
+     * @return Collection<string, T>
+     */
+    public function fieldsOfType(string $class): Collection
+    {
+        $direct = (new Collection($this->fields))
+            ->filter(fn (ContractsType $type): bool => $type instanceof $class)
+            ->mapWithKeys(fn (ContractsType $field): array => [$field->fullPath() => $field]);
+
+        $nested = $this->deepFields()
+            ->mapWithKeys(fn (FieldContainer $field): array => $field->getProperties()->fieldsOfType($class)->toArray());
+
+        return new Collection([
+            ...$direct->toArray(),
+            ...$nested->toArray(),
+        ]);
+    }
+
     public function getProperties(): Properties
     {
         return $this;

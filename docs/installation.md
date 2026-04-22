@@ -145,14 +145,15 @@ Sigmie includes a complete AI-powered search stack via Docker Compose. This prov
 Start the AI services with a single command:
 
 ```bash
-docker-compose up -d elasticsearch embeddings reranker llm
+docker-compose up -d elasticsearch embeddings reranker
 ```
 
 This launches:
 - **Elasticsearch 9.1.3** - Search engine (port 9200)
 - **Embeddings** - BAAI/bge-small-en-v1.5 for semantic search (port 7997)
 - **Reranker** - ms-marco-MiniLM for result reranking (port 7998)
-- **LLM** - Ollama with tinyllama for RAG responses (port 7999)
+
+Optional: add `llm` from the same compose file if your **application** uses Ollama for generation (Sigmie does not include an LLM client).
 
 The first start takes 5-10 minutes as Docker downloads models and initializes services.
 
@@ -172,26 +173,20 @@ $embeddings = new Infinity(
 $sigmie->setEmbeddings($embeddings);
 ```
 
-Use local Ollama for RAG instead of OpenAI:
+Register **embeddings** and **rerank** APIs on `Sigmie`. Rerank on the **search response** (`$res->rerank(...)`) instead of cloud APIs when you use local Infinity. Sigmie does not provide `newRag()` or an LLM client; retrieve with `newSearch()`, optionally rerank, then call your own generation API:
 
 ```php
-use Sigmie\LLM\Ollama;
 use Sigmie\Rerank\Infinity as InfinityReranker;
 
-$llm = new Ollama(
-    baseUrl: 'http://localhost:7999',
-    model: 'tinyllama'
-);
-
-$reranker = new InfinityReranker(
+$sigmie->registerApi('my-rerank', new InfinityReranker(
     baseUrl: 'http://localhost:7998',
     model: 'cross-encoder/ms-marco-MiniLM-L-6-v2'
-);
+));
 
-$answer = $sigmie->newRag($llm, $reranker)
-    ->search($search)
-    ->prompt(fn($p) => $p->system('You are helpful'))
-    ->answer();
+$res = $search->get();
+$reranked = $res->rerank('my-rerank', ['content'], query: '...', topK: 5);
+
+// Build context from $reranked; call OpenAI, Ollama HTTP API, etc. outside Sigmie.
 ```
 
 ### Environment Configuration
@@ -208,9 +203,7 @@ The `.env` file includes local service URLs by default:
 # Local AI APIs (Docker)
 LOCAL_EMBEDDING_URL=http://localhost:7997
 LOCAL_RERANK_URL=http://localhost:7998
-
-# Optional: Choose different Ollama model
-OLLAMA_MODEL=tinyllama
+LOCAL_CLIP_URL=http://localhost:7996
 ```
 
 You can switch between local and cloud services by changing environment variables without modifying code.
@@ -224,7 +217,7 @@ Sigmie's docker-compose.yml includes six services:
 | **embeddings** | 7997 | Text-to-vector conversion | BAAI/bge-small-en-v1.5 (384d) |
 | **reranker** | 7998 | Result reranking | cross-encoder/ms-marco-MiniLM-L-6-v2 |
 | **image-embeddings** | 7996 | Image similarity | TinyCLIP |
-| **llm** | 7999 | Text generation | Ollama (tinyllama default) |
+| **llm** (optional) | 7999 | App-level generation only; not used by Sigmie | Ollama |
 | **elasticsearch** | 9200 | Search engine | Elasticsearch 9.1.3 |
 | **opensearch** | 9200 | Search engine | OpenSearch 3.0 |
 
@@ -239,9 +232,9 @@ You rarely need all services. Start only what you need:
 docker-compose up -d elasticsearch embeddings
 ```
 
-**Full RAG stack:**
+**Semantic search + rerank (core AI integrations):**
 ```bash
-docker-compose up -d elasticsearch embeddings reranker llm
+docker-compose up -d elasticsearch embeddings reranker
 ```
 
 **Basic keyword search:**
@@ -263,8 +256,6 @@ curl http://localhost:7997/health
 # Test reranker service
 curl http://localhost:7998/health
 
-# Test Ollama
-docker exec sigmie-llm ollama list
 ```
 
 ### Data Persistence
@@ -283,10 +274,10 @@ This directory persists between restarts, so models download only once.
 
 ### Resource Requirements
 
-The full AI stack requires:
-- **RAM:** 10-14 GB (with tinyllama)
-- **Disk:** 5-10 GB (models + data)
-- **Docker:** 8 GB RAM allocation minimum
+Elasticsearch plus embeddings and rerank typically needs:
+- **RAM:** several GB for ES and model containers (add more if you run optional Ollama)
+- **Disk:** several GB for models and data
+- **Docker:** allocate enough RAM for the services you start
 
 For limited hardware, start only the services you need.
 

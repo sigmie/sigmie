@@ -22,8 +22,22 @@ class TopHits extends Bucket
 
     protected function value(): array
     {
+        $topHits = [
+            'size' => $this->size,
+        ];
+
+        if ($this->_sources !== null) {
+            $topHits['_source'] = [
+                'includes' => $this->_sources,
+            ];
+        }
+
+        if ($this->sort !== null) {
+            $topHits['sort'] = $this->sort;
+        }
+
         return [
-            'top_hits' => [],
+            'top_hits' => $topHits,
         ];
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\AI\Prompt;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\TestCase;
@@ -41,21 +40,21 @@ class ApiAssertionsExampleTest extends TestCase
     /**
      * @test
      */
-    public function example_llm_assertions(): void
+    public function example_rerank_assertions(): void
     {
-        $prompt = new Prompt;
-        $prompt->user('Tell me a joke');
+        $this->rerankApi->rerank(
+            [
+                ['id' => '1', 'text' => 'alpha'],
+                ['id' => '2', 'text' => 'beta'],
+            ],
+            'search query',
+            5
+        );
 
-        $this->llmApi->jsonAnswer($prompt);
+        $this->rerankApi->assertRerankWasCalled();
+        $this->rerankApi->assertRerankWasCalled(1);
 
-        // Assert jsonAnswer was called
-        $this->llmApi->assertJsonAnswerWasCalled();
-
-        // Assert it was called exactly once
-        $this->llmApi->assertJsonAnswerWasCalled(1);
-
-        // Get calls for inspection
-        $calls = $this->llmApi->getJsonAnswerCalls();
+        $calls = $this->rerankApi->getRerankCalls();
         $this->assertCount(1, $calls);
     }
 }

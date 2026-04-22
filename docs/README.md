@@ -71,7 +71,9 @@ $response = $sigmie->newSearch('movies')
 - **[Analysis](analysis.md)** - Text processing and tokenization
 - **[Language Support](language.md)** - Multi-language search capabilities
 - **[Semantic Search](semantic-search.md)** - Vector-based search
-- **[RAG (Retrieval-Augmented Generation)](rag.md)** - LLM-powered intelligent answers
+- **[Magic Tags](magic-tags.md)** - LLM taxonomy tags and shared tag sidecar (package)
+- **[Retrieval and agents](rag.md)** - Search, reranking, and generation in your application
+- **[Extending Sigmie](extending.md)** - Build packages that add field types and processing hooks
 - **[Facets & Aggregations](facets.md)** - Faceted search interfaces
 - **[Filter Parser](filter-parser.md)** - Advanced filtering syntax
 - **[Sort Parser](sort-parser.md)** - Flexible sorting options
@@ -104,10 +106,9 @@ $response = $sigmie->newSearch('movies')
 - Semantic search using vector embeddings
 
 ### 🤖 **AI-Powered Features**
-- Retrieval-Augmented Generation (RAG) for intelligent answers
-- Streaming responses for real-time user experiences
-- Vector embeddings and semantic search
-- LLM integration with reranking capabilities
+- Semantic search and vector embeddings (`EmbeddingsApi`)
+- Reranking on the search response (`$response->rerank(...)`) with pluggable `RerankApi` implementations
+- Optional [Magic Tags](magic-tags.md) package for taxonomy-style tags (external to core)
 
 ### 📝 **Document Management**  
 - Type-safe document creation and validation
@@ -183,31 +184,20 @@ $response = $sigmie->newSearch('documents')
     ->get();
 ```
 
-### AI-Powered Question Answering
+### Retrieval, rerank, then generate (app code)
+
+Sigmie handles **search** and optional **reranking**. Text generation uses your own HTTP client, vendor SDK, or framework — not this package:
 
 ```php
-use Sigmie\AI\LLMs\OpenAILLM;
+$res = $sigmie->newSearch('knowledge-base')
+    ->properties($props)
+    ->queryString('What is machine learning?')
+    ->size(5)
+    ->get();
 
-$llm = new OpenAILLM('your-openai-api-key');
+$reranked = $res->rerank('my-rerank', ['body'], 'machine learning', 3);
 
-// Streaming response for real-time experience
-$stream = $sigmie->newRag($llm)
-    ->search(
-        $sigmie->newSearch('knowledge-base')
-            ->queryString('What is machine learning?')
-            ->size(5)
-    )
-    ->prompt(function ($prompt) {
-        $prompt->question('What is machine learning?');
-        $prompt->contextFields(['title', 'content']);
-    })
-    ->instructions('You are a helpful technical assistant.')
-    ->answer(stream: true);
-
-foreach ($stream as $chunk) {
-    echo $chunk;
-    flush();
-}
+// Build context from $reranked, then call your OpenAI / Ollama / other API outside Sigmie.
 ```
 
 ## Common Use Cases
@@ -219,7 +209,7 @@ Build search experiences with typo tolerance, highlighting, and faceted navigati
 Enable semantic search to find content by meaning, not just keywords.
 
 ### Intelligent Q&A Systems
-Create AI-powered question-answering systems that provide contextually accurate responses using your own data.
+Combine Elasticsearch retrieval and reranking in Sigmie with generation in your application for grounded answers.
 
 ### Data Analysis
 Use aggregations and facets to analyze and summarize your data.
@@ -238,16 +228,15 @@ Implement autocomplete and search-as-you-type functionality.
 │ • Views         │    │ • Index         │    │ • Mappings      │
 └─────────────────┘    │ • Document      │    └─────────────────┘
                        │ • Properties    │           ▲
-                       │ • RAG           │           │
+                       │ • Embeddings    │           │
+                       │ • Rerank        │           │
                        └─────────────────┘           │
                                │                     │
                                ▼                     │
                        ┌─────────────────┐           │
-                       │   AI Services   │───────────┘
-                       │                 │
-                       │ • OpenAI        │
-                       │ • Embeddings    │
-                       │ • Rerankers     │
+                       │  Vector / rank  │───────────┘
+                       │  APIs you       │
+                       │  register       │
                        └─────────────────┘
 ```
 
@@ -271,4 +260,4 @@ Sigmie is released under the MIT License. See the LICENSE file for details.
 
 For experienced Elasticsearch users, the [API Reference](api-reference.md) provides comprehensive documentation of all available methods and classes.
 
-To explore AI-powered search capabilities, check out the [RAG Documentation](rag.md) for intelligent question-answering systems.
+To explore how retrieval fits with generation in your app, see [Retrieval and agents](rag.md).

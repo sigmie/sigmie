@@ -2,8 +2,13 @@
 
 namespace Sigmie\Search\Formatters;
 
+use InvalidArgumentException;
+use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Document\Hit;
+use Sigmie\Document\RerankedHit;
 use Sigmie\Mappings\Properties;
+use Sigmie\Search\NewRerank;
+use Sigmie\Search\QueryString;
 use Sigmie\Search\SearchContext;
 
 class SigmieSearchResponse extends AbstractFormatter
@@ -66,6 +71,56 @@ class SigmieSearchResponse extends AbstractFormatter
     public function getContext(): ?SearchContext
     {
         return $this->search ?? null;
+    }
+
+    /**
+     * Rerank this response's hits using the search query (first `queryString`) unless you pass an explicit query.
+     *
+     * @param  array<int, string>  $fields  Source fields to send to the reranker (YAML snippets)
+     * @return array<int, RerankedHit>
+     */
+    public function rerank(
+        RerankApi|string $reranker,
+        array $fields,
+        ?string $query = null,
+        ?int $topK = null,
+    ): array {
+        $api = $this->resolveRerankApi($reranker);
+        $queryString = $query ?? $this->defaultRerankQuery();
+        $limit = $topK ?? ($this->search->size > 0 ? $this->search->size : 10);
+
+        return (new NewRerank($api))
+            ->fields($fields)
+            ->query($queryString)
+            ->topK($limit)
+            ->rerank($this->hits());
+    }
+
+    protected function resolveRerankApi(RerankApi|string $reranker): RerankApi
+    {
+        if ($reranker instanceof RerankApi) {
+            return $reranker;
+        }
+
+        $api = $this->apis[$reranker] ?? null;
+        if (! $api instanceof RerankApi) {
+            throw new InvalidArgumentException(
+                sprintf('Registered API "%s" is not a RerankApi.', $reranker)
+            );
+        }
+
+        return $api;
+    }
+
+    protected function defaultRerankQuery(): string
+    {
+        foreach ($this->search->queryStrings as $qs) {
+            if ($qs instanceof QueryString && $qs->text() !== '') {
+                return $qs->text();
+            }
+        }
+
+        return '';
     }
 
     public function formatFacets(): object

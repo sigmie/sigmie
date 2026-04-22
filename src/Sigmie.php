@@ -9,7 +9,6 @@ use GuzzleHttp\Client as GuzzleHttpClient;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\AI\Contracts\LLMApi;
 use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
@@ -20,7 +19,9 @@ use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Classification\NewClassification;
 use Sigmie\Clustering\NewClustering;
+use Sigmie\Contracts\Package;
 use Sigmie\Document\AliveCollection;
+use Sigmie\Document\Contracts\CollectionHook;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Http\JSONClient;
 use Sigmie\Index\Actions as IndexActions;
@@ -36,7 +37,6 @@ use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Search;
 use Sigmie\Search\ExistingScript;
 use Sigmie\Search\NewMultiSearch;
-use Sigmie\Search\NewRag;
 use Sigmie\Search\NewRecommendations;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewTemplate;
@@ -54,20 +54,23 @@ class Sigmie
 
     public static array $plugins = [];
 
+    /** @var array<int, CollectionHook> */
+    protected array $collectionHooks = [];
+
     public function __construct(
         Connection $httpConnection
     ) {
         $this->elasticsearchConnection = $httpConnection;
     }
 
-    public function registerApi(string $name, EmbeddingsApi|LLMApi|RerankApi $api): static
+    public function registerApi(string $name, EmbeddingsApi|RerankApi $api): static
     {
         $this->apis[$name] = $api;
 
         return $this;
     }
 
-    public function api(string $name): EmbeddingsApi|LLMApi|RerankApi
+    public function api(string $name): EmbeddingsApi|RerankApi
     {
         return $this->apis[$name];
     }
@@ -115,7 +118,17 @@ class Sigmie
             $name,
             $this->elasticsearchConnection,
             $refresh ? 'true' : 'false'
-        ))->apis($this->apis);
+        ))->apis($this->apis)->hooks($this->collectionHooks);
+    }
+
+    public function extend(Package $package): void
+    {
+        $package->register($this);
+    }
+
+    public function addCollectionHook(CollectionHook $hook): void
+    {
+        $this->collectionHooks[] = $hook;
     }
 
     public function newClassification(EmbeddingsApi $embeddingsApi): NewClassification
@@ -162,14 +175,6 @@ class Sigmie
         return (new NewSearch($this->elasticsearchConnection))
             ->index($index)
             ->apis($this->apis);
-    }
-
-    public function newRag(
-        LLMApi $llm,
-        ?RerankApi $reranker = null
-    ): NewRag {
-
-        return new NewRag($llm, $reranker);
     }
 
     public function newMultiSearch(): NewMultiSearch
