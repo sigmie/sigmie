@@ -65,6 +65,8 @@ class NewQuery implements MultiSearchable, Queries
     {
         $this->properties = $props instanceof NewProperties ? $props->get() : $props;
 
+        $this->search->filterParserProperties($this->properties);
+
         return $this;
     }
 
@@ -111,6 +113,16 @@ class NewQuery implements MultiSearchable, Queries
     public function query(Query $query): Search
     {
         return $this->search->query($query);
+    }
+
+    public function postFilter(Query $postFilter): Search
+    {
+        return $this->search->postFilter($postFilter);
+    }
+
+    public function postFilterString(string $filterString): Search
+    {
+        return $this->search->postFilterString($filterString);
     }
 
     public function matchNone(float $boost = 1): Search

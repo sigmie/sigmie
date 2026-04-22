@@ -632,6 +632,46 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
+    public function facet_counts_reflect_text_query(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+        $blueprint->category('color')->facetDisjunctive();
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['name' => 'red shoes', 'color' => 'red']),
+            new Document(['name' => 'blue shoes', 'color' => 'blue']),
+            new Document(['name' => 'red hat', 'color' => 'red']),
+        ]);
+
+        $searchResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('shoes')
+            ->facets('color')
+            ->get();
+
+        $res = $searchResponse->json();
+
+        $this->assertCount(2, (array) $res['hits']);
+
+        $facets = (array) $res['facets'];
+        $colors = (array) $facets['color'];
+
+        $this->assertEquals(1, $colors['red']);
+        $this->assertEquals(1, $colors['blue']);
+    }
+
+    /**
+     * @test
+     */
     public function facet_parenthetic_expressions(): void
     {
         $indexName = uniqid();

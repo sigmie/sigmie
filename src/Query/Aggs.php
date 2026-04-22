@@ -152,10 +152,10 @@ class Aggs implements AggsInterface
         string $field,
         CalendarInterval $interval,
         int $minDocCount = 0,
-        ?array $extendedBounds = null
-
+        ?array $extendedBounds = null,
+        ?string $format = null,
     ): DateHistogram {
-        $aggregation = new DateHistogram($name, $field, $interval, $minDocCount, $extendedBounds);
+        $aggregation = new DateHistogram($name, $field, $interval, $minDocCount, $extendedBounds, $format);
 
         $this->aggs[] = $aggregation;
 
