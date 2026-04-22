@@ -20,6 +20,7 @@ use Sigmie\Index\Mappings;
 use Sigmie\Index\Settings;
 use Sigmie\Shared\Collection;
 use Sigmie\Testing\TestCase;
+use stdClass;
 
 class IndexActionsTest extends TestCase
 {
@@ -109,7 +110,8 @@ class IndexActionsTest extends TestCase
         $alias = 'alias_'.uniqid();
         $concreteName = 'index_'.uniqid();
 
-        $connection = new class ($alias, $concreteName) implements ElasticsearchConnection {
+        $connection = new class($alias, $concreteName) implements ElasticsearchConnection
+        {
             public function __construct(private string $alias, private string $concreteName) {}
 
             public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse
@@ -122,8 +124,8 @@ class IndexActionsTest extends TestCase
 
                 $body = [
                     $this->concreteName => [
-                        'aliases'  => [$this->alias => new \stdClass],
-                        'mappings' => ['properties' => new \stdClass],
+                        'aliases' => [$this->alias => new stdClass],
+                        'mappings' => ['properties' => new stdClass],
                         'settings' => ['index' => ['number_of_shards' => '1', 'number_of_replicas' => '0']],
                     ],
                 ];
@@ -131,17 +133,35 @@ class IndexActionsTest extends TestCase
                 return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], (string) json_encode($body)));
             }
 
-            public function promise(ElasticsearchRequest $request): Promise { return new FulfilledPromise($this($request)); }
+            public function promise(ElasticsearchRequest $request): Promise
+            {
+                return new FulfilledPromise($this($request));
+            }
 
-            public function driver(): SearchEngine { return new Elasticsearch; }
+            public function driver(): SearchEngine
+            {
+                return new Elasticsearch;
+            }
 
-            public function isServerless(): bool { return false; }
+            public function isServerless(): bool
+            {
+                return false;
+            }
         };
 
-        $harness = new class ($connection) {
+        $harness = new class($connection)
+        {
             use IndexActions;
-            public function __construct(ElasticsearchConnection $conn) { $this->setElasticsearchConnection($conn); }
-            public function get(string $alias): AliasedIndex|Index|null { return $this->getIndex($alias); }
+
+            public function __construct(ElasticsearchConnection $conn)
+            {
+                $this->setElasticsearchConnection($conn);
+            }
+
+            public function get(string $alias): AliasedIndex|Index|null
+            {
+                return $this->getIndex($alias);
+            }
         };
 
         $index = $harness->get($alias);

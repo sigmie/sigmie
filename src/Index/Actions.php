@@ -87,6 +87,7 @@ trait Actions
         if ($name === null || $name === '') {
             $name = $this->indexAPICall('_resolve/index/'.$alias, 'GET')->json('indices.0.name');
         }
+
         if ($name === null || $name === '') {
             $name = $concreteName;
         }
