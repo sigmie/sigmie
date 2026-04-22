@@ -20,6 +20,7 @@ use Sigmie\Index\UpdateIndex as Update;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
+use stdClass;
 
 class IndexUpdateTest extends TestCase
 {
@@ -572,10 +573,9 @@ class IndexUpdateTest extends TestCase
         $alias = 'alias_'.uniqid();
         $sourceName = 'src_'.uniqid();
 
-        $connection = new class ($alias) implements ElasticsearchConnection {
+        $connection = new class($alias) implements ElasticsearchConnection
+        {
             public array $settingsCalls = [];
-
-            public function __construct(private string $alias) {}
 
             public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse
             {
@@ -605,8 +605,8 @@ class IndexUpdateTest extends TestCase
                     $aliasName = ltrim($path, '/');
                     $data = [
                         $aliasName.'_concrete' => [
-                            'aliases' => [$aliasName => new \stdClass],
-                            'mappings' => ['properties' => new \stdClass],
+                            'aliases' => [$aliasName => new stdClass],
+                            'mappings' => ['properties' => new stdClass],
                             'settings' => ['index' => ['number_of_shards' => '1', 'number_of_replicas' => '0']],
                         ],
                     ];
@@ -617,21 +617,30 @@ class IndexUpdateTest extends TestCase
                 return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"indices":[]}'));
             }
 
-            public function promise(ElasticsearchRequest $request): Promise { return new FulfilledPromise($this($request)); }
+            public function promise(ElasticsearchRequest $request): Promise
+            {
+                return new FulfilledPromise($this($request));
+            }
 
-            public function driver(): SearchEngine { return new Elasticsearch; }
+            public function driver(): SearchEngine
+            {
+                return new Elasticsearch;
+            }
 
-            public function isServerless(): bool { return true; }
+            public function isServerless(): bool
+            {
+                return true;
+            }
         };
 
         $index = new AliasedIndex($sourceName, $alias);
         $index->setElasticsearchConnection($connection);
 
-        $index->update(fn (Update $update) => $update);
+        $index->update(fn (Update $update): Update => $update);
 
         $afterReindex = array_values(array_filter(
             $connection->settingsCalls,
-            fn ($s) => isset($s['refresh_interval'])
+            fn ($s): bool => isset($s['refresh_interval'])
         ))[0] ?? [];
 
         $this->assertSame('5s', $afterReindex['refresh_interval']);
@@ -647,10 +656,11 @@ class IndexUpdateTest extends TestCase
         $dest = 'dst_'.uniqid();
         $alias = 'alias_'.uniqid();
 
-        $connection = new class ($dest, $alias) implements ElasticsearchConnection {
+        $connection = new class($dest, $alias) implements ElasticsearchConnection
+        {
             public array $settingsCalls = [];
 
-            public function __construct(private string $dest, private string $alias) {}
+            public function __construct(private string $dest) {}
 
             public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse
             {
@@ -675,8 +685,8 @@ class IndexUpdateTest extends TestCase
                     $aliasName = ltrim($path, '/');
                     $data = [
                         $this->dest => [
-                            'aliases' => [$aliasName => new \stdClass],
-                            'mappings' => ['properties' => new \stdClass],
+                            'aliases' => [$aliasName => new stdClass],
+                            'mappings' => ['properties' => new stdClass],
                             'settings' => ['index' => ['number_of_shards' => '1', 'number_of_replicas' => '0']],
                         ],
                     ];
@@ -687,11 +697,20 @@ class IndexUpdateTest extends TestCase
                 return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"indices":[]}'));
             }
 
-            public function promise(ElasticsearchRequest $request): Promise { return new FulfilledPromise($this($request)); }
+            public function promise(ElasticsearchRequest $request): Promise
+            {
+                return new FulfilledPromise($this($request));
+            }
 
-            public function driver(): SearchEngine { return new Elasticsearch; }
+            public function driver(): SearchEngine
+            {
+                return new Elasticsearch;
+            }
 
-            public function isServerless(): bool { return true; }
+            public function isServerless(): bool
+            {
+                return true;
+            }
         };
 
         $task = new IndexUpdateTask($connection, $source, $dest, $alias, $alias, 2);
