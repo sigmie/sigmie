@@ -74,6 +74,8 @@ final class RawQuery implements LazyIterableQuery, MultiSearchable
 
         $body = $this->body;
 
+        $userSort = is_array($this->body['sort'] ?? null) ? $this->body['sort'] : [];
+
         unset(
             $body['from'],
             $body['size'],
@@ -86,7 +88,7 @@ final class RawQuery implements LazyIterableQuery, MultiSearchable
         );
 
         $body['size'] = $this->pitIterationChunkSize;
-        $body['sort'] = $isOpenSearch ? [['_id' => 'asc']] : [['_shard_doc' => 'asc']];
+        $body['sort'] = PitSortPlanner::plan($userSort, $isOpenSearch);
 
         $keepAlive = '1m';
         $open = $pit->open($this->index, $keepAlive);
