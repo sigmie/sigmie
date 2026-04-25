@@ -44,11 +44,7 @@ final class PitSortPlanner
             return true;
         }
 
-        if (is_array($only) && (isset($only['_score']) || isset($only['_doc']))) {
-            return true;
-        }
-
-        return false;
+        return is_array($only) && (isset($only['_score']) || isset($only['_doc']));
     }
 
     /**
