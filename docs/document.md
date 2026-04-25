@@ -211,21 +211,25 @@ if ($movies instanceof AliveCollection) {
 
 ### Iterating Through Documents
 
+`each()` streams all documents from the collection without loading them all into memory. Sigmie fetches them in pages using Point-in-Time (PIT) and `search_after`, so the result is consistent even if writes happen during iteration.
+
 ```php
-$movies = $sigmie->collect('movies', refresh: true);
+$movies = $sigmie->collect('movies');
 
-// Add some documents first
-$movies->merge([
-    new Document(['title' => 'Movie 1']),
-    new Document(['title' => 'Movie 2']),
-    new Document(['title' => 'Movie 3'])
-]);
-
-// Lazy iteration (memory efficient for large collections)
-$movies->each(function (Document $document) {
+$movies->each(function (Document $document): void {
     echo $document['title'] . "\n";
 });
 ```
+
+By default, documents are fetched 500 at a time. Use `chunk()` to change the page size:
+
+```php
+$movies->chunk(100)->each(function (Document $document): void {
+    processDocument($document);
+});
+```
+
+To iterate over a **filtered** subset instead of the entire collection, use `NewSearch::each()` or `NewSearch::lazy()`. See the [Search documentation](search.md#iterating-over-all-matching-hits) for details.
 
 ### Converting to Array
 
@@ -356,17 +360,16 @@ foreach ($manyDocuments as $doc) {
 
 ### Memory Management
 
-For large collections, use lazy iteration:
+For large collections, use `each()` instead of loading everything at once:
 
 ```php
-// Memory efficient for large datasets
-$movies->each(function (Document $doc) {
-    // Process each document
+// Memory efficient: fetches documents page by page
+$movies->each(function (Document $doc): void {
     processDocument($doc);
 });
 
-// Memory intensive for large datasets
-$allDocs = $movies->toArray();  // Loads everything into memory
+// Memory intensive: loads all documents at once
+$allDocs = $movies->toArray();
 ```
 
 ### Index Optimization

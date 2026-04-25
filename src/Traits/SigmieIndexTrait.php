@@ -14,6 +14,7 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\NewQuery;
 use Sigmie\Search\NewMultiSearch;
 use Sigmie\Search\NewSearch;
+use Sigmie\Search\RawQuery;
 use Sigmie\Sigmie;
 
 trait SigmieIndexTrait
@@ -147,7 +148,7 @@ trait SigmieIndexTrait
                 return $this->multiSearch->newQuery($index);
             }
 
-            public function raw(string $indexName, array $query): NewMultiSearch
+            public function raw(string $indexName, array $query): RawQuery
             {
                 return $this->multiSearch->raw($indexName, $query);
             }

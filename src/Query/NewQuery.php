@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Query;
 
+use Closure;
+use Generator;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Base\Http\PointInTimeRequests;
+use Sigmie\Document\Hit;
+use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Parse\FilterParser;
@@ -23,17 +28,21 @@ use Sigmie\Query\Queries\Term\Terms;
 use Sigmie\Query\Queries\Term\Wildcard;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
+use Sigmie\Search\Contracts\LazyIterableQuery;
 use Sigmie\Search\Contracts\MultiSearchable;
+use Sigmie\Search\PointInTimeIterator;
 
 use function Sigmie\Functions\random_name;
 
-class NewQuery implements MultiSearchable, Queries
+class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
 {
     protected Search $search;
 
     protected Properties $properties;
 
     protected string $searchName = '';
+
+    protected int $pitIterationChunkSize = 500;
 
     public function __construct(
         protected ElasticsearchConnection $httpConnection,
@@ -245,5 +254,72 @@ class NewQuery implements MultiSearchable, Queries
         }
 
         return random_name('qr');
+    }
+
+    public function chunk(int $size = 500): static
+    {
+        $this->pitIterationChunkSize = $size;
+
+        return $this;
+    }
+
+    /**
+     * @return Generator<int, Hit>
+     */
+    public function lazy(): Generator
+    {
+        yield from $this->iterateHits();
+    }
+
+    public function each(Closure $fn): void
+    {
+        foreach ($this->iterateHits() as $hit) {
+            $fn($hit);
+        }
+    }
+
+    /**
+     * @return Generator<int, Hit>
+     */
+    protected function iterateHits(): Generator
+    {
+        $pit = new PointInTimeRequests($this->httpConnection);
+        $isOpenSearch = $this->httpConnection->driver()->engine() === SearchEngineType::OpenSearch;
+
+        $body = $this->search->toRaw();
+
+        unset(
+            $body['from'],
+            $body['size'],
+            $body['aggs'],
+            $body['highlight'],
+            $body['suggest'],
+            $body['track_total_hits'],
+            $body['sort'],
+        );
+
+        $body['size'] = $this->pitIterationChunkSize;
+        $body['sort'] = $isOpenSearch ? [['_id' => 'asc']] : [['_shard_doc' => 'asc']];
+
+        $keepAlive = '1m';
+        $open = $pit->open($this->search->index, $keepAlive);
+        $pitId = PointInTimeIterator::pitIdFromOpenResponse($open, $isOpenSearch);
+
+        yield from PointInTimeIterator::iterate(
+            $pitId,
+            $keepAlive,
+            $body,
+            fn (array $requestBody) => $pit->search($requestBody),
+            function (string $id) use ($pit): void {
+                $pit->close($id);
+            },
+            fn (array $data): Hit => new Hit(
+                $data['_source'] ?? [],
+                $data['_id'],
+                isset($data['_score']) ? (float) $data['_score'] : null,
+                $data['_index'] ?? null,
+                $data['sort'] ?? null,
+            ),
+        );
     }
 }

@@ -8,6 +8,8 @@ use Closure;
 use Iterator;
 use Sigmie\Base\APIs\Count;
 use Sigmie\Document\Actions as DocumentActions;
+use Sigmie\Enums\SearchEngineType;
+use Sigmie\Search\PointInTimeIterator;
 
 trait LazyEach
 {
@@ -34,55 +36,50 @@ trait LazyEach
 
     protected function indexGenerator(): Iterator
     {
-        $page = 1;
-        $total = (int) $this->countAPICall($this->name)->json('count');
+        $isOpenSearch = $this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch;
 
-        // Initial scroll request
-        $body = [
+        $sort = $isOpenSearch ? [['_id' => 'asc']] : [['_shard_doc' => 'asc']];
+
+        $baseBody = [
             'size' => $this->chunk,
-            // Return documents in the order they are stored internally in the index, per shard.
-            // It is the most efficient sort, especially for large scans or scrolls.
-            'sort' => [['_doc' => 'asc']],
+            'sort' => $sort,
             'query' => ['match_all' => (object) []],
         ];
 
         if ($this->only || $this->except) {
-
-            $body['_source'] = [];
+            $baseBody['_source'] = [];
 
             if ($this->only) {
-                $body['_source']['includes'] = $this->only;
+                $baseBody['_source']['includes'] = $this->only;
             }
 
             if ($this->except) {
-                $body['_source']['excludes'] = $this->except;
+                $baseBody['_source']['excludes'] = $this->except;
             }
         }
 
-        $response = $this->searchAPICall(index: $this->name, query: $body, scroll: '1m');
+        $keepAlive = '1m';
 
-        $scrollId = $response->json('_scroll_id');
+        $open = $this->openPointInTimeAPICall($this->name, $keepAlive);
+        $pitId = PointInTimeIterator::pitIdFromOpenResponse($open, $isOpenSearch);
 
-        foreach ($response->json('hits')['hits'] as $data) {
-            yield $data['_id'] => new Document($data['_source'], $data['_id']);
-        }
-
-        while ($this->chunk * $page < $total) {
-            $page++;
-
-            yield from $this->pageGenerator($scrollId);
-        }
-    }
-
-    protected function pageGenerator(string $scrollId): Iterator
-    {
-        // Continue scrolling with scroll_id
-        $response = $this->scrollAPICall($scrollId, '1m');
-
-        $values = $response->json('hits')['hits'];
-
-        foreach ($values as $data) {
-            yield $data['_id'] => new Document($data['_source'], $data['_id']);
+        foreach (PointInTimeIterator::iterate(
+            $pitId,
+            $keepAlive,
+            $baseBody,
+            fn (array $body) => $this->pitSearchAPICall($body),
+            function (string $id): void {
+                $this->closePointInTimeAPICall($id);
+            },
+            fn (array $data): Hit => new Hit(
+                $data['_source'] ?? [],
+                $data['_id'],
+                isset($data['_score']) ? (float) $data['_score'] : null,
+                $data['_index'] ?? null,
+                $data['sort'] ?? null,
+            ),
+        ) as $hit) {
+            yield $hit->_id => $hit;
         }
     }
 }

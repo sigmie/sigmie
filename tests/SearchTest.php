@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Generator;
 use Http\Promise\Promise;
 use Sigmie\Document\Document;
+use Sigmie\Document\Hit;
 use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
@@ -1308,5 +1310,121 @@ class SearchTest extends TestCase
             ->get();
 
         $this->assertEquals(200, $response->code());
+    }
+
+    /**
+     * @test
+     */
+    public function lazy_returns_generator(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $gen = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->lazy();
+
+        $this->assertInstanceOf(Generator::class, $gen);
+    }
+
+    /**
+     * @test
+     */
+    public function lazy_iterates_all_documents_across_pages(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $docs = [];
+        for ($i = 0; $i < 5; $i++) {
+            $docs[] = new Document(['name' => 'item'.$i]);
+        }
+
+        $this->sigmie->collect($indexName, refresh: true)->merge($docs);
+
+        $hits = iterator_to_array(
+            $this->sigmie->newSearch($indexName)
+                ->properties($blueprint)
+                ->chunk(2)
+                ->lazy()
+        );
+
+        $this->assertCount(5, $hits);
+        foreach ($hits as $hit) {
+            $this->assertInstanceOf(Hit::class, $hit);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function each_respects_filters_for_lazy_iteration(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->bool('active');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['active' => true]),
+            new Document(['active' => false]),
+            new Document(['active' => true]),
+            new Document(['active' => true]),
+        ]);
+
+        $ids = [];
+
+        $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->filters('active:true')
+            ->chunk(2)
+            ->each(function (Hit $hit) use (&$ids): void {
+                $this->assertInstanceOf(Hit::class, $hit);
+                $ids[] = $hit->_id;
+            });
+
+        $this->assertCount(3, $ids);
+    }
+
+    /**
+     * @test
+     */
+    public function each_respects_query_string_for_lazy_iteration(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['name' => 'Mickey']),
+            new Document(['name' => 'Goofy']),
+            new Document(['name' => 'Mickey Mouse']),
+        ]);
+
+        $names = [];
+
+        $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Mickey')
+            ->each(function (Hit $hit) use (&$names): void {
+                $names[] = $hit->_source['name'];
+            });
+
+        $this->assertCount(2, $names);
+        $this->assertContains('Mickey', $names);
+        $this->assertContains('Mickey Mouse', $names);
     }
 }
