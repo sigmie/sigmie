@@ -7,6 +7,7 @@ namespace Sigmie\Search;
 use Closure;
 use Generator;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\PointInTimeRequests;
 use Sigmie\Document\Hit;
 use Sigmie\Enums\SearchEngineType;
@@ -15,12 +16,12 @@ use Sigmie\Search\Contracts\MultiSearchable;
 
 final class RawQuery implements LazyIterableQuery, MultiSearchable
 {
-    protected int $pitIterationChunkSize = 500;
+    private int $pitIterationChunkSize = 500;
 
     public function __construct(
-        protected ElasticsearchConnection $httpConnection,
-        protected string $index,
-        protected array $body,
+        private ElasticsearchConnection $httpConnection,
+        private string $index,
+        private array $body,
     ) {}
 
     public function toMultiSearch(): array
@@ -66,7 +67,7 @@ final class RawQuery implements LazyIterableQuery, MultiSearchable
     /**
      * @return Generator<int, Hit>
      */
-    protected function iterateHits(): Generator
+    private function iterateHits(): Generator
     {
         $pit = new PointInTimeRequests($this->httpConnection);
         $isOpenSearch = $this->httpConnection->driver()->engine() === SearchEngineType::OpenSearch;
@@ -95,7 +96,7 @@ final class RawQuery implements LazyIterableQuery, MultiSearchable
             $pitId,
             $keepAlive,
             $body,
-            fn (array $requestBody) => $pit->search($requestBody),
+            fn (array $requestBody): ElasticsearchResponse => $pit->search($requestBody),
             function (string $id) use ($pit): void {
                 $pit->close($id);
             },

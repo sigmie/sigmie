@@ -8,8 +8,10 @@ use Closure;
 use Generator;
 use Http\Promise\Promise;
 use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Base\Http\PointInTimeRequests;
+use Sigmie\Document\Hit;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
@@ -28,11 +30,10 @@ use Sigmie\Query\Contracts\FuzzyQuery;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\Compound\Boolean;
-use Sigmie\Query\Queries\MatchAll;
 // use Sigmie\Query\Queries\Query;
+use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\MatchNone;
 use Sigmie\Query\Queries\Text\Nested;
-use Sigmie\Document\Hit;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
 use Sigmie\Search\Contracts\LazyIterableQuery;
@@ -1025,7 +1026,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
             $pitId,
             $keepAlive,
             $body,
-            fn (array $requestBody) => $pit->search($requestBody),
+            fn (array $requestBody): ElasticsearchResponse => $pit->search($requestBody),
             function (string $id) use ($pit): void {
                 $pit->close($id);
             },
@@ -1077,11 +1078,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
             return true;
         }
 
-        if (is_array($only) && (isset($only['_score']) || isset($only['_doc']))) {
-            return true;
-        }
-
-        return false;
+        return is_array($only) && (isset($only['_score']) || isset($only['_doc']));
     }
 
     /**

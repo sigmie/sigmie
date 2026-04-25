@@ -7,6 +7,7 @@ namespace Sigmie\Query;
 use Closure;
 use Generator;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\PointInTimeRequests;
 use Sigmie\Document\Hit;
 use Sigmie\Enums\SearchEngineType;
@@ -309,7 +310,7 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
             $pitId,
             $keepAlive,
             $body,
-            fn (array $requestBody) => $pit->search($requestBody),
+            fn (array $requestBody): ElasticsearchResponse => $pit->search($requestBody),
             function (string $id) use ($pit): void {
                 $pit->close($id);
             },
