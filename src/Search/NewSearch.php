@@ -1016,7 +1016,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         );
 
         $body['size'] = $this->pitIterationChunkSize;
-        $body['sort'] = $this->stableSortForPitIteration();
+        $body['sort'] = PitSortPlanner::plan($this->sort, $isOpenSearch);
 
         $keepAlive = '1m';
         $open = $pit->open($this->index, $keepAlive);
@@ -1038,63 +1038,6 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
                 $data['sort'] ?? null,
             ),
         );
-    }
-
-    /**
-     * @return list<string|array<string, mixed>>
-     */
-    private function stableSortForPitIteration(): array
-    {
-        $isOpenSearch = $this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch;
-        $tiebreaker = $isOpenSearch ? [['_id' => 'asc']] : [['_shard_doc' => 'asc']];
-
-        if ($this->sortUsesOnlyScoreOrDoc($this->sort)) {
-            return $tiebreaker;
-        }
-
-        return $this->appendPitTiebreakerUnlessPresent($this->sort, $tiebreaker);
-    }
-
-    /**
-     * @param  list<string|array<string, mixed>>  $sort
-     */
-    private function sortUsesOnlyScoreOrDoc(array $sort): bool
-    {
-        if ($sort === []) {
-            return true;
-        }
-
-        if ($sort === ['_score'] || $sort === ['_doc']) {
-            return true;
-        }
-
-        if (count($sort) !== 1) {
-            return false;
-        }
-
-        $only = $sort[0];
-
-        if ($only === '_score' || $only === '_doc') {
-            return true;
-        }
-
-        return is_array($only) && (isset($only['_score']) || isset($only['_doc']));
-    }
-
-    /**
-     * @param  list<string|array<string, mixed>>  $sort
-     * @param  list<array<string, string>>  $tiebreaker
-     * @return list<string|array<string, mixed>>
-     */
-    private function appendPitTiebreakerUnlessPresent(array $sort, array $tiebreaker): array
-    {
-        $last = $sort[array_key_last($sort)];
-
-        if (is_array($last) && (isset($last['_shard_doc']) || isset($last['_id']))) {
-            return $sort;
-        }
-
-        return array_merge($sort, $tiebreaker);
     }
 
     public function setVectorPool(VectorPool|array $pool, ?string $apiName = null): static

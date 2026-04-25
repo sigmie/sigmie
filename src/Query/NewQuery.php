@@ -31,6 +31,7 @@ use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
 use Sigmie\Search\Contracts\LazyIterableQuery;
 use Sigmie\Search\Contracts\MultiSearchable;
+use Sigmie\Search\PitSortPlanner;
 use Sigmie\Search\PointInTimeIterator;
 
 use function Sigmie\Functions\random_name;
@@ -76,6 +77,13 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
         $this->properties = $props instanceof NewProperties ? $props->get() : $props;
 
         $this->search->filterParserProperties($this->properties);
+
+        return $this;
+    }
+
+    public function sort(array $sort): static
+    {
+        $this->search->sort($sort);
 
         return $this;
     }
@@ -289,6 +297,8 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
 
         $body = $this->search->toRaw();
 
+        $userSort = is_array($body['sort'] ?? null) ? $body['sort'] : [];
+
         unset(
             $body['from'],
             $body['size'],
@@ -300,7 +310,7 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
         );
 
         $body['size'] = $this->pitIterationChunkSize;
-        $body['sort'] = $isOpenSearch ? [['_id' => 'asc']] : [['_shard_doc' => 'asc']];
+        $body['sort'] = PitSortPlanner::plan($userSort, $isOpenSearch);
 
         $keepAlive = '1m';
         $open = $pit->open($this->search->index, $keepAlive);

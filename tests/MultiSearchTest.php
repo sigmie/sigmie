@@ -250,4 +250,66 @@ class MultiSearchTest extends TestCase
 
         $this->assertCount(2, $hits);
     }
+
+    /**
+     * @test
+     */
+    public function multi_lazy_includes_raw_queries_with_sort(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name')->keyword()->makeSortable();
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['name' => 'Charlie']),
+            new Document(['name' => 'Alice']),
+            new Document(['name' => 'Bob']),
+        ]);
+
+        $multi = $this->sigmie->newMultiSearch();
+
+        $multi->raw($indexName, [
+            'query' => ['match_all' => (object) []],
+            'sort' => [['name.sortable' => 'asc']],
+        ]);
+
+        $hits = iterator_to_array($multi->lazy());
+        $names = array_map(fn (Hit $hit): string => (string) $hit['name'], $hits);
+
+        $this->assertSame(['Alice', 'Bob', 'Charlie'], $names);
+    }
+
+    /**
+     * @test
+     */
+    public function lazy_new_query_respects_user_sort(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name')->keyword()->makeSortable();
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['name' => 'a']),
+            new Document(['name' => 'b']),
+            new Document(['name' => 'c']),
+        ]);
+
+        $multi = $this->sigmie->newMultiSearch();
+
+        $multi->newQuery($indexName)
+            ->properties($blueprint)
+            ->sort([['name.sortable' => 'desc']])
+            ->matchAll();
+
+        $hits = iterator_to_array($multi->lazy());
+        $names = array_map(fn (Hit $hit): string => (string) $hit['name'], $hits);
+
+        $this->assertSame(['c', 'b', 'a'], $names);
+    }
 }

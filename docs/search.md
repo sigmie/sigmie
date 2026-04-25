@@ -470,6 +470,23 @@ $sigmie->newSearch('products')
 
 A smaller chunk size reduces memory per request; a larger one reduces the number of round-trips to Elasticsearch. Tune it based on document size and your available memory.
 
+### Sort order during iteration
+
+Point-in-Time search must use a deterministic `sort` so `search_after` can page without skipping or duplicating hits. Sigmie builds that internally (via `PitSortPlanner`); you do not instantiate it yourself.
+
+- **`NewSearch`**: Your `sort('field:asc')` string still applies. Sorts that are only `_score` or `_doc` are replaced by the engine tiebreaker (`_shard_doc` ascending on Elasticsearch, `_id` ascending on OpenSearch). Any other sort list keeps your keys and appends the tiebreaker when it is not already the last sort key.
+
+- **`NewQuery`**: Pass an Elasticsearch sort array with `sort([['price' => 'asc']])` before you add the query clause (for example `matchAll()`). Omit `sort()` to stream in tiebreaker-only order (stable, not relevance-ranked). Use field names that exist in your mapping (for text fields you often need a `.keyword` or a `.sortable` subfield from your blueprint).
+
+- **`raw()` / `RawQuery`**: Include a top-level `sort` key in the body you pass to `raw()`:
+
+```php
+$multi->raw('orders', [
+    'query' => ['match_all' => (object) []],
+    'sort' => [['processed_at' => 'asc']],
+]);
+```
+
 ### Streaming hits from a multi-search
 
 `newMultiSearch()` registers several queries. A single `_msearch` call returns only the first page per query. To stream **all** matching hits across those queries, call `lazy()` or `each()` on the multi-search instance. Each registered `NewSearch`, `NewQuery`, or `raw()` body runs its own PIT iteration; the multi-search yields hits in registration order (first query fully, then the next).
@@ -498,7 +515,7 @@ foreach ($multi->lazy() as $hit) {
 
 Set `chunk()` on each query before the next registration — the multi-search object does not expose its own `chunk()`; page size is per query. `raw()` returns a `RawQuery` instance; call `chunk()` on that return value before you register the next slot if you want a non-default page size for that raw body.
 
-> **Note:** `each()` and `lazy()` ignore `from()`, `size()`, `page()`, and `highlighting()` — these are pagination and display concerns that do not apply to full iteration.
+> **Note:** `each()` and `lazy()` ignore `from()`, `size()`, `page()`, and `highlighting()` — these are pagination and display concerns that do not apply to full iteration. User-defined sort is still applied for streaming where you set it (`NewSearch::sort()`, `NewQuery::sort(array)`, or a `sort` key on a raw body); see **Sort order during iteration** above.
 
 ## Promises
 For asynchronous operations, you can get a Promise instead of executing the search immediately:
