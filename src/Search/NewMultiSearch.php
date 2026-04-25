@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use Closure;
+use Generator;
 use Sigmie\Base\APIs\MSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\ElasticsearchException;
+use Sigmie\Document\Hit;
 use Sigmie\Query\NewQuery;
+use Sigmie\Search\Contracts\LazyIterableQuery;
 use Sigmie\Search\Contracts\MultiSearchable;
 use Sigmie\Shared\UsesApis;
 
@@ -18,7 +22,7 @@ class NewMultiSearch
     use MSearch;
     use UsesApis;
 
-    /** @var array Ordered list of all queries (MultiSearchable objects and raw arrays) */
+    /** @var list<MultiSearchable> */
     protected array $queries = [];
 
     /** @var array Names associated with each query (by index) */
@@ -62,33 +66,24 @@ class NewMultiSearch
         return $query;
     }
 
-    public function raw(string $index, array $query, ?string $name = null): static
+    public function raw(string $index, array $query, ?string $name = null): RawQuery
     {
-        $this->queries[] = [
-            ['index' => $index],
-            $query,
-        ];
+        $raw = new RawQuery($this->elasticsearchConnection, $index, $query);
+        $this->queries[] = $raw;
         $this->names[count($this->queries) - 1] = $name ?? random_name('srch');
 
-        return $this;
+        return $raw;
     }
 
     public function get(): array
     {
         $body = [];
 
-        // Build body in the order queries were added
         foreach ($this->queries as $query) {
-            if ($query instanceof MultiSearchable) {
-                $body = [
-                    ...$body,
-                    ...$query->toMultiSearch(),
-                ];
-            } else {
-                // Raw query (array format: [header, body])
-                $body[] = $query[0]; // header
-                $body[] = $query[1]; // body
-            }
+            $body = [
+                ...$body,
+                ...$query->toMultiSearch(),
+            ];
         }
 
         $response = $this->msearchAPICall($body);
@@ -103,21 +98,13 @@ class NewMultiSearch
         $results = [];
         $responseIndex = 0;
 
-        // Process responses in the same order
         foreach ($this->queries as $query) {
-            if ($query instanceof MultiSearchable) {
-                $searchResponses = array_slice($responses, $responseIndex, $query->multisearchResCount());
+            $searchResponses = array_slice($responses, $responseIndex, $query->multisearchResCount());
 
-                // Pass HTTP code as the last argument
-                $result = $query->formatResponses(...$searchResponses, httpCode: $this->responseCode);
+            $result = $query->formatResponses(...$searchResponses, httpCode: $this->responseCode);
 
-                $results[] = $result;
-                $responseIndex += $query->multisearchResCount();
-            } else {
-                // Raw query
-                $results[] = $responses[$responseIndex] ?? [];
-                $responseIndex += 1;
-            }
+            $results[] = $result;
+            $responseIndex += $query->multisearchResCount();
         }
 
         return $results;
@@ -165,5 +152,34 @@ class NewMultiSearch
     public function responseCode(): int
     {
         return $this->responseCode;
+    }
+
+    /**
+     * @return Generator<int, Hit>
+     */
+    public function lazy(): Generator
+    {
+        foreach ($this->queries as $query) {
+            if (! $query instanceof LazyIterableQuery) {
+                continue;
+            }
+
+            foreach ($query->lazy() as $hit) {
+                yield $hit;
+            }
+        }
+    }
+
+    public function each(Closure $fn): void
+    {
+        foreach ($this->queries as $query) {
+            if (! $query instanceof LazyIterableQuery) {
+                continue;
+            }
+
+            foreach ($query->lazy() as $hit) {
+                $fn($hit);
+            }
+        }
     }
 }

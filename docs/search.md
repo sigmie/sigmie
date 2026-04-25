@@ -408,6 +408,98 @@ $hits = $response->hits();
 $total = $response->total();
 ```
 
+## Iterating Over All Matching Hits
+
+Pagination works well for UI results, but some tasks — CSV exports, bulk re-processing, data migrations — need every document that matches a query. `each()` and `lazy()` stream all matching hits without holding the full result set in memory.
+
+Both methods reuse the exact query you already have: filters, query strings, field scoping, and minimum score all apply. Elasticsearch handles pagination internally using Point-in-Time (PIT) and `search_after`, so the results are consistent even if new documents arrive while you iterate.
+
+### Iterating with a Callback
+
+`each()` calls a closure for every matching `Hit`:
+
+```php
+$sigmie->newSearch('orders')
+    ->properties($properties)
+    ->filters('status:completed')
+    ->each(function (Hit $hit) use ($csv) {
+        $csv->writeRow($hit->_source);
+    });
+```
+
+Each `Hit` carries `_id`, `_source`, and `_score`:
+
+```php
+$sigmie->newSearch('products')
+    ->properties($properties)
+    ->filters('in_stock:true')
+    ->each(function (Hit $hit): void {
+        echo $hit->_id;            // document ID
+        echo $hit->_source['name']; // field value
+        echo $hit->_score;         // relevance score
+    });
+```
+
+### Iterating with a Generator
+
+`lazy()` returns a `Generator` you can drive yourself. This is useful when you need to pass an iterable to another function or process hits in batches using regular PHP:
+
+```php
+$generator = $sigmie->newSearch('orders')
+    ->properties($properties)
+    ->filters('status:completed')
+    ->lazy();
+
+foreach ($generator as $hit) {
+    processHit($hit);
+}
+```
+
+### Controlling Page Size
+
+Both `each()` and `lazy()` fetch hits in pages. The default page size is 500. Use `chunk()` to change it:
+
+```php
+$sigmie->newSearch('products')
+    ->properties($properties)
+    ->chunk(100)
+    ->each(function (Hit $hit): void {
+        // called for every product, fetched 100 at a time
+    });
+```
+
+A smaller chunk size reduces memory per request; a larger one reduces the number of round-trips to Elasticsearch. Tune it based on document size and your available memory.
+
+### Streaming hits from a multi-search
+
+`newMultiSearch()` registers several queries. A single `_msearch` call returns only the first page per query. To stream **all** matching hits across those queries, call `lazy()` or `each()` on the multi-search instance. Each registered `NewSearch`, `NewQuery`, or `raw()` body runs its own PIT iteration; the multi-search yields hits in registration order (first query fully, then the next).
+
+```php
+use Sigmie\Document\Hit;
+
+$multi = $sigmie->newMultiSearch();
+
+$multi->newSearch('orders')
+    ->properties($orderProperties)
+    ->filters('status:pending')
+    ->chunk(200);
+
+$multi->newQuery('products')
+    ->matchAll();
+
+$multi->raw('orders', [
+    'query' => ['term' => ['status' => 'pending']]],
+])->chunk(200);
+
+foreach ($multi->lazy() as $hit) {
+    exportRow($hit);
+}
+```
+
+Set `chunk()` on each query before the next registration — the multi-search object does not expose its own `chunk()`; page size is per query. `raw()` returns a `RawQuery` instance; call `chunk()` on that return value before you register the next slot if you want a non-default page size for that raw body.
+
+> **Note:** `each()` and `lazy()` ignore `from()`, `size()`, `page()`, and `highlighting()` — these are pagination and display concerns that do not apply to full iteration.
+
 ## Promises
 For asynchronous operations, you can get a Promise instead of executing the search immediately:
 

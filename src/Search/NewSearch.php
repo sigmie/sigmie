@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use Closure;
+use Generator;
 use Http\Promise\Promise;
 use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\ElasticsearchConnection;
+use Sigmie\Base\Http\PointInTimeRequests;
+use Sigmie\Document\Hit;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
@@ -25,12 +30,13 @@ use Sigmie\Query\Contracts\FuzzyQuery;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\Compound\Boolean;
-use Sigmie\Query\Queries\MatchAll;
 // use Sigmie\Query\Queries\Query;
+use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\MatchNone;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
+use Sigmie\Search\Contracts\LazyIterableQuery;
 use Sigmie\Search\Contracts\MultiSearchable;
 use Sigmie\Search\Contracts\ResponseFormater;
 use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
@@ -38,7 +44,7 @@ use Sigmie\Search\Formatters\SigmieSearchResponse;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\UsesApis;
 
-class NewSearch extends AbstractSearchBuilder implements MultiSearchable, SearchQueryBuilderInterface
+class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, MultiSearchable, SearchQueryBuilderInterface
 {
     use UsesApis;
 
@@ -69,6 +75,8 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
     public readonly SortParser $sortParser;
 
     protected array $vectorPools = [];
+
+    protected int $pitIterationChunkSize = 500;
 
     public function __construct(
         ElasticsearchConnection $elasticsearchConnection
@@ -963,6 +971,130 @@ class NewSearch extends AbstractSearchBuilder implements MultiSearchable, Search
     public function hits()
     {
         return $this->get()->hits();
+    }
+
+    public function chunk(int $size = 500): static
+    {
+        $this->pitIterationChunkSize = $size;
+
+        return $this;
+    }
+
+    /**
+     * @return Generator<int, Hit>
+     */
+    public function lazy(): Generator
+    {
+        yield from $this->iterateHits();
+    }
+
+    public function each(Closure $fn): void
+    {
+        foreach ($this->iterateHits() as $hit) {
+            $fn($hit);
+        }
+    }
+
+    /**
+     * @return Generator<int, Hit>
+     */
+    protected function iterateHits(): Generator
+    {
+        $pit = new PointInTimeRequests($this->elasticsearchConnection);
+        $isOpenSearch = $this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch;
+
+        $body = $this->makeSearch()->toRaw();
+
+        unset(
+            $body['from'],
+            $body['size'],
+            $body['aggs'],
+            $body['highlight'],
+            $body['suggest'],
+            $body['track_total_hits'],
+            $body['sort'],
+        );
+
+        $body['size'] = $this->pitIterationChunkSize;
+        $body['sort'] = $this->stableSortForPitIteration();
+
+        $keepAlive = '1m';
+        $open = $pit->open($this->index, $keepAlive);
+        $pitId = PointInTimeIterator::pitIdFromOpenResponse($open, $isOpenSearch);
+
+        yield from PointInTimeIterator::iterate(
+            $pitId,
+            $keepAlive,
+            $body,
+            fn (array $requestBody): ElasticsearchResponse => $pit->search($requestBody),
+            function (string $id) use ($pit): void {
+                $pit->close($id);
+            },
+            fn (array $data): Hit => new Hit(
+                $data['_source'] ?? [],
+                $data['_id'],
+                isset($data['_score']) ? (float) $data['_score'] : null,
+                $data['_index'] ?? null,
+                $data['sort'] ?? null,
+            ),
+        );
+    }
+
+    /**
+     * @return list<string|array<string, mixed>>
+     */
+    private function stableSortForPitIteration(): array
+    {
+        $isOpenSearch = $this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch;
+        $tiebreaker = $isOpenSearch ? [['_id' => 'asc']] : [['_shard_doc' => 'asc']];
+
+        if ($this->sortUsesOnlyScoreOrDoc($this->sort)) {
+            return $tiebreaker;
+        }
+
+        return $this->appendPitTiebreakerUnlessPresent($this->sort, $tiebreaker);
+    }
+
+    /**
+     * @param  list<string|array<string, mixed>>  $sort
+     */
+    private function sortUsesOnlyScoreOrDoc(array $sort): bool
+    {
+        if ($sort === []) {
+            return true;
+        }
+
+        if ($sort === ['_score'] || $sort === ['_doc']) {
+            return true;
+        }
+
+        if (count($sort) !== 1) {
+            return false;
+        }
+
+        $only = $sort[0];
+
+        if ($only === '_score' || $only === '_doc') {
+            return true;
+        }
+
+        return is_array($only) && (isset($only['_score']) || isset($only['_doc']));
+    }
+
+    /**
+     * @param  list<string|array<string, mixed>>  $sort
+     * @param  list<array<string, string>>  $tiebreaker
+     * @return list<string|array<string, mixed>>
+     */
+    private function appendPitTiebreakerUnlessPresent(array $sort, array $tiebreaker): array
+    {
+        $last = $sort[array_key_last($sort)];
+
+        if (is_array($last) && (isset($last['_shard_doc']) || isset($last['_id']))) {
+            return $sort;
+        }
+
+        return array_merge($sort, $tiebreaker);
     }
 
     public function setVectorPool(VectorPool|array $pool, ?string $apiName = null): static
