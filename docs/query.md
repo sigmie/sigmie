@@ -4,16 +4,18 @@ short_description: Build custom Elasticsearch queries for advanced use cases
 keywords: [query, advanced query, bool query, elasticsearch dsl, custom queries]
 category: Core Concepts
 order: 6
-related_pages: [search, document, semantic-search]
+related_pages: [search, document, semantic-search, sort-parser]
 ---
 
 # Introduction
 If you are familiar with Elasticsearch and the Search functionality doesn't cover your needs, you can of course send any query that you wish to Elasticsearch using the `newQuery` method on the Sigmie client instance.
 
 Below is an example of some of the available options:
+
 ```php
 $sigmie->newQuery('disney-movies')
         ->properties($properties)
+        ->sortString('name:asc')
         ->bool(function (Boolean $boolean) {
 
             $boolean->filter()->matchAll();
@@ -29,11 +31,12 @@ $sigmie->newQuery('disney-movies')
             $boolean->should()->bool(fn (Boolean $boolean) => $boolean->must()->match('name', 'Mickey'));
 
         })
-        ->sortString('name:asc')
         ->from(0)
         ->size(15)
         ->get();
 ```
+
+Call `sortString` (or `sort` with a raw array) on `NewQuery` **before** `bool`, `matchAll`, `parse`, and other methods that return `Search`. Pagination uses `from` and `size` on that `Search` instance after the query is set.
 
 The above example uses the `get` method to execute the query and get the results. You can also use `getDSL` to get the underlying JSON query for debugging:
 
@@ -392,7 +395,7 @@ $facets = $response->json('aggregations');
 
 # Sorting
 
-By default, the returned Documents are sorted by the `_score` attribute in descending order (highest scores first). You can change this behavior using the `sortString` method:
+By default, the returned Documents are sorted by the `_score` attribute in descending order (highest scores first). You can change this behavior with `sortString` (parsed with the same rules as `NewSearch::sort()`) or with `sort` and a raw Elasticsearch sort array.
 
 ```php
 $newQuery->sortString('name:asc _score:desc');
@@ -400,11 +403,17 @@ $newQuery->sortString('name:asc _score:desc');
 
 **Note**: `_score:asc` is not allowed. Use `_score` or `_score:desc` instead.
 
-Multiple sorts can be chained:
+Put every sort field in a **single** string (space-separated). A second `sortString` call **replaces** the first; it does not append.
+
 ```php
-$newQuery->sortString('name:asc')
-        ->sortString('created_at:desc');
+$newQuery->sortString('name:asc created_at:desc');
 ```
+
+```php
+$newQuery->sort([['year' => 'desc'], ['_score' => 'desc']]);
+```
+
+Call `sortString` / `sort` on `NewQuery` before `matchAll`, `bool`, `parse`, and other methods that return `Search`.
 
 @info
 It's important to note here, that sorting on Text fields is only possible if they are mapped as Keywords.
