@@ -1427,4 +1427,86 @@ class SearchTest extends TestCase
         $this->assertContains('Mickey', $names);
         $this->assertContains('Mickey Mouse', $names);
     }
+
+    /**
+     * @test
+     */
+    public function unique_by_collapses_results_by_field(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('product_id');
+        $blueprint->integer('ord');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['product_id' => 'A', 'ord' => 1]),
+            new Document(['product_id' => 'A', 'ord' => 2]),
+            new Document(['product_id' => 'B', 'ord' => 3]),
+        ]);
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('')
+            ->sort('ord:asc')
+            ->uniqueBy('product_id')
+            ->get();
+
+        $hits = $res->json('hits');
+
+        $this->assertCount(2, $hits);
+    }
+
+    /**
+     * @test
+     */
+    public function unique_by_with_top_returns_inner_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('product_id');
+        $blueprint->integer('ord');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['product_id' => 'A', 'ord' => 1]),
+            new Document(['product_id' => 'A', 'ord' => 2]),
+            new Document(['product_id' => 'A', 'ord' => 3]),
+            new Document(['product_id' => 'B', 'ord' => 0]),
+        ]);
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('')
+            ->sort('ord:asc')
+            ->uniqueBy('product_id', top: 2)
+            ->get();
+
+        $hits = $res->json('hits');
+        $this->assertCount(2, $hits);
+
+        $groupA = null;
+        foreach ($hits as $hit) {
+            if ($hit['_source']['product_id'] === 'A') {
+                $groupA = $hit;
+                break;
+            }
+        }
+
+        $this->assertNotNull($groupA);
+        $this->assertArrayHasKey('inner_hits', $groupA);
+        $this->assertArrayHasKey('top', $groupA['inner_hits']);
+        $this->assertCount(
+            2,
+            $groupA['inner_hits']['top']['hits']['hits']
+        );
+    }
 }
