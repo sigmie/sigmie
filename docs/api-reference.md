@@ -483,6 +483,15 @@ $search->sort('_score:desc year:desc');
 $search->sort('rating:desc title:asc');
 ```
 
+##### `uniqueBy(string $field, int $top = 0): self`
+
+Field collapsing: at most one hit per value of `field`. When `top` is greater than zero, the response includes inner hits named `top` with up to that many additional documents per group. The field must be single-valued in the mapping (for example `keyword`).
+
+```php
+$search->uniqueBy('composite_key');
+$search->uniqueBy('product_id', top: 3);
+```
+
 #### Pagination
 
 ##### `from(int $from): self`
@@ -723,30 +732,38 @@ Add aggregations.
 $query->facets('category');
 ```
 
-#### Sorting and Pagination
+#### Sorting (NewQuery)
+
+Call `sort` and `sortString` on `NewQuery` **before** `matchAll`, `bool`, `parse`, and other methods that return `Search`. Each `sortString` call sets the full sort; use one string with all fields, or `sort` with a raw array.
+
+##### `sort(array $sort): self`
+
+Elasticsearch sort array (same as the top-level `sort` key in the search body).
+
+```php
+$query->sort([['year' => 'desc'], ['_score' => 'desc']]);
+```
 
 ##### `sortString(string $sort): self`
 
-Set sort order.
+Parsed sort string (same syntax as `NewSearch::sort()`).
 
 ```php
 $query->sortString('year:desc _score:desc');
 ```
 
-##### `from(int $from): self`
+#### Pagination (`Search`)
 
-Set offset.
-
-```php
-$query->from(10);
-```
-
-##### `size(int $size): self`
-
-Set limit.
+`from` and `size` are on the `Search` instance returned after the query is set.
 
 ```php
-$query->size(20);
+$response = $sigmie->newQuery('movies')
+    ->properties($properties)
+    ->sortString('title:asc')
+    ->matchAll()
+    ->from(0)
+    ->size(20)
+    ->get();
 ```
 
 #### Execution
