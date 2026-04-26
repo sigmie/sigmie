@@ -27,10 +27,15 @@ class InfinityRerankApi implements RerankApi
 
     public function rerank(array $newIndexes, string $query, ?int $topK = null): array
     {
+        $documents = array_map(
+            static fn (mixed $doc): string => is_array($doc) ? (string) ($doc['text'] ?? '') : (string) $doc,
+            $newIndexes,
+        );
+
         $payload = [
             'model' => $this->model,
             'query' => $query,
-            'documents' => $newIndexes,
+            'documents' => $documents,
         ];
 
         if ($topK !== null) {
