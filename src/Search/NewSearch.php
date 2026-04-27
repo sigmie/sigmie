@@ -78,6 +78,10 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected int $pitIterationChunkSize = 500;
 
+    protected ?string $collapseField = null;
+
+    protected int $collapseTop = 0;
+
     public function __construct(
         ElasticsearchConnection $elasticsearchConnection
     ) {
@@ -219,6 +223,14 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         return $this;
     }
 
+    public function uniqueBy(string $field, int $top = 0): static
+    {
+        $this->collapseField = $field;
+        $this->collapseTop = $top;
+
+        return $this;
+    }
+
     protected function handleHighlight(Search $search)
     {
         $highlight = new Collection($this->highlight);
@@ -288,6 +300,24 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     protected function handleSort(Search $search)
     {
         $search->addRaw('sort', $this->sort);
+    }
+
+    protected function handleCollapse(Search $search): void
+    {
+        if ($this->collapseField === null) {
+            return;
+        }
+
+        $collapse = ['field' => $this->collapseField];
+
+        if ($this->collapseTop > 0) {
+            $collapse['inner_hits'] = [
+                'name' => 'top',
+                'size' => $this->collapseTop,
+            ];
+        }
+
+        $search->addRaw('collapse', $collapse);
     }
 
     protected function handleMinScore(Search $search)
@@ -414,6 +444,8 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         $search->query($query);
 
         $this->handlePostFilter($search);
+
+        $this->handleCollapse($search);
 
         return $search;
     }

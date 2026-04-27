@@ -296,6 +296,31 @@ The `from` method specifies the number of records that should be skipped, while 
 
 In this example, the combination of the `from` and `size` values creates a paginated result set with 10 hits per page. You can use these methods to paginate the results of a search and split them into smaller, more manageable pages.
 
+## Deduplication
+
+When many documents share the same key (for example variants of the same product), you can return one hit per key and optionally include the next best matches from that group in the response.
+
+```php
+// One result per composite_key
+$sigmie->newSearch('jobs')
+    ->properties($properties)
+    ->queryString('')
+    ->uniqueBy('composite_key')
+    ->get();
+
+// One result per product_id, plus the top two other matches in that group (inner hits named `top`)
+$sigmie->newSearch('products')
+    ->properties($properties)
+    ->queryString('sneakers')
+    ->sort('price:asc')
+    ->uniqueBy('product_id', top: 3)
+    ->get();
+```
+
+The collapse field must be mapped as a single-valued field (for example `keyword`).
+
+`uniqueBy` is for `newSearch` only. If you use `newQuery` and a sort string, call `sortString` (or `sort` with a raw array) on the query builder before `bool`, `matchAll`, and other methods that return `Search` — see [Advanced Queries](/docs/query) and [Sort parser](/docs/sort-parser).
+
 ## Facets
 You can use facets to get aggregated information about your search results:
 
@@ -476,7 +501,7 @@ Point-in-Time search must use a deterministic `sort` so `search_after` can page 
 
 - **`NewSearch`**: Your `sort('field:asc')` string still applies. Sorts that are only `_score` or `_doc` are replaced by the engine tiebreaker (`_shard_doc` ascending on Elasticsearch, `_id` ascending on OpenSearch). Any other sort list keeps your keys and appends the tiebreaker when it is not already the last sort key.
 
-- **`NewQuery`**: Pass an Elasticsearch sort array with `sort([['price' => 'asc']])` before you add the query clause (for example `matchAll()`). Omit `sort()` to stream in tiebreaker-only order (stable, not relevance-ranked). Use field names that exist in your mapping (for text fields you often need a `.keyword` or a `.sortable` subfield from your blueprint).
+- **`NewQuery`**: Call `sortString('price:asc')` or `sort([['price' => 'asc']])` on the query builder before you add the query clause (for example `matchAll()`). Omit `sort()` to stream in tiebreaker-only order (stable, not relevance-ranked). Use field names that exist in your mapping (for text fields you often need a `.keyword` or a `.sortable` subfield from your blueprint).
 
 - **`raw()` / `RawQuery`**: Include a top-level `sort` key in the body you pass to `raw()`:
 
@@ -515,7 +540,7 @@ foreach ($multi->lazy() as $hit) {
 
 Set `chunk()` on each query before the next registration — the multi-search object does not expose its own `chunk()`; page size is per query. `raw()` returns a `RawQuery` instance; call `chunk()` on that return value before you register the next slot if you want a non-default page size for that raw body.
 
-> **Note:** `each()` and `lazy()` ignore `from()`, `size()`, `page()`, and `highlighting()` — these are pagination and display concerns that do not apply to full iteration. User-defined sort is still applied for streaming where you set it (`NewSearch::sort()`, `NewQuery::sort(array)`, or a `sort` key on a raw body); see **Sort order during iteration** above.
+> **Note:** `each()` and `lazy()` ignore `from()`, `size()`, `page()`, and `highlighting()` — these are pagination and display concerns that do not apply to full iteration. User-defined sort is still applied for streaming where you set it (`NewSearch::sort()`, `NewQuery::sortString()` / `NewQuery::sort(array)`, or a `sort` key on a raw body); see **Sort order during iteration** above.
 
 ## Promises
 For asynchronous operations, you can get a Promise instead of executing the search immediately:

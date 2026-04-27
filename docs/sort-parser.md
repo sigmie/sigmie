@@ -4,15 +4,25 @@ short_description: Parse sort expressions for search result ordering
 keywords: [sort parser, sorting, order, search results]
 category: Utilities
 order: 2
-related_pages: [search, filter-parser]
+related_pages: [search, query, filter-parser]
 ---
 
 # Sort parser
 
 ## Introduction
+
+With `NewSearch` or with `NewQuery` (call `sortString` before the query):
+
 ```php
-$newQuery->sort('_score')->sort('name.keyword', 'asc');
+$sigmie->newSearch('movies')->properties($properties)->sort('_score name:asc');
 ```
+
+```php
+$sigmie->newQuery('movies')->properties($properties)->sortString('_score name:asc');
+```
+
+Using the parser directly:
+
 ```php
 $parser->parse('_score name:asc');
 ```

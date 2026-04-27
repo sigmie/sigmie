@@ -14,6 +14,7 @@ use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Parse\FilterParser;
+use Sigmie\Parse\SortParser;
 use Sigmie\Query\Contracts\Queries;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\Compound\Boolean;
@@ -84,6 +85,15 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
     public function sort(array $sort): static
     {
         $this->search->sort($sort);
+
+        return $this;
+    }
+
+    public function sortString(string $sort): static
+    {
+        $parser = new SortParser($this->properties, true);
+
+        $this->search->sort($parser->parse($sort));
 
         return $this;
     }

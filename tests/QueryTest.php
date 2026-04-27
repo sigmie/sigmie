@@ -352,4 +352,35 @@ class QueryTest extends TestCase
 
         $this->assertEquals(2, $res->json()['hits']['total']['value']);
     }
+
+    /**
+     * @test
+     */
+    public function sort_string_parses_and_sorts_results(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('category')->keyword()->makeSortable();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['category' => 'a']),
+            new Document(['category' => 'b']),
+        ]);
+
+        $res = $this->sigmie->newQuery($indexName)
+            ->properties($blueprint)
+            ->sortString('category:desc')
+            ->matchAll()
+            ->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertEquals('b', $hits[0]['_source']['category']);
+        $this->assertEquals('a', $hits[1]['_source']['category']);
+    }
 }
