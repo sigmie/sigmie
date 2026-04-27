@@ -7,7 +7,7 @@ namespace Sigmie\Search;
 use Generator;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 
-final class PointInTimeIterator
+class PointInTimeIterator
 {
     public static function pitIdFromOpenResponse(ElasticsearchResponse $response, bool $isOpenSearch): string
     {

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-final class PitSortPlanner
+class PitSortPlanner
 {
     /**
      * When `$hasCollapse` is true, returns `$userSort` unchanged. Elasticsearch allows only one

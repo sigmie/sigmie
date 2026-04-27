@@ -14,7 +14,7 @@ use Sigmie\Enums\SearchEngineType;
 use Sigmie\Search\Contracts\LazyIterableQuery;
 use Sigmie\Search\Contracts\MultiSearchable;
 
-final class RawQuery implements LazyIterableQuery, MultiSearchable
+class RawQuery implements LazyIterableQuery, MultiSearchable
 {
     private int $pitIterationChunkSize = 500;
 
