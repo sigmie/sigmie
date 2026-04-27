@@ -1037,6 +1037,8 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
         $body = $this->makeSearch()->toRaw();
 
+        $hasCollapse = array_key_exists('collapse', $body);
+
         unset(
             $body['from'],
             $body['size'],
@@ -1048,7 +1050,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         );
 
         $body['size'] = $this->pitIterationChunkSize;
-        $body['sort'] = PitSortPlanner::plan($this->sort, $isOpenSearch);
+        $body['sort'] = PitSortPlanner::plan($this->sort, $isOpenSearch, $hasCollapse);
 
         $keepAlive = '1m';
         $open = $pit->open($this->index, $keepAlive);

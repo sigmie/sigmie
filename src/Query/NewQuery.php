@@ -307,6 +307,7 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
 
         $body = $this->search->toRaw();
 
+        $hasCollapse = array_key_exists('collapse', $body);
         $userSort = is_array($body['sort'] ?? null) ? $body['sort'] : [];
 
         unset(
@@ -320,7 +321,7 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
         );
 
         $body['size'] = $this->pitIterationChunkSize;
-        $body['sort'] = PitSortPlanner::plan($userSort, $isOpenSearch);
+        $body['sort'] = PitSortPlanner::plan($userSort, $isOpenSearch, $hasCollapse);
 
         $keepAlive = '1m';
         $open = $pit->open($this->search->index, $keepAlive);

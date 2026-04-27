@@ -512,6 +512,8 @@ $multi->raw('orders', [
 ]);
 ```
 
+When the request body includes `collapse`, Sigmie does not append `_shard_doc` / `_id`. Elasticsearch only allows a single sort key with `collapse` + `search_after`; supply that sort yourself (usually the collapsed field).
+
 ### Streaming hits from a multi-search
 
 `newMultiSearch()` registers several queries. A single `_msearch` call returns only the first page per query. To stream **all** matching hits across those queries, call `lazy()` or `each()` on the multi-search instance. Each registered `NewSearch`, `NewQuery`, or `raw()` body runs its own PIT iteration; the multi-search yields hits in registration order (first query fully, then the next).

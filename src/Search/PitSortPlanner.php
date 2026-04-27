@@ -7,11 +7,18 @@ namespace Sigmie\Search;
 final class PitSortPlanner
 {
     /**
+     * When `$hasCollapse` is true, returns `$userSort` unchanged. Elasticsearch allows only one
+     * sort field with `collapse` + `search_after`; the tiebreaker would violate that rule.
+     *
      * @param  list<string|array<string, mixed>>  $userSort
      * @return list<string|array<string, mixed>>
      */
-    public static function plan(array $userSort, bool $isOpenSearch): array
+    public static function plan(array $userSort, bool $isOpenSearch, bool $hasCollapse = false): array
     {
+        if ($hasCollapse) {
+            return $userSort;
+        }
+
         $tiebreaker = $isOpenSearch ? [['_id' => 'asc']] : [['_shard_doc' => 'asc']];
 
         if ($userSort === [] || self::onlyScoreOrDoc($userSort)) {
