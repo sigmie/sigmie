@@ -14,7 +14,7 @@ use Sigmie\Enums\SearchEngineType;
 use Sigmie\Search\Contracts\LazyIterableQuery;
 use Sigmie\Search\Contracts\MultiSearchable;
 
-final class RawQuery implements LazyIterableQuery, MultiSearchable
+class RawQuery implements LazyIterableQuery, MultiSearchable
 {
     private int $pitIterationChunkSize = 500;
 
@@ -74,6 +74,7 @@ final class RawQuery implements LazyIterableQuery, MultiSearchable
 
         $body = $this->body;
 
+        $hasCollapse = array_key_exists('collapse', $this->body);
         $userSort = is_array($this->body['sort'] ?? null) ? $this->body['sort'] : [];
 
         unset(
@@ -88,7 +89,7 @@ final class RawQuery implements LazyIterableQuery, MultiSearchable
         );
 
         $body['size'] = $this->pitIterationChunkSize;
-        $body['sort'] = PitSortPlanner::plan($userSort, $isOpenSearch);
+        $body['sort'] = PitSortPlanner::plan($userSort, $isOpenSearch, $hasCollapse);
 
         $keepAlive = '1m';
         $open = $pit->open($this->index, $keepAlive);

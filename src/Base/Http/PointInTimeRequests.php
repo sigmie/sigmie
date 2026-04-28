@@ -10,7 +10,7 @@ use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\Requests\Search as SearchRequest;
 use Sigmie\Enums\SearchEngineType;
 
-final class PointInTimeRequests
+class PointInTimeRequests
 {
     public function __construct(
         private ElasticsearchConnection $connection,
