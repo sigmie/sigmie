@@ -52,22 +52,20 @@ class SigmieIndexTool implements Tool
 
         $fieldDescriptions = $this->collectFieldDescriptions($properties->toArray());
 
-        $description = "Search the '{$this->index->name()}' index.";
+        $description = sprintf("Search the '%s' index.", $this->index->name());
 
         if ($fieldDescriptions !== []) {
-            $description .= "\n\nAvailable fields:\n" . implode("\n", $fieldDescriptions);
+            $description .= "\n\nAvailable fields:\n".implode("\n", $fieldDescriptions);
         }
 
-        $description .= "\n\n"
-            . "Filter operators: AND, OR, AND NOT\n"
-            . "Negation: NOT field:'value'\n"
-            . "Grouping: (field:'a' OR field:'b') AND other>10\n"
-            . "Exists check: field:*\n"
-            . "Sort: field:asc field:desc _score (space-separated)\n"
-            . "Geo sort: field[lat,lon]:km:asc\n"
-            . "Facets: field1 field2:20 (space-separated, optional :size for keywords or :interval for numbers)";
-
-        return $description;
+        return $description.("\n\n"
+            ."Filter operators: AND, OR, AND NOT\n"
+            ."Negation: NOT field:'value'\n"
+            ."Grouping: (field:'a' OR field:'b') AND other>10\n"
+            ."Exists check: field:*\n"
+            ."Sort: field:asc field:desc _score (space-separated)\n"
+            ."Geo sort: field[lat,lon]:km:asc\n"
+            .'Facets: field1 field2:20 (space-separated, optional :size for keywords or :interval for numbers)');
     }
 
     public function schema(JsonSchema $schema): array
@@ -95,11 +93,11 @@ class SigmieIndexTool implements Tool
         $filterParts = [];
 
         if ($this->baseFilters !== '') {
-            $filterParts[] = "({$this->baseFilters})";
+            $filterParts[] = sprintf('(%s)', $this->baseFilters);
         }
 
         if ($aiFilters = $request['filters'] ?? null) {
-            $filterParts[] = "({$aiFilters})";
+            $filterParts[] = sprintf('(%s)', $aiFilters);
         }
 
         if ($filterParts !== []) {
@@ -141,7 +139,7 @@ class SigmieIndexTool implements Tool
         $descriptions = [];
 
         foreach ($fields as $field) {
-            $name = $prefix !== '' ? "{$prefix}.{$field->name}" : $field->name;
+            $name = $prefix !== '' ? sprintf('%s.%s', $prefix, $field->name) : $field->name;
 
             if ($field instanceof Object_) {
                 $descriptions = [
@@ -176,27 +174,27 @@ class SigmieIndexTool implements Tool
         $capabilities = $this->fieldCapabilities($field);
         $filter = $this->filterExample($field, $name);
 
-        $tags = $capabilities !== [] ? ' (' . implode(', ', $capabilities) . ')' : '';
+        $tags = $capabilities !== [] ? ' ('.implode(', ', $capabilities).')' : '';
 
         if ($field instanceof Nested) {
             return $this->describeNested($field, $name, $tags);
         }
 
-        return "- {$name} [{$type}]{$tags}: {$filter}";
+        return sprintf('- %s [%s]%s: %s', $name, $type, $tags, $filter);
     }
 
     private function describeNested(Nested $field, string $name, string $tags): string
     {
         $subFields = array_filter(array_map(
-            fn (Type $child) => $this->describeField($child, $child->name),
+            fn (Type $child): ?string => $this->describeField($child, $child->name),
             $field->getProperties()->toArray()
         ));
 
-        $desc = "- {$name} [nested]{$tags}: {$name}:{subfield:'value' AND other>10}";
+        $desc = sprintf("- %s [nested]%s: %s:{subfield:'value' AND other>10}", $name, $tags, $name);
 
         if ($subFields !== []) {
-            $desc .= "\n  Sub-fields:\n" . implode("\n", array_map(
-                fn (string $line) => "  {$line}",
+            $desc .= "\n  Sub-fields:\n".implode("\n", array_map(
+                fn (string $line): string => '  '.$line,
                 $subFields
             ));
         }
@@ -247,16 +245,16 @@ class SigmieIndexTool implements Tool
     {
         return match (true) {
             $field instanceof Keyword,
-            $field instanceof CaseSensitiveKeyword => "{$name}:'value' {$name}:['a','b'] {$name}:val*",
+            $field instanceof CaseSensitiveKeyword => sprintf("%s:'value' %s:['a','b'] %s:val*", $name, $name, $name),
             $field instanceof Number,
-            $field instanceof Price => "{$name}>n {$name}<=n {$name}:min..max",
-            $field instanceof Boolean => "{$name}:true {$name}:false",
+            $field instanceof Price => sprintf('%s>n %s<=n %s:min..max', $name, $name, $name),
+            $field instanceof Boolean => sprintf('%s:true %s:false', $name, $name),
             $field instanceof Date,
-            $field instanceof DateTime => "{$name}>'2024-01-01' {$name}<'2024-12-31'",
-            $field instanceof GeoPoint => "{$name}:10km[lat,lon]",
-            $field instanceof Range => "{$name}>n {$name}:min..max",
+            $field instanceof DateTime => sprintf("%s>'2024-01-01' %s<'2024-12-31'", $name, $name),
+            $field instanceof GeoPoint => $name.':10km[lat,lon]',
+            $field instanceof Range => sprintf('%s>n %s:min..max', $name, $name),
             $field instanceof Text => $field->isFilterable()
-                ? "{$name}:'value' {$name}:['a','b']"
+                ? sprintf("%s:'value' %s:['a','b']", $name, $name)
                 : 'query only',
             default => '',
         };
