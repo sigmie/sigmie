@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-require_once __DIR__ . '/Stubs/LaravelAiStubs.php';
+require_once __DIR__.'/Stubs/LaravelAiStubs.php';
 
 use Laravel\Ai\Tools\Request;
 use Sigmie\AI\AsTool;
@@ -17,7 +17,7 @@ use Sigmie\Testing\TestCase;
 
 class SigmieIndexToolTest extends TestCase
 {
-    private function createProductIndex(array $extraSetup = []): SigmieIndex
+    private function createProductIndex(): SigmieIndex
     {
         $index = new class($this->sigmie) extends SigmieIndex
         {
@@ -49,7 +49,6 @@ class SigmieIndexToolTest extends TestCase
                 return $props;
             }
         };
-
         $index->create();
 
         return $index;
@@ -193,7 +192,7 @@ class SigmieIndexToolTest extends TestCase
             {
                 $props = new NewProperties;
                 $props->name('name');
-                $props->nested('variants', function (NewProperties $p) {
+                $props->nested('variants', function (NewProperties $p): void {
                     $p->keyword('color');
                     $p->number('size');
                 });
@@ -238,7 +237,7 @@ class SigmieIndexToolTest extends TestCase
             public function properties(): NewProperties
             {
                 $props = new NewProperties;
-                $props->object('meta', function (NewProperties $p) {
+                $props->object('meta', function (NewProperties $p): void {
                     $p->keyword('author');
                 });
 
@@ -387,7 +386,7 @@ class SigmieIndexToolTest extends TestCase
         $documents = [];
         for ($i = 1; $i <= 5; $i++) {
             $documents[] = new Document([
-                'name' => "Product {$i}",
+                'name' => 'Product '.$i,
                 'brand' => 'Brand',
                 'price' => $i * 100,
                 'in_stock' => true,
