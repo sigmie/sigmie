@@ -43,7 +43,7 @@ class SigmieIndexToolTest extends TestCase
                 $props->name('name');
                 $props->category('brand');
                 $props->number('price');
-                $props->boolean('in_stock');
+                $props->bool('in_stock');
                 $props->date('created_at');
 
                 return $props;
