@@ -1,6 +1,6 @@
 ---
 title: MCP Server
-short_description: Connect AI agents to the Sigmie documentation
+short_description: Connect AI agents like Claude Code and Cursor to the Sigmie documentation via the Model Context Protocol — semantic search, page read, page list.
 keywords: [mcp, ai, agent, claude, cursor, documentation, semantic search]
 category: Integrations
 order: 3

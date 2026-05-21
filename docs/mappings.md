@@ -1,6 +1,6 @@
 ---
 title: Mappings & Properties
-short_description: Field types and schema definitions
+short_description: Define your Elasticsearch schema with Sigmie's high-level and native field types — title, name, category, price, semantic vectors, nested, and more.
 keywords: [mappings, properties, field types, text, keyword, number, schema]
 category: Core Concepts
 order: 4

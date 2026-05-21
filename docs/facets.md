@@ -1,6 +1,6 @@
 ---
 title: Facets
-short_description: Faceted navigation and filter sidebars
+short_description: Build faceted navigation with Sigmie — term, price histogram, and stats facets, with disjunctive and conjunctive logic for e-commerce sidebars.
 keywords: [facets, filters, faceted search, navigation, refinement]
 category: Features
 order: 3

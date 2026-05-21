@@ -1,6 +1,6 @@
 ---
 title: Languages
-short_description: Language-specific analyzers and token filters
+short_description: Language-specific Elasticsearch analyzers in Sigmie — English, German, and Greek stemmers, stopwords, lowercase, and umlaut normalizers.
 keywords: [languages, multilingual, greek, german, english, stemming, stopwords]
 category: Text Analysis
 order: 5

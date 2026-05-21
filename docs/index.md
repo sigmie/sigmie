@@ -1,6 +1,6 @@
 ---
 title: Indices
-short_description: Create, configure, update, and delete indices
+short_description: Create, configure, and update Elasticsearch indices with Sigmie — schema, analysis, sharding, replication, zero-downtime updates, and deletion.
 keywords: [index, indices, create index, shards, replicas, aliases]
 category: Core Concepts
 order: 2

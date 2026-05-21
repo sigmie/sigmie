@@ -1,6 +1,6 @@
 ---
 title: Magic Tags
-short_description: LLM-generated taxonomy tags with embedding classification
+short_description: LLM-generated taxonomy tags for Elasticsearch documents — classify with embeddings, dedup with vector similarity, share a tag registry across indices.
 keywords: [magic tags, taxonomy, llm, embeddings, sidecar, classification]
 category: Features
 order: 2

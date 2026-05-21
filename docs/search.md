@@ -1,6 +1,6 @@
 ---
 title: Search
-short_description: Build user-facing searches with filters, facets, and typo tolerance
+short_description: Build user-facing Elasticsearch searches with Sigmie — typo tolerance, faceted navigation, highlighting, semantic search, and filter-parser syntax.
 keywords: [search, query, filters, sorting, highlighting, typo tolerance]
 category: Core Concepts
 order: 5

@@ -1,6 +1,6 @@
 ---
 title: Semantic Search
-short_description: Vector embeddings, semantic fields, and similarity search
+short_description: Build semantic vector search with Sigmie — semantic fields, accuracy levels, similarity metrics, and embeddings from OpenAI, Cohere, or Infinity.
 keywords: [semantic search, vector search, embeddings, ai, similarity]
 category: Features
 order: 1

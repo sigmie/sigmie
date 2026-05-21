@@ -1,6 +1,6 @@
 ---
 title: Tokenizers
-short_description: Split text into tokens
+short_description: Split text into tokens with Elasticsearch tokenizers in Sigmie — word boundaries, whitespace, pattern, simple pattern, path hierarchy, non-letter.
 keywords: [tokenizers, tokenization, tokens, text splitting, analysis]
 category: Text Analysis
 order: 2

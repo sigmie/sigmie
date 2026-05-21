@@ -1,6 +1,6 @@
 ---
 title: Character Filters
-short_description: Pre-process text before tokenization
+short_description: Pre-process text before Elasticsearch tokenization with Sigmie's character filters — HTML strip, character mapping, and regex pattern replace.
 keywords: [char filters, character filters, html strip, char mapping, preprocessing]
 category: Text Analysis
 order: 4

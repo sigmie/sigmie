@@ -1,6 +1,6 @@
 ---
 title: Documentation
-short_description: Sigmie documentation index
+short_description: Complete documentation for Sigmie — the PHP library that gives Elasticsearch and OpenSearch a fluent, Laravel-inspired search and indexing API.
 keywords: [documentation, sigmie, elasticsearch, php]
 category: Getting Started
 order: 0

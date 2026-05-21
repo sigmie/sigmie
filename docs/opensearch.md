@@ -1,6 +1,6 @@
 ---
 title: OpenSearch
-short_description: Use OpenSearch as your search engine
+short_description: Use OpenSearch 2.x or 3.x with Sigmie — connect to local clusters or AWS OpenSearch Service. Every Sigmie feature works identically to Elasticsearch.
 keywords: [opensearch, aws, search engine, vector search, knn, semantic search]
 category: Configuration
 order: 3

@@ -1,6 +1,6 @@
 ---
 title: Aggregations
-short_description: Metrics and bucket aggregations for analytics
+short_description: Run Elasticsearch metric and bucket aggregations with Sigmie — sum, avg, stats, terms, histogram, date histogram, and pipeline aggregations.
 keywords: [aggregations, facets, analytics, bucket aggregations, metrics]
 category: Features
 order: 2

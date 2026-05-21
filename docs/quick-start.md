@@ -1,6 +1,6 @@
 ---
 title: Quick Start
-short_description: Build your first Sigmie search in five minutes
+short_description: Build your first Sigmie search in five minutes — define a schema, index documents, and search with typo tolerance, filters, sorting, and weighting.
 keywords: [quick start, tutorial, first search, getting started]
 category: Getting Started
 order: 3

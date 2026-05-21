@@ -1,6 +1,6 @@
 ---
 title: Recommendations
-short_description: Similar-item search with RRF and MMR
+short_description: Build similar-item recommendations with Sigmie's newRecommend() API — multi-seed retrieval, field weighting, RRF fusion, and MMR diversification.
 keywords: [recommendations, similar items, rrf, mmr, semantic similarity]
 category: Features
 order: 4

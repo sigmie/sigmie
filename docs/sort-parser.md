@@ -1,6 +1,6 @@
 ---
 title: Sort Parser
-short_description: Sort expression syntax for searches and queries
+short_description: Sort Elasticsearch results with space-separated expressions like "_score rating:desc name:asc". Auto-routes text fields to .keyword sub-fields.
 keywords: [sort parser, sorting, order, search results]
 category: Utilities
 order: 2

@@ -1,6 +1,6 @@
 ---
 title: Installation
-short_description: Install Sigmie and connect to Elasticsearch or OpenSearch
+short_description: Install Sigmie via Composer and connect to a local, cloud, or multi-node Elasticsearch or OpenSearch cluster with basic auth, API keys, or SSL.
 keywords: [installation, setup, composer, requirements, php, elasticsearch]
 category: Getting Started
 order: 2

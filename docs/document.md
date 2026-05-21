@@ -1,6 +1,6 @@
 ---
 title: Documents
-short_description: Create, index, and iterate over documents
+short_description: Index documents into Elasticsearch with Sigmie collections — add, merge, update, iterate with each() and lazy(), and stream large result sets.
 keywords: [documents, indexing, upsert, bulk operations, collections]
 category: Core Concepts
 order: 3

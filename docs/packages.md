@@ -1,6 +1,6 @@
 ---
 title: Packages
-short_description: The modular Sigmie packages
+short_description: The modular Sigmie Composer packages — base, http, index, document, mappings, query, search, parse, testing, plus English, German, and Greek.
 keywords: [packages, composer, modules, standalone packages]
 category: Reference
 order: 2

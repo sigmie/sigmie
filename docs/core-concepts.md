@@ -1,6 +1,6 @@
 ---
 title: Core Concepts
-short_description: The four pieces of Sigmie that everything else builds on
+short_description: The four pieces of Sigmie that everything else composes from — the client, indices, documents, and properties — and how they fit together.
 keywords: [core concepts, fundamentals, client, indices, documents, properties]
 category: Core Concepts
 order: 1

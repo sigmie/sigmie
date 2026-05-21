@@ -1,6 +1,6 @@
 ---
 title: Text Analysis
-short_description: How Elasticsearch transforms text at index and query time
+short_description: How Elasticsearch transforms text at index and query time — the char filter, tokenizer, and token filter pipeline explained with worked examples.
 keywords: [analysis, analyzers, text processing, tokenization]
 category: Text Analysis
 order: 1

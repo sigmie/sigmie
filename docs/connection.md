@@ -1,6 +1,6 @@
 ---
 title: Connection Setup
-short_description: Authentication, SSL, and connection options
+short_description: Configure Elasticsearch and OpenSearch connections in Sigmie — basic auth, API keys, bearer tokens, SSL certificates, and multi-node clusters.
 keywords: [connection, authentication, ssl, tls, api key, basic auth, opensearch]
 category: Configuration
 order: 1

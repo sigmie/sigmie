@@ -1,6 +1,6 @@
 ---
 title: Filter Parser
-short_description: Human-readable filter syntax for searches and queries
+short_description: Filter Elasticsearch results with human-readable expressions — ranges, wildcards, AND/OR/NOT, nested fields, geo proximity. Full syntax reference.
 keywords: [filter parser, filters, query parser, boolean queries, syntax]
 category: Utilities
 order: 1

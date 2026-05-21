@@ -1,6 +1,6 @@
 ---
 title: Retrieval and Agents
-short_description: How Sigmie fits with RAG-style applications and generation
+short_description: Combine Sigmie retrieval and reranking with text generation in RAG workflows — search, rerank, then call your LLM client of choice from app code.
 keywords: [rag, retrieval, llm, agents, elasticsearch, search]
 category: Advanced Features
 order: 45

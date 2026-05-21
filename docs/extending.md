@@ -1,6 +1,6 @@
 ---
 title: Extending Sigmie
-short_description: Build packages with field types and document processing hooks
+short_description: Extend Sigmie with custom packages — register field-type macros on NewProperties and add CollectionHook implementations that fire during indexing.
 keywords: [extending, package, plugin, hooks, field types, collection]
 category: Advanced Features
 order: 90

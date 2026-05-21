@@ -1,6 +1,6 @@
 ---
 title: Advanced Queries
-short_description: Build raw Elasticsearch queries with boolean logic and DSL access
+short_description: Build raw Elasticsearch queries with Sigmie's low-level newQuery() API — boolean must/should/filter, term, match, range, and script scoring.
 keywords: [query, advanced query, bool query, elasticsearch dsl, custom queries]
 category: Core Concepts
 order: 6

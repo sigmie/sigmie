@@ -1,6 +1,6 @@
 ---
 title: Laravel Scout
-short_description: Use Sigmie as a Laravel Scout driver for Eloquent search
+short_description: Use Sigmie as a Laravel Scout driver — index Eloquent models in Elasticsearch with typo tolerance, highlighting, facets, and custom analyzers.
 keywords: [laravel scout, laravel, eloquent, integration, scout driver]
 category: Integrations
 order: 1

@@ -1,6 +1,6 @@
 ---
 title: Introduction
-short_description: What Sigmie is and when to use it
+short_description: Sigmie is a Laravel-inspired PHP library for Elasticsearch and OpenSearch with fluent search, typo tolerance, faceting, and semantic vectors.
 keywords: [introduction, overview, sigmie, elasticsearch, php]
 category: Getting Started
 order: 1
