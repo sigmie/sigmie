@@ -1,7 +1,7 @@
 ---
 title: Introduction
-short_description: Learn what Sigmie is and when to use it for Elasticsearch search
-keywords: [introduction, overview, sigmie, elasticsearch, search library, php]
+short_description: What Sigmie is and when to use it
+keywords: [introduction, overview, sigmie, elasticsearch, php]
 category: Getting Started
 order: 1
 related_pages: [installation, quick-start, core-concepts]
@@ -9,103 +9,110 @@ related_pages: [installation, quick-start, core-concepts]
 
 # Introduction
 
-## What is Sigmie?
-
-Sigmie is a Laravel-inspired PHP library that makes Elasticsearch feel natural. Here's a search with typo tolerance, filtering, and highlighting:
+Sigmie is a Laravel-inspired PHP library for Elasticsearch and OpenSearch. It replaces deeply nested query arrays with a fluent, chainable API that reads like the feature you're building.
 
 ```php
-$results = $sigmie->newSearch(name: 'products')
+$results = $sigmie->newSearch('products')
     ->properties($props)
-    ->queryString('laptop')
-    ->weight(['title' => 3, 'description' => 1])
-    ->typoTolerance() // [tl! highlight]
-    ->filters('price<=1500 AND in_stock:true') // [tl! highlight]
-    ->sort('_score:desc', 'price:asc')
+    ->queryString('lapto')
+    ->typoTolerance()
+    ->filters('price<=1500 AND in_stock:true')
+    ->facets('brand category price:100')
     ->highlighting(['title', 'description'])
+    ->sort('_score:desc price:asc')
     ->get();
 ```
 
-A fluent API that reads like the feature you're building. No nested arrays, no obscure DSL rules—just expressive, chainable methods.
+That's a typo-tolerant, faceted, highlighted search with sorting and filtering — in one expression.
 
-## When to Use Sigmie
+## When to use Sigmie
 
-**Use Sigmie if you want to:**
-- Build search features without becoming an Elasticsearch expert
-- Write readable, maintainable search code
-- Add semantic search with vector embeddings
-- Implement faceted filtering for e-commerce or content discovery
-- Get typo tolerance, highlighting, and filtering without configuration overhead
+Reach for Sigmie when you want to:
 
-**Consider the raw Elasticsearch client if:**
-- You need every possible Elasticsearch feature (Sigmie covers 90% of common use cases)
-- You're migrating a large codebase already built on raw queries
-- You need ultra-low-level control over every query parameter
+- Build search features without becoming an Elasticsearch DSL expert.
+- Get typo tolerance, highlighting, faceting, and filtering with sensible defaults.
+- Add semantic search with vector embeddings.
+- Stay close to your domain code instead of writing query JSON.
+- Use Laravel Scout with a serious Elasticsearch backend.
 
-## Core Features at a Glance
+Use the raw Elasticsearch client instead when you need every possible Elasticsearch feature, when you have a large existing codebase built on raw queries, or when you need direct control over query parameters Sigmie does not expose.
 
-**Field Types That Know Their Purpose**
+## High-level field types
+
+Sigmie wraps Elasticsearch's `text`, `keyword`, `number`, and friends in **semantic field types** that tell Elasticsearch how to treat your data:
+
 ```php
 $props = new NewProperties;
-$props->title('name');        // Optimized for searchable titles // [tl! focus]
-$props->category('brand');    // For exact-match filtering // [tl! focus]
-$props->price();              // Min/max ranges and histograms // [tl! focus]
-$props->text('bio')->keyword(); // Full-text search + filtering
+$props->title('name');         // short searchable titles
+$props->category('brand');     // exact-match filterable
+$props->price();               // numeric ranges and histograms
+$props->text('bio')->keyword();// full-text search + sortable
 ```
 
-**Human-Readable Filters**
+Each high-level type configures the right analyzers, sub-fields, and queries underneath. See [Mappings & Properties](mappings.md).
+
+## Human-readable filters
+
+Skip the boolean query DSL. Write filters the way you'd describe them:
+
 ```php
-->filters('category:"electronics" AND price:100..500 AND in_stock:true') // [tl! focus]
+->filters('category:"electronics" AND price:100..500 AND in_stock:true')
 ```
 
-**Semantic Search with Vector Embeddings**
-```php
-$props->text('description')->semantic( // [tl! focus:start]
-    accuracy: 3,
-    dimensions: 384,
-    api: 'embeddings'
-); // [tl! focus:end]
+See [Filter Parser](filter-parser.md) for the full syntax.
 
-$results = $sigmie->newSearch(name: 'products')
+## Semantic search
+
+Add `->semantic()` to a text field and Sigmie generates vectors at index time using whatever embeddings API you registered:
+
+```php
+$props->text('description')->semantic(api: 'embeddings', dimensions: 384);
+
+$sigmie->registerApi('embeddings', $embeddingsApi);
+
+$results = $sigmie->newSearch('products')
     ->properties($props)
-    ->semantic() // [tl! highlight]
-    ->queryString('portable work computer') // Finds "laptop", "notebook", etc.
+    ->semantic()
+    ->queryString('portable work computer')   // finds "laptop", "notebook"
     ->get();
 ```
 
-**Faceted Search for Filtering Interfaces**
+See [Semantic Search](semantic-search.md).
+
+## Faceted search
+
+Build sidebar filters for e-commerce or content discovery with a single method:
+
 ```php
-$response = $sigmie->newSearch(name: 'products')
+$response = $sigmie->newSearch('products')
     ->queryString('laptop')
-    ->facets('brand category price:50') // [tl! highlight]
+    ->facets('brand category price:100')   // [tl! highlight]
     ->get();
 
-$brands = $response->json('facets.brand'); // [tl! focus]
-// ['Apple' => 12, 'Dell' => 8, 'HP' => 5]
+$facets = $response->json('facets');
+// ['brand' => ['Apple' => 12, 'Dell' => 8], 'price' => ['min' => 599, ...]]
 ```
 
-## Real-World Example
+See [Facets](facets.md).
 
-Let's build a product search with typo tolerance, faceted filtering, and semantic matching:
+## End-to-end example
 
 ```php
+use Sigmie\Sigmie;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Document\Document;
 
-// 1. Define your schema
+$sigmie = Sigmie::create(hosts: ['127.0.0.1:9200']);
+
 $props = new NewProperties;
 $props->title('name');
-$props->text('description')->semantic(accuracy: 3, dimensions: 384, api: 'embeddings'); // [tl! highlight]
-$props->category('brand')->facetDisjunctive(); // [tl! highlight]
-$props->category('category')->facetDisjunctive(); // [tl! highlight]
+$props->text('description');
+$props->category('brand')->facetDisjunctive();
 $props->price();
 $props->bool('in_stock');
 
-// 2. Create the index
-$sigmie->newIndex('products')
-    ->properties($props)
-    ->create();
+$sigmie->newIndex('products')->properties($props)->create();
 
-// 3. Add documents
 $sigmie->collect('products', refresh: true)
     ->properties($props)
     ->merge([
@@ -113,91 +120,42 @@ $sigmie->collect('products', refresh: true)
             'name' => 'MacBook Pro 16"',
             'description' => 'High-performance laptop for professionals',
             'brand' => 'Apple',
-            'category' => 'Laptops',
             'price' => 2499,
             'in_stock' => true,
         ]),
         new Document([
             'name' => 'ThinkPad X1 Carbon',
-            'description' => 'Lightweight business notebook with long battery life',
+            'description' => 'Lightweight business notebook',
             'brand' => 'Lenovo',
-            'category' => 'Laptops',
             'price' => 1599,
             'in_stock' => true,
         ]),
     ]);
 
-// 4. Search with everything enabled
-$results = $sigmie->newSearch(name: 'products')
+$results = $sigmie->newSearch('products')
     ->properties($props)
-    ->queryString('profesional latop') // Typos are OK // [tl! focus]
-    ->semantic()                        // Semantic + keyword matching // [tl! highlight]
-    ->typoTolerance()                   // Fix spelling mistakes // [tl! highlight]
-    ->filters('in_stock:true')          // Only available products // [tl! highlight]
-    ->facets('brand category price:100') // Sidebar filters // [tl! highlight]
-    ->weight(['name' => 3, 'description' => 1]) // Title matters more
-    ->sort('_score:desc', 'price:asc')  // Best match, then cheapest
+    ->queryString('profesional latop')        // typos are fine
+    ->typoTolerance()
+    ->filters('in_stock:true')
+    ->facets('brand price:100')
+    ->weight(['name' => 3, 'description' => 1])
+    ->sort('_score:desc price:asc')
     ->get();
 
-// 5. Use the results
-foreach ($results->hits() as $hit) { // [tl! focus:start]
+foreach ($results->hits() as $hit) {
     echo $hit['name'] . ' - $' . $hit['price'] . "\n";
-} // [tl! focus:end]
-
-$facets = $results->json('facets'); // [tl! focus]
-// ['brand' => ['Apple' => 1, 'Lenovo' => 1], 'price' => ['min' => 1599, 'max' => 2499, ...]]
+}
 ```
-
-This example demonstrates:
-- Semantic search finding "professional laptop" despite typos and synonyms
-- Facets for building filter interfaces
-- Weighted fields for relevance tuning
-- Readable filter syntax
-- Multi-level sorting
-
-## Key Capabilities
-
-**Semantic Search & Vector Embeddings**
-Use OpenAI, Cohere, or custom embeddings to search by meaning, not just keywords. Sigmie handles vector generation, storage, and similarity scoring.
-
-**Faceted Search**
-Automatic aggregations for term counts, price ranges, and statistics. Supports disjunctive (OR) and conjunctive (AND) filtering.
-
-**Typo Tolerance**
-Built-in fuzzy matching handles spelling mistakes without configuration.
-
-**Multi-Language Support**
-Pre-configured analyzers for German, English, and other languages with proper stemming and normalization.
-
-**Laravel Integration**
-Drop-in Laravel Scout driver for seamless Eloquent model integration.
-
-## What's Next?
-
-Ready to dive in? Here's your path:
-
-**For beginners:**
-Start with [Quick Start](/docs/quick-start.md) to build your first search in 5 minutes.
-
-**For experienced developers:**
-Explore [Semantic Search](/docs/semantic-search.md) for AI-powered features.
-
-**For Laravel users:**
-Jump to [Laravel Scout Integration](/docs/laravel-scout.md) for Eloquent integration.
-
-**For production systems:**
-Review [Index Management](/docs/index.md) and [Performance Optimization](/docs/performance.md).
 
 ## Requirements
 
 - PHP 8.1 or higher
-- Elasticsearch 9.x or OpenSearch 3.x
-- Composer for installation
+- Elasticsearch 7.x, 8.x, or 9.x — or OpenSearch 2.x or 3.x
+- Composer
 
-## Getting Help
+## What's next
 
-- **Documentation**: Comprehensive guides with examples at [sigmie.com](https://sigmie.com)
-- **GitHub Issues**: [github.com/sigmie/sigmie](https://github.com/sigmie/sigmie)
-- **Security**: Report vulnerabilities to nico@sigmie.com
-
-Elasticsearch is powerful. Sigmie makes it accessible.
+- New to the library: [Installation](installation.md), then [Quick Start](quick-start.md).
+- Laravel user: [Laravel Scout](laravel-scout.md).
+- Building AI agents: [Laravel AI SDK](laravel-ai.md) and [Retrieval and Agents](rag.md).
+- Exploring the model: [Core Concepts](core-concepts.md).

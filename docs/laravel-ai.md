@@ -1,7 +1,7 @@
 ---
 title: Laravel AI SDK
 short_description: Expose Sigmie indices as tools for Laravel AI agents
-keywords: [laravel ai, ai sdk, tools, agents, llm, ai tools]
+keywords: [laravel ai, ai sdk, tools, agents, llm]
 category: Integrations
 order: 2
 related_pages: [search, filter-parser, sort-parser, facets, laravel-scout]
@@ -9,13 +9,9 @@ related_pages: [search, filter-parser, sort-parser, facets, laravel-scout]
 
 # Laravel AI SDK
 
-## Introduction
+`SigmieIndexTool` exposes a Sigmie index as a [Laravel AI SDK](https://laravel.com/docs/ai-sdk) tool. The AI agent gets full access to your search builder — query, filters, sorts, facets, pagination — with a description auto-generated from your property definitions.
 
-When building AI agents, you often need the LLM to query or find documents in an index. Sigmie integrates with the [Laravel AI SDK](https://laravel.com/docs/13.x/ai-sdk) so you can expose any index as a tool — the AI gets search, filtering, sorting, and faceting out of the box.
-
-The `SigmieIndexTool` class wraps a `SigmieIndex` and implements Laravel AI's `Tool` interface. It auto-generates a description from your index properties, so the AI knows what fields exist and how to filter on each one.
-
-## Quick Start
+## Quick start
 
 ```php
 use Sigmie\AI\SigmieIndexTool;
@@ -38,15 +34,16 @@ class ShoppingAssistant implements Agent, HasTools
 }
 ```
 
-That's it. The AI can now search the `products` index, filter by any field, sort results, and request facets.
+The agent now searches `products` end-to-end, with filtering, sorting, and facets.
 
-## The `AsTool` Trait
+## The `AsTool` trait
 
-For convenience, add the `AsTool` trait to your index class and call `toTool()`:
+For convenience, add `AsTool` to your `SigmieIndex` subclass:
 
 ```php
 use Sigmie\AI\AsTool;
 use Sigmie\SigmieIndex;
+use Sigmie\Mappings\NewProperties;
 
 class ProductIndex extends SigmieIndex
 {
@@ -63,11 +60,13 @@ class ProductIndex extends SigmieIndex
         $props->name('name');
         $props->category('brand');
         $props->number('price');
-        $props->boolean('in_stock');
+        $props->bool('in_stock');
         return $props;
     }
 }
 ```
+
+Now `toTool()` builds the agent tool:
 
 ```php
 public function tools(): array
@@ -78,29 +77,29 @@ public function tools(): array
 }
 ```
 
-## Base Filters
+## Base filters
 
-Pass `baseFilters` to scope every query the AI makes. This is useful for multi-tenancy or authorization — the AI never sees or can bypass these filters:
+Pass `baseFilters` to scope every query the AI makes. This is how you enforce multi-tenancy or per-user authorization — the AI can't bypass these filters and can't see them in its tool description:
 
 ```php
 new SigmieIndexTool(
     app(OrderIndex::class),
     baseFilters: "user_id:{$user->id}",
-)
+);
 
-// or via the trait
-app(OrderIndex::class)->toTool(baseFilters: "user_id:{$user->id}")
+// Or via the trait:
+app(OrderIndex::class)->toTool(baseFilters: "user_id:{$user->id}");
 ```
 
-Base filters are wrapped in parentheses and AND'd with the AI's filters, so precedence is always correct:
+Base filters are wrapped in parentheses and AND-ed with whatever the AI passes:
 
 ```
 (user_id:3) AND (status:'shipped' OR status:'delivered')
 ```
 
-## Auto-Generated Description
+## The auto-generated description
 
-The tool description is built from your index properties. The AI sees the field names, types, capabilities, and filter syntax examples. For an index with:
+The tool description is built from your properties. For:
 
 ```php
 $props->name('name');
@@ -110,7 +109,7 @@ $props->boolean('in_stock');
 $props->date('created_at');
 ```
 
-The generated description looks like:
+The AI sees:
 
 ```
 Search the 'products' index.
@@ -131,23 +130,21 @@ Geo sort: field[lat,lon]:km:asc
 Facets: field1 field2:20 (space-separated, optional :size for keywords or :interval for numbers)
 ```
 
-## Tool Parameters
-
-The AI receives these parameters in the tool schema:
+## Tool parameters
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `query` | string (required) | Search query text |
-| `filters` | string | Filter expression |
-| `sort` | string | Sort expression |
-| `facets` | string | Space-separated facet fields |
-| `facet_filters` | string | Active facet filter values |
-| `per_page` | integer (default 10) | Results per page |
-| `page` | integer (default 1) | Page number |
+| `query` | string (required) | Search query text. |
+| `filters` | string | Filter expression. |
+| `sort` | string | Sort expression. |
+| `facets` | string | Space-separated facet fields. |
+| `facet_filters` | string | Active facet filter values. |
+| `per_page` | int (default 10) | Results per page. |
+| `page` | int (default 1) | Page number. |
 
-## Filter Syntax by Field Type
+## Filter syntax
 
-The filter syntax follows the [Filter Parser](filter-parser.md) rules. Each field type supports different operators:
+Filters use the [Filter Parser](filter-parser.md). Quick reference by field type:
 
 ### Keyword
 
@@ -157,7 +154,7 @@ brand:['toyota','honda','ford']
 brand:toy*
 ```
 
-### Number / Price
+### Number / price
 
 ```
 price>100
@@ -187,21 +184,17 @@ location:10km[40.71,-74.00]
 
 ### Nested
 
-Nested fields use curly braces. Sub-field filters go inside:
-
 ```
 variants:{color:'red' AND size>10}
 ```
 
 ### Object
 
-Object fields use dot notation, just like regular fields:
-
 ```
 meta.author:'John'
 ```
 
-### Combining Filters
+### Combining
 
 ```
 brand:'toyota' AND price:10000..50000
@@ -210,9 +203,9 @@ NOT status:'discontinued'
 brand:'toyota' AND NOT color:'red'
 ```
 
-## Sorting
+## Sort
 
-Sort expressions are space-separated. Each field can specify `:asc` or `:desc`:
+Space-separated, optional `:asc` / `:desc`:
 
 ```
 price:asc
@@ -220,7 +213,7 @@ created_at:desc price:asc
 _score
 ```
 
-Geo fields have a special sort syntax:
+Geo:
 
 ```
 location[40.71,-74.00]:km:asc
@@ -228,11 +221,17 @@ location[40.71,-74.00]:km:asc
 
 ## Facets
 
-Request facets by listing field names. Optionally pass a size (for keywords) or interval (for numbers) after a colon:
-
 ```
 brand
 brand:20 price:50
 ```
 
-The tool response includes a `facets` key with aggregation data when facets are requested.
+When facets are requested, the tool response includes a `facets` key with the aggregation data.
+
+## See also
+
+- [Filter Parser](filter-parser.md) — every filter operator.
+- [Sort Parser](sort-parser.md) — sort expression syntax.
+- [Facets](facets.md) — facet behavior and structure.
+- [Search](search.md) — the underlying search builder.
+- [MCP Server](mcp.md) — connect AI agents to Sigmie's own documentation.

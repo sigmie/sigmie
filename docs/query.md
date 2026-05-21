@@ -1,391 +1,296 @@
 ---
 title: Advanced Queries
-short_description: Build custom Elasticsearch queries for advanced use cases
+short_description: Build raw Elasticsearch queries with boolean logic and DSL access
 keywords: [query, advanced query, bool query, elasticsearch dsl, custom queries]
 category: Core Concepts
 order: 6
 related_pages: [search, document, semantic-search, sort-parser]
 ---
 
-# Introduction
-If you are familiar with Elasticsearch and the Search functionality doesn't cover your needs, you can of course send any query that you wish to Elasticsearch using the `newQuery` method on the Sigmie client instance.
+# Advanced Queries
 
-Below is an example of some of the available options:
-
-```php
-$sigmie->newQuery('disney-movies')
-        ->properties($properties)
-        ->sortString('name:asc')
-        ->bool(function (Boolean $boolean) {
-
-            $boolean->filter()->matchAll();
-
-            $boolean->filter()->multiMatch('goofy', ['name', 'description']);
-
-            $boolean->must()->term('is_active', true);
-
-            $boolean->mustNot()->term('is_active', false);
-
-            $boolean->mustNot()->wildcard('foo', '**/*');
-
-            $boolean->should()->bool(fn (Boolean $boolean) => $boolean->must()->match('name', 'Mickey'));
-
-        })
-        ->from(0)
-        ->size(15)
-        ->get();
-```
-
-Call `sortString` (or `sort` with a raw array) on `NewQuery` **before** `bool`, `matchAll`, `parse`, and other methods that return `Search`. Pagination uses `from` and `size` on that `Search` instance after the query is set.
-
-The above example uses the `get` method to execute the query and get the results. You can also use `getDSL` to get the underlying JSON query for debugging:
+`newQuery()` gives you direct access to Elasticsearch's boolean query DSL. Reach for it when you need control [`newSearch()`](search.md) doesn't expose — custom scoring, nested boolean logic, or features specific to your Elasticsearch version.
 
 ```php
-$dsl = $newQuery->getDSL();
+use Sigmie\Query\Queries\Compound\Boolean;
+
+$response = $sigmie->newQuery('disney-movies')
+    ->properties($props)
+    ->sortString('name:asc')
+    ->bool(function (Boolean $bool) {
+        $bool->filter()->matchAll();
+        $bool->filter()->multiMatch('goofy', ['name', 'description']);
+        $bool->must()->term('is_active', true);
+        $bool->mustNot()->term('is_active', false);
+        $bool->mustNot()->wildcard('foo', '**/*');
+        $bool->should()->bool(fn (Boolean $bool) =>
+            $bool->must()->match('name', 'Mickey')
+        );
+    })
+    ->from(0)
+    ->size(15)
+    ->get();
 ```
 
-# Query Builder vs Search Builder
+## When to use each builder
 
-Sigmie provides two ways to build queries:
+Use **[`newSearch()`](search.md)** for:
 
-1. **Search Builder** (`newSearch()`) - High-level, user-friendly API optimized for common search use cases
-2. **Query Builder** (`newQuery()`) - Low-level access to all Elasticsearch query capabilities
+- User-facing search.
+- Built-in features (typo tolerance, highlighting, facets, semantic search).
+- Most ordinary search code.
 
-## When to Use Each
+Use **`newQuery()`** for:
 
-**Use Search Builder when:**
-- Building user-facing search functionality
-- You need features like typo tolerance, highlighting, facets
-- Working with simple to moderately complex queries
-- You want Sigmie's built-in optimizations
+- Complex boolean logic.
+- Custom scoring (`scriptScore`, `functionScore`).
+- Direct Elasticsearch DSL features Sigmie doesn't wrap.
+- Migrating from raw Elasticsearch queries.
 
-**Use Query Builder when:**
-- You need full control over the Elasticsearch query
-- Working with complex boolean logic
-- Using advanced Elasticsearch features not available in Search Builder
-- Migrating from raw Elasticsearch queries
-
-# Query Builder API
-
-## Basic Usage
+## Basic queries
 
 ```php
 use Sigmie\Mappings\NewProperties;
 
-$properties = new NewProperties;
-$properties->name('name');
-$properties->number('age')->integer();
+$props = new NewProperties;
+$props->name('name');
+$props->number('age')->integer();
 
 $response = $sigmie->newQuery('users')
-    ->properties($properties)
+    ->properties($props)
     ->matchAll()
     ->get();
 ```
 
-## Required Properties
+Properties are required for complex queries — they let Sigmie parse field names and route queries correctly.
 
-Unlike the Search builder, the Query builder requires you to pass properties when using complex queries for proper field parsing:
+## Boolean queries
+
+A boolean query has four clause types, each handling matches differently:
+
+| Clause | Behavior | Affects score |
+|--------|----------|---------------|
+| `must()` | Must match | Yes |
+| `mustNot()` | Must not match | No |
+| `should()` | Should match (OR) | Yes |
+| `filter()` | Must match | No |
 
 ```php
-$response = $sigmie->newQuery('users')
-    ->properties($properties)  // Required for complex queries
-    ->parse('name:"John Doe" AND age<21')
+$sigmie->newQuery('movies')
+    ->properties($props)
+    ->bool(function (Boolean $bool) {
+        $bool->must()->match('title', 'matrix');
+        $bool->filter()->range('year', ['>' => 1990]);
+        $bool->should()->term('genre', 'sci-fi');
+        $bool->mustNot()->term('rating', 'R');
+    })
     ->get();
 ```
 
-# Boolean Query
-The `boolean` query is probably the most powerful of the queries available. It allows you to combine queries when searching for documents, and it can be nested multiple times.
+### Must — AND
 
-You can define a `boolean` query using a callback function as a parameter to the `bool` method like this:
+Every clause inside `must()` must match:
+
 ```php
-use Sigmie\Query\Queries\Compound\Boolean;
-
-$newQuery->bool(function (Boolean $boolean) {
-    // Your boolean logic here
-});
-```
-
-The callback gets an instance of the `Sigmie\Query\Queries\Compound\Boolean` class. 
-
-A Boolean query has 4 options for nesting queries inside of them, and each of them handles the nested queries differently.
-
-Those are:
-* Must
-* Must Not
-* Filter
-* Should
-
-### Must
-For a Document to match the query clause inside of a `must`, it has to match **all** the must's nested queries.
-
-Look at the following example:
-```php
-use Sigmie\Query\Queries\Compound\Boolean;
-
-$newQuery->bool(function (Boolean $boolean) {
-    $boolean->must()->term('is_active', true);
-    $boolean->must()->range('stock', ['>' => 0 ]); 
-});
-```
-
-In this example, we defined 2 query clauses in the **must** section of the boolean query. One is saying that the matched documents need to have the `is_active` flag set to `true`, and the second says that the Document's `stock` attribute has to be greater than `0`.
-
-If **all of those conditions** are met, then the Document matches our query. But if only **one or none** of the conditions are met, the Document isn't matched.
-
-In an SQL example, the above query would look like this:
-
-```sql
-SELECT * FROM movies WHERE is_active = TRUE AND stock > 0;
-```
-
-### Must Not
-The **Must Not** occurrence type is the opposite of  `must`. This means that **all** queries of the `must_not` occurrence need to be evaluated as `false` for a Document to match the query.
-
-We could convert the above into a `must_not` example like this:
-```php
-use Sigmie\Query\Queries\Compound\Boolean;
-
-$newQuery->bool(function (Boolean $boolean) {
-    $boolean->mustNot()->term('is_active', false);
-    $boolean->mustNot()->term('stock', 0);
-});
-```
-
-Now instead of saying that the `is_active` attribute has to be `true`, we are saying that the `is_active` attribute needs to **NOT** be `false` and the `stock` needs to **NOT** be `0`.
-
-And here is an example of the reverted SQL query that the `must_not` example corresponds to.
-```sql
-SELECT * FROM movies WHERE is_active != FALSE AND stock != 0;
-```
-
-### Should
-Unlike the `must` and `must_not` the `should` needs **at least one** query to be true for the Document to match the query. 
-
-In `must` and `must_not` the queries inside them are combined with the **AND** logical operator, and in the `should` they are combined with **OR**.
-
-Look at the example below:
-```php
-use Sigmie\Query\Queries\Compound\Boolean;
-
-$sigmie->newQuery('movies')
-    ->bool(function (Boolean $boolean) {
-        $boolean->should()->term('category', 'fantasy');
-        $boolean->should()->term('category', 'musical');
+$sigmie->newQuery('products')
+    ->bool(function (Boolean $bool) {
+        $bool->must()->term('is_active', true);
+        $bool->must()->range('stock', ['>' => 0]);
     });
 ```
 
-In this example we are looking for Documents whose `category` attribute is `fantasy` **OR** `musical`. If any of those two queries evaluates as true, the Document is a match. 
+SQL equivalent:
 
-The above example in an SQL query looks like this:
 ```sql
-SELECT * FROM movies WHERE category = 'fantasy' OR category = 'musical';
+SELECT * FROM products WHERE is_active = TRUE AND stock > 0;
 ```
 
-### Filter
-The `filter` behaves exactly like `must` with one key difference, it **doesn't affect** scoring.
+### Must Not — NOT
 
-Unless specified otherwise the Documents that match a query are sorted by **"How well they match the query"**. For this Elasticsearch assigns a float `_score` attribute that indicates the answer to this question.
+Documents matching any `mustNot()` clause are excluded:
 
-There are various criteria for how the `_score` is calculated for each query and its field, but the important to know here is that a query inside a `must` influences the `_score` and the `filter` **does NOT**.
-
-Simply: **Filter queries do NOT affect the order in which the hits are returned**.
 ```php
-use Sigmie\Query\Queries\Compound\Boolean;
-
-$sigmie->newQuery('movies')
-    ->bool(function (Boolean $boolean) {
-        $boolean->filter()->term('is_active', true);
+$sigmie->newQuery('products')
+    ->bool(function (Boolean $bool) {
+        $bool->mustNot()->term('is_active', false);
+        $bool->mustNot()->term('stock', 0);
     });
 ```
 
-# Individual Queries
-You can use the supported queries as part of a `Boolean` query, or standalone.
+### Should — OR
 
-In simple scenarios is simple to directly call your query instead of putting it inside of a `Boolean` one.
+At least one `should()` clause must match. Multiple clauses are OR'd:
+
 ```php
-// Instead of using a boolean wrapper
 $sigmie->newQuery('movies')
-    ->bool(function (Boolean $boolean) {
-        $boolean->filter()->term('active', true);
+    ->bool(function (Boolean $bool) {
+        $bool->should()->term('category', 'fantasy');
+        $bool->should()->term('category', 'musical');
+    });
+```
+
+### Filter — AND without scoring
+
+Same logic as `must()`, but doesn't influence `_score`. Filter queries are cached by Elasticsearch — use them whenever scoring doesn't matter:
+
+```php
+$sigmie->newQuery('movies')
+    ->bool(function (Boolean $bool) {
+        $bool->filter()->term('is_active', true);
+    });
+```
+
+## Standalone queries
+
+Outside a boolean wrapper, query types can be called directly on the builder:
+
+```php
+// Instead of wrapping in bool:
+$sigmie->newQuery('movies')
+    ->bool(function (Boolean $bool) {
+        $bool->filter()->term('active', true);
     });
 
-// You can directly use the query
+// Call directly:
 $sigmie->newQuery('movies')->term('active', true);
 ```
 
-Now let's have a look at all Elasticsearch queries supported in Sigmie.
+## Query types
 
-## Match All
-The `matchAll` query matches **all** the Documents.
-
-```php
-$newQuery->matchAll();
-```
-
-## Match None
-The `matchNone` query matches **none** of the Documents.
+### Match all / match none
 
 ```php
-$newQuery->matchNone();
+$query->matchAll();
+$query->matchNone();
 ```
 
-## Term
-The `term` query finds exact values of the Document's attributes.
+### Term and terms
 
-For example, if we were to find all **active** Documents we would use it as follow: 
-```php
-$newQuery->term('active', true);
-```
-
-Here is another example of how to find a Document that belongs to a user with an of **13**:
-```php
-$newQuery->term('user_id', 13);
-```
-
-@info
-Using the `term` query on text fields isn't wise as it won't match the desired Documents because **text fields are analyzed**.
-@endinfo
-
-If you plan to use `term` on a Text field, you need to map it also as a `keyword`, for Elasticsearch to also store its raw value.
-
-You can do this by calling the `keyword` method on the properties builder.
+`term()` finds an exact value — best for `keyword`, `bool`, `integer`, etc:
 
 ```php
-$properties->text('category')->keyword(); 
+$query->term('active', true);
+$query->term('user_id', 13);
 ```
 
-This instructs Elasticsearch to also store the field value as it is, without analyzing it. After you have done this the raw value of the `category` is also stored under the `category.keyword` key.
-
-Using this key the `term` query will bring us the expected results.
-```php
-$newQuery->term('category.keyword', 'drama');
-```
-
-## Match
-The `match` query accepts as the first argument the Document field and as second argument the query value.
-
-Unlike the `term` query passed value is **analyzed**, which makes this the preferred way for searching Text attributes.
+`terms()` matches any of several values:
 
 ```php
-$newQuery->match('name', 'mickey');
+$query->terms('category', ['horror', 'action']);
 ```
 
-## Multi Match
-The `multiMatch` query is the same as the `match` query with the difference that the first argument is an array of the Document's fields.
+> **Note:** `term()` against an analyzed text field usually doesn't work — the field is tokenized. Add a `.keyword` sub-field if you need exact matching:
+>
+> ```php
+> $props->text('category')->keyword();
+> // then:
+> $query->term('category.keyword', 'drama');
+> ```
+
+### Match
+
+Analyzed query — best for text fields:
 
 ```php
-$newQuery->multiMatch(['name', 'username'], 'mickey');
+$query->match('name', 'mickey');
 ```
 
-## Range
-Using the `range` query you can filter `numbers` and `dates` by range. 
-```php
-$newQuery->range('count', ['>=' => 233]);
-```
+### Multi-match
 
-The first argument of the `range` query is the **attribute name** and the second argument is an array with the range criteria. 
-
-The supported operators are:
-* `>=` Greater of equal than
-* `>` Greater than
-* `<=` Less or equal than
-* `<` Less than
-
-You can pass multiple array items for defining ranges. For example, to match Documents that have a `price` attribute between `30.00` and `130.00`  use the `range` query like this:
-```php
-$newQuery->range('price', ['>=' => 30.00, '<='=> 130.00]);
-```
-
-## Exists
-The `exists` query checks if the passed field exists on the Document.
-```php
-$newQuery->exists('field_name');
-```
-
-## Ids
-The `ids` query returns the Documents whose `_id` field is passed in the array parameter.
-```php
-$newQuery->ids(['dkKwMe4UBAUb2dMteRe2','wd6Me4UBAUb2dMJT']);
-```
-
-## Terms
-The `terms` query is the same as the `term` query with the difference that the second argument accepts an array of values.
+Match across multiple fields:
 
 ```php
-$newQuery->terms(field:'category', values:['horror','action']);
+$query->multiMatch(['name', 'username'], 'mickey');
 ```
 
-## Regex
-The `regex` query accepts the **field name** as the first argument and a **Regular Expression expression** pattern as a second.
+### Range
 
-Then it returns the Documents whose attribute matches the Regular Expression.
+Filter numeric and date ranges:
+
 ```php
-$newQuery->regex('category','(horror|action)');
+$query->range('count', ['>=' => 233]);
+$query->range('price', ['>=' => 30, '<=' => 130]);
 ```
 
-## Wildcard
-The `wildcard` query accepts the wildcard operator `*` in the value parameter.
+Operators: `>=`, `>`, `<=`, `<`.
+
+### Exists
+
+Document has any value for the field:
+
 ```php
-$newQuery->wildcard('name','john*');
+$query->exists('director');
 ```
 
-## Prefix
-The `prefix` query matches documents that contain terms starting with the specified prefix.
+### Ids
+
+Match by document `_id`:
+
 ```php
-$newQuery->prefix('name', 'john');
+$query->ids(['dkKwMe4UBAUb2dMteRe2', 'wd6Me4UBAUb2dMJT']);
 ```
 
-## Fuzzy
-The `fuzzy` query matches documents that contain terms similar to the search term within a specified edit distance.
+### Regex, wildcard, prefix, fuzzy
+
 ```php
-$newQuery->fuzzy('name', 'john');
+$query->regex('category', '(horror|action)');
+$query->wildcard('name', 'john*');
+$query->prefix('name', 'john');
+$query->fuzzy('name', 'john');
 ```
 
-# Advanced Query Features
+## Parsing a filter string
 
-## Parsing Query Strings
-You can parse complex query strings using the `parse` method:
+For ad-hoc queries built from human input, `parse()` accepts the same syntax as [Filter Parser](filter-parser.md):
 
 ```php
 $sigmie->newQuery('movies')
-    ->properties($properties)
+    ->properties($props)
     ->parse('name:"John Doe" AND age<21')
     ->get();
 ```
 
-This allows you to use a search syntax similar to Google or other search engines.
+## Custom scoring
 
-## Script Score
-You can use custom scoring with the `scriptScore` method:
+### Script score
+
+Replace or multiply the score with a custom Painless script:
 
 ```php
 $sigmie->newQuery('movies')
-    ->properties($properties)
+    ->properties($props)
     ->matchAll()
     ->scriptScore(
         source: "Math.log(2 + doc['popularity'].value)",
-        boostMode: 'replace'
+        boostMode: 'replace',
     )
     ->get();
 ```
 
-## Function Score
-For more complex scoring scenarios:
+### Function score
 
 ```php
 $sigmie->newQuery('movies')
-    ->properties($properties)
+    ->properties($props)
     ->functionScore()
     ->get();
 ```
 
-# Aggregations and Facets
+## Boosting
 
-You can add aggregations to your queries:
+Boost a query's contribution to `_score`:
+
+```php
+$query->matchAll(boost: 5);
+```
+
+## Aggregations and facets
+
+Add facets the same way as in `newSearch()`:
 
 ```php
 $response = $sigmie->newQuery('products')
-    ->properties($properties)
+    ->properties($props)
     ->matchAll()
     ->facets('category')
     ->get();
@@ -393,103 +298,71 @@ $response = $sigmie->newQuery('products')
 $facets = $response->json('aggregations');
 ```
 
-# Sorting
+For raw aggregations, see [Aggregations](aggregations.md).
 
-By default, the returned Documents are sorted by the `_score` attribute in descending order (highest scores first). You can change this behavior with `sortString` (parsed with the same rules as `NewSearch::sort()`) or with `sort` and a raw Elasticsearch sort array.
+## Sorting
 
-```php
-$newQuery->sortString('name:asc _score:desc');
-```
-
-**Note**: `_score:asc` is not allowed. Use `_score` or `_score:desc` instead.
-
-Put every sort field in a **single** string (space-separated). A second `sortString` call **replaces** the first; it does not append.
+Call `sort()` or `sortString()` **before** the query method (`matchAll`, `bool`, `parse`, etc.). Each call replaces the previous sort — put all fields in a single string.
 
 ```php
-$newQuery->sortString('name:asc created_at:desc');
+$query->sortString('name:asc created_at:desc');
+$query->sort([['year' => 'desc'], ['_score' => 'desc']]);
 ```
 
-```php
-$newQuery->sort([['year' => 'desc'], ['_score' => 'desc']]);
-```
+`_score:asc` is not allowed.
 
-Call `sortString` / `sort` on `NewQuery` before `matchAll`, `bool`, `parse`, and other methods that return `Search`.
+> **Note:** Sorting on text fields requires a `.keyword` sub-field. Add one with `$props->text('name')->keyword()->makeSortable()`.
 
-@info
-It's important to note here, that sorting on Text fields is only possible if they are mapped as Keywords.
-@endinfo
+See [Sort Parser](sort-parser.md) for full syntax.
 
-# Pagination
+## Pagination
 
-To paginate over your Query results you can use the `from` and `size` methods, which correspond to the SQL `LIMIT` and `OFFSET`.
-
-## From
-From is the SQL like `OFFSET` that defines how many Documents should be skipped when returning the Search results.
-```php
-$newQuery->from(0);
-```
-
-## Size
-Size is the SQL `LIMIT` that defines how many Documents you get when you run your Query.
-```php
-$newQuery->size(15);
-```
-
-# Response Handling
-
-Query responses provide several ways to access results:
+`from` and `size` are on the `Search` instance returned after the query method:
 
 ```php
 $response = $sigmie->newQuery('movies')
-    ->properties($properties)
+    ->properties($props)
+    ->sortString('title:asc')
+    ->matchAll()
+    ->from(0)
+    ->size(20)
+    ->get();
+```
+
+## Reading responses
+
+```php
+$response = $sigmie->newQuery('movies')
+    ->properties($props)
     ->matchAll()
     ->get();
 
-// Get specific JSON path
-$hits = $response->json('hits.hits');
-$totalHits = $response->json('hits.total.value');
-
-// Get full response
-$fullResponse = $response->json();
+$response->json();                       // full response
+$response->json('hits.hits');            // hits array
+$response->json('hits.total.value');     // total count
 ```
 
-# Boosting
-You can use the `boost` parameter to increase the Query importance when the `_score` is calculated.
+## Debugging
+
+`getDSL()` returns the underlying Elasticsearch JSON:
+
 ```php
-$newQuery->matchAll(boost: 5);
+$dsl = $query->getDSL();
 ```
 
-This is useful to say that a match in the `title` attribute is more important than a match in the `tags` attribute.
+## Performance
 
-# Error Handling
-
-When queries fail due to missing mappings or other issues, Sigmie will throw appropriate exceptions:
-
-```php
-try {
-    $response = $sigmie->newQuery('movies')
-        ->parse('name:"John Doe" AND age<21')  // No properties provided
-        ->get();
-} catch (Exception $e) {
-    // Handle the error
-}
-```
-
-# Performance Tips
-
-1. **Use Filter Context**: Use `filter()` instead of `must()` when you don't need scoring
-2. **Limit Fields**: Only retrieve the fields you need
-3. **Use Term Queries**: For exact matches, use `term()` instead of `match()`
-4. **Cache Filters**: Filter queries are automatically cached by Elasticsearch
-5. **Batch Queries**: Use bulk operations when possible
+- Use `filter()` instead of `must()` when scoring doesn't matter. Filter queries are cached.
+- Prefer `term()` over `match()` for exact matches.
+- Limit `size()` to what you need.
+- Use `retrieve()` (on `newSearch()`) to drop unused fields from the response.
 
 ```php
-// Good for performance
 $sigmie->newQuery('products')
     ->bool(function (Boolean $bool) {
-        $bool->filter()->term('status', 'active');  // Cached, no scoring
-        $bool->must()->match('title', $searchTerm);  // Scored
+        $bool->filter()->term('status', 'active');     // cached, no scoring
+        $bool->must()->match('title', $searchTerm);    // scored
     })
-    ->size(10)  // Limit results
+    ->size(10)
     ->get();
 ```

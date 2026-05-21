@@ -1,6 +1,6 @@
 ---
 title: Extending Sigmie
-short_description: Build packages that add field types and document processing hooks to Sigmie
+short_description: Build packages with field types and document processing hooks
 keywords: [extending, package, plugin, hooks, field types, collection]
 category: Advanced Features
 order: 90
@@ -9,24 +9,27 @@ related_pages: [mappings, document, search, magic-tags]
 
 # Extending Sigmie
 
-Sigmie ships with a single registration point for external packages. The **magic tags** feature is a good mental model: a package adds a `magicTags()` builder on mappings and a `CollectionHook` that fills tags and syncs a sidecar index. Nothing in core knows about magic tags — only your package does.
+Sigmie has a single registration point for external packages. A package can add custom field-type builder methods to `NewProperties` and document-processing hooks that fire during `merge()` and `add()`.
 
-`extend()` runs on a **`Sigmie` instance** so hooks apply to that client only (not process-wide static state). Macros on `NewProperties` remain global to the process; in tests call `NewProperties::flushMacros()` when you need isolation.
+The [Magic Tags](magic-tags.md) package is a real-world example: it adds a `magicTags()` builder and a `CollectionHook` that calls an LLM and writes to a sidecar index. Core Sigmie knows nothing about either — only the package does.
+
+## Bootstrap a package
 
 ```php
-use Vendor\MagicTags\MagicTagsPackage;
 use Sigmie\Sigmie;
+use Vendor\MagicTags\MagicTagsPackage;
 
+$sigmie = new Sigmie($connection);
 $sigmie->extend(new MagicTagsPackage());
 ```
 
-One call registers everything the package needs — custom field-type builder methods and document processing hooks on **this** `Sigmie` instance.
+`extend()` calls the package's `register()` immediately and binds the hook to **this** `Sigmie` instance — not process-wide static state. Two clients in the same PHP process can have different extensions registered.
 
-See [Magic Tags](magic-tags.md) for the product behavior (sidecar index, LLM, classification).
+> **Note:** `NewProperties` macros are process-global. In tests that need isolation, call `NewProperties::flushMacros()` between cases.
 
 ## The `Package` interface
 
-Every Sigmie package implements `Sigmie\Contracts\Package`:
+A package implements `Sigmie\Contracts\Package`:
 
 ```php
 namespace Vendor\MagicTags;
@@ -45,13 +48,11 @@ class MagicTagsPackage implements Package
 }
 ```
 
-`register()` is called immediately by `$sigmie->extend()`.
+`register()` runs once per `extend()` call.
 
 ## Field-type macros
 
-`NewProperties` supports macros — methods added at runtime that work identically to built-in ones like `keyword()`, `longText()`, etc.
-
-A magic-tags package registers the `magicTags` macro so users map fields the same way as any other type:
+`NewProperties::macro()` adds a method that behaves like a built-in field type:
 
 ```php
 use Closure;
@@ -66,29 +67,25 @@ NewProperties::macro('magicTags', function (string $name, string $fromField): Ma
 });
 ```
 
-After registration, users call it like a built-in type:
+After registration, callers use it like any native type:
 
 ```php
 $props = new NewProperties;
-
-$props->text('content')->semantic(api: 'my-embeddings', accuracy: 1, dimensions: 1024);
-
+$props->text('content')->semantic(api: 'embeddings', accuracy: 1, dimensions: 1024);
 $props->magicTags('topic', fromField: 'content')
-    ->api('my-llm')
-    ->embeddingsApi('my-embeddings');
+    ->api('llm')
+    ->embeddingsApi('embeddings');
 ```
 
 ## Collection hooks
 
-A `CollectionHook` lets your package run logic before, during, and after documents are indexed via `AliveCollection::merge()` and `AliveCollection::add()`.
-
-Register the hook inside the package's `register()` using the same `Sigmie` instance passed in:
+`CollectionHook` lets your package intervene around document indexing through `merge()` and `add()`. Register a hook on the same `Sigmie` instance:
 
 ```php
 $sigmie->addCollectionHook(new MagicTagsCollectionHook());
 ```
 
-Implement `Sigmie\Document\Contracts\CollectionHook`. For magic tags, `shouldRun()` limits work to indices that actually declare `MagicTags` fields — so the hook does not run on unrelated collections or on the sidecar index itself.
+A hook implements `Sigmie\Document\Contracts\CollectionHook`:
 
 ```php
 namespace Vendor\MagicTags;
@@ -111,7 +108,7 @@ class MagicTagsCollectionHook implements CollectionHook
         Properties $properties,
         array $apis
     ): void {
-        // Ensure {logicalName}__sigmie_magic_tags exists with the right mapping.
+        // Ensure the sidecar index exists with the right mapping.
     }
 
     public function processBatch(
@@ -119,7 +116,7 @@ class MagicTagsCollectionHook implements CollectionHook
         Properties $properties,
         array $apis
     ): array {
-        // Centroid classification, LLM tag generation, dedup — return updated documents.
+        // Classify, call the LLM, dedup tags. Return updated documents.
         return $documents;
     }
 
@@ -130,33 +127,43 @@ class MagicTagsCollectionHook implements CollectionHook
         Properties $properties,
         array $apis
     ): void {
-        // Upsert (magic_field_path, tag) rows into the sidecar index.
+        // Upsert (magic_field_path, tag) rows into the sidecar.
     }
 }
 ```
 
-## `shouldRun()` and the `apis` array
+### `shouldRun()`
 
-`shouldRun(Properties $properties)` receives the index's field definitions. Use `Properties::fieldsOfType(MagicTags::class)` so the hook is skipped when there are no magic-tags fields — including sidecar indices your package creates.
-
-The `$apis` array passed to `processBatch` / `afterBatch` is the map from `Sigmie::registerApi()`. **Core Sigmie only registers `EmbeddingsApi` and `RerankApi` implementations** (for semantic indexing and `$response->rerank(...)`). Magic tags need an LLM for tag text: inject that in your package (for example pass a client into `MagicTagsCollectionHook`’s constructor, or resolve it from your app container). Resolve embeddings the same way users registered them on the collection:
+Gate the hook on whether the collection's properties contain your field type. This keeps the hook from firing on unrelated indices — including any sidecar indices your package creates:
 
 ```php
-$embeddings = $apis['my-embeddings'] ?? null;  // EmbeddingsApi
-$rerank = $apis['my-rerank'] ?? null;            // RerankApi
+public function shouldRun(Properties $properties): bool
+{
+    return $properties->fieldsOfType(MagicTags::class)->isNotEmpty();
+}
 ```
 
-## `withoutHooks()`
+### The `$apis` array
 
-To index documents without triggering hooks — for example when documents already carry final tag values, or when the package writes to the sidecar without re-running generation:
+`processBatch()` and `afterBatch()` receive a map of registered API name → instance, populated from `Sigmie::registerApi()` and per-collection `apis()`.
+
+Core Sigmie only registers `EmbeddingsApi` and `RerankApi` implementations. If your package needs an LLM client, inject it in the package constructor (or resolve it from your application container):
+
+```php
+$embeddings = $apis['my-embeddings'] ?? null;    // EmbeddingsApi
+$rerank = $apis['my-rerank'] ?? null;            // RerankApi
+$llm = $this->llmClient;                         // your own dependency
+```
+
+## Skip hooks on demand
+
+`withoutHooks()` indexes documents without running any registered hooks — useful when documents already carry the values your hook would generate:
 
 ```php
 $sigmie->collect('kb')->withoutHooks()->merge($documents);
 ```
 
-## Full example — `MagicTagsPackage`
-
-The following ties macro + hook together. Your package fills in `MagicTags`, `MagicTagsCollectionHook`, index creation, LLM calls, and sidecar writes (see [Magic Tags](magic-tags.md)).
+## Full example
 
 ```php
 namespace Vendor\MagicTags;
@@ -182,7 +189,7 @@ class MagicTagsPackage implements Package
 }
 ```
 
-Application bootstrap and mapping:
+Application bootstrap:
 
 ```php
 use Sigmie\Mappings\NewProperties;
@@ -198,8 +205,17 @@ $props->magicTags('topic', fromField: 'content')->api('llm')->embeddingsApi('emb
 
 $sigmie->collect('kb', refresh: true)
     ->properties($props)
-    ->apis(['llm' => $llmApi, 'embeds' => $embeddingsApi])
+    ->apis([
+        'llm' => $llmApi,
+        'embeds' => $embeddingsApi,
+    ])
     ->merge([/* documents */]);
 ```
 
-Any `merge()` or `add()` on a collection whose properties include `MagicTags` fields runs `MagicTagsCollectionHook` for that batch (unless you use `withoutHooks()`), **for the same `Sigmie` instance** you called `extend()` on.
+Every `merge()` / `add()` on a collection whose properties contain `MagicTags` fields runs the hook for that batch — for the same `Sigmie` instance you called `extend()` on.
+
+## See also
+
+- [Magic Tags](magic-tags.md) — a complete package built on this API.
+- [Mappings & Properties](mappings.md) — field types and properties.
+- [Documents](document.md) — collection lifecycle.

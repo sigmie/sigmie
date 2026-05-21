@@ -1,6 +1,6 @@
 ---
 title: OpenSearch
-short_description: Use OpenSearch as your search engine with Sigmie
+short_description: Use OpenSearch as your search engine
 keywords: [opensearch, aws, search engine, vector search, knn, semantic search]
 category: Configuration
 order: 3
@@ -9,11 +9,11 @@ related_pages: [connection, semantic-search, index]
 
 # OpenSearch
 
-Sigmie supports OpenSearch, AWS's open-source search engine. This guide shows how to use OpenSearch instead of the default Elasticsearch.
+Sigmie supports OpenSearch 2.x and 3.x — including AWS OpenSearch Service — with the same API as Elasticsearch. You change one parameter and everything else continues to work.
 
-## Basic Usage
+## Connect
 
-To use OpenSearch, specify the engine type when creating your connection:
+Specify the engine type:
 
 ```php
 use Sigmie\Sigmie;
@@ -23,141 +23,106 @@ $sigmie = Sigmie::create(
     hosts: ['https://localhost:9200'],
     engine: SearchEngineType::OpenSearch,
     config: [
-        'auth' => ['admin', 'password'],
-        'verify' => false  // For self-signed certificates
+        'auth' => ['admin', 'MyStrongPass123!@#'],
+        'verify' => false,    // self-signed cert in dev
     ]
 );
 ```
 
-That's it! All Sigmie APIs now work with OpenSearch. The driver automatically handles the differences between OpenSearch and Elasticsearch.
+## Supported versions
 
-## Supported Versions
-
-Sigmie supports OpenSearch 2.x and 3.x:
-- OpenSearch 2.4.x, 2.5.x, 2.11.x
-- OpenSearch 3.0.x
+- OpenSearch 2.4 – 2.11
+- OpenSearch 3.0+
 - AWS OpenSearch Service
 
-Both versions work identically - Sigmie automatically adapts to your OpenSearch version.
+Sigmie adapts to the version automatically.
 
-## Creating Indices with Semantic Search
+## Semantic search
 
-Create indices with semantic search fields the same way you would with Elasticsearch:
+Define semantic fields the same way as with Elasticsearch:
 
 ```php
 use Sigmie\Mappings\NewProperties;
 
 $props = new NewProperties;
-$props->text('title')->semantic(dimensions: 384);
-$props->text('content')->semantic(dimensions: 384, accuracy: 3);
+$props->text('title')->semantic(dimensions: 384, api: 'embeddings');
+$props->text('content')->semantic(dimensions: 384, accuracy: 3, api: 'embeddings');
 
-$sigmie->newIndex('articles')
-    ->properties($props)
-    ->create();
+$sigmie->newIndex('articles')->properties($props)->create();
 ```
 
-Sigmie automatically configures OpenSearch's KNN settings for you.
+Sigmie configures OpenSearch's KNN settings under the hood.
 
-## Accuracy Levels
+### Accuracy
 
-Control search quality with the `accuracy` parameter:
+| Level | Use case |
+|-------|----------|
+| 1 | Fastest indexing, large corpora |
+| 2 | Balanced |
+| 3 | Recommended default |
+| 4–5 | Highest precision |
 
-```php
-$props->text('content')->semantic(
-    dimensions: 384,
-    accuracy: 3  // 1 (fast) to 5 (precise), default: 3
-);
-```
-
-| Accuracy | Use Case |
-|----------|----------|
-| 1 | Fast indexing, many documents |
-| 2 | Balanced performance |
-| 3 | Recommended (default) |
-| 4-5 | High precision |
-
-## Similarity Metrics
-
-Choose how vectors are compared:
+### Similarity metrics
 
 ```php
 use Sigmie\Enums\VectorSimilarity;
 
-// Cosine similarity (default)
 $props->text('description')->semantic(
     dimensions: 384,
-    similarity: VectorSimilarity::Cosine
+    similarity: VectorSimilarity::Cosine,        // default
 );
 
-// Dot product
 $props->text('abstract')->semantic(
     dimensions: 384,
-    similarity: VectorSimilarity::DotProduct
+    similarity: VectorSimilarity::DotProduct,
 );
 
-// Euclidean distance
 $props->text('content')->semantic(
     dimensions: 384,
-    similarity: VectorSimilarity::Euclidean
+    similarity: VectorSimilarity::Euclidean,
 );
 ```
 
-## Performing Searches
+## Searching
 
-Search with OpenSearch works exactly like Elasticsearch:
+Search is identical to Elasticsearch:
 
 ```php
-// Semantic search
-$search = $sigmie->newSearch('articles')
+$results = $sigmie->newSearch('articles')
+    ->properties($props)
     ->semantic()
     ->queryString('quantum computing')
-    ->size(20);
-
-$results = $search->get();
-
-// Regular text search
-$search = $sigmie->newSearch('articles')
-    ->queryString('quantum')
-    ->size(10);
-
-$results = $search->get();
+    ->size(20)
+    ->get();
 ```
 
-## Switching from Elasticsearch
+## Migrate from Elasticsearch
 
-To migrate from Elasticsearch to OpenSearch, simply change the engine parameter:
+Change one parameter:
 
 ```php
-// Before (Elasticsearch)
-$sigmie = Sigmie::create(
-    hosts: ['https://localhost:9200']
-);
+// Before
+$sigmie = Sigmie::create(hosts: ['https://localhost:9200']);
 
-// After (OpenSearch)
+// After
 $sigmie = Sigmie::create(
     hosts: ['https://localhost:9200'],
-    engine: SearchEngineType::OpenSearch
+    engine: SearchEngineType::OpenSearch,
 );
 ```
 
-All your existing Sigmie code continues to work without changes.
+The rest of your code is unchanged.
 
 ## AWS OpenSearch Service
 
-To connect to AWS OpenSearch Service:
+For username/password auth:
 
 ```php
 $sigmie = Sigmie::create(
     hosts: ['https://your-domain.region.es.amazonaws.com'],
     engine: SearchEngineType::OpenSearch,
-    config: [
-        'auth' => ['username', 'password']
-    ]
+    config: ['auth' => ['username', 'password']],
 );
 ```
 
-## Related Documentation
-
-- **[Connection Setup](/docs/connection)** - Authentication and SSL configuration
-- **[Semantic Search](/docs/semantic-search)** - Vector search guide
-- **[Creating Indices](/docs/index)** - Index management
+For IAM-signed requests, see the AWS section of [Connection Setup](connection.md).

@@ -1,7 +1,7 @@
 ---
 title: Quick Start
-short_description: Build your first search in 5 minutes with index creation and document search
-keywords: [quick start, tutorial, first search, getting started, index, search]
+short_description: Build your first Sigmie search in five minutes
+keywords: [quick start, tutorial, first search, getting started]
 category: Getting Started
 order: 3
 related_pages: [installation, introduction, search, document]
@@ -9,61 +9,39 @@ related_pages: [installation, introduction, search, document]
 
 # Quick Start
 
-Get your first Sigmie search working in 5 minutes. You'll create an index, add documents, and build a search that handles typos and filtering.
-
-## What You'll Build
-
-By the end of this guide, you'll have a working product search that:
-- Indexes documents with multiple field types
-- Searches with keyword matching and typo tolerance
-- Filters results with human-readable syntax
-- Returns results you can iterate over
-
-This foundation applies to any search use case: e-commerce, documentation, blogs, or internal tools.
+In five minutes you'll have a product search that handles typos, filters by stock and price, and returns relevance-ranked results.
 
 ## Prerequisites
 
-Before starting, ensure you have:
-- Sigmie [installed](/docs/installation)
-- Elasticsearch running and [connected](/docs/installation#connecting-to-elasticsearch)
+- Sigmie [installed](installation.md)
+- Elasticsearch running on `127.0.0.1:9200`
 
-Verify your connection:
+Quick sanity check:
 
 ```php
 use Sigmie\Sigmie;
 
 $sigmie = Sigmie::create(hosts: ['127.0.0.1:9200']);
 
-if ($sigmie->isConnected()) {
-    echo "Connected to Elasticsearch!\n";
-}
+$sigmie->isConnected();   // true
 ```
 
-## Step 1: Define Your Index Schema
+## Step 1: Define a schema
 
-Define the fields you'll search and filter. Start simple with the core field types: // [tl! focus]
+`NewProperties` is your schema builder. Use high-level types — they wire up the right analyzers and queries underneath.
 
 ```php
 use Sigmie\Mappings\NewProperties;
 
 $props = new NewProperties;
-$props->title('name');              // Full-text searchable titles
-$props->text('description');        // Longer searchable content
-$props->keyword('category');        // Exact-match filtering
-$props->price();                    // Numeric filtering and sorting
-$props->bool('in_stock');           // Boolean filtering
+$props->title('name');         // full-text searchable title
+$props->text('description');   // long-form searchable text
+$props->category('category');  // exact-match category
+$props->price();               // numeric, filterable by range
+$props->bool('in_stock');
 ```
 
-**What each type does:**
-- `title()` - Optimized for short searchable text (product names, titles)
-- `text()` - Full-text search on longer content (descriptions, bios)
-- `keyword()` - Exact matching for categories, tags, brands (no fuzzy search)
-- `price()` - Numeric field for ranges and sorting
-- `bool()` - True/false values for filtering
-
-## Step 2: Create the Index
-
-Create the index in Elasticsearch with your schema:
+## Step 2: Create the index
 
 ```php
 $sigmie->newIndex('products')
@@ -71,434 +49,181 @@ $sigmie->newIndex('products')
     ->create();
 ```
 
-This creates an index named "products" with the five fields you defined. If the index already exists, the method returns early without errors.
-
-## Step 3: Add Documents
-
-Insert documents into your index:
+## Step 3: Index documents
 
 ```php
 use Sigmie\Document\Document;
 
-$collection = $sigmie->collect('products', refresh: true);
-
-$collection->merge([
-    new Document([
-        'name' => 'Laptop Pro',
-        'description' => 'High-performance laptop for professionals',
-        'category' => 'electronics',
-        'price' => 1299,
-        'in_stock' => true,
-    ]),
-    new Document([
-        'name' => 'Wireless Mouse',
-        'description' => 'Ergonomic wireless mouse with precision tracking',
-        'category' => 'accessories',
-        'price' => 49,
-        'in_stock' => true,
-    ]),
-    new Document([
-        'name' => 'USB-C Cable',
-        'description' => 'Fast charging and data transfer cable',
-        'category' => 'accessories',
-        'price' => 15,
-        'in_stock' => false,
-    ]),
-]);
+$sigmie->collect('products', refresh: true)
+    ->merge([
+        new Document([
+            'name' => 'Laptop Pro',
+            'description' => 'High-performance laptop for professionals',
+            'category' => 'electronics',
+            'price' => 1299,
+            'in_stock' => true,
+        ]),
+        new Document([
+            'name' => 'Wireless Mouse',
+            'description' => 'Ergonomic wireless mouse with precision tracking',
+            'category' => 'accessories',
+            'price' => 49,
+            'in_stock' => true,
+        ]),
+        new Document([
+            'name' => 'USB-C Cable',
+            'description' => 'Fast charging and data transfer cable',
+            'category' => 'accessories',
+            'price' => 15,
+            'in_stock' => false,
+        ]),
+    ]);
 ```
 
-The `refresh: true` parameter makes documents immediately searchable. In production, omit it for better bulk-indexing performance and refresh periodically instead.
+`refresh: true` makes documents immediately searchable. Omit it in production for better bulk-indexing performance.
 
-## Step 4: Your First Search
-
-Search for documents with keyword matching:
+## Step 4: Search
 
 ```php
 $results = $sigmie->newSearch('products')
     ->properties($props)
     ->queryString('laptop')
-    ->fields(['name', 'description'])
     ->get();
 
 foreach ($results->hits() as $hit) {
     echo $hit['name'] . "\n";
 }
-// Output: Laptop Pro
+// Laptop Pro
 ```
 
-The search looks for "laptop" in the `name` and `description` fields. Elasticsearch matches both exact and partial words.
-
-## Step 5: Add Typo Tolerance
-
-Find results even when the query has spelling mistakes:
+## Step 5: Tolerate typos
 
 ```php
 $results = $sigmie->newSearch('products')
     ->properties($props)
-    ->queryString('lapto')          // [tl! highlight]
-    ->fields(['name', 'description'])
-    ->typoTolerance()               // [tl! highlight]
+    ->queryString('lapto')                        // typo
+    ->typoTolerance()                             // [tl! highlight]
     ->get();
-
-foreach ($results->hits() as $hit) {
-    echo $hit['name'] . "\n";
-}
-// Output: Laptop Pro (still found despite typo)
+// Laptop Pro
 ```
 
-Typo tolerance uses fuzzy matching to find results with 1-2 character differences. Use `typoTolerance()` for user-facing search.
+Defaults: one typo allowed for terms of 3+ characters, two typos for 6+. Override with `typoTolerance(oneTypoChars: 4, twoTypoChars: 8)`.
 
-## Step 6: Add Filters
+## Step 6: Filter
 
-Narrow results with human-readable filter syntax:
+The [filter parser](filter-parser.md) reads like a sentence:
 
 ```php
 $results = $sigmie->newSearch('products')
     ->properties($props)
     ->queryString('cable')
-    ->fields(['name', 'description'])
-    ->filters('in_stock:true')                      // [tl! highlight]
+    ->filters('in_stock:true')                    // [tl! highlight]
     ->get();
-
-foreach ($results->hits() as $hit) {
-    echo $hit['name'] . " - \$" . $hit['price'] . "\n";
-}
-// No results (USB-C Cable is not in stock)
+// (no results — USB-C Cable is out of stock)
 ```
 
-The filter syntax is human-readable:
-- `in_stock:true` - Boolean match
-- `category:"electronics"` - Exact text match (quotes required)
-- `price:100..500` - Range (inclusive on both ends)
-- `price:>=100` - Comparison operators (>=, >, <=, <)
-
-Combine filters with `AND`:
+Combine clauses with `AND`, `OR`, and `NOT`:
 
 ```php
-$results = $sigmie->newSearch('products')
-    ->properties($props)
-    ->queryString('wireless')
-    ->fields(['name', 'description'])
-    ->filters('category:"accessories" AND price:<=100')  // [tl! highlight]
-    ->get();
-
-foreach ($results->hits() as $hit) {
-    echo $hit['name'] . "\n";
-}
-// Output: Wireless Mouse
+->filters('category:"accessories" AND price:<=100')
+->filters('price:100..500 AND in_stock:true')
+->filters('NOT category:"books"')
 ```
 
-For more complex filters, see the [Filter Parser](/docs/filter-parser) documentation.
-
-## Step 7: Sort and Paginate
-
-Control result order and retrieve specific pages:
+## Step 7: Sort and paginate
 
 ```php
 $results = $sigmie->newSearch('products')
     ->properties($props)
     ->queryString('mouse cable')
-    ->fields(['name', 'description'])
-    ->sort('_score:desc', 'price:asc')    // [tl! highlight]
-    ->size(10)                             // [tl! highlight]
-    ->from(0)                              // [tl! highlight]
+    ->sort('_score:desc price:asc')
+    ->from(0)
+    ->size(10)
     ->get();
 ```
 
-**Sorting:**
-- `_score:desc` - Results most relevant to query first (default)
-- `price:asc` - Cheapest first
-- `price:desc` - Most expensive first
+`_score:desc` is the default. `_score:asc` is not allowed — Elasticsearch always sorts relevance highest-first.
 
-**Pagination:**
-- `size(10)` - Return 10 results per page
-- `from(20)` - Skip first 20 results (for page 3, when size=10)
-
-## Step 8: Search Multiple Fields with Weighting
-
-Give certain fields more importance in relevance scoring:
+## Step 8: Weight fields
 
 ```php
 $results = $sigmie->newSearch('products')
     ->properties($props)
     ->queryString('laptop')
-    ->weight(['name' => 3, 'description' => 1])  // [tl! highlight]
+    ->weight(['name' => 3, 'description' => 1])   // [tl! highlight]
     ->get();
-
-foreach ($results->hits() as $hit) {
-    echo $hit['name'] . " (score: " . $hit['_score'] . ")\n";
-}
 ```
 
-Weights multiply the relevance score:
-- `name` field matches count 3x more than `description` matches
-- "Laptop" in the name ranks higher than "laptop" in the description
+A match in `name` now scores 3× higher than the same match in `description`.
 
-## Going Deeper: Build a Complete Search
-
-Combine everything into a realistic product search with filters, sorting, and relevance tuning:
+## Putting it together
 
 ```php
 $results = $sigmie->newSearch('products')
     ->properties($props)
     ->queryString('wireless laptop')
-    ->weight(['name' => 3, 'description' => 1])
-    ->filters('category:"electronics" AND price:100..2000 AND in_stock:true')
     ->typoTolerance()
-    ->sort('_score:desc', 'price:asc')
+    ->filters('category:"electronics" AND price:100..2000 AND in_stock:true')
+    ->weight(['name' => 3, 'description' => 1])
+    ->sort('_score:desc price:asc')
     ->size(20)
-    ->from(0)
     ->get();
 
-// Display results
-echo "Found " . $results->count() . " products\n\n";
+echo "Found {$results->total()} products\n";
 
 foreach ($results->hits() as $hit) {
-    echo $hit['name'];
-    echo " - \$" . $hit['price'];
-    echo " (relevance: " . round($hit['_score'], 2) . ")\n";
+    printf("%s — $%d\n", $hit['name'], $hit['price']);
 }
 ```
 
-This search:
-1. Matches "wireless" or "laptop" (or both) in name/description
-2. Weights name matches 3x higher
-3. Filters to electronics, $100-$2000 price range, in stock only
-4. Tolerates typos (e.g., "wirelss" → "wireless")
-5. Sorts by relevance first, then price
-6. Returns 20 results per page
+## Add facets
 
-## Next: Faceted Search and Aggregations
-
-To build filter sidebars (like on e-commerce sites), use faceted search:
+Faceted navigation is one method away:
 
 ```php
-$props->category('brand')->facetDisjunctive();   // Enable faceting
+$props->category('brand')->facetDisjunctive();   // enable faceting
 
 $results = $sigmie->newSearch('products')
     ->properties($props)
     ->queryString('laptop')
-    ->facets('brand category price:100')  // [tl! highlight]
+    ->facets('brand category price:100')         // [tl! highlight]
     ->get();
 
 $facets = $results->json('facets');
-// {
-//   "brand": {"Apple": 5, "Dell": 3, "Lenovo": 2},
-//   "price": {"min": 999, "max": 2499, ...}
-// }
+// ['brand' => ['Apple' => 5, ...], 'price' => ['min' => 999, 'max' => 2499, ...]]
 ```
 
-See [Aggregations](/docs/aggregations) for complete faceting guide.
+See [Facets](facets.md) for the full reference.
 
-## Next: Semantic Search with Vector Embeddings
+## Add semantic search
 
-Find results by meaning, not just keywords:
-
-```php
-use Sigmie\AI\OpenAI\Embeddings;
-
-// Register embeddings API (one time)
-$embeddings = new Embeddings(apiKey: 'your-openai-key');
-$sigmie->registerApi('embeddings', $embeddings);
-
-// Add semantic field to schema
-$props = new NewProperties;
-$props->text('description')->semantic(
-    accuracy: 3,
-    dimensions: 384,
-    api: 'embeddings'
-);
-
-// Search by meaning
-$results = $sigmie->newSearch('products')
-    ->properties($props)
-    ->semantic()
-    ->disableKeywordSearch()
-    ->queryString('portable computer for work')
-    ->get();
-// Finds "Laptop", "Notebook", "MacBook" despite different words
-```
-
-See [Semantic Search](/docs/semantic-search) for embeddings, vector strategies, and advanced techniques.
-
-## Next: Retrieval, rerank, then generate (app-level)
-
-Combine search and reranking in Sigmie. Register **embeddings** and **rerank** APIs on the client; call your own generation API outside this package (Sigmie does not ship a `newRag()` orchestrator or an LLM client):
+When you want results by meaning, not just keywords:
 
 ```php
-$sigmie->registerApi('embeddings', $embeddingsApi);
-$sigmie->registerApi('my-rerank', $rerankApi);
+use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 
-$props = new NewProperties;
-$props->text('content')->semantic(accuracy: 1, dimensions: 384, api: 'embeddings');
+$sigmie->registerApi('embeddings', new OpenAIEmbeddingsApi('sk-...'));
 
-$sigmie->newIndex('docs')->properties($props)->create();
-$sigmie->collect('docs', refresh: true)->properties($props)->apis([
-    'embeddings' => $embeddingsApi,
-])->merge([
-    new Document([
-        'content' => 'Returnable within 30 days for full refund.',
-    ]),
-]);
-
-$res = $sigmie->newSearch('docs')
-    ->properties($props)
-    ->semantic()
-    ->queryString('What is your return policy?')
-    ->size(5)
-    ->get();
-
-$reranked = $res->rerank('my-rerank', ['content'], 'return policy', 3);
-
-// Build context from $reranked, then call OpenAI / Ollama / etc. in your app.
-```
-
-See [Retrieval and agents](/docs/rag) for positioning and optional conversation history.
-
-## Complete Example: Product Search App
-
-Here's a complete, runnable example you can adapt:
-
-```php
-<?php
-
-use Sigmie\Sigmie;
-use Sigmie\Mappings\NewProperties;
-use Sigmie\Document\Document;
-
-require 'vendor/autoload.php';
-
-// 1. Connect to Elasticsearch
-$sigmie = Sigmie::create(hosts: ['127.0.0.1:9200']);
-
-// 2. Define schema
 $props = new NewProperties;
 $props->title('name');
-$props->text('description');
-$props->keyword('category');
-$props->price();
-$props->bool('in_stock');
-
-// 3. Create index
-$sigmie->newIndex('products')->properties($props)->create();
-
-// 4. Index documents
-$collection = $sigmie->collect('products', refresh: true);
-$collection->merge([
-    new Document(['name' => 'Laptop Pro', 'description' => 'High-performance laptop', 'category' => 'electronics', 'price' => 1299, 'in_stock' => true]),
-    new Document(['name' => 'Wireless Mouse', 'description' => 'Ergonomic mouse with precision tracking', 'category' => 'accessories', 'price' => 49, 'in_stock' => true]),
-]);
-
-// 5. Search with typo tolerance and filters
-$results = $sigmie->newSearch('products')
-    ->properties($props)
-    ->queryString('lapto')
-    ->fields(['name', 'description'])
-    ->typoTolerance()
-    ->filters('in_stock:true')
-    ->sort('_score:desc', 'price:asc')
-    ->get();
-
-// 6. Display results
-foreach ($results->hits() as $hit) {
-    echo $hit['name'] . " - \$" . $hit['price'] . "\n";
-}
-```
-
-Save this as `search.php` and run:
-
-```bash
-php search.php
-```
-
-## Common Patterns
-
-### Search with No Results Fallback
-
-```php
-$results = $sigmie->newSearch('products')
-    ->properties($props)
-    ->queryString($query)
-    ->fields(['name', 'description'])
-    ->get();
-
-if ($results->count() === 0) {
-    echo "No products found. Showing popular items instead.\n";
-    // Fall back to different query or popular items
-}
-```
-
-### Safe Filters (No Hard-Coded Values)
-
-```php
-$filters = [];
-if ($category) {
-    $filters[] = "category:\"$category\"";  // Note the quotes
-}
-if ($minPrice && $maxPrice) {
-    $filters[] = "price:$minPrice..$maxPrice";
-}
+$props->text('description')->semantic(            // [tl! highlight]
+    api: 'embeddings',
+    dimensions: 1536,
+);
 
 $results = $sigmie->newSearch('products')
     ->properties($props)
-    ->queryString($query)
-    ->filters(implode(' AND ', $filters) ?: null)
+    ->semantic()
+    ->queryString('portable computer for work')   // matches "laptop", "notebook"
     ->get();
 ```
 
-### Highlight Matching Terms
+See [Semantic Search](semantic-search.md) for embeddings setup, accuracy levels, and similarity functions.
 
-```php
-$results = $sigmie->newSearch('products')
-    ->properties($props)
-    ->queryString('laptop')
-    ->fields(['name', 'description'])
-    ->highlighting(['name', 'description'])  // [tl! highlight]
-    ->get();
+## Where to go next
 
-foreach ($results->hits() as $hit) {
-    $highlighted = $hit['highlight']['name'][0] ?? $hit['name'];
-    echo $highlighted . "\n";  // Shows <em>laptop</em> in HTML
-}
-```
-
-## Troubleshooting
-
-### Index Already Exists
-
-If you re-run the quick start and see "resource_already_exists_exception", delete the old index first:
-
-```php
-$sigmie->deleteIndex('products');
-// Then run Step 2 again
-```
-
-### No Results After Indexing
-
-Ensure documents are indexed before searching:
-
-```php
-$collection = $sigmie->collect('products', refresh: true);  // refresh: true is important
-```
-
-### Slow Searches
-
-Large result sets slow down queries. Use pagination:
-
-```php
-->size(10)  // Return 10 per page, not 1000
-->from(offset)
-```
-
-## Next Steps
-
-Now that you understand keyword search, explore Sigmie's advanced features:
-
-- **[Filter Parser](/docs/filter-parser)** - Build complex, readable filters
-- **[Facets & Aggregations](/docs/aggregations)** - Create filter sidebars and analytics
-- **[Semantic Search](/docs/semantic-search)** - Find results by meaning with embeddings
-- **[Retrieval and agents](/docs/rag)** - Search, reranking, and generation in your app
-- **[Index Management](/docs/index)** - Customize field types, analyzers, and settings
-- **[Search API Reference](/docs/search)** - Complete method documentation
-
-Your first search is working. The rest builds on this foundation.
+- [Filter Parser](filter-parser.md) — every operator and clause.
+- [Facets](facets.md) — sidebar filters with conjunctive/disjunctive logic.
+- [Search](search.md) — every `NewSearch` method.
+- [Mappings & Properties](mappings.md) — all field types.
+- [Laravel Scout](laravel-scout.md) — Eloquent integration.

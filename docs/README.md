@@ -1,7 +1,7 @@
 ---
-title: Documentation Home
-short_description: Complete documentation for Sigmie PHP library for Elasticsearch
-keywords: [documentation, sigmie, elasticsearch, php, search library]
+title: Documentation
+short_description: Sigmie documentation index
+keywords: [documentation, sigmie, elasticsearch, php]
 category: Getting Started
 order: 0
 related_pages: [introduction, installation, quick-start]
@@ -9,136 +9,88 @@ related_pages: [introduction, installation, quick-start]
 
 # Sigmie Documentation
 
-Welcome to the complete documentation for Sigmie, the PHP library that makes Elasticsearch simple and powerful.
-
-## What is Sigmie?
-
-Sigmie is a PHP library designed to simplify working with Elasticsearch. Instead of writing complex Elasticsearch queries, you can use Sigmie's intuitive API to create powerful search experiences with features like typo tolerance, semantic search, faceting, and more.
-
-## Quick Start
+Sigmie is a PHP library that gives Elasticsearch a fluent, Laravel-inspired API. Define an index in a few lines, search with typo tolerance and faceting, add semantic search when you need it.
 
 ```php
 use Sigmie\Sigmie;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Document\Document;
 
-// Connect to Elasticsearch
-$sigmie = Sigmie::create(['127.0.0.1:9200']);
+$sigmie = Sigmie::create(hosts: ['127.0.0.1:9200']);
 
-// Define your data structure
-$properties = new NewProperties;
-$properties->title('title');
-$properties->name('director'); 
-$properties->number('year')->integer();
+$props = new NewProperties;
+$props->title('name');
+$props->category('brand');
+$props->price();
 
-// Create an index
-$sigmie->newIndex('movies')->properties($properties)->create();
+$sigmie->newIndex('products')->properties($props)->create();
 
-// Add documents
-$movies = $sigmie->collect('movies', refresh: true);
-$movies->merge([
-    new Document(['title' => 'The Matrix', 'director' => 'The Wachowskis', 'year' => 1999]),
-    new Document(['title' => 'Inception', 'director' => 'Christopher Nolan', 'year' => 2010])
-]);
-
-// Search with advanced features
-$response = $sigmie->newSearch('movies')
-    ->properties($properties)
-    ->queryString('matrix')
+$results = $sigmie->newSearch('products')
+    ->properties($props)
+    ->queryString('lapto')
     ->typoTolerance()
-    ->highlighting(['title'])
+    ->filters('price<=1500')
     ->get();
 ```
 
-## Documentation Structure
+## Where to start
 
-### Getting Started
+- **[Introduction](introduction.md)** — what Sigmie is and when to reach for it.
+- **[Installation](installation.md)** — install and connect.
+- **[Quick Start](quick-start.md)** — build your first search end to end.
 
-- **[Installation](installation.md)** - Install and configure Sigmie
-- **[Getting Started](getting-started.md)** - Your first Sigmie application
-- **[Core Concepts](core-concepts.md)** - Understand the fundamentals
+## Configuration
 
-### Core Features
+- [Connection Setup](connection.md) — authentication, SSL, multi-node.
+- [Docker](docker.md) — local Elasticsearch and AI services via `docker-compose`.
+- [OpenSearch](opensearch.md) — using OpenSearch instead of Elasticsearch.
 
-- **[Index Management](index.md)** - Create and manage indices
-- **[Document Management](document.md)** - Work with documents and collections
-- **[Property Mappings](mappings.md)** - Define field types and behaviors
-- **[Search](search.md)** - High-level search API with built-in features
-- **[Query Builder](query.md)** - Low-level query construction
+## Core concepts
 
-### Advanced Features
+- [Core Concepts](core-concepts.md) — client, index, document, properties.
+- [Indices](index.md) — creation, settings, updates, deletion.
+- [Documents](document.md) — collections, indexing, iteration.
+- [Mappings & Properties](mappings.md) — field types and schema.
 
-- **[Analysis](analysis.md)** - Text processing and tokenization
-- **[Language Support](language.md)** - Multi-language search capabilities
-- **[Semantic Search](semantic-search.md)** - Vector-based search
-- **[Magic Tags](magic-tags.md)** - LLM taxonomy tags and shared tag sidecar (package)
-- **[Retrieval and agents](rag.md)** - Search, reranking, and generation in your application
-- **[Extending Sigmie](extending.md)** - Build packages that add field types and processing hooks
-- **[Facets & Aggregations](facets.md)** - Faceted search interfaces
-- **[Filter Parser](filter-parser.md)** - Advanced filtering syntax
-- **[Sort Parser](sort-parser.md)** - Flexible sorting options
+## Search
 
-### Text Processing
+- [Search](search.md) — `newSearch()` with filters, facets, typo tolerance, highlighting.
+- [Advanced Queries](query.md) — `newQuery()` for raw Elasticsearch DSL.
+- [Filter Parser](filter-parser.md) — human-readable filter syntax.
+- [Sort Parser](sort-parser.md) — sort expression syntax.
+- [Facets](facets.md) — faceted navigation and filter UIs.
+- [Aggregations](aggregations.md) — metrics and bucket aggregations.
 
-- **[Tokenizers](tokenizers.md)** - Text tokenization methods
-- **[Token Filters](token-filters.md)** - Token transformation filters  
-- **[Character Filters](char-filters.md)** - Character-level processing
+## AI features
 
-### Integration & Deployment
+- [Semantic Search](semantic-search.md) — vector fields and embeddings.
+- [Recommendations](recommendations.md) — "more like this" with RRF and MMR.
+- [Retrieval and Agents](rag.md) — how Sigmie fits with generation.
+- [Magic Tags](magic-tags.md) — LLM-generated taxonomy tags (package).
+- [Extending Sigmie](extending.md) — write packages with macros and hooks.
 
-- **[Laravel Scout](laravel-scout.md)** - Laravel integration
-- **[Testing](testing.md)** - Test your search functionality
-- **[Docker](docker.md)** - Containerized deployments
+## Text analysis
 
-### Reference
+- [Analysis](analysis.md) — how text is processed at index and query time.
+- [Tokenizers](tokenizers.md) — splitting text into tokens.
+- [Token Filters](token-filters.md) — transforming tokens (stemming, synonyms, stopwords).
+- [Character Filters](char-filters.md) — pre-tokenizer text processing.
+- [Languages](language.md) — language-specific analyzers (English, German, Greek).
 
-- **[API Reference](api-reference.md)** - Complete API documentation
-- **[Packages](packages.md)** - Individual package information
-- **[Update Guide](update.md)** - Migration between versions
-- **[Template](template.md)** - Documentation template
+## Integrations
 
-## Key Features
+- [Laravel Scout](laravel-scout.md) — Scout driver for Eloquent models.
+- [Laravel AI SDK](laravel-ai.md) — expose indices as AI agent tools.
+- [MCP Server](mcp.md) — connect AI agents to Sigmie docs.
 
-### 🔍 **Powerful Search**
-- Full-text search with relevance scoring
-- Typo tolerance and fuzzy matching
-- Multi-field searching with custom weights
-- Semantic search using vector embeddings
+## Reference
 
-### 🤖 **AI-Powered Features**
-- Semantic search and vector embeddings (`EmbeddingsApi`)
-- Reranking on the search response (`$response->rerank(...)`) with pluggable `RerankApi` implementations
-- Optional [Magic Tags](magic-tags.md) package for taxonomy-style tags (external to core)
+- [Packages](packages.md) — the modular Sigmie packages.
 
-### 📝 **Document Management**  
-- Type-safe document creation and validation
-- Bulk operations for performance
-- Flexible data structures with nested objects
-- Random document sampling
+## Requirements
 
-### 🏗️ **Index Management**
-- Flexible mappings with high-level field types
-- Multi-language analysis support
-- Index templates and settings
-- Zero-downtime index updates
-
-### 🎯 **Advanced Filtering**
-- Intuitive filter syntax (`year>1990 AND rating>=8.0`)
-- Faceted search with aggregations
-- Geographic and range filtering
-- Complex boolean logic
-
-### 🚀 **Developer Experience**
-- Fluent, chainable API
-- Comprehensive error handling
-- Built-in debugging and logging
-- Laravel Scout integration
-
-## System Requirements
-
-- **PHP >= 8.1**
-- **Elasticsearch ^7** or **^8**
-- **Composer** for package management
+- PHP 8.1 or higher
+- Elasticsearch 7.x, 8.x, or 9.x — or OpenSearch 2.x or 3.x
+- Composer
 
 ## Installation
 
@@ -146,118 +98,12 @@ $response = $sigmie->newSearch('movies')
 composer require sigmie/sigmie
 ```
 
-## Basic Usage Patterns
+## Support
 
-### E-commerce Search
-
-```php
-$response = $sigmie->newSearch('products')
-    ->properties($properties)
-    ->queryString('wireless headphones')
-    ->filters('in_stock:true AND price<200')
-    ->facets('category brand')
-    ->sort('_score:desc price:asc')
-    ->highlighting(['name', 'description'])
-    ->get();
-```
-
-### Content Management
-
-```php
-$response = $sigmie->newSearch('articles')
-    ->properties($properties)
-    ->queryString('elasticsearch tutorial')
-    ->filters('is_published:true AND author_id:123')
-    ->sort('published_at:desc')
-    ->from(20)
-    ->size(10)
-    ->get();
-```
-
-### Semantic Search
-
-```php
-$response = $sigmie->newSearch('documents')
-    ->properties($properties)
-    ->semantic()
-    ->queryString('artificial intelligence machine learning')
-    ->get();
-```
-
-### Retrieval, rerank, then generate (app code)
-
-Sigmie handles **search** and optional **reranking**. Text generation uses your own HTTP client, vendor SDK, or framework — not this package:
-
-```php
-$res = $sigmie->newSearch('knowledge-base')
-    ->properties($props)
-    ->queryString('What is machine learning?')
-    ->size(5)
-    ->get();
-
-$reranked = $res->rerank('my-rerank', ['body'], 'machine learning', 3);
-
-// Build context from $reranked, then call your OpenAI / Ollama / other API outside Sigmie.
-```
-
-## Common Use Cases
-
-### User-Facing Search
-Build search experiences with typo tolerance, highlighting, and faceted navigation.
-
-### Content Discovery
-Enable semantic search to find content by meaning, not just keywords.
-
-### Intelligent Q&A Systems
-Combine Elasticsearch retrieval and reranking in Sigmie with generation in your application for grounded answers.
-
-### Data Analysis
-Use aggregations and facets to analyze and summarize your data.
-
-### Real-time Search
-Implement autocomplete and search-as-you-type functionality.
-
-## Architecture Overview
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Application   │───▶│     Sigmie      │───▶│  Elasticsearch  │
-│                 │    │                 │    │                 │
-│ • Models        │    │ • Search        │    │ • Indices       │
-│ • Controllers   │    │ • Query         │    │ • Documents     │
-│ • Views         │    │ • Index         │    │ • Mappings      │
-└─────────────────┘    │ • Document      │    └─────────────────┘
-                       │ • Properties    │           ▲
-                       │ • Embeddings    │           │
-                       │ • Rerank        │           │
-                       └─────────────────┘           │
-                               │                     │
-                               ▼                     │
-                       ┌─────────────────┐           │
-                       │  Vector / rank  │───────────┘
-                       │  APIs you       │
-                       │  register       │
-                       └─────────────────┘
-```
-
-## Support & Community
-
-- **Issues**: [GitHub Issues](https://github.com/sigmie/sigmie/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/sigmie/sigmie/discussions)
-- **Email**: For security issues, email nico@sigmie.com
-
-## Contributing
-
-Sigmie is open-source software. Contributions are welcome! Please see our contributing guidelines for details on how to contribute.
+- Issues: [github.com/sigmie/sigmie/issues](https://github.com/sigmie/sigmie/issues)
+- Discussions: [github.com/sigmie/sigmie/discussions](https://github.com/sigmie/sigmie/discussions)
+- Security: nico@sigmie.com
 
 ## License
 
-Sigmie is released under the MIT License. See the LICENSE file for details.
-
----
-
-**Ready to get started?** Begin with the [Installation Guide](installation.md) or jump straight into the [Getting Started Tutorial](getting-started.md).
-
-For experienced Elasticsearch users, the [API Reference](api-reference.md) provides comprehensive documentation of all available methods and classes.
-
-To explore how retrieval fits with generation in your app, see [Retrieval and agents](rag.md).
+Sigmie is open-source software released under the MIT license.

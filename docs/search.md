@@ -1,355 +1,254 @@
 ---
 title: Search
-short_description: Build powerful search queries with filtering, sorting, and highlighting
+short_description: Build user-facing searches with filters, facets, and typo tolerance
 keywords: [search, query, filters, sorting, highlighting, typo tolerance]
 category: Core Concepts
 order: 5
 related_pages: [query, document, semantic-search, filter-parser]
 ---
 
-## Introduction
-Once you've indexed all your documents into an index, you'll want to start searching. However, "searching" in Elasticsearch can mean many different things. To search for your indexed documents, you'll need to make decisions like "Title is more important than a tag," and these decisions can be even more complex when you need to filter and sort the matches.
+# Search
 
-Even after you've made these decisions, converting them into an Elasticsearch query can be quite challenging, especially if you're not familiar with it. Sigmie provides an abstraction that simplifies this process by providing more user-friendly APIs.
+`newSearch()` is the high-level entry point for user-facing search: typo tolerance, faceting, highlighting, weighting, semantic matching, all in one fluent chain.
 
-Let's see how you can do this using an example from the fairy tales open domain.
-
-Imagine having the following documents:
-
-```php    
-[
-    new Document([
-        'name' => 'Snow White',
-        'description' => 'Adventure in the woods'
-    ]),
-    new Document([
-        'name' => 'Cinderella',
-        'description' => 'Lost her glass slipper'
-    ]),
-    new Document([
-        'name' => 'Sleeping Beauty',
-        'description' => 'Cursed to sleep for a hundred years'
-    ]),
-]
-```
-
-Like when defining an index, we need an instance of `NewProperties` that we will pass to the `NewSearch` builder class.
-
-In our case, the properties look like this:
+For lower-level access to Elasticsearch's boolean query DSL, see [Advanced Queries](query.md).
 
 ```php
 use Sigmie\Mappings\NewProperties;
 
-$properties = new NewProperties;
-$properties->name();
-$properties->text('description');
+$props = new NewProperties;
+$props->name();
+$props->text('description');
+
+$results = $sigmie->newSearch('fairy-tales')
+    ->properties($props)
+    ->queryString('snow white')
+    ->get();
 ```
 
-You can find a deeper explanation of properties in the Mappings section.
+Two arguments are required: the **properties** (so Sigmie knows how to query each field) and the **query string**.
 
-Now that we have our properties defined, we can use them to search for our documents.
+## Query string
 
-Let's have a look at a full example where we search for the `Snow White` **query string**. 
-
-```php
-use Sigmie\Mappings\NewProperties;
-
-$index = $sigmie->collect('fairy-tales', refresh: true);
-$index->merge([
-    new Document([
-        'name' => 'Snow White',
-        'description' => 'Adventure in the woods'
-    ]),
-    new Document([
-        'name' => 'Cinderella',
-        'description' => 'Lost her glass slipper'
-    ]),
-    new Document([
-        'name' => 'Sleeping Beauty',
-        'description' => 'Cursed to sleep for a hundred years'
-    ]),
-]);
-
-$properties = new NewProperties;
-$properties->name();
-$properties->text('description');
-
-$sigmie->newSearch('fairy-tales')
-       ->properties($properties)
-       ->queryString('snow white')
-       ->get()
-       ->json('hits');
-```
-
-In the above example, we passed the properties to the `properties` method. This way, Sigmie knows how to search for each property.
-
-In the `queryString`, we pass the `string` that we are searching for, and after we call the `get` method, we receive an instance of `ElasticsearchResponse`.
-
-We can access the matches **hits** by passing the `'hits'` key to the `json` method.
-
-## Query String and Properties
-Properties and the Query string are the 2 required parameters that the search builder needs.
+The user input you're searching for:
 
 ```php
 $sigmie->newSearch('fairy-tales')
-       ->properties($properties)
-       ->queryString('Snow White')
-       ->get();
+    ->properties($props)
+    ->queryString('snow white')
+    ->get();
 ```
 
-## Multiple Query Strings with Weights
-You can combine multiple query strings with different weights to control their importance:
+Add multiple query strings with different weights to bias the score:
 
 ```php
-$sigmie->newSearch($indexName)
-    ->properties($blueprint)
+$sigmie->newSearch('characters')
+    ->properties($props)
     ->queryString('Mickey', weight: 2)
     ->queryString('Goofy', weight: 1)
     ->get();
 ```
 
-## Searchable Attributes
-To search only for specific fields in Sigmie, you can use the `fields` method on the `NewSearch` builder instance. The `fields` method allows you to only look for the query string in the specific fields.
+## Limit which fields are searched
 
-Here's an example of how you might use it.
+By default, every searchable field in your properties is queried. Narrow to specific fields with `fields()`:
 
 ```php
 $sigmie->newSearch('fairy-tales')
-       ->properties($properties)
-       ->queryString('Snow White')
-       ->fields(['name'])
-       ->get();
+    ->properties($props)
+    ->queryString('Snow White')
+    ->fields(['name'])                              // only search `name`
+    ->get();
 ```
 
-In this example, we query the `fairy-tales` Index for the `Snow White` query string, and we are looking only in the `name` attribute.
+## Limit which fields are returned
 
-## Retrievable Attributes
-
-To only retrieve some attributes of the documents, use the `retrieve` method. This method accepts an array of the attributes that you want to retrieve.
-
-Here's an example of how you to use it to retrieve **only** the `description` attribute.
+Reduce response size by selecting only the fields you need:
 
 ```php
 $sigmie->newSearch('fairy-tales')
-       ->properties($properties)
-       ->queryString('Snow White')
-       ->retrieve(['description'])
-       ->get();
+    ->properties($props)
+    ->queryString('Snow White')
+    ->retrieve(['name', 'description'])
+    ->get();
 ```
 
-In the above example, we passed an array containing the `description` key that should be retrieved.
+## Filter
 
-## Sorting
-To sort the records returned from Elasticsearch, you can use the `sort` method. This method expects a string with the attributes and their sorting direction.
+The [filter parser](filter-parser.md) reads filters in a human-friendly syntax:
 
-Here is an example of how you can use it:
 ```php
 $sigmie->newSearch('fairy-tales')
-       ->properties($properties)
-       ->queryString('Snow White')
-       ->sort('name:asc year:desc')
-       ->get();
+    ->properties($props)
+    ->queryString('Sleeping Beauty')
+    ->filters('stock>0 AND is:active AND NOT category:"Drama"')
+    ->get();
 ```
 
-This code sorts the **matched hits** first by their `name` in ascending direction, and secondly by the `description` in descending order. 
+Filters narrow the result set but don't affect relevance scoring.
 
-By default, the matched hits are sorted by their `_score`, which shows how well a document matches the query.
-
-You can also use `_score` in the sort string. By default, `_score` sorts in descending order (highest scores first). You can explicitly specify `_score:desc`:
+## Sort
 
 ```php
 $sigmie->newSearch('fairy-tales')
-       ->properties($properties)
-       ->queryString('Snow White')
-       ->sort('_score:desc name:asc')
-       ->get();
+    ->properties($props)
+    ->queryString('Snow White')
+    ->sort('_score:desc name:asc')
+    ->get();
 ```
 
-This will sort the **hits** first by their `_score` in descending order and then ascending by their `name` attribute.
+`_score:desc` is the default. `_score:asc` is not allowed — Elasticsearch can't sort relevance ascending. See [Sort Parser](sort-parser.md) for full syntax.
 
-**Note**: `_score:asc` is not allowed. Use `_score` or `_score:desc` instead.
-
-## Filtering
-
-To filter the results of a search query in Sigmie, you can use the `filters` method on the search builder instance. Here is an example of how you could use this method:
+## Typo tolerance
 
 ```php
 $sigmie->newSearch('fairy-tales')
-       ->properties($properties) 
-       ->queryString('Sleeping Beauty')
-       ->filters('stock>0')
-       ->get();
+    ->properties($props)
+    ->queryString('Sleping Buety')                  // typos OK
+    ->typoTolerance()
+    ->get();
 ```
 
-This code will look into the `fairy-tales` for the `Sleeping Beauty` string, but **only** in the documents whose `stock` attribute **is greater** than zero.
-
-You can also chain multiple filter clauses to create more complex filters. For example:
+The default policy: one typo allowed for terms 3+ characters long, two typos for 6+. Override the thresholds:
 
 ```php
-$sigmie->newSearch('fairy-tales')
-       ->properties($properties) 
-       ->queryString('Sleeping Beauty')
-       ->filters('stock>0 AND is:active AND NOT category:"Drama"')
-       ->get();
+->typoTolerance(oneTypoChars: 4, twoTypoChars: 8)
 ```
 
-This code will search for records that match the query "Sleeping Beauty", and have a `stock` greater than 0, an `active: true` attribute and their `category`  attribute is not `Drama`.
-
-You can find more information about all the available filter clauses in the Filter Parser section.
-
-## Typo-Tolerant Attributes
-
-The `typoTolerance` method specifies how tolerant the search should be to spelling errors. This is useful for handling typos and other small errors that users may make when entering a search query.
-
-The `oneTypoChars` and `twoTypoChars`  parameters determine the appropriate typo tolerance according to the length of the search term.
-
-The default value for `oneTypoChars`  is `3` which means one typo is allowed once the search term has a length of 3 chars.
-
-Next, the default value for `twoTypoChars` is `6` which again means **two** typos are allowed once the search term has a length of 6 chars
+Restrict typos to specific fields:
 
 ```php
 $sigmie->newSearch('fairy-tales')
-       ->properties($properties) 
-       ->queryString('Sleeping Beauty')
-       ->typoTolerance(oneTypoChars: 3, twoTypoChars: 6)
-       ->get();
+    ->properties($props)
+    ->queryString('Sleping Buety')
+    ->typoTolerance()
+    ->typoTolerantAttributes(['name'])
+    ->get();
 ```
 
-You can combine the `typoTolerance` method with the `typoTolerantAttributes` where you can specify which attributes are typo tolerant.
+## Highlight matches
 
-Here is an example of how you can use it:
+Wrap matching tokens in HTML for direct display:
+
 ```php
 $sigmie->newSearch('fairy-tales')
-       ->properties($properties) 
-       ->queryString('Sleeping Beauty')
-       ->typoTolerance(oneTypoChars: 3, twoTypoChars: 6)
-       ->typoTolerantAttributes(['name'])
-       ->get();
+    ->properties($props)
+    ->queryString('sleeping beauty')
+    ->highlighting(
+        ['name'],
+        prefix: '<mark>',
+        suffix: '</mark>',
+    )
+    ->get();
 ```
 
-This code accepts spelling errors only on the `name` attribute.
+Default prefix/suffix is `<em>` / `</em>`.
 
-## Highlighting
+## Weight fields
 
-To **highlight** the matching text, you can use the `highlighting` method to specify which attributes you want to highlight and what the highlighting prefix and suffix should be.
+Give certain fields more influence on relevance:
 
-For example, you can use `<span class="font-bold">` as `prefix` and `</span>` as `suffix`. This way, you can directly display the **highlighted parts** in your application's HTML.
-
-The code to do this looks like this:
 ```php
 $sigmie->newSearch('fairy-tales')
-       ->properties($properties) 
-       ->queryString('sleeping beauty')
-       ->highlighting(['name'], prefix: '<span class="font-bold">', suffix: '</span>')
-       ->get();
+    ->properties($props)
+    ->queryString('sleeping beauty')
+    ->weight(['name' => 4, 'description' => 1])
+    ->get();
 ```
 
-In this code example, the first parameter of the `highlighting` function gets an array with the attributes that we want to highlight.
+A match in `name` now scores 4× higher than the same match in `description`.
 
-## Weight
-The `weight` method specifies the relative importance of a field when boosting clauses for a search query. This parameter allows you to influence the relevance score of Documents based on the values in specific fields.
+## Minimum score
 
-The `weight` method accepts an array where the key is the attribute names and values is the attribute importance.
-
-Here is an example:
-```php
-$sigmie->newSearch('fairy-tales')
-       ->properties($properties) 
-       ->queryString('sleeping beauty')
-       ->weight(['name'=> 4, 'description'=> 1])
-       ->get();
-```
-
-In this code, we said that `name` importance score is `4`  and the `description` importance score is `1`. 
-
-Now if a match is found in the `name` field in one document and in the `description` field in another document, the document with the query term in its `name` will be **scored higher** than the one with the match in the `description` field.
-
-## Minimum Score
-You can set a minimum score threshold using the `minScore` method. Only documents with a score equal to or higher than the specified value will be returned:
+Drop low-relevance results:
 
 ```php
 $sigmie->newSearch('fairy-tales')
-    ->properties($properties)
+    ->properties($props)
+    ->queryString('Mickey')
     ->weight(['name' => 5])
     ->minScore(2)
-    ->queryString('Mickey')
     ->get();
 ```
 
-## Pagination
-The `from` and `size` methods on the search builder can be used to specify the number of hits that should be skipped and the maximum number of records that should be returned by the search.
-
-For example, you could use the `from` and `size` methods to retrieve the second page of hits, with 10 hits per page, like this:
+## Paginate
 
 ```php
 $sigmie->newSearch('fairy-tales')
-       ->properties($properties) 
-       ->queryString('sleeping beauty')
-       ->from(10)
-       ->size(10)
-       ->get();
+    ->properties($props)
+    ->queryString('sleeping beauty')
+    ->from(10)
+    ->size(10)
+    ->get();
 ```
 
-This code will skip the first 10 records from the hits, and then return the next 10 hits.
+`from(10)->size(10)` returns the second page (skip first 10, take next 10).
 
-The `from` method specifies the number of records that should be skipped, while the `size` method specifies the maximum number of hits that should be returned.
-
-In this example, the combination of the `from` and `size` values creates a paginated result set with 10 hits per page. You can use these methods to paginate the results of a search and split them into smaller, more manageable pages.
-
-## Deduplication
-
-When many documents share the same key (for example variants of the same product), you can return one hit per key and optionally include the next best matches from that group in the response.
+`page()` is a shortcut:
 
 ```php
-// One result per composite_key
-$sigmie->newSearch('jobs')
-    ->properties($properties)
-    ->queryString('')
-    ->uniqueBy('composite_key')
-    ->get();
+->page(2, 20)               // page 2, 20 per page (== from(20)->size(20))
+```
 
-// One result per product_id, plus the top two other matches in that group (inner hits named `top`)
+## Deduplicate
+
+Return one hit per value of a field. Useful for product variants:
+
+```php
 $sigmie->newSearch('products')
-    ->properties($properties)
+    ->properties($props)
     ->queryString('sneakers')
-    ->sort('price:asc')
-    ->uniqueBy('product_id', top: 3)
+    ->uniqueBy('product_id')
     ->get();
 ```
 
-The collapse field must be mapped as a single-valued field (for example `keyword`).
+Include the next best matches from each group as inner hits:
 
-`uniqueBy` is for `newSearch` only. If you use `newQuery` and a sort string, call `sortString` (or `sort` with a raw array) on the query builder before `bool`, `matchAll`, and other methods that return `Search` — see [Advanced Queries](/docs/query) and [Sort parser](/docs/sort-parser).
+```php
+->uniqueBy('product_id', top: 3)
+```
+
+The collapse field must be single-valued (e.g. `keyword`).
 
 ## Facets
-You can use facets to get aggregated information about your search results:
+
+Build sidebar filters with one method. See [Facets](facets.md):
 
 ```php
-$sigmie->newSearch('fairy-tales')
-    ->properties($properties)
-    ->queryString('')
-    ->facets('category')
+$response = $sigmie->newSearch('products')
+    ->properties($props)
+    ->queryString('laptop')
+    ->facets('brand category price:100')
     ->get();
 
 $facets = $response->json('facets');
 ```
 
-For price fields, you can specify the interval:
+## Semantic search
+
+Enable vector matching alongside keyword search:
 
 ```php
-$sigmie->newSearch('products')
-    ->properties($properties)
-    ->queryString('')
-    ->facets('price:100')
+$sigmie->newSearch('articles')
+    ->properties($props)
+    ->semantic()
+    ->queryString('artificial intelligence')
     ->get();
 ```
 
-## Autocomplete
-You can use the autocomplete feature for type-ahead functionality:
+Use vectors only (no keyword matching):
 
 ```php
-$sigmie->newSearch('fairy-tales')
-    ->properties($properties)
+->semantic()->disableKeywordSearch()
+```
+
+See [Semantic Search](semantic-search.md) for embeddings setup and accuracy levels.
+
+## Autocomplete
+
+```php
+$response = $sigmie->newSearch('fairy-tales')
+    ->properties($props)
     ->autocompletePrefix('m')
     ->fields(['name'])
     ->retrieve(['name'])
@@ -358,120 +257,87 @@ $sigmie->newSearch('fairy-tales')
 $suggestions = $response->json('autocomplete');
 ```
 
-## Semantic Search
-Sigmie supports semantic search using vector embeddings:
+## Multi-language
+
+Search across multiple indices:
 
 ```php
-$sigmie->newSearch('articles')
-    ->semantic()
-    ->noResultsOnEmptySearch()
-    ->properties($properties)
-    ->queryString('artificial intelligence')
+$result = $sigmie->newSearch("$germanIndex,$englishIndex")
+    ->properties($props)
+    ->queryString('door tür')
     ->get();
 ```
 
-You can also disable keyword search to rely only on semantic matching:
+## Nested fields
 
-```php
-$sigmie->newSearch('articles')
-    ->semantic()
-    ->disableKeywordSearch()
-    ->properties($properties)
-    ->queryString('AI technology')
-    ->get();
-```
-
-## No Results on Empty Search
-By default, Sigmie returns all documents when the query string is empty. You can change this behavior:
-
-```php
-$sigmie->newSearch('fairy-tales')
-    ->properties($properties)
-    ->noResultsOnEmptySearch()
-    ->queryString('')
-    ->get();
-```
-
-## Multi-Language Search
-You can search across multiple indices with different languages:
-
-```php
-$result = $sigmie->newSearch("$deIndexName,$enIndexName")
-    ->properties($properties)
-    ->queryString('door tur')
-    ->get();
-```
-
-## Nested Field Search
-You can search and retrieve nested fields:
+Search and retrieve nested fields with dot notation:
 
 ```php
 $sigmie->newSearch('users')
-    ->properties($properties)
+    ->properties($props)
     ->queryString('Pluto')
     ->fields(['contact.dog.name'])
     ->retrieve(['contact.dog.name'])
     ->get();
 ```
 
-## Working with Hits
-The response provides several ways to access the search results:
+## Reading results
 
 ```php
 $response = $sigmie->newSearch('fairy-tales')
-    ->properties($properties)
+    ->properties($props)
     ->queryString('mickey')
     ->get();
 
-// Get hits array
-$hits = $response->json('hits');
-
-// Get hits using the hits() method
-$hits = $response->hits();
-
-// Get total count
-$total = $response->total();
+$response->total();                  // total matching documents
+$response->hits();                   // array of hits
+$response->json('hits');             // raw hits array
+$response->json('hits.0._source');   // a specific value via dot notation
 ```
 
-## Iterating Over All Matching Hits
+## Empty query strings
 
-Pagination works well for UI results, but some tasks — CSV exports, bulk re-processing, data migrations — need every document that matches a query. `each()` and `lazy()` stream all matching hits without holding the full result set in memory.
-
-Both methods reuse the exact query you already have: filters, query strings, field scoping, and minimum score all apply. Elasticsearch handles pagination internally using Point-in-Time (PIT) and `search_after`, so the results are consistent even if new documents arrive while you iterate.
-
-### Iterating with a Callback
-
-`each()` calls a closure for every matching `Hit`:
+By default, an empty query string returns every document. To return nothing instead:
 
 ```php
+->noResultsOnEmptySearch()
+```
+
+## Async execution
+
+`promise()` returns a Guzzle promise instead of executing immediately:
+
+```php
+$promise = $sigmie->newSearch('fairy-tales')
+    ->properties($props)
+    ->queryString('mickey')
+    ->promise();
+```
+
+## Iterating over all matching hits
+
+`size()` is for UIs. For exports, migrations, or bulk re-processing, use `each()` or `lazy()` to stream every matching document. Both reuse your filters, query string, and field scoping, and page internally using Point-in-Time + `search_after` — so concurrent writes don't break the cursor.
+
+### With a callback
+
+```php
+use Sigmie\Document\Hit;
+
 $sigmie->newSearch('orders')
-    ->properties($properties)
+    ->properties($props)
     ->filters('status:completed')
-    ->each(function (Hit $hit) use ($csv) {
+    ->each(function (Hit $hit) use ($csv): void {
         $csv->writeRow($hit->_source);
     });
 ```
 
-Each `Hit` carries `_id`, `_source`, and `_score`:
+Each `Hit` exposes `_id`, `_source`, and `_score`.
 
-```php
-$sigmie->newSearch('products')
-    ->properties($properties)
-    ->filters('in_stock:true')
-    ->each(function (Hit $hit): void {
-        echo $hit->_id;            // document ID
-        echo $hit->_source['name']; // field value
-        echo $hit->_score;         // relevance score
-    });
-```
-
-### Iterating with a Generator
-
-`lazy()` returns a `Generator` you can drive yourself. This is useful when you need to pass an iterable to another function or process hits in batches using regular PHP:
+### With a generator
 
 ```php
 $generator = $sigmie->newSearch('orders')
-    ->properties($properties)
+    ->properties($props)
     ->filters('status:completed')
     ->lazy();
 
@@ -480,30 +346,26 @@ foreach ($generator as $hit) {
 }
 ```
 
-### Controlling Page Size
+### Page size
 
-Both `each()` and `lazy()` fetch hits in pages. The default page size is 500. Use `chunk()` to change it:
+Default 500 per page. Tune for memory vs. round-trips:
 
 ```php
 $sigmie->newSearch('products')
-    ->properties($properties)
+    ->properties($props)
     ->chunk(100)
     ->each(function (Hit $hit): void {
-        // called for every product, fetched 100 at a time
+        // 100 at a time
     });
 ```
 
-A smaller chunk size reduces memory per request; a larger one reduces the number of round-trips to Elasticsearch. Tune it based on document size and your available memory.
+### Sort during iteration
 
-### Sort order during iteration
+Point-in-Time needs a deterministic sort. Sigmie handles this for you:
 
-Point-in-Time search must use a deterministic `sort` so `search_after` can page without skipping or duplicating hits. Sigmie builds that internally (via `PitSortPlanner`); you do not instantiate it yourself.
-
-- **`NewSearch`**: Your `sort('field:asc')` string still applies. Sorts that are only `_score` or `_doc` are replaced by the engine tiebreaker (`_shard_doc` ascending on Elasticsearch, `_id` ascending on OpenSearch). Any other sort list keeps your keys and appends the tiebreaker when it is not already the last sort key.
-
-- **`NewQuery`**: Call `sortString('price:asc')` or `sort([['price' => 'asc']])` on the query builder before you add the query clause (for example `matchAll()`). Omit `sort()` to stream in tiebreaker-only order (stable, not relevance-ranked). Use field names that exist in your mapping (for text fields you often need a `.keyword` or a `.sortable` subfield from your blueprint).
-
-- **`raw()` / `RawQuery`**: Include a top-level `sort` key in the body you pass to `raw()`:
+- **`NewSearch::sort()`** — your sort string is kept. Sigmie appends a stable tiebreaker (`_shard_doc` on Elasticsearch, `_id` on OpenSearch) if you didn't already provide one. `_score`-only or `_doc`-only sorts are replaced by the tiebreaker.
+- **`NewQuery::sortString()` / `sort(array)`** — call before the query method (`matchAll`, `bool`, etc.). Omit sort entirely to stream in stable but unranked order. Use field names that exist in your mapping (often a `.keyword` sub-field for text).
+- **`raw()`** — include a top-level `sort` key in the body you pass.
 
 ```php
 $multi->raw('orders', [
@@ -512,11 +374,11 @@ $multi->raw('orders', [
 ]);
 ```
 
-When the request body includes `collapse`, Sigmie does not append `_shard_doc` / `_id`. Elasticsearch only allows a single sort key with `collapse` + `search_after`; supply that sort yourself (usually the collapsed field).
+When the body includes `collapse`, Sigmie does not append the tiebreaker — Elasticsearch only allows one sort key with `collapse` + `search_after`, and that's your responsibility.
 
-### Streaming hits from a multi-search
+### Multi-search
 
-`newMultiSearch()` registers several queries. A single `_msearch` call returns only the first page per query. To stream **all** matching hits across those queries, call `lazy()` or `each()` on the multi-search instance. Each registered `NewSearch`, `NewQuery`, or `raw()` body runs its own PIT iteration; the multi-search yields hits in registration order (first query fully, then the next).
+`newMultiSearch()` registers multiple queries; a single `_msearch` returns one page each. To stream **all** matching hits across registered queries, call `each()` or `lazy()` on the multi-search:
 
 ```php
 use Sigmie\Document\Hit;
@@ -524,15 +386,14 @@ use Sigmie\Document\Hit;
 $multi = $sigmie->newMultiSearch();
 
 $multi->newSearch('orders')
-    ->properties($orderProperties)
+    ->properties($orderProps)
     ->filters('status:pending')
     ->chunk(200);
 
-$multi->newQuery('products')
-    ->matchAll();
+$multi->newQuery('products')->matchAll();
 
 $multi->raw('orders', [
-    'query' => ['term' => ['status' => 'pending']]],
+    'query' => ['term' => ['status' => 'pending']],
 ])->chunk(200);
 
 foreach ($multi->lazy() as $hit) {
@@ -540,16 +401,6 @@ foreach ($multi->lazy() as $hit) {
 }
 ```
 
-Set `chunk()` on each query before the next registration — the multi-search object does not expose its own `chunk()`; page size is per query. `raw()` returns a `RawQuery` instance; call `chunk()` on that return value before you register the next slot if you want a non-default page size for that raw body.
+Each registered search runs its own PIT iteration; results yield in registration order. Set `chunk()` per query — the multi-search has no global chunk size.
 
-> **Note:** `each()` and `lazy()` ignore `from()`, `size()`, `page()`, and `highlighting()` — these are pagination and display concerns that do not apply to full iteration. User-defined sort is still applied for streaming where you set it (`NewSearch::sort()`, `NewQuery::sortString()` / `NewQuery::sort(array)`, or a `sort` key on a raw body); see **Sort order during iteration** above.
-
-## Promises
-For asynchronous operations, you can get a Promise instead of executing the search immediately:
-
-```php
-$promise = $sigmie->newSearch('fairy-tales')
-    ->properties($properties)
-    ->queryString('mickey')
-    ->promise();
-```
+> **Note:** `each()` and `lazy()` ignore `from()`, `size()`, `page()`, and `highlighting()` — these are pagination/display concerns. Sort is honored as described above.

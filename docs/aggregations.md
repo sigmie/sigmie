@@ -1,535 +1,259 @@
 ---
 title: Aggregations
-short_description: Analyze and summarize data with Elasticsearch aggregations
+short_description: Metrics and bucket aggregations for analytics
 keywords: [aggregations, facets, analytics, bucket aggregations, metrics]
 category: Features
 order: 2
 related_pages: [facets, search]
 ---
 
-# Aggregations & Facets
+# Aggregations
 
-Aggregations in Sigmie allow you to analyze and summarize your data. They're particularly useful for creating faceted search, analytics dashboards, and understanding your dataset.
+Aggregations summarize and analyze your indexed data. Use them to power analytics dashboards, statistical summaries, and the underlying data for filter UIs.
 
-## Introduction
+Sigmie has two paths into aggregations:
 
-Sigmie provides two main ways to work with aggregations:
+1. **[Facets](facets.md)** — high-level, integrated with properties. The right choice for filter sidebars.
+2. **Raw aggregations** — direct access to all Elasticsearch aggregation types. The right choice for analytics.
 
-1. **Facets** - High-level abstraction for common aggregation patterns
-2. **Raw Aggregations** - Direct access to all Elasticsearch aggregation types
+This page covers the raw aggregations API.
 
-Facets are integrated with Sigmie's property system and automatically handle complex nested structures, while raw aggregations give you full control over the aggregation query.
-
-## Facets
-
-Facets are the easiest way to add aggregations to your searches. They work seamlessly with Sigmie's property system.
-
-### Basic Facets
-
-```php
-use Sigmie\Mappings\NewProperties;
-
-$properties = new NewProperties;
-$properties->category('genre');
-$properties->price('price');
-$properties->date('created_at');
-
-// Simple category facet
-$response = $sigmie->newSearch('movies')
-    ->properties($properties)
-    ->queryString('action')
-    ->facets('genre')
-    ->get();
-
-$facets = $response->json('facets');
-```
-
-### Price Facets with Intervals
-
-Price fields support histogram facets with custom intervals:
-
-```php
-// Price facet with $100 intervals
-$response = $sigmie->newSearch('products')
-    ->properties($properties)
-    ->queryString('')
-    ->facets('price:100')  // 100 unit intervals
-    ->get();
-
-$priceFacets = $response->json('facets')['price'];
-// Returns: ['min' => 50, 'max' => 500, 'histogram' => [...]]
-```
-
-### Multiple Facets
-
-```php
-$response = $sigmie->newSearch('products')
-    ->properties($properties)
-    ->queryString('laptop')
-    ->facets('brand category price:50')
-    ->get();
-
-$facets = $response->json('facets');
-// Contains: ['brand' => [...], 'category' => [...], 'price' => [...]]
-```
-
-### Nested Field Facets
-
-Facets work automatically with nested fields:
-
-```php
-$properties = new NewProperties;
-$properties->nested('variants', function (NewProperties $props) {
-    $props->keyword('color');
-    $props->price('price');
-});
-
-// Facet on nested field
-$response = $sigmie->newSearch('products')
-    ->properties($properties)
-    ->queryString('')
-    ->facets('variants.color variants.price:25')
-    ->get();
-```
-
-### Deep Nested Facets
-
-Even deeply nested structures are supported:
-
-```php
-$properties = new NewProperties;
-$properties->nested('shirt', function (NewProperties $props) {
-    $props->nested('red', function (NewProperties $props) {
-        $props->price('price');
-    });
-});
-
-$response = $sigmie->newSearch('products')
-    ->properties($properties)
-    ->queryString('')
-    ->facets('shirt.red.price:100')
-    ->get();
-```
-
-## Working with Facet Results
-
-### Price Facets Structure
-
-Price facets return a structured response:
-
-```php
-$priceFacets = $response->json('facets')['price'];
-/*
-Array structure:
-[
-    'min' => 50,           // Minimum price in results
-    'max' => 500,          // Maximum price in results
-    'histogram' => [       // Bucketed counts
-        0 => 1,            // 1 item in $0-$100 range
-        100 => 2,          // 2 items in $100-$200 range
-        200 => 2,          // 2 items in $200-$300 range
-        300 => 0,          // 0 items in $300-$400 range
-        400 => 2,          // 2 items in $400-$500 range
-        500 => 1,          // 1 item in $500-$600 range
-    ]
-]
-*/
-```
-
-### Category Facets Structure
-
-Category and keyword facets return term counts:
-
-```php
-$categoryFacets = $response->json('facets')['category'];
-/*
-Array structure:
-[
-    'terms' => [
-        ['key' => 'electronics', 'doc_count' => 15],
-        ['key' => 'clothing', 'doc_count' => 8],
-        ['key' => 'books', 'doc_count' => 3],
-    ]
-]
-*/
-```
-
-### Processing Facets with Properties
-
-You can use the properties system to process raw aggregation results:
-
-```php
-$properties = new NewProperties;
-$properties->price('price');
-
-$props = $properties->get();
-$searchResponse = $sigmie->newSearch('products')->properties($properties)->facets('price:100')->get();
-
-// Process facets through properties
-$facets = $props['price']->facets($searchResponse->facetAggregations());
-```
-
-## Raw Aggregations API
-
-For more control, you can use aggregations directly with the Query Builder:
-
-### Basic Aggregations
+## Basic usage
 
 ```php
 use Sigmie\Query\Aggs;
 
-$res = $sigmie->newQuery('orders')
+$response = $sigmie->newQuery('orders')
     ->matchAll()
-    ->aggregate(function (Aggs $aggregation) {
-        $aggregation->sum(name:'turnover', field: 'price');
+    ->aggregate(function (Aggs $agg) {
+        $agg->sum(name: 'turnover', field: 'price');
     })
     ->get();
 
-$res->aggregation('turnover.value'); // 54.403
+$response->aggregation('turnover.value');     // 54.403
 ```
 
-## Metrics Aggregations
+## Metric aggregations
 
-Metric aggregations are simple aggregations that yield a **single value**. They are used to perform simple calculations on the numeric values of your documents.
+Metrics return a single value across the matched documents.
 
 ### Sum
-The sum aggregation returns the total sum of a numeric field. This is useful when you want to calculate the total value of a specific field across all documents.
+
 ```php
-$aggregation->sum(name:'stock_sum', field:'stock');
+$agg->sum(name: 'stock_sum', field: 'stock');
+$response->aggregation('stock_sum.value');
 ```
 
-Equivalent SQL:
-```sql
-SELECT SUM(stock) AS stock_sum;
-```
+SQL equivalent: `SELECT SUM(stock)`.
 
-Accessing the result:
+### Max / Min / Avg
+
 ```php
-$res->aggregation('stock_sum.value');
+$agg->max(name: 'max_price', field: 'price');
+$agg->min(name: 'min_price', field: 'price');
+$agg->avg(name: 'avg_rating', field: 'rating');
 ```
 
-### Max
-The max aggregation returns the maximum value of a numeric field. This is useful when you want to find the highest value of a specific field across all documents.
+Access with `$response->aggregation('max_price.value')`.
+
+### Value count
+
+Count of distinct values:
+
 ```php
-$aggregation->max(name:'max_price', field:'price');
-```
-
-Equivalent SQL:
-```sql
-SELECT MAX(price) AS max_price;
-```
-
-Accessing the result:
-```php
-$res->aggregation('max_price.value');
-```
-
-### Min
-The min aggregation returns the minimum value of a numeric field. This is useful when you want to find the lowest value of a specific field across all documents.
-```php
-$aggregation->min(name:'min_price', field:'price');
-```
-
-Equivalent SQL:
-```sql
-SELECT MIN(price) AS min_price;
-```
-
-Accessing the result:
-```php
-$res->aggregation('min_price.value');
-```
-
-### Avg
-The average aggregation returns the average value of a numeric field. This is useful when you want to calculate the average value of a specific field across all documents.
-```php
-$aggregation->avg(name:'avg_rating', field:'rating');
-```
-
-Equivalent SQL:
-```sql
-SELECT AVG(rating) AS avg_rating;
-```
-
-Accessing the result:
-```php
-$res->aggregation('avg_rating.value');
-```
-
-### Value Count
-The value count aggregation returns the count of unique values for a field. This is useful when you want to count the number of unique values of a specific field across all documents.
-```php
-$aggregation->valueCount(name:'categories_count', field:'category');
-```
-
-Equivalent SQL:
-```sql
-SELECT COUNT(DISTINCT category) AS categories_count;
-```
-
-Accessing the result:
-```php
-$res->aggregation('categories_count.value');
+$agg->valueCount(name: 'categories_count', field: 'category');
 ```
 
 ### Cardinality
-The cardinality aggregation returns the approximate number of distinct values in a field:
-```php
-$aggregation->cardinality(name:'unique_users', field:'user_id');
-```
 
-Accessing the result:
+Approximate distinct-value count — much cheaper than `valueCount` on large fields:
+
 ```php
-$res->aggregation('unique_users.value');
+$agg->cardinality(name: 'unique_users', field: 'user_id');
 ```
 
 ### Stats
-The stats aggregation provides a quick summary of the distribution of a set of data. This is useful when you want to get a quick overview of the statistical distribution of a specific field across all documents.
+
+A quick statistical summary:
+
 ```php
-$aggregation->stats(name:'sales_stats', field:'amount');
+$agg->stats(name: 'sales_stats', field: 'amount');
+$response->aggregation('sales_stats');
+// [
+//     'count' => 133,
+//     'min'   => 5.33,
+//     'max'   => 128.58,
+//     'avg'   => 73.53,
+//     'sum'   => 9779.49,
+// ]
 ```
 
-Accessing the result:
-```php
-$res->aggregation('sales_stats');
-```
+## Bucket aggregations
 
-The result will be an array with the following keys:
-```php
-[
-   "count" => 133,
-   "min"   => 5.33,
-   "max"   => 128.58,
-   "avg"   => 73.53,
-   "sum"   => 9779.49,
-]
-```
-
-## Bucket Aggregations
-
-Bucket aggregations don't calculate metrics over fields like the previous examples (min, avg, value count). Instead, they create buckets of documents. Each bucket is associated with a criterion which determines whether a document falls into it.
+Bucket aggregations group documents by criteria — each bucket holds the documents that match.
 
 ### Terms
-The terms aggregation is used to group your documents based on the unique values of a specific field. This is useful when you want to categorize your documents based on the unique values of a specific field and count the number of documents in each category.
+
+Group by the unique values of a field. Use a `keyword` field (or `text` field with a `.keyword` sub-field):
+
 ```php
-$aggregation->terms(name:'category_terms', field: 'category')->missing('N/A');
+$agg->terms(name: 'category_terms', field: 'category')->missing('N/A');
+
+$response->aggregation('category_terms.buckets');
+// [
+//     ['key' => 'Musical', 'doc_count' => 18],
+//     ['key' => 'Adventure', 'doc_count' => 13],
+//     ['key' => 'Fantasy', 'doc_count' => 20],
+//     ['key' => 'N/A', 'doc_count' => 7],
+// ]
 ```
 
-Accessing the result:
-```php
-$res->aggregation('category_terms.buckets');
-```
-
-Here is the actual array of buckets, each represented as an array with a key and a document count:
-```php
-[
-    [
-      "key"=> "Musical",
-      "doc_count"=> 18 
-    ],
-    [
-      "key"=> "Adventure",
-      "doc_count"=> 13 
-    ],
-    [
-      "key"=> "Fantasy",
-      "doc_count"=> 20 
-    ],
-    [
-      "key"=> "N/A",
-      "doc_count"=> 7 
-    ]
-]
-```
+`missing('N/A')` puts documents without the field into a bucket of that key.
 
 ### Range
-The range aggregation is used to group your documents based on ranges of numeric values. This is useful when you want to categorize your documents based on ranges of a specific numeric field and count the number of documents in each range.
+
+Group by explicit numeric ranges:
 
 ```php
-$aggregation->range(name: 'price_ranges', field: 'price', [
-    ['key' => '0-100', 'to' => 100 ],
-    ['key' => '100-200', 'from'=> 100, 'to' => 200 ],
-    ['key' => '200+', 'from' => 200 ],
+$agg->range(name: 'price_ranges', field: 'price', [
+    ['key' => '0-100', 'to' => 100],
+    ['key' => '100-200', 'from' => 100, 'to' => 200],
+    ['key' => '200+', 'from' => 200],
 ]);
-```
 
-Accessing the result:
-```php
-$res->aggregation('price_ranges.buckets');
-```
-
-The result will be an array of buckets:
-```php
-[
-    "0-100" => [
-      "to"=> 100.0,
-      "doc_count"=> 803
-    ],
-    "100-200"=> [
-      "from"=> 100.0,
-      "to"=> 200.0,
-      "doc_count"=> 422
-    ],
-    "200+" => [
-      "from"=> 200.0,
-      "doc_count"=> 343
-    ],
-]
+$response->aggregation('price_ranges.buckets');
+// [
+//     '0-100'   => ['to' => 100, 'doc_count' => 803],
+//     '100-200' => ['from' => 100, 'to' => 200, 'doc_count' => 422],
+//     '200+'    => ['from' => 200, 'doc_count' => 343],
+// ]
 ```
 
 ### Histogram
-The histogram aggregation groups documents based on fixed intervals:
+
+Fixed-width buckets across a numeric field:
 
 ```php
-$aggregation->histogram(name: 'price_histogram', field: 'price', interval: 50);
+$agg->histogram(name: 'price_histogram', field: 'price', interval: 50);
 ```
 
-### Date Histogram
-Group documents by time intervals:
+### Date histogram
+
+Time-bucket documents:
 
 ```php
-$aggregation->dateHistogram(name: 'sales_over_time', field: 'created_at', interval: 'month');
+$agg->dateHistogram(name: 'sales_over_time', field: 'created_at', interval: 'month');
 ```
 
-### Auto Date Histogram
-Automatically choose the best interval:
+### Auto date histogram
+
+Let Elasticsearch pick the bucket interval:
 
 ```php
-$aggregation->autoDateHistogram(name: 'auto_sales_timeline', field: 'created_at', buckets: 12);
+$agg->autoDateHistogram(name: 'timeline', field: 'created_at', buckets: 12);
 ```
 
-## Advanced Aggregation Features
+## Sub-aggregations
 
-### Nested Aggregations
-You can nest aggregations inside bucket aggregations:
+Nest aggregations to compute metrics per bucket:
 
 ```php
-$aggregation->terms(name:'category_terms', field: 'category')
-    ->subAggregation(function (Aggs $subAgg) {
-        $subAgg->avg(name: 'avg_price', field: 'price');
-        $subAgg->max(name: 'max_price', field: 'price');
+$agg->terms(name: 'category_terms', field: 'category')
+    ->subAggregation(function (Aggs $sub) {
+        $sub->avg(name: 'avg_price', field: 'price');
+        $sub->max(name: 'max_price', field: 'price');
     });
 ```
 
-### Pipeline Aggregations
-Pipeline aggregations work on the output of other aggregations:
+Each category bucket now carries `avg_price` and `max_price` alongside `doc_count`.
+
+## Pipeline aggregations
+
+Operate on the output of other aggregations:
 
 ```php
-$aggregation->terms(name:'monthly_sales', field: 'month')
-    ->subAggregation(function (Aggs $subAgg) {
-        $subAgg->sum(name: 'total_sales', field: 'amount');
+$agg->terms(name: 'monthly_sales', field: 'month')
+    ->subAggregation(function (Aggs $sub) {
+        $sub->sum(name: 'total_sales', field: 'amount');
     })
-    ->pipelineAggregation(function (Aggs $pipeline) {
-        $pipeline->avgBucket(name: 'avg_monthly_sales', bucketsPath: 'monthly_sales>total_sales');
+    ->pipelineAggregation(function (Aggs $pipe) {
+        $pipe->avgBucket(name: 'avg_monthly_sales', bucketsPath: 'monthly_sales>total_sales');
     });
 ```
 
-### Filtering Aggregations
-Apply filters to aggregations:
+## Filtered aggregations
+
+Run an aggregation over a filtered subset of the query results:
 
 ```php
-$aggregation->filter(name: 'expensive_products', filter: ['range' => ['price' => ['gte' => 100]]])
-    ->subAggregation(function (Aggs $subAgg) {
-        $subAgg->terms(name: 'expensive_categories', field: 'category');
+$agg->filter(name: 'expensive_products', filter: ['range' => ['price' => ['gte' => 100]]])
+    ->subAggregation(function (Aggs $sub) {
+        $sub->terms(name: 'expensive_categories', field: 'category');
     });
 ```
 
-## Using with Query Builder
-
-Combined usage with Query Builder:
+## Combined with the query builder
 
 ```php
 $response = $sigmie->newQuery('products')
-    ->properties($properties)
+    ->properties($props)
     ->matchAll()
     ->facets('category price:50')
     ->scriptScore(
         source: "Math.log(2 + doc['popularity'].value)",
-        boostMode: 'replace'
+        boostMode: 'replace',
     )
     ->get();
 
 $hits = $response->json('hits.hits');
 $facets = $response->json('facets');
-$customAggregations = $response->json('aggregations');
+$rawAggs = $response->json('aggregations');
 ```
 
-## Common E-commerce Patterns
+## Analytics-only requests
 
-### Product Facets
-```php
-$properties = new NewProperties;
-$properties->category('category');
-$properties->keyword('brand');
-$properties->price('price');
-$properties->number('rating')->float();
-$properties->bool('in_stock');
+For pure analytics (no documents needed), set `size(0)`:
 
-$response = $sigmie->newSearch('products')
-    ->properties($properties)
-    ->queryString($userQuery)
-    ->filters('in_stock:true')
-    ->facets('category brand price:50 rating')
-    ->size(20)
-    ->get();
-
-$hits = $response->json('hits');
-$facets = $response->json('facets');
-```
-
-### Analytics Dashboard
 ```php
 $response = $sigmie->newQuery('sales')
     ->matchAll()
     ->aggregate(function (Aggs $agg) {
         $agg->dateHistogram('sales_over_time', 'date', 'month')
-            ->subAggregation(function (Aggs $subAgg) {
-                $subAgg->sum('monthly_revenue', 'amount');
+            ->subAggregation(function (Aggs $sub) {
+                $sub->sum('monthly_revenue', 'amount');
             });
-        
+
         $agg->terms('top_products', 'product_id')
             ->size(10)
-            ->subAggregation(function (Aggs $subAgg) {
-                $subAgg->sum('product_revenue', 'amount');
+            ->subAggregation(function (Aggs $sub) {
+                $sub->sum('product_revenue', 'amount');
             });
     })
-    ->size(0)  // Only aggregations, no documents
+    ->size(0)
     ->get();
 ```
 
-## Performance Tips
+## Performance
 
-1. **Use appropriate field types**: Use `keyword` for term aggregations
-2. **Limit bucket size**: Don't request too many terms
-3. **Use doc_values**: Most aggregations use doc_values by default
-4. **Consider memory usage**: Large cardinality aggregations use more memory
-5. **Cache when possible**: Use filter context for cacheable aggregations
+- Use `keyword` fields for term aggregations — `text` fields require `.keyword` sub-fields.
+- Limit bucket size — `terms(...)->size(10)` for top 10.
+- Aggregate inside a `filter()` boolean clause to enable Elasticsearch's filter cache.
+- Cardinality aggregations on high-cardinality fields use significant memory.
 
 ```php
-// Good performance pattern
-$response = $sigmie->newQuery('products')
-    ->properties($properties)
+$sigmie->newQuery('products')
+    ->properties($props)
     ->bool(function ($bool) {
-        $bool->filter()->term('status', 'active');  // Cached
+        $bool->filter()->term('status', 'active');     // cached
         $bool->must()->match('title', $searchTerm);
     })
-    ->facets('category:top10 brand:top10')  // Limited
+    ->facets('category:10 brand:10')                   // top 10 per facet
     ->size(20)
     ->get();
 ```
 
-## Error Handling
+## See also
 
-```php
-try {
-    $response = $sigmie->newSearch('products')
-        ->properties($properties)
-        ->facets('category')
-        ->get();
-    
-    $facets = $response->json('facets');
-} catch (Exception $e) {
-    // Handle aggregation errors
-    echo "Aggregation failed: " . $e->getMessage();
-}
-```
+- [Facets](facets.md) — high-level facets for filter UIs.
+- [Mappings & Properties](mappings.md) — choosing the right field type for aggregation.
+- [Advanced Queries](query.md) — combining aggregations with custom queries.

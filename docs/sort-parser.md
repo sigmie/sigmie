@@ -1,80 +1,91 @@
 ---
 title: Sort Parser
-short_description: Parse sort expressions for search result ordering
+short_description: Sort expression syntax for searches and queries
 keywords: [sort parser, sorting, order, search results]
 category: Utilities
 order: 2
 related_pages: [search, query, filter-parser]
 ---
 
-# Sort parser
+# Sort Parser
 
-## Introduction
+The Sort Parser turns space-separated sort expressions into Elasticsearch sort arrays. You write `_score rating:desc name:asc`; Sigmie generates the right JSON.
 
-With `NewSearch` or with `NewQuery` (call `sortString` before the query):
+## In `newSearch()` and `newQuery()`
 
-```php
-$sigmie->newSearch('movies')->properties($properties)->sort('_score name:asc');
-```
+Pass a sort string to `sort()` on `NewSearch`, or `sortString()` on `NewQuery`:
 
 ```php
-$sigmie->newQuery('movies')->properties($properties)->sortString('_score name:asc');
+$sigmie->newSearch('movies')
+    ->properties($props)
+    ->sort('_score rating:desc name:asc');
+
+$sigmie->newQuery('movies')
+    ->properties($props)
+    ->sortString('_score rating:desc name:asc');
 ```
 
-Using the parser directly:
+> **Note:** On `NewQuery`, call `sortString()` **before** the query method (`matchAll`, `bool`, `parse`, etc.). Each call replaces the previous sort.
 
-```php
-$parser->parse('_score name:asc');
+## Syntax
+
 ```
-
-```bash
 _score:desc rating:desc name:asc
 ```
 
-```json
-[
-    {
-        "_score": "desc"
-    },
-    {
-        "rating": "desc"
-    },
-    {
-        "name": "asc"
-    }
-]
-```
+Each clause is `field` or `field:asc` / `field:desc`. Clauses are space-separated. The default direction depends on the field: `_score` defaults to `desc`, everything else to `asc`.
 
-**Note**: `_score` can be used alone (defaults to descending) or with `:desc` explicitly. `_score:asc` is not allowed.
+> **Note:** `_score:asc` is **not allowed**. Elasticsearch can't sort relevance ascending. Use `_score` or `_score:desc`.
 
-### Properties
+## With properties
+
+When you pass properties, the parser routes text fields to their `.keyword` sub-field automatically:
 
 ```php
-$mappings = new Properties();
+$props = new NewProperties;
+$props->bool('active');
+$props->text('name')->keyword();
+$props->text('category');
 
-$parser = new SortParser($props);
-
+$parser = new SortParser($props());
 $parser->parse('_score rating:desc name:asc');
 ```
+
+The compiled output:
 
 ```json
 [
     "_score",
-    {
-        "rating": "desc"
-    },
-    {
-        "name": "asc", // [tl! remove]
-        "name.keyword": "asc" // [tl! add]
-    }
+    { "rating": "desc" },
+    { "name.keyword": "asc" }
 ]
 ```
 
-```php
-$blueprint = new Blueprint;
-$blueprint->bool('active');
-$blueprint->text('name')->keyword();
-$blueprint->text('category');
+Without properties, the parser passes field names through unchanged — which usually fails for text fields, since Elasticsearch can't sort an analyzed `text` field directly. Always pass properties when sorting on text.
 
-$props = $blueprint();
+## Direct use
+
+```php
+use Sigmie\Parse\SortParser;
+
+$parser = new SortParser($props());
+$sort = $parser->parse('_score rating:desc name:asc');
 ```
+
+The result is a valid Elasticsearch sort array suitable for the `sort` key in a raw query body.
+
+## Geo sort
+
+For `geoPoint` fields:
+
+```
+location[40.71,-74.00]:km:asc
+```
+
+The format is `field[lat,lon]:unit:direction`. Units match the filter parser: `km`, `mi`, `m`, `yd`, etc.
+
+## See also
+
+- [Filter Parser](filter-parser.md) — same human-friendly syntax for `WHERE` clauses.
+- [Search](search.md#sort) — using sort with `newSearch()`.
+- [Advanced Queries](query.md#sorting) — using sort with `newQuery()`.

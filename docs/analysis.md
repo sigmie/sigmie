@@ -1,111 +1,180 @@
 ---
 title: Text Analysis
-short_description: Configure analyzers, tokenizers, and filters for text processing
-keywords: [analysis, analyzers, text processing, tokenization, elasticsearch]
+short_description: How Elasticsearch transforms text at index and query time
+keywords: [analysis, analyzers, text processing, tokenization]
 category: Text Analysis
 order: 1
 related_pages: [tokenizers, token-filters, char-filters, language]
 ---
 
-## Introduction
-The analysis is the process that separates Elasticsearch from a traditional database. To accomplish this impressive speed when searching one word in thousands of records, work must be done before the search happens.
+# Text Analysis
 
-Every Document Text field is **analyzed** with its corresponding **Analyzer** at index time. This process is called **Analysis** and it consisted of the 3 steps below. 
+Analysis is how Elasticsearch transforms text into searchable tokens. Every text field is analyzed at index time, and every query string is analyzed the same way at search time. When both sides apply identical transformations, matching becomes a fast set operation.
 
-```bash
-Analysis
-├─ Char filters
-├─ Tokenizer
-├─ Token filters
+## The pipeline
+
+Every analyzer has three stages:
+
+```
+input text
+   │
+   ▼
+[Char filters]    pre-process raw characters (strip HTML, map symbols)
+   │
+   ▼
+[Tokenizer]       split into tokens
+   │
+   ▼
+[Token filters]   transform tokens (lowercase, remove stopwords, stem)
+   │
+   ▼
+indexed tokens
 ```
 
-Once the text passes through all the steps it has a form efficient for searching.
+Each stage is optional but tokenization. The tokenizer is the one required component — char filters and token filters are added as needed.
 
-## Analyzer
-The Analyzer is responsible for performing the **Analysis**. It’s a group of **Char filters**, a **Tokenizer**, and **Token filters**. 
+## A worked example
 
-The Document Text field either has its own **Analyzer** or uses the Index **default** one.
-
-Let’s see an example of how this HTML Text
+Index this HTML text:
 
 ```php
 "<span>Some people are worth melting for</span>"
 ```
 
-is analyzed by the below **Analyzer**.
-```bash
+With this analyzer:
+
+```
 Analyzer
 ├─ Char filters
-│  ├─ Strip HTML
+│  └─ Strip HTML
 ├─ Tokenizer
-│  ├─ Whitespace
-├─ Token filters
-│  ├─ Lowercase
-│  ├─ Stopwords
+│  └─ Whitespace
+└─ Token filters
+   ├─ Lowercase
+   └─ Stopwords (drop "are", "for")
 ```
 
+### Step 1: Char filters
 
-### Char filter
-The first step in the Analysis is to apply the configured **Char Filters**. In our case, the `Strip HTML` char filter removes all HTML from the text.
-```php
-"<span>Some people are worth melting for</span>"  // [tl! remove]
-"Some people are worth melting for"               // [tl! add]
+The HTML strip removes tags:
+
+```
+"<span>Some people are worth melting for</span>"   →   "Some people are worth melting for"
 ```
 
-### Tokenize
-After the **Char Filters** the resulting string is passed to the **Tokenizer** that split’s the text into terms called **tokens**.
+### Step 2: Tokenize
 
-In our example, we have the **Word Boundaries** tokenizer. This means that the tokenizer will produce a token every time it encounters a **word boundary** like this.
-```php
-"Some people are worth melting for"               // [tl! remove]
-"Some"                                             // [tl! add]
-"people"                                           // [tl! add]
-"are"                                              // [tl! add]
-"worth"                                            // [tl! add]
-"melting"                                          // [tl! add]
-"for"                                              // [tl! add]
+Whitespace tokenizer splits on spaces:
+
+```
+"Some people are worth melting for"
+
+→ "Some"
+→ "people"
+→ "are"
+→ "worth"
+→ "melting"
+→ "for"
 ```
 
-### Token filters
-The last step in the **Analysis** is to apply the **Token Filters** to all **tokens** produced by the tokenizer. Our example has the **Lowercase** token filter that converts all tokens to only contain **lowercase** letters.
-```php
-"Some"                                             // [tl! remove]
-"some"                                             // [tl! add]
-"people"                                          
-"are"                                              // [tl! remove]
-"worth"                                           
-"melting"                                         
-"for"                                             // [tl! remove]
+### Step 3: Token filters
+
+Lowercase normalizes case; stopwords drops common words:
+
+```
+"Some"    → "some"
+"people"  → "people"
+"are"     → (dropped)
+"worth"   → "worth"
+"melting" → "melting"
+"for"     → (dropped)
 ```
 
-```php
-"some"                                            
-"people"                                          
-"worth"                                           
-"melting"                                         
+The indexed tokens are:
+
+```
+"some" "people" "worth" "melting"
 ```
 
-## Query
-Every time a query hits the Index, the **query string** goes through the same analysis process.
+## Query analysis
 
-```php
-"Some people worth melting" 
+A query string goes through the **same** analyzer. Query "Some people worth melting":
+
+```
+"Some people worth melting"
+   │
+   ▼ (no HTML to strip)
+   │
+   ▼ Whitespace tokenizer
+"Some" "people" "worth" "melting"
+   │
+   ▼ Lowercase + stopwords
+"some" "people" "worth" "melting"
 ```
 
-```php
-"Some people worth melting"                        // [tl! remove]
-"some"                                             // [tl! add]
-"people"                                           // [tl! add]
-"worth"                                            // [tl! add]
-"melting"                                          // [tl! add]
+Now Elasticsearch can match tokens against the index:
+
+```
+Query Term    Document 1    Document 2
+"some"           ✓             ✓
+"people"         ✓             ✓
+"worth"                        ✓
+"melting"        ✓             ✓
 ```
 
-Once both the **Query String** and the **Document** attribute are analyzed in the same way, it’s easier for Elasticsearch to find where the incoming terms appear. 
+Document 2 matches more terms, so it scores higher.
+
+## Configure analysis in Sigmie
+
+Index-level analysis runs on every text field unless a field overrides it:
+
 ```php
-| Query Term   | Document 1  | Document 2  |
-| -----------  | ----------- | ------------|
-| "some"       | x           | x           |
-| "people"     | x           | x           |
-| "worth"      |             | x           | // [tl! highlight]
-| "melting"    | x           | x           | 
+$sigmie->newIndex('movies')
+    ->tokenizeOnWhitespaces()        // tokenizer
+    ->lowercase()                    // token filter
+    ->trim()                         // token filter
+    ->stripHTML()                    // char filter
+    ->create();
+```
+
+See [Tokenizers](tokenizers.md), [Token Filters](token-filters.md), and [Character Filters](char-filters.md) for every option.
+
+## Per-field analysis
+
+Override analysis on a single field:
+
+```php
+use Sigmie\Index\NewAnalyzer;
+
+$props->text('email')
+    ->withNewAnalyzer(function (NewAnalyzer $analyzer) {
+        $analyzer->tokenizeOnPattern('(@|\.)');
+        $analyzer->lowercase();
+    });
+```
+
+## Test the analyzer
+
+`analyze()` runs text through the index's analyzer and returns the resulting tokens:
+
+```php
+$sigmie->index('movies')->analyze('The Matrix Reloaded');
+// ["matrix", "reloaded"]
+```
+
+Use this to verify a field is being tokenized the way you expect before re-indexing the world.
+
+## Language-specific analysis
+
+English, German, and Greek have purpose-built analyzers with stemmers, stopwords, and normalizers — see [Languages](language.md).
+
+```php
+use Sigmie\Languages\English\English;
+
+$sigmie->newIndex('articles')
+    ->language(new English)
+    ->englishStemmer()
+    ->englishStopwords()
+    ->englishLowercase()
+    ->create();
 ```
