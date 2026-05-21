@@ -15,8 +15,16 @@ class FakeEmbeddingsApi implements EmbeddingsApi
     protected array $batchEmbedCalls = [];
 
     public function __construct(
-        protected EmbeddingsApi $realApi
+        protected EmbeddingsApi $realApi,
+        protected ?int $maxBatchSizeOverride = null,
     ) {}
+
+    public function overrideMaxBatchSize(?int $size): static
+    {
+        $this->maxBatchSizeOverride = $size;
+
+        return $this;
+    }
 
     public function embed(string $text, int $dimensions): array
     {
@@ -43,6 +51,11 @@ class FakeEmbeddingsApi implements EmbeddingsApi
     public function model(): string
     {
         return $this->realApi->model();
+    }
+
+    public function maxBatchSize(): int
+    {
+        return $this->maxBatchSizeOverride ?? $this->realApi->maxBatchSize();
     }
 
     public function assertEmbedWasCalled(?int $times = null): void

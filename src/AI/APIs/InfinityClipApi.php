@@ -113,6 +113,11 @@ class InfinityClipApi implements EmbeddingsApi
         return $this->model;
     }
 
+    public function maxBatchSize(): int
+    {
+        return 512;
+    }
+
     /**
      * Embed text using CLIP text encoder
      */

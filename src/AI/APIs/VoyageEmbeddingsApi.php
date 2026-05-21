@@ -136,4 +136,9 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
 
         return $embedding;
     }
+
+    public function maxBatchSize(): int
+    {
+        return 128;
+    }
 }

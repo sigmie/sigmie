@@ -78,4 +78,9 @@ class InfinityEmbeddingsApi implements EmbeddingsApi
     {
         return $this->model;
     }
+
+    public function maxBatchSize(): int
+    {
+        return 512;
+    }
 }

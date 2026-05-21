@@ -187,7 +187,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         }, $docs);
 
         if ($this->populateEmbeddings) {
-            $docs = array_map(fn (Document $doc): Document => $processor->populateEmbeddings($doc), $docs);
+            $docs = $processor->populateEmbeddingsBatch($docs);
         }
 
         foreach ($activeHooks as $hook) {

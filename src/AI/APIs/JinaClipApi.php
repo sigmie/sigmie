@@ -115,6 +115,11 @@ class JinaClipApi implements EmbeddingsApi
         return $this->model;
     }
 
+    public function maxBatchSize(): int
+    {
+        return 2048;
+    }
+
     /**
      * Check if a string is likely an image source (URL, base64, or file path)
      */

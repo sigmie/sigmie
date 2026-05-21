@@ -8,7 +8,6 @@ use Carbon\Carbon;
 use DateTime as PHPDateTime;
 use Exception;
 use InvalidArgumentException;
-use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\BaseVector;
@@ -17,7 +16,6 @@ use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\DateTime;
 use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Nested;
-use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\Text;
@@ -29,6 +27,8 @@ use Sigmie\Support\VectorMath;
 class DocumentProcessor
 {
     use UsesApis;
+
+    public const DEFAULT_BATCH_SIZE = 100;
 
     public function __construct(
         protected Properties $properties
@@ -52,23 +52,192 @@ class DocumentProcessor
 
     public function populateEmbeddings(Document $document): Document
     {
-        // Check if any embeddings API is registered
-        if (! $this->hasApi()) {
-            // No embeddings API registered, skip embeddings
-            return $document;
+        [$result] = $this->populateEmbeddingsBatch([$document]);
+
+        return $result;
+    }
+
+    /**
+     * Populate embeddings for many documents in a single pass, batching
+     * provider calls across documents grouped by (api, dims).
+     *
+     * @param  array<int, Document>  $documents
+     * @return array<int, Document>
+     */
+    public function populateEmbeddingsBatch(array $documents): array
+    {
+        if (! $this->hasApi() || $documents === []) {
+            return $documents;
         }
 
-        $embeddings = $this->properties
-            ->nestedSemanticFields()
-            ->mapWithKeys(fn (Text|Image $field) => [
-                $field->fullPath() => $this->processField($field, $document),
-            ])
-            ->filter(fn ($vectors): bool => ! empty($vectors))
-            ->toArray();
+        $semanticFields = $this->properties->nestedSemanticFields()->toArray();
 
-        $document['_embeddings'] = $this->buildNestedStructure($embeddings);
+        if ($semanticFields === []) {
+            return $documents;
+        }
 
-        return $document;
+        $workItems = [];
+        $existingByDoc = [];
+
+        foreach ($documents as $docIdx => $document) {
+            foreach ($semanticFields as $field) {
+                $reused = $this->reuseExistingEmbeddings($field, $document);
+
+                if ($reused !== null) {
+                    $existingByDoc[$docIdx][$field->fullPath()] = $reused;
+
+                    continue;
+                }
+
+                $value = $this->extractFieldValue($field, $document);
+
+                if ($value === []) {
+                    continue;
+                }
+
+                foreach ($this->planFieldWorkItems($field, $value, $docIdx) as $item) {
+                    $workItems[] = $item;
+                }
+            }
+        }
+
+        $workItems = $this->runBatches($workItems);
+
+        return $this->assembleEmbeddings($documents, $workItems, $existingByDoc);
+    }
+
+    protected function reuseExistingEmbeddings(Text|Image $field, Document $document): ?array
+    {
+        $existingEmbeddings = dot($document->_source)->get('_embeddings.'.$field->fullPath());
+
+        if (! $existingEmbeddings || ! is_array($existingEmbeddings)) {
+            return null;
+        }
+
+        foreach ($field->vectorFields() as $vectorField) {
+            $name = $vectorField->name;
+
+            if (! isset($existingEmbeddings[$name]) || empty($existingEmbeddings[$name])) {
+                return null;
+            }
+        }
+
+        return $existingEmbeddings;
+    }
+
+    protected function planFieldWorkItems(Text|Image $field, array $value, int $docIdx): array
+    {
+        $items = [];
+        $isImage = $field instanceof Image;
+
+        foreach ($field->vectorFields() as $vectorField) {
+            $vector = $vectorField instanceof Nested ? $vectorField->properties['vector'] : $vectorField;
+            $strategy = $vector->strategy();
+            $dims = (string) $vector->dims();
+            $normalize = $vector instanceof BaseVector ? $vector->autoNormalizeVector() : true;
+            $apiName = $vectorField->apiName;
+
+            $prepared = $strategy->prepare($value);
+
+            foreach ($prepared as $pos => $text) {
+                $items[] = [
+                    'doc_idx' => $docIdx,
+                    'field_path' => $field->fullPath(),
+                    'field' => $field,
+                    'vector_name' => $vectorField->name,
+                    'pos' => $pos,
+                    'text' => $text,
+                    'dims' => $dims,
+                    'strategy' => $strategy,
+                    'normalize' => $normalize,
+                    'api_name' => $apiName,
+                    'is_image' => $isImage,
+                    'vector' => [],
+                ];
+            }
+        }
+
+        return $items;
+    }
+
+    protected function runBatches(array $workItems): array
+    {
+        if ($workItems === []) {
+            return $workItems;
+        }
+
+        $groups = [];
+
+        foreach ($workItems as $idx => $item) {
+            $key = $item['api_name'].'|'.$item['dims'].'|'.($item['is_image'] ? 'image' : 'text');
+            $groups[$key][] = $idx;
+        }
+
+        foreach ($groups as $indices) {
+            $api = $this->getApi($workItems[$indices[0]]['api_name']);
+
+            $api ?? throw new Exception(sprintf("Embeddings API '%s' is not registered", $workItems[$indices[0]]['api_name']));
+
+            $chunkSize = max(1, min(self::DEFAULT_BATCH_SIZE, $api->maxBatchSize()));
+
+            foreach (array_chunk($indices, $chunkSize) as $chunk) {
+                $payload = array_map(fn (int $i): array => [
+                    'name' => $workItems[$i]['vector_name'],
+                    'text' => $workItems[$i]['text'],
+                    'dims' => $workItems[$i]['dims'],
+                    'vector' => [],
+                ], $chunk);
+
+                $result = $api->batchEmbed($payload);
+
+                foreach ($chunk as $pos => $i) {
+                    $workItems[$i]['vector'] = $result[$pos]['vector'] ?? [];
+                }
+            }
+        }
+
+        return $workItems;
+    }
+
+    protected function assembleEmbeddings(array $documents, array $workItems, array $existingByDoc): array
+    {
+        $perDoc = [];
+
+        foreach ($workItems as $item) {
+            $perDoc[$item['doc_idx']][$item['field_path']]['_field'] = $item['field'];
+            $perDoc[$item['doc_idx']][$item['field_path']][$item['vector_name']]['strategy'] = $item['strategy'];
+            $perDoc[$item['doc_idx']][$item['field_path']][$item['vector_name']]['normalize'] = $item['normalize'];
+            $perDoc[$item['doc_idx']][$item['field_path']][$item['vector_name']]['vectors'][$item['pos']] = $item['vector'];
+        }
+
+        foreach ($documents as $docIdx => $document) {
+            $flatEmbeddings = $existingByDoc[$docIdx] ?? [];
+
+            $fieldsForDoc = $perDoc[$docIdx] ?? [];
+
+            foreach ($fieldsForDoc as $path => $vectorsByName) {
+                $field = $vectorsByName['_field'];
+                unset($vectorsByName['_field']);
+
+                $formatted = [];
+
+                foreach ($vectorsByName as $vectorName => $data) {
+                    ksort($data['vectors']);
+                    $vectors = array_values($data['vectors']);
+                    $formatted[$vectorName] = $data['strategy']->format($vectors, $data['normalize']);
+                }
+
+                $formatted = $this->applyBoostScaling($field, $formatted, $document);
+
+                $flatEmbeddings[$path] = $formatted;
+            }
+
+            $document['_embeddings'] = $this->buildNestedStructure($flatEmbeddings);
+
+            $documents[$docIdx] = $document;
+        }
+
+        return $documents;
     }
 
     public function formatDateTimeFields(Document $document): Document
@@ -145,38 +314,6 @@ class DocumentProcessor
             ->filter(fn ($value): bool => $value !== null)
             ->flatMap(fn ($value): array => is_array($value) ? $value : [$value])
             ->toArray();
-    }
-
-    protected function processField(Text|Image $field, Document $document): array
-    {
-        // Check if embeddings already exist for this field
-        $existingEmbeddings = dot($document->_source)->get('_embeddings.'.$field->fullPath());
-
-        if ($existingEmbeddings && is_array($existingEmbeddings)) {
-            // Check if all required vector fields already have embeddings
-            $vectorFields = $field->vectorFields();
-            $allExist = true;
-            foreach ($vectorFields as $vectorField) {
-                $name = $vectorField instanceof Nested ? $vectorField->name : $vectorField->name;
-                if (! isset($existingEmbeddings[$name]) || empty($existingEmbeddings[$name])) {
-                    $allExist = false;
-                    break;
-                }
-            }
-
-            if ($allExist) {
-                // Return existing embeddings, no need to regenerate
-                return $existingEmbeddings;
-            }
-        }
-
-        $value = $this->extractFieldValue($field, $document);
-
-        if ($value === []) {
-            return [];
-        }
-
-        return $this->generateEmbeddings($field, $value, $document);
     }
 
     protected function extractFieldValue(Text|Image $field, Document $document): array
@@ -267,150 +404,6 @@ class DocumentProcessor
         return is_array($value) ? $value : [$value];
     }
 
-    protected function generateEmbeddings(Text|Image $field, array $value, Document $document): array
-    {
-        // Get the appropriate API for this field
-        $embeddingsApi = $this->getEmbeddingsApiForField($field);
-
-        // Handle images separately from text
-        if ($field instanceof Image) {
-            return $this->generateImageEmbeddings($field, $value, $embeddingsApi, $document);
-        }
-
-        // Original text processing
-        $fieldVectors = $this->prepareVectorFields($field->vectorFields(), $value);
-
-        $vectorsCollection = new Collection($fieldVectors);
-
-        $nameStrategy = $vectorsCollection->mapWithKeys(fn ($item) => [$item['name'] => $item['strategy']]);
-
-        // Collect normalize settings for each vector
-        $normalizeSettings = [];
-        foreach ($field->vectorFields() as $vectorField) {
-            $vector = $vectorField instanceof Nested ? $vectorField->properties['vector'] : $vectorField;
-            if ($vector instanceof BaseVector) {
-                $normalizeSettings[$vectorField->name] = $vector->autoNormalizeVector();
-            } else {
-                $normalizeSettings[$vectorField->name] = true; // Default to normalize
-            }
-        }
-
-        $valuesToEmbed = $vectorsCollection
-            ->map(fn ($item) => $item['vectors'])
-            ->flatten(1)
-            ->values();
-
-        $embeddedVectors = $embeddingsApi->batchEmbed($valuesToEmbed);
-
-        $formattedVectors = $this->formatEmbeddedVectors($embeddedVectors, $nameStrategy, $normalizeSettings);
-
-        // Apply boost scaling if needed
-        return $this->applyBoostScaling($field, $formattedVectors, $document);
-    }
-
-    protected function generateImageEmbeddings(Image $field, array $imageUrls, EmbeddingsApi $embeddingsApi, Document $document): array
-    {
-        $result = [];
-
-        foreach ($field->vectorFields() as $vectorField) {
-            $vector = $vectorField instanceof Nested ? $vectorField->properties['vector'] : $vectorField;
-            $name = $vectorField->name;
-            $dimensions = $vector->dims();
-            $strategy = $vector->strategy();
-
-            // Determine if we should normalize
-            $normalize = true;
-            if ($vector instanceof BaseVector) {
-                $normalize = $vector->autoNormalizeVector();
-            }
-
-            // Prepare image values using strategy
-            $preparedImages = $strategy->prepare($imageUrls);
-
-            // Embed each image individually using embed() method
-            $embeddings = [];
-            foreach ($preparedImages as $imageUrl) {
-                $embedding = $embeddingsApi->embed($imageUrl, $dimensions);
-                $embeddings[] = $embedding;
-            }
-
-            // Format embeddings according to strategy
-            $result[$name] = $strategy->format($embeddings, $normalize);
-        }
-
-        // Apply boost scaling if needed
-        return $this->applyBoostScaling($field, $result, $document);
-    }
-
-    protected function formatEmbeddedVectors(array $embeddedVectors, Collection $nameStrategy, array $normalizeSettings = []): array
-    {
-        return (new Collection($embeddedVectors))
-            ->groupBy('name')
-            ->mapWithKeys(function ($group, $name) use ($nameStrategy, $normalizeSettings) {
-                $strategy = $nameStrategy->get($name);
-                $normalize = $normalizeSettings[$name] ?? true;
-
-                $vectors = (new Collection($group))
-                    ->map(fn ($item) => $item['vector'] ?? [])
-                    ->toArray();
-
-                $formatted = $strategy->format($vectors, $normalize);
-
-                return [$name => $formatted];
-            })
-            ->toArray();
-    }
-
-    protected function prepareVectorFields(Collection $vectorFields, array $value): array
-    {
-        return $vectorFields
-            ->map(fn ($vector): array => $this->prepareVectorTexts($vector, $value))
-            ->flatten(2)
-            ->groupBy('name')
-            ->mapWithKeys(fn ($group, $groupName): array => $this->groupVectorsByName($group, $groupName))
-            ->toArray();
-    }
-
-    protected function prepareVectorTexts(BaseVector|NestedVector $vector, array $value): array
-    {
-        $name = $vector->name;
-
-        if ($vector instanceof NestedVector) {
-            $vector = $vector->properties['vector'];
-        }
-
-        $preparedTexts = $vector->strategy()->prepare($value);
-
-        return [
-            array_map(fn ($text): array => [
-                'name' => $name,
-                'text' => $text,
-                'strategy' => $vector->strategy(),
-                'dims' => (string) $vector->dims(),
-            ], $preparedTexts),
-        ];
-    }
-
-    protected function groupVectorsByName(array $group, string $groupName): array
-    {
-        $groupCollection = new Collection($group);
-
-        return [
-            $groupName => [
-                'name' => $groupName,
-                'strategy' => $groupCollection->first()['strategy'],
-                'vectors' => $groupCollection
-                    ->map(fn ($item): array => [
-                        'name' => $groupName,
-                        'text' => $item['text'],
-                        'dims' => $item['dims'],
-                        'vector' => [],
-                    ])
-                    ->toArray(),
-            ],
-        ];
-    }
-
     protected function buildNestedStructure(array $flatEmbeddings): array
     {
         $result = [];
@@ -422,15 +415,6 @@ class DocumentProcessor
         }
 
         return $result;
-    }
-
-    protected function getEmbeddingsApiForField(Text|Image $field): EmbeddingsApi
-    {
-        // Check if any vector field has a specific API configured
-        foreach ($field->vectorFields()->getIterator() as $vectorField) {
-
-            return $this->getApi($vectorField->apiName);
-        }
     }
 
     protected function formatDateTimeValue(mixed $value, Type $field): mixed

@@ -254,6 +254,34 @@ new Document([
 ]);
 ```
 
+## Batched embedding calls
+
+When you pass many documents to `merge()`, Sigmie collects the texts from every doc and sends them to your embedding provider in batched requests — not one request per document.
+
+### What gets batched together
+
+Sigmie groups texts by `(api, dimensions, modality)`. Two docs whose `title` field uses the same provider and the same vector dimensions share a single request. Text and image inputs are never mixed in the same request, even when the same provider can handle both.
+
+### Chunk size
+
+Each group is split into chunks of `min(100, $provider->maxBatchSize())`. The provider cap reflects what each backend accepts in one call — OpenAI and Jina allow 2048, Voyage 128, Cohere 96, Infinity 512.
+
+```php
+$movies->merge($thirtyDocs);   // 1 request of 30
+$movies->merge($twoHundredDocs); // 2 requests: 100 + 100
+```
+
+`add()` and `replace()` go through the same code path, so a single document is just a one-item batch.
+
+### What stays per-document
+
+- Docs that already carry an `_embeddings` block for a field (see [Pre-computed embeddings](#pre-computed-embeddings)) are excluded from the batch for that field.
+- After vectors come back, strategy formatting (concatenate / average / script-score) and [score multipliers](#score-multipliers) still run on each doc individually.
+
+### Tradeoffs
+
+The win is fewer roundtrips and less rate-limit pressure when indexing in bulk. The cost: if a chunk fails, the whole `merge()` fails — Sigmie does not split-and-retry, because partial upserts produce inconsistent indexes. Keep merge batches at a size your provider can serve reliably.
+
 ## Reranking
 
 For higher-quality top-K results, rerank with a cross-encoder after retrieval:
