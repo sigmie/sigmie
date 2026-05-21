@@ -69,4 +69,9 @@ class OpenAIEmbeddingsApi extends AbstractOpenAIApi implements EmbeddingsApi
             ],
         ]);
     }
+
+    public function maxBatchSize(): int
+    {
+        return 2048;
+    }
 }

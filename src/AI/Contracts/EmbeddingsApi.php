@@ -24,4 +24,9 @@ interface EmbeddingsApi
     public function promiseEmbed(string $text, int $dimensions): Promise;
 
     public function model(): string;
+
+    /**
+     * Maximum number of inputs the provider accepts in a single batchEmbed() call.
+     */
+    public function maxBatchSize(): int;
 }

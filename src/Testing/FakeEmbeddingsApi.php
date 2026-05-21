@@ -45,6 +45,11 @@ class FakeEmbeddingsApi implements EmbeddingsApi
         return $this->realApi->model();
     }
 
+    public function maxBatchSize(): int
+    {
+        return $this->realApi->maxBatchSize();
+    }
+
     public function assertEmbedWasCalled(?int $times = null): void
     {
         $actualCount = count($this->embedCalls);

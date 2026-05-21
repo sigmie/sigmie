@@ -108,4 +108,9 @@ class CohereEmbeddingsApi implements EmbeddingsApi
             ],
         ]);
     }
+
+    public function maxBatchSize(): int
+    {
+        return 96;
+    }
 }
