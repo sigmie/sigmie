@@ -238,4 +238,97 @@ class EmbeddingsTest extends TestCase
         // Assert embeddings properties only contain semantic fields
         $this->assertCount(2, $embeddingsProperties, 'Only semantic fields should be in embeddings mapping');
     }
+
+    /**
+     * @test
+     */
+    public function merge_batches_embeddings_across_documents(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $collected = $this->sigmie->collect($indexName, true)->properties($blueprint);
+
+        $docs = [];
+        for ($i = 0; $i < 12; $i++) {
+            $docs[] = new Document(['title' => 'doc '.$i]);
+        }
+
+        $collected->merge($docs);
+
+        $this->embeddingApi->assertBatchEmbedWasCalled(1);
+        $this->embeddingApi->assertBatchEmbedWasCalledWithCount(12);
+    }
+
+    /**
+     * @test
+     */
+    public function merge_chunks_when_docs_exceed_provider_batch_size(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $collected = $this->sigmie->collect($indexName, true)->properties($blueprint);
+
+        $this->embeddingApi->overrideMaxBatchSize(5);
+
+        $docs = [];
+        for ($i = 0; $i < 12; $i++) {
+            $docs[] = new Document(['title' => 'doc '.$i]);
+        }
+
+        $collected->merge($docs);
+
+        $this->embeddingApi->assertBatchEmbedWasCalled(3);
+
+        $calls = $this->embeddingApi->getBatchEmbedCalls();
+        $this->assertCount(5, $calls[0]);
+        $this->assertCount(5, $calls[1]);
+        $this->assertCount(2, $calls[2]);
+    }
+
+    /**
+     * @test
+     */
+    public function merge_skips_docs_that_already_have_embeddings(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $collected = $this->sigmie->collect($indexName, true)->properties($blueprint);
+
+        $vectorName = 'm15_efc73_dims384_cosine_concat';
+        $existingVector = array_fill(0, 384, 0.1);
+
+        $collected->merge([
+            new Document([
+                'title' => 'pre-embedded',
+                '_embeddings' => [
+                    'title' => [
+                        $vectorName => $existingVector,
+                    ],
+                ],
+            ], _id: 'with-vec'),
+            new Document(['title' => 'needs embedding'], _id: 'without-vec'),
+        ]);
+
+        $this->embeddingApi->assertBatchEmbedWasCalled(1);
+        $this->embeddingApi->assertBatchEmbedWasCalledWithCount(1);
+        $this->embeddingApi->assertBatchEmbedWasCalledWith('needs embedding');
+
+        $document = $collected->get('with-vec');
+        $this->assertSame($existingVector, $document['_embeddings']['title'][$vectorName]);
+    }
 }

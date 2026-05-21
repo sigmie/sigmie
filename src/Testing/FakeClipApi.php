@@ -48,11 +48,23 @@ class FakeClipApi extends FakeEmbeddingsApi
 
         foreach ($payload as $item) {
             $text = $item['text'] ?? '';
+            $dims = (int) ($item['dims'] ?? 0);
+
             if ($this->isImageSource($text)) {
                 $imageCount++;
-            } else {
-                $textCount++;
+                $this->imageEmbedCalls[] = [
+                    'source' => $text,
+                    'dimensions' => $dims,
+                ];
+
+                continue;
             }
+
+            $textCount++;
+            $this->textEmbedCalls[] = [
+                'text' => $text,
+                'dimensions' => $dims,
+            ];
         }
 
         $this->mixedBatchCalls[] = [
