@@ -84,7 +84,7 @@ class SigmieIndexTool implements Tool
     public function handle(Request $request): string
     {
         $search = $this->index->newSearch()
-            ->queryString($request->string('query'))
+            ->queryString((string) $request->string('query'))
             ->page(
                 $request->integer('page', 1),
                 $request->integer('per_page', 10),
