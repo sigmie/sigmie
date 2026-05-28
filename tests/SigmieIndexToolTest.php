@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\Base\ElasticsearchException;
 use Sigmie\Mappings\Types\Keyword;
 
 require_once __DIR__.'/Stubs/LaravelAiStubs.php';
@@ -700,7 +701,7 @@ class SigmieIndexToolTest extends TestCase
 
         // No client-side validation: an unknown/non-facetable field surfaces as an engine
         // error, which the agent SDK / tool-call dispatch reports back to the model.
-        $this->expectException(\Sigmie\Base\ElasticsearchException::class);
+        $this->expectException(ElasticsearchException::class);
 
         (new SigmieFilterValuesTool($index))->handle(new Request(['field' => 'nope']));
     }
