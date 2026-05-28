@@ -65,7 +65,8 @@ class SigmieIndexTool implements Tool
             ."Exists check: field:*\n"
             ."Sort: field:asc field:desc _score (space-separated)\n"
             ."Geo sort: field[lat,lon]:km:asc\n"
-            .'Facets: field1 field2:20 (space-separated, optional :size for keywords or :interval for numbers)');
+            ."Facets: field1 field2:20 (space-separated, optional :size for keywords or :interval for numbers)\n"
+            .'Discovering valid values: to filter on a field whose values you do not know, first search with that field name in `facets` (optionally narrowed by `query` or another filter), then read the returned facet values and filter by one of them.');
     }
 
     public function schema(JsonSchema $schema): array
@@ -180,7 +181,13 @@ class SigmieIndexTool implements Tool
             return $this->describeNested($field, $name, $tags);
         }
 
-        return sprintf('- %s [%s]%s: %s', $name, $type, $tags, $filter);
+        $line = sprintf('- %s [%s]%s: %s', $name, $type, $tags, $filter);
+
+        $description = $field->getMeta()['description'] ?? null;
+
+        return is_string($description) && $description !== ''
+            ? $line.' — '.$description
+            : $line;
     }
 
     private function describeNested(Nested $field, string $name, string $tags): string

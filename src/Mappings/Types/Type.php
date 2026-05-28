@@ -84,9 +84,16 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
         return $this;
     }
 
-    public function meta(array $meta): void
+    public function meta(array $meta): static
     {
         $this->meta = [...$this->meta, ...$meta];
+
+        return $this;
+    }
+
+    public function getMeta(): array
+    {
+        return $this->meta;
     }
 
     public function isFacetable(): bool
