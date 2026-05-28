@@ -21,7 +21,7 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
      * Human/agent-facing description of the field (e.g. for AI tools). NOT sent to
      * Elasticsearch — kept out of toRaw() so it is not constrained by ES field-meta limits.
      */
-    protected ?string $aiDescription = null;
+    protected ?string $description = null;
 
     /**
      * Field path with optional nested boundary marker (>).
@@ -106,14 +106,14 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
      */
     public function description(string $description): static
     {
-        $this->aiDescription = $description;
+        $this->description = $description;
 
         return $this;
     }
 
     public function getDescription(): ?string
     {
-        return $this->aiDescription;
+        return $this->description;
     }
 
     public function isFacetable(): bool

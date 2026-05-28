@@ -7,23 +7,20 @@ namespace Sigmie\AI;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
-use Sigmie\Mappings\Types\Date;
-use Sigmie\Mappings\Types\DateTime;
 use Sigmie\Mappings\Types\Nested;
-use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Object_;
-use Sigmie\Mappings\Types\Price;
-use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\SigmieIndex;
-use Throwable;
 
 /**
- * Companion to {@see SigmieIndexTool}: lets an agent discover the valid filter values for a
- * facetable field at query time (instead of baking values into the search tool's description).
+ * Companion to {@see SigmieIndexTool}: discover the valid values of a facetable field at query
+ * time, so the agent can filter accurately instead of guessing (and so values aren't baked into
+ * the search tool's description).
  *
- * Keyword/category fields return their distinct values (with counts); numeric/date fields return
- * min/max. An optional `query` narrows term values by prefix. Aggregation only (size 0).
+ * Thin by design — it delegates to the engine's own building blocks:
+ *  - `newSearch()` + the filter DSL for scoping/narrowing,
+ *  - the field's own facet parser (`$field->facets()`), which already returns the right shape per
+ *    type (value counts for keyword/category, min/max/histogram for numeric/date).
  */
 class SigmieFilterValuesTool implements Tool
 {
@@ -32,7 +29,6 @@ class SigmieFilterValuesTool implements Tool
         protected string $baseFilters = '',
     ) {}
 
-    /** Max distinct values returned. */
     private const DEFAULT_LIMIT = 20;
 
     public function name(): string
@@ -45,7 +41,7 @@ class SigmieFilterValuesTool implements Tool
         $fields = implode(', ', $this->facetableFieldNames());
 
         return sprintf(
-            "List the valid filter values for a field of the '%s' index. Provide `field` (one of: %s) and an optional `query` to narrow by prefix. Keyword/category fields return distinct values; numeric/date fields return min and max. Call this before filtering when you do not know a field's values.",
+            "List the valid values of a facetable field of the '%s' index so you can filter accurately — call this when you do not know a field's values. Provide `field` (one of: %s) and optional `filters` (same DSL as the search tool, e.g. \"field:nav*\" to prefix-match, or filter another field to narrow). Keyword/category fields return value counts; numeric/date fields return min/max.",
             $this->index->name(),
             $fields !== '' ? $fields : '(no facetable fields)'
         );
@@ -54,9 +50,9 @@ class SigmieFilterValuesTool implements Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'field' => $schema->string()->description('Field to list values for (one of the facetable fields named in the description)')->required(),
-            'query' => $schema->string()->description('Optional prefix to narrow term values, e.g. "nav" matches "navy", "navy blue"'),
-            'limit' => $schema->integer()->description('Max distinct values to return')->default(self::DEFAULT_LIMIT),
+            'field' => $schema->string()->description('Facetable field to list values for (one named in the description)')->required(),
+            'filters' => $schema->string()->description('Optional filter expression, same DSL as the search tool, to narrow values (e.g. "field:nav*")'),
+            'limit' => $schema->integer()->description('Max values to return')->default(self::DEFAULT_LIMIT),
         ];
     }
 
@@ -64,7 +60,6 @@ class SigmieFilterValuesTool implements Tool
     {
         $fieldName = trim((string) ($request['field'] ?? ''));
         $limit = max(1, (int) ($request['limit'] ?? self::DEFAULT_LIMIT));
-        $query = trim((string) ($request['query'] ?? ''));
 
         $field = $this->facetableField($fieldName);
 
@@ -75,51 +70,23 @@ class SigmieFilterValuesTool implements Tool
             ], JSON_THROW_ON_ERROR);
         }
 
-        $isNumeric = $field instanceof Number || $field instanceof Price
-            || $field instanceof Date || $field instanceof DateTime || $field instanceof Range;
+        $search = $this->index->newSearch()
+            ->queryString('')
+            ->facets(sprintf('%s:%d', $fieldName, $limit))
+            ->size(0);
 
-        $search = $this->index->newSearch()->queryString('')->size(0);
+        $filters = array_values(array_filter([
+            $this->baseFilters,
+            trim((string) ($request['filters'] ?? '')),
+        ], static fn (string $f): bool => $f !== ''));
 
-        $filterParts = [];
-        if ($this->baseFilters !== '') {
-            $filterParts[] = sprintf('(%s)', $this->baseFilters);
+        if ($filters !== []) {
+            $search->filters(implode(' AND ', array_map(static fn (string $f): string => sprintf('(%s)', $f), $filters)));
         }
 
-        if (! $isNumeric && ($prefix = $this->safePrefix($query)) !== '') {
-            $filterParts[] = sprintf('%s:%s*', $fieldName, $prefix);
-        }
+        $values = $field->facets($search->get()->facetAggregations()) ?? [];
 
-        if ($filterParts !== []) {
-            $search->filters(implode(' AND ', $filterParts));
-        }
-
-        $search->facets($isNumeric ? $fieldName : sprintf('%s:%d', $fieldName, $limit));
-
-        try {
-            $parsed = $field->facets($search->get()->facetAggregations());
-        } catch (Throwable) {
-            $parsed = null;
-        }
-
-        if (! is_array($parsed)) {
-            $parsed = [];
-        }
-
-        if ($isNumeric && array_key_exists('min', $parsed) && array_key_exists('max', $parsed)) {
-            return json_encode([
-                'field' => $fieldName,
-                'min' => $parsed['min'],
-                'max' => $parsed['max'],
-            ], JSON_THROW_ON_ERROR);
-        }
-
-        $values = array_slice(array_keys($parsed), 0, $limit);
-
-        return json_encode([
-            'field' => $fieldName,
-            'values' => $values,
-            'counts' => array_intersect_key($parsed, array_flip($values)),
-        ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        return json_encode(['field' => $fieldName, 'values' => $values], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
     }
 
     private function facetableField(string $name): ?Type
@@ -152,13 +119,5 @@ class SigmieFilterValuesTool implements Tool
     private function isFacetableLeaf(Type $field): bool
     {
         return ! $field instanceof Object_ && ! $field instanceof Nested && $field->isFacetable();
-    }
-
-    /** First token of the query, stripped to a wildcard-safe prefix. */
-    private function safePrefix(string $query): string
-    {
-        $first = preg_split('/\s+/', trim($query))[0] ?? '';
-
-        return (string) preg_replace('/[^\p{L}\p{N}_-]/u', '', $first);
     }
 }

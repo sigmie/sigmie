@@ -488,7 +488,7 @@ class SigmieIndexToolTest extends TestCase
     {
         $index = $this->createProductIndex();
 
-        $tool = $index->toTool();
+        $tool = $index->tools()[0];
 
         $this->assertInstanceOf(SigmieIndexTool::class, $tool);
     }
@@ -505,7 +505,7 @@ class SigmieIndexToolTest extends TestCase
             new Document(['name' => 'Galaxy', 'brand' => 'Samsung', 'price' => 899, 'in_stock' => true, 'created_at' => '2024-03-10']),
         ], refresh: true);
 
-        $tool = $index->toTool(baseFilters: "brand:'Apple'");
+        $tool = $index->tools("brand:'Apple'")[0];
 
         $result = json_decode($tool->handle(new Request([
             'query' => '',
@@ -623,11 +623,11 @@ class SigmieIndexToolTest extends TestCase
     /**
      * @test
      */
-    public function to_tools_returns_search_values_and_sample_tools(): void
+    public function tools_returns_search_values_and_sample_tools(): void
     {
         $index = $this->createProductIndex();
 
-        [$search, $values, $sample] = $index->toTools();
+        [$search, $values, $sample] = $index->tools();
 
         $this->assertInstanceOf(SigmieIndexTool::class, $search);
         $this->assertInstanceOf(SigmieFilterValuesTool::class, $values);
@@ -650,14 +650,14 @@ class SigmieIndexToolTest extends TestCase
         $result = json_decode((new SigmieFilterValuesTool($index))->handle(new Request(['field' => 'brand'])), true);
 
         $this->assertEquals('brand', $result['field']);
-        $this->assertContains('Apple', $result['values']);
-        $this->assertContains('Samsung', $result['values']);
+        $this->assertArrayHasKey('Apple', $result['values']);
+        $this->assertArrayHasKey('Samsung', $result['values']);
     }
 
     /**
      * @test
      */
-    public function filter_values_narrows_by_prefix_query(): void
+    public function filter_values_narrows_by_filters(): void
     {
         $index = $this->createProductIndex();
 
@@ -666,10 +666,10 @@ class SigmieIndexToolTest extends TestCase
             new Document(['name' => 'Galaxy', 'brand' => 'Samsung', 'price' => 899, 'in_stock' => true, 'created_at' => '2024-03-10']),
         ], refresh: true);
 
-        $result = json_decode((new SigmieFilterValuesTool($index))->handle(new Request(['field' => 'brand', 'query' => 'App'])), true);
+        $result = json_decode((new SigmieFilterValuesTool($index))->handle(new Request(['field' => 'brand', 'filters' => 'brand:App*'])), true);
 
-        $this->assertContains('Apple', $result['values']);
-        $this->assertNotContains('Samsung', $result['values']);
+        $this->assertArrayHasKey('Apple', $result['values']);
+        $this->assertArrayNotHasKey('Samsung', $result['values']);
     }
 
     /**
@@ -687,8 +687,8 @@ class SigmieIndexToolTest extends TestCase
 
         $result = json_decode((new SigmieFilterValuesTool($index))->handle(new Request(['field' => 'price'])), true);
 
-        $this->assertEquals(699, $result['min']);
-        $this->assertEquals(1999, $result['max']);
+        $this->assertEquals(699, $result['values']['min']);
+        $this->assertEquals(1999, $result['values']['max']);
     }
 
     /**
@@ -718,7 +718,8 @@ class SigmieIndexToolTest extends TestCase
 
         $result = json_decode((new SigmieSampleDocumentsTool($index))->handle(new Request(['limit' => 2])), true);
 
-        $this->assertCount(2, $result['documents']);
-        $this->assertArrayHasKey('_id', $result['documents'][0]);
+        $this->assertCount(2, $result);
+        $this->assertArrayHasKey('_id', $result[0]);
+        $this->assertArrayHasKey('_source', $result[0]);
     }
 }
