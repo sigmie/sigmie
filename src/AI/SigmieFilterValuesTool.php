@@ -51,6 +51,14 @@ class SigmieFilterValuesTool implements Tool
 
     public function handle(Request $request): string
     {
+        return json_encode($this->result($request), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * The discovered values as an array, for callers that want data instead of the JSON string handle() returns.
+     */
+    public function result(Request $request): array
+    {
         $fieldName = trim((string) ($request['field'] ?? ''));
         $limit = max(1, (int) ($request['limit'] ?? self::DEFAULT_LIMIT));
 
@@ -70,9 +78,9 @@ class SigmieFilterValuesTool implements Tool
 
         $facets = (array) ($search->get()->json('facets') ?? []);
 
-        return json_encode([
+        return [
             'field' => $fieldName,
             'values' => $facets[$fieldName] ?? null,
-        ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        ];
     }
 }

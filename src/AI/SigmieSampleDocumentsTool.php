@@ -43,8 +43,17 @@ class SigmieSampleDocumentsTool implements Tool
 
     public function handle(Request $request): string
     {
+        return json_encode($this->result($request), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * The sample documents as an array, for callers that want data instead of the JSON string handle() returns.
+     */
+    public function result(Request $request): array
+    {
         $limit = max(1, min(20, (int) ($request['limit'] ?? 5)));
 
-        return $this->index->collect()->random($limit)->toJson(JSON_UNESCAPED_UNICODE);
+        // Documents serialise to {_id, _source} via their JsonSerializable.
+        return $this->index->collect()->random($limit)->toArray();
     }
 }
