@@ -563,4 +563,75 @@ class SigmieIndexToolTest extends TestCase
 
         $this->assertStringContainsString('query only', $description);
     }
+
+    /**
+     * @test
+     */
+    public function description_includes_field_description(): void
+    {
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
+            use AsTool;
+
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
+            public function properties(): NewProperties
+            {
+                $props = new NewProperties;
+                $props->keyword('country_code_a3')
+                    ->description('Country as ISO-3166 alpha-3, e.g. DEU=Germany.');
+
+                return $props;
+            }
+        };
+        $index->create();
+
+        $description = (new SigmieIndexTool($index))->description();
+
+        $this->assertStringContainsString('Country as ISO-3166 alpha-3, e.g. DEU=Germany.', $description);
+    }
+
+    /**
+     * @test
+     */
+    public function field_description_is_not_sent_to_elasticsearch(): void
+    {
+        $field = (new \Sigmie\Mappings\Types\Keyword('country_code_a3'))
+            ->description('Country as ISO-3166 alpha-3, e.g. DEU=Germany.');
+
+        $raw = json_encode($field->toRaw());
+
+        $this->assertStringNotContainsString('ISO-3166', $raw);
+    }
+
+    /**
+     * @test
+     */
+    public function description_lists_facet_values_for_facetable_fields(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
+            new Document(['name' => 'Galaxy', 'brand' => 'Samsung', 'price' => 899, 'in_stock' => true, 'created_at' => '2024-02-20']),
+        ], refresh: true);
+
+        $description = (new SigmieIndexTool($index))->description();
+
+        $this->assertStringContainsString('values:', $description);
+        $this->assertStringContainsString('Apple', $description);
+        $this->assertStringContainsString('Samsung', $description);
+    }
 }

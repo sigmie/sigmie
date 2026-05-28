@@ -46,9 +46,17 @@ class SigmieIndexTool implements Tool
         protected string $baseFilters = '',
     ) {}
 
+    /** Max distinct values listed per facetable field in the description. */
+    private const FACET_VALUE_CAP = 20;
+
+    /** Facet value hints keyed by field name, recomputed on each description() build. */
+    private array $facetHints = [];
+
     public function description(): string
     {
         $properties = $this->index->properties()->get();
+
+        $this->facetHints = $this->facetValueHints($properties->toArray());
 
         $fieldDescriptions = $this->collectFieldDescriptions($properties->toArray());
 
@@ -135,6 +143,92 @@ class SigmieIndexTool implements Tool
         return json_encode($result, JSON_PRETTY_PRINT);
     }
 
+    /**
+     * One match-all facet query over all facetable top-level fields, returning a
+     * "values: …" (or "range a..b") hint per field so the agent uses real values
+     * instead of guessing. Best-effort: never throws — an empty index or a field
+     * whose facets cannot be parsed is simply skipped.
+     *
+     * @param  array<int, Type>  $fields
+     * @return array<string, string>
+     */
+    private function facetValueHints(array $fields): array
+    {
+        $facetable = array_values(array_filter(
+            $fields,
+            fn (Type $f): bool => ! $f instanceof Object_ && ! $f instanceof Nested && $f->isFacetable(),
+        ));
+
+        if ($facetable === []) {
+            return [];
+        }
+
+        // Numbers/dates/ranges take an interval (not a term count) after ':', so omit the cap for them.
+        $spec = implode(' ', array_map(
+            fn (Type $f): string => $f->name().(
+                $f instanceof Number || $f instanceof Price || $f instanceof Date || $f instanceof DateTime || $f instanceof Range
+                    ? ''
+                    : ':'.(self::FACET_VALUE_CAP + 1)
+            ),
+            $facetable,
+        ));
+
+        try {
+            $aggregations = $this->index->newSearch()
+                ->queryString('')
+                ->facets($spec)
+                ->size(0) // aggregations only — we never use the hits
+                ->get()
+                ->facetAggregations();
+        } catch (\Throwable) {
+            return [];
+        }
+
+        if ($aggregations === []) {
+            return [];
+        }
+
+        $hints = [];
+
+        foreach ($facetable as $field) {
+            try {
+                $parsed = $field->facets($aggregations);
+            } catch (\Throwable) {
+                continue;
+            }
+
+            if (! is_array($parsed) || $parsed === []) {
+                continue;
+            }
+
+            $hint = $this->formatFacetValues($parsed);
+
+            if ($hint !== '') {
+                $hints[$field->name] = $hint;
+            }
+        }
+
+        return $hints;
+    }
+
+    /**
+     * @param  array<string, mixed>  $parsed
+     */
+    private function formatFacetValues(array $parsed): string
+    {
+        if (array_key_exists('min', $parsed) && array_key_exists('max', $parsed)) {
+            return sprintf('range %s..%s', $parsed['min'], $parsed['max']);
+        }
+
+        $values = array_keys($parsed);
+        $shown = array_slice($values, 0, self::FACET_VALUE_CAP);
+        $more = count($values) > self::FACET_VALUE_CAP
+            ? sprintf(' (+%d more — request this field in `facets`)', count($values) - self::FACET_VALUE_CAP)
+            : '';
+
+        return 'values: '.implode(', ', array_map(static fn ($v): string => (string) $v, $shown)).$more;
+    }
+
     private function collectFieldDescriptions(array $fields, string $prefix = ''): array
     {
         $descriptions = [];
@@ -183,11 +277,17 @@ class SigmieIndexTool implements Tool
 
         $line = sprintf('- %s [%s]%s: %s', $name, $type, $tags, $filter);
 
-        $description = $field->getMeta()['description'] ?? null;
+        $description = $field->getDescription();
+        if (is_string($description) && $description !== '') {
+            $line .= ' — '.$description;
+        }
 
-        return is_string($description) && $description !== ''
-            ? $line.' — '.$description
-            : $line;
+        $values = $this->facetHints[$name] ?? null;
+        if (is_string($values) && $values !== '') {
+            $line .= ' — '.$values;
+        }
+
+        return $line;
     }
 
     private function describeNested(Nested $field, string $name, string $tags): string
