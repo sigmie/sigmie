@@ -2152,4 +2152,20 @@ class FilterParserTest extends TestCase
 
         $this->assertCount(2, $res->json('hits.hits'));
     }
+
+    /**
+     * @test
+     */
+    public function unbalanced_parentheses_throw_a_parse_exception(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('color');
+
+        $parser = new FilterParser($props, false);
+
+        $this->expectException(ParseException::class);
+
+        // Unbalanced parentheses previously caused a raw "Undefined array key 0" PHP error.
+        $parser->parse('(color:bar');
+    }
 }
