@@ -66,7 +66,7 @@ class SigmieIndexTool implements Tool
             ."Sort: field:asc field:desc _score (space-separated)\n"
             ."Geo sort: field[lat,lon]:km:asc\n"
             ."Facets: field1 field2:20 (space-separated, optional :size for keywords or :interval for numbers)\n"
-            .'Discovering valid values: if you do not know a field\'s valid values, call the companion value-discovery tool (discover_filter_values) with the field name and an optional query before filtering.');
+            ."Discovering valid values: if you do not know a field's valid values, call the companion value-discovery tool (discover_filter_values) with the field name and an optional query before filtering.");
     }
 
     public function schema(JsonSchema $schema): array

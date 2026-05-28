@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\Mappings\Types\Keyword;
+
 require_once __DIR__.'/Stubs/LaravelAiStubs.php';
 
 use Laravel\Ai\Tools\Request;
@@ -610,7 +612,7 @@ class SigmieIndexToolTest extends TestCase
      */
     public function field_description_is_not_sent_to_elasticsearch(): void
     {
-        $field = (new \Sigmie\Mappings\Types\Keyword('country_code_a3'))
+        $field = (new Keyword('country_code_a3'))
             ->description('Country as ISO-3166 alpha-3, e.g. DEU=Germany.');
 
         $raw = json_encode($field->toRaw());

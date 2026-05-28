@@ -16,6 +16,7 @@ use Sigmie\Mappings\Types\Price;
 use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\SigmieIndex;
+use Throwable;
 
 /**
  * Companion to {@see SigmieIndexTool}: lets an agent discover the valid filter values for a
@@ -83,9 +84,11 @@ class SigmieFilterValuesTool implements Tool
         if ($this->baseFilters !== '') {
             $filterParts[] = sprintf('(%s)', $this->baseFilters);
         }
+
         if (! $isNumeric && ($prefix = $this->safePrefix($query)) !== '') {
             $filterParts[] = sprintf('%s:%s*', $fieldName, $prefix);
         }
+
         if ($filterParts !== []) {
             $search->filters(implode(' AND ', $filterParts));
         }
@@ -94,7 +97,7 @@ class SigmieFilterValuesTool implements Tool
 
         try {
             $parsed = $field->facets($search->get()->facetAggregations());
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $parsed = null;
         }
 
