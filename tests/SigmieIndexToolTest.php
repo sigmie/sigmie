@@ -8,7 +8,9 @@ require_once __DIR__.'/Stubs/LaravelAiStubs.php';
 
 use Laravel\Ai\Tools\Request;
 use Sigmie\AI\AsTool;
+use Sigmie\AI\SigmieFilterValuesTool;
 use Sigmie\AI\SigmieIndexTool;
+use Sigmie\AI\SigmieSampleDocumentsTool;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Sigmie;
@@ -619,19 +621,102 @@ class SigmieIndexToolTest extends TestCase
     /**
      * @test
      */
-    public function description_lists_facet_values_for_facetable_fields(): void
+    public function to_tools_returns_search_values_and_sample_tools(): void
+    {
+        $index = $this->createProductIndex();
+
+        [$search, $values, $sample] = $index->toTools();
+
+        $this->assertInstanceOf(SigmieIndexTool::class, $search);
+        $this->assertInstanceOf(SigmieFilterValuesTool::class, $values);
+        $this->assertInstanceOf(SigmieSampleDocumentsTool::class, $sample);
+    }
+
+    /**
+     * @test
+     */
+    public function filter_values_lists_distinct_term_values(): void
     {
         $index = $this->createProductIndex();
 
         $index->merge([
             new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
-            new Document(['name' => 'Galaxy', 'brand' => 'Samsung', 'price' => 899, 'in_stock' => true, 'created_at' => '2024-02-20']),
+            new Document(['name' => 'MacBook', 'brand' => 'Apple', 'price' => 1999, 'in_stock' => true, 'created_at' => '2024-02-20']),
+            new Document(['name' => 'Galaxy', 'brand' => 'Samsung', 'price' => 899, 'in_stock' => true, 'created_at' => '2024-03-10']),
         ], refresh: true);
 
-        $description = (new SigmieIndexTool($index))->description();
+        $result = json_decode((new SigmieFilterValuesTool($index))->handle(new Request(['field' => 'brand'])), true);
 
-        $this->assertStringContainsString('values:', $description);
-        $this->assertStringContainsString('Apple', $description);
-        $this->assertStringContainsString('Samsung', $description);
+        $this->assertEquals('brand', $result['field']);
+        $this->assertContains('Apple', $result['values']);
+        $this->assertContains('Samsung', $result['values']);
+    }
+
+    /**
+     * @test
+     */
+    public function filter_values_narrows_by_prefix_query(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
+            new Document(['name' => 'Galaxy', 'brand' => 'Samsung', 'price' => 899, 'in_stock' => true, 'created_at' => '2024-03-10']),
+        ], refresh: true);
+
+        $result = json_decode((new SigmieFilterValuesTool($index))->handle(new Request(['field' => 'brand', 'query' => 'App'])), true);
+
+        $this->assertContains('Apple', $result['values']);
+        $this->assertNotContains('Samsung', $result['values']);
+    }
+
+    /**
+     * @test
+     */
+    public function filter_values_returns_min_max_for_numeric_fields(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
+            new Document(['name' => 'Pixel', 'brand' => 'Google', 'price' => 699, 'in_stock' => true, 'created_at' => '2024-02-20']),
+            new Document(['name' => 'MacBook', 'brand' => 'Apple', 'price' => 1999, 'in_stock' => true, 'created_at' => '2024-03-10']),
+        ], refresh: true);
+
+        $result = json_decode((new SigmieFilterValuesTool($index))->handle(new Request(['field' => 'price'])), true);
+
+        $this->assertEquals(699, $result['min']);
+        $this->assertEquals(1999, $result['max']);
+    }
+
+    /**
+     * @test
+     */
+    public function filter_values_rejects_unknown_field(): void
+    {
+        $index = $this->createProductIndex();
+
+        $result = json_decode((new SigmieFilterValuesTool($index))->handle(new Request(['field' => 'nope'])), true);
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertContains('brand', $result['available_fields']);
+    }
+
+    /**
+     * @test
+     */
+    public function sample_documents_returns_documents(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
+            new Document(['name' => 'Galaxy', 'brand' => 'Samsung', 'price' => 899, 'in_stock' => true, 'created_at' => '2024-03-10']),
+        ], refresh: true);
+
+        $result = json_decode((new SigmieSampleDocumentsTool($index))->handle(new Request(['limit' => 2])), true);
+
+        $this->assertCount(2, $result['documents']);
+        $this->assertArrayHasKey('_id', $result['documents'][0]);
     }
 }
