@@ -7,6 +7,7 @@ namespace Sigmie\AI;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
+use Sigmie\AI\Contracts\ArrayResult;
 use Sigmie\SigmieIndex;
 
 /**
@@ -18,7 +19,7 @@ use Sigmie\SigmieIndex;
  * per-type parsing are handled by the search/facet layer; an unknown or non-facetable field
  * simply yields no values.
  */
-class SigmieFilterValuesTool implements Tool
+class SigmieFilterValuesTool implements ArrayResult, Tool
 {
     public function __construct(
         protected SigmieIndex $index,
@@ -51,6 +52,11 @@ class SigmieFilterValuesTool implements Tool
 
     public function handle(Request $request): string
     {
+        return json_encode($this->result($request), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+    }
+
+    public function result(Request $request): array
+    {
         $fieldName = trim((string) ($request['field'] ?? ''));
         $limit = max(1, (int) ($request['limit'] ?? self::DEFAULT_LIMIT));
 
@@ -70,9 +76,9 @@ class SigmieFilterValuesTool implements Tool
 
         $facets = (array) ($search->get()->json('facets') ?? []);
 
-        return json_encode([
+        return [
             'field' => $fieldName,
             'values' => $facets[$fieldName] ?? null,
-        ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        ];
     }
 }

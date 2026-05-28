@@ -7,6 +7,7 @@ namespace Sigmie\AI;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
+use Sigmie\AI\Contracts\ArrayResult;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Date;
@@ -39,7 +40,7 @@ use Sigmie\SigmieIndex;
  *       ];
  *   }
  */
-class SigmieIndexTool implements Tool
+class SigmieIndexTool implements ArrayResult, Tool
 {
     public function __construct(
         protected SigmieIndex $index,
@@ -83,6 +84,11 @@ class SigmieIndexTool implements Tool
     }
 
     public function handle(Request $request): string
+    {
+        return json_encode($this->result($request), JSON_PRETTY_PRINT);
+    }
+
+    public function result(Request $request): array
     {
         $search = $this->index->newSearch()
             ->queryString((string) ($request['query'] ?? ''))
@@ -132,7 +138,7 @@ class SigmieIndexTool implements Tool
             $result['facets'] = $response->json('facets');
         }
 
-        return json_encode($result, JSON_PRETTY_PRINT);
+        return $result;
     }
 
     private function collectFieldDescriptions(array $fields, string $prefix = ''): array

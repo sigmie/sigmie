@@ -724,4 +724,40 @@ class SigmieIndexToolTest extends TestCase
         $this->assertArrayHasKey('_id', $result[0]);
         $this->assertArrayHasKey('_source', $result[0]);
     }
+
+    /**
+     * @test
+     */
+    public function tools_expose_array_results(): void
+    {
+        $index = $this->createProductIndex();
+
+        foreach ($index->tools() as $tool) {
+            $this->assertInstanceOf(\Sigmie\AI\Contracts\ArrayResult::class, $tool);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function result_returns_an_array_not_a_json_string(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
+        ], refresh: true);
+
+        $search = (new SigmieIndexTool($index))->result(new Request(['query' => '']));
+        $this->assertIsArray($search);
+        $this->assertArrayHasKey('total', $search);
+        $this->assertArrayHasKey('hits', $search);
+
+        $values = (new SigmieFilterValuesTool($index))->result(new Request(['field' => 'brand']));
+        $this->assertIsArray($values);
+        $this->assertArrayHasKey('values', $values);
+
+        $sample = (new SigmieSampleDocumentsTool($index))->result(new Request(['limit' => 1]));
+        $this->assertIsArray($sample);
+    }
 }
