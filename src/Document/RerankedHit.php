@@ -18,4 +18,12 @@ class RerankedHit extends Hit
             $hit->sort,
         );
     }
+
+    public function toArray(): array
+    {
+        return [
+            ...parent::toArray(),
+            '_rerank_score' => $this->_rerank_score,
+        ];
+    }
 }

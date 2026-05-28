@@ -694,14 +694,15 @@ class SigmieIndexToolTest extends TestCase
     /**
      * @test
      */
-    public function filter_values_rejects_unknown_field(): void
+    public function filter_values_errors_on_unknown_field(): void
     {
         $index = $this->createProductIndex();
 
-        $result = json_decode((new SigmieFilterValuesTool($index))->handle(new Request(['field' => 'nope'])), true);
+        // No client-side validation: an unknown/non-facetable field surfaces as an engine
+        // error, which the agent SDK / tool-call dispatch reports back to the model.
+        $this->expectException(\Sigmie\Base\ElasticsearchException::class);
 
-        $this->assertArrayHasKey('error', $result);
-        $this->assertContains('brand', $result['available_fields']);
+        (new SigmieFilterValuesTool($index))->handle(new Request(['field' => 'nope']));
     }
 
     /**

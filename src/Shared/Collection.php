@@ -9,11 +9,22 @@ use ArrayIterator;
 use Closure;
 use Countable;
 use IteratorAggregate;
+use JsonSerializable;
 use Traversable;
 
-class Collection implements ArrayAccess, Countable, IteratorAggregate
+class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSerializable
 {
     public function __construct(protected array $elements = []) {}
+
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
+    }
+
+    public function toJson(int $flags = 0): string
+    {
+        return json_encode($this->jsonSerialize(), JSON_THROW_ON_ERROR | $flags);
+    }
 
     public function deepen(int|float $depth = INF): static
     {

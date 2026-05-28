@@ -7,14 +7,13 @@ namespace Sigmie\AI;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
-use Sigmie\Document\Document;
 use Sigmie\SigmieIndex;
 
 /**
  * Companion to {@see SigmieIndexTool}: returns a few random example documents so an agent can see
  * the real data shape and field values before searching or filtering.
  *
- * Reuses the index's `collect()->random()` sampler and the document's own `toArray()`.
+ * Reuses the index's `collect()->random()` sampler and the collection's `toJson()`.
  */
 class SigmieSampleDocumentsTool implements Tool
 {
@@ -46,11 +45,6 @@ class SigmieSampleDocumentsTool implements Tool
     {
         $limit = max(1, min(20, (int) ($request['limit'] ?? 5)));
 
-        $documents = $this->index->collect()
-            ->random($limit)
-            ->map(static fn (Document $document): array => $document->toArray())
-            ->toArray();
-
-        return json_encode($documents, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        return $this->index->collect()->random($limit)->toJson(JSON_UNESCAPED_UNICODE);
     }
 }
