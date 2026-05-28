@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\AI\Contracts\ArrayResult;
 use Sigmie\Base\ElasticsearchException;
 use Sigmie\Mappings\Types\Keyword;
 
@@ -733,7 +734,7 @@ class SigmieIndexToolTest extends TestCase
         $index = $this->createProductIndex();
 
         foreach ($index->tools() as $tool) {
-            $this->assertInstanceOf(\Sigmie\AI\Contracts\ArrayResult::class, $tool);
+            $this->assertInstanceOf(ArrayResult::class, $tool);
         }
     }
 
