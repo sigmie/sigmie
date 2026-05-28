@@ -19,4 +19,13 @@ class Hit extends Document
 
         $this->index($_index);
     }
+
+    public function toArray(): array
+    {
+        return [
+            '_id' => $this->_id ?? null,
+            '_score' => $this->_score,
+            '_source' => $this->_source,
+        ];
+    }
 }

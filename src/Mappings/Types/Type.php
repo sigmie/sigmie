@@ -18,6 +18,12 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
     protected array $meta = [];
 
     /**
+     * Human/agent-facing description of the field (e.g. for AI tools). NOT sent to
+     * Elasticsearch — kept out of toRaw() so it is not constrained by ES field-meta limits.
+     */
+    protected ?string $description = null;
+
+    /**
      * Field path with optional nested boundary marker (>).
      *
      * Regular field:              "title"           → fullPath: "title", nestedPath: null
@@ -84,16 +90,30 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
         return $this;
     }
 
-    public function meta(array $meta): static
+    public function meta(array $meta): void
     {
         $this->meta = [...$this->meta, ...$meta];
-
-        return $this;
     }
 
     public function getMeta(): array
     {
         return $this->meta;
+    }
+
+    /**
+     * Set an agent/AI-facing description of the field. Surfaced by SigmieIndexTool; never
+     * sent to Elasticsearch (so it is free of ES field-meta length/count limits).
+     */
+    public function description(string $description): static
+    {
+        $this->description = $description;
+
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
     }
 
     public function isFacetable(): bool

@@ -66,7 +66,7 @@ class SigmieIndexTool implements Tool
             ."Sort: field:asc field:desc _score (space-separated)\n"
             ."Geo sort: field[lat,lon]:km:asc\n"
             ."Facets: field1 field2:20 (space-separated, optional :size for keywords or :interval for numbers)\n"
-            .'Discovering valid values: to filter on a field whose values you do not know, first search with that field name in `facets` (optionally narrowed by `query` or another filter), then read the returned facet values and filter by one of them.');
+            ."Discovering valid values: if you do not know a field's valid values, call the companion value-discovery tool (discover_filter_values) with the field name and an optional query before filtering.");
     }
 
     public function schema(JsonSchema $schema): array
@@ -183,7 +183,7 @@ class SigmieIndexTool implements Tool
 
         $line = sprintf('- %s [%s]%s: %s', $name, $type, $tags, $filter);
 
-        $description = $field->getMeta()['description'] ?? null;
+        $description = $field->getDescription();
 
         return is_string($description) && $description !== ''
             ? $line.' — '.$description

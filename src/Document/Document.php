@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Sigmie\Document;
 
 use ArrayAccess;
+use JsonSerializable;
 use Sigmie\Shared\Contracts\FromRaw;
 
-class Document implements ArrayAccess, FromRaw
+class Document implements ArrayAccess, FromRaw, JsonSerializable
 {
     public readonly string $_index; // @phpstan-ignore-line
 
@@ -73,6 +74,11 @@ class Document implements ArrayAccess, FromRaw
             '_id' => $this->_id ?? null,
             '_source' => $this->_source,
         ];
+    }
+
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
     }
 
     public static function fromRaw(array $raw): static
