@@ -31,10 +31,9 @@ namespace Sigmie\AI;
 trait AsTool
 {
     /**
-     * The agent tool suite for this index: search, on-demand value discovery, sample documents,
-     * and the structured schema (field list + filter syntax).
+     * The agent tool suite for this index: search, on-demand value discovery, and sample documents.
      *
-     * @return array{0: SigmieIndexTool, 1: SigmieFilterValuesTool, 2: SigmieSampleDocumentsTool, 3: SigmieIndexSchemaTool}
+     * @return array{0: SigmieIndexTool, 1: SigmieFilterValuesTool, 2: SigmieSampleDocumentsTool}
      */
     public function tools(string $baseFilter = ''): array
     {
@@ -42,7 +41,6 @@ trait AsTool
             new SigmieIndexTool($this, $baseFilter),
             new SigmieFilterValuesTool($this, $baseFilter),
             new SigmieSampleDocumentsTool($this),
-            new SigmieIndexSchemaTool($this),
         ];
     }
 }

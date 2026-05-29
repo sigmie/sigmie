@@ -13,7 +13,6 @@ require_once __DIR__.'/Stubs/LaravelAiStubs.php';
 use Laravel\Ai\Tools\Request;
 use Sigmie\AI\AsTool;
 use Sigmie\AI\SigmieFilterValuesTool;
-use Sigmie\AI\SigmieIndexSchemaTool;
 use Sigmie\AI\SigmieIndexTool;
 use Sigmie\AI\SigmieSampleDocumentsTool;
 use Sigmie\Document\Document;
@@ -626,101 +625,15 @@ class SigmieIndexToolTest extends TestCase
     /**
      * @test
      */
-    public function tools_returns_search_values_sample_and_schema_tools(): void
+    public function tools_returns_search_values_and_sample_tools(): void
     {
         $index = $this->createProductIndex();
 
-        [$search, $values, $sample, $schema] = $index->tools();
+        [$search, $values, $sample] = $index->tools();
 
         $this->assertInstanceOf(SigmieIndexTool::class, $search);
         $this->assertInstanceOf(SigmieFilterValuesTool::class, $values);
         $this->assertInstanceOf(SigmieSampleDocumentsTool::class, $sample);
-        $this->assertInstanceOf(SigmieIndexSchemaTool::class, $schema);
-    }
-
-    /**
-     * @test
-     */
-    public function describe_index_returns_structured_fields_and_syntax(): void
-    {
-        $index = $this->createProductIndex();
-
-        $result = json_decode((new SigmieIndexSchemaTool($index))->handle(new Request([])), true);
-
-        $this->assertEquals($index->name(), $result['index']);
-        $this->assertArrayHasKey('fields', $result);
-        $this->assertArrayHasKey('filter_syntax', $result);
-        $this->assertArrayHasKey('notes', $result);
-
-        $byName = [];
-        foreach ($result['fields'] as $field) {
-            $byName[$field['name']] = $field;
-        }
-
-        $this->assertEqualsCanonicalizing(
-            ['name', 'brand', 'price', 'in_stock', 'created_at'],
-            array_keys($byName)
-        );
-
-        $this->assertTrue($byName['brand']['filterable']);
-        $this->assertStringContainsString("brand:'value'", $byName['brand']['filter']);
-
-        $this->assertSame('number', $byName['price']['type']);
-        $this->assertTrue($byName['price']['sortable']);
-        $this->assertTrue($byName['price']['filterable']);
-
-        // The case-sensitivity guidance must be present for the agent.
-        $this->assertStringContainsString(
-            'case-sensitive',
-            implode(' ', $result['notes'])
-        );
-    }
-
-    /**
-     * @test
-     */
-    public function describe_index_includes_field_descriptions(): void
-    {
-        $index = new class($this->sigmie) extends SigmieIndex
-        {
-            use AsTool;
-
-            protected string $indexName;
-
-            public function __construct(Sigmie $sigmie)
-            {
-                parent::__construct($sigmie);
-
-                $this->indexName = uniqid();
-            }
-
-            public function name(): string
-            {
-                return $this->indexName;
-            }
-
-            public function properties(): NewProperties
-            {
-                $props = new NewProperties;
-                $props->keyword('country_code_a3')
-                    ->description('Country as ISO-3166 alpha-3, e.g. DEU=Germany.');
-
-                return $props;
-            }
-        };
-        $index->create();
-
-        $result = json_decode((new SigmieIndexSchemaTool($index))->handle(new Request([])), true);
-
-        $field = null;
-        foreach ($result['fields'] as $candidate) {
-            if ($candidate['name'] === 'country_code_a3') {
-                $field = $candidate;
-                break;
-            }
-        }
-
-        $this->assertSame('Country as ISO-3166 alpha-3, e.g. DEU=Germany.', $field['description']);
     }
 
     /**

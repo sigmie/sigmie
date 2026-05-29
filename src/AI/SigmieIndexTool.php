@@ -57,8 +57,7 @@ class SigmieIndexTool implements Tool
             ."Geo sort: field[lat,lon]:km:asc\n"
             ."Facets: field1 field2:20 (space-separated, optional :size for keywords or :interval for numbers)\n"
             ."Matching: equality filters on text/keyword fields are exact and CASE-SENSITIVE — if a filter returns 0 unexpectedly, call discover_filter_values to confirm the exact stored value.\n"
-            ."Discovering valid values: if you do not know a field's valid values, call discover_filter_values with the field name (and optional query) before filtering.\n"
-            .'Schema: call describe_index for the full structured field list, types and filter syntax.');
+            ."Discovering valid values: if you do not know a field's valid values, call discover_filter_values with the field name (and optional query) before filtering.");
     }
 
     public function schema(JsonSchema $schema): array

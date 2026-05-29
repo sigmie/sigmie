@@ -19,64 +19,11 @@ use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 
 /**
- * Shared field introspection for the index tools. Turns an index's properties() into either
- * human-readable field lines (for {@see SigmieIndexTool}'s description) or a structured field
- * list (for {@see SigmieIndexSchemaTool}). The using class must expose `protected SigmieIndex $index`.
+ * Shared field introspection: turns an index's properties() into the human-readable field lines
+ * used in {@see SigmieIndexTool}'s description.
  */
 trait DescribesIndexFields
 {
-    /**
-     * Structured per-field schema: name, type, capabilities, description and a filter example.
-     *
-     * @param  array<int, Type>|null  $fields
-     * @return list<array<string, mixed>>
-     */
-    protected function fieldsSchema(?array $fields = null, string $prefix = ''): array
-    {
-        $fields ??= $this->index->properties()->get()->toArray();
-
-        $schema = [];
-
-        foreach ($fields as $field) {
-            $name = $prefix !== '' ? sprintf('%s.%s', $prefix, $field->name) : $field->name;
-
-            if ($field instanceof Object_) {
-                $schema = [...$schema, ...$this->fieldsSchema($field->getProperties()->toArray(), $name)];
-
-                continue;
-            }
-
-            $type = $this->fieldTypeName($field);
-
-            if ($type === null) {
-                continue;
-            }
-
-            $entry = [
-                'name' => $name,
-                'type' => $type,
-                'filterable' => $this->fieldFilterable($field),
-                'sortable' => $this->fieldSortable($field),
-                'facetable' => $field->isFacetable(),
-                'filter' => $this->filterExample($field, $name),
-            ];
-
-            $description = $field->getDescription();
-
-            if (is_string($description) && $description !== '') {
-                $entry['description'] = $description;
-            }
-
-            if ($field instanceof Nested) {
-                $entry['subfields'] = $this->fieldsSchema($field->getProperties()->toArray());
-            }
-
-            $schema[] = $entry;
-        }
-
-        return $schema;
-    }
-
     /**
      * @param  array<int, Type>  $fields
      * @return list<string>
@@ -198,13 +145,6 @@ trait DescribesIndexFields
             $field instanceof Nested, $field instanceof Range => false,
             default => true,
         };
-    }
-
-    private function fieldFilterable(Type $field): bool
-    {
-        $example = $this->filterExample($field, 'x');
-
-        return $example !== '' && $example !== 'query only';
     }
 
     private function filterExample(Type $field, string $name): string
