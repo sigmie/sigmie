@@ -58,154 +58,410 @@ class FilterParserTest extends TestCase
 
     /**
      * @test
+     *
+     * Seeds a fixed set of documents into a real Elasticsearch index, then runs
+     * every filter string below through the parser and asserts the query returns
+     * EXACTLY the documents we expect.
+     *
+     * Each document is stored under a human-readable `_id` (the array key in
+     * $documents, e.g. 'acme' or 'obrien'). A case like
+     *
+     *     ["company:'Acme'", ['acme']]
+     *
+     * therefore reads as: "this filter must match the document whose _id is
+     * 'acme', and no other document". The assertion compares the full set of
+     * returned _ids, so a failure names exactly which documents were wrongly
+     * included or excluded.
      */
-    public function apostrophe_in_value(): void
+    public function filters_return_the_expected_documents(): void
     {
         $indexName = uniqid();
 
-        $props = new NewProperties;
-        $props->keyword('team_id');
-        $props->keyword('company');
+        $properties = new NewProperties;
+        foreach (['company', 'name', 'status', 'url', 'time', 'ratio', 'note', 'path', 'code', 'tags'] as $field) {
+            $properties->caseSensitiveKeyword($field);
+        }
+        $properties->number('price');
+        $properties->number('qty');
+        $properties->bool('active');
+        $properties->date('created');
+        $properties->nested('user', fn (NewProperties $user) => $user->caseSensitiveKeyword('name'));
 
-        $index = $this->sigmie->newIndex($indexName)
-            ->properties($props)
-            ->create();
-
+        $index = $this->sigmie->newIndex($indexName)->properties($properties)->create();
         $index = $this->sigmie->collect($indexName, true);
 
-        $docs = [
-            new Document([
-                'team_id' => '1',
-                'company' => "O'Brien GmbH",
-            ]),
-            new Document([
-                'team_id' => '1',
-                'company' => 'Acme',
-            ]),
+        // _id => document source. Every filter case below refers to these ids.
+        $documents = [
+            'obrien' => [
+                'company' => "O'Brien GmbH", 'name' => 'Smith, John', 'status' => 'active',
+                'url' => 'https://example.com/path?q=1', 'time' => '12:00', 'ratio' => '16:9',
+                'note' => 'Marks AND Spencer', 'path' => 'C:\Users\nico', 'tags' => ['a, b', 'vip'],
+                'price' => 100, 'qty' => 5, 'active' => true, 'created' => '2024-06-15T10:30:00.000000+00:00',
+                'user' => ['name' => "O'Brien"],
+            ],
+            'acme' => [
+                'company' => 'Acme', 'name' => 'Jane Doe', 'status' => 'active',
+                'url' => 'http://other.test', 'time' => '09:30', 'ratio' => '4:3',
+                'note' => 'plain text', 'path' => '/var/log', 'tags' => ['x', 'vip'],
+                'price' => 200, 'qty' => 0, 'active' => false, 'created' => '2020-01-01T00:00:00.000000+00:00',
+                'user' => ['name' => 'Jane'],
+            ],
+            'loreal' => [
+                'company' => "L'Oréal", 'name' => "D'Angelo", 'status' => 'pending',
+                'url' => 'ftp://files.local', 'time' => '23:59', 'ratio' => '21:9',
+                'note' => 'a OR b', 'path' => 'D:\data', 'tags' => ['(special)', 'b2b'],
+                'price' => 50, 'qty' => 10, 'active' => true, 'created' => '2023-03-03T03:03:03.000000+00:00',
+                'user' => ['name' => "O'Brien"],
+            ],
+            'muller' => [
+                'company' => 'Müller & Co', 'name' => 'José', 'status' => 'closed',
+                'url' => 'mailto:x@y.z', 'time' => '00:00', 'ratio' => '1:1',
+                'note' => 'AND NOT applicable', 'path' => 'E:\x', 'tags' => ['{json}', 'x'],
+                'price' => 0, 'qty' => 100, 'active' => false, 'created' => '2019-12-31T23:59:59.000000+00:00',
+                'user' => ['name' => 'José'],
+            ],
+            'zeta' => [
+                'company' => 'Zeta Corp', 'name' => 'Anne-Marie', 'status' => 'active',
+                'url' => 'https://e.example', 'time' => '06:00', 'ratio' => '3:2',
+                'note' => 'hello world', 'path' => 'F:\y', 'tags' => ['vip', 'gold'],
+                'price' => 150, 'qty' => 50, 'active' => true, 'created' => '2024-01-10T00:00:00.000000+00:00',
+                'user' => ['name' => 'Anne'],
+            ],
+            'quote' => [
+                'company' => 'quote"inside', 'name' => "O'Neil", 'status' => 'pending',
+                'url' => 'https://f.example', 'time' => '18:45', 'ratio' => '5:4',
+                'note' => 'say "hi"', 'path' => 'G:\z', 'tags' => ['plain'],
+                'price' => 999, 'qty' => 1, 'active' => true, 'created' => '2025-01-01T00:00:00.000000+00:00',
+                'user' => ['name' => "O'Neil"],
+            ],
         ];
 
-        $index->merge($docs);
+        // The 'code' field mirrors the _id so it can be used in keyword filters.
+        $index->merge(array_map(
+            fn (string $id, array $source): Document => new Document([...$source, 'code' => $id], $id),
+            array_keys($documents),
+            $documents,
+        ));
 
-        $parser = new FilterParser($props, false);
+        $parser = new FilterParser($properties, false);
 
-        // Escaped apostrophe inside single quotes
-        $query = $parser->parse("team_id:'1' AND company:'O\\'Brien GmbH'");
-        $res = $this->sigmie->query($indexName, $query)->get();
-        $this->assertCount(1, $res->json('hits.hits'));
-        $this->assertSame("O'Brien GmbH", $res->json('hits.hits.0._source.company'));
+        // [filter string, the _ids it must return — order does not matter]
+        $cases = [
+            // colon inside the value (would be truncated if split on every ':')
+            ["ratio:'16:9'", ['obrien']],
+            ["ratio:'4:3'", ['acme']],
+            ["time:'23:59'", ['loreal']],
+            ['url:"https://example.com/path?q=1"', ['obrien']],
+            ["url:'mailto:x@y.z'", ['muller']],
 
-        // Apostrophe inside double quotes
-        $query = $parser->parse('team_id:\'1\' AND company:"O\'Brien GmbH"');
-        $res = $this->sigmie->query($indexName, $query)->get();
-        $this->assertCount(1, $res->json('hits.hits'));
-        $this->assertSame("O'Brien GmbH", $res->json('hits.hits.0._source.company'));
+            // exact term match: apostrophes, accents, ampersand, escaped quotes
+            ['company:"O\'Brien GmbH"', ['obrien']],
+            ["company:'O\\'Brien GmbH'", ['obrien']],
+            ["company:'Acme'", ['acme']],
+            ['company:"L\'Oréal"', ['loreal']],
+            ["company:'L\\'Oréal'", ['loreal']],
+            ["company:'Müller & Co'", ['muller']],
+            ['company:"quote\"inside"', ['quote']],
+
+            // exact term match: comma + space, hyphen, apostrophe
+            ["name:'Smith, John'", ['obrien']],
+            ["name:'Jane Doe'", ['acme']],
+            ['name:"D\'Angelo"', ['loreal']],
+            ["name:'José'", ['muller']],
+            ["name:'Anne-Marie'", ['zeta']],
+            ['name:"O\'Neil"', ['quote']],
+
+            // wildcards (including with an apostrophe)
+            ['company:"O\'Br*"', ['obrien']],
+            ["name:'Smith*'", ['obrien']],
+            ["name:'*Doe'", ['acme']],
+            ['name:"O\'N*"', ['quote']],
+
+            // operator words / quotes living inside a value
+            ["note:'Marks AND Spencer'", ['obrien']],
+            ["note:'a OR b'", ['loreal']],
+            ["note:'AND NOT applicable'", ['muller']],
+            ['note:\'say "hi"\'', ['quote']],
+
+            // backslashes (and a colon) in the value
+            ["path:'C:\\Users\\nico'", ['obrien']],
+            ["path:'/var/log'", ['acme']],
+
+            // term + exists
+            ["status:'active'", ['obrien', 'acme', 'zeta']],
+            ["status:'pending'", ['loreal', 'quote']],
+            ["status:'closed'", ['muller']],
+            ['status:*', ['obrien', 'acme', 'loreal', 'muller', 'zeta', 'quote']],
+
+            // single value against a keyword array
+            ["tags:'vip'", ['obrien', 'acme', 'zeta']],
+            ["tags:'x'", ['acme', 'muller']],
+            ["tags:'(special)'", ['loreal']],
+            ["tags:'{json}'", ['muller']],
+            ["tags:'a, b'", ['obrien']],
+
+            // IN arrays
+            ["tags:['vip','b2b']", ['obrien', 'acme', 'loreal', 'zeta']],
+            ["tags:['x','gold']", ['acme', 'muller', 'zeta']],
+            ["status:['active','closed']", ['obrien', 'acme', 'muller', 'zeta']],
+            ["code:['obrien','loreal']", ['obrien', 'loreal']],
+            // spaces inside the brackets, and dropped empty elements
+            ["tags:[ 'vip' , 'gold' ]", ['obrien', 'acme', 'zeta']],
+            ["tags:['vip',,'gold']", ['obrien', 'acme', 'zeta']],
+            ["tags:[ 'a, b' ]", ['obrien']],
+
+            // term + IDs query
+            ["code:'acme'", ['acme']],
+            ["_id:'obrien'", ['obrien']],
+            ["_id:'muller'", ['muller']],
+            ["_id:['obrien','loreal']", ['obrien', 'loreal']],
+
+            // booleans
+            ['active:true', ['obrien', 'loreal', 'zeta', 'quote']],
+            ['active:false', ['acme', 'muller']],
+
+            // numeric ranges + between
+            ['price>100', ['acme', 'zeta', 'quote']],
+            ['price>=100', ['obrien', 'acme', 'zeta', 'quote']],
+            ['price<50', ['muller']],
+            ['price<=50', ['loreal', 'muller']],
+            ['price:50..200', ['obrien', 'acme', 'loreal', 'zeta']],
+            ['qty:1..10', ['obrien', 'loreal', 'quote']],
+            ['qty:-10..200', ['obrien', 'acme', 'loreal', 'muller', 'zeta', 'quote']],
+
+            // date ranges (colons in the bounds)
+            ["created>='2024-01-01T00:00:00.000000+00:00' AND created<='2024-12-31T23:59:59.999999+00:00'", ['obrien', 'zeta']],
+            ["created>='2025-01-01T00:00:00.000000+00:00'", ['quote']],
+
+            // nested objects, including operators inside the braces
+            ['user:{name:"O\'Brien"}', ['obrien', 'loreal']],
+            ["user:{name:'José'}", ['muller']],
+            ['user:{name:"O\'Brien"} AND status:\'pending\'', ['loreal']],
+            ['user:{name:"O\'Brien" OR name:\'Jane\'}', ['obrien', 'acme', 'loreal']],
+
+            // negation in every position
+            ["NOT status:'active'", ['loreal', 'muller', 'quote']],
+            ["NOT company:'Acme'", ['obrien', 'loreal', 'muller', 'zeta', 'quote']],
+            ['(NOT price>100) AND active:true', ['obrien', 'loreal']],
+            ['(NOT active:true) AND price>100', ['acme']],
+            ["status:'active' AND NOT tags:'vip'", []],
+            ["NOT (status:'active' OR status:'pending')", ['muller']],
+            ["NOT (tags:'vip' AND active:true)", ['acme', 'loreal', 'muller', 'quote']],
+
+            // operator precedence: AND binds tighter than OR
+            ["status:'active' AND price>100 OR status:'closed'", ['acme', 'muller', 'zeta']],
+            ["status:'closed' OR status:'active' AND price>100", ['acme', 'muller', 'zeta']],
+            ['price>=100 AND price<=200 OR qty>=100', ['obrien', 'acme', 'muller', 'zeta']],
+            ["status:'pending' OR status:'active' AND active:false", ['acme', 'loreal', 'quote']],
+
+            // explicit grouping
+            ["(status:'active' OR status:'pending') AND active:true", ['obrien', 'loreal', 'zeta', 'quote']],
+            ['company:"L\'Oréal" OR company:\'Acme\'', ['acme', 'loreal']],
+
+            // case-insensitive operators
+            ["status:'active' and active:true", ['obrien', 'zeta']],
+            ["status:'closed' or status:'pending'", ['loreal', 'muller', 'quote']],
+            ["not status:'active'", ['loreal', 'muller', 'quote']],
+            ["status:'active' and not tags:'vip'", []],
+
+            // empty value matches nothing; surrounding whitespace is ignored
+            ["name:''", []],
+            ["  status:'active'  ", ['obrien', 'acme', 'zeta']],
+            ['price>=', []],
+        ];
+
+        foreach ($cases as [$filter, $expected]) {
+            $hits = $this->sigmie->query($indexName, $parser->parse($filter))->get()->json('hits.hits');
+
+            $returned = array_map(fn (array $hit): string => $hit['_id'], $hits);
+            sort($returned);
+            sort($expected);
+
+            $this->assertSame(
+                $expected,
+                $returned,
+                sprintf('Filter [%s] returned [%s] but expected [%s].', $filter, implode(', ', $returned), implode(', ', $expected)),
+            );
+        }
     }
 
     /**
      * @test
+     *
+     * Property-based check for the boolean engine (precedence, NOT, AND NOT,
+     * parentheses, case-insensitive operators). Instead of hand-writing cases,
+     * it builds random boolean expressions out of predicates whose matching
+     * documents are known, works out the expected document set from the
+     * expression itself, and asserts the parser + Elasticsearch return exactly
+     * that set.
+     *
+     * The rendered string is also perturbed in ways that must NOT change the
+     * result — redundant parentheses, mixed-case operators, extra whitespace —
+     * so the lexer is exercised too. The seed is fixed so any failure is
+     * reproducible and prints the offending filter.
      */
-    public function hard_edge_cases(): void
+    public function random_boolean_filters_match_a_reference_evaluator(): void
     {
         $indexName = uniqid();
 
-        $props = new NewProperties;
-        $props->keyword('company');
-        $props->keyword('name');
-        $props->keyword('url');
-        $props->keyword('time');
-        $props->keyword('note');
-        $props->keyword('tags');
-        $props->date('created');
-        $props->nested('user', function (NewProperties $p): void {
-            $p->keyword('name');
-        });
+        $properties = new NewProperties;
+        $properties->keyword('status');
+        $properties->keyword('tags');
+        $properties->number('price');
+        $properties->number('qty');
+        $properties->bool('active');
 
-        $index = $this->sigmie->newIndex($indexName)
-            ->properties($props)
-            ->create();
-
+        $index = $this->sigmie->newIndex($indexName)->properties($properties)->create();
         $index = $this->sigmie->collect($indexName, true);
 
-        $index->merge([
-            new Document([
-                'company' => "O'Brien GmbH",
-                'name' => 'Smith, John',
-                'url' => 'https://example.com/path?q=1',
-                'time' => '12:00',
-                'note' => 'Marks AND Spencer',
-                'tags' => ['a, b', 'c'],
-                'created' => '2024-06-15T10:30:00.000000+00:00',
-                'user' => ['name' => "O'Brien"],
-            ]),
-            new Document([
-                'company' => 'Acme',
-                'name' => 'Jane',
-                'url' => 'http://other.test',
-                'time' => '09:30',
-                'note' => 'plain',
-                'tags' => ['x', 'y'],
-                'created' => '2020-01-01T00:00:00.000000+00:00',
-                'user' => ['name' => 'Acme Admin'],
-            ]),
-        ]);
+        $documents = [
+            'a' => ['status' => 'active', 'price' => 100, 'qty' => 5, 'active' => true, 'tags' => ['a, b', 'vip']],
+            'b' => ['status' => 'active', 'price' => 200, 'qty' => 0, 'active' => false, 'tags' => ['x', 'vip']],
+            'c' => ['status' => 'pending', 'price' => 50, 'qty' => 10, 'active' => true, 'tags' => ['(special)', 'b2b']],
+            'd' => ['status' => 'closed', 'price' => 0, 'qty' => 100, 'active' => false, 'tags' => ['{json}', 'x']],
+            'e' => ['status' => 'active', 'price' => 150, 'qty' => 50, 'active' => true, 'tags' => ['vip', 'gold']],
+            'f' => ['status' => 'pending', 'price' => 999, 'qty' => 1, 'active' => true, 'tags' => ['plain']],
+        ];
 
-        $parser = new FilterParser($props, false);
+        $index->merge(array_map(
+            fn (string $id, array $source): Document => new Document($source, $id),
+            array_keys($documents),
+            $documents,
+        ));
 
-        $hits = fn (string $filter): array => $this->sigmie
-            ->query($indexName, $parser->parse($filter))
-            ->get()
-            ->json('hits.hits');
+        $all = array_keys($documents);
 
-        // Apostrophe inside double quotes
-        $res = $hits('company:"O\'Brien GmbH"');
-        $this->assertCount(1, $res);
-        $this->assertSame("O'Brien GmbH", $res[0]['_source']['company']);
+        // [filter string, ids that match it] — the building blocks for the trees.
+        $predicates = [
+            ["status:'active'", ['a', 'b', 'e']],
+            ['status:"active"', ['a', 'b', 'e']],
+            ["status:'pending'", ['c', 'f']],
+            ['active:true', ['a', 'c', 'e', 'f']],
+            ['active:false', ['b', 'd']],
+            ['price>100', ['b', 'e', 'f']],
+            ['price<=50', ['c', 'd']],
+            ['price:50..200', ['a', 'b', 'c', 'e']],
+            ['qty>=50', ['d', 'e']],
+            ["tags:'vip'", ['a', 'b', 'e']],
+            ["tags:'vi*'", ['a', 'b', 'e']],
+            ["tags:'a, b'", ['a']],
+            ["tags:['vip','x']", ['a', 'b', 'd', 'e']],
+            ["_id:'f'", ['f']],
+        ];
 
-        // Escaped apostrophe inside single quotes
-        $this->assertCount(1, $hits("company:'O\\'Brien GmbH'"));
+        $parser = new FilterParser($properties, false);
 
-        // Comma + space preserved inside a value
-        $res = $hits("name:'Smith, John'");
-        $this->assertCount(1, $res);
-        $this->assertSame('Smith, John', $res[0]['_source']['name']);
+        // Fixed seed → reproducible.
+        mt_srand(20260529);
 
-        // Colons and slashes in value (URL)
-        $res = $hits('url:"https://example.com/path?q=1"');
-        $this->assertCount(1, $res);
-        $this->assertSame('https://example.com/path?q=1', $res[0]['_source']['url']);
+        for ($i = 0; $i < 300; $i++) {
+            $tree = $this->randomFilterTree(3, count($predicates));
+            $filter = $this->renderFilterTree($tree, 1, $predicates);
 
-        // Colon in value (time)
-        $this->assertCount(1, $hits("time:'12:00'"));
+            $expected = $this->evaluateFilterTree($tree, $predicates, $all);
+            sort($expected);
 
-        // Operator words inside a value
-        $this->assertCount(1, $hits("note:'Marks AND Spencer'"));
+            $hits = $this->sigmie->query($indexName, $parser->parse($filter))->get()->json('hits.hits');
+            $returned = array_map(fn (array $hit): string => $hit['_id'], $hits);
+            sort($returned);
 
-        // Quoted comma inside an array element
-        $res = $hits("tags:['a, b','c']");
-        $this->assertCount(1, $res);
+            $this->assertSame(
+                $expected,
+                $returned,
+                sprintf('Random filter [%s] returned [%s] but expected [%s].', $filter, implode(', ', $returned), implode(', ', $expected)),
+            );
+        }
+    }
 
-        // Multi-clause with apostrophe AND comma values
-        $this->assertCount(1, $hits('company:"O\'Brien GmbH" AND name:\'Smith, John\''));
+    /**
+     * Build a random boolean expression tree: a leaf predicate, an AND/OR/AND NOT
+     * of two sub-trees, or a NOT of one sub-tree.
+     */
+    private function randomFilterTree(int $depth, int $predicateCount): array
+    {
+        if ($depth <= 0 || mt_rand(0, 100) < 35) {
+            return ['leaf', mt_rand(0, $predicateCount - 1)];
+        }
 
-        // OR across both documents
-        $this->assertCount(2, $hits('company:\'Acme\' OR company:"O\'Brien GmbH"'));
+        $type = ['and', 'or', 'andnot', 'not'][mt_rand(0, 3)];
 
-        // Wildcard combined with an apostrophe
-        $this->assertCount(1, $hits('company:"O\'Br*"'));
+        if ($type === 'not') {
+            return ['not', $this->randomFilterTree($depth - 1, $predicateCount)];
+        }
 
-        // Negation
-        $res = $hits("NOT company:'Acme'");
-        $this->assertCount(1, $res);
-        $this->assertSame("O'Brien GmbH", $res[0]['_source']['company']);
+        return [$type, $this->randomFilterTree($depth - 1, $predicateCount), $this->randomFilterTree($depth - 1, $predicateCount)];
+    }
 
-        // Nested field with an apostrophe value
-        $this->assertCount(1, $hits('user:{name:"O\'Brien"}'));
+    /** The set of ids an expression tree should match (the reference answer). */
+    private function evaluateFilterTree(array $node, array $predicates, array $all): array
+    {
+        if ($node[0] === 'leaf') {
+            return $predicates[$node[1]][1];
+        }
 
-        // Range over datetime values (colons in the bounds)
-        $this->assertCount(
-            1,
-            $hits("created>='2024-01-01T00:00:00.000000+00:00' AND created<='2024-12-31T23:59:59.999999+00:00'")
-        );
+        if ($node[0] === 'not') {
+            return array_values(array_diff($all, $this->evaluateFilterTree($node[1], $predicates, $all)));
+        }
+
+        $left = $this->evaluateFilterTree($node[1], $predicates, $all);
+        $right = $this->evaluateFilterTree($node[2], $predicates, $all);
+
+        return array_values(match ($node[0]) {
+            'and' => array_intersect($left, $right),
+            'or' => array_unique([...$left, ...$right]),
+            'andnot' => array_diff($left, $right),
+        });
+    }
+
+    /** Precedence: NOT / leaf bind tightest, then AND / AND NOT, then OR. */
+    private function filterTreePrecedence(array $node): int
+    {
+        return match ($node[0]) {
+            'leaf', 'not' => 3,
+            'and', 'andnot' => 2,
+            'or' => 1,
+        };
+    }
+
+    /** Render a tree to a filter string, parenthesising only where precedence requires. */
+    private function renderFilterTree(array $node, int $context, array $predicates): string
+    {
+        $string = match ($node[0]) {
+            'leaf' => $predicates[$node[1]][0],
+            'not' => $this->renderFilterOperator('NOT').' '.$this->renderFilterTree($node[1], 3, $predicates),
+            'and' => $this->renderFilterTree($node[1], 2, $predicates).$this->renderFilterOperator('AND').$this->renderFilterTree($node[2], 2, $predicates),
+            'or' => $this->renderFilterTree($node[1], 1, $predicates).$this->renderFilterOperator('OR').$this->renderFilterTree($node[2], 1, $predicates),
+            'andnot' => $this->renderFilterTree($node[1], 2, $predicates).$this->renderFilterOperator('AND NOT').$this->renderFilterTree($node[2], 3, $predicates),
+        };
+
+        if ($this->filterTreePrecedence($node) < $context) {
+            $string = '('.$string.')';
+        }
+
+        // Redundant parentheses never change the meaning but stress the parser.
+        if ($node[0] !== 'leaf' && mt_rand(0, 100) < 20) {
+            $string = '('.$string.')';
+        }
+
+        return $string;
+    }
+
+    /** Render an operator with random case and whitespace — must not change the result. */
+    private function renderFilterOperator(string $operator): string
+    {
+        $cased = match (mt_rand(0, 2)) {
+            0 => $operator,
+            1 => strtolower($operator),
+            default => ucwords(strtolower($operator)),
+        };
+
+        if ($operator === 'NOT') {
+            return $cased;
+        }
+
+        $spaces = fn (): string => str_repeat(' ', mt_rand(1, 3));
+
+        return $spaces().$cased.$spaces();
     }
 
     /**
