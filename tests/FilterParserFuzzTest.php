@@ -168,7 +168,7 @@ class FilterParserFuzzTest extends TestCase
         // Random *redundant* parentheses around a full sub-expression never
         // change the meaning, but they stress the parser's grouping.
         if ($node[0] !== 'leaf' && mt_rand(0, 100) < 20) {
-            $string = '('.$string.')';
+            return '('.$string.')';
         }
 
         return $string;
