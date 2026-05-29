@@ -649,7 +649,7 @@ class FilterParserTest extends TestCase
         $properties->caseSensitiveKeyword('opt');
         $properties->nested('user', function (NewProperties $user): void {
             $user->caseSensitiveKeyword('name');
-            $user->nested('address', fn (NewProperties $a) => $a->caseSensitiveKeyword('city'));
+            $user->nested('address', fn (NewProperties $a): CaseSensitiveKeyword => $a->caseSensitiveKeyword('city'));
         });
 
         $index = $this->sigmie->newIndex($indexName)->properties($properties)->create();
@@ -677,7 +677,7 @@ class FilterParserTest extends TestCase
             try {
                 $hits = $this->sigmie->query($indexName, $parser->parse($filter))->get()->json('hits.hits');
             } catch (Throwable $e) {
-                $failures[] = "  #$i  [$filter]  THREW ".$e->getMessage();
+                $failures[] = sprintf('  #%d  [%s]  THREW ', $i, $filter).$e->getMessage();
 
                 continue;
             }
@@ -743,7 +743,7 @@ class FilterParserTest extends TestCase
         $t = [-20, -10, 0, 50, 75, 100, 150, 200, 300, 999, 1000][mt_rand(0, 10)];
         $cmp = $this->numericCmp($op, $t);
 
-        return ["num1$op$t", fn (array $d): bool => $cmp($d['num1'])];
+        return [sprintf('num1%s%s', $op, $t), fn (array $d): bool => $cmp($d['num1'])];
     }
 
     private function numFloat(): array
@@ -752,7 +752,7 @@ class FilterParserTest extends TestCase
         $t = [-5.0, 0.0, 1.5, 2.5, 3.3, 9.9, 10.0, 50.5, 100.0][mt_rand(0, 8)];
         $cmp = $this->numericCmp($op, $t);
 
-        return ["num2$op$t", fn (array $d): bool => $cmp($d['num2'])];
+        return [sprintf('num2%s%s', $op, $t), fn (array $d): bool => $cmp($d['num2'])];
     }
 
     private function numericCmp(string $op, int|float $t): callable
@@ -771,7 +771,7 @@ class FilterParserTest extends TestCase
         $lo = $pool[mt_rand(0, count($pool) - 1)];
         $hi = $pool[mt_rand(0, count($pool) - 1)];
 
-        return ["num1:$lo..$hi", fn (array $d): bool => $d['num1'] >= $lo && $d['num1'] <= $hi];
+        return [sprintf('num1:%s..%s', $lo, $hi), fn (array $d): bool => $d['num1'] >= $lo && $d['num1'] <= $hi];
     }
 
     private function betweenFloat(): array
@@ -780,21 +780,21 @@ class FilterParserTest extends TestCase
         $lo = $pool[mt_rand(0, count($pool) - 1)];
         $hi = $pool[mt_rand(0, count($pool) - 1)];
 
-        return ["num2:$lo..$hi", fn (array $d): bool => $d['num2'] >= $lo && $d['num2'] <= $hi];
+        return [sprintf('num2:%s..%s', $lo, $hi), fn (array $d): bool => $d['num2'] >= $lo && $d['num2'] <= $hi];
     }
 
     private function termEnum(): array
     {
         $v = ['active', 'pending', 'closed', 'missing'][mt_rand(0, 3)];
 
-        return ["enum:'$v'", fn (array $d): bool => $d['enum'] === $v];
+        return [sprintf("enum:'%s'", $v), fn (array $d): bool => $d['enum'] === $v];
     }
 
     private function termKw(): array
     {
         $v = ['alpha', 'beta', 'gamma', 'delta', 'omega', 'zeta', 'nope'][mt_rand(0, 6)];
 
-        return ["kw:'$v'", fn (array $d): bool => $d['kw'] === $v];
+        return [sprintf("kw:'%s'", $v), fn (array $d): bool => $d['kw'] === $v];
     }
 
     private function wildcard(): array
@@ -806,10 +806,11 @@ class FilterParserTest extends TestCase
             $field = 'kw';
             $patterns = ['alpha*', 'beta*', 'delta*', 'omega*', '*a', '*ma', 'z*', 'o*', '*e*'];
         }
+
         $p = $patterns[mt_rand(0, count($patterns) - 1)];
         $regex = '/^'.str_replace('\*', '.*', preg_quote($p, '/')).'$/';
 
-        return ["$field:'$p'", fn (array $d): bool => (bool) preg_match($regex, $d[$field])];
+        return [sprintf("%s:'%s'", $field, $p), fn (array $d): bool => (bool) preg_match($regex, $d[$field])];
     }
 
     private function keywordRange(): array
@@ -823,7 +824,7 @@ class FilterParserTest extends TestCase
             '<=' => fn (string $v): bool => strcmp($v, $t) <= 0,
         };
 
-        return ["name$op'$t'", fn (array $d): bool => $cmp($d['name'])];
+        return [sprintf("name%s'%s'", $op, $t), fn (array $d): bool => $cmp($d['name'])];
     }
 
     private function dateRange(): array
@@ -845,21 +846,21 @@ class FilterParserTest extends TestCase
             '<=' => fn (string $v): bool => strtotime($v) <= $ts,
         };
 
-        return ["created$op'$t'", fn (array $d): bool => $cmp($d['created'])];
+        return [sprintf("created%s'%s'", $op, $t), fn (array $d): bool => $cmp($d['created'])];
     }
 
     private function nestedName(): array
     {
         $v = ['Bob', 'Alice', 'Carol', 'Dave', 'Eve', 'Nobody'][mt_rand(0, 5)];
 
-        return ["user:{name:'$v'}", fn (array $d): bool => $d['user']['name'] === $v];
+        return [sprintf("user:{name:'%s'}", $v), fn (array $d): bool => $d['user']['name'] === $v];
     }
 
     private function nestedCity(): array
     {
         $v = ['NYC', 'LA', 'SF', 'Boston'][mt_rand(0, 3)];
 
-        return ["user:{address:{city:'$v'}}", fn (array $d): bool => $d['user']['address']['city'] === $v];
+        return [sprintf("user:{address:{city:'%s'}}", $v), fn (array $d): bool => $d['user']['address']['city'] === $v];
     }
 
     private function exists(): array
@@ -878,7 +879,7 @@ class FilterParserTest extends TestCase
     {
         $v = ['red', 'blue', 'green', 'yellow', 'purple', 'pink'][mt_rand(0, 5)];
 
-        return ["arr:'$v'", fn (array $d): bool => in_array($v, $d['arr'], true)];
+        return [sprintf("arr:'%s'", $v), fn (array $d): bool => in_array($v, $d['arr'], true)];
     }
 
     /** @return array<string,array<string,mixed>> */
