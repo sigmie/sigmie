@@ -95,6 +95,15 @@ class FilterParser extends Parser
             }
         }, $query);
 
+        // A NOT directly in front of a parenthetic group negates the whole
+        // group, e.g. NOT (a AND b). Strip the NOT here and remember to negate
+        // the resulting group when the query is applied.
+        $negateGroup = false;
+        if (preg_match('/^NOT\s+\(/', $query)) {
+            $negateGroup = true;
+            $query = preg_replace('/^NOT\s+/', '', $query);
+        }
+
         // If first filter is a parenthetic expression
         if (str_starts_with($query, '(')) {
 
@@ -149,6 +158,10 @@ class FilterParser extends Parser
         }
 
         $res = ['filter' => $filter];
+
+        if ($negateGroup) {
+            $res['negate'] = true;
+        }
 
         if (preg_match('/^(?P<operator>AND NOT|AND|OR)/', $query, $matchWithoutParentheses)) {
             $operator = $matchWithoutParentheses['operator'];
@@ -222,11 +235,14 @@ class FilterParser extends Parser
         $operator = $filters['operator'] ?? $operator;
         $values = $filters['values'] ?? null;
 
-        if (is_string($filter) && str_starts_with($filter, 'NOT')) {
-            $operator = 'NOT';
-            $filter = trim($filter, 'NOT');
-            $filter = trim($filter);
-            $query1 = $this->stringToQueryClause($filter);
+        // A leading NOT negates *only* this clause. It must not change the
+        // operator that joins the next clause, otherwise `(NOT a) AND b`
+        // would wrongly negate `b` as well. `negate` is also set by the parser
+        // for a negated parenthetic group, e.g. NOT (a AND b).
+        $negate = ($filters['negate'] ?? false) || (is_string($filter) && str_starts_with($filter, 'NOT '));
+
+        if (is_string($filter) && str_starts_with($filter, 'NOT ')) {
+            $filter = trim(substr($filter, 4));
         }
 
         if (is_string($filter)) {
@@ -252,6 +268,14 @@ class FilterParser extends Parser
             $query1 = $this->stringToQueryClause($filter);
         } else {
             $query1 = $this->apply($filter, $operator);
+        }
+
+        // Wrap the negated clause in its own bool so it composes correctly
+        // regardless of how it is joined (AND keeps it required, OR optional).
+        if ($negate) {
+            $negated = new Boolean;
+            $negated->mustNot()->query($query1);
+            $query1 = $negated;
         }
 
         match ($operator) {

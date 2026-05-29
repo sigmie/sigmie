@@ -213,6 +213,19 @@ class FilterParserBatteryTest extends TestCase
             ['company:"O\'Brien GmbH" AND status:\'active\'', ['A']],
             ['company:"L\'Oréal" OR company:\'Acme\'', ['B', 'C']],
             ['company:"O\'Brien GmbH" AND name:\'Smith, John\'', ['A']],
+            // --- NOT as the LEFT operand (must not leak into the join) ---
+            ['(NOT price>100) AND active:true', ['A', 'C']],
+            ['NOT price>100 AND active:true', ['A', 'C']],
+            ['(NOT active:true) AND price>100', ['B']],
+            ["(NOT tags:'vip') AND active:true", ['C', 'F']],
+            ["(NOT status:'active') OR price>=200", ['B', 'C', 'D', 'F']],
+            ["NOT tags:'vip' OR NOT active:true", ['B', 'C', 'D', 'F']],
+            // --- NOT applied to a parenthetic group ---
+            ["NOT (status:'active' OR status:'pending')", ['D']],
+            ["NOT (status:'closed' AND active:false)", ['A', 'B', 'C', 'E', 'F']],
+            ["NOT (tags:'vip' AND active:true)", ['B', 'C', 'D', 'F']],
+            ["NOT (status:'active' AND price>100) AND active:true", ['A', 'C', 'F']],
+            ["status:'active' AND NOT (price<100)", ['A', 'B', 'E']],
             // --- empty / whitespace ---
             ["name:''", []],
             ["  status:'active'  ", ['A', 'B', 'E']],
