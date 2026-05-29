@@ -104,6 +104,113 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function hard_edge_cases(): void
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties;
+        $props->keyword('company');
+        $props->keyword('name');
+        $props->keyword('url');
+        $props->keyword('time');
+        $props->keyword('note');
+        $props->keyword('tags');
+        $props->date('created');
+        $props->nested('user', function (NewProperties $p): void {
+            $p->keyword('name');
+        });
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($props)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $index->merge([
+            new Document([
+                'company' => "O'Brien GmbH",
+                'name' => 'Smith, John',
+                'url' => 'https://example.com/path?q=1',
+                'time' => '12:00',
+                'note' => 'Marks AND Spencer',
+                'tags' => ['a, b', 'c'],
+                'created' => '2024-06-15T10:30:00.000000+00:00',
+                'user' => ['name' => "O'Brien"],
+            ]),
+            new Document([
+                'company' => 'Acme',
+                'name' => 'Jane',
+                'url' => 'http://other.test',
+                'time' => '09:30',
+                'note' => 'plain',
+                'tags' => ['x', 'y'],
+                'created' => '2020-01-01T00:00:00.000000+00:00',
+                'user' => ['name' => 'Acme Admin'],
+            ]),
+        ]);
+
+        $parser = new FilterParser($props, false);
+
+        $hits = fn (string $filter): array => $this->sigmie
+            ->query($indexName, $parser->parse($filter))
+            ->get()
+            ->json('hits.hits');
+
+        // Apostrophe inside double quotes
+        $res = $hits('company:"O\'Brien GmbH"');
+        $this->assertCount(1, $res);
+        $this->assertSame("O'Brien GmbH", $res[0]['_source']['company']);
+
+        // Escaped apostrophe inside single quotes
+        $this->assertCount(1, $hits("company:'O\\'Brien GmbH'"));
+
+        // Comma + space preserved inside a value
+        $res = $hits("name:'Smith, John'");
+        $this->assertCount(1, $res);
+        $this->assertSame('Smith, John', $res[0]['_source']['name']);
+
+        // Colons and slashes in value (URL)
+        $res = $hits('url:"https://example.com/path?q=1"');
+        $this->assertCount(1, $res);
+        $this->assertSame('https://example.com/path?q=1', $res[0]['_source']['url']);
+
+        // Colon in value (time)
+        $this->assertCount(1, $hits("time:'12:00'"));
+
+        // Operator words inside a value
+        $this->assertCount(1, $hits("note:'Marks AND Spencer'"));
+
+        // Quoted comma inside an array element
+        $res = $hits("tags:['a, b','c']");
+        $this->assertCount(1, $res);
+
+        // Multi-clause with apostrophe AND comma values
+        $this->assertCount(1, $hits('company:"O\'Brien GmbH" AND name:\'Smith, John\''));
+
+        // OR across both documents
+        $this->assertCount(2, $hits('company:\'Acme\' OR company:"O\'Brien GmbH"'));
+
+        // Wildcard combined with an apostrophe
+        $this->assertCount(1, $hits('company:"O\'Br*"'));
+
+        // Negation
+        $res = $hits("NOT company:'Acme'");
+        $this->assertCount(1, $res);
+        $this->assertSame("O'Brien GmbH", $res[0]['_source']['company']);
+
+        // Nested field with an apostrophe value
+        $this->assertCount(1, $hits('user:{name:"O\'Brien"}'));
+
+        // Range over datetime values (colons in the bounds)
+        $this->assertCount(
+            1,
+            $hits("created>='2024-01-01T00:00:00.000000+00:00' AND created<='2024-12-31T23:59:59.999999+00:00'")
+        );
+    }
+
+    /**
+     * @test
+     */
     public function end_in_query(): void
     {
         $indexName = uniqid();
