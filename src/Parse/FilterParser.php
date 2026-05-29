@@ -166,6 +166,7 @@ class FilterParser extends Parser
     public function parse(string $filterString): Boolean
     {
         $this->errors = [];
+        $this->nestingLevel = 0;
 
         if (trim($filterString) === '') {
             $bool = new Boolean;
@@ -284,6 +285,7 @@ class FilterParser extends Parser
     {
         $this->facetField = $field;
         $this->errors = [];
+        $this->nestingLevel = 0;
 
         if (trim($filterString) === '') {
             $bool = new Boolean;
@@ -308,7 +310,7 @@ class FilterParser extends Parser
             preg_match('/^([\w\.]+)([<>]=?)(\'.+\')/', $string) => $this->handleRange($string),
             preg_match('/^([\w\.]+)([<>]=?)(\".+\")/', $string) => $this->handleRange($string),
             preg_match('/^_id:\[.*\]/', $string) => $this->handleIDs($string),
-            preg_match('/^_id:[a-z_A-Z0-9]+/', $string) => $this->handleID($string),
+            preg_match('/^_id:[\'"]?[a-z_A-Z0-9]+[\'"]?$/', $string) => $this->handleID($string),
             preg_match('/[\w\.]+:\[.*\]/', $string) => $this->handleIn($string),
             preg_match('/^[\w\.]+:.*\*.*$/', $string) => $this->handleWildcard($string),
             preg_match('/[\w\.]+:".*"/', $string) => $this->handleTerm($string),
@@ -431,6 +433,8 @@ class FilterParser extends Parser
     public function handleID(string $id): IDs
     {
         [, $value] = explode(':', $id, 2);
+
+        $value = trim($value, '\'"');
 
         return new IDs([$value]);
     }
