@@ -34,6 +34,13 @@ abstract class Parser implements ParserInterface
         return $this;
     }
 
+    public function throwOnError(bool $throwOnError = true): static
+    {
+        $this->throwOnError = $throwOnError;
+
+        return $this;
+    }
+
     abstract public function parse(string $string);
 
     protected function handleError(string $message, array $context = [])

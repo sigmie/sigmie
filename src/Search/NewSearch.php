@@ -82,8 +82,6 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected int $collapseTop = 0;
 
-    protected array $filterQueries = [];
-
     public function __construct(
         ElasticsearchConnection $elasticsearchConnection
     ) {
@@ -172,18 +170,13 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         return $this;
     }
 
-    public function filters(string $filters, bool $thorwOnError = true): static
+    public function filters(string $filters, bool $throwOnError = false): static
     {
         $this->searchContext->filterString = $filters;
 
-        $this->globalFilters = $this->filterParser->parse($this->searchContext->filterString);
-
-        return $this;
-    }
-
-    public function filterQuery(Query $query): static
-    {
-        $this->filterQueries[] = $query;
+        $this->globalFilters = $this->filterParser
+            ->throwOnError($throwOnError)
+            ->parse($this->searchContext->filterString);
 
         return $this;
     }
@@ -225,7 +218,10 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     public function facets(
         string $facets,
         string $filters = '',
+        bool $throwOnError = false,
     ): static {
+
+        $this->facetParser->throwOnError($throwOnError);
 
         $facetFilterString = $this->facetParser->parseFilterString($filters);
 
@@ -234,7 +230,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         $this->searchContext->facetFilterString = $facetFilterString;
 
         if ($facetFilterString !== '') {
-            $this->facetFilters = $this->filterParser->parse($facetFilterString);
+            $this->facetFilters = $this->filterParser->throwOnError($throwOnError)->parse($facetFilterString);
         }
 
         $this->facets = $this->facetParser->parse($facets, $facetFilterString);
@@ -242,9 +238,9 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         return $this;
     }
 
-    public function sort(string $sort = '_score', bool $thorwOnError = true): static
+    public function sort(string $sort = '_score', bool $throwOnError = true): static
     {
-        $parser = new SortParser($this->properties, $thorwOnError);
+        $parser = new SortParser($this->properties, $throwOnError);
 
         $this->searchContext->sortString = $sort;
         $this->sort = $parser->parse($sort);
