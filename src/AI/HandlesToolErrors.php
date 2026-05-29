@@ -23,9 +23,9 @@ trait HandlesToolErrors
     {
         try {
             return $work();
-        } catch (Throwable $e) {
+        } catch (Throwable $throwable) {
             return json_encode(
-                ['error' => $this->toolErrorMessage($e)],
+                ['error' => $this->toolErrorMessage($throwable)],
                 JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
             );
         }
