@@ -35,8 +35,6 @@ class FilterParser extends Parser
 
     public static int $maxNestingLevel = 32;
 
-    protected int $nestingLevel = 0;
-
     protected Type $facetField;
 
     public function parentPath(string $path): static
@@ -51,11 +49,12 @@ class FilterParser extends Parser
         return $this->parentPath ? $this->parentPath.'.'.$field : $field;
     }
 
-    protected function handleNesting()
+    // Guard against pathologically deep nesting (parentheses / NOT). This tracks
+    // the actual recursion *depth*, so a wide but shallow filter such as
+    // `a AND b AND ... ` (dozens of clauses) is never affected.
+    protected function guardDepth(int $depth): void
     {
-        $this->nestingLevel++;
-
-        if ($this->nestingLevel > self::$maxNestingLevel) {
+        if ($depth > self::$maxNestingLevel) {
             throw new ParseException('Nesting level exceeded. Max nesting level is '.self::$maxNestingLevel.'.');
         }
     }
@@ -170,9 +169,9 @@ class FilterParser extends Parser
     // Parse a full expression honouring operator precedence: OR has the lowest
     // precedence, so the expression is first split into OR groups and each group
     // is parsed as an AND sequence.
-    protected function parseExpression(string $query): Boolean
+    protected function parseExpression(string $query, int $depth = 0): Boolean
     {
-        $this->handleNesting();
+        $this->guardDepth($depth);
 
         $tokens = $this->splitTopLevel(trim($query));
 
@@ -193,25 +192,25 @@ class FilterParser extends Parser
         $groups[] = $group;
 
         if (count($groups) === 1) {
-            return $this->parseAndGroup($groups[0]);
+            return $this->parseAndGroup($groups[0], $depth);
         }
 
         $boolean = new Boolean;
 
         foreach ($groups as $group) {
-            $boolean->should()->query($this->parseAndGroup($group));
+            $boolean->should()->query($this->parseAndGroup($group, $depth));
         }
 
         return $boolean;
     }
 
     // Parse a sequence of factors joined by AND / AND NOT into a single bool.
-    protected function parseAndGroup(array $tokens): Boolean
+    protected function parseAndGroup(array $tokens, int $depth): Boolean
     {
         $boolean = new Boolean;
 
         foreach ($tokens as $index => $token) {
-            $query = $this->parseFactor($token['expr']);
+            $query = $this->parseFactor($token['expr'], $depth);
 
             match (true) {
                 $index === 0, $token['op'] === 'AND' => $boolean->must()->query($query),
@@ -225,22 +224,22 @@ class FilterParser extends Parser
 
     // Parse a single factor: an optional (possibly repeated) NOT, a parenthetic
     // sub-expression, or a primary filter such as `status:'active'`.
-    protected function parseFactor(string $expr): QueryClause
+    protected function parseFactor(string $expr, int $depth): QueryClause
     {
-        $this->handleNesting();
+        $this->guardDepth($depth);
 
         $expr = trim($expr);
 
         // A leading NOT (case-insensitive) followed by whitespace or a group.
         if (preg_match('/^not(?=[\s(])/i', $expr)) {
             $boolean = new Boolean;
-            $boolean->mustNot()->query($this->parseFactor(substr($expr, 3)));
+            $boolean->mustNot()->query($this->parseFactor(substr($expr, 3), $depth + 1));
 
             return $boolean;
         }
 
         if (str_starts_with($expr, '(') && $this->isWholeGroup($expr)) {
-            return $this->parseExpression(substr($expr, 1, -1));
+            return $this->parseExpression(substr($expr, 1, -1), $depth + 1);
         }
 
         return $this->stringToQueryClause($this->primaryString($expr));
@@ -333,7 +332,6 @@ class FilterParser extends Parser
     public function parse(string $filterString): Boolean
     {
         $this->errors = [];
-        $this->nestingLevel = 0;
 
         if (trim($filterString) === '') {
             $bool = new Boolean;
@@ -385,7 +383,6 @@ class FilterParser extends Parser
     {
         $this->facetField = $field;
         $this->errors = [];
-        $this->nestingLevel = 0;
 
         if (trim($filterString) === '') {
             $bool = new Boolean;
