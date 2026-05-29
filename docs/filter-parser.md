@@ -283,6 +283,23 @@ if (!empty($parser->errors())) {
 }
 ```
 
+### Throwing vs collecting
+
+Whether a bad filter throws or is collected depends on how the parser is invoked:
+
+- **Directly** (`new FilterParser(...)`) or via `newQuery()` — throws `ParseException` on the first error.
+- **Via `newSearch()`** — lenient by default: the bad clause is dropped, the search runs, and the error is collected under the response's `errors` key.
+
+Opt into throwing on the search builder with `throwOnError`:
+
+```php
+$sigmie->newSearch('products')
+    ->properties($props)
+    ->filters('nonexistent:"x"', throwOnError: true);   // throws instead of collecting
+```
+
+When a silently-dropped clause would be unsafe — returning a broader result set than intended — pass `throwOnError: true` and treat a non-empty `errors` array as a failed request rather than a warning.
+
 ## Syntax cheatsheet
 
 | Operation | Syntax | Example |

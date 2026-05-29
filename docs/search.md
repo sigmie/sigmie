@@ -87,6 +87,52 @@ $sigmie->newSearch('fairy-tales')
 
 Filters narrow the result set but don't affect relevance scoring.
 
+### Hard filter clauses with `filterQuery()`
+
+`filters()` parses a user-facing string. When a filter must **not** come from user input — a tenant scope, an ownership check, an access boundary — pass a pre-built query to `filterQuery()` instead:
+
+```php
+use Sigmie\Query\Queries\Term\Term;
+
+$sigmie->newSearch('records')
+    ->properties($props)
+    ->queryString('checkup')
+    ->filters("category:'public' OR category:'private'")   // user input, parsed
+    ->filterQuery(new Term('tenant_id', $tenantId))         // hard clause, never parsed
+    ->get();
+```
+
+The hard clause is ANDed with the parsed filter. Because it never passes through the parser, a malformed filter string can't drop it, and it doesn't alter the parsed query's own `OR`/`NOT` logic — that stays nested as a single clause. It applies everywhere the filter does: results, facet counts, and semantic (vector) pre-filtering. Call it more than once to add several clauses.
+
+`filterQuery()` accepts any query clause, so you're not limited to the parser's syntax:
+
+```php
+use Sigmie\Query\Queries\Term\Terms;
+
+->filterQuery(new Terms('owner_id', $allowedOwnerIds))
+```
+
+### Strict vs lenient parsing
+
+By default `newSearch()` is **lenient**: an invalid filter clause is dropped, the search still runs, and the reason is collected under the response's `errors` key:
+
+```php
+$response = $sigmie->newSearch('products')
+    ->properties($props)
+    ->filters('nonexistent:"x"')
+    ->get();
+
+$response->json('errors');   // [['message' => 'Field nonexistent does not exist.', ...]]
+```
+
+To fail loudly instead — so a bad filter raises a `ParseException` rather than silently returning a broader result set — opt in with `throwOnError`:
+
+```php
+->filters('nonexistent:"x"', throwOnError: true)     // throws ParseException
+```
+
+The same flag is available on [`facets()`](facets.md) for the facet filter string.
+
 ## Sort
 
 ```php
