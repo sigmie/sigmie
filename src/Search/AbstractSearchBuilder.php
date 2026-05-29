@@ -10,6 +10,7 @@ use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
 use Sigmie\Query\Aggs as FacetAggs;
 use Sigmie\Query\Contracts\Aggs;
+use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Search\Contracts\SearchBuilder;
 
@@ -67,6 +68,8 @@ abstract class AbstractSearchBuilder implements SearchBuilder
 
     protected Boolean $globalFilters;
 
+    protected array $filterQueries = [];
+
     protected Boolean $facetFilters;
 
     protected Aggs $facets;
@@ -97,6 +100,13 @@ abstract class AbstractSearchBuilder implements SearchBuilder
         if ($this->fields === []) {
             $this->fields = $this->properties->fieldNames();
         }
+
+        return $this;
+    }
+
+    public function filterQuery(QueryClause $query): static
+    {
+        $this->filterQueries[] = $query;
 
         return $this;
     }

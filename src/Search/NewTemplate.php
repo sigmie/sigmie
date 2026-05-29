@@ -104,6 +104,12 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
         $boolean->must()->bool(fn (Boolean $boolean) => $boolean->addRaw('filter', sprintf('@filters(%s)@endfilters', $defaultFilters)));
 
+        (new Collection($this->filterQueries))->each(
+            fn (QueryClause $query): BooleanQueryBuilder => $boolean->must()->bool(
+                fn (Boolean $boolean): BooleanQueryBuilder => $boolean->filter()->query($query)
+            )
+        );
+
         $defaultSorts = json_encode($this->sort);
 
         $search->addRaw('sort', sprintf('@sort(%s)@endsort', $defaultSorts));

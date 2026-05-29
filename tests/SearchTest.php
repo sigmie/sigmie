@@ -11,6 +11,7 @@ use Sigmie\Document\Hit;
 use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Parse\ParseException;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Testing\TestCase;
@@ -1599,5 +1600,50 @@ class SearchTest extends TestCase
         $facets = $props['category']->facets($res->facetAggregations());
 
         $this->assertEquals(['private' => 1, 'public' => 1], $facets);
+    }
+
+    /**
+     * @test
+     */
+    public function filters_throw_on_error_can_be_opted_into(): void
+    {
+        $blueprint = new NewProperties;
+        $blueprint->keyword('category');
+
+        $this->expectException(ParseException::class);
+
+        $this->sigmie->newSearch('test')
+            ->properties($blueprint)
+            ->filters("nonexistent:'x'", throwOnError: true);
+    }
+
+    /**
+     * @test
+     */
+    public function filters_collect_errors_by_default_instead_of_throwing(): void
+    {
+        $blueprint = new NewProperties;
+        $blueprint->keyword('category');
+
+        $search = $this->sigmie->newSearch('test')
+            ->properties($blueprint)
+            ->filters("nonexistent:'x'");
+
+        $this->assertNotEmpty($search->filterParser->errors());
+    }
+
+    /**
+     * @test
+     */
+    public function facets_throw_on_error_can_be_opted_into(): void
+    {
+        $blueprint = new NewProperties;
+        $blueprint->keyword('category');
+
+        $this->expectException(ParseException::class);
+
+        $this->sigmie->newSearch('test')
+            ->properties($blueprint)
+            ->facets('category', "nonexistent:'x'", throwOnError: true);
     }
 }
