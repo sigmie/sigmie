@@ -34,12 +34,16 @@ trait AsTool
      * The agent tool suite for this index: search, on-demand value discovery, sample documents,
      * and the structured schema (field list + filter syntax).
      *
+     * Pass $describeFields: false for "lean" mode — the search tool's description drops the inline
+     * field list and points the agent to describe_index instead. Useful when many indices are
+     * registered and the combined tool descriptions would bloat the system prompt.
+     *
      * @return array{0: SigmieIndexTool, 1: SigmieFilterValuesTool, 2: SigmieSampleDocumentsTool, 3: SigmieIndexSchemaTool}
      */
-    public function tools(string $baseFilter = ''): array
+    public function tools(string $baseFilter = '', bool $describeFields = true): array
     {
         return [
-            new SigmieIndexTool($this, $baseFilter),
+            new SigmieIndexTool($this, $baseFilter, $describeFields),
             new SigmieFilterValuesTool($this, $baseFilter),
             new SigmieSampleDocumentsTool($this),
             new SigmieIndexSchemaTool($this),

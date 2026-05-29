@@ -34,10 +34,24 @@ class SigmieIndexTool implements Tool
     public function __construct(
         protected SigmieIndex $index,
         protected string $baseFilters = '',
+        protected bool $describeFields = true,
     ) {}
 
     public function description(): string
     {
+        // Lean mode: omit the per-field list and operator docs from the always-present description
+        // (keeps the system prompt small when many indices are registered) and point the agent to
+        // describe_index for the schema on demand. Still lists field NAMES so it can decide to search.
+        if (! $this->describeFields) {
+            $names = array_column($this->fieldsSchema(), 'name');
+
+            return sprintf(
+                "Search the '%s' index. Fields: %s. Before building filters or sorts, call describe_index for each field's type and meaning and the exact filter/sort/facet syntax.",
+                $this->index->name(),
+                implode(', ', $names)
+            );
+        }
+
         $properties = $this->index->properties()->get();
 
         $fieldDescriptions = $this->collectFieldDescriptions($properties->toArray());

@@ -641,6 +641,44 @@ class SigmieIndexToolTest extends TestCase
     /**
      * @test
      */
+    public function lean_description_drops_field_block_and_points_to_describe_index(): void
+    {
+        $index = $this->createProductIndex();
+
+        $description = (new SigmieIndexTool($index, describeFields: false))->description();
+
+        // Still names the fields so the agent can decide to search...
+        $this->assertStringContainsString('brand', $description);
+        $this->assertStringContainsString('price', $description);
+        // ...but drops the verbose per-field block, examples and operator docs...
+        $this->assertStringNotContainsString('Available fields:', $description);
+        $this->assertStringNotContainsString("brand:'value'", $description);
+        $this->assertStringNotContainsString('Filter operators:', $description);
+        // ...and points to the schema tool instead.
+        $this->assertStringContainsString('describe_index', $description);
+
+        // The verbose default still includes the field block (no regression).
+        $verbose = (new SigmieIndexTool($index))->description();
+        $this->assertStringContainsString('Available fields:', $verbose);
+        $this->assertStringContainsString("brand:'value'", $verbose);
+    }
+
+    /**
+     * @test
+     */
+    public function tools_lean_mode_produces_a_lean_search_tool(): void
+    {
+        $index = $this->createProductIndex();
+
+        $description = $index->tools('', describeFields: false)[0]->description();
+
+        $this->assertStringNotContainsString('Available fields:', $description);
+        $this->assertStringContainsString('describe_index', $description);
+    }
+
+    /**
+     * @test
+     */
     public function describe_index_returns_structured_fields_and_syntax(): void
     {
         $index = $this->createProductIndex();
