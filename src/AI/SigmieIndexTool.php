@@ -41,6 +41,8 @@ use Sigmie\SigmieIndex;
  */
 class SigmieIndexTool implements Tool
 {
+    use HandlesToolErrors;
+
     public function __construct(
         protected SigmieIndex $index,
         protected string $baseFilters = '',
@@ -84,7 +86,7 @@ class SigmieIndexTool implements Tool
 
     public function handle(Request $request): string
     {
-        return json_encode($this->result($request), JSON_PRETTY_PRINT);
+        return $this->guard(fn (): string => json_encode($this->result($request), JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
     }
 
     /**
