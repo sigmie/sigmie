@@ -558,7 +558,7 @@ class FilterParserTest extends TestCase
         $properties = new NewProperties;
         $properties->nested('user', function (NewProperties $user): void {
             $user->caseSensitiveKeyword('name');
-            $user->nested('address', fn (NewProperties $address) => $address->caseSensitiveKeyword('city'));
+            $user->nested('address', fn (NewProperties $address): CaseSensitiveKeyword => $address->caseSensitiveKeyword('city'));
         });
 
         $index = $this->sigmie->newIndex($indexName)->properties($properties)->create();
