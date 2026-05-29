@@ -22,6 +22,7 @@ class FilterParserBatteryTest extends TestCase
         foreach (['company', 'name', 'status', 'url', 'time', 'ratio', 'note', 'path', 'code', 'tags'] as $field) {
             $props->caseSensitiveKeyword($field);
         }
+
         $props->number('price');
         $props->number('qty');
         $props->bool('active');
