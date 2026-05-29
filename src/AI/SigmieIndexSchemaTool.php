@@ -67,8 +67,8 @@ class SigmieIndexSchemaTool implements Tool
                 'facets' => 'field1 field2:20 (space-separated; optional :size for keywords or :interval for numbers)',
             ],
             'notes' => [
-                "Equality filters on text/keyword fields are exact and case-sensitive. If a filter returns 0 unexpectedly, call discover_filter_values on that field to confirm the exact stored values (including casing).",
-                'Use discover_filter_values to list a field\'s valid values; use sample_documents to see example records.',
+                'Equality filters on text/keyword fields are exact and case-sensitive. If a filter returns 0 unexpectedly, call discover_filter_values on that field to confirm the exact stored values (including casing).',
+                "Use discover_filter_values to list a field's valid values; use sample_documents to see example records.",
             ],
         ];
     }
