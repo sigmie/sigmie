@@ -7,19 +7,6 @@ namespace Sigmie\AI;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
-use Sigmie\Mappings\Types\Boolean;
-use Sigmie\Mappings\Types\CaseSensitiveKeyword;
-use Sigmie\Mappings\Types\Date;
-use Sigmie\Mappings\Types\DateTime;
-use Sigmie\Mappings\Types\GeoPoint;
-use Sigmie\Mappings\Types\Keyword;
-use Sigmie\Mappings\Types\Nested;
-use Sigmie\Mappings\Types\Number;
-use Sigmie\Mappings\Types\Object_;
-use Sigmie\Mappings\Types\Price;
-use Sigmie\Mappings\Types\Range;
-use Sigmie\Mappings\Types\Text;
-use Sigmie\Mappings\Types\Type;
 use Sigmie\SigmieIndex;
 
 /**
@@ -41,6 +28,7 @@ use Sigmie\SigmieIndex;
  */
 class SigmieIndexTool implements Tool
 {
+    use DescribesIndexFields;
     use HandlesToolErrors;
 
     public function __construct(
@@ -68,7 +56,9 @@ class SigmieIndexTool implements Tool
             ."Sort: space-separated list of 'field:asc' or 'field:desc' — the direction goes after a COLON (e.g. 'price:asc name:desc'), plus '_score'. A space before the direction ('price asc') is INVALID.\n"
             ."Geo sort: field[lat,lon]:km:asc\n"
             ."Facets: field1 field2:20 (space-separated, optional :size for keywords or :interval for numbers)\n"
-            ."Discovering valid values: if you do not know a field's valid values, call the companion value-discovery tool (discover_filter_values) with the field name and an optional query before filtering.");
+            ."Matching: equality filters on text/keyword fields are exact and CASE-SENSITIVE — if a filter returns 0 unexpectedly, call discover_filter_values to confirm the exact stored value.\n"
+            ."Discovering valid values: if you do not know a field's valid values, call discover_filter_values with the field name (and optional query) before filtering.\n"
+            .'Schema: call describe_index for the full structured field list, types and filter syntax.');
     }
 
     public function schema(JsonSchema $schema): array
@@ -143,137 +133,5 @@ class SigmieIndexTool implements Tool
         }
 
         return $result;
-    }
-
-    private function collectFieldDescriptions(array $fields, string $prefix = ''): array
-    {
-        $descriptions = [];
-
-        foreach ($fields as $field) {
-            $name = $prefix !== '' ? sprintf('%s.%s', $prefix, $field->name) : $field->name;
-
-            if ($field instanceof Object_) {
-                $descriptions = [
-                    ...$descriptions,
-                    ...$this->collectFieldDescriptions(
-                        $field->getProperties()->toArray(),
-                        $name
-                    ),
-                ];
-
-                continue;
-            }
-
-            $desc = $this->describeField($field, $name);
-
-            if ($desc !== null) {
-                $descriptions[] = $desc;
-            }
-        }
-
-        return $descriptions;
-    }
-
-    private function describeField(Type $field, string $name): ?string
-    {
-        $type = $this->fieldTypeName($field);
-
-        if ($type === null) {
-            return null;
-        }
-
-        $capabilities = $this->fieldCapabilities($field);
-        $filter = $this->filterExample($field, $name);
-
-        $tags = $capabilities !== [] ? ' ('.implode(', ', $capabilities).')' : '';
-
-        if ($field instanceof Nested) {
-            return $this->describeNested($field, $name, $tags);
-        }
-
-        $line = sprintf('- %s [%s]%s: %s', $name, $type, $tags, $filter);
-
-        $description = $field->getDescription();
-
-        return is_string($description) && $description !== ''
-            ? $line.' — '.$description
-            : $line;
-    }
-
-    private function describeNested(Nested $field, string $name, string $tags): string
-    {
-        $subFields = array_filter(array_map(
-            fn (Type $child): ?string => $this->describeField($child, $child->name),
-            $field->getProperties()->toArray()
-        ));
-
-        $desc = sprintf("- %s [nested]%s: %s:{subfield:'value' AND other>10}", $name, $tags, $name);
-
-        if ($subFields !== []) {
-            $desc .= "\n  Sub-fields:\n".implode("\n", array_map(
-                fn (string $line): string => '  '.$line,
-                $subFields
-            ));
-        }
-
-        return $desc;
-    }
-
-    private function fieldTypeName(Type $field): ?string
-    {
-        return match (true) {
-            $field instanceof Keyword,
-            $field instanceof CaseSensitiveKeyword => 'keyword',
-            $field instanceof Number,
-            $field instanceof Price => 'number',
-            $field instanceof Boolean => 'boolean',
-            $field instanceof Date,
-            $field instanceof DateTime => 'date',
-            $field instanceof GeoPoint => 'geo',
-            $field instanceof Range => 'range',
-            $field instanceof Nested => 'nested',
-            $field instanceof Text => 'text',
-            default => null,
-        };
-    }
-
-    private function fieldCapabilities(Type $field): array
-    {
-        $capabilities = [];
-
-        $isSortable = match (true) {
-            $field instanceof Text => $field->isSortable(),
-            $field instanceof Nested, $field instanceof Range => false,
-            default => true,
-        };
-
-        if ($isSortable) {
-            $capabilities[] = 'sortable';
-        }
-
-        if ($field->isFacetable()) {
-            $capabilities[] = 'facetable';
-        }
-
-        return $capabilities;
-    }
-
-    private function filterExample(Type $field, string $name): string
-    {
-        return match (true) {
-            $field instanceof Keyword,
-            $field instanceof CaseSensitiveKeyword => sprintf("%s:'value' %s:['a','b'] %s:val*", $name, $name, $name),
-            $field instanceof Number,
-            $field instanceof Price => sprintf('%s>n %s<=n %s:min..max', $name, $name, $name),
-            $field instanceof Boolean => sprintf('%s:true %s:false', $name, $name),
-            $field instanceof Date,
-            $field instanceof DateTime => sprintf("%s>'2024-01-01' %s<'2024-12-31'", $name, $name),
-            $field instanceof GeoPoint => $name.':10km[lat,lon]',
-            $field instanceof Range => sprintf('%s>n %s:min..max', $name, $name),
-            $field instanceof Text => $field->isFilterable()
-                ? sprintf("%s:'value' %s:['a','b']", $name, $name)
-                : 'query only',
-            default => '',
-        };
     }
 }
