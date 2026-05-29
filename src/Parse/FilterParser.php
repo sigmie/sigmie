@@ -134,9 +134,14 @@ class FilterParser extends Parser
         // a subquery like (inStock = 1 AND active = true).
         if (is_string($filter)) {
 
-            // Remove spaces that are not in quotes
+            // Remove spaces around structural characters, but never inside a
+            // quoted value (so name:'Smith, John' keeps its space).
             // eg. {user: { id:'465'}} becomes {user:{id:'465'}}
-            $filter = preg_replace_callback('/\s*(\{|\}|:|,)\s*/', fn ($matches): string => $matches[1], $filter);
+            $filter = preg_replace_callback(
+                '/(["\'])[^"\']*\1|\s*([{}:,])\s*/',
+                fn ($matches): string => ($matches[1] ?? '') !== '' ? $matches[0] : $matches[2],
+                $filter
+            );
 
             $query = preg_replace('/'.preg_quote($filter, '/').'/', '', $query, 1);
             $query = trim($query);
@@ -199,6 +204,13 @@ class FilterParser extends Parser
             ["'", '"', '\\'],
             $value
         );
+    }
+
+    // Split a comma-separated list on the commas that sit *outside* a quoted
+    // value, so ['Smith, John','Acme'] yields two items, not three.
+    protected function splitListValues(string $value): array
+    {
+        return preg_split('/,(?=(?:[^"\']*["\'][^"\']*["\'])*[^"\']*$)/', $value);
     }
 
     protected function apply(string|array $filters, string $operator = 'AND'): Boolean
@@ -418,17 +430,17 @@ class FilterParser extends Parser
 
     public function handleID(string $id): IDs
     {
-        [, $value] = explode(':', $id);
+        [, $value] = explode(':', $id, 2);
 
         return new IDs([$value]);
     }
 
     public function handleIDs(string $ids): IDs
     {
-        [, $value] = explode(':', $ids);
+        [, $value] = explode(':', $ids, 2);
 
         $value = trim($value, '[]');
-        $values = explode(',', $value);
+        $values = $this->splitListValues($value);
 
         $values = array_filter($values, fn ($value): bool => $value !== '');
 
@@ -484,9 +496,9 @@ class FilterParser extends Parser
 
     public function handleIn(string $terms): ?Query
     {
-        [$field, $value] = explode(':', $terms);
+        [$field, $value] = explode(':', $terms, 2);
         $value = trim($value, '[]');
-        $values = explode(',', $value);
+        $values = $this->splitListValues($value);
 
         $values = array_filter($values, fn ($value): bool => $value !== '');
 
@@ -522,7 +534,7 @@ class FilterParser extends Parser
 
     public function handleTerm(string $term): ?Query
     {
-        [$field, $value] = explode(':', $term);
+        [$field, $value] = explode(':', $term, 2);
 
         // Remove quotes from value
         $value = trim($value, "'");
@@ -542,7 +554,7 @@ class FilterParser extends Parser
 
     public function handleWildcard(string $term): ?Query
     {
-        [$field, $value] = explode(':', $term);
+        [$field, $value] = explode(':', $term, 2);
 
         // Remove quotes from value
         $value = trim($value, "'");
