@@ -1560,4 +1560,44 @@ class SearchTest extends TestCase
         $this->assertEquals(2, $res->total());
         $this->assertEquals(['Alice', 'Carol'], $names);
     }
+
+    /**
+     * @test
+     */
+    public function filter_query_constrains_facet_counts(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->name('name');
+        $blueprint->keyword('category');
+        $blueprint->bool('active');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['name' => 'Alice', 'category' => 'public', 'active' => true]),
+            new Document(['name' => 'Bob', 'category' => 'public', 'active' => false]),
+            new Document(['name' => 'Carol', 'category' => 'private', 'active' => true]),
+        ]);
+
+        // The hard clause lives in the query, so the facet aggregation is
+        // scoped by it too: the inactive 'public' document is not counted.
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets('category')
+            ->filterQuery(new Term('active', true))
+            ->get();
+
+        $props = $blueprint();
+
+        $facets = $props['category']->facets($res->facetAggregations());
+
+        $this->assertEquals(['private' => 1, 'public' => 1], $facets);
+    }
 }
