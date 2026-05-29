@@ -13,6 +13,7 @@ use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\ParseException;
 use Sigmie\Testing\TestCase;
+use Throwable;
 
 class FilterParserTest extends TestCase
 {
@@ -625,6 +626,276 @@ class FilterParserTest extends TestCase
         sort($returned);
 
         $this->assertSame(['b1', 'r1'], $returned);
+    }
+
+    /**
+     * @test
+     */
+    public function random_filters_over_all_field_types_match_a_reference(): void
+    {
+        $indexName = uniqid();
+
+        $documents = $this->megaDocuments();
+
+        $properties = new NewProperties;
+        $properties->number('num1');
+        $properties->float('num2');
+        $properties->caseSensitiveKeyword('enum');
+        $properties->caseSensitiveKeyword('name');
+        $properties->caseSensitiveKeyword('kw');
+        $properties->caseSensitiveKeyword('arr');
+        $properties->date('created');
+        $properties->bool('flag');
+        $properties->caseSensitiveKeyword('opt');
+        $properties->nested('user', function (NewProperties $user): void {
+            $user->caseSensitiveKeyword('name');
+            $user->nested('address', fn (NewProperties $a) => $a->caseSensitiveKeyword('city'));
+        });
+
+        $index = $this->sigmie->newIndex($indexName)->properties($properties)->create();
+        $index = $this->sigmie->collect($indexName, true);
+
+        $index->merge(array_map(
+            fn (string $id, array $src): Document => new Document($src, $id),
+            array_keys($documents),
+            array_values($documents),
+        ));
+
+        $parser = new FilterParser($properties, false);
+
+        mt_srand(20260529);
+        $iterations = 400;
+
+        $failures = [];
+
+        for ($i = 0; $i < $iterations; $i++) {
+            [$filter, $match] = $this->expr(mt_rand(1, 3));
+
+            $expected = array_values(array_filter(array_keys($documents), fn (string $id): bool => $match($documents[$id])));
+            sort($expected);
+
+            try {
+                $hits = $this->sigmie->query($indexName, $parser->parse($filter))->get()->json('hits.hits');
+            } catch (Throwable $e) {
+                $failures[] = "  #$i  [$filter]  THREW ".$e->getMessage();
+
+                continue;
+            }
+
+            $returned = array_map(fn (array $h): string => $h['_id'], $hits);
+            sort($returned);
+
+            if ($returned !== $expected) {
+                $failures[] = sprintf('  #%d  [%s]  expected [%s] got [%s]', $i, $filter, implode(',', $expected), implode(',', $returned));
+            }
+        }
+
+        $this->assertSame([], $failures, sprintf("%d/%d failed:\n%s", count($failures), $iterations, implode("\n", array_slice($failures, 0, 40))));
+    }
+
+    private function expr(int $depth): array
+    {
+        if ($depth <= 0 || mt_rand(0, 100) < 45) {
+            return $this->primary();
+        }
+
+        $type = ['and', 'or', 'andnot', 'not'][mt_rand(0, 3)];
+
+        if ($type === 'not') {
+            [$s, $m] = $this->expr($depth - 1);
+
+            return ['NOT ('.$s.')', fn (array $d): bool => ! $m($d)];
+        }
+
+        [$ls, $lm] = $this->expr($depth - 1);
+        [$rs, $rm] = $this->expr($depth - 1);
+
+        return match ($type) {
+            'and' => ['('.$ls.') AND ('.$rs.')', fn (array $d): bool => $lm($d) && $rm($d)],
+            'or' => ['('.$ls.') OR ('.$rs.')', fn (array $d): bool => $lm($d) || $rm($d)],
+            'andnot' => ['('.$ls.') AND NOT ('.$rs.')', fn (array $d): bool => $lm($d) && ! $rm($d)],
+        };
+    }
+
+    private function primary(): array
+    {
+        return match (mt_rand(0, 13)) {
+            0 => $this->numInt(),
+            1 => $this->numFloat(),
+            2 => $this->betweenInt(),
+            3 => $this->betweenFloat(),
+            4 => $this->termEnum(),
+            5 => $this->termKw(),
+            6 => $this->wildcard(),
+            7 => $this->keywordRange(),
+            8 => $this->dateRange(),
+            9 => $this->nestedName(),
+            10 => $this->nestedCity(),
+            11 => $this->exists(),
+            12 => $this->boolFlag(),
+            default => $this->arrTerm(),
+        };
+    }
+
+    private function numInt(): array
+    {
+        $op = ['>', '>=', '<', '<='][mt_rand(0, 3)];
+        $t = [-20, -10, 0, 50, 75, 100, 150, 200, 300, 999, 1000][mt_rand(0, 10)];
+        $cmp = $this->numericCmp($op, $t);
+
+        return ["num1$op$t", fn (array $d): bool => $cmp($d['num1'])];
+    }
+
+    private function numFloat(): array
+    {
+        $op = ['>', '>=', '<', '<='][mt_rand(0, 3)];
+        $t = [-5.0, 0.0, 1.5, 2.5, 3.3, 9.9, 10.0, 50.5, 100.0][mt_rand(0, 8)];
+        $cmp = $this->numericCmp($op, $t);
+
+        return ["num2$op$t", fn (array $d): bool => $cmp($d['num2'])];
+    }
+
+    private function numericCmp(string $op, int|float $t): callable
+    {
+        return match ($op) {
+            '>' => fn ($v): bool => $v > $t,
+            '>=' => fn ($v): bool => $v >= $t,
+            '<' => fn ($v): bool => $v < $t,
+            '<=' => fn ($v): bool => $v <= $t,
+        };
+    }
+
+    private function betweenInt(): array
+    {
+        $pool = [-20, 0, 50, 100, 150, 200, 300, 1000];
+        $lo = $pool[mt_rand(0, count($pool) - 1)];
+        $hi = $pool[mt_rand(0, count($pool) - 1)];
+
+        return ["num1:$lo..$hi", fn (array $d): bool => $d['num1'] >= $lo && $d['num1'] <= $hi];
+    }
+
+    private function betweenFloat(): array
+    {
+        $pool = [-5.0, 0.0, 2.5, 3.3, 9.9, 10.0, 50.5, 100.0];
+        $lo = $pool[mt_rand(0, count($pool) - 1)];
+        $hi = $pool[mt_rand(0, count($pool) - 1)];
+
+        return ["num2:$lo..$hi", fn (array $d): bool => $d['num2'] >= $lo && $d['num2'] <= $hi];
+    }
+
+    private function termEnum(): array
+    {
+        $v = ['active', 'pending', 'closed', 'missing'][mt_rand(0, 3)];
+
+        return ["enum:'$v'", fn (array $d): bool => $d['enum'] === $v];
+    }
+
+    private function termKw(): array
+    {
+        $v = ['alpha', 'beta', 'gamma', 'delta', 'omega', 'zeta', 'nope'][mt_rand(0, 6)];
+
+        return ["kw:'$v'", fn (array $d): bool => $d['kw'] === $v];
+    }
+
+    private function wildcard(): array
+    {
+        if (mt_rand(0, 1) === 0) {
+            $field = 'name';
+            $patterns = ['a.b*', 'a.*.c', 'foo*', 'foo(*', '*bar', 'prod-12*', '*-124', '*world', 'x:*', '*:y', 'A-*', '*', '*o*'];
+        } else {
+            $field = 'kw';
+            $patterns = ['alpha*', 'beta*', 'delta*', 'omega*', '*a', '*ma', 'z*', 'o*', '*e*'];
+        }
+        $p = $patterns[mt_rand(0, count($patterns) - 1)];
+        $regex = '/^'.str_replace('\*', '.*', preg_quote($p, '/')).'$/';
+
+        return ["$field:'$p'", fn (array $d): bool => (bool) preg_match($regex, $d[$field])];
+    }
+
+    private function keywordRange(): array
+    {
+        $op = ['>', '>=', '<', '<='][mt_rand(0, 3)];
+        $t = ['a.b', 'a.b.c', 'foo', 'foo+bar', 'prod', 'prod-123', 'x', 'A-B', 'hello world', 'zzz'][mt_rand(0, 9)];
+        $cmp = match ($op) {
+            '>' => fn (string $v): bool => strcmp($v, $t) > 0,
+            '>=' => fn (string $v): bool => strcmp($v, $t) >= 0,
+            '<' => fn (string $v): bool => strcmp($v, $t) < 0,
+            '<=' => fn (string $v): bool => strcmp($v, $t) <= 0,
+        };
+
+        return ["name$op'$t'", fn (array $d): bool => $cmp($d['name'])];
+    }
+
+    private function dateRange(): array
+    {
+        $op = ['>', '>=', '<', '<='][mt_rand(0, 3)];
+        $t = [
+            '2020-01-01T00:00:00.000000+00:00',
+            '2022-03-03T03:03:03.000000+00:00',
+            '2023-06-01T00:00:00.000000+00:00',
+            '2024-06-15T10:30:00.000000+00:00',
+            '2025-01-01T00:00:00.000000+00:00',
+            '2026-06-01T00:00:00.000000+00:00',
+        ][mt_rand(0, 5)];
+        $ts = strtotime($t);
+        $cmp = match ($op) {
+            '>' => fn (string $v): bool => strtotime($v) > $ts,
+            '>=' => fn (string $v): bool => strtotime($v) >= $ts,
+            '<' => fn (string $v): bool => strtotime($v) < $ts,
+            '<=' => fn (string $v): bool => strtotime($v) <= $ts,
+        };
+
+        return ["created$op'$t'", fn (array $d): bool => $cmp($d['created'])];
+    }
+
+    private function nestedName(): array
+    {
+        $v = ['Bob', 'Alice', 'Carol', 'Dave', 'Eve', 'Nobody'][mt_rand(0, 5)];
+
+        return ["user:{name:'$v'}", fn (array $d): bool => $d['user']['name'] === $v];
+    }
+
+    private function nestedCity(): array
+    {
+        $v = ['NYC', 'LA', 'SF', 'Boston'][mt_rand(0, 3)];
+
+        return ["user:{address:{city:'$v'}}", fn (array $d): bool => $d['user']['address']['city'] === $v];
+    }
+
+    private function exists(): array
+    {
+        return ['opt:*', fn (array $d): bool => array_key_exists('opt', $d)];
+    }
+
+    private function boolFlag(): array
+    {
+        $v = (bool) mt_rand(0, 1);
+
+        return ['flag:'.($v ? 'true' : 'false'), fn (array $d): bool => $d['flag'] === $v];
+    }
+
+    private function arrTerm(): array
+    {
+        $v = ['red', 'blue', 'green', 'yellow', 'purple', 'pink'][mt_rand(0, 5)];
+
+        return ["arr:'$v'", fn (array $d): bool => in_array($v, $d['arr'], true)];
+    }
+
+    /** @return array<string,array<string,mixed>> */
+    private function megaDocuments(): array
+    {
+        return [
+            'd1' => ['num1' => 0, 'num2' => 0.0, 'enum' => 'active', 'name' => 'a.b', 'kw' => 'alpha', 'arr' => ['red', 'blue'], 'created' => '2020-01-01T00:00:00.000000+00:00', 'flag' => true, 'opt' => 'x', 'user' => ['name' => 'Bob', 'address' => ['city' => 'NYC']]],
+            'd2' => ['num1' => 50, 'num2' => 1.5, 'enum' => 'pending', 'name' => 'a.b.c', 'kw' => 'alphabet', 'arr' => ['blue'], 'created' => '2021-06-15T12:00:00.000000+00:00', 'flag' => false, 'user' => ['name' => 'Alice', 'address' => ['city' => 'LA']]],
+            'd3' => ['num1' => 100, 'num2' => 2.5, 'enum' => 'closed', 'name' => 'foo(1)', 'kw' => 'beta', 'arr' => ['green', 'red'], 'created' => '2022-03-03T03:03:03.000000+00:00', 'flag' => true, 'opt' => 'y', 'user' => ['name' => 'Bob', 'address' => ['city' => 'LA']]],
+            'd4' => ['num1' => 100, 'num2' => 2.5, 'enum' => 'active', 'name' => 'foo+bar', 'kw' => 'betamax', 'arr' => ['green'], 'created' => '2023-01-01T00:00:00.000000+00:00', 'flag' => false, 'opt' => 'x', 'user' => ['name' => 'Carol', 'address' => ['city' => 'NYC']]],
+            'd5' => ['num1' => 150, 'num2' => 9.9, 'enum' => 'active', 'name' => 'user_1', 'kw' => 'gamma', 'arr' => ['blue', 'green'], 'created' => '2023-12-31T23:59:59.000000+00:00', 'flag' => true, 'user' => ['name' => 'Bob', 'address' => ['city' => 'SF']]],
+            'd6' => ['num1' => 200, 'num2' => 10.0, 'enum' => 'pending', 'name' => 'A-B', 'kw' => 'delta', 'arr' => ['red'], 'created' => '2024-02-29T00:00:00.000000+00:00', 'flag' => false, 'opt' => 'z', 'user' => ['name' => 'Alice', 'address' => ['city' => 'SF']]],
+            'd7' => ['num1' => 999, 'num2' => -5.0, 'enum' => 'closed', 'name' => 'hello world', 'kw' => 'deltaforce', 'arr' => ['yellow'], 'created' => '2024-06-15T10:30:00.000000+00:00', 'flag' => true, 'user' => ['name' => 'Dave', 'address' => ['city' => 'LA']]],
+            'd8' => ['num1' => -10, 'num2' => 100.0, 'enum' => 'active', 'name' => 'x:y', 'kw' => 'omega', 'arr' => ['blue', 'red'], 'created' => '2025-01-01T00:00:00.000000+00:00', 'flag' => true, 'opt' => 'x', 'user' => ['name' => 'Bob', 'address' => ['city' => 'NYC']]],
+            'd9' => ['num1' => 75, 'num2' => 3.3, 'enum' => 'pending', 'name' => 'prod-123', 'kw' => 'omega2', 'arr' => ['purple'], 'created' => '2025-05-05T05:05:05.000000+00:00', 'flag' => false, 'opt' => 'q', 'user' => ['name' => 'Eve', 'address' => ['city' => 'SF']]],
+            'd10' => ['num1' => 300, 'num2' => 50.5, 'enum' => 'closed', 'name' => 'prod-124', 'kw' => 'zeta', 'arr' => ['blue'], 'created' => '2026-01-01T00:00:00.000000+00:00', 'flag' => true, 'user' => ['name' => 'Alice', 'address' => ['city' => 'NYC']]],
+        ];
     }
 
     /**
