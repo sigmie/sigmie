@@ -309,20 +309,22 @@ class FilterParserTest extends TestCase
         $properties = new NewProperties;
         $properties->keyword('status');
         $properties->keyword('tags');
+        $properties->keyword('tier');
         $properties->number('price');
         $properties->number('qty');
         $properties->bool('active');
+        $properties->nested('user', fn (NewProperties $user) => $user->keyword('name'));
 
         $index = $this->sigmie->newIndex($indexName)->properties($properties)->create();
         $index = $this->sigmie->collect($indexName, true);
 
         $documents = [
-            'a' => ['status' => 'active', 'price' => 100, 'qty' => 5, 'active' => true, 'tags' => ['a, b', 'vip']],
-            'b' => ['status' => 'active', 'price' => 200, 'qty' => 0, 'active' => false, 'tags' => ['x', 'vip']],
-            'c' => ['status' => 'pending', 'price' => 50, 'qty' => 10, 'active' => true, 'tags' => ['(special)', 'b2b']],
-            'd' => ['status' => 'closed', 'price' => 0, 'qty' => 100, 'active' => false, 'tags' => ['{json}', 'x']],
-            'e' => ['status' => 'active', 'price' => 150, 'qty' => 50, 'active' => true, 'tags' => ['vip', 'gold']],
-            'f' => ['status' => 'pending', 'price' => 999, 'qty' => 1, 'active' => true, 'tags' => ['plain']],
+            'a' => ['status' => 'active', 'price' => 100, 'qty' => 5, 'active' => true, 'tags' => ['a, b', 'vip'], 'tier' => 'gold', 'user' => ['name' => "O'Brien"]],
+            'b' => ['status' => 'active', 'price' => 200, 'qty' => 0, 'active' => false, 'tags' => ['x', 'vip'], 'tier' => 'gold', 'user' => ['name' => 'Jane']],
+            'c' => ['status' => 'pending', 'price' => 50, 'qty' => 10, 'active' => true, 'tags' => ['(special)', 'b2b'], 'user' => ['name' => "O'Brien"]],
+            'd' => ['status' => 'closed', 'price' => 0, 'qty' => 100, 'active' => false, 'tags' => ['{json}', 'x'], 'tier' => 'silver', 'user' => ['name' => 'José']],
+            'e' => ['status' => 'active', 'price' => 150, 'qty' => 50, 'active' => true, 'tags' => ['vip', 'gold'], 'user' => ['name' => 'Anne']],
+            'f' => ['status' => 'pending', 'price' => 999, 'qty' => 1, 'active' => true, 'tags' => ['plain'], 'tier' => 'silver', 'user' => ['name' => "O'Neil"]],
         ];
 
         $index->merge(array_map(
@@ -341,14 +343,24 @@ class FilterParserTest extends TestCase
             ['active:true', ['a', 'c', 'e', 'f']],
             ['active:false', ['b', 'd']],
             ['price>100', ['b', 'e', 'f']],
+            ['price>=100', ['a', 'b', 'e', 'f']],
+            ["price>='100'", ['a', 'b', 'e', 'f']],
             ['price<=50', ['c', 'd']],
             ['price:50..200', ['a', 'b', 'c', 'e']],
             ['qty>=50', ['d', 'e']],
+            ['qty:1..10', ['a', 'c', 'f']],
             ["tags:'vip'", ['a', 'b', 'e']],
             ["tags:'vi*'", ['a', 'b', 'e']],
+            ["status:'pend*'", ['c', 'f']],
             ["tags:'a, b'", ['a']],
             ["tags:['vip','x']", ['a', 'b', 'd', 'e']],
+            ['tier:*', ['a', 'b', 'd', 'f']],
+            ["tier:'gold'", ['a', 'b']],
+            ['user:{name:"O\'Brien"}', ['a', 'c']],
+            ["user:{name:'José'}", ['d']],
+            ['user:{name:"O\'Brien" OR name:\'Anne\'}', ['a', 'c', 'e']],
             ["_id:'f'", ['f']],
+            ["_id:['a','c']", ['a', 'c']],
         ];
 
         $parser = new FilterParser($properties, false);
@@ -356,7 +368,7 @@ class FilterParserTest extends TestCase
         // Fixed seed → reproducible.
         mt_srand(20260529);
 
-        for ($i = 0; $i < 300; $i++) {
+        for ($i = 0; $i < 500; $i++) {
             $tree = $this->randomFilterTree(3, count($predicates));
             $filter = $this->renderFilterTree($tree, 1, $predicates);
 
