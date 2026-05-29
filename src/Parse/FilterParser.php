@@ -60,132 +60,272 @@ class FilterParser extends Parser
         }
     }
 
-    protected function parseString(string $query): array
+    // Normalize whitespace outside quoted values: CRLF to spaces and collapse
+    // runs of whitespace to a single space. Quote characters inside values are
+    // already masked, so the quote-parity lookahead below is reliable.
+    protected function normalizeWhitespace(string $query): string
     {
-        // TODO hanlde throw error is passed eg. color:red price:100 (without logical operator)
-        $this->handleNesting();
-
-        // Replace breaks with spaces
         $query = str_replace(["\r", "\n"], ' ', $query);
-        // Remove extra spaces that aren't in quotes
-        // and replace them with only one. This regex handles
-        // also quotes that are escapted
         $query = preg_replace('/\s+(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)/', ' ', $query);
-        // Trim leading and trailing spaces
-        $query = trim($query);
 
-        // Remove spaces between parentheses if not in quotes
-        $query = preg_replace_callback('/\(\s+(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)/', function ($matches): string {
-            return '('; // Replace opening parenthesis with spaces with just an opening parenthesis
-        }, $query);
-        $query = preg_replace_callback('/\s+\)(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)/', function ($matches): string {
-            return ')'; // Replace closing parenthesis with spaces with just a closing parenthesis
-        }, $query);
+        return trim($query);
+    }
 
-        // Remove all single items in parenthesis
-        // for example the ((emails_sent_count>0) AND (last_activity_label:'click_time'))
-        // will change to (emails_sent_count>0 AND last_activity_label:'click_time')
-        // $query = preg_replace("/\(([^()]*)\)/", '$1', $query);
-        $query = preg_replace_callback('/\(([^()]*?)\)(?=(?:[^"\'"]*["\'][^"\'"]*["\'])*[^"\'"]*$)/', function (array $matches): string {
-            // Check if the match contains OR, AND, or AND NOT, indicating it's not a single item
-            if (str_contains($matches[1], ' OR ') || str_contains($matches[1], ' AND ') || str_contains($matches[1], ' AND NOT ')) {
-                return $matches[0]; // Return the original match with parentheses
-            } else {
-                return $matches[1]; // Return without parentheses for single items
+    // Split an expression on the top-level logical operators (AND NOT, AND, OR),
+    // ignoring any operator that sits inside quotes, parentheses or braces.
+    // Returns a list of ['op' => null|'AND'|'OR'|'AND NOT', 'expr' => string];
+    // the first item always has a null operator.
+    protected function splitTopLevel(string $query): array
+    {
+        $tokens = [];
+        $buffer = '';
+        $currentOp = null;
+        $paren = 0;
+        $brace = 0;
+        $inQuote = false;
+        $quoteChar = '';
+        $length = strlen($query);
+
+        for ($i = 0; $i < $length;) {
+            $char = $query[$i];
+
+            if ($inQuote) {
+                $buffer .= $char;
+                if ($char === $quoteChar) {
+                    $inQuote = false;
+                }
+                $i++;
+
+                continue;
             }
-        }, $query);
 
-        // A NOT directly in front of a parenthetic group negates the whole
-        // group, e.g. NOT (a AND b). Strip the NOT here and remember to negate
-        // the resulting group when the query is applied.
-        $negateGroup = false;
-        if (preg_match('/^NOT\s+\(/', $query)) {
-            $negateGroup = true;
-            $query = preg_replace('/^NOT\s+/', '', $query);
-        }
+            if ($char === '"' || $char === "'") {
+                $inQuote = true;
+                $quoteChar = $char;
+                $buffer .= $char;
+                $i++;
 
-        // If first filter is a parenthetic expression
-        if (str_starts_with($query, '(')) {
+                continue;
+            }
 
-            // match all parenthentic expresions recusively
-            preg_match_all("/\(([^()]|(?R))*\)/", $query, $matches);
+            if ($paren === 0 && $brace === 0 && ($operator = $this->operatorAt($query, $i)) !== null) {
+                $tokens[] = ['op' => $currentOp, 'expr' => trim($buffer)];
+                $buffer = '';
+                $currentOp = $operator;
+                $i += strlen($operator);
 
-            // No balanced parenthetic group means the expression is malformed (e.g. unbalanced
-            // parentheses). Surface a clear parse error instead of an out-of-bounds access.
-            if (! isset($matches[0][0])) {
+                continue;
+            }
+
+            match ($char) {
+                '(' => $paren++,
+                ')' => $paren--,
+                '{' => $brace++,
+                '}' => $brace--,
+                default => null,
+            };
+
+            if ($paren < 0 || $brace < 0) {
                 throw new ParseException(sprintf("Invalid filter: unbalanced parentheses in '%s'.", $query));
             }
 
-            $matchWithParentheses = $matches[0][0];
-
-            // Remove outer parenthesis
-            $matchWithoutParentheses = preg_replace('/^\((.+)\)$/', '$1', $matchWithParentheses);
-
-            // Remove the parenthetic expresion from the query
-            $query = preg_replace(sprintf("/((\\b(?:AND NOT|AND|OR)?\\b(?=(?:(?:[^'\"]*['\"]){2})*[^'\"]*\$)) )?\\Q(%s)\\E/", $matchWithoutParentheses), '', $query);
-
-            // Trim leading and trailing spaces
-            $query = trim($query);
-
-            // Create filter from parentheses match
-            $filter = $this->parseString($matchWithoutParentheses);
-        } else {
-            // Split on the first AND NOT, AND or OR operator that is not in quotes and not in nested curly braces
-            [$filter] = preg_split('/\b(?:AND NOT|AND|OR)\b(?=(?:(?:[^\'"\{\}]*[\'"\{\}]){2})*[^\'"\{\}]*$)(?=(?:(?:[^\{\}]*\{[^\{\}]*\})*[^\{\}]*$))/', $query, limit: 2);
-
-            // Remove white spaces
-            $filter = trim($filter);
+            $buffer .= $char;
+            $i++;
         }
 
-        // A nested filter like (inStock = 1 AND active = true) is
-        // returned as an array from the `parseString` method.
-        // If it's a string filter like inStock = 1 and not
-        // a subquery like (inStock = 1 AND active = true).
-        if (is_string($filter)) {
-
-            // Remove spaces around structural characters, but never inside a
-            // quoted value (so name:'Smith, John' keeps its space).
-            // eg. {user: { id:'465'}} becomes {user:{id:'465'}}
-            // For brackets only the *inside* spaces are removed (after [ and
-            // before ]) so a missing operator after a list still errors.
-            $filter = preg_replace_callback(
-                '/(["\'])[^"\']*\1|\s*([{}:,])\s*|(\[)\s*|\s*(\])/',
-                function (array $m): string {
-                    if (($m[1] ?? '') !== '') {
-                        return $m[0];
-                    }
-
-                    return match (true) {
-                        ($m[2] ?? '') !== '' => $m[2],
-                        ($m[3] ?? '') !== '' => '[',
-                        default => ']',
-                    };
-                },
-                $filter
-            );
-
-            $query = preg_replace('/'.preg_quote($filter, '/').'/', '', $query, 1);
-            $query = trim($query);
-            $filter = trim($filter);
+        if ($paren !== 0 || $brace !== 0 || $inQuote) {
+            throw new ParseException(sprintf("Invalid filter: unbalanced parentheses in '%s'.", $query));
         }
 
-        $res = ['filter' => $filter];
+        $tokens[] = ['op' => $currentOp, 'expr' => trim($buffer)];
 
-        if ($negateGroup) {
-            $res['negate'] = true;
+        return $tokens;
+    }
+
+    // Return the logical operator keyword at $position (longest match first) when
+    // it stands as its own word, otherwise null.
+    protected function operatorAt(string $query, int $position): ?string
+    {
+        $isWord = fn (string $char): bool => ctype_alnum($char) || $char === '_';
+
+        foreach (['AND NOT', 'AND', 'OR'] as $operator) {
+            $length = strlen($operator);
+
+            if (substr($query, $position, $length) !== $operator) {
+                continue;
+            }
+
+            $before = $position > 0 ? $query[$position - 1] : ' ';
+            $after = $position + $length < strlen($query) ? $query[$position + $length] : ' ';
+
+            if (! $isWord($before) && ! $isWord($after)) {
+                return $operator;
+            }
         }
 
-        if (preg_match('/^(?P<operator>AND NOT|AND|OR)/', $query, $matchWithoutParentheses)) {
-            $operator = $matchWithoutParentheses['operator'];
-            // Remove operator from the query string
-            $query = preg_replace(sprintf('/^%s/', $operator), '', $query);
-            $query = trim($query);
+        return null;
+    }
 
-            $res['operator'] = $operator;
-            $res['values'] = $this->parseString($query);
+    // Parse a full expression honouring operator precedence: OR has the lowest
+    // precedence, so the expression is first split into OR groups and each group
+    // is parsed as an AND sequence.
+    protected function parseExpression(string $query): Boolean
+    {
+        $this->handleNesting();
+
+        $tokens = $this->splitTopLevel(trim($query));
+
+        $groups = [];
+        $group = [];
+
+        foreach ($tokens as $token) {
+            if ($token['op'] === 'OR') {
+                $groups[] = $group;
+                $group = [['op' => null, 'expr' => $token['expr']]];
+
+                continue;
+            }
+
+            $group[] = $token;
         }
 
-        return $res;
+        $groups[] = $group;
+
+        if (count($groups) === 1) {
+            return $this->parseAndGroup($groups[0]);
+        }
+
+        $boolean = new Boolean;
+
+        foreach ($groups as $group) {
+            $boolean->should()->query($this->parseAndGroup($group));
+        }
+
+        return $boolean;
+    }
+
+    // Parse a sequence of factors joined by AND / AND NOT into a single bool.
+    protected function parseAndGroup(array $tokens): Boolean
+    {
+        $boolean = new Boolean;
+
+        foreach ($tokens as $index => $token) {
+            $query = $this->parseFactor($token['expr']);
+
+            match (true) {
+                $index === 0, $token['op'] === 'AND' => $boolean->must()->query($query),
+                $token['op'] === 'AND NOT' => $boolean->mustNot()->query($query),
+                default => throw new ParseException(sprintf("Unmatched filter operator '%s'", $token['op'])),
+            };
+        }
+
+        return $boolean;
+    }
+
+    // Parse a single factor: an optional (possibly repeated) NOT, a parenthetic
+    // sub-expression, or a primary filter such as `status:'active'`.
+    protected function parseFactor(string $expr): QueryClause
+    {
+        $this->handleNesting();
+
+        $expr = trim($expr);
+
+        if (str_starts_with($expr, 'NOT ')) {
+            $boolean = new Boolean;
+            $boolean->mustNot()->query($this->parseFactor(substr($expr, 4)));
+
+            return $boolean;
+        }
+
+        if (str_starts_with($expr, '(') && $this->isWholeGroup($expr)) {
+            return $this->parseExpression(substr($expr, 1, -1));
+        }
+
+        return $this->stringToQueryClause($this->primaryString($expr));
+    }
+
+    // True when the whole expression is wrapped in a single matching pair of
+    // parentheses, e.g. "(a AND b)" but not "(a) AND (b)".
+    protected function isWholeGroup(string $expr): bool
+    {
+        $depth = 0;
+        $length = strlen($expr);
+        $inQuote = false;
+        $quoteChar = '';
+
+        for ($i = 0; $i < $length; $i++) {
+            $char = $expr[$i];
+
+            if ($inQuote) {
+                if ($char === $quoteChar) {
+                    $inQuote = false;
+                }
+
+                continue;
+            }
+
+            if ($char === '"' || $char === "'") {
+                $inQuote = true;
+                $quoteChar = $char;
+
+                continue;
+            }
+
+            if ($char === '(') {
+                $depth++;
+            } elseif ($char === ')') {
+                $depth--;
+
+                if ($depth === 0) {
+                    return $i === $length - 1;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // Normalize a primary filter (spaces around structural characters) and make
+    // sure it contains no unquoted whitespace, which would signal a malformed
+    // expression such as a missing operator between two filters.
+    protected function primaryString(string $expr): string
+    {
+        // Remove spaces around structural characters, but never inside a quoted
+        // value (so name:'Smith, John' keeps its space). For brackets only the
+        // *inside* spaces are removed (after [ and before ]) so a missing
+        // operator after a list still errors.
+        $expr = preg_replace_callback(
+            '/(["\'])[^"\']*\1|\s*([{}:,])\s*|(\[)\s*|\s*(\])/',
+            function (array $m): string {
+                if (($m[1] ?? '') !== '') {
+                    return $m[0];
+                }
+
+                return match (true) {
+                    ($m[2] ?? '') !== '' => $m[2],
+                    ($m[3] ?? '') !== '' => '[',
+                    default => ']',
+                };
+            },
+            $expr
+        );
+
+        if (
+            preg_match(
+                '/\s/',
+                // Replace anything inside single/double quotes or {...} blocks
+                // with underscores so only genuinely unquoted spaces remain.
+                preg_replace_callback(
+                    '/(["\'])(?:\\\\.|[^\\\\])*?\1|{(?:[^{}]|(?R))*}/',
+                    fn ($m): string => str_repeat('_', strlen($m[0])),
+                    $expr
+                )
+            )
+        ) {
+            throw new ParseException(sprintf("Invalid filter string: '%s'", $expr));
+        }
+
+        return $expr;
     }
 
     public function parse(string $filterString): Boolean
@@ -200,9 +340,9 @@ class FilterParser extends Parser
             return $bool;
         }
 
-        $filters = $this->parseString($this->maskQuotedValues($filterString));
-
-        return $this->apply($filters);
+        return $this->parseExpression(
+            $this->normalizeWhitespace($this->maskQuotedValues($filterString))
+        );
     }
 
     // Replace every quote character that appears *inside* a quoted value with a
@@ -239,84 +379,6 @@ class FilterParser extends Parser
         return preg_split('/,(?=(?:[^"\']*["\'][^"\']*["\'])*[^"\']*$)/', $value);
     }
 
-    protected function apply(string|array $filters, string $operator = 'AND'): Boolean
-    {
-        $boolean = new Boolean;
-
-        $filter = is_string($filters) ? $filters : $filters['filter'];
-        $operator = $filters['operator'] ?? $operator;
-        $values = $filters['values'] ?? null;
-
-        // A leading NOT negates *only* this clause. It must not change the
-        // operator that joins the next clause, otherwise `(NOT a) AND b`
-        // would wrongly negate `b` as well. `negate` is also set by the parser
-        // for a negated parenthetic group, e.g. NOT (a AND b).
-        $negate = ($filters['negate'] ?? false) || (is_string($filter) && str_starts_with($filter, 'NOT '));
-
-        if (is_string($filter) && str_starts_with($filter, 'NOT ')) {
-            $filter = trim(substr($filter, 4));
-        }
-
-        if (is_string($filter)) {
-
-            // Throw an error if there's a space in the filter string
-            // and it's not in a quote
-            if (
-                preg_match(
-                    '/\s/',
-                    // The preg_replace_callback removes (replaces with underscores) anything inside:
-                    // • single or double quotes
-                    // • {...} blocks (non-nested or shallowly nested)
-                    preg_replace_callback(
-                        '/(["\'])(?:\\\\.|[^\\\\])*?\1|{(?:[^{}]|(?R))*}/',
-                        fn ($m): string => str_repeat('_', strlen($m[0])),
-                        $filter
-                    )
-                )
-            ) {
-                throw new ParseException(sprintf("Invalid filter string: '%s'", $filter));
-            }
-
-            $query1 = $this->stringToQueryClause($filter);
-        } else {
-            $query1 = $this->apply($filter, $operator);
-        }
-
-        // Wrap the negated clause in its own bool so it composes correctly
-        // regardless of how it is joined (AND keeps it required, OR optional).
-        if ($negate) {
-            $negated = new Boolean;
-            $negated->mustNot()->query($query1);
-            $query1 = $negated;
-        }
-
-        match ($operator) {
-            'AND' => $boolean->must()->query($query1),
-            'NOT' => $boolean->mustNot()->query($query1),
-            // Using must here is correct, trust me!
-            // The `NOT` is handled in the second query
-            'AND NOT' => $boolean->must()->query($query1),
-            'OR' => $boolean->should()->query($query1),
-            default => throw new ParseException(sprintf("Unmatched filter operator '%s'", $operator))
-        };
-
-        if ($filters['operator'] ?? false) {
-            $query2 = $this->apply($values, $operator);
-
-            match ($operator) {
-                'AND' => $boolean->must()->query($query2),
-                // Using must here is correct, trust me!
-                // The `NOT` is handled in the first query
-                'NOT' => $boolean->must()->query($query2),
-                'AND NOT' => $boolean->mustNot()->query($query2),
-                'OR' => $boolean->should()->query($query2),
-                default => throw new ParseException(sprintf("Unmatched filter operator '%s'", $operator))
-            };
-        }
-
-        return $boolean;
-    }
-
     public function facetFilter(Type $field, string $filterString): Boolean
     {
         $this->facetField = $field;
@@ -330,9 +392,9 @@ class FilterParser extends Parser
             return $bool;
         }
 
-        $filters = $this->parseString($this->maskQuotedValues($filterString));
-
-        return $this->apply($filters);
+        return $this->parseExpression(
+            $this->normalizeWhitespace($this->maskQuotedValues($filterString))
+        );
     }
 
     protected function stringToQueryClause(string $string): QueryClause

@@ -233,6 +233,15 @@ class FilterParserBatteryTest extends TestCase
             ["NOT (tags:'vip' AND active:true)", ['B', 'C', 'D', 'F']],
             ["NOT (status:'active' AND price>100) AND active:true", ['A', 'C', 'F']],
             ["status:'active' AND NOT (price<100)", ['A', 'B', 'E']],
+            // --- operator precedence: AND binds tighter than OR ---
+            ["status:'active' AND price>100 OR status:'closed'", ['B', 'D', 'E']],
+            ["status:'closed' OR status:'active' AND price>100", ['B', 'D', 'E']],
+            ["status:'pending' AND active:true OR status:'closed' AND active:false", ['C', 'D', 'F']],
+            ['price>=100 AND price<=200 OR qty>=100', ['A', 'B', 'D', 'E']],
+            ["tags:'vip' AND active:true OR tags:'b2b'", ['A', 'C', 'E']],
+            ["status:'pending' OR status:'active' AND active:false", ['B', 'C', 'F']],
+            ["NOT status:'active' AND active:true", ['C', 'F']],
+            ['status:\'active\' OR NOT active:true', ['A', 'B', 'D', 'E']],
             // --- empty / whitespace ---
             ["name:''", []],
             ["  status:'active'  ", ['A', 'B', 'E']],

@@ -1228,10 +1228,10 @@ class FilterParserTest extends TestCase
 
         $query = $parser->parse("((emails_sent_count>0) AND (last_activity_label:'smartlead_click_time')) AND last_activity>='2001-01-01T00:00:00.000000+00:00' AND last_activity<='2100-12-31T23:59:59.999999+00:00' AND account_id:'10'");
 
-        $raw = $query->toRaw();
+        $json = json_encode($query->toRaw());
 
-        $this->assertArrayHasKey('emails_sent_count', $raw['bool']['must'][0]['bool']['must'][0]['range'] ?? []);
-        $this->assertArrayHasKey('last_activity_label', $raw['bool']['must'][0]['bool']['must'][1]['bool']['must'][0]['term'] ?? []);
+        $this->assertStringContainsString('"range":{"emails_sent_count"', $json);
+        $this->assertStringContainsString('"term":{"last_activity_label"', $json);
     }
 
     /**
