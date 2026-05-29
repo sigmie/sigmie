@@ -8,6 +8,7 @@ use RuntimeException;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\ParseException;
 use Sigmie\Testing\TestCase;
@@ -81,11 +82,12 @@ class FilterParserTest extends TestCase
         foreach (['company', 'name', 'status', 'url', 'time', 'ratio', 'note', 'path', 'code', 'tags'] as $field) {
             $properties->caseSensitiveKeyword($field);
         }
+
         $properties->number('price');
         $properties->number('qty');
         $properties->bool('active');
         $properties->date('created');
-        $properties->nested('user', fn (NewProperties $user) => $user->caseSensitiveKeyword('name'));
+        $properties->nested('user', fn (NewProperties $user): CaseSensitiveKeyword => $user->caseSensitiveKeyword('name'));
 
         $index = $this->sigmie->newIndex($indexName)->properties($properties)->create();
         $index = $this->sigmie->collect($indexName, true);
@@ -440,7 +442,7 @@ class FilterParserTest extends TestCase
 
         // Redundant parentheses never change the meaning but stress the parser.
         if ($node[0] !== 'leaf' && mt_rand(0, 100) < 20) {
-            $string = '('.$string.')';
+            return '('.$string.')';
         }
 
         return $string;
