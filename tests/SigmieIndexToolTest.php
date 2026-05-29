@@ -6,6 +6,7 @@ namespace Sigmie\Tests;
 
 use Sigmie\Base\ElasticsearchException;
 use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Parse\ParseException;
 
 require_once __DIR__.'/Stubs/LaravelAiStubs.php';
 
@@ -695,15 +696,30 @@ class SigmieIndexToolTest extends TestCase
     /**
      * @test
      */
-    public function filter_values_errors_on_unknown_field(): void
+    public function filter_values_handle_surfaces_unknown_field_as_error(): void
     {
         $index = $this->createProductIndex();
 
-        // No client-side validation: an unknown/non-facetable field surfaces as an engine
-        // error, which the agent SDK / tool-call dispatch reports back to the model.
+        // handle() must NOT throw — an unknown/non-facetable field is returned as a readable
+        // {"error": ...} so the agent can read it and correct its arguments, instead of the
+        // whole turn aborting on an uncaught exception.
+        $result = json_decode((new SigmieFilterValuesTool($index))->handle(new Request(['field' => 'nope'])), true);
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertNotEmpty($result['error']);
+    }
+
+    /**
+     * @test
+     */
+    public function filter_values_result_still_throws_on_unknown_field(): void
+    {
+        $index = $this->createProductIndex();
+
+        // result() keeps normal exception semantics for programmatic callers.
         $this->expectException(ElasticsearchException::class);
 
-        (new SigmieFilterValuesTool($index))->handle(new Request(['field' => 'nope']));
+        (new SigmieFilterValuesTool($index))->result(new Request(['field' => 'nope']));
     }
 
     /**
@@ -747,5 +763,56 @@ class SigmieIndexToolTest extends TestCase
 
         $sample = (new SigmieSampleDocumentsTool($index))->result(new Request(['limit' => 1]));
         $this->assertIsArray($sample);
+    }
+
+    /**
+     * @test
+     */
+    public function handle_surfaces_malformed_sort_as_error(): void
+    {
+        $index = $this->createProductIndex();
+
+        // SQL-style "price asc" (a space instead of "price:asc") makes the sort parser throw.
+        // handle() must return it as an {"error": ...} the agent can correct, not propagate
+        // an exception that aborts the turn.
+        $result = json_decode((new SigmieIndexTool($index))->handle(new Request([
+            'query' => '',
+            'sort' => 'price asc',
+        ])), true);
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertNotEmpty($result['error']);
+    }
+
+    /**
+     * @test
+     */
+    public function handle_surfaces_malformed_filter_as_error(): void
+    {
+        $index = $this->createProductIndex();
+
+        $result = json_decode((new SigmieIndexTool($index))->handle(new Request([
+            'query' => '',
+            'filters' => '(brand:',
+        ])), true);
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertNotEmpty($result['error']);
+    }
+
+    /**
+     * @test
+     */
+    public function result_still_throws_on_malformed_filter(): void
+    {
+        $index = $this->createProductIndex();
+
+        // result() keeps normal exception semantics; only handle() is guarded.
+        $this->expectException(ParseException::class);
+
+        (new SigmieIndexTool($index))->result(new Request([
+            'query' => '',
+            'filters' => '(brand:',
+        ]));
     }
 }

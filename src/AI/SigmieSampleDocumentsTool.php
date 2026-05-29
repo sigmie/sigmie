@@ -17,6 +17,8 @@ use Sigmie\SigmieIndex;
  */
 class SigmieSampleDocumentsTool implements Tool
 {
+    use HandlesToolErrors;
+
     public function __construct(
         protected SigmieIndex $index,
     ) {}
@@ -43,7 +45,7 @@ class SigmieSampleDocumentsTool implements Tool
 
     public function handle(Request $request): string
     {
-        return json_encode($this->result($request), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        return $this->guard(fn (): string => json_encode($this->result($request), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
     }
 
     /**
