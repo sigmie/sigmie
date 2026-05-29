@@ -92,6 +92,12 @@ class FilterParser extends Parser
             // match all parenthentic expresions recusively
             preg_match_all("/\(([^()]|(?R))*\)/", $query, $matches);
 
+            // No balanced parenthetic group means the expression is malformed (e.g. unbalanced
+            // parentheses). Surface a clear parse error instead of an out-of-bounds access.
+            if (! isset($matches[0][0])) {
+                throw new ParseException(sprintf("Invalid filter: unbalanced parentheses in '%s'.", $query));
+            }
+
             $matchWithParentheses = $matches[0][0];
 
             // Remove outer parenthesis
