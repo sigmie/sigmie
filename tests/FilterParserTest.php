@@ -481,6 +481,35 @@ class FilterParserTest extends TestCase
 
     /**
      * @test
+     *
+     * A newline (or any whitespace) that is part of a quoted value must be kept
+     * verbatim: only whitespace *outside* quotes is normalised. Regression for a
+     * bug where CR/LF were globally replaced with spaces, corrupting the value.
+     */
+    public function newline_inside_a_value_is_preserved(): void
+    {
+        $indexName = uniqid();
+
+        $properties = new NewProperties;
+        $properties->caseSensitiveKeyword('note');
+
+        $index = $this->sigmie->newIndex($indexName)->properties($properties)->create();
+        $index = $this->sigmie->collect($indexName, true);
+
+        $index->merge([
+            new Document(['note' => "line1\nline2"], 'multiline'),
+            new Document(['note' => 'line1 line2'], 'spaced'),
+        ]);
+
+        $parser = new FilterParser($properties, false);
+
+        $hits = $this->sigmie->query($indexName, $parser->parse("note:'line1\nline2'"))->get()->json('hits.hits');
+
+        $this->assertSame(['multiline'], array_map(fn (array $hit): string => $hit['_id'], $hits));
+    }
+
+    /**
+     * @test
      */
     public function end_in_query(): void
     {

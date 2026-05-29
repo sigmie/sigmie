@@ -60,11 +60,12 @@ class FilterParser extends Parser
     }
 
     // Normalize whitespace outside quoted values: CRLF to spaces and collapse
-    // runs of whitespace to a single space. Quote characters inside values are
-    // already masked, so the quote-parity lookahead below is reliable.
+    // runs of whitespace (incl. newlines/tabs) to a single space — but only
+    // OUTSIDE quoted values, so a newline that is part of a value is preserved.
+    // Quote characters inside values are already masked, so the quote-parity
+    // lookahead below is reliable.
     protected function normalizeWhitespace(string $query): string
     {
-        $query = str_replace(["\r", "\n"], ' ', $query);
         $query = preg_replace('/\s+(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)/', ' ', $query);
 
         return trim($query);
@@ -398,23 +399,26 @@ class FilterParser extends Parser
 
     protected function stringToQueryClause(string $string): QueryClause
     {
+        // The `s` modifier lets `.` match newlines, so a value that legitimately
+        // contains a newline (kept intact by normalizeWhitespace) still routes
+        // to the right handler.
         $query = match (1) {
-            preg_match('/^[\w\.]+:\{.*\}$/', $string) => $this->handleNested($string),
+            preg_match('/^[\w\.]+:\{.*\}$/s', $string) => $this->handleNested($string),
             preg_match('/[\w\.]+:\*$/', $string) => $this->handleHas($string),
             preg_match('/[\w\.]+:true$/', $string) => $this->handleIs($string),
             preg_match('/[\w\.]+:false$/', $string) => $this->handleIsNot($string),
-            preg_match('/^([\w\.]+)([<>]=?)(?!=)(.+)/', $string) => $this->handleRange($string),
-            preg_match('/^([\w\.]+)([<>]=?)(?!=)(\'.+\')/', $string) => $this->handleRange($string),
-            preg_match('/^([\w\.]+)([<>]=?)(?!=)(\".+\")/', $string) => $this->handleRange($string),
-            preg_match('/^_id:\[.*\]/', $string) => $this->handleIDs($string),
+            preg_match('/^([\w\.]+)([<>]=?)(?!=)(.+)/s', $string) => $this->handleRange($string),
+            preg_match('/^([\w\.]+)([<>]=?)(?!=)(\'.+\')/s', $string) => $this->handleRange($string),
+            preg_match('/^([\w\.]+)([<>]=?)(?!=)(\".+\")/s', $string) => $this->handleRange($string),
+            preg_match('/^_id:\[.*\]/s', $string) => $this->handleIDs($string),
             preg_match('/^_id:[\'"]?[a-z_A-Z0-9]+[\'"]?$/', $string) => $this->handleID($string),
-            preg_match('/[\w\.]+:\[.*\]/', $string) => $this->handleIn($string),
-            preg_match('/^[\w\.]+:.*\*.*$/', $string) => $this->handleWildcard($string),
-            preg_match('/[\w\.]+:".*"/', $string) => $this->handleTerm($string),
-            preg_match('/[\w\.]+:\'.*\'/', $string) => $this->handleTerm($string),
-            preg_match('/^([\w\.]+):(-?\d+(.+)?)\.\.(-?\d+(.+)?)$/', $string) => $this->handleBetween($string),
+            preg_match('/[\w\.]+:\[.*\]/s', $string) => $this->handleIn($string),
+            preg_match('/^[\w\.]+:.*\*.*$/s', $string) => $this->handleWildcard($string),
+            preg_match('/[\w\.]+:".*"/s', $string) => $this->handleTerm($string),
+            preg_match('/[\w\.]+:\'.*\'/s', $string) => $this->handleTerm($string),
+            preg_match('/^([\w\.]+):(-?\d+(.+)?)\.\.(-?\d+(.+)?)$/s', $string) => $this->handleBetween($string),
             preg_match('/^[\w\.]+:\d+(km|m|cm|mm|mi|yd|ft|in|nmi)\[\-?\d+(\.\d+)?\,\-?\d+(\.\d+)?\]/', $string) => $this->handleGeo($string),
-            preg_match('/[\w\.]+:.*$/', $string) => $this->handleTerm($string),
+            preg_match('/[\w\.]+:.*$/s', $string) => $this->handleTerm($string),
             default => null
         };
 
@@ -430,7 +434,7 @@ class FilterParser extends Parser
     public function handleNested(string $string): MatchNone|Nested
     {
         preg_match(
-            '/(?P<field>[\w\.]+):\{(?P<filters>.*)\}/',
+            '/(?P<field>[\w\.]+):\{(?P<filters>.*)\}/s',
             $string,
             $matches
         );
@@ -490,7 +494,7 @@ class FilterParser extends Parser
 
     public function handleBetween(string $range): ?Query
     {
-        preg_match('/^([\w\.]+):(.+)\.\.(.+)$/', $range, $matches);
+        preg_match('/^([\w\.]+):(.+)\.\.(.+)$/s', $range, $matches);
 
         $field = $matches[1];
         $min = $matches[2];
@@ -513,7 +517,7 @@ class FilterParser extends Parser
 
     public function handleRange(string $range): ?Query
     {
-        preg_match('/^([\w\.]+)([<>]=?)(?!=)(("|\')?.+("|\')?)/', $range, $matches);
+        preg_match('/^([\w\.]+)([<>]=?)(?!=)(("|\')?.+("|\')?)/s', $range, $matches);
 
         $field = $matches[1];
         $operator = $matches[2];
