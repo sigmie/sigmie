@@ -82,6 +82,8 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected int $collapseTop = 0;
 
+    protected array $filterQueries = [];
+
     public function __construct(
         ElasticsearchConnection $elasticsearchConnection
     ) {
@@ -177,6 +179,33 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         $this->globalFilters = $this->filterParser->parse($this->searchContext->filterString);
 
         return $this;
+    }
+
+    public function filterQuery(Query $query): static
+    {
+        $this->filterQueries[] = $query;
+
+        return $this;
+    }
+
+    // Compose the parsed string filter with any raw queries added via
+    // filterQuery() as sibling clauses in a single filter context, so they
+    // are ANDed together without disturbing the parsed query's own
+    // should/must_not semantics (it stays nested as one clause).
+    protected function appliedFilters(): Boolean
+    {
+        if ($this->filterQueries === []) {
+            return $this->globalFilters;
+        }
+
+        $boolean = new Boolean;
+        $filter = $boolean->filter()->query($this->globalFilters);
+
+        foreach ($this->filterQueries as $query) {
+            $filter->query($query);
+        }
+
+        return $boolean;
     }
 
     public function textScoreMultiplier(float $multiplier = 1.0): static
@@ -331,7 +360,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     {
         $boolean->must()->bool(
             fn (Boolean $boolean): BooleanQueryBuilder => $boolean->filter()->query(
-                $this->globalFilters
+                $this->appliedFilters()
             )
         );
     }
@@ -406,7 +435,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         $facets = new Search($this->elasticsearchConnection);
 
         $facets->index($this->index)
-            ->query($this->globalFilters)
+            ->query($this->appliedFilters())
             ->aggs($this->facets);
 
         return $facets;
@@ -694,7 +723,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
             $vectorByDims = new Collection([$dims => $vector]);
 
             // Build queries for these fields
-            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryImage->weight(), $this->globalFilters);
+            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryImage->weight(), $this->appliedFilters());
 
             $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries): void {
 
@@ -783,7 +812,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
             $vectorByDims = new Collection([$dims => $vector]);
 
             // Build queries for these fields
-            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryString->weight(), $this->globalFilters);
+            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryString->weight(), $this->appliedFilters());
 
             $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries): void {
                 $raw = $query->toRaw();

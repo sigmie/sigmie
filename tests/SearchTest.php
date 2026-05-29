@@ -12,6 +12,7 @@ use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\Queries\Term\Range;
+use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Testing\TestCase;
 
 class SearchTest extends TestCase
@@ -1508,5 +1509,95 @@ class SearchTest extends TestCase
             2,
             $groupA['inner_hits']['top']['hits']['hits']
         );
+    }
+
+    /**
+     * @test
+     */
+    public function filter_query_ands_a_hard_clause_with_the_string_filter(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->name('name');
+        $blueprint->keyword('category');
+        $blueprint->bool('active');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['name' => 'Alice', 'category' => 'public', 'active' => true]),
+            new Document(['name' => 'Bob', 'category' => 'public', 'active' => false]),
+            new Document(['name' => 'Carol', 'category' => 'private', 'active' => true]),
+        ]);
+
+        // Baseline: the OR string filter alone matches all three documents.
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('')
+            ->filters("category:'public' OR category:'private'")
+            ->get();
+
+        $this->assertEquals(3, $res->total());
+
+        // The hard clause is ANDed on top without corrupting the OR (should)
+        // semantics: only the active documents from either category survive.
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('')
+            ->filters("category:'public' OR category:'private'")
+            ->filterQuery(new Term('active', true))
+            ->get();
+
+        $names = array_map(fn (array $hit): string => $hit['_source']['name'], $res->json('hits'));
+
+        sort($names);
+
+        $this->assertEquals(2, $res->total());
+        $this->assertEquals(['Alice', 'Carol'], $names);
+    }
+
+    /**
+     * @test
+     */
+    public function filter_query_constrains_facet_counts(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->name('name');
+        $blueprint->keyword('category');
+        $blueprint->bool('active');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['name' => 'Alice', 'category' => 'public', 'active' => true]),
+            new Document(['name' => 'Bob', 'category' => 'public', 'active' => false]),
+            new Document(['name' => 'Carol', 'category' => 'private', 'active' => true]),
+        ]);
+
+        // The hard clause lives in the query, so the facet aggregation is
+        // scoped by it too: the inactive 'public' document is not counted.
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets('category')
+            ->filterQuery(new Term('active', true))
+            ->get();
+
+        $props = $blueprint();
+
+        $facets = $props['category']->facets($res->facetAggregations());
+
+        $this->assertEquals(['private' => 1, 'public' => 1], $facets);
     }
 }
