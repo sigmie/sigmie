@@ -9,6 +9,7 @@ use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
+use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\ParseException;
 use Sigmie\Testing\TestCase;
@@ -313,7 +314,7 @@ class FilterParserTest extends TestCase
         $properties->number('price');
         $properties->number('qty');
         $properties->bool('active');
-        $properties->nested('user', fn (NewProperties $user) => $user->keyword('name'));
+        $properties->nested('user', fn (NewProperties $user): Keyword => $user->keyword('name'));
 
         $index = $this->sigmie->newIndex($indexName)->properties($properties)->create();
         $index = $this->sigmie->collect($indexName, true);
