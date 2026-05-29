@@ -546,7 +546,7 @@ class FilterParser extends Parser
         $value = trim($value, '[]');
         $values = $this->splitListValues($value);
 
-        $values = array_filter($values, fn ($value): bool => $value !== '');
+        $values = array_values(array_filter($values, fn ($value): bool => $value !== ''));
 
         $values = array_map(fn ($value): string => trim($value, ' '), $values);
         $values = array_map(fn ($value): string => trim($value, "'"), $values);
@@ -604,7 +604,7 @@ class FilterParser extends Parser
         $value = trim($value, '[]');
         $values = $this->splitListValues($value);
 
-        $values = array_filter($values, fn ($value): bool => $value !== '');
+        $values = array_values(array_filter($values, fn ($value): bool => $value !== ''));
 
         // Remove whitespaces from values
         $values = array_map(fn ($value): string => trim($value, ' '), $values);

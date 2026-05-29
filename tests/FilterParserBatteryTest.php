@@ -215,6 +215,9 @@ class FilterParserBatteryTest extends TestCase
             ['company:"O\'Brien GmbH" AND name:\'Smith, John\'', ['A']],
             // --- arrays with spaces inside the brackets ---
             ["tags:[ 'vip' , 'gold' ]", ['A', 'B', 'E']],
+            // empty array elements are dropped and the list stays a JSON array
+            ["tags:['vip',,'gold']", ['A', 'B', 'E']],
+            ["tags:[,'plain',]", ['F']],
             ["tags:[ 'a, b' ]", ['A']],
             ["status:[ 'active' , 'closed' ]", ['A', 'B', 'D', 'E']],
             // --- between with a negative lower bound (parsed as a range) ---
