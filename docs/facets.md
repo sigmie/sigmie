@@ -141,6 +141,12 @@ $sigmie->newSearch('products')
     ->get();
 ```
 
+Like `filters()`, the facet filter string is parsed leniently — an invalid clause is dropped and recorded under the response's `errors` key. Pass `throwOnError: true` as the third argument to raise a `ParseException` instead:
+
+```php
+->facets('brand category', "brand:'Apple'", throwOnError: true)
+```
+
 ## Disjunctive vs conjunctive
 
 E-commerce facets usually want **disjunctive** logic: selecting two brands should show items from either brand, and both brand options should remain visible in the sidebar.
