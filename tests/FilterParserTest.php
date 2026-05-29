@@ -59,6 +59,51 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function apostrophe_in_value(): void
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties;
+        $props->keyword('team_id');
+        $props->keyword('company');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($props)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $docs = [
+            new Document([
+                'team_id' => '1',
+                'company' => "O'Brien GmbH",
+            ]),
+            new Document([
+                'team_id' => '1',
+                'company' => 'Acme',
+            ]),
+        ];
+
+        $index->merge($docs);
+
+        $parser = new FilterParser($props, false);
+
+        // Escaped apostrophe inside single quotes
+        $query = $parser->parse("team_id:'1' AND company:'O\\'Brien GmbH'");
+        $res = $this->sigmie->query($indexName, $query)->get();
+        $this->assertCount(1, $res->json('hits.hits'));
+        $this->assertSame("O'Brien GmbH", $res->json('hits.hits.0._source.company'));
+
+        // Apostrophe inside double quotes
+        $query = $parser->parse('team_id:\'1\' AND company:"O\'Brien GmbH"');
+        $res = $this->sigmie->query($indexName, $query)->get();
+        $this->assertCount(1, $res->json('hits.hits'));
+        $this->assertSame("O'Brien GmbH", $res->json('hits.hits.0._source.company'));
+    }
+
+    /**
+     * @test
+     */
     public function end_in_query(): void
     {
         $indexName = uniqid();
