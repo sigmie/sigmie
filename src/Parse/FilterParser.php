@@ -22,6 +22,15 @@ use Sigmie\Query\Queries\Text\Nested;
 
 class FilterParser extends Parser
 {
+    // Placeholder bytes used to neutralize quote characters that live *inside*
+    // a quoted value (escaped quotes like \' or an apostrophe inside "..."),
+    // so the parser's quote-parity counting only ever sees the real delimiters.
+    private const ESC_SINGLE = "\x01";
+
+    private const ESC_DOUBLE = "\x02";
+
+    private const ESC_BACKSLASH = "\x03";
+
     protected ?string $parentPath = null;
 
     public static int $maxNestingLevel = 32;
@@ -160,9 +169,36 @@ class FilterParser extends Parser
             return $bool;
         }
 
-        $filters = $this->parseString($filterString);
+        $filters = $this->parseString($this->maskQuotedValues($filterString));
 
         return $this->apply($filters);
+    }
+
+    // Replace every quote character that appears *inside* a quoted value with a
+    // placeholder byte, leaving only the delimiting quotes in place. This keeps
+    // the parser's quote-parity logic correct even when a value contains an
+    // escaped quote (team:'O\'Brien') or an apostrophe inside double quotes
+    // (team:"O'Brien"). Values are restored via unmaskQuotedValue() on extraction.
+    protected function maskQuotedValues(string $filter): string
+    {
+        return preg_replace_callback(
+            '/(["\'])((?:\\\\.|(?!\1).)*)\1/s',
+            fn (array $m): string => $m[1].str_replace(
+                ['\\\\', "\\'", '\\"', "'", '"'],
+                [self::ESC_BACKSLASH, self::ESC_SINGLE, self::ESC_DOUBLE, self::ESC_SINGLE, self::ESC_DOUBLE],
+                $m[2]
+            ).$m[1],
+            $filter
+        );
+    }
+
+    protected function unmaskQuotedValue(string $value): string
+    {
+        return str_replace(
+            [self::ESC_SINGLE, self::ESC_DOUBLE, self::ESC_BACKSLASH],
+            ["'", '"', '\\'],
+            $value
+        );
     }
 
     protected function apply(string|array $filters, string $operator = 'AND'): Boolean
@@ -244,7 +280,7 @@ class FilterParser extends Parser
             return $bool;
         }
 
-        $filters = $this->parseString($filterString);
+        $filters = $this->parseString($this->maskQuotedValues($filterString));
 
         return $this->apply($filters);
     }
@@ -370,7 +406,7 @@ class FilterParser extends Parser
 
         $field = $matches[1];
         $operator = $matches[2];
-        $value = trim($matches[3], '"\'');
+        $value = $this->unmaskQuotedValue(trim($matches[3], '"\''));
 
         $realFieldName = $this->handleFieldName($field);
         if (is_null($realFieldName)) {
@@ -399,6 +435,7 @@ class FilterParser extends Parser
         $values = array_map(fn ($value): string => trim($value, ' '), $values);
         $values = array_map(fn ($value): string => trim($value, "'"), $values);
         $values = array_map(fn ($value): string => trim($value, '"'), $values);
+        $values = array_map(fn ($value): string => $this->unmaskQuotedValue($value), $values);
 
         return new IDs($values);
     }
@@ -459,6 +496,8 @@ class FilterParser extends Parser
         $values = array_map(fn ($value): string => trim($value, "'"), $values);
         // Remove single quotes from values
         $values = array_map(fn ($value): string => trim($value, '"'), $values);
+        // Restore any quote characters that lived inside the values
+        $values = array_map(fn ($value): string => $this->unmaskQuotedValue($value), $values);
 
         $realFieldName = $this->handleFieldName($field);
 
@@ -489,6 +528,8 @@ class FilterParser extends Parser
         $value = trim($value, "'");
         // Remove quotes from value
         $value = trim($value, '"');
+        // Restore any quote characters that lived inside the value
+        $value = $this->unmaskQuotedValue($value);
 
         $realFieldName = $this->handleFieldName($field);
 
@@ -507,6 +548,8 @@ class FilterParser extends Parser
         $value = trim($value, "'");
         // Remove quotes from value
         $value = trim($value, '"');
+        // Restore any quote characters that lived inside the value
+        $value = $this->unmaskQuotedValue($value);
 
         $realFieldName = $this->handleFieldName($field);
 
