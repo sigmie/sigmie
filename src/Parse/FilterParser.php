@@ -143,8 +143,8 @@ class FilterParser extends Parser
         return $tokens;
     }
 
-    // Return the logical operator keyword at $position (longest match first) when
-    // it stands as its own word, otherwise null.
+    // Return the canonical logical operator keyword at $position (longest match
+    // first, case-insensitive) when it stands as its own word, otherwise null.
     protected function operatorAt(string $query, int $position): ?string
     {
         $isWord = fn (string $char): bool => ctype_alnum($char) || $char === '_';
@@ -152,7 +152,7 @@ class FilterParser extends Parser
         foreach (['AND NOT', 'AND', 'OR'] as $operator) {
             $length = strlen($operator);
 
-            if (substr($query, $position, $length) !== $operator) {
+            if (strcasecmp(substr($query, $position, $length), $operator) !== 0) {
                 continue;
             }
 
@@ -231,9 +231,10 @@ class FilterParser extends Parser
 
         $expr = trim($expr);
 
-        if (str_starts_with($expr, 'NOT ')) {
+        // A leading NOT (case-insensitive) followed by whitespace or a group.
+        if (preg_match('/^not(?=[\s(])/i', $expr)) {
             $boolean = new Boolean;
-            $boolean->mustNot()->query($this->parseFactor(substr($expr, 4)));
+            $boolean->mustNot()->query($this->parseFactor(substr($expr, 3)));
 
             return $boolean;
         }
@@ -405,9 +406,9 @@ class FilterParser extends Parser
             preg_match('/[\w\.]+:\*$/', $string) => $this->handleHas($string),
             preg_match('/[\w\.]+:true$/', $string) => $this->handleIs($string),
             preg_match('/[\w\.]+:false$/', $string) => $this->handleIsNot($string),
-            preg_match('/^([\w\.]+)([<>]=?)(.+)/', $string) => $this->handleRange($string),
-            preg_match('/^([\w\.]+)([<>]=?)(\'.+\')/', $string) => $this->handleRange($string),
-            preg_match('/^([\w\.]+)([<>]=?)(\".+\")/', $string) => $this->handleRange($string),
+            preg_match('/^([\w\.]+)([<>]=?)(?!=)(.+)/', $string) => $this->handleRange($string),
+            preg_match('/^([\w\.]+)([<>]=?)(?!=)(\'.+\')/', $string) => $this->handleRange($string),
+            preg_match('/^([\w\.]+)([<>]=?)(?!=)(\".+\")/', $string) => $this->handleRange($string),
             preg_match('/^_id:\[.*\]/', $string) => $this->handleIDs($string),
             preg_match('/^_id:[\'"]?[a-z_A-Z0-9]+[\'"]?$/', $string) => $this->handleID($string),
             preg_match('/[\w\.]+:\[.*\]/', $string) => $this->handleIn($string),
@@ -515,7 +516,7 @@ class FilterParser extends Parser
 
     public function handleRange(string $range): ?Query
     {
-        preg_match('/^([\w\.]+)([<>]=?)(("|\')?.+("|\')?)/', $range, $matches);
+        preg_match('/^([\w\.]+)([<>]=?)(?!=)(("|\')?.+("|\')?)/', $range, $matches);
 
         $field = $matches[1];
         $operator = $matches[2];

@@ -242,6 +242,15 @@ class FilterParserBatteryTest extends TestCase
             ["status:'pending' OR status:'active' AND active:false", ['B', 'C', 'F']],
             ["NOT status:'active' AND active:true", ['C', 'F']],
             ["status:'active' OR NOT active:true", ['A', 'B', 'D', 'E']],
+            // --- lowercase / mixed-case logical operators ---
+            ["status:'active' and active:true", ['A', 'E']],
+            ["status:'closed' or status:'pending'", ['C', 'D', 'F']],
+            ["not status:'active'", ['C', 'D', 'F']],
+            ["status:'active' and not tags:'vip'", []],
+            ["status:'active' Or status:'closed'", ['A', 'B', 'D', 'E']],
+            ["not (status:'active' or status:'pending')", ['D']],
+            // --- malformed range operator resolves to nothing (not a bogus value) ---
+            ['price>=', []],
             // --- empty / whitespace ---
             ["name:''", []],
             ["  status:'active'  ", ['A', 'B', 'E']],
