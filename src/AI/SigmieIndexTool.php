@@ -84,6 +84,14 @@ class SigmieIndexTool implements Tool
 
     public function handle(Request $request): string
     {
+        return json_encode($this->result($request), JSON_PRETTY_PRINT);
+    }
+
+    /**
+     * The search result as an array, for callers that want data instead of the JSON string handle() returns.
+     */
+    public function result(Request $request): array
+    {
         $search = $this->index->newSearch()
             ->queryString((string) ($request['query'] ?? ''))
             ->page(
@@ -132,7 +140,7 @@ class SigmieIndexTool implements Tool
             $result['facets'] = $response->json('facets');
         }
 
-        return json_encode($result, JSON_PRETTY_PRINT);
+        return $result;
     }
 
     private function collectFieldDescriptions(array $fields, string $prefix = ''): array
