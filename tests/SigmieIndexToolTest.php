@@ -781,7 +781,7 @@ class SigmieIndexToolTest extends TestCase
         ])), true);
 
         $this->assertArrayHasKey('error', $result);
-        $this->assertStringContainsString("field:asc", $result['error']);
+        $this->assertStringContainsString('field:asc', $result['error']);
     }
 
     /**
