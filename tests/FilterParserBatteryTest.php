@@ -241,7 +241,7 @@ class FilterParserBatteryTest extends TestCase
             ["tags:'vip' AND active:true OR tags:'b2b'", ['A', 'C', 'E']],
             ["status:'pending' OR status:'active' AND active:false", ['B', 'C', 'F']],
             ["NOT status:'active' AND active:true", ['C', 'F']],
-            ['status:\'active\' OR NOT active:true', ['A', 'B', 'D', 'E']],
+            ["status:'active' OR NOT active:true", ['A', 'B', 'D', 'E']],
             // --- empty / whitespace ---
             ["name:''", []],
             ["  status:'active'  ", ['A', 'B', 'E']],

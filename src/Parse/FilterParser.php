@@ -94,6 +94,7 @@ class FilterParser extends Parser
                 if ($char === $quoteChar) {
                     $inQuote = false;
                 }
+
                 $i++;
 
                 continue;
