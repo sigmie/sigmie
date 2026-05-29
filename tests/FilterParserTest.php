@@ -511,6 +511,125 @@ class FilterParserTest extends TestCase
     /**
      * @test
      */
+    public function geo_distance_returns_points_within_radius(): void
+    {
+        $indexName = uniqid();
+
+        $properties = new NewProperties;
+        $properties->geoPoint('location');
+
+        $index = $this->sigmie->newIndex($indexName)->properties($properties)->create();
+        $index = $this->sigmie->collect($indexName, true);
+
+        $index->merge([
+            new Document(['location' => ['lat' => 52.52, 'lon' => 13.40]], 'berlin'),
+            new Document(['location' => ['lat' => 48.14, 'lon' => 11.58]], 'munich'),  // ~504 km from Berlin
+            new Document(['location' => ['lat' => 48.86, 'lon' => 2.35]], 'paris'),    // ~878 km
+            new Document(['location' => ['lat' => 40.71, 'lon' => -74.01]], 'nyc'),    // ~6385 km
+            new Document(['location' => ['lat' => 35.68, 'lon' => 139.65]], 'tokyo'),  // ~8920 km
+        ]);
+
+        $parser = new FilterParser($properties, false);
+
+        $within = function (string $filter) use ($parser, $indexName): array {
+            $hits = $this->sigmie->query($indexName, $parser->parse($filter))->get()->json('hits.hits');
+            $ids = array_map(fn (array $h): string => $h['_id'], $hits);
+            sort($ids);
+
+            return $ids;
+        };
+
+        $this->assertSame(['berlin'], $within('location:100km[52.52,13.40]'));
+        $this->assertSame(['berlin', 'munich'], $within('location:600km[52.52,13.40]'));
+        $this->assertSame(['berlin', 'munich', 'paris'], $within('location:1000km[52.52,13.40]'));
+        $this->assertSame(['berlin', 'munich', 'nyc', 'paris'], $within('location:7000km[52.52,13.40]'));
+        $this->assertSame(['berlin', 'munich', 'nyc', 'paris', 'tokyo'], $within('location:10000km[52.52,13.40]'));
+        // combined with a boolean operator
+        $this->assertSame(['munich', 'paris'], $within('location:1000km[52.52,13.40] AND NOT location:100km[52.52,13.40]'));
+    }
+
+    /**
+     * @test
+     */
+    public function multi_level_nested_objects(): void
+    {
+        $indexName = uniqid();
+
+        $properties = new NewProperties;
+        $properties->nested('user', function (NewProperties $user): void {
+            $user->caseSensitiveKeyword('name');
+            $user->nested('address', fn (NewProperties $address) => $address->caseSensitiveKeyword('city'));
+        });
+
+        $index = $this->sigmie->newIndex($indexName)->properties($properties)->create();
+        $index = $this->sigmie->collect($indexName, true);
+
+        $index->merge([
+            new Document(['user' => ['name' => 'Bob', 'address' => ['city' => 'NYC']]], 'u1'),
+            new Document(['user' => ['name' => 'Alice', 'address' => ['city' => 'LA']]], 'u2'),
+            new Document(['user' => ['name' => 'Bob', 'address' => ['city' => 'LA']]], 'u3'),
+        ]);
+
+        $parser = new FilterParser($properties, false);
+
+        $ids = function (string $filter) use ($parser, $indexName): array {
+            $hits = $this->sigmie->query($indexName, $parser->parse($filter))->get()->json('hits.hits');
+            $r = array_map(fn (array $h): string => $h['_id'], $hits);
+            sort($r);
+
+            return $r;
+        };
+
+        $this->assertSame(['u1'], $ids("user:{address:{city:'NYC'}}"));
+        $this->assertSame(['u2', 'u3'], $ids("user:{address:{city:'LA'}}"));
+        $this->assertSame(['u3'], $ids("user:{name:'Bob' AND address:{city:'LA'}}"));
+        $this->assertSame(['u2', 'u3'], $ids("NOT user:{address:{city:'NYC'}}"));
+    }
+
+    /**
+     * @test
+     *
+     * facetFilter() must apply every clause EXCEPT one on the facet field
+     * itself (which is matched-all so the aggregation still sees all buckets
+     * for that field).
+     */
+    public function facet_filter_ignores_the_facet_field_clause(): void
+    {
+        $indexName = uniqid();
+
+        $properties = new NewProperties;
+        $properties->caseSensitiveKeyword('color');
+        $properties->caseSensitiveKeyword('size');
+
+        $index = $this->sigmie->newIndex($indexName)->properties($properties)->create();
+        $index = $this->sigmie->collect($indexName, true);
+
+        $index->merge([
+            new Document(['color' => 'red', 'size' => 'S'], 'r1'),
+            new Document(['color' => 'red', 'size' => 'L'], 'r2'),
+            new Document(['color' => 'blue', 'size' => 'S'], 'b1'),
+            new Document(['color' => 'green', 'size' => 'L'], 'g1'),
+        ]);
+
+        $props = $properties->get();
+        $colorField = $props->get('color');
+
+        $parser = new FilterParser($props);
+
+        // Filtering by color while faceting on color: the color clause is
+        // ignored, only the size clause applies -> all S documents.
+        $query = $parser->facetFilter($colorField, "color:'red' AND size:'S'");
+
+        $hits = $this->sigmie->query($indexName, $query)->get()->json('hits.hits');
+        $returned = array_map(fn (array $h): string => $h['_id'], $hits);
+        sort($returned);
+
+        $this->assertSame(['b1', 'r1'], $returned);
+    }
+
+    /**
+     * @test
+     */
     public function end_in_query(): void
     {
         $indexName = uniqid();
