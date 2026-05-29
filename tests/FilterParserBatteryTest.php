@@ -213,6 +213,13 @@ class FilterParserBatteryTest extends TestCase
             ['company:"O\'Brien GmbH" AND status:\'active\'', ['A']],
             ['company:"L\'Oréal" OR company:\'Acme\'', ['B', 'C']],
             ['company:"O\'Brien GmbH" AND name:\'Smith, John\'', ['A']],
+            // --- arrays with spaces inside the brackets ---
+            ["tags:[ 'vip' , 'gold' ]", ['A', 'B', 'E']],
+            ["tags:[ 'a, b' ]", ['A']],
+            ["status:[ 'active' , 'closed' ]", ['A', 'B', 'D', 'E']],
+            // --- between with a negative lower bound (parsed as a range) ---
+            ['qty:-10..200', ['A', 'B', 'C', 'D', 'E', 'F']],
+            ['price:0..50', ['C', 'D']],
             // --- NOT as the LEFT operand (must not leak into the join) ---
             ['(NOT price>100) AND active:true', ['A', 'C']],
             ['NOT price>100 AND active:true', ['A', 'C']],

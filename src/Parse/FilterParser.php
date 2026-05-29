@@ -146,9 +146,21 @@ class FilterParser extends Parser
             // Remove spaces around structural characters, but never inside a
             // quoted value (so name:'Smith, John' keeps its space).
             // eg. {user: { id:'465'}} becomes {user:{id:'465'}}
+            // For brackets only the *inside* spaces are removed (after [ and
+            // before ]) so a missing operator after a list still errors.
             $filter = preg_replace_callback(
-                '/(["\'])[^"\']*\1|\s*([{}:,])\s*/',
-                fn ($matches): string => ($matches[1] ?? '') !== '' ? $matches[0] : $matches[2],
+                '/(["\'])[^"\']*\1|\s*([{}:,])\s*|(\[)\s*|\s*(\])/',
+                function (array $m): string {
+                    if (($m[1] ?? '') !== '') {
+                        return $m[0];
+                    }
+
+                    return match (true) {
+                        ($m[2] ?? '') !== '' => $m[2],
+                        ($m[3] ?? '') !== '' => '[',
+                        default => ']',
+                    };
+                },
                 $filter
             );
 
@@ -339,7 +351,7 @@ class FilterParser extends Parser
             preg_match('/^[\w\.]+:.*\*.*$/', $string) => $this->handleWildcard($string),
             preg_match('/[\w\.]+:".*"/', $string) => $this->handleTerm($string),
             preg_match('/[\w\.]+:\'.*\'/', $string) => $this->handleTerm($string),
-            preg_match('/^([\w\.]+):(\d+(.+)?)\.\.(\d+(.+)?)$/', $string) => $this->handleBetween($string),
+            preg_match('/^([\w\.]+):(-?\d+(.+)?)\.\.(-?\d+(.+)?)$/', $string) => $this->handleBetween($string),
             preg_match('/^[\w\.]+:\d+(km|m|cm|mm|mi|yd|ft|in|nmi)\[\-?\d+(\.\d+)?\,\-?\d+(\.\d+)?\]/', $string) => $this->handleGeo($string),
             preg_match('/[\w\.]+:.*$/', $string) => $this->handleTerm($string),
             default => null
