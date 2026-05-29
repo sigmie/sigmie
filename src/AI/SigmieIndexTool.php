@@ -65,7 +65,7 @@ class SigmieIndexTool implements Tool
             ."Negation: NOT field:'value'\n"
             ."Grouping: (field:'a' OR field:'b') AND other>10\n"
             ."Exists check: field:*\n"
-            ."Sort: field:asc field:desc _score (space-separated)\n"
+            ."Sort: space-separated list of 'field:asc' or 'field:desc' — the direction goes after a COLON (e.g. 'price:asc name:desc'), plus '_score'. A space before the direction ('price asc') is INVALID.\n"
             ."Geo sort: field[lat,lon]:km:asc\n"
             ."Facets: field1 field2:20 (space-separated, optional :size for keywords or :interval for numbers)\n"
             ."Discovering valid values: if you do not know a field's valid values, call the companion value-discovery tool (discover_filter_values) with the field name and an optional query before filtering.");

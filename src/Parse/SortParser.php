@@ -29,6 +29,20 @@ class SortParser extends Parser
                 continue;
             }
 
+            // A bare "asc"/"desc" token means the direction was written with a space
+            // (SQL-style "field asc") instead of a colon. Point to the correct form so
+            // the caller (or an agent) can fix it rather than seeing "Field asc does not exist".
+            if (in_array($match, ['asc', 'desc'], true)) {
+                $this->handleError(sprintf(
+                    "Invalid sort '%s': attach the direction to its field with a colon, e.g. 'field:%s' (not 'field %s'). Use 'field:asc' or 'field:desc', and separate multiple sorts with spaces, e.g. 'price:asc name:desc'.",
+                    $string,
+                    $match,
+                    $match
+                ), ['token' => $match]);
+
+                continue;
+            }
+
             // Handle _score with direction
             if (str_starts_with($match, '_score:')) {
                 $direction = substr($match, 7); // Remove '_score:'

@@ -774,14 +774,14 @@ class SigmieIndexToolTest extends TestCase
 
         // SQL-style "price asc" (a space instead of "price:asc") makes the sort parser throw.
         // handle() must return it as an {"error": ...} the agent can correct, not propagate
-        // an exception that aborts the turn.
+        // an exception that aborts the turn — and the message must show the correct syntax.
         $result = json_decode((new SigmieIndexTool($index))->handle(new Request([
             'query' => '',
             'sort' => 'price asc',
         ])), true);
 
         $this->assertArrayHasKey('error', $result);
-        $this->assertNotEmpty($result['error']);
+        $this->assertStringContainsString('field:asc', $result['error']);
     }
 
     /**

@@ -746,4 +746,22 @@ class SortParserTest extends TestCase
         $this->assertTrue($hits[1]['_source']['created_at'] === '2023-05-07T12:38:29.000000Z');
         $this->assertTrue($hits[2]['_source']['created_at'] === '2023-06-07T12:38:29.000000Z');
     }
+
+    /**
+     * @test
+     */
+    public function space_separated_direction_throws_a_helpful_error(): void
+    {
+        $blueprint = new NewProperties;
+        $blueprint->number('price');
+
+        $parser = new SortParser($blueprint());
+
+        // SQL-style "price asc" (a space instead of "price:asc") used to throw the misleading
+        // "Field asc does not exist." — now it teaches the correct colon form.
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessageMatches('/field:asc/');
+
+        $parser->parse('price asc');
+    }
 }
