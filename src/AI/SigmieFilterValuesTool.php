@@ -44,10 +44,13 @@ class SigmieFilterValuesTool implements Tool
 
     public function schema(JsonSchema $schema): array
     {
+        // Optional params are `nullable()->required()` so the schema is also valid under
+        // OpenAI's strict function-calling. Callers that don't want to scope or change the
+        // limit simply pass null.
         return [
             'field' => $schema->string()->description('Facetable field to list values for (from the search tool field list)')->required(),
-            'filters' => $schema->string()->description('Optional filter expression, same DSL as the search tool, to narrow values (e.g. "field:nav*")'),
-            'limit' => $schema->integer()->description('Max values to return')->default(self::DEFAULT_LIMIT),
+            'filters' => $schema->string()->description('Filter expression to narrow values (pass null for none, same DSL as the search tool, e.g. "field:nav*")')->nullable()->required(),
+            'limit' => $schema->integer()->description('Max values to return (default '.self::DEFAULT_LIMIT.')')->default(self::DEFAULT_LIMIT)->nullable()->required(),
         ];
     }
 

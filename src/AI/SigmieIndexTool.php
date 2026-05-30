@@ -63,14 +63,17 @@ class SigmieIndexTool implements Tool
 
     public function schema(JsonSchema $schema): array
     {
+        // Every parameter is declared `nullable()->required()` so the schema works under
+        // OpenAI's strict function-calling (which demands every property appear in `required`)
+        // AND keeps the same UX for callers that simply omit a value (pass null instead).
         return [
             'query' => $schema->string()->description('Search query text')->required(),
-            'filters' => $schema->string()->description('Filter expression'),
-            'sort' => $schema->string()->description('Sort expression'),
-            'facets' => $schema->string()->description('Space-separated facet fields'),
-            'facet_filters' => $schema->string()->description('Active facet filter values'),
-            'per_page' => $schema->integer()->description('Number of results per page')->default(10),
-            'page' => $schema->integer()->description('Page number')->default(1),
+            'filters' => $schema->string()->description('Filter expression (pass null when not filtering)')->nullable()->required(),
+            'sort' => $schema->string()->description('Sort expression (pass null for relevance)')->nullable()->required(),
+            'facets' => $schema->string()->description('Space-separated facet fields (pass null when not faceting)')->nullable()->required(),
+            'facet_filters' => $schema->string()->description('Active facet filter values (pass null when no facet filters)')->nullable()->required(),
+            'per_page' => $schema->integer()->description('Number of results per page (default 10)')->default(10)->nullable()->required(),
+            'page' => $schema->integer()->description('Page number (default 1)')->default(1)->nullable()->required(),
         ];
     }
 

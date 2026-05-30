@@ -902,4 +902,106 @@ class SigmieIndexToolTest extends TestCase
             'filters' => '(brand:',
         ]));
     }
+
+    /**
+     * OpenAI's strict function-calling rejects schemas with optional properties. To stay
+     * compatible across providers, every AI tool in Sigmie marks each optional param both
+     * `required()` AND `nullable()` — so the property is in `required[]` (OpenAI happy) and
+     * the caller can pass null when it doesn't want a value (Anthropic-equivalent UX).
+     *
+     * @test
+     */
+    public function search_tool_schema_marks_every_property_required_for_openai_strict(): void
+    {
+        $index = $this->createProductIndex();
+
+        $schema = (new SigmieIndexTool($index))->schema(new \Sigmie\Tests\Stubs\FakeJsonSchema);
+
+        $expected = ['query', 'filters', 'sort', 'facets', 'facet_filters', 'per_page', 'page'];
+        $this->assertSame($expected, array_keys($schema));
+
+        foreach ($schema as $name => $prop) {
+            $this->assertTrue(
+                $prop->required,
+                "Property '{$name}' must be required() for OpenAI strict-mode function calling."
+            );
+        }
+
+        // `query` stays a plain required string; everything else is nullable so the LLM can pass null.
+        $this->assertFalse($schema['query']->nullable, "Property 'query' must NOT be nullable.");
+        foreach (['filters', 'sort', 'facets', 'facet_filters', 'per_page', 'page'] as $name) {
+            $this->assertTrue(
+                $schema[$name]->nullable,
+                "Optional property '{$name}' must be nullable() for OpenAI strict-mode function calling."
+            );
+        }
+
+        // Defaults on the int params are still declared so the model knows the fallback.
+        $this->assertSame(10, $schema['per_page']->defaultValue);
+        $this->assertSame(1, $schema['page']->defaultValue);
+    }
+
+    /**
+     * @test
+     */
+    public function filter_values_tool_schema_is_openai_strict_compatible(): void
+    {
+        $index = $this->createProductIndex();
+
+        $schema = (new SigmieFilterValuesTool($index))->schema(new \Sigmie\Tests\Stubs\FakeJsonSchema);
+
+        $this->assertSame(['field', 'filters', 'limit'], array_keys($schema));
+
+        foreach ($schema as $name => $prop) {
+            $this->assertTrue($prop->required, "Property '{$name}' must be required().");
+        }
+
+        $this->assertFalse($schema['field']->nullable);
+        $this->assertTrue($schema['filters']->nullable);
+        $this->assertTrue($schema['limit']->nullable);
+    }
+
+    /**
+     * @test
+     */
+    public function sample_documents_tool_schema_is_openai_strict_compatible(): void
+    {
+        $index = $this->createProductIndex();
+
+        $schema = (new SigmieSampleDocumentsTool($index))->schema(new \Sigmie\Tests\Stubs\FakeJsonSchema);
+
+        $this->assertSame(['limit'], array_keys($schema));
+        $this->assertTrue($schema['limit']->required);
+        $this->assertTrue($schema['limit']->nullable);
+        $this->assertSame(5, $schema['limit']->defaultValue);
+    }
+
+    /**
+     * Sanity check: handle() still works when the LLM passes null for every optional param,
+     * which is what an OpenAI strict-mode caller does when it has no value to supply.
+     *
+     * @test
+     */
+    public function handle_accepts_null_for_every_optional_param(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
+        ], refresh: true);
+
+        $result = json_decode((new SigmieIndexTool($index))->handle(new Request([
+            'query' => 'iPhone',
+            'filters' => null,
+            'sort' => null,
+            'facets' => null,
+            'facet_filters' => null,
+            'per_page' => null,
+            'page' => null,
+        ])), true);
+
+        $this->assertArrayNotHasKey('error', $result);
+        $this->assertArrayHasKey('hits', $result);
+        $this->assertGreaterThan(0, $result['total']);
+    }
 }
