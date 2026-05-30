@@ -192,4 +192,46 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertArrayHasKey('error', $decoded);
         $this->assertStringContainsString('not_a_field', $decoded['error']);
     }
+
+    /**
+     * @test
+     */
+    public function result_accepts_a_named_range_and_timezone_offset(): void
+    {
+        $today = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d');
+
+        $index = $this->createSalesIndex();
+        $index->merge([new Document(['created_at' => $today, 'amount' => 25, 'product' => 'C'])], refresh: true);
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'kpi',
+            'date_field' => 'created_at',
+            'metric' => 'count',
+            'range' => 'this_month',
+            'timezone_offset' => 0,
+        ]));
+
+        // Only the just-inserted current-month doc; the 2024 seed docs are out of range.
+        $this->assertEquals(1, $result['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function unknown_range_returns_a_correctable_error(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $json = (new SigmieAnalyticsTool($index))->handle(new Request([
+            'widget' => 'kpi',
+            'date_field' => 'created_at',
+            'metric' => 'count',
+            'range' => 'since_forever',
+        ]));
+
+        $decoded = json_decode($json, true);
+
+        $this->assertArrayHasKey('error', $decoded);
+        $this->assertStringContainsString('since_forever', $decoded['error']);
+    }
 }

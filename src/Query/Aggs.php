@@ -139,9 +139,10 @@ class Aggs implements AggsInterface
         string $name,
         string $field,
         int $buckets,
-        MinimumInterval $minimumInterval = MinimumInterval::Second
+        MinimumInterval $minimumInterval = MinimumInterval::Second,
+        ?string $timeZone = null,
     ): AutoDateHistogram {
-        $aggregation = new AutoDateHistogram($name, $field, $buckets, $minimumInterval);
+        $aggregation = new AutoDateHistogram($name, $field, $buckets, $minimumInterval, $timeZone);
 
         $this->aggs[] = $aggregation;
 
@@ -155,8 +156,9 @@ class Aggs implements AggsInterface
         int $minDocCount = 0,
         ?array $extendedBounds = null,
         ?string $format = null,
+        ?string $timeZone = null,
     ): DateHistogram {
-        $aggregation = new DateHistogram($name, $field, $interval, $minDocCount, $extendedBounds, $format);
+        $aggregation = new DateHistogram($name, $field, $interval, $minDocCount, $extendedBounds, $format, $timeZone);
 
         $this->aggs[] = $aggregation;
 

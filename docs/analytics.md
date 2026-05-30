@@ -154,7 +154,49 @@ $orders->analytics('created_at')
 
 ## Filtering and the time window
 
-`filters()` accepts the same [filter-parser](filter-parser.md) DSL as search, applied across every widget. `from()` / `to()` set the window; each widget scopes itself to it (a KPI delta also reaches back one window for its comparison).
+`filters()` accepts the same [filter-parser](filter-parser.md) DSL as search, applied across every widget. `filterQuery()` ANDs a hard query clause (a query object) into the same filter context — exactly like [`NewSearch::filterQuery()`](search.md):
+
+```php
+use Sigmie\Query\Queries\Term\Range;
+
+$orders->analytics('created_at')
+    ->filters("status:'paid'")
+    ->filterQuery(new Range('amount', ['>=' => 100]))   // composed with the DSL above
+    ->kpi('big_orders', Metric::Sum, 'amount')
+    ->get();
+```
+
+`from()` / `to()` set the window; each widget scopes itself to it (a KPI delta also reaches back one window for its comparison).
+
+## Timezone
+
+Analytics is UTC by default — which silently mis-buckets daily/weekly/monthly charts for users elsewhere (a Tokyo sale just after local midnight lands in the previous UTC day). Set the timezone and Elasticsearch aligns bucket boundaries to local time and handles DST:
+
+```php
+$orders->analytics('created_at')
+    ->timezoneOffset(540)             // minutes east of UTC: Tokyo = 540, New York = -300, India = 330
+    ->range(Period::ThisMonth)
+    ->trend('sales', Metric::Sum, 'amount', CalendarInterval::Day)
+    ->get();
+```
+
+From a browser, pass `-new Date().getTimezoneOffset()` (its sign is inverted). Minutes — not hours — so half-hour zones like India (`330`) and Nepal (`345`) work. For DST-correctness across a transition, pass an IANA name instead: `->timezone('Asia/Tokyo')`.
+
+The window edges follow too: build `from()`/`to()` as `DateTimeImmutable` in the user's zone (their offset rides along in the ISO string), or use a named range, which is resolved in the configured timezone.
+
+## Named ranges
+
+`range()` sets the window to a relative period, resolved in the configured timezone to absolute instants (so the query stays cacheable). Weeks start Monday (ISO).
+
+```php
+use Sigmie\Analytics\Enums\Period;
+
+$orders->analytics('created_at')->timezoneOffset(540)->range(Period::Last7Days);
+```
+
+`Today, Yesterday, ThisWeek, LastWeek, ThisMonth, LastMonth, ThisQuarter, LastQuarter, ThisYear, LastYear, Last7Days, Last30Days, Last90Days`.
+
+A **calendar** range also makes `kpiDelta` compare against the *previous instance* of that period rather than an equal-length window — `ThisMonth` → vs last calendar month, `ThisWeek` → vs last week. Raw `from()`/`to()` keep the equal-duration comparison.
 
 ## Analytics for AI agents
 
@@ -177,4 +219,4 @@ public function tools(): array
 }
 ```
 
-The agent supplies the `date_field` (validated against the index's date fields) and the `metric`/`field` (from its numeric fields). As with the other tools, the optional `$baseFilter` is server-controlled scoping — AND-ed into every query and never taken from the agent — so an agent can only ever see its own slice of the data.
+The agent supplies the `date_field` (validated against the index's date fields), the `metric`/`field` (from its numeric fields), and optionally a `range` (`this_month`, `last_7_days`, …) and `timezone_offset` (minutes east of UTC) so charts land in the user's local time. As with the other tools, the optional `$baseFilter` is server-controlled scoping — AND-ed into every query and never taken from the agent — so an agent can only ever see its own slice of the data.

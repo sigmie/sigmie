@@ -26,6 +26,7 @@ class Trend extends Widget
         protected Metric $metric,
         protected string $field,
         protected CalendarInterval $interval,
+        protected ?string $timeZone = null,
     ) {
         parent::__construct($name, $dateField, $from, $to, $dateFormat);
     }
@@ -33,7 +34,7 @@ class Trend extends Widget
     public function toRaw(): array
     {
         return $this->scoped($this->name, $this->from, $this->to, function (Aggs $aggs): void {
-            $aggs->dateHistogram('series', $this->dateField, $this->interval)
+            $aggs->dateHistogram('series', $this->dateField, $this->interval, timeZone: $this->timeZone)
                 ->aggregate(fn (Aggs $sub) => $this->metric->apply($sub, 'metric', $this->field));
         })->toRaw();
     }

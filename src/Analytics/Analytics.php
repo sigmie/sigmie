@@ -7,7 +7,9 @@ namespace Sigmie\Analytics;
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
+use DateTimeZone;
 use Sigmie\Analytics\Enums\Metric;
+use Sigmie\Analytics\Enums\Period;
 use Sigmie\Analytics\Widgets\Breakdown;
 use Sigmie\Analytics\Widgets\Cumulative;
 use Sigmie\Analytics\Widgets\Distribution;
@@ -22,6 +24,7 @@ use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Aggs;
+use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\NewQuery;
 use Sigmie\Query\Queries\Compound\Boolean;
 
@@ -48,11 +51,20 @@ class Analytics
 
     protected string $filters = '';
 
+    /**
+     * @var list<QueryClause>
+     */
+    protected array $filterQueries = [];
+
     protected DateTimeInterface $from;
 
     protected DateTimeInterface $to;
 
     protected string $dateFormat = DateTimeInterface::ATOM;
+
+    protected ?string $timeZone = null;
+
+    protected ?Period $period = null;
 
     protected ?Properties $resolvedProperties = null;
 
@@ -88,9 +100,70 @@ class Analytics
         return $this;
     }
 
+    /**
+     * The index mapping, so the filter DSL is typed and keyword-like fields resolve to their
+     * `.keyword` aggregatable path. Set automatically by SigmieIndex::analytics(); pass it
+     * explicitly when entering through Sigmie::analytics().
+     */
+    public function properties(NewProperties $properties): static
+    {
+        $this->properties = $properties;
+        $this->resolvedProperties = null;
+
+        return $this;
+    }
+
     public function filters(string $filters): static
     {
         $this->filters = $filters;
+
+        return $this;
+    }
+
+    /**
+     * AND a hard query clause into every widget's filter context, alongside the string filters().
+     * Mirrors NewSearch::filterQuery() for callers composing a query object instead of the DSL.
+     */
+    public function filterQuery(QueryClause $query): static
+    {
+        $this->filterQueries[] = $query;
+
+        return $this;
+    }
+
+    /**
+     * Set the timezone as an offset in minutes east of UTC (Tokyo = 540, New York = -300, India = 330).
+     * From a browser, pass `-new Date().getTimezoneOffset()`. Aligns calendar buckets and named
+     * ranges to local time. For DST-correctness across a transition, prefer {@see timezone()}.
+     */
+    public function timezoneOffset(int $minutes): static
+    {
+        $sign = $minutes < 0 ? '-' : '+';
+        $abs = abs($minutes);
+
+        return $this->timezone(sprintf('%s%02d:%02d', $sign, intdiv($abs, 60), $abs % 60));
+    }
+
+    /**
+     * Set the timezone as an Elasticsearch time zone — an IANA name ('Asia/Tokyo', DST-correct)
+     * or a fixed offset ('+09:00').
+     */
+    public function timezone(string $timeZone): static
+    {
+        $this->timeZone = $timeZone;
+
+        return $this;
+    }
+
+    /**
+     * Set the window to a named relative period ("this month", "last 7 days"), resolved in the
+     * configured timezone. A calendar period also makes a kpiDelta compare against the previous
+     * instance of that period (this month vs last month).
+     */
+    public function range(Period $period): static
+    {
+        [$this->from, $this->to] = $period->resolve(new DateTimeImmutable('now', new DateTimeZone($this->timeZone ?? 'UTC')));
+        $this->period = $period;
 
         return $this;
     }
@@ -102,22 +175,24 @@ class Analytics
 
     public function kpiDelta(string $as, Metric $metric, string $field = ''): static
     {
-        return $this->add(new KpiDelta($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field)));
+        [$previousFrom, $previousTo] = $this->previousWindow();
+
+        return $this->add(new KpiDelta($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $previousFrom, $previousTo));
     }
 
     public function trend(string $as, Metric $metric, string $field = '', CalendarInterval $interval = CalendarInterval::Day): static
     {
-        return $this->add(new Trend($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval));
+        return $this->add(new Trend($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone));
     }
 
     public function cumulative(string $as, Metric $metric, string $field = '', CalendarInterval $interval = CalendarInterval::Day): static
     {
-        return $this->add(new Cumulative($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval));
+        return $this->add(new Cumulative($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone));
     }
 
     public function groupedTrend(string $as, Metric $metric, string $field, string $groupBy, CalendarInterval $interval = CalendarInterval::Day, int $limit = 5): static
     {
-        return $this->add(new GroupedTrend($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $this->aggregatableField($groupBy), $interval, $limit));
+        return $this->add(new GroupedTrend($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $this->aggregatableField($groupBy), $interval, $limit, $this->timeZone));
     }
 
     public function breakdown(string $as, string $groupBy, Metric $metric, string $field = '', int $limit = 10, string $direction = 'desc'): static
@@ -157,13 +232,18 @@ class Analytics
     protected function run(): array
     {
         $filters = $this->filters;
+        $filterQueries = $this->filterQueries;
 
         $search = $this->query
             ->properties($this->properties)
-            ->bool(function (Boolean $boolean) use ($filters): void {
-                $filters !== ''
-                    ? $boolean->filter()->parse($filters)
-                    : $boolean->filter()->matchAll();
+            ->bool(function (Boolean $boolean) use ($filters, $filterQueries): void {
+                $filter = $boolean->filter();
+
+                $filters !== '' ? $filter->parse($filters) : $filter->matchAll();
+
+                foreach ($filterQueries as $query) {
+                    $filter->query($query);
+                }
             })
             ->size(0)
             ->aggregate(function (Aggs $aggs): void {
@@ -173,6 +253,27 @@ class Analytics
             });
 
         return $search->response()->json('aggregations') ?? [];
+    }
+
+    /**
+     * The window to compare a kpiDelta against: the previous instance of a named calendar period
+     * (this month → last month), or the immediately preceding equal-duration window otherwise.
+     *
+     * @return array{0: DateTimeInterface, 1: DateTimeInterface} [previousFrom, previousTo]
+     */
+    protected function previousWindow(): array
+    {
+        $previousTo = DateTimeImmutable::createFromInterface($this->from);
+
+        $modifier = $this->period?->previousModifier();
+
+        if ($modifier !== null) {
+            return [$previousTo->modify($modifier), $previousTo];
+        }
+
+        $length = $this->to->getTimestamp() - $this->from->getTimestamp();
+
+        return [$previousTo->setTimestamp($this->from->getTimestamp() - $length), $previousTo];
     }
 
     protected function add(Widget $widget): static

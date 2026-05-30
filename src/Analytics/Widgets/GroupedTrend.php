@@ -27,6 +27,7 @@ class GroupedTrend extends Widget
         protected string $groupBy,
         protected CalendarInterval $interval,
         protected int $limit,
+        protected ?string $timeZone = null,
     ) {
         parent::__construct($name, $dateField, $from, $to, $dateFormat);
     }
@@ -37,7 +38,7 @@ class GroupedTrend extends Widget
             $aggs->terms('groups', $this->groupBy)
                 ->size($this->limit)
                 ->aggregate(function (Aggs $sub): void {
-                    $sub->dateHistogram('series', $this->dateField, $this->interval)
+                    $sub->dateHistogram('series', $this->dateField, $this->interval, timeZone: $this->timeZone)
                         ->aggregate(fn (Aggs $m) => $this->metric->apply($m, 'metric', $this->field));
                 });
         })->toRaw();

@@ -12,6 +12,7 @@ use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
 use Sigmie\Analytics\Analytics;
 use Sigmie\Analytics\Enums\Metric;
+use Sigmie\Analytics\Enums\Period;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\SigmieIndex;
 
@@ -67,6 +68,8 @@ class SigmieAnalyticsTool implements Tool
 
         $description .= "\n\nMetrics (`metric`): sum, avg, min, max, count, unique (distinct), median.";
         $description .= "\n\nIntervals (`interval`): minute, hour, day, week, month, quarter, year.";
+        $description .= "\n\nRelative window (`range`, preferred over from/to): today, yesterday, this_week, last_week, this_month, last_month, this_quarter, last_quarter, this_year, last_year, last_7_days, last_30_days, last_90_days. A calendar range makes kpi_delta compare against the previous instance (this_month vs last_month).";
+        $description .= "\n\nTimezone (`timezone_offset`): minutes east of UTC (Tokyo 540, New York -300). Aligns buckets and ranges to the user's local time. From a browser, send the negation of Date.getTimezoneOffset().";
 
         $description .= "\n\nTimeline fields for `date_field`: ".(
             $dateFields !== [] ? implode(', ', $dateFields) : '(none — this index has no date field)'
@@ -94,8 +97,10 @@ class SigmieAnalyticsTool implements Tool
             'limit' => $schema->integer()->description('Max groups for breakdown/grouped_trend (default 10)')->default(10)->nullable()->required(),
             'bucket_size' => $schema->integer()->description('Bucket width for the distribution widget (pass null otherwise)')->nullable()->required(),
             'percents' => $schema->string()->description('Comma-separated percentiles for the percentiles widget, e.g. "50,75,95,99" (pass null for the default)')->nullable()->required(),
-            'from' => $schema->string()->description('ISO start date, inclusive (pass null for 30 days ago)')->nullable()->required(),
-            'to' => $schema->string()->description('ISO end date, exclusive (pass null for now)')->nullable()->required(),
+            'range' => $schema->string()->description('Named relative window, e.g. this_month | last_7_days (pass null to use from/to)')->nullable()->required(),
+            'timezone_offset' => $schema->integer()->description('Timezone as minutes east of UTC, e.g. 540 for Tokyo (pass null for UTC)')->nullable()->required(),
+            'from' => $schema->string()->description('ISO start date, inclusive — ignored when range is set (pass null for 30 days ago)')->nullable()->required(),
+            'to' => $schema->string()->description('ISO end date, exclusive — ignored when range is set (pass null for now)')->nullable()->required(),
             'filters' => $schema->string()->description('Filter expression, same DSL as the search tool (pass null for none)')->nullable()->required(),
         ];
     }
@@ -118,6 +123,19 @@ class SigmieAnalyticsTool implements Tool
             $this->date($request['from'] ?? null),
             $this->date($request['to'] ?? null),
         );
+
+        if (($offset = $request['timezone_offset'] ?? null) !== null && $offset !== '') {
+            $analytics->timezoneOffset((int) $offset);
+        }
+
+        if (($range = trim((string) ($request['range'] ?? ''))) !== '') {
+            $analytics->range(
+                Period::tryFrom($range) ?? throw new InvalidArgumentException(sprintf(
+                    "Unknown range '%s'. Use one of: today, yesterday, this_week, last_week, this_month, last_month, this_quarter, last_quarter, this_year, last_year, last_7_days, last_30_days, last_90_days.",
+                    $range
+                ))
+            );
+        }
 
         if (($filters = $this->filters($request)) !== '') {
             $analytics->filters($filters);

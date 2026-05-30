@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie;
 
+use DateTimeInterface;
 use Elastic\Transport\TransportBuilder;
 use GuzzleHttp\Client as GuzzleHttpClient;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\Analytics\Analytics;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection as Connection;
@@ -168,6 +171,20 @@ class Sigmie
     public function newQuery(string $index): NewQuery
     {
         return new NewQuery($this->elasticsearchConnection, $index);
+    }
+
+    /**
+     * Dashboard analytics over a timeline (date) field of an index. Lower-level sibling of
+     * {@see SigmieIndex::analytics()}: pass `->properties()` so the filter DSL is typed and
+     * keyword fields resolve to their `.keyword` aggregatable path.
+     */
+    public function analytics(
+        string $index,
+        string $dateField,
+        ?DateTimeInterface $from = null,
+        ?DateTimeInterface $to = null,
+    ): Analytics {
+        return new Analytics($this->newQuery($index), new NewProperties, $dateField, $from, $to);
     }
 
     public function newSearch(string $index): NewSearch

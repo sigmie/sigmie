@@ -7,9 +7,11 @@ namespace Sigmie\Tests;
 use DateTimeImmutable;
 use DateTimeZone;
 use Sigmie\Analytics\Enums\Metric;
+use Sigmie\Analytics\Enums\Period;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
+use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Sigmie;
 use Sigmie\SigmieIndex;
 use Sigmie\Testing\TestCase;
@@ -267,5 +269,176 @@ class AnalyticsTest extends TestCase
             ->get();
 
         $this->assertEquals(370.0, $result['revenue']['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function filter_query_adds_a_hard_clause(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->filterQuery(new Range('amount', ['>=' => 100]))
+            ->kpi('revenue', Metric::Sum, 'amount')
+            ->get();
+
+        // amounts >= 100: 100 + 200 = 300
+        $this->assertEquals(300.0, $result['revenue']['value']);
+    }
+
+    private function createTimedIndex(array $docs): SigmieIndex
+    {
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
+            public function properties(): NewProperties
+            {
+                $props = new NewProperties;
+                $props->datetime('created_at');
+                $props->number('amount');
+
+                return $props;
+            }
+        };
+
+        $index->create();
+        $index->merge(array_map(fn (array $d): Document => new Document($d), $docs), refresh: true);
+
+        return $index;
+    }
+
+    private function labelOfValue(array $series, float $value): string
+    {
+        foreach ($series as $bucket) {
+            if ((float) $bucket['value'] === $value) {
+                return $bucket['label'];
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * @test
+     */
+    public function timezone_offset_shifts_the_day_bucket(): void
+    {
+        // 16:00 UTC on May 1 is 01:00 on May 2 in Tokyo (+09:00).
+        $index = $this->createTimedIndex([
+            ['created_at' => '2024-05-01T16:00:00Z', 'amount' => 100],
+        ]);
+
+        $utc = $index->analytics('created_at')
+            ->from($this->date('2024-04-30'))->to($this->date('2024-05-03'))
+            ->trend('s', Metric::Sum, 'amount', CalendarInterval::Day)
+            ->get();
+
+        $tokyo = $index->analytics('created_at')
+            ->timezoneOffset(540)
+            ->from($this->date('2024-04-30'))->to($this->date('2024-05-03'))
+            ->trend('s', Metric::Sum, 'amount', CalendarInterval::Day)
+            ->get();
+
+        $this->assertStringStartsWith('2024-05-01', $this->labelOfValue($utc['s']['series'], 100.0));
+        $this->assertStringStartsWith('2024-05-02', $this->labelOfValue($tokyo['s']['series'], 100.0));
+    }
+
+    /**
+     * @test
+     */
+    public function range_uses_a_named_period(): void
+    {
+        $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+
+        $index = $this->createTimedIndex([
+            ['created_at' => $now->format('Y-m-d\TH:i:s\Z'), 'amount' => 100],
+            ['created_at' => $now->modify('-2 years')->format('Y-m-d\TH:i:s\Z'), 'amount' => 999],
+        ]);
+
+        $result = $index->analytics('created_at')
+            ->range(Period::ThisMonth)
+            ->kpi('revenue', Metric::Sum, 'amount')
+            ->get();
+
+        // Only the current-month doc is in range; the 2-years-ago doc is excluded.
+        $this->assertEquals(100.0, $result['revenue']['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function calendar_period_makes_delta_compare_to_previous_instance(): void
+    {
+        $utc = new DateTimeZone('UTC');
+        $now = new DateTimeImmutable('now', $utc);
+        $lastMonth = (new DateTimeImmutable('first day of last month', $utc))->setTime(12, 0);
+
+        $index = $this->createTimedIndex([
+            ['created_at' => $now->format('Y-m-d\TH:i:s\Z'), 'amount' => 100],
+            ['created_at' => $lastMonth->format('Y-m-d\TH:i:s\Z'), 'amount' => 40],
+        ]);
+
+        $result = $index->analytics('created_at')
+            ->range(Period::ThisMonth)
+            ->kpiDelta('revenue', Metric::Sum, 'amount')
+            ->get();
+
+        $this->assertEquals(100.0, $result['revenue']['value']);
+        $this->assertEquals(40.0, $result['revenue']['previous']);   // last calendar month, not equal-duration
+        $this->assertEquals(150.0, $result['revenue']['change_pct']);
+    }
+
+    /**
+     * @test
+     */
+    public function analytics_can_be_built_from_the_sigmie_facade(): void
+    {
+        $index = $this->createSalesIndex();
+
+        // Lower-level entry point: same builder, properties passed explicitly so the keyword
+        // field ('product') resolves and the typed filter DSL works.
+        $result = $this->sigmie->analytics($index->name(), 'created_at')
+            ->properties($index->properties())
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->breakdown('top', 'product', Metric::Sum, 'amount')
+            ->get();
+
+        $this->assertSame('A', $result['top']['rows'][0]['key']);
+        $this->assertEquals(370.0, $result['top']['rows'][0]['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function period_resolves_calendar_boundaries(): void
+    {
+        $now = new DateTimeImmutable('2024-05-15 10:00:00', new DateTimeZone('+09:00'));
+
+        [$from, $to] = Period::ThisMonth->resolve($now);
+        $this->assertSame('2024-05-01T00:00:00+09:00', $from->format('Y-m-d\TH:i:sP'));
+        $this->assertSame('2024-06-01T00:00:00+09:00', $to->format('Y-m-d\TH:i:sP'));
+
+        // ISO week: 2024-05-15 is a Wednesday → Monday the 13th.
+        [$from] = Period::ThisWeek->resolve($now);
+        $this->assertSame('2024-05-13T00:00:00+09:00', $from->format('Y-m-d\TH:i:sP'));
+
+        $this->assertSame('-1 month', Period::ThisMonth->previousModifier());
+        $this->assertNull(Period::Last7Days->previousModifier());
     }
 }
