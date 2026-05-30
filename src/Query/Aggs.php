@@ -32,6 +32,7 @@ use Sigmie\Query\Aggregations\Metrics\Stats;
 use Sigmie\Query\Aggregations\Metrics\Sum;
 use Sigmie\Query\Aggregations\Metrics\TopHits;
 use Sigmie\Query\Aggregations\Metrics\ValueCount;
+use Sigmie\Query\Aggregations\Pipeline\CumulativeSum;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
 
 class Aggs implements AggsInterface
@@ -317,6 +318,15 @@ class Aggs implements AggsInterface
     public function avg(string $name, string $field): Avg
     {
         $aggregation = new Avg($name, $field);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    public function cumulativeSum(string $name, string $path): CumulativeSum
+    {
+        $aggregation = new CumulativeSum($name, $path);
 
         $this->aggs[] = $aggregation;
 

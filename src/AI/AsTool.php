@@ -32,9 +32,9 @@ trait AsTool
 {
     /**
      * The agent tool suite for this index: search, on-demand value discovery, sample documents,
-     * and the structured schema (field list + filter syntax).
+     * the structured schema (field list + filter syntax), and dashboard analytics.
      *
-     * @return array{0: SigmieIndexTool, 1: SigmieFilterValuesTool, 2: SigmieSampleDocumentsTool, 3: SigmieIndexSchemaTool}
+     * @return array{0: SigmieIndexTool, 1: SigmieFilterValuesTool, 2: SigmieSampleDocumentsTool, 3: SigmieIndexSchemaTool, 4: SigmieAnalyticsTool}
      */
     public function tools(string $baseFilter = ''): array
     {
@@ -43,6 +43,7 @@ trait AsTool
             new SigmieFilterValuesTool($this, $baseFilter),
             new SigmieSampleDocumentsTool($this),
             new SigmieIndexSchemaTool($this),
+            new SigmieAnalyticsTool($this, $baseFilter),
         ];
     }
 }

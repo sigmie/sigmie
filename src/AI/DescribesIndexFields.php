@@ -78,6 +78,37 @@ trait DescribesIndexFields
     }
 
     /**
+     * Flattened names of every field whose type is one of $types — e.g. ['date'] for the timeline
+     * fields an analytics widget can bucket by, ['number'] for the fields it can measure.
+     *
+     * @param  array<int, Type>|null  $fields
+     * @param  list<string>  $types
+     * @return list<string>
+     */
+    protected function fieldNamesOfTypes(array $types, ?array $fields = null, string $prefix = ''): array
+    {
+        $fields ??= $this->index->properties()->get()->toArray();
+
+        $names = [];
+
+        foreach ($fields as $field) {
+            $name = $prefix !== '' ? sprintf('%s.%s', $prefix, $field->name) : $field->name;
+
+            if ($field instanceof Object_) {
+                $names = [...$names, ...$this->fieldNamesOfTypes($types, $field->getProperties()->toArray(), $name)];
+
+                continue;
+            }
+
+            if (in_array($this->fieldTypeName($field), $types, true)) {
+                $names[] = $name;
+            }
+        }
+
+        return $names;
+    }
+
+    /**
      * @param  array<int, Type>  $fields
      * @return list<string>
      */
