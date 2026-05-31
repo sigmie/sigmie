@@ -15,7 +15,8 @@ class AutoDateHistogram extends Bucket
         protected string $name,
         protected string $field,
         protected int $buckets,
-        protected MinimumInterval $minimumInterval = MinimumInterval::Second
+        protected MinimumInterval $minimumInterval = MinimumInterval::Second,
+        protected ?string $timeZone = null,
     ) {}
 
     protected function value(): array
@@ -27,6 +28,10 @@ class AutoDateHistogram extends Bucket
                 'minimum_interval' => $this->minimumInterval->value,
             ],
         ];
+
+        if (! is_null($this->timeZone)) {
+            $value['auto_date_histogram']['time_zone'] = $this->timeZone;
+        }
 
         if (isset($this->missing)) {
             $value['date_histogram']['missing'] = $this->missing;
