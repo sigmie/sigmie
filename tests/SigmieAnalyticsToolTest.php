@@ -125,6 +125,35 @@ class SigmieAnalyticsToolTest extends TestCase
     }
 
     /**
+     * Concrete worked example for the bucket-word trap — empirically the difference between
+     * gpt-4.1-mini picking widget=kpi 7/8 times and picking widget=trend 8/8 times on the same
+     * prompt. The abstract phrasing rule alone (added in #82) was not enough for that model;
+     * a single worked example flipped it. Pin it here so it can't quietly drift.
+     *
+     * @test
+     */
+    public function description_includes_worked_example_for_bucket_word_trap(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $description = (new SigmieAnalyticsTool($index))->description();
+
+        $this->assertStringContainsString('Example mapping', $description);
+
+        // The example prompt itself — verbatim, so the LLM matches the exact pattern.
+        $this->assertStringContainsString('"Monthly revenue for the last 90 days"', $description);
+
+        // The right answer, spelled out.
+        $this->assertStringContainsString('widget=trend', $description);
+        $this->assertStringContainsString('interval=month', $description);
+        $this->assertStringContainsString('range=last_90_days', $description);
+
+        // The "what NOT to do" line — this is what actually anchors the model.
+        $this->assertStringContainsString('NOT widget=kpi', $description);
+        $this->assertStringContainsString('"monthly" names the bucket cadence', $description);
+    }
+
+    /**
      * @test
      */
     public function schema_marks_required_and_optional_params_for_openai_strict(): void

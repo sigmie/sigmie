@@ -91,6 +91,15 @@ class SigmieAnalyticsTool implements Tool
             $numericFields !== [] ? implode(', ', $numericFields) : '(none)'
         );
 
+        // Concrete worked example. Empirically necessary: the abstract "Choosing a widget" block
+        // above is not enough to fix gpt-4.1-mini on the bucket-word case — it picks widget=kpi
+        // 7/8 times on the prompt below without this example. Adding this single example lifts
+        // it to 8/8, while leaving true-KPI prompts (e.g. "Revenue this month") unaffected.
+        $description .= "\n\nExample mapping (read this before picking a widget):\n"
+            ."- USER: \"Monthly revenue for the last 90 days\"\n"
+            ."  → widget=trend, metric=sum, field=<amount-field>, interval=month, range=last_90_days\n"
+            .'  (NOT widget=kpi — "monthly" names the bucket cadence, so the answer is a series.)';
+
         return $description."\n\n"
             ."Time window: `from` and `to` are ISO dates (default: last 30 days).\n"
             .'Narrow with `filters` (same DSL as the search tool, e.g. "status:\'paid\' AND amount>10"). Call describe_index for the full field list and filter syntax.';
