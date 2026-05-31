@@ -95,6 +95,36 @@ class SigmieAnalyticsToolTest extends TestCase
     }
 
     /**
+     * The 'Choosing a widget' phrasing guide is what stops a small model from reading
+     * 'monthly revenue for the last 90 days' as 'one number' (kpi) instead of 'a series
+     * bucketed monthly' (trend). Asserts the disambiguation hints are present so they
+     * don't quietly drift away in a future edit.
+     *
+     * @test
+     */
+    public function description_includes_phrasing_to_widget_disambiguation(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $description = (new SigmieAnalyticsTool($index))->description();
+
+        // Section header.
+        $this->assertStringContainsString('Choosing a widget', $description);
+
+        // The bucket-word trap is named explicitly.
+        $this->assertStringContainsString('daily / weekly / monthly / hourly', $description);
+        $this->assertStringContainsString('NOT kpi', $description);
+        $this->assertStringContainsString('the bucket word means a series', $description);
+
+        // Each widget has a phrasing entry.
+        $this->assertStringContainsString('cumulative', $description);
+        $this->assertStringContainsString('top N', $description);
+        $this->assertStringContainsString('with no bucket word', $description);
+        $this->assertStringContainsString('histogram', $description);
+        $this->assertStringContainsString('percentiles', $description);
+    }
+
+    /**
      * @test
      */
     public function schema_marks_required_and_optional_params_for_openai_strict(): void
