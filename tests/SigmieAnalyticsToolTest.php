@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\Tests\Stubs\FakeJsonSchema;
+
 require_once __DIR__.'/Stubs/LaravelAiStubs.php';
 
+use DateTimeImmutable;
+use DateTimeZone;
 use Laravel\Ai\Tools\Request;
 use Sigmie\AI\AsTool;
 use Sigmie\AI\SigmieAnalyticsTool;
@@ -97,17 +101,17 @@ class SigmieAnalyticsToolTest extends TestCase
     {
         $index = $this->createSalesIndex();
 
-        $schema = (new SigmieAnalyticsTool($index))->schema(new \Sigmie\Tests\Stubs\FakeJsonSchema);
+        $schema = (new SigmieAnalyticsTool($index))->schema(new FakeJsonSchema);
 
         foreach ($schema as $name => $prop) {
-            $this->assertTrue($prop->required, "Property '{$name}' must be required().");
+            $this->assertTrue($prop->required, sprintf("Property '%s' must be required().", $name));
         }
 
         $this->assertFalse($schema['widget']->nullable, "'widget' must NOT be nullable.");
         $this->assertFalse($schema['date_field']->nullable, "'date_field' must NOT be nullable.");
 
         foreach (['metric', 'field', 'interval', 'group_by', 'limit', 'bucket_size', 'percents', 'from', 'to', 'filters'] as $name) {
-            $this->assertTrue($schema[$name]->nullable, "Optional property '{$name}' must be nullable().");
+            $this->assertTrue($schema[$name]->nullable, sprintf("Optional property '%s' must be nullable().", $name));
         }
     }
 
@@ -198,7 +202,7 @@ class SigmieAnalyticsToolTest extends TestCase
      */
     public function result_accepts_a_named_range_and_timezone_offset(): void
     {
-        $today = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d');
+        $today = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format('Y-m-d');
 
         $index = $this->createSalesIndex();
         $index->merge([new Document(['created_at' => $today, 'amount' => 25, 'product' => 'C'])], refresh: true);

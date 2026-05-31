@@ -64,7 +64,7 @@ class SigmieAnalyticsTool implements Tool
             ."- grouped_trend: one trend line per value of group_by — stacked chart (needs metric, field, group_by, interval)\n"
             ."- breakdown: top-N group_by values ranked by a metric (needs group_by, metric, field)\n"
             ."- distribution: histogram of a numeric field (needs field, bucket_size)\n"
-            ."- percentiles: p50/p75/p95/p99 of a numeric field (needs field)";
+            .'- percentiles: p50/p75/p95/p99 of a numeric field (needs field)';
 
         $description .= "\n\nMetrics (`metric`): sum, avg, min, max, count, unique (distinct), median.";
         $description .= "\n\nIntervals (`interval`): minute, hour, day, week, month, quarter, year.";

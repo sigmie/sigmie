@@ -6,7 +6,6 @@ namespace Sigmie\Analytics\Widgets;
 
 use DateTimeInterface;
 use Sigmie\Analytics\Enums\Metric;
-use Sigmie\Query\Aggregations\Bucket\DateHistogram;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Aggs;
 use Sigmie\Shared\Collection;

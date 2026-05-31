@@ -6,13 +6,12 @@ namespace Sigmie\Analytics\Widgets;
 
 use DateTimeInterface;
 use Sigmie\Query\Aggregations\Bucket\Filter;
-use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Shared\Contracts\ToRaw;
 
 /**
  * A dashboard widget: a self-contained chunk of analytics (a KPI, a trend, a breakdown…)
- * that knows how to render itself as Elasticsearch aggregations ({@see toRaw()}) and how to
+ * that knows how to render itself as Elasticsearch aggregations ({@see ToRaw()}) and how to
  * normalise the response into a chart-ready shape ({@see extract()}).
  *
  * Every widget scopes itself to its own time window with a `filter` bucket via {@see scoped()},

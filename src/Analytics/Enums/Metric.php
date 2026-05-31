@@ -59,6 +59,6 @@ enum Metric: string
      */
     public function orderKey(string $name): string
     {
-        return $this === self::Median ? "{$name}.50" : $name;
+        return $this === self::Median ? $name.'.50' : $name;
     }
 }

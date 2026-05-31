@@ -7,6 +7,7 @@ namespace Sigmie\Tests;
 use Sigmie\Base\ElasticsearchException;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Parse\ParseException;
+use Sigmie\Tests\Stubs\FakeJsonSchema;
 
 require_once __DIR__.'/Stubs/LaravelAiStubs.php';
 
@@ -915,7 +916,7 @@ class SigmieIndexToolTest extends TestCase
     {
         $index = $this->createProductIndex();
 
-        $schema = (new SigmieIndexTool($index))->schema(new \Sigmie\Tests\Stubs\FakeJsonSchema);
+        $schema = (new SigmieIndexTool($index))->schema(new FakeJsonSchema);
 
         $expected = ['query', 'filters', 'sort', 'facets', 'facet_filters', 'per_page', 'page'];
         $this->assertSame($expected, array_keys($schema));
@@ -923,7 +924,7 @@ class SigmieIndexToolTest extends TestCase
         foreach ($schema as $name => $prop) {
             $this->assertTrue(
                 $prop->required,
-                "Property '{$name}' must be required() for OpenAI strict-mode function calling."
+                sprintf("Property '%s' must be required() for OpenAI strict-mode function calling.", $name)
             );
         }
 
@@ -932,7 +933,7 @@ class SigmieIndexToolTest extends TestCase
         foreach (['filters', 'sort', 'facets', 'facet_filters', 'per_page', 'page'] as $name) {
             $this->assertTrue(
                 $schema[$name]->nullable,
-                "Optional property '{$name}' must be nullable() for OpenAI strict-mode function calling."
+                sprintf("Optional property '%s' must be nullable() for OpenAI strict-mode function calling.", $name)
             );
         }
 
@@ -948,12 +949,12 @@ class SigmieIndexToolTest extends TestCase
     {
         $index = $this->createProductIndex();
 
-        $schema = (new SigmieFilterValuesTool($index))->schema(new \Sigmie\Tests\Stubs\FakeJsonSchema);
+        $schema = (new SigmieFilterValuesTool($index))->schema(new FakeJsonSchema);
 
         $this->assertSame(['field', 'filters', 'limit'], array_keys($schema));
 
         foreach ($schema as $name => $prop) {
-            $this->assertTrue($prop->required, "Property '{$name}' must be required().");
+            $this->assertTrue($prop->required, sprintf("Property '%s' must be required().", $name));
         }
 
         $this->assertFalse($schema['field']->nullable);
@@ -968,7 +969,7 @@ class SigmieIndexToolTest extends TestCase
     {
         $index = $this->createProductIndex();
 
-        $schema = (new SigmieSampleDocumentsTool($index))->schema(new \Sigmie\Tests\Stubs\FakeJsonSchema);
+        $schema = (new SigmieSampleDocumentsTool($index))->schema(new FakeJsonSchema);
 
         $this->assertSame(['limit'], array_keys($schema));
         $this->assertTrue($schema['limit']->required);

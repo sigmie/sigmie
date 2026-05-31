@@ -35,15 +35,15 @@ class KpiDelta extends Widget
         $metric = fn (Aggs $aggs) => $this->metric->apply($aggs, 'metric', $this->field);
 
         return [
-            ...$this->scoped("{$this->name}_current", $this->from, $this->to, $metric)->toRaw(),
-            ...$this->scoped("{$this->name}_previous", $this->previousFrom, $this->previousTo, $metric)->toRaw(),
+            ...$this->scoped($this->name.'_current', $this->from, $this->to, $metric)->toRaw(),
+            ...$this->scoped($this->name.'_previous', $this->previousFrom, $this->previousTo, $metric)->toRaw(),
         ];
     }
 
     public function extract(array $aggregations): array
     {
-        $current = $this->metric->extract($aggregations["{$this->name}_current"]['metric'] ?? []);
-        $previous = $this->metric->extract($aggregations["{$this->name}_previous"]['metric'] ?? []);
+        $current = $this->metric->extract($aggregations[$this->name.'_current']['metric'] ?? []);
+        $previous = $this->metric->extract($aggregations[$this->name.'_previous']['metric'] ?? []);
 
         $change = ($previous !== null && $previous != 0.0 && $current !== null)
             ? round((($current - $previous) / $previous) * 100, 2)
