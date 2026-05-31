@@ -66,6 +66,19 @@ class SigmieAnalyticsTool implements Tool
             ."- distribution: histogram of a numeric field (needs field, bucket_size)\n"
             .'- percentiles: p50/p75/p95/p99 of a numeric field (needs field)';
 
+        // Phrasing → widget hints. Disambiguates the common trap where 'monthly/weekly/daily X
+        // over <period>' reads as 'one number for the period' (kpi) instead of 'a series bucketed
+        // at that interval' (trend). Without this, small models (gpt-4o-mini, gpt-4.1-mini) drop
+        // the time-series when the user names the bucket inside the phrase.
+        $description .= "\n\nChoosing a widget — match the phrasing:\n"
+            ."- \"daily / weekly / monthly / hourly X over <period>\" or \"X per day/week/month\" → trend (use interval=day|week|month|hour). NOT kpi — the bucket word means a series.\n"
+            ."- \"X over time\", \"trend of X\", \"X by <date_field>\" → trend\n"
+            ."- \"running total\", \"cumulative X\", \"growth curve\" → cumulative\n"
+            ."- \"top N <thing> by X\", \"best <thing>\", \"which <thing> drove the most X\" → breakdown (group_by=<thing>)\n"
+            ."- \"X this month\" / \"average X last week\" with no bucket word → kpi (or kpi_delta when the user compares to a prior period)\n"
+            ."- \"distribution of X\", \"histogram of X\" → distribution\n"
+            .'- "p50/p75/p95/p99", "percentiles of X", "median X" → percentiles';
+
         $description .= "\n\nMetrics (`metric`): sum, avg, min, max, count, unique (distinct), median.";
         $description .= "\n\nIntervals (`interval`): minute, hour, day, week, month, quarter, year.";
         $description .= "\n\nRelative window (`range`, preferred over from/to): today, yesterday, this_week, last_week, this_month, last_month, this_quarter, last_quarter, this_year, last_year, last_7_days, last_30_days, last_90_days. A calendar range makes kpi_delta compare against the previous instance (this_month vs last_month).";
