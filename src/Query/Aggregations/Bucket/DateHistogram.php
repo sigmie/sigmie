@@ -17,7 +17,8 @@ class DateHistogram extends Bucket
         protected CalendarInterval $interval,
         protected int $minDocCount = 0,
         protected ?array $extendedBounds = null,
-        protected ?string $format = null
+        protected ?string $format = null,
+        protected ?string $timeZone = null,
     ) {}
 
     protected function value(): array
@@ -29,6 +30,10 @@ class DateHistogram extends Bucket
                 'min_doc_count' => $this->minDocCount,
             ],
         ];
+
+        if (! is_null($this->timeZone)) {
+            $value['date_histogram']['time_zone'] = $this->timeZone;
+        }
 
         if (isset($this->missing)) {
             $value['date_histogram']['missing'] = $this->missing;

@@ -16,6 +16,68 @@ namespace Illuminate\Contracts\JsonSchema {
     }
 }
 
+namespace Sigmie\Tests\Stubs {
+    /**
+     * Fluent recorder used by the AI-tool schema tests: every `description()`/`required()`/
+     * `nullable()`/`default()` call mutates the type so the test can assert what the tool
+     * declared (e.g. that every optional param is `nullable()->required()` for OpenAI strict
+     * function-calling).
+     */
+    class FakeSchemaType
+    {
+        public bool $required = false;
+
+        public bool $nullable = false;
+
+        public ?string $descriptionText = null;
+
+        public mixed $defaultValue = null;
+
+        public function __construct(public string $type) {}
+
+        public function description(string $text): self
+        {
+            $this->descriptionText = $text;
+
+            return $this;
+        }
+
+        public function required(): self
+        {
+            $this->required = true;
+
+            return $this;
+        }
+
+        public function nullable(): self
+        {
+            $this->nullable = true;
+
+            return $this;
+        }
+
+        public function default(mixed $value): self
+        {
+            $this->defaultValue = $value;
+
+            return $this;
+        }
+    }
+
+    class FakeJsonSchema implements \Illuminate\Contracts\JsonSchema\JsonSchema
+    {
+        public function string(): FakeSchemaType
+        {
+            return new FakeSchemaType('string');
+        }
+
+        public function integer(): FakeSchemaType
+        {
+            return new FakeSchemaType('integer');
+        }
+    }
+}
+
 namespace Laravel\Ai\Contracts {
     if (! interface_exists(Tool::class)) {
         interface Tool

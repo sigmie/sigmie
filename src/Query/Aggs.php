@@ -32,6 +32,7 @@ use Sigmie\Query\Aggregations\Metrics\Stats;
 use Sigmie\Query\Aggregations\Metrics\Sum;
 use Sigmie\Query\Aggregations\Metrics\TopHits;
 use Sigmie\Query\Aggregations\Metrics\ValueCount;
+use Sigmie\Query\Aggregations\Pipeline\CumulativeSum;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
 
 class Aggs implements AggsInterface
@@ -138,9 +139,10 @@ class Aggs implements AggsInterface
         string $name,
         string $field,
         int $buckets,
-        MinimumInterval $minimumInterval = MinimumInterval::Second
+        MinimumInterval $minimumInterval = MinimumInterval::Second,
+        ?string $timeZone = null,
     ): AutoDateHistogram {
-        $aggregation = new AutoDateHistogram($name, $field, $buckets, $minimumInterval);
+        $aggregation = new AutoDateHistogram($name, $field, $buckets, $minimumInterval, $timeZone);
 
         $this->aggs[] = $aggregation;
 
@@ -154,8 +156,9 @@ class Aggs implements AggsInterface
         int $minDocCount = 0,
         ?array $extendedBounds = null,
         ?string $format = null,
+        ?string $timeZone = null,
     ): DateHistogram {
-        $aggregation = new DateHistogram($name, $field, $interval, $minDocCount, $extendedBounds, $format);
+        $aggregation = new DateHistogram($name, $field, $interval, $minDocCount, $extendedBounds, $format, $timeZone);
 
         $this->aggs[] = $aggregation;
 
@@ -317,6 +320,15 @@ class Aggs implements AggsInterface
     public function avg(string $name, string $field): Avg
     {
         $aggregation = new Avg($name, $field);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    public function cumulativeSum(string $name, string $path): CumulativeSum
+    {
+        $aggregation = new CumulativeSum($name, $path);
 
         $this->aggs[] = $aggregation;
 

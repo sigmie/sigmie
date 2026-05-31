@@ -38,8 +38,10 @@ class SigmieSampleDocumentsTool implements Tool
 
     public function schema(JsonSchema $schema): array
     {
+        // `limit` is `nullable()->required()` so the schema is valid under OpenAI's strict
+        // function-calling. Callers that want the default simply pass null.
         return [
-            'limit' => $schema->integer()->description('Number of example documents to return (1-20)')->default(5),
+            'limit' => $schema->integer()->description('Number of example documents to return (1-20, default 5)')->default(5)->nullable()->required(),
         ];
     }
 
