@@ -74,7 +74,7 @@ class SigmieAnalyticsToolTest extends TestCase
 
         $tools = $index->tools();
 
-        $this->assertInstanceOf(SigmieAnalyticsTool::class, $tools[4]);
+        $this->assertInstanceOf(SigmieAnalyticsTool::class, $tools[5]);
     }
 
     /**
