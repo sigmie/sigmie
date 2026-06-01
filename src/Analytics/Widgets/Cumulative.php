@@ -24,7 +24,7 @@ class Cumulative extends Widget
         string $dateFormat,
         protected Metric $metric,
         protected string $field,
-        protected CalendarInterval $interval,
+        protected CalendarInterval|string $interval,
         protected ?string $timeZone = null,
     ) {
         parent::__construct($name, $dateField, $from, $to, $dateFormat);
@@ -49,7 +49,7 @@ class Cumulative extends Widget
             'type' => 'cumulative',
             'metric' => $this->metric->value,
             'field' => $this->field,
-            'interval' => $this->interval->name,
+            'interval' => $this->interval instanceof CalendarInterval ? $this->interval->name : $this->interval,
             'series' => $buckets->map(fn (array $bucket): array => [
                 'label' => $bucket['key_as_string'],
                 'value' => $bucket['cumulative']['value'] ?? null,

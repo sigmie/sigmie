@@ -80,7 +80,7 @@ class SigmieAnalyticsTool implements Tool
             .'- "p50/p75/p95/p99", "percentiles of X", "median X" → percentiles';
 
         $description .= "\n\nMetrics (`metric`): sum, avg, min, max, count, unique (distinct), median.";
-        $description .= "\n\nIntervals (`interval`): minute, hour, day, week, month, quarter, year.";
+        $description .= "\n\nIntervals (`interval`): a calendar unit (minute, hour, day, week, month, quarter, year) or a fixed interval — a multiple of a unit like 15d, 12h, 90m, 30s.";
         $description .= "\n\nRelative window (`range`, preferred over from/to): today, yesterday, this_week, last_week, this_month, last_month, this_quarter, last_quarter, this_year, last_year, last_7_days, last_30_days, last_90_days. A calendar range makes kpi_delta compare against the previous instance (this_month vs last_month).";
         $description .= "\n\nTimezone (`timezone_offset`): minutes east of UTC (Tokyo 540, New York -300). Aligns buckets and ranges to the user's local time. From a browser, send the negation of Date.getTimezoneOffset().";
 
@@ -105,7 +105,7 @@ class SigmieAnalyticsTool implements Tool
             'date_field' => $schema->string()->description('Timeline (date) field to bucket/scope by')->required(),
             'metric' => $schema->string()->description('sum | avg | min | max | count | unique | median (pass null for distribution/percentiles)')->nullable()->required(),
             'field' => $schema->string()->description('Numeric field the metric is computed on (pass null for count)')->nullable()->required(),
-            'interval' => $schema->string()->description('Time bucket for trends: minute | hour | day | week | month | quarter | year (default day)')->default('day')->nullable()->required(),
+            'interval' => $schema->string()->description('Time bucket for trends: a calendar unit (minute | hour | day | week | month | quarter | year) or a fixed interval like 15d | 12h | 90m (default day)')->default('day')->nullable()->required(),
             'group_by' => $schema->string()->description('Keyword field to group/break down by, for breakdown and grouped_trend (pass null otherwise)')->nullable()->required(),
             'limit' => $schema->integer()->description('Max groups for breakdown/grouped_trend (default 10)')->default(10)->nullable()->required(),
             'bucket_size' => $schema->integer()->description('Bucket width for the distribution widget (pass null otherwise)')->nullable()->required(),
@@ -163,7 +163,7 @@ class SigmieAnalyticsTool implements Tool
     {
         $metric = fn (): Metric => $this->metric((string) ($request['metric'] ?? ''));
         $field = (string) ($request['field'] ?? '');
-        $interval = fn (): CalendarInterval => $this->interval((string) ($request['interval'] ?? 'day'));
+        $interval = fn (): CalendarInterval|string => $this->interval((string) ($request['interval'] ?? 'day'));
         $groupBy = fn (): string => $this->required($request, 'group_by');
         $limit = max(1, (int) ($request['limit'] ?? 10));
 
@@ -205,9 +205,17 @@ class SigmieAnalyticsTool implements Tool
         ));
     }
 
-    protected function interval(string $interval): CalendarInterval
+    protected function interval(string $interval): CalendarInterval|string
     {
-        return match (strtolower(trim($interval))) {
+        $interval = strtolower(trim($interval));
+
+        // Fixed interval: a multiple of a unit (15d, 90m, 12h, 30s, 250ms) — Elasticsearch needs
+        // fixed_interval for these, since calendar_interval only allows a single unit.
+        if (preg_match('/^\d+(ms|s|m|h|d)$/', $interval) === 1) {
+            return $interval;
+        }
+
+        return match ($interval) {
             'minute' => CalendarInterval::Minute,
             'hour' => CalendarInterval::Hour,
             '', 'day' => CalendarInterval::Day,
@@ -216,7 +224,7 @@ class SigmieAnalyticsTool implements Tool
             'quarter' => CalendarInterval::Quarter,
             'year' => CalendarInterval::Year,
             default => throw new InvalidArgumentException(sprintf(
-                "Unknown interval '%s'. Use one of: minute, hour, day, week, month, quarter, year.",
+                "Unknown interval '%s'. Use a calendar unit (minute, hour, day, week, month, quarter, year) or a fixed interval like 15d, 12h, 90m.",
                 $interval
             )),
         };

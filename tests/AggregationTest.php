@@ -350,6 +350,34 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
+    public function date_histogram_uses_calendar_interval_for_enum(): void
+    {
+        $aggs = new SearchAggregation;
+        $aggs->dateHistogram('timeline', 'created_at', CalendarInterval::Week);
+
+        $raw = $aggs->toRaw();
+
+        $this->assertSame('1w', $raw['timeline']['date_histogram']['calendar_interval']);
+        $this->assertArrayNotHasKey('fixed_interval', $raw['timeline']['date_histogram']);
+    }
+
+    /**
+     * @test
+     */
+    public function date_histogram_uses_fixed_interval_for_string(): void
+    {
+        $aggs = new SearchAggregation;
+        $aggs->dateHistogram('timeline', 'created_at', '15d');
+
+        $raw = $aggs->toRaw();
+
+        $this->assertSame('15d', $raw['timeline']['date_histogram']['fixed_interval']);
+        $this->assertArrayNotHasKey('calendar_interval', $raw['timeline']['date_histogram']);
+    }
+
+    /**
+     * @test
+     */
     public function ranges_aggregation(): void
     {
         $name = uniqid();

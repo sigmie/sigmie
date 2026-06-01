@@ -180,17 +180,17 @@ class Analytics
         return $this->add(new KpiDelta($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $previousFrom, $previousTo));
     }
 
-    public function trend(string $as, Metric $metric, string $field = '', CalendarInterval $interval = CalendarInterval::Day): static
+    public function trend(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day): static
     {
         return $this->add(new Trend($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone));
     }
 
-    public function cumulative(string $as, Metric $metric, string $field = '', CalendarInterval $interval = CalendarInterval::Day): static
+    public function cumulative(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day): static
     {
         return $this->add(new Cumulative($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone));
     }
 
-    public function groupedTrend(string $as, Metric $metric, string $field, string $groupBy, CalendarInterval $interval = CalendarInterval::Day, int $limit = 5): static
+    public function groupedTrend(string $as, Metric $metric, string $field, string $groupBy, CalendarInterval|string $interval = CalendarInterval::Day, int $limit = 5): static
     {
         return $this->add(new GroupedTrend($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $this->aggregatableField($groupBy), $interval, $limit, $this->timeZone));
     }

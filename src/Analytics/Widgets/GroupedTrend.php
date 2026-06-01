@@ -25,7 +25,7 @@ class GroupedTrend extends Widget
         protected Metric $metric,
         protected string $field,
         protected string $groupBy,
-        protected CalendarInterval $interval,
+        protected CalendarInterval|string $interval,
         protected int $limit,
         protected ?string $timeZone = null,
     ) {
@@ -53,7 +53,7 @@ class GroupedTrend extends Widget
             'metric' => $this->metric->value,
             'field' => $this->field,
             'group_by' => $this->groupBy,
-            'interval' => $this->interval->name,
+            'interval' => $this->interval instanceof CalendarInterval ? $this->interval->name : $this->interval,
             'groups' => $groups->map(fn (array $group): array => [
                 'group' => $group['key'],
                 'series' => array_map(fn (array $bucket): array => [
