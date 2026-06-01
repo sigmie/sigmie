@@ -12,6 +12,8 @@ namespace Illuminate\Contracts\JsonSchema {
             public function string(): mixed;
 
             public function integer(): mixed;
+
+            public function array(): mixed;
         }
     }
 }
@@ -33,7 +35,16 @@ namespace Sigmie\Tests\Stubs {
 
         public mixed $defaultValue = null;
 
+        public mixed $itemsType = null;
+
         public function __construct(public string $type) {}
+
+        public function items(mixed $type): self
+        {
+            $this->itemsType = $type;
+
+            return $this;
+        }
 
         public function description(string $text): self
         {
@@ -74,6 +85,11 @@ namespace Sigmie\Tests\Stubs {
         public function integer(): FakeSchemaType
         {
             return new FakeSchemaType('integer');
+        }
+
+        public function array(): FakeSchemaType
+        {
+            return new FakeSchemaType('array');
         }
     }
 }

@@ -14,6 +14,7 @@ require_once __DIR__.'/Stubs/LaravelAiStubs.php';
 use Laravel\Ai\Tools\Request;
 use Sigmie\AI\AsTool;
 use Sigmie\AI\SigmieFilterValuesTool;
+use Sigmie\AI\SigmieGetDocumentsTool;
 use Sigmie\AI\SigmieIndexSchemaTool;
 use Sigmie\AI\SigmieIndexTool;
 use Sigmie\AI\SigmieSampleDocumentsTool;
@@ -631,11 +632,12 @@ class SigmieIndexToolTest extends TestCase
     {
         $index = $this->createProductIndex();
 
-        [$search, $values, $sample, $schema] = $index->tools();
+        [$search, $values, $sample, $get, $schema] = $index->tools();
 
         $this->assertInstanceOf(SigmieIndexTool::class, $search);
         $this->assertInstanceOf(SigmieFilterValuesTool::class, $values);
         $this->assertInstanceOf(SigmieSampleDocumentsTool::class, $sample);
+        $this->assertInstanceOf(SigmieGetDocumentsTool::class, $get);
         $this->assertInstanceOf(SigmieIndexSchemaTool::class, $schema);
     }
 
@@ -827,6 +829,42 @@ class SigmieIndexToolTest extends TestCase
         $this->assertCount(2, $result);
         $this->assertArrayHasKey('_id', $result[0]);
         $this->assertArrayHasKey('_source', $result[0]);
+    }
+
+    /**
+     * @test
+     */
+    public function get_documents_returns_requested_documents_by_id(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15'], 'doc_1'),
+            new Document(['name' => 'Galaxy', 'brand' => 'Samsung', 'price' => 899, 'in_stock' => true, 'created_at' => '2024-03-10'], 'doc_2'),
+            new Document(['name' => 'Pixel', 'brand' => 'Google', 'price' => 699, 'in_stock' => false, 'created_at' => '2024-04-01'], 'doc_3'),
+        ], refresh: true);
+
+        // Requests two existing ids and one that does not exist; missing ids are omitted.
+        $result = json_decode((new SigmieGetDocumentsTool($index))->handle(new Request(['ids' => ['doc_1', 'doc_3', 'missing']])), true);
+
+        $this->assertCount(2, $result);
+        $this->assertSame(['doc_1', 'doc_3'], array_column($result, '_id'));
+        $this->assertSame('iPhone', $result[0]['_source']['name']);
+    }
+
+    /**
+     * @test
+     */
+    public function get_documents_tool_schema_requires_an_ids_array(): void
+    {
+        $index = $this->createProductIndex();
+
+        $schema = (new SigmieGetDocumentsTool($index))->schema(new FakeJsonSchema);
+
+        $this->assertSame(['ids'], array_keys($schema));
+        $this->assertSame('array', $schema['ids']->type);
+        $this->assertTrue($schema['ids']->required);
+        $this->assertSame('string', $schema['ids']->itemsType->type);
     }
 
     /**

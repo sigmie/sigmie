@@ -77,6 +77,17 @@ public function tools(): array
 }
 ```
 
+## The tool suite
+
+`tools()` returns the full agent tool suite for the index:
+
+- `search_index` — query, filter, sort, facet and paginate.
+- `discover_filter_values` — list valid values for a field before filtering.
+- `sample_documents` — a few random documents so the agent can see the real data shape.
+- `get_documents` — retrieve specific documents by their `_id` (e.g. ids surfaced by `search_index`). Non-existent ids are omitted.
+- `describe_index` — the structured field list, types and filter syntax.
+- `analytics` — dashboard widgets (KPIs, trends, breakdowns, distributions, percentiles).
+
 ## Base filters
 
 Pass `baseFilters` to scope every query the AI makes. This is how you enforce multi-tenancy or per-user authorization — the AI can't bypass these filters and can't see them in its tool description:
