@@ -152,7 +152,7 @@ class Aggs implements AggsInterface
     public function dateHistogram(
         string $name,
         string $field,
-        CalendarInterval $interval,
+        CalendarInterval|string $interval,
         int $minDocCount = 0,
         ?array $extendedBounds = null,
         ?string $format = null,
