@@ -441,4 +441,81 @@ class AnalyticsTest extends TestCase
         $this->assertSame('-1 month', Period::ThisMonth->previousModifier());
         $this->assertNull(Period::Last7Days->previousModifier());
     }
+
+    /**
+     * The sales index only has January data; a trend over Jan→Jun must still return a bucket per
+     * month, with the empty months (Feb–May) zero-filled — not trimmed at the last bucket with data.
+     *
+     * @test
+     */
+    public function trend_zero_fills_the_full_requested_window(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-06-01'))
+            ->trend('revenue', Metric::Sum, 'amount', CalendarInterval::Month)
+            ->get();
+
+        $series = $result['revenue']['series'];
+
+        $this->assertCount(5, $series); // Jan, Feb, Mar, Apr, May — not just January
+        $this->assertEquals(450.0, $series[0]['value']);
+        $this->assertEquals(0.0, $series[1]['value']);
+        $this->assertEquals(0.0, $series[2]['value']);
+        $this->assertEquals(0.0, $series[3]['value']);
+        $this->assertEquals(0.0, $series[4]['value']);
+    }
+
+    /**
+     * A cumulative curve over a wider-than-data window flattens across the empty tail instead of
+     * stopping in January.
+     *
+     * @test
+     */
+    public function cumulative_zero_fills_the_full_requested_window(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-06-01'))
+            ->cumulative('growth', Metric::Sum, 'amount', CalendarInterval::Month)
+            ->get();
+
+        $series = $result['growth']['series'];
+
+        $this->assertCount(5, $series);
+        $this->assertEquals(450.0, $series[0]['value']);
+        $this->assertEquals(450.0, $series[4]['value']); // running total holds across the empty months
+    }
+
+    /**
+     * Every group's series in a grouped trend spans the full window with zero-filled empty months.
+     *
+     * @test
+     */
+    public function grouped_trend_zero_fills_each_group_across_the_full_window(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-06-01'))
+            ->groupedTrend('by_product', Metric::Sum, 'amount', 'product', CalendarInterval::Month, 10)
+            ->get();
+
+        $groups = [];
+        foreach ($result['by_product']['groups'] as $group) {
+            $groups[$group['group']] = $group['series'];
+        }
+
+        $this->assertCount(5, $groups['A']);
+        $this->assertCount(5, $groups['B']);
+        $this->assertEquals(370.0, $groups['A'][0]['value']);
+        $this->assertEquals(80.0, $groups['B'][0]['value']);
+        $this->assertEquals(0.0, $groups['A'][4]['value']);
+        $this->assertEquals(0.0, $groups['B'][4]['value']);
+    }
 }
