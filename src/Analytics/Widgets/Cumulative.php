@@ -33,7 +33,7 @@ class Cumulative extends Widget
     public function toRaw(): array
     {
         return $this->scoped($this->name, $this->from, $this->to, function (Aggs $aggs): void {
-            $aggs->dateHistogram('series', $this->dateField, $this->interval, timeZone: $this->timeZone)
+            $aggs->dateHistogram('series', $this->dateField, $this->interval, extendedBounds: $this->extendedBounds(), timeZone: $this->timeZone)
                 ->aggregate(function (Aggs $sub): void {
                     $this->metric->apply($sub, 'metric', $this->field);
                     $sub->cumulativeSum('cumulative', 'metric');

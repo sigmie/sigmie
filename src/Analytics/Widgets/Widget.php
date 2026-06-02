@@ -37,6 +37,22 @@ abstract class Widget implements ToRaw
     abstract public function extract(array $aggregations): array;
 
     /**
+     * Force a date histogram to span the FULL requested window [$from, $to), emitting zero-count
+     * buckets for periods with no data. Without this the histogram stops at the last bucket that
+     * has documents, so a query for a wide range (e.g. a full year over partial data) silently
+     * trims the empty tail instead of showing it. Epoch millis; max is exclusive-aware.
+     *
+     * @return array{min: int, max: int}
+     */
+    protected function extendedBounds(): array
+    {
+        return [
+            'min' => $this->from->getTimestamp() * 1000,
+            'max' => $this->to->getTimestamp() * 1000 - 1,
+        ];
+    }
+
+    /**
      * Wrap the inner aggregations in a `filter` bucket scoped to [$from, $to).
      */
     protected function scoped(

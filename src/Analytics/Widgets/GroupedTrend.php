@@ -38,7 +38,7 @@ class GroupedTrend extends Widget
             $aggs->terms('groups', $this->groupBy)
                 ->size($this->limit)
                 ->aggregate(function (Aggs $sub): void {
-                    $sub->dateHistogram('series', $this->dateField, $this->interval, timeZone: $this->timeZone)
+                    $sub->dateHistogram('series', $this->dateField, $this->interval, extendedBounds: $this->extendedBounds(), timeZone: $this->timeZone)
                         ->aggregate(fn (Aggs $m) => $this->metric->apply($m, 'metric', $this->field));
                 });
         })->toRaw();
