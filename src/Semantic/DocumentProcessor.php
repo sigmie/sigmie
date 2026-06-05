@@ -14,6 +14,7 @@ use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\DateTime;
+use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
@@ -438,9 +439,10 @@ class DocumentProcessor
 
     protected function validateFieldValue(string $fieldPath, mixed $value, Type $field, array &$errors): void
     {
-        // For Range fields, the array IS the value (e.g., ['gt' => 10, 'lt' => 20])
-        // Don't iterate over it like we do for other field types
-        if ($field instanceof Range) {
+        // For Range and GeoPoint fields the array IS the value — a Range is ['gt' => 10, 'lt' => 20]
+        // and a GeoPoint is ['lat' => .., 'lon' => ..] (or a list of those). Validate it whole;
+        // iterating would recurse into the scalar lat/lon and reject them.
+        if ($field instanceof Range || $field instanceof GeoPoint) {
             [$isValid, $errorMessage] = $field->validate($fieldPath, $value);
 
             if (! $isValid) {
