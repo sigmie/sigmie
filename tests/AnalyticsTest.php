@@ -315,6 +315,27 @@ class AnalyticsTest extends TestCase
     /**
      * @test
      */
+    public function a_per_widget_filter_accepts_a_filter_string(): void
+    {
+        $index = $this->createSalesIndex();
+
+        // Same funnel, but each slice is expressed with the filter DSL instead of a query object.
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->kpi('all_revenue', Metric::Sum, 'amount')
+            ->kpi('a_revenue', Metric::Sum, 'amount', filter: "product:'A'")
+            ->kpi('b_revenue', Metric::Sum, 'amount', filter: "product:'B'")
+            ->get();
+
+        $this->assertEquals(450.0, $result['all_revenue']['value']);   // 100+50+200+30+70
+        $this->assertEquals(370.0, $result['a_revenue']['value']);     // 100+200+70
+        $this->assertEquals(80.0, $result['b_revenue']['value']);      // 50+30
+    }
+
+    /**
+     * @test
+     */
     public function the_unique_metric_asks_for_an_accurate_distinct_count(): void
     {
         $widget = new Kpi('distinct', 'created_at', $this->date('2024-01-01'), $this->date('2024-01-04'), 'Y-m-d', Metric::Unique, 'product');

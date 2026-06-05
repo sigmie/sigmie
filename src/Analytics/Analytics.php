@@ -22,6 +22,7 @@ use Sigmie\Analytics\Widgets\Widget;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\Parse\FilterParser;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\QueryClause;
@@ -169,15 +170,35 @@ class Analytics
         return $this;
     }
 
-    public function kpi(string $as, Metric $metric, string $field = '', ?Query $filter = null): static
+    /**
+     * Add a KPI widget. An optional per-widget $filter — a filter-DSL string ("status:'paid'") or a
+     * query object — restricts this KPI to its own slice of the window, so a single query can hold a
+     * whole funnel ("total", "engaged", "completed") of KPIs each counting a different slice.
+     */
+    public function kpi(string $as, Metric $metric, string $field = '', Query|string|null $filter = null): static
     {
         $kpi = new Kpi($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field));
 
-        if ($filter instanceof Query) {
-            $kpi->filter($filter);
+        $resolved = $this->resolveFilter($filter);
+
+        if ($resolved instanceof Query) {
+            $kpi->filter($resolved);
         }
 
         return $this->add($kpi);
+    }
+
+    /**
+     * Resolve a per-widget filter to a Query: a filter-DSL string ("status:'paid'") is parsed
+     * with the same {@see FilterParser} as the analytics-wide filters(), a Query is taken as-is.
+     */
+    protected function resolveFilter(Query|string|null $filter): ?Query
+    {
+        if ($filter === null || $filter instanceof Query) {
+            return $filter;
+        }
+
+        return (new FilterParser($this->properties))->parse($filter);
     }
 
     public function kpiDelta(string $as, Metric $metric, string $field = ''): static

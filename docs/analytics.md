@@ -168,6 +168,23 @@ $orders->analytics('created_at')
 
 `from()` / `to()` set the window; each widget scopes itself to it (a KPI delta also reaches back one window for its comparison).
 
+### Per-widget filter (funnels)
+
+`filters()` / `filterQuery()` apply to *every* widget. To count a *different* slice per widget — a funnel of `total → engaged → completed` over the same window — pass a `filter:` to the widget itself. It is ANDed into that widget's own scope only, so the whole funnel is a single request. Like `filters()`, it accepts either the filter DSL string or a query object:
+
+```php
+use Sigmie\Query\Queries\Term\Term;
+
+$orders->analytics('created_at')
+    ->from($start)->to($end)
+    ->kpi('total', Metric::Unique, 'customer_id')
+    ->kpi('engaged', Metric::Unique, 'customer_id', filter: "status:'opened' OR status:'completed'")
+    ->kpi('completed', Metric::Unique, 'customer_id', filter: new Term('status', 'completed'))
+    ->get();
+```
+
+A string is parsed with the same [filter-parser](filter-parser.md) DSL (typed against the index mapping); a query object is taken as-is. Omit it and the widget is unchanged.
+
 ## Timezone
 
 Analytics is UTC by default — which silently mis-buckets daily/weekly/monthly charts for users elsewhere (a Tokyo sale just after local midnight lands in the previous UTC day). Set the timezone and Elasticsearch aligns bucket boundaries to local time and handles DST:
