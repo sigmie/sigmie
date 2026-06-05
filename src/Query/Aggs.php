@@ -8,6 +8,7 @@ use Sigmie\Query\Aggregations\Bucket\AutoDateHistogram;
 use Sigmie\Query\Aggregations\Bucket\BucketSelector;
 use Sigmie\Query\Aggregations\Bucket\DateHistogram;
 use Sigmie\Query\Aggregations\Bucket\Filter;
+use Sigmie\Query\Aggregations\Bucket\GeoHashGrid;
 use Sigmie\Query\Aggregations\Bucket\Global_;
 use Sigmie\Query\Aggregations\Bucket\Histogram;
 use Sigmie\Query\Aggregations\Bucket\Missing;
@@ -159,6 +160,19 @@ class Aggs implements AggsInterface
         ?string $timeZone = null,
     ): DateHistogram {
         $aggregation = new DateHistogram($name, $field, $interval, $minDocCount, $extendedBounds, $format, $timeZone);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    public function geoHashGrid(
+        string $name,
+        string $field,
+        int $precision = 5,
+        ?int $size = null,
+    ): GeoHashGrid {
+        $aggregation = new GeoHashGrid($name, $field, $precision, $size);
 
         $this->aggs[] = $aggregation;
 

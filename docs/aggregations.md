@@ -1,6 +1,6 @@
 ---
 title: Aggregations
-short_description: Run Elasticsearch metric and bucket aggregations with Sigmie — sum, avg, stats, terms, histogram, date histogram, and pipeline aggregations.
+short_description: Run Elasticsearch metric and bucket aggregations with Sigmie — sum, avg, stats, terms, histogram, date histogram, geohash grid, and pipeline aggregations.
 keywords: [aggregations, facets, analytics, bucket aggregations, metrics]
 category: Features
 order: 2
@@ -151,6 +151,14 @@ Let Elasticsearch pick the bucket interval:
 
 ```php
 $agg->autoDateHistogram(name: 'timeline', field: 'created_at', buckets: 12);
+```
+
+### Geohash grid
+
+Bucket a `geo_point` field into geohash cells — the basis of a map heatmap. Higher `precision` (1–12) means smaller, more granular cells; `size` caps the number of returned cells:
+
+```php
+$agg->geoHashGrid(name: 'areas', field: 'location', precision: 5);
 ```
 
 ## Sub-aggregations
