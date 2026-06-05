@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Analytics\Enums\Period;
+use Sigmie\Analytics\Widgets\Kpi;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
@@ -309,6 +310,19 @@ class AnalyticsTest extends TestCase
         $this->assertEquals(450.0, $result['all_revenue']['value']);   // 100+50+200+30+70
         $this->assertEquals(370.0, $result['a_revenue']['value']);     // 100+200+70
         $this->assertEquals(80.0, $result['b_revenue']['value']);      // 50+30
+    }
+
+    /**
+     * @test
+     */
+    public function the_unique_metric_asks_for_an_accurate_distinct_count(): void
+    {
+        $widget = new Kpi('distinct', 'created_at', $this->date('2024-01-01'), $this->date('2024-01-04'), 'Y-m-d', Metric::Unique, 'product');
+
+        $cardinality = $widget->toRaw()['distinct']['aggs']['metric']['cardinality'];
+
+        $this->assertEquals('product', $cardinality['field']);
+        $this->assertEquals(40000, $cardinality['precision_threshold']);
     }
 
     private function createTimedIndex(array $docs): SigmieIndex

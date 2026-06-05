@@ -27,6 +27,14 @@ enum Metric: string
     case Median = 'median';
 
     /**
+     * Distinct-count accuracy for the Unique metric. A dashboard "distinct users / orders / …"
+     * headline is misleading if it silently approximates, so analytics asks Elasticsearch for the
+     * maximum exact range (40000) rather than its cheap default (3000). Raw cardinality() callers
+     * outside analytics keep the Elasticsearch default.
+     */
+    private const UNIQUE_PRECISION_THRESHOLD = 40000;
+
+    /**
      * Attach the metric as a sub-aggregation named $name on the given field.
      */
     public function apply(Aggs $aggs, string $name, string $field): void
@@ -37,7 +45,7 @@ enum Metric: string
             self::Min => $aggs->min($name, $field),
             self::Max => $aggs->max($name, $field),
             self::Count => $aggs->valueCount($name, $field),
-            self::Unique => $aggs->cardinality($name, $field),
+            self::Unique => $aggs->cardinality($name, $field)->precisionThreshold(self::UNIQUE_PRECISION_THRESHOLD),
             self::Median => $aggs->percentiles($name, $field, [50]),
         };
     }
