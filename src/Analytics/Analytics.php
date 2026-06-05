@@ -27,6 +27,7 @@ use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\NewQuery;
 use Sigmie\Query\Queries\Compound\Boolean;
+use Sigmie\Query\Queries\Query;
 
 /**
  * Dashboard analytics for an index. Compose one or more widgets — KPIs, trends, breakdowns,
@@ -168,9 +169,15 @@ class Analytics
         return $this;
     }
 
-    public function kpi(string $as, Metric $metric, string $field = ''): static
+    public function kpi(string $as, Metric $metric, string $field = '', ?Query $filter = null): static
     {
-        return $this->add(new Kpi($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field)));
+        $kpi = new Kpi($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field));
+
+        if ($filter !== null) {
+            $kpi->filter($filter);
+        }
+
+        return $this->add($kpi);
     }
 
     public function kpiDelta(string $as, Metric $metric, string $field = ''): static

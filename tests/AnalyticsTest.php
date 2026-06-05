@@ -12,6 +12,7 @@ use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Queries\Term\Range;
+use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Sigmie;
 use Sigmie\SigmieIndex;
 use Sigmie\Testing\TestCase;
@@ -287,6 +288,27 @@ class AnalyticsTest extends TestCase
 
         // amounts >= 100: 100 + 200 = 300
         $this->assertEquals(300.0, $result['revenue']['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function a_per_widget_filter_scopes_only_that_widget(): void
+    {
+        $index = $this->createSalesIndex();
+
+        // A funnel in a single query: every KPI shares the window, but each counts its own slice.
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->kpi('all_revenue', Metric::Sum, 'amount')
+            ->kpi('a_revenue', Metric::Sum, 'amount', filter: new Term('product.keyword', 'A'))
+            ->kpi('b_revenue', Metric::Sum, 'amount', filter: new Term('product.keyword', 'B'))
+            ->get();
+
+        $this->assertEquals(450.0, $result['all_revenue']['value']);   // 100+50+200+30+70
+        $this->assertEquals(370.0, $result['a_revenue']['value']);     // 100+200+70
+        $this->assertEquals(80.0, $result['b_revenue']['value']);      // 50+30
     }
 
     private function createTimedIndex(array $docs): SigmieIndex
