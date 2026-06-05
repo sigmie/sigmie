@@ -36,6 +36,7 @@ use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\NewQuery;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\Query;
+use Sigmie\Query\Search;
 
 /**
  * Dashboard analytics for an index. Compose one or more widgets — KPIs, trends, breakdowns,
@@ -76,6 +77,8 @@ class Analytics
     protected ?Period $period = null;
 
     protected ?string $lastWidget = null;
+
+    protected ?Search $compiledSearch = null;
 
     protected ?Properties $resolvedProperties = null;
 
@@ -354,8 +357,45 @@ class Analytics
      */
     public function get(): array
     {
-        $aggregations = $this->run();
+        return $this->mapWidgets($this->run());
+    }
 
+    /**
+     * Turn a raw search response into the map of widget name => normalised result. Public so a
+     * multi-search caller that batched {@see toSearch()} into one _msearch can format that response
+     * slot directly, instead of going through {@see get()} (which runs its own request).
+     */
+    public function formatResponse(array $response): array
+    {
+        return $this->mapWidgets($response['aggregations'] ?? []);
+    }
+
+    /**
+     * The whole dashboard as a single MultiSearchable query — size(0), the analytics-wide filter, and
+     * every widget's aggregations. Add it to a newMultiSearch() to batch the dashboard into one
+     * _msearch round-trip alongside other searches (e.g. a paginated rows query that can't fold into
+     * aggregations), then feed the matching response slot back through {@see formatResponse()}.
+     *
+     *   $multi = $sigmie->newMultiSearch();
+     *   $multi->addQuery($analytics->toSearch(), 'metrics');
+     *   $multi->newSearch($index, 'rows')->queryString('…')->size(20);
+     *   [$metrics, $rows] = $multi->get();
+     *   $dashboard = $analytics->formatResponse($metrics);
+     */
+    public function toSearch(): NewQuery
+    {
+        $this->compile();
+
+        return $this->query;
+    }
+
+    protected function run(): array
+    {
+        return $this->compile()->response()->json('aggregations') ?? [];
+    }
+
+    protected function mapWidgets(array $aggregations): array
+    {
         $result = [];
 
         foreach ($this->widgets as $name => $widget) {
@@ -365,19 +405,20 @@ class Analytics
         return $result;
     }
 
-    protected function run(): array
+    /**
+     * Configure the underlying search once and memoise it, so the single-request {@see run()} and the
+     * multi-search {@see toSearch()} paths share one body and the widget aggregations are added once.
+     */
+    protected function compile(): Search
     {
-        $filters = $this->filters;
-        $filterQueries = $this->filterQueries;
-
-        $search = $this->query
+        return $this->compiledSearch ??= $this->query
             ->properties($this->properties)
-            ->bool(function (Boolean $boolean) use ($filters, $filterQueries): void {
+            ->bool(function (Boolean $boolean): void {
                 $filter = $boolean->filter();
 
-                $filters !== '' ? $filter->parse($filters) : $filter->matchAll();
+                $this->filters !== '' ? $filter->parse($this->filters) : $filter->matchAll();
 
-                foreach ($filterQueries as $query) {
+                foreach ($this->filterQueries as $query) {
                     $filter->query($query);
                 }
             })
@@ -387,8 +428,6 @@ class Analytics
                     $aggs->add($widget);
                 }
             });
-
-        return $search->response()->json('aggregations') ?? [];
     }
 
     /**

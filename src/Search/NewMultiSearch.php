@@ -66,6 +66,14 @@ class NewMultiSearch
         return $query;
     }
 
+    public function addQuery(NewQuery $query, ?string $name = null): NewQuery
+    {
+        $this->queries[] = $query;
+        $this->names[count($this->queries) - 1] = $name ?? random_name('srch');
+
+        return $query;
+    }
+
     public function raw(string $index, array $query, ?string $name = null): RawQuery
     {
         $raw = new RawQuery($this->elasticsearchConnection, $index, $query);
