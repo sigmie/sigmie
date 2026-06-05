@@ -8,7 +8,6 @@ use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
-use LogicException;
 use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Analytics\Enums\Period;
 use Sigmie\Analytics\Widgets\Breakdown;
@@ -75,8 +74,6 @@ class Analytics
     protected ?string $timeZone = null;
 
     protected ?Period $period = null;
-
-    protected ?string $lastWidget = null;
 
     protected ?Search $compiledSearch = null;
 
@@ -185,51 +182,68 @@ class Analytics
     /**
      * Add a KPI widget. An optional per-widget $filter — a filter-DSL string ("status:'paid'") or a
      * query object — restricts this KPI to its own slice of the window, so a single query can hold a
-     * whole funnel ("total", "engaged", "completed") of KPIs each counting a different slice.
+     * whole funnel ("total", "engaged", "completed") of KPIs each counting a different slice. An
+     * optional $window — a named {@see Period} or a [from, to] pair — scopes this widget to its own
+     * time window instead of the analytics-wide one (an all-time headline next to a recent trend).
      */
-    public function kpi(string $as, Metric $metric, string $field = '', Query|string|null $filter = null): static
+    public function kpi(string $as, Metric $metric, string $field = '', Query|string|null $filter = null, Period|array|null $window = null): static
     {
-        return $this->addFiltered(new Kpi($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field)), $filter);
+        [$from, $to] = $this->resolveWindow($window);
+
+        return $this->addFiltered(new Kpi($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field)), $filter);
     }
 
-    public function kpiDelta(string $as, Metric $metric, string $field = '', Query|string|null $filter = null): static
+    public function kpiDelta(string $as, Metric $metric, string $field = '', Query|string|null $filter = null, Period|array|null $window = null): static
     {
-        [$previousFrom, $previousTo] = $this->previousWindow();
+        [$from, $to] = $this->resolveWindow($window);
+        [$previousFrom, $previousTo] = $this->previousWindow($from, $to, $window === null);
 
-        return $this->addFiltered(new KpiDelta($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $previousFrom, $previousTo), $filter);
+        return $this->addFiltered(new KpiDelta($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $previousFrom, $previousTo), $filter);
     }
 
-    public function trend(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null): static
+    public function trend(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null, Period|array|null $window = null): static
     {
-        return $this->addFiltered(new Trend($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone), $filter);
+        [$from, $to] = $this->resolveWindow($window);
+
+        return $this->addFiltered(new Trend($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone), $filter);
     }
 
-    public function cumulative(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null): static
+    public function cumulative(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null, Period|array|null $window = null): static
     {
-        return $this->addFiltered(new Cumulative($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone), $filter);
+        [$from, $to] = $this->resolveWindow($window);
+
+        return $this->addFiltered(new Cumulative($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone), $filter);
     }
 
-    public function groupedTrend(string $as, Metric $metric, string $field, string $groupBy, CalendarInterval|string $interval = CalendarInterval::Day, int $limit = 5, Query|string|null $filter = null): static
+    public function groupedTrend(string $as, Metric $metric, string $field, string $groupBy, CalendarInterval|string $interval = CalendarInterval::Day, int $limit = 5, Query|string|null $filter = null, Period|array|null $window = null): static
     {
-        return $this->addFiltered(new GroupedTrend($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $this->aggregatableField($groupBy), $interval, $limit, $this->timeZone), $filter);
+        [$from, $to] = $this->resolveWindow($window);
+
+        return $this->addFiltered(new GroupedTrend($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $this->aggregatableField($groupBy), $interval, $limit, $this->timeZone), $filter);
     }
 
-    public function breakdown(string $as, string $groupBy, Metric $metric, string $field = '', int $limit = 10, string $direction = 'desc', Query|string|null $filter = null): static
+    public function breakdown(string $as, string $groupBy, Metric $metric, string $field = '', int $limit = 10, string $direction = 'desc', Query|string|null $filter = null, Period|array|null $window = null): static
     {
-        return $this->addFiltered(new Breakdown($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $this->aggregatableField($groupBy), $metric, $this->metricField($metric, $field), $limit, $direction), $filter);
+        [$from, $to] = $this->resolveWindow($window);
+
+        return $this->addFiltered(new Breakdown($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($groupBy), $metric, $this->metricField($metric, $field), $limit, $direction), $filter);
     }
 
-    public function distribution(string $as, string $field, int $interval, Query|string|null $filter = null): static
+    public function distribution(string $as, string $field, int $interval, Query|string|null $filter = null, Period|array|null $window = null): static
     {
-        return $this->addFiltered(new Distribution($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $this->aggregatableField($field), $interval), $filter);
+        [$from, $to] = $this->resolveWindow($window);
+
+        return $this->addFiltered(new Distribution($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($field), $interval), $filter);
     }
 
     /**
      * @param  list<int|float>  $percents
      */
-    public function percentiles(string $as, string $field, array $percents = [50, 75, 95, 99], Query|string|null $filter = null): static
+    public function percentiles(string $as, string $field, array $percents = [50, 75, 95, 99], Query|string|null $filter = null, Period|array|null $window = null): static
     {
-        return $this->addFiltered(new Percentiles($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $this->aggregatableField($field), $percents), $filter);
+        [$from, $to] = $this->resolveWindow($window);
+
+        return $this->addFiltered(new Percentiles($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($field), $percents), $filter);
     }
 
     /**
@@ -237,17 +251,21 @@ class Analytics
      * limits the returned source (empty returns the full document); $sort is a "field:dir" string
      * ("amount:desc", defaults to descending) sorting the rows before $limit is applied.
      */
-    public function table(string $as, array $fields = [], int $limit = 10, ?string $sort = null, Query|string|null $filter = null): static
+    public function table(string $as, array $fields = [], int $limit = 10, ?string $sort = null, Query|string|null $filter = null, Period|array|null $window = null): static
     {
-        return $this->addFiltered(new Table($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $fields, $limit, $this->sortClause($sort)), $filter);
+        [$from, $to] = $this->resolveWindow($window);
+
+        return $this->addFiltered(new Table($as, $this->dateField, $from, $to, $this->dateFormat, $fields, $limit, $this->sortClause($sort)), $filter);
     }
 
     /**
      * Add the five-number summary (count, min, max, avg, sum) of a numeric field.
      */
-    public function stats(string $as, string $field, Query|string|null $filter = null): static
+    public function stats(string $as, string $field, Query|string|null $filter = null, Period|array|null $window = null): static
     {
-        return $this->addFiltered(new StatSummary($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $this->aggregatableField($field)), $filter);
+        [$from, $to] = $this->resolveWindow($window);
+
+        return $this->addFiltered(new StatSummary($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($field)), $filter);
     }
 
     /**
@@ -257,42 +275,50 @@ class Analytics
      *
      * @param  array<string, Query|string>  $steps
      */
-    public function funnel(string $as, array $steps, Query|string|null $filter = null): static
+    public function funnel(string $as, array $steps, Query|string|null $filter = null, Period|array|null $window = null): static
     {
+        [$from, $to] = $this->resolveWindow($window);
+
         $resolved = [];
 
         foreach ($steps as $label => $step) {
             $resolved[] = ['label' => (string) $label, 'query' => $this->resolveQuery($step)];
         }
 
-        return $this->addFiltered(new Funnel($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $resolved), $filter);
+        return $this->addFiltered(new Funnel($as, $this->dateField, $from, $to, $this->dateFormat, $resolved), $filter);
     }
 
     /**
      * Add a two-dimensional matrix — $rowField by $colField, each cell carrying $metric of $field.
      * Defaults to a count of documents per cell.
      */
-    public function heatmap(string $as, string $rowField, string $colField, Metric $metric = Metric::Count, string $field = '', int $rowLimit = 10, int $colLimit = 10, Query|string|null $filter = null): static
+    public function heatmap(string $as, string $rowField, string $colField, Metric $metric = Metric::Count, string $field = '', int $rowLimit = 10, int $colLimit = 10, Query|string|null $filter = null, Period|array|null $window = null): static
     {
-        return $this->addFiltered(new Heatmap($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $this->aggregatableField($rowField), $this->aggregatableField($colField), $metric, $this->metricField($metric, $field), $rowLimit, $colLimit), $filter);
+        [$from, $to] = $this->resolveWindow($window);
+
+        return $this->addFiltered(new Heatmap($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($rowField), $this->aggregatableField($colField), $metric, $this->metricField($metric, $field), $rowLimit, $colLimit), $filter);
     }
 
     /**
      * Add a cohort retention grid — entities (identified by $idField) grouped by the period of their
      * $cohortField date, counted distinct across each later $dateField period.
      */
-    public function retention(string $as, string $cohortField, string $idField, CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null): static
+    public function retention(string $as, string $cohortField, string $idField, CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null, Period|array|null $window = null): static
     {
-        return $this->addFiltered(new Retention($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $cohortField, $this->aggregatableField($idField), $interval, $this->timeZone), $filter);
+        [$from, $to] = $this->resolveWindow($window);
+
+        return $this->addFiltered(new Retention($as, $this->dateField, $from, $to, $this->dateFormat, $cohortField, $this->aggregatableField($idField), $interval, $this->timeZone), $filter);
     }
 
     /**
      * Add a map heatmap — $metric bucketed into geohash cells of a geo_point $field. Higher
      * $precision means smaller, more granular cells. Defaults to a count of documents per cell.
      */
-    public function geo(string $as, string $field, int $precision = 5, ?int $size = null, Metric $metric = Metric::Count, string $metricField = '', Query|string|null $filter = null): static
+    public function geo(string $as, string $field, int $precision = 5, ?int $size = null, Metric $metric = Metric::Count, string $metricField = '', Query|string|null $filter = null, Period|array|null $window = null): static
     {
-        return $this->addFiltered(new Geo($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $field, $precision, $size, $metric, $this->metricField($metric, $metricField)), $filter);
+        [$from, $to] = $this->resolveWindow($window);
+
+        return $this->addFiltered(new Geo($as, $this->dateField, $from, $to, $this->dateFormat, $field, $precision, $size, $metric, $this->metricField($metric, $metricField)), $filter);
     }
 
     /**
@@ -333,23 +359,6 @@ class Analytics
         }
 
         return $this->add($widget);
-    }
-
-    /**
-     * Override the time window of the most recently added widget. Mirrors the per-widget filter():
-     * chains right after a widget to scope just that one to its own window, so a single query can
-     * hold an all-time headline alongside a last-30-days trend.
-     *
-     *   ->kpi('total', Metric::Sum, 'amount')                          // analytics-wide window
-     *   ->trend('recent', Metric::Sum, 'amount')->over($from, $to);    // its own window
-     */
-    public function over(DateTimeInterface $from, DateTimeInterface $to): static
-    {
-        $widget = $this->widgets[$this->lastWidget] ?? throw new LogicException('over() must be called after adding a widget.');
-
-        $widget->window($from, $to);
-
-        return $this;
     }
 
     /**
@@ -431,30 +440,51 @@ class Analytics
     }
 
     /**
+     * Resolve an optional per-widget window override to a [from, to] pair, falling back to the
+     * analytics-wide window. A {@see Period} is resolved in the configured timezone (so the query stays
+     * cacheable); a [from, to] array of DateTimeInterface is taken as-is.
+     *
+     * @param  Period|array{0: DateTimeInterface, 1: DateTimeInterface}|null  $window
+     * @return array{0: DateTimeInterface, 1: DateTimeInterface}
+     */
+    protected function resolveWindow(Period|array|null $window): array
+    {
+        if ($window === null) {
+            return [$this->from, $this->to];
+        }
+
+        if ($window instanceof Period) {
+            return $window->resolve(new DateTimeImmutable('now', new DateTimeZone($this->timeZone ?? 'UTC')));
+        }
+
+        return $window;
+    }
+
+    /**
      * The window to compare a kpiDelta against: the previous instance of a named calendar period
-     * (this month → last month), or the immediately preceding equal-duration window otherwise.
+     * (this month → last month) when the widget uses the analytics-wide range, or the immediately
+     * preceding equal-duration window otherwise (including any per-widget window override).
      *
      * @return array{0: DateTimeInterface, 1: DateTimeInterface} [previousFrom, previousTo]
      */
-    protected function previousWindow(): array
+    protected function previousWindow(DateTimeInterface $from, DateTimeInterface $to, bool $usePeriod): array
     {
-        $previousTo = DateTimeImmutable::createFromInterface($this->from);
+        $previousTo = DateTimeImmutable::createFromInterface($from);
 
-        $modifier = $this->period?->previousModifier();
+        $modifier = $usePeriod ? $this->period?->previousModifier() : null;
 
         if ($modifier !== null) {
             return [$previousTo->modify($modifier), $previousTo];
         }
 
-        $length = $this->to->getTimestamp() - $this->from->getTimestamp();
+        $length = $to->getTimestamp() - $from->getTimestamp();
 
-        return [$previousTo->setTimestamp($this->from->getTimestamp() - $length), $previousTo];
+        return [$previousTo->setTimestamp($from->getTimestamp() - $length), $previousTo];
     }
 
     protected function add(Widget $widget): static
     {
         $this->widgets[$widget->name()] = $widget;
-        $this->lastWidget = $widget->name();
 
         return $this;
     }

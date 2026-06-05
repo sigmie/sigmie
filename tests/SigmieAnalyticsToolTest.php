@@ -140,7 +140,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertStringContainsString('Examples (', $description);
 
         // One example per widget, as valid JSON grounded in the index's real fields.
-        foreach (['kpi', 'kpi_delta', 'trend', 'cumulative', 'grouped_trend', 'breakdown', 'distribution', 'percentiles'] as $widget) {
+        foreach (['kpi', 'kpi_delta', 'trend', 'cumulative', 'grouped_trend', 'breakdown', 'distribution', 'percentiles', 'stats', 'table', 'funnel', 'heatmap', 'retention', 'geo'] as $widget) {
             $this->assertStringContainsString(sprintf('"widget":"%s"', $widget), $description);
         }
 
@@ -214,6 +214,70 @@ class SigmieAnalyticsToolTest extends TestCase
 
         $this->assertSame('A', $result['rows'][0]['key']);
         $this->assertEquals(370.0, $result['rows'][0]['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function result_runs_a_stats_widget(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'stats',
+            'date_field' => 'created_at',
+            'field' => 'amount',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('stats', $result['type']);
+        $this->assertEquals(5, $result['count']);
+        $this->assertEquals(450.0, $result['sum']);
+        $this->assertEquals(200.0, $result['max']);
+    }
+
+    /**
+     * @test
+     */
+    public function result_runs_a_table_widget(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'table',
+            'date_field' => 'created_at',
+            'fields' => 'amount,product',
+            'sort' => 'amount:desc',
+            'limit' => 2,
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('table', $result['type']);
+        $this->assertCount(2, $result['rows']);
+        $this->assertEquals(200, $result['rows'][0]['document']['amount']);
+    }
+
+    /**
+     * @test
+     */
+    public function result_runs_a_funnel_widget(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'funnel',
+            'date_field' => 'created_at',
+            'steps' => '[{"label":"all","filter":"amount>0"},{"label":"big","filter":"amount>=100"}]',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('funnel', $result['type']);
+        $this->assertSame(['all', 'big'], array_column($result['steps'], 'label'));
+        $this->assertEquals(5, $result['steps'][0]['count']);
+        $this->assertEquals(2, $result['steps'][1]['count']);
     }
 
     /**

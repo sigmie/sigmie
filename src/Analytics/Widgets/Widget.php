@@ -40,20 +40,6 @@ abstract class Widget implements ToRaw
     }
 
     /**
-     * Override this widget's own time window, independent of the analytics-wide from()/to(). Lets one
-     * query mix windows — an all-time headline KPI next to a last-30-days trend — without a second
-     * request. Like filter(), it scopes this widget only; every widget renders through scoped(), which
-     * reads these bounds, so the override propagates to the filter bucket and the extended bounds alike.
-     */
-    public function window(DateTimeInterface $from, DateTimeInterface $to): static
-    {
-        $this->from = $from;
-        $this->to = $to;
-
-        return $this;
-    }
-
-    /**
      * Restrict this widget to a slice of the window. Unlike the analytics-wide filters()/filterQuery(),
      * this applies to this widget only, so a single query can hold widgets counting different slices —
      * e.g. a funnel of "total", "engaged" and "completed" KPIs over the same time window.

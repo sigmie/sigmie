@@ -294,15 +294,20 @@ $orders->analytics('created_at')
 
 ### Per-widget window
 
-`from()` / `to()` set one window for the whole dashboard. To give a single widget its **own** window — an all-time headline next to a last-30-days trend — chain `->over($from, $to)` straight after it. Like the per-widget `filter:`, it scopes that one widget only, so the mixed-window dashboard stays a single request:
+`from()` / `to()` set one window for the whole dashboard. To give a single widget its **own** window — an all-time headline next to a last-30-days trend — pass a `window:` to the widget. Like the per-widget `filter:`, it scopes that one widget only, so the mixed-window dashboard stays a single request. It accepts a named [`Period`](#named-ranges) or a `[$from, $to]` pair:
 
 ```php
+use Sigmie\Analytics\Enums\Period;
+
 $orders->analytics('created_at')
     ->from($last30Start)->to($now)
-    ->kpi('lifetime_revenue', Metric::Sum, 'amount')->over($accountStart, $now)   // all-time
-    ->trend('recent_revenue', Metric::Sum, 'amount', CalendarInterval::Day)       // last 30 days
+    ->kpi('lifetime_revenue', Metric::Sum, 'amount', window: [$accountStart, $now])  // all-time
+    ->kpi('this_year', Metric::Sum, 'amount', window: Period::ThisYear)               // named period
+    ->trend('recent_revenue', Metric::Sum, 'amount', CalendarInterval::Day)           // dashboard window
     ->get();
 ```
+
+`window:` is the last argument of every widget method, alongside `filter:`. A `kpiDelta` with a custom `window:` compares against the immediately preceding equal-length window (the named-period comparison only applies to the dashboard-wide `range()`).
 
 ## Timezone
 
@@ -360,7 +365,7 @@ $dashboard = $analytics->formatResponse($metrics);            // widget name => 
 
 ## Analytics for AI agents
 
-Add [`AsTool`](laravel-ai.md) to an index and its `tools()` suite includes an `analytics` tool. The agent picks a `widget` and arguments; "give me sales this month as a chart" becomes a `trend` call, and "show it per month instead" is the **same call with `interval: month`** — the agent adapts one argument and re-runs.
+Add [`AsTool`](laravel-ai.md) to an index and its `tools()` suite includes an `analytics` tool. The agent picks a `widget` — `kpi`, `kpi_delta`, `trend`, `cumulative`, `grouped_trend`, `breakdown`, `distribution`, `percentiles`, `stats`, `table`, `funnel`, `heatmap`, `retention` or `geo` — and arguments; "give me sales this month as a chart" becomes a `trend` call, and "show it per month instead" is the **same call with `interval: month`** — the agent adapts one argument and re-runs. The tool's description carries a grounded example per widget (using the index's own fields), so the model sees the exact argument shape each one expects.
 
 ```php
 class OrderIndex extends SigmieIndex

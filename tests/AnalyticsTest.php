@@ -877,7 +877,7 @@ class AnalyticsTest extends TestCase
             ->from($this->date('2024-01-01'))
             ->to($this->date('2024-01-04'))
             ->kpi('all_time', Metric::Sum, 'amount')
-            ->kpi('first_day', Metric::Sum, 'amount')->over($this->date('2024-01-01'), $this->date('2024-01-02'))
+            ->kpi('first_day', Metric::Sum, 'amount', window: [$this->date('2024-01-01'), $this->date('2024-01-02')])
             ->get();
 
         $this->assertEquals(450.0, $result['all_time']['value']);
