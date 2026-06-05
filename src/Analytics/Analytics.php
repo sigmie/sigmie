@@ -36,6 +36,7 @@ use Sigmie\Query\NewQuery;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Search;
+use Sigmie\Search\Contracts\MultiSearchable;
 
 /**
  * Dashboard analytics for an index. Compose one or more widgets — KPIs, trends, breakdowns,
@@ -50,8 +51,11 @@ use Sigmie\Query\Search;
  *       ->get();
  *
  * "Per day → per month" is the same call with a different {@see CalendarInterval}.
+ *
+ * Implements {@see MultiSearchable}, so a whole dashboard can be added to a {@see newMultiSearch()}
+ * (via newAnalytics()) and batched into one _msearch alongside other queries.
  */
-class Analytics
+class Analytics implements MultiSearchable
 {
     /**
      * @var array<string, Widget>
@@ -396,6 +400,25 @@ class Analytics
         $this->compile();
 
         return $this->query;
+    }
+
+    /**
+     * {@see MultiSearchable}: the _msearch header + body for this dashboard, so newMultiSearch() can
+     * batch it. The response slot comes back through {@see formatResponses()} as the widget map.
+     */
+    public function toMultiSearch(): array
+    {
+        return $this->toSearch()->toMultiSearch();
+    }
+
+    public function multisearchResCount(): int
+    {
+        return 1;
+    }
+
+    public function formatResponses(...$responses): array
+    {
+        return $this->formatResponse($responses[0] ?? []);
     }
 
     protected function run(): array

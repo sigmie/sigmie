@@ -910,4 +910,28 @@ class AnalyticsTest extends TestCase
         $this->assertSame('A', $dashboard['top_products']['rows'][0]['key']);
         $this->assertCount(2, $rows['hits']['hits']);
     }
+
+    /**
+     * @test
+     */
+    public function multi_search_can_build_analytics_inline(): void
+    {
+        $index = $this->createSalesIndex();
+        $name = $index->name();
+
+        $multi = $this->sigmie->newMultiSearch();
+        $multi->newAnalytics($index, 'created_at', 'metrics')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->kpi('revenue', Metric::Sum, 'amount')
+            ->breakdown('top_products', 'product', Metric::Sum, 'amount');
+        $multi->newQuery($name, 'rows')->matchAll()->size(2);
+
+        [$metrics, $rows] = $multi->get();
+
+        // newAnalytics formats its own slot — the result is already the widget map.
+        $this->assertEquals(450.0, $metrics['revenue']['value']);
+        $this->assertSame('A', $metrics['top_products']['rows'][0]['key']);
+        $this->assertCount(2, $rows['hits']['hits']);
+    }
 }

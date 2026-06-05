@@ -6,11 +6,13 @@ namespace Sigmie\Search;
 
 use Closure;
 use Generator;
+use Sigmie\Analytics\Analytics;
 use Sigmie\Base\APIs\MSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\ElasticsearchException;
 use Sigmie\Document\Hit;
 use Sigmie\Query\NewQuery;
+use Sigmie\SigmieIndex;
 use Sigmie\Search\Contracts\LazyIterableQuery;
 use Sigmie\Search\Contracts\MultiSearchable;
 use Sigmie\Shared\UsesApis;
@@ -72,6 +74,21 @@ class NewMultiSearch
         $this->names[count($this->queries) - 1] = $name ?? random_name('srch');
 
         return $query;
+    }
+
+    /**
+     * Start a dashboard-analytics query in the batch. Compose widgets on the returned Analytics; at
+     * get() time the whole dashboard is serialised into the same _msearch, and its response slot comes
+     * back already mapped to the widget result map.
+     */
+    public function newAnalytics(SigmieIndex $index, string $dateField, ?string $name = null): Analytics
+    {
+        $analytics = $index->analytics($dateField);
+
+        $this->queries[] = $analytics;
+        $this->names[count($this->queries) - 1] = $name ?? random_name('srch');
+
+        return $analytics;
     }
 
     public function raw(string $index, array $query, ?string $name = null): RawQuery

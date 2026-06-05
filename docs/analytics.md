@@ -343,25 +343,32 @@ A **calendar** range also makes `kpiDelta` compare against the *previous instanc
 
 `get()` already runs every widget in a single request. But a dashboard often needs **one more** query that can't be expressed as an aggregation — most commonly a paginated, field-collapsed [`search()`](search.md) for a results table (`top_hits` only returns the top N of one bucket). Rather than pay a second round-trip, batch both into one `_msearch`.
 
-`toSearch()` returns the whole dashboard as a single query you can hand to [`newMultiSearch()`](search.md). Run the batch, then turn the dashboard's response slot back into widget results with `formatResponse()`:
+`newAnalytics()` starts a dashboard **inside** the multi-search — compose widgets on it as usual, and its response slot comes back already mapped to the widget result map:
 
 ```php
-$analytics = $orders->analytics('created_at')
+$multi = $sigmie->newMultiSearch();
+
+$multi->newAnalytics($orders, 'created_at', 'metrics')        // the whole dashboard
     ->from($start)->to($end)
     ->kpiDelta('revenue', Metric::Sum, 'amount')
     ->trend('revenue_over_time', Metric::Sum, 'amount', CalendarInterval::Day);
 
-$multi = $sigmie->newMultiSearch();
-$multi->addQuery($analytics->toSearch(), 'metrics');          // the whole dashboard
 $multi->newSearch($orders->name(), 'rows')                    // a paginated rows table
     ->queryString('')->filters("status:'paid'")->page(3, 20);
 
 [$metrics, $rows] = $multi->get();                            // one HTTP round-trip
-
-$dashboard = $analytics->formatResponse($metrics);            // widget name => result
+// $metrics is already the widget name => result map
 ```
 
-`addQuery()` adds a prebuilt query to the batch (the counterpart to `add()` for a `NewSearch`); `formatResponse()` maps the raw response's aggregations through every widget, exactly as `get()` does internally. Use `get()` for a standalone dashboard, `toSearch()` + `formatResponse()` when it shares a request with another query.
+If you built the `Analytics` elsewhere, add it to the batch with `toSearch()` instead, then map its slot by hand with `formatResponse()`:
+
+```php
+$multi->addQuery($analytics->toSearch(), 'metrics');
+[$metrics, $rows] = $multi->get();
+$dashboard = $analytics->formatResponse($metrics);
+```
+
+`formatResponse()` maps the raw response's aggregations through every widget, exactly as `get()` does internally. Use `get()` for a standalone dashboard, and `newAnalytics()` (or `toSearch()` + `formatResponse()`) when it shares a request with another query.
 
 ## Analytics for AI agents
 
