@@ -114,7 +114,7 @@ class SigmieAnalyticsTool implements Tool
 
         $description .= "\n\nTime window: `from` and `to` are ISO dates (default: last 30 days).\n"
             ."Narrow with `filters` (same DSL as the search tool, e.g. \"status:'paid' AND amount>10\") — it scopes this widget to that slice of the window. Call describe_index for the full field list and filter syntax.\n"
-            .'Comparing slices (a funnel like total → engaged → completed, or A vs B): call this tool once per slice over the SAME window — each call narrows with its own `filters` — and read the numbers side by side.';
+            .'Comparing slices: for an ordered funnel (total → engaged → completed) use the funnel widget with `steps`; for an ad-hoc A vs B, call this tool once per slice over the SAME window — each call narrows with its own `filters` — and read the numbers side by side.';
 
         return $description."\n\nExamples (`widget` → arguments):\n".$this->examples();
     }
