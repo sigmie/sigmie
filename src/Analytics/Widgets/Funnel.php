@@ -35,7 +35,7 @@ class Funnel extends Widget
     {
         return $this->scoped($this->name, $this->from, $this->to, function (Aggs $aggs): void {
             foreach ($this->steps as $i => $step) {
-                $aggs->filter("step_{$i}", $step['query']);
+                $aggs->filter('step_'.$i, $step['query']);
             }
         })->toRaw();
     }
@@ -48,7 +48,7 @@ class Funnel extends Widget
         $previous = $first;
 
         $steps = (new Collection($this->steps))->map(function (array $step, int $i) use ($scope, $first, &$previous): array {
-            $count = $scope["step_{$i}"]['doc_count'] ?? 0;
+            $count = $scope['step_'.$i]['doc_count'] ?? 0;
 
             $row = [
                 'label' => $step['label'],

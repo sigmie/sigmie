@@ -788,7 +788,7 @@ class AnalyticsTest extends TestCase
         $cells = [];
         foreach ($result['regions']['rows'] as $row) {
             foreach ($row['cells'] as $cell) {
-                $cells["{$row['key']}/{$cell['key']}"] = $cell['count'];
+                $cells[sprintf('%s/%s', $row['key'], $cell['key'])] = $cell['count'];
             }
         }
 
@@ -826,6 +826,7 @@ class AnalyticsTest extends TestCase
             foreach ($cohort['periods'] as $period) {
                 $periods[substr($period['label'], 0, 10)] = $period['value'];
             }
+
             $cohorts[substr($cohort['cohort'], 0, 10)] = ['size' => $cohort['size'], 'periods' => $periods];
         }
 

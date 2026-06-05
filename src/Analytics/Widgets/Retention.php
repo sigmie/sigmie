@@ -6,6 +6,7 @@ namespace Sigmie\Analytics\Widgets;
 
 use DateTimeInterface;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
+use Sigmie\Query\Aggregations\Metrics\Cardinality;
 use Sigmie\Query\Aggs;
 use Sigmie\Shared\Collection;
 
@@ -40,7 +41,7 @@ class Retention extends Widget
                 ->aggregate(function (Aggs $sub): void {
                     $sub->cardinality('size', $this->idField);
                     $sub->dateHistogram('periods', $this->dateField, $this->interval, extendedBounds: $this->extendedBounds(), timeZone: $this->timeZone)
-                        ->aggregate(fn (Aggs $m) => $m->cardinality('users', $this->idField));
+                        ->aggregate(fn (Aggs $m): Cardinality => $m->cardinality('users', $this->idField));
                 });
         })->toRaw();
     }
