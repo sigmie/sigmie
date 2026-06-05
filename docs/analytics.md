@@ -185,6 +185,17 @@ $orders->analytics('created_at')
 
 A string is parsed with the same [filter-parser](filter-parser.md) DSL (typed against the index mapping); a query object is taken as-is. Omit it and the widget is unchanged.
 
+Every widget takes the same `filter:` argument (as its last parameter) — so you can scope a trend, a breakdown, a `kpiDelta`, and the rest to a slice too:
+
+```php
+$orders->analytics('created_at')
+    ->from($start)->to($end)
+    ->trend('paid_revenue', Metric::Sum, 'amount', CalendarInterval::Day, filter: "status:'paid'")
+    ->breakdown('top_vip_products', 'product', Metric::Sum, 'amount', filter: "tier:'vip'")
+    ->kpiDelta('refunds', Metric::Count, filter: "status:'refunded'")   // applies to both the current and comparison window
+    ->get();
+```
+
 ## Timezone
 
 Analytics is UTC by default — which silently mis-buckets daily/weekly/monthly charts for users elsewhere (a Tokyo sale just after local midnight lands in the previous UTC day). Set the timezone and Elasticsearch aligns bucket boundaries to local time and handles DST:

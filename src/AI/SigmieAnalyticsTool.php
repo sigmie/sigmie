@@ -93,7 +93,8 @@ class SigmieAnalyticsTool implements Tool
 
         return $description."\n\n"
             ."Time window: `from` and `to` are ISO dates (default: last 30 days).\n"
-            .'Narrow with `filters` (same DSL as the search tool, e.g. "status:\'paid\' AND amount>10"). Call describe_index for the full field list and filter syntax.';
+            ."Narrow with `filters` (same DSL as the search tool, e.g. \"status:'paid' AND amount>10\") — it scopes this widget to that slice of the window. Call describe_index for the full field list and filter syntax.\n"
+            .'Comparing slices (a funnel like total → engaged → completed, or A vs B): call this tool once per slice over the SAME window — each call narrows with its own `filters` — and read the numbers side by side.';
     }
 
     public function schema(JsonSchema $schema): array
@@ -114,7 +115,7 @@ class SigmieAnalyticsTool implements Tool
             'timezone_offset' => $schema->integer()->description('Timezone as minutes east of UTC, e.g. 540 for Tokyo (pass null for UTC)')->nullable()->required(),
             'from' => $schema->string()->description('ISO start date, inclusive — ignored when range is set (pass null for 30 days ago)')->nullable()->required(),
             'to' => $schema->string()->description('ISO end date, exclusive — ignored when range is set (pass null for now)')->nullable()->required(),
-            'filters' => $schema->string()->description('Filter expression, same DSL as the search tool (pass null for none)')->nullable()->required(),
+            'filters' => $schema->string()->description('Filter expression, same DSL as the search tool — scopes this widget to a slice of the window; for a funnel or A-vs-B, call once per slice with a different filter (pass null for none)')->nullable()->required(),
         ];
     }
 

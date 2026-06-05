@@ -177,68 +177,63 @@ class Analytics
      */
     public function kpi(string $as, Metric $metric, string $field = '', Query|string|null $filter = null): static
     {
-        $kpi = new Kpi($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field));
-
-        $resolved = $this->resolveFilter($filter);
-
-        if ($resolved instanceof Query) {
-            $kpi->filter($resolved);
-        }
-
-        return $this->add($kpi);
+        return $this->addFiltered(new Kpi($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field)), $filter);
     }
 
-    /**
-     * Resolve a per-widget filter to a Query: a filter-DSL string ("status:'paid'") is parsed
-     * with the same {@see FilterParser} as the analytics-wide filters(), a Query is taken as-is.
-     */
-    protected function resolveFilter(Query|string|null $filter): ?Query
-    {
-        if ($filter === null || $filter instanceof Query) {
-            return $filter;
-        }
-
-        return (new FilterParser($this->properties))->parse($filter);
-    }
-
-    public function kpiDelta(string $as, Metric $metric, string $field = ''): static
+    public function kpiDelta(string $as, Metric $metric, string $field = '', Query|string|null $filter = null): static
     {
         [$previousFrom, $previousTo] = $this->previousWindow();
 
-        return $this->add(new KpiDelta($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $previousFrom, $previousTo));
+        return $this->addFiltered(new KpiDelta($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $previousFrom, $previousTo), $filter);
     }
 
-    public function trend(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day): static
+    public function trend(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null): static
     {
-        return $this->add(new Trend($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone));
+        return $this->addFiltered(new Trend($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone), $filter);
     }
 
-    public function cumulative(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day): static
+    public function cumulative(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null): static
     {
-        return $this->add(new Cumulative($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone));
+        return $this->addFiltered(new Cumulative($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone), $filter);
     }
 
-    public function groupedTrend(string $as, Metric $metric, string $field, string $groupBy, CalendarInterval|string $interval = CalendarInterval::Day, int $limit = 5): static
+    public function groupedTrend(string $as, Metric $metric, string $field, string $groupBy, CalendarInterval|string $interval = CalendarInterval::Day, int $limit = 5, Query|string|null $filter = null): static
     {
-        return $this->add(new GroupedTrend($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $this->aggregatableField($groupBy), $interval, $limit, $this->timeZone));
+        return $this->addFiltered(new GroupedTrend($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field), $this->aggregatableField($groupBy), $interval, $limit, $this->timeZone), $filter);
     }
 
-    public function breakdown(string $as, string $groupBy, Metric $metric, string $field = '', int $limit = 10, string $direction = 'desc'): static
+    public function breakdown(string $as, string $groupBy, Metric $metric, string $field = '', int $limit = 10, string $direction = 'desc', Query|string|null $filter = null): static
     {
-        return $this->add(new Breakdown($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $this->aggregatableField($groupBy), $metric, $this->metricField($metric, $field), $limit, $direction));
+        return $this->addFiltered(new Breakdown($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $this->aggregatableField($groupBy), $metric, $this->metricField($metric, $field), $limit, $direction), $filter);
     }
 
-    public function distribution(string $as, string $field, int $interval): static
+    public function distribution(string $as, string $field, int $interval, Query|string|null $filter = null): static
     {
-        return $this->add(new Distribution($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $this->aggregatableField($field), $interval));
+        return $this->addFiltered(new Distribution($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $this->aggregatableField($field), $interval), $filter);
     }
 
     /**
      * @param  list<int|float>  $percents
      */
-    public function percentiles(string $as, string $field, array $percents = [50, 75, 95, 99]): static
+    public function percentiles(string $as, string $field, array $percents = [50, 75, 95, 99], Query|string|null $filter = null): static
     {
-        return $this->add(new Percentiles($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $this->aggregatableField($field), $percents));
+        return $this->addFiltered(new Percentiles($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $this->aggregatableField($field), $percents), $filter);
+    }
+
+    /**
+     * Register a widget, first attaching an optional per-widget filter — a filter-DSL string
+     * ("status:'paid'") or a query object — that scopes this widget to its own slice of the window.
+     * A string is parsed with the same {@see FilterParser} as the analytics-wide filters().
+     */
+    protected function addFiltered(Widget $widget, Query|string|null $filter): static
+    {
+        if ($filter !== null) {
+            $resolved = $filter instanceof Query ? $filter : (new FilterParser($this->properties))->parse($filter);
+
+            $widget->filter($resolved);
+        }
+
+        return $this->add($widget);
     }
 
     /**
