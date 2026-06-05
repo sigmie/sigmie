@@ -344,11 +344,15 @@ class SigmieAnalyticsTool implements Tool
     {
         $raw = trim((string) ($request['steps'] ?? ''));
 
-        $raw !== '' || throw new InvalidArgumentException('The funnel widget requires steps — a JSON array of {label, filter} objects, in order.');
+        if ($raw === '') {
+            throw new InvalidArgumentException('The funnel widget requires steps — a JSON array of {label, filter} objects, in order.');
+        }
 
         $decoded = json_decode($raw, true);
 
-        is_array($decoded) || throw new InvalidArgumentException('funnel steps must be a JSON array of {label, filter} objects, e.g. [{"label":"visited","filter":"event:\'visit\'"}].');
+        if (! is_array($decoded)) {
+            throw new InvalidArgumentException('funnel steps must be a JSON array of {label, filter} objects, e.g. [{"label":"visited","filter":"event:\'visit\'"}].');
+        }
 
         $steps = [];
 
@@ -356,7 +360,9 @@ class SigmieAnalyticsTool implements Tool
             $label = trim((string) ($step['label'] ?? ''));
             $filter = trim((string) ($step['filter'] ?? ''));
 
-            ($label !== '' && $filter !== '') || throw new InvalidArgumentException('Each funnel step needs a non-empty label and filter.');
+            if (! ($label !== '' && $filter !== '')) {
+                throw new InvalidArgumentException('Each funnel step needs a non-empty label and filter.');
+            }
 
             $steps[$label] = $filter;
         }
