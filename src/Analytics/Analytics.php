@@ -173,7 +173,7 @@ class Analytics
     {
         $kpi = new Kpi($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $metric, $this->metricField($metric, $field));
 
-        if ($filter !== null) {
+        if ($filter instanceof Query) {
             $kpi->filter($filter);
         }
 

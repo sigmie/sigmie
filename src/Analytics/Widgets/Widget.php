@@ -90,11 +90,11 @@ abstract class Widget implements ToRaw
 
     /**
      * The query for this widget's filter bucket: just the time range, or the time range ANDed
-     * with the per-widget {@see filter()} when one is set.
+     * with the per-widget {@see Filter()} when one is set.
      */
     private function scopedQuery(Range $range): Query
     {
-        if ($this->filter === null) {
+        if (! $this->filter instanceof Query) {
             return $range;
         }
 
