@@ -12,10 +12,10 @@ use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\ElasticsearchException;
 use Sigmie\Document\Hit;
 use Sigmie\Query\NewQuery;
-use Sigmie\SigmieIndex;
 use Sigmie\Search\Contracts\LazyIterableQuery;
 use Sigmie\Search\Contracts\MultiSearchable;
 use Sigmie\Shared\UsesApis;
+use Sigmie\SigmieIndex;
 
 use function Sigmie\Functions\random_name;
 
