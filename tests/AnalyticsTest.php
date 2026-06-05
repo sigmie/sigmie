@@ -8,10 +8,12 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Analytics\Enums\Period;
+use Sigmie\Analytics\Widgets\Kpi;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Queries\Term\Range;
+use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Sigmie;
 use Sigmie\SigmieIndex;
 use Sigmie\Testing\TestCase;
@@ -287,6 +289,119 @@ class AnalyticsTest extends TestCase
 
         // amounts >= 100: 100 + 200 = 300
         $this->assertEquals(300.0, $result['revenue']['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function a_per_widget_filter_scopes_only_that_widget(): void
+    {
+        $index = $this->createSalesIndex();
+
+        // A funnel in a single query: every KPI shares the window, but each counts its own slice.
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->kpi('all_revenue', Metric::Sum, 'amount')
+            ->kpi('a_revenue', Metric::Sum, 'amount', filter: new Term('product.keyword', 'A'))
+            ->kpi('b_revenue', Metric::Sum, 'amount', filter: new Term('product.keyword', 'B'))
+            ->get();
+
+        $this->assertEquals(450.0, $result['all_revenue']['value']);   // 100+50+200+30+70
+        $this->assertEquals(370.0, $result['a_revenue']['value']);     // 100+200+70
+        $this->assertEquals(80.0, $result['b_revenue']['value']);      // 50+30
+    }
+
+    /**
+     * @test
+     */
+    public function a_per_widget_filter_accepts_a_filter_string(): void
+    {
+        $index = $this->createSalesIndex();
+
+        // Same funnel, but each slice is expressed with the filter DSL instead of a query object.
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->kpi('all_revenue', Metric::Sum, 'amount')
+            ->kpi('a_revenue', Metric::Sum, 'amount', filter: "product:'A'")
+            ->kpi('b_revenue', Metric::Sum, 'amount', filter: "product:'B'")
+            ->get();
+
+        $this->assertEquals(450.0, $result['all_revenue']['value']);   // 100+50+200+30+70
+        $this->assertEquals(370.0, $result['a_revenue']['value']);     // 100+200+70
+        $this->assertEquals(80.0, $result['b_revenue']['value']);      // 50+30
+    }
+
+    /**
+     * @test
+     */
+    public function a_trend_can_be_scoped_with_a_per_widget_filter(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->trend('a_revenue', Metric::Sum, 'amount', CalendarInterval::Day, filter: "product:'A'")
+            ->get();
+
+        $series = $result['a_revenue']['series'];
+
+        $this->assertEquals(100.0, $series[0]['value']);   // 2024-01-01: only A
+        $this->assertEquals(200.0, $series[1]['value']);   // 2024-01-02: A
+        $this->assertEquals(70.0, $series[2]['value']);    // 2024-01-03: A (B's 30 excluded)
+    }
+
+    /**
+     * @test
+     */
+    public function a_breakdown_can_be_scoped_with_a_per_widget_filter(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->breakdown('top_products', 'product', Metric::Sum, 'amount', filter: new Term('product.keyword', 'A'))
+            ->get();
+
+        $rows = $result['top_products']['rows'];
+
+        $this->assertCount(1, $rows);            // B is filtered out entirely
+        $this->assertSame('A', $rows[0]['key']);
+        $this->assertEquals(370.0, $rows[0]['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function a_kpi_delta_filter_applies_to_both_windows(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-02'))
+            ->to($this->date('2024-01-04'))
+            ->kpiDelta('a_revenue', Metric::Sum, 'amount', filter: "product:'A'")
+            ->get();
+
+        $this->assertEquals(270.0, $result['a_revenue']['value']);        // current window, A only: 200+70
+        $this->assertEquals(100.0, $result['a_revenue']['previous']);     // previous window, A only: 100
+        $this->assertEquals(170.0, $result['a_revenue']['change_pct']);
+    }
+
+    /**
+     * @test
+     */
+    public function the_unique_metric_asks_for_an_accurate_distinct_count(): void
+    {
+        $widget = new Kpi('distinct', 'created_at', $this->date('2024-01-01'), $this->date('2024-01-04'), 'Y-m-d', Metric::Unique, 'product');
+
+        $cardinality = $widget->toRaw()['distinct']['aggs']['metric']['cardinality'];
+
+        $this->assertEquals('product', $cardinality['field']);
+        $this->assertEquals(40000, $cardinality['precision_threshold']);
     }
 
     private function createTimedIndex(array $docs): SigmieIndex

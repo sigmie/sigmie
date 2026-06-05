@@ -6,6 +6,8 @@ namespace Sigmie\Analytics\Widgets;
 
 use DateTimeInterface;
 use Sigmie\Query\Aggregations\Bucket\Filter;
+use Sigmie\Query\Queries\Compound\Boolean;
+use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Shared\Contracts\ToRaw;
 
@@ -19,6 +21,11 @@ use Sigmie\Shared\Contracts\ToRaw;
  */
 abstract class Widget implements ToRaw
 {
+    /**
+     * An extra hard filter ANDed into this widget's own `filter` bucket, alongside its time window.
+     */
+    protected ?Query $filter = null;
+
     public function __construct(
         protected string $name,
         protected string $dateField,
@@ -30,6 +37,18 @@ abstract class Widget implements ToRaw
     public function name(): string
     {
         return $this->name;
+    }
+
+    /**
+     * Restrict this widget to a slice of the window. Unlike the analytics-wide filters()/filterQuery(),
+     * this applies to this widget only, so a single query can hold widgets counting different slices —
+     * e.g. a funnel of "total", "engaged" and "completed" KPIs over the same time window.
+     */
+    public function filter(Query $filter): static
+    {
+        $this->filter = $filter;
+
+        return $this;
     }
 
     abstract public function toRaw(): array;
@@ -66,6 +85,23 @@ abstract class Widget implements ToRaw
             '<' => $to->format($this->dateFormat),
         ]);
 
-        return (new Filter($name, $range))->aggregate($inner);
+        return (new Filter($name, $this->scopedQuery($range)))->aggregate($inner);
+    }
+
+    /**
+     * The query for this widget's filter bucket: just the time range, or the time range ANDed
+     * with the per-widget {@see Filter()} when one is set.
+     */
+    private function scopedQuery(Range $range): Query
+    {
+        if (! $this->filter instanceof Query) {
+            return $range;
+        }
+
+        $boolean = new Boolean;
+        $boolean->must()->query($range);
+        $boolean->must()->query($this->filter);
+
+        return $boolean;
     }
 }

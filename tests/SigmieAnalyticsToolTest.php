@@ -125,6 +125,34 @@ class SigmieAnalyticsToolTest extends TestCase
     }
 
     /**
+     * The Examples section gives the model a copy-pasteable argument object per widget, grounded
+     * in this index's own fields — so it sees the exact JSON shape (and how `filters` slices one
+     * widget) rather than inferring it.
+     *
+     * @test
+     */
+    public function description_includes_grounded_argument_examples(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $description = (new SigmieAnalyticsTool($index))->description();
+
+        $this->assertStringContainsString('Examples (', $description);
+
+        // One example per widget, as valid JSON grounded in the index's real fields.
+        foreach (['kpi', 'kpi_delta', 'trend', 'cumulative', 'grouped_trend', 'breakdown', 'distribution', 'percentiles'] as $widget) {
+            $this->assertStringContainsString(sprintf('"widget":"%s"', $widget), $description);
+        }
+
+        $this->assertStringContainsString('"date_field":"created_at"', $description);
+        $this->assertStringContainsString('"field":"amount"', $description);
+        $this->assertStringContainsString('"group_by":"product"', $description);
+
+        // The sliced example shows filters narrowing a single widget.
+        $this->assertStringContainsString('"filters"', $description);
+    }
+
+    /**
      * @test
      */
     public function schema_marks_required_and_optional_params_for_openai_strict(): void

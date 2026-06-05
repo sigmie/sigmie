@@ -91,9 +91,44 @@ class SigmieAnalyticsTool implements Tool
             $numericFields !== [] ? implode(', ', $numericFields) : '(none)'
         );
 
-        return $description."\n\n"
-            ."Time window: `from` and `to` are ISO dates (default: last 30 days).\n"
-            .'Narrow with `filters` (same DSL as the search tool, e.g. "status:\'paid\' AND amount>10"). Call describe_index for the full field list and filter syntax.';
+        $description .= "\n\nTime window: `from` and `to` are ISO dates (default: last 30 days).\n"
+            ."Narrow with `filters` (same DSL as the search tool, e.g. \"status:'paid' AND amount>10\") — it scopes this widget to that slice of the window. Call describe_index for the full field list and filter syntax.\n"
+            .'Comparing slices (a funnel like total → engaged → completed, or A vs B): call this tool once per slice over the SAME window — each call narrows with its own `filters` — and read the numbers side by side.';
+
+        return $description."\n\nExamples (`widget` → arguments):\n".$this->examples();
+    }
+
+    /**
+     * One copy-pasteable argument example per widget, grounded in this index's own fields (the first
+     * date / numeric / keyword field), so the model sees the exact JSON shape each widget expects —
+     * including a sliced KPI showing how `filters` narrows a single widget.
+     */
+    protected function examples(): string
+    {
+        $date = $this->fieldNamesOfTypes(['date'])[0] ?? '<date_field>';
+        $number = $this->fieldNamesOfTypes(['number'])[0] ?? '<numeric_field>';
+        // group_by is typically a keyword or a category (a text field with a keyword sub-field).
+        $keyword = $this->fieldNamesOfTypes(['keyword', 'text'])[0] ?? '<keyword_field>';
+
+        $examples = [
+            'total for the month' => ['widget' => 'kpi', 'date_field' => $date, 'metric' => 'sum', 'field' => $number, 'range' => 'this_month'],
+            'this month vs last month' => ['widget' => 'kpi_delta', 'date_field' => $date, 'metric' => 'sum', 'field' => $number, 'range' => 'this_month'],
+            'daily count over 30 days' => ['widget' => 'trend', 'date_field' => $date, 'metric' => 'count', 'interval' => 'day', 'range' => 'last_30_days'],
+            'running total this quarter' => ['widget' => 'cumulative', 'date_field' => $date, 'metric' => 'sum', 'field' => $number, 'interval' => 'day', 'range' => 'this_quarter'],
+            'daily series per group' => ['widget' => 'grouped_trend', 'date_field' => $date, 'metric' => 'sum', 'field' => $number, 'group_by' => $keyword, 'interval' => 'day', 'range' => 'last_30_days'],
+            'top 5 groups by total' => ['widget' => 'breakdown', 'date_field' => $date, 'group_by' => $keyword, 'metric' => 'sum', 'field' => $number, 'limit' => 5, 'range' => 'this_month'],
+            'histogram of a number' => ['widget' => 'distribution', 'date_field' => $date, 'field' => $number, 'bucket_size' => 100, 'range' => 'this_month'],
+            'p50/p95/p99 of a number' => ['widget' => 'percentiles', 'date_field' => $date, 'field' => $number, 'percents' => '50,95,99', 'range' => 'this_month'],
+            'one slice of the window' => ['widget' => 'kpi', 'date_field' => $date, 'metric' => 'sum', 'field' => $number, 'filters' => sprintf("%s:'…'", $keyword), 'range' => 'this_month'],
+        ];
+
+        $lines = array_map(
+            static fn (string $label, array $args): string => sprintf('- %s: %s', $label, json_encode($args, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)),
+            array_keys($examples),
+            array_values($examples),
+        );
+
+        return implode("\n", $lines);
     }
 
     public function schema(JsonSchema $schema): array
@@ -114,7 +149,7 @@ class SigmieAnalyticsTool implements Tool
             'timezone_offset' => $schema->integer()->description('Timezone as minutes east of UTC, e.g. 540 for Tokyo (pass null for UTC)')->nullable()->required(),
             'from' => $schema->string()->description('ISO start date, inclusive — ignored when range is set (pass null for 30 days ago)')->nullable()->required(),
             'to' => $schema->string()->description('ISO end date, exclusive — ignored when range is set (pass null for now)')->nullable()->required(),
-            'filters' => $schema->string()->description('Filter expression, same DSL as the search tool (pass null for none)')->nullable()->required(),
+            'filters' => $schema->string()->description('Filter expression, same DSL as the search tool — scopes this widget to a slice of the window; for a funnel or A-vs-B, call once per slice with a different filter (pass null for none)')->nullable()->required(),
         ];
     }
 
