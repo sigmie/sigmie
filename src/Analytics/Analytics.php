@@ -8,15 +8,22 @@ use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
+use LogicException;
 use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Analytics\Enums\Period;
 use Sigmie\Analytics\Widgets\Breakdown;
 use Sigmie\Analytics\Widgets\Cumulative;
 use Sigmie\Analytics\Widgets\Distribution;
+use Sigmie\Analytics\Widgets\Funnel;
+use Sigmie\Analytics\Widgets\Geo;
 use Sigmie\Analytics\Widgets\GroupedTrend;
+use Sigmie\Analytics\Widgets\Heatmap;
 use Sigmie\Analytics\Widgets\Kpi;
 use Sigmie\Analytics\Widgets\KpiDelta;
 use Sigmie\Analytics\Widgets\Percentiles;
+use Sigmie\Analytics\Widgets\Retention;
+use Sigmie\Analytics\Widgets\StatSummary;
+use Sigmie\Analytics\Widgets\Table;
 use Sigmie\Analytics\Widgets\Trend;
 use Sigmie\Analytics\Widgets\Widget;
 use Sigmie\Mappings\NewProperties;
@@ -67,6 +74,8 @@ class Analytics
     protected ?string $timeZone = null;
 
     protected ?Period $period = null;
+
+    protected ?string $lastWidget = null;
 
     protected ?Properties $resolvedProperties = null;
 
@@ -221,6 +230,93 @@ class Analytics
     }
 
     /**
+     * Add a table of the actual matching documents — the rows behind a number, not a metric. $fields
+     * limits the returned source (empty returns the full document); $sort is a "field:dir" string
+     * ("amount:desc", defaults to descending) sorting the rows before $limit is applied.
+     */
+    public function table(string $as, array $fields = [], int $limit = 10, ?string $sort = null, Query|string|null $filter = null): static
+    {
+        return $this->addFiltered(new Table($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $fields, $limit, $this->sortClause($sort)), $filter);
+    }
+
+    /**
+     * Add the five-number summary (count, min, max, avg, sum) of a numeric field.
+     */
+    public function stats(string $as, string $field, Query|string|null $filter = null): static
+    {
+        return $this->addFiltered(new StatSummary($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $this->aggregatableField($field)), $filter);
+    }
+
+    /**
+     * Add an ordered step funnel. $steps is an ordered map of label => slice, where each slice is a
+     * filter-DSL string ("event:'signup'") or a query object; the result reports each step's count
+     * and its conversion against both the first and the previous step.
+     *
+     * @param  array<string, Query|string>  $steps
+     */
+    public function funnel(string $as, array $steps, Query|string|null $filter = null): static
+    {
+        $resolved = [];
+
+        foreach ($steps as $label => $step) {
+            $resolved[] = ['label' => (string) $label, 'query' => $this->resolveQuery($step)];
+        }
+
+        return $this->addFiltered(new Funnel($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $resolved), $filter);
+    }
+
+    /**
+     * Add a two-dimensional matrix — $rowField by $colField, each cell carrying $metric of $field.
+     * Defaults to a count of documents per cell.
+     */
+    public function heatmap(string $as, string $rowField, string $colField, Metric $metric = Metric::Count, string $field = '', int $rowLimit = 10, int $colLimit = 10, Query|string|null $filter = null): static
+    {
+        return $this->addFiltered(new Heatmap($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $this->aggregatableField($rowField), $this->aggregatableField($colField), $metric, $this->metricField($metric, $field), $rowLimit, $colLimit), $filter);
+    }
+
+    /**
+     * Add a cohort retention grid — entities (identified by $idField) grouped by the period of their
+     * $cohortField date, counted distinct across each later $dateField period.
+     */
+    public function retention(string $as, string $cohortField, string $idField, CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null): static
+    {
+        return $this->addFiltered(new Retention($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $cohortField, $this->aggregatableField($idField), $interval, $this->timeZone), $filter);
+    }
+
+    /**
+     * Add a map heatmap — $metric bucketed into geohash cells of a geo_point $field. Higher
+     * $precision means smaller, more granular cells. Defaults to a count of documents per cell.
+     */
+    public function geo(string $as, string $field, int $precision = 5, ?int $size = null, Metric $metric = Metric::Count, string $metricField = '', Query|string|null $filter = null): static
+    {
+        return $this->addFiltered(new Geo($as, $this->dateField, $this->from, $this->to, $this->dateFormat, $field, $precision, $size, $metric, $this->metricField($metric, $metricField)), $filter);
+    }
+
+    /**
+     * Turn a "field:dir" string into an Elasticsearch sort clause, resolving the field to its
+     * aggregatable path. The direction is optional and defaults to descending.
+     */
+    protected function sortClause(?string $sort): ?array
+    {
+        if ($sort === null) {
+            return null;
+        }
+
+        [$field, $direction] = array_pad(explode(':', $sort, 2), 2, 'desc');
+
+        return [[$this->aggregatableField($field) => ['order' => $direction]]];
+    }
+
+    /**
+     * Resolve a per-step slice to a query: a query object as-is, or a filter-DSL string parsed with
+     * the same {@see FilterParser} as the analytics-wide filters().
+     */
+    protected function resolveQuery(Query|string $query): Query
+    {
+        return $query instanceof Query ? $query : (new FilterParser($this->properties))->parse($query);
+    }
+
+    /**
      * Register a widget, first attaching an optional per-widget filter — a filter-DSL string
      * ("status:'paid'") or a query object — that scopes this widget to its own slice of the window.
      * A string is parsed with the same {@see FilterParser} as the analytics-wide filters().
@@ -234,6 +330,23 @@ class Analytics
         }
 
         return $this->add($widget);
+    }
+
+    /**
+     * Override the time window of the most recently added widget. Mirrors the per-widget filter():
+     * chains right after a widget to scope just that one to its own window, so a single query can
+     * hold an all-time headline alongside a last-30-days trend.
+     *
+     *   ->kpi('total', Metric::Sum, 'amount')                          // analytics-wide window
+     *   ->trend('recent', Metric::Sum, 'amount')->over($from, $to);    // its own window
+     */
+    public function over(DateTimeInterface $from, DateTimeInterface $to): static
+    {
+        $widget = $this->widgets[$this->lastWidget] ?? throw new LogicException('over() must be called after adding a widget.');
+
+        $widget->window($from, $to);
+
+        return $this;
     }
 
     /**
@@ -302,6 +415,7 @@ class Analytics
     protected function add(Widget $widget): static
     {
         $this->widgets[$widget->name()] = $widget;
+        $this->lastWidget = $widget->name();
 
         return $this;
     }

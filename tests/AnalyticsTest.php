@@ -633,4 +633,253 @@ class AnalyticsTest extends TestCase
         $this->assertEquals(0.0, $groups['A'][4]['value']);
         $this->assertEquals(0.0, $groups['B'][4]['value']);
     }
+
+    /**
+     * Build a throwaway index from a properties definition and a set of documents.
+     *
+     * @param  callable(NewProperties): void  $defineProperties
+     * @param  list<Document>  $documents
+     */
+    private function indexWith(callable $defineProperties, array $documents): SigmieIndex
+    {
+        $index = new class($this->sigmie, $defineProperties) extends SigmieIndex
+        {
+            protected string $indexName;
+
+            /** @var callable(NewProperties): void */
+            protected $define;
+
+            public function __construct(Sigmie $sigmie, callable $define)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+                $this->define = $define;
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
+            public function properties(): NewProperties
+            {
+                $props = new NewProperties;
+
+                ($this->define)($props);
+
+                return $props;
+            }
+        };
+
+        $index->create();
+        $index->merge($documents, refresh: true);
+
+        return $index;
+    }
+
+    /**
+     * @test
+     */
+    public function table_returns_the_matching_documents(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->table('recent', fields: ['amount', 'product'], limit: 2, sort: 'amount:desc')
+            ->get();
+
+        $rows = $result['recent']['rows'];
+
+        $this->assertSame('table', $result['recent']['type']);
+        $this->assertCount(2, $rows);
+        $this->assertEquals(200, $rows[0]['document']['amount']);
+        $this->assertSame('A', $rows[0]['document']['product']);
+        $this->assertEquals(100, $rows[1]['document']['amount']);
+        $this->assertNotNull($rows[0]['id']);
+    }
+
+    /**
+     * @test
+     */
+    public function stats_summarises_a_numeric_field(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->stats('order_size', 'amount')
+            ->get();
+
+        $stats = $result['order_size'];
+
+        $this->assertSame('stats', $stats['type']);
+        $this->assertEquals(5, $stats['count']);
+        $this->assertEquals(30.0, $stats['min']);
+        $this->assertEquals(200.0, $stats['max']);
+        $this->assertEquals(450.0, $stats['sum']);
+        $this->assertEquals(90.0, $stats['avg']);
+    }
+
+    /**
+     * @test
+     */
+    public function funnel_reports_step_conversions(): void
+    {
+        $index = $this->indexWith(function (NewProperties $props): void {
+            $props->date('created_at');
+            $props->category('event');
+        }, [
+            new Document(['created_at' => '2024-01-01', 'event' => 'visit']),
+            new Document(['created_at' => '2024-01-01', 'event' => 'visit']),
+            new Document(['created_at' => '2024-01-02', 'event' => 'visit']),
+            new Document(['created_at' => '2024-01-02', 'event' => 'visit']),
+            new Document(['created_at' => '2024-01-02', 'event' => 'signup']),
+            new Document(['created_at' => '2024-01-03', 'event' => 'signup']),
+            new Document(['created_at' => '2024-01-03', 'event' => 'paid']),
+        ]);
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->funnel('signup', [
+                'visited' => "event:'visit'",
+                'signed' => "event:'signup'",
+                'paid' => "event:'paid'",
+            ])
+            ->get();
+
+        $steps = $result['signup']['steps'];
+
+        $this->assertSame('funnel', $result['signup']['type']);
+        $this->assertSame(['visited', 'signed', 'paid'], array_column($steps, 'label'));
+        $this->assertEquals([4, 2, 1], array_column($steps, 'count'));
+        $this->assertEquals(1.0, $steps[0]['conversion']);
+        $this->assertEquals(0.5, $steps[1]['conversion']);
+        $this->assertEquals(0.25, $steps[2]['conversion']);
+        $this->assertEquals(0.5, $steps[2]['step_conversion']);
+    }
+
+    /**
+     * @test
+     */
+    public function heatmap_crosses_two_dimensions(): void
+    {
+        $index = $this->indexWith(function (NewProperties $props): void {
+            $props->date('created_at');
+            $props->category('region');
+            $props->category('device');
+        }, [
+            new Document(['created_at' => '2024-01-01', 'region' => 'US', 'device' => 'mobile']),
+            new Document(['created_at' => '2024-01-01', 'region' => 'US', 'device' => 'mobile']),
+            new Document(['created_at' => '2024-01-02', 'region' => 'US', 'device' => 'desktop']),
+            new Document(['created_at' => '2024-01-02', 'region' => 'EU', 'device' => 'mobile']),
+        ]);
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->heatmap('regions', 'region', 'device')
+            ->get();
+
+        $cells = [];
+        foreach ($result['regions']['rows'] as $row) {
+            foreach ($row['cells'] as $cell) {
+                $cells["{$row['key']}/{$cell['key']}"] = $cell['count'];
+            }
+        }
+
+        $this->assertSame('heatmap', $result['regions']['type']);
+        $this->assertEquals(2, $cells['US/mobile']);
+        $this->assertEquals(1, $cells['US/desktop']);
+        $this->assertEquals(1, $cells['EU/mobile']);
+    }
+
+    /**
+     * @test
+     */
+    public function retention_grids_cohorts_by_period(): void
+    {
+        $index = $this->indexWith(function (NewProperties $props): void {
+            $props->date('created_at');
+            $props->date('signup_at');
+            $props->category('user');
+        }, [
+            new Document(['created_at' => '2024-01-01', 'signup_at' => '2024-01-01', 'user' => 'u1']),
+            new Document(['created_at' => '2024-01-02', 'signup_at' => '2024-01-01', 'user' => 'u1']),
+            new Document(['created_at' => '2024-01-01', 'signup_at' => '2024-01-01', 'user' => 'u2']),
+            new Document(['created_at' => '2024-01-02', 'signup_at' => '2024-01-02', 'user' => 'u3']),
+        ]);
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-03'))
+            ->retention('cohorts', 'signup_at', 'user', CalendarInterval::Day)
+            ->get();
+
+        $cohorts = [];
+        foreach ($result['cohorts']['cohorts'] as $cohort) {
+            $periods = [];
+            foreach ($cohort['periods'] as $period) {
+                $periods[substr($period['label'], 0, 10)] = $period['value'];
+            }
+            $cohorts[substr($cohort['cohort'], 0, 10)] = ['size' => $cohort['size'], 'periods' => $periods];
+        }
+
+        $this->assertSame('retention', $result['cohorts']['type']);
+        $this->assertEquals(2, $cohorts['2024-01-01']['size']);
+        $this->assertEquals(2, $cohorts['2024-01-01']['periods']['2024-01-01']);
+        $this->assertEquals(1, $cohorts['2024-01-01']['periods']['2024-01-02']);
+        $this->assertEquals(1, $cohorts['2024-01-02']['size']);
+        $this->assertEquals(1, $cohorts['2024-01-02']['periods']['2024-01-02']);
+    }
+
+    /**
+     * @test
+     */
+    public function geo_buckets_points_into_cells(): void
+    {
+        $index = $this->indexWith(function (NewProperties $props): void {
+            $props->date('created_at');
+            $props->geoPoint('location');
+        }, [
+            new Document(['created_at' => '2024-01-01', 'location' => ['lat' => 52.37, 'lon' => 4.90]]),
+            new Document(['created_at' => '2024-01-01', 'location' => ['lat' => 52.37, 'lon' => 4.90]]),
+            new Document(['created_at' => '2024-01-02', 'location' => ['lat' => 40.71, 'lon' => -74.00]]),
+        ]);
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->geo('areas', 'location', precision: 5)
+            ->get();
+
+        $buckets = $result['areas']['buckets'];
+
+        $this->assertSame('geo', $result['areas']['type']);
+        $this->assertCount(2, $buckets);
+        $this->assertEquals(2, $buckets[0]['count']);
+        $this->assertEquals(1, $buckets[1]['count']);
+    }
+
+    /**
+     * @test
+     */
+    public function a_widget_can_override_its_window(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->kpi('all_time', Metric::Sum, 'amount')
+            ->kpi('first_day', Metric::Sum, 'amount')->over($this->date('2024-01-01'), $this->date('2024-01-02'))
+            ->get();
+
+        $this->assertEquals(450.0, $result['all_time']['value']);
+        $this->assertEquals(150.0, $result['first_day']['value']);
+    }
 }
