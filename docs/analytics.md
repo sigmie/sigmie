@@ -339,9 +339,32 @@ $orders->analytics('created_at')->timezoneOffset(540)->range(Period::Last7Days);
 
 A **calendar** range also makes `kpiDelta` compare against the *previous instance* of that period rather than an equal-length window — `ThisMonth` → vs last calendar month, `ThisWeek` → vs last week. Raw `from()`/`to()` keep the equal-duration comparison.
 
+## Widgets and hits in one request
+
+`get()` returns only the widget map. When a dashboard needs the numbers **and** the matching documents behind those numbers, use `search()` to customize the underlying Elasticsearch search and `getWithHits()` to return both.
+
+```php
+$result = $orders->analytics('created_at')
+    ->from($start)->to($end)
+    ->kpi('revenue', Metric::Sum, 'amount')
+    ->search(function ($search) {
+        $search
+            ->size(20)
+            ->sortString('amount:desc')
+            ->postFilterString("status:'paid'")
+            ->trackTotalHits(true);
+    })
+    ->getWithHits();
+
+$result['widgets']['revenue']; // normalized KPI result
+$result['hits'];               // raw Elasticsearch hits block
+```
+
+The important detail is `post_filter`: it narrows the returned hits without changing the aggregations. That is useful when the headline card should count the full scoped population, but the table should show one row slice.
+
 ## One request with multi-search
 
-`get()` already runs every widget in a single request. But a dashboard often needs **one more** query that can't be expressed as an aggregation — most commonly a paginated, field-collapsed [`search()`](search.md) for a results table (`top_hits` only returns the top N of one bucket). Rather than pay a second round-trip, batch both into one `_msearch`.
+`get()` already runs every widget in a single request. `getWithHits()` covers the common case where the same search can return dashboard widgets and rows. When the rows need a completely different query shape, batch both into one `_msearch`.
 
 `newAnalytics()` starts a dashboard **inside** the multi-search — compose widgets on it as usual, and its response slot comes back already mapped to the widget result map:
 
@@ -368,7 +391,7 @@ $multi->addQuery($analytics->toSearch(), 'metrics');
 $dashboard = $analytics->formatResponse($metrics);
 ```
 
-`formatResponse()` maps the raw response's aggregations through every widget, exactly as `get()` does internally. Use `get()` for a standalone dashboard, and `newAnalytics()` (or `toSearch()` + `formatResponse()`) when it shares a request with another query.
+`formatResponse()` maps the raw response's aggregations through every widget, exactly as `get()` does internally. Use `get()` for a standalone dashboard, `getWithHits()` when one search can also return rows, and `newAnalytics()` (or `toSearch()` + `formatResponse()`) when analytics shares a round-trip with a separate query.
 
 ## Analytics for AI agents
 
@@ -391,4 +414,4 @@ public function tools(): array
 }
 ```
 
-The agent supplies the `date_field` (validated against the index's date fields), the `metric`/`field` (from its numeric fields), and optionally a `range` (`this_month`, `last_7_days`, …) and `timezone_offset` (minutes east of UTC) so charts land in the user's local time. As with the other tools, the optional `$baseFilter` is server-controlled scoping — AND-ed into every query and never taken from the agent — so an agent can only ever see its own slice of the data.
+The agent supplies the `date_field` (validated against the index's date fields), the `metric`/`field` (from its numeric fields), and optionally a `range` (`this_month`, `last_7_days`, …) and `timezone_offset` (minutes east of UTC) so charts land in the user's local time. When the user asks for a metric/chart and examples or rows behind it, the agent can set `include_hits=1`, plus optional `hit_fields`, `hit_sort`, `hit_limit`, and `hit_filters`. As with the other tools, the optional `$baseFilter` is server-controlled scoping — AND-ed into every query and never taken from the agent — so an agent can only ever see its own slice of the data.

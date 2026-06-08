@@ -14,6 +14,7 @@ use Sigmie\Analytics\Analytics;
 use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Analytics\Enums\Period;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
+use Sigmie\Query\Search;
 use Sigmie\SigmieIndex;
 
 /**
@@ -114,6 +115,7 @@ class SigmieAnalyticsTool implements Tool
 
         $description .= "\n\nTime window: `from` and `to` are ISO dates (default: last 30 days).\n"
             ."Narrow with `filters` (same DSL as the search tool, e.g. \"status:'paid' AND amount>10\") — it scopes this widget to that slice of the window. Call describe_index for the full field list and filter syntax.\n"
+            ."Need a number/chart and the matching rows in one call? Set `include_hits` to 1. Use `hit_filters` when the rows should be narrower than the widget, `hit_fields` to choose source fields, `hit_sort` to order rows, and `hit_limit` for row count.\n"
             .'Comparing slices: for an ordered funnel (total → engaged → completed) use the funnel widget with `steps`; for an ad-hoc A vs B, call this tool once per slice over the SAME window — each call narrows with its own `filters` — and read the numbers side by side.';
 
         return $description."\n\nExamples (`widget` → arguments):\n".$this->examples();
@@ -149,6 +151,7 @@ class SigmieAnalyticsTool implements Tool
             'weekly cohort retention' => ['widget' => 'retention', 'date_field' => $date, 'cohort_field' => $date, 'id_field' => $keyword, 'interval' => 'week', 'range' => 'last_90_days'],
             'counts on a map' => ['widget' => 'geo', 'date_field' => $date, 'field' => $geo, 'precision' => 5, 'range' => 'this_month'],
             'one slice of the window' => ['widget' => 'kpi', 'date_field' => $date, 'metric' => 'sum', 'field' => $number, 'filters' => sprintf("%s:'…'", $keyword), 'range' => 'this_month'],
+            'number plus rows' => ['widget' => 'kpi', 'date_field' => $date, 'metric' => 'sum', 'field' => $number, 'range' => 'this_month', 'include_hits' => 1, 'hit_fields' => sprintf('%s,%s', $keyword, $number), 'hit_sort' => $number.':desc', 'hit_limit' => 5],
         ];
 
         $lines = array_map(
@@ -187,6 +190,11 @@ class SigmieAnalyticsTool implements Tool
             'from' => $schema->string()->description('ISO start date, inclusive — ignored when range is set (pass null for 30 days ago)')->nullable()->required(),
             'to' => $schema->string()->description('ISO end date, exclusive — ignored when range is set (pass null for now)')->nullable()->required(),
             'filters' => $schema->string()->description('Filter expression, same DSL as the search tool — scopes this widget to a slice of the window (pass null for none)')->nullable()->required(),
+            'include_hits' => $schema->integer()->description('Set to 1 to return matching document hits alongside the widget from the same analytics search; pass null or 0 to omit hits')->default(0)->nullable()->required(),
+            'hit_filters' => $schema->string()->description('Optional post-filter for returned hits only; keeps widget aggregations unchanged while narrowing rows (pass null for none)')->nullable()->required(),
+            'hit_fields' => $schema->string()->description('Comma-separated source fields to include in returned hits when include_hits=1 (pass null for full source)')->nullable()->required(),
+            'hit_sort' => $schema->string()->description('Sort returned hits when include_hits=1 using the search sort DSL, e.g. "amount:desc" or "_score" (pass null for Elasticsearch default)')->nullable()->required(),
+            'hit_limit' => $schema->integer()->description('Number of document hits to return when include_hits=1, default 10')->default(10)->nullable()->required(),
         ];
     }
 
@@ -227,6 +235,17 @@ class SigmieAnalyticsTool implements Tool
         }
 
         $this->build($analytics, $widget, $request);
+
+        if ($this->includeHits($request)) {
+            $this->configureHits($analytics, $request);
+
+            $result = $analytics->getWithHits();
+
+            return [
+                'result' => $result['widgets']['result'] ?? [],
+                'hits' => $result['hits'],
+            ];
+        }
 
         return $analytics->get()['result'] ?? [];
     }
@@ -387,6 +406,37 @@ class SigmieAnalyticsTool implements Tool
             array_map(static fn (string $v): string => trim($v), explode(',', $raw)),
             static fn (string $v): bool => $v !== '',
         ));
+    }
+
+    protected function includeHits(Request $request): bool
+    {
+        return (int) ($request['include_hits'] ?? 0) === 1;
+    }
+
+    protected function configureHits(Analytics $analytics, Request $request): void
+    {
+        $analytics->search(function (Search $search) use ($request): void {
+            $limit = max(1, (int) ($request['hit_limit'] ?? 10));
+
+            $search
+                ->size($limit)
+                ->trackTotalHits(true);
+
+            $fields = $this->csvList($request, 'hit_fields');
+            if ($fields !== []) {
+                $search->fields($fields);
+            }
+
+            $sort = trim((string) ($request['hit_sort'] ?? ''));
+            if ($sort !== '') {
+                $search->sortString($sort);
+            }
+
+            $hitFilters = trim((string) ($request['hit_filters'] ?? ''));
+            if ($hitFilters !== '') {
+                $search->postFilterString($hitFilters);
+            }
+        });
     }
 
     /**

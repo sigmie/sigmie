@@ -83,6 +83,11 @@ class Analytics implements MultiSearchable
 
     protected ?Properties $resolvedProperties = null;
 
+    /**
+     * @var list<callable(Search): void>
+     */
+    protected array $searchCallbacks = [];
+
     public function __construct(
         protected NewQuery $query,
         protected NewProperties $properties,
@@ -142,6 +147,19 @@ class Analytics implements MultiSearchable
     public function filterQuery(QueryClause $query): static
     {
         $this->filterQueries[] = $query;
+
+        return $this;
+    }
+
+    /**
+     * Customize the underlying Elasticsearch search used for this dashboard. This lets callers fetch
+     * document hits and aggregations from the same request by overriding the default size(0), adding a
+     * post_filter for rows, sorting, collapsing, tracking totals, or attaching raw search options.
+     */
+    public function search(callable $callback): static
+    {
+        $this->searchCallbacks[] = $callback;
+        $this->compiledSearch = null;
 
         return $this;
     }
@@ -374,6 +392,19 @@ class Analytics implements MultiSearchable
     }
 
     /**
+     * Run the analytics search and return both normalized widgets and the raw Elasticsearch hits block.
+     * Use {@see Search()} to configure hit pagination, sorting, collapse, post_filter, and total hits.
+     *
+     * @return array{widgets: array<string, mixed>, hits: array<string, mixed>, took: int|null, timed_out: bool}
+     */
+    public function getWithHits(): array
+    {
+        $response = $this->compile()->response()->json() ?? [];
+
+        return $this->formatResponseWithHits($response);
+    }
+
+    /**
      * Turn a raw search response into the map of widget name => normalised result. Public so a
      * multi-search caller that batched {@see toSearch()} into one _msearch can format that response
      * slot directly, instead of going through {@see get()} (which runs its own request).
@@ -381,6 +412,21 @@ class Analytics implements MultiSearchable
     public function formatResponse(array $response): array
     {
         return $this->mapWidgets($response['aggregations'] ?? []);
+    }
+
+    /**
+     * Format a raw search response when the analytics request also fetches document hits.
+     *
+     * @return array{widgets: array<string, mixed>, hits: array<string, mixed>, took: int|null, timed_out: bool}
+     */
+    public function formatResponseWithHits(array $response): array
+    {
+        return [
+            'widgets' => $this->formatResponse($response),
+            'hits' => $response['hits'] ?? [],
+            'took' => $response['took'] ?? null,
+            'timed_out' => $response['timed_out'] ?? false,
+        ];
     }
 
     /**
@@ -443,7 +489,11 @@ class Analytics implements MultiSearchable
      */
     protected function compile(): Search
     {
-        return $this->compiledSearch ??= $this->query
+        if ($this->compiledSearch instanceof Search) {
+            return $this->compiledSearch;
+        }
+
+        $search = $this->query
             ->properties($this->properties)
             ->bool(function (Boolean $boolean): void {
                 $filter = $boolean->filter();
@@ -460,6 +510,12 @@ class Analytics implements MultiSearchable
                     $aggs->add($widget);
                 }
             });
+
+        foreach ($this->searchCallbacks as $callback) {
+            $callback($search);
+        }
+
+        return $this->compiledSearch = $search;
     }
 
     /**

@@ -92,6 +92,8 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertStringContainsString('created_at', $description);
         $this->assertStringContainsString('amount', $description);
         $this->assertStringContainsString('median', $description);
+        $this->assertStringContainsString('include_hits', $description);
+        $this->assertStringContainsString('hit_filters', $description);
     }
 
     /**
@@ -168,7 +170,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertFalse($schema['widget']->nullable, "'widget' must NOT be nullable.");
         $this->assertFalse($schema['date_field']->nullable, "'date_field' must NOT be nullable.");
 
-        foreach (['metric', 'field', 'interval', 'group_by', 'limit', 'bucket_size', 'percents', 'from', 'to', 'filters'] as $name) {
+        foreach (['metric', 'field', 'interval', 'group_by', 'limit', 'bucket_size', 'percents', 'from', 'to', 'filters', 'include_hits', 'hit_filters', 'hit_fields', 'hit_sort', 'hit_limit'] as $name) {
             $this->assertTrue($schema[$name]->nullable, sprintf("Optional property '%s' must be nullable().", $name));
         }
     }
@@ -257,6 +259,34 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertSame('table', $result['type']);
         $this->assertCount(2, $result['rows']);
         $this->assertEquals(200, $result['rows'][0]['document']['amount']);
+    }
+
+    /**
+     * @test
+     */
+    public function result_can_return_a_widget_and_document_hits(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'kpi',
+            'date_field' => 'created_at',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+            'include_hits' => 1,
+            'hit_fields' => 'amount,product',
+            'hit_sort' => 'amount:desc',
+            'hit_filters' => "product:'A'",
+            'hit_limit' => 2,
+        ]));
+
+        $this->assertEquals(450.0, $result['result']['value']);
+        $this->assertSame(3, $result['hits']['total']['value']);
+        $this->assertCount(2, $result['hits']['hits']);
+        $this->assertSame(200, $result['hits']['hits'][0]['_source']['amount']);
+        $this->assertSame('A', $result['hits']['hits'][0]['_source']['product']);
     }
 
     /**

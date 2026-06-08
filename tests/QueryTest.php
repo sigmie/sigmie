@@ -282,6 +282,42 @@ class QueryTest extends TestCase
     /**
      * @test
      */
+    public function search_dsl_only_filters_source_when_fields_are_explicit(): void
+    {
+        $query = $this->sigmie->newQuery('')
+            ->matchAll()
+            ->getDSL();
+
+        $this->assertArrayNotHasKey('_source', $query);
+
+        $query = $this->sigmie->newQuery('')
+            ->matchAll()
+            ->fields(['title'])
+            ->getDSL();
+
+        $this->assertSame(['title'], $query['_source']);
+    }
+
+    /**
+     * @test
+     */
+    public function low_level_search_can_parse_sort_strings_with_query_properties(): void
+    {
+        $props = new NewProperties;
+        $props->text('title')->keyword()->makeSortable();
+
+        $query = $this->sigmie->newQuery('')
+            ->properties($props)
+            ->matchAll()
+            ->sortString('title:desc')
+            ->getDSL();
+
+        $this->assertSame([['title.sortable' => 'desc']], $query['sort']);
+    }
+
+    /**
+     * @test
+     */
     public function match_query_analyzer(): void
     {
         $query = $this->sigmie
