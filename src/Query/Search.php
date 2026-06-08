@@ -249,7 +249,6 @@ class Search
     public function toRaw(): array
     {
         $result = [
-            '_source' => $this->fields,
             'query' => $this->query->toRaw(),
             'from' => $this->from,
             'size' => $this->size,
@@ -257,6 +256,10 @@ class Search
             'sort' => $this->sort,
             ...$this->raw,
         ];
+
+        if ($this->fields !== []) {
+            $result['_source'] = $this->fields;
+        }
 
         if ($this->knn !== []) {
             $result['knn'] = $this->knn;

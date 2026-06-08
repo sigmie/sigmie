@@ -282,6 +282,22 @@ class QueryTest extends TestCase
     /**
      * @test
      */
+    public function search_dsl_only_filters_source_when_fields_are_explicit(): void
+    {
+        $query = $this->sigmie->newQuery('')->getDSL();
+
+        $this->assertArrayNotHasKey('_source', $query);
+
+        $query = $this->sigmie->newQuery('')
+            ->fields(['title'])
+            ->getDSL();
+
+        $this->assertSame(['title'], $query['_source']);
+    }
+
+    /**
+     * @test
+     */
     public function match_query_analyzer(): void
     {
         $query = $this->sigmie
