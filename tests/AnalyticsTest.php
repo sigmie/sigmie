@@ -306,7 +306,7 @@ class AnalyticsTest extends TestCase
             ->search(function (Search $search): void {
                 $search
                     ->size(2)
-                    ->sort([['amount' => ['order' => 'desc']]])
+                    ->sortString('amount:desc')
                     ->postFilterString("product:'A'")
                     ->trackTotalHits(true);
             })

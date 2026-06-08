@@ -193,7 +193,7 @@ class SigmieAnalyticsTool implements Tool
             'include_hits' => $schema->integer()->description('Set to 1 to return matching document hits alongside the widget from the same analytics search; pass null or 0 to omit hits')->default(0)->nullable()->required(),
             'hit_filters' => $schema->string()->description('Optional post-filter for returned hits only; keeps widget aggregations unchanged while narrowing rows (pass null for none)')->nullable()->required(),
             'hit_fields' => $schema->string()->description('Comma-separated source fields to include in returned hits when include_hits=1 (pass null for full source)')->nullable()->required(),
-            'hit_sort' => $schema->string()->description('Sort returned hits when include_hits=1 as "field:dir", e.g. "amount:desc" (pass null for Elasticsearch default)')->nullable()->required(),
+            'hit_sort' => $schema->string()->description('Sort returned hits when include_hits=1 using the search sort DSL, e.g. "amount:desc" or "_score" (pass null for Elasticsearch default)')->nullable()->required(),
             'hit_limit' => $schema->integer()->description('Number of document hits to return when include_hits=1, default 10')->default(10)->nullable()->required(),
         ];
     }
@@ -427,9 +427,9 @@ class SigmieAnalyticsTool implements Tool
                 $search->fields($fields);
             }
 
-            $sort = $this->hitSort($request);
-            if ($sort !== []) {
-                $search->sort($sort);
+            $sort = trim((string) ($request['hit_sort'] ?? ''));
+            if ($sort !== '') {
+                $search->sortString($sort);
             }
 
             $hitFilters = trim((string) ($request['hit_filters'] ?? ''));
@@ -437,33 +437,6 @@ class SigmieAnalyticsTool implements Tool
                 $search->postFilterString($hitFilters);
             }
         });
-    }
-
-    /**
-     * @return list<array<string, array{order: string}>>
-     */
-    protected function hitSort(Request $request): array
-    {
-        $raw = trim((string) ($request['hit_sort'] ?? ''));
-        if ($raw === '') {
-            return [];
-        }
-
-        return array_values(array_filter(array_map(function (string $part): ?array {
-            [$field, $direction] = array_pad(explode(':', trim($part), 2), 2, 'desc');
-            $field = trim($field);
-            $direction = strtolower(trim($direction));
-
-            if ($field === '') {
-                return null;
-            }
-
-            if (! in_array($direction, ['asc', 'desc'], true)) {
-                throw new InvalidArgumentException(sprintf("Unknown hit_sort direction '%s'. Use asc or desc.", $direction));
-            }
-
-            return [$field => ['order' => $direction]];
-        }, preg_split('/\s+/', $raw) ?: [])));
     }
 
     /**

@@ -10,6 +10,7 @@ use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Mappings\Properties;
 use Sigmie\Parse\FilterParser;
+use Sigmie\Parse\SortParser;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\MatchAll;
 
@@ -174,6 +175,13 @@ class Search
         $this->sort = $sort;
 
         return $this;
+    }
+
+    public function sortString(string $sort): static
+    {
+        $parser = new SortParser($this->filterParserProperties ?? new Properties);
+
+        return $this->sort($parser->parse($sort));
     }
 
     public function addRaw(string $key, mixed $value): static

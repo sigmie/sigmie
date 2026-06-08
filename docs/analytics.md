@@ -350,7 +350,7 @@ $result = $orders->analytics('created_at')
     ->search(function ($search) {
         $search
             ->size(20)
-            ->sort([['amount' => ['order' => 'desc']]])
+            ->sortString('amount:desc')
             ->postFilterString("status:'paid'")
             ->trackTotalHits(true);
     })
