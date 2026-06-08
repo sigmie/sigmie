@@ -14,6 +14,7 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
+use Sigmie\Query\Search;
 use Sigmie\Sigmie;
 use Sigmie\SigmieIndex;
 use Sigmie\Testing\TestCase;
@@ -289,6 +290,33 @@ class AnalyticsTest extends TestCase
 
         // amounts >= 100: 100 + 200 = 300
         $this->assertEquals(300.0, $result['revenue']['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function analytics_can_return_widgets_and_hits_from_one_search(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->kpi('revenue', Metric::Sum, 'amount')
+            ->search(function (Search $search): void {
+                $search
+                    ->size(2)
+                    ->sort([['amount' => ['order' => 'desc']]])
+                    ->postFilterString("product:'A'")
+                    ->trackTotalHits(true);
+            })
+            ->getWithHits();
+
+        $this->assertEquals(450.0, $result['widgets']['revenue']['value']);
+        $this->assertSame(3, $result['hits']['total']['value']);
+        $this->assertCount(2, $result['hits']['hits']);
+        $this->assertSame(200, $result['hits']['hits'][0]['_source']['amount']);
+        $this->assertSame('A', $result['hits']['hits'][0]['_source']['product']);
     }
 
     /**
