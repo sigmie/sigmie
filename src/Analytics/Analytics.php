@@ -393,7 +393,7 @@ class Analytics implements MultiSearchable
 
     /**
      * Run the analytics search and return both normalized widgets and the raw Elasticsearch hits block.
-     * Use {@see search()} to configure hit pagination, sorting, collapse, post_filter, and total hits.
+     * Use {@see Search()} to configure hit pagination, sorting, collapse, post_filter, and total hits.
      *
      * @return array{widgets: array<string, mixed>, hits: array<string, mixed>, took: int|null, timed_out: bool}
      */
