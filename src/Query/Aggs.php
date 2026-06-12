@@ -29,6 +29,7 @@ use Sigmie\Query\Aggregations\Metrics\Min;
 use Sigmie\Query\Aggregations\Metrics\PercentileRanks;
 use Sigmie\Query\Aggregations\Metrics\Percentiles;
 use Sigmie\Query\Aggregations\Metrics\Rate;
+use Sigmie\Query\Aggregations\Metrics\ScriptedMetric;
 use Sigmie\Query\Aggregations\Metrics\Stats;
 use Sigmie\Query\Aggregations\Metrics\Sum;
 use Sigmie\Query\Aggregations\Metrics\TopHits;
@@ -213,6 +214,31 @@ class Aggs implements AggsInterface
         ?array $sort = null,
     ): TopHits {
         $aggregation = new TopHits($name, $sort, $sourceIncludes, $size);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    /**
+     * @param  array<string, mixed>  $params
+     */
+    public function scriptedMetric(
+        string $name,
+        string $initScript,
+        string $mapScript,
+        string $combineScript,
+        string $reduceScript,
+        array $params = [],
+    ): ScriptedMetric {
+        $aggregation = new ScriptedMetric(
+            $name,
+            $initScript,
+            $mapScript,
+            $combineScript,
+            $reduceScript,
+            $params,
+        );
 
         $this->aggs[] = $aggregation;
 
