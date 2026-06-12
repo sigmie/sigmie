@@ -203,6 +203,36 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
+    public function scripted_metric_aggregation(): void
+    {
+        $aggregation = new SearchAggregation;
+
+        $aggregation->scriptedMetric(
+            'latest_status',
+            'state.rows = [:];',
+            'state.rows[doc["id"].value] = doc["status"].value;',
+            'return state.rows;',
+            'return states;',
+            ['status' => 'completed'],
+        )->meta(['scope' => 'report']);
+
+        $this->assertEquals([
+            'latest_status' => [
+                'scripted_metric' => [
+                    'init_script' => 'state.rows = [:];',
+                    'map_script' => 'state.rows[doc["id"].value] = doc["status"].value;',
+                    'combine_script' => 'return state.rows;',
+                    'reduce_script' => 'return states;',
+                    'params' => ['status' => 'completed'],
+                ],
+                'meta' => ['scope' => 'report'],
+            ],
+        ], $aggregation->toRaw());
+    }
+
+    /**
+     * @test
+     */
     public function date_histogram_aggregation(): void
     {
         $name = uniqid();
