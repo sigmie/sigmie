@@ -94,6 +94,7 @@ class Breakdown extends Widget
             if ($label === '') {
                 continue;
             }
+
             if ($values === []) {
                 continue;
             }
