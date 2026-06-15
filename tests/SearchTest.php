@@ -12,6 +12,7 @@ use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Parse\ParseException;
+use Sigmie\Query\Aggregations\Metrics\Composite;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
@@ -1660,7 +1661,7 @@ class SearchTest extends TestCase
             ->properties($blueprint)
             ->queryString('')
             ->filterQuery(new Term('active', true))
-            ->aggregate(fn (Aggs $aggs) => $aggs->composite(
+            ->aggregate(fn (Aggs $aggs): Composite => $aggs->composite(
                 'categories',
                 [
                     [
