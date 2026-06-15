@@ -94,6 +94,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertStringContainsString('median', $description);
         $this->assertStringContainsString('include_hits', $description);
         $this->assertStringContainsString('hit_filters', $description);
+        $this->assertStringContainsString('bucket_aliases', $description);
     }
 
     /**
@@ -170,7 +171,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertFalse($schema['widget']->nullable, "'widget' must NOT be nullable.");
         $this->assertFalse($schema['date_field']->nullable, "'date_field' must NOT be nullable.");
 
-        foreach (['metric', 'field', 'interval', 'group_by', 'limit', 'bucket_size', 'percents', 'from', 'to', 'filters', 'include_hits', 'hit_filters', 'hit_fields', 'hit_sort', 'hit_limit'] as $name) {
+        foreach (['metric', 'field', 'interval', 'group_by', 'limit', 'bucket_size', 'percents', 'from', 'to', 'filters', 'bucket_aliases', 'include_hits', 'hit_filters', 'hit_fields', 'hit_sort', 'hit_limit'] as $name) {
             $this->assertTrue($schema[$name]->nullable, sprintf("Optional property '%s' must be nullable().", $name));
         }
     }
@@ -216,6 +217,37 @@ class SigmieAnalyticsToolTest extends TestCase
 
         $this->assertSame('A', $result['rows'][0]['key']);
         $this->assertEquals(370.0, $result['rows'][0]['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function result_merges_breakdown_bucket_aliases(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $index->merge([
+            new Document(['created_at' => '2024-01-02', 'amount' => 250, 'product' => 'B']),
+            new Document(['created_at' => '2024-01-02', 'amount' => 180, 'product' => 'C']),
+            new Document(['created_at' => '2024-01-02', 'amount' => 170, 'product' => 'Old C']),
+        ], refresh: true);
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'breakdown',
+            'date_field' => 'created_at',
+            'group_by' => 'product',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'limit' => 2,
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+            'bucket_aliases' => '[{"label":"Combined C","values":["C","Old C"]}]',
+        ]));
+
+        $this->assertSame('A', $result['rows'][0]['key']);
+        $this->assertSame('Combined C', $result['rows'][1]['key']);
+        $this->assertEquals(350.0, $result['rows'][1]['value']);
+        $this->assertNotContains('B', array_column($result['rows'], 'key'));
     }
 
     /**

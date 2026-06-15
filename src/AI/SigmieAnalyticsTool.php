@@ -95,6 +95,8 @@ class SigmieAnalyticsTool implements Tool
             ."- \"retention\", \"cohort analysis\", \"how many users come back\" → retention\n"
             .'- "on a map", "by location / area / region (coordinates)", "geo heatmap" → geo';
 
+        $description .= "\n\nBucket aliases: for breakdowns, use `bucket_aliases` only when the user explicitly asks to merge exact bucket labels, e.g. [{\"label\":\"Germany\",\"values\":[\"Germany\",\"West Germany\"]}].";
+
         $description .= "\n\nMetrics (`metric`): sum, avg, min, max, count, unique (distinct), median.";
         $description .= "\n\nIntervals (`interval`): a calendar unit (minute, hour, day, week, month, quarter, year) or a fixed interval — a multiple of a unit like 15d, 12h, 90m, 30s.";
         $description .= "\n\nRelative window (`range`, preferred over from/to): today, yesterday, this_week, last_week, this_month, last_month, this_quarter, last_quarter, this_year, last_year, last_7_days, last_30_days, last_90_days. A calendar range makes kpi_delta compare against the previous instance (this_month vs last_month).";
@@ -142,6 +144,7 @@ class SigmieAnalyticsTool implements Tool
             'running total this quarter' => ['widget' => 'cumulative', 'date_field' => $date, 'metric' => 'sum', 'field' => $number, 'interval' => 'day', 'range' => 'this_quarter'],
             'daily series per group' => ['widget' => 'grouped_trend', 'date_field' => $date, 'metric' => 'sum', 'field' => $number, 'group_by' => $keyword, 'interval' => 'day', 'range' => 'last_30_days'],
             'top 5 groups by total' => ['widget' => 'breakdown', 'date_field' => $date, 'group_by' => $keyword, 'metric' => 'sum', 'field' => $number, 'limit' => 5, 'range' => 'this_month'],
+            'top groups with merged labels' => ['widget' => 'breakdown', 'date_field' => $date, 'group_by' => $keyword, 'metric' => 'sum', 'field' => $number, 'limit' => 5, 'range' => 'this_month', 'bucket_aliases' => '[{"label":"Combined","values":["Old name","New name"]}]'],
             'histogram of a number' => ['widget' => 'distribution', 'date_field' => $date, 'field' => $number, 'bucket_size' => 100, 'range' => 'this_month'],
             'p50/p95/p99 of a number' => ['widget' => 'percentiles', 'date_field' => $date, 'field' => $number, 'percents' => '50,95,99', 'range' => 'this_month'],
             'summary of a number' => ['widget' => 'stats', 'date_field' => $date, 'field' => $number, 'range' => 'this_month'],
@@ -190,6 +193,7 @@ class SigmieAnalyticsTool implements Tool
             'from' => $schema->string()->description('ISO start date, inclusive — ignored when range is set (pass null for 30 days ago)')->nullable()->required(),
             'to' => $schema->string()->description('ISO end date, exclusive — ignored when range is set (pass null for now)')->nullable()->required(),
             'filters' => $schema->string()->description('Filter expression, same DSL as the search tool — scopes this widget to a slice of the window (pass null for none)')->nullable()->required(),
+            'bucket_aliases' => $schema->string()->description('JSON array for breakdown bucket merges, e.g. [{"label":"Germany","values":["Germany","West Germany"]}]. Use only when the user explicitly asks to combine exact labels; pass null otherwise')->nullable()->required(),
             'include_hits' => $schema->integer()->description('Set to 1 to return matching document hits alongside the widget from the same analytics search; pass null or 0 to omit hits')->default(0)->nullable()->required(),
             'hit_filters' => $schema->string()->description('Optional post-filter for returned hits only; keeps widget aggregations unchanged while narrowing rows (pass null for none)')->nullable()->required(),
             'hit_fields' => $schema->string()->description('Comma-separated source fields to include in returned hits when include_hits=1 (pass null for full source)')->nullable()->required(),
@@ -264,7 +268,7 @@ class SigmieAnalyticsTool implements Tool
             'trend' => $analytics->trend('result', $metric(), $field, $interval()),
             'cumulative' => $analytics->cumulative('result', $metric(), $field, $interval()),
             'grouped_trend' => $analytics->groupedTrend('result', $metric(), $this->required($request, 'field'), $groupBy(), $interval(), $limit),
-            'breakdown' => $analytics->breakdown('result', $groupBy(), $metric(), $field, $limit),
+            'breakdown' => $analytics->breakdown('result', $groupBy(), $metric(), $field, $limit, bucketAliases: $this->bucketAliases($request)),
             'distribution' => $analytics->distribution('result', $this->required($request, 'field'), (int) ($request['bucket_size'] ?? throw new InvalidArgumentException('The distribution widget requires bucket_size.'))),
             'percentiles' => $analytics->percentiles('result', $this->required($request, 'field'), $this->percents($request)),
             'stats' => $analytics->stats('result', $this->required($request, 'field')),
@@ -411,6 +415,46 @@ class SigmieAnalyticsTool implements Tool
     protected function includeHits(Request $request): bool
     {
         return (int) ($request['include_hits'] ?? 0) === 1;
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    protected function bucketAliases(Request $request): array
+    {
+        $raw = trim((string) ($request['bucket_aliases'] ?? ''));
+
+        if ($raw === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+
+        if (! is_array($decoded)) {
+            throw new InvalidArgumentException('bucket_aliases must be a JSON array of {label, values} objects.');
+        }
+
+        $aliases = [];
+
+        foreach ($decoded as $item) {
+            if (! is_array($item)) {
+                throw new InvalidArgumentException('Each bucket_aliases item must be an object with label and values.');
+            }
+
+            $label = trim((string) ($item['label'] ?? ''));
+            $values = array_values(array_filter(array_map(
+                static fn (mixed $value): string => trim((string) $value),
+                (array) ($item['values'] ?? []),
+            ), static fn (string $value): bool => $value !== ''));
+
+            if ($label === '' || $values === []) {
+                throw new InvalidArgumentException('Each bucket_aliases item needs a non-empty label and values array.');
+            }
+
+            $aliases[$label] = $values;
+        }
+
+        return $aliases;
     }
 
     protected function configureHits(Analytics $analytics, Request $request): void

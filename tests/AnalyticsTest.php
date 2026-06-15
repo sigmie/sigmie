@@ -171,6 +171,40 @@ class AnalyticsTest extends TestCase
     /**
      * @test
      */
+    public function breakdown_merges_bucket_aliases_in_elasticsearch_before_top_n_ranking(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $index->merge([
+            new Document(['created_at' => '2024-01-02', 'amount' => 250, 'product' => 'B']),
+            new Document(['created_at' => '2024-01-02', 'amount' => 180, 'product' => 'C']),
+            new Document(['created_at' => '2024-01-02', 'amount' => 170, 'product' => 'Old C']),
+        ], refresh: true);
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->breakdown('top_products', 'product', Metric::Sum, 'amount', limit: 2, bucketAliases: [
+                'Combined C' => ['C', 'Old C'],
+            ])
+            ->get();
+
+        $rows = $result['top_products']['rows'];
+
+        $this->assertCount(2, $rows);
+        $this->assertSame('A', $rows[0]['key']);
+        $this->assertEquals(370.0, $rows[0]['value']);
+        $this->assertSame('Combined C', $rows[1]['key']);
+        $this->assertEquals(350.0, $rows[1]['value']);
+        $this->assertSame(['C', 'Old C'], $rows[1]['source_keys']);
+        $this->assertNotContains('B', array_column($rows, 'key'));
+        $this->assertNotContains('C', array_column($rows, 'key'));
+        $this->assertNotContains('Old C', array_column($rows, 'key'));
+    }
+
+    /**
+     * @test
+     */
     public function cumulative_runs_a_running_total(): void
     {
         $index = $this->createSalesIndex();

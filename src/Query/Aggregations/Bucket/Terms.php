@@ -14,6 +14,8 @@ class Terms extends Bucket
 
     protected array $order = [];
 
+    protected array|string|null $exclude = null;
+
     public function __construct(
         protected string $name,
         protected string $field,
@@ -35,6 +37,13 @@ class Terms extends Bucket
         return $this;
     }
 
+    public function exclude(array|string $terms): self
+    {
+        $this->exclude = $terms;
+
+        return $this;
+    }
+
     protected function value(): array
     {
         $value = [
@@ -50,6 +59,10 @@ class Terms extends Bucket
 
         if (isset($this->missing)) {
             $value['terms']['missing'] = $this->missing;
+        }
+
+        if ($this->exclude !== null && $this->exclude !== []) {
+            $value['terms']['exclude'] = $this->exclude;
         }
 
         return $value;
