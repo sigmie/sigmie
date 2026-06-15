@@ -98,4 +98,14 @@ abstract class AbstractFormatter implements ResponseFormater
     {
         return $this->facetsResponseRaw['aggregations'] ?? [];
     }
+
+    public function aggregations(): array
+    {
+        return $this->queryResponseRaw['aggregations'] ?? [];
+    }
+
+    public function aggregation(string $dot): mixed
+    {
+        return dot($this->aggregations())->get($dot);
+    }
 }

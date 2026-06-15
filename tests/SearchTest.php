@@ -12,6 +12,8 @@ use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Parse\ParseException;
+use Sigmie\Query\Aggregations\Metrics\Composite;
+use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Testing\TestCase;
@@ -1630,6 +1632,62 @@ class SearchTest extends TestCase
             ->filters("nonexistent:'x'");
 
         $this->assertNotEmpty($search->filterParser->errors());
+    }
+
+    /**
+     * @test
+     */
+    public function new_search_returns_custom_aggregations_from_real_index(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('category');
+        $blueprint->bool('active');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['category' => 'public', 'active' => true]),
+                new Document(['category' => 'public', 'active' => false]),
+                new Document(['category' => 'private', 'active' => true]),
+            ]);
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('')
+            ->filterQuery(new Term('active', true))
+            ->aggregate(fn (Aggs $aggs): Composite => $aggs->composite(
+                'categories',
+                [
+                    [
+                        'category' => [
+                            'terms' => [
+                                'field' => 'category',
+                            ],
+                        ],
+                    ],
+                ],
+                10,
+            ))
+            ->get();
+
+        $buckets = $response->aggregation('categories.buckets');
+
+        $this->assertIsArray($buckets);
+        $this->assertEquals(['private', 'public'], array_map(
+            fn (array $bucket): string => $bucket['key']['category'],
+            $buckets,
+        ));
+        $this->assertEquals([1, 1], array_map(
+            fn (array $bucket): int => $bucket['doc_count'],
+            $buckets,
+        ));
+        $this->assertEquals(2, $response->total());
     }
 
     /**

@@ -16,6 +16,10 @@ interface ResponseFormater
 
     public function format(): array;
 
+    public function aggregations(): array;
+
+    public function aggregation(string $dot): mixed;
+
     public function errors(array $errors): static;
 
     public function context(SearchContext $context): static;
