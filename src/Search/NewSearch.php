@@ -22,6 +22,7 @@ use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
+use Sigmie\Query\Aggs;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
@@ -82,6 +83,8 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected int $collapseTop = 0;
 
+    protected Aggs $aggregations;
+
     public function __construct(
         ElasticsearchConnection $elasticsearchConnection
     ) {
@@ -92,6 +95,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         $this->filterParser = new FilterParser($this->properties, false);
         $this->facetParser = new FacetParser($this->properties, false);
         $this->sortParser = new SortParser($this->properties, false);
+        $this->aggregations = new Aggs;
     }
 
     public function page(int $page, int $perPage = 20): static
@@ -319,7 +323,17 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected function handleAggs(Search $search)
     {
-        $search->addRaw('aggs', $this->facets->toRaw());
+        $search->addRaw('aggs', [
+            ...$this->facets->toRaw(),
+            ...$this->aggregations->toRaw(),
+        ]);
+    }
+
+    public function aggregate(callable $callable): static
+    {
+        $callable($this->aggregations);
+
+        return $this;
     }
 
     protected function handleSort(Search $search)
