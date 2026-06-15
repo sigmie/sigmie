@@ -47,6 +47,7 @@ class SigmieAnalyticsToolTest extends TestCase
                 $props->date('created_at');
                 $props->number('amount');
                 $props->category('product');
+                $props->category('channel');
 
                 return $props;
             }
@@ -55,11 +56,11 @@ class SigmieAnalyticsToolTest extends TestCase
         $index->create();
 
         $index->merge([
-            new Document(['created_at' => '2024-01-01', 'amount' => 100, 'product' => 'A']),
-            new Document(['created_at' => '2024-01-01', 'amount' => 50, 'product' => 'B']),
-            new Document(['created_at' => '2024-01-02', 'amount' => 200, 'product' => 'A']),
-            new Document(['created_at' => '2024-01-03', 'amount' => 30, 'product' => 'B']),
-            new Document(['created_at' => '2024-01-03', 'amount' => 70, 'product' => 'A']),
+            new Document(['created_at' => '2024-01-01', 'amount' => 100, 'product' => 'A', 'channel' => 'online']),
+            new Document(['created_at' => '2024-01-01', 'amount' => 50, 'product' => 'B', 'channel' => 'online']),
+            new Document(['created_at' => '2024-01-02', 'amount' => 200, 'product' => 'A', 'channel' => 'retail']),
+            new Document(['created_at' => '2024-01-03', 'amount' => 30, 'product' => 'B', 'channel' => 'retail']),
+            new Document(['created_at' => '2024-01-03', 'amount' => 70, 'product' => 'A', 'channel' => 'online']),
         ], refresh: true);
 
         return $index;
@@ -94,6 +95,9 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertStringContainsString('median', $description);
         $this->assertStringContainsString('include_hits', $description);
         $this->assertStringContainsString('hit_filters', $description);
+        $this->assertStringContainsString('bucket_aliases', $description);
+        $this->assertStringContainsString('multi_breakdown', $description);
+        $this->assertStringContainsString('group_by_fields', $description);
     }
 
     /**
@@ -142,7 +146,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertStringContainsString('Examples (', $description);
 
         // One example per widget, as valid JSON grounded in the index's real fields.
-        foreach (['kpi', 'kpi_delta', 'trend', 'cumulative', 'grouped_trend', 'breakdown', 'distribution', 'percentiles', 'stats', 'table', 'funnel', 'heatmap', 'retention', 'geo'] as $widget) {
+        foreach (['kpi', 'kpi_delta', 'trend', 'cumulative', 'grouped_trend', 'breakdown', 'multi_breakdown', 'distribution', 'percentiles', 'stats', 'table', 'funnel', 'heatmap', 'retention', 'geo'] as $widget) {
             $this->assertStringContainsString(sprintf('"widget":"%s"', $widget), $description);
         }
 
@@ -170,7 +174,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertFalse($schema['widget']->nullable, "'widget' must NOT be nullable.");
         $this->assertFalse($schema['date_field']->nullable, "'date_field' must NOT be nullable.");
 
-        foreach (['metric', 'field', 'interval', 'group_by', 'limit', 'bucket_size', 'percents', 'from', 'to', 'filters', 'include_hits', 'hit_filters', 'hit_fields', 'hit_sort', 'hit_limit'] as $name) {
+        foreach (['metric', 'field', 'interval', 'group_by', 'group_by_fields', 'limit', 'bucket_size', 'percents', 'from', 'to', 'filters', 'bucket_aliases', 'include_hits', 'hit_filters', 'hit_fields', 'hit_sort', 'hit_limit'] as $name) {
             $this->assertTrue($schema[$name]->nullable, sprintf("Optional property '%s' must be nullable().", $name));
         }
     }
@@ -216,6 +220,62 @@ class SigmieAnalyticsToolTest extends TestCase
 
         $this->assertSame('A', $result['rows'][0]['key']);
         $this->assertEquals(370.0, $result['rows'][0]['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function result_merges_breakdown_bucket_aliases(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $index->merge([
+            new Document(['created_at' => '2024-01-02', 'amount' => 250, 'product' => 'B']),
+            new Document(['created_at' => '2024-01-02', 'amount' => 180, 'product' => 'C']),
+            new Document(['created_at' => '2024-01-02', 'amount' => 170, 'product' => 'Old C']),
+        ], refresh: true);
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'breakdown',
+            'date_field' => 'created_at',
+            'group_by' => 'product',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'limit' => 2,
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+            'bucket_aliases' => '[{"label":"Combined C","values":["C","Old C"]}]',
+        ]));
+
+        $this->assertSame('A', $result['rows'][0]['key']);
+        $this->assertSame('Combined C', $result['rows'][1]['key']);
+        $this->assertEquals(350.0, $result['rows'][1]['value']);
+        $this->assertNotContains('B', array_column($result['rows'], 'key'));
+    }
+
+    /**
+     * @test
+     */
+    public function result_runs_a_multi_breakdown_widget(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'multi_breakdown',
+            'date_field' => 'created_at',
+            'group_by_fields' => 'product,channel',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'limit' => 3,
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('multi_breakdown', $result['type']);
+        $this->assertSame(['A', 'retail'], $result['rows'][0]['key_values']);
+        $this->assertEquals(200.0, $result['rows'][0]['value']);
+        $this->assertSame(['A', 'online'], $result['rows'][1]['key_values']);
+        $this->assertEquals(170.0, $result['rows'][1]['value']);
     }
 
     /**

@@ -45,6 +45,7 @@ class AnalyticsTest extends TestCase
                 $props->date('created_at');
                 $props->number('amount');
                 $props->category('product');
+                $props->category('channel');
 
                 return $props;
             }
@@ -53,11 +54,11 @@ class AnalyticsTest extends TestCase
         $index->create();
 
         $index->merge([
-            new Document(['created_at' => '2024-01-01', 'amount' => 100, 'product' => 'A']),
-            new Document(['created_at' => '2024-01-01', 'amount' => 50, 'product' => 'B']),
-            new Document(['created_at' => '2024-01-02', 'amount' => 200, 'product' => 'A']),
-            new Document(['created_at' => '2024-01-03', 'amount' => 30, 'product' => 'B']),
-            new Document(['created_at' => '2024-01-03', 'amount' => 70, 'product' => 'A']),
+            new Document(['created_at' => '2024-01-01', 'amount' => 100, 'product' => 'A', 'channel' => 'online']),
+            new Document(['created_at' => '2024-01-01', 'amount' => 50, 'product' => 'B', 'channel' => 'online']),
+            new Document(['created_at' => '2024-01-02', 'amount' => 200, 'product' => 'A', 'channel' => 'retail']),
+            new Document(['created_at' => '2024-01-03', 'amount' => 30, 'product' => 'B', 'channel' => 'retail']),
+            new Document(['created_at' => '2024-01-03', 'amount' => 70, 'product' => 'A', 'channel' => 'online']),
         ], refresh: true);
 
         return $index;
@@ -166,6 +167,65 @@ class AnalyticsTest extends TestCase
         $this->assertEquals(370.0, $rows[0]['value']);
         $this->assertSame('B', $rows[1]['key']);
         $this->assertEquals(80.0, $rows[1]['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function breakdown_merges_bucket_aliases_in_elasticsearch_before_top_n_ranking(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $index->merge([
+            new Document(['created_at' => '2024-01-02', 'amount' => 250, 'product' => 'B']),
+            new Document(['created_at' => '2024-01-02', 'amount' => 180, 'product' => 'C']),
+            new Document(['created_at' => '2024-01-02', 'amount' => 170, 'product' => 'Old C']),
+        ], refresh: true);
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->breakdown('top_products', 'product', Metric::Sum, 'amount', limit: 2, bucketAliases: [
+                'Combined C' => ['C', 'Old C'],
+            ])
+            ->get();
+
+        $rows = $result['top_products']['rows'];
+
+        $this->assertCount(2, $rows);
+        $this->assertSame('A', $rows[0]['key']);
+        $this->assertEquals(370.0, $rows[0]['value']);
+        $this->assertSame('Combined C', $rows[1]['key']);
+        $this->assertEquals(350.0, $rows[1]['value']);
+        $this->assertSame(['C', 'Old C'], $rows[1]['source_keys']);
+        $this->assertNotContains('B', array_column($rows, 'key'));
+        $this->assertNotContains('C', array_column($rows, 'key'));
+        $this->assertNotContains('Old C', array_column($rows, 'key'));
+    }
+
+    /**
+     * @test
+     */
+    public function multi_breakdown_ranks_top_composite_keys_by_metric(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->multiBreakdown('top_product_channels', ['product', 'channel'], Metric::Sum, 'amount', limit: 3)
+            ->get();
+
+        $rows = $result['top_product_channels']['rows'];
+
+        $this->assertSame('multi_breakdown', $result['top_product_channels']['type']);
+        $this->assertCount(3, $rows);
+        $this->assertSame(['A', 'retail'], $rows[0]['key_values']);
+        $this->assertEquals(200.0, $rows[0]['value']);
+        $this->assertSame(['A', 'online'], $rows[1]['key_values']);
+        $this->assertEquals(170.0, $rows[1]['value']);
+        $this->assertSame(['B', 'online'], $rows[2]['key_values']);
+        $this->assertEquals(50.0, $rows[2]['value']);
     }
 
     /**

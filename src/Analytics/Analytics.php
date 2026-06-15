@@ -19,6 +19,7 @@ use Sigmie\Analytics\Widgets\GroupedTrend;
 use Sigmie\Analytics\Widgets\Heatmap;
 use Sigmie\Analytics\Widgets\Kpi;
 use Sigmie\Analytics\Widgets\KpiDelta;
+use Sigmie\Analytics\Widgets\MultiBreakdown;
 use Sigmie\Analytics\Widgets\Percentiles;
 use Sigmie\Analytics\Widgets\Retention;
 use Sigmie\Analytics\Widgets\StatSummary;
@@ -244,11 +245,28 @@ class Analytics implements MultiSearchable
         return $this->addFiltered(new GroupedTrend($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $this->aggregatableField($groupBy), $interval, $limit, $this->timeZone), $filter);
     }
 
-    public function breakdown(string $as, string $groupBy, Metric $metric, string $field = '', int $limit = 10, string $direction = 'desc', Query|string|null $filter = null, Period|array|null $window = null): static
+    public function breakdown(string $as, string $groupBy, Metric $metric, string $field = '', int $limit = 10, string $direction = 'desc', Query|string|null $filter = null, Period|array|null $window = null, array $bucketAliases = []): static
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addFiltered(new Breakdown($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($groupBy), $metric, $this->metricField($metric, $field), $limit, $direction), $filter);
+        return $this->addFiltered(new Breakdown($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($groupBy), $metric, $this->metricField($metric, $field), $limit, $direction, $bucketAliases), $filter);
+    }
+
+    /**
+     * Add a top-N ranked list over a composite key, such as product + channel by revenue.
+     *
+     * @param  list<string>  $groupBy
+     */
+    public function multiBreakdown(string $as, array $groupBy, Metric $metric, string $field = '', int $limit = 10, string $direction = 'desc', Query|string|null $filter = null, Period|array|null $window = null): static
+    {
+        [$from, $to] = $this->resolveWindow($window);
+
+        $resolvedGroupBy = array_values(array_map(
+            fn (string $field): string => $this->aggregatableField($field),
+            $groupBy,
+        ));
+
+        return $this->addFiltered(new MultiBreakdown($as, $this->dateField, $from, $to, $this->dateFormat, $resolvedGroupBy, $metric, $this->metricField($metric, $field), $limit, $direction), $filter);
     }
 
     public function distribution(string $as, string $field, int $interval, Query|string|null $filter = null, Period|array|null $window = null): static

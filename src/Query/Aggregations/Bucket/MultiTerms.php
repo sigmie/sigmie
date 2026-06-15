@@ -4,21 +4,18 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Aggregations\Bucket;
 
-use Sigmie\Query\Shared\Missing;
-
-class Terms extends Bucket
+class MultiTerms extends Bucket
 {
-    use Missing;
-
     protected int $size;
 
     protected array $order = [];
 
-    protected array|string|null $exclude = null;
-
+    /**
+     * @param  list<string>  $fields
+     */
     public function __construct(
         protected string $name,
-        protected string $field,
+        protected array $fields,
     ) {}
 
     public function size(int $size): static
@@ -37,32 +34,20 @@ class Terms extends Bucket
         return $this;
     }
 
-    public function exclude(array|string $terms): self
-    {
-        $this->exclude = $terms;
-
-        return $this;
-    }
-
     protected function value(): array
     {
         $value = [
-            'terms' => [
-                'field' => $this->field,
+            'multi_terms' => [
+                'terms' => array_map(
+                    fn (string $field): array => ['field' => $field],
+                    $this->fields,
+                ),
                 ...$this->order,
             ],
         ];
 
         if ($this->size ?? false) {
-            $value['terms']['size'] = $this->size;
-        }
-
-        if (isset($this->missing)) {
-            $value['terms']['missing'] = $this->missing;
-        }
-
-        if ($this->exclude !== null && $this->exclude !== []) {
-            $value['terms']['exclude'] = $this->exclude;
+            $value['multi_terms']['size'] = $this->size;
         }
 
         return $value;

@@ -12,6 +12,7 @@ use Sigmie\Query\Aggregations\Bucket\GeoHashGrid;
 use Sigmie\Query\Aggregations\Bucket\Global_;
 use Sigmie\Query\Aggregations\Bucket\Histogram;
 use Sigmie\Query\Aggregations\Bucket\Missing;
+use Sigmie\Query\Aggregations\Bucket\MultiTerms;
 use Sigmie\Query\Aggregations\Bucket\Nested;
 use Sigmie\Query\Aggregations\Bucket\Range;
 use Sigmie\Query\Aggregations\Bucket\RangeFilter;
@@ -201,6 +202,18 @@ class Aggs implements AggsInterface
     public function terms(string $name, string $field): Terms
     {
         $aggregation = new Terms($name, $field);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    /**
+     * @param  list<string>  $fields
+     */
+    public function multiTerms(string $name, array $fields): MultiTerms
+    {
+        $aggregation = new MultiTerms($name, $fields);
 
         $this->aggs[] = $aggregation;
 
