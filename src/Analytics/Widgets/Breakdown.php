@@ -91,8 +91,10 @@ class Breakdown extends Widget
                 static fn (mixed $value): string => trim((string) $value),
                 (array) $values,
             ), static fn (string $value): bool => $value !== ''));
-
-            if ($label === '' || $values === []) {
+            if ($label === '') {
+                continue;
+            }
+            if ($values === []) {
                 continue;
             }
 
