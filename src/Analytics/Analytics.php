@@ -301,10 +301,34 @@ class Analytics implements MultiSearchable
             'metric' => Metric::Count,
             'field' => '',
         ]];
-        $metricKeys = array_column($resolvedMetrics, 'key');
-        $sortMetric = in_array($sortMetric, $metricKeys, true) ? $sortMetric : (string) ($metricKeys[0] ?? 'count');
+        $sortMetric = $this->groupedMetricsSortMetric($resolvedMetrics, $sortMetric);
 
         return $this->addFiltered(new GroupedMetrics($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($groupBy), $resolvedMetrics, $sortMetric, $limit, $direction, $minCount), $filter);
+    }
+
+    /**
+     * @param  list<array{key: string, label: string, metric: Metric, field: string}>  $metrics
+     */
+    protected function groupedMetricsSortMetric(array $metrics, string $sortMetric): string
+    {
+        $metricKeys = array_column($metrics, 'key');
+
+        if (in_array($sortMetric, $metricKeys, true)) {
+            return $sortMetric;
+        }
+
+        if ($sortMetric === 'count') {
+            $countMetric = array_values(array_filter(
+                $metrics,
+                fn (array $metric): bool => $metric['metric'] === Metric::Count,
+            ))[0] ?? null;
+
+            if (is_array($countMetric)) {
+                return $countMetric['key'];
+            }
+        }
+
+        return (string) ($metricKeys[0] ?? 'count');
     }
 
     /**

@@ -116,6 +116,10 @@ class GroupedMetrics extends Widget
             return '_count';
         }
 
+        if ($metric['metric'] === Metric::Count) {
+            return '_count';
+        }
+
         return $metric['metric']->orderKey($metric['key']);
     }
 }
