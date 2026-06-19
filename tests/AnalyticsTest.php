@@ -325,6 +325,56 @@ class AnalyticsTest extends TestCase
     /**
      * @test
      */
+    public function grouped_metrics_sorts_count_metrics_with_domain_specific_keys(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->groupedMetrics('product_metrics', 'product', [
+                ['key' => 'orders', 'label' => 'Orders', 'metric' => Metric::Count],
+                ['key' => 'avg_amount', 'label' => 'Average amount', 'metric' => Metric::Avg, 'field' => 'amount'],
+            ], sortMetric: 'orders', minCount: 2)
+            ->get();
+
+        $rows = $result['product_metrics']['rows'];
+
+        $this->assertSame('orders', $result['product_metrics']['sort_metric']);
+        $this->assertSame('A', $rows[0]['key']);
+        $this->assertEquals(3, $rows[0]['metrics']['orders']);
+        $this->assertSame('B', $rows[1]['key']);
+        $this->assertEquals(2, $rows[1]['metrics']['orders']);
+    }
+
+    /**
+     * @test
+     */
+    public function grouped_metrics_sort_metric_count_uses_the_count_metric_even_when_it_has_a_custom_key(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->groupedMetrics('product_metrics', 'product', [
+                ['key' => 'avg_amount', 'label' => 'Average amount', 'metric' => Metric::Avg, 'field' => 'amount'],
+                ['key' => 'orders', 'label' => 'Orders', 'metric' => Metric::Count],
+            ], sortMetric: 'count', minCount: 2)
+            ->get();
+
+        $rows = $result['product_metrics']['rows'];
+
+        $this->assertSame('orders', $result['product_metrics']['sort_metric']);
+        $this->assertSame('A', $rows[0]['key']);
+        $this->assertEquals(3, $rows[0]['metrics']['orders']);
+        $this->assertSame('B', $rows[1]['key']);
+        $this->assertEquals(2, $rows[1]['metrics']['orders']);
+    }
+
+    /**
+     * @test
+     */
     public function grouped_metrics_applies_min_count_before_returning_groups(): void
     {
         $index = $this->createSalesIndex();
