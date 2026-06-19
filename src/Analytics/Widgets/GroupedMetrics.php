@@ -50,7 +50,7 @@ class GroupedMetrics extends Widget
                 }
 
                 if ($this->minCount > 0) {
-                    $sub->bucketSelector('min_count', ['count' => '_count'], "params.count >= {$this->minCount}");
+                    $sub->bucketSelector('min_count', ['count' => '_count'], 'params.count >= '.$this->minCount);
                 }
 
                 $sub->sort('limit', [[$this->sortOrderKey() => ['order' => $this->direction]]], $this->limit);
