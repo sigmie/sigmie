@@ -15,8 +15,10 @@ use Sigmie\Analytics\Widgets\Cumulative;
 use Sigmie\Analytics\Widgets\Distribution;
 use Sigmie\Analytics\Widgets\Funnel;
 use Sigmie\Analytics\Widgets\Geo;
+use Sigmie\Analytics\Widgets\GroupedMetrics;
 use Sigmie\Analytics\Widgets\GroupedTrend;
 use Sigmie\Analytics\Widgets\Heatmap;
+use Sigmie\Analytics\Widgets\HistogramMetric;
 use Sigmie\Analytics\Widgets\Kpi;
 use Sigmie\Analytics\Widgets\KpiDelta;
 use Sigmie\Analytics\Widgets\MultiBreakdown;
@@ -274,6 +276,35 @@ class Analytics implements MultiSearchable
         [$from, $to] = $this->resolveWindow($window);
 
         return $this->addFiltered(new Distribution($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($field), $interval), $filter);
+    }
+
+    public function histogramMetric(string $as, string $bucketField, int $interval, Metric $metric, string $field = '', Query|string|null $filter = null, Period|array|null $window = null): static
+    {
+        [$from, $to] = $this->resolveWindow($window);
+
+        return $this->addFiltered(new HistogramMetric($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($bucketField), $interval, $metric, $this->metricField($metric, $field)), $filter);
+    }
+
+    /**
+     * @param  list<array{key: string, label?: string, metric: Metric, field?: string}>  $metrics
+     */
+    public function groupedMetrics(string $as, string $groupBy, array $metrics, string $sortMetric = 'count', int $limit = 10, string $direction = 'desc', int $minCount = 0, Query|string|null $filter = null, Period|array|null $window = null): static
+    {
+        [$from, $to] = $this->resolveWindow($window);
+        $resolvedMetrics = array_values(array_filter(array_map(
+            fn (array $metric): ?array => $this->metricSpec($metric),
+            $metrics,
+        )));
+        $resolvedMetrics = $resolvedMetrics !== [] ? $resolvedMetrics : [[
+            'key' => 'count',
+            'label' => 'Count',
+            'metric' => Metric::Count,
+            'field' => '',
+        ]];
+        $metricKeys = array_column($resolvedMetrics, 'key');
+        $sortMetric = in_array($sortMetric, $metricKeys, true) ? $sortMetric : (string) ($metricKeys[0] ?? 'count');
+
+        return $this->addFiltered(new GroupedMetrics($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($groupBy), $resolvedMetrics, $sortMetric, $limit, $direction, $minCount), $filter);
     }
 
     /**
@@ -597,6 +628,33 @@ class Analytics implements MultiSearchable
         }
 
         return $this->aggregatableField($field);
+    }
+
+    /**
+     * @param  array{key: string, label?: string, metric: Metric, field?: string}  $metric
+     * @return array{key: string, label: string, metric: Metric, field: string}|null
+     */
+    protected function metricSpec(array $metric): ?array
+    {
+        $key = trim((string) ($metric['key'] ?? ''));
+
+        if ($key === '') {
+            return null;
+        }
+
+        $metricType = $metric['metric'];
+        $field = (string) ($metric['field'] ?? '');
+
+        if (! $metricType instanceof Metric) {
+            return null;
+        }
+
+        return [
+            'key' => $key,
+            'label' => trim((string) ($metric['label'] ?? $key)) ?: $key,
+            'metric' => $metricType,
+            'field' => $metricType === Metric::Count ? '' : $this->metricField($metricType, $field),
+        ];
     }
 
     /**
