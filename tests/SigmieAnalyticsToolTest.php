@@ -98,6 +98,8 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertStringContainsString('bucket_aliases', $description);
         $this->assertStringContainsString('multi_breakdown', $description);
         $this->assertStringContainsString('group_by_fields', $description);
+        $this->assertStringContainsString('histogram_metric', $description);
+        $this->assertStringContainsString('grouped_metrics', $description);
     }
 
     /**
@@ -146,7 +148,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertStringContainsString('Examples (', $description);
 
         // One example per widget, as valid JSON grounded in the index's real fields.
-        foreach (['kpi', 'kpi_delta', 'trend', 'cumulative', 'grouped_trend', 'breakdown', 'multi_breakdown', 'distribution', 'percentiles', 'stats', 'table', 'funnel', 'heatmap', 'retention', 'geo'] as $widget) {
+        foreach (['kpi', 'kpi_delta', 'trend', 'cumulative', 'grouped_trend', 'breakdown', 'multi_breakdown', 'distribution', 'histogram_metric', 'grouped_metrics', 'percentiles', 'stats', 'table', 'funnel', 'heatmap', 'retention', 'geo'] as $widget) {
             $this->assertStringContainsString(sprintf('"widget":"%s"', $widget), $description);
         }
 
@@ -174,7 +176,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertFalse($schema['widget']->nullable, "'widget' must NOT be nullable.");
         $this->assertFalse($schema['date_field']->nullable, "'date_field' must NOT be nullable.");
 
-        foreach (['metric', 'field', 'interval', 'group_by', 'group_by_fields', 'limit', 'bucket_size', 'percents', 'from', 'to', 'filters', 'bucket_aliases', 'include_hits', 'hit_filters', 'hit_fields', 'hit_sort', 'hit_limit'] as $name) {
+        foreach (['metric', 'field', 'bucket_field', 'metrics', 'sort_metric', 'min_count', 'interval', 'group_by', 'group_by_fields', 'limit', 'bucket_size', 'percents', 'from', 'to', 'filters', 'bucket_aliases', 'include_hits', 'hit_filters', 'hit_fields', 'hit_sort', 'hit_limit'] as $name) {
             $this->assertTrue($schema[$name]->nullable, sprintf("Optional property '%s' must be nullable().", $name));
         }
     }
@@ -276,6 +278,53 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertEquals(200.0, $result['rows'][0]['value']);
         $this->assertSame(['A', 'online'], $result['rows'][1]['key_values']);
         $this->assertEquals(170.0, $result['rows'][1]['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function result_runs_a_histogram_metric_widget(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'histogram_metric',
+            'date_field' => 'created_at',
+            'metric' => 'avg',
+            'field' => 'amount',
+            'bucket_field' => 'amount',
+            'bucket_size' => 100,
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('histogram_metric', $result['type']);
+        $this->assertEquals(50.0, $result['rows'][0]['value']);
+        $this->assertEquals(3, $result['rows'][0]['count']);
+    }
+
+    /**
+     * @test
+     */
+    public function result_runs_a_grouped_metrics_widget(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'grouped_metrics',
+            'date_field' => 'created_at',
+            'group_by' => 'product',
+            'metrics' => '[{"key":"count","label":"Count","metric":"count"},{"key":"avg_amount","label":"Average amount","metric":"avg","field":"amount"}]',
+            'sort_metric' => 'count',
+            'min_count' => 2,
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('grouped_metrics', $result['type']);
+        $this->assertSame('A', $result['rows'][0]['key']);
+        $this->assertEquals(3, $result['rows'][0]['metrics']['count']);
+        $this->assertEquals(123.33333333333333, $result['rows'][0]['metrics']['avg_amount']);
     }
 
     /**

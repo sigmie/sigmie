@@ -275,6 +275,78 @@ class AnalyticsTest extends TestCase
     /**
      * @test
      */
+    public function histogram_metric_computes_a_metric_inside_numeric_buckets(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->histogramMetric('average_by_amount_bucket', 'amount', 100, Metric::Avg, 'amount')
+            ->get();
+
+        $rows = $result['average_by_amount_bucket']['rows'];
+
+        $this->assertSame('histogram_metric', $result['average_by_amount_bucket']['type']);
+        $this->assertEquals(0, $rows[0]['key']);
+        $this->assertEquals(50.0, $rows[0]['value']);
+        $this->assertEquals(3, $rows[0]['count']);
+        $this->assertEquals(100.0, $rows[1]['value']);
+        $this->assertEquals(200.0, $rows[2]['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function grouped_metrics_ranks_groups_and_carries_additional_metrics(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->groupedMetrics('product_metrics', 'product', [
+                ['key' => 'count', 'label' => 'Count', 'metric' => Metric::Count],
+                ['key' => 'avg_amount', 'label' => 'Average amount', 'metric' => Metric::Avg, 'field' => 'amount'],
+            ], sortMetric: 'count', minCount: 2)
+            ->get();
+
+        $rows = $result['product_metrics']['rows'];
+
+        $this->assertSame('grouped_metrics', $result['product_metrics']['type']);
+        $this->assertSame('A', $rows[0]['key']);
+        $this->assertEquals(3, $rows[0]['metrics']['count']);
+        $this->assertEquals(123.33333333333333, $rows[0]['metrics']['avg_amount']);
+        $this->assertSame('B', $rows[1]['key']);
+        $this->assertEquals(2, $rows[1]['metrics']['count']);
+        $this->assertEquals(40.0, $rows[1]['metrics']['avg_amount']);
+    }
+
+    /**
+     * @test
+     */
+    public function grouped_metrics_applies_min_count_before_returning_groups(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->groupedMetrics('product_metrics', 'product', [
+                ['key' => 'count', 'label' => 'Count', 'metric' => Metric::Count],
+                ['key' => 'avg_amount', 'label' => 'Average amount', 'metric' => Metric::Avg, 'field' => 'amount'],
+            ], sortMetric: 'count', minCount: 3)
+            ->get();
+
+        $rows = $result['product_metrics']['rows'];
+
+        $this->assertCount(1, $rows);
+        $this->assertSame('A', $rows[0]['key']);
+    }
+
+    /**
+     * @test
+     */
     public function percentiles_returns_values(): void
     {
         $index = $this->createSalesIndex();
