@@ -419,4 +419,77 @@ class QueryTest extends TestCase
         $this->assertEquals('b', $hits[0]['_source']['category']);
         $this->assertEquals('a', $hits[1]['_source']['category']);
     }
+
+    /**
+     * @test
+     */
+    public function term_clause_helpers_return_expected_elasticsearch_documents(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('sku');
+        $blueprint->keyword('category');
+        $blueprint->keyword('tag');
+        $blueprint->text('name');
+        $blueprint->number('stock')->integer();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['sku' => 'alpha-001', 'category' => 'books', 'tag' => 'featured', 'name' => 'Laravel Guide', 'stock' => 5], _id: 'alpha'),
+            new Document(['sku' => 'beta-002', 'category' => 'books', 'tag' => 'sale', 'name' => 'Elastic Search Handbook', 'stock' => 0], _id: 'beta'),
+            new Document(['sku' => 'gamma-003', 'category' => 'music', 'name' => 'Synth Album', 'stock' => 8], _id: 'gamma'),
+        ]);
+
+        $this->assertSame(['alpha', 'beta'], $this->idsFromQuery(fn () => $this->sigmie->newQuery($indexName)->terms('category', ['books'])));
+        $this->assertSame(['alpha', 'beta'], $this->idsFromQuery(fn () => $this->sigmie->newQuery($indexName)->exists('tag')));
+        $this->assertSame(['alpha', 'gamma'], $this->idsFromQuery(fn () => $this->sigmie->newQuery($indexName)->ids(['alpha', 'gamma'])));
+        $this->assertSame(['beta'], $this->idsFromQuery(fn () => $this->sigmie->newQuery($indexName)->wildcard('sku', 'beta-*')));
+        $this->assertSame(['gamma'], $this->idsFromQuery(fn () => $this->sigmie->newQuery($indexName)->regex('sku', 'gamma-00[0-9]')));
+        $this->assertSame(['alpha'], $this->idsFromQuery(fn () => $this->sigmie->newQuery($indexName)->fuzzy('name', 'Laraval')));
+    }
+
+    /**
+     * @test
+     */
+    public function post_filter_string_filters_hits_after_query_execution(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('category');
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['category' => 'books', 'name' => 'Laravel Guide'], _id: 'book'),
+            new Document(['category' => 'music', 'name' => 'Laravel Soundtrack'], _id: 'music'),
+        ]);
+
+        $response = $this->sigmie->newQuery($indexName)
+            ->properties($blueprint)
+            ->match('name', 'Laravel')
+            ->postFilterString("category:'books'")
+            ->get();
+
+        $this->assertSame(['book'], array_map(fn (array $hit): string => $hit['_id'], $response->json('hits.hits')));
+    }
+
+    protected function idsFromQuery(callable $query): array
+    {
+        $response = $query()
+            ->get();
+
+        $ids = array_map(fn (array $hit): string => $hit['_id'], $response->json('hits.hits'));
+
+        sort($ids);
+
+        return $ids;
+    }
 }
