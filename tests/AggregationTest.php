@@ -205,29 +205,39 @@ class AggregationTest extends TestCase
      */
     public function scripted_metric_aggregation(): void
     {
-        $aggregation = new SearchAggregation;
+        $name = uniqid();
 
-        $aggregation->scriptedMetric(
-            'latest_status',
-            'state.rows = [:];',
-            'state.rows[doc["id"].value] = doc["status"].value;',
-            'return state.rows;',
-            'return states;',
-            ['status' => 'completed'],
-        )->meta(['scope' => 'report']);
+        $blueprint = new NewProperties;
+        $blueprint->keyword('status');
 
-        $this->assertEquals([
-            'latest_status' => [
-                'scripted_metric' => [
-                    'init_script' => 'state.rows = [:];',
-                    'map_script' => 'state.rows[doc["id"].value] = doc["status"].value;',
-                    'combine_script' => 'return state.rows;',
-                    'reduce_script' => 'return states;',
-                    'params' => ['status' => 'completed'],
-                ],
-                'meta' => ['scope' => 'report'],
-            ],
-        ], $aggregation->toRaw());
+        $this->sigmie->newIndex($name)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($name, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['status' => 'completed'], _id: 'completed'),
+                new Document(['status' => 'pending'], _id: 'pending'),
+            ]);
+
+        $response = $this->sigmie->newQuery($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation): void {
+                $aggregation->scriptedMetric(
+                    'completed_count',
+                    'state.count = 0;',
+                    'if (doc["status"].value == params.status) { state.count += 1; }',
+                    'return state.count;',
+                    'int total = 0; for (state in states) { total += state; } return total;',
+                    ['status' => 'completed'],
+                )->meta(['scope' => 'report']);
+            })
+            ->get();
+
+        $this->assertEquals(2, $response->json('hits.total.value'));
+        $this->assertEquals(1, $response->aggregation('completed_count.value'));
+        $this->assertSame('report', $response->json('aggregations.completed_count.meta.scope'));
     }
 
     /**
@@ -289,19 +299,33 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function post_filter_serializes_when_set(): void
+    public function post_filter_filters_elasticsearch_hits_when_set(): void
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->create();
+        $blueprint = new NewProperties;
+        $blueprint->keyword('status');
 
-        $raw = $this->sigmie->newQuery($name)
+        $this->sigmie->newIndex($name)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($name, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['status' => 'published'], _id: 'published'),
+                new Document(['status' => 'draft'], _id: 'draft'),
+            ]);
+
+        $response = $this->sigmie->newQuery($name)
             ->matchAll()
             ->postFilter(new Term('status', 'published'))
-            ->getDSL();
+            ->get();
 
-        $this->assertArrayHasKey('post_filter', $raw);
-        $this->assertSame('published', $raw['post_filter']['term']['status']['value']);
+        $hits = $response->json('hits.hits');
+
+        $this->assertEquals(1, $response->json('hits.total.value'));
+        $this->assertSame('published', $hits[0]['_id']);
     }
 
     /**
@@ -338,17 +362,33 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function post_filter_omitted_when_not_set(): void
+    public function missing_post_filter_returns_all_elasticsearch_hits(): void
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->create();
+        $blueprint = new NewProperties;
+        $blueprint->keyword('status');
 
-        $raw = $this->sigmie->newQuery($name)
+        $this->sigmie->newIndex($name)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($name, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['status' => 'published'], _id: 'published'),
+                new Document(['status' => 'draft'], _id: 'draft'),
+            ]);
+
+        $response = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->getDSL();
+            ->get();
 
-        $this->assertArrayNotHasKey('post_filter', $raw);
+        $ids = array_map(fn (array $hit): string => $hit['_id'], $response->json('hits.hits'));
+        sort($ids);
+
+        $this->assertEquals(2, $response->json('hits.total.value'));
+        $this->assertSame(['draft', 'published'], $ids);
     }
 
     /**
