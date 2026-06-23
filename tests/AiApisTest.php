@@ -28,6 +28,9 @@ class AiApisTest extends TestCase
         $this->sigmie->registerApi('api1', $api1);
         $this->sigmie->registerApi('api2', $api2);
 
+        $this->assertTrue($this->sigmie->hasApi('api1'));
+        $this->assertSame($api1, $this->sigmie->api('api1'));
+
         // Create properties with fields using different APIs
         $props = new NewProperties;
         $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'api1');
@@ -35,6 +38,16 @@ class AiApisTest extends TestCase
         $props->text('content')->semantic(accuracy: 1, dimensions: 384, api: 'api1');
 
         $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie->collect($indexName, true)
+            ->properties($props)
+            ->merge([
+                new Document([
+                    'title' => 'Test Product',
+                    'description' => 'A searchable test item',
+                    'content' => 'Semantic routing payload',
+                ], _id: 'test-product'),
+            ]);
 
         // Create a search - this should populate VectorPools for each API
         $search = $this->sigmie->newSearch($indexName)
@@ -44,7 +57,7 @@ class AiApisTest extends TestCase
             ->disableKeywordSearch();
 
         // Execute the search to trigger vector generation
-        $search->get();
+        $response = $search->get();
 
         // Verify that api1 was called for title and content
         $api1->assertBatchEmbedWasCalled();
@@ -80,6 +93,10 @@ class AiApisTest extends TestCase
 
         $this->assertContains('test query', $api2TextsCalled, 'API2 should be called with the query string');
         $this->assertContains(384, $api2Dims, 'API2 should be called with 384 dimensions for description field');
+        $hits = $response->json('hits');
+
+        $this->assertSame('test-product', $hits[0]['_id']);
+        $this->assertSame('Test Product', $hits[0]['_source']['title']);
     }
 
     /**
@@ -152,6 +169,18 @@ class AiApisTest extends TestCase
 
         $this->assertContains('Product Summary', $cohereTexts, 'Cohere should process the summary');
         $this->assertContains('positive neutral', $cohereTexts, 'Cohere should process concatenated sentiments');
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->queryString('Product Title')
+            ->disableKeywordSearch()
+            ->get();
+
+        $hits = $response->json('hits');
+
+        $this->assertSame('test-doc', $hits[0]['_id']);
+        $this->assertSame('Product Title', $hits[0]['_source']['title']);
     }
 
     /**
@@ -216,7 +245,7 @@ class AiApisTest extends TestCase
             ->queryString('test query')
             ->disableKeywordSearch();
 
-        $search->get();
+        $response = $search->get();
 
         // Assert search-api was called during search
         $searchApi->assertBatchEmbedWasCalled();
@@ -233,5 +262,9 @@ class AiApisTest extends TestCase
 
         // Assert index-api was NOT called during search
         $this->assertCount(0, $indexApi->getBatchEmbedCalls(), 'index-api should NOT be called during search');
+        $hits = $response->json('hits');
+
+        $this->assertSame('doc1', $hits[0]['_id']);
+        $this->assertSame('Test Product', $hits[0]['_source']['title']);
     }
 }
