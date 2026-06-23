@@ -354,7 +354,7 @@ class AiApisTest extends TestCase
             $texts = is_array($texts) ? $texts : [$texts];
 
             $dimensions = (int) ($payload['dimensions'] ?? $payload['output_dimension'] ?? 384);
-            $vectors = array_map(fn (string $text): array => $this->testVector($text, $dimensions), $texts);
+            $vectors = array_map(fn (string $text): array => $this->test_vector($text, $dimensions), $texts);
 
             $promise = new Promise;
             $promise->resolve(new Response(200, [], json_encode(
