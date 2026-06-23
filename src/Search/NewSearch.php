@@ -404,14 +404,17 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected function handleSuggest(Search $search): void
     {
-        if (
-            ($this->searchContext->autocompletePrefixStrings[0] ?? false)
-            && ($this->properties->autocompleteField ?? false)
-        ) {
+        if (! ($this->searchContext->autocompletePrefixStrings[0] ?? false)) {
+            return;
+        }
+
+        $autocompleteField = $this->properties->completionFields()->first();
+
+        if ($autocompleteField) {
             $suggest = new Suggest;
 
             $suggest->completion(name: 'autocompletion')
-                ->field($this->properties->autocompleteField->name())
+                ->field($autocompleteField->name())
                 ->size($this->autocompleteSize)
                 ->fuzzyMinLegth($this->autocompleteFuzzyMinLength)
                 ->fuzzyPrefixLenght($this->autocompleteFuzzyPrefixLength)

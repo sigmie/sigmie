@@ -16,6 +16,7 @@ use Sigmie\Query\Aggregations\Metrics\Composite;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
+use Sigmie\Search\VectorPool;
 use Sigmie\Testing\TestCase;
 
 class SearchTest extends TestCase
@@ -63,6 +64,125 @@ class SearchTest extends TestCase
 
         $this->assertEquals('Goofy', $hits[0]['_source']['name']);
         $this->assertEquals(2, $res->total());
+    }
+
+    /**
+     * @test
+     */
+    public function autocomplete_prefix_returns_completion_suggestions_from_elasticsearch(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->completion('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Star Trek']),
+                new Document(['title' => 'Star Wars']),
+                new Document(['title' => 'Stargate']),
+                new Document(['title' => 'Moonrise']),
+            ]);
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->autocompletePrefix('star')
+            ->autocompleteSize(3)
+            ->queryString('')
+            ->get();
+
+        $suggestions = array_map(
+            fn (array $option): string => $option['text'],
+            $res->autocompletion()[0]['options']
+        );
+
+        sort($suggestions);
+
+        $this->assertSame(['Star Trek', 'Star Wars', 'Stargate'], $suggestions);
+    }
+
+    /**
+     * @test
+     */
+    public function make_facet_search_returns_filtered_elasticsearch_aggregations(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('category');
+        $blueprint->bool('active');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['category' => 'docs', 'active' => true]),
+                new Document(['category' => 'docs', 'active' => false]),
+                new Document(['category' => 'blog', 'active' => true]),
+            ]);
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->filters('active:true')
+            ->facets('category')
+            ->makeFacetSearch()
+            ->get();
+
+        $facets = $blueprint->get()['category']->facets($response->get()['aggregations']);
+
+        $this->assertSame(['blog' => 1, 'docs' => 1], $facets);
+    }
+
+    /**
+     * @test
+     */
+    public function semantic_search_uses_seeded_vector_pool_and_returns_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 128, api: 'test-embeddings');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Alpha search manual'], _id: 'alpha'),
+                new Document(['title' => 'Beta archive notes'], _id: 'beta'),
+            ]);
+
+        $vectorPool = new VectorPool($this->embeddingApi);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->semantic()
+            ->queryString('Alpha search manual')
+            ->fields(['title'])
+            ->setVectorPool($vectorPool)
+            ->setVectorPool([
+                'Gamma cache seed' => [
+                    128 => $this->embeddingApi->embed('Gamma cache seed', 128),
+                ],
+            ]);
+
+        $this->assertSame($vectorPool, $search->getVectorPool('test-embeddings'));
+        $this->assertSame($vectorPool, $search->getVectorPool());
+        $this->assertArrayHasKey('test-embeddings', $search->getVectorPools());
+
+        $hits = $search->size(1)->hits();
+
+        $this->assertSame('alpha', $hits[0]->_id);
     }
 
     /**
