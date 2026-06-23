@@ -56,7 +56,7 @@ trait SigmieIndexTrait
     {
         $index = $this->index();
         if ($index !== null) {
-            $this->sigmie->deleteIndex($this->indexName);
+            $this->sigmie->delete($this->indexName);
         }
     }
 
@@ -126,7 +126,7 @@ trait SigmieIndexTrait
     /**
      * Create a new multi-search instance
      */
-    public function newMultiSearch(): NewMultiSearch
+    public function newMultiSearch(): object
     {
         $multiSearch = $this->sigmie->newMultiSearch();
 
