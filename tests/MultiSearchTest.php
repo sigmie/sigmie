@@ -225,6 +225,90 @@ class MultiSearchTest extends TestCase
     /**
      * @test
      */
+    public function grouped_and_flattened_hits_keep_expected_elasticsearch_results(): void
+    {
+        $indexName1 = uniqid();
+        $indexName2 = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName1)->properties($blueprint)->create();
+        $this->sigmie->newIndex($indexName2)->properties($blueprint)->create();
+
+        $this->sigmie->collect($indexName1, refresh: true)->merge([
+            new Document(['name' => 'Alpha']),
+            new Document(['name' => 'Beta']),
+        ]);
+
+        $this->sigmie->collect($indexName2, refresh: true)->merge([
+            new Document(['name' => 'Gamma']),
+        ]);
+
+        $multi = $this->sigmie->newMultiSearch();
+
+        $multi->newSearch($indexName1, 'letters')
+            ->properties($blueprint)
+            ->queryString('Alpha');
+
+        $multi->raw($indexName2, [
+            'query' => [
+                'match' => [
+                    'name' => 'Gamma',
+                ],
+            ],
+        ], 'raw_letters');
+
+        $grouped = $multi->groupedHits();
+        $flattened = $multi->hits();
+
+        $this->assertEquals(200, $multi->responseCode());
+        $this->assertEquals('Alpha', $grouped['letters'][0]->_source['name'] ?? null);
+        $this->assertEquals('Gamma', $grouped['raw_letters'][0]['_source']['name'] ?? null);
+        $this->assertEquals('Alpha', $flattened[0]->_source['name'] ?? null);
+        $this->assertEquals('Gamma', $flattened[1]['_source']['name'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function add_methods_include_existing_searches_in_elasticsearch_multi_search(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['name' => 'Alpha']),
+            new Document(['name' => 'Beta']),
+        ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Alpha');
+
+        $query = $this->sigmie->newQuery($indexName)
+            ->properties($blueprint);
+
+        $query->match('name', 'Beta');
+
+        $multi = $this->sigmie->newMultiSearch();
+
+        $multi->add($search, 'existing_search');
+        $multi->addQuery($query, 'existing_query');
+
+        $grouped = $multi->groupedHits();
+
+        $this->assertEquals('Alpha', $grouped['existing_search'][0]->_source['name'] ?? null);
+        $this->assertEquals('Beta', $grouped['existing_query'][0]['_source']['name'] ?? null);
+    }
+
+    /**
+     * @test
+     */
     public function multi_lazy_includes_raw_queries(): void
     {
         $indexName = uniqid();
