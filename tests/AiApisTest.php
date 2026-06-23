@@ -4,8 +4,18 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\Promise\Promise;
+use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\RequestInterface;
+use ReflectionObject;
+use Sigmie\AI\APIs\CohereEmbeddingsApi;
 use Sigmie\AI\APIs\InfinityEmbeddingsApi;
+use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
+use Sigmie\AI\APIs\VoyageEmbeddingsApi;
+use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Document\Document;
+use Sigmie\Enums\CohereInputType;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\FakeEmbeddingsApi;
 use Sigmie\Testing\TestCase;
@@ -266,5 +276,136 @@ class AiApisTest extends TestCase
 
         $this->assertSame('doc1', $hits[0]['_id']);
         $this->assertSame('Test Product', $hits[0]['_source']['title']);
+    }
+
+    /**
+     * @test
+     */
+    public function real_embedding_apis_index_and_search_documents_through_elasticsearch(): void
+    {
+        foreach ($this->realEmbeddingApis() as $apiName => $api) {
+            $indexName = uniqid();
+            $registeredApiName = 'real-'.$apiName;
+
+            $this->sigmie->registerApi($registeredApiName, $api);
+
+            $this->assertNotSame('', $api->model());
+            $this->assertGreaterThan(0, $api->maxBatchSize());
+            $this->assertCount(3, $api->embed('accounting audit', 3));
+            $this->assertCount(512, $api->embed('accounting audit', 512));
+            $this->assertSame([], $api->batchEmbed([]));
+            $this->assertCount(512, $api->batchEmbed([
+                ['text' => 'accounting audit', 'dims' => 512],
+            ])[0]['vector']);
+            $this->assertCount(128, $api->batchEmbed([
+                ['text' => 'accounting audit', 'dims' => 128],
+            ])[0]['vector']);
+            $this->assertSame(200, $api->promiseEmbed('accounting audit', 3)->wait()->getStatusCode());
+
+            if ($api instanceof VoyageEmbeddingsApi) {
+                $this->assertCount(3, $api->embedQuery('accounting audit', 3));
+                $this->assertCount(512, $api->embedQuery('accounting audit', 512));
+            }
+
+            $props = new NewProperties;
+            $props->text('title')->semantic(api: $registeredApiName, accuracy: 1, dimensions: 384);
+
+            $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+            $this->sigmie->collect($indexName, true)
+                ->properties($props)
+                ->merge([
+                    new Document(['title' => 'Accounting ledger reconciliation'], _id: $apiName.'-accounting'),
+                    new Document(['title' => 'Basketball training schedule'], _id: $apiName.'-basketball'),
+                ]);
+
+            $response = $this->sigmie->newSearch($indexName)
+                ->properties($props)
+                ->semantic()
+                ->disableKeywordSearch()
+                ->queryString('accounting audit')
+                ->get();
+
+            $hits = $response->json('hits');
+
+            $this->assertSame($apiName.'-accounting', $hits[0]['_id']);
+            $this->assertSame('Accounting ledger reconciliation', $hits[0]['_source']['title']);
+        }
+    }
+
+    private function realEmbeddingApis(): array
+    {
+        $openAI = new OpenAIEmbeddingsApi('test-key');
+        $cohere = new CohereEmbeddingsApi('test-key', CohereInputType::SearchDocument);
+        $voyage = new VoyageEmbeddingsApi('test-key');
+
+        return [
+            'openai' => $this->withMockEmbeddingClient($openAI, 'openai'),
+            'cohere' => $this->withMockEmbeddingClient($cohere, 'cohere'),
+            'voyage' => $this->withMockEmbeddingClient($voyage, 'voyage'),
+        ];
+    }
+
+    private function withMockEmbeddingClient(EmbeddingsApi $api, string $provider): EmbeddingsApi
+    {
+        $handler = function (RequestInterface $request) use ($provider) {
+            $payload = json_decode((string) $request->getBody(), true);
+            $texts = $payload['input'] ?? $payload['texts'] ?? [];
+            $texts = is_array($texts) ? $texts : [$texts];
+            $dimensions = (int) ($payload['dimensions'] ?? $payload['output_dimension'] ?? 384);
+            $vectors = array_map(fn (string $text): array => $this->testVector($text, $dimensions), $texts);
+
+            $promise = new Promise;
+            $promise->resolve(new Response(200, [], json_encode(
+                match ($provider) {
+                    'cohere' => [
+                        '_embeddings' => ['float' => $vectors],
+                        'embeddings' => ['float' => $vectors],
+                    ],
+                    default => ['data' => array_map(fn (array $vector): array => ['embedding' => $vector], $vectors)],
+                },
+                JSON_THROW_ON_ERROR
+            )));
+
+            return $promise;
+        };
+
+        $reflection = new ReflectionObject($api);
+        $property = $reflection->getProperty('client');
+        $property->setAccessible(true);
+        $property->setValue($api, new Client(['handler' => $handler]));
+
+        return $api;
+    }
+
+    private function testVector(string $text, int $dimensions): array
+    {
+        $dimensions = max(1, $dimensions);
+        $vector = array_fill(0, $dimensions, 0.001);
+        $tokens = array_values(array_filter(explode(' ', trim((string) preg_replace('/[^a-z0-9]+/', ' ', strtolower($text))))));
+
+        foreach ($tokens as $token) {
+            $vector[crc32($token) % $dimensions] += 0.25;
+        }
+
+        foreach ($this->semanticGroups() as $index => $terms) {
+            foreach ($terms as $term) {
+                if (in_array($term, $tokens, true)) {
+                    $vector[$index % $dimensions] += 4.0;
+                }
+            }
+        }
+
+        $magnitude = sqrt(array_sum(array_map(fn (float $value): float => $value * $value, $vector)));
+
+        return array_map(fn (float $value): float => $value / $magnitude, $vector);
+    }
+
+    private function semanticGroups(): array
+    {
+        return [
+            ['accounting', 'ledger', 'reconciliation', 'audit'],
+            ['basketball', 'training', 'schedule'],
+        ];
     }
 }
