@@ -348,10 +348,11 @@ class AiApisTest extends TestCase
 
     private function withMockEmbeddingClient(EmbeddingsApi $api, string $provider): EmbeddingsApi
     {
-        $handler = function (RequestInterface $request) use ($provider) {
+        $handler = function (RequestInterface $request) use ($provider): Promise {
             $payload = json_decode((string) $request->getBody(), true);
             $texts = $payload['input'] ?? $payload['texts'] ?? [];
             $texts = is_array($texts) ? $texts : [$texts];
+
             $dimensions = (int) ($payload['dimensions'] ?? $payload['output_dimension'] ?? 384);
             $vectors = array_map(fn (string $text): array => $this->testVector($text, $dimensions), $texts);
 
@@ -378,7 +379,7 @@ class AiApisTest extends TestCase
         return $api;
     }
 
-    private function testVector(string $text, int $dimensions): array
+    private function test_vector(string $text, int $dimensions): array
     {
         $dimensions = max(1, $dimensions);
         $vector = array_fill(0, $dimensions, 0.001);
