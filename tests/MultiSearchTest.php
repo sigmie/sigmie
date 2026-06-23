@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Generator;
+use Sigmie\Base\APIs\MSearch;
+use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Search\Formatters\FormatterParameters;
+use Sigmie\Search\Formatters\SigmieMultiSearchResponse;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
 use Sigmie\Testing\TestCase;
 
@@ -74,6 +78,102 @@ class MultiSearchTest extends TestCase
         $this->assertEquals('Goofy', $search2Hit['name']);
         $this->assertEquals(2, $newQueryRes['hits']['total']['value']);
         $this->assertEquals(0, $rawRes['hits']['total']['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function legacy_multisearch_formatter_formats_elasticsearch_responses(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->lowercase()
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['name' => 'Mickey']),
+            new Document(['name' => 'Donald']),
+        ]);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Mickey')
+            ->size(1);
+
+        $query = $this->sigmie->newQuery($indexName);
+        $query->matchAll();
+
+        $rawResponse = $this->rawMultiSearch([
+            ...$search->toMultiSearch(),
+            ...$query->toMultiSearch(),
+        ]);
+
+        $response = (new SigmieMultiSearchResponse)
+            ->multiSearchResponseRaw($rawResponse)
+            ->searches([$search, $query]);
+
+        $formatted = $response->format();
+
+        $this->assertSame('Mickey', $formatted[0]['hits'][0]['_source']['name']);
+        $this->assertSame(2, $formatted[1]['total']);
+        $this->assertSame($formatted, $response->json());
+        $this->assertSame('Mickey', $response->json('0.hits.0._source')['name']);
+        $this->assertSame($formatted[0], $response->getSearchResult(0));
+        $this->assertNull($response->getSearchResult(2));
+        $this->assertSame($formatted, $response->getAllResults());
+    }
+
+    /**
+     * @test
+     */
+    public function formatter_parameters_drive_an_elasticsearch_search(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+        $blueprint->category('type');
+        $blueprint->number('rank');
+
+        $this->sigmie->newIndex($indexName)
+            ->lowercase()
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['name' => 'Alpha Guide', 'type' => 'docs', 'rank' => 1]),
+            new Document(['name' => 'Beta Guide', 'type' => 'docs', 'rank' => 2]),
+            new Document(['name' => 'Beta Note', 'type' => 'notes', 'rank' => 3]),
+        ]);
+
+        $params = (new FormatterParameters)
+            ->queryStrings(['Beta'])
+            ->filters("type:'docs'")
+            ->sort('rank:desc')
+            ->facets('type')
+            ->pagination(1, 0)
+            ->meta(['scenario' => 'formatter-parameters']);
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString($params->getQueryStrings()[0])
+            ->filters($params->getFilterString())
+            ->sort($params->getSortString())
+            ->facets($params->getFacetString())
+            ->size($params->getSize())
+            ->from($params->getFrom())
+            ->get();
+
+        $this->assertSame(1, $response->total());
+        $this->assertSame('Beta Guide', $response->hits()[0]->_source['name']);
+        $this->assertSame(1, $response->format()['facets']->type->docs);
+        $this->assertSame('formatter-parameters', $params->getMeta()['scenario']);
+        $this->assertSame($params->getMeta(), $params->toArray()['meta']);
     }
 
     /**
@@ -395,5 +495,22 @@ class MultiSearchTest extends TestCase
         $names = array_map(fn (Hit $hit): string => (string) $hit['name'], $hits);
 
         $this->assertSame(['c', 'b', 'a'], $names);
+    }
+
+    protected function rawMultiSearch(array $body): array
+    {
+        $runner = new class($this->elasticsearchConnection)
+        {
+            use MSearch;
+
+            public function __construct(protected ElasticsearchConnection $elasticsearchConnection) {}
+
+            public function run(array $body): array
+            {
+                return $this->msearchAPICall($body)->json();
+            }
+        };
+
+        return $runner->run($body);
     }
 }

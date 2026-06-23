@@ -11,6 +11,7 @@ use Sigmie\Document\Hit;
 use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Parse\InputParser;
 use Sigmie\Parse\ParseException;
 use Sigmie\Query\Aggregations\Metrics\Composite;
 use Sigmie\Query\Aggs;
@@ -1826,6 +1827,44 @@ class SearchTest extends TestCase
             $buckets,
         ));
         $this->assertEquals(2, $response->total());
+    }
+
+    /**
+     * @test
+     */
+    public function input_parser_parts_drive_elasticsearch_search(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->category('category');
+        $blueprint->number('rank');
+
+        $this->sigmie->newIndex($indexName)
+            ->lowercase()
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Beta Public Guide', 'category' => 'public', 'rank' => 2]),
+                new Document(['title' => 'Beta Private Guide', 'category' => 'private', 'rank' => 1]),
+                new Document(['title' => 'Alpha Public Guide', 'category' => 'public', 'rank' => 3]),
+            ]);
+
+        $parsed = (new InputParser)->parse("Beta FILTER category:'public' SORT rank:desc");
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString($parsed['query_string'])
+            ->filters($parsed['filter_string'])
+            ->sort($parsed['sort_string'])
+            ->get();
+
+        $this->assertSame(1, $response->total());
+        $this->assertSame('Beta Public Guide', $response->hits()[0]->_source['title']);
     }
 
     /**

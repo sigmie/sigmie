@@ -82,4 +82,48 @@ class ApiAssertionsExampleTest extends TestCase
         $this->assertInstanceOf(RerankedHit::class, $rerankedHits[0]);
         $this->assertEquals('PHP Framework', $rerankedHits[0]->_source['name']);
     }
+
+    /**
+     * @test
+     */
+    public function document_assertions_verify_elasticsearch_documents(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->number('rank');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $firstDocument = new Document(['title' => 'Assertion Guide', 'rank' => 1], 'assertion-guide');
+        $missingDocument = new Document(['title' => 'Missing Guide', 'rank' => 99], 'missing-guide');
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                $firstDocument,
+                new Document(['title' => 'Search Guide', 'rank' => 2], 'search-guide'),
+            ]);
+
+        $results = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Assertion')
+            ->get();
+
+        $this->assertSame(1, $results->total());
+        $this->assertSame('Assertion Guide', $results->hits()[0]->_source['title']);
+
+        $this->assertIndexCount($indexName, 2);
+        $this->assertIndexHas($indexName, [
+            ['term' => ['rank' => 1]],
+        ]);
+        $this->assertIndexMissing($indexName, [
+            ['term' => ['rank' => 99]],
+        ]);
+        $this->assertDocumentExists($indexName, $firstDocument);
+        $this->assertDocumentIsMissing($indexName, $missingDocument);
+    }
 }
