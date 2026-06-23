@@ -15,12 +15,8 @@ class FakeClipApi extends FakeEmbeddingsApi
 
     protected array $mixedBatchCalls = [];
 
-    /**
-     * Override embed to use real API
-     */
     public function embed(string $text, int $dimensions): array
     {
-        // Track if this is an image or text
         if ($this->isImageSource($text)) {
             $this->imageEmbedCalls[] = [
                 'source' => $text,
@@ -33,16 +29,11 @@ class FakeClipApi extends FakeEmbeddingsApi
             ];
         }
 
-        // Call the real API
-        return $this->realApi->embed($text, $dimensions);
+        return $this->vector($this->embeddingText($text), $dimensions);
     }
 
-    /**
-     * Override batchEmbed to use real API
-     */
     public function batchEmbed(array $payload): array
     {
-        // Analyze the batch to determine types
         $imageCount = 0;
         $textCount = 0;
 
@@ -77,8 +68,13 @@ class FakeClipApi extends FakeEmbeddingsApi
         // Track in parent for general batch embed tracking
         $this->batchEmbedCalls[] = $payload;
 
-        // Call the real API
-        return $this->realApi->batchEmbed($payload);
+        return array_map(fn (array $item): array => [
+            ...$item,
+            'vector' => $this->vector(
+                $this->embeddingText((string) ($item['text'] ?? '')),
+                (int) ($item['dims'] ?? $item['dimensions'] ?? 512),
+            ),
+        ], $payload);
     }
 
     /**
@@ -219,6 +215,31 @@ class FakeClipApi extends FakeEmbeddingsApi
         $this->imageEmbedCalls = [];
         $this->textEmbedCalls = [];
         $this->mixedBatchCalls = [];
+    }
+
+    protected function embeddingText(string $source): string
+    {
+        if (! $this->isImageSource($source)) {
+            return $source;
+        }
+
+        if (str_starts_with($source, 'data:image')) {
+            return $this->dataImageText($source);
+        }
+
+        return str_replace(['-', '_', '.'], ' ', basename(parse_url($source, PHP_URL_PATH) ?: $source));
+    }
+
+    protected function dataImageText(string $source): string
+    {
+        $data = (string) preg_replace('/^data:image\/[a-z]+;base64,/', '', $source);
+        $hash = substr(hash('sha256', base64_decode($data, strict: true) ?: ''), 0, 16);
+
+        return match ($hash) {
+            'e8efb9cea15eb819' => 'basketball orange basket',
+            '15f8738724be8793' => 'tennis green',
+            default => 'data image',
+        };
     }
 
     /**

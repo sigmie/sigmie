@@ -24,7 +24,20 @@ class FakeRerankApi implements RerankApi
             'topK' => $topK,
         ];
 
-        return $this->realApi->rerank($documents, $query, $topK);
+        $queryTokens = $this->tokens($query);
+
+        $scores = array_map(fn (mixed $document, int $index): array => [
+            'index' => $index,
+            'score' => $this->score((string) $document, $queryTokens),
+        ], $documents, array_keys($documents));
+
+        usort($scores, fn (array $left, array $right): int => $right['score'] <=> $left['score']);
+
+        if ($topK === null) {
+            return $scores;
+        }
+
+        return array_slice($scores, 0, $topK);
     }
 
     public function assertRerankWasCalled(?int $times = null): void
@@ -78,5 +91,20 @@ class FakeRerankApi implements RerankApi
     public function reset(): void
     {
         $this->rerankCalls = [];
+    }
+
+    protected function score(string $document, array $queryTokens): float
+    {
+        $documentTokens = $this->tokens($document);
+        $overlap = array_intersect($queryTokens, $documentTokens);
+
+        return count($overlap) + (count($documentTokens) / 1000);
+    }
+
+    protected function tokens(string $text): array
+    {
+        $normalized = (string) preg_replace('/[^a-z0-9]+/', ' ', strtolower($text));
+
+        return array_values(array_filter(explode(' ', $normalized)));
     }
 }
