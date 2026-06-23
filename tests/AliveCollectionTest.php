@@ -163,6 +163,62 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
+    public function replace_updates_and_creates_documents_in_elasticsearch(): void
+    {
+        $indexName = uniqid();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $index->add(new Document(['foo' => 'old', 'category' => 'docs'], 'existing'));
+
+        $updated = $index->replace(new Document(['foo' => 'new', 'category' => 'docs'], 'existing'));
+        $created = $index->replace(new Document(['foo' => 'generated', 'category' => 'notes']));
+
+        $this->assertSame('existing', $updated->_id);
+        $this->assertNotEmpty($created->_id);
+
+        $updatedFromElasticsearch = $index->get('existing');
+        $createdFromElasticsearch = $index->get($created->_id);
+
+        $this->assertSame('new', $updatedFromElasticsearch->foo);
+        $this->assertSame('generated', $createdFromElasticsearch->foo);
+        $this->assertSame('notes', $createdFromElasticsearch->category);
+        $this->assertCount(2, $index);
+    }
+
+    /**
+     * @test
+     */
+    public function get_many_respects_source_includes_and_excludes_from_elasticsearch(): void
+    {
+        $indexName = uniqid();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $index->merge([
+            new Document(['title' => 'Alpha', 'secret' => 'hidden', 'category' => 'docs'], 'alpha'),
+            new Document(['title' => 'Beta', 'secret' => 'hidden', 'category' => 'notes'], 'beta'),
+        ]);
+
+        $onlyDocs = $index->only(['title'])->getMany(['alpha', 'beta']);
+
+        $this->assertSame('Alpha', $onlyDocs[0]->_source['title']);
+        $this->assertArrayNotHasKey('secret', $onlyDocs[0]->_source);
+        $this->assertArrayNotHasKey('category', $onlyDocs[1]->_source);
+
+        $exceptDocs = $this->sigmie->collect($indexName, true)
+            ->except(['secret'])
+            ->getMany(['alpha', 'beta']);
+
+        $this->assertSame('docs', $exceptDocs[0]->_source['category']);
+        $this->assertSame('Beta', $exceptDocs[1]->_source['title']);
+        $this->assertArrayNotHasKey('secret', $exceptDocs[0]->_source);
+        $this->assertArrayNotHasKey('secret', $exceptDocs[1]->_source);
+    }
+
+    /**
+     * @test
+     */
     public function offset_unset(): void
     {
         $indexName = uniqid();
