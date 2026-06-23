@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\Promise\Promise;
+use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\RequestInterface;
+use ReflectionObject;
+use Sigmie\AI\APIs\CohereRerankApi;
+use Sigmie\AI\APIs\VoyageRerankApi;
+use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Document\Document;
 use Sigmie\Document\RerankedHit;
 use Sigmie\Mappings\Contracts\Type;
@@ -257,6 +265,55 @@ class RerankerTest extends TestCase
         );
     }
 
+    /**
+     * @test
+     */
+    public function real_rerank_apis_reorder_elasticsearch_hits(): void
+    {
+        foreach ($this->realRerankApis() as $apiName => $api) {
+            $indexName = uniqid();
+
+            $blueprint = new NewProperties;
+            $blueprint->longText('title')->semantic(dimensions: 384, api: 'test-embeddings');
+            $blueprint->longText('description')->semantic(dimensions: 384, api: 'test-embeddings');
+
+            $this->sigmie->newIndex($indexName)
+                ->properties($blueprint)
+                ->create();
+
+            $this->sigmie->collect($indexName, refresh: true)
+                ->properties($blueprint)
+                ->merge([
+                    new Document(['title' => 'Laravel', 'description' => 'PHP web framework'], _id: $apiName.'-laravel'),
+                    new Document(['title' => 'Django', 'description' => 'Python web framework'], _id: $apiName.'-django'),
+                    new Document(['title' => 'React', 'description' => 'JavaScript interface library'], _id: $apiName.'-react'),
+                ]);
+
+            $response = $this->sigmie->newSearch($indexName)
+                ->properties($blueprint)
+                ->queryString('framework')
+                ->semantic()
+                ->fields(['title', 'description'])
+                ->size(3)
+                ->get();
+
+            $this->assertGreaterThanOrEqual(2, $response->total());
+
+            $directScores = $api->rerank(['title: Laravel', 'title: Django'], 'best framework');
+
+            $this->assertSame(1, $directScores[0]['index']);
+            $this->assertSame(0.96, $directScores[0]['score']);
+
+            $reranked = $response->rerank($api, ['title', 'description'], 'best framework', 2);
+
+            $this->assertCount(2, $reranked);
+            $this->assertSame($apiName.'-django', $reranked[0]->_id);
+            $this->assertSame('Django', $reranked[0]->_source['title']);
+            $this->assertSame(0.96, $reranked[0]->_rerank_score);
+            $this->assertSame($apiName.'-laravel', $reranked[1]->_id);
+        }
+    }
+
     protected function semanticProvider(array $scores = []): object
     {
         return new class($scores) implements AIProvider
@@ -300,5 +357,61 @@ class RerankerTest extends TestCase
                 }, $documents);
             }
         };
+    }
+
+    private function realRerankApis(): array
+    {
+        $cohere = new CohereRerankApi('test-key');
+        $voyage = new VoyageRerankApi('test-key');
+
+        return [
+            'cohere' => $this->withMockRerankClient($cohere, 'cohere'),
+            'voyage' => $this->withMockRerankClient($voyage, 'voyage'),
+        ];
+    }
+
+    private function withMockRerankClient(RerankApi $api, string $provider): RerankApi
+    {
+        $handler = function (RequestInterface $request) use ($provider): Promise {
+            $payload = json_decode((string) $request->getBody(), true);
+            $topK = $payload['top_n'] ?? $payload['top_k'] ?? null;
+            $documents = $payload['documents'] ?? [];
+            $results = [];
+
+            foreach ($documents as $index => $document) {
+                $results[] = [
+                    'index' => $index,
+                    'relevance_score' => match (true) {
+                        str_contains($document, 'Django') => 0.96,
+                        str_contains($document, 'Laravel') => 0.82,
+                        default => 0.11,
+                    },
+                ];
+            }
+
+            usort($results, fn (array $left, array $right): int => $right['relevance_score'] <=> $left['relevance_score']);
+
+            if ($topK !== null) {
+                $results = array_slice($results, 0, (int) $topK);
+            }
+
+            $promise = new Promise;
+            $promise->resolve(new Response(200, [], json_encode(
+                match ($provider) {
+                    'cohere' => ['results' => $results],
+                    default => ['data' => $results],
+                },
+                JSON_THROW_ON_ERROR
+            )));
+
+            return $promise;
+        };
+
+        $reflection = new ReflectionObject($api);
+        $property = $reflection->getProperty('client');
+        $property->setAccessible(true);
+        $property->setValue($api, new Client(['handler' => $handler]));
+
+        return $api;
     }
 }
