@@ -16,6 +16,7 @@ use Sigmie\Query\Aggregations\Metrics\Composite;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
+use Sigmie\Search\Formatters\RawElasticsearchFormat;
 use Sigmie\Search\VectorPool;
 use Sigmie\Testing\TestCase;
 
@@ -43,11 +44,20 @@ class SearchTest extends TestCase
             new Document(['name' => 'Donald']),
         ]);
 
-        $res = $this->sigmie->newSearch($indexName)
+        $search = $this->sigmie->newSearch($indexName)
             ->properties($blueprint)
+            ->textScoreMultiplier(2)
+            ->semanticScoreMultiplier(0.5)
             ->queryString('Mickey', weight: 2)
-            ->queryString('Goofy', weight: 1)
-            ->get();
+            ->queryString('Goofy', weight: 1);
+
+        $this->assertSame(['Mickey', 'Goofy'], array_map(
+            fn (object $queryString): string => (string) $queryString,
+            $search->queryStrings()
+        ));
+        $this->assertSame(['name'], $search->getProperties()?->fieldNames());
+
+        $res = $search->get();
 
         $hits = $res->json('hits');
 
@@ -64,6 +74,14 @@ class SearchTest extends TestCase
 
         $this->assertEquals('Goofy', $hits[0]['_source']['name']);
         $this->assertEquals(2, $res->total());
+
+        $raw = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->formatter(new RawElasticsearchFormat)
+            ->queryString('Donald')
+            ->get();
+
+        $this->assertSame('Donald', $raw->format()['hits']['hits'][0]['_source']['name']);
     }
 
     /**

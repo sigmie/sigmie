@@ -1780,6 +1780,72 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
+    public function recursive_mapping_helpers_from_index_match_elasticsearch_search_results(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->nested('comments', function (NewProperties $props): void {
+            $props->keyword('comment_id');
+            $props->text('text');
+            $props->object('user', fn (NewProperties $props): Text => $props->text('name'));
+        });
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document([
+                'title' => 'Runtime mappings',
+                'comments' => [
+                    [
+                        'comment_id' => 'one',
+                        'text' => 'Elasticsearch confirms recursive mappings',
+                        'user' => [
+                            'name' => 'Nico',
+                        ],
+                    ],
+                ],
+            ]),
+            new Document([
+                'title' => 'Irrelevant document',
+                'comments' => [
+                    [
+                        'comment_id' => 'two',
+                        'text' => 'No matching phrase',
+                        'user' => [
+                            'name' => 'Other',
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+
+        $results = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Runtime')
+            ->get();
+
+        $this->assertSame(1, $results->total());
+        $this->assertSame('Runtime mappings', $results->json('hits')[0]['_source']['title']);
+
+        $properties = $this->sigmie->index($indexName)->mappings->properties();
+
+        $this->assertSame('', $properties->fullPath());
+        $this->assertTrue($properties->hasFields());
+        $this->assertNull($properties->get('title.raw'));
+        $this->assertEquals([
+            'title',
+            'comments.text',
+            'comments.user.name',
+        ], $properties->fieldsOfType(Text::class)->keys());
+    }
+
+    /**
+     * @test
+     */
     public function double_field_mapping(): void
     {
         $indexName = uniqid();
