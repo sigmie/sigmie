@@ -548,11 +548,13 @@ class QueryTest extends TestCase
         $lazyQuery = new NewQuery($this->elasticsearchConnection, $indexName);
         $lazyQuery->sort([['rank' => 'asc']]);
         $lazyQuery->term('category', 'books');
+
         $lazyHits = iterator_to_array($lazyQuery->chunk(1)->lazy());
 
         $eachQuery = new NewQuery($this->elasticsearchConnection, $indexName);
         $eachQuery->sort([['rank' => 'asc']]);
         $eachQuery->term('category', 'books');
+
         $eachHits = [];
         $eachQuery->chunk(1)->each(function (Hit $hit) use (&$eachHits): void {
             $eachHits[] = $hit->_id;
