@@ -202,6 +202,17 @@ class SearchTest extends TestCase
         $hits = $search->size(1)->hits();
 
         $this->assertSame('alpha', $hits[0]->_id);
+        $this->embeddingApi->assertEmbedWasCalled(1);
+        $this->embeddingApi->assertEmbedWasCalledWith('Gamma cache seed');
+        $this->embeddingApi->assertEmbedWasCalledWith('Gamma cache seed', 128);
+        $this->embeddingApi->assertBatchEmbedWasCalledWith('Gamma cache seed');
+
+        $this->assertCount(128, $this->embeddingApi->promiseEmbed('Alpha search manual', 128)->wait());
+        $this->embeddingApi->assertEmbedWasCalled(2);
+        $this->embeddingApi->assertEmbedWasCalled();
+        $this->assertNotSame('', $this->embeddingApi->model());
+        $this->assertGreaterThan(0, $this->embeddingApi->maxBatchSize());
+        $this->assertSame(2, $this->embeddingApi->overrideMaxBatchSize(2)->maxBatchSize());
     }
 
     /**
