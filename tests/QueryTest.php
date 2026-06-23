@@ -7,9 +7,13 @@ namespace Sigmie\Tests;
 use Exception;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Document\Document;
+use Sigmie\Document\Hit;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\BooleanQueryBuilder;
+use Sigmie\Query\NewQuery;
 use Sigmie\Query\Queries\Compound\Boolean as QueriesCompoundBoolean;
+use Sigmie\Query\Queries\Term\Term;
+use Sigmie\Query\Search;
 use Sigmie\Testing\TestCase;
 
 class QueryTest extends TestCase
@@ -206,11 +210,27 @@ class QueryTest extends TestCase
     /**
      * @test
      */
-    public function query_clauses(): void
+    public function query_clauses_return_expected_elasticsearch_documents(): void
     {
-        $query = $this->sigmie->newQuery('')->bool(function (QueriesCompoundBoolean $boolean): void {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('foo');
+        $blueprint->keyword('bar');
+        $blueprint->text('title')->keyword()->makeSortable();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['foo' => 'bar', 'bar' => 'baz', 'title' => 'Charlie'], _id: 'charlie'),
+            new Document(['foo' => 'bar', 'bar' => 'baz', 'title' => 'Alice'], _id: 'alice'),
+            new Document(['foo' => 'zip', 'bar' => 'baz', 'title' => 'Beta'], _id: 'beta'),
+        ]);
+
+        $response = $this->sigmie->newQuery($indexName)->bool(function (QueriesCompoundBoolean $boolean): void {
             $boolean->filter->matchAll();
-            $boolean->filter->matchNone();
             $boolean->filter->fuzzy('bar', 'baz');
             $boolean->filter()->multiMatch(['foo', 'bar'], 'baz');
 
@@ -218,118 +238,114 @@ class QueryTest extends TestCase
             $boolean->must->exists('bar');
             $boolean->must->terms('foo', ['bar', 'baz']);
 
-            $boolean->mustNot->wildcard('foo', '**/*');
-            $boolean->mustNot->ids(['unqie']);
+            $boolean->mustNot->wildcard('title', 'Beta');
+            $boolean->mustNot->ids(['missing']);
 
             $boolean->should->bool(fn (QueriesCompoundBoolean $boolean): BooleanQueryBuilder => $boolean->must->match('foo', 'bar'));
-        })->sort(['title.raw' => 'asc'])
+        })
+            ->sort([['title.sortable' => 'asc']])
             ->fields(['title'])
             ->from(0)
             ->size(2)
-            ->getDSL();
+            ->get();
 
-        $this->assertArrayHasKey('_source', $query);
-        $this->assertArrayHasKey('query', $query);
-        $this->assertArrayHasKey('sort', $query);
-        $this->assertArrayHasKey('from', $query);
-        $this->assertArrayHasKey('size', $query);
+        $hits = $response->json('hits.hits');
 
-        $expected = [
-            'bool' => [
-                'must' => [
-                    ['term' => ['foo' => ['value' => 'bar', 'boost' => 1.0]]],
-                    ['exists' => ['field' => 'bar', 'boost' => 1.0]],
-                    ['terms' => ['foo' => ['bar', 'baz'], 'boost' => 1.0]],
-                ],
-                'must_not' => [
-                    ['wildcard' => ['foo' => ['value' => '**/*', 'boost' => 1.0]]],
-                    ['ids' => ['values' => ['unqie'], 'boost' => 1.0]],
-                ],
-                'should' => [
-                    [
-                        'bool' => [
-                            'must' => [
-                                ['match' => [
-                                    'foo' => [
-                                        'query' => 'bar',
-                                        'boost' => 1.0,
-                                        'analyzer' => 'default',
-                                    ],
-                                ]],
-                            ],
-                            'boost' => 1.0,
-                        ],
-                    ],
-                ],
-                'filter' => [
-                    ['match_all' => (object) ['boost' => 1.0]],
-                    ['match_none' => (object) ['boost' => 1.0]],
-                    ['fuzzy' => ['bar' => ['value' => 'baz']]],
-                    ['multi_match' => [
-                        'query' => 'baz',
-                        'boost' => 1.0,
-                        'analyzer' => 'default',
-                        'fields' => ['foo', 'bar'],
-                    ]],
-                ],
-                'boost' => 1.0,
-            ],
-        ];
-
-        $this->assertEquals($expected, $query['query']);
+        $this->assertSame(['alice', 'charlie'], array_map(fn (array $hit): string => $hit['_id'], $hits));
+        $this->assertSame([['title' => 'Alice'], ['title' => 'Charlie']], array_map(fn (array $hit): array => $hit['_source'], $hits));
     }
 
     /**
      * @test
      */
-    public function search_dsl_only_filters_source_when_fields_are_explicit(): void
+    public function low_level_search_filters_source_only_when_fields_are_explicit(): void
     {
-        $query = $this->sigmie->newQuery('')
+        $indexName = uniqid();
+
+        $this->sigmie->newIndex($indexName)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['title' => 'Visible', 'body' => 'Hidden body'], _id: 'visible'),
+        ]);
+
+        $fullHit = $this->sigmie->newQuery($indexName)
             ->matchAll()
-            ->getDSL();
+            ->get()
+            ->json('hits.hits.0._source');
 
-        $this->assertArrayNotHasKey('_source', $query);
-
-        $query = $this->sigmie->newQuery('')
+        $sourceFilteredHit = $this->sigmie->newQuery($indexName)
             ->matchAll()
             ->fields(['title'])
-            ->getDSL();
+            ->get()
+            ->json('hits.hits.0._source');
 
-        $this->assertSame(['title'], $query['_source']);
+        $this->assertSame(['title' => 'Visible', 'body' => 'Hidden body'], $fullHit);
+        $this->assertSame(['title' => 'Visible'], $sourceFilteredHit);
     }
 
     /**
      * @test
      */
-    public function low_level_search_can_parse_sort_strings_with_query_properties(): void
+    public function low_level_search_can_parse_sort_strings_and_order_elasticsearch_results(): void
     {
+        $indexName = uniqid();
+
         $props = new NewProperties;
         $props->text('title')->keyword()->makeSortable();
 
-        $query = $this->sigmie->newQuery('')
+        $this->sigmie->newIndex($indexName)
+            ->properties($props)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['title' => 'Alpha'], _id: 'alpha'),
+            new Document(['title' => 'Zulu'], _id: 'zulu'),
+        ]);
+
+        $hits = $this->sigmie->newQuery($indexName)
             ->properties($props)
             ->matchAll()
             ->sortString('title:desc')
-            ->getDSL();
+            ->get()
+            ->json('hits.hits');
 
-        $this->assertSame([['title.sortable' => 'desc']], $query['sort']);
+        $this->assertSame(['zulu', 'alpha'], array_map(fn (array $hit): string => $hit['_id'], $hits));
     }
 
     /**
      * @test
      */
-    public function match_query_analyzer(): void
+    public function match_query_analyzer_changes_elasticsearch_results(): void
     {
-        $query = $this->sigmie
-            ->newQuery('index')
-            ->match(
-                'foo',
-                'bar',
-                analyzer: 'custom_analyzer'
-            )
-            ->getDSL();
+        $indexName = uniqid();
 
-        $this->assertEquals('custom_analyzer', $query['query']['match']['foo']['analyzer']);
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['title' => 'Nico Orfanos'], _id: 'nico'),
+        ]);
+
+        $defaultAnalyzerResponse = $this->sigmie
+            ->newQuery($indexName)
+            ->match('title', 'Nico Orfanos')
+            ->get();
+
+        $keywordAnalyzerResponse = $this->sigmie
+            ->newQuery($indexName)
+            ->match(
+                'title',
+                'Nico Orfanos',
+                analyzer: 'keyword'
+            )
+            ->get();
+
+        $this->assertEquals(1, $defaultAnalyzerResponse->json('hits.total.value'));
+        $this->assertEquals(0, $keywordAnalyzerResponse->json('hits.total.value'));
     }
 
     /**
@@ -444,12 +460,107 @@ class QueryTest extends TestCase
             new Document(['sku' => 'gamma-003', 'category' => 'music', 'name' => 'Synth Album', 'stock' => 8], _id: 'gamma'),
         ]);
 
-        $this->assertSame(['alpha', 'beta'], $this->idsFromQuery(fn (): \Sigmie\Query\Search => $this->sigmie->newQuery($indexName)->terms('category', ['books'])));
-        $this->assertSame(['alpha', 'beta'], $this->idsFromQuery(fn (): \Sigmie\Query\Search => $this->sigmie->newQuery($indexName)->exists('tag')));
-        $this->assertSame(['alpha', 'gamma'], $this->idsFromQuery(fn (): \Sigmie\Query\Search => $this->sigmie->newQuery($indexName)->ids(['alpha', 'gamma'])));
-        $this->assertSame(['beta'], $this->idsFromQuery(fn (): \Sigmie\Query\Search => $this->sigmie->newQuery($indexName)->wildcard('sku', 'beta-*')));
-        $this->assertSame(['gamma'], $this->idsFromQuery(fn (): \Sigmie\Query\Search => $this->sigmie->newQuery($indexName)->regex('sku', 'gamma-00[0-9]')));
-        $this->assertSame(['alpha'], $this->idsFromQuery(fn (): \Sigmie\Query\Search => $this->sigmie->newQuery($indexName)->fuzzy('name', 'Laraval')));
+        $this->assertSame(['alpha', 'beta'], $this->idsFromQuery(fn (): Search => $this->sigmie->newQuery($indexName)->terms('category', ['books'])));
+        $this->assertSame(['alpha', 'beta'], $this->idsFromQuery(fn (): Search => $this->sigmie->newQuery($indexName)->exists('tag')));
+        $this->assertSame(['alpha', 'gamma'], $this->idsFromQuery(fn (): Search => $this->sigmie->newQuery($indexName)->ids(['alpha', 'gamma'])));
+        $this->assertSame(['beta'], $this->idsFromQuery(fn (): Search => $this->sigmie->newQuery($indexName)->wildcard('sku', 'beta-*')));
+        $this->assertSame(['gamma'], $this->idsFromQuery(fn (): Search => $this->sigmie->newQuery($indexName)->regex('sku', 'gamma-00[0-9]')));
+        $this->assertSame(['alpha'], $this->idsFromQuery(fn (): Search => $this->sigmie->newQuery($indexName)->fuzzy('name', 'Laraval')));
+    }
+
+    /**
+     * @test
+     */
+    public function object_query_and_post_filter_helpers_run_against_elasticsearch(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('category');
+        $blueprint->keyword('status');
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['category' => 'books', 'status' => 'published', 'title' => 'Search Guide'], _id: 'published-book'),
+            new Document(['category' => 'books', 'status' => 'draft', 'title' => 'Draft Guide'], _id: 'draft-book'),
+            new Document(['category' => 'music', 'status' => 'published', 'title' => 'Music Theory'], _id: 'published-music'),
+        ]);
+
+        $queryResponse = $this->sigmie->newQuery($indexName)
+            ->query(new Term('status', 'published'))
+            ->get();
+
+        $postFilterResponse = $this->sigmie->newQuery($indexName)
+            ->postFilter(new Term('category', 'books'))
+            ->get();
+
+        $postFilterStringResponse = $this->sigmie->newQuery($indexName)
+            ->properties($blueprint)
+            ->postFilterString("status:'published'")
+            ->get();
+
+        $matchNoneResponse = $this->sigmie->newQuery($indexName)
+            ->matchNone()
+            ->get();
+
+        $multiMatchResponse = $this->sigmie->newQuery($indexName)
+            ->multiMatch(['title'], 'Guide')
+            ->get();
+
+        $this->assertSame(['published-book', 'published-music'], $this->idsFromHits($queryResponse->json('hits.hits')));
+        $this->assertSame(['draft-book', 'published-book'], $this->idsFromHits($postFilterResponse->json('hits.hits')));
+        $this->assertSame(['published-book', 'published-music'], $this->idsFromHits($postFilterStringResponse->json('hits.hits')));
+        $this->assertEquals(0, $matchNoneResponse->json('hits.total.value'));
+        $this->assertSame(['draft-book', 'published-book'], $this->idsFromHits($multiMatchResponse->json('hits.hits')));
+    }
+
+    /**
+     * @test
+     */
+    public function explicit_index_term_sort_lazy_and_each_helpers_run_against_elasticsearch(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('category');
+        $blueprint->number('rank')->integer();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['category' => 'books', 'rank' => 2], _id: 'second-book'),
+            new Document(['category' => 'books', 'rank' => 1], _id: 'first-book'),
+            new Document(['category' => 'music', 'rank' => 3], _id: 'music'),
+        ]);
+
+        $response = (new NewQuery($this->elasticsearchConnection))
+            ->index($indexName)
+            ->sort([['rank' => 'asc']])
+            ->term('category', 'books')
+            ->get();
+
+        $lazyQuery = new NewQuery($this->elasticsearchConnection, $indexName);
+        $lazyQuery->sort([['rank' => 'asc']]);
+        $lazyQuery->term('category', 'books');
+        $lazyHits = iterator_to_array($lazyQuery->chunk(1)->lazy());
+
+        $eachQuery = new NewQuery($this->elasticsearchConnection, $indexName);
+        $eachQuery->sort([['rank' => 'asc']]);
+        $eachQuery->term('category', 'books');
+        $eachHits = [];
+        $eachQuery->chunk(1)->each(function (Hit $hit) use (&$eachHits): void {
+            $eachHits[] = $hit->_id;
+        });
+
+        $this->assertSame(['first-book', 'second-book'], array_map(fn (array $hit): string => $hit['_id'], $response->json('hits.hits')));
+        $this->assertSame(['first-book', 'second-book'], array_map(fn (Hit $hit): string => $hit->_id, $lazyHits));
+        $this->assertSame(['first-book', 'second-book'], $eachHits);
     }
 
     /**
@@ -486,7 +597,12 @@ class QueryTest extends TestCase
         $response = $query()
             ->get();
 
-        $ids = array_map(fn (array $hit): string => $hit['_id'], $response->json('hits.hits'));
+        return $this->idsFromHits($response->json('hits.hits'));
+    }
+
+    protected function idsFromHits(array $hits): array
+    {
+        $ids = array_map(fn (array $hit): string => $hit['_id'], $hits);
 
         sort($ids);
 

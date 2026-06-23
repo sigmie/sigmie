@@ -112,4 +112,162 @@ class TemplateTest extends TestCase
         $this->assertNull($script->get());
         $this->assertFalse($script->delete());
     }
+
+    /**
+     * @test
+     */
+    public function saved_template_without_search_fields_returns_no_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+        $templateId = uniqid('empty_fields_');
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Search Guide'], _id: 'search-guide'),
+            ]);
+
+        $this->sigmie->newTemplate($templateId)
+            ->properties($blueprint)
+            ->fields([])
+            ->semanticThreshold(0.75)
+            ->filterable()
+            ->sortable()
+            ->autocomplete(false)
+            ->get()
+            ->save();
+
+        $response = $this->sigmie->template($templateId)->run($indexName, [
+            'query_string' => 'Search',
+        ]);
+
+        $this->assertEquals(0, $response->total());
+        $this->assertSame([], $response->hits());
+    }
+
+    /**
+     * @test
+     */
+    public function saved_template_highlights_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+        $templateId = uniqid('highlight_');
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Search Guide'], _id: 'search-guide'),
+            ]);
+
+        $this->sigmie->newTemplate($templateId)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->highlighting([
+                'fields' => [
+                    'title' => (object) [],
+                ],
+                'pre_tags' => ['<em>'],
+                'post_tags' => ['</em>'],
+            ], '<em>', '</em>')
+            ->autocomplete(false)
+            ->get()
+            ->save();
+
+        $hits = $this->sigmie->template($templateId)->run($indexName, [
+            'query_string' => 'Search',
+        ])->json('hits.hits');
+
+        $this->assertSame('search-guide', $hits[0]['_id']);
+        $this->assertSame('<em>Search</em> Guide', $hits[0]['highlight']['title'][0]);
+    }
+
+    /**
+     * @test
+     */
+    public function saved_template_returns_elasticsearch_completion_suggestions(): void
+    {
+        $indexName = uniqid();
+        $templateId = uniqid('autocomplete_');
+
+        $blueprint = new NewProperties;
+        $blueprint->completion('autocomplete');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['autocomplete' => 'Star Wars'], _id: 'star-wars'),
+                new Document(['autocomplete' => 'Star Trek'], _id: 'star-trek'),
+                new Document(['autocomplete' => 'Dune'], _id: 'dune'),
+            ]);
+
+        $this->sigmie->newTemplate($templateId)
+            ->properties($blueprint)
+            ->fields([])
+            ->autocomplete(true, minLength: 2, prefixLength: 1)
+            ->autocompleteSize(2)
+            ->get()
+            ->save();
+
+        $suggestions = $this->sigmie->template($templateId)->run($indexName, [
+            'query_string' => 'Sta',
+        ])->json('suggest.autocompletion.0.options');
+
+        $this->assertSame(['Star Trek', 'Star Wars'], array_map(fn (array $option): string => $option['text'], $suggestions));
+    }
+
+    /**
+     * @test
+     */
+    public function saved_template_matches_nested_elasticsearch_documents(): void
+    {
+        $indexName = uniqid();
+        $templateId = uniqid('nested_');
+
+        $blueprint = new NewProperties;
+        $blueprint->nested('contact', function (NewProperties $blueprint): void {
+            $blueprint->name('name');
+        });
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['contact' => ['name' => 'Pluto']], _id: 'matching'),
+                new Document(['contact' => ['name' => 'Donald']], _id: 'missing'),
+            ]);
+
+        $this->sigmie->newTemplate($templateId)
+            ->properties($blueprint)
+            ->fields(['contact.name'])
+            ->autocomplete(false)
+            ->get()
+            ->save();
+
+        $hits = $this->sigmie->template($templateId)->run($indexName, [
+            'query_string' => 'Pluto',
+        ])->json('hits.hits');
+
+        $this->assertSame(['matching'], array_map(fn (array $hit): string => $hit['_id'], $hits));
+    }
 }
