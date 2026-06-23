@@ -56,6 +56,6 @@ class NewPipeline implements ToRaw
     {
         $this->ingestAPICall($this->name, 'PUT', $this->toRaw());
 
-        return new Pipeline($this->name);
+        return new Pipeline($this->elasticsearchConnection, $this->name);
     }
 }
