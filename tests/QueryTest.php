@@ -444,12 +444,12 @@ class QueryTest extends TestCase
             new Document(['sku' => 'gamma-003', 'category' => 'music', 'name' => 'Synth Album', 'stock' => 8], _id: 'gamma'),
         ]);
 
-        $this->assertSame(['alpha', 'beta'], $this->idsFromQuery(fn () => $this->sigmie->newQuery($indexName)->terms('category', ['books'])));
-        $this->assertSame(['alpha', 'beta'], $this->idsFromQuery(fn () => $this->sigmie->newQuery($indexName)->exists('tag')));
-        $this->assertSame(['alpha', 'gamma'], $this->idsFromQuery(fn () => $this->sigmie->newQuery($indexName)->ids(['alpha', 'gamma'])));
-        $this->assertSame(['beta'], $this->idsFromQuery(fn () => $this->sigmie->newQuery($indexName)->wildcard('sku', 'beta-*')));
-        $this->assertSame(['gamma'], $this->idsFromQuery(fn () => $this->sigmie->newQuery($indexName)->regex('sku', 'gamma-00[0-9]')));
-        $this->assertSame(['alpha'], $this->idsFromQuery(fn () => $this->sigmie->newQuery($indexName)->fuzzy('name', 'Laraval')));
+        $this->assertSame(['alpha', 'beta'], $this->idsFromQuery(fn (): \Sigmie\Query\Search => $this->sigmie->newQuery($indexName)->terms('category', ['books'])));
+        $this->assertSame(['alpha', 'beta'], $this->idsFromQuery(fn (): \Sigmie\Query\Search => $this->sigmie->newQuery($indexName)->exists('tag')));
+        $this->assertSame(['alpha', 'gamma'], $this->idsFromQuery(fn (): \Sigmie\Query\Search => $this->sigmie->newQuery($indexName)->ids(['alpha', 'gamma'])));
+        $this->assertSame(['beta'], $this->idsFromQuery(fn (): \Sigmie\Query\Search => $this->sigmie->newQuery($indexName)->wildcard('sku', 'beta-*')));
+        $this->assertSame(['gamma'], $this->idsFromQuery(fn (): \Sigmie\Query\Search => $this->sigmie->newQuery($indexName)->regex('sku', 'gamma-00[0-9]')));
+        $this->assertSame(['alpha'], $this->idsFromQuery(fn (): \Sigmie\Query\Search => $this->sigmie->newQuery($indexName)->fuzzy('name', 'Laraval')));
     }
 
     /**
