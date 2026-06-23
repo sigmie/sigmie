@@ -292,15 +292,19 @@ class AiApisTest extends TestCase
 
             $this->sigmie->registerApi($registeredApiName, $api);
 
+            $expectedDimensions = $api instanceof InfinityEmbeddingsApi ? 384 : 3;
+            $expectedLargeDimensions = $api instanceof InfinityEmbeddingsApi ? 384 : 512;
+            $expectedSmallBatchDimensions = $api instanceof InfinityEmbeddingsApi ? 384 : 128;
+
             $this->assertNotSame('', $api->model());
             $this->assertGreaterThan(0, $api->maxBatchSize());
-            $this->assertCount(3, $api->embed('accounting audit', 3));
-            $this->assertCount(512, $api->embed('accounting audit', 512));
+            $this->assertCount($expectedDimensions, $api->embed('accounting audit', 3));
+            $this->assertCount($expectedLargeDimensions, $api->embed('accounting audit', 512));
             $this->assertSame([], $api->batchEmbed([]));
-            $this->assertCount(512, $api->batchEmbed([
+            $this->assertCount($expectedLargeDimensions, $api->batchEmbed([
                 ['text' => 'accounting audit', 'dims' => 512],
             ])[0]['vector']);
-            $this->assertCount(128, $api->batchEmbed([
+            $this->assertCount($expectedSmallBatchDimensions, $api->batchEmbed([
                 ['text' => 'accounting audit', 'dims' => 128],
             ])[0]['vector']);
             $this->assertSame(200, $api->promiseEmbed('accounting audit', 3)->wait()->getStatusCode());
@@ -393,11 +397,13 @@ class AiApisTest extends TestCase
     {
         $openAI = new OpenAIEmbeddingsApi('test-key');
         $cohere = new CohereEmbeddingsApi('test-key', CohereInputType::SearchDocument);
+        $infinity = new InfinityEmbeddingsApi('http://example.com');
         $voyage = new VoyageEmbeddingsApi('test-key');
 
         return [
             'openai' => $this->withMockEmbeddingClient($openAI, 'openai'),
             'cohere' => $this->withMockEmbeddingClient($cohere, 'cohere'),
+            'infinity' => $this->withMockEmbeddingClient($infinity, 'infinity'),
             'voyage' => $this->withMockEmbeddingClient($voyage, 'voyage'),
         ];
     }
