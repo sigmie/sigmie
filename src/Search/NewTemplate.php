@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use Sigmie\Mappings\PropertiesFieldNotFound;
-use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
@@ -93,12 +92,13 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
     public function get(): SearchTemplate
     {
         $boolean = new Boolean;
-        $search = new Search($boolean);
-        $highlight = new Collection($this->highlight);
-
-        $highlight->each(fn (string $field): Search => $search->highlight($field));
+        $search = (new Search($this->elasticsearchConnection))->query($boolean);
 
         $search->fields($this->retrieve ?? $this->properties->fieldNames());
+
+        if ($this->highlight !== []) {
+            $search->highlight($this->highlight);
+        }
 
         $defaultFilters = json_encode($this->filters->toRaw());
 
@@ -183,8 +183,8 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
                         $queryClause->fuzziness($fuzziness);
                     }
 
-                    if ($field->parentPath && $field->parentType === TypesNested::class) {
-                        $queryClause = new Nested($field->parentPath, $queryClause);
+                    if ($nestedPath = $field->nestedPath()) {
+                        $queryClause = new Nested($nestedPath, $queryClause);
                     }
 
                     $shouldClauses->add(
@@ -206,16 +206,17 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
 
         if ($this->autocompletion) {
 
-            $search->suggest(function (Suggest $suggest): void {
+            $suggest = new Suggest;
 
-                $suggest->completion(name: 'autocompletion')
-                    ->field('autocomplete')
-                    ->size($this->autocompleteSize)
-                    ->fuzzyMinLegth($this->autocompleteFuzzyMinLength)
-                    ->fuzzyPrefixLenght($this->autocompleteFuzzyPrefixLength)
-                    ->fuzzy($this->autocompletion)
-                    ->prefix('{{query_string}}');
-            });
+            $suggest->completion(name: 'autocompletion')
+                ->field('autocomplete')
+                ->size($this->autocompleteSize)
+                ->fuzzyMinLegth($this->autocompleteFuzzyMinLength)
+                ->fuzzyPrefixLenght($this->autocompleteFuzzyPrefixLength)
+                ->fuzzy($this->autocompletion)
+                ->prefix('{{query_string}}');
+
+            $search->suggest($suggest);
         }
 
         $search->trackTotalHits();
