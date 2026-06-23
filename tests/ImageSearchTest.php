@@ -7,6 +7,7 @@ namespace Sigmie\Tests;
 use Exception;
 use Sigmie\AI\APIs\InfinityClipApi;
 use Sigmie\Document\Document;
+use Sigmie\Helpers\ImageHelper;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\FakeClipApi;
@@ -135,8 +136,38 @@ class ImageSearchTest extends TestCase
      */
     public function local_image_path(): void
     {
-        // Remove the feature also from internal
-        $this->assertTrue(true, 'Feature removed - local paths are now converted to base64 internally');
+        $indexName = uniqid();
+        $redCarPath = $this->createLocalImage('red-car-local', [220, 20, 20], 320, 180);
+        $blueShipPath = $this->createLocalImage('blue-ship-local', [20, 20, 220], 320, 180);
+
+        $props = new NewProperties;
+        $props->text('title');
+        $props->image('image')->semantic(accuracy: 1, dimensions: 512, api: 'test-clip');
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($props)
+            ->merge([
+                new Document(['title' => 'Local red car', 'image' => $redCarPath], _id: 'red-car'),
+                new Document(['title' => 'Local blue ship', 'image' => $blueShipPath], _id: 'blue-ship'),
+            ]);
+
+        $this->clipApi->assertImageSourceWasEmbedded($redCarPath);
+        $this->clipApi->assertImageSourceWasEmbedded($blueShipPath);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->queryString('red car local')
+            ->fields(['image'])
+            ->size(1)
+            ->hits();
+
+        $this->assertSame('red-car', $hits[0]->_id);
+
+        unlink($redCarPath);
+        unlink($blueShipPath);
     }
 
     /**
@@ -144,8 +175,56 @@ class ImageSearchTest extends TestCase
      */
     public function image_preprocessing_resizes_to_224px(): void
     {
-        // Remove the feature also from internal
-        $this->assertTrue(true, 'Image resizing is handled by ImageHelper');
+        $indexName = uniqid();
+        $imagePath = $this->createLocalImage('large-data-image', [20, 180, 40], 640, 320);
+        $tallImagePath = $this->createLocalImage('tall-data-image', [40, 80, 200], 120, 360);
+
+        $processedBase64 = ImageHelper::processImageForEmbedding($imagePath, 64);
+        $processedContent = base64_decode($processedBase64, true);
+
+        $this->assertNotFalse($processedContent);
+        $processedImage = imagecreatefromstring($processedContent) ?: throw new Exception('Processed image could not be decoded');
+
+        $this->assertLessThanOrEqual(64, imagesx($processedImage));
+
+        imagedestroy($processedImage);
+
+        $processedFromDataUrl = ImageHelper::processImageForEmbedding('data:image/jpeg;base64,'.$processedBase64, 1024);
+        $processedFromPureBase64 = ImageHelper::processImageForEmbedding($processedBase64, 1024);
+        $processedTallBase64 = ImageHelper::processImageForEmbedding($tallImagePath, 64);
+        $processedTallImage = imagecreatefromstring(base64_decode($processedTallBase64, true) ?: '') ?: throw new Exception('Processed tall image could not be decoded');
+        $processedUrlBase64 = ImageHelper::processImageForEmbedding('https://github.com/sigmie/test-images/raw/refs/heads/main/basket-ball.jpeg', 64);
+
+        $this->assertNotSame('', $processedFromDataUrl);
+        $this->assertNotSame('', $processedFromPureBase64);
+        $this->assertLessThanOrEqual(64, imagesy($processedTallImage));
+        $this->assertNotSame('', $processedUrlBase64);
+
+        imagedestroy($processedTallImage);
+
+        $props = new NewProperties;
+        $props->image('photo')->semantic(accuracy: 1, dimensions: 512, api: 'test-clip');
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($props)
+            ->add(new Document([
+                'photo' => 'data:image/jpeg;base64,'.$processedBase64,
+            ], _id: 'processed-local-image'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->queryImage('data:image/jpeg;base64,'.$processedBase64)
+            ->fields(['photo'])
+            ->size(1)
+            ->hits();
+
+        $this->assertSame('processed-local-image', $hits[0]->_id);
+
+        unlink($imagePath);
+        unlink($tallImagePath);
     }
 
     /**
@@ -743,5 +822,19 @@ class ImageSearchTest extends TestCase
         $modelHits = $modelSearch->hits();
         $this->assertGreaterThanOrEqual(1, count($modelHits), 'Should find car model products');
         $this->assertEquals('sedan-model', $modelHits[0]->_id, 'Family Sedan Model Kit should be the top result');
+    }
+
+    protected function createLocalImage(string $name, array $rgb, int $width, int $height): string
+    {
+        $path = sprintf('%s/%s-%s.jpg', sys_get_temp_dir(), $name, uniqid());
+        $image = imagecreatetruecolor($width, $height) ?: throw new Exception('Failed to create local test image');
+        [$red, $green, $blue] = $rgb;
+        $color = imagecolorallocate($image, $red, $green, $blue);
+
+        imagefilledrectangle($image, 0, 0, $width, $height, $color);
+        imagejpeg($image, $path, 80) ?: throw new Exception('Failed to write local test image');
+        imagedestroy($image);
+
+        return $path;
     }
 }
