@@ -6,6 +6,7 @@ namespace Sigmie\AI\History;
 
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Search\NewSearch;
 use Sigmie\Sigmie;
 use Sigmie\SigmieIndex;
@@ -73,11 +74,17 @@ class Index extends SigmieIndex
         ], true);
     }
 
-    public function search($conversationId, $userToken = null): NewSearch
+    public function search(string $conversationId, ?string $userToken = null): NewSearch
     {
-        return $this->newSearch()
+        $search = $this->newSearch()
             ->semantic()
-            // ->filters($filters)
+            ->filterQuery(new Term('conversation_id', $conversationId))
             ->disableKeywordSearch();
+
+        if ($userToken === null) {
+            return $search;
+        }
+
+        return $search->filterQuery(new Term('user_token', $userToken));
     }
 }
