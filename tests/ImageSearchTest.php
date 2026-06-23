@@ -5,7 +5,14 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Exception;
+use GuzzleHttp\Client;
+use GuzzleHttp\Promise\Promise;
+use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\RequestInterface;
+use ReflectionObject;
 use Sigmie\AI\APIs\InfinityClipApi;
+use Sigmie\AI\APIs\JinaClipApi;
+use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Document\Document;
 use Sigmie\Helpers\ImageHelper;
 use Sigmie\Mappings\NewProperties;
@@ -490,6 +497,50 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
+    public function real_clip_apis_index_and_search_images_through_elasticsearch(): void
+    {
+        foreach ($this->realClipApis() as $apiName => $api) {
+            $indexName = uniqid();
+            $registeredApiName = 'real-'.$apiName;
+
+            $this->sigmie->registerApi($registeredApiName, $api);
+
+            $this->assertNotSame('', $api->model());
+            $this->assertGreaterThan(0, $api->maxBatchSize());
+            $this->assertCount(512, $api->embed('red car', 512));
+            $this->assertCount(512, $api->embed('https://example.com/red-car.jpeg', 512));
+            $this->assertCount(512, $api->embed('data:image/png;base64,'.base64_encode('red car image'), 512));
+            $this->assertSame([], $api->batchEmbed([]));
+            $this->assertSame(200, $api->promiseEmbed('https://example.com/red-car.jpeg', 512)->wait()->getStatusCode());
+
+            $props = new NewProperties;
+            $props->image('image')->semantic(api: $registeredApiName, accuracy: 1, dimensions: 512);
+
+            $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+            $this->sigmie->collect($indexName, refresh: true)
+                ->properties($props)
+                ->merge([
+                    new Document(['image' => 'https://example.com/red-car.jpeg'], _id: $apiName.'-red-car'),
+                    new Document(['image' => 'https://example.com/pirate-ship.jpeg'], _id: $apiName.'-pirate-ship'),
+                ]);
+
+            $hits = $this->sigmie->newSearch($indexName)
+                ->properties($props)
+                ->semantic()
+                ->disableKeywordSearch()
+                ->queryString('red car')
+                ->fields(['image'])
+                ->size(1)
+                ->hits();
+
+            $this->assertSame($apiName.'-red-car', $hits[0]->_id);
+        }
+    }
+
+    /**
+     * @test
+     */
     public function error_handling_for_invalid_image_sources(): void
     {
         $indexName = uniqid();
@@ -836,5 +887,92 @@ class ImageSearchTest extends TestCase
         imagedestroy($image);
 
         return $path;
+    }
+
+    private function realClipApis(): array
+    {
+        $infinity = new InfinityClipApi('http://example.com');
+        $jina = new JinaClipApi('http://example.com');
+
+        return [
+            'infinity' => $this->withMockClipClient($infinity),
+            'jina' => $this->withMockClipClient($jina),
+        ];
+    }
+
+    private function withMockClipClient(EmbeddingsApi $api): EmbeddingsApi
+    {
+        $handler = function (RequestInterface $request): Promise {
+            $payload = json_decode((string) $request->getBody(), true);
+            $inputs = $this->clipInputs($payload);
+            $vectors = array_map(fn (string $input): array => $this->clipVector($input, 512), $inputs);
+
+            $promise = new Promise;
+            $promise->resolve(new Response(200, [], json_encode([
+                'data' => array_map(fn (array $vector): array => ['embedding' => $vector], $vectors),
+            ], JSON_THROW_ON_ERROR)));
+
+            return $promise;
+        };
+
+        $reflection = new ReflectionObject($api);
+        $property = $reflection->getProperty('client');
+        $property->setAccessible(true);
+        $property->setValue($api, new Client(['handler' => $handler]));
+
+        return $api;
+    }
+
+    private function clipInputs(array $payload): array
+    {
+        if (isset($payload['data'])) {
+            return array_map(
+                fn (array $item): string => (string) ($item['text'] ?? $item['uri'] ?? ''),
+                $payload['data']
+            );
+        }
+
+        $input = $payload['input'] ?? [];
+
+        return is_array($input) ? $input : [$input];
+    }
+
+    private function clipVector(string $input, int $dimensions): array
+    {
+        $dimensions = max(1, $dimensions);
+        $vector = array_fill(0, $dimensions, 0.001);
+        $tokens = $this->clipTokens($input);
+
+        foreach ($tokens as $token) {
+            $vector[crc32($token) % $dimensions] += 0.25;
+        }
+
+        foreach ($this->clipSemanticGroups() as $index => $terms) {
+            foreach ($terms as $term) {
+                if (in_array($term, $tokens, true)) {
+                    $vector[$index % $dimensions] += 4.0;
+                }
+            }
+        }
+
+        $magnitude = sqrt(array_sum(array_map(fn (float $value): float => $value * $value, $vector)));
+
+        return array_map(fn (float $value): float => $value / $magnitude, $vector);
+    }
+
+    private function clipTokens(string $input): array
+    {
+        $path = parse_url($input, PHP_URL_PATH);
+        $text = $path ? basename($path) : $input;
+
+        return array_values(array_filter(explode(' ', trim((string) preg_replace('/[^a-z0-9]+/', ' ', strtolower($text))))));
+    }
+
+    private function clipSemanticGroups(): array
+    {
+        return [
+            ['red', 'car', 'vehicle'],
+            ['pirate', 'ship', 'ocean'],
+        ];
     }
 }
