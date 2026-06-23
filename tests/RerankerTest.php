@@ -9,9 +9,9 @@ use Sigmie\Document\RerankedHit;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\Search\NewRerank;
 use Sigmie\Semantic\Contracts\AIProvider;
 use Sigmie\Semantic\Reranker;
-use Sigmie\Search\NewRerank;
 use Sigmie\Testing\TestCase;
 use Symfony\Component\Yaml\Yaml;
 
