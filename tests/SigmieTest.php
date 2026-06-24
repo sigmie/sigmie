@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\Contracts\Package;
+use Sigmie\Document\Contracts\CollectionHook;
 use Sigmie\Document\Document;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Index\ListedIndex;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Properties;
 use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
@@ -113,5 +116,60 @@ class SigmieTest extends TestCase
         $this->assertTrue($this->sigmie->deleteIfExists($deleteIfExistsAlias));
         $this->assertTrue($this->sigmie->deleteIfExists($deleteIfExistsAlias));
         $this->assertNull($this->sigmie->index($deleteIfExistsAlias));
+    }
+
+    /**
+     * @test
+     */
+    public function extend_registers_collection_hooks_that_modify_elasticsearch_documents(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->keyword('package_marker');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->extend(new class implements Package
+        {
+            public function register(Sigmie $sigmie): void
+            {
+                $sigmie->addCollectionHook(new class implements CollectionHook
+                {
+                    public function shouldRun(Properties $properties): bool
+                    {
+                        return $properties->get('package_marker') !== null;
+                    }
+
+                    public function beforeBatch(string $indexName, Sigmie $sigmie, Properties $properties, array $apis): void {}
+
+                    public function processBatch(array $documents, Properties $properties, array $apis): array
+                    {
+                        foreach ($documents as $document) {
+                            $document['package_marker'] = 'registered';
+                        }
+
+                        return $documents;
+                    }
+
+                    public function afterBatch(array $documents, string $indexName, Sigmie $sigmie, Properties $properties, array $apis): void {}
+                });
+            }
+        });
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Extended package document'], _id: 'extended'));
+
+        $response = $this->sigmie->newQuery($indexName)
+            ->term('package_marker', 'registered')
+            ->get();
+
+        $this->assertEquals(1, $response->json('hits.total.value'));
+        $this->assertSame('extended', $response->json('hits.hits.0._id'));
+        $this->assertSame('registered', $response->json('hits.hits.0._source.package_marker'));
     }
 }
