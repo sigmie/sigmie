@@ -203,8 +203,10 @@ class QueryTest extends TestCase
         $response = $this->sigmie->newQuery($name)->bool(function (QueriesCompoundBoolean $boolean): void {
             $boolean->filter->term('status', 'published');
             $boolean->filter->range('stock', ['>' => 0]);
+
             $boolean->must->regex('sku', 'book-00[0-9]');
             $boolean->must->match('title', 'Search');
+
             $boolean->mustNot->wildcard('sku', 'video-*');
         })
             ->get();
