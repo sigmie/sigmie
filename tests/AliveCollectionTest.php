@@ -381,7 +381,7 @@ class AliveCollectionTest extends TestCase
         $blueprint = new NewProperties;
         $blueprint->text('title');
 
-        $index = $this->sigmie->newIndex($indexName)
+        $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
             ->create();
 
