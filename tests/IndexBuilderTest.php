@@ -15,6 +15,7 @@ use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Analysis\CharFilter\Pattern as PatternCharFilter;
 use Sigmie\Index\Analysis\Tokenizers\NonLetter;
 use Sigmie\Index\Analysis\Tokenizers\Pattern as PatternTokenizer;
+use Sigmie\Index\Analysis\Tokenizers\SimplePattern;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\NewAnalyzer;
@@ -769,6 +770,34 @@ class IndexBuilderTest extends TestCase
             $index->assertAnalyzerFilterIsEmpty('default');
             $index->assertAnalyzerTokenizerIsWordBoundaries('default');
         });
+    }
+
+    /**
+     * @test
+     */
+    public function simple_pattern_tokenizer_analyzes_matching_tokens(): void
+    {
+        $alias = uniqid();
+        $unflaggedAlias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->tokenizer(new SimplePattern('capital_tokenizer', '[A-Z]+', 'CASE_INSENSITIVE'))
+            ->create();
+
+        $this->sigmie->newIndex($unflaggedAlias)
+            ->tokenizeOnPatternMatch('[A-Z]+', 'unflagged_capital_tokenizer')
+            ->create();
+
+        $tokens = $this->sigmie
+            ->index($alias)
+            ->analyze('abc ABC DEF 123', 'default');
+
+        $unflaggedTokens = $this->sigmie
+            ->index($unflaggedAlias)
+            ->analyze('abc ABC DEF 123', 'default');
+
+        $this->assertSame(['ABC', 'DEF'], $tokens);
+        $this->assertSame(['ABC', 'DEF'], $unflaggedTokens);
     }
 
     /**

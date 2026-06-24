@@ -126,6 +126,15 @@ class MultiSearchTest extends TestCase
         $this->assertSame($formatted[0], $response->getSearchResult(0));
         $this->assertNull($response->getSearchResult(2));
         $this->assertSame($formatted, $response->getAllResults());
+
+        $formattedQueryResponse = $query->formatMultiSearchResponse($rawResponse['responses'], 1);
+        $slicedQueryResponse = $query->sliceMultiSearchResponse([$rawResponse['responses'][1]]);
+
+        $this->assertSame(1, $query->multisearchResCount());
+        $this->assertSame(2, $formattedQueryResponse['total']);
+        $this->assertSame(2, $slicedQueryResponse['total']);
+        $this->assertFalse($formattedQueryResponse['timed_out']);
+        $this->assertCount(2, $slicedQueryResponse['hits']);
     }
 
     /**

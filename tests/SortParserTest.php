@@ -562,6 +562,62 @@ class SortParserTest extends TestCase
     /**
      * @test
      */
+    public function invalid_sort_tokens_collect_errors_and_keep_valid_elasticsearch_sort(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->geoPoint('location');
+        $blueprint->keyword('name');
+        $blueprint->number('price');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, true)
+            ->merge([
+                new Document([
+                    'location' => ['lat' => 52.49, 'lon' => 13.77],
+                    'name' => 'Gamma',
+                    'price' => 10,
+                ], _id: 'gamma'),
+                new Document([
+                    'location' => ['lat' => 53.49, 'lon' => 13.77],
+                    'name' => 'Alpha',
+                    'price' => 10,
+                ], _id: 'alpha'),
+                new Document([
+                    'location' => ['lat' => 54.49, 'lon' => 13.77],
+                    'name' => 'Beta',
+                    'price' => 10,
+                ], _id: 'beta'),
+            ]);
+
+        foreach ([
+            ['price asc name:desc', ['gamma', 'beta', 'alpha'], 'attach the direction'],
+            ['_score:sideways name:asc', ['alpha', 'beta', 'gamma'], 'Invalid direction'],
+            ['name[52.49,13.77]:m:asc name:asc', ['alpha', 'beta', 'gamma'], 'is not a geo point'],
+            ['location[52.49,13.77]:parsec:asc name:desc', ['gamma', 'beta', 'alpha'], 'Invalid unit'],
+            ['location[52.49,13.77]:km:sideways name:asc', ['alpha', 'beta', 'gamma'], 'Invalid order'],
+            ['location[91,13.77]:km:asc name:desc', ['gamma', 'beta', 'alpha'], 'Invalid latitude or longitude'],
+        ] as [$sortString, $expectedIds, $expectedError]) {
+            $parser = new SortParser($blueprint(), throwOnError: false);
+            $sorts = $parser->parse($sortString);
+
+            $hits = $this->sigmie->query($indexName)
+                ->sort($sorts)
+                ->get()
+                ->json('hits.hits');
+
+            $this->assertSame($expectedIds, array_column($hits, '_id'));
+            $this->assertStringContainsString($expectedError, $parser->errors()[0]['message']);
+        }
+    }
+
+    /**
+     * @test
+     */
     public function score_asc_not_allowed(): void
     {
         $blueprint = new NewProperties;
