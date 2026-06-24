@@ -6,10 +6,9 @@ namespace Sigmie\Search\Formatters;
 
 use Sigmie\Mappings\Properties;
 use Sigmie\Search\Contracts\MultiSearchable;
-use Sigmie\Search\Contracts\MultiSearchResponse;
 use Sigmie\Search\NewSearch;
 
-class SigmieMultiSearchResponse implements MultiSearchResponse
+class SigmieMultiSearchResponse
 {
     protected array $multiSearchResponseRaw = [];
 
@@ -54,7 +53,7 @@ class SigmieMultiSearchResponse implements MultiSearchResponse
                     ->facetsResponseRaw($searchResponse)
                     ->context($searchContext)
                     ->errors([])
-                    ->apis($apis);
+                    ->apis($search->apis);
 
                 $results[$searchIndex] = $formatter->format();
                 $responseIndex += 1;

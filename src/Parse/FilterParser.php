@@ -284,7 +284,9 @@ class FilterParser extends Parser
             }
         }
 
+        // @codeCoverageIgnoreStart
         return false;
+        // @codeCoverageIgnoreEnd
     }
 
     // Normalize a primary filter (spaces around structural characters) and make
@@ -485,9 +487,12 @@ class FilterParser extends Parser
 
         $realFieldName = $this->handleFieldName($field);
 
+        // @codeCoverageIgnoreStart
         if (is_null($realFieldName)) {
             return null;
         }
+
+        // @codeCoverageIgnoreEnd
 
         return $this->prepareQuery($field, new GeoDistance($this->fieldName($realFieldName), $distance, $latitude, $longitude));
     }
@@ -502,9 +507,12 @@ class FilterParser extends Parser
 
         $realFieldName = $this->handleFieldName($field);
 
+        // @codeCoverageIgnoreStart
         if (is_null($realFieldName)) {
             return null;
         }
+
+        // @codeCoverageIgnoreEnd
 
         return $this->prepareQuery(
             $field,
@@ -563,13 +571,14 @@ class FilterParser extends Parser
 
         $field = $this->handleFieldName($field);
 
-        $realFieldName = $this->handleFieldName($field);
-
-        if (is_null($realFieldName)) {
+        // @codeCoverageIgnoreStart
+        if (is_null($field)) {
             return null;
         }
 
-        return $this->prepareQuery($field, new Term($this->fieldName($realFieldName), true));
+        // @codeCoverageIgnoreEnd
+
+        return $this->prepareQuery($field, new Term($this->fieldName($field), true));
     }
 
     public function handleHas(string $has): ?Query

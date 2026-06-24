@@ -6,6 +6,7 @@ namespace Sigmie\Tests;
 
 use Exception;
 use RachidLaasri\Travel\Travel;
+use RuntimeException;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Document\Document;
 use Sigmie\Index\Alias\AliasAlreadyExists;
@@ -13,10 +14,13 @@ use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Analysis\CharFilter\Pattern as PatternCharFilter;
+use Sigmie\Index\Analysis\Tokenizers\Ngram as NgramTokenizer;
 use Sigmie\Index\Analysis\Tokenizers\NonLetter;
 use Sigmie\Index\Analysis\Tokenizers\Pattern as PatternTokenizer;
+use Sigmie\Index\Analysis\Tokenizers\SimplePattern;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Index\Index as BaseIndex;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Index\NewIndex;
 use Sigmie\Languages\English\Builder as EnglishBuilder;
@@ -242,6 +246,54 @@ class IndexBuilderTest extends TestCase
                     'language' => 'english',
                 ]
             );
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function english_lovins_stemmer_analyzes_with_elasticsearch(): void
+    {
+        $alias = uniqid();
+
+        $this->forOpenSearch(function () use ($alias): void {
+            /** @var EnglishBuilder */
+            $englishBuilder = $this->sigmie->newIndex($alias)
+                ->language(new English);
+
+            $englishBuilder
+                ->englishStemmer('english_stemmer')
+                ->create();
+
+            $tokens = $this->sigmie
+                ->index($alias)
+                ->analyze('running relational', 'default');
+
+            $this->assertSame(['run', 'relat'], $tokens);
+        });
+
+        $this->forElasticsearch(function () use ($alias): void {
+            /** @var EnglishBuilder */
+            $englishBuilder = $this->sigmie->newIndex($alias)
+                ->language(new English);
+
+            $englishBuilder
+                ->englishLovinsStemmer('english_stemmer_lovins')
+                ->create();
+
+            $tokens = $this->sigmie
+                ->index($alias)
+                ->analyze('running relational', 'default');
+
+            $this->assertSame([], $tokens);
+
+            $this->assertIndex($alias, function (Assert $index): void {
+                $index->assertAnalyzerHasFilter('default', 'english_stemmer_lovins');
+                $index->assertFilterEquals('english_stemmer_lovins', [
+                    'type' => 'stemmer',
+                    'language' => 'lovins',
+                ]);
+            });
         });
     }
 
@@ -774,6 +826,149 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
+    public function standard_analyzer_mapping_returns_elasticsearch_hits(): void
+    {
+        $alias = uniqid();
+
+        $this->indexAPICall($alias, 'PUT', [
+            'mappings' => [
+                'properties' => [
+                    'title' => [
+                        'type' => 'text',
+                        'analyzer' => 'standard',
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->sigmie->collect($alias, refresh: true)->merge([
+            new Document(['title' => 'Sigmie Search'], _id: 'matching'),
+            new Document(['title' => 'Other Engine'], _id: 'other'),
+        ]);
+
+        $index = $this->sigmie->index($alias);
+
+        $response = $this->sigmie->newQuery($alias)
+            ->match('title', 'sigmie')
+            ->get();
+
+        $this->assertSame(['matching'], array_map(fn (array $hit): string => $hit['_id'], $response->json('hits.hits')));
+        $this->assertSame(['title'], $index->mappings->fieldNames());
+    }
+
+    /**
+     * @test
+     */
+    public function simple_pattern_tokenizer_analyzes_matching_tokens(): void
+    {
+        $alias = uniqid();
+        $unflaggedAlias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->tokenizer(new SimplePattern('capital_tokenizer', '[A-Z]+', 'CASE_INSENSITIVE'))
+            ->create();
+
+        $this->sigmie->newIndex($unflaggedAlias)
+            ->tokenizeOnPatternMatch('[A-Z]+', 'unflagged_capital_tokenizer')
+            ->create();
+
+        $tokens = $this->sigmie
+            ->index($alias)
+            ->analyze('abc ABC DEF 123', 'default');
+
+        $unflaggedTokens = $this->sigmie
+            ->index($unflaggedAlias)
+            ->analyze('abc ABC DEF 123', 'default');
+
+        $this->assertSame(['ABC', 'DEF'], $tokens);
+        $this->assertSame(['ABC', 'DEF'], $unflaggedTokens);
+    }
+
+    /**
+     * @test
+     */
+    public function simple_pattern_split_tokenizer_splits_text_with_elasticsearch(): void
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->tokenizeOnSimplePattern('_', 'underscore_split_tokenizer')
+            ->create();
+
+        $tokens = $this->sigmie
+            ->index($alias)
+            ->analyze('alpha_beta_gamma', 'default');
+
+        $analysis = $this->sigmie->index($alias)->settings->analysis();
+
+        $this->assertSame(['alpha', 'beta', 'gamma'], $tokens);
+        $this->assertTrue($analysis->hasTokenizer('underscore_split_tokenizer'));
+    }
+
+    /**
+     * @test
+     */
+    public function ngram_tokenizer_analyzes_overlapping_tokens(): void
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->tokenizer(new NgramTokenizer('two_gram_tokenizer', 2, 2))
+            ->create();
+
+        $tokens = $this->sigmie
+            ->index($alias)
+            ->analyze('abcd', 'default');
+
+        $this->assertSame(['ab', 'bc', 'cd'], $tokens);
+    }
+
+    /**
+     * @test
+     */
+    public function name_field_ngram_filter_is_restored_from_elasticsearch_settings(): void
+    {
+        $alias = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->name('name');
+
+        $this->sigmie->newIndex($alias)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($alias, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['name' => 'Nico Orfanos'], _id: 'nico'),
+                new Document(['name' => 'Other Person'], _id: 'other'),
+            ]);
+
+        $response = $this->sigmie->newSearch($alias)
+            ->properties($blueprint)
+            ->queryString('Nico')
+            ->fields(['name'])
+            ->get();
+
+        $filters = $this->sigmie->index($alias)
+            ->settings
+            ->analysis()
+            ->toRaw()['filter'];
+
+        $ngramFilters = array_values(array_filter(
+            $filters,
+            fn (array $filter): bool => ($filter['type'] ?? null) === 'ngram'
+        ));
+
+        $this->assertSame('nico', $response->json('hits')[0]['_id']);
+        $this->assertSame('4', $ngramFilters[0]['min_gram']);
+        $this->assertSame('5', $ngramFilters[0]['max_gram']);
+        $this->assertFalse($ngramFilters[0]['preserve_original']);
+    }
+
+    /**
+     * @test
+     */
     public function field_mappings(): void
     {
         $alias = uniqid();
@@ -1051,5 +1246,98 @@ class IndexBuilderTest extends TestCase
         $secondIndex = $this->sigmie->newIndex($alias)->createIfNotExists();
 
         $this->assertEquals($name, $secondIndex->name);
+    }
+
+    /**
+     * @test
+     */
+    public function create_if_not_exists_rejects_existing_concrete_index(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->indexAPICall($indexName, 'PUT', [
+            'mappings' => [
+                'properties' => [
+                    'title' => [
+                        'type' => 'text',
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Concrete index'], _id: 'matching'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Concrete')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $builder = new class($this->elasticsearchConnection, $indexName) extends NewIndex
+        {
+            public function __construct(
+                ElasticsearchConnection $connection,
+                protected string $indexName,
+            ) {
+                parent::__construct($connection);
+                $this->alias($indexName);
+            }
+
+            protected function aliasExists(string $alias): bool
+            {
+                return true;
+            }
+
+            protected function getIndex(string $alias): BaseIndex|AliasedIndex|null
+            {
+                return new BaseIndex($this->indexName);
+            }
+        };
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(sprintf("Index '%s' exists but is not an aliased index", $indexName));
+
+        $builder->createIfNotExists();
+    }
+
+    /**
+     * @test
+     */
+    public function new_index_save_creates_elasticsearch_index_template(): void
+    {
+        $templateName = uniqid('template_');
+        $indexName = uniqid('templated_');
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $template = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->save($templateName, [$indexName.'-*']);
+
+        $this->assertSame($templateName, $template->name);
+
+        $this->indexAPICall($indexName.'-live', 'PUT');
+
+        $this->sigmie->collect($indexName.'-live', refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Templated index'], _id: 'matching'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName.'-live')
+            ->properties($blueprint)
+            ->queryString('Templated')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
     }
 }

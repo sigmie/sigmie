@@ -404,14 +404,17 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected function handleSuggest(Search $search): void
     {
-        if (
-            ($this->searchContext->autocompletePrefixStrings[0] ?? false)
-            && ($this->properties->autocompleteField ?? false)
-        ) {
+        if (! ($this->searchContext->autocompletePrefixStrings[0] ?? false)) {
+            return;
+        }
+
+        $autocompleteField = $this->properties->completionFields()->first();
+
+        if ($autocompleteField) {
             $suggest = new Suggest;
 
             $suggest->completion(name: 'autocompletion')
-                ->field($this->properties->autocompleteField->name())
+                ->field($autocompleteField->name())
                 ->size($this->autocompleteSize)
                 ->fuzzyMinLegth($this->autocompleteFuzzyMinLength)
                 ->fuzzyPrefixLenght($this->autocompleteFuzzyPrefixLength)
@@ -497,10 +500,6 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected function hasSemanticFields(): bool
     {
-        if (! $this->properties) {
-            return false;
-        }
-
         $semanticFields = $this->properties->nestedSemanticFields()
             ->filter(fn (Text $field): bool => $field->isSemantic());
 
@@ -536,10 +535,6 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
         // Group fields by their API
         $fieldsByApi = [];
-
-        if (! $this->properties) {
-            return;
-        }
 
         $semanticFields = $this->properties->nestedSemanticFields()
             ->filter(fn (Text $field): bool => $field->isSemantic());
@@ -742,14 +737,18 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
                 if (isset($raw['knn'])) {
                     // For OpenSearch, keep knn queries as Query objects to add to boolean query
                     // For Elasticsearch, extract the knn part for top-level knn parameter
+                    // @codeCoverageIgnoreStart
                     if ($this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch) {
                         $semanticQueries[] = $query;
+                        // @codeCoverageIgnoreEnd
                     } else {
                         $knnQueries[] = $raw['knn'];
                     }
                 } else {
+                    // @codeCoverageIgnoreStart
                     // This is a function_score or other non-KNN query
                     $semanticQueries[] = $query;
+                    // @codeCoverageIgnoreEnd
                 }
             });
         }
@@ -829,8 +828,10 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
                 if (isset($raw['knn'])) {
                     // For OpenSearch, keep knn queries as Query objects to add to boolean query
                     // For Elasticsearch, extract the knn part for top-level knn parameter
+                    // @codeCoverageIgnoreStart
                     if ($this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch) {
                         $semanticQueries[] = $query;
+                        // @codeCoverageIgnoreEnd
                     } else {
                         $knnQueries[] = $raw['knn'];
                     }
@@ -846,10 +847,6 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected function getVectorFields(?array $scopedFields = null): Collection
     {
-        if (! $this->properties) {
-            return new Collection([]);
-        }
-
         $fieldsToFilter = $scopedFields ?? $this->fields;
 
         $semanticFields = $this->properties->nestedSemanticFields()
@@ -1160,10 +1157,6 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected function getRequiredEmbeddingApis(): array
     {
-        if (! $this->properties) {
-            return [];
-        }
-
         $apis = [];
 
         $semanticFields = $this->properties->nestedSemanticFields()

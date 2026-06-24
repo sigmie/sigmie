@@ -6,16 +6,24 @@ namespace Sigmie\Tests;
 
 use Generator;
 use Http\Promise\Promise;
+use InvalidArgumentException;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
+use Sigmie\Document\RerankedHit;
 use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Types\BaseVector;
+use Sigmie\Parse\InputParser;
 use Sigmie\Parse\ParseException;
 use Sigmie\Query\Aggregations\Metrics\Composite;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
+use Sigmie\Search\Formatters\RawElasticsearchFormat;
+use Sigmie\Search\NewSearch;
+use Sigmie\Search\VectorPool;
+use Sigmie\Shared\Collection;
 use Sigmie\Testing\TestCase;
 
 class SearchTest extends TestCase
@@ -42,11 +50,20 @@ class SearchTest extends TestCase
             new Document(['name' => 'Donald']),
         ]);
 
-        $res = $this->sigmie->newSearch($indexName)
+        $search = $this->sigmie->newSearch($indexName)
             ->properties($blueprint)
+            ->textScoreMultiplier(2)
+            ->semanticScoreMultiplier(0.5)
             ->queryString('Mickey', weight: 2)
-            ->queryString('Goofy', weight: 1)
-            ->get();
+            ->queryString('Goofy', weight: 1);
+
+        $this->assertSame(['Mickey', 'Goofy'], array_map(
+            fn (object $queryString): string => (string) $queryString,
+            $search->queryStrings()
+        ));
+        $this->assertSame(['name'], $search->getProperties()?->fieldNames());
+
+        $res = $search->get();
 
         $hits = $res->json('hits');
 
@@ -63,6 +80,303 @@ class SearchTest extends TestCase
 
         $this->assertEquals('Goofy', $hits[0]['_source']['name']);
         $this->assertEquals(2, $res->total());
+
+        $raw = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->formatter(new RawElasticsearchFormat)
+            ->queryString('Donald')
+            ->get();
+
+        $this->assertSame('Donald', $raw->format()['hits']['hits'][0]['_source']['name']);
+    }
+
+    /**
+     * @test
+     */
+    public function autocomplete_prefix_returns_completion_suggestions_from_elasticsearch(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->completion('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Star Trek']),
+                new Document(['title' => 'Star Wars']),
+                new Document(['title' => 'Stargate']),
+                new Document(['title' => 'Moonrise']),
+            ]);
+
+        $res = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->autocompletePrefix('star')
+            ->autocompleteSize(3)
+            ->queryString('')
+            ->get();
+
+        $suggestions = array_map(
+            fn (array $option): string => $option['text'],
+            $res->autocompletion()[0]['options']
+        );
+
+        sort($suggestions);
+
+        $this->assertSame(['Star Trek', 'Star Wars', 'Stargate'], $suggestions);
+    }
+
+    /**
+     * @test
+     */
+    public function search_response_helpers_reflect_elasticsearch_results(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->keyword('category');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Alpha Search Manual', 'category' => 'docs'], _id: 'alpha'),
+                new Document(['title' => 'Beta Archive', 'category' => 'archive'], _id: 'beta'),
+            ]);
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Alpha')
+            ->fields(['title'])
+            ->facets('category')
+            ->size(1)
+            ->get();
+
+        $format = $response->format();
+        $hits = $response->hits();
+        $reranked = $response->rerank('test-rerank', ['title']);
+        $rerankedWithApi = $response->rerank($this->rerankApi, ['title'], query: 'Alpha', topK: 1);
+        $scores = $this->rerankApi->rerank(['Alpha Search Manual', 'Beta Archive'], 'Alpha');
+        $this->rerankApi->reset();
+        $matchAllResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->size(1)
+            ->get();
+        $matchAllReranked = $matchAllResponse->rerank($this->rerankApi, ['title'], topK: 1);
+
+        $this->assertSame('alpha', $response->json('hits')[0]['_id']);
+        $this->assertSame('alpha', $hits[0]->_id);
+        $this->assertInstanceOf(Hit::class, $hits[0]);
+        $this->assertEquals(1, $response->total());
+        $this->assertSame(['Alpha'], $format['query_strings']);
+        $this->assertSame('category', $format['facets_string']);
+        $this->assertSame(1, $format['page']);
+        $this->assertSame(1, $format['per_page']);
+        $this->assertNotNull($response->getContext());
+        $this->assertInstanceOf(RerankedHit::class, $reranked[0]);
+        $this->assertSame('alpha', $reranked[0]->_id);
+        $this->assertSame([], $response->autocompletion());
+        $this->assertInstanceOf(RerankedHit::class, $rerankedWithApi[0]);
+        $this->assertSame([0, 1], array_column($scores, 'index'));
+        $this->assertInstanceOf(Hit::class, $matchAllReranked[0]);
+        $this->assertContains($matchAllReranked[0]->_id, ['alpha', 'beta']);
+        $this->rerankApi->assertRerankWasCalled(0);
+    }
+
+    /**
+     * @test
+     */
+    public function search_response_rerank_validation_is_backed_by_elasticsearch_results(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Validation Manual'], _id: 'matching'),
+            ]);
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Validation')
+            ->get();
+
+        $hits = $response->hits();
+
+        $this->assertSame(['matching'], array_map(fn (Hit $hit): string => $hit->_id, $hits));
+        $this->assertSame(0, $this->rerankApi->rerank(['Validation Manual'], 'Validation')[0]['index']);
+        $this->assertSame('matching', $response->rerank($this->rerankApi, ['title'], topK: 1)[0]->_id);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Registered API "invalid-rerank" is not a RerankApi.');
+
+        $response->apis(['invalid-rerank' => (object) []])
+            ->rerank('invalid-rerank', ['title']);
+    }
+
+    /**
+     * @test
+     */
+    public function make_facet_search_returns_filtered_elasticsearch_aggregations(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('category');
+        $blueprint->bool('active');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['category' => 'docs', 'active' => true]),
+                new Document(['category' => 'docs', 'active' => false]),
+                new Document(['category' => 'blog', 'active' => true]),
+            ]);
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->filters('active:true')
+            ->facets('category')
+            ->makeFacetSearch()
+            ->get();
+
+        $facets = $blueprint->get()['category']->facets($response->get()['aggregations']);
+
+        $this->assertSame(['blog' => 1, 'docs' => 1], $facets);
+    }
+
+    /**
+     * @test
+     */
+    public function semantic_search_uses_seeded_vector_pool_and_returns_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 128, api: 'test-embeddings');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Alpha search manual'], _id: 'alpha'),
+                new Document(['title' => 'Beta archive notes'], _id: 'beta'),
+            ]);
+
+        $vectorPool = new VectorPool($this->embeddingApi);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->semantic()
+            ->queryString('Alpha search manual')
+            ->fields(['title'])
+            ->setVectorPool($vectorPool)
+            ->setVectorPool([
+                'Gamma cache seed' => [
+                    128 => $this->embeddingApi->embed('Gamma cache seed', 128),
+                ],
+            ]);
+
+        $this->assertSame($vectorPool, $search->getVectorPool('test-embeddings'));
+        $this->assertSame($vectorPool, $search->getVectorPool());
+        $this->assertArrayHasKey('test-embeddings', $search->getVectorPools());
+
+        $hits = $search->size(1)->hits();
+
+        $this->assertSame('alpha', $hits[0]->_id);
+        $this->embeddingApi->assertEmbedWasCalled(1);
+        $this->embeddingApi->assertEmbedWasCalledWith('Gamma cache seed');
+        $this->embeddingApi->assertEmbedWasCalledWith('Gamma cache seed', 128);
+        $this->embeddingApi->assertBatchEmbedWasCalledWith('Gamma cache seed');
+
+        $this->assertCount(128, $this->embeddingApi->promiseEmbed('Alpha search manual', 128)->wait());
+        $this->embeddingApi->assertEmbedWasCalled(2);
+        $this->embeddingApi->assertEmbedWasCalled();
+        $this->assertNotSame('', $this->embeddingApi->model());
+        $this->assertGreaterThan(0, $this->embeddingApi->maxBatchSize());
+        $this->assertSame(2, $this->embeddingApi->overrideMaxBatchSize(2)->maxBatchSize());
+    }
+
+    /**
+     * @test
+     */
+    public function semantic_search_without_embedding_api_falls_back_to_elasticsearch_keyword_hits(): void
+    {
+        $indexName = uniqid();
+
+        $indexBlueprint = new NewProperties;
+        $indexBlueprint->text('title');
+
+        $searchBlueprint = new NewProperties;
+        $searchBlueprint->text('title')->newSemantic(fn ($semantic) => $semantic->accuracy(1, 128));
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($indexBlueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($indexBlueprint)
+            ->merge([
+                new Document(['title' => 'API-less semantic fallback'], _id: 'matching'),
+                new Document(['title' => 'Other document'], _id: 'missing'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($searchBlueprint)
+            ->semantic()
+            ->queryString('fallback')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $search = new class($this->elasticsearchConnection) extends NewSearch
+        {
+            public function noResultsEmptyQuery(): array
+            {
+                $this->noResultsOnEmptySearch();
+
+                return $this->onEmptyQueryString()->toRaw();
+            }
+
+            public function vectorDimensions(): array
+            {
+                return $this->getVectorDimensions(new Collection([
+                    new BaseVector('first', dims: 3),
+                    new BaseVector('second', dims: 3),
+                    new BaseVector('third', dims: 5),
+                ]));
+            }
+        };
+
+        $emptyQuery = $search->noResultsEmptyQuery();
+
+        $this->assertArrayHasKey('match_none', $emptyQuery);
+        $this->assertSame(1.0, $emptyQuery['match_none']->boost);
+        $this->assertSame([3, 5], array_values($search->vectorDimensions()));
     }
 
     /**
@@ -690,6 +1004,41 @@ class SearchTest extends TestCase
         $hits = $search->json('hits');
 
         $this->assertCount(1, $hits);
+        $this->assertSame('Mickey', $hits[0]['_source']['name']);
+    }
+
+    /**
+     * @test
+     */
+    public function custom_typo_tolerance_thresholds_return_expected_elasticsearch_hit(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['name' => 'Mickey'], _id: 'mickey'),
+            new Document(['name' => 'Donald'], _id: 'donald'),
+        ]);
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['name'])
+            ->typoTolerantAttributes(['name'])
+            ->minCharsForOneTypo(1)
+            ->minCharsForTwoTypo(4)
+            ->queryString('Mickeu')
+            ->get();
+
+        $this->assertSame(['mickey'], array_map(
+            fn (array $hit): string => $hit['_id'],
+            $response->json('hits')
+        ));
     }
 
     /**
@@ -1113,6 +1462,100 @@ class SearchTest extends TestCase
             ->get();
 
         $this->assertEquals(0, $response->total());
+    }
+
+    /**
+     * @test
+     */
+    public function direct_query_string_vector_searches_elasticsearch_semantic_field(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title')->semantic(dimensions: 384, api: 'test-embeddings');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Alpha Manual'], _id: 'alpha'),
+                new Document(['title' => 'Beta Handbook'], _id: 'beta'),
+            ]);
+
+        $vector = $this->embeddingApi->embed('Alpha Manual', 384);
+
+        $search = $this->sigmie
+            ->newSearch($indexName)
+            ->properties($blueprint)
+            ->semantic()
+            ->disableKeywordSearch()
+            ->queryString('ignored text', fields: ['title'])
+            ->size(1);
+
+        $queryString = $search->queryStrings()[0];
+        $queryString->setDimension(384)->setVector($vector);
+
+        $hits = $search->hits();
+
+        $this->assertSame('alpha', $hits[0]->_id);
+        $this->assertSame('ignored text', (string) $queryString);
+        $this->assertTrue($queryString->hasFields());
+        $this->assertSame([
+            'text' => 'ignored text',
+            'weight' => 1.0,
+            'dimension' => 384,
+            'vector' => $vector,
+            'fields' => ['title'],
+        ], $queryString->toArray());
+    }
+
+    /**
+     * @test
+     */
+    public function semantic_search_scoped_to_non_vector_field_returns_sorted_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title')->keyword()->makeSortable();
+        $blueprint->text('description')->semantic(dimensions: 384, api: 'test-embeddings');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'title' => 'Beta',
+                    'description' => 'Second document',
+                ], _id: 'beta'),
+                new Document([
+                    'title' => 'Alpha',
+                    'description' => 'First document',
+                ], _id: 'alpha'),
+            ]);
+
+        $hits = $this->sigmie
+            ->newSearch($indexName)
+            ->properties($blueprint)
+            ->semantic()
+            ->queryString('Alpha', fields: ['title'])
+            ->sort('title:asc')
+            ->size(2)
+            ->get()
+            ->json('hits');
+
+        $this->assertSame(['alpha'], array_map(
+            fn (array $hit): string => $hit['_id'],
+            $hits
+        ));
     }
 
     /**
@@ -1693,6 +2136,44 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function input_parser_parts_drive_elasticsearch_search(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->category('category');
+        $blueprint->number('rank');
+
+        $this->sigmie->newIndex($indexName)
+            ->lowercase()
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Beta Public Guide', 'category' => 'public', 'rank' => 2]),
+                new Document(['title' => 'Beta Private Guide', 'category' => 'private', 'rank' => 1]),
+                new Document(['title' => 'Alpha Public Guide', 'category' => 'public', 'rank' => 3]),
+            ]);
+
+        $parsed = (new InputParser)->parse("Beta FILTER category:'public' SORT rank:desc");
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString($parsed['query_string'])
+            ->filters($parsed['filter_string'])
+            ->sort($parsed['sort_string'])
+            ->get();
+
+        $this->assertSame(1, $response->total());
+        $this->assertSame('Beta Public Guide', $response->hits()[0]->_source['title']);
+    }
+
+    /**
+     * @test
+     */
     public function facets_throw_on_error_can_be_opted_into(): void
     {
         $blueprint = new NewProperties;
@@ -1703,5 +2184,116 @@ class SearchTest extends TestCase
         $this->sigmie->newSearch('test')
             ->properties($blueprint)
             ->facets('category', "nonexistent:'x'", throwOnError: true);
+    }
+
+    /**
+     * @test
+     */
+    public function new_search_without_properties_guard_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'New search guard coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('guard')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $search = new class($this->elasticsearchConnection) extends NewSearch
+        {
+            public function hasSemanticFieldCoverage(): bool
+            {
+                return $this->hasSemanticFields();
+            }
+
+            public function populateVectorPoolCoverage(): void
+            {
+                $this->populateVectorPool();
+            }
+
+            public function vectorFieldsCoverage(): Collection
+            {
+                return $this->getVectorFields();
+            }
+
+            public function requiredApisCoverage(): array
+            {
+                return $this->getRequiredEmbeddingApis();
+            }
+        };
+
+        $this->assertFalse($search->hasSemanticFieldCoverage());
+        $this->assertSame([], $search->vectorFieldsCoverage()->toArray());
+        $this->assertSame([], $search->requiredApisCoverage());
+
+        $searchWithRequiredApis = new class($this->elasticsearchConnection) extends NewSearch
+        {
+            public function populateVectorPoolCoverage(): void
+            {
+                $this->populateVectorPool();
+            }
+
+            protected function getRequiredEmbeddingApis(): array
+            {
+                return ['missing-api'];
+            }
+        };
+
+        $searchWithRequiredApis->populateVectorPoolCoverage();
+    }
+
+    /**
+     * @test
+     */
+    public function hit_serialization_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Hit serialization'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('serialization')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $hit = new Hit(['title' => 'Hit serialization'], 'matching', 1.5, $indexName);
+        $reranked = new RerankedHit($hit, 0.9);
+
+        $this->assertSame([
+            '_id' => 'matching',
+            '_score' => 1.5,
+            '_source' => ['title' => 'Hit serialization'],
+        ], $hit->toArray());
+        $this->assertSame([
+            '_id' => 'matching',
+            '_score' => 1.5,
+            '_source' => ['title' => 'Hit serialization'],
+            '_rerank_score' => 0.9,
+        ], $reranked->toArray());
     }
 }

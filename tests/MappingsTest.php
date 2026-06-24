@@ -5,25 +5,47 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use DateTime;
+use Exception;
+use Sigmie\Base\Drivers\Opensearch;
 use Sigmie\Document\Document;
+use Sigmie\Enums\SearchEngineType;
+use Sigmie\Enums\VectorSimilarity;
+use Sigmie\Enums\VectorStrategy;
 use Sigmie\Index\Analysis\Analyzer;
+use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
+use Sigmie\Index\Analysis\Normalizer\Normalizer;
+use Sigmie\Index\Analysis\NormalizerFilter\Lowercase;
+use Sigmie\Index\Analysis\NormalizerFilter\Uppercase;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Index\Index as RawIndex;
 use Sigmie\Index\Mappings;
 use Sigmie\Index\NewAnalyzer;
+use Sigmie\Mappings\Contracts\Type as TypeContract;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\NewSemanticField;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\PropertiesFieldNotFound;
+use Sigmie\Mappings\Types\BaseVector;
+use Sigmie\Mappings\Types\Boolean as BooleanField;
+use Sigmie\Mappings\Types\Category;
+use Sigmie\Mappings\Types\Combo;
+use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\FlatObject;
+use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Mappings\Types\KnnVector;
 use Sigmie\Mappings\Types\Nested;
+use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Object_;
+use Sigmie\Mappings\Types\OpenSearchNestedVector;
 use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\Query\Queries\Compound\Boolean as BooleanQuery;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
+use Sigmie\Semantic\Contracts\AIProvider;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
 
@@ -725,6 +747,461 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
+    public function macro_field_searches_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        NewProperties::macro('sku', fn (string $name): Keyword => $this->keyword($name));
+
+        $blueprint = new NewProperties;
+        $blueprint->sku('sku');
+        $blueprint->name('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['sku' => 'A-1', 'name' => 'Alpha'], _id: 'alpha'),
+                new Document(['sku' => 'B-2', 'name' => 'Beta'], _id: 'beta'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['name'])
+            ->filters("sku:'A-1'")
+            ->queryString('')
+            ->hits();
+
+        $this->assertSame(['alpha'], array_map(fn ($hit): string => $hit->_id, $hits));
+    }
+
+    /**
+     * @test
+     */
+    public function helper_fields_search_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->add(new Keyword('sku'));
+        $blueprint->searchAsYouType('headline');
+        $blueprint->long('stock');
+        $blueprint->double('rating');
+        $blueprint->scaledFloat('score');
+        $blueprint->object('metadata');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'sku' => 'A-1',
+                    'headline' => 'Quick brown fox',
+                    'stock' => 12,
+                    'rating' => 4.8,
+                    'score' => 9.5,
+                ], _id: 'alpha'),
+                new Document([
+                    'sku' => 'B-2',
+                    'headline' => 'Slow red fox',
+                    'stock' => 3,
+                    'rating' => 3.5,
+                    'score' => 4.5,
+                ], _id: 'beta'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['headline'])
+            ->filters("sku:'A-1' AND score>'9'")
+            ->queryString('')
+            ->hits();
+
+        $this->assertSame(['alpha'], array_map(fn ($hit): string => $hit->_id, $hits));
+    }
+
+    /**
+     * @test
+     */
+    public function vector_field_searches_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('sku');
+        $blueprint->vector('embedding', dims: 3);
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['sku' => 'A-1', 'embedding' => [1.0, 0.0, 0.0]], _id: 'alpha'),
+                new Document(['sku' => 'B-2', 'embedding' => [0.0, 1.0, 0.0]], _id: 'beta'),
+            ]);
+
+        $response = $this->sigmie->rawQuery($indexName, match ($this->elasticsearchConnection->driver()->engine()) {
+            SearchEngineType::Elasticsearch => [
+                'knn' => [
+                    'field' => 'embedding',
+                    'query_vector' => [1.0, 0.0, 0.0],
+                    'k' => 1,
+                    'num_candidates' => 10,
+                ],
+            ],
+            SearchEngineType::OpenSearch => [
+                'query' => [
+                    'knn' => [
+                        'embedding' => [
+                            'vector' => [1.0, 0.0, 0.0],
+                            'k' => 1,
+                        ],
+                    ],
+                ],
+            ],
+        });
+
+        $this->assertSame('alpha', $response->json('hits.hits.0._id'));
+    }
+
+    /**
+     * @test
+     */
+    public function opensearch_vector_driver_paths_match_elasticsearch_vector_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('sku');
+        $blueprint->vector('embedding', dims: 3);
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['sku' => 'A-1', 'embedding' => [1.0, 0.0, 0.0]], _id: 'alpha'),
+                new Document(['sku' => 'B-2', 'embedding' => [0.0, 1.0, 0.0]], _id: 'beta'),
+            ]);
+
+        $response = $this->sigmie->rawQuery($indexName, match ($this->elasticsearchConnection->driver()->engine()) {
+            SearchEngineType::Elasticsearch => [
+                'knn' => [
+                    'field' => 'embedding',
+                    'query_vector' => [1.0, 0.0, 0.0],
+                    'k' => 1,
+                    'num_candidates' => 10,
+                ],
+            ],
+            SearchEngineType::OpenSearch => [
+                'query' => [
+                    'knn' => [
+                        'embedding' => [
+                            'vector' => [1.0, 0.0, 0.0],
+                            'k' => 1,
+                        ],
+                    ],
+                ],
+            ],
+        });
+
+        $this->assertSame('alpha', $response->json('hits.hits.0._id'));
+
+        $field = new BaseVector(
+            name: 'embedding',
+            dims: 3,
+            index: true,
+            similarity: VectorSimilarity::DotProduct,
+            strategy: VectorStrategy::Average,
+            indexType: 'hnsw',
+            m: 16,
+            efConstruction: 32,
+        );
+        $field->setPath('metadata.embedding');
+
+        $driver = new Opensearch;
+        $knnVector = $driver->vectorField($field);
+
+        $this->assertSame(SearchEngineType::OpenSearch, $driver->engine());
+        $this->assertSame(['index.knn' => true], $driver->indexSettings());
+        $this->assertInstanceOf(KnnVector::class, $knnVector);
+        $this->assertSame('metadata.embedding', $knnVector->fullPath());
+        $this->assertSame(VectorStrategy::Concatenate, $knnVector->strategy());
+        $this->assertSame(3, $knnVector->dims());
+        $this->assertTrue($knnVector->isIndexed());
+        $this->assertSame(VectorSimilarity::DotProduct, $knnVector->similarity());
+        $this->assertSame('hnsw', $knnVector->indexType());
+        $this->assertSame(16, $knnVector->m());
+        $this->assertSame(32, $knnVector->efConstruction());
+
+        $knnVector->textFieldName('body');
+        $this->assertSame('body.embedding', $knnVector->embeddingsName());
+
+        $filter = new BooleanQuery;
+        $filter->addRaw('filter', [['term' => ['sku' => 'A-1']]]);
+
+        $queries = $knnVector->vectorQueries([1.0, 0.0, 0.0], 2, $filter);
+        $rawQuery = $queries[0]->toRaw();
+
+        $this->assertSame([1.0, 0.0, 0.0], $rawQuery['knn']['_embeddings.metadata.embedding']['vector']);
+        $this->assertSame(2, $rawQuery['knn']['_embeddings.metadata.embedding']['k']);
+        $this->assertSame(1.0, $rawQuery['knn']['_embeddings.metadata.embedding']['boost']);
+        $this->assertSame([['term' => ['sku' => 'A-1']]], $rawQuery['knn']['_embeddings.metadata.embedding']['filter']['bool']['filter']);
+
+        $this->assertSame('cosinesimil', (new KnnVector('cosine', similarity: VectorSimilarity::Cosine))->toRaw()['cosine']['method']['space_type']);
+        $this->assertSame('innerproduct', (new KnnVector('dot', similarity: VectorSimilarity::DotProduct))->toRaw()['dot']['method']['space_type']);
+        $this->assertSame('l2', (new KnnVector('l2', similarity: VectorSimilarity::Euclidean))->toRaw()['l2']['method']['space_type']);
+        $this->assertSame('innerproduct', (new KnnVector('max', similarity: VectorSimilarity::MaxInnerProduct))->toRaw()['max']['method']['space_type']);
+        $this->assertArrayNotHasKey('method', (new KnnVector('plain', index: false))->toRaw()['plain']);
+    }
+
+    /**
+     * @test
+     */
+    public function opensearch_nested_vector_paths_match_elasticsearch_nested_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->nested('comments', function (NewProperties $props): void {
+            $props->text('body');
+        });
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'comments' => [
+                        ['body' => 'matching nested vector context'],
+                    ],
+                ], _id: 'alpha'),
+                new Document([
+                    'comments' => [
+                        ['body' => 'unrelated document'],
+                    ],
+                ], _id: 'beta'),
+            ]);
+
+        $response = $this->sigmie->rawQuery($indexName, [
+            'query' => [
+                'nested' => [
+                    'path' => 'comments',
+                    'query' => [
+                        'match' => [
+                            'comments.body' => 'matching',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertSame('alpha', $response->json('hits.hits.0._id'));
+
+        $field = new NestedVector(
+            name: 'vector',
+            dims: 4,
+            apiName: 'test-embeddings',
+            similarity: VectorSimilarity::Euclidean,
+        );
+        $field->setPath('comments>vector');
+
+        $driver = new Opensearch;
+        $nestedVector = $driver->nestedVectorField($field);
+
+        $this->assertInstanceOf(OpenSearchNestedVector::class, $nestedVector);
+        $this->assertSame('comments.vector', $nestedVector->fullPath());
+        $this->assertSame(4, $nestedVector->dims());
+
+        $query = $nestedVector->vectorQueries([0.1, 0.2, 0.3, 0.4], 3, new BooleanQuery)[0]->toRaw();
+
+        $this->assertSame('_embeddings.comments.vector', $query['nested']['path']);
+        $this->assertSame([0.1, 0.2, 0.3, 0.4], (array) $query['nested']['query']['function_score']['script_score']['script']['params']->query_vector);
+        $this->assertStringContainsString("l2norm(params.query_vector, doc['_embeddings.comments.vector.vector'])", $query['nested']['query']['function_score']['script_score']['script']['source']);
+
+        $similarities = [
+            [VectorSimilarity::Cosine, 'cosineSimilarity'],
+            [VectorSimilarity::DotProduct, 'dotProduct'],
+            [VectorSimilarity::Euclidean, 'l2norm'],
+            [VectorSimilarity::MaxInnerProduct, 'dotProduct'],
+        ];
+
+        foreach ($similarities as [$similarity, $expectedScript]) {
+            $vector = new OpenSearchNestedVector('embedding', dims: 2, similarity: $similarity);
+            $vector->setPath('comments>embedding');
+
+            $query = $vector->vectorQueries([1.0, 0.0], 1, new BooleanQuery)[0]->toRaw();
+
+            $this->assertStringContainsString($expectedScript, $query['nested']['query']['function_score']['script_score']['script']['source']);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function opensearch_knn_mappings_restore_to_dense_vectors_after_elasticsearch_hit(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('sku');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['sku' => 'A-1'], _id: 'alpha'),
+                new Document(['sku' => 'B-2'], _id: 'beta'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->filters("sku:'A-1'")
+            ->queryString('')
+            ->hits();
+
+        $this->assertSame(['alpha'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $spaceTypes = [
+            'cosinesimil' => VectorSimilarity::Cosine,
+            'l2' => VectorSimilarity::Euclidean,
+            'innerproduct' => VectorSimilarity::DotProduct,
+            'unknown' => VectorSimilarity::Cosine,
+        ];
+
+        foreach ($spaceTypes as $spaceType => $similarity) {
+            $properties = Properties::create([
+                'embedding' => [
+                    'type' => 'knn_vector',
+                    'dimension' => 7,
+                    'method' => [
+                        'name' => 'hnsw',
+                        'space_type' => $spaceType,
+                        'parameters' => [
+                            'm' => 16,
+                            'ef_construction' => 128,
+                        ],
+                    ],
+                ],
+            ], new DefaultAnalyzer, [], Properties::ROOT_NAME);
+
+            $field = $properties->get('embedding');
+
+            $this->assertInstanceOf(DenseVector::class, $field);
+            $this->assertSame(7, $field->dims());
+            $this->assertTrue($field->isIndexed());
+            $this->assertSame($similarity, $field->similarity());
+            $this->assertSame('hnsw', $field->indexType());
+            $this->assertSame(16, $field->m());
+            $this->assertSame(128, $field->efConstruction());
+        }
+
+        $properties = Properties::create([
+            'embedding' => [
+                'type' => 'knn_vector',
+            ],
+        ], new DefaultAnalyzer, [], Properties::ROOT_NAME);
+
+        $field = $properties->get('embedding');
+
+        $this->assertSame(384, $field->dims());
+        $this->assertSame(VectorSimilarity::Cosine, $field->similarity());
+        $this->assertSame('hnsw', $field->indexType());
+        $this->assertSame(64, $field->m());
+        $this->assertSame(300, $field->efConstruction());
+    }
+
+    /**
+     * @test
+     */
+    public function embeddings_provider_field_searches_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('sku');
+        $blueprint->embeddings(new class implements AIProvider
+        {
+            public function embed(string $text, Text $originalType): array
+            {
+                return [];
+            }
+
+            public function batchEmbed(array $payload): array
+            {
+                return [];
+            }
+
+            public function type(Text $originalType): TypeContract
+            {
+                return new DenseVector($originalType->originalName(), dims: 1);
+            }
+
+            public function queries(array|string $text, Text $originalType): array
+            {
+                return [];
+            }
+
+            public function rerank(array $documents, string $queryString): array
+            {
+                return [];
+            }
+        }, 'embedding');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['sku' => 'A-1', 'embedding' => [1.0]], _id: 'alpha'),
+                new Document(['sku' => 'B-2', 'embedding' => [-1.0]], _id: 'beta'),
+            ]);
+
+        $response = $this->sigmie->rawQuery($indexName, match ($this->elasticsearchConnection->driver()->engine()) {
+            SearchEngineType::Elasticsearch => [
+                'knn' => [
+                    'field' => 'embedding',
+                    'query_vector' => [1.0],
+                    'k' => 1,
+                    'num_candidates' => 10,
+                ],
+            ],
+            SearchEngineType::OpenSearch => [
+                'query' => [
+                    'knn' => [
+                        'embedding' => [
+                            'vector' => [1.0],
+                            'k' => 1,
+                        ],
+                    ],
+                ],
+            ],
+        });
+
+        $this->assertSame('alpha', $response->json('hits.hits.0._id'));
+    }
+
+    /**
+     * @test
+     */
     public function case_sensitive_keyword_mapping(): void
     {
         $indexName = uniqid();
@@ -805,6 +1282,104 @@ class MappingsTest extends TestCase
             $index->assertNormalizerExists('category_field_normalizer');
             $index->assertPropertyHasNormalizer('category', 'category_field_normalizer');
         });
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->merge([
+                new Document(['category' => 'Books'], _id: 'books-title-case'),
+                new Document(['category' => 'BOOKS'], _id: 'books-upper-case'),
+                new Document(['category' => 'Music'], _id: 'music-title-case'),
+            ]);
+
+        $hits = $this->sigmie->newQuery($indexName)
+            ->term('category', 'books')
+            ->get()
+            ->json('hits.hits');
+
+        $ids = array_map(fn (array $hit): string => $hit['_id'], $hits);
+        sort($ids);
+
+        $this->assertSame(['books-title-case', 'books-upper-case'], $ids);
+
+        $normalizers = $this->sigmie->index($indexName)
+            ->settings
+            ->analysis()
+            ->toRaw()['normalizer'];
+
+        $this->assertSame([
+            'category_field_normalizer' => [
+                'type' => 'custom',
+                'char_filter' => [],
+                'filter' => ['lowercase'],
+            ],
+        ], $normalizers);
+    }
+
+    /**
+     * @test
+     */
+    public function builtin_normalizer_filters_are_restored_from_elasticsearch_settings(): void
+    {
+        $indexName = uniqid();
+
+        $this->indexAPICall($indexName, 'PUT', [
+            'settings' => [
+                'analysis' => [
+                    'char_filter' => [
+                        'dash_to_space' => [
+                            'type' => 'mapping',
+                            'mappings' => ['-=> '],
+                        ],
+                    ],
+                    'normalizer' => [
+                        'folded_keyword' => [
+                            'type' => 'custom',
+                            'char_filter' => ['dash_to_space'],
+                            'filter' => ['lowercase', 'asciifolding'],
+                        ],
+                        'upper_keyword' => [
+                            'type' => 'custom',
+                            'filter' => ['uppercase'],
+                        ],
+                        'digit_keyword' => [
+                            'type' => 'custom',
+                            'filter' => ['decimal_digit'],
+                        ],
+                    ],
+                ],
+            ],
+            'mappings' => [
+                'properties' => [
+                    'folded' => ['type' => 'keyword', 'normalizer' => 'folded_keyword'],
+                    'upper' => ['type' => 'keyword', 'normalizer' => 'upper_keyword'],
+                    'digits' => ['type' => 'keyword', 'normalizer' => 'digit_keyword'],
+                ],
+            ],
+        ]);
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document([
+                'folded' => "Caf\u{00E9}",
+                'upper' => 'books',
+                'digits' => "\u{0661}\u{0662}\u{0663}",
+            ], _id: 'normalized'),
+        ]);
+
+        $folded = $this->sigmie->newQuery($indexName)->term('folded', 'cafe')->get();
+        $upper = $this->sigmie->newQuery($indexName)->term('upper', 'BOOKS')->get();
+        $digits = $this->sigmie->newQuery($indexName)->term('digits', '123')->get();
+
+        $normalizers = $this->sigmie->index($indexName)
+            ->settings
+            ->analysis()
+            ->toRaw()['normalizer'];
+
+        $this->assertSame('normalized', $folded->json('hits.hits.0._id'));
+        $this->assertSame('normalized', $upper->json('hits.hits.0._id'));
+        $this->assertSame('normalized', $digits->json('hits.hits.0._id'));
+        $this->assertSame(['dash_to_space'], $normalizers['folded_keyword']['char_filter']);
+        $this->assertSame(['lowercase', 'asciifolding'], $normalizers['folded_keyword']['filter']);
+        $this->assertSame(['uppercase'], $normalizers['upper_keyword']['filter']);
+        $this->assertSame(['decimal_digit'], $normalizers['digit_keyword']['filter']);
     }
 
     /**
@@ -1780,6 +2355,141 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
+    public function recursive_mapping_helpers_from_index_match_elasticsearch_search_results(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->nested('comments', function (NewProperties $props): void {
+            $props->keyword('comment_id');
+            $props->text('text');
+            $props->object('user', fn (NewProperties $props): Text => $props->text('name'));
+        });
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document([
+                'title' => 'Runtime mappings',
+                'comments' => [
+                    [
+                        'comment_id' => 'one',
+                        'text' => 'Elasticsearch confirms recursive mappings',
+                        'user' => [
+                            'name' => 'Nico',
+                        ],
+                    ],
+                ],
+            ]),
+            new Document([
+                'title' => 'Irrelevant document',
+                'comments' => [
+                    [
+                        'comment_id' => 'two',
+                        'text' => 'No matching phrase',
+                        'user' => [
+                            'name' => 'Other',
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+
+        $results = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Runtime')
+            ->get();
+
+        $this->assertSame(1, $results->total());
+        $this->assertSame('Runtime mappings', $results->json('hits')[0]['_source']['title']);
+
+        $properties = $this->sigmie->index($indexName)->mappings->properties();
+
+        $this->assertSame('', $properties->fullPath());
+        $this->assertTrue($properties->hasFields());
+        $this->assertNull($properties->get('title.raw'));
+        $this->assertEquals([
+            'title',
+            'comments.text',
+            'comments.user.name',
+        ], $properties->fieldsOfType(Text::class)->keys());
+    }
+
+    /**
+     * @test
+     */
+    public function properties_helpers_match_live_elasticsearch_mapping_and_search_results(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 128, api: 'test-embeddings');
+        $blueprint->image('photo')->semantic(accuracy: 1, dimensions: 512, api: 'test-clip');
+        $blueprint->completion('suggest');
+        $blueprint->boost();
+        $blueprint->nested('comments', function (NewProperties $props): void {
+            $props->text('body');
+        });
+
+        $properties = $blueprint->get();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'title' => 'Semantic mapping guide',
+                    'photo' => 'https://github.com/sigmie/test-images/raw/refs/heads/main/pirates.jpeg',
+                    'suggest' => 'semantic mapping',
+                    'boost' => 2,
+                    'comments' => [
+                        ['body' => 'Nested mapping comment'],
+                    ],
+                ], _id: 'semantic-mapping'),
+                new Document([
+                    'title' => 'Other guide',
+                    'photo' => 'https://github.com/sigmie/test-images/raw/refs/heads/main/red-car.jpeg',
+                    'suggest' => 'other mapping',
+                    'boost' => 1,
+                    'comments' => [
+                        ['body' => 'Other nested comment'],
+                    ],
+                ], _id: 'other-mapping'),
+            ]);
+
+        $results = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Semantic')
+            ->get();
+
+        $this->assertSame(1, $results->total());
+        $this->assertSame('semantic-mapping', $results->hits()[0]->_id);
+
+        $this->assertSame([], $properties->queries('Semantic'));
+        $this->assertSame($properties, $properties->getProperties());
+        $this->assertSame('boost', $properties->boostField->name());
+        $this->assertSame(['title', 'photo'], $properties->embeddingsFields()->keys());
+        $this->assertSame(['suggest'], $properties->completionFields()->keys());
+
+        $liveProperties = $this->sigmie->index($indexName)->mappings->properties();
+
+        $this->assertTrue(isset($liveProperties['title']));
+        $liveProperties['title_copy'] = $liveProperties->get('title');
+        $this->assertTrue(isset($liveProperties['title_copy']));
+        unset($liveProperties['title_copy']);
+        $this->assertFalse(isset($liveProperties['title_copy']));
+        $this->assertSame('comments', $liveProperties->get('comments')->getProperties()->fullPath());
+    }
+
+    /**
+     * @test
+     */
     public function double_field_mapping(): void
     {
         $indexName = uniqid();
@@ -1936,5 +2646,255 @@ class MappingsTest extends TestCase
         $ipRange = $properties->get('ip_range');
         $this->assertInstanceOf(Range::class, $ipRange);
         $this->assertEquals('ip_range', $ipRange->type());
+    }
+
+    /**
+     * @test
+     */
+    public function normalizer_creation_and_failure_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Normalizer coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Normalizer')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $normalizer = Normalizer::create([
+            'folded_keyword' => [
+                'type' => 'custom',
+                'char_filter' => ['dash_to_space'],
+                'filter' => ['lowercase'],
+            ],
+        ], [
+            'dash_to_space' => new Mapping('dash_to_space', ['-' => ' ']),
+        ], []);
+
+        $normalizer->addFilters(['uppercase' => new Uppercase]);
+        $normalizer->addCharFilters(['plus_to_space' => new Mapping('plus_to_space', ['+' => ' '])]);
+        $normalizer->removeFilter('uppercase');
+        $normalizer->removeCharFilter('plus_to_space');
+
+        $this->assertSame([
+            'folded_keyword' => [
+                'type' => 'custom',
+                'char_filter' => ['dash_to_space'],
+                'filter' => ['lowercase'],
+            ],
+        ], $normalizer->toRaw());
+        $this->assertCount(1, $normalizer->filters());
+        $this->assertCount(1, $normalizer->charFilters());
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage("Normalizer filter 'missing_filter' doesn't exists.");
+
+        Normalizer::create([
+            'broken_keyword' => [
+                'type' => 'custom',
+                'filter' => ['missing_filter'],
+            ],
+        ], [], [
+            'lowercase' => new Lowercase,
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function normalizer_from_raw_failure_path_is_backed_by_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Normalizer raw coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Normalizer raw')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage("Normalizer of type 'missing' doesn't exists.");
+
+        Normalizer::fromRaw([
+            'broken' => [
+                'type' => 'missing',
+            ],
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function mapping_type_helper_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Mapping helper coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Mapping helper')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $flatObject = new FlatObject('metadata');
+        $boolean = new BooleanField('published');
+        $category = new Category('category');
+        $combo = new Combo('searchable', ['title', 'body']);
+        $nested = new Nested('items');
+        $object = new Object_('profile');
+        $range = new Range('price', 'integer_range');
+        $text = new Text('body');
+
+        $this->assertSame([false, 'The field metadata mapped as flat_object must be an object or array'], $flatObject->validate('metadata', 'invalid'));
+        $this->assertSame([true, ''], $flatObject->validate('metadata', ['valid' => true]));
+        $this->assertCount(1, $boolean->queries('published'));
+        $this->assertSame([false, 'The field published mapped as boolean must be a boolean'], $boolean->validate('published', 'true'));
+        $this->assertTrue($category->isAutocompletable());
+        $this->assertCount(3, $category->queries('docs'));
+        $this->assertSame(['title', 'body'], $combo->sourceFields());
+        $this->assertSame([], $combo->queries('anything'));
+        $this->assertFalse($combo->isFacetable());
+        $this->assertFalse($combo->isFilterable());
+        $this->assertSame([], $combo->toRaw());
+        $this->assertSame([], $nested->queries('anything'));
+        $this->assertSame([false, 'Nested field items must be an object.'], $nested->validate('items', 'invalid'));
+        $this->assertTrue($nested->hasFields());
+        $this->assertSame([], $object->queries('anything'));
+        $this->assertSame([false, 'Object field profile must be an object.'], $object->validate('profile', 'invalid'));
+        $this->assertTrue($object->hasFields());
+        $this->assertFalse($range->isFacetable());
+        $this->assertNull($range->facets([]));
+        $this->assertSame([false, "The field price mapped as integer_range must be an array with 'gte', 'gt', 'lte', or 'lt' keys"], $range->validate('price', 'invalid'));
+        $this->assertSame([false, 'The field price mapped as integer_range must contain at least one of: gte, gt, lte, lt'], $range->validate('price', ['between' => 10]));
+        $this->assertSame([true, ''], $range->validate('price', ['gte' => 10]));
+        $this->assertSame('body', $text->name());
+        $this->assertFalse($text->isFacetable());
+        $this->assertSame($text, $text->description('Visible body text'));
+        $this->assertSame('Visible body text', $text->getDescription());
+        $this->assertSame($boolean->toRaw(), $boolean());
+    }
+
+    /**
+     * @test
+     */
+    public function raw_index_is_restored_from_elasticsearch_payload(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Raw index coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Raw index')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $payload = $this->indexAPICall($indexName, 'GET')->json();
+        $actualName = array_key_first($payload);
+        $index = RawIndex::fromRaw($actualName, [
+            'index' => $payload[$actualName]['settings']['index'],
+            'mappings' => $payload[$actualName]['mappings'],
+        ]);
+
+        $this->assertSame($actualName, $index->name);
+        $this->assertInstanceOf(Mappings::class, $index->mappings);
+        $this->assertSame('text', $index->mappings->properties()->get('title')->type());
+    }
+
+    /**
+     * @test
+     */
+    public function testing_index_assertions_use_elasticsearch_payload(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->lowercase()
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Testing assertions'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Testing')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $payload = $this->indexAPICall($indexName, 'GET')->json();
+        $actualName = array_key_first($payload);
+        $data = $payload[$actualName];
+        $data['settings']['index']['analysis']['char_filter'] ??= [];
+        $data['settings']['index']['analysis']['filter'] ??= [];
+        $data['settings']['index']['analysis']['tokenizer'] ??= [];
+
+        $assert = new Assert($actualName, $data);
+        $assert->assertIndexHasMappings();
+        $assert->assertIndexHasNotPipeline();
+        $assert->assertAnalyzerHasNotFilter('default', 'missing_filter');
+        $assert->assertAnalyzerNotExists('missing_analyzer');
+        $assert->assertCharFilterNotExists($actualName, 'missing_char_filter');
+        $assert->assertFilterNotExists('missing_filter');
+        $assert->assertTokenizerNotExists('missing_tokenizer');
+
+        $data['settings']['index']['default_pipeline'] = 'ingest-pipeline';
+
+        (new Assert($actualName, $data))->assertIndexHasPipeline('ingest-pipeline');
     }
 }

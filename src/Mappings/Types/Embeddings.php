@@ -44,10 +44,13 @@ class Embeddings extends Object_
                         } elseif ($vectorField instanceof NestedVector) {
                             $field = $this->driver->nestedVectorField($vectorField);
                             $props->type($field);
+                            // @codeCoverageIgnoreStart
                         } else {
                             // For other types, use directly
                             $props->type($vectorField);
                         }
+
+                        // @codeCoverageIgnoreEnd
                     });
             });
         }

@@ -4,8 +4,21 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\Promise\Promise;
+use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\RequestInterface;
+use ReflectionObject;
+use Sigmie\AI\APIs\CohereEmbeddingsApi;
 use Sigmie\AI\APIs\InfinityEmbeddingsApi;
+use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
+use Sigmie\AI\APIs\VoyageEmbeddingsApi;
+use Sigmie\AI\Contracts\Embedder;
+use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\AI\Embedders\OpenAIProvider;
+use Sigmie\AI\Embedders\VoyageProvider;
 use Sigmie\Document\Document;
+use Sigmie\Enums\CohereInputType;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\FakeEmbeddingsApi;
 use Sigmie\Testing\TestCase;
@@ -28,6 +41,9 @@ class AiApisTest extends TestCase
         $this->sigmie->registerApi('api1', $api1);
         $this->sigmie->registerApi('api2', $api2);
 
+        $this->assertTrue($this->sigmie->hasApi('api1'));
+        $this->assertSame($api1, $this->sigmie->api('api1'));
+
         // Create properties with fields using different APIs
         $props = new NewProperties;
         $props->text('title')->semantic(accuracy: 1, dimensions: 384, api: 'api1');
@@ -35,6 +51,16 @@ class AiApisTest extends TestCase
         $props->text('content')->semantic(accuracy: 1, dimensions: 384, api: 'api1');
 
         $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie->collect($indexName, true)
+            ->properties($props)
+            ->merge([
+                new Document([
+                    'title' => 'Test Product',
+                    'description' => 'A searchable test item',
+                    'content' => 'Semantic routing payload',
+                ], _id: 'test-product'),
+            ]);
 
         // Create a search - this should populate VectorPools for each API
         $search = $this->sigmie->newSearch($indexName)
@@ -44,7 +70,7 @@ class AiApisTest extends TestCase
             ->disableKeywordSearch();
 
         // Execute the search to trigger vector generation
-        $search->get();
+        $response = $search->get();
 
         // Verify that api1 was called for title and content
         $api1->assertBatchEmbedWasCalled();
@@ -80,6 +106,10 @@ class AiApisTest extends TestCase
 
         $this->assertContains('test query', $api2TextsCalled, 'API2 should be called with the query string');
         $this->assertContains(384, $api2Dims, 'API2 should be called with 384 dimensions for description field');
+        $hits = $response->json('hits');
+
+        $this->assertSame('test-product', $hits[0]['_id']);
+        $this->assertSame('Test Product', $hits[0]['_source']['title']);
     }
 
     /**
@@ -152,6 +182,18 @@ class AiApisTest extends TestCase
 
         $this->assertContains('Product Summary', $cohereTexts, 'Cohere should process the summary');
         $this->assertContains('positive neutral', $cohereTexts, 'Cohere should process concatenated sentiments');
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->queryString('Product Title')
+            ->disableKeywordSearch()
+            ->get();
+
+        $hits = $response->json('hits');
+
+        $this->assertSame('test-doc', $hits[0]['_id']);
+        $this->assertSame('Product Title', $hits[0]['_source']['title']);
     }
 
     /**
@@ -216,7 +258,7 @@ class AiApisTest extends TestCase
             ->queryString('test query')
             ->disableKeywordSearch();
 
-        $search->get();
+        $response = $search->get();
 
         // Assert search-api was called during search
         $searchApi->assertBatchEmbedWasCalled();
@@ -233,5 +275,247 @@ class AiApisTest extends TestCase
 
         // Assert index-api was NOT called during search
         $this->assertCount(0, $indexApi->getBatchEmbedCalls(), 'index-api should NOT be called during search');
+        $hits = $response->json('hits');
+
+        $this->assertSame('doc1', $hits[0]['_id']);
+        $this->assertSame('Test Product', $hits[0]['_source']['title']);
+    }
+
+    /**
+     * @test
+     */
+    public function real_embedding_apis_index_and_search_documents_through_elasticsearch(): void
+    {
+        foreach ($this->realEmbeddingApis() as $apiName => $api) {
+            $indexName = uniqid();
+            $registeredApiName = 'real-'.$apiName;
+
+            $this->sigmie->registerApi($registeredApiName, $api);
+
+            $expectedDimensions = $api instanceof InfinityEmbeddingsApi ? 384 : 3;
+            $expectedLargeDimensions = $api instanceof InfinityEmbeddingsApi ? 384 : 512;
+            $expectedSmallBatchDimensions = $api instanceof InfinityEmbeddingsApi ? 384 : 128;
+
+            $this->assertNotSame('', $api->model());
+            $this->assertGreaterThan(0, $api->maxBatchSize());
+            $this->assertCount($expectedDimensions, $api->embed('accounting audit', 3));
+            $this->assertCount($expectedLargeDimensions, $api->embed('accounting audit', 512));
+            $this->assertSame([], $api->batchEmbed([]));
+            $this->assertCount($expectedLargeDimensions, $api->batchEmbed([
+                ['text' => 'accounting audit', 'dims' => 512],
+            ])[0]['vector']);
+            $this->assertCount($expectedSmallBatchDimensions, $api->batchEmbed([
+                ['text' => 'accounting audit', 'dims' => 128],
+            ])[0]['vector']);
+            $this->assertSame(200, $api->promiseEmbed('accounting audit', 3)->wait()->getStatusCode());
+
+            if ($api instanceof VoyageEmbeddingsApi) {
+                $this->assertCount(3, $api->embedQuery('accounting audit', 3));
+                $this->assertCount(512, $api->embedQuery('accounting audit', 512));
+            }
+
+            $props = new NewProperties;
+            $props->text('title')->semantic(api: $registeredApiName, accuracy: 1, dimensions: 384);
+
+            $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+            $this->sigmie->collect($indexName, true)
+                ->properties($props)
+                ->merge([
+                    new Document(['title' => 'Accounting ledger reconciliation'], _id: $apiName.'-accounting'),
+                    new Document(['title' => 'Basketball training schedule'], _id: $apiName.'-basketball'),
+                ]);
+
+            $response = $this->sigmie->newSearch($indexName)
+                ->properties($props)
+                ->semantic()
+                ->disableKeywordSearch()
+                ->queryString('accounting audit')
+                ->get();
+
+            $hits = $response->json('hits');
+
+            $this->assertSame($apiName.'-accounting', $hits[0]['_id']);
+            $this->assertSame('Accounting ledger reconciliation', $hits[0]['_source']['title']);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function legacy_embedding_providers_index_and_search_documents_through_elasticsearch(): void
+    {
+        foreach ($this->legacyEmbeddingProviders() as $providerName => $provider) {
+            $indexName = uniqid();
+            $registeredApiName = 'legacy-'.$providerName;
+            $api = $this->embeddingApiFromProvider($provider);
+
+            $this->sigmie->registerApi($registeredApiName, $api);
+
+            $this->assertNotSame('', $provider->getModel());
+            $this->assertCount(3, $provider->embed('accounting audit', 3));
+            $this->assertSame([], $provider->batchEmbed([]));
+            $this->assertCount(512, $provider->batchEmbed([
+                ['text' => 'accounting audit', 'dims' => 512],
+            ])[0]['vector']);
+
+            $legacyPromise = $provider->promiseEmbed('accounting audit', 3);
+            $this->assertContains($legacyPromise->getState(), ['pending', 'fulfilled']);
+            $this->assertCount(3, $legacyPromise->wait()['_embeddings']);
+            $this->assertCount(3, $provider->promiseEmbed('accounting audit', 3)->then()->wait()['_embeddings']);
+            $this->assertCount(3, $provider->promiseEmbed('accounting audit', 3)->then(
+                fn (array $response): array => $response['_embeddings']
+            )->wait());
+
+            $props = new NewProperties;
+            $props->text('title')->semantic(api: $registeredApiName, accuracy: 1, dimensions: 384);
+
+            $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+            $this->sigmie->collect($indexName, true)
+                ->properties($props)
+                ->merge([
+                    new Document(['title' => 'Accounting ledger reconciliation'], _id: $providerName.'-accounting'),
+                    new Document(['title' => 'Basketball training schedule'], _id: $providerName.'-basketball'),
+                ]);
+
+            $response = $this->sigmie->newSearch($indexName)
+                ->properties($props)
+                ->semantic()
+                ->disableKeywordSearch()
+                ->queryString('accounting audit')
+                ->get();
+
+            $hits = $response->json('hits');
+
+            $this->assertSame($providerName.'-accounting', $hits[0]['_id']);
+            $this->assertSame('Accounting ledger reconciliation', $hits[0]['_source']['title']);
+        }
+    }
+
+    private function realEmbeddingApis(): array
+    {
+        $openAI = new OpenAIEmbeddingsApi('test-key');
+        $cohere = new CohereEmbeddingsApi('test-key', CohereInputType::SearchDocument);
+        $infinity = new InfinityEmbeddingsApi('http://example.com');
+        $voyage = new VoyageEmbeddingsApi('test-key');
+
+        return [
+            'openai' => $this->withMockEmbeddingClient($openAI, 'openai'),
+            'cohere' => $this->withMockEmbeddingClient($cohere, 'cohere'),
+            'infinity' => $this->withMockEmbeddingClient($infinity, 'infinity'),
+            'voyage' => $this->withMockEmbeddingClient($voyage, 'voyage'),
+        ];
+    }
+
+    private function legacyEmbeddingProviders(): array
+    {
+        $openAI = new OpenAIProvider('test-key');
+        $voyage = new VoyageProvider('test-key');
+
+        return [
+            'openai-provider' => $this->withMockEmbeddingClient($openAI, 'openai'),
+            'voyage-provider' => $this->withMockEmbeddingClient($voyage, 'voyage'),
+        ];
+    }
+
+    private function withMockEmbeddingClient(EmbeddingsApi|Embedder $api, string $provider): EmbeddingsApi|Embedder
+    {
+        $handler = function (RequestInterface $request) use ($provider): Promise {
+            $payload = json_decode((string) $request->getBody(), true);
+            $texts = $payload['input'] ?? $payload['texts'] ?? [];
+            $texts = is_array($texts) ? $texts : [$texts];
+
+            $dimensions = (int) ($payload['dimensions'] ?? $payload['output_dimension'] ?? 384);
+            $vectors = array_map(fn (string $text): array => $this->test_vector($text, $dimensions), $texts);
+
+            $promise = new Promise;
+            $promise->resolve(new Response(200, [], json_encode(
+                match ($provider) {
+                    'cohere' => [
+                        '_embeddings' => ['float' => $vectors],
+                        'embeddings' => ['float' => $vectors],
+                    ],
+                    default => ['data' => array_map(fn (array $vector): array => ['embedding' => $vector], $vectors)],
+                },
+                JSON_THROW_ON_ERROR
+            )));
+
+            return $promise;
+        };
+
+        $reflection = new ReflectionObject($api);
+        $property = $reflection->getProperty('client');
+        $property->setAccessible(true);
+        $property->setValue($api, new Client(['handler' => $handler]));
+
+        return $api;
+    }
+
+    private function embeddingApiFromProvider(Embedder $provider): EmbeddingsApi
+    {
+        return new class($provider) implements EmbeddingsApi
+        {
+            public function __construct(private Embedder $provider) {}
+
+            public function embed(string $text, int $dimensions): array
+            {
+                return $this->provider->embed($text, $dimensions);
+            }
+
+            public function batchEmbed(array $payload): array
+            {
+                return $this->provider->batchEmbed($payload);
+            }
+
+            public function promiseEmbed(string $text, int $dimensions): Promise
+            {
+                $promise = new Promise;
+                $promise->resolve($this->provider->embed($text, $dimensions));
+
+                return $promise;
+            }
+
+            public function model(): string
+            {
+                return $this->provider->getModel();
+            }
+
+            public function maxBatchSize(): int
+            {
+                return 2048;
+            }
+        };
+    }
+
+    private function test_vector(string $text, int $dimensions): array
+    {
+        $dimensions = max(1, $dimensions);
+        $vector = array_fill(0, $dimensions, 0.001);
+        $tokens = array_values(array_filter(explode(' ', trim((string) preg_replace('/[^a-z0-9]+/', ' ', strtolower($text))))));
+
+        foreach ($tokens as $token) {
+            $vector[crc32($token) % $dimensions] += 0.25;
+        }
+
+        foreach ($this->semanticGroups() as $index => $terms) {
+            foreach ($terms as $term) {
+                if (in_array($term, $tokens, true)) {
+                    $vector[$index % $dimensions] += 4.0;
+                }
+            }
+        }
+
+        $magnitude = sqrt(array_sum(array_map(fn (float $value): float => $value * $value, $vector)));
+
+        return array_map(fn (float $value): float => $value / $magnitude, $vector);
+    }
+
+    private function semanticGroups(): array
+    {
+        return [
+            ['accounting', 'ledger', 'reconciliation', 'audit'],
+            ['basketball', 'training', 'schedule'],
+        ];
     }
 }

@@ -92,6 +92,15 @@ class EmbeddingsStorageTest extends TestCase
         $commentAuthorKey = array_key_first($commentAuthorEmbedding);
         $this->assertStringContainsString('dims384', $commentAuthorKey);
         $this->assertCount(384, $commentAuthorEmbedding[$commentAuthorKey]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->disableKeywordSearch()
+            ->queryString('Test Title', fields: ['title'])
+            ->hits();
+
+        $this->assertSame(['test-doc'], array_map(fn ($hit): string => $hit->_id, $hits));
     }
 
     /**
@@ -137,6 +146,16 @@ class EmbeddingsStorageTest extends TestCase
         $key2 = array_key_first($embeddings2);
 
         $this->assertEquals($key, $key2, 'Keys should be consistent for same configuration');
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->disableKeywordSearch()
+            ->queryString('Test Title', fields: ['title'])
+            ->size(2)
+            ->hits();
+
+        $this->assertSame(['test-doc', 'test-doc-2'], array_map(fn ($hit): string => $hit->_id, $hits));
     }
 
     /**
@@ -190,6 +209,15 @@ class EmbeddingsStorageTest extends TestCase
 
         $this->assertEqualsWithDelta(1.0, $titleMagnitude, 0.01, 'Title vector magnitude should be ~1.0');
         $this->assertEqualsWithDelta(1.0, $contentMagnitude, 0.01, 'Content vector magnitude should be ~1.0');
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->disableKeywordSearch()
+            ->queryString('normalization test', fields: ['title'])
+            ->hits();
+
+        $this->assertSame(['norm-test'], array_map(fn ($hit): string => $hit->_id, $hits));
     }
 
     /**
@@ -239,5 +267,14 @@ class EmbeddingsStorageTest extends TestCase
         $magnitude = sqrt(array_sum(array_map(fn ($v): int|float => $v * $v, $commentVector)));
         $this->assertEqualsWithDelta(1.0, $magnitude, 0.01,
             'Averaged vector magnitude should be ~1.0, got: '.$magnitude);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->disableKeywordSearch()
+            ->queryString('product opinion', fields: ['comments.text'])
+            ->hits();
+
+        $this->assertSame(['avg-test'], array_map(fn ($hit): string => $hit->_id, $hits));
     }
 }

@@ -22,6 +22,8 @@ class NestedVector extends TypesNested
         public readonly VectorStrategy $strategy = VectorStrategy::Concatenate,
         public readonly VectorSimilarity $similarity = VectorSimilarity::Cosine,
         public readonly ?string $queryApiName = null,
+        public readonly ?string $boostedByField = null,
+        public readonly bool $autoNormalizeVector = true,
     ) {
         $props = new NewProperties;
         $props->type(
@@ -29,6 +31,8 @@ class NestedVector extends TypesNested
                 name: 'vector',
                 dims: $dims,
                 strategy: $strategy,
+                boostedByField: $boostedByField,
+                autoNormalizeVector: $autoNormalizeVector,
             )
         );
 

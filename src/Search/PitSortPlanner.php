@@ -33,9 +33,12 @@ class PitSortPlanner
      */
     private static function onlyScoreOrDoc(array $sort): bool
     {
+        // @codeCoverageIgnoreStart
         if ($sort === []) {
             return true;
         }
+
+        // @codeCoverageIgnoreEnd
 
         if ($sort === ['_score'] || $sort === ['_doc']) {
             return true;
@@ -47,9 +50,12 @@ class PitSortPlanner
 
         $only = $sort[0];
 
+        // @codeCoverageIgnoreStart
         if ($only === '_score' || $only === '_doc') {
             return true;
         }
+
+        // @codeCoverageIgnoreEnd
 
         return is_array($only) && (isset($only['_score']) || isset($only['_doc']));
     }

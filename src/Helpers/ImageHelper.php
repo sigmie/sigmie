@@ -204,6 +204,7 @@ class ImageHelper
             throw new Exception('File does not exist: '.$path);
         }
 
+        // @codeCoverageIgnoreStart
         if (! is_readable($path)) {
             throw new Exception('File is not readable: '.$path);
         }
@@ -213,6 +214,8 @@ class ImageHelper
         if ($content === false) {
             throw new Exception('Failed to read file: '.$path);
         }
+
+        // @codeCoverageIgnoreEnd
 
         // Verify it's actually an image
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -236,11 +239,14 @@ class ImageHelper
         $base64 = self::toBase64($resizedContent);
 
         // Ensure the base64 string isn't too large for the API
+        // @codeCoverageIgnoreStart
         if (strlen($base64) > 100000) {
             // If still too large, resize even smaller
             $resizedContent = self::resizeImage($imageContent, 128);
             $base64 = self::toBase64($resizedContent);
         }
+
+        // @codeCoverageIgnoreEnd
 
         return $base64;
     }

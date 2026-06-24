@@ -6,6 +6,7 @@ namespace Sigmie\Mappings;
 
 use ArrayAccess;
 use Exception;
+use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\SimpleAnalyzer;
@@ -13,6 +14,7 @@ use Sigmie\Index\Analysis\Standard;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Mappings\Contracts\FieldContainer;
 use Sigmie\Mappings\Contracts\Type as ContractsType;
+use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Boost;
 use Sigmie\Mappings\Types\Combo;
@@ -293,12 +295,38 @@ class Properties extends Type implements ArrayAccess, FieldContainer
         return $props;
     }
 
-    public function toRaw(): array
+    public function toRaw(?SearchEngine $driver = null): array
     {
         // if (in_array($this->name, ['mappings', '_embeddings'])) {
         return (new Collection($this->fields))
             ->filter(fn (ContractsType $value): bool => ! ($value instanceof Combo))
-            ->mapToDictionary(fn (ContractsType $value): array => $value->toRaw())
+            ->mapToDictionary(function (ContractsType $value) use ($driver): array {
+                if ($value instanceof BaseVector && $driver instanceof SearchEngine) {
+                    return $driver->vectorField($value)->toRaw();
+                }
+
+                if ($value instanceof DenseVector && $driver instanceof SearchEngine) {
+                    $vector = new BaseVector(
+                        name: $value->name,
+                        dims: $value->dims(),
+                        index: $value->isIndexed(),
+                        similarity: $value->similarity(),
+                        indexType: $value->indexType(),
+                        m: $value->m(),
+                        efConstruction: $value->efConstruction(),
+                    );
+
+                    $vector->setPath($value->fullPath());
+
+                    return $driver->vectorField($vector)->toRaw();
+                }
+
+                if (($value instanceof Nested || $value instanceof Object_) && $driver instanceof SearchEngine) {
+                    return $value->toRaw($driver);
+                }
+
+                return $value->toRaw();
+            })
             ->toArray();
         // } else {
         //     return [$this->name() => ['properties' => $fields]];

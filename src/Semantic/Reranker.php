@@ -37,7 +37,7 @@ class Reranker
 
             foreach ($semanticProps as $semanticProp) {
 
-                $text = dot($hit['_source'])->get($semanticProp);
+                $text = dot($hit->_source)->get($semanticProp);
 
                 if (is_array($text)) {
                     // Remove description part if it exists
@@ -52,7 +52,7 @@ class Reranker
                         $description = '';
 
                         // Check if the item follows the expected format
-                        if (preg_match('/(.+) at (.+) from (.+) to (.+)(?: in (.+))?: (.+)/', $item, $matches)) {
+                        if (preg_match('/^(.+) at (.+) from (.+) to (.+?)(?: in (.+))?: (.+)$/', $item, $matches)) {
                             $title = $matches[1] ?? '';
                             $company = $matches[2] ?? '';
                             $yearFrom = $matches[3] ?? '';
@@ -82,9 +82,15 @@ class Reranker
         $rerankedHits = [];
 
         foreach ($res->hits() as $index => $hit) {
-            // Preserve the original score and add a new rerank score
-            $hit['_rerank_score'] = $rerankedScores[$index] ?? 0;
-            $rerankedHits[] = $hit;
+            $rawHit = [
+                '_index' => $hit->_index,
+                '_id' => $hit->_id,
+                '_score' => $hit->_score,
+                '_source' => $hit->_source,
+                '_rerank_score' => $rerankedScores[$index] ?? 0,
+            ];
+
+            $rerankedHits[] = $rawHit;
         }
 
         usort($rerankedHits, fn ($a, $b): int => $b['_rerank_score'] <=> $a['_rerank_score']);

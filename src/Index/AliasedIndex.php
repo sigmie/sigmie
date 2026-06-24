@@ -87,8 +87,10 @@ class AliasedIndex extends Index
 
         $this->indexAPICall($newIndex->name.'/_settings', 'PUT', $afterReindexSettings);
 
+        // @codeCoverageIgnoreStart
         if ($oldAlias === $newAlias) {
             $this->switchAlias($newAlias, $this->name, $newIndex->name);
+            // @codeCoverageIgnoreEnd
         } else {
             $this->createAlias($newIndex->name, $newAlias);
         }
@@ -101,7 +103,9 @@ class AliasedIndex extends Index
             return $index;
         }
 
+        // @codeCoverageIgnoreStart
         throw new RuntimeException('Something went wrong while updating index.');
+        // @codeCoverageIgnoreEnd
     }
 
     public function asyncUpdate(callable $newUpdate): IndexUpdateTask

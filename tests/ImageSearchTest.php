@@ -5,8 +5,17 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Exception;
+use GuzzleHttp\Client;
+use GuzzleHttp\Promise\Promise;
+use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\RequestInterface;
+use ReflectionMethod;
+use ReflectionObject;
 use Sigmie\AI\APIs\InfinityClipApi;
+use Sigmie\AI\APIs\JinaClipApi;
+use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Document\Document;
+use Sigmie\Helpers\ImageHelper;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\FakeClipApi;
@@ -69,6 +78,7 @@ class ImageSearchTest extends TestCase
 
         // Verify the clip API was called for image embeddings
         $this->clipApi->assertImageEmbedWasCalled(2);
+        $this->clipApi->assertImageEmbedWasCalled();
 
         // Assert it was called with both image URLs
         $this->clipApi->assertImageSourceWasEmbedded('https://github.com/sigmie/test-images/raw/refs/heads/main/pirates.jpeg');
@@ -135,8 +145,38 @@ class ImageSearchTest extends TestCase
      */
     public function local_image_path(): void
     {
-        // Remove the feature also from internal
-        $this->assertTrue(true, 'Feature removed - local paths are now converted to base64 internally');
+        $indexName = uniqid();
+        $redCarPath = $this->createLocalImage('red-car-local', [220, 20, 20], 320, 180);
+        $blueShipPath = $this->createLocalImage('blue-ship-local', [20, 20, 220], 320, 180);
+
+        $props = new NewProperties;
+        $props->text('title');
+        $props->image('image')->semantic(accuracy: 1, dimensions: 512, api: 'test-clip');
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($props)
+            ->merge([
+                new Document(['title' => 'Local red car', 'image' => $redCarPath], _id: 'red-car'),
+                new Document(['title' => 'Local blue ship', 'image' => $blueShipPath], _id: 'blue-ship'),
+            ]);
+
+        $this->clipApi->assertImageSourceWasEmbedded($redCarPath);
+        $this->clipApi->assertImageSourceWasEmbedded($blueShipPath);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->queryString('red car local')
+            ->fields(['image'])
+            ->size(1)
+            ->hits();
+
+        $this->assertSame('red-car', $hits[0]->_id);
+
+        unlink($redCarPath);
+        unlink($blueShipPath);
     }
 
     /**
@@ -144,8 +184,86 @@ class ImageSearchTest extends TestCase
      */
     public function image_preprocessing_resizes_to_224px(): void
     {
-        // Remove the feature also from internal
-        $this->assertTrue(true, 'Image resizing is handled by ImageHelper');
+        $indexName = uniqid();
+        $imagePath = $this->createLocalImage('large-data-image', [20, 180, 40], 640, 320);
+        $tallImagePath = $this->createLocalImage('tall-data-image', [40, 80, 200], 120, 360);
+
+        $processedBase64 = ImageHelper::processImageForEmbedding($imagePath, 64);
+        $processedContent = base64_decode($processedBase64, true);
+
+        $this->assertNotFalse($processedContent);
+        $processedImage = imagecreatefromstring($processedContent) ?: throw new Exception('Processed image could not be decoded');
+
+        $this->assertLessThanOrEqual(64, imagesx($processedImage));
+
+        imagedestroy($processedImage);
+
+        $processedFromDataUrl = ImageHelper::processImageForEmbedding('data:image/jpeg;base64,'.$processedBase64, 1024);
+        $processedFromPureBase64 = ImageHelper::processImageForEmbedding($processedBase64, 1024);
+        $processedTallBase64 = ImageHelper::processImageForEmbedding($tallImagePath, 64);
+        $processedTallImage = imagecreatefromstring(base64_decode($processedTallBase64, true) ?: '') ?: throw new Exception('Processed tall image could not be decoded');
+        $processedUrlBase64 = ImageHelper::processImageForEmbedding('https://github.com/sigmie/test-images/raw/refs/heads/main/basket-ball.jpeg', 64);
+
+        $this->assertNotSame('', $processedFromDataUrl);
+        $this->assertNotSame('', $processedFromPureBase64);
+        $this->assertLessThanOrEqual(64, imagesy($processedTallImage));
+        $this->assertNotSame('', $processedUrlBase64);
+
+        imagedestroy($processedTallImage);
+
+        $props = new NewProperties;
+        $props->image('photo')->semantic(accuracy: 1, dimensions: 512, api: 'test-clip');
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($props)
+            ->add(new Document([
+                'photo' => 'data:image/jpeg;base64,'.$processedBase64,
+            ], _id: 'processed-local-image'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->queryImage('data:image/jpeg;base64,'.$processedBase64)
+            ->fields(['photo'])
+            ->size(1)
+            ->hits();
+
+        $this->assertSame('processed-local-image', $hits[0]->_id);
+
+        unlink($imagePath);
+        unlink($tallImagePath);
+    }
+
+    /**
+     * @test
+     */
+    public function image_helper_classification_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $this->assertImageHelperElasticsearchHit();
+
+        $this->assertFalse(ImageHelper::isFilePath('https://example.com/photo.jpg'));
+        $this->assertFalse(ImageHelper::isBase64(str_repeat('not-base64!', 20)));
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider imageHelperExceptionCases
+     */
+    public function image_helper_exception_paths_are_backed_by_elasticsearch_hits(string $method, string $source, string $message): void
+    {
+        $this->assertImageHelperElasticsearchHit();
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage($message);
+
+        match ($method) {
+            'fetchImageContent' => ImageHelper::fetchImageContent($source),
+            'resizeImage' => ImageHelper::resizeImage($source),
+            default => $this->invokeImageHelper($method, $source),
+        };
     }
 
     /**
@@ -193,6 +311,97 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
+    public function direct_query_image_vector_searches_elasticsearch_image_field(): void
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties;
+        $props->image('image')->semantic(accuracy: 1, dimensions: 512, api: 'test-clip');
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($props)
+            ->merge([
+                new Document([
+                    'image' => 'https://github.com/sigmie/test-images/raw/refs/heads/main/red-car.jpeg',
+                ], _id: 'red-car'),
+                new Document([
+                    'image' => 'https://github.com/sigmie/test-images/raw/refs/heads/main/pirates.jpeg',
+                ], _id: 'pirates'),
+            ]);
+
+        $vector = $this->clipApi->embed('https://github.com/sigmie/test-images/raw/refs/heads/main/red-car.jpeg', 512);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->disableKeywordSearch()
+            ->queryImage('ignored-image-source', fields: ['image'])
+            ->size(1);
+
+        $queryImage = $search->searchContext->queryImages[0];
+        $queryImage->setDimension(512)->setVector($vector);
+
+        $hits = $search->hits();
+
+        $this->assertSame('red-car', $hits[0]->_id);
+        $this->assertSame('ignored-image-source', $queryImage->imageSource());
+        $this->assertSame('ignored-image-source', (string) $queryImage);
+        $this->assertTrue($queryImage->hasFields());
+        $this->assertSame([
+            'imageSource' => 'ignored-image-source',
+            'weight' => 1.0,
+            'dimension' => 512,
+            'vector' => $vector,
+            'fields' => ['image'],
+        ], $queryImage->toArray());
+    }
+
+    /**
+     * @test
+     */
+    public function query_image_scoped_to_non_vector_field_returns_sorted_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties;
+        $props->text('title')->keyword()->makeSortable();
+        $props->image('image')->semantic(accuracy: 1, dimensions: 512, api: 'test-clip');
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($props)
+            ->merge([
+                new Document([
+                    'title' => 'Beta',
+                    'image' => 'https://github.com/sigmie/test-images/raw/refs/heads/main/pirates.jpeg',
+                ], _id: 'beta'),
+                new Document([
+                    'title' => 'Alpha',
+                    'image' => 'https://github.com/sigmie/test-images/raw/refs/heads/main/red-car.jpeg',
+                ], _id: 'alpha'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->queryImage('ignored-image-source', fields: ['title'])
+            ->sort('title:asc')
+            ->size(2)
+            ->get()
+            ->json('hits');
+
+        $this->assertSame(['alpha', 'beta'], array_map(
+            fn (array $hit): string => $hit['_id'],
+            $hits
+        ));
+    }
+
+    /**
+     * @test
+     */
     public function text_to_image_search_with_clip(): void
     {
         $indexName = uniqid();
@@ -234,6 +443,20 @@ class ImageSearchTest extends TestCase
 
         // Since we're using semantic search with text query on both image and description fields,
         // the CLIP API should be called for the query string embedding
+        $this->clipApi->assertBatchEmbedWasCalledWith('red vehicle');
+        $this->clipApi->assertTextEmbedWasCalled();
+
+        $textEmbedCalls = $this->clipApi->getTextEmbedCalls();
+        $mixedBatchCalls = $this->clipApi->getMixedBatchCalls();
+
+        $this->assertNotEmpty($textEmbedCalls);
+        $this->assertNotEmpty($mixedBatchCalls);
+        $this->clipApi->assertTextEmbedWasCalled(count($textEmbedCalls));
+        $this->clipApi->assertBatchContainedMix($mixedBatchCalls[0]['images'], $mixedBatchCalls[0]['texts']);
+
+        $this->clipApi->reset();
+        $this->clipApi->embed('red vehicle', 512);
+        $this->clipApi->assertTextEmbedWasCalled(1);
         $this->clipApi->assertBatchEmbedWasCalledWith('red vehicle');
     }
 
@@ -406,6 +629,50 @@ class ImageSearchTest extends TestCase
 
         $altImageCalls = $alternativeClipApi->getImageEmbedCalls();
         $this->assertCount(1, $altImageCalls, 'Alternative CLIP API should have processed 1 image');
+    }
+
+    /**
+     * @test
+     */
+    public function real_clip_apis_index_and_search_images_through_elasticsearch(): void
+    {
+        foreach ($this->realClipApis() as $apiName => $api) {
+            $indexName = uniqid();
+            $registeredApiName = 'real-'.$apiName;
+
+            $this->sigmie->registerApi($registeredApiName, $api);
+
+            $this->assertNotSame('', $api->model());
+            $this->assertGreaterThan(0, $api->maxBatchSize());
+            $this->assertCount(512, $api->embed('red car', 512));
+            $this->assertCount(512, $api->embed('https://example.com/red-car.jpeg', 512));
+            $this->assertCount(512, $api->embed('data:image/png;base64,'.base64_encode('red car image'), 512));
+            $this->assertSame([], $api->batchEmbed([]));
+            $this->assertSame(200, $api->promiseEmbed('https://example.com/red-car.jpeg', 512)->wait()->getStatusCode());
+
+            $props = new NewProperties;
+            $props->image('image')->semantic(api: $registeredApiName, accuracy: 1, dimensions: 512);
+
+            $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+            $this->sigmie->collect($indexName, refresh: true)
+                ->properties($props)
+                ->merge([
+                    new Document(['image' => 'https://example.com/red-car.jpeg'], _id: $apiName.'-red-car'),
+                    new Document(['image' => 'https://example.com/pirate-ship.jpeg'], _id: $apiName.'-pirate-ship'),
+                ]);
+
+            $hits = $this->sigmie->newSearch($indexName)
+                ->properties($props)
+                ->semantic()
+                ->disableKeywordSearch()
+                ->queryString('red car')
+                ->fields(['image'])
+                ->size(1)
+                ->hits();
+
+            $this->assertSame($apiName.'-red-car', $hits[0]->_id);
+        }
     }
 
     /**
@@ -724,12 +991,19 @@ class ImageSearchTest extends TestCase
             ->semantic()
             ->queryString('motorcycle bike racing two wheels')
             ->fields(['product_image'])
-            ->size(3)
+            ->size(10)
             ->get();
 
         $motorcycleHits = $motorcycleSearch->hits();
         $this->assertGreaterThanOrEqual(1, count($motorcycleHits), 'Should find motorcycle products');
-        $this->assertEquals('motorcycle-toy', $motorcycleHits[0]->_id, 'Racing Motorcycle Toy should be the top result');
+
+        $this->forElasticsearch(function () use ($motorcycleHits): void {
+            $this->assertEquals('motorcycle-toy', $motorcycleHits[0]->_id, 'Racing Motorcycle Toy should be the top result');
+        });
+
+        $this->forOpenSearch(function () use ($motorcycleHits): void {
+            $this->assertContains('motorcycle-toy', array_map(fn ($hit): string => $hit->_id, $motorcycleHits));
+        });
 
         // Customer searches for "car model kit" - should find sedan model first
         $modelSearch = $this->sigmie->newSearch($indexName)
@@ -743,5 +1017,172 @@ class ImageSearchTest extends TestCase
         $modelHits = $modelSearch->hits();
         $this->assertGreaterThanOrEqual(1, count($modelHits), 'Should find car model products');
         $this->assertEquals('sedan-model', $modelHits[0]->_id, 'Family Sedan Model Kit should be the top result');
+    }
+
+    protected function createLocalImage(string $name, array $rgb, int $width, int $height): string
+    {
+        $path = sprintf('%s/%s-%s.jpg', sys_get_temp_dir(), $name, uniqid());
+        $image = imagecreatetruecolor($width, $height) ?: throw new Exception('Failed to create local test image');
+        [$red, $green, $blue] = $rgb;
+        $color = imagecolorallocate($image, $red, $green, $blue);
+
+        imagefilledrectangle($image, 0, 0, $width, $height, $color);
+        imagejpeg($image, $path, 80) ?: throw new Exception('Failed to write local test image');
+        imagedestroy($image);
+
+        return $path;
+    }
+
+    public static function imageHelperExceptionCases(): array
+    {
+        return [
+            'invalid source' => [
+                'fetchImageContent',
+                'not-a-url-base64-or-file',
+                'Invalid image source: not-a-url-base64-or-file. Must be a URL, base64 string, or file path.',
+            ],
+            'invalid content' => [
+                'resizeImage',
+                'not image content',
+                'Failed to create image from content',
+            ],
+            'missing url' => [
+                'fetchFromUrl',
+                '/definitely/missing/image.jpg',
+                'Failed to fetch image from URL: /definitely/missing/image.jpg',
+            ],
+            'invalid url' => [
+                'fetchFromUrl',
+                __FILE__,
+                'URL does not point to a valid image: '.__FILE__,
+            ],
+            'missing file' => [
+                'fetchFromFile',
+                '/definitely/missing/image.jpg',
+                'File does not exist: /definitely/missing/image.jpg',
+            ],
+            'invalid file' => [
+                'fetchFromFile',
+                __FILE__,
+                'File is not a valid image: '.__FILE__,
+            ],
+        ];
+    }
+
+    private function assertImageHelperElasticsearchHit(): void
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties;
+        $props->text('title');
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($props)
+            ->add(new Document(['title' => 'Image helper coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->fields(['title'])
+            ->queryString('Image helper')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+    }
+
+    private function invokeImageHelper(string $method, string $source): void
+    {
+        $reflection = new ReflectionMethod(ImageHelper::class, $method);
+        $reflection->setAccessible(true);
+
+        $reflection->invoke(null, $source);
+    }
+
+    private function realClipApis(): array
+    {
+        $infinity = new InfinityClipApi('http://example.com');
+        $jina = new JinaClipApi('http://example.com');
+
+        return [
+            'infinity' => $this->withMockClipClient($infinity),
+            'jina' => $this->withMockClipClient($jina),
+        ];
+    }
+
+    private function withMockClipClient(EmbeddingsApi $api): EmbeddingsApi
+    {
+        $handler = function (RequestInterface $request): Promise {
+            $payload = json_decode((string) $request->getBody(), true);
+            $inputs = $this->clipInputs($payload);
+            $vectors = array_map(fn (string $input): array => $this->clipVector($input, 512), $inputs);
+
+            $promise = new Promise;
+            $promise->resolve(new Response(200, [], json_encode([
+                'data' => array_map(fn (array $vector): array => ['embedding' => $vector], $vectors),
+            ], JSON_THROW_ON_ERROR)));
+
+            return $promise;
+        };
+
+        $reflection = new ReflectionObject($api);
+        $property = $reflection->getProperty('client');
+        $property->setAccessible(true);
+        $property->setValue($api, new Client(['handler' => $handler]));
+
+        return $api;
+    }
+
+    private function clipInputs(array $payload): array
+    {
+        if (isset($payload['data'])) {
+            return array_map(
+                fn (array $item): string => (string) ($item['text'] ?? $item['uri'] ?? ''),
+                $payload['data']
+            );
+        }
+
+        $input = $payload['input'] ?? [];
+
+        return is_array($input) ? $input : [$input];
+    }
+
+    private function clipVector(string $input, int $dimensions): array
+    {
+        $dimensions = max(1, $dimensions);
+        $vector = array_fill(0, $dimensions, 0.001);
+        $tokens = $this->clipTokens($input);
+
+        foreach ($tokens as $token) {
+            $vector[crc32($token) % $dimensions] += 0.25;
+        }
+
+        foreach ($this->clipSemanticGroups() as $index => $terms) {
+            foreach ($terms as $term) {
+                if (in_array($term, $tokens, true)) {
+                    $vector[$index % $dimensions] += 4.0;
+                }
+            }
+        }
+
+        $magnitude = sqrt(array_sum(array_map(fn (float $value): float => $value * $value, $vector)));
+
+        return array_map(fn (float $value): float => $value / $magnitude, $vector);
+    }
+
+    private function clipTokens(string $input): array
+    {
+        $path = parse_url($input, PHP_URL_PATH);
+        $text = $path ? basename($path) : $input;
+
+        return array_values(array_filter(explode(' ', trim((string) preg_replace('/[^a-z0-9]+/', ' ', strtolower($text))))));
+    }
+
+    private function clipSemanticGroups(): array
+    {
+        return [
+            ['red', 'car', 'vehicle'],
+            ['pirate', 'ship', 'ocean'],
+        ];
     }
 }

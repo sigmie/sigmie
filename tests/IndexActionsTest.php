@@ -12,7 +12,9 @@ use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Base\Drivers\Elasticsearch;
+use Sigmie\Document\Document;
 use Sigmie\Index\Actions as IndexActions;
+use Sigmie\Index\Alias\MultipleIndicesForAlias;
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Index;
 use Sigmie\Index\ListedIndex;
@@ -40,6 +42,22 @@ class IndexActionsTest extends TestCase
         $aliasedIndex = $this->getIndex($indexName);
 
         $this->assertEquals(AliasedIndex::class, $aliasedIndex::class);
+
+        $aliasedIndex->enableWrite();
+        $aliasedIndex->collect(refresh: true)->merge([
+            new Document(['title' => 'Aliased index document'], _id: 'aliased-doc'),
+        ]);
+
+        $response = $this->sigmie->rawQuery($indexName, [
+            'query' => [
+                'match' => [
+                    'title' => 'Aliased',
+                ],
+            ],
+        ]);
+
+        $this->assertSame('aliased-doc', $response->json('hits.hits.0._id'));
+        $this->assertSame('1', $aliasedIndex->get()['settings']['index']['number_of_shards']);
 
         $baseIndex = $this->getIndex($index->name);
 
@@ -78,6 +96,35 @@ class IndexActionsTest extends TestCase
         $this->createIndex($indexName, $index->settings, $index->mappings);
 
         $this->assertIndexExists($indexName);
+    }
+
+    /**
+     * @test
+     */
+    public function alias_create_exists_delete_and_multi_index_errors_hit_elasticsearch(): void
+    {
+        $firstIndex = uniqid();
+        $secondIndex = uniqid();
+        $alias = 'alias_'.uniqid();
+
+        $this->createIndex($firstIndex, new Settings, new Mappings);
+        $this->createIndex($secondIndex, new Settings, new Mappings);
+
+        $this->assertFalse($this->aliasExists($alias));
+
+        $this->createAlias($firstIndex, $alias);
+
+        $this->assertTrue($this->aliasExists($alias));
+        $this->assertTrue($this->deleteAlias($firstIndex, $alias));
+        $this->assertFalse($this->aliasExists($alias));
+
+        $this->createAlias($firstIndex, $alias);
+        $this->createAlias($secondIndex, $alias);
+
+        $this->expectException(MultipleIndicesForAlias::class);
+        $this->expectExceptionMessage(sprintf('Multiple indices found for alias %s.', $alias));
+
+        $this->getIndex($alias);
     }
 
     /**

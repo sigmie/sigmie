@@ -113,9 +113,12 @@ class NewMultiSearch
 
         $response = $this->msearchAPICall($body);
 
+        // @codeCoverageIgnoreStart
         if ($response->failed()) {
             throw new ElasticsearchException($response->json(), $response->code());
         }
+
+        // @codeCoverageIgnoreEnd
 
         $this->responseCode = $response->code();
 

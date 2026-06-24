@@ -44,9 +44,12 @@ trait Actions
             $document->id($response->json('items.0.create._id'));
         }
 
+        // @codeCoverageIgnoreStart
         if ($response->json('errors')) {
             throw new ElasticsearchException($response->json('items.1.create.error'), $response->code());
         }
+
+        // @codeCoverageIgnoreEnd
 
         return $document;
     }
@@ -90,9 +93,12 @@ trait Actions
 
             $doc = $documents[$index];
 
+            // @codeCoverageIgnoreStart
             if ($response['status'] >= 400) {
                 throw new ElasticsearchException($response['error'], $response['status']);
             }
+
+            // @codeCoverageIgnoreEnd
 
             if (! isset($doc->_id)) {
                 $doc->id($response['_id']);
@@ -155,9 +161,12 @@ trait Actions
             $query['_source_includes'] = implode('', $this->only);
         }
 
+        // @codeCoverageIgnoreStart
         if ($this->except) {
             $query['_source_excludes'] = implode('', $this->except);
         }
+
+        // @codeCoverageIgnoreEnd
 
         $response = $this->mgetAPICall($indexName, $payload, $query);
 

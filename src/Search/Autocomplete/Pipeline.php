@@ -6,6 +6,7 @@ namespace Sigmie\Search\Autocomplete;
 
 use Sigmie\Base\APIs\API;
 use Sigmie\Base\APIs\Ingest;
+use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 
 class Pipeline
@@ -14,8 +15,11 @@ class Pipeline
     use Ingest;
 
     public function __construct(
+        ElasticsearchConnection $elasticsearchConnection,
         public readonly string $name
-    ) {}
+    ) {
+        $this->setElasticsearchConnection($elasticsearchConnection);
+    }
 
     public function simulate(array $docs = []): ElasticsearchResponse
     {

@@ -12,6 +12,8 @@ class Number extends Type
 {
     use HasFacets;
 
+    protected ?int $scalingFactor = null;
+
     public function __construct(string $name)
     {
         parent::__construct($name);
@@ -33,11 +35,23 @@ class Number extends Type
         return $this;
     }
 
-    public function scaledFloat(): self
+    public function scaledFloat(int $scalingFactor = 100): self
     {
         $this->type = ElasticsearchMappingType::SCALED_FLOAT->value;
+        $this->scalingFactor = $scalingFactor;
 
         return $this;
+    }
+
+    public function toRaw(): array
+    {
+        $raw = parent::toRaw();
+
+        if ($this->type === ElasticsearchMappingType::SCALED_FLOAT->value) {
+            $raw[$this->name]['scaling_factor'] = $this->scalingFactor ?? 100;
+        }
+
+        return $raw;
     }
 
     public function long(): self

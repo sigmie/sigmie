@@ -255,13 +255,22 @@ class EmbeddingsTest extends TestCase
 
         $docs = [];
         for ($i = 0; $i < 12; $i++) {
-            $docs[] = new Document(['title' => 'doc '.$i]);
+            $docs[] = new Document(['title' => 'doc '.$i], _id: 'doc-'.$i);
         }
 
         $collected->merge($docs);
 
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('doc 7')
+            ->fields(['title'])
+            ->size(1)
+            ->get()
+            ->json('hits');
+
         $this->embeddingApi->assertBatchEmbedWasCalled(1);
         $this->embeddingApi->assertBatchEmbedWasCalledWithCount(12);
+        $this->assertSame('doc-7', $hits[0]['_id']);
     }
 
     /**
@@ -282,10 +291,18 @@ class EmbeddingsTest extends TestCase
 
         $docs = [];
         for ($i = 0; $i < 12; $i++) {
-            $docs[] = new Document(['title' => 'doc '.$i]);
+            $docs[] = new Document(['title' => 'doc '.$i], _id: 'doc-'.$i);
         }
 
         $collected->merge($docs);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('doc 11')
+            ->fields(['title'])
+            ->size(1)
+            ->get()
+            ->json('hits');
 
         $this->embeddingApi->assertBatchEmbedWasCalled(3);
 
@@ -293,6 +310,7 @@ class EmbeddingsTest extends TestCase
         $this->assertCount(5, $calls[0]);
         $this->assertCount(5, $calls[1]);
         $this->assertCount(2, $calls[2]);
+        $this->assertSame('doc-11', $hits[0]['_id']);
     }
 
     /**
@@ -329,6 +347,15 @@ class EmbeddingsTest extends TestCase
         $this->embeddingApi->assertBatchEmbedWasCalledWith('needs embedding');
 
         $document = $collected->get('with-vec');
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('needs embedding')
+            ->fields(['title'])
+            ->size(1)
+            ->get()
+            ->json('hits');
+
         $this->assertSame($existingVector, $document['_embeddings']['title'][$vectorName]);
+        $this->assertSame('without-vec', $hits[0]['_id']);
     }
 }

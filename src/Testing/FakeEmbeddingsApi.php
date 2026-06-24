@@ -33,19 +33,22 @@ class FakeEmbeddingsApi implements EmbeddingsApi
             'dimensions' => $dimensions,
         ];
 
-        return $this->realApi->embed($text, $dimensions);
+        return $this->vector($text, $dimensions);
     }
 
     public function batchEmbed(array $payload): array
     {
         $this->batchEmbedCalls[] = $payload;
 
-        return $this->realApi->batchEmbed($payload);
+        return $this->embedPayload($payload);
     }
 
     public function promiseEmbed(string $text, int $dimensions): Promise
     {
-        return $this->realApi->promiseEmbed($text, $dimensions);
+        $promise = new Promise;
+        $promise->resolve($this->embed($text, $dimensions));
+
+        return $promise;
     }
 
     public function model(): string
@@ -155,5 +158,71 @@ class FakeEmbeddingsApi implements EmbeddingsApi
     {
         $this->embedCalls = [];
         $this->batchEmbedCalls = [];
+    }
+
+    protected function embedPayload(array $payload): array
+    {
+        return array_map(fn (array $item): array => [
+            ...$item,
+            'vector' => $this->vector(
+                (string) ($item['text'] ?? ''),
+                (int) ($item['dims'] ?? $item['dimensions'] ?? 384),
+            ),
+        ], $payload);
+    }
+
+    protected function vector(string $text, int $dimensions): array
+    {
+        $dimensions = max(1, $dimensions);
+        $vector = array_fill(0, $dimensions, 0.001);
+        $normalized = $this->normalize($text);
+        $tokens = $this->tokens($normalized);
+
+        foreach ($tokens as $token) {
+            $vector[crc32($token) % $dimensions] += 0.25;
+        }
+
+        foreach ($this->semanticGroups() as $index => $terms) {
+            foreach ($terms as $term) {
+                if (in_array($term, $tokens, true)) {
+                    $vector[$index % $dimensions] += 4.0;
+                }
+            }
+        }
+
+        $magnitude = sqrt(array_sum(array_map(fn (float $value): float => $value * $value, $vector)));
+
+        return array_map(fn (float $value): float => $value / $magnitude, $vector);
+    }
+
+    protected function normalize(string $text): string
+    {
+        return trim((string) preg_replace('/[^a-z0-9]+/', ' ', strtolower($text)));
+    }
+
+    protected function tokens(string $text): array
+    {
+        return array_values(array_filter(explode(' ', $text)));
+    }
+
+    protected function semanticGroups(): array
+    {
+        return [
+            ['accountant', 'accounting', 'financial', 'finance', 'ledger', 'tax', 'audit', 'bookkeeping', 'gaap', 'quickbooks', 'xero', 'reconciliation'],
+            ['sales', 'selling', 'quota', 'revenue', 'pipeline', 'client', 'prospect', 'crm', 'contract', 'saas', 'acquisition', 'retention'],
+            ['trainer', 'training', 'coach', 'fitness', 'workshop', 'onboarding', 'instructional', 'learning', 'wellness', 'certification'],
+            ['woman', 'lady', 'queen', 'princess', 'female', 'royal', 'crown', 'monarch', 'regal', 'chess'],
+            ['king', 'man', 'male'],
+            ['web', 'framework', 'php', 'laravel', 'django', 'python', 'development'],
+            ['javascript', 'react', 'library', 'interfaces'],
+            ['pirate', 'pirates', 'ship', 'sailing', 'ocean', 'sea', 'adventure', 'treasure', 'caribbean'],
+            ['car', 'vehicle', 'automobile', 'racing', 'ferrari', 'speed', 'sedan'],
+            ['basketball', 'basket', 'orange'],
+            ['tennis', 'green'],
+            ['beach', 'vacation', 'puzzle'],
+            ['motorcycle', 'bike', 'wheels'],
+            ['red'],
+            ['blue'],
+        ];
     }
 }

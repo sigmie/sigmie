@@ -79,6 +79,59 @@ class SuggestTest extends TestCase
     /**
      * @test
      */
+    public function term_modes_and_sorting_return_elasticsearch_suggestions(): void
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)
+            ->mapping(function (NewProperties $blueprint): void {
+                $blueprint->text('title-text');
+            })
+            ->lowercase()
+            ->trim()
+            ->create();
+
+        $collection = $this->sigmie->collect($name, true);
+
+        $collection->merge([
+            new Document(['title-text' => 'apple']),
+            new Document(['title-text' => 'apple']),
+            new Document(['title-text' => 'apple']),
+            new Document(['title-text' => 'apply']),
+        ]);
+
+        $suggest = new Suggest;
+        $suggest->term(name: 'missing-term')
+            ->field('title-text')
+            ->size(1)
+            ->sortByFrequency()
+            ->missingMode()
+            ->text('applf');
+        $suggest->term(name: 'popular-term')
+            ->field('title-text')
+            ->size(1)
+            ->sortByScore()
+            ->popularMode()
+            ->text('apply');
+        $suggest->term(name: 'always-term')
+            ->field('title-text')
+            ->size(1)
+            ->alwaysMode()
+            ->text('applf');
+
+        $res = $this->sigmie->newQuery($name)
+            ->matchAll()
+            ->suggest($suggest)
+            ->get();
+
+        $this->assertSame('apple', $res->json('suggest.missing-term.0.options.0.text'));
+        $this->assertSame('apple', $res->json('suggest.popular-term.0.options.0.text'));
+        $this->assertSame('apple', $res->json('suggest.always-term.0.options.0.text'));
+    }
+
+    /**
+     * @test
+     */
     public function phrase(): void
     {
         $name = uniqid();

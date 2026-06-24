@@ -9,10 +9,13 @@ use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Query\Aggregations\Bucket\RareTerms;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
+use Sigmie\Query\Aggregations\Pipeline\SortBucket;
 use Sigmie\Query\Aggs as SearchAggregation;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Testing\TestCase;
+use TypeError;
 
 class AggregationTest extends TestCase
 {
@@ -205,29 +208,39 @@ class AggregationTest extends TestCase
      */
     public function scripted_metric_aggregation(): void
     {
-        $aggregation = new SearchAggregation;
+        $name = uniqid();
 
-        $aggregation->scriptedMetric(
-            'latest_status',
-            'state.rows = [:];',
-            'state.rows[doc["id"].value] = doc["status"].value;',
-            'return state.rows;',
-            'return states;',
-            ['status' => 'completed'],
-        )->meta(['scope' => 'report']);
+        $blueprint = new NewProperties;
+        $blueprint->keyword('status');
 
-        $this->assertEquals([
-            'latest_status' => [
-                'scripted_metric' => [
-                    'init_script' => 'state.rows = [:];',
-                    'map_script' => 'state.rows[doc["id"].value] = doc["status"].value;',
-                    'combine_script' => 'return state.rows;',
-                    'reduce_script' => 'return states;',
-                    'params' => ['status' => 'completed'],
-                ],
-                'meta' => ['scope' => 'report'],
-            ],
-        ], $aggregation->toRaw());
+        $this->sigmie->newIndex($name)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($name, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['status' => 'completed'], _id: 'completed'),
+                new Document(['status' => 'pending'], _id: 'pending'),
+            ]);
+
+        $response = $this->sigmie->newQuery($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation): void {
+                $aggregation->scriptedMetric(
+                    'completed_count',
+                    'state.count = 0;',
+                    'if (doc["status"].value == params.status) { state.count += 1; }',
+                    'return state.count;',
+                    'int total = 0; for (state in states) { total += state; } return total;',
+                    ['status' => 'completed'],
+                )->meta(['scope' => 'report']);
+            })
+            ->get();
+
+        $this->assertEquals(2, $response->json('hits.total.value'));
+        $this->assertEquals(1, $response->aggregation('completed_count.value'));
+        $this->assertSame('report', $response->json('aggregations.completed_count.meta.scope'));
     }
 
     /**
@@ -289,19 +302,33 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function post_filter_serializes_when_set(): void
+    public function post_filter_filters_elasticsearch_hits_when_set(): void
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->create();
+        $blueprint = new NewProperties;
+        $blueprint->keyword('status');
 
-        $raw = $this->sigmie->newQuery($name)
+        $this->sigmie->newIndex($name)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($name, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['status' => 'published'], _id: 'published'),
+                new Document(['status' => 'draft'], _id: 'draft'),
+            ]);
+
+        $response = $this->sigmie->newQuery($name)
             ->matchAll()
             ->postFilter(new Term('status', 'published'))
-            ->getDSL();
+            ->get();
 
-        $this->assertArrayHasKey('post_filter', $raw);
-        $this->assertSame('published', $raw['post_filter']['term']['status']['value']);
+        $hits = $response->json('hits.hits');
+
+        $this->assertEquals(1, $response->json('hits.total.value'));
+        $this->assertSame('published', $hits[0]['_id']);
     }
 
     /**
@@ -338,17 +365,33 @@ class AggregationTest extends TestCase
     /**
      * @test
      */
-    public function post_filter_omitted_when_not_set(): void
+    public function missing_post_filter_returns_all_elasticsearch_hits(): void
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->create();
+        $blueprint = new NewProperties;
+        $blueprint->keyword('status');
 
-        $raw = $this->sigmie->newQuery($name)
+        $this->sigmie->newIndex($name)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($name, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['status' => 'published'], _id: 'published'),
+                new Document(['status' => 'draft'], _id: 'draft'),
+            ]);
+
+        $response = $this->sigmie->newQuery($name)
             ->matchAll()
-            ->getDSL();
+            ->get();
 
-        $this->assertArrayNotHasKey('post_filter', $raw);
+        $ids = array_map(fn (array $hit): string => $hit['_id'], $response->json('hits.hits'));
+        sort($ids);
+
+        $this->assertEquals(2, $response->json('hits.total.value'));
+        $this->assertSame(['draft', 'published'], $ids);
     }
 
     /**
@@ -497,6 +540,89 @@ class AggregationTest extends TestCase
         $value = $res->aggregation('genders.buckets');
 
         $this->assertCount(4, $value);
+    }
+
+    /**
+     * @test
+     */
+    public function rare_terms_aggregation_returns_rare_elasticsearch_buckets(): void
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->mapping(function (NewProperties $blueprint): void {
+            $blueprint->keyword('type');
+        })->create();
+
+        $collection = $this->sigmie->collect($name, refresh: true);
+
+        $collection->merge([
+            new Document(['type' => 'common']),
+            new Document(['type' => 'common']),
+            new Document(['type' => 'rare']),
+            new Document(['name' => 'missing type']),
+        ]);
+
+        $res = $this->sigmie->newQuery($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation): void {
+                $rareTerms = (new RareTerms('rare_types', 'type'))
+                    ->missing('N/A');
+                $rareTerms->size(10);
+
+                $aggregation->add($rareTerms);
+            })
+            ->get();
+
+        $buckets = $res->aggregation('rare_types.buckets');
+        $bucketCounts = [];
+
+        foreach ($buckets as $bucket) {
+            $bucketCounts[$bucket['key']] = $bucket['doc_count'];
+        }
+
+        ksort($bucketCounts);
+
+        $this->assertSame([
+            'N/A' => 1,
+            'rare' => 1,
+        ], $bucketCounts);
+    }
+
+    /**
+     * @test
+     */
+    public function bucket_sort_pipeline_orders_elasticsearch_buckets_by_metric(): void
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->mapping(function (NewProperties $blueprint): void {
+            $blueprint->keyword('product');
+            $blueprint->number('amount');
+        })->create();
+
+        $this->sigmie->collect($name, refresh: true)->merge([
+            new Document(['product' => 'alpha', 'amount' => 10]),
+            new Document(['product' => 'alpha', 'amount' => 5]),
+            new Document(['product' => 'beta', 'amount' => 30]),
+        ]);
+
+        $res = $this->sigmie->newQuery($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation): void {
+                $aggregation->terms('products', 'product')
+                    ->aggregate(function (SearchAggregation $aggregation): void {
+                        $aggregation->sum('revenue', 'amount');
+                        $aggregation->add(new SortBucket('sort_by_revenue', 'revenue', 'desc'));
+                    });
+            })
+            ->get();
+
+        $buckets = $res->aggregation('products.buckets');
+
+        $this->assertSame('beta', $buckets[0]['key']);
+        $this->assertEquals(30, $buckets[0]['revenue']['value']);
+        $this->assertSame('alpha', $buckets[1]['key']);
+        $this->assertEquals(15, $buckets[1]['revenue']['value']);
     }
 
     /**
@@ -859,5 +985,87 @@ class AggregationTest extends TestCase
             ->get();
 
         $this->assertEquals(233, (int) $res->aggregation('maxCount.value'));
+    }
+
+    /**
+     * @test
+     */
+    public function aggregation_builder_edge_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $name = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->number('count');
+        $blueprint->keyword('status');
+
+        $this->sigmie->newIndex($name)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($name, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Aggregation coverage', 'count' => 10, 'status' => 'active'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($name)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Aggregation')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $aggregation = new SearchAggregation;
+        $aggregation->rangeFilter('filtered_count', 'count', ['>=' => 5]);
+        $aggregation->bucketSelector('count_selector', ['total' => 'total_count'], 'params.total > 0');
+        $aggregation->sort('sorted_buckets', [['total_count' => ['order' => 'desc']]], 2, 1);
+        $aggregation->missing('missing_status', 'status');
+        $aggregation->composite('status_pages', [
+            ['status' => ['terms' => ['field' => 'status']]],
+        ], 5, ['status' => 'active']);
+        $aggregation->cumulativeSum('running_total', 'total_count');
+        $aggregation->rate('yearly_rate', 'count');
+
+        $raw = $aggregation->toRaw();
+
+        $this->assertSame(5, $raw['filtered_count']['filter']['range']['count']['gte']);
+        $this->assertSame('params.total > 0', $raw['count_selector']['bucket_selector']['script']);
+        $this->assertSame(2, $raw['sorted_buckets']['bucket_sort']['size']);
+        $this->assertSame(1, $raw['sorted_buckets']['bucket_sort']['from']);
+        $this->assertSame('status', $raw['missing_status']['missing']['field']);
+        $this->assertEquals((object) ['status' => 'active'], $raw['status_pages']['composite']['after']);
+        $this->assertSame('total_count', $raw['running_total']['cumulative_sum']['buckets_path']);
+        $this->assertSame('year', $raw['yearly_rate']['rate']['unit']);
+    }
+
+    /**
+     * @test
+     */
+    public function term_filter_type_error_path_is_backed_by_elasticsearch_hits(): void
+    {
+        $name = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($name)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($name, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Term filter coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($name)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Term filter')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $this->expectException(TypeError::class);
+
+        (new SearchAggregation)->termFilter('status_filter', 'status', 'active');
     }
 }

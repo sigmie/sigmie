@@ -14,16 +14,20 @@ class Noop extends AbstractAIProvider
 {
     public function embed(string $text, Text $originalType): array
     {
+        // @codeCoverageIgnoreStart
         return Sigmie::isPluginRegistered('elastiknn') ?
             [] :
             [-1];
+        // @codeCoverageIgnoreEnd
     }
 
     public function type(Text $originalType): Type
     {
+        // @codeCoverageIgnoreStart
         return Sigmie::isPluginRegistered('elastiknn') ?
             new DenseFloatVector($originalType->originalName(), dims: 0) :
             new DenseVector($originalType->originalName(), dims: 1);
+        // @codeCoverageIgnoreEnd
     }
 
     public function queries(

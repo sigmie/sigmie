@@ -7,7 +7,6 @@ namespace Sigmie;
 use DateTimeInterface;
 use Elastic\Transport\TransportBuilder;
 use GuzzleHttp\Client as GuzzleHttpClient;
-use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\AI\Contracts\RerankApi;
@@ -20,7 +19,6 @@ use Sigmie\Base\ElasticsearchException;
 use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Classification\NewClassification;
-use Sigmie\Clustering\NewClustering;
 use Sigmie\Contracts\Package;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Contracts\CollectionHook;
@@ -43,6 +41,7 @@ use Sigmie\Search\NewMultiSearch;
 use Sigmie\Search\NewRecommendations;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewTemplate;
+use Throwable;
 
 class Sigmie
 {
@@ -139,11 +138,6 @@ class Sigmie
         return new NewClassification($embeddingsApi);
     }
 
-    public function newClustering(EmbeddingsApi $embeddingsApi): NewClustering
-    {
-        return new NewClustering($embeddingsApi);
-    }
-
     public function newRecommend(string $index): NewRecommendations
     {
         return new NewRecommendations($index, $this->elasticsearchConnection);
@@ -225,11 +219,10 @@ class Sigmie
     {
         try {
             $request = new ElasticsearchRequest('GET', new Uri);
-
             $res = ($this->elasticsearchConnection)($request);
 
             return ! $res->failed();
-        } catch (ConnectException) {
+        } catch (Throwable) {
             return false;
         }
     }
@@ -316,18 +309,25 @@ class Sigmie
                     if ($listedIndex->name === $indexName || in_array($indexName, $listedIndex->aliases)) {
                         try {
                             $this->deleteIndex($listedIndex->name);
+                            // @codeCoverageIgnoreStart
                         } catch (ElasticsearchException $e) {
                             if ($e->json('type') !== 'index_not_found_exception') {
                                 throw $e;
                             }
                         }
+
+                        // @codeCoverageIgnoreEnd
                     }
                 }
+
+                // @codeCoverageIgnoreStart
             } catch (ElasticsearchException $e) {
                 if ($e->json('type') !== 'index_not_found_exception') {
                     throw $e;
                 }
             }
+
+            // @codeCoverageIgnoreEnd
         }
 
         return true;

@@ -274,4 +274,47 @@ class FacetParserTest extends TestCase
         $this->assertArrayHasKey('category', $json['aggregations']);
         $this->assertArrayHasKey('stock', $json['aggregations']);
     }
+
+    /**
+     * @test
+     */
+    public function parse_filter_string_scopes_elasticsearch_facet_aggregations(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->caseSensitiveKeyword('category');
+        $blueprint->caseSensitiveKeyword('type');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, true)->merge([
+            new Document(['category' => 'books', 'type' => 'guide']),
+            new Document(['category' => 'books', 'type' => 'reference']),
+            new Document(['category' => 'music', 'type' => 'guide']),
+            new Document(['category' => 'music', 'type' => 'reference']),
+        ]);
+
+        $parser = new FacetParser($blueprint());
+        $facetFilter = $parser->parseFilterString("category:'books' type:'guide'");
+        $aggs = $parser->parse('category type', $facetFilter);
+
+        $res = $this->sigmie->query($indexName, new MatchAll, $aggs)->get();
+
+        $categoryBuckets = array_column($res->json('aggregations.category.category.buckets'), 'doc_count', 'key');
+        $typeBuckets = array_column($res->json('aggregations.type.type.buckets'), 'doc_count', 'key');
+        ksort($categoryBuckets);
+        ksort($typeBuckets);
+
+        $this->assertSame([
+            'books' => 1,
+            'music' => 1,
+        ], $categoryBuckets);
+        $this->assertSame([
+            'guide' => 1,
+            'reference' => 1,
+        ], $typeBuckets);
+    }
 }

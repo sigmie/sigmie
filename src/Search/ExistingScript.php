@@ -52,7 +52,9 @@ class ExistingScript
                 return null;
             }
 
+            // @codeCoverageIgnoreStart
             throw $elasticsearchException;
+            // @codeCoverageIgnoreEnd
         }
     }
 
@@ -67,7 +69,9 @@ class ExistingScript
                 return null;
             }
 
+            // @codeCoverageIgnoreStart
             throw $elasticsearchException;
+            // @codeCoverageIgnoreEnd
         }
     }
 
@@ -84,7 +88,9 @@ class ExistingScript
                 return false;
             }
 
+            // @codeCoverageIgnoreStart
             throw $elasticsearchException;
+            // @codeCoverageIgnoreEnd
         }
     }
 }

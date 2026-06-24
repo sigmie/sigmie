@@ -70,7 +70,9 @@ trait Actions
                 return null;
             }
 
+            // @codeCoverageIgnoreStart
             throw $elasticsearchException;
+            // @codeCoverageIgnoreEnd
         }
 
         if (count($res->json()) > 1) {

@@ -490,8 +490,20 @@ class SortParserTest extends TestCase
      */
     public function score_desc_allowed(): void
     {
+        $indexName = uniqid();
+
         $blueprint = new NewProperties;
         $blueprint->keyword('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, true)
+            ->merge([
+                new Document(['name' => 'Beta'], _id: 'beta'),
+                new Document(['name' => 'Alpha'], _id: 'alpha'),
+            ]);
 
         $props = $blueprint();
         $parser = new SortParser($props);
@@ -500,6 +512,107 @@ class SortParserTest extends TestCase
 
         $this->assertEquals([['_score' => 'desc'], ['name' => 'asc']], $sorts);
         $this->assertEmpty($parser->errors());
+
+        $res = $this->sigmie->query($indexName)
+            ->sort($sorts)
+            ->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertSame(['alpha', 'beta'], array_column($hits, '_id'));
+    }
+
+    /**
+     * @test
+     */
+    public function default_and_doc_sorts_return_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, true)
+            ->merge([
+                new Document(['name' => 'Alpha'], _id: 'alpha'),
+                new Document(['name' => 'Beta'], _id: 'beta'),
+            ]);
+
+        $parser = new SortParser($blueprint());
+
+        $scoreSorted = $this->sigmie->query($indexName)
+            ->sort($parser->parse(''))
+            ->get()
+            ->json('hits.hits');
+
+        $this->assertEqualsCanonicalizing(['alpha', 'beta'], array_column($scoreSorted, '_id'));
+
+        $docSorted = $this->sigmie->query($indexName)
+            ->sort($parser->parse('_doc'))
+            ->get()
+            ->json('hits.hits');
+
+        $this->assertEqualsCanonicalizing(['alpha', 'beta'], array_column($docSorted, '_id'));
+    }
+
+    /**
+     * @test
+     */
+    public function invalid_sort_tokens_collect_errors_and_keep_valid_elasticsearch_sort(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->geoPoint('location');
+        $blueprint->keyword('name');
+        $blueprint->number('price');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, true)
+            ->merge([
+                new Document([
+                    'location' => ['lat' => 52.49, 'lon' => 13.77],
+                    'name' => 'Gamma',
+                    'price' => 10,
+                ], _id: 'gamma'),
+                new Document([
+                    'location' => ['lat' => 53.49, 'lon' => 13.77],
+                    'name' => 'Alpha',
+                    'price' => 10,
+                ], _id: 'alpha'),
+                new Document([
+                    'location' => ['lat' => 54.49, 'lon' => 13.77],
+                    'name' => 'Beta',
+                    'price' => 10,
+                ], _id: 'beta'),
+            ]);
+
+        foreach ([
+            ['price asc name:desc', ['gamma', 'beta', 'alpha'], 'attach the direction'],
+            ['_score:sideways name:asc', ['alpha', 'beta', 'gamma'], 'Invalid direction'],
+            ['name[52.49,13.77]:m:asc name:asc', ['alpha', 'beta', 'gamma'], 'is not a geo point'],
+            ['location[52.49,13.77]:parsec:asc name:desc', ['gamma', 'beta', 'alpha'], 'Invalid unit'],
+            ['location[52.49,13.77]:km:sideways name:asc', ['alpha', 'beta', 'gamma'], 'Invalid order'],
+            ['location[91,13.77]:km:asc name:desc', ['gamma', 'beta', 'alpha'], 'Invalid latitude or longitude'],
+        ] as [$sortString, $expectedIds, $expectedError]) {
+            $parser = new SortParser($blueprint(), throwOnError: false);
+            $sorts = $parser->parse($sortString);
+
+            $hits = $this->sigmie->query($indexName)
+                ->sort($sorts)
+                ->get()
+                ->json('hits.hits');
+
+            $this->assertSame($expectedIds, array_column($hits, '_id'));
+            $this->assertStringContainsString($expectedError, $parser->errors()[0]['message']);
+        }
     }
 
     /**

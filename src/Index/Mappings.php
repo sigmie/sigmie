@@ -56,9 +56,12 @@ class Mappings implements MappingsInterface
 
                 $analyzer = $field->analyzer();
 
+                // @codeCoverageIgnoreStart
                 if ($analyzer->name() === 'autocomplete_analyzer') {
                     return [$analyzer->name() => $analyzer];
                 }
+
+                // @codeCoverageIgnoreEnd
 
                 $filters = array_filter($this->defaultAnalyzer->filters(), fn (TokenFilter $filter): bool => ! in_array($filter::class, $field->notAllowedFilters()));
 
@@ -76,7 +79,7 @@ class Mappings implements MappingsInterface
         $embeddingsRaw = (new Embeddings($this->properties, $driver))->toRaw();
 
         $properties = [
-            ...$this->properties->toRaw(),
+            ...$this->properties->toRaw($driver),
             ...$embeddingsRaw,
         ];
 

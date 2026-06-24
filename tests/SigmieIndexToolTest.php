@@ -1043,4 +1043,86 @@ class SigmieIndexToolTest extends TestCase
         $this->assertArrayHasKey('hits', $result);
         $this->assertGreaterThan(0, $result['total']);
     }
+
+    /**
+     * @test
+     */
+    public function schema_tool_metadata_and_nested_object_schema_are_backed_by_elasticsearch_hits(): void
+    {
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
+            public function properties(): NewProperties
+            {
+                $props = new NewProperties;
+                $props->name('name');
+                $props->object('meta', function (NewProperties $props): void {
+                    $props->keyword('author')->description('Document author.');
+                });
+                $props->nested('variants', function (NewProperties $props): void {
+                    $props->keyword('color');
+                    $props->number('size');
+                });
+
+                return $props;
+            }
+        };
+
+        $index->create();
+        $index->merge([
+            new Document([
+                'name' => 'Nested schema guide',
+                'meta' => ['author' => 'Nico'],
+                'variants' => [
+                    ['color' => 'blue', 'size' => 42],
+                ],
+            ], 'schema-guide'),
+        ], refresh: true);
+
+        $hits = $index->newSearch()
+            ->queryString('Nested schema')
+            ->hits();
+
+        $this->assertSame(['schema-guide'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $schema = new SigmieIndexSchemaTool($index);
+        $filterValues = new SigmieFilterValuesTool($index);
+        $getDocuments = new SigmieGetDocumentsTool($index);
+        $sampleDocuments = new SigmieSampleDocumentsTool($index);
+
+        $this->assertSame('describe_index', $schema->name());
+        $this->assertStringContainsString($index->name(), $schema->description());
+        $this->assertSame([], $schema->schema(new FakeJsonSchema));
+        $this->assertSame('discover_filter_values', $filterValues->name());
+        $this->assertStringContainsString($index->name(), $filterValues->description());
+        $this->assertSame('get_documents', $getDocuments->name());
+        $this->assertStringContainsString($index->name(), $getDocuments->description());
+        $this->assertSame('sample_documents', $sampleDocuments->name());
+        $this->assertStringContainsString($index->name(), $sampleDocuments->description());
+
+        $result = $schema->result(new Request([]));
+        $fields = [];
+        foreach ($result['fields'] as $field) {
+            $fields[$field['name']] = $field;
+        }
+
+        $this->assertSame('keyword', $fields['meta.author']['type']);
+        $this->assertSame('Document author.', $fields['meta.author']['description']);
+        $this->assertSame('nested', $fields['variants']['type']);
+        $this->assertSame('color', $fields['variants']['subfields'][0]['name']);
+        $this->assertSame('size', $fields['variants']['subfields'][1]['name']);
+    }
 }

@@ -1144,4 +1144,43 @@ class AnalyticsTest extends TestCase
         $this->assertSame('A', $metrics['top_products']['rows'][0]['key']);
         $this->assertCount(2, $rows['hits']['hits']);
     }
+
+    /**
+     * @test
+     */
+    public function analytics_fallback_paths_are_backed_by_elasticsearch_results(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $analytics = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->format('Y-m-d')
+            ->groupedMetrics('fallback_sort', 'product', [
+                ['key' => 'revenue', 'label' => 'Revenue', 'metric' => Metric::Sum, 'field' => 'amount'],
+            ], sortMetric: 'count', minCount: 2)
+            ->groupedMetrics('default_metrics', 'product', [
+                ['key' => '', 'label' => 'Ignored', 'metric' => Metric::Sum, 'field' => 'amount'],
+                ['key' => 'invalid', 'label' => 'Invalid', 'metric' => 'sum', 'field' => 'amount'],
+            ], sortMetric: 'count', minCount: 2)
+            ->kpi('this_month_docs', Metric::Count, window: Period::ThisMonth);
+
+        $result = $analytics->get();
+
+        $this->assertSame('revenue', $result['fallback_sort']['sort_metric']);
+        $this->assertSame('A', $result['fallback_sort']['rows'][0]['key']);
+        $this->assertEquals(370.0, $result['fallback_sort']['rows'][0]['metrics']['revenue']);
+        $this->assertSame('count', $result['default_metrics']['sort_metric']);
+        $this->assertEquals(3, $result['default_metrics']['rows'][0]['metrics']['count']);
+        $this->assertEquals(0.0, $result['this_month_docs']['value']);
+
+        $this->assertSame($analytics->toSearch(), $analytics->toSearch());
+
+        $emptyFieldAnalytics = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->stats('empty_stats', '');
+
+        $this->assertSame($emptyFieldAnalytics->toSearch(), $emptyFieldAnalytics->toSearch());
+    }
 }
