@@ -12,6 +12,7 @@ use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Base\Drivers\Elasticsearch;
+use Sigmie\Document\Document;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Index;
@@ -40,6 +41,22 @@ class IndexActionsTest extends TestCase
         $aliasedIndex = $this->getIndex($indexName);
 
         $this->assertEquals(AliasedIndex::class, $aliasedIndex::class);
+
+        $aliasedIndex->enableWrite();
+        $aliasedIndex->collect(refresh: true)->merge([
+            new Document(['title' => 'Aliased index document'], _id: 'aliased-doc'),
+        ]);
+
+        $response = $this->sigmie->rawQuery($indexName, [
+            'query' => [
+                'match' => [
+                    'title' => 'Aliased',
+                ],
+            ],
+        ]);
+
+        $this->assertSame('aliased-doc', $response->json('hits.hits.0._id'));
+        $this->assertSame('1', $aliasedIndex->get()['settings']['index']['number_of_shards']);
 
         $baseIndex = $this->getIndex($index->name);
 

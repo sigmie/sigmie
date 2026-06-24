@@ -211,7 +211,14 @@ class QueryTest extends TestCase
         })
             ->get();
 
+        $emptyResponse = $this->sigmie->newQuery($name)->bool(function (QueriesCompoundBoolean $boolean): void {
+            $boolean->filter->matchNone();
+            $boolean->must->matchAll();
+        })
+            ->get();
+
         $this->assertSame(['laravel-search'], $this->idsFromHits($response->json('hits.hits')));
+        $this->assertEquals(0, $emptyResponse->json('hits.total.value'));
     }
 
     /**

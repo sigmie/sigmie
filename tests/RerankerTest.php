@@ -189,6 +189,36 @@ class RerankerTest extends TestCase
     /**
      * @test
      */
+    public function new_rerank_leaves_empty_elasticsearch_hits_untouched(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $rawHits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('missing')
+            ->fields(['title'])
+            ->get()
+            ->json('hits');
+
+        $reranked = (new NewRerank($this->rerankApi))
+            ->fields(['title'])
+            ->query('missing')
+            ->rerank($rawHits);
+
+        $this->assertSame([], $rawHits);
+        $this->assertSame([], $reranked);
+    }
+
+    /**
+     * @test
+     */
     public function semantic_reranker_leaves_empty_elasticsearch_results_untouched(): void
     {
         $indexName = uniqid();
