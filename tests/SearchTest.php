@@ -12,6 +12,7 @@ use Sigmie\Document\RerankedHit;
 use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Parse\InputParser;
 use Sigmie\Parse\ParseException;
 use Sigmie\Query\Aggregations\Metrics\Composite;
@@ -19,7 +20,9 @@ use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Search\Formatters\RawElasticsearchFormat;
+use Sigmie\Search\NewSearch;
 use Sigmie\Search\VectorPool;
+use Sigmie\Shared\Collection;
 use Sigmie\Testing\TestCase;
 
 class SearchTest extends TestCase
@@ -268,6 +271,64 @@ class SearchTest extends TestCase
         $this->assertNotSame('', $this->embeddingApi->model());
         $this->assertGreaterThan(0, $this->embeddingApi->maxBatchSize());
         $this->assertSame(2, $this->embeddingApi->overrideMaxBatchSize(2)->maxBatchSize());
+    }
+
+    /**
+     * @test
+     */
+    public function semantic_search_without_embedding_api_falls_back_to_elasticsearch_keyword_hits(): void
+    {
+        $indexName = uniqid();
+
+        $indexBlueprint = new NewProperties;
+        $indexBlueprint->text('title');
+
+        $searchBlueprint = new NewProperties;
+        $searchBlueprint->text('title')->newSemantic(fn ($semantic) => $semantic->accuracy(1, 128));
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($indexBlueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($indexBlueprint)
+            ->merge([
+                new Document(['title' => 'API-less semantic fallback'], _id: 'matching'),
+                new Document(['title' => 'Other document'], _id: 'missing'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($searchBlueprint)
+            ->semantic()
+            ->queryString('fallback')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $search = new class($this->elasticsearchConnection) extends NewSearch
+        {
+            public function noResultsEmptyQuery(): array
+            {
+                $this->noResultsOnEmptySearch();
+
+                return $this->onEmptyQueryString()->toRaw();
+            }
+
+            public function vectorDimensions(): array
+            {
+                return $this->getVectorDimensions(new Collection([
+                    new BaseVector('first', dims: 3),
+                    new BaseVector('second', dims: 3),
+                    new BaseVector('third', dims: 5),
+                ]));
+            }
+        };
+
+        $emptyQuery = $search->noResultsEmptyQuery();
+
+        $this->assertArrayHasKey('match_none', $emptyQuery);
+        $this->assertSame(1.0, $emptyQuery['match_none']->boost);
+        $this->assertSame([3, 5], array_values($search->vectorDimensions()));
     }
 
     /**
