@@ -330,6 +330,47 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
+    public function query_image_scoped_to_non_vector_field_returns_sorted_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties;
+        $props->text('title')->keyword()->makeSortable();
+        $props->image('image')->semantic(accuracy: 1, dimensions: 512, api: 'test-clip');
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($props)
+            ->merge([
+                new Document([
+                    'title' => 'Beta',
+                    'image' => 'https://github.com/sigmie/test-images/raw/refs/heads/main/pirates.jpeg',
+                ], _id: 'beta'),
+                new Document([
+                    'title' => 'Alpha',
+                    'image' => 'https://github.com/sigmie/test-images/raw/refs/heads/main/red-car.jpeg',
+                ], _id: 'alpha'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->queryImage('ignored-image-source', fields: ['title'])
+            ->sort('title:asc')
+            ->size(2)
+            ->get()
+            ->json('hits');
+
+        $this->assertSame(['alpha', 'beta'], array_map(
+            fn (array $hit): string => $hit['_id'],
+            $hits
+        ));
+    }
+
+    /**
+     * @test
+     */
     public function text_to_image_search_with_clip(): void
     {
         $indexName = uniqid();
