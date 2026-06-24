@@ -1268,6 +1268,55 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function direct_query_string_vector_searches_elasticsearch_semantic_field(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title')->semantic(dimensions: 384, api: 'test-embeddings');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Alpha Manual'], _id: 'alpha'),
+                new Document(['title' => 'Beta Handbook'], _id: 'beta'),
+            ]);
+
+        $vector = $this->embeddingApi->embed('Alpha Manual', 384);
+
+        $search = $this->sigmie
+            ->newSearch($indexName)
+            ->properties($blueprint)
+            ->semantic()
+            ->disableKeywordSearch()
+            ->queryString('ignored text', fields: ['title'])
+            ->size(1);
+
+        $queryString = $search->queryStrings()[0];
+        $queryString->setDimension(384)->setVector($vector);
+
+        $hits = $search->hits();
+
+        $this->assertSame('alpha', $hits[0]->_id);
+        $this->assertSame('ignored text', (string) $queryString);
+        $this->assertTrue($queryString->hasFields());
+        $this->assertSame([
+            'text' => 'ignored text',
+            'weight' => 1.0,
+            'dimension' => 384,
+            'vector' => $vector,
+            'fields' => ['title'],
+        ], $queryString->toArray());
+    }
+
+    /**
+     * @test
+     */
     public function boost_field_search_test(): void
     {
         $indexName = uniqid();

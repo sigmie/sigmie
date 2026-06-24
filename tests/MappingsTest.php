@@ -805,6 +805,28 @@ class MappingsTest extends TestCase
             $index->assertNormalizerExists('category_field_normalizer');
             $index->assertPropertyHasNormalizer('category', 'category_field_normalizer');
         });
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->merge([
+                new Document(['category' => 'Books'], _id: 'books-title-case'),
+                new Document(['category' => 'BOOKS'], _id: 'books-upper-case'),
+                new Document(['category' => 'Music'], _id: 'music-title-case'),
+            ]);
+
+        $hits = $this->sigmie->newQuery($indexName)
+            ->term('category', 'books')
+            ->get()
+            ->json('hits.hits');
+
+        $ids = array_map(fn (array $hit): string => $hit['_id'], $hits);
+        sort($ids);
+
+        $this->assertSame(['books-title-case', 'books-upper-case'], $ids);
+
+        $this->assertArrayHasKey(
+            'category_field_normalizer',
+            $this->sigmie->index($indexName)->raw['settings']['index']['analysis']['normalizer']
+        );
     }
 
     /**

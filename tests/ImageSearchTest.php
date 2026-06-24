@@ -280,6 +280,56 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
+    public function direct_query_image_vector_searches_elasticsearch_image_field(): void
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties;
+        $props->image('image')->semantic(accuracy: 1, dimensions: 512, api: 'test-clip');
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($props)
+            ->merge([
+                new Document([
+                    'image' => 'https://github.com/sigmie/test-images/raw/refs/heads/main/red-car.jpeg',
+                ], _id: 'red-car'),
+                new Document([
+                    'image' => 'https://github.com/sigmie/test-images/raw/refs/heads/main/pirates.jpeg',
+                ], _id: 'pirates'),
+            ]);
+
+        $vector = $this->clipApi->embed('https://github.com/sigmie/test-images/raw/refs/heads/main/red-car.jpeg', 512);
+
+        $search = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->disableKeywordSearch()
+            ->queryImage('ignored-image-source', fields: ['image'])
+            ->size(1);
+
+        $queryImage = $search->searchContext->queryImages[0];
+        $queryImage->setDimension(512)->setVector($vector);
+
+        $hits = $search->hits();
+
+        $this->assertSame('red-car', $hits[0]->_id);
+        $this->assertSame('ignored-image-source', $queryImage->imageSource());
+        $this->assertSame('ignored-image-source', (string) $queryImage);
+        $this->assertTrue($queryImage->hasFields());
+        $this->assertSame([
+            'imageSource' => 'ignored-image-source',
+            'weight' => 1.0,
+            'dimension' => 512,
+            'vector' => $vector,
+            'fields' => ['image'],
+        ], $queryImage->toArray());
+    }
+
+    /**
+     * @test
+     */
     public function text_to_image_search_with_clip(): void
     {
         $indexName = uniqid();

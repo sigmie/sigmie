@@ -13,6 +13,7 @@ use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Analysis\CharFilter\Pattern as PatternCharFilter;
+use Sigmie\Index\Analysis\Tokenizers\Ngram as NgramTokenizer;
 use Sigmie\Index\Analysis\Tokenizers\NonLetter;
 use Sigmie\Index\Analysis\Tokenizers\Pattern as PatternTokenizer;
 use Sigmie\Index\Analysis\Tokenizers\SimplePattern;
@@ -798,6 +799,24 @@ class IndexBuilderTest extends TestCase
 
         $this->assertSame(['ABC', 'DEF'], $tokens);
         $this->assertSame(['ABC', 'DEF'], $unflaggedTokens);
+    }
+
+    /**
+     * @test
+     */
+    public function ngram_tokenizer_analyzes_overlapping_tokens(): void
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->tokenizer(new NgramTokenizer('two_gram_tokenizer', 2, 2))
+            ->create();
+
+        $tokens = $this->sigmie
+            ->index($alias)
+            ->analyze('abcd', 'default');
+
+        $this->assertSame(['ab', 'bc', 'cd'], $tokens);
     }
 
     /**
