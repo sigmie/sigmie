@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use DateTime;
+use Sigmie\Base\Drivers\Opensearch;
 use Sigmie\Document\Document;
 use Sigmie\Enums\SearchEngineType;
+use Sigmie\Enums\VectorSimilarity;
+use Sigmie\Enums\VectorStrategy;
 use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
@@ -17,14 +20,19 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\NewSemanticField;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\PropertiesFieldNotFound;
+use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\FlatObject;
 use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Mappings\Types\KnnVector;
 use Sigmie\Mappings\Types\Nested;
+use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Object_;
+use Sigmie\Mappings\Types\OpenSearchNestedVector;
 use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\Query\Queries\Compound\Boolean as BooleanQuery;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
@@ -853,6 +861,261 @@ class MappingsTest extends TestCase
         });
 
         $this->assertSame('alpha', $response->json('hits.hits.0._id'));
+    }
+
+    /**
+     * @test
+     */
+    public function opensearch_vector_driver_paths_match_elasticsearch_vector_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('sku');
+        $blueprint->vector('embedding', dims: 3);
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['sku' => 'A-1', 'embedding' => [1.0, 0.0, 0.0]], _id: 'alpha'),
+                new Document(['sku' => 'B-2', 'embedding' => [0.0, 1.0, 0.0]], _id: 'beta'),
+            ]);
+
+        $response = $this->sigmie->rawQuery($indexName, match ($this->elasticsearchConnection->driver()->engine()) {
+            SearchEngineType::Elasticsearch => [
+                'knn' => [
+                    'field' => 'embedding',
+                    'query_vector' => [1.0, 0.0, 0.0],
+                    'k' => 1,
+                    'num_candidates' => 10,
+                ],
+            ],
+            SearchEngineType::OpenSearch => [
+                'query' => [
+                    'knn' => [
+                        'embedding' => [
+                            'vector' => [1.0, 0.0, 0.0],
+                            'k' => 1,
+                        ],
+                    ],
+                ],
+            ],
+        });
+
+        $this->assertSame('alpha', $response->json('hits.hits.0._id'));
+
+        $field = new BaseVector(
+            name: 'embedding',
+            dims: 3,
+            index: true,
+            similarity: VectorSimilarity::DotProduct,
+            strategy: VectorStrategy::Average,
+            indexType: 'hnsw',
+            m: 16,
+            efConstruction: 32,
+        );
+        $field->setPath('metadata.embedding');
+
+        $driver = new Opensearch;
+        $knnVector = $driver->vectorField($field);
+
+        $this->assertSame(SearchEngineType::OpenSearch, $driver->engine());
+        $this->assertSame(['index.knn' => true], $driver->indexSettings());
+        $this->assertInstanceOf(KnnVector::class, $knnVector);
+        $this->assertSame('metadata.embedding', $knnVector->fullPath());
+        $this->assertSame(VectorStrategy::Concatenate, $knnVector->strategy());
+        $this->assertSame(3, $knnVector->dims());
+        $this->assertTrue($knnVector->isIndexed());
+        $this->assertSame(VectorSimilarity::DotProduct, $knnVector->similarity());
+        $this->assertSame('hnsw', $knnVector->indexType());
+        $this->assertSame(16, $knnVector->m());
+        $this->assertSame(32, $knnVector->efConstruction());
+
+        $knnVector->textFieldName('body');
+        $this->assertSame('body.embedding', $knnVector->embeddingsName());
+
+        $filter = new BooleanQuery;
+        $filter->addRaw('filter', [['term' => ['sku' => 'A-1']]]);
+
+        $queries = $knnVector->vectorQueries([1.0, 0.0, 0.0], 2, $filter);
+        $rawQuery = $queries[0]->toRaw();
+
+        $this->assertSame([1.0, 0.0, 0.0], $rawQuery['knn']['_embeddings.metadata.embedding']['vector']);
+        $this->assertSame(2, $rawQuery['knn']['_embeddings.metadata.embedding']['k']);
+        $this->assertSame(1.0, $rawQuery['knn']['_embeddings.metadata.embedding']['boost']);
+        $this->assertSame([['term' => ['sku' => 'A-1']]], $rawQuery['knn']['_embeddings.metadata.embedding']['filter']['bool']['filter']);
+
+        $this->assertSame('cosinesimil', (new KnnVector('cosine', similarity: VectorSimilarity::Cosine))->toRaw()['cosine']['method']['space_type']);
+        $this->assertSame('innerproduct', (new KnnVector('dot', similarity: VectorSimilarity::DotProduct))->toRaw()['dot']['method']['space_type']);
+        $this->assertSame('l2', (new KnnVector('l2', similarity: VectorSimilarity::Euclidean))->toRaw()['l2']['method']['space_type']);
+        $this->assertSame('innerproduct', (new KnnVector('max', similarity: VectorSimilarity::MaxInnerProduct))->toRaw()['max']['method']['space_type']);
+        $this->assertArrayNotHasKey('method', (new KnnVector('plain', index: false))->toRaw()['plain']);
+    }
+
+    /**
+     * @test
+     */
+    public function opensearch_nested_vector_paths_match_elasticsearch_nested_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->nested('comments', function (NewProperties $props): void {
+            $props->text('body');
+        });
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'comments' => [
+                        ['body' => 'matching nested vector context'],
+                    ],
+                ], _id: 'alpha'),
+                new Document([
+                    'comments' => [
+                        ['body' => 'unrelated document'],
+                    ],
+                ], _id: 'beta'),
+            ]);
+
+        $response = $this->sigmie->rawQuery($indexName, [
+            'query' => [
+                'nested' => [
+                    'path' => 'comments',
+                    'query' => [
+                        'match' => [
+                            'comments.body' => 'matching',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertSame('alpha', $response->json('hits.hits.0._id'));
+
+        $field = new NestedVector(
+            name: 'vector',
+            dims: 4,
+            apiName: 'test-embeddings',
+            similarity: VectorSimilarity::Euclidean,
+        );
+        $field->setPath('comments>vector');
+
+        $driver = new Opensearch;
+        $nestedVector = $driver->nestedVectorField($field);
+
+        $this->assertInstanceOf(OpenSearchNestedVector::class, $nestedVector);
+        $this->assertSame('comments.vector', $nestedVector->fullPath());
+        $this->assertSame(4, $nestedVector->dims());
+
+        $query = $nestedVector->vectorQueries([0.1, 0.2, 0.3, 0.4], 3, new BooleanQuery)[0]->toRaw();
+
+        $this->assertSame('_embeddings.comments.vector', $query['nested']['path']);
+        $this->assertSame([0.1, 0.2, 0.3, 0.4], (array) $query['nested']['query']['function_score']['script_score']['script']['params']->query_vector);
+        $this->assertStringContainsString("l2norm(params.query_vector, doc['_embeddings.comments.vector.vector'])", $query['nested']['query']['function_score']['script_score']['script']['source']);
+
+        $similarities = [
+            [VectorSimilarity::Cosine, 'cosineSimilarity'],
+            [VectorSimilarity::DotProduct, 'dotProduct'],
+            [VectorSimilarity::Euclidean, 'l2norm'],
+            [VectorSimilarity::MaxInnerProduct, 'dotProduct'],
+        ];
+
+        foreach ($similarities as [$similarity, $expectedScript]) {
+            $vector = new OpenSearchNestedVector('embedding', dims: 2, similarity: $similarity);
+            $vector->setPath('comments>embedding');
+
+            $query = $vector->vectorQueries([1.0, 0.0], 1, new BooleanQuery)[0]->toRaw();
+
+            $this->assertStringContainsString($expectedScript, $query['nested']['query']['function_score']['script_score']['script']['source']);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function opensearch_knn_mappings_restore_to_dense_vectors_after_elasticsearch_hit(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('sku');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['sku' => 'A-1'], _id: 'alpha'),
+                new Document(['sku' => 'B-2'], _id: 'beta'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->filters("sku:'A-1'")
+            ->queryString('')
+            ->hits();
+
+        $this->assertSame(['alpha'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $spaceTypes = [
+            'cosinesimil' => VectorSimilarity::Cosine,
+            'l2' => VectorSimilarity::Euclidean,
+            'innerproduct' => VectorSimilarity::DotProduct,
+            'unknown' => VectorSimilarity::Cosine,
+        ];
+
+        foreach ($spaceTypes as $spaceType => $similarity) {
+            $properties = Properties::create([
+                'embedding' => [
+                    'type' => 'knn_vector',
+                    'dimension' => 7,
+                    'method' => [
+                        'name' => 'hnsw',
+                        'space_type' => $spaceType,
+                        'parameters' => [
+                            'm' => 16,
+                            'ef_construction' => 128,
+                        ],
+                    ],
+                ],
+            ], new DefaultAnalyzer, [], Properties::ROOT_NAME);
+
+            $field = $properties->get('embedding');
+
+            $this->assertInstanceOf(DenseVector::class, $field);
+            $this->assertSame(7, $field->dims());
+            $this->assertTrue($field->isIndexed());
+            $this->assertSame($similarity, $field->similarity());
+            $this->assertSame('hnsw', $field->indexType());
+            $this->assertSame(16, $field->m());
+            $this->assertSame(128, $field->efConstruction());
+        }
+
+        $properties = Properties::create([
+            'embedding' => [
+                'type' => 'knn_vector',
+            ],
+        ], new DefaultAnalyzer, [], Properties::ROOT_NAME);
+
+        $field = $properties->get('embedding');
+
+        $this->assertSame(384, $field->dims());
+        $this->assertSame(VectorSimilarity::Cosine, $field->similarity());
+        $this->assertSame('hnsw', $field->indexType());
+        $this->assertSame(64, $field->m());
+        $this->assertSame(300, $field->efConstruction());
     }
 
     /**

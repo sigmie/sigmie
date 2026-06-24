@@ -6,6 +6,7 @@ namespace Sigmie\Tests;
 
 use Exception;
 use RachidLaasri\Travel\Travel;
+use RuntimeException;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Document\Document;
 use Sigmie\Index\Alias\AliasAlreadyExists;
@@ -13,6 +14,7 @@ use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Analysis\CharFilter\Pattern as PatternCharFilter;
+use Sigmie\Index\Index as BaseIndex;
 use Sigmie\Index\Analysis\Tokenizers\Ngram as NgramTokenizer;
 use Sigmie\Index\Analysis\Tokenizers\NonLetter;
 use Sigmie\Index\Analysis\Tokenizers\Pattern as PatternTokenizer;
@@ -1244,5 +1246,98 @@ class IndexBuilderTest extends TestCase
         $secondIndex = $this->sigmie->newIndex($alias)->createIfNotExists();
 
         $this->assertEquals($name, $secondIndex->name);
+    }
+
+    /**
+     * @test
+     */
+    public function create_if_not_exists_rejects_existing_concrete_index(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->indexAPICall($indexName, 'PUT', [
+            'mappings' => [
+                'properties' => [
+                    'title' => [
+                        'type' => 'text',
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Concrete index'], _id: 'matching'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Concrete')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $builder = new class($this->elasticsearchConnection, $indexName) extends NewIndex
+        {
+            public function __construct(
+                ElasticsearchConnection $connection,
+                protected string $indexName,
+            ) {
+                parent::__construct($connection);
+                $this->alias($indexName);
+            }
+
+            protected function aliasExists(string $alias): bool
+            {
+                return true;
+            }
+
+            protected function getIndex(string $alias): BaseIndex|AliasedIndex|null
+            {
+                return new BaseIndex($this->indexName);
+            }
+        };
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(sprintf("Index '%s' exists but is not an aliased index", $indexName));
+
+        $builder->createIfNotExists();
+    }
+
+    /**
+     * @test
+     */
+    public function new_index_save_creates_elasticsearch_index_template(): void
+    {
+        $templateName = uniqid('template_');
+        $indexName = uniqid('templated_');
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $template = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->save($templateName, [$indexName.'-*']);
+
+        $this->assertSame($templateName, $template->name);
+
+        $this->indexAPICall($indexName.'-live', 'PUT');
+
+        $this->sigmie->collect($indexName.'-live', refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Templated index'], _id: 'matching'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName.'-live')
+            ->properties($blueprint)
+            ->queryString('Templated')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
     }
 }

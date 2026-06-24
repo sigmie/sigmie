@@ -7,6 +7,7 @@ namespace Sigmie\Tests;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Http\Promise\FulfilledPromise;
 use Http\Promise\Promise;
+use RuntimeException;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
@@ -719,6 +720,79 @@ class IndexUpdateTest extends TestCase
         $settings = $connection->settingsCalls[0] ?? [];
         $this->assertSame('5s', $settings['refresh_interval']);
         $this->assertArrayNotHasKey('number_of_replicas', $settings);
+    }
+
+    /**
+     * @test
+     */
+    public function index_update_task_pack_unpack_and_timeout_paths_after_elasticsearch_hit(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Update task coverage'], _id: 'matching'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Update')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $connection = new class implements ElasticsearchConnection
+        {
+            public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse
+            {
+                if ($request->getMethod() === 'POST') {
+                    return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"task":"node:1"}'));
+                }
+
+                return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"nodes":{"node":{"tasks":{"node:1":{}}}}}'));
+            }
+
+            public function promise(ElasticsearchRequest $request): Promise
+            {
+                return new FulfilledPromise($this($request));
+            }
+
+            public function driver(): SearchEngine
+            {
+                return new Elasticsearch;
+            }
+
+            public function isServerless(): bool
+            {
+                return false;
+            }
+        };
+
+        $task = new IndexUpdateTask($connection, 'source', 'dest', 'old', 'new', 2);
+
+        $this->assertSame([
+            'source' => 'source',
+            'dest' => 'dest',
+            'old_alias' => 'old',
+            'new_alias' => 'new',
+            'requested_replicas' => 2,
+        ], $task->pack());
+
+        $unpacked = IndexUpdateTask::unpack($connection, $task->pack());
+
+        $this->assertFalse($unpacked->isCompleted());
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Index update is not completed. Tried 1 times.');
+
+        $unpacked->waitAndFinish(maxTries: 0);
     }
 
     /**

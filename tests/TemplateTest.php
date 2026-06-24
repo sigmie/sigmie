@@ -324,4 +324,49 @@ class TemplateTest extends TestCase
 
         $this->assertSame(['matching'], array_map(fn (array $hit): string => $hit['_id'], $hits));
     }
+
+    /**
+     * @test
+     */
+    public function saved_semantic_template_runs_against_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+        $templateId = uniqid('semantic_');
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 128, api: 'test-embeddings');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Semantic template guide'], _id: 'matching'),
+                new Document(['title' => 'Unrelated release notes'], _id: 'missing'),
+            ]);
+
+        $this->sigmie->newTemplate($templateId)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->semantic()
+            ->semanticThreshold(0.25)
+            ->autocomplete(false)
+            ->get()
+            ->save();
+
+        $script = $this->sigmie->template($templateId);
+        $rendered = $script->render([
+            'query_string' => 'template',
+            '_embeddings_title' => '"Semantic template"',
+        ]);
+        $response = $script->run($indexName, [
+            'query_string' => 'template',
+            '_embeddings_title' => '"Semantic template"',
+        ]);
+
+        $this->assertSame('replace', $rendered['query']['bool']['must'][1]['bool']['should'][0]['function_score']['boost_mode']);
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $response->hits()));
+    }
 }
