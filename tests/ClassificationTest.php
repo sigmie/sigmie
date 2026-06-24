@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\Clustering\ClusteringResult;
+use Sigmie\Document\Document;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\TestCase;
 
 class ClassificationTest extends TestCase
@@ -79,6 +82,14 @@ class ClassificationTest extends TestCase
     public function kmeans_clustering(): void
     {
         $embeddingsApi = $this->embeddingApi;
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
 
         $texts = [
             'The Lion King',
@@ -93,6 +104,24 @@ class ClassificationTest extends TestCase
             'Toy Story',
         ];
 
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge(array_map(
+                fn (string $text): Document => new Document(['title' => $text]),
+                $texts
+            ));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('')
+            ->size(10)
+            ->hits();
+
+        $texts = array_map(fn ($hit): string => $hit->_source['title'], $hits);
+
+        $this->assertSame('The Lion King', $texts[0]);
+        $this->assertCount(10, $texts);
+
         $result = $this->sigmie->newClustering($embeddingsApi)
             ->texts($texts)
             ->algorithm('kmeans')
@@ -101,9 +130,13 @@ class ClassificationTest extends TestCase
 
         $this->assertEquals(3, $result->clusterCount());
         $this->assertCount(10, $result->assignments());
+        $this->assertNotEmpty($result->centroids());
+        $this->assertSame([], $result->noise());
+        $this->assertSame(0.0, $result->silhouetteScore());
 
         $clusters = $result->clusters();
         $this->assertCount(3, $clusters);
+        $this->assertNotEmpty($result->getCluster($result->assignments()[0]));
 
         // Each cluster should have at least one item
         foreach ($clusters as $items) {
@@ -117,6 +150,14 @@ class ClassificationTest extends TestCase
     public function hdbscan_clustering(): void
     {
         $embeddingsApi = $this->embeddingApi;
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
 
         $texts = [
             'The Lion King',
@@ -129,6 +170,24 @@ class ClassificationTest extends TestCase
             'Micheal Jackson',
         ];
 
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge(array_map(
+                fn (string $text): Document => new Document(['title' => $text]),
+                $texts
+            ));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('')
+            ->size(8)
+            ->hits();
+
+        $texts = array_map(fn ($hit): string => $hit->_source['title'], $hits);
+
+        $this->assertSame('The Lion King', $texts[0]);
+        $this->assertCount(8, $texts);
+
         $result = $this->sigmie->newClustering($embeddingsApi)
             ->texts($texts)
             ->algorithm('hdbscan')
@@ -140,5 +199,20 @@ class ClassificationTest extends TestCase
         $clusters = $result->clusters();
 
         $this->assertGreaterThan(0, count($clusters));
+        $this->assertIsArray($result->noise());
+
+        $noiseResult = new ClusteringResult(
+            assignments: [-1, 0],
+            centroids: [[0.1]],
+            texts: array_slice($texts, 0, 2),
+            algorithm: 'hdbscan'
+        );
+
+        $this->assertSame([
+            [
+                'index' => 0,
+                'text' => 'The Lion King',
+            ],
+        ], $noiseResult->noise());
     }
 }

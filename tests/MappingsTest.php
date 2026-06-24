@@ -1846,6 +1846,75 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
+    public function properties_helpers_match_live_elasticsearch_mapping_and_search_results(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title')->semantic(accuracy: 1, dimensions: 128, api: 'test-embeddings');
+        $blueprint->image('photo')->semantic(accuracy: 1, dimensions: 512, api: 'test-clip');
+        $blueprint->completion('suggest');
+        $blueprint->boost();
+        $blueprint->nested('comments', function (NewProperties $props): void {
+            $props->text('body');
+        });
+
+        $properties = $blueprint->get();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'title' => 'Semantic mapping guide',
+                    'photo' => 'https://github.com/sigmie/test-images/raw/refs/heads/main/pirates.jpeg',
+                    'suggest' => 'semantic mapping',
+                    'boost' => 2,
+                    'comments' => [
+                        ['body' => 'Nested mapping comment'],
+                    ],
+                ], _id: 'semantic-mapping'),
+                new Document([
+                    'title' => 'Other guide',
+                    'photo' => 'https://github.com/sigmie/test-images/raw/refs/heads/main/red-car.jpeg',
+                    'suggest' => 'other mapping',
+                    'boost' => 1,
+                    'comments' => [
+                        ['body' => 'Other nested comment'],
+                    ],
+                ], _id: 'other-mapping'),
+            ]);
+
+        $results = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Semantic')
+            ->get();
+
+        $this->assertSame(1, $results->total());
+        $this->assertSame('semantic-mapping', $results->hits()[0]->_id);
+
+        $this->assertSame([], $properties->queries('Semantic'));
+        $this->assertSame($properties, $properties->getProperties());
+        $this->assertSame('boost', $properties->boostField->name());
+        $this->assertSame(['title', 'photo'], $properties->embeddingsFields()->keys());
+        $this->assertSame(['suggest'], $properties->completionFields()->keys());
+
+        $liveProperties = $this->sigmie->index($indexName)->mappings->properties();
+
+        $this->assertTrue(isset($liveProperties['title']));
+        $liveProperties['title_copy'] = $liveProperties->get('title');
+        $this->assertTrue(isset($liveProperties['title_copy']));
+        unset($liveProperties['title_copy']);
+        $this->assertFalse(isset($liveProperties['title_copy']));
+        $this->assertSame('comments', $liveProperties->get('comments')->getProperties()->fullPath());
+    }
+
+    /**
+     * @test
+     */
     public function double_field_mapping(): void
     {
         $indexName = uniqid();
