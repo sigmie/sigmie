@@ -9,8 +9,8 @@ use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FilterParser;
-use Sigmie\Parse\Parser;
 use Sigmie\Parse\ParseException;
+use Sigmie\Parse\Parser;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\MatchNone;
 use Sigmie\Testing\TestCase;
@@ -206,7 +206,7 @@ class ParserCoverageTest extends TestCase
 
         $this->assertArrayHasKey('match_all', $emptyRaw);
         $this->assertSame(1.0, $emptyRaw['match_all']->boost);
-        $this->assertFalse($parser->wholeGroup('(status:\'published\') AND (price>5)'));
+        $this->assertFalse($parser->wholeGroup("(status:'published') AND (price>5)"));
         $this->assertNull($parser->handleGeo('missing:1km[1,2]'));
         $this->assertInstanceOf(MatchNone::class, $parser->handleGeo('location:0km[1,2]'));
         $this->assertNull($parser->handleBetween('missing:1..2'));
