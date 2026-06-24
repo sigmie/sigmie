@@ -19,7 +19,6 @@ use Sigmie\Base\ElasticsearchException;
 use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Classification\NewClassification;
-use Sigmie\Clustering\NewClustering;
 use Sigmie\Contracts\Package;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Contracts\CollectionHook;
@@ -137,11 +136,6 @@ class Sigmie
     public function newClassification(EmbeddingsApi $embeddingsApi): NewClassification
     {
         return new NewClassification($embeddingsApi);
-    }
-
-    public function newClustering(EmbeddingsApi $embeddingsApi): NewClustering
-    {
-        return new NewClustering($embeddingsApi);
     }
 
     public function newRecommend(string $index): NewRecommendations

@@ -38,7 +38,6 @@ use Sigmie\Base\Http\Responses\Bulk as BulkResponse;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Classification\ClassificationResult;
 use Sigmie\Classification\NewClassification;
-use Sigmie\Clustering\NewClustering;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Enums\VectorSimilarity;
@@ -1196,22 +1195,6 @@ class UtilityCoverageTest extends TestCase
             'flat_previous' => ['metric' => ['value' => 0]],
         ])['change_pct']);
         $this->assertSame(0, (new AutoDateHistogram('by_date', 'created_at', 10))->missing(0)->toRaw()['by_date']['date_histogram']['missing']);
-
-        $clustering = new class($embeddings) extends NewClustering
-        {
-            public function centroid(array $vectors): array
-            {
-                return $this->calculateCentroid($vectors);
-            }
-        };
-
-        $kmeans = $clustering
-            ->texts(['one'])
-            ->clusters(3)
-            ->fit();
-
-        $this->assertSame([0], $kmeans->assignments());
-        $this->assertSame([], $clustering->centroid([]));
 
         $classifier = new class($embeddings) extends NewClassification
         {

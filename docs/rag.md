@@ -85,10 +85,6 @@ rerank(
 
 For advanced cases, build a rerank manually with `Sigmie\Search\NewRerank`.
 
-## Optional: conversation history
-
-`Sigmie\AI\History\Index` is a standalone index for storing conversation turns. It uses embeddings for semantic recall, but stays decoupled from generation — your app reads from it before composing each prompt.
-
 ## See also
 
 - [Semantic Search](semantic-search.md) — embeddings and similarity.
