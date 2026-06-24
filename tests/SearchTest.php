@@ -893,6 +893,41 @@ class SearchTest extends TestCase
         $hits = $search->json('hits');
 
         $this->assertCount(1, $hits);
+        $this->assertSame('Mickey', $hits[0]['_source']['name']);
+    }
+
+    /**
+     * @test
+     */
+    public function custom_typo_tolerance_thresholds_return_expected_elasticsearch_hit(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['name' => 'Mickey'], _id: 'mickey'),
+            new Document(['name' => 'Donald'], _id: 'donald'),
+        ]);
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['name'])
+            ->typoTolerantAttributes(['name'])
+            ->minCharsForOneTypo(1)
+            ->minCharsForTwoTypo(4)
+            ->queryString('Mickeu')
+            ->get();
+
+        $this->assertSame(['mickey'], array_map(
+            fn (array $hit): string => $hit['_id'],
+            $response->json('hits')
+        ));
     }
 
     /**
