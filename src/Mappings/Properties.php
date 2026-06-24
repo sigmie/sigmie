@@ -301,11 +301,11 @@ class Properties extends Type implements ArrayAccess, FieldContainer
         return (new Collection($this->fields))
             ->filter(fn (ContractsType $value): bool => ! ($value instanceof Combo))
             ->mapToDictionary(function (ContractsType $value) use ($driver): array {
-                if ($value instanceof BaseVector && $driver !== null) {
+                if ($value instanceof BaseVector && $driver instanceof SearchEngine) {
                     return $driver->vectorField($value)->toRaw();
                 }
 
-                if (($value instanceof Nested || $value instanceof Object_) && $driver !== null) {
+                if (($value instanceof Nested || $value instanceof Object_) && $driver instanceof SearchEngine) {
                     return $value->toRaw($driver);
                 }
 
