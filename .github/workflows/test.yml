@@ -163,9 +163,11 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.xml
           flags: elasticsearch
           name: elasticsearch-${{ matrix.elasticsearch_version }}
+          fail_ci_if_error: true
 
   test-opensearch:
     needs: code-quality
@@ -287,6 +289,8 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.xml
           flags: opensearch
           name: opensearch-${{ matrix.opensearch_version }}
+          fail_ci_if_error: true
